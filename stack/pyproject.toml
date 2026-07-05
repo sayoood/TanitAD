@@ -20,6 +20,9 @@ dev = ["pytest>=8.0"]
 # (GitHub main, gymnasium-based) in a supervised session. See
 # tanitad/data/metadrive_env.py docstring for the measured setup verdict.
 sim = ["panda3d>=1.10", "gymnasium>=0.28"]
+# TLS behind the dev-machine intercepting proxy + authenticated downloads
+# (Hugging Face etc.). truststore routes verification through the OS trust store.
+net = ["truststore>=0.9"]
 
 [tool.setuptools.packages.find]
 include = ["tanitad*"]
