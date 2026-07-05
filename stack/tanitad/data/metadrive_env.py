@@ -48,6 +48,12 @@ from torch import Tensor
 # Re-use the exact episode container so a MetaDrive episode is type-identical to
 # a toy episode -- downstream code cannot tell them apart.
 from tanitad.data.toy_driving import ToyEpisode
+# The episode-contract assembly (accel finite-diff, contract assertion, windowed
+# Dataset) lives in one shared home so every adapter stays contract-identical.
+# Re-exported below so existing importers of these names keep working.
+from tanitad.data._contract import (EpisodeWindowDataset, assemble_episode,
+                                     assert_contract, finite_diff_accel,
+                                     frame_change_fraction)
 
 
 # --------------------------------------------------------------------------- #
@@ -99,99 +105,20 @@ def steering_to_rad(norm_steering: float, max_steering_deg: float = 40.0) -> flo
     return math.radians(float(norm_steering) * float(max_steering_deg))
 
 
-def finite_diff_accel(v: np.ndarray, dt: float) -> np.ndarray:
-    """Longitudinal accel (m/s^2) as the forward finite difference of speed.
+# --------------------------------------------------------------------------- #
+# Episode assembly + windowed dataset come from the shared contract module.    #
+# ``assemble_episode`` / ``finite_diff_accel`` / ``frame_change_fraction`` are  #
+# imported (and re-exported) at the top of this file. The MetaDrive dataset is  #
+# the generic windowed dataset -- kept as a named subclass so a MetaDrive       #
+# episode set reads intention-clearly at the call site.                        #
+# --------------------------------------------------------------------------- #
+class MetaDriveDataset(EpisodeWindowDataset):
+    """Windowed dataset over MetaDrive episodes (see :class:`EpisodeWindowDataset`).
 
-    ``accel[t]`` is the acceleration applied between ``t`` and ``t+1`` (matching
-    the toy contract's action-at-t semantics). The final step repeats the
-    previous value so the length equals ``len(v)``.
+    MetaDrive episodes are produced by driving a live simulator, but the window
+    contract is byte-for-byte identical to the toy set, so a model trained on the
+    toy set consumes these unchanged. Splits are EPISODE-level (I3).
     """
-    v = np.asarray(v, dtype=np.float32)
-    if v.shape[0] < 2:
-        return np.zeros_like(v)
-    a = np.empty_like(v)
-    a[:-1] = (v[1:] - v[:-1]) / float(dt)
-    a[-1] = a[-2]
-    return a
-
-
-def frame_change_fraction(frames: Tensor, thresh: float = 0.05) -> float:
-    """Consequence-dominance probe (A8): mean fraction of pixels changing/step."""
-    diffs = (frames[1:] - frames[:-1]).abs() > thresh
-    return float(diffs.float().mean())
-
-
-# --------------------------------------------------------------------------- #
-# Episode container assembly (pure)                                           #
-# --------------------------------------------------------------------------- #
-def assemble_episode(frames: list[Tensor], poses: list[np.ndarray],
-                     steer_rad: list[float], dt: float,
-                     episode_id: int) -> ToyEpisode:
-    """Stack per-step buffers into a contract-compliant :class:`ToyEpisode`.
-
-    ``actions`` = column-stack of ``steer_rad`` and the finite-difference accel
-    of the pose speeds. Shapes are validated to the contract before return.
-    """
-    frames_t = torch.stack(frames, dim=0).to(torch.float32)  # [T, 1, H, W]
-    poses_arr = np.stack(poses).astype(np.float32)           # [T, 4]
-    accel = finite_diff_accel(poses_arr[:, 3], dt)           # [T]
-    actions = np.column_stack([np.asarray(steer_rad, np.float32), accel])
-
-    ep = ToyEpisode(
-        frames=frames_t,
-        actions=torch.from_numpy(actions).to(torch.float32),
-        poses=torch.from_numpy(poses_arr).to(torch.float32),
-        episode_id=episode_id,
-    )
-    _assert_contract(ep)
-    return ep
-
-
-def _assert_contract(ep: ToyEpisode) -> None:
-    T = ep.frames.shape[0]
-    assert ep.frames.ndim == 4 and ep.frames.shape[1] == 1, ep.frames.shape
-    assert ep.actions.shape == (T, 2), ep.actions.shape
-    assert ep.poses.shape == (T, 4), ep.poses.shape
-    assert float(ep.frames.min()) >= 0.0 and float(ep.frames.max()) <= 1.0
-
-
-# --------------------------------------------------------------------------- #
-# Dataset: identical windowing/return contract to ToyDrivingDataset          #
-# --------------------------------------------------------------------------- #
-class MetaDriveDataset(torch.utils.data.Dataset):
-    """Windows over pre-generated episodes -- same dict contract as the toy set.
-
-    Kept separate from :class:`~tanitad.data.toy_driving.ToyDrivingDataset` (which
-    generates its episodes internally) because MetaDrive episodes are produced by
-    driving a live simulator; the *window contract* is byte-for-byte identical, so
-    a model trained on the toy set consumes this without any code change. Splits
-    are EPISODE-level (I3): build train/val from disjoint episode lists.
-    """
-
-    def __init__(self, episodes: list[ToyEpisode], window: int = 6,
-                 max_horizon: int = 4):
-        self.window, self.max_horizon = window, max_horizon
-        self.episodes = episodes
-        self.index: list[tuple[int, int]] = []
-        for e_i, ep in enumerate(episodes):
-            t_max = ep.frames.shape[0] - window - max_horizon
-            self.index.extend((e_i, t) for t in range(t_max))
-
-    def __len__(self) -> int:
-        return len(self.index)
-
-    def __getitem__(self, i: int):
-        e_i, t = self.index[i]
-        ep = self.episodes[e_i]
-        w = self.window
-        return {
-            "frames": ep.frames[t:t + w],
-            "actions": ep.actions[t:t + w],
-            "future_frames": ep.frames[t + w:t + w + self.max_horizon],
-            "future_poses": ep.poses[t + w:t + w + self.max_horizon],
-            "pose_last": ep.poses[t + w - 1],
-            "episode_id": ep.episode_id,
-        }
 
 
 # --------------------------------------------------------------------------- #

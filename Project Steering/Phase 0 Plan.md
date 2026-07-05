@@ -69,7 +69,12 @@ encoder (+LoRA r=16 later).** Answers H4 at every gate. Decision between arms on
 language-core (H12 stance), CEM/continuous planners (discrete tactical vocabulary is milliseconds),
 BatchNorm anywhere in the inference path (I2).
 
-### 2.2 Training data — **exact specification** *(updated 2026-07-06 per D-008)*
+### 2.2 Training data — **exact specification** *(updated 2026-07-06 per D-008; ordering updated per D-009)*
+
+> **D-009 (Sayed): real camera data first.** B1 (comma2k19, HF mirror `commaai/comma2k19`) is the
+> PRIMARY training corpus from day 1 under config `base250cam` (6-ch 2-frame RGB @ 256 px); B2 follows.
+> A1 (toy) is a CI fixture only — zero training time. A2 (MetaDrive) remains required for the
+> closed-loop gates D5/D6 and scripted-occluder LOPS, scheduled after the supervised source install.
 
 | # | Dataset | Exact spec | Volume | Role / gates |
 |---|---|---|---|---|

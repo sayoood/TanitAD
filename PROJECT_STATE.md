@@ -45,8 +45,12 @@ Summary of the immediate next actions:
 - [x] W1: D-008 executed — TanitAD-4B-M at **261.1 M params** instantiated (budget enforced by test);
       H15 ImaginationField (advection + refine + epistemic σ) wired into training; D9 gate defined;
       exact Phase-0 data spec in Phase 0 Plan §2.2; 24 tests green + 1 sim-skip
-- [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` (run p0-sA02, planned $20)
-- [ ] W1: supervised MetaDrive source-install, then regenerate Stage-A data as A2 (Tools&DevEnv handoff)
+- [x] W1: D-009 executed — real camera data first: comma2k19 loader (`stack/tanitad/data/comma2k19.py`,
+      HF mirror, route-level splits, real CAN actions), `base250cam` config, Windows-safe extractor;
+      Chunk_1 (8.7 GB) downloading locally; 36 tests green
+- [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` (run p0-sB01, comma2k19, planned $25)
+- [ ] W1: first local real-camera run on 4060 once Chunk_1 lands (p0-sB00 pipe-proof)
+- [ ] W1: supervised MetaDrive source-install — still needed for closed-loop gates D5/D6 (Tools&DevEnv handoff)
 - [ ] W2: Stage-0 bake-off (residual+change-weighted vs MSE; grid readout vs pooling; probe_imag vs probe_real)
 - [ ] W2–3: D1–D3 gates measured (see Phase 0 Plan §4)
 

@@ -1,6 +1,7 @@
-# RunPod Runbook — Stage-A training of TanitAD-4B-M (261 M)
+# RunPod Runbook — real-data training of TanitAD-4B-M (261 M)
 
-**Run ID:** `p0-sA02-base250-stageA` · **Budget:** planned $20 (ledger row exists) · **Owner:** Sayed
+**Run ID:** `p0-sB01-base250cam-comma` · **Budget:** planned $25 (ledger) · **Owner:** Sayed
+*(Updated per D-009: trains on comma2k19 real camera data — the toy pipeline command was retired.)*
 
 ## 1. Create the pod (web UI, ~3 min)
 
@@ -21,23 +22,36 @@ pip install -e .[dev]
 pytest -q                      # must be green (25 tests) before spending GPU time
 ```
 
-## 3. Launch Stage-A run (in tmux so the browser can disconnect)
+## 3. Get real data onto the pod (D-009: comma2k19, ungated — no token needed)
+
+```bash
+pip install -e .[real]
+python - <<'EOF'
+from huggingface_hub import hf_hub_download
+for i in (1, 2, 3):        # 3 chunks ~ 27 GB ~ 10 h of driving; add more later
+    p = hf_hub_download('commaai/comma2k19', f'raw_data/Chunk_{i}.zip',
+                        repo_type='dataset', local_dir='/workspace/data')
+    print('got', p)
+EOF
+for z in /workspace/data/raw_data/Chunk_*.zip; do unzip -q "$z" -d /workspace/data/comma2k19; done
+```
+
+## 4. Launch the real-data Stage run (in tmux so the browser can disconnect)
 
 ```bash
 tmux new -s train
 cd /workspace/TanitAD/stack
 python -m tanitad.train.train_worldmodel \
-    --config base250 \
-    --episodes 1000 \
-    --out /workspace/experiments/p0-sA02-base250-stageA \
-    2>&1 | tee /workspace/experiments/p0-sA02.log
+    --config base250cam \
+    --data comma2k19 --data-root /workspace/data/comma2k19 \
+    --episodes 600 \
+    --out /workspace/experiments/p0-sB01-base250cam-comma \
+    2>&1 | tee /workspace/experiments/p0-sB01.log
 ```
 Detach: `Ctrl-b d`. Re-attach: `tmux attach -t train`.
 
-- Expected: ~12–24 h for 60 k steps at batch 64 (A40, bf16 autocast lands this week; fp32 works today).
-- Data note: this run trains on dataset A1 (toy at scale, generated on the fly on the pod).
-  When the supervised MetaDrive source-install is done, regenerate with A2 and rerun — same command,
-  the adapter is contract-identical.
+- Expected: ~18–30 h for 60 k steps at batch 64 on 256 px inputs (fp32 today; bf16 autocast lands
+  this week and roughly halves it). Budget accordingly or cut `--steps 30000` for the first pass.
 
 ## 4. Monitor
 

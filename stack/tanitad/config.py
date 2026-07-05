@@ -156,3 +156,16 @@ def base250_config() -> StackConfig:
     cfg.train.steps = 60_000
     cfg.train.warmup_steps = 2_000
     return cfg
+
+
+def base250cam_config() -> StackConfig:
+    """TanitAD-4B-M, real-camera variant (D-009: real data first).
+
+    Same ~261 M budget as base250; input becomes 2-frame RGB stacks
+    (6 channels) at 256 px -> 16x16 token grid. This is the PRIMARY Phase 0
+    training config (comma2k19 / PhysicalAI-AV front camera).
+    """
+    cfg = base250_config()
+    cfg.encoder = EncoderConfig(in_channels=6, image_size=256, patch_size=16,
+                                d_model=768, depth=14, n_heads=12)
+    return cfg

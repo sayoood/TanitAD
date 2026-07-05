@@ -86,6 +86,18 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-009 — Real camera data first; toy demoted to CI fixture (2026-07-06, accepted — decided by Sayed)
+
+**Decision.** Phase 0 training starts on **real front-camera data immediately**; no training time is
+spent on toy data (it remains only as a CI fixture and instrument-check substrate). Primary source:
+**comma2k19 via the ungated HuggingFace mirror** (`commaai/comma2k19`, `raw_data/Chunk_*.zip`) — real
+20 fps camera + real CAN actions + GNSS poses, zero annotation. Chunk_1 (8.7 GB ≈ 3.3 h) is the first
+training corpus; further chunks stream in as needed. PhysicalAI-AV (gated=auto, token verified) is the
+second source and the multi-view/G0.7 corpus. **Consequence for gates:** D1–D4, D8, D9 run on real
+data; D5/D6 (topology/generalization) still require MetaDrive closed-loop and stay scheduled after the
+supervised source-install. Primary config: `base250cam` (6-ch 2-frame RGB stacks @ 256 px, same 261 M
+budget). This supersedes the sim-first Stage-A ladder of D-002.
+
 ## D-007 — Phase 0 primary open-loop benchmark: NAVSIM-style trajectory metrics + custom Phase-0 metrics (2026-07-05, accepted)
 
 **Decision.** Phase 0 measures: (a) standard open-loop trajectory metrics (ADE/FDE@1s/2s, and NAVSIM

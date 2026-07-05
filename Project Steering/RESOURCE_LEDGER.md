@@ -5,6 +5,6 @@
 
 | Date | Exp-ID | Resource | Planned $ | Actual $ | Purpose / gate | Approved by |
 |---|---|---|---|---|---|---|
-| 2026-07-06 | p0-sA02-base250-stageA | RunPod A40 48 GB, ~12–24 h | 20 | — | Stage-A training of TanitAD-4B-M (261 M); D1–D3 rehearsal + D9 first rows | Sayed (pod started by Sayed per runbook) |
+| 2026-07-06 | p0-sB01-base250cam-comma | RunPod A40 48 GB, ~18–30 h | 25 | — | Real-data (comma2k19) training of TanitAD-4B-M (261 M) per D-009; D1–D3 + D9 first rows on real camera data | Sayed (pod started per runbook) |
 
 **Phase 0 running total: $0 spent / $20 planned** (guardrail: ≤ $50/week without explicit approval)

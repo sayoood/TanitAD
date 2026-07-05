@@ -23,7 +23,8 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
-from tanitad.config import StackConfig, base250_config, smoke_config
+from tanitad.config import (StackConfig, base250_config, base250cam_config,
+                            smoke_config)
 from tanitad.data.toy_driving import ToyDrivingDataset
 from tanitad.instruments.checks import (i2_batch_consistency, i3_episode_split,
                                         i4_imag_relative, instrument_rows)
@@ -59,21 +60,43 @@ def cosine_lr(step: int, total: int, warmup: int, base: float) -> float:
     return base * 0.5 * (1 + math.cos(math.pi * t))
 
 
-def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
+def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
+                    data_root: str | None):
+    max_h = _max_horizon(cfg)
+    if data == "comma2k19":
+        from tanitad.data.comma2k19 import (Comma2k19Dataset,
+                                            discover_segments, split_by_route)
+        assert data_root, "--data-root required for comma2k19"
+        assert cfg.encoder.in_channels == 6, \
+            "comma2k19 emits 6-channel frames — use --config base250cam"
+        segs = discover_segments(data_root)[:n_episodes]
+        assert segs, f"no comma2k19 segments under {data_root}"
+        train_segs, val_segs = split_by_route(segs, val_frac=0.2,
+                                              seed=cfg.train.seed)       # I3
+        print(f"[data] comma2k19: {len(train_segs)} train / "
+              f"{len(val_segs)} val segments (route-level split)")
+        mk = lambda s: Comma2k19Dataset(s, window=cfg.predictor.window,
+                                        max_horizon=max_h,
+                                        size=cfg.encoder.image_size)
+        return mk(train_segs), mk(val_segs)
+    # default: procedural toy (CI fixture / pipeline checks only, D-009)
+    train_ids, val_ids = i3_episode_split(list(range(n_episodes)), val_frac=0.2,
+                                          seed=cfg.train.seed)           # I3
+    ep_steps = max(80, cfg.predictor.window + max_h + 40)
+    mk = lambda ids: ToyDrivingDataset(ids, window=cfg.predictor.window,
+                                       max_horizon=max_h,
+                                       size=cfg.encoder.image_size,
+                                       steps=ep_steps)
+    return mk(train_ids), mk(val_ids)
+
+
+def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
+          data_root: str | None = None) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if cfg.train.device == "auto" else cfg.train.device
     torch.manual_seed(cfg.train.seed)
 
-    train_ids, val_ids = i3_episode_split(list(range(n_episodes)), val_frac=0.2,
-                                          seed=cfg.train.seed)          # I3
-    max_h = _max_horizon(cfg)
-    ep_steps = max(80, cfg.predictor.window + max_h + 40)
-    ds_train = ToyDrivingDataset(train_ids, window=cfg.predictor.window,
-                                 max_horizon=max_h, size=cfg.encoder.image_size,
-                                 steps=ep_steps)
-    ds_val = ToyDrivingDataset(val_ids, window=cfg.predictor.window,
-                               max_horizon=max_h, size=cfg.encoder.image_size,
-                               steps=ep_steps)
+    ds_train, ds_val = _build_datasets(cfg, n_episodes, data, data_root)
     dl = DataLoader(ds_train, batch_size=cfg.train.batch_size, shuffle=True,
                     drop_last=True)
 
@@ -202,11 +225,17 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", choices=["smoke", "base", "base250"],
-                    default="base", help="base250 = TanitAD-4B-M (~250 M, D-008)")
+    ap.add_argument("--config", choices=["smoke", "base", "base250", "base250cam"],
+                    default="base", help="base250cam = TanitAD-4B-M on real camera "
+                                         "data (PRIMARY, D-009)")
     ap.add_argument("--smoke", action="store_true", help="alias for --config smoke")
+    ap.add_argument("--data", choices=["toy", "comma2k19"], default="toy",
+                    help="toy is a CI fixture only (D-009: real data first)")
+    ap.add_argument("--data-root", type=str, default=None,
+                    help="comma2k19 extracted root (contains Chunk_*/...)")
     ap.add_argument("--steps", type=int, default=None)
-    ap.add_argument("--episodes", type=int, default=40)
+    ap.add_argument("--episodes", type=int, default=40,
+                    help="toy: #episodes; comma2k19: max #segments")
     ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
@@ -215,6 +244,8 @@ def main():
         cfg = smoke_config()
     elif args.config == "base250":
         cfg = base250_config()
+    elif args.config == "base250cam":
+        cfg = base250cam_config()
     else:
         cfg = StackConfig()
     if args.steps:
@@ -224,7 +255,7 @@ def main():
     if args.out:
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
-    train(cfg, n_episodes=n_eps)
+    train(cfg, n_episodes=n_eps, data=args.data, data_root=args.data_root)
 
 
 if __name__ == "__main__":
