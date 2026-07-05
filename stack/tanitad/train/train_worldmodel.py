@@ -61,8 +61,29 @@ def cosine_lr(step: int, total: int, warmup: int, base: float) -> float:
 
 
 def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
-                    data_root: str | None):
+                    data_root: str | None, sim_root: str | None = None,
+                    sim_frac: float = 0.2):
     max_h = _max_horizon(cfg)
+    if data == "mix":
+        # D-010: real (comma2k19) + sim (pre-generated MetaDrive episodes,
+        # SAME contract: front-camera RGB 2-frame stacks at cfg image size).
+        from pathlib import Path
+
+        from tanitad.data.metadrive_env import MetaDriveDataset
+        from tanitad.data.mixing import MixedWindowDataset, load_episode
+        assert sim_root, "--sim-root required for --data mix"
+        real_train, real_val = _build_datasets(cfg, n_episodes, "comma2k19",
+                                               data_root)
+        sim_eps = [load_episode(str(p))
+                   for p in sorted(Path(sim_root).glob("*.pt"))]
+        assert sim_eps, f"no sim episodes (*.pt) under {sim_root}"
+        sim_ds = MetaDriveDataset(sim_eps, window=cfg.predictor.window,
+                                  max_horizon=max_h)
+        train = MixedWindowDataset([(real_train, 1.0 - sim_frac),
+                                    (sim_ds, sim_frac)], seed=cfg.train.seed)
+        print(f"[data] mix: {train.mix_report()} "
+              f"(real windows {len(real_train)}, sim windows {len(sim_ds)})")
+        return train, real_val          # validation stays REAL-only (D-010)
     if data == "comma2k19":
         from tanitad.data.comma2k19 import (Comma2k19Dataset,
                                             discover_segments, split_by_route)
@@ -91,12 +112,14 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
 
 
 def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
-          data_root: str | None = None) -> dict:
+          data_root: str | None = None, sim_root: str | None = None,
+          sim_frac: float = 0.2) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if cfg.train.device == "auto" else cfg.train.device
     torch.manual_seed(cfg.train.seed)
 
-    ds_train, ds_val = _build_datasets(cfg, n_episodes, data, data_root)
+    ds_train, ds_val = _build_datasets(cfg, n_episodes, data, data_root,
+                                       sim_root=sim_root, sim_frac=sim_frac)
     dl = DataLoader(ds_train, batch_size=cfg.train.batch_size, shuffle=True,
                     drop_last=True)
 
@@ -229,10 +252,14 @@ def main():
                     default="base", help="base250cam = TanitAD-4B-M on real camera "
                                          "data (PRIMARY, D-009)")
     ap.add_argument("--smoke", action="store_true", help="alias for --config smoke")
-    ap.add_argument("--data", choices=["toy", "comma2k19"], default="toy",
-                    help="toy is a CI fixture only (D-009: real data first)")
+    ap.add_argument("--data", choices=["toy", "comma2k19", "mix"], default="toy",
+                    help="toy is a CI fixture only (D-009); mix = real+sim (D-010)")
     ap.add_argument("--data-root", type=str, default=None,
                     help="comma2k19 extracted root (contains Chunk_*/...)")
+    ap.add_argument("--sim-root", type=str, default=None,
+                    help="dir of pre-generated sim episodes (*.pt) for --data mix")
+    ap.add_argument("--sim-frac", type=float, default=0.2,
+                    help="sim share of training windows in --data mix")
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--episodes", type=int, default=40,
                     help="toy: #episodes; comma2k19: max #segments")
@@ -255,7 +282,8 @@ def main():
     if args.out:
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
-    train(cfg, n_episodes=n_eps, data=args.data, data_root=args.data_root)
+    train(cfg, n_episodes=n_eps, data=args.data, data_root=args.data_root,
+          sim_root=args.sim_root, sim_frac=args.sim_frac)
 
 
 if __name__ == "__main__":

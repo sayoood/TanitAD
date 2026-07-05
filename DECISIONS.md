@@ -86,6 +86,26 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-010 — Sim (MetaDrive) is combined with real data for interaction, not pixels (2026-07-06, accepted)
+
+**Decision.** MetaDrive stays in Phase 0 in a strictly complementary role next to the real-data-first
+rule (D-009). Role separation:
+- **Real data owns:** representation learning, all public open-loop numbers (D1–D3 on real held-out
+  routes), validation sets (always real-only).
+- **Sim owns what logs cannot provide:** (a) off-expert action–consequence coverage via perturbed/
+  exploration rollouts — comma2k19 only covers the safe expert manifold, but imagine-and-select must
+  rank *bad* candidate actions it has never seen the consequences of; (b) scripted occluders for
+  object-level D9/LOPS (Ghost Cut-Through); (c) blocked-route topology tasks (D5) and procedural
+  simple→complex generalization (D6); (d) collisions/near-misses; (e) closed-loop evaluation (G0.5).
+- **Combination:** co-training via `MixedWindowDataset` (`--data mix`), default 80 % real / 20 % sim,
+  sim episodes rendered as front-camera RGB in the SAME contract (2-frame stacks @ 256 px), every item
+  domain-tagged. **Mandatory bake-off:** real-only vs mixed at matched steps — sim keeps its share only
+  if real-data gates do not regress (one lever per run, D-004).
+
+**Prerequisite.** MetaDrive live rollout (supervised source install) + front-camera RGB rendering in
+the adapter (currently BEV) + a perturbation-policy episode generator writing `*.pt` episodes
+(`tanitad/data/mixing.py: save_episode`). Until then training runs real-only — no time lost.
+
 ## D-009 — Real camera data first; toy demoted to CI fixture (2026-07-06, accepted — decided by Sayed)
 
 **Decision.** Phase 0 training starts on **real front-camera data immediately**; no training time is

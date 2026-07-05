@@ -15,8 +15,11 @@ Start simple, scale step by step, leverage proven open source.
   paths toward Orin/Thor.
 
 ## Weekly implementation duty (rotating backlog, top item first)
-1. MetaDrive wrapper in `stack/tanitad/data/` matching the toy episode contract (WP2 — top priority
-   until done, coordinate with Wednesday agent).
+1. MetaDrive sim stream for D-010 mix training: (a) supervised source install (PyPI no-go on py3.13 —
+   your own verdict note), (b) **front-camera RGB rendering** in the adapter (real-data contract:
+   2-frame RGB stacks @ 256 px — the BEV path stays for probes), (c) perturbation-policy episode
+   generator writing `*.pt` via `tanitad/data/mixing.py: save_episode` (off-expert actions,
+   scripted-occluder + blocked-route scenario configs).
 2. Minimal replay/viz script: episode → MP4/GIF with predicted-vs-actual trajectory overlay.
 3. CI script (`stack/scripts/ci.ps1`): pytest + I2 tripwire on every commit.
 4. AlpaSim hello-world: run one of its example scenarios locally; document setup cost honestly.
