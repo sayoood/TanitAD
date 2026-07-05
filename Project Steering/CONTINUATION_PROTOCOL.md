@@ -23,7 +23,14 @@ Rule of thumb: **state is overwritten, history is appended, the constitution is 
 3. Read the `STATE.md` of the discipline you will work in.
 4. Skim the last entries of `DECISIONS.md` (only entries newer than your knowledge).
 5. `git pull` (if remote ahead) and `git log --oneline -15` to see recent work.
-6. Only then start working.
+6. **MVP sessions only (D-011): intake triage.** Scan
+   `TanitAD Research Hub/*/Implementation/incoming/` for packages without a verdict. For each:
+   read `INTAKE.md`, run its standalone tests, decide integrate / integrate-with-changes / defer /
+   reject-with-reason, write the verdict into the `INTAKE.md`, and on integration move the code to
+   its `stack/` target, run the FULL test suite, commit with provenance
+   (`intake(<discipline>): <slug> — <verdict>`). Feedback is the point: a reason-less rejection
+   teaches the agent nothing.
+7. Only then start working.
 
 ## 3. Session end ritual (mandatory, even when interrupted)
 
@@ -49,6 +56,7 @@ Rule of thumb: **state is overwritten, history is appended, the constitution is 
 | Result type | Home |
 |---|---|
 | Research findings per discipline | `TanitAD Research Hub/<discipline>/Research/` (dated files + `KNOWLEDGE_BASE.md`) |
+| Agent code proposals for the stack (D-011) | `TanitAD Research Hub/<discipline>/Implementation/incoming/<date>-<slug>/` + `INTAKE.md` — never directly in `stack/` |
 | Hypothesis status (H0–H15) | `TanitAD Research Hub/HYPOTHESIS_LEDGER.md` |
 | Experiment results (training runs, gates) | `stack/experiments/<exp-id>/` (config + metrics.json + REPORT.md) |
 | Benchmark numbers & leaderboard | `Benchmarks & Eval/LEADERBOARD.md` |

@@ -13,6 +13,11 @@ the weekly report with benchmark/KPI-driven progress and concrete proposals for 
 1. **Health check.** For each Mon–Fri agent: did it run? gates passed? `QUALITY: partial` flags?
    Uncommitted work? → health table. Diagnose failures (schedule, budget, gate too strict) and either
    re-run the agent's critical missing step yourself (≤30 min) or file a fix task.
+1b. **Intake-queue audit (D-011).** Scan all `*/Implementation/incoming/` packages: verdictless
+   packages older than 3 days → escalate in the weekly report (top of Proposals section); packages
+   you can safely triage yourself (doc-only, or additive+tests-green with trivial blast radius) →
+   triage them, verdict into `INTAKE.md`. Never integrate into `stack/` yourself unless the package's
+   standalone tests AND the full stack suite pass — integration remains an MVP-stream act.
 2. **Synthesis.** Read all new research notes + knowledge-base deltas + `stack/experiments/` records
    + git log of the week. Write `Project Steering/Progress Reports/YYYY-Www.md`:
    - Executive summary (≤10 lines, honest — P8).

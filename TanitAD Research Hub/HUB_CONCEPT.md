@@ -59,11 +59,19 @@ pruned monthly (stale/superseded entries moved to an ARCHIVE section). Research 
 (`YYYY-MM-DD-<slug>.md`) hold the full weekly analysis; the knowledge base holds only the distilled
 deltas. Hypothesis-relevant findings ALSO update `HYPOTHESIS_LEDGER.md` (status + one-line evidence).
 
-## 5. Interfaces to the rest of the project
+## 5. Interfaces to the rest of the project (updated per D-011)
 
-- Agents never edit `Mission Plan.md`; proposals go to `Project Steering/Proposals/`.
-- Implementation increments that are runnable code go into `stack/` via normal commits (tests must pass).
-- Benchmarks & Eval agent owns `Benchmarks & Eval/LEADERBOARD.md` and `REGULATION_TRACE.md`.
+- **Separation principle: the hub proposes, the MVP integrates.** Agents never write into `stack/`;
+  code increments are self-contained intake packages in
+  `<Discipline>/Implementation/incoming/<date>-<slug>/` with an `INTAKE.md`
+  (template: `INTAKE_TEMPLATE.md`). The MVP stream (Sayed + the central sessions acting as
+  orchestrator) triages the queues in every MVP session: integrate / defer / reject-with-reason,
+  verdict written back into the package. The Friday Orchestrator agent audits queues as a safety net
+  and escalates stale packages in the weekly report.
+- Agents DO directly maintain: their Research folders, knowledge bases, `HYPOTHESIS_LEDGER.md`,
+  their `STATE.md`, their PROJECT_STATE session-log row; Benchmarks & Eval additionally owns
+  `LEADERBOARD.md` and `REGULATION_TRACE.md`.
+- Agents never edit `Mission Plan.md`; constitution proposals go to `Project Steering/Proposals/`.
 - Every agent ends its run with the session-end ritual of `CONTINUATION_PROTOCOL.md` (state update,
   commit, push) — the hub is fully resumable at any point.
 

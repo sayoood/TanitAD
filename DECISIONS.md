@@ -86,6 +86,28 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-011 — Hub/MVP separation: agents propose via intake queues, the MVP integrates (2026-07-07, accepted — proposed by Sayed)
+
+**Decision.** Research-hub agents no longer write into `stack/` (or any core MVP artifact). Their
+implementation increments land as **self-contained intake packages** in
+`TanitAD Research Hub/<Discipline>/Implementation/incoming/<date>-<slug>/` with an `INTAKE.md`
+(what/why/tests/target location/risk). The **MVP stream acts as orchestrator**: every MVP session
+starts with an intake triage (integrate / defer / reject-with-reason), and the Friday Orchestrator
+agent runs the same triage as a safety net. Rejections and integration notes are written back to the
+package's `INTAKE.md` and the discipline `STATE.md`, so agents learn from the feedback loop.
+
+**Rationale.** Matches the constitution (agents "identify concrete proposals to our main stream";
+the MVP is steered manually). Prevents unreviewed mutation of the production stack, keeps gate/
+instrument discipline in one place, and avoids working-tree collisions — all sessions share one
+folder on one machine, so git-branch isolation per agent would be operationally fragile here; a
+directory-level write boundary is robust.
+
+**Scope notes.** (1) Agents still directly update their own Research folders, knowledge bases,
+`HYPOTHESIS_LEDGER.md`, their `STATE.md`, and their PROJECT_STATE session-log row — shared *state*,
+not core code. (2) The two pre-D-011 agent contributions inside `stack/` (MetaDrive adapter, shared
+`_contract.py` + real-data validation) are grandfathered: reviewed, tested, kept. (3) Small doc-only
+improvements outside the hub still go through intake if they touch steering documents.
+
 ## D-010 — Sim (MetaDrive) is combined with real data for interaction, not pixels (2026-07-06, accepted)
 
 **Decision.** MetaDrive stays in Phase 0 in a strictly complementary role next to the real-data-first

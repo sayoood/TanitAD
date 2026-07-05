@@ -42,14 +42,25 @@ Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web s
 - G-F: session-end ritual done: STATE.md updated (incl. `LAST_RUN`, `QUALITY` line), files committed
   with message `hub(<discipline>): <what> — <why>`, pushed.
 
-## Boundaries
+## Boundaries (updated per D-011 — hub/MVP separation)
 
+- **NEVER write into `stack/`** or other core MVP artifacts. Code and code-change proposals go into
+  an intake package: `TanitAD Research Hub/<YourDiscipline>/Implementation/incoming/<YYYY-MM-DD>-<slug>/`
+  containing (a) the self-contained module(s)/patch, (b) its tests, (c) an `INTAKE.md` following
+  `TanitAD Research Hub/INTAKE_TEMPLATE.md` (what, why, evidence, tests run, proposed target location
+  in `stack/`, risk, rollback). The MVP orchestrator triages every package (integrate / defer /
+  reject-with-reason) and writes the verdict back into the `INTAKE.md` — read verdicts on your next
+  run and adapt.
+- You MAY directly update: your `Research/` folder, `KNOWLEDGE_BASE.md`, your `STATE.md`,
+  `HYPOTHESIS_LEDGER.md` rows, your PROJECT_STATE session-log row, and (Benchmarks & Eval only)
+  `LEADERBOARD.md` / `REGULATION_TRACE.md`.
 - NEVER edit `Project Steering/Mission Plan.md`. Constitution changes = proposal file in
   `Project Steering/Proposals/`.
 - Respect the resource plan (`Project Steering/Master Plan.md` §4): local GPU first; no cloud GPU
   spend without an approved entry in `Project Steering/RESOURCE_LEDGER.md`.
 - Honesty (P8): negative results and failed edges are first-class findings — record them.
-- Do not break `stack/` — run `pytest` before committing code there.
+- Intake packages must run standalone (`pytest <package>/tests`) — a package whose tests fail is a
+  gate-E failure.
 
 ## Schedule (registered 2026-07-05, dev-machine scheduled tasks)
 
