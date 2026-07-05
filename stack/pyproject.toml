@@ -14,10 +14,18 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
-sim = ["metadrive-simulator"]
+# MetaDrive native runtime deps (both ship cp313 wheels). MetaDrive itself is
+# NOT on this list: its PyPI package (metadrive-simulator 0.2.6.0) pins the
+# unbuildable gym==0.19.0 and fails on py3.13 -- install MetaDrive from source
+# (GitHub main, gymnasium-based) in a supervised session. See
+# tanitad/data/metadrive_env.py docstring for the measured setup verdict.
+sim = ["panda3d>=1.10", "gymnasium>=0.28"]
 
 [tool.setuptools.packages.find]
 include = ["tanitad*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "slow: live-simulator or long-running tests (skipped/needs .[sim] + source MetaDrive)",
+]

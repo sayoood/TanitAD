@@ -4,7 +4,7 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
-- **Last update:** 2026-07-05 (session: project kickoff)
+- **Last update:** 2026-07-06 (session: Tools&DevEnv weekly agent — WP2 MetaDrive wrapper)
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
@@ -39,7 +39,8 @@ Summary of the immediate next actions:
 
 - [x] W1: smoke training runs on RTX 4060 (`stack/experiments/p0-s000-kickoff-smoke`: loss 3.34→1.89,
       I2 pass 3.6e-7, I4=6.17 — untrained baseline, correctly blocking predictive claims)
-- [ ] W1: MetaDrive wrapper (toy pipeline done; MetaDrive adapter is WP2 top item)
+- [x] W1: MetaDrive wrapper (WP2) — contract-identical adapter merged + CI-green (`stack/tanitad/data/metadrive_env.py`);
+      live rollout needs a supervised source-install of MetaDrive (PyPI pkg no-go on py3.13; see Tools&DevEnv STATE)
 - [x] W1: I1–I4 instrument checks implemented + in test suite (10/10 tests pass)
 - [ ] W2: Stage-0 bake-off (residual+change-weighted vs MSE; grid readout vs pooling; probe_imag vs probe_real)
 - [ ] W2–3: D1–D3 gates measured (see Phase 0 Plan §4)
@@ -53,4 +54,5 @@ Summary of the immediate next actions:
 
 | Date | Session | What happened | Artifacts |
 |---|---|---|---|
+| 2026-07-06 | Tools&DevEnv agent | WP2 MetaDrive→toy-contract wrapper (17✓/1skip); MetaDrive install verdict (PyPI no-go py3.13, source is GO); AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM); Rerun.io picked for viz | `stack/tanitad/data/metadrive_env.py`, `TanitAD Research Hub/Tools&DevEnv/Research/2026-07-06-*.md` |
 | 2026-07-05 | Kickoff | Repo analysis, initial research, plans, stack scaffold, hub setup, first push | see §2 table |

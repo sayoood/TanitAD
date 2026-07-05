@@ -14,6 +14,10 @@ stack/experiments/**/*.ckpt
 
 # Data (never commit datasets)
 data/
+# ...but tanitad/data is the source package (loaders/adapters), not a dataset dir.
+# Re-include the dir + its .py only (keeps __pycache__ etc. ignored).
+!stack/tanitad/data/
+!stack/tanitad/data/*.py
 *.parquet
 *.h5
 *.hdf5
@@ -36,3 +40,5 @@ Thumbs.db
 .env
 *.token
 hf_token*
+Keys.txt
+keys.txt
