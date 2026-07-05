@@ -6,6 +6,11 @@
 - [2026-07-07] [measured] comma2k19 loader (D-009) decode path validated on REAL bytes: `av` decodes
   real HEVC → [200,3,256,256] uint8 @ ~105 fps (py3.13/Win), stack→[199,6,256,256] — impact: D-009/H7 —
   see `2026-07-07-comma2k19-data-card.md` §5
+- [2026-07-07] [license/D-002] PhysicalAI-AV **real** sets (-Vehicles/-NCore/-NuRec) = NVIDIA AV Dataset
+  License: **internal-dev-only, confidential, 12-month expiry, no public claims** → EXCLUDED from public
+  benchmarks (comma2k19/MIT stays the public corpus). Cosmos-Drive-Dreams = **CC-BY-4.0**, ungated → the
+  one publicly-claimable AV asset. Internal use needs Sayed+NVIDIA-legal sign-off ("using NVIDIA tech")
+  — impact: D-002, all public claims — `2026-07-07-physicalai-av-license-review.md`
 - [2026-07-07] [tool+finding] A8 statistics harness shipped (`stack/tanitad/data/stats.py`, 6 tests):
   per-corpus/per-domain `frame_change_fraction` distribution for change-weighting + D-010 mix. Measured
   toy=0.046 (threshold-INsensitive, hard-edged) vs comma-real=0.053→0.012 @0.05→0.10 (threshold-sensitive:

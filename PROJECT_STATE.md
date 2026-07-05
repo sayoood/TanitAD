@@ -59,7 +59,10 @@ Summary of the immediate next actions:
 
 ## 4. Open questions / blocked items
 
-- NVIDIA PhysicalAI-AV dataset license review before use in any public claim (DataEng agent, task in backlog)
+- ~~NVIDIA PhysicalAI-AV license review~~ **RESOLVED 2026-07-07 (DataEng):** real AV sets = NVIDIA
+  internal-dev-only/confidential/12-mo → **excluded from public claims**; comma2k19 (MIT) is the public
+  corpus; Cosmos-Drive-Dreams (CC-BY-4.0) is the publicly-safe AV asset. Internal use needs Sayed+legal
+  sign-off. See `TanitAD Research Hub/Data Engineering/Research/2026-07-07-physicalai-av-license-review.md`.
 - RunPod budget approval per training stage (owner: Sayed; default budget in Master Plan §7)
 
 ## 5. Session log (newest first, keep last ~15 entries)

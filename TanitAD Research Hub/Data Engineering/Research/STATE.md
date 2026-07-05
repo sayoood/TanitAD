@@ -20,8 +20,15 @@ QUALITY: full (G-A…G-F, G-D1, G-D2 met; suite 40✓/1 skip)
   measured toy(0.046, threshold-insensitive) vs comma-real(0.053→0.012, threshold-sensitive); feeds
   change-weighting + D-010 mix. Finding in the research note §4a.
 
+- [x] **PhysicalAI-AV license review** (backlog #2, D-002) — real AV sets = NVIDIA internal-dev-only,
+  confidential, 12-mo → **no public claims**; Cosmos-Drive-Dreams (CC-BY-4.0) is the publicly-safe AV
+  asset; comma2k19 (MIT) stays the public corpus. Note: `2026-07-07-physicalai-av-license-review.md`.
+
 ## Next (backlog, priority order)
 1. **Steering-ratio calibration log** (H7 artifact) — per-segment residual when seed IDM trains on comma2k19.
+2. If a publicly-claimable *synthetic* AV corpus is wanted, harden a **Cosmos-Drive-Dreams** loader
+   (CC-BY-4.0) — NOT the gated real PhysicalAI-AV sets (former backlog #2 target, now legally excluded from
+   public claims).
 2. **On the Linux A40 pod:** pull+unzip Chunk_1 (8.7 GB via `scripts/extract_comma2k19.py`), add `av` to
    `[real]` extra, smoke `build_episode` on 3 segments, wire into Stage-A. ~1–2 engineer-h, 0 new code.
 3. **Run the A8 harness on real Chunk_1** (many segments) once on the pod → set the change-weight schedule
