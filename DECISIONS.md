@@ -70,6 +70,22 @@ files in `TanitAD Research Hub/agents/` and registered as scheduled jobs. Each a
 loop (search → analyze → write → self-critique → iterate) until its quality gates are met, then updates
 its knowledge base, its `STATE.md`, and commits.
 
+## D-008 — Model scale ≥250 M params; H15 imagination promoted into Phase 0 (2026-07-05, accepted — decided by Sayed)
+
+**Decision.** The Phase 0 main-track model is **TanitAD-4B-M at ~250 M instantiated parameters**
+(component budget in `Project Steering/Phase 0 Plan.md` §2.1, updated). The 10–100 M framing of the
+initial plan is superseded for the trained stack; the efficiency claim shifts to
+"sub-300 M with sparse activation and layered inference rates — 40× smaller than Alpamayo-1-class
+VLAs". Additionally, **H15 (imagination in unobserved areas) moves from Phase 1 into Phase 0** as a
+first-class training mechanism (sector-masked imagination + latent advection prior + epistemic
+gating) with a new gate **D9**.
+
+**Consequences.** RTX 4060 becomes smoke/debug-only for the main model (it fits ~250 M at batch ≤8,
+128 px, for pipeline validation only); real Stage-A/B training moves to RunPod A40 (runbook:
+`stack/RUNPOD_RUNBOOK.md`). Tactical layer gains a parametric maneuver-horizon predictor now (MoE
+upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
+bridge (Phase 1) sits outside this budget.
+
 ## D-007 — Phase 0 primary open-loop benchmark: NAVSIM-style trajectory metrics + custom Phase-0 metrics (2026-07-05, accepted)
 
 **Decision.** Phase 0 measures: (a) standard open-loop trajectory metrics (ADE/FDE@1s/2s, and NAVSIM

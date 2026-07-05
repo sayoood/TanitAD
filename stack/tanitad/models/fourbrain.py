@@ -24,6 +24,7 @@ from torch import Tensor, nn
 
 from tanitad.config import StackConfig
 from tanitad.models.encoder import ViTEncoder
+from tanitad.models.imagination import ImaginationField
 from tanitad.models.inverse_dynamics import InverseDynamicsHead
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.readout import RidgeProbe, SpatialGridReadout
@@ -31,7 +32,8 @@ from tanitad.models.sigreg import SigReg
 
 
 class WorldModel(nn.Module):
-    """Encoder + readout + operative predictor + inverse dynamics + SIGReg."""
+    """Encoder + readout + operative predictor + tactical predictor (optional)
+    + H15 imagination field (optional) + inverse dynamics + SIGReg."""
 
     def __init__(self, cfg: StackConfig):
         super().__init__()
@@ -42,8 +44,24 @@ class WorldModel(nn.Module):
             grid=cfg.readout.grid, d_readout=cfg.readout.d_readout)
         self.state_dim = self.readout.out_dim
         self.predictor = OperativePredictor(cfg.predictor, self.state_dim)
-        self.inv_dyn = InverseDynamicsHead(self.state_dim, cfg.predictor.action_dim)
+        # Tactical brain, parametric part: same predictor family at maneuver
+        # horizons (8/16 steps) — the ALPS-4B tactical role. MoE upgrade: WP4.
+        self.tactical_pred = (OperativePredictor(cfg.tactical_pred, self.state_dim)
+                              if cfg.tactical_pred is not None else None)
+        # H15: belief maintenance over unobserved sectors (D-008).
+        self.imagination = (ImaginationField(cfg.encoder.d_model,
+                                             self.encoder.grid_hw,
+                                             depth=cfg.h15.depth,
+                                             n_heads=cfg.encoder.n_heads)
+                            if cfg.h15.enabled else None)
+        self.inv_dyn = InverseDynamicsHead(
+            self.state_dim, cfg.predictor.action_dim,
+            hidden=max(256, min(1024, self.state_dim // 2)))
         self.sigreg = SigReg(cfg.loss.sigreg.n_slices, cfg.loss.sigreg.beta)
+
+    def encode_tokens(self, frames: Tensor) -> Tensor:
+        """frames [B, C, H, W] -> token grid [B, N, D] (H15 operates here)."""
+        return self.encoder(frames)
 
     def encode(self, frames: Tensor) -> Tensor:
         """frames [B, C, H, W] -> compact state [B, S]."""

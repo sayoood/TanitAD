@@ -26,13 +26,32 @@ latent-RAG retrieval in the control path, radar/lidar fusion, on-target Orin dep
 
 ## 2. Decision recommendations (the ones you asked for)
 
-### 2.1 Model architecture — **decided recommendation**
+### 2.1 Model architecture — **decided recommendation** *(updated 2026-07-06 per D-008: ≥250 M)*
 
-**Main track (arm A): TanitAD-4B-S, from-scratch hierarchical latent world model, ~15–40 M params.**
+**Main track (arm A): TanitAD-4B-M, from-scratch hierarchical latent world model, 261 M params
+(measured at instantiation; enforced by `tests/test_imagination.py::test_base250_parameter_budget`).**
+
+| Brain / component | Config (`base250_config`) | Params (measured) |
+|---|---|---|
+| Operative — perception (ViT encoder) | d 768 × 14 blocks, patch 16, batch-free norms | 99.5 M |
+| Operative — dynamics (causal predictor) | d 768 × 12 blocks, FiLM actions, horizons 1/2/4 | 107.7 M |
+| Tactical — maneuver-horizon predictor | d 512 × 6 blocks, horizons 8/16 (MoE upgrade WP4: 8 experts top-2, +~40 M total at equal *active* params) | 26.5 M |
+| H15 — imagination field | advection flow + 3 refine blocks d 768 + σ head | 22.1 M |
+| Grounding — inverse dynamics | MLP (2·state → 1024 → action) | 5.2 M |
+| Readout (spatial grid 4×4, d_r 128) | linear projection | 0.1 M |
+| Strategic — VQ(256) + latent transition graph | **non-parametric by design** | ~0.1 M |
+| Fallback — monitors | out-of-gradient | 0 |
+| **Total** | | **261.1 M** |
+
+Inference-rate layering keeps the efficiency moat despite the size: operative path (207 M) at 10–20 Hz,
+tactical (26 M) at 1–2 Hz, H15 heads only where sectors are gated, strategic at 0.1 Hz (graph lookup,
+µs). The Phase-1 LLM bridge (frozen 1 B, ~20 M trainable adapters) sits outside this budget.
+
+Detailed component rationale (unchanged from kickoff):
 
 | Component | Choice | Why / provenance |
 |---|---|---|
-| Encoder | ViT-S-style, patch 16, 2-frame tubelets, d_model 192 (Stage A) → 384 (Stage B), **batch-free norms** (LayerNorm/RMSNorm only) | ALPS-4B validated; patch 8 measured worse; batch-free norms guarantee I2 |
+| Encoder | ViT patch 16, 2-frame tubelets, **batch-free norms** (LayerNorm only) | ALPS-4B validated; patch 8 measured worse; batch-free norms guarantee I2 |
 | SSL objective | LeJEPA: SIGReg (Epps–Pulley, 512 slices, λ=0.1) on embeddings AND predictions, all levels; no EMA/stop-grad crutches | A1 + LeJEPA theory; single hyperparameter |
 | Operative predictor | causal transformer, window 6–8, depth 8, action-conditioned (FiLM on continuous (steer, accel)), **residual/delta prediction + change-weighted latent loss**, multi-horizon heads k∈{1,2,4} | A4 bake-off winner (0.97 vs 0.71 MSE vs 0.44 flow); MTP = free speedup+signal (H5) |
 | Grounding | inverse-dynamics regression head (z_t, z_{t+1}) → (steer, accel) | A5; ego-motion is free proprioception; seed of the H7 IDM |
@@ -50,14 +69,18 @@ encoder (+LoRA r=16 later).** Answers H4 at every gate. Decision between arms on
 language-core (H12 stance), CEM/continuous planners (discrete tactical vocabulary is milliseconds),
 BatchNorm anywhere in the inference path (I2).
 
-### 2.2 Training data — **decided recommendation**
+### 2.2 Training data — **exact specification** *(updated 2026-07-06 per D-008)*
 
-| Stage | Data | Purpose |
-|---|---|---|
-| A (w1–4) | **MetaDrive** procedural sim: BEV 128×128 first, then front-camera 224×224; 500–1500 episodes (~40–150 k frames), mixed random+IDM policies; blocked-route variants for topology | validated Block-Rooms scale; only place D5/D6 run cleanly; closed-loop for free |
-| B (w4–6) | **comma2k19** (33 h, CAN steer/speed + GNSS; ~3–10 h subset first) | first real data with *free real actions*; G0.4 |
-| B+ | **PhysicalAI-AV** clips (loader exists, `DataEng/AVDataSetLoader`) — front-camera subset + multi-view clips for G0.7 demo | multi-camera for modality steering; the strategic dataset for Phase 1 |
-| probes | nuScenes-mini | OOD probes for D8 |
+| # | Dataset | Exact spec | Volume | Role / gates |
+|---|---|---|---|---|
+| A1 | TanitAD driving toy (in repo, zero-dep) | 1 000 episodes × 300 steps, ego-centric BEV 128×128, bicycle-model actions | 300 k frames | pipeline + H15 rehearsal; runs TODAY on pod & local |
+| A2 | **MetaDrive** (adapter merged; live rollout after supervised source install — PyPI no-go on py3.13) | train: 1 000 procedural maps (3-block), eval: 100 unseen (3–7 block) + blocked-route variants; BEV 128² + front cam 224² @ 10 Hz; continuous (steer, accel) | ~500 k frames ≈ 14 h | D1–D6, D9 (scripted occluders), closed-loop G0.5 |
+| B1 | **comma2k19** — full 33 h | 10 Hz resample; front cam center-crop → 224²; actions: yaw-rate from CAN steering + accel from speed derivative; pose targets from GNSS; **split by chunk: 1–8 train, 9 val, 10 test (I3)** | 33 h | G0.4 real-data open-loop; the data-efficiency anchor |
+| B2 | **PhysicalAI-AV** (loader in `DataEng/AVDataSetLoader`; needs rotated HF token; license review before public claims) | 2 000 front-wide 20 s clips (diversity aug) + 500 multi-view clips (front+L+R+rear) reserved for the G0.7 modality demo; egomotion → actions | ~11 h + demo set | Stage-B diversity; H2 demo |
+| P | nuScenes-mini | 10 scenes, never trained on | ~20 min | D8 OOD probes only |
+
+**Total trained volume Phase 0: ~14 h sim + ~44 h real** — the "tens of hours" data-efficiency claim
+stays intact at 261 M params. Own GoPro/smartphone data and YouTube corpora: Phase 1 (H7 IDM pipeline).
 
 Own smartphone/GoPro data, YouTube/dashcam corpora: Phase 1 (H7 pipeline). License review of
 PhysicalAI-AV terms before any public claim (open task, DataEng agent).
@@ -74,12 +97,13 @@ PhysicalAI-AV terms before any public claim (open task, DataEng agent).
 5. **Safety/compliance:** rule-violation rate (stop line, speed, collision) on decoded trajectories;
    friction-circle violation rate; D8 OOD AUROC.
 
-### 2.4 Compute — **decided recommendation**
+### 2.4 Compute — **decided recommendation** *(updated per D-008: 261 M model)*
 
-RTX 4060 (8 GB) for: driving-toy training d128–192, all bake-offs at reduced scale, CI, smoke tests.
-A40 (RunPod, ≤$50/wk): Stage-A full runs (~50 min/30 ep at 14 M params measured in ALPS-4B) and Stage-B
-comma2k19 encoder runs. A100: only if a gate demands scale. Every run logged in the experiment record
-format (protocol §6).
+RTX 4060 (8 GB): CI, smoke tests, and 261 M pipeline-debug runs at batch ≤ 8 / 128 px only — NOT for
+real training at this scale. **A40 48 GB (RunPod) is the Phase 0 training workhorse**: Stage-A run
+(A1+A2 data, 60 k steps, batch 64) ≈ 12–24 h ≈ $10–20 at $0.40–0.85/h — inside the $50/wk guardrail
+(runbook: `stack/RUNPOD_RUNBOOK.md`). A100 80 GB only if Stage-B 224² multi-view memory demands it.
+Every run logged in the experiment record format (protocol §6) + RESOURCE_LEDGER row before launch.
 
 ## 3. Work packages
 
@@ -110,6 +134,7 @@ format (protocol §6).
 | D6 | hierarchy generalizes simple→complex | success-degradation slope 4B < flat at matched params (20 train maps → 100 unseen, 3→7 blocks) | flat matched-params |
 | D7 | memory helps rare scenarios *(stretch)* | repeat-exposure improvement, no interference regression | RAG off |
 | D8 | monitor detects OOD | AUROC > 0.85 (unseen town/weather) | vs Mahalanobis-encoder baseline |
+| D9 | **H15: imagination in unobserved areas** (added per D-008) | hidden-sector cosine ≥ shuffled baseline + 0.2; calibration gap > 0 (σ higher where blind); object-level LOPS uplift vs no-advection on scripted occluders | advection off; refine blocks off |
 
 **Program rule:** no architecture change may be motivated by a gate that hasn't passed its instrument rows.
 

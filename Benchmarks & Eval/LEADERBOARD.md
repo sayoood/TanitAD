@@ -23,6 +23,7 @@
 | D5 (routing edge) | not run | — | — | — |
 | D6 (generalization slope) | not run | — | — | — |
 | D8 (OOD AUROC) | not run | — | — | — |
+| D9 (H15 hidden-sector imagination) | not run | — | — | — |
 
 ## Efficiency ledger (CNCE inputs)
 

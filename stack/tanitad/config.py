@@ -62,6 +62,24 @@ class TacticalConfig:
 
 
 @dataclass
+class H15Config:
+    """Imagination in unobserved areas (H15) — Phase 0 scope per D-008.
+
+    Mechanisms: (1) sector-masked imagination training — whole spatial sectors
+    of the input are hidden and the model must maintain beliefs about them;
+    (2) latent advection prior — hidden cells evolve by a learned flow field
+    (object permanence by construction); (3) epistemic gating — per-cell
+    log-variance, the uncertainty signal that later triggers H2 modality
+    steering and fallback margins.
+    """
+    enabled: bool = True
+    mask_prob: float = 0.5        # fraction of batches that get a masked sector
+    weight: float = 0.5           # loss weight of the imagination NLL
+    depth: int = 3                # refinement blocks over the advected prior
+    observed_weight: float = 0.1  # small consistency weight on visible cells
+
+
+@dataclass
 class TrainConfig:
     lr: float = 1e-3
     weight_decay: float = 0.05
@@ -79,8 +97,11 @@ class TrainConfig:
 class StackConfig:
     encoder: EncoderConfig = field(default_factory=EncoderConfig)
     predictor: PredictorConfig = field(default_factory=PredictorConfig)
+    # Parametric tactical predictor (maneuver-horizon dynamics). None = off.
+    tactical_pred: PredictorConfig | None = None
     readout: ReadoutConfig = field(default_factory=ReadoutConfig)
     tactical: TacticalConfig = field(default_factory=TacticalConfig)
+    h15: H15Config = field(default_factory=H15Config)
     loss: LossConfig = field(default_factory=LossConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
 
@@ -98,8 +119,40 @@ def smoke_config() -> StackConfig:
                                 d_model=64, depth=2, n_heads=2)
     cfg.predictor = PredictorConfig(d_model=64, depth=2, n_heads=2, window=4,
                                     horizons=(1, 2), action_dim=2)
+    cfg.h15.depth = 1
     cfg.loss.sigreg.n_slices = 64
     cfg.train.batch_size = 16
     cfg.train.steps = 30
     cfg.train.warmup_steps = 5
+    return cfg
+
+
+def base250_config() -> StackConfig:
+    """TanitAD-4B-M — the Phase 0 main-track model (~250 M params, D-008).
+
+    Component budget (measured via count_params at instantiation):
+      encoder ViT d768 x 14 blocks .......... ~99 M   (operative perception)
+      operative predictor d768 x 12 + FiLM .. ~103 M  (action-conditioned dynamics)
+      tactical predictor d512 x 6 ........... ~23 M   (maneuver-horizon dynamics,
+                                                       MoE upgrade lands in WP4)
+      H15 imagination field d768 x 3 ........ ~22 M   (advection + refine + sigma)
+      inverse dynamics + heads .............. ~3 M
+      strategic VQ + graph .................. ~0.1 M  (non-parametric by design)
+    Trains on A40 (48 GB). Fits the 4060 only at batch <= 8 for pipeline debug.
+    Stage-A input: BEV/gray 128 px; Stage-B switches in_channels=6 (2-frame RGB),
+    image_size=224 via CLI overrides — parameter count barely moves.
+    """
+    cfg = StackConfig()
+    cfg.encoder = EncoderConfig(in_channels=1, image_size=128, patch_size=16,
+                                d_model=768, depth=14, n_heads=12)
+    cfg.predictor = PredictorConfig(d_model=768, depth=12, n_heads=12, window=8,
+                                    horizons=(1, 2, 4), action_dim=2)
+    cfg.tactical_pred = PredictorConfig(d_model=512, depth=6, n_heads=8, window=8,
+                                        horizons=(8, 16), action_dim=2)
+    cfg.readout = ReadoutConfig(grid=4, d_readout=128)
+    cfg.h15 = H15Config(enabled=True, depth=3)
+    cfg.train.lr = 3e-4
+    cfg.train.batch_size = 64
+    cfg.train.steps = 60_000
+    cfg.train.warmup_steps = 2_000
     return cfg

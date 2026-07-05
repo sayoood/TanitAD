@@ -23,12 +23,33 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
-from tanitad.config import StackConfig, smoke_config
+from tanitad.config import StackConfig, base250_config, smoke_config
 from tanitad.data.toy_driving import ToyDrivingDataset
 from tanitad.instruments.checks import (i2_batch_consistency, i3_episode_split,
                                         i4_imag_relative, instrument_rows)
 from tanitad.models.fourbrain import WorldModel
+from tanitad.models.imagination import d9_rows, imagination_nll, sector_mask
 from tanitad.models.predictor import change_weighted_mse
+
+
+def _max_horizon(cfg: StackConfig) -> int:
+    h = max(cfg.predictor.horizons)
+    if cfg.tactical_pred is not None:
+        h = max(h, max(cfg.tactical_pred.horizons))
+    return h
+
+
+def _pred_losses(preds: dict[int, torch.Tensor], horizons, z_t, fut_states,
+                 change_weighted: bool) -> torch.Tensor:
+    loss = torch.zeros((), device=z_t.device)
+    for k in horizons:
+        target = fut_states[:, k - 1]
+        prev = z_t if k == 1 else fut_states[:, k - 2]
+        if change_weighted:
+            loss = loss + change_weighted_mse(preds[k], target, prev)
+        else:
+            loss = loss + (preds[k] - target).pow(2).mean()
+    return loss / len(horizons)
 
 
 def cosine_lr(step: int, total: int, warmup: int, base: float) -> float:
@@ -45,11 +66,14 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
 
     train_ids, val_ids = i3_episode_split(list(range(n_episodes)), val_frac=0.2,
                                           seed=cfg.train.seed)          # I3
-    max_h = max(cfg.predictor.horizons)
+    max_h = _max_horizon(cfg)
+    ep_steps = max(80, cfg.predictor.window + max_h + 40)
     ds_train = ToyDrivingDataset(train_ids, window=cfg.predictor.window,
-                                 max_horizon=max_h, size=cfg.encoder.image_size)
+                                 max_horizon=max_h, size=cfg.encoder.image_size,
+                                 steps=ep_steps)
     ds_val = ToyDrivingDataset(val_ids, window=cfg.predictor.window,
-                               max_horizon=max_h, size=cfg.encoder.image_size)
+                               max_horizon=max_h, size=cfg.encoder.image_size,
+                               steps=ep_steps)
     dl = DataLoader(ds_train, batch_size=cfg.train.batch_size, shuffle=True,
                     drop_last=True)
 
@@ -82,15 +106,15 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
 
         preds = model.imagine(states, actions)
         z_t = states[:, -1]
-        loss_pred = torch.zeros((), device=device)
-        for k in cfg.predictor.horizons:
-            target = fut_states[:, k - 1]
-            prev = z_t if k == 1 else fut_states[:, k - 2]
-            if cfg.predictor.change_weighted:
-                loss_pred = loss_pred + change_weighted_mse(preds[k], target, prev)
-            else:
-                loss_pred = loss_pred + (preds[k] - target).pow(2).mean()
-        loss_pred = loss_pred / len(cfg.predictor.horizons)
+        loss_pred = _pred_losses(preds, cfg.predictor.horizons, z_t, fut_states,
+                                 cfg.predictor.change_weighted)
+
+        # Tactical brain: same SSL objective at maneuver horizons (8/16).
+        loss_tac = torch.zeros((), device=device)
+        if model.tactical_pred is not None:
+            tac_preds = model.tactical_pred(states, actions)
+            loss_tac = _pred_losses(tac_preds, cfg.tactical_pred.horizons, z_t,
+                                    fut_states, cfg.predictor.change_weighted)
 
         # SIGReg on embeddings AND predictions (A1).
         z_all = torch.cat([states.reshape(-1, states.shape[-1]),
@@ -102,9 +126,22 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
         a_hat = model.inv_dyn(states[:, -2], states[:, -1])
         loss_inv = (a_hat - actions[:, -2]).pow(2).mean()
 
+        # H15: sector-masked imagination on the token grid (D-008).
+        loss_h15 = torch.zeros((), device=device)
+        if model.imagination is not None and torch.rand(()) < cfg.h15.mask_prob:
+            f_t, f_next = frames[:, -1], fut[:, 0]
+            masked, vis = sector_mask(f_t, model.encoder.grid_hw)
+            tok_belief = model.encode_tokens(masked)
+            tok_true = model.encode_tokens(f_next)
+            imag_pred, logvar = model.imagination(tok_belief, vis)
+            loss_h15 = imagination_nll(imag_pred, tok_true, logvar, vis,
+                                       cfg.h15.observed_weight)
+
         loss = (cfg.loss.pred_weight * loss_pred
+                + cfg.loss.pred_weight * 0.5 * loss_tac
                 + cfg.loss.sigreg.weight * loss_sig
-                + cfg.loss.inv_dyn_weight * loss_inv)
+                + cfg.loss.inv_dyn_weight * loss_inv
+                + cfg.h15.weight * loss_h15)
 
         lr = cosine_lr(step, cfg.train.steps, cfg.train.warmup_steps, cfg.train.lr)
         for pg in opt.param_groups:
@@ -116,7 +153,8 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
 
         if step % cfg.train.log_every == 0 or step == cfg.train.steps - 1:
             log = {"step": step, "loss": loss.item(), "pred": loss_pred.item(),
-                   "sigreg": loss_sig.item(), "inv": loss_inv.item(), "lr": lr}
+                   "tac": loss_tac.item(), "sigreg": loss_sig.item(),
+                   "inv": loss_inv.item(), "h15": loss_h15.item(), "lr": lr}
             print(json.dumps(log))
         step += 1
 
@@ -134,7 +172,16 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
     i2_pass, i2_dev = i2_batch_consistency(model.encode, frames[:, -1])   # I2
     i4 = i4_imag_relative(preds[1], fut_states[:, 0], states[:, -1])      # I4
 
+    # D9 evidence rows (H15): imagination quality in hidden sectors.
+    d9 = {}
+    if model.imagination is not None:
+        with torch.no_grad():
+            masked, vis = sector_mask(frames[:, -1], model.encoder.grid_hw)
+            imag_pred, logvar = model.imagination(model.encode_tokens(masked), vis)
+            d9 = d9_rows(imag_pred, model.encode_tokens(fut[:, 0]), logvar, vis)
+
     metrics = {
+        "d9": d9,
         "final": log,
         "wallclock_s": time.time() - t0,
         "device": device,
@@ -155,18 +202,29 @@ def train(cfg: StackConfig, n_episodes: int = 40) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--smoke", action="store_true", help="tiny CI run")
+    ap.add_argument("--config", choices=["smoke", "base", "base250"],
+                    default="base", help="base250 = TanitAD-4B-M (~250 M, D-008)")
+    ap.add_argument("--smoke", action="store_true", help="alias for --config smoke")
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--episodes", type=int, default=40)
+    ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
 
-    cfg = smoke_config() if args.smoke else StackConfig()
+    if args.smoke or args.config == "smoke":
+        cfg = smoke_config()
+    elif args.config == "base250":
+        cfg = base250_config()
+    else:
+        cfg = StackConfig()
     if args.steps:
         cfg.train.steps = args.steps
+    if args.batch_size:
+        cfg.train.batch_size = args.batch_size
     if args.out:
         cfg.train.out_dir = args.out
-    train(cfg, n_episodes=args.episodes if not args.smoke else 8)
+    n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
+    train(cfg, n_episodes=n_eps)
 
 
 if __name__ == "__main__":
