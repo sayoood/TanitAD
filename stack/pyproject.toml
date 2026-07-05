@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tanitad"
+version = "0.0.1"
+description = "TanitAD - hierarchical latent world-model stack for autonomous driving (4B architecture)"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+sim = ["metadrive-simulator"]
+
+[tool.setuptools.packages.find]
+include = ["tanitad*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

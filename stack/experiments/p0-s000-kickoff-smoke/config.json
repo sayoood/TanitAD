@@ -1,0 +1,55 @@
+{
+  "encoder": {
+    "in_channels": 1,
+    "image_size": 64,
+    "patch_size": 8,
+    "d_model": 64,
+    "depth": 2,
+    "n_heads": 2
+  },
+  "predictor": {
+    "d_model": 64,
+    "depth": 2,
+    "n_heads": 2,
+    "window": 4,
+    "horizons": [
+      1,
+      2
+    ],
+    "action_dim": 2,
+    "residual": true,
+    "change_weighted": true
+  },
+  "readout": {
+    "grid": 4,
+    "d_readout": 32
+  },
+  "tactical": {
+    "n_maneuvers": 9,
+    "horizon": 4
+  },
+  "loss": {
+    "sigreg": {
+      "n_slices": 64,
+      "beta": 1.0,
+      "weight": 0.1
+    },
+    "pred_weight": 1.0,
+    "inv_dyn_weight": 0.5
+  },
+  "train": {
+    "lr": 0.001,
+    "weight_decay": 0.05,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "batch_size": 16,
+    "steps": 30,
+    "warmup_steps": 5,
+    "device": "auto",
+    "seed": 0,
+    "log_every": 50,
+    "out_dir": "experiments\\p0-s000-kickoff-smoke"
+  }
+}
