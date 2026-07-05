@@ -29,12 +29,18 @@ def i2_batch_consistency(encode_fn, frames: Tensor, batch_size: int = 32,
                          tol: float = 1e-4) -> tuple[bool, float]:
     """encode_fn: [B, ...] -> [B, S]. Compares batch-1 vs batched encodings.
 
-    Returns (pass, max relative deviation). Any deviation means a
-    batch-statistic layer sits in the inference path — banned (D-004).
+    Returns (pass, max relative deviation). Any deviation beyond tol means
+    either a batch-statistic layer (banned, D-004) or unpinned numerics.
+    Runs under strict_numerics(): TF32/cuDNN autotuning legitimately differs
+    per batch size (~1e-3) and the whole MEASUREMENT path — probe fits, gate
+    evals, deployment inference — is mandated to run pinned the same way.
     """
+    from tanitad.instruments.numerics import strict_numerics
     frames = frames[:batch_size]
-    z_batched = encode_fn(frames)
-    z_single = torch.cat([encode_fn(frames[i:i + 1]) for i in range(frames.shape[0])])
+    with strict_numerics():
+        z_batched = encode_fn(frames)
+        z_single = torch.cat([encode_fn(frames[i:i + 1])
+                              for i in range(frames.shape[0])])
     denom = z_batched.norm(dim=-1, keepdim=True).clamp_min(1e-8)
     rel = ((z_batched - z_single).norm(dim=-1, keepdim=True) / denom).max()
     return bool(rel < tol), float(rel)
