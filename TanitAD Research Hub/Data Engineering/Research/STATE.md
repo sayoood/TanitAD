@@ -16,12 +16,16 @@ QUALITY: full (G-A…G-F, G-D1, G-D2 met; suite 40✓/1 skip)
 - **Findings:** Windows `|` path bug (extract on Linux pod only); A8 weak on raw highway RGB → change-
   weighting justified; H7 gains LAOF + Sensorimotor-WM.
 
+- [x] **Per-dataset A8 statistics harness** (backlog #4) — `stack/tanitad/data/stats.py` shipped (6 tests);
+  measured toy(0.046, threshold-insensitive) vs comma-real(0.053→0.012, threshold-sensitive); feeds
+  change-weighting + D-010 mix. Finding in the research note §4a.
+
 ## Next (backlog, priority order)
 1. **Steering-ratio calibration log** (H7 artifact) — per-segment residual when seed IDM trains on comma2k19.
-2. **Per-dataset A8 statistics harness** (backlog #4) — `frame_change_fraction` distribution per corpus →
-   data-driven change-weighting schedule for the W2 bake-off.
-3. **On the Linux A40 pod:** pull+unzip Chunk_1 (8.7 GB), add `av` to `[real]` extra, smoke `build_episode`
-   on 3 segments, wire into Stage-A. ~1–2 engineer-h, 0 new code.
+2. **On the Linux A40 pod:** pull+unzip Chunk_1 (8.7 GB via `scripts/extract_comma2k19.py`), add `av` to
+   `[real]` extra, smoke `build_episode` on 3 segments, wire into Stage-A. ~1–2 engineer-h, 0 new code.
+3. **Run the A8 harness on real Chunk_1** (many segments) once on the pod → set the change-weight schedule
+   and the D-010 real-vs-sim consequence comparison from real distributions, not one clip.
 4. PhysicalAI-AV loader hardening + license review note (backlog #2, D-002) — second corpus.
 5. Focal-canonicalization prototype (backlog #3) — deprioritized until heterogeneous video (GoPro/BDD/OpenDV).
 

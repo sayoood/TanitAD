@@ -79,6 +79,27 @@ step; the consequence of an action lives in a **small, high-information image re
 - Recommend a **per-dataset A8 statistics harness** (backlog item #4) to report `frame_change_fraction`
   distribution per corpus, so the change-weighting schedule is set from data, not guessed. (H3/A8.)
 
+### 4a. A8 statistics harness built (backlog #4 done) + threshold-sensitivity finding
+
+Shipped `stack/tanitad/data/stats.py` (`consequence_dominance_stats`, `stats_by_label`, `format_report`;
+6 tests). It measures the per-episode A8 fraction (mean/median/p10/p90) per corpus/domain, with an optional
+`channels` slice so differently-stacked corpora compare on a common view. It feeds both change-weighting
+and the **D-010 real-vs-sim mix** decision (measure the consequence-signal each domain adds). Measured
+end-to-end (toy corpus vs the real comma segment):
+
+```
+toy-bev(1ch)         A8@0.05 mean=0.046  | A8@0.10 mean=0.046   <- threshold-INSENSITIVE
+comma2k19-real(6ch)  A8@0.05 mean=0.053  | A8@0.10 mean=0.012   <- threshold-SENSITIVE
+```
+
+**Finding:** the toy BEV is threshold-insensitive (hard-edged synthetic pixels: change is either >0.1 or
+0), whereas real camera change is threshold-sensitive — only ~1.2 % of pixels change *a lot* per step; the
+rest is subtle gradient. A change-prediction model tuned on the toy's large, binary changes will not see
+the small-gradient regime that dominates real driving → **another argument for D-009 (real data first)**,
+and the change-weight should target the *small-but-real* residuals (soft weighting, not a hard mask). Also
+note the toy's measured 0.046 contradicts `toy_driving.py`'s "tens of percent" docstring claim — the toy is
+less consequence-dominant than advertised (flagged for the toy owner; not edited here).
+
 ## 5. Reconciliation: the forked frames contract is now explicit, not drift (increment)
 
 D-009's `[T,6,S,S]` diverged from the shared `[T,1,H,W]` contract. Rather than silently allow two

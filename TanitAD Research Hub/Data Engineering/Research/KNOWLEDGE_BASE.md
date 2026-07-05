@@ -6,6 +6,11 @@
 - [2026-07-07] [measured] comma2k19 loader (D-009) decode path validated on REAL bytes: `av` decodes
   real HEVC → [200,3,256,256] uint8 @ ~105 fps (py3.13/Win), stack→[199,6,256,256] — impact: D-009/H7 —
   see `2026-07-07-comma2k19-data-card.md` §5
+- [2026-07-07] [tool+finding] A8 statistics harness shipped (`stack/tanitad/data/stats.py`, 6 tests):
+  per-corpus/per-domain `frame_change_fraction` distribution for change-weighting + D-010 mix. Measured
+  toy=0.046 (threshold-INsensitive, hard-edged) vs comma-real=0.053→0.012 @0.05→0.10 (threshold-sensitive:
+  real change is mostly small gradient, ~1.2 % large) — change-weight the small-but-real residuals —
+  impact: H3/A8, D-009, D-010 — `...-validation-and-h7.md` §4a
 - [2026-07-07] [measured] A8 on REAL highway camera `frame_change_fraction`≈0.053@0.05 / 0.012@0.10 — only
   ~1.7× the toy floor; raw-RGB under-reads consequence on low-texture highway → change-weighted loss
   justified — impact: H3/A8, W2 bake-off — `2026-07-07-comma2k19-validation-and-h7.md` §4
