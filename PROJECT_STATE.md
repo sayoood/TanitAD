@@ -4,7 +4,7 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
-- **Last update:** 2026-07-06 (session: Tools&DevEnv weekly agent — WP2 MetaDrive wrapper)
+- **Last update:** 2026-07-07 (session: Data Engineering weekly agent — comma2k19 real-data validation)
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
@@ -48,6 +48,9 @@ Summary of the immediate next actions:
 - [x] W1: D-009 executed — real camera data first: comma2k19 loader (`stack/tanitad/data/comma2k19.py`,
       HF mirror, route-level splits, real CAN actions), `base250cam` config, Windows-safe extractor;
       Chunk_1 (8.7 GB) downloading locally; 36 tests green
+- [x] W1: comma2k19 loader (D-009) **real-data-validated** (DataEng agent): `av` decodes real HEVC →
+      [200,3,256,256]@~105 fps, A8 real≈0.053; contract reconciled into shared `_contract` (channels=1|6|None);
+      comma2k19 exported + `test_comma2k19_contract.py`; data card + H7 note; 40 tests green
 - [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` (run p0-sB01, comma2k19, planned $25)
 - [ ] W1: first local real-camera run on 4060 once Chunk_1 lands (p0-sB00 pipe-proof)
 - [ ] W1: supervised MetaDrive source-install — still needed for closed-loop gates D5/D6 (Tools&DevEnv handoff)
@@ -63,6 +66,7 @@ Summary of the immediate next actions:
 
 | Date | Session | What happened | Artifacts |
 |---|---|---|---|
+| 2026-07-07 | Data Engineering agent | comma2k19 (D-009) real-data-validated: `av` decodes real HEVC @~105 fps, A8 real≈0.053 → change-weighting justified; forked contract reconciled into shared `_contract` (channels param) + `test_comma2k19_contract.py`; comma2k19 exported; Windows `\|` confirmed (handled by `extract_comma2k19.py`); H7 deltas (LAOF, Sensorimotor-WM); data card + note | `.../Data Engineering/Research/2026-07-07-*.md`, `stack/tanitad/data/_contract.py`, `stack/tests/test_comma2k19_contract.py` |
 | 2026-07-06 | D-008 scale-up | Model scaled to 261 M (measured per-component budget in Phase 0 Plan §2.1); H15 imagination in Phase 0 (module + losses + D9); exact data spec; RunPod runbook + ledger row; local 261 M pipe-check run | `stack/tanitad/models/imagination.py`, `stack/RUNPOD_RUNBOOK.md`, DECISIONS D-008 |
 | 2026-07-06 | Tools&DevEnv agent | WP2 MetaDrive→toy-contract wrapper (17✓/1skip); MetaDrive install verdict (PyPI no-go py3.13, source is GO); AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM); Rerun.io picked for viz | `stack/tanitad/data/metadrive_env.py`, `TanitAD Research Hub/Tools&DevEnv/Research/2026-07-06-*.md` |
 | 2026-07-05 | Kickoff | Repo analysis, initial research, plans, stack scaffold, hub setup, first push | see §2 table |

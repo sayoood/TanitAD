@@ -48,10 +48,18 @@ def frame_change_fraction(frames: Tensor, thresh: float = 0.05) -> float:
     return float(diffs.float().mean())
 
 
-def assert_contract(ep: ToyEpisode) -> None:
-    """Validate a :class:`ToyEpisode` against the episode contract (raises)."""
+def assert_contract(ep: ToyEpisode, channels: int | None = 1) -> None:
+    """Validate a :class:`ToyEpisode` against the episode contract (raises).
+
+    ``channels`` is the required frame channel count: ``1`` for the single-channel
+    BEV contract (toy / MetaDrive), ``6`` for the D-009 ``base250cam`` 2-frame RGB
+    stack (comma2k19), or ``None`` to accept any channel count. The action/pose/
+    range invariants are identical across every adapter regardless of channels.
+    """
     T = ep.frames.shape[0]
-    assert ep.frames.ndim == 4 and ep.frames.shape[1] == 1, ep.frames.shape
+    assert ep.frames.ndim == 4, ep.frames.shape
+    if channels is not None:
+        assert ep.frames.shape[1] == channels, ep.frames.shape
     assert ep.actions.shape == (T, 2), ep.actions.shape
     assert ep.poses.shape == (T, 4), ep.poses.shape
     assert float(ep.frames.min()) >= 0.0 and float(ep.frames.max()) <= 1.0

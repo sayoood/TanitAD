@@ -10,10 +10,10 @@
 | H1 | 4B architecture | validated-toy (5× hierarchy lift, ALPS-4B) | D5, D6 | Architecture & Inference |
 | H2 | Attention-based Modality Steering | supported (DriveMoE/GEMINUS) — race is on | Phase-0 exit demo | Architecture & Inference |
 | H3 | Latent world model core (LeJEPA/SigReg) | validated-toy (A1–A10) | D1, D2, D3 | Architecture & Inference |
-| H4 | Frozen encoders comparison | open (cheap to answer) | arm B at D1–D3 | Data Engineering |
+| H4 | Frozen encoders comparison | open (cheap to answer) — real corpus (comma2k19) ready to make it meaningful | arm B at D1–D3 | Data Engineering |
 | H5 | Efficient inference transfer | supported | CNCE tracked from day 1 | Architecture & Inference |
 | H6 | Opponent weak-spot corpus | actionable | 3 scenarios in eval set | Opponent Analyzer |
-| H7 | 1000× data via IDM + focal canonicalization | supported (VLM3, LAPA) | IDM calibration logged | Data Engineering |
+| H7 | 1000× data via IDM + focal canonicalization | supported (VLM3, LAPA; +LAOF flow-consistency, Sensorimotor-WM 2026) — real (steer,accel) pairs from comma2k19 in hand | IDM calibration logged (steering-ratio residual = named artifact) | Data Engineering |
 | H8 | MoE beyond sensors | prio-2, interface ready | — | Architecture & Inference |
 | H9 | Inherent rule compliance (RMFM/barriers) | supported, concrete math | violation-rate metric | Benchmarks & Eval |
 | H10 | Latent RAG continual learning | validated-toy w/ known failure mode (−24 % interference → surprise-gating) | D7 (end of P0/P1) | Architecture & Inference |
@@ -29,4 +29,7 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-07: Data Eng — H7 gains LAOF (optical-flow-consistent latent actions) + Sensorimotor-WM
+  (IDM-as-perception) support; comma2k19 real (steer,accel,pose) pairs validated on real bytes;
+  steering-ratio calibration residual named as the H7 artifact. H4 unblocked by real corpus.
 - 2026-07-05: Ledger created at kickoff from initial research synthesis.
