@@ -72,9 +72,15 @@ BatchNorm anywhere in the inference path (I2).
 ### 2.2 Training data — **exact specification** *(updated 2026-07-06 per D-008; ordering updated per D-009)*
 
 > **D-009 (Sayed): real camera data first.** B1 (comma2k19, HF mirror `commaai/comma2k19`) is the
-> PRIMARY training corpus from day 1 under config `base250cam` (6-ch 2-frame RGB @ 256 px); B2 follows.
+> bootstrap corpus from day 1 under config `base250cam` (6-ch 2-frame RGB @ 256 px).
 > A1 (toy) is a CI fixture only — zero training time. A2 (MetaDrive) remains required for the
 > closed-loop gates D5/D6 and scripted-occluder LOPS, scheduled after the supervised source install.
+>
+> **D-012 update (Sayed): the FIRST RICH corpus is PhysicalAI-AV**, used now with tagged exposure
+> and the license resolved later — comma2k19 is highway-only and stays the license-clean anchor for
+> public numbers. Full corpus roles, staged ingestion (R0 urban starter 500 clips → R1 2 000 clips →
+> R2 multi-view), composition targets (~60/25/15) and the license-management plan:
+> **`DataEng/DATA_STRATEGY.md`** (supersedes the volume figures in the table below where they differ).
 
 | # | Dataset | Exact spec | Volume | Role / gates |
 |---|---|---|---|---|

@@ -25,10 +25,12 @@ headline responsibility.
 - Training-workflow research: curricula for consequence-dominance, data mixing, dedup/quality filters.
 
 ## Weekly implementation duty (rotating backlog)
-1. comma2k19 ingestion module (`stack/tanitad/data/comma2k19.py`): route-level splits (I3), actions
-   from CAN, poses from GNSS; data card in `Data Engineering/Research/`.
-2. PhysicalAI-AV loader hardening (from `DataEng/AVDataSetLoader` notebook → module): front-cam
-   subset extraction; **complete the license review note** (blocks public claims — D-002).
+1. **PhysicalAI-AV Stage R0 (D-012 + DATA_STRATEGY §2 — TOP until done):** harden the
+   `DataEng/AVDataSetLoader` notebook into an intake package for `stack/tanitad/data/physicalai.py`:
+   filter `clip_index.parquet` for urban/interactive scenarios → 500 front-wide clips @10 Hz →
+   episode contract (6-ch 2-frame stacks, 256 px; actions from egomotion yaw-rate+accel); session/geo
+   splits (I3); semantic-coverage audit table in the data card; tag `data:physicalai` everywhere.
+2. ~~comma2k19 ingestion module~~ DONE (MVP stream, 2026-07-06) — keep the data card current.
 3. Focal-canonicalization prototype (resize-to-f=1000 transform + validation on own GoPro clip).
 4. Data statistics harness: per-dataset consequence-dominance measurement (frame-change fraction).
 

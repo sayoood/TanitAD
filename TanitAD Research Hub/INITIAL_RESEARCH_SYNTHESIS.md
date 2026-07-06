@@ -1,4 +1,51 @@
-# TanitAD — Initial Deep Research Synthesis (Kickoff, 2026-07-05)
+# TanitAD — Initial Deep Research Synthesis (Kickoff, 2026-07-05; **v1.1 update 2026-07-06 below**)
+
+---
+
+## v1.1 UPDATE (2026-07-06) — what changed since kickoff
+
+**New theory grounding (the biggest delta).** Two papers surfaced by Sayed (analysis:
+`Architecture & Inference/Research/2026-07-06-jepa-generalization-theory-and-hit-jepa.md`):
+
+- *A Generalization Theory for JEPA-Based World Models* (arXiv 2606.27014): JEPA pretraining ≡
+  low-rank factorization of the action-conditioned co-occurrence matrix; planning regret ≤
+  O(T·√pretraining-risk); approximation error = spectral tail beyond latent dim k vs sample error
+  growing in k. Consequences adopted: **H3's data-efficiency claim now has a formal skeleton**
+  (latent filters nuisance → smaller sample complexity — driving is the nuisance-dominated regime);
+  **H1 gains the horizon-factorization argument** (hierarchy splits one long-T bound into several
+  short-T bounds); **D-010 perturbation data attacks the max-over-actions term** in the bound;
+  new experiment `p0-spectral-sizing` (choose latent dim at the spectral knee); Phase-1 bake-off
+  `p1-lora-conditioning` (action conditioning as low-rank adapters — the "JEPA as LoRA" view).
+- *HiT-JEPA* (arXiv 2507.00028): hierarchical JEPA for trajectory similarity — no actions/control,
+  resolution-pyramid hierarchy, VICReg+EMA crutches; no claim overlap with 4B. Transfers: independent
+  **zero-shot cross-domain generalization evidence for hierarchical JEPA** (supports H1/D6); Uber-H3
+  hexagonal keys for the StrategicGraph; attention-spotlight coupling + coarse-dominant loss weights
+  as Phase-1 bake-off arms.
+
+**Empirical findings from our own first runs (instrument doctrine paying off):**
+- F-1: TF32/cuDNN kernel selection breaks batch-1↔batched consistency at 261 M scale (invisible at
+  smoke scale) → measurement path now runs pinned numerics (`strict_numerics()`).
+- F-2: SigReg is statistically starved below ~256 samples/step (batch-2 run collapsed to erank
+  23/2048 while pred-loss fell — the falling loss was an illusion; I4 caught it) → live collapse-
+  health rows (erank/dim_std/step_ratio) in every training log; batch-64 A40 run is the first whose
+  learning signal counts.
+
+**Dataset landscape corrections (feeding the new `DataEng/DATA_STRATEGY.md`):**
+- comma2k19 is **highway-only** — real actions and license-clean, but semantically poor (no
+  intersections/pedestrians/lights). It is the bootstrap + public-claims anchor, not the rich corpus.
+- PhysicalAI-AV license is internal-dev-only → **D-012: use now for training/research, tag all
+  usage, resolve before public claims**. It becomes the PRIMARY rich corpus (urban, 25 countries,
+  multi-view; access verified, `clip_index.parquet` enables scenario-filtered subsets).
+- comma2k19 is mirrored ungated on HF (`commaai/comma2k19`) — no torrent needed.
+
+**Process delta:** D-013 upgraded the hub's literature-search protocol (systematic arXiv sweeps,
+citation-graph walks, Ressources-inbox rule, theory watch) after the missed-papers finding.
+
+*The kickoff text below stands as written; where it conflicts with this update, the update wins
+(notably: H3 status now "validated-toy + theory-grounded"; data section superseded by
+`DataEng/DATA_STRATEGY.md`; Phase-0 data spec in Phase 0 Plan §2.2).*
+
+---
 
 **Scope.** Research baseline for all hypotheses H0–H15 of the Mission Plan, combining:
 (a) evidence from our own four experiment repos (ALPS-4B, 4B-HRM, ACRE, RSRA-4B),

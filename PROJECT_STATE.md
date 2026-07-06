@@ -57,6 +57,11 @@ Summary of the immediate next actions:
       live collapse-health rows (erank/dim_std/step_ratio) now in every training log.
 - [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` — p0-sB01 at batch 64 (SigReg
       n=1024) is the first run whose learning signal counts (planned $25)
+- [x] W2: **Data strategy v1.0** (`DataEng/DATA_STRATEGY.md`, D-012): PhysicalAI-AV = first RICH
+      corpus (access verified, clip_index enables urban filtering; staged R0 500 clips → R1 2 000 →
+      R2 multi-view; usage tagged, license resolved at Phase-0 exit); comma2k19 = license-clean
+      public anchor; composition ~60/25/15; research synthesis updated to v1.1 (theory grounding)
+- [ ] W2: PhysicalAI-AV Stage R0 ingestion (DataEng agent top duty Tuesday; MVP assists)
 - [x] W2: D-010 **sim arm unblocked** (Tools&DevEnv): MetaDrive front-camera RGB path renders 6ch/256
       2-frame stacks (comma2k19-identical) + perturbation policy + occluder/blocked-route scenarios —
       intake pkg `Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`
