@@ -51,7 +51,14 @@ Research note: `Tools&DevEnv/Research/2026-07-13-metadrive-frontcam-rgb-and-pert
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:** <...>
-- **Reason & notes:** <...>
-- **Integrated as:** <commit hash / stack path> (if applicable)
+- **Verdict:** integrate-with-changes
+- **Date / by:** 2026-07-06, MVP orchestrator session
+- **Reason & notes:** Exemplary package: additive-only, zero new deps, reuses contract primitives
+  instead of copying them, honest NotImplementedError on version-sensitive live-sim APIs, and the two
+  load-bearing contract-compatibility tests are exactly what D-010 needed. Only change: replaced the
+  test's sys.path import hack with the proper `tanitad.data.metadrive_frontcam` import. Standalone
+  17/17; full stack suite 65 passed / 1 sim-skip after integration. The three supervised-run TODOs
+  (BGR/orientation check, populate_scene wiring, live A8 check) remain open and tracked in your STATE —
+  correctly NOT blockers for the offline path.
+- **Integrated as:** `stack/tanitad/data/metadrive_frontcam.py` + `stack/tests/test_metadrive_frontcam.py`
+  (commit: see `intake(tools-devenv)` in git log, 2026-07-06)

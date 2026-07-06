@@ -51,8 +51,12 @@ Summary of the immediate next actions:
 - [x] W1: comma2k19 loader (D-009) **real-data-validated** (DataEng agent): `av` decodes real HEVC →
       [200,3,256,256]@~105 fps, A8 real≈0.053; contract reconciled into shared `_contract` (channels=1|6|None);
       comma2k19 exported + `test_comma2k19_contract.py`; data card + H7 note; 40 tests green
-- [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` (run p0-sB01, comma2k19, planned $25)
-- [ ] W1: first local real-camera run on 4060 once Chunk_1 lands (p0-sB00 pipe-proof)
+- [x] W1: p0-sB00 real-camera pipe-proof DONE on 4060 — pipeline validated (I2 9.5e-7 pinned; bf16 +
+      horizon-subset encoding fixed the 22 GB OOM; Chunk_1 = 188 segments local). Learning at batch 2
+      invalid by design: **F-2 SigReg starvation** (n=32/step → erank 23/2048; I4=98.9 caught it);
+      live collapse-health rows (erank/dim_std/step_ratio) now in every training log.
+- [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` — p0-sB01 at batch 64 (SigReg
+      n=1024) is the first run whose learning signal counts (planned $25)
 - [x] W2: D-010 **sim arm unblocked** (Tools&DevEnv): MetaDrive front-camera RGB path renders 6ch/256
       2-frame stacks (comma2k19-identical) + perturbation policy + occluder/blocked-route scenarios —
       intake pkg `Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`
