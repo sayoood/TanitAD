@@ -15,11 +15,15 @@ Start simple, scale step by step, leverage proven open source.
   paths toward Orin/Thor.
 
 ## Weekly implementation duty (rotating backlog, top item first)
-1. MetaDrive sim stream for D-010 mix training: (a) supervised source install (PyPI no-go on py3.13 —
-   your own verdict note), (b) **front-camera RGB rendering** in the adapter (real-data contract:
-   2-frame RGB stacks @ 256 px — the BEV path stays for probes), (c) perturbation-policy episode
-   generator writing `*.pt` via `tanitad/data/mixing.py: save_episode` (off-expert actions,
-   scripted-occluder + blocked-route scenario configs).
+1. **CARLA-on-pod runbook (D-014 — replaces all MetaDrive work):** Docker image choice
+   (carlasim/carla 0.9.16 or 0.10), headless server + py3.12 client container on RunPod, scenario
+   scripts for blocked-route (D5/D6) + scripted-occluder (D9) + perturbation rollouts, episode
+   export via `tanitad/data/mixing.py: save_episode` in the real-data contract (6ch/256). Port the
+   sim-agnostic conversion/perturbation/scenario logic from the retired `metadrive_frontcam.py`.
+   Deliver as an intake package with a measured $-per-1000-episodes figure (G-T1).
+1b. Synthetic-corpora ingestion support (with DataEng): loaders for
+   `PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios` (emergency/lanechange/nudging/
+   pedestrian/weather folders) and Cosmos-Drive-Dreams into the episode contract.
 2. Minimal replay/viz script: episode → MP4/GIF with predicted-vs-actual trajectory overlay.
 3. CI script (`stack/scripts/ci.ps1`): pytest + I2 tripwire on every commit.
 4. AlpaSim hello-world: run one of its example scenarios locally; document setup cost honestly.

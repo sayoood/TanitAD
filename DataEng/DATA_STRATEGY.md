@@ -11,7 +11,9 @@ story defensible.
 |---|---|---|---|---|
 | **PhysicalAI-AV (PRIMARY RICH, D-012)** | urban diversity backbone of Phase 0 training; H2 multi-view demo | 1 727 h, 25 countries, 2 500+ cities: intersections, pedestrians, lights, weather — the distribution comma2k19 lacks; access verified, `clip_index.parquet` enables scenario-filtered subsets | egomotion (poses → yaw-rate/accel) | **use now, resolve later** (D-012); every consuming experiment tagged `data:physicalai` |
 | comma2k19 (BOOTSTRAP + PUBLIC ANCHOR) | real-CAN action grounding; ALL public open-loop numbers until licenses resolved | highway commute only — honest limitation | real CAN (steer, speed) | MIT — clean |
-| MetaDrive (SIM ARM, D-010) | off-expert consequences, occluders, blocked routes, closed loop | procedural; not photoreal by design | exact | open |
+| NVIDIA synthetic corpora (SIM-DATA ARM, D-014): WorldModel-Synthetic-Scenarios + Cosmos-Drive-Dreams | pre-rendered long-tail: emergency, lane change, nudging, pedestrian, weather degradation (H6/H15/D9 training material) | targeted safety-critical scenarios; ungated | scenario egomotion | Cosmos-Drive-Dreams CC-BY-4.0 (publicly safe); scenarios corpus per its card |
+| CARLA on RunPod (CLOSED-LOOP ARM, D-014; W31–32) | D5/D6 topology gates, G0.5 closed loop, occluder LOPS, off-expert perturbation rollouts | procedural towns; UE4/5 | exact | MIT/open |
+| ~~MetaDrive~~ | retired per D-014 (packaging unmaintainable on modern Python) | — | — | — |
 | nuScenes-mini | D8 OOD probes only (never trained on) | urban, 2 cities | ego pose | research |
 | Own GoPro/smartphone + OpenDV/YouTube | Phase 1 H7 pseudo-labeling scale-up | uncontrolled diversity | via IDM (H7) | own / public video |
 

@@ -86,6 +86,26 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-014 — MetaDrive retired; sim arm split into synthetic corpora + CARLA-on-pod (2026-07-06, accepted — direction by Sayed)
+
+**Decision.** MetaDrive is dropped (PyPI package unmaintainable on modern Python; source install
+needs supervised trust; Sayed: find better or go real-only). The sim arm's two jobs are split:
+1. **Training-mix synthetic data (Phase 0, now):** NVIDIA synthetic corpora, both ungated on HF —
+   `PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios` (pre-rendered long-tail:
+   emergency / lanechange / nudging / pedestrian / weather_degradation — the H6/H15/D9 material) and
+   `Cosmos-Drive-Dreams` (CC-BY-4.0 per license review → also our publicly-safe synthetic asset).
+   Zero simulator ops; ingested like any dataset; mix share stays bake-off-gated per D-010.
+2. **Closed-loop interaction (D5/D6, G0.5, occluder LOPS):** **CARLA 0.9.16/0.10 in Docker on the
+   RunPod** (py≤3.12 lives in the container, not our 3.13 venv), scheduled W31–32; this is also the
+   Bench2Drive path we need in Phase 1 regardless. **AlpaSim remains the declared Phase-1 target**
+   (constitution; agent-verified 40–60 GB VRAM → pod class).
+
+**Honest caveat (P8).** Pre-rendered synthetic video does NOT fully replace off-expert
+action-consequence rollouts (the max_a argument of the JEPA generalization theory) — that job
+returns with CARLA-on-pod perturbation rollouts. Until then the training mix is real + synthetic
+long-tail; training is never blocked on sim. The integrated MetaDrive modules are retired from the
+roadmap (conversion/perturbation/scenario logic is sim-agnostic and ports to the CARLA adapter).
+
 ## D-013 — Literature-search protocol upgraded after missed-papers finding (2026-07-06, accepted)
 
 **Decision.** Triggered by Sayed surfacing two directly relevant papers (arXiv 2606.27014 JEPA

@@ -67,8 +67,10 @@ Summary of the immediate next actions:
       intake pkg `Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`
       (17 tests, 0 new deps), pending orchestrator triage. The merged 1ch BEV adapter is (correctly)
       rejected by `MixedWindowDataset` — proven by test.
-- [ ] W2: **Sayed/supervised** MetaDrive source-install (~10 min) — last blocker for LIVE sim episodes
-      (D5/D6 closed-loop) + the A8/BGR render check (Tools&DevEnv STATE handoff)
+- [x] W2: **D-014 — MetaDrive retired** (Sayed: too old / Python pinning). Sim arm split: training
+      mix ← NVIDIA synthetic corpora (WorldModel-Synthetic-Scenarios: emergency/lanechange/nudging/
+      pedestrian/weather + Cosmos-Drive-Dreams CC-BY-4.0, both ungated); closed loop (D5/D6, G0.5)
+      ← CARLA-in-Docker on RunPod, W31–32 (Tools&DevEnv top backlog). Training never blocked on sim.
 - [ ] W2: Stage-0 bake-off (residual+change-weighted vs MSE; grid readout vs pooling; probe_imag vs probe_real)
 - [ ] W2–3: D1–D3 gates measured (see Phase 0 Plan §4)
 

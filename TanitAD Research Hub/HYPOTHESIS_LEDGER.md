@@ -29,6 +29,16 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-16: Benchmarks & Eval (Thu) — evidence-of-need deltas (no status *upgrade*; nothing measured
+  on our stack yet, P8). **Custom metric suite implemented** (LAL/TMS/OKRI/CNCE/LOPS + trajectory seam,
+  22 analytic-ground-truth tests) → the empirical instruments behind **H15** (LOPS/OKRI, D9 hidden-sector),
+  **H5** (CNCE efficiency moat), **H11** (D8 monitoring context), **H9** (violation-rate home). Motivating
+  external evidence: arXiv 2605.00066 shows **open-loop ADE/FDE ⊥ closed-loop DS** (ranking inversions) →
+  reinforces that D1–D3 are necessary-not-sufficient and the custom, closed-loop-native metrics are what
+  actually prove the edge; NAVSIM-v2 EPDMS criticized as thin on safety-critical occlusion (= our
+  OKRI/LOPS niche). Validation rule adopted: closed-loop gate claims report mean±CI over ≥3 seeds
+  (CARLA ~5 DS seed variance). See
+  `Benchmarks & Eval/Research/2026-07-16-benchmark-ecosystem-and-metric-suite.md`.
 - 2026-07-14: Architecture & Inference (Wed) — external evidence deltas (no status *upgrade*; none
   measured on our stack yet, P8). **H3** +LeWM (2-loss stable action-conditioned JEPA, no EMA/stop-grad)
   reinforces SIGReg-only anti-collapse; **L2 `p0-spectral-sizing` tool built** (fits the transition
