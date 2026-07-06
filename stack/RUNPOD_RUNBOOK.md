@@ -37,7 +37,8 @@ for i in (1, 2, 3):
     print(hf_hub_download('commaai/comma2k19', f'raw_data/Chunk_{i}.zip',
                           repo_type='dataset', local_dir='/workspace/data'))
 EOF
-for z in /workspace/data/raw_data/Chunk_*.zip; do unzip -q "$z" -d /workspace/data/comma2k19 && rm "$z"; done
+# python -m zipfile: RunPod containers ship without the `unzip` binary
+for z in /workspace/data/raw_data/Chunk_*.zip; do python -m zipfile -e "$z" /workspace/data/comma2k19/ && rm "$z"; done
 ```
 
 ## 4. Data — PhysicalAI-AV R0 (urban 500 clips; ~30–60 min on DC bandwidth)
