@@ -45,9 +45,11 @@ Wednesday `tanitad_gates.run_d1` (see below). The five headline metrics operate 
   — i.e. the doctrine held (no instrument row → no claim) *and* the custom metrics still merged. Merge is
   independent of PASS/BLOCKED, as intended.
 - **Honest scope (P8):** LAL/OKRI/LOPS need closed-loop occluder-scenario telemetry (Ghost Cut-Through /
-  Blind Creep / Choke Weave), still gated on the supervised MetaDrive source install (PROJECT_STATE W2).
-  **No metric is claimed on a real TanitAD run here** — only synthetic fixtures with known answers. This
-  is the computation those scenarios will call.
+  Blind Creep / Choke Weave). Per **D-014** (landed mid-run; MetaDrive retired) the closed-loop substrate
+  is now **CARLA-on-pod (W31–32)**; the ungated synthetic corpora (`PhysicalAI-WorldModel-Synthetic`,
+  `Cosmos-Drive-Dreams`) can drive a cheaper pre-rendered first pass now. The suite is **sim-agnostic** —
+  it consumes `ScenarioTelemetry` columns, not any simulator API, so D-014 does not touch this package.
+  **No metric is claimed on a real TanitAD run here** — only synthetic fixtures with known answers.
 
 ## Risk & rollback
 

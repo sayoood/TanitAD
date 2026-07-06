@@ -115,9 +115,10 @@ is the computation those scenarios will call the moment live logs exist.
    rule for every closed-loop gate claim (CARLA ~5 DS seed variance). Falsifier: a gate that "passes" on a
    single seed but whose CI overlaps the baseline is not a pass.
 3. **[Scenario specs, Friday hand-off — backlog #3]** Author Ghost Cut-Through / Blind Creep / Choke Weave
-   as MetaDrive occluder configs (Monday's front-cam occluder path is the substrate) wired to LAL+LOPS /
-   OKRI+TMS / CNCE hooks respectively — the exact telemetry columns `ScenarioTelemetry` expects. Co-own
-   with the Opponent Analyzer (Friday).
+   scenarios wired to LAL+LOPS / OKRI+TMS / CNCE hooks respectively — the exact telemetry columns
+   `ScenarioTelemetry` expects. **Retargeted per D-014 (see §7): substrate = CARLA-on-pod (W31–32)** for the
+   closed-loop occluder path; the ungated synthetic corpora give a pre-rendered first pass now. Co-own with
+   the Opponent Analyzer (Friday).
 4. **[Leaderboard hygiene, G-B1 — standing]** Keep open-loop and closed-loop rows in separate blocks with
    the 2605.00066 non-correlation footnote; never rank a TanitAD checkpoint on an open-loop number alone.
 5. **[Regulation, Phase-1 — record]** Spec the H10 DSSAD event log to the June-2026 triple (standard
@@ -135,6 +136,18 @@ is the computation those scenarios will call the moment live logs exist.
 - **Honesty (P8):** the headline research finding (open-loop ⊥ closed-loop) *undercuts* the temptation to
   publish an early ADE leaderboard win — recorded as first-class and turned into a hygiene rule, not buried.
   No metric claimed on a real run; the n=8 weakness of the anchor study is stated, not hidden.
-- **Gap (recorded):** the five headline metrics are unexercised on live telemetry (blocked on MetaDrive
-  source install); the LEADERBOARD's TanitAD rows stay empty until the A40 Stage-0 run. Both are upstream
-  blockers, not eval-side debt.
+- **Gap (recorded):** the five headline metrics are unexercised on live telemetry; the LEADERBOARD's
+  TanitAD rows stay empty until the A40 Stage-0 run. Both are upstream blockers, not eval-side debt.
+
+## 7. Mid-session repo advance (P8) — D-014 consumed and reconciled
+
+Sayed's auto-commit swept this run's artifacts into **his** commits mid-session (`5940129`: metric suite +
+note + LEADERBOARD + KNOWLEDGE_BASE; `47a89c4`: REGULATION_TRACE + STATE + ledger) and `47a89c4` brought
+**D-014 — MetaDrive retired; sim arm = synthetic corpora + CARLA-on-pod**. Reconciliation: (i) the metric
+suite is **sim-agnostic** (consumes `ScenarioTelemetry` columns, no simulator API) → **unaffected**; (ii)
+the closed-loop occluder-LOPS path re-targets **CARLA-on-pod (W31–32)** — which is also the Bench2Drive
+path in the LEADERBOARD's new closed-loop block, so D-014 makes that block *more* relevant, not less; (iii)
+the ungated synthetic corpora (`PhysicalAI-WorldModel-Synthetic`, `Cosmos-Drive-Dreams`) enable a
+pre-rendered LOPS/OKRI/LAL first pass **now**, before CARLA lands. STATE backlog #3 and rec #3 updated
+accordingly. Operational note for hub agents: `core.fsmonitor=true` on this Google-Drive repo hides
+tool-written changes from git until fsmonitor is toggled off and the index refreshed.

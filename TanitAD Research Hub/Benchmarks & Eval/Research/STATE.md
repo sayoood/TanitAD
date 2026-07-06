@@ -29,15 +29,35 @@ QUALITY: full (all gates G-A…G-F, G-B1, G-B2 met; loop iteration 1 of 3, well 
 
 - [ ] After orchestrator integrates the metric suite: G0.6 ("custom metric suite live") is code-complete;
       only live scenario telemetry remains.
-- [ ] Backlog #3 (with Friday/Opponent Analyzer): author Ghost Cut-Through / Blind Creep / Choke Weave as
-      MetaDrive occluder configs emitting the exact `ScenarioTelemetry` columns → wire LAL+LOPS / OKRI+TMS
-      / CNCE. Substrate = Monday's front-cam occluder path (2026-07-13 Tools&DevEnv). Blocked on supervised
-      MetaDrive source install (PROJECT_STATE W2).
+- [ ] Backlog #3 (with Friday/Opponent Analyzer): author Ghost Cut-Through / Blind Creep / Choke Weave
+      scenarios emitting the exact `ScenarioTelemetry` columns → wire LAL+LOPS / OKRI+TMS / CNCE. **Retargeted
+      per D-014 (MetaDrive retired):** substrate is now **CARLA-on-pod (Docker, W31–32)** for the closed-loop
+      occluder-LOPS path — the scenario/occluder/perturbation logic is sim-agnostic and ports to the CARLA
+      adapter. **Available NOW, no simulator:** the ungated synthetic corpora
+      `PhysicalAI-WorldModel-Synthetic` (pedestrian/emergency/nudging/weather long-tail) + `Cosmos-Drive-Dreams`
+      can exercise LOPS/OKRI/LAL on pre-rendered occlusion clips before CARLA lands — a cheaper first pass.
 - [ ] Backlog #4: full paragraph-level extraction of `ECE-TRANS-WP.29-2026-139e.pdf` into REGULATION_TRACE.
 - [ ] Backlog #5 (gate-result audit): once a Wednesday D-gate has a real number, recompute one independently
       (fresh seed) — the Mission-Plan independent-test role.
 - [ ] Populate LEADERBOARD TanitAD rows after the A40 Stage-0 run + D1–D3 through the gate runner.
 
+## Mid-session repo advances (P8 — "re-check git" memory earned its keep, twice)
+
+During this run Sayed's auto-commit swept my in-progress artifacts into **two of his commits**:
+`5940129` absorbed the metric suite (pkg + tests + INTAKE), the research note, LEADERBOARD and
+KNOWLEDGE_BASE; `47a89c4` absorbed REGULATION_TRACE, this STATE, and the HYPOTHESIS_LEDGER entry. All are
+on `origin/main` (verified 0/0 vs origin). The follow-up `hub(bench-eval)` commit carries only the D-014
+reconciliation below — my deliverables landed under Sayed's messages, not mine, which is why the provenance
+note lives here. Also observed: `core.fsmonitor=true` hides tool-written changes on this Google-Drive repo
+(git can't see them until fsmonitor is toggled off / index refreshed) — a real gotcha for every hub agent.
+
+`47a89c4` also brought **D-014** (MetaDrive retired; sim arm = synthetic corpora + CARLA-on-pod). Consumed
+and reconciled this run: the metric suite is sim-agnostic (math on telemetry columns — unaffected); the
+scenario backlog re-targets CARLA-on-pod + the ungated synthetic corpora (see backlog #3). The Bench2Drive
+closed-loop block I added to the LEADERBOARD is now doubly relevant (D-014 names CARLA/Bench2Drive as the
+Phase-1 path).
+
 ## HANDOFF
 
-None — run completed cleanly (session-end ritual done, committed + pushed). No half-done work in flight.
+None — run completed cleanly. Deliverables committed + pushed (in `5940129`/`47a89c4` via auto-sweep, plus
+the D-014 reconciliation commit). No half-done work in flight.
