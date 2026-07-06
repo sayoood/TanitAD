@@ -106,9 +106,16 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         assert clips, f"no R0 clips under {data_root}"
         tr, va = split_clips(clips, val_frac=0.2, seed=cfg.train.seed)   # I3
         print(f"[data] physicalai R0: {len(tr)} train / {len(va)} val clips")
-        mk = lambda cs: EpisodeWindowDataset(
-            [build_episode(c, size=cfg.encoder.image_size) for c in cs],
-            window=cfg.predictor.window, max_horizon=max_h)
+
+        def mk(cs):
+            eps = []
+            for i, c in enumerate(cs):
+                if i % 20 == 0:
+                    print(f"[physicalai] building episodes {i}/{len(cs)} "
+                          f"(video decode)", flush=True)
+                eps.append(build_episode(c, size=cfg.encoder.image_size))
+            return EpisodeWindowDataset(eps, window=cfg.predictor.window,
+                                        max_horizon=max_h)
         return mk(tr), mk(va)
     if data == "realmix":
         # D-012/D-015: comma2k19 highway + PhysicalAI urban, both 9ch (D-015).

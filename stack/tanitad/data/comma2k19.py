@@ -255,7 +255,10 @@ class Comma2k19Dataset(torch.utils.data.Dataset):
                  max_steps: int | None = 300, decode_fn=_decode_video):
         self.window, self.max_horizon = window, max_horizon
         self.episodes: list[ToyEpisode] = []
-        for seg in segments:
+        for i, seg in enumerate(segments):
+            if i % 20 == 0:
+                print(f"[comma2k19] building episodes {i}/{len(segments)} "
+                      f"(video decode — this is the slow part)", flush=True)
             try:
                 self.episodes.append(build_episode(
                     seg, size=size, stride=stride, max_steps=max_steps,
