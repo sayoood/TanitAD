@@ -65,10 +65,45 @@ def route_of(segment: Path) -> str:
     return segment.parent.name
 
 
+def sample_segments_across_routes(segments: list[Path], n: int,
+                                  seed: int = 0) -> list[Path]:
+    """Cap to n segments while spanning as many ROUTES as possible (round-robin).
+
+    Plain `segments[:n]` returns n minutes of the SAME drive (segments of one
+    route sort together), which a route-level split then puts wholly into one
+    side — the p0-sB00 '0 train segments' failure. Round-robin over routes
+    keeps small caps split-able and diverse.
+    """
+    by_route: dict[str, list[Path]] = {}
+    for s in segments:
+        by_route.setdefault(route_of(s), []).append(s)
+    order = sorted(by_route)
+    g = torch.Generator().manual_seed(seed)
+    order = [order[i] for i in torch.randperm(len(order), generator=g).tolist()]
+    out: list[Path] = []
+    depth = 0
+    while len(out) < min(n, len(segments)):
+        added = False
+        for r in order:
+            if depth < len(by_route[r]):
+                out.append(by_route[r][depth])
+                added = True
+                if len(out) == n:
+                    break
+        if not added:
+            break
+        depth += 1
+    return out
+
+
 def split_by_route(segments: list[Path], val_frac: float = 0.2,
                    seed: int = 0) -> tuple[list[Path], list[Path]]:
     """I3: disjoint ROUTES, not frames, not segments."""
     routes = sorted({route_of(s) for s in segments})
+    assert len(routes) >= 2, (
+        f"route-level split needs >= 2 routes, got {len(routes)} "
+        f"({routes}) — cap segments with sample_segments_across_routes(), "
+        "not list slicing")
     g = torch.Generator().manual_seed(seed)
     perm = torch.randperm(len(routes), generator=g).tolist()
     n_val = max(1, int(len(routes) * val_frac))

@@ -86,11 +86,14 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         return train, real_val          # validation stays REAL-only (D-010)
     if data == "comma2k19":
         from tanitad.data.comma2k19 import (Comma2k19Dataset,
-                                            discover_segments, split_by_route)
+                                            discover_segments,
+                                            sample_segments_across_routes,
+                                            split_by_route)
         assert data_root, "--data-root required for comma2k19"
         assert cfg.encoder.in_channels == 6, \
             "comma2k19 emits 6-channel frames — use --config base250cam"
-        segs = discover_segments(data_root)[:n_episodes]
+        segs = sample_segments_across_routes(discover_segments(data_root),
+                                             n_episodes, seed=cfg.train.seed)
         assert segs, f"no comma2k19 segments under {data_root}"
         train_segs, val_segs = split_by_route(segs, val_frac=0.2,
                                               seed=cfg.train.seed)       # I3

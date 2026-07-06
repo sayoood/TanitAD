@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 from tanitad.data.comma2k19 import (Comma2k19Dataset, actions_and_poses,
@@ -80,6 +81,28 @@ def test_stack_two_frames_semantics():
     s = stack_two_frames(vid)
     assert s.shape == (3, 6, 2, 2)
     assert int(s[1, 0, 0, 0]) == 1 and int(s[1, 3, 0, 0]) == 2  # (t-1, t)
+
+
+def test_small_cap_spans_routes(tmp_path):
+    """Regression p0-sB00: capping segments must span routes, or the
+    route-level split starves one side."""
+    from tanitad.data.comma2k19 import sample_segments_across_routes
+    for r in range(4):
+        for s in range(5):
+            make_fake_segment(tmp_path, f"d{r}_2018-02-0{r + 1}--09-00-00", str(s))
+    segs = discover_segments(tmp_path)
+    capped = sample_segments_across_routes(segs, 6, seed=0)
+    routes = {s.parent.name for s in capped}
+    assert len(capped) == 6 and len(routes) == 4      # spans ALL routes
+    train, val = split_by_route(capped, val_frac=0.2, seed=0)
+    assert train and val                              # both sides populated
+
+
+def test_single_route_split_fails_loudly(tmp_path):
+    for s in range(3):
+        make_fake_segment(tmp_path, "d9_2018-03-01--08-00-00", str(s))
+    with pytest.raises(AssertionError, match="needs >= 2 routes"):
+        split_by_route(discover_segments(tmp_path))
 
 
 def test_route_split_and_dataset(tmp_path):
