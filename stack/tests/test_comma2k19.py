@@ -73,7 +73,7 @@ def test_build_episode_contract(tmp_path):
     t = ep.frames.shape[0]
     assert ep.frames.shape == (t, 9, 64, 64) and t >= 20      # D-015: 3 frames
     assert ep.actions.shape == (t, 2) and ep.poses.shape == (t, 4)
-    assert 0.0 <= float(ep.frames.min()) and float(ep.frames.max()) <= 1.0
+    assert ep.frames.dtype == torch.uint8                     # F-4 memory layout
 
 
 def test_stack_frames_semantics():

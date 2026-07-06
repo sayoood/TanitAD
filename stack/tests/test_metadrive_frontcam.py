@@ -228,5 +228,8 @@ def test_save_load_roundtrip_six_channel(tmp_path):
     back = load_episode(str(p))
     assert back.frames.shape == ep.frames.shape == (9, fc.REAL_CHANNELS, 12, 12)
     assert back.episode_id == 321
-    # uint8 round-trip: within one quantization step
-    assert float((back.frames - ep.frames).abs().max()) <= 1.0 / 255 + 1e-6
+    # load_episode returns the uint8 memory layout (F-4 pod-RAM fix);
+    # consumers convert — compare in float space within one quantization step
+    from tanitad.data._contract import to_float_frames
+    assert float((to_float_frames(back.frames) - ep.frames).abs().max()) \
+        <= 1.0 / 255 + 1e-6
