@@ -29,6 +29,18 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-17: Opponent Analyzer (Fri, run #1) — competitive-evidence deltas (no status *upgrade*;
+  nothing measured on our stack, P8). **H0** reinforced (external): mid-2026 competitor failures land
+  squarely on the E2E weaknesses we target — Waymo's **3,871-vehicle construction-zone recall** (W-01),
+  NTSB school-zone VRU-anticipation + school-bus stop-arm probes (W-02/W-03), Tesla's open NHTSA
+  **degraded-visibility** case (W-04); the field's convergence on latent WMs (arXiv 2603.09086 cluster;
+  Wayve GAIA-3 15 B; NVIDIA Alpamayo-2 32 B) means our moat is now hierarchy+efficiency+imagination+
+  self-monitoring, not "world model" alone. **H6** stays *actionable* and now has a dated evidence corpus
+  + a shipped scenario: **Work-Zone Phantom** intake pkg (W-01 → H15/H9/H1; 9/9 offline tests). Evidence
+  strengthens the *need* for **H15** (LOPS/OKRI/LAL, D9), **H11** (degraded-visibility D8 stressor
+  recommended), **H9** (closure/stop-arm compliance), and the **H1/H3/H5** efficiency wedge (CNCE vs 32 B/
+  15 B competitors). See `Opponent Analyzer/Research/2026-07-17-opponent-sweep-w2.md` +
+  `WEAKNESS_CATALOG.md` / `OPPONENT_PROFILES.md`.
 - 2026-07-16: Benchmarks & Eval (Thu) — evidence-of-need deltas (no status *upgrade*; nothing measured
   on our stack yet, P8). **Custom metric suite implemented** (LAL/TMS/OKRI/CNCE/LOPS + trajectory seam,
   22 analytic-ground-truth tests) → the empirical instruments behind **H15** (LOPS/OKRI, D9 hidden-sector),
