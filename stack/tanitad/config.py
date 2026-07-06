@@ -14,12 +14,13 @@ from pathlib import Path
 
 @dataclass
 class EncoderConfig:
-    in_channels: int = 1          # 1 = BEV toy; 3/6 = camera (2-frame stack)
+    in_channels: int = 1          # 1 = BEV toy; 9 = camera (3-frame stack, D-015)
     image_size: int = 64
-    patch_size: int = 8           # 8 for 64px toy -> 8x8 grid; 16 for 224px camera
+    patch_size: int = 8           # 8 for 64px toy -> 8x8 grid; 16 for 256px camera
     d_model: int = 128
     depth: int = 6
     n_heads: int = 4
+    grad_checkpoint: bool = False  # recompute block activations (F-5 GPU-memory lever)
     # Batch-free norms only (I2 batch-consistency): never BatchNorm here.
 
 
@@ -84,7 +85,8 @@ class TrainConfig:
     lr: float = 1e-3
     weight_decay: float = 0.05
     betas: tuple[float, float] = (0.9, 0.95)
-    batch_size: int = 64
+    batch_size: int = 64          # MICRO-batch (what the GPU holds at once)
+    accum_steps: int = 1          # optimizer effective batch = batch_size * accum
     steps: int = 2000
     warmup_steps: int = 100
     device: str = "auto"          # auto -> cuda if available

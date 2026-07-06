@@ -11,6 +11,8 @@ from tanitad.train.train_worldmodel import train
 def test_smoke_training(tmp_path: Path):
     cfg = smoke_config()
     cfg.train.steps = 5
+    cfg.train.accum_steps = 2            # cover the F-5 accumulation path
+    cfg.encoder.grad_checkpoint = True   # cover the F-5 checkpoint path
     cfg.train.out_dir = str(tmp_path / "run")
     metrics = train(cfg, n_episodes=4)
     assert "instruments" in metrics

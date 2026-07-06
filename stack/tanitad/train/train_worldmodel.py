@@ -187,7 +187,16 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
     step, t0 = 0, time.time()
     log: dict[str, float] = {}
     data_iter = iter(dl)
+    accum = max(1, cfg.train.accum_steps)
     while step < cfg.train.steps:
+      # gradient accumulation (F-5): GPU holds a micro-batch; the optimizer
+      # sees batch_size*accum. SigReg runs per micro-batch — keep
+      # batch_size*window >= 256 rows or the F-2 starvation warning fires.
+      lr = cosine_lr(step, cfg.train.steps, cfg.train.warmup_steps, cfg.train.lr)
+      for pg in opt.param_groups:
+          pg["lr"] = lr
+      opt.zero_grad(set_to_none=True)
+      for _micro in range(accum):
         try:
             batch = next(data_iter)
         except StopIteration:
@@ -251,33 +260,30 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
                     + cfg.loss.inv_dyn_weight * loss_inv
                     + cfg.h15.weight * loss_h15)
 
-        lr = cosine_lr(step, cfg.train.steps, cfg.train.warmup_steps, cfg.train.lr)
-        for pg in opt.param_groups:
-            pg["lr"] = lr
-        opt.zero_grad(set_to_none=True)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        opt.step()
+        (loss / accum).backward()
+      torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+      opt.step()
 
-        if step % cfg.train.log_every == 0 or step == cfg.train.steps - 1:
-            # Collapse health rows (the p0-sB00 lesson: falling pred-loss can
-            # mean a frozen latent; watch geometry live, A9 applied to training).
-            with torch.no_grad():
-                flat = states.detach().float().reshape(-1, states.shape[-1])
-                s = torch.linalg.svdvals(flat - flat.mean(0))
-                p = (s / s.sum().clamp_min(1e-12)).clamp_min(1e-12)
-                erank = float(torch.exp(-(p * p.log()).sum()))
-                step_ratio = float(
-                    (states[:, 1:] - states[:, :-1]).norm(dim=-1).mean()
-                    / flat.norm(dim=-1).mean().clamp_min(1e-8))
-                dim_std = float(flat.std(0).mean())
-            log = {"step": step, "loss": loss.item(), "pred": loss_pred.item(),
-                   "tac": loss_tac.item(), "sigreg": loss_sig.item(),
-                   "inv": loss_inv.item(), "h15": loss_h15.item(),
-                   "erank": round(erank, 1), "dim_std": round(dim_std, 5),
-                   "step_ratio": round(step_ratio, 5), "lr": lr}
-            print(json.dumps(log))
-        step += 1
+      if step % cfg.train.log_every == 0 or step == cfg.train.steps - 1:
+          # Collapse health rows (the p0-sB00 lesson: falling pred-loss can
+          # mean a frozen latent; watch geometry live, A9 applied to training).
+          # Computed on the LAST micro-batch of the optimizer step.
+          with torch.no_grad():
+              flat = states.detach().float().reshape(-1, states.shape[-1])
+              s = torch.linalg.svdvals(flat - flat.mean(0))
+              p = (s / s.sum().clamp_min(1e-12)).clamp_min(1e-12)
+              erank = float(torch.exp(-(p * p.log()).sum()))
+              step_ratio = float(
+                  (states[:, 1:] - states[:, :-1]).norm(dim=-1).mean()
+                  / flat.norm(dim=-1).mean().clamp_min(1e-8))
+              dim_std = float(flat.std(0).mean())
+          log = {"step": step, "loss": loss.item(), "pred": loss_pred.item(),
+                 "tac": loss_tac.item(), "sigreg": loss_sig.item(),
+                 "inv": loss_inv.item(), "h15": loss_h15.item(),
+                 "erank": round(erank, 1), "dim_std": round(dim_std, 5),
+                 "step_ratio": round(step_ratio, 5), "lr": lr}
+          print(json.dumps(log))
+      step += 1
 
     # ---- Instrument rows (D-004) on validation data ----
     model.eval()
@@ -342,7 +348,12 @@ def main():
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--episodes", type=int, default=40,
                     help="toy: #episodes; comma2k19: max #segments")
-    ap.add_argument("--batch-size", type=int, default=None)
+    ap.add_argument("--batch-size", type=int, default=None,
+                    help="MICRO-batch (GPU-resident); effective = batch*accum")
+    ap.add_argument("--accum", type=int, default=None,
+                    help="gradient-accumulation steps (F-5)")
+    ap.add_argument("--grad-checkpoint", action="store_true",
+                    help="recompute encoder activations (F-5 memory lever)")
     ap.add_argument("--no-amp", action="store_true",
                     help="disable bf16 autocast (training default: on for cuda)")
     ap.add_argument("--out", type=str, default=None)
@@ -360,6 +371,10 @@ def main():
         cfg.train.steps = args.steps
     if args.batch_size:
         cfg.train.batch_size = args.batch_size
+    if args.accum:
+        cfg.train.accum_steps = args.accum
+    if args.grad_checkpoint:
+        cfg.encoder.grad_checkpoint = True
     if args.out:
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes

@@ -57,6 +57,12 @@ class ViTEncoder(nn.Module):
         t = self.patch(x)                       # [B, D, H/P, W/P]
         t = t.flatten(2).transpose(1, 2)        # [B, N, D]
         t = t + self.pos
+        use_ckpt = (self.cfg.grad_checkpoint and self.training
+                    and t.requires_grad)
         for blk in self.blocks:
-            t = blk(t)
+            if use_ckpt:                        # F-5: trade compute for memory
+                t = torch.utils.checkpoint.checkpoint(
+                    blk, t, use_reentrant=False)
+            else:
+                t = blk(t)
         return self.norm(t)

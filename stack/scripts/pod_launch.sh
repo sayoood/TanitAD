@@ -24,12 +24,19 @@ tmux kill-session -t train 2>/dev/null || true
 echo "--- RAM ---"; free -g | head -2
 echo "--- episodes cap: ${EPISODES}/corpus (EPISODES=... to override) ---"
 
+# F-5: batch 64 naive OOMs the 48 GB A40 (512 window-frames of stored
+# activations). micro 16 x accum 4 = effective 64; checkpointing for headroom.
+MICRO="${MICRO:-16}"
+ACCUM="${ACCUM:-4}"
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 tmux new-session -d -s train \
-  "python -u -m tanitad.train.train_worldmodel \
+  "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+   python -u -m tanitad.train.train_worldmodel \
      --config base250cam --data realmix \
      --data-root /workspace/data/comma2k19 \
      --sim-root  /workspace/data/physicalai \
-     --sim-frac 0.6 --episodes ${EPISODES} --batch-size 64 \
+     --sim-frac 0.6 --episodes ${EPISODES} \
+     --batch-size ${MICRO} --accum ${ACCUM} --grad-checkpoint \
      --out ${OUT} 2>&1 | tee ${LOG}"
 
 echo "launched in tmux session 'train'"

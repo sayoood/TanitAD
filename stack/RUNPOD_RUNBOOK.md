@@ -77,23 +77,23 @@ free -g                                             # note the available RAM
 ~50 GB RAM pod → `--episodes 120`; ~100 GB → `--episodes 250`; ≥180 GB → `--episodes 500`.
 (Disk-backed episode cache is on the DataEng backlog to lift this cap.)
 
+**GPU sizing (F-5, measured):** naive batch 64 OOMs the 48 GB A40 (the first encoder pass holds
+512 frames of activations). Use **micro-batch 16 × accumulation 4** (effective 64) with
+`--grad-checkpoint`. SigReg runs per micro-batch: micro 16 × window 8 × 2 = 256 samples/step —
+at the healthy floor; do not go below micro 16 without raising `--accum` awareness.
+
 ```bash
-tmux new -s train
-cd /workspace/TanitAD/stack
-python -u -m tanitad.train.train_worldmodel \
-    --config base250cam \
-    --data realmix \
-    --data-root /workspace/data/comma2k19 \
-    --sim-root  /workspace/data/physicalai \
-    --sim-frac 0.6 \
-    --episodes 120 --batch-size 64 \
-    --out /workspace/experiments/p0-sB01-realmix \
-    2>&1 | tee /workspace/experiments/p0-sB01.log
+EPISODES=500 bash scripts/pod_launch.sh      # does all of the below in tmux
+# equivalent manual command:
+#   PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+#   python -u -m tanitad.train.train_worldmodel --config base250cam --data realmix \
+#     --data-root /workspace/data/comma2k19 --sim-root /workspace/data/physicalai \
+#     --sim-frac 0.6 --episodes 500 --batch-size 16 --accum 4 --grad-checkpoint \
+#     --out /workspace/experiments/p0-sB01-realmix 2>&1 | tee /workspace/experiments/p0-sB01-realmix.log
 ```
-Detach `Ctrl-b d`; re-attach `tmux attach -t train`. If tmux is unavailable, use
-`nohup ... > /workspace/experiments/p0-sB01.log 2>&1 &` instead. Expected ~15–25 h for 60 k steps
-(bf16); `--steps 30000` for a cheaper first pass. Dataset build (video decode) takes ~10–20 min
-before the first step prints — that is normal.
+Attach `tmux attach -t train`; detach `Ctrl-b d`. Expected wall-clock rises ~30 % from
+checkpointing; `--steps 30000` for a cheaper first pass. Dataset build (video decode) prints
+`building episodes i/N` progress and takes ~10–45 min depending on `--episodes`.
 
 ## 7. What healthy looks like (check after ~30 min)
 
