@@ -4,7 +4,7 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
-- **Last update:** 2026-07-07 (session: Data Engineering weekly agent — comma2k19 real-data validation)
+- **Last update:** 2026-07-13 (session: Tools&DevEnv weekly agent — MetaDrive front-camera RGB sim arm)
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
@@ -53,7 +53,13 @@ Summary of the immediate next actions:
       comma2k19 exported + `test_comma2k19_contract.py`; data card + H7 note; 40 tests green
 - [ ] W1: **Sayed**: start the A40 pod per `stack/RUNPOD_RUNBOOK.md` (run p0-sB01, comma2k19, planned $25)
 - [ ] W1: first local real-camera run on 4060 once Chunk_1 lands (p0-sB00 pipe-proof)
-- [ ] W1: supervised MetaDrive source-install — still needed for closed-loop gates D5/D6 (Tools&DevEnv handoff)
+- [x] W2: D-010 **sim arm unblocked** (Tools&DevEnv): MetaDrive front-camera RGB path renders 6ch/256
+      2-frame stacks (comma2k19-identical) + perturbation policy + occluder/blocked-route scenarios —
+      intake pkg `Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`
+      (17 tests, 0 new deps), pending orchestrator triage. The merged 1ch BEV adapter is (correctly)
+      rejected by `MixedWindowDataset` — proven by test.
+- [ ] W2: **Sayed/supervised** MetaDrive source-install (~10 min) — last blocker for LIVE sim episodes
+      (D5/D6 closed-loop) + the A8/BGR render check (Tools&DevEnv STATE handoff)
 - [ ] W2: Stage-0 bake-off (residual+change-weighted vs MSE; grid readout vs pooling; probe_imag vs probe_real)
 - [ ] W2–3: D1–D3 gates measured (see Phase 0 Plan §4)
 
@@ -69,6 +75,7 @@ Summary of the immediate next actions:
 
 | Date | Session | What happened | Artifacts |
 |---|---|---|---|
+| 2026-07-13 | Tools&DevEnv agent | D-010 sim arm unblocked: MetaDrive front-camera RGB path (6ch/256 2-frame stacks, comma2k19-identical geometry/alignment) + scripted perturbation policy (off-expert coverage) + occluder(H15/D9)/blocked-route(D5/D6) scenario configs; proved the old 1ch BEV adapter is rejected by `MixedWindowDataset`. Intake pkg (17 tests, 0 new deps, import 1.38 s); live rollout still gated on supervised MetaDrive source-install. KB: Alpamayo 2 Super (32B) + OmniDreams = Phase-1 watch, reinforce P5/C2 | `.../Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`, `.../Tools&DevEnv/Research/2026-07-13-*.md` |
 | 2026-07-07 | Data Engineering agent | comma2k19 (D-009) real-data-validated: `av` decodes real HEVC @~105 fps, A8 real≈0.053 → change-weighting justified; forked contract reconciled into shared `_contract` (channels param) + `test_comma2k19_contract.py`; comma2k19 exported; Windows `\|` confirmed (handled by `extract_comma2k19.py`); H7 deltas (LAOF, Sensorimotor-WM); data card + note | `.../Data Engineering/Research/2026-07-07-*.md`, `stack/tanitad/data/_contract.py`, `stack/tests/test_comma2k19_contract.py` |
 | 2026-07-06 | D-008 scale-up | Model scaled to 261 M (measured per-component budget in Phase 0 Plan §2.1); H15 imagination in Phase 0 (module + losses + D9); exact data spec; RunPod runbook + ledger row; local 261 M pipe-check run | `stack/tanitad/models/imagination.py`, `stack/RUNPOD_RUNBOOK.md`, DECISIONS D-008 |
 | 2026-07-06 | Tools&DevEnv agent | WP2 MetaDrive→toy-contract wrapper (17✓/1skip); MetaDrive install verdict (PyPI no-go py3.13, source is GO); AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM); Rerun.io picked for viz | `stack/tanitad/data/metadrive_env.py`, `TanitAD Research Hub/Tools&DevEnv/Research/2026-07-06-*.md` |
