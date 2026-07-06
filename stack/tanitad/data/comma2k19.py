@@ -45,6 +45,14 @@ FPS = 20
 STEER_RATIO = 15.3           # steering wheel -> road wheel, v0 constant
 WHEEL_TO_RAD = math.pi / 180.0
 
+# I7 task-identity fingerprint (D-017): probes fit on this corpus may only be
+# consumed by streams with an IDENTICAL fingerprint (i7_task_identity check).
+CORPUS_META = {
+    "channels": 9, "image_size": 256, "f_eff_px": 266.0, "hz": 10.0,
+    "actions": ("steer_road_rad", "accel_mps2"),
+    "poses": ("x_east_m", "y_north_m", "yaw_rad", "v_mps"),
+}
+
 
 # --------------------------------------------------------------------------- #
 # Discovery & splits                                                           #

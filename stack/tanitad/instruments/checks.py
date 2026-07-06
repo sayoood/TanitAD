@@ -61,9 +61,27 @@ def i3_episode_split(episode_ids: list[int], val_frac: float = 0.2,
 @torch.no_grad()
 def i4_imag_relative(z_pred: Tensor, z_true: Tensor, z_prev: Tensor) -> float:
     """||z_hat - z_true|| / ||z_true - z_prev|| (mean over batch).
-    < 1: predictor beats persistence. >= 1: no predictive claim allowed."""
+
+    DIAGNOSTIC, not a claim-blocking gate (D-017/A13): control was measured
+    usable at imag-rel 1.27 — action DISCRIMINATION in decoded-state space
+    (gate D2) is what bounds control, and driving's horizon always imports
+    unseen content. Collapse detection: read I4 together with the geometry
+    health rows — I4 >> 1 WITH erank/dim_std collapsed = the F-2 pattern;
+    I4 > 1 with healthy geometry = normal driving regime."""
     scale = (z_true - z_prev).norm(dim=-1).mean().clamp_min(1e-8)
     return float((z_pred - z_true).norm(dim=-1).mean() / scale)
+
+
+def i7_task_identity(fit_meta: dict, run_meta: dict) -> tuple[bool, list[str]]:
+    """I7 (D-017): probe-fit data and eval/runtime stream must be the SAME task.
+
+    Compares corpus fingerprints (channels, input size, effective focal, Hz,
+    action convention) MECHANICALLY — the ALPS-4B contamination bug showed
+    cross-domain mismatch is invisible to every downstream metric. Returns
+    (identical, list of mismatched keys)."""
+    keys = sorted(set(fit_meta) | set(run_meta))
+    bad = [k for k in keys if fit_meta.get(k) != run_meta.get(k)]
+    return not bad, bad
 
 
 def instrument_rows(**rows) -> dict:

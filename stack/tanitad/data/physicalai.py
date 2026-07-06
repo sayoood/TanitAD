@@ -39,6 +39,14 @@ from tanitad.data.toy_driving import ToyEpisode
 WHEELBASE = 2.9          # Hyperion platform class, sedan/SUV proxy
 TARGET_HZ = 10.0
 
+# I7 task-identity fingerprint (D-017) — matches comma2k19's on purpose:
+# D-016 canonicalization makes the corpora compatible; I7 PROVES it per run.
+CORPUS_META = {
+    "channels": 9, "image_size": 256, "f_eff_px": 266.0, "hz": 10.0,
+    "actions": ("steer_road_rad", "accel_mps2"),
+    "poses": ("x_east_m", "y_north_m", "yaw_rad", "v_mps"),
+}
+
 
 def discover_r0_clips(root: str | Path) -> list[dict]:
     """Selected clips that have both camera mp4 and egomotion available."""

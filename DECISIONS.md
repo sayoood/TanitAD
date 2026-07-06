@@ -86,6 +86,30 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-017 — ALPS-4B v1.1 findings adopted: I4 demoted to diagnostic, P4 readout, I7/I8 doctrine, slots scheduled (2026-07-07, accepted)
+
+**Source.** `Ressources/AD_TRANSFER_RESEARCH.md` v1.1 (fresh measured results; full delta analysis in
+`TanitAD Research Hub/Architecture & Inference/Research/2026-07-07-alps4b-v11-findings.md`).
+
+**Adopted:**
+1. **A13/I4:** `imag relative` is a DIAGNOSTIC, not a claim-blocking gate — control was measured
+   usable at imag-rel 1.27. Collapse detection = I4 read TOGETHER with the geometry health rows
+   (erank/dim_std/step_ratio; the F-2 pattern). The binding control gate is **D2: calibrated
+   direction_acc > 0.7 OR forward-dynamics direction_acc > 0.7 (P4)**, oracle row (I1) first.
+2. **P4 forward-dynamics probe** (frozen ridge in decoded-state space; measured 0.76, cheapest path)
+   joins P1/P3 as a first-class readout; P2 (pure latent matching) confirmed weakest — never an
+   early gate. Gate-runner intake integration is conditioned on adding P4.
+3. **I7 task-identity assertion:** loaders export `CORPUS_META` fingerprints (channels, size,
+   effective focal, Hz, action convention); probe-fit and eval sets must fingerprint-identical —
+   mechanical check, composing with D-016.
+4. **I8 batch-1 memory/latency profile** at the finest shipped config joins the efficiency ledger
+   per checkpoint.
+5. **A11:** egocentric = the control-enabling regime (0.69/0.76 vs 0.19 top-down) — confirms our
+   camera-first pipeline; rule for CARLA work: control gates on egocentric camera only, BEV for
+   planning isolation (D5/D6).
+6. **A12 object-binding laws:** object-centric slots scheduled for real-video Phase 1 (their laws
+   invert there), with the two laws as go/no-go; no toy-scale slot work.
+
 ## D-016 — Camera intrinsic canonicalization across corpora; extrinsics deferred with mitigation (2026-07-06, accepted — gap surfaced by Sayed)
 
 **Decision.** All camera loaders canonicalize the **effective focal length** to F_REF = 266 px at the

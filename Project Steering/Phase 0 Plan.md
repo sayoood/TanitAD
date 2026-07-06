@@ -138,7 +138,7 @@ Every run logged in the experiment record format (protocol §6) + RESOURCE_LEDGE
 | Gate | Claim | Threshold | Ablation |
 |---|---|---|---|
 | D1 | encoder state decodable | frozen-probe ADE@1s < 0.5 m (BEV) / < 1.0 m (camera); I2, I3 pass | vs global-pool |
-| D2 | imagination usable for selection | calibrated direction acc > 0.7; imag-rel < 0.8; I1 ≈ 1.0 first | vs persistence; vs flow head |
+| D2 | imagination usable for selection | calibrated direction acc > 0.7 **or forward-dynamics (P4) acc > 0.7**; I1 ≈ 1.0 first. *imag-rel is a diagnostic, not a gate (D-017/A13: control measured usable at imag-rel 1.27)* | vs persistence; vs flow head |
 | D3 | trajectory decode from imagination | imagined-ADE@2s ≤ 1.5× oracle-decode ADE@2s | probe_real vs probe_imag |
 | D4 | tactical beats greedy | +15 % success on interactive scenarios | tactical off |
 | D5 | strategic routing beats greedy on topology | blocked-route success: 4B ≫ operative (≥ +30 % abs) | graph off / random waypoints |

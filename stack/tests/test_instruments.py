@@ -32,3 +32,15 @@ def test_i4_persistence_ratio():
     persistence = i4_imag_relative(z_prev.clone(), z_true, z_prev)
     assert perfect < 0.01
     assert abs(persistence - 1.0) < 1e-5
+
+
+def test_i7_task_identity():
+    """D-017: fit/eval corpus fingerprints must match mechanically — and the
+    two production corpora are canonicalized to the SAME fingerprint."""
+    from tanitad.data.comma2k19 import CORPUS_META as COMMA
+    from tanitad.data.physicalai import CORPUS_META as PHYS
+    from tanitad.instruments.checks import i7_task_identity
+    ok, bad = i7_task_identity(COMMA, PHYS)
+    assert ok, f"corpora fingerprints diverged: {bad}"
+    ok, bad = i7_task_identity(COMMA, {**PHYS, "f_eff_px": 554.0})
+    assert not ok and bad == ["f_eff_px"]      # the pre-D-016 world, caught
