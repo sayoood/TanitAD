@@ -29,6 +29,19 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-14: Architecture & Inference (Wed) — external evidence deltas (no status *upgrade*; none
+  measured on our stack yet, P8). **H3** +LeWM (2-loss stable action-conditioned JEPA, no EMA/stop-grad)
+  reinforces SIGReg-only anti-collapse; **L2 `p0-spectral-sizing` tool built** (fits the transition
+  operator, reports the spectral knee vs the 2048 readout) — the empirical instrument for the H3
+  latent-dim skeleton, awaiting a trained checkpoint. **H1** +V-JEPA-2-AC (300 M block-causal AC WM =
+  our 261 M envelope); arXiv 2512.24497 validates ViT-L enc + depth-12 pred and AdaLN (=our FiLM)
+  conditioning. **H5** +MTP draft-heads / K-step rollout-loss bake-off lever; revisable-diffusion
+  planners = Phase-1 comparison only. **H4** DINO > V-JEPA encoders for planning (2512.24497) — supporting
+  data point for frozen arm B. **H2** differentiator sharpened: route the tactical/sensor MoE on
+  ImaginationField epistemic σ (vs DriveMoE/GEMINUS learned scene routers). **Cross-cutting (D1–D3):**
+  2512.24497 shows decode ≠ planning → D1–D3 are instrument gates (necessary-not-sufficient), D4–D6
+  arbitrate; encoded in the new gate runner. See
+  `Architecture & Inference/Research/2026-07-14-gate-runner-and-jepa-wm-deltas.md`.
 - 2026-07-06: **H1 strengthened** — (a) T-linear planning-regret bound (arXiv 2606.27014) gives the
   formal argument for horizon factorization via hierarchy; (b) HiT-JEPA (2507.00028) provides
   independent zero-shot-generalization evidence for hierarchical JEPA from urban computing.

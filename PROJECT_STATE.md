@@ -4,7 +4,7 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
-- **Last update:** 2026-07-13 (session: Tools&DevEnv weekly agent — MetaDrive front-camera RGB sim arm)
+- **Last update:** 2026-07-14 (session: Architecture & Inference weekly agent — D1–D3 gate runner + p0-spectral-sizing)
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
@@ -84,6 +84,7 @@ Summary of the immediate next actions:
 
 | Date | Session | What happened | Artifacts |
 |---|---|---|---|
+| 2026-07-14 | Architecture & Inference agent | Two intake pkgs (D-011): **#0 `p0-spectral-sizing`** — latent-dim sizing from the action-conditioned transition spectrum (L2/2606.27014; knee vs 2048 readout; 8 tests) and **#1 D1–D3 gate runner** — instrument-doctrine gating (BLOCKED≠FAIL; I1–I4 first; vs-pool & probe A3 ablations; extra_metrics seam for Thu; 13 tests). Research: decode ≠ planning (2512.24497 → D1–D3 are necessary-not-sufficient, D4–D6 arbitrate); V-JEPA-2-AC 300 M ≈ our envelope; LeWM supports SIGReg-only (H3); DriveMoE/GEMINUS → route MoE on H15 σ (H2); native-TRT ViT INT8 trap → OwLite/ModelOpt (H5). Consumed mid-session D-012/D-013 + JEPA-theory note. Stack suite 65✓/1s | `.../Architecture & Inference/Implementation/incoming/2026-07-14-{spectral-sizing-p0,gate-runner-d1-d3}/`, `.../Architecture & Inference/Research/2026-07-14-*.md` |
 | 2026-07-13 | Tools&DevEnv agent | D-010 sim arm unblocked: MetaDrive front-camera RGB path (6ch/256 2-frame stacks, comma2k19-identical geometry/alignment) + scripted perturbation policy (off-expert coverage) + occluder(H15/D9)/blocked-route(D5/D6) scenario configs; proved the old 1ch BEV adapter is rejected by `MixedWindowDataset`. Intake pkg (17 tests, 0 new deps, import 1.38 s); live rollout still gated on supervised MetaDrive source-install. KB: Alpamayo 2 Super (32B) + OmniDreams = Phase-1 watch, reinforce P5/C2 | `.../Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`, `.../Tools&DevEnv/Research/2026-07-13-*.md` |
 | 2026-07-07 | Data Engineering agent | comma2k19 (D-009) real-data-validated: `av` decodes real HEVC @~105 fps, A8 real≈0.053 → change-weighting justified; forked contract reconciled into shared `_contract` (channels param) + `test_comma2k19_contract.py`; comma2k19 exported; Windows `\|` confirmed (handled by `extract_comma2k19.py`); H7 deltas (LAOF, Sensorimotor-WM); data card + note | `.../Data Engineering/Research/2026-07-07-*.md`, `stack/tanitad/data/_contract.py`, `stack/tests/test_comma2k19_contract.py` |
 | 2026-07-06 | D-008 scale-up | Model scaled to 261 M (measured per-component budget in Phase 0 Plan §2.1); H15 imagination in Phase 0 (module + losses + D9); exact data spec; RunPod runbook + ledger row; local 261 M pipe-check run | `stack/tanitad/models/imagination.py`, `stack/RUNPOD_RUNBOOK.md`, DECISIONS D-008 |
