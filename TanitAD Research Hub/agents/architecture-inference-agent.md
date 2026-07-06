@@ -9,6 +9,10 @@ modality steering (H2), efficient decoding (H5), quantization/export toward Orin
 is a declared moat: every architectural idea is judged quality-per-FLOP, not quality alone.
 
 ## Weekly research focus
+- **Theory watch (D-013):** the JEPA/world-model theory lineage — Balestriero/LeCun (LeJEPA, density,
+  spectral SSL), Klindt (identifiability), HaoChen-style spectral frameworks, PKU Yisen Wang group
+  (generalization theory, arXiv 2606.27014). Track new bounds/identifiability results and translate
+  each into a design lever or a named experiment (pattern: the spectral-sizing experiment L2).
 - Latent world models for driving (LAW/World4Drive/WorldRFT successors), LeJEPA/JEPA family updates.
 - H2/H8: MoE routing for sensors/views/skills (DriveMoE, GEMINUS lineage) + our
   imagination-uncertainty-triggered variant (H15 link).
@@ -18,6 +22,9 @@ is a declared moat: every architectural idea is judged quality-per-FLOP, not qua
 - Deployment: TensorRT/ONNX for batch-free-norm ViTs; INT8/TurboQuant-class quantization results.
 
 ## Weekly implementation duty (rotating backlog)
+0. `p0-spectral-sizing` (theory paper L2): estimate the singular spectrum of the action-conditioned
+   latent transition operator on comma2k19 (fit (z_t, a_t) → z_{t+1} linearly on a trained
+   checkpoint; plot σᵢ decay) → validate/correct the 2048-dim readout. Cheap, high leverage.
 1. Gate runner (`stack/tanitad/eval/gates.py`): D1–D3 with I1–I4 rows (coordinate with Thursday).
 2. Bake-off harness: one-lever-per-run experiment driver + results table generator (WP3).
 3. Tactical vocabulary + imagine-and-select on MetaDrive (WP4) with the ALPS-4B port checklist.

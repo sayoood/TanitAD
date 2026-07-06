@@ -29,6 +29,15 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-06: **H1 strengthened** — (a) T-linear planning-regret bound (arXiv 2606.27014) gives the
+  formal argument for horizon factorization via hierarchy; (b) HiT-JEPA (2507.00028) provides
+  independent zero-shot-generalization evidence for hierarchical JEPA from urban computing.
+  **H3 strengthened** — generalization theory formalizes the latent-vs-pixel trade-off (spectral
+  tail vs sample complexity in latent dim k); data-efficiency claim gains a theoretical skeleton;
+  `p0-spectral-sizing` experiment queued. **D-010 upgraded** — the max_a term in the regret bound
+  is a formal argument for off-expert sim action coverage. Full analysis:
+  `Architecture & Inference/Research/2026-07-06-jepa-generalization-theory-and-hit-jepa.md`.
+
 - 2026-07-07: Data Eng — H7 gains LAOF (optical-flow-consistent latent actions) + Sensorimotor-WM
   (IDM-as-perception) support; comma2k19 real (steer,accel,pose) pairs validated on real bytes;
   steering-ratio calibration residual named as the H7 artifact. H4 unblocked by real corpus.

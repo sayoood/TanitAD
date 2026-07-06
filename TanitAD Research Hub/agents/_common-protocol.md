@@ -18,9 +18,18 @@ to the repo at `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD`.
 Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web searches**:
 
 1. **RECALL** what you already know (knowledge base) — never re-research known facts.
-2. **SEARCH** for NEW material since your last run: arXiv, conference proceedings, engineering blogs,
-   product/dataset releases, GitHub repos, YouTube technical talks, regulator news. Prioritize items
-   with direct impact on our hypotheses (H0–H15) and current phase goals.
+2. **SEARCH** for NEW material since your last run (protocol upgraded per D-013):
+   a. **Systematic arXiv sweep** — run your discipline's fixed query set (listed in your agent file
+      or derived from your mission) over cs.LG / cs.CV / cs.RO / eess.SY, window = since your last
+      run. Fixed queries beat ad-hoc topic searches for recall.
+   b. **Citation-graph walk** — check new citations OF and new work BY the anchor papers/groups
+      (LeJEPA, V-JEPA-2, LAW, World4Drive, DINO-WM lineages; add anchors as they emerge).
+   c. **Ressources inbox** — list `Ressources/` by modification time; any file newer than your last
+      run that is not yet analyzed in the hub gets a deep analysis THIS run (highest priority).
+   d. Then the broader net: conferences, engineering blogs, dataset releases, GitHub, YouTube
+      technical talks, regulator news. Prioritize impact on H0–H15 and current phase goals.
+   Adjacent-domain sweep (trajectory/mobility, robotics, aviation autonomy) at least monthly —
+   HiT-JEPA was missed because it lives in the urban-computing community, not the AD literature.
 3. **ANALYZE** with post-doc rigor: what does this change for TanitAD? Which hypothesis does it
    strengthen/weaken? What is actionable this week? Discard noise aggressively — 5 deep findings beat
    50 shallow links.

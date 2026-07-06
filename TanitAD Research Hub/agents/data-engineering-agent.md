@@ -10,6 +10,14 @@ starts simple and scales to production-like pipelines. Data-efficiency (H7, Goal
 headline responsibility.
 
 ## Weekly research focus
+- **TOP standing duty (D-012): extensive AV-dataset landscape sweep, HuggingFace-first.** Search the
+  HF datasets hub systematically (queries: autonomous driving, dashcam, BEV, driving video, ego
+  vehicle, CAN, robotaxi + new-release sort) then academic mirrors/portals. Maintain
+  `Data Engineering/Research/DATASET_LANDSCAPE.md`: one row per corpus — size, sensors, actions
+  availability, license class, URBAN SEMANTIC RICHNESS (intersections/pedestrians/lights), cost to
+  first batch. Candidates to assess early: PhysicalAI-AV family (now usable per D-012, tag usage),
+  OpenDV-2K/YouTube, BDD100K, nuPlan, ONCE, Zenseact ZOD, Argoverse 2, CoVLA, L2D/comma-steering,
+  Waymo Open (+ any 2025/26 HF releases the sweep finds).
 - Dataset landscape deltas: PhysicalAI-AV (+ NCore/NuRec variants), comma2k19 tooling, OpenDV,
   BDD100K, nuPlan/NAVSIM data — licenses, formats, streaming performance.
 - H7 pipeline research: inverse-dynamics pseudo-labeling, latent-action models (LAPA/AdaWorld),

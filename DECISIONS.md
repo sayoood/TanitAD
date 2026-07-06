@@ -86,6 +86,33 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-013 — Literature-search protocol upgraded after missed-papers finding (2026-07-06, accepted)
+
+**Decision.** Triggered by Sayed surfacing two directly relevant papers (arXiv 2606.27014 JEPA
+generalization theory; 2507.00028 HiT-JEPA) that the kickoff research missed. Upgrades:
+(1) every agent's SEARCH step now includes a **systematic arXiv sweep** (fixed query set per
+discipline over cs.LG/cs.CV/cs.RO/eess.SY, last-7-days window) plus a **citation-graph walk** from
+our anchor papers (LeJEPA, V-JEPA-2, LAW, World4Drive, DINO-WM) — not just topic searches;
+(2) the Architecture & Inference agent gains an explicit **theory-watch duty** (JEPA/world-model
+theory lineage: Balestriero/LeCun, Klindt, HaoChen-style spectral SSL theory, PKU Yisen Wang group);
+(3) **Ressources-inbox rule:** any new file Sayed drops into `Ressources/` is detected (mtime) and
+deeply analyzed by the next agent run or MVP session, results filed in the hub;
+(4) at every phase boundary the MVP stream runs a dedicated multi-day deep-research pass, not a
+single-session sweep. Honest note (P8): a one-session kickoff sweep cannot reach post-doc
+literature coverage on 16 hypotheses; the weekly cadence + these rules are the fix, and misses
+should keep being reported when found.
+
+## D-012 — NVIDIA PhysicalAI-AV: use now for training/research; license handling deferred (2026-07-06, accepted — decided by Sayed)
+
+**Decision.** PhysicalAI-AV enters the training/eval corpus immediately (urban semantic diversity,
+multi-camera, radar/lidar — everything comma2k19 lacks). The license finding (internal-dev-only
+clauses, DataEng 2026-07-07 note) is NOT forgotten but parked: revisit before any public claim,
+publication, or external demo that used it. Ledger and reports must tag experiments that consumed
+PhysicalAI-AV data so the exposure is auditable later. Additionally the Data Engineering agent's
+top standing duty becomes an **extensive AV-dataset landscape sweep** (HuggingFace-first: search
+`datasets` for driving/AV corpora incl. new 2025/26 releases; then academic mirrors), maintaining
+`Data Engineering/Research/DATASET_LANDSCAPE.md` with license/actions/sensors/urban-richness columns.
+
 ## D-011 — Hub/MVP separation: agents propose via intake queues, the MVP integrates (2026-07-07, accepted — proposed by Sayed)
 
 **Decision.** Research-hub agents no longer write into `stack/` (or any core MVP artifact). Their
