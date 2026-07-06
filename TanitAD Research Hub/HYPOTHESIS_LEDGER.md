@@ -29,6 +29,13 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-07: **ALPS-4B v1.1 adopted (D-017).** H3 strengthened: A11 validates consequence-dominance
+  in the egocentric observation model our pipeline uses (control 0.19→0.69/0.76 from the observation
+  change alone). A13 demotes imag-rel to a diagnostic — D2 redefined (calibrated OR P4
+  forward-dynamics acc > 0.7). H11 gains P4 as a cheap redundancy control channel. H15/H13
+  object-centric branch scheduled to Phase 1 by the A12 binding laws. New doctrine: I7 task-identity
+  fingerprints (implemented; corpora proven identical), I8 batch-1 memory profiling. Delta analysis:
+  `Architecture & Inference/Research/2026-07-07-alps4b-v11-findings.md`.
 - 2026-07-17: Opponent Analyzer (Fri, run #1) — competitive-evidence deltas (no status *upgrade*;
   nothing measured on our stack, P8). **H0** reinforced (external): mid-2026 competitor failures land
   squarely on the E2E weaknesses we target — Waymo's **3,871-vehicle construction-zone recall** (W-01),
