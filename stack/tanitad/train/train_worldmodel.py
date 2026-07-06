@@ -40,12 +40,23 @@ def _max_horizon(cfg: StackConfig) -> int:
     return h
 
 
+def _needed_future_indices(cfg: StackConfig) -> tuple[list[int], dict[int, int]]:
+    """Only encode the future frames the horizon losses actually consume —
+    targets k-1 and change-weight references k-2 (halves future encodes at
+    horizons (1,2,4,8,16): 8 of 16 frames). Found via the p0-sB00 OOM."""
+    all_h: set[int] = set(cfg.predictor.horizons)
+    if cfg.tactical_pred is not None:
+        all_h |= set(cfg.tactical_pred.horizons)
+    needed = sorted({k - 1 for k in all_h} | {k - 2 for k in all_h if k >= 2})
+    return needed, {i: j for j, i in enumerate(needed)}
+
+
 def _pred_losses(preds: dict[int, torch.Tensor], horizons, z_t, fut_states,
-                 change_weighted: bool) -> torch.Tensor:
+                 idx_of: dict[int, int], change_weighted: bool) -> torch.Tensor:
     loss = torch.zeros((), device=z_t.device)
     for k in horizons:
-        target = fut_states[:, k - 1]
-        prev = z_t if k == 1 else fut_states[:, k - 2]
+        target = fut_states[:, idx_of[k - 1]]
+        prev = z_t if k == 1 else fut_states[:, idx_of[k - 2]]
         if change_weighted:
             loss = loss + change_weighted_mse(preds[k], target, prev)
         else:
@@ -116,10 +127,12 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
 
 def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
           data_root: str | None = None, sim_root: str | None = None,
-          sim_frac: float = 0.2) -> dict:
+          sim_frac: float = 0.2, amp: bool = True) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if cfg.train.device == "auto" else cfg.train.device
     torch.manual_seed(cfg.train.seed)
+    use_amp = amp and device == "cuda"          # bf16 autocast; SIGReg stays fp32
+    needed_fut, idx_of = _needed_future_indices(cfg)
 
     ds_train, ds_val = _build_datasets(cfg, n_episodes, data, data_root,
                                        sim_root=sim_root, sim_frac=sim_frac)
@@ -144,53 +157,58 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
         except StopIteration:
             data_iter = iter(dl)
             batch = next(data_iter)
-        frames = batch["frames"].to(device)          # [B, W, 1, H, W]
+        frames = batch["frames"].to(device)          # [B, W, C, H, W]
         actions = batch["actions"].to(device)        # [B, W, 2]
-        fut = batch["future_frames"].to(device)      # [B, Hmax, 1, H, W]
+        fut = batch["future_frames"].to(device)      # [B, Hmax, C, H, W]
 
-        states = model.encode_window(frames)         # [B, W, S]
-        # Future targets are encoded WITH gradients: LeJEPA needs SIGReg on all
-        # embeddings and there is no stop-gradient/EMA crutch anywhere (A1).
-        fut_states = model.encode_window(fut)        # [B, Hmax, S]
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=use_amp):
+            states = model.encode_window(frames)     # [B, W, S]
+            # Future targets encoded WITH gradients (LeJEPA: SIGReg on all
+            # embeddings, no stop-grad/EMA crutch, A1) — but only the frames
+            # the horizon losses consume (memory, p0-sB00 OOM).
+            fut_states = model.encode_window(fut[:, needed_fut])
 
-        preds = model.imagine(states, actions)
-        z_t = states[:, -1]
-        loss_pred = _pred_losses(preds, cfg.predictor.horizons, z_t, fut_states,
-                                 cfg.predictor.change_weighted)
+            preds = model.imagine(states, actions)
+            z_t = states[:, -1]
+            loss_pred = _pred_losses(preds, cfg.predictor.horizons, z_t,
+                                     fut_states, idx_of,
+                                     cfg.predictor.change_weighted)
 
-        # Tactical brain: same SSL objective at maneuver horizons (8/16).
-        loss_tac = torch.zeros((), device=device)
-        if model.tactical_pred is not None:
-            tac_preds = model.tactical_pred(states, actions)
-            loss_tac = _pred_losses(tac_preds, cfg.tactical_pred.horizons, z_t,
-                                    fut_states, cfg.predictor.change_weighted)
+            # Tactical brain: same SSL objective at maneuver horizons (8/16).
+            loss_tac = torch.zeros((), device=device)
+            if model.tactical_pred is not None:
+                tac_preds = model.tactical_pred(states, actions)
+                loss_tac = _pred_losses(tac_preds, cfg.tactical_pred.horizons,
+                                        z_t, fut_states, idx_of,
+                                        cfg.predictor.change_weighted)
 
-        # SIGReg on embeddings AND predictions (A1).
-        z_all = torch.cat([states.reshape(-1, states.shape[-1]),
-                           fut_states.reshape(-1, states.shape[-1])])
-        z_pred_all = torch.cat([preds[k] for k in cfg.predictor.horizons])
-        loss_sig = model.sigreg(z_all) + model.sigreg(z_pred_all)
+            # SIGReg on embeddings AND predictions (A1) — fp32 inside SigReg.
+            z_all = torch.cat([states.reshape(-1, states.shape[-1]),
+                               fut_states.reshape(-1, states.shape[-1])])
+            z_pred_all = torch.cat([preds[k] for k in cfg.predictor.horizons])
+            loss_sig = model.sigreg(z_all) + model.sigreg(z_pred_all)
 
-        # Inverse dynamics on consecutive window states (A5).
-        a_hat = model.inv_dyn(states[:, -2], states[:, -1])
-        loss_inv = (a_hat - actions[:, -2]).pow(2).mean()
+            # Inverse dynamics on consecutive window states (A5).
+            a_hat = model.inv_dyn(states[:, -2], states[:, -1])
+            loss_inv = (a_hat - actions[:, -2]).pow(2).mean()
 
-        # H15: sector-masked imagination on the token grid (D-008).
-        loss_h15 = torch.zeros((), device=device)
-        if model.imagination is not None and torch.rand(()) < cfg.h15.mask_prob:
-            f_t, f_next = frames[:, -1], fut[:, 0]
-            masked, vis = sector_mask(f_t, model.encoder.grid_hw)
-            tok_belief = model.encode_tokens(masked)
-            tok_true = model.encode_tokens(f_next)
-            imag_pred, logvar = model.imagination(tok_belief, vis)
-            loss_h15 = imagination_nll(imag_pred, tok_true, logvar, vis,
-                                       cfg.h15.observed_weight)
+            # H15: sector-masked imagination on the token grid (D-008).
+            loss_h15 = torch.zeros((), device=device)
+            if (model.imagination is not None
+                    and torch.rand(()) < cfg.h15.mask_prob):
+                f_t, f_next = frames[:, -1], fut[:, 0]
+                masked, vis = sector_mask(f_t, model.encoder.grid_hw)
+                tok_belief = model.encode_tokens(masked)
+                tok_true = model.encode_tokens(f_next)
+                imag_pred, logvar = model.imagination(tok_belief, vis)
+                loss_h15 = imagination_nll(imag_pred, tok_true, logvar, vis,
+                                           cfg.h15.observed_weight)
 
-        loss = (cfg.loss.pred_weight * loss_pred
-                + cfg.loss.pred_weight * 0.5 * loss_tac
-                + cfg.loss.sigreg.weight * loss_sig
-                + cfg.loss.inv_dyn_weight * loss_inv
-                + cfg.h15.weight * loss_h15)
+            loss = (cfg.loss.pred_weight * loss_pred
+                    + cfg.loss.pred_weight * 0.5 * loss_tac
+                    + cfg.loss.sigreg.weight * loss_sig
+                    + cfg.loss.inv_dyn_weight * loss_inv
+                    + cfg.h15.weight * loss_h15)
 
         lr = cosine_lr(step, cfg.train.steps, cfg.train.warmup_steps, cfg.train.lr)
         for pg in opt.param_groups:
@@ -210,16 +228,17 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
     # ---- Instrument rows (D-004) on validation data ----
     model.eval()
     vb = torch.utils.data.default_collate([ds_val[i] for i in range(
-        min(64, len(ds_val)))])
+        min(16, len(ds_val)))])
     frames = vb["frames"].to(device)
     actions = vb["actions"].to(device)
     fut = vb["future_frames"].to(device)
     with torch.no_grad():
         states = model.encode_window(frames)
-        fut_states = model.encode_window(fut)
+        fut_states = model.encode_window(fut[:, needed_fut])
         preds = model.imagine(states, actions)
     i2_pass, i2_dev = i2_batch_consistency(model.encode, frames[:, -1])   # I2
-    i4 = i4_imag_relative(preds[1], fut_states[:, 0], states[:, -1])      # I4
+    i4 = i4_imag_relative(preds[1], fut_states[:, idx_of[0]],
+                          states[:, -1])                                  # I4
 
     # D9 evidence rows (H15): imagination quality in hidden sectors.
     d9 = {}
@@ -267,6 +286,8 @@ def main():
     ap.add_argument("--episodes", type=int, default=40,
                     help="toy: #episodes; comma2k19: max #segments")
     ap.add_argument("--batch-size", type=int, default=None)
+    ap.add_argument("--no-amp", action="store_true",
+                    help="disable bf16 autocast (training default: on for cuda)")
     ap.add_argument("--out", type=str, default=None)
     args = ap.parse_args()
 
@@ -286,7 +307,7 @@ def main():
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
     train(cfg, n_episodes=n_eps, data=args.data, data_root=args.data_root,
-          sim_root=args.sim_root, sim_frac=args.sim_frac)
+          sim_root=args.sim_root, sim_frac=args.sim_frac, amp=not args.no_amp)
 
 
 if __name__ == "__main__":

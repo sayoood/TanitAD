@@ -51,9 +51,20 @@ class SigReg(torch.nn.Module):
         self.beta = beta
 
     def forward(self, z: Tensor) -> Tensor:
-        """z: [n, d] (flatten any leading dims before calling). Returns scalar."""
+        """z: [n, d] (flatten any leading dims before calling). Returns scalar.
+
+        Always computed in fp32: the Epps-Pulley statistic is a difference of
+        exponential sums — bf16 autocast would eat the signal. Gradients flow
+        back to the (possibly lower-precision) embeddings unchanged.
+        """
         if z.ndim != 2:
             z = z.reshape(-1, z.shape[-1])
+        if z.is_cuda:
+            with torch.autocast("cuda", enabled=False):
+                return self._forward_fp32(z.float())
+        return self._forward_fp32(z.float())
+
+    def _forward_fp32(self, z: Tensor) -> Tensor:
         n, d = z.shape
         # Fresh random directions every call (never a fixed buffer).
         dirs = torch.randn(d, self.n_slices, device=z.device, dtype=z.dtype)
