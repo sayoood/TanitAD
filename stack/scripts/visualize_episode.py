@@ -46,7 +46,10 @@ def frame_to_pil(frame9: torch.Tensor) -> Image.Image:
     """Current frame = LAST 3 channels of the D-015 stack (1ch toy: replicate)."""
     c = frame9.shape[0]
     rgb = frame9[-3:] if c >= 3 else frame9.expand(3, -1, -1)
-    arr = (rgb.clamp(0, 1) * 255).byte().permute(1, 2, 0).numpy()
+    if rgb.dtype == torch.uint8:
+        arr = rgb.permute(1, 2, 0).numpy()
+    else:
+        arr = (rgb.clamp(0, 1) * 255).byte().permute(1, 2, 0).numpy()
     return Image.fromarray(arr).resize((512, 512), Image.BILINEAR)
 
 

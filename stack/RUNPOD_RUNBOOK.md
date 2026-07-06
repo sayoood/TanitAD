@@ -65,7 +65,17 @@ python scripts/visualize_episode.py --source physicalai --path /workspace/data/p
 # accel bar and trajectory inset must match what the video shows (F-3 lesson).
 ```
 
-## 6. Launch training (tmux)
+## 6. Launch training (survives disconnects; RAM-sized)
+
+```bash
+apt-get update -qq && apt-get install -y -qq tmux   # containers ship without it
+mkdir -p /workspace/experiments                     # tee needs the dir to exist
+free -g                                             # note the available RAM
+```
+**RAM sizing (episodes are held in memory as uint8):** ≈ 0.18 GB per comma segment +
+0.12 GB per PhysicalAI clip. `--episodes N` caps EACH corpus. Rule of thumb:
+~50 GB RAM pod → `--episodes 120`; ~100 GB → `--episodes 250`; ≥180 GB → `--episodes 500`.
+(Disk-backed episode cache is on the DataEng backlog to lift this cap.)
 
 ```bash
 tmux new -s train
@@ -76,12 +86,14 @@ python -u -m tanitad.train.train_worldmodel \
     --data-root /workspace/data/comma2k19 \
     --sim-root  /workspace/data/physicalai \
     --sim-frac 0.6 \
-    --episodes 600 --batch-size 64 \
+    --episodes 120 --batch-size 64 \
     --out /workspace/experiments/p0-sB01-realmix \
     2>&1 | tee /workspace/experiments/p0-sB01.log
 ```
-Detach `Ctrl-b d`; re-attach `tmux attach -t train`. Expected ~15–25 h for 60 k steps (bf16);
-`--steps 30000` for a cheaper first pass.
+Detach `Ctrl-b d`; re-attach `tmux attach -t train`. If tmux is unavailable, use
+`nohup ... > /workspace/experiments/p0-sB01.log 2>&1 &` instead. Expected ~15–25 h for 60 k steps
+(bf16); `--steps 30000` for a cheaper first pass. Dataset build (video decode) takes ~10–20 min
+before the first step prints — that is normal.
 
 ## 7. What healthy looks like (check after ~30 min)
 

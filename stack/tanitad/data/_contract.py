@@ -48,13 +48,22 @@ def frame_change_fraction(frames: Tensor, thresh: float = 0.05) -> float:
     return float(diffs.float().mean())
 
 
+def to_float_frames(x: Tensor) -> Tensor:
+    """uint8 [0,255] -> float32 [0,1]; float passes through.
+
+    Episodes STORE frames uint8 (4x memory — the pod-OOM lesson: 584 float32
+    episodes ~ 400 GB); consumers receive float via the window datasets."""
+    return x.float().div(255.0) if x.dtype == torch.uint8 else x
+
+
 def assert_contract(ep: ToyEpisode, channels: int | None = 1) -> None:
     """Validate a :class:`ToyEpisode` against the episode contract (raises).
 
     ``channels`` is the required frame channel count: ``1`` for the single-channel
-    BEV contract (toy / MetaDrive), ``6`` for the D-009 ``base250cam`` 2-frame RGB
-    stack (comma2k19), or ``None`` to accept any channel count. The action/pose/
-    range invariants are identical across every adapter regardless of channels.
+    BEV contract (toy), ``9`` for the D-015 3-frame RGB stack (comma2k19 /
+    PhysicalAI), or ``None`` to accept any channel count. Frames may be stored
+    uint8 [0,255] (memory layout) or float [0,1] (consumer layout); the window
+    datasets convert per window via :func:`to_float_frames`.
     """
     T = ep.frames.shape[0]
     assert ep.frames.ndim == 4, ep.frames.shape
@@ -62,7 +71,10 @@ def assert_contract(ep: ToyEpisode, channels: int | None = 1) -> None:
         assert ep.frames.shape[1] == channels, ep.frames.shape
     assert ep.actions.shape == (T, 2), ep.actions.shape
     assert ep.poses.shape == (T, 4), ep.poses.shape
-    assert float(ep.frames.min()) >= 0.0 and float(ep.frames.max()) <= 1.0
+    if ep.frames.dtype == torch.uint8:
+        pass                                    # uint8 range is valid by type
+    else:
+        assert float(ep.frames.min()) >= 0.0 and float(ep.frames.max()) <= 1.0
 
 
 def assemble_episode(frames: list[Tensor], poses: list[np.ndarray],
@@ -116,9 +128,10 @@ class EpisodeWindowDataset(torch.utils.data.Dataset):
         ep = self.episodes[e_i]
         w = self.window
         return {
-            "frames": ep.frames[t:t + w],
+            "frames": to_float_frames(ep.frames[t:t + w]),
             "actions": ep.actions[t:t + w],
-            "future_frames": ep.frames[t + w:t + w + self.max_horizon],
+            "future_frames": to_float_frames(
+                ep.frames[t + w:t + w + self.max_horizon]),
             "future_poses": ep.poses[t + w:t + w + self.max_horizon],
             "pose_last": ep.poses[t + w - 1],
             "episode_id": ep.episode_id,

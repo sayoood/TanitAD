@@ -233,8 +233,10 @@ def build_episode(segment: Path, size: int = 256, stride: int = 2,
     n = min(n, vid.shape[0], actions.shape[0])
     stacked = stack_frames(vid[:n], n_stack)                    # [n-k+1,3k,S,S]
     k = n_stack - 1
+    # Frames stay uint8 in memory (4x smaller — 584 float32 episodes would
+    # need ~400 GB, found on the first pod run); datasets convert per window.
     return ToyEpisode(
-        frames=stacked.float().div_(255.0),
+        frames=stacked,
         actions=torch.from_numpy(actions[k:n]),
         poses=torch.from_numpy(poses[k:n]),
         episode_id=episode_id_of(segment),
@@ -269,13 +271,15 @@ class Comma2k19Dataset(torch.utils.data.Dataset):
         return len(self.index)
 
     def __getitem__(self, i: int):
+        from tanitad.data._contract import to_float_frames
         e_i, t = self.index[i]
         ep = self.episodes[e_i]
         w = self.window
         return {
-            "frames": ep.frames[t:t + w],
+            "frames": to_float_frames(ep.frames[t:t + w]),
             "actions": ep.actions[t:t + w],
-            "future_frames": ep.frames[t + w:t + w + self.max_horizon],
+            "future_frames": to_float_frames(
+                ep.frames[t + w:t + w + self.max_horizon]),
             "future_poses": ep.poses[t + w:t + w + self.max_horizon],
             "pose_last": ep.poses[t + w - 1],
             "episode_id": ep.episode_id,

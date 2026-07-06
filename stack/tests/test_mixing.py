@@ -34,11 +34,14 @@ def test_contract_mismatch_fails_fast():
 
 
 def test_episode_save_load_roundtrip(tmp_path):
+    from tanitad.data._contract import to_float_frames
     ep = generate_episode(3, steps=20, size=64)
     p = str(tmp_path / "ep.pt")
     save_episode(ep, p)
     ep2 = load_episode(p)
     assert ep2.frames.shape == ep.frames.shape
-    assert torch.allclose(ep.frames, ep2.frames, atol=1 / 255 + 1e-6)
+    assert ep2.frames.dtype == torch.uint8          # memory layout (pod-OOM fix)
+    assert torch.allclose(ep.frames, to_float_frames(ep2.frames),
+                          atol=1 / 255 + 1e-6)
     assert torch.equal(ep.actions, ep2.actions)
     assert ep2.episode_id == ep.episode_id

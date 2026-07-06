@@ -141,7 +141,8 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     stacked = stack_frames(vid[:n], n_stack)
     k = n_stack - 1
     ep_id = int.from_bytes(clip["clip_id"].encode()[:4].ljust(4, b"\0"), "big")
-    return ToyEpisode(frames=stacked.float().div_(255.0),
+    # uint8 in memory; datasets convert per window (500 float32 clips ~ 236 GB).
+    return ToyEpisode(frames=stacked,
                       actions=torch.from_numpy(actions[k:n]),
                       poses=torch.from_numpy(poses[k:n]),
                       episode_id=ep_id)

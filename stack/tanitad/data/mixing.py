@@ -26,10 +26,14 @@ from tanitad.data.toy_driving import ToyEpisode
 
 
 def save_episode(ep: ToyEpisode, path: str) -> None:
-    """Persist an episode (e.g. MetaDrive rollouts generated on another
-    machine/pod) — frames stored uint8 to keep files small."""
+    """Persist an episode — frames stored uint8 to keep files small
+    (accepts uint8 [0,255] or float [0,1] frames)."""
+    if ep.frames.dtype == torch.uint8:
+        u8 = ep.frames
+    else:
+        u8 = (ep.frames.clamp(0, 1) * 255).to(torch.uint8)
     torch.save({
-        "frames_u8": (ep.frames.clamp(0, 1) * 255).to(torch.uint8),
+        "frames_u8": u8,
         "actions": ep.actions,
         "poses": ep.poses,
         "episode_id": ep.episode_id,
@@ -37,8 +41,9 @@ def save_episode(ep: ToyEpisode, path: str) -> None:
 
 
 def load_episode(path: str) -> ToyEpisode:
+    """Loads with uint8 frames (memory layout); window datasets convert."""
     d = torch.load(path, map_location="cpu", weights_only=True)
-    return ToyEpisode(frames=d["frames_u8"].float() / 255.0,
+    return ToyEpisode(frames=d["frames_u8"],
                       actions=d["actions"], poses=d["poses"],
                       episode_id=int(d["episode_id"]))
 
