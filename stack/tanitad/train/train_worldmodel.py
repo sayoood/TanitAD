@@ -187,6 +187,11 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
                                fut_states.reshape(-1, states.shape[-1])])
             z_pred_all = torch.cat([preds[k] for k in cfg.predictor.horizons])
             loss_sig = model.sigreg(z_all) + model.sigreg(z_pred_all)
+            if step == 0 and z_all.shape[0] < 256:
+                print(f"WARNING: SigReg sees only {z_all.shape[0]} samples/step "
+                      f"— statistically starved below ~256; collapse likely "
+                      f"(measured in p0-sB00 at n=32: erank 23/2048). "
+                      f"Increase batch size or accumulate.")
 
             # Inverse dynamics on consecutive window states (A5).
             a_hat = model.inv_dyn(states[:, -2], states[:, -1])
@@ -219,9 +224,22 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
         opt.step()
 
         if step % cfg.train.log_every == 0 or step == cfg.train.steps - 1:
+            # Collapse health rows (the p0-sB00 lesson: falling pred-loss can
+            # mean a frozen latent; watch geometry live, A9 applied to training).
+            with torch.no_grad():
+                flat = states.detach().float().reshape(-1, states.shape[-1])
+                s = torch.linalg.svdvals(flat - flat.mean(0))
+                p = (s / s.sum().clamp_min(1e-12)).clamp_min(1e-12)
+                erank = float(torch.exp(-(p * p.log()).sum()))
+                step_ratio = float(
+                    (states[:, 1:] - states[:, :-1]).norm(dim=-1).mean()
+                    / flat.norm(dim=-1).mean().clamp_min(1e-8))
+                dim_std = float(flat.std(0).mean())
             log = {"step": step, "loss": loss.item(), "pred": loss_pred.item(),
                    "tac": loss_tac.item(), "sigreg": loss_sig.item(),
-                   "inv": loss_inv.item(), "h15": loss_h15.item(), "lr": lr}
+                   "inv": loss_inv.item(), "h15": loss_h15.item(),
+                   "erank": round(erank, 1), "dim_std": round(dim_std, 5),
+                   "step_ratio": round(step_ratio, 5), "lr": lr}
             print(json.dumps(log))
         step += 1
 
