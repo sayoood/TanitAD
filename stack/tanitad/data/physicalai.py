@@ -77,13 +77,15 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
             rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
             frames.append(rgb)
     vid = torch.stack(frames)
-    h, w = vid.shape[-2:]
-    s = min(h, w)
-    top, left = (h - s) // 2, (w - s) // 2
-    vid = vid[..., top:top + s, left:left + s].float()
-    vid = F.interpolate(vid, size=(size, size), mode="bilinear",
-                        align_corners=False)
-    return vid.clamp(0, 255).to(torch.uint8)
+    # D-016: canonical effective focal. Nominal focal from the 120-deg HFOV
+    # spec until per-clip intrinsics (calibration/ feature) are ingested —
+    # the crop keeps the central ~51 deg, angularly consistent with comma2k19;
+    # the wide periphery returns later as H2 side-view modalities.
+    from tanitad.data.calib import (PHYSICALAI_FRONT_WIDE_HFOV_DEG,
+                                    focal_crop_resize, nominal_focal_from_hfov)
+    f_px = nominal_focal_from_hfov(vid.shape[-1],
+                                   PHYSICALAI_FRONT_WIDE_HFOV_DEG)
+    return focal_crop_resize(vid, f_px, size)
 
 
 def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

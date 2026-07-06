@@ -86,6 +86,22 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-016 — Camera intrinsic canonicalization across corpora; extrinsics deferred with mitigation (2026-07-06, accepted — gap surfaced by Sayed)
+
+**Decision.** All camera loaders canonicalize the **effective focal length** to F_REF = 266 px at the
+256-px input (the VLM3/H7 principle, pulled into Phase 0 because we now MIX cameras): crop side
+c = f_px·256/F_REF, then resize. comma2k19 (f≈910 px) is the reference — its crop ≈ full frame
+height (behavior unchanged); PhysicalAI front-wide (120° HFOV) gets a central crop retaining ~51°,
+angularly consistent with comma; the sacrificed periphery returns as H2 side-view modalities.
+Without this, identical metric motion produces corpus-dependent pixel motion — poison for
+action-conditioned dynamics and for every metric probe.
+**Deferred (recorded limitation):** per-clip intrinsics from PhysicalAI `calibration/` replace the
+nominal-FOV focal (DataEng backlog); extrinsic normalization (mount height/pitch via
+horizon-alignment homography, Deep Think 8) is the R1 follow-up — until then both corpora are
+front-centered windshield/roof mounts and the domain tag carries the residual difference.
+**Also clarified:** training tensors contain no overlays — the viz tool draws on copies only;
+the dashboard/hood edge in comma frames is real scene content (crop bake-off optional).
+
 ## D-015 — Encoder input: 3 frames at 100 ms spacing + aligned actions (2026-07-06, accepted — specified by Sayed)
 
 **Decision.** The model's per-step visual input is the current frame plus the two previous frames at

@@ -187,13 +187,10 @@ def _decode_video(seg: Path, stride: int, size: int,
             if max_frames is not None and len(out) >= max_frames:
                 break
     vid = torch.stack(out)                                      # T 3 H W uint8
-    h, w = vid.shape[-2:]
-    c = min(h, w)
-    top, left = (h - c) // 2, (w - c) // 2
-    vid = vid[..., top:top + c, left:left + c].float()
-    vid = F.interpolate(vid, size=(size, size), mode="bilinear",
-                        align_corners=False)
-    return vid.clamp(0, 255).to(torch.uint8)
+    # D-016: canonical effective focal across corpora (comma is the reference
+    # camera — its crop is ~the full frame height, matching prior behavior).
+    from tanitad.data.calib import COMMA2K19_FOCAL_PX, focal_crop_resize
+    return focal_crop_resize(vid, COMMA2K19_FOCAL_PX, size)
 
 
 def stack_frames(vid_u8: torch.Tensor, n_stack: int = 3) -> torch.Tensor:
