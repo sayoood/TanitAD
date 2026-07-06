@@ -3,9 +3,10 @@
 Complements ``test_comma2k19.py`` (which covers the action/pose math and route
 splits) by asserting two things that loader test does not:
 
-  * the D-009 ``base250cam`` episodes validate against the one shared contract
-    home (:func:`tanitad.data._contract.assert_contract`) at ``channels=6`` --
-    so the 2-frame-RGB fork is an *explicit* contract, not an untracked drift;
+  * the D-009/D-015 ``base250cam`` episodes validate against the one shared
+    contract home (:func:`tanitad.data._contract.assert_contract`) at
+    ``channels=9`` (3 frames @ 100 ms, D-015) -- an *explicit* contract, not
+    an untracked drift;
   * consequence-dominance (A8): with real translating motion, the fraction of
     pixels changing per step clears the toy BEV floor (0.03). Measured on one
     real comma2k19 highway segment this metric is ~0.05 at thresh 0.05 -- low
@@ -58,8 +59,8 @@ def test_comma2k19_satisfies_shared_contract(tmp_path):
     seg = _make_seg(tmp_path)
     ep = build_episode(seg, size=64, stride=2, max_steps=40, decode_fn=_moving_decode)
     # Validates against the single shared contract home at the base250cam width.
-    assert_contract(ep, channels=6)
-    assert ep.frames.shape[1] == 6
+    assert_contract(ep, channels=9)                            # D-015
+    assert ep.frames.shape[1] == 9
 
 
 def test_comma2k19_is_consequence_dominant(tmp_path):

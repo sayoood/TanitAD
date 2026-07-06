@@ -1,81 +1,105 @@
-# RunPod Runbook — real-data training of TanitAD-4B-M (261 M)
+# RunPod Runbook v3 — real-data training of TanitAD-4B-M (261 M, D-015 input)
 
-**Run ID:** `p0-sB01-base250cam-comma` · **Budget:** planned $25 (ledger) · **Owner:** Sayed
-*(Updated per D-009: trains on comma2k19 real camera data — the toy pipeline command was retired.)*
+**Run ID:** `p0-sB01-realmix` · **Budget:** planned $25–35 (ledger) · **Owner:** Sayed
+Data tags: `data:comma2k19, data:physicalai` (D-012 — PhysicalAI exposure auditable, no public
+claims from it until license resolution).
 
-## 1. Create the pod (web UI, ~3 min)
+## 0. What this run is
 
-1. runpod.io → *Pods* → *Deploy*.
-2. GPU: **1× A40 48 GB** (Secure Cloud ~$0.85/h or Community ~$0.40/h — Community is fine, we
-   checkpoint every 30 min). Fallback if no A40: A6000 48 GB; A100 80 GB is overkill for Stage A.
-3. Template: **RunPod PyTorch 2.x** (any image with torch ≥ 2.4 + CUDA 12.x).
-4. Volume: **100 GB** persistent at `/workspace` (checkpoints + data live here, survive pod stop).
-5. Deploy → open **Web Terminal** (or SSH).
+First learning-valid training of the 261 M stack: batch 64 (SigReg n=1024 — the F-2 lesson),
+**D-015 input** (3 RGB frames @ 100 ms = 9 channels + aligned actions), real mix of comma2k19
+highway (~40 %) + PhysicalAI-AV urban R0 (~60 %). Watch the live collapse-health rows.
 
-## 2. Setup (~5 min, copy-paste block)
+## 1. Create the pod (~3 min)
+
+1. runpod.io → Pods → Deploy → **1× A40 48 GB** (Community ~$0.40/h fine; A6000 fallback).
+2. Template: RunPod PyTorch 2.x (torch ≥ 2.4, CUDA 12.x). Volume: **150 GB** at `/workspace`.
+3. Open the web terminal.
+
+## 2. Setup (~5 min)
 
 ```bash
 cd /workspace
 git clone https://github.com/sayoood/TanitAD.git
 cd TanitAD/stack
-pip install -e .[dev]
-pytest -q                      # must be green (25 tests) before spending GPU time
+pip install -e .[dev,real]
+pytest -q                                  # must be green before GPU spend
+export HF_TOKEN=hf_XXXX                    # your (rotated) token — PhysicalAI is gated
+export TANITAD_PHYSICALAI_ROOT=/workspace/data/physicalai
 ```
 
-## 3. Get real data onto the pod (D-009: comma2k19, ungated — no token needed)
+## 3. Data — comma2k19 (~15 min on DC bandwidth)
 
 ```bash
-pip install -e .[real]
-python - <<'EOF'
+mkdir -p /workspace/data && python - <<'EOF'
 from huggingface_hub import hf_hub_download
-for i in (1, 2, 3):        # 3 chunks ~ 27 GB ~ 10 h of driving; add more later
-    p = hf_hub_download('commaai/comma2k19', f'raw_data/Chunk_{i}.zip',
-                        repo_type='dataset', local_dir='/workspace/data')
-    print('got', p)
+for i in (1, 2, 3):
+    print(hf_hub_download('commaai/comma2k19', f'raw_data/Chunk_{i}.zip',
+                          repo_type='dataset', local_dir='/workspace/data'))
 EOF
-for z in /workspace/data/raw_data/Chunk_*.zip; do unzip -q "$z" -d /workspace/data/comma2k19; done
+for z in /workspace/data/raw_data/Chunk_*.zip; do unzip -q "$z" -d /workspace/data/comma2k19 && rm "$z"; done
 ```
 
-## 4. Launch the real-data Stage run (in tmux so the browser can disconnect)
+## 4. Data — PhysicalAI-AV R0 (urban 500 clips; ~30–60 min on DC bandwidth)
+
+```bash
+cd /workspace/TanitAD/stack
+python - <<'EOF'
+from huggingface_hub import hf_hub_download
+for f in ('clip_index.parquet', 'metadata/data_collection.parquet'):
+    hf_hub_download('nvidia/PhysicalAI-Autonomous-Vehicles', f,
+                    repo_type='dataset', local_dir='/workspace/data/physicalai')
+EOF
+python scripts/physicalai_r0.py select --chunks 30 --target 500
+python scripts/physicalai_r0.py fetch-camera --max-chunks 30   # ~60 GB transient, zips auto-deleted
+```
+
+## 5. Sanity: visualize frames + actions before training (2 min — always)
+
+```bash
+SEG=$(find /workspace/data/comma2k19 -name video.hevc | head -1 | xargs dirname)
+python scripts/visualize_episode.py --source comma2k19 --path "$SEG" --out /workspace/viz_comma.mp4
+python scripts/visualize_episode.py --source physicalai --path /workspace/data/physicalai --out /workspace/viz_phys.mp4
+# download both MP4s via the RunPod file browser and EYEBALL them: steering dial,
+# accel bar and trajectory inset must match what the video shows (F-3 lesson).
+```
+
+## 6. Launch training (tmux)
 
 ```bash
 tmux new -s train
 cd /workspace/TanitAD/stack
-python -m tanitad.train.train_worldmodel \
+python -u -m tanitad.train.train_worldmodel \
     --config base250cam \
-    --data comma2k19 --data-root /workspace/data/comma2k19 \
-    --episodes 600 \
-    --out /workspace/experiments/p0-sB01-base250cam-comma \
+    --data realmix \
+    --data-root /workspace/data/comma2k19 \
+    --sim-root  /workspace/data/physicalai \
+    --sim-frac 0.6 \
+    --episodes 600 --batch-size 64 \
+    --out /workspace/experiments/p0-sB01-realmix \
     2>&1 | tee /workspace/experiments/p0-sB01.log
 ```
-Detach: `Ctrl-b d`. Re-attach: `tmux attach -t train`.
+Detach `Ctrl-b d`; re-attach `tmux attach -t train`. Expected ~15–25 h for 60 k steps (bf16);
+`--steps 30000` for a cheaper first pass.
 
-- Expected: ~18–30 h for 60 k steps at batch 64 on 256 px inputs (fp32 today; bf16 autocast lands
-  this week and roughly halves it). Budget accordingly or cut `--steps 30000` for the first pass.
-
-## 4. Monitor
+## 7. What healthy looks like (check after ~30 min)
 
 ```bash
-tail -f /workspace/experiments/p0-sA02.log        # loss lines are JSON
+tail -f /workspace/experiments/p0-sB01.log
 ```
-Healthy run: `loss` falling, `sigreg` falling toward ~O(1), `h15` falling, no NaN. The final
-`metrics.json` must contain the I2/I4 instrument rows and the D9 rows — a run without them does not
-exist for decision-making (D-004).
+- `erank` RISING over the first thousands of steps (batch-2 collapse was 23/2048 — F-2)
+- `dim_std` moving toward ~1.0 (LeJEPA isotropic Gaussian target)
+- `step_ratio` well above 0.007 (the collapsed value)
+- `sigreg` falling, `pred`/`tac`/`h15` falling, no NaN
+Final `metrics.json` must contain I2 (pass), I4, and the D9 imagination rows — no rows, no run.
 
-## 5. Retrieve results (metrics + checkpoint)
+## 8. Results back / shutdown
 
 ```bash
-# metrics + config back into the repo (small, committed):
-cp -r /workspace/experiments/p0-sA02-base250-stageA /workspace/TanitAD/stack/experiments/
+cp -r /workspace/experiments/p0-sB01-realmix /workspace/TanitAD/stack/experiments/
 cd /workspace/TanitAD && git add stack/experiments && \
   git -c user.name=sayoood -c user.email=sayedbouzouraa@googlemail.com \
-  commit -m "exp(p0-sA02): Stage-A base250 run — metrics" && git push
-# checkpoint (large): keep on the volume, or push to HF hub:
-# huggingface-cli upload Sayood/tanitad-checkpoints /workspace/experiments/p0-sA02-base250-stageA/model.pt
+  commit -m "exp(p0-sB01): realmix base250cam run — metrics + health rows" && git push
 ```
-(`model.pt` is gitignored by design — never push checkpoints to GitHub.)
-
-## 6. Shut down
-
-**Stop the pod** when the run finishes (volume persists; billing for GPU stops). Enter the actual $
-into `Project Steering/RESOURCE_LEDGER.md`.
+(`model.pt` stays on the volume — gitignored by design.) **Stop the pod**; enter actual $ into
+`Project Steering/RESOURCE_LEDGER.md`.

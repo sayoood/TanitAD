@@ -196,37 +196,50 @@ def _decode_video(seg: Path, stride: int, size: int,
     return vid.clamp(0, 255).to(torch.uint8)
 
 
+def stack_frames(vid_u8: torch.Tensor, n_stack: int = 3) -> torch.Tensor:
+    """[T,3,S,S] uint8 -> [T-(n-1), 3n, S, S]: frames t-(n-1)..t channel-stacked.
+
+    D-015: n_stack=3 at 10 Hz -> the encoder sees [t-200ms, t-100ms, t] in one
+    9-channel input, making acceleration/curvature observable per input.
+    Oldest frame first, current frame in the LAST 3 channels.
+    """
+    parts = [vid_u8[i:vid_u8.shape[0] - (n_stack - 1) + i] for i in range(n_stack)]
+    return torch.cat(parts, dim=1)
+
+
 def stack_two_frames(vid_u8: torch.Tensor) -> torch.Tensor:
-    """[T,3,S,S] uint8 -> [T-1,6,S,S] uint8: frame t-1 and t channel-stacked."""
-    return torch.cat([vid_u8[:-1], vid_u8[1:]], dim=1)
+    """Legacy 2-frame stack (pre-D-015). Kept for tests/compat."""
+    return stack_frames(vid_u8, n_stack=2)
 
 
 def build_episode(segment: Path, size: int = 256, stride: int = 2,
-                  max_steps: int | None = 300,
+                  max_steps: int | None = 300, n_stack: int = 3,
                   decode_fn=_decode_video) -> ToyEpisode:
     """One comma2k19 segment -> contract episode at FPS/stride Hz.
 
-    max_steps caps memory (300 steps = 30 s at 10 Hz ~ 118 MB uint8 frames).
-    decode_fn is injectable for tests (no real video needed in CI).
+    D-015: n_stack consecutive strided frames (100 ms apart at stride 2) are
+    channel-stacked per step -> [T, 3*n_stack, S, S]; actions/poses aligned to
+    the LATEST frame of each stack. max_steps caps memory. decode_fn is
+    injectable for tests (no real video needed in CI).
     """
     segment = Path(segment)
     ft = np.load(segment / "global_pose" / "frame_times")
     pos = np.load(segment / "global_pose" / "frame_positions")
     vel = np.load(segment / "global_pose" / "frame_velocities")
     n_avail = (len(ft) + stride - 1) // stride
-    n = n_avail if max_steps is None else min(max_steps + 1, n_avail)
+    n = n_avail if max_steps is None else min(max_steps + n_stack - 1, n_avail)
 
     actions, poses = actions_and_poses(
         ft, pos, vel, _load_tv(segment, "speed"),
         _load_tv(segment, "steering_angle"), stride)
     vid = decode_fn(segment, stride, size, n)                   # [n,3,S,S] u8
     n = min(n, vid.shape[0], actions.shape[0])
-    frames6 = stack_two_frames(vid[:n])                         # [n-1,6,S,S]
-    # frames6[t] pairs (t, t+1) of the strided timeline; action/pose at t+1.
+    stacked = stack_frames(vid[:n], n_stack)                    # [n-k+1,3k,S,S]
+    k = n_stack - 1
     return ToyEpisode(
-        frames=frames6.float().div_(255.0),
-        actions=torch.from_numpy(actions[1:n]),
-        poses=torch.from_numpy(poses[1:n]),
+        frames=stacked.float().div_(255.0),
+        actions=torch.from_numpy(actions[k:n]),
+        poses=torch.from_numpy(poses[k:n]),
         episode_id=episode_id_of(segment),
     )
 

@@ -29,7 +29,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(r"C:\Users\Admin\tanitad-data\physicalai")
+import os
+ROOT = Path(os.environ.get("TANITAD_PHYSICALAI_ROOT",
+                           r"C:\Users\Admin\tanitad-data\physicalai"))
 REPO = "nvidia/PhysicalAI-Autonomous-Vehicles"
 EGO_TMPL = "labels/egomotion/egomotion.chunk_{chunk_id:04d}.zip"
 CAM_TMPL = ("camera/camera_front_wide_120fov/"
@@ -37,9 +39,13 @@ CAM_TMPL = ("camera/camera_front_wide_120fov/"
 
 
 def _hf():
-    from tanitad.keys import enable_tls, load_keys
-    enable_tls()
-    load_keys()
+    try:
+        # dev machine: proxy TLS + Keys.txt. On pods, export HF_TOKEN instead.
+        from tanitad.keys import enable_tls, load_keys
+        enable_tls()
+        load_keys()
+    except Exception as e:
+        print(f"[r0] keys helper unavailable ({e}) — relying on env HF_TOKEN")
     from huggingface_hub import hf_hub_download
     return hf_hub_download
 

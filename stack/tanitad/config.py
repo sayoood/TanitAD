@@ -159,13 +159,15 @@ def base250_config() -> StackConfig:
 
 
 def base250cam_config() -> StackConfig:
-    """TanitAD-4B-M, real-camera variant (D-009: real data first).
+    """TanitAD-4B-M, real-camera variant (D-009 real-first; D-015 input spec).
 
-    Same ~261 M budget as base250; input becomes 2-frame RGB stacks
-    (6 channels) at 256 px -> 16x16 token grid. This is the PRIMARY Phase 0
-    training config (comma2k19 / PhysicalAI-AV front camera).
+    Input per step: 3 RGB frames at 100 ms spacing channel-stacked
+    (9 channels, [t-200ms, t-100ms, t]) at 256 px -> 16x16 token grid, so
+    acceleration/curvature are observable inside one encoder input; the
+    predictor adds ~800 ms of action history over its 8-step window.
+    PRIMARY Phase 0 training config (comma2k19 / PhysicalAI-AV front camera).
     """
     cfg = base250_config()
-    cfg.encoder = EncoderConfig(in_channels=6, image_size=256, patch_size=16,
+    cfg.encoder = EncoderConfig(in_channels=9, image_size=256, patch_size=16,
                                 d_model=768, depth=14, n_heads=12)
     return cfg

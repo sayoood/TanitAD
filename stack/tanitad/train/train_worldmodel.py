@@ -95,14 +95,43 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         print(f"[data] mix: {train.mix_report()} "
               f"(real windows {len(real_train)}, sim windows {len(sim_ds)})")
         return train, real_val          # validation stays REAL-only (D-010)
+    if data == "physicalai":
+        from tanitad.data._contract import EpisodeWindowDataset
+        from tanitad.data.physicalai import (build_episode, discover_r0_clips,
+                                             split_clips)
+        assert data_root, "--data-root required for physicalai (R0 root)"
+        assert cfg.encoder.in_channels == 9, \
+            "physicalai emits 9-channel frames (D-015) — use --config base250cam"
+        clips = discover_r0_clips(data_root)[:n_episodes]
+        assert clips, f"no R0 clips under {data_root}"
+        tr, va = split_clips(clips, val_frac=0.2, seed=cfg.train.seed)   # I3
+        print(f"[data] physicalai R0: {len(tr)} train / {len(va)} val clips")
+        mk = lambda cs: EpisodeWindowDataset(
+            [build_episode(c, size=cfg.encoder.image_size) for c in cs],
+            window=cfg.predictor.window, max_horizon=max_h)
+        return mk(tr), mk(va)
+    if data == "realmix":
+        # D-012/D-015: comma2k19 highway + PhysicalAI urban, both 9ch (D-015).
+        from tanitad.data.mixing import MixedWindowDataset
+        assert sim_root, ("--sim-root is reused as the PhysicalAI R0 root for "
+                          "--data realmix (comma root via --data-root)")
+        c_tr, c_va = _build_datasets(cfg, n_episodes, "comma2k19", data_root)
+        p_tr, p_va = _build_datasets(cfg, n_episodes, "physicalai", sim_root)
+        frac = min(max(sim_frac, 0.0), 1.0)      # here: PhysicalAI share (~0.6)
+        train = MixedWindowDataset([(c_tr, 1.0 - frac), (p_tr, frac)],
+                                   seed=cfg.train.seed)
+        print(f"[data] realmix: {train.mix_report()}")
+        # validation: keep corpora separate is ideal; v1 concatenates them
+        val = torch.utils.data.ConcatDataset([c_va, p_va])
+        return train, val
     if data == "comma2k19":
         from tanitad.data.comma2k19 import (Comma2k19Dataset,
                                             discover_segments,
                                             sample_segments_across_routes,
                                             split_by_route)
         assert data_root, "--data-root required for comma2k19"
-        assert cfg.encoder.in_channels == 6, \
-            "comma2k19 emits 6-channel frames — use --config base250cam"
+        assert cfg.encoder.in_channels == 9, \
+            "comma2k19 emits 9-channel frames (D-015) — use --config base250cam"
         segs = sample_segments_across_routes(discover_segments(data_root),
                                              n_episodes, seed=cfg.train.seed)
         assert segs, f"no comma2k19 segments under {data_root}"
@@ -292,8 +321,11 @@ def main():
                     default="base", help="base250cam = TanitAD-4B-M on real camera "
                                          "data (PRIMARY, D-009)")
     ap.add_argument("--smoke", action="store_true", help="alias for --config smoke")
-    ap.add_argument("--data", choices=["toy", "comma2k19", "mix"], default="toy",
-                    help="toy is a CI fixture only (D-009); mix = real+sim (D-010)")
+    ap.add_argument("--data",
+                    choices=["toy", "comma2k19", "physicalai", "realmix", "mix"],
+                    default="toy",
+                    help="toy = CI fixture only (D-009); realmix = comma2k19 + "
+                         "PhysicalAI R0 (D-012); mix = real+sim episodes (D-010)")
     ap.add_argument("--data-root", type=str, default=None,
                     help="comma2k19 extracted root (contains Chunk_*/...)")
     ap.add_argument("--sim-root", type=str, default=None,

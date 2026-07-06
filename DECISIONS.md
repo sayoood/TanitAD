@@ -86,6 +86,17 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-015 — Encoder input: 3 frames at 100 ms spacing + aligned actions (2026-07-06, accepted — specified by Sayed)
+
+**Decision.** The model's per-step visual input is the current frame plus the two previous frames at
+100 ms spacing (10 Hz), channel-stacked → **9-channel input** [t−200 ms, t−100 ms, t]. The aligned
+action/ground-truth stream accompanies each step (the predictor already consumes per-step actions
+over its 8-step window via FiLM, so the model sees ~800 ms of action history on top of the 200 ms of
+pixel motion inside each input). Contract change: camera adapters emit `frames [T, 9, S, S]` with
+actions/poses aligned to the latest frame. Applies to comma2k19, PhysicalAI-AV, and future synthetic
+loaders; the toy CI fixture stays 1-channel. Rationale: two frames encode only one motion delta;
+three frames make acceleration/curvature observable inside a single encoder input.
+
 ## D-014 — MetaDrive retired; sim arm split into synthetic corpora + CARLA-on-pod (2026-07-06, accepted — direction by Sayed)
 
 **Decision.** MetaDrive is dropped (PyPI package unmaintainable on modern Python; source install

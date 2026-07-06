@@ -71,16 +71,21 @@ def test_build_episode_contract(tmp_path):
     ep = build_episode(seg, size=64, stride=2, max_steps=30,
                        decode_fn=fake_decode)
     t = ep.frames.shape[0]
-    assert ep.frames.shape == (t, 6, 64, 64) and t >= 20
+    assert ep.frames.shape == (t, 9, 64, 64) and t >= 20      # D-015: 3 frames
     assert ep.actions.shape == (t, 2) and ep.poses.shape == (t, 4)
     assert 0.0 <= float(ep.frames.min()) and float(ep.frames.max()) <= 1.0
 
 
-def test_stack_two_frames_semantics():
-    vid = torch.arange(4, dtype=torch.uint8).view(4, 1, 1, 1).expand(4, 3, 2, 2)
-    s = stack_two_frames(vid)
-    assert s.shape == (3, 6, 2, 2)
-    assert int(s[1, 0, 0, 0]) == 1 and int(s[1, 3, 0, 0]) == 2  # (t-1, t)
+def test_stack_frames_semantics():
+    from tanitad.data.comma2k19 import stack_frames
+    vid = torch.arange(5, dtype=torch.uint8).view(5, 1, 1, 1).expand(5, 3, 2, 2)
+    s2 = stack_two_frames(vid)
+    assert s2.shape == (4, 6, 2, 2)
+    assert int(s2[1, 0, 0, 0]) == 1 and int(s2[1, 3, 0, 0]) == 2  # (t-1, t)
+    s3 = stack_frames(vid, n_stack=3)                       # D-015
+    assert s3.shape == (3, 9, 2, 2)
+    # oldest first, current LAST: stack at t=2 must be frames (0, 1, 2)
+    assert [int(s3[0, c, 0, 0]) for c in (0, 3, 6)] == [0, 1, 2]
 
 
 def test_small_cap_spans_routes(tmp_path):
@@ -116,5 +121,5 @@ def test_route_split_and_dataset(tmp_path):
     ds = Comma2k19Dataset(val[:2], window=4, max_horizon=2, size=64,
                           max_steps=20, decode_fn=fake_decode)
     item = ds[0]
-    assert item["frames"].shape == (4, 6, 64, 64)
-    assert item["future_frames"].shape == (2, 6, 64, 64)
+    assert item["frames"].shape == (4, 9, 64, 64)             # D-015
+    assert item["future_frames"].shape == (2, 9, 64, 64)
