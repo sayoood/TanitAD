@@ -70,37 +70,37 @@ def _pick_chunks(cat: pd.DataFrame, n_chunks: int) -> list[int]:
 
 
 def _urban_score_from_egomotion(df: pd.DataFrame) -> dict | None:
-    """Motion-statistics urban proxy. Robust to schema variants: uses any
-    velocity-like columns it finds, else differentiates positions."""
-    cols = {c.lower(): c for c in df.columns}
-    t = None
-    for k in ("timestamp", "t", "time", "timestamp_ns"):
-        if k in cols:
-            t = df[cols[k]].to_numpy().astype(np.float64)
-            if t.max() > 1e12:            # ns -> s
-                t = t / 1e9
-            break
-    vel_cols = [c for c in df.columns if "vel" in c.lower()]
-    pos_cols = [c for c in df.columns if any(k in c.lower() for k in ("pos", "x", "y"))]
-    if vel_cols:
-        v = np.linalg.norm(df[vel_cols[:3]].to_numpy(np.float64), axis=1)
-    elif len(pos_cols) >= 2 and t is not None:
-        p = df[pos_cols[:2]].to_numpy(np.float64)
-        v = np.linalg.norm(np.diff(p, axis=0), axis=1) / np.clip(np.diff(t), 1e-3, None)
-    else:
-        return None
-    yaw_cols = [c for c in df.columns if "yaw" in c.lower() or "heading" in c.lower()]
-    if yaw_cols:
-        yaw_rate = np.abs(np.diff(np.unwrap(df[yaw_cols[0]].to_numpy(np.float64))))
-    else:
-        yaw_rate = np.zeros(1)
+    """Motion-statistics urban proxy against the ACTUAL egomotion schema:
+    timestamp, q{x,y,z,w}, x/y/z [m], v{x,y,z} [m/s], a{x,y,z}, curvature.
+
+    First version of this scorer matched 'vel' substrings (vx/vy don't match),
+    fell through to quaternion columns and selected 500 PARKED clips with a
+    uniform score — caught by the R0 report audit (mean speed 6e-9). Lesson
+    baked in here: hard gates that require actual driving, plus explicit
+    column names with a loud failure when absent.
+    """
+    need = {"vx", "vy", "curvature"}
+    if not need.issubset(set(df.columns)):
+        raise ValueError(f"unexpected egomotion schema: {list(df.columns)}")
+    v = np.linalg.norm(df[["vx", "vy"]].to_numpy(np.float64), axis=1)
+    curv = df["curvature"].to_numpy(np.float64)
     mean_v = float(np.nanmean(v))
     stop_frac = float(np.mean(v < 0.5))
-    yaw_act = float(np.nanstd(yaw_rate))
-    # urban score: slow + stops + turning; clipped to keep outliers bounded
-    score = (max(0.0, 1.0 - mean_v / 20.0) + min(stop_frac * 3.0, 1.0)
-             + min(yaw_act * 20.0, 1.0))
-    return {"mean_speed": mean_v, "stop_frac": stop_frac,
+    dur = 20.0                                    # clips are 20 s
+    distance = float(np.nanmean(v) * dur)
+    yaw_rate = np.abs(curv) * v                   # |kappa| * v = yaw rate
+    yaw_act = float(np.nanmean(yaw_rate))
+    # HARD GATES — the clip must contain actual driving:
+    if not (2.0 <= mean_v <= 14.0) or stop_frac > 0.8 or distance < 40.0:
+        score = 0.0
+    else:
+        # urban interaction: moderate speed band + some (not permanent)
+        # stopping + turning activity
+        speed_band = 1.0 - abs(mean_v - 8.0) / 8.0          # peak at 8 m/s
+        stop_term = min(stop_frac / 0.3, 1.0)               # saturate at 30 %
+        turn_term = min(yaw_act / 0.08, 1.0)                # ~4.6 deg/s mean
+        score = max(0.0, speed_band) + stop_term + turn_term
+    return {"mean_speed": mean_v, "stop_frac": stop_frac, "distance": distance,
             "yaw_activity": yaw_act, "urban_score": score}
 
 
