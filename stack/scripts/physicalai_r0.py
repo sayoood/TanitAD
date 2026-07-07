@@ -173,24 +173,52 @@ def stage_select(n_chunks: int, target: int) -> None:
     print(json.dumps(report, indent=2))
 
 
+def _download_chunk(rel_path: str, dl) -> Path:
+    """Windows: curl.exe (resumable, --ssl-no-revoke for the MITM proxy —
+    hf_hub_download zombies on network drops here, measured twice).
+    Linux/pod: hf_hub_download works fine on datacenter networks."""
+    import os
+    import platform
+    import subprocess
+    if platform.system() != "Windows":
+        return Path(dl(REPO, rel_path, repo_type="dataset", local_dir=str(ROOT)))
+    zp = ROOT / rel_path
+    zp.parent.mkdir(parents=True, exist_ok=True)
+    token = (os.environ.get("HF_TOKEN")
+             or os.environ.get("HUGGING_FACE_HUB_TOKEN"))
+    url = f"https://huggingface.co/datasets/{REPO}/resolve/main/{rel_path}"
+    cmd = ["curl.exe", "-L", "-C", "-", "--ssl-no-revoke", "--retry", "10",
+           "--retry-delay", "5", "-o", str(zp), url]
+    if token:      # gated dataset; curl drops the header on the CDN redirect
+        cmd += ["-H", f"Authorization: Bearer {token}"]
+    subprocess.run(cmd, check=True)
+    return zp
+
+
 def stage_fetch_camera(max_chunks: int) -> None:
     dl = _hf()
     sel = pd.read_parquet(ROOT / "r0" / "r0_selection.parquet")
     out = ROOT / "r0" / "camera_front_wide"
     out.mkdir(parents=True, exist_ok=True)
-    wanted = set(sel["clip_id"].astype(str))
-    for ch in sorted(sel["chunk"].unique())[:max_chunks]:
-        zp = Path(dl(REPO, CAM_TMPL.format(chunk_id=int(ch)),
-                     repo_type="dataset", local_dir=str(ROOT)))
+    by_chunk: dict[int, set[str]] = {}
+    for _, r in sel.iterrows():
+        by_chunk.setdefault(int(r["chunk"]), set()).add(str(r["clip_id"]))
+    have = {p.name.split(".")[0] for p in out.rglob("*.mp4")}
+    for ch in sorted(by_chunk)[:max_chunks]:
+        missing = by_chunk[ch] - have
+        if not missing:
+            print(f"[r0] chunk {ch}: complete, skipping", flush=True)
+            continue
+        zp = _download_chunk(CAM_TMPL.format(chunk_id=ch), dl)
         n = 0
         with zipfile.ZipFile(zp) as z:
             for name in z.namelist():
                 clip_id = name.split("/")[-1].split(".")[0]
-                if clip_id in wanted:
+                if clip_id in by_chunk[ch]:
                     z.extract(name, out)
                     n += 1
         zp.unlink()                       # 2 GB each — never keep the zips
-        print(f"[r0] chunk {ch}: extracted {n} files, zip deleted")
+        print(f"[r0] chunk {ch}: extracted {n} files, zip deleted", flush=True)
     print("[r0] camera fetch done ->", out)
 
 
