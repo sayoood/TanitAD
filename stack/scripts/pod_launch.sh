@@ -13,8 +13,14 @@ LOG="/workspace/experiments/${RUN_ID}.log"
 cd "$(dirname "$0")/.."                      # -> stack/
 mkdir -p /workspace/experiments
 
-if pgrep -f "train_worldmodel" >/dev/null 2>&1; then
-    echo "training already running:"; pgrep -af "train_worldmodel"
+# Guard against BOTH a live python AND a live runner loop — during the
+# runner's 15 s restart sleep no python exists, and relaunching in that
+# window spawned a second trainer (observed: duplicate step lines, two
+# processes fighting over ckpt.pt).
+if pgrep -f "train_worldmodel" >/dev/null 2>&1 \
+   || pgrep -f "run_${RUN_ID}.sh" >/dev/null 2>&1; then
+    echo "training (or its auto-restart runner) already running:"
+    pgrep -af "train_worldmodel|run_${RUN_ID}.sh" || true
     echo "following its output (Ctrl-C stops WATCHING only):"
     exec tail -f "${LOG}"
 fi
