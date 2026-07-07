@@ -91,9 +91,12 @@ EPISODES=500 bash scripts/pod_launch.sh      # does all of the below in tmux
 #     --sim-frac 0.6 --episodes 500 --batch-size 16 --accum 4 --grad-checkpoint \
 #     --out /workspace/experiments/p0-sB01-realmix 2>&1 | tee /workspace/experiments/p0-sB01-realmix.log
 ```
-Attach `tmux attach -t train`; detach `Ctrl-b d`. Expected wall-clock rises ~30 % from
-checkpointing; `--steps 30000` for a cheaper first pass. Dataset build (video decode) prints
-`building episodes i/N` progress and takes ~10–45 min depending on `--episodes`.
+**No tmux needed:** the launcher detaches training via `setsid`/`nohup` (survives any terminal
+reset) and immediately follows the log as normal console output — **Ctrl-C only stops watching**.
+Re-run the script (or `tail -f` the log) to watch again; `pkill -f train_worldmodel` stops training.
+Expected wall-clock rises ~30 % from checkpointing; `--steps 30000` for a cheaper first pass. The
+build prints `episodes i/N (x from cache, y built)` and resumes from the episode cache after any
+interruption; training auto-resumes from `ckpt.pt` (500-step cadence).
 
 ## 7. What healthy looks like (check after ~30 min)
 

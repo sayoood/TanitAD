@@ -12,14 +12,12 @@ LOG="/workspace/experiments/${RUN_ID}.log"
 
 cd "$(dirname "$0")/.."                      # -> stack/
 mkdir -p /workspace/experiments
-command -v tmux >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq tmux; }
 
 if pgrep -f "train_worldmodel" >/dev/null 2>&1; then
     echo "training already running:"; pgrep -af "train_worldmodel"
-    echo "attach: tmux attach -t train   |   log: tail -f ${LOG}"
-    exit 0
+    echo "following its output (Ctrl-C stops WATCHING only):"
+    exec tail -f "${LOG}"
 fi
-tmux kill-session -t train 2>/dev/null || true
 
 echo "--- RAM ---"; free -g | head -2
 echo "--- episodes cap: ${EPISODES}/corpus (EPISODES=... to override) ---"
@@ -53,11 +51,19 @@ for attempt in \$(seq 1 20); do
   echo "[runner] exited nonzero; restarting in 15 s" >> ${LOG}
   sleep 15
 done
+echo "[runner] finished" >> ${LOG}
 EOF
 chmod +x "${RUNNER}"
-tmux new-session -d -s train "bash ${RUNNER}"
 
-echo "launched in tmux session 'train'"
-echo "  attach:  tmux attach -t train   (detach: Ctrl-b d)"
-echo "  log:     tail -f ${LOG}"
-echo "  NOTE: dataset build (video decode) runs 10-20 min before step 0 prints."
+# No tmux: detach via setsid+nohup (survives terminal resets), then follow the
+# log as normal console output. Ctrl-C stops WATCHING only, never training.
+touch "${LOG}"
+nohup setsid bash "${RUNNER}" </dev/null >/dev/null 2>&1 &
+echo $! > "/workspace/experiments/${RUN_ID}.pid"
+
+echo "training launched detached (pid $(cat /workspace/experiments/${RUN_ID}.pid))"
+echo "  stop it:      pkill -f train_worldmodel"
+echo "  watch again:  tail -f ${LOG}   (or just re-run this script)"
+echo "  NOTE: dataset build/cache-load runs before step 0 prints."
+echo "--- live output (Ctrl-C detaches you, training continues) ---"
+exec tail -f "${LOG}"
