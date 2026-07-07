@@ -106,17 +106,19 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         assert clips, f"no R0 clips under {data_root}"
         tr, va = split_clips(clips, val_frac=0.2, seed=cfg.train.seed)   # I3
         print(f"[data] physicalai R0: {len(tr)} train / {len(va)} val clips")
+        from pathlib import Path as _P
 
-        def mk(cs):
-            eps = []
-            for i, c in enumerate(cs):
-                if i % 20 == 0:
-                    print(f"[physicalai] building episodes {i}/{len(cs)} "
-                          f"(video decode)", flush=True)
-                eps.append(build_episode(c, size=cfg.encoder.image_size))
+        from tanitad.data.epcache import build_episodes_cached
+        cache = _P(data_root) / "_epcache"
+        params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10}
+
+        def mk(cs, split):
+            eps = build_episodes_cached(
+                cs, lambda c: build_episode(c, size=cfg.encoder.image_size),
+                cache, f"physicalai-{split}", params)
             return EpisodeWindowDataset(eps, window=cfg.predictor.window,
                                         max_horizon=max_h)
-        return mk(tr), mk(va)
+        return mk(tr, "train"), mk(va, "val")
     if data == "realmix":
         # D-012/D-015: comma2k19 highway + PhysicalAI urban, both 9ch (D-015).
         from tanitad.data.mixing import MixedWindowDataset
@@ -146,10 +148,22 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
                                               seed=cfg.train.seed)       # I3
         print(f"[data] comma2k19: {len(train_segs)} train / "
               f"{len(val_segs)} val segments (route-level split)")
-        mk = lambda s: Comma2k19Dataset(s, window=cfg.predictor.window,
-                                        max_horizon=max_h,
-                                        size=cfg.encoder.image_size)
-        return mk(train_segs), mk(val_segs)
+        from pathlib import Path as _P
+
+        from tanitad.data._contract import EpisodeWindowDataset
+        from tanitad.data.comma2k19 import build_episode as build_comma
+        from tanitad.data.epcache import build_episodes_cached
+        cache = _P(data_root) / "_epcache"
+        params = {"size": cfg.encoder.image_size, "n_stack": 3, "stride": 2,
+                  "max_steps": 300}
+
+        def mk(s, split):
+            eps = build_episodes_cached(
+                s, lambda seg: build_comma(seg, size=cfg.encoder.image_size),
+                cache, f"comma2k19-{split}", params)
+            return EpisodeWindowDataset(eps, window=cfg.predictor.window,
+                                        max_horizon=max_h)
+        return mk(train_segs, "train"), mk(val_segs, "val")
     # default: procedural toy (CI fixture / pipeline checks only, D-009)
     train_ids, val_ids = i3_episode_split(list(range(n_episodes)), val_frac=0.2,
                                           seed=cfg.train.seed)           # I3
