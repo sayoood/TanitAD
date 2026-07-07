@@ -67,7 +67,14 @@ Wednesday `tanitad_gates.run_d1` (see below). The five headline metrics operate 
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:** <...>
-- **Reason & notes:** <...>
-- **Integrated as:** <commit hash / stack path> (if applicable)
+- **Verdict:** integrate
+- **Date / by:** 2026-07-08 (overnight), MVP orchestrator (autonomous loop iteration 3)
+- **Reason & notes:** Exemplary G-B2 discipline — every metric validated against analytically-derived
+  ground truth; the gate-runner seam verified live including the doctrine case (metrics merge while the
+  gate stays BLOCKED); sim-agnostic telemetry consistent with D-014; honest no-claims scope. Only
+  change: test import de-hacked. Integrated AFTER the gate runner per the package's own coordination
+  note; `eval/__init__.py` exports both surfaces. Full suite 119 passed / 1 sim-skip. G0.6 exit item
+  ("custom metric suite live") is now satisfied on the tooling side — first real numbers come with the
+  checkpoint evaluation and, for LAL/OKRI/LOPS, the CARLA-on-pod scenario telemetry (W31–32).
+- **Integrated as:** `stack/tanitad/eval/metrics.py` + `stack/tests/test_metrics.py`
+  (see `intake(bench-eval)` commit, 2026-07-08)

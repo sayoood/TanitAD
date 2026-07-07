@@ -4,3 +4,7 @@
 
 from tanitad.eval import spectral
 
+from tanitad.eval.metrics import (ScenarioTelemetry, compute_cnce, compute_lal,
+                                  compute_lops, compute_okri, compute_tms,
+                                  run_scenario_suite, trajectory_extra_metrics)
+
