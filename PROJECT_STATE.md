@@ -77,6 +77,13 @@ Summary of the immediate next actions:
       steer/accel from 4×4 `vehicle_pose` geometry, D-015 9-ch, `CORPUS_META`≡comma2k19 (D-017 I7 →
       admissible in D-010 mix), CLIP-split (I3); 9 tests, stack 73✓/1s. `DATASET_LANDSCAPE.md` created
       (D-012 duty). Pending orchestrator triage.
+- [x] W2 (autonomous loop iter 1–2): **gate runner + spectral-sizing packages INTEGRATED** with the
+      D-017 rework (P4 path, imag-rel→diagnostic incl. A13 test, I7 rows); 97 tests green.
+      **Spectral DIAGNOSTIC on the live ckpt (step 3000, pod GPU): fit R²=0.997, operator effective
+      rank ≈35, energy knee ≈22, k*≈11 → task-relevant dynamics rank is LOW (tens) — NOT a collapse
+      signature.** Reframes the step-10k erank question: low live-erank may reflect intrinsic
+      highway-dynamics rank; judge the checkpoint by ACTION DISCRIMINATION (D2/P1-P4), not raw rank.
+      Decision-grade sizing still awaits the trained ckpt. Local R0 fetch complete: 500/500 urban clips.
 - [ ] W2: Stage-0 bake-off (residual+change-weighted vs MSE; grid readout vs pooling; probe_imag vs probe_real)
 - [ ] W2–3: D1–D3 gates measured (see Phase 0 Plan §4)
 
