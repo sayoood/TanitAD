@@ -48,7 +48,13 @@ and a recommendation **vs the current 2048-dim readout** (D-008). It flags OVER-
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:** <...>
-- **Reason & notes:** <...>
-- **Integrated as:** <commit hash / stack path> (if applicable)
+- **Verdict:** integrate
+- **Date / by:** 2026-07-08, MVP orchestrator (autonomous loop iteration 2)
+- **Reason & notes:** Additive, honest (fit-R² sanity floor; explicit no-claims-on-untrained-latents
+  caveat preserved), rank-recovery validation on known-rank synthetics is exactly right. Only change:
+  test import de-hacked to `tanitad.eval.spectral`. Full suite 97 passed / 1 sim-skip. The
+  decision-grade sizing run stays queued behind the trained checkpoint per the package's own caveat;
+  a diagnostic (non-sizing) spectrum preview on the live ckpt is being taken to inform the step-10k
+  erank decision — clearly labeled diagnostic, not a sizing claim.
+- **Integrated as:** `stack/tanitad/eval/spectral.py` + `stack/tests/test_spectral_sizing.py`
+  (see `intake(arch-inf)` commit, 2026-07-08)
