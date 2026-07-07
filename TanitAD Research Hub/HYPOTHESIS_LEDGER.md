@@ -80,6 +80,12 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   is a formal argument for off-expert sim action coverage. Full analysis:
   `Architecture & Inference/Research/2026-07-06-jepa-generalization-theory-and-hit-jepa.md`.
 
+- 2026-07-14: Data Eng — H7 external-support delta (no status change, P8): LAWM (latent actions from
+  unlabeled video via world modeling), Drive-JEPA (V-JEPA latent WM for E2E driving), HiLAM (hierarchy×
+  latent-action), CLAW/DeFI (label-free forward/inverse dynamics). H4 arm-B: **Cosmos-Drive-Dreams**
+  (CC-BY-4.0) loader shipped → first publicly-claimable *rich* corpus for the frozen-vs-trained encoder
+  comparison; Zenseact ZOD flagged as real-CAN #2. Binding H7 evidence (IDM steering-ratio residual)
+  still pending on real Chunk_1. See `Data Engineering/Research/2026-07-14-cosmos-drive-dreams-loader-and-landscape.md`.
 - 2026-07-07: Data Eng — H7 gains LAOF (optical-flow-consistent latent actions) + Sensorimotor-WM
   (IDM-as-perception) support; comma2k19 real (steer,accel,pose) pairs validated on real bytes;
   steering-ratio calibration residual named as the H7 artifact. H4 unblocked by real corpus.
