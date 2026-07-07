@@ -57,7 +57,15 @@ success → D1–D3 are labelled **necessary-not-sufficient**; closed-loop D4–
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:** <...>
-- **Reason & notes:** <...>
-- **Integrated as:** <commit hash / stack path> (if applicable)
+- **Verdict:** integrate-with-changes
+- **Date / by:** 2026-07-08, MVP orchestrator (autonomous loop iteration 1)
+- **Reason & notes:** Excellent instrument-doctrine mechanics (BLOCKED≠FAIL, instruments-first,
+  both doctrine branches tested). Package predates D-017, so integration applied the conditioned
+  changes: (1) **P4 forward-dynamics readout** added to run_d2 ([low-D state ⊕ action] → displacement;
+  gate passes via P1 OR P4); (2) **imag-rel demoted** from D2 admissibility row to diagnostic metric
+  (A13 — new test proves the "usable at imag-rel>1" case); (3) **I7 task-identity row** wired
+  (fit/run fingerprint mismatch blocks); (4) I1 sanity floor applies to the ACTIVE readout path
+  (either probe family). D3 keeps its I4 row (multi-step decode is a different claim). Import
+  de-hacked. Standalone 13/13 pre-rework; full suite 89 passed / 1 sim-skip post-rework.
+- **Integrated as:** `stack/tanitad/eval/gates.py` + `stack/tanitad/eval/__init__.py` +
+  `stack/tests/test_gates.py` (see `intake(arch-inf)` commit, 2026-07-08)
