@@ -44,7 +44,7 @@ def build_episodes_cached(sources: list, build_one: Callable[[object], ToyEpisod
         f = d / f"ep_{i:05d}.pt"
         skip = d / f"skip_{i:05d}"
         if f.exists():
-            eps.append(load_episode(str(f)))
+            eps.append(load_episode(str(f), mmap=True))          # F-7: disk-backed
             n_loaded += 1
             continue
         if skip.exists():
@@ -56,7 +56,10 @@ def build_episodes_cached(sources: list, build_one: Callable[[object], ToyEpisod
         try:
             ep = build_one(src)
             save_episode(ep, str(f))
-            eps.append(ep)
+            # F-7: never keep the built tensor resident — reload disk-backed so
+            # RAM stays ~one episode regardless of corpus size (62 GB cgroup).
+            del ep
+            eps.append(load_episode(str(f), mmap=True))
             n_built += 1
         except Exception as e:      # one bad clip must never kill the run (F-6)
             skip.write_text(f"{type(e).__name__}: {e}")

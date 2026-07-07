@@ -25,6 +25,14 @@ def test_build_skip_cache_and_reload(tmp_path):
     assert not calls                               # loaded from cache, no rebuild
     assert len(eps2) == 5
     assert torch.equal(eps2[0].actions, eps1[0].actions)
+    # F-7: cached episodes are disk-backed (mmap); slicing must still work and
+    # window datasets consume them unchanged
+    win = eps2[0].frames[2:6]
+    assert win.shape[0] == 4 and win.dtype == torch.uint8
+    from tanitad.data._contract import EpisodeWindowDataset
+    ds = EpisodeWindowDataset(eps2, window=4, max_horizon=2)
+    item = ds[0]
+    assert item["frames"].dtype == torch.float32   # converted per window
 
 
 def test_param_change_invalidates(tmp_path):

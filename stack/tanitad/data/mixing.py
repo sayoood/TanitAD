@@ -40,9 +40,14 @@ def save_episode(ep: ToyEpisode, path: str) -> None:
     }, path)
 
 
-def load_episode(path: str) -> ToyEpisode:
-    """Loads with uint8 frames (memory layout); window datasets convert."""
-    d = torch.load(path, map_location="cpu", weights_only=True)
+def load_episode(path: str, mmap: bool = False) -> ToyEpisode:
+    """Loads with uint8 frames (memory layout); window datasets convert.
+
+    mmap=True (F-7): tensors stay disk-backed — the kernel pages frames in on
+    access and reclaims under pressure, so a 62 GB container can train on a
+    500-episode corpus that would need ~135 GB resident. Window __getitem__
+    copies only its slice."""
+    d = torch.load(path, map_location="cpu", weights_only=True, mmap=mmap)
     return ToyEpisode(frames=d["frames_u8"],
                       actions=d["actions"], poses=d["poses"],
                       episode_id=int(d["episode_id"]))
