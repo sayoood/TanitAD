@@ -79,7 +79,26 @@ Rule of thumb: **state is overwritten, history is appended, the constitution is 
 - Decisions: D-00x sequential.
 - Research notes: `YYYY-MM-DD-<slug>.md`.
 
-## 8. Weekly cadence
+## 8. Remote decision escalation (D-018 — Sayed confirms strategy & tactics, never executions)
+
+Autonomous sessions (the loop, scheduled agents, monitors) classify every choice:
+
+**ESCALATE — push notification to Sayed's phone + `proposed` entry in DECISIONS.md + PROJECT_STATE §4;
+WAIT for his confirm/reject on that item (other tracks continue meanwhile):**
+- Strategy: phase transitions, hypothesis kills/pivots, data-strategy changes (add/drop a corpus),
+  budget beyond Master-Plan guardrails, license handling, anything public (claims, publishing, demos).
+- Tactics: architecture/config changes to the trained stack (dims, losses, weights — incl. the
+  pending "raise SigReg weight if erank stalls" intervention), gate-threshold changes, training-recipe
+  changes, switching compute class (e.g. Secure Cloud).
+
+**EXECUTE — never ask:** run/relaunch/kill per playbook, intake integrations, bug fixes, tests,
+downloads, monitoring, reports, infra hardening, commits/pushes, resource use inside guardrails.
+
+Escalation format (≤200 chars, phone-readable): `DECISION NEEDED: <what> | proposal: <X> |
+default if no answer: hold item, continue rest`. Sayed answers via Remote Control message or the
+next session; the decision is then logged accepted/rejected in DECISIONS.md.
+
+## 9. Weekly cadence
 
 - Mon–Thu: discipline agents run (research + implementation), each updates its knowledge base and STATE.
 - Fri: Opponent Analyzer + Orchestrator run; Orchestrator verifies all agents ran, aggregates, writes the

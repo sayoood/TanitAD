@@ -86,6 +86,14 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-018 — Remote escalation protocol: strategic/tactical decisions go to Sayed's phone; executions never (2026-07-08, accepted — specified by Sayed)
+
+**Decision.** Autonomous work (loop, agents, monitors) escalates STRATEGIC and TACTICAL decisions to
+Sayed via push notification + `proposed` DECISIONS entry and waits for his confirm/reject on that
+item; execution-level choices are never escalated. Full taxonomy and message format:
+`CONTINUATION_PROTOCOL.md` §8. The already-flagged "raise SigReg weight if erank stalls at step 10k"
+is explicitly in the escalate class.
+
 ## D-017 — ALPS-4B v1.1 findings adopted: I4 demoted to diagnostic, P4 readout, I7/I8 doctrine, slots scheduled (2026-07-07, accepted)
 
 **Source.** `Ressources/AD_TRANSFER_RESEARCH.md` v1.1 (fresh measured results; full delta analysis in
