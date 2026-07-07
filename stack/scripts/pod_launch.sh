@@ -28,16 +28,34 @@ echo "--- episodes cap: ${EPISODES}/corpus (EPISODES=... to override) ---"
 # activations). micro 16 x accum 4 = effective 64; checkpointing for headroom.
 MICRO="${MICRO:-16}"
 ACCUM="${ACCUM:-4}"
+
+# Container RAM ceiling can be far below `free` (host view) — size EPISODES to
+# THIS number, not to free -g (suspected cause of the overnight kill):
+LIMIT=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max)
+echo "--- container memory limit: ${LIMIT} (bytes; 'max' = unlimited) ---"
+
+# In-container auto-restart: training resumes from ckpt.pt + episode cache,
+# so a crash costs at most save_every steps. (A full POD interruption still
+# needs a manual pod_launch — it also resumes.)
+RUNNER="/workspace/experiments/run_${RUN_ID}.sh"
+cat > "${RUNNER}" <<EOF
+#!/usr/bin/env bash
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-tmux new-session -d -s train \
-  "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-   python -u -m tanitad.train.train_worldmodel \
-     --config base250cam --data realmix \
-     --data-root /workspace/data/comma2k19 \
-     --sim-root  /workspace/data/physicalai \
-     --sim-frac 0.6 --episodes ${EPISODES} \
-     --batch-size ${MICRO} --accum ${ACCUM} --grad-checkpoint \
-     --out ${OUT} 2>&1 | tee ${LOG}"
+for attempt in \$(seq 1 20); do
+  echo "[runner] attempt \${attempt}" >> ${LOG}
+  python -u -m tanitad.train.train_worldmodel \\
+    --config base250cam --data realmix \\
+    --data-root /workspace/data/comma2k19 \\
+    --sim-root  /workspace/data/physicalai \\
+    --sim-frac 0.6 --episodes ${EPISODES} \\
+    --batch-size ${MICRO} --accum ${ACCUM} --grad-checkpoint \\
+    --out ${OUT} >> ${LOG} 2>&1 && break
+  echo "[runner] exited nonzero; restarting in 15 s" >> ${LOG}
+  sleep 15
+done
+EOF
+chmod +x "${RUNNER}"
+tmux new-session -d -s train "bash ${RUNNER}"
 
 echo "launched in tmux session 'train'"
 echo "  attach:  tmux attach -t train   (detach: Ctrl-b d)"

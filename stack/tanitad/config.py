@@ -87,6 +87,7 @@ class TrainConfig:
     betas: tuple[float, float] = (0.9, 0.95)
     batch_size: int = 64          # MICRO-batch (what the GPU holds at once)
     accum_steps: int = 1          # optimizer effective batch = batch_size * accum
+    save_every: int = 500         # checkpoint cadence (interruptible-pod proof)
     steps: int = 2000
     warmup_steps: int = 100
     device: str = "auto"          # auto -> cuda if available

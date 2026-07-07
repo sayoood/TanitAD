@@ -199,6 +199,14 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
     cfg.save(out_dir / "config.json")
 
     step, t0 = 0, time.time()
+    # Interruptible-pod resume: reload the periodic checkpoint if one exists.
+    ckpt_path = out_dir / "ckpt.pt"
+    if ckpt_path.exists():
+        ck = torch.load(ckpt_path, map_location=device, weights_only=True)
+        model.load_state_dict(ck["model"])
+        opt.load_state_dict(ck["opt"])
+        step = int(ck["step"]) + 1
+        print(f"[resume] checkpoint found — resuming at step {step}", flush=True)
     log: dict[str, float] = {}
     data_iter = iter(dl)
     accum = max(1, cfg.train.accum_steps)
@@ -277,6 +285,14 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
         (loss / accum).backward()
       torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
       opt.step()
+
+      if step > 0 and step % cfg.train.save_every == 0:
+          # atomic write: a kill mid-save must not corrupt the resume point
+          tmp = ckpt_path.with_suffix(".tmp")
+          torch.save({"model": model.state_dict(),
+                      "opt": opt.state_dict(), "step": step}, tmp)
+          tmp.replace(ckpt_path)
+          print(f"[ckpt] saved at step {step}", flush=True)
 
       if step % cfg.train.log_every == 0 or step == cfg.train.steps - 1:
           # Collapse health rows (the p0-sB00 lesson: falling pred-loss can
