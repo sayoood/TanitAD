@@ -22,3 +22,14 @@ verification. **The loader's video-discovery assumption does not match the repo:
    pod-side only; local machine gets derived episodes via the epcache, never shards.
 
 Handoff: DataEng agent (Tuesday) owns the data card update; the loop executes the shard extraction.
+
+## UPDATE (same day, loop iter 9): verify_real_clip PASSED on real bytes
+
+Shard part-000 stream-extraction works end-to-end: 60 mp4s (weather variants in filenames:
+Rainy/Night/Foggy/Morning/Sunny), 60/60 pose tars paired after the base-id fix (videos carry
+`_<variant>_<Weather>` suffixes; pose tars do not). Real-clip stats: speed 4.8 m/s, |steer| ~0,
+|accel| <= 1.08, **A8 = 0.109** (consequence-dominant, ~2x comma2k19). Saved:
+`/workspace/data/cosmos/verify_real_clip.json`.
+**Open question for the data card (P8):** T = 39 frames per episode — shorter than nominal
+20 s @ 10 Hz; determine source fps / pose-stream rate before cosmos enters training windows
+(window 8 + horizon 16 needs T > 24, so usable, but the temporal semantics must be confirmed).
