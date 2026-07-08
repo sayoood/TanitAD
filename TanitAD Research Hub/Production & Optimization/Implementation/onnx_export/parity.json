@@ -1,0 +1,64 @@
+{
+  "exp": "onnx-export-parity-operative-path",
+  "backlog": "Production&Optimization P0.2",
+  "ckpt_step": 6500,
+  "ckpt": "C:/Users/Admin/tanitad-data/eval/ckpt_full.pt",
+  "params_billions": 0.2628,
+  "opset": 17,
+  "device": "cpu (fp32, strict numerics); ORT CPUExecutionProvider, 1 thread",
+  "note_speed": "CPU-only same-device speed delta; NOT the deployment target (TensorRT-on-Orin later). ORT-GPU EP not installed.",
+  "graphs": {
+    "encoder_readout": {
+      "export": {
+        "ok": true
+      },
+      "input": "[1,9,256,256]",
+      "output": "[1,2048]",
+      "parity": {
+        "max_abs_delta": 8.821487426757812e-06,
+        "mean_abs_delta": 1.5559782355012431e-06,
+        "n_inputs": 5,
+        "n_output_tensors": 1,
+        "tol": 0.0001,
+        "pass": true
+      },
+      "latency_torch_cpu": {
+        "p50_ms": 103.162,
+        "p95_ms": 107.031
+      },
+      "latency_ort_cpu": {
+        "p50_ms": 455.028,
+        "p95_ms": 466.847
+      },
+      "onnx_mb": 405.4
+    },
+    "predictor": {
+      "export": {
+        "ok": true
+      },
+      "input": "states[1,8,2048], actions[1,8,2]",
+      "outputs": [
+        "z_h1",
+        "z_h2",
+        "z_h4"
+      ],
+      "parity": {
+        "max_abs_delta": 1.239776611328125e-05,
+        "mean_abs_delta": 9.351817880087765e-08,
+        "n_inputs": 5,
+        "n_output_tensors": 3,
+        "tol": 0.0001,
+        "pass": true
+      },
+      "latency_torch_cpu": {
+        "p50_ms": 17.098,
+        "p95_ms": 19.454
+      },
+      "latency_ort_cpu": {
+        "p50_ms": 24.576,
+        "p95_ms": 25.66
+      },
+      "onnx_mb": 424.7
+    }
+  }
+}

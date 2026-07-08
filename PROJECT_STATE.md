@@ -4,7 +4,13 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
-- **Last update:** 2026-07-08 evening (autonomous loop: D-020 extensions + cosmos chunk fix + D8 paired preview + I8 latency baseline + scenario-suite wiring; training step ~7.6k/30k)
+- **Last update:** 2026-07-08 night (**tanitad-pod2 A40 live** — CARLA harness + bake-off acceleration
+  plan running; training step ~8.7k/30k healthy)
+- **Pod2 plan of record (Sayed-approved):** Phase A bootstrap (repo+stack installed, CARLA 0.9.15
+  downloading to /opt/carla, step-8k ckpt relaying); Phase B CARLA closed-loop — work-zone scene from
+  `carla_recipe()`, live telemetry → metric suite, checkpoint-driven ego → first real
+  LAL/OKRI/LOPS/closure + D4 preview; Phase C K-step (K=2) + RoPE bake-off arms at matched compute
+  (needs train-cache copy — pod-to-pod key pending Sayed approval, else subset relay).
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
