@@ -55,3 +55,8 @@ Measured on the extracted bytes + cross-checked against the HF card and toolkit 
 - **Verdict: cosmos is cleared for the D-010 mix** (window 8 + horizon 16 < T=39), pending the
   usual epcache build. Speeds/A8 previously reported by `verify_real_clip` on chunk-0 clips are
   valid; chunk-1 numbers from before the fix are void.
+- **Real-bytes verification of the fix (pod):** 60 extracted clips = 32 chunk-0 + 28 chunk-1
+  (47% affected). Post-fix chunk-1 sample: speed 17.1 m/s, |steer| 0.013 rad, |accel| ≤ 0.83,
+  A8 = 0.14 — all plausible; chunk-0 numbers unchanged (4.8 m/s, A8 = 0.109). Note the epcache
+  build must NOT run while the trainer holds the 62 GB cgroup — schedule after the 30k run or
+  with an explicit memory budget.
