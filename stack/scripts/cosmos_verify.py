@@ -53,10 +53,79 @@ def _explore(api, want_video: str = "front_wide", max_entries: int = 4000):
     return mp4, pose_dirs, seen
 
 
+def from_shard(root: str, n_clips: int = 60) -> None:
+    """Stream-extract the first n_clips videos from generation.tar.gz.part-000
+    (layout finding 2026-07-08: videos ship as ~43 GB split-gzip shards; the
+    first part decompresses sequentially until its byte boundary — the final
+    truncated member is skipped gracefully). Then fetch the matching per-clip
+    vehicle_pose tars and run discover_clips + verify_real_clip."""
+    import gzip
+    import tarfile
+    from huggingface_hub import HfApi, hf_hub_download
+    api = HfApi()
+    shard = hf_hub_download(
+        REPO, "cosmos_synthetic/single_view/generation.tar.gz.part-000",
+        repo_type="dataset", local_dir=root)
+    print(f"[cosmos] shard downloaded: {shard}")
+
+    out = Path(root) / "extracted"
+    out.mkdir(parents=True, exist_ok=True)
+    names, got = [], 0
+    try:
+        with tarfile.open(fileobj=gzip.open(shard, "rb"), mode="r|") as tf:
+            for m in tf:
+                if len(names) < 20:
+                    names.append(m.name)
+                if m.isfile() and m.name.endswith(".mp4"):
+                    tf.extract(m, out, filter="data")
+                    got += 1
+                    if got >= n_clips:
+                        break
+    except (EOFError, tarfile.ReadError) as e:
+        print(f"[cosmos] stream ended at shard boundary ({type(e).__name__}) "
+              f"— expected for a split archive; kept {got} clips")
+    print(f"[cosmos] first members: {names[:8]}")
+    print(f"[cosmos] extracted {got} mp4s under {out}")
+
+    # matching vehicle_pose tars (per-clip, ~0.6 MB each)
+    ids = [p.stem.split(".")[0] for p in out.rglob("*.mp4")]
+    pose_root = Path(root) / "extracted" / "vehicle_pose"
+    pose_root.mkdir(parents=True, exist_ok=True)
+    fetched = 0
+    for cid in ids:
+        try:
+            t = hf_hub_download(REPO, f"vehicle_pose/{cid}.tar",
+                                repo_type="dataset", local_dir=root)
+            with tarfile.open(t) as pf:
+                pf.extractall(pose_root / cid, filter="data")
+            fetched += 1
+        except Exception as e:
+            print(f"[cosmos] pose {cid}: {type(e).__name__}")
+    print(f"[cosmos] pose tars fetched: {fetched}/{len(ids)}")
+
+    from tanitad.data.cosmos_drive import discover_clips, verify_real_clip
+    # camera_subdir override: point discovery at wherever the mp4s landed
+    mp4s = list(out.rglob("*.mp4"))
+    cam_dir = str(mp4s[0].parent) if mp4s else None
+    clips = discover_clips(str(out), camera_subdir=cam_dir)
+    print(f"[cosmos] discover_clips: {len(clips)} paired clip(s)")
+    if clips:
+        stats = verify_real_clip(clips[0])
+        print(json.dumps(stats, indent=2))
+        Path(root, "verify_real_clip.json").write_text(
+            json.dumps(stats, indent=2))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="/workspace/data/cosmos")
+    ap.add_argument("--from-shard", action="store_true",
+                    help="stream-extract clips from generation part-000")
+    ap.add_argument("--n-clips", type=int, default=60)
     args = ap.parse_args()
+    if args.from_shard:
+        from_shard(args.root, args.n_clips)
+        return
     from huggingface_hub import HfApi, hf_hub_download
     api = HfApi()
 
