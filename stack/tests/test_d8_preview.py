@@ -6,7 +6,8 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from d8_preview import imag_rel_scores, rank_auroc  # noqa: E402
+from d8_preview import (collect, fit_diag_gauss, imag_rel_scores,  # noqa: E402
+                        maha_score, rank_auroc)
 
 from tanitad.config import smoke_config
 from tanitad.data.toy_driving import ToyEpisode
@@ -42,3 +43,17 @@ def test_imag_rel_scores_smoke_model():
                         stride=4, batch=2, max_windows=8)
     assert s.numel() > 0 and s.numel() <= 8
     assert torch.isfinite(s).all() and (s >= 0).all()
+    c = collect(world, [ep], "cpu", world.predictor.cfg.window,
+                stride=4, batch=2, max_windows=8)
+    assert c["z_prev"].shape == c["z_true1"].shape == c["z_imag1"].shape
+    assert c["ep"].numel() == c["z_prev"].shape[0]
+
+
+def test_mahalanobis_separates_shifted_gaussian():
+    torch.manual_seed(0)
+    ref = torch.randn(500, 32)
+    mu, var = fit_diag_gauss(ref[:250])
+    in_d = maha_score(ref[250:], mu, var)
+    ood = maha_score(torch.randn(200, 32) * 2.0 + 3.0, mu, var)
+    assert rank_auroc(ood, in_d) > 0.95                # clear separation
+    assert abs(float(in_d.mean()) - 1.0) < 0.25        # calibrated on in-dist
