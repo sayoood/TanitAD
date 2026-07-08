@@ -46,7 +46,13 @@ distribution comma2k19's highway commute lacks. Research note:
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:**
-- **Reason & notes:**
-- **Integrated as:**
+- **Verdict:** integrate
+- **Date / by:** 2026-07-08 (overnight), MVP orchestrator (autonomous loop iteration 4)
+- **Reason & notes:** Strategically important package: the ONE corpus we can train on AND cite
+  publicly (CC-BY-4.0), contract- and fingerprint-identical to comma2k19 (I7 test), analytic signal
+  derivation validated, honest pod-verification step documented before any trained claim
+  (`verify_real_clip`). Only change: test import de-hacked. Full suite 128 passed / 1 sim-skip.
+  Follow-ups queued: pod `verify_real_clip` run + data card; then cosmos joins the D-010 mix
+  (bake-off-gated share).
+- **Integrated as:** `stack/tanitad/data/cosmos_drive.py` + `stack/tests/test_cosmos_drive.py`
+  (see `intake(data-eng)` commit, 2026-07-08)
