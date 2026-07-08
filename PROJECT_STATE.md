@@ -6,11 +6,14 @@
 
 - **Last update:** 2026-07-08 night (**tanitad-pod2 A40 live** — CARLA harness + bake-off acceleration
   plan running; training step ~8.7k/30k healthy)
-- **Pod2 plan of record (Sayed-approved):** Phase A bootstrap (repo+stack installed, CARLA 0.9.15
-  downloading to /opt/carla, step-8k ckpt relaying); Phase B CARLA closed-loop — work-zone scene from
-  `carla_recipe()`, live telemetry → metric suite, checkpoint-driven ego → first real
-  LAL/OKRI/LOPS/closure + D4 preview; Phase C K-step (K=2) + RoPE bake-off arms at matched compute
-  (needs train-cache copy — pod-to-pod key pending Sayed approval, else subset relay).
+- **Pod2 plan of record (Sayed-approved):** Phase A DONE (repo+stack+178-test parity; CARLA 0.9.16
+  server+client version-matched; step-8k ckpt relaying). Phase B: **CARLA RUNS in `-nullrhi`**
+  (Town10HD, sync stepping ~1400 ticks/s) — camera RENDERING is host-blocked (compute-only vulkan:
+  driver GIPA returns NULL; all userspace libs verified present/matching — not fixable in-container).
+  Milestone 1 (work-zone scene + scripted-policy LIVE telemetry → LAL/OKRI/LOPS) needs NO pixels →
+  proceeding under nullrhi. Checkpoint-driven ego (needs camera) → pod recreation with a
+  graphics-capable template when required (Sayed decision, not urgent). Phase C: bake-off arms need
+  the train-cache copy — pod-to-pod key approval still pending (else subset relay overnight).
 - **Current phase:** Phase 0 — foundation & first edge proofs
 - **Constitution:** `Project Steering/Mission Plan.md` (owned by Sayed, never edited by agents)
 - **Final evaluation date (P7):** 2026-10-05
