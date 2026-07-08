@@ -33,8 +33,14 @@ public claim candidate.
   to screen captions for construction (open); comma2k19 work-zone segments (unlabeled — mine via
   high imagination-error stretches, INFER-quality only).
 - **Metric hooks:** `closure_incursion_m`, LAL, OKRI, LOPS via `ScenarioTelemetry`.
-- **Status:** **oracle-tested** (`stack/tanitad/eval/scenarios/work_zone_phantom.py`, 9 tests);
-  live build gated on CARLA harness.
+- **Status:** **live-measured (partial), 2026-07-08 night** — first CARLA build on pod2
+  (`stack/scripts/carla_work_zone.py`, nullrhi, real physics + raycast occlusion + measured tick
+  latency; policies still scripted archetypes, honestly labeled). Live rows: **OKRI 32.4 vs 12.8**
+  (reactive vs anticipating), **LOPS 0.0 vs 0.83**, TMS 0.006 vs 0.023 —
+  `stack/experiments/p0-carla-workzone/suite_results_v1.json`. Instruments needing v2 before
+  decision-grade: LAL (jerk-threshold never fires on the gentle slowdown — both read −0.7),
+  closure-incursion detector (reads 0 for the reactive run; needs lane-polygon check + collision
+  sensor). Checkpoint-driven ego waits on camera rendering (pod recreation decision).
 
 ## SC-02 — Ghost cut-through (occluded pedestrian, school zone)  [W-02] ★★★
 - **Opponent evidence (FACT):** NTSB HWY26FH008 — Waymo I-Pace struck a 9-year-old near a school;
