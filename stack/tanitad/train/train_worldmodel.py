@@ -43,12 +43,35 @@ def _max_horizon(cfg: StackConfig) -> int:
 def _needed_future_indices(cfg: StackConfig) -> tuple[list[int], dict[int, int]]:
     """Only encode the future frames the horizon losses actually consume —
     targets k-1 and change-weight references k-2 (halves future encodes at
-    horizons (1,2,4,8,16): 8 of 16 frames). Found via the p0-sB00 OOM."""
+    horizons (1,2,4,8,16): 8 of 16 frames). Found via the p0-sB00 OOM.
+    A K-step rollout loss (rollout_k > 1) additionally consumes targets 0..K-1."""
     all_h: set[int] = set(cfg.predictor.horizons)
     if cfg.tactical_pred is not None:
         all_h |= set(cfg.tactical_pred.horizons)
-    needed = sorted({k - 1 for k in all_h} | {k - 2 for k in all_h if k >= 2})
+    needed_set = {k - 1 for k in all_h} | {k - 2 for k in all_h if k >= 2}
+    if getattr(cfg.train, "rollout_k", 1) > 1:
+        needed_set |= set(range(cfg.train.rollout_k))
+    needed = sorted(needed_set)
     return needed, {i: j for j, i in enumerate(needed)}
+
+
+def _rollout_loss(model, states, actions, fut_states, fut_actions,
+                  idx_of: dict[int, int], K: int) -> torch.Tensor:
+    """Recursive K-step rollout (2512.24497 'multistep-as-augmentation'):
+    feed the 1-step prediction back into the window and predict again.
+    Future actions come from the batch when present, else zero-order-hold."""
+    win_s, win_a = states, actions
+    loss = torch.zeros((), device=states.device)
+    for j in range(1, K + 1):
+        z_hat = model.predictor(win_s, win_a)[1]
+        loss = loss + (z_hat - fut_states[:, idx_of[j - 1]]).pow(2).mean()
+        if j == K:
+            break
+        a_next = (fut_actions[:, j - 1] if fut_actions is not None
+                  else win_a[:, -1])
+        win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
+        win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
+    return loss / K
 
 
 def _pred_losses(preds: dict[int, torch.Tensor], horizons, z_t, fut_states,
@@ -241,6 +264,15 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
                                      fut_states, idx_of,
                                      cfg.predictor.change_weighted)
 
+            # K-step recursive rollout (bake-off lever; 1 = off).
+            loss_roll = torch.zeros((), device=device)
+            K = getattr(cfg.train, "rollout_k", 1)
+            if K > 1:
+                fut_a = batch.get("future_actions")
+                fut_a = fut_a.to(device) if fut_a is not None else None
+                loss_roll = _rollout_loss(model, states, actions, fut_states,
+                                          fut_a, idx_of, K)
+
             # Tactical brain: same SSL objective at maneuver horizons (8/16).
             loss_tac = torch.zeros((), device=device)
             if model.tactical_pred is not None:
@@ -278,6 +310,7 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
 
             loss = (cfg.loss.pred_weight * loss_pred
                     + cfg.loss.pred_weight * 0.5 * loss_tac
+                    + cfg.loss.pred_weight * 0.5 * loss_roll
                     + cfg.loss.sigreg.weight * loss_sig
                     + cfg.loss.inv_dyn_weight * loss_inv
                     + cfg.h15.weight * loss_h15)
@@ -308,7 +341,8 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
                   / flat.norm(dim=-1).mean().clamp_min(1e-8))
               dim_std = float(flat.std(0).mean())
           log = {"step": step, "loss": loss.item(), "pred": loss_pred.item(),
-                 "tac": loss_tac.item(), "sigreg": loss_sig.item(),
+                 "tac": loss_tac.item(), "roll": loss_roll.item(),
+                 "sigreg": loss_sig.item(),
                  "inv": loss_inv.item(), "h15": loss_h15.item(),
                  "erank": round(erank, 1), "dim_std": round(dim_std, 5),
                  "step_ratio": round(step_ratio, 5), "lr": lr}

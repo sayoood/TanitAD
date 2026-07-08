@@ -94,6 +94,8 @@ class TrainConfig:
     seed: int = 0
     log_every: int = 50
     out_dir: str = "experiments/dev"
+    rollout_k: int = 1            # >1: recursive K-step rollout loss (bake-off
+                                  # lever, 2512.24497 multistep-as-augmentation)
 
 
 @dataclass

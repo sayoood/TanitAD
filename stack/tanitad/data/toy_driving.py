@@ -142,6 +142,7 @@ class ToyDrivingDataset(torch.utils.data.Dataset):
             "frames": ep.frames[t:t + w],                        # [W, 1, H, W]
             "actions": ep.actions[t:t + w],                      # [W, 2]
             "future_frames": ep.frames[t + w:t + w + self.max_horizon],
+            "future_actions": ep.actions[t + w:t + w + self.max_horizon],
             "future_poses": ep.poses[t + w:t + w + self.max_horizon],
             "pose_last": ep.poses[t + w - 1],
             "episode_id": ep.episode_id,

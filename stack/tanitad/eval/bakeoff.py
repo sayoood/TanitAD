@@ -146,6 +146,10 @@ def default_levers() -> list[Lever]:
         c.h15.enabled = False                   # ablate the imagination field
         return c
 
+    def _kstep_rollout(c: StackConfig) -> StackConfig:
+        c.train.rollout_k = 4                   # recursive rollout loss (K=4)
+        return c
+
     return [
         Lever("residual_off", "H4/A4", ("D1", "D3"),
               "predictor.residual: delta-prediction -> absolute head",
@@ -187,6 +191,14 @@ def default_levers() -> list[Lever]:
               _h15_off, fields=("h15.enabled",),
               rationale="H15 imagination-for-selection ablation; D2 direction acc "
                         "should drop if imagination is load-bearing"),
+        Lever("kstep_rollout", "H5", ("D2", "D3"),
+              "training: single-step -> recursive K-step rollout loss (K=4)",
+              _kstep_rollout, fields=("train.rollout_k",),
+              rationale="multistep rollout as data-aug against compounding error; "
+                        "Pareto optimum reported ~K=4 (2512.24497 real=6-step; "
+                        "Delta-JEPA). Mechanism landed 2026-07-09: "
+                        "train_worldmodel._rollout_loss + future_actions in the "
+                        "window contract (zero-order-hold fallback)"),
     ]
 
 
@@ -215,12 +227,6 @@ def planned_levers() -> list[Lever]:
                         "action-conditioned latent predictors (Delta-JEPA, "
                         "OmniDreams 2606.03159); needs rotary embed in "
                         "OperativePredictor attention (WP-arch)"),
-        Lever("kstep_rollout", "H5", ("D2", "D3"),
-              "training: single-step -> recursive K-step rollout loss (K~4)",
-              _needs_code, fields=("train.rollout_k",), implemented=False,
-              rationale="multistep rollout as data-aug against compounding error; "
-                        "Pareto optimum reported ~K=4 (2512.24497 real=6-step; "
-                        "Delta-JEPA). Needs a rollout loop in train_worldmodel (WP3)"),
         Lever("tactical_moe_sigma", "H2/H8/H15", ("D2",),
               "tactical predictor: dense -> MoE routed on imagination epistemic sigma",
               _needs_code, fields=("tactical_pred.moe",), implemented=False,

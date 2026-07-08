@@ -132,6 +132,7 @@ class EpisodeWindowDataset(torch.utils.data.Dataset):
             "actions": ep.actions[t:t + w],
             "future_frames": to_float_frames(
                 ep.frames[t + w:t + w + self.max_horizon]),
+            "future_actions": ep.actions[t + w:t + w + self.max_horizon],
             "future_poses": ep.poses[t + w:t + w + self.max_horizon],
             "pose_last": ep.poses[t + w - 1],
             "episode_id": ep.episode_id,
