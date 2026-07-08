@@ -87,12 +87,15 @@ def from_shard(root: str, n_clips: int = 60) -> None:
     print(f"[cosmos] first members: {names[:8]}")
     print(f"[cosmos] extracted {got} mp4s under {out}")
 
-    # matching vehicle_pose tars (per-clip, ~0.6 MB each)
-    ids = [p.stem.split(".")[0] for p in out.rglob("*.mp4")]
+    # matching vehicle_pose tars (per-clip, ~0.6 MB each). Video names carry
+    # variant+weather suffixes (<uuid>_<t0>_<t1>_<k>_<Weather>.mp4) while pose
+    # tars are keyed by the BASE id (<uuid>_<t0>_<t1>) — measured 2026-07-08.
+    base_ids = sorted({"_".join(p.stem.split("_")[:3])
+                       for p in out.rglob("*.mp4")})
     pose_root = Path(root) / "extracted" / "vehicle_pose"
     pose_root.mkdir(parents=True, exist_ok=True)
     fetched = 0
-    for cid in ids:
+    for cid in base_ids:
         try:
             t = hf_hub_download(REPO, f"vehicle_pose/{cid}.tar",
                                 repo_type="dataset", local_dir=root)
@@ -101,7 +104,7 @@ def from_shard(root: str, n_clips: int = 60) -> None:
             fetched += 1
         except Exception as e:
             print(f"[cosmos] pose {cid}: {type(e).__name__}")
-    print(f"[cosmos] pose tars fetched: {fetched}/{len(ids)}")
+    print(f"[cosmos] pose tars fetched: {fetched}/{len(base_ids)} base ids")
 
     from tanitad.data.cosmos_drive import discover_clips, verify_real_clip
     # camera_subdir override: point discovery at wherever the mp4s landed
