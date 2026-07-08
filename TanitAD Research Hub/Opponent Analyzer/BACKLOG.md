@@ -10,12 +10,15 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    on Waymo). Deliverable: scenario spec + telemetry oracle module (mirror work_zone_phantom
    structure) + SCENARIO_DATABASE row upgrade to `spec-drafted`; intake package with passing
    tests. Metric hook: H9 violation-rate (hard-barrier compliance), not soft prior.
-2. **W-04 degraded-visibility D8 stressor spec** — glare/rain/obscurant (NHTSA Tesla FSD
-   engineering analysis). Method: define the D8 OOD stressor protocol using Cosmos weather
-   variants (Rainy/Night/Foggy already in shard part-000, verified on real bytes); measure
-   imagination-error separation healthy-vs-degraded on the step-latest checkpoint (4060) —
-   first real AUROC preview. Falsifier: AUROC < 0.6 at 17% training ⇒ record honestly, re-test
-   at 30k.
+2. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
+   step 6500: naive relative imag-error AUROC 0.34 inverted / 0.54 weather axis — falsifier
+   fired, recorded in `stack/experiments/p0-d8-preview/NOTE.md`). Next experiment:
+   **matched-pairs weather test** — pair cosmos clips by base clip id (same scene, different
+   weather), score with per-corpus z-normalized ABSOLUTE error + latent Mahalanobis, add
+   physicalai-val in-domain control; re-run at 15k and 30k. Expected: weather-axis AUROC on
+   matched pairs > 0.6 by 30k. Falsifier: still ~0.5 on matched pairs at 30k ⇒ raw predictor
+   error is not the D8 signal — escalate to the H15 σ-head (heteroscedastic variance) as the
+   detector.
 
 ## P1
 

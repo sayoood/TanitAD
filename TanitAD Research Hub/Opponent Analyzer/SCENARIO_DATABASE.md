@@ -79,7 +79,13 @@ public claim candidate.
   (Rainy/Night/Foggy in shard part-000, real-bytes verified 2026-07-08); nuScenes-rain as
   held-out probe (never trained).
 - **Metric hooks:** D8 AUROC healthy-vs-degraded; speed-vs-σ correlation.
-- **Status:** **data-sourced**; first AUROC preview = Opponent Analyzer backlog P0.2.
+- **Status:** **data-sourced**; first preview MEASURED 2026-07-08 (step 6500, 4060):
+  the naive relative imagination error does NOT separate yet — AUROC 0.34 (inverted) vs
+  comma, 0.54 on the domain-matched weather axis. Two confounds identified (step-size
+  normalization; 60%-urban training mix) → redesigned protocol queued: matched-pairs by
+  base clip id across weathers, Mahalanobis/z-normalized score, physicalai-val control,
+  re-run at 15k/30k. Full record: `stack/experiments/p0-d8-preview/NOTE.md`. Honest
+  status stays **data-sourced** (no oracle yet).
 
 ## SC-06 — Emergency-vehicle interaction failure
 - **Opponent evidence (FACT):** Cruise–fire-truck collision (SF, Aug 2023); SF fire department's

@@ -1,0 +1,30 @@
+{
+  "exp": "d8-preview-sc05",
+  "ckpt_step": 6500,
+  "caveat": "partial checkpoint (~22% of 30k); cosmos is synthetic => domain shift confounds weather; diagnostic, not gate D8",
+  "groups": {
+    "comma_val": {
+      "n": 400,
+      "mean": 20.4622,
+      "median": 9.7321,
+      "p90": 32.4173
+    },
+    "cosmos_clear": {
+      "n": 100,
+      "mean": 7.2086,
+      "median": 5.2726,
+      "p90": 13.8711
+    },
+    "cosmos_degraded": {
+      "n": 200,
+      "mean": 9.4459,
+      "median": 6.0029,
+      "p90": 21.9077
+    }
+  },
+  "auroc": {
+    "comma_vs_degraded": 0.3442,
+    "comma_vs_clear": 0.2957,
+    "clear_vs_degraded_weather_axis": 0.5384
+  }
+}
