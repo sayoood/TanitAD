@@ -29,6 +29,12 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-08: Architecture & Inference (Wed) — **H3 first trained-checkpoint measurement** (no status
+  change, P8: mid-training + feeds D-021, not a passed gate): spectral-sizing on the step-6500 ckpt (fit
+  R²=0.99, operator effective rank ≈43, energy knee 31, k*=21) → the action-conditioned transition operator
+  is **genuinely low-rank** (~tens ≪ 2048) → **OVER-PROVISIONED** readout. Strengthens the H3 data-efficiency
+  story with a real number, but rank is still climbing (35→43 over 3k→6.5k) so no resize is motivated;
+  D-021 default holds. Artifact: `Architecture & Inference/Research/2026-07-08-spectral_step6500.json`.
 - 2026-07-08: Architecture & Inference (Wed) — decoding-lever evidence (no status change, P8:
   corroboration is not confirmation; the D-gates are unpassed until the trained checkpoint). **H4/A4**
   external support: **Delta-JEPA** (arXiv 2606.31232) reconstructs the executed action from the *latent

@@ -1,11 +1,13 @@
 # Architecture & Inference — 2026-07-08 (Wednesday weekly agent)
 
-**Focus:** backlog #2 (bake-off harness) + theory/decoding-lever watch. **Loop:** RECALL → SEARCH
-(4 web searches + 1 fetch; arXiv anchors + Ressources inbox) → ANALYZE → PRODUCE → CRITIQUE. Well under
-caps (2 h / 25 searches / 3 iters). **Calendar note (P8):** wall-clock today is **2026-07-08**; the
-discipline's prior notes are forward-dated to 07-14 by the autonomous loop. I date this run by wall clock,
-matching the Data-Engineering precedent (`2026-07-08-cosmos-layout-finding.md`). LAST_RUN advanced to
-2026-07-08.
+**Two deliverables:** (1) **bake-off harness** (backlog #2, WP3 — implementation increment, integrated by
+the MVP loop into `stack/tanitad/eval/bakeoff.py`) and (2) a **measured experiment (G-H)**: the
+`p0-spectral-sizing` tool run for the FIRST time on a real *trained* checkpoint (step-6500) →
+**OVER-PROVISIONED** verdict on the 2048 readout (§5b). **Loop:** RECALL → SEARCH (4 web searches + 1
+fetch; arXiv anchors + Ressources inbox) → ANALYZE → PRODUCE (incl. measured run) → CRITIQUE. Under caps
+(upgraded D-020: 4 h / 25 searches / 4 iters). **Calendar note (P8):** wall-clock today is **2026-07-08**;
+the discipline's prior notes are forward-dated to 07-14 by the autonomous loop. I date this run by wall
+clock, matching the Data-Engineering precedent (`2026-07-08-cosmos-layout-finding.md`). LAST_RUN → 2026-07-08.
 
 ## 0. Consumed this week
 
@@ -76,6 +78,11 @@ V-JEPA-2-AC 300 M envelope; TRT ViT INT8 trap (OwLite/ModelOpt). Ressources inbo
 
 ## 4. Actionable recommendations (each ties to a hypothesis / gate — G-B, G-AI1)
 
+0. **[MEASURED this run → D-021] The 2048 readout is OVER-PROVISIONED at step-6500** (knee 31 / k* 21 /
+   rank 43, fit R² 0.99; §5b). Feed this into D-021 as the first *trained-checkpoint* data point, but hold
+   the default (keep 2048) — the rank is still climbing; re-run `run_spectral.py` at the final Stage-0
+   checkpoint. Falsifier for a future resize: if the step-30k knee exceeds ~256, the over-provisioning
+   argument weakens and the H3 efficiency story with it. **No change executed (D-004/D-018).**
 1. **[EXECUTE-ready] Run the decision-grade bake-off on the first trained A40 checkpoint.** Sweep the 8
    config-native levers over comma2k19 held-out routes through D1–D3; report the mean±CI table. Falsifiers:
    `residual_off`/`change_weight_off` on D1/D3 (H4/A4); `global_pool_readout` on D1's built-in vs-pool
@@ -106,15 +113,43 @@ Standalone (`pytest tests/`). Sample rendered table (smoke wiring, **NOT a claim
 (+ planned: adaln_conditioning, rope_conditioning, kstep_rollout, tactical_moe_sigma — need model code)
 ```
 
-BLOCKED/MIXED here is the doctrine working, not a result. Decision-grade sweep awaits the trained checkpoint.
+BLOCKED/MIXED here is the doctrine working, not a result. Decision-grade *lever* sweep awaits matched-compute
+trained arms (each config variant must be trained; pod2 Phase C runs the K-step/RoPE arms from the step-8k ckpt).
+
+## 5b. Measured experiment (G-H) — spectral-sizing on the step-6500 trained checkpoint
+
+The `p0-spectral-sizing` tool (backlog #0, shipped 07-14) had been *awaiting a trained checkpoint* for two
+runs. A step-6500 checkpoint (`ckpt_full.pt`, relayed from pod2) is now local, so I ran it —
+`scripts/run_spectral.py`, 24 held-out comma2k19-val episodes, **7,176 transition pairs**, dim 2048, on the
+4060. Result:
+
+| metric | step-3000 preview | **step-6500 (this run)** |
+|---|---|---|
+| fit R² (I1 sanity: is the linear-operator proxy valid?) | 0.997 | **0.990** ✓ |
+| operator effective rank | ≈35 | **≈43** |
+| energy knee k (99%) | ≈22 | **31** |
+| trade-off-optimal k* | ≈11 | **21** |
+| verdict vs 2048 readout | (diagnostic) | **OVER-PROVISIONED** |
+
+**Read (P8-bounded):** the action-conditioned transition operator is **genuinely low-rank** — task-relevant
+dynamics live in ~tens of dimensions, not 2048. fit R²=0.99 says the linear proxy is valid, so the spectrum
+is readable (not a collapsed-latent artifact). This is **decision-grade evidence for D-021** (latent dim k as
+a *measured* variable): the 2048 readout pays the O(k²) sample-error term for capacity the dynamics do not
+use. **BUT** — the rank is still **climbing with training** (35→43 as steps 3k→6.5k); at 6.5k/30k the model is
+mid-Stage-0, so the knee will likely rise further. **Verdict:** OVER-PROVISIONED *now*, re-measure at the
+final Stage-0 checkpoint before any resize. This does **not** motivate an architecture change here — shrinking
+`d_readout` is a **D-018 Tactic** (escalate) and D-004 forbids a change off a diagnostic that is not a passed
+gate. D-021 default stands: keep 2048, keep measuring. Artifact: `2026-07-08-spectral_step6500.json`.
 
 ## 6. CRITIQUE (quality gates)
 
 - G-A ✓ every claim sourced (arXiv ids / repo paths). G-B ✓ 4 actionable recs, each gate/hypothesis-tied.
-- G-C ✓ KB delta appended (below → `KNOWLEDGE_BASE.md`). G-D ✓ ledger evidence rows (H4/H5/H1) — no status
-  change (P8: corroboration ≠ confirmation, gates unpassed). G-E ✓ verifiable increment (16 green + stack
-  green). G-AI1 ✓ every lever names its falsifying gate + isolating change; planned levers carry the same.
-  G-AI2 ✓ params measured, FLOPs/latency explicitly deferred, never mixed. G-F on session-end commit.
+- G-C ✓ KB delta appended (below → `KNOWLEDGE_BASE.md`). G-D ✓ ledger evidence rows (H4/H5/H1/H3) — no
+  status change (P8: corroboration ≠ confirmation, gates unpassed; spectral is mid-training + feeds D-021).
+  G-E ✓ verifiable increment (16 pkg tests; loop integrated → stack 178 green). **G-H ✓ measured experiment
+  with real numbers on the step-6500 checkpoint (§5b).** G-AI1 ✓ every lever names its falsifying gate +
+  isolating change; planned levers carry the same. G-AI2 ✓ params measured, FLOPs/latency explicitly
+  deferred, never mixed. G-F on session-end commit.
 - **Negative/limits (P8):** no lever ranking is produced — cannot be, without a trained checkpoint; that is
   stated, not hidden. AdaLN-injection detail for Delta-JEPA is from a secondary summary, not the abstract —
   flagged. The harness is a measurement tool; acting on any result is a D-018 escalation, not this run's call.

@@ -5,13 +5,11 @@ Format per item: goal / method / resource / expected number / falsifier.
 
 ## P0 — next run
 
-1. **Spectral-sizing on real trained latents** — validate D-008 readout dim 2048 against the
-   knee of the action-conditioned transition spectrum (arXiv 2606.27014 method).
-   Method: pull latest `ckpt.pt` from pod (`/workspace/runs/`), run
-   `stack/scripts/run_spectral.py` on ≥2k held-out comma windows locally (4060).
-   Expected: knee 20–60 (step-5000 preview: R²=0.997, erank≈35, knee≈22); verdict
-   OVER → efficiency-moat evidence. Falsifier: knee > 512 ⇒ 2048 justified, H3 story weakens.
-   Wall-clock ~30 min. Feeds proposed D-021.
+1. **[✅ DONE 2026-07-08 — spectral-sizing on real trained latents]** Ran `run_spectral.py` on the
+   step-6500 `ckpt_full.pt` (24 val eps, 7,176 pairs, 4060): **fit R²=0.99, rank ≈43, knee 31, k*=21 →
+   OVER-PROVISIONED** (knee ≪ 512, well inside the predicted 20–60 band → efficiency-moat evidence for H3).
+   Feeds D-021. **Remaining:** re-run at the FINAL Stage-0 ckpt (rank still climbing 35→43) before any resize.
+   Artifact: `Research/2026-07-08-spectral_step6500.json` + note §5b.
 2. **K-step rollout loss bake-off (K=2)** — test the "multistep-as-augmentation" finding
    (arXiv 2512.24497) on our predictor.
    Method: branch trainer config, feed predictions back for K=2 alongside single-window loss;
