@@ -79,13 +79,15 @@ public claim candidate.
   (Rainy/Night/Foggy in shard part-000, real-bytes verified 2026-07-08); nuScenes-rain as
   held-out probe (never trained).
 - **Metric hooks:** D8 AUROC healthy-vs-degraded; speed-vs-σ correlation.
-- **Status:** **data-sourced**; first preview MEASURED 2026-07-08 (step 6500, 4060):
-  the naive relative imagination error does NOT separate yet — AUROC 0.34 (inverted) vs
-  comma, 0.54 on the domain-matched weather axis. Two confounds identified (step-size
-  normalization; 60%-urban training mix) → redesigned protocol queued: matched-pairs by
-  base clip id across weathers, Mahalanobis/z-normalized score, physicalai-val control,
-  re-run at 15k/30k. Full record: `stack/experiments/p0-d8-preview/NOTE.md`. Honest
-  status stays **data-sourced** (no oracle yet).
+- **Status:** **data-sourced + first paired measurement** (2026-07-08, step 6500, 4060).
+  Naive unpaired scores don't separate (rel AUROC 0.34 inverted vs comma; weather axis
+  0.54–0.59; diagonal Mahalanobis ~chance — within-comma route shift swamps it). **But the
+  matched-pairs test (23 same-scene clear-vs-degraded pairs from shard part-000) shows the
+  first directional positive: 16/23 scenes (69.6%) score higher imagination error under
+  degraded weather, median paired shift +1.60, sign-test p≈0.047.** Pre-registered: paired
+  effect should grow at 15k/30k; falsifier: ~chance at 30k ⇒ switch detector to the H15
+  σ-head. Full record: `stack/experiments/p0-d8-preview/NOTE.md` + result JSONs. Honest
+  status stays **data-sourced** (no oracle module yet; paired protocol now exists).
 
 ## SC-06 — Emergency-vehicle interaction failure
 - **Opponent evidence (FACT):** Cruise–fire-truck collision (SF, Aug 2023); SF fire department's

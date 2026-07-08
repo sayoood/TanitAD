@@ -44,3 +44,32 @@ No claim about H11/D8 is made or retired: gate D8 runs on the trained checkpoint
 real OOD probes (nuScenes, never trained) with the redesigned score. This preview's value is
 (a) the harness exists and runs end-to-end on real bytes, (b) the naive score is now known
 to be confounded — found at 22% training instead of at gate time.
+
+---
+
+## v2 (same day): three-score redesign + MATCHED PAIRS — first directional positive
+
+**Scoring redesign** (`d8_preview.py` v2, 6 tests): `abs` (no step normalization), diagonal
+`maha` vs a reference fitted on half the comma windows, `rel` kept for trend.
+
+Unpaired axes at step 6500: abs lifts the weather axis to 0.594 (rel 0.538); maha is ~chance
+on every axis (0.48–0.57) and its in-domain calibration (median 2.4 vs ~1.0 expected) shows
+**within-comma route-to-route shift already swamps a diagonal-Gaussian detector** — a finding
+for the D8 design (route-conditioned reference or richer density model needed).
+
+**Matched pairs** (`cosmos_pairs.py`: 2-pass stream of shard part-000 — 5,067 mp4s, 4,242
+scene-chunks, 439 clear+degraded candidates → 24 pairs, 23 with poses):
+same scene, same chunk, clear vs degraded weather, per-clip mean `abs` error:
+
+- **16/23 scenes (69.6%) score HIGHER imagination error under degraded weather**
+- median paired diff **+1.60**, mean +2.54 (group median ≈ 26 → ~6% median shift)
+- one-sided sign test **p ≈ 0.047** — marginal, n=23
+
+Interpretation (honest): once scene content is controlled, the imagination error carries a
+weak but directionally-correct degraded-visibility signal at 22% training — the effect the
+unpaired comparison could not see. Pre-registered expectation: the paired fraction and shift
+grow by step 15k/30k; falsifier unchanged (still ~0.5/0 at 30k ⇒ raw predictor error is not
+the D8 signal, switch to the H15 σ-head as detector).
+
+**Cost:** ~25 min pod CPU (2× streaming 40 GiB, niced next to the trainer), ~6 min 4060,
+~1 GB transfers, $0.
