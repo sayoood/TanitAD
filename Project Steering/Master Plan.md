@@ -56,7 +56,13 @@ Details: `Phase 0 Plan.md`.
 | Architecture & Inference | the stack, efficiency, deployment | `stack/` package, gates D1–D6 |
 | Tools & DevEnv | sim, replay, viz, CI, compute | MetaDrive env, run scripts, CI with I1–I4 |
 | Benchmarks & Eval | metrics, gates harness, leaderboard, regulation trace | metric suite (ADE/FDE + LAL/TMS/OKRI/CNCE/LOPS), gate runner |
-| Research Hub (all agents) | weekly research + implementation increments | knowledge bases seeded, cadence live |
+| Opponent Analyzer | opponent intel, weakness catalog, **scenario database** (D-020 §5) | `SCENARIO_DATABASE.md` seeded (SC-01…SC-12), ≥1 oracle-tested scenario |
+| **Production & Optimization** (added 2026-07-08, D-020 §3) | production-compliance review of `stack/`, deployment/optimization prototyping (ONNX/TRT/quantization, batch-1 latency, CNCE inputs), `PRODUCTION_READINESS.md` | latency baseline (I8) + ONNX parity + first compliance review — **separated from MVP velocity; changes via intake only** |
+| Research Hub (all agents) | weekly research + implementation increments **+ ≥1 measured backlog experiment per run (D-020 §4)** | knowledge bases seeded, cadence live, per-discipline `BACKLOG.md` |
+
+Cross-stream artifacts (D-020): `Paper/TANITAD_PAPER.md` (living postdoc-level paper — every gate
+evaluation appends results; separate from operational docs) and the per-scenario excellence
+scoreboard (`SCENARIO_DATABASE.md` ↔ `LEADERBOARD.md`).
 
 ## 4. Resource plan (P5: efficiency as edge)
 

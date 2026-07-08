@@ -86,6 +86,42 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-021 — Latent dimension k is a measured design variable, not a hyperparameter (2026-07-08, **proposed** — awaiting Sayed)
+
+**Trigger.** The JEPA generalization theory (arXiv 2606.27014) makes the latent dimension the
+knob of an approximation-vs-estimation trade-off with an optimum at the knee of the
+action-conditioned transition spectrum; the step-3000 spectral diagnostic measured that knee at
+≈22 (erank ≈35, fit R²=0.997) against our heuristic 2048-dim readout (D-008).
+
+**Proposed decision.** (a) Readout/state dims are set by spectral measurement, not convention:
+2048 stays for Phase 0 (over-provisioning is safe, only inefficient), but any Phase-1 resizing
+must cite a spectral-sizing result on a *trained* checkpoint plus a gate-impact check (D1/D3).
+(b) `evaluate_checkpoint` keeps emitting the spectrum every evaluation, making the knee a tracked
+quantity. (c) If the trained-checkpoint knee stays ≤ ~64, the compact-state efficiency edge (H5)
+gets a dedicated Phase-1 experiment (narrow readout arm at matched training).
+
+**Status:** proposed (tactical, D-018 class) — hold Phase-1 resizing on this; everything else
+proceeds. Default if unconfirmed: keep 2048, keep measuring.
+
+## D-020 — Five program extensions (2026-07-08, directed by Sayed)
+
+1. **Agent-results screening into MVP:** periodic deep-screen of all hub outputs; usable findings
+   flow into the MVP backlog (first sweep executed at adoption).
+2. **Scientific paper stream:** `Paper/TANITAD_PAPER.md` — postdoc-level living paper (concepts,
+   mathematical background, results); maintained separately from operational docs; results flow in
+   with every gate evaluation.
+3. **Production & Optimization stream:** new workstream (Master Plan §3) + Saturday agent —
+   iterative production-compliance review of `stack/`, optimization/deployment prototyping
+   (ONNX/TensorRT, quantization); explicitly separated from MVP velocity.
+4. **Agent depth upgrade:** every agent run must include ≥1 practical experiment/prototype with
+   measured numbers; per-discipline `BACKLOG.md` (continuously improved experiment roadmaps, seeded
+   at adoption); burst compute (Colab CLI, idle pod, local 4060) actively used within the resource
+   plan.
+5. **Opponent scenario database (H6 sharpened):** `Opponent Analyzer/SCENARIO_DATABASE.md` — every
+   documented opponent weakness as (a) scenario description and (b) sourced training+validation
+   data; joint Opponent↔DataEng↔Benchmarks duty; ultimate goal: per-scenario excellence proof on
+   the leaderboard.
+
 ## D-019 — p0-sB01 throughput fix: micro 32 × accum 2, run capped at 30k steps (2026-07-08, accepted by Sayed)
 
 **Decision.** Measured overnight pace (~260 steps/h at micro 16 × accum 4) put the 60k plan at ~10

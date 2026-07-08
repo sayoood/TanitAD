@@ -25,6 +25,12 @@ headline responsibility.
 - Training-workflow research: curricula for consequence-dominance, data mixing, dedup/quality filters.
 
 ## Weekly implementation duty (rotating backlog)
+0. **Joint duty (D-020 §5): data-source rows in `Opponent Analyzer/SCENARIO_DATABASE.md`.** Each
+   run, pick the highest-priority SC-entries with unsourced or unverified data rows and fill them:
+   concrete corpora slices / synthetic recipes for TRAINING and VALIDATION, license class, cost to
+   first batch — and where public, actually download+verify one sample (measured numbers in your
+   research note). A scenario without sourced data cannot advance past `spec-drafted`; you are the
+   gatekeeper of `data-sourced`.
 1. **PhysicalAI-AV Stage R0 (D-012 + DATA_STRATEGY §2 — TOP until done):** harden the
    `DataEng/AVDataSetLoader` notebook into an intake package for `stack/tanitad/data/physicalai.py`:
    filter `clip_index.parquet` for urban/interactive scenarios → 500 front-wide clips @10 Hz →

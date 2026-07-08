@@ -9,13 +9,15 @@ to the repo at `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD`.
 1. Read `PROJECT_STATE.md` (repo root) — current phase and focus.
 2. Read `Project Steering/CONTINUATION_PROTOCOL.md` §2/§3 — you follow those rituals.
 3. Read your discipline's `Research/STATE.md` and `Research/KNOWLEDGE_BASE.md`.
-4. Read this week's outputs of the agents scheduled before you (Mon→Fri order; check the
+4. Read your discipline's `BACKLOG.md` (folder root) — your prioritized roadmap of concrete
+   experiments. It drives step 4b of the loop.
+5. Read this week's outputs of the agents scheduled before you (Mon→Sat order; check the
    `Research/` folders' newest dated notes of the other disciplines).
-5. Read your agent file completely. Then execute the loop.
+6. Read your agent file completely. Then execute the loop.
 
-## The loop (bounded quality loop — the "loop concept")
+## The loop (bounded quality loop — the "loop concept", depth upgraded per D-020)
 
-Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web searches**:
+Iterate at most **4** times, total wall-clock budget **4 h**, at most **25 web searches**:
 
 1. **RECALL** what you already know (knowledge base) — never re-research known facts.
 2. **SEARCH** for NEW material since your last run (protocol upgraded per D-013):
@@ -35,9 +37,35 @@ Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web s
    50 shallow links.
 4. **PRODUCE** your outputs (see your agent file: research note, knowledge-base delta, implementation
    increment, ledger updates).
+   b. **EXPERIMENT (mandatory, D-020 §4):** execute at least **one practical experiment from your
+   `BACKLOG.md`** and report **measured numbers**, not designs. An experiment = code that ran on
+   data/hardware and produced a quantitative result (a bake-off arm, a latency curve, a loader
+   validated on real bytes, a probe fit, a scenario telemetry run). Prototyping happens in your
+   `Implementation/` folder or on burst compute — SEPARATE from the MVP stream; results that
+   should change `stack/` still go through intake. If the experiment genuinely cannot run
+   (hardware/dependency blocked), record the attempt + blocker in STATE.md and mark
+   `QUALITY: partial` — a missing experiment is a gate failure, not a silent skip.
+   c. **BACKLOG upkeep:** re-prioritize your `BACKLOG.md` (add findings-driven items, retire done
+   ones, keep each item concrete: goal, method, resource, expected number, falsifier). The backlog
+   is your continuously-improved roadmap — it must never be empty or stale.
 5. **CRITIQUE** yourself against your quality gates. If any gate fails and budget remains → loop,
    feeding the critique back into SEARCH/ANALYZE. If budget exhausted → commit what you have and mark
    `QUALITY: partial` in your STATE.md.
+
+## Burst compute (use it — allocated resources must not idle, D-020 §4)
+
+Priority order for experiments:
+1. **Local RTX 4060** (always available; also the Orin latency proxy — I8 batch-1 profiling).
+2. **Google Colab via CLI** (`Keys.txt` has the Google account; use `colab` CLI or notebook
+   execution via `google-colab-tools`; T4/A100 bursts for bake-off arms and probe fits that exceed
+   the 4060). Keep sessions ≤ 2 h, save all artifacts back into your `Implementation/` folder —
+   Colab storage is ephemeral.
+3. **The pod, only if idle**: check first (`ssh tanitad-pod "nvidia-smi --query-gpu=utilization.gpu
+   --format=csv,noheader"`); training has absolute priority — if a trainer is running, the pod is
+   off-limits for agents. Never touch `/workspace/runs/` of the active run.
+4. New paid resources: NEVER — propose a `RESOURCE_LEDGER.md` entry instead (Sayed approves).
+Every experiment records: hardware used, wall-clock, and cost (0 if local/Colab-free) in the
+research note — these numbers feed the efficiency story (CNCE).
 
 ## Quality gates (all agents; your file may add more)
 
@@ -48,6 +76,8 @@ Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web s
 - G-E: implementation increment exists and is verifiable (code with a passing test, or a runnable
   notebook/spec with explicit next step) — "theory only" weeks are gate failures unless your agent
   file explicitly scopes a research-only week.
+- G-H (D-020): at least one backlog experiment executed with **measured numbers** in the research
+  note (hardware, wall-clock, result vs expectation, falsifier verdict); `BACKLOG.md` re-prioritized.
 - G-F: session-end ritual done: STATE.md updated (incl. `LAST_RUN`, `QUALITY` line), files committed
   with message `hub(<discipline>): <what> — <why>`, pushed.
 
@@ -81,3 +111,4 @@ Iterate at most **3** times, total wall-clock budget **2 h**, at most **25 web s
 | Thu | 06:43 | benchmarks-eval-agent |
 | Fri | 06:43 | opponent-analyzer-agent |
 | Fri | 14:23 | orchestrator-agent |
+| Sat | 06:44 | production-optimization-agent (added 2026-07-08, D-020) |
