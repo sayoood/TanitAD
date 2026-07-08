@@ -42,7 +42,12 @@ Research: `../../Research/2026-07-17-opponent-sweep-w2.md`; catalog entry W-01 i
 ---
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:**
-- **Reason & notes:**
-- **Integrated as:**
+- **Verdict:** integrate
+- **Date / by:** 2026-07-08 (overnight), MVP orchestrator (autonomous loop iteration 4)
+- **Reason & notes:** The H6 pipeline working end-to-end: real competitor failure (Waymo W-01
+  construction-zone recall) → catalog entry → repeatable scenario + telemetry oracle + the
+  `closure_incursion_m` seed of the H9 violation metric. Design-oracle honesty preserved (no claims
+  about our model). Created the `eval/scenarios/` home; test import de-hacked (from-import variant).
+  Full suite 137 passed / 1 sim-skip. Live CARLA build stays gated on the W31–32 harness as documented.
+- **Integrated as:** `stack/tanitad/eval/scenarios/work_zone_phantom.py` + test
+  (see `intake(opponent)` commit, 2026-07-08)
