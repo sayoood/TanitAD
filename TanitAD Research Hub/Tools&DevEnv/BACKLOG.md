@@ -4,12 +4,14 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **Colab CLI burst harness** — make Google Colab usable by all agents from the command line
-   (account in `Keys.txt`). Method: authenticate, run a smoke notebook that clones the repo,
-   installs `stack/`, runs `pytest stack/tests -x -q` on a T4, and writes an artifact back.
-   Deliverable: `Implementation/colab_burst/README.md` + runner script + measured session
-   setup time. Expected: < 10 min from cold to tests green. Falsifier: CLI auth not scriptable
-   ⇒ document the manual-once flow and the scripted rest.
+1. **Colab CLI burst harness — INSTALL TESTED 2026-07-08 (MVP loop), auth gate reached.**
+   Facts established: the OFFICIAL `googlecolab/google-colab-cli` is GitHub-source only (not on
+   PyPI), requires **py≥3.12**, and is **Linux/macOS only** → installed on **pod2** in a py3.12
+   venv (`/opt/colabcli`, symlinked to `/usr/local/bin/colab`); agents on the Windows dev machine
+   drive it via `ssh tanitad-pod2 colab ...`. Auth = one-time URL+code flow (Sayed's Google
+   account, ~2 min, token persists) — instructions delivered to Sayed 2026-07-08. REMAINING once
+   authed: end-to-end T4 smoke (`colab run` a script that clones repo + runs pytest), measure
+   cold-to-green, write `Implementation/colab_burst/README.md` with the agent usage pattern.
 2. **CARLA-on-pod harness prep (W31–32, D-014)** — dry-run the CARLA server install recipe in a
    throwaway container locally or on idle pod (headless, -RenderOffScreen); measure install size
    + boot time + a 100-tick rollout. Deliverable: pinned install script + measured numbers.
