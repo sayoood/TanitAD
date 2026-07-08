@@ -39,6 +39,25 @@
 | **comma L2D / comma-steering-control** | GB-scale | front cam + steering | real steering | public (MIT-class — verify) | low–med | ~2 h | candidate — real-CAN augment |
 | **Own GoPro / smartphone** | on demand | front cam | via IDM (H7) | own | controllable | focal-canon prototype (backlog #3) | Phase-1 |
 
+## RANKED acquisition queue (added 2026-07-08 by the MVP orchestrator, per Sayed's directive:
+## "leverage all high-quality possible data; PhysicalAI-AV in despite license — solve/replace later")
+
+Score = edge value (urban richness × action quality × hypothesis/gate coverage) ÷ cost, license as
+a *tag* not a blocker (public claims stay firewalled to comma+Cosmos regardless).
+
+| # | Corpus | Why this rank | Action | Owner / when |
+|---|---|---|---|---|
+| 1 | **PhysicalAI-AV R1 (500→2,000 urban clips)** | richest real urban corpus we have; already loaded+tagged; Sayed-directed; feeds the 30k-follow-up training mix directly | run the R0 scorer at R1 scale on the pod (disk OK, 284 GB free) | DataEng Tue + MVP assists; **this week** |
+| 2 | **PhysicalAI-WorldModel-Synthetic-Scenarios** | THE long-tail material (emergency/pedestrian/weather-degradation) for H6/H15/D9 + scenario DB data rows; loader mirrors cosmos (shared pose code) | verify HF card license → pilot 50 clips | DataEng Tue (backlog P1.4→P0) |
+| 3 | **Zenseact ZOD** | real-CAN corpus #2 (EU/night/winter — everything comma lacks); H4 arm-B + D8 real-OOD probe | pilot loader on 5 drives (~5 h) | DataEng next runs |
+| 4 | **Cosmos-Drive-Dreams expansion** | more shards → bigger weather-paired sets for SC-05/D8 + D-010 mix share | extract shards 001+ as needed (pod, streaming) | MVP loop, on demand |
+| 5 | **BDD100K** | H7 flywheel proof-of-concept (IDM pseudo-labels on weak-action data); very high diversity | after 30k ckpt (needs trained inv-dyn) | DataEng, Phase 0→1 boundary |
+| 6 | **nuScenes** | reserved D8 OOD probe (never trained — that's its value) | loader at gate-D8 time | Benchmarks+DataEng |
+| 7 | **CoVLA** | language-conditioned driving (H12 bridge), Phase 1 | assess at Phase 1 kickoff | DataEng |
+| 8 | **nuPlan / Argoverse 2 / Waymo Open** | benchmark-adjacent; value rises when closed-loop/forecasting comparisons start | defer to Phase 1 | DataEng |
+| 9 | **OpenDV-2K (YouTube)** | the 1000× thesis at scale; needs robust heterogeneous-focal canon + IDM | Phase 1 flagship experiment | DataEng |
+| 10 | comma L2D / steering-control | small real-CAN augment; cheap but low marginal value vs ZOD | opportunistic | DataEng |
+
 ## Sweep notes (2026-07-14)
 
 - **Loaded this run:** Cosmos-Drive-Dreams — the first *publicly-claimable* rich AV corpus (CC-BY-4.0),

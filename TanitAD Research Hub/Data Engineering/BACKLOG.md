@@ -4,7 +4,14 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — for the top-3 unsourced scenarios
+0. **PhysicalAI-AV R1 expansion (Sayed directive 2026-07-08: leverage all high-quality data;
+   license solved later or corpus replaced):** scale the R0 urban scorer 500 → **2,000 clips** on
+   pod1 (disk OK; run scorer + fetch during trainer idle-CPU windows; epcache build AFTER the 30k
+   run finishes — 62 GB cgroup). Deliverable: R1 clip list + fetch plan + measured ingest cost.
+   Everything tagged `data:physicalai` as always. Ranked queue: `DATASET_LANDSCAPE.md` (new section).
+1. **PhysicalAI-WorldModel-Synthetic-Scenarios license check + 50-clip pilot** (promoted from P1.4;
+   rank #2 in the acquisition queue — H6/H15/D9 long-tail + scenario-DB data rows).
+2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — for the top-3 unsourced scenarios
    in `Opponent Analyzer/SCENARIO_DATABASE.md`, find concrete training/validation data (public
    corpora slices, Cosmos weather variants, CARLA recipes). Deliverable: filled data-source rows
    + one downloaded/verified sample each where public.
