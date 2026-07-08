@@ -4,12 +4,13 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **Metric-suite live dry-run — PARTIALLY DONE 2026-07-08 (MVP loop):** TMS + CNCE now run on
-   REAL telemetry (12 comma-val log replays + measured 4060 decision tick): CNCE median
-   2.02×10⁵ m/(s·B), TMS expert-log band 0.024–0.083 (see LEADERBOARD efficiency block +
-   `stack/experiments/p0-latency-baseline/`). REMAINING: LAL/OKRI/LOPS need occluder-scenario
-   telemetry — run the work_zone_phantom ORACLE through `run_scenario_suite` as the wiring
-   dry-run (no real claim, contract check only), full live numbers gated on CARLA W31–32.
+1. ~~Metric-suite live dry-run~~ **DONE 2026-07-08 (MVP loop), two parts:** (a) TMS + CNCE on
+   REAL telemetry (12 comma-val replays + measured 4060 tick): CNCE median 2.02×10⁵ m/(s·B),
+   TMS expert band 0.024–0.083 → LEADERBOARD efficiency block. (b) **Wiring dry-run PASSED
+   end-to-end** (`scripts/scenario_suite_dryrun.py` + regression tests): work-zone oracle →
+   ScenarioTelemetry → suite; discriminative structure survives the real metrics (LAL −0.1 vs
+   +2.9 s; OKRI 120.6 vs 14.8; LOPS 0.0 vs 0.83; closure 20.8 vs 0.0 m). Live LAL/OKRI/LOPS
+   numbers remain gated on CARLA W31–32 — replace `simulate_policy` with the real rollout.
 2. **Competitor efficiency block in LEADERBOARD** — param counts + published compute of GAIA-3
    (15B, offline), Alpamayo-2 (32B), UniAD-class, vs TanitAD 261M live; each row sourced.
    This operationalizes W-05 (CNCE differentiation).

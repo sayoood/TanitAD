@@ -1,0 +1,47 @@
+{
+  "exp": "scenario-suite-wiring-dryrun",
+  "scenario": "work_zone_phantom",
+  "rows": {
+    "reactive": {
+      "model": "oracle:reactive",
+      "LAL_s": -0.1,
+      "TMS": 0.0202,
+      "OKRI": 120.5642,
+      "CNCE": 230.6667,
+      "LOPS": 0.0,
+      "_directions": {
+        "LAL_s": ">0 proactive",
+        "TMS": "->1 smooth",
+        "OKRI": "lower safer",
+        "CNCE": "higher efficient",
+        "LOPS": "->1 tracks hidden"
+      },
+      "closure_incursion_m": 20.8
+    },
+    "world_model": {
+      "model": "oracle:world_model",
+      "LAL_s": 2.9,
+      "TMS": 0.0467,
+      "OKRI": 14.8139,
+      "CNCE": 1888.8889,
+      "LOPS": 0.832,
+      "_directions": {
+        "LAL_s": ">0 proactive",
+        "TMS": "->1 smooth",
+        "OKRI": "lower safer",
+        "CNCE": "higher efficient",
+        "LOPS": "->1 tracks hidden"
+      },
+      "closure_incursion_m": 0.0
+    }
+  },
+  "checks": {
+    "LAL_wm_proactive": true,
+    "OKRI_wm_safer": true,
+    "LOPS_wm_tracks": true,
+    "CNCE_wm_efficient": true,
+    "closure_wm_compliant": true
+  },
+  "all_pass": true,
+  "note": "design-oracle telemetry, NOT a model claim (P8)"
+}
