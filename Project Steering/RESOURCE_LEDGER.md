@@ -1,10 +1,10 @@
-﻿# Resource Ledger
+# Resource Ledger
 
 > Every cloud-GPU spend gets a row BEFORE the run (plan) and after (actual). Local 4060 runs are free
-> and not logged. Reviewed by the Orchestrator every Friday. Budget guardrails: Master Plan Â§4.
+> and not logged. Reviewed by the Orchestrator every Friday. Budget guardrails: Master Plan §4.
 
 | Date | Exp-ID | Resource | Planned $ | Actual $ | Purpose / gate | Approved by |
 |---|---|---|---|---|---|---|
-| 2026-07-06 | p0-sB01-base250cam-comma | RunPod A40 48 GB, ~18â€“30 h | 25 | â€” | Real-data (comma2k19) training of TanitAD-4B-M (261 M) per D-009; D1â€“D3 + D9 first rows on real camera data | Sayed (pod started per runbook) |
+| 2026-07-06 | p0-sB01-realmix | RunPod A6000 48 GB (D-019: 30k steps, micro 32 × accum 2) | 40 | — | Real-data mix training of TanitAD-4B-M (261 M) per D-009/D-015; D1–D3 + D9 first rows on real camera data | Sayed (pod start + D-019 acceleration) |
 
-**Phase 0 running total: $0 spent / $20 planned** (guardrail: â‰¤ $50/week without explicit approval)
+**Phase 0 running total: $0 settled / $40 planned** (guardrail: ≤ $50/week without explicit approval)
