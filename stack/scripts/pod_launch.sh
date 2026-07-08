@@ -32,6 +32,7 @@ echo "--- episodes cap: ${EPISODES}/corpus (EPISODES=... to override) ---"
 # activations). micro 16 x accum 4 = effective 64; checkpointing for headroom.
 MICRO="${MICRO:-16}"
 ACCUM="${ACCUM:-4}"
+STEPS="${STEPS:-60000}"
 
 # Container RAM ceiling can be far below `free` (host view) — size EPISODES to
 # THIS number, not to free -g (suspected cause of the overnight kill):
@@ -51,7 +52,7 @@ for attempt in \$(seq 1 20); do
     --config base250cam --data realmix \\
     --data-root /workspace/data/comma2k19 \\
     --sim-root  /workspace/data/physicalai \\
-    --sim-frac 0.6 --episodes ${EPISODES} \\
+    --sim-frac 0.6 --episodes ${EPISODES} --steps ${STEPS} \\
     --batch-size ${MICRO} --accum ${ACCUM} --grad-checkpoint \\
     --out ${OUT} >> ${LOG} 2>&1 && break
   echo "[runner] exited nonzero; restarting in 15 s" >> ${LOG}

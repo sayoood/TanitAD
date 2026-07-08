@@ -86,6 +86,15 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-019 — p0-sB01 throughput fix: micro 32 × accum 2, run capped at 30k steps (2026-07-08, accepted by Sayed)
+
+**Decision.** Measured overnight pace (~260 steps/h at micro 16 × accum 4) put the 60k plan at ~10
+days / >$100 vs the $25 ledger entry, with the A6000 at only 12.5/48 GB. Escalated per D-018; Sayed
+approved: raise micro-batch to 32 (accum 2 — effective batch stays 64, SigReg statistics unchanged),
+cap this run at 30k steps (~2.5 days, ~$30–40; sufficient for the D1–D3/D9 gate evaluation this run
+exists for). Resumes from checkpoint ~5,150. Note: the cosine LR schedule now anneals to the 30k
+horizon — intended (proper annealing for a shorter run). Ledger updated to planned $40.
+
 ## D-018 — Remote escalation protocol: strategic/tactical decisions go to Sayed's phone; executions never (2026-07-08, accepted — specified by Sayed)
 
 **Decision.** Autonomous work (loop, agents, monitors) escalates STRATEGIC and TACTICAL decisions to
