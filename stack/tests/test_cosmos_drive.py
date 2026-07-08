@@ -100,12 +100,58 @@ def test_episode_id_distinct_per_weather():
     a = cd._episode_id("clipX", "rainy")
     b = cd._episode_id("clipX", "snowy")
     assert a != b                                      # weather variants differ
+    assert cd._episode_id("clipX", "rainy", 0) != cd._episode_id("clipX", "rainy", 1)
 
 
 def test_clip_id_parsing():
     assert cd._clip_id_of(Path("abc123_0_Rainy.mp4")) == "abc123"
     assert cd._clip_id_of(Path("abc123_1.mp4")) == "abc123"
     assert cd._weather_of(Path("abc123_0_Night.mp4")) == "night"
+    assert cd._chunk_of(Path("abc123_0_Rainy.mp4")) == 0
+    assert cd._chunk_of(Path("abc123_1_Rainy.mp4")) == 1
+    assert cd._chunk_of(Path("abc123_1.mp4")) == 1
+    assert cd._chunk_of(Path("abc123.mp4")) == 0       # no chunk suffix
+
+
+def test_chunk_offsets_pose_pairing():
+    """Chunk 1 video must pair with poses [121:242], not [:121] (the bug found
+    on real shard bytes 2026-07-08: ~half the extracted videos are chunk 1)."""
+    # accelerating trajectory => speed identifies WHICH pose segment was used
+    dt = 1 / 30.0
+    M = np.zeros((300, 4, 4))
+    x = 0.0
+    for t in range(300):
+        v = 2.0 + 0.05 * t                             # v(t) rises 2 -> 17 m/s
+        M[t] = np.eye(4)
+        M[t, 0, 3] = x
+        x += v * dt
+    pose_fn = lambda ref: M
+    decode = lambda mp4, size: torch.randint(
+        0, 255, (cd.CHUNK_FRAMES, 3, size, size), dtype=torch.uint8)
+
+    ep0 = cd.build_episode({**fake_clip("c"), "chunk": 0}, size=32,
+                           decode_fn=decode, pose_fn=pose_fn)
+    ep1 = cd.build_episode({**fake_clip("c"), "chunk": 1}, size=32,
+                           decode_fn=decode, pose_fn=pose_fn)
+    v0 = float(ep0.poses[:, 3].mean())
+    v1 = float(ep1.poses[:, 3].mean())
+    # chunk 0 covers t in [0,121) (mean v ~ 5), chunk 1 covers [121,242) (~11)
+    assert abs(v0 - (2.0 + 0.05 * 60)) < 0.5
+    assert abs(v1 - (2.0 + 0.05 * 181)) < 0.5
+    assert ep0.episode_id != ep1.episode_id
+
+
+def test_chunk_beyond_poses_raises_and_is_skipped():
+    short_pose_fn = make_pose_fn(n=130)                # chunk 1 needs > 130
+    clip = {**fake_clip("c"), "chunk": 1}
+    import pytest
+    with pytest.raises(ValueError):
+        cd.build_episode(clip, size=32, decode_fn=fake_decode,
+                         pose_fn=short_pose_fn)
+    # build_episodes must skip it, not crash
+    eps = cd.build_episodes([clip], size=32, decode_fn=fake_decode,
+                            pose_fn=short_pose_fn)
+    assert eps == []
 
 
 def test_admissible_in_mix():

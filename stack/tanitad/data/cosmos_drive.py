@@ -62,7 +62,8 @@ from tanitad.data.toy_driving import ToyEpisode
 
 WHEELBASE = 2.9          # Hyperion platform class, shared with PhysicalAI-AV
 TARGET_HZ = 10.0
-SRC_FPS = 30.0           # Cosmos-Drive-Dreams synthetic camera rate
+SRC_FPS = 30.0           # RDS-HQ label rate; container fps metadata is unreliable
+CHUNK_FRAMES = 121       # chunk i renders label frames [i*121, i*121+121)
 FRONT_CAM = "front_wide_120fov"
 MAX_STEER_RAD = 0.7      # ~40 deg road-wheel clip (guards low-speed 1/v blow-up)
 
@@ -121,6 +122,18 @@ def _clip_id_of(mp4: Path) -> str:
     stem = re.sub(r"_(Foggy|Golden_hour|Morning|Night|Rainy|Snowy|Sunny)$", "",
                   stem, flags=re.IGNORECASE)
     return re.sub(r"_\d+$", "", stem)                        # drop `_<chunk>`
+
+
+def _chunk_of(mp4: Path) -> int:
+    """`<clip>_<chunk>[_<weather>].mp4` -> chunk index (0 if absent).
+
+    Chunk i of a clip is generated from label frames [i*121, i*121+121) of the
+    30 Hz RDS-HQ stream (measured on real shard bytes 2026-07-08: 121-frame
+    videos, ~300 poses per 10 s clip, chunk ids 0 and 1 both present)."""
+    stem = re.sub(r"_(Foggy|Golden_hour|Morning|Night|Rainy|Snowy|Sunny)$", "",
+                  mp4.stem, flags=re.IGNORECASE)
+    m = re.search(r"_(\d+)$", stem)
+    return int(m.group(1)) if m else 0
 
 
 def load_vehicle_pose(pose_ref: str | Path) -> np.ndarray:
@@ -183,7 +196,8 @@ def discover_clips(root: str | Path, camera_subdir: str | None = None,
             pose_file if pose_file.exists() else pose_root)
         if Path(pose).exists():
             out.append({"clip_id": cid, "mp4": mp4, "pose": pose,
-                        "weather": _weather_of(mp4)})
+                        "weather": _weather_of(mp4),
+                        "chunk": _chunk_of(mp4)})
     return out
 
 
@@ -193,8 +207,8 @@ def _weather_of(mp4: Path) -> str:
     return m.group(1).lower() if m else "unknown"
 
 
-def _episode_id(clip_id: str, weather: str) -> int:
-    return int(hashlib.sha1(f"cosmos/{clip_id}/{weather}".encode())
+def _episode_id(clip_id: str, weather: str, chunk: int = 0) -> int:
+    return int(hashlib.sha1(f"cosmos/{clip_id}/{weather}/{chunk}".encode())
                .hexdigest()[:8], 16)
 
 
@@ -210,15 +224,27 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     strided to TARGET_HZ (dt = stride/src_fps ~ 0.1 s), signals derived on the
     strided timeline, then ``n_stack`` frames are channel-stacked with
     actions/poses aligned to the LATEST frame of each stack (drop the first k).
+
+    Chunked videos (measured 2026-07-08): a `_<chunk>` video renders label
+    frames [chunk*CHUNK_FRAMES, chunk*CHUNK_FRAMES + 121) of the clip's 30 Hz
+    pose track, so poses are OFFSET by chunk*CHUNK_FRAMES before pairing.
+    Container fps metadata is a muxing artifact (reads 24) — the true frame
+    spacing is 1/src_fps.
     """
     stride = max(1, int(round(src_fps / TARGET_HZ)))
     dt = stride / src_fps
 
     vid = decode_fn(clip["mp4"], size)                       # [M,3,S,S] u8
     poses4 = pose_fn(clip["pose"])                           # [N,4,4]
-    n = min(vid.shape[0], poses4.shape[0])
+    off = int(clip.get("chunk", 0)) * CHUNK_FRAMES
+    n_avail = poses4.shape[0] - off
+    if n_avail < (n_stack + 2) * stride:
+        raise ValueError(
+            f"chunk {clip.get('chunk')} of {clip.get('clip_id')} needs poses "
+            f"beyond index {off} but only {poses4.shape[0]} exist")
+    n = min(vid.shape[0], n_avail)
     vid = vid[:n][::stride]                                  # [n',3,S,S]
-    actions, poses = poses_to_signals(poses4[:n][::stride], dt)
+    actions, poses = poses_to_signals(poses4[off:off + n][::stride], dt)
 
     m = min(vid.shape[0], actions.shape[0])
     stacked = stack_frames(vid[:m], n_stack)                 # [m-k,9,S,S] u8
@@ -227,7 +253,8 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     return ToyEpisode(frames=stacked,
                       actions=torch.from_numpy(actions[k:m]),
                       poses=torch.from_numpy(poses[k:m]),
-                      episode_id=_episode_id(clip["clip_id"], clip["weather"]))
+                      episode_id=_episode_id(clip["clip_id"], clip["weather"],
+                                             int(clip.get("chunk", 0))))
 
 
 def build_episodes(clips: list[dict], **kw) -> list[ToyEpisode]:
