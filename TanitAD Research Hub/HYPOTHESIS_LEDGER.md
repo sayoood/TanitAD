@@ -29,6 +29,17 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-08: Architecture & Inference (Wed) — decoding-lever evidence (no status change, P8:
+  corroboration is not confirmation; the D-gates are unpassed until the trained checkpoint). **H4/A4**
+  external support: **Delta-JEPA** (arXiv 2606.31232) reconstructs the executed action from the *latent
+  displacement between consecutive observations* — independently our residual (A4) + inverse-dynamics (A5)
+  design. **H5** the multistep-rollout benefit gains a second data point (Pareto ≈ K=4, alongside
+  2512.24497's 6-step real). **H1/H2** conditioning upgrades (AdaLN>FiLM, +RoPE) now triangulated across
+  three sources (2512.24497, Delta-JEPA, OmniDreams 2606.03159). **H3** theory-watch live (Balestriero &
+  LeCun spectral-SSL, IEEE SPMag 43(3) 2026). All turned into *falsifiable, gated* levers in the new
+  **bake-off harness** (WP3, backlog #2) — AdaLN/RoPE/K-step enter as `planned` levers (gate + hypothesis +
+  WP pointer), runnable only after the model code lands AND the checkpoint makes D1/D3 admissible (D-004).
+  See `Architecture & Inference/Research/2026-07-08-bakeoff-harness-and-conditioning-levers.md`.
 - 2026-07-07: **ALPS-4B v1.1 adopted (D-017).** H3 strengthened: A11 validates consequence-dominance
   in the egocentric observation model our pipeline uses (control 0.19→0.69/0.76 from the observation
   change alone). A13 demotes imag-rel to a diagnostic — D2 redefined (calibrated OR P4

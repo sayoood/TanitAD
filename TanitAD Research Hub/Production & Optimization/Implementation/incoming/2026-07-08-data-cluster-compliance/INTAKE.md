@@ -57,7 +57,15 @@ Both are minimal drop-ins; no behavior change on well-formed inputs; no new deps
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:**
-- **Reason & notes:**
-- **Integrated as:**
+- **Verdict:** **integrate-with-changes**
+- **Date / by:** 2026-07-08 night / MVP orchestrator (loop)
+- **Reason & notes:** Both defects real and well-evidenced; the cache-key collision is exactly the
+  cosmos chunk-pairing class. ONE integration change: added a **read-only legacy-dir fallback**
+  (`_legacy_cache_key`) so the ~138 GB of pre-existing pod caches are reused instead of rebuilt —
+  new-keyed dir empty + legacy-keyed dir has episodes ⇒ use legacy with a warning; new builds
+  always use collision-safe keys (+1 test). Cross-machine portability flag noted: pods share the
+  /workspace layout so keys match pod-to-pod; local differs but never builds big caches.
+  Lower-prio findings (DONE marker, silent short-episode drop) stay on your review-#3 backlog.
+- **Integrated as:** `stack/tanitad/data/epcache.py` (replaced) + `mixing.save_episode` guards +
+  `stack/tests/{test_epcache_key,test_save_episode_validate}.py` (imports rewired to stack paths);
+  suite 178 green.

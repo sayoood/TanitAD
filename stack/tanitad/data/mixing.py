@@ -27,7 +27,21 @@ from tanitad.data.toy_driving import ToyEpisode
 
 def save_episode(ep: ToyEpisode, path: str) -> None:
     """Persist an episode — frames stored uint8 to keep files small
-    (accepts uint8 [0,255] or float [0,1] frames)."""
+    (accepts uint8 [0,255] or float [0,1] frames).
+
+    Fail-fast: raises ValueError if the episode is mis-shaped, so a broken
+    adapter item is caught at the write boundary, not deep inside a training
+    window (Production review #1, integrated 2026-07-08)."""
+    T = ep.frames.shape[0]
+    if ep.frames.ndim != 4:
+        raise ValueError(f"save_episode: frames must be [T,C,H,W], got "
+                         f"{tuple(ep.frames.shape)}")
+    if ep.actions.shape[0] != T or ep.actions.ndim != 2 or ep.actions.shape[1] != 2:
+        raise ValueError(f"save_episode: actions must be [T,2] with T={T}, got "
+                         f"{tuple(ep.actions.shape)}")
+    if ep.poses.shape[0] != T or ep.poses.ndim != 2 or ep.poses.shape[1] != 4:
+        raise ValueError(f"save_episode: poses must be [T,4] with T={T}, got "
+                         f"{tuple(ep.poses.shape)}")
     if ep.frames.dtype == torch.uint8:
         u8 = ep.frames
     else:
