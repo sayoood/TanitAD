@@ -1,0 +1,124 @@
+{
+  "exp": "i8-latency+tms-cnce-baseline",
+  "ckpt_step": 6500,
+  "hardware": "RTX 4060 (Orin proxy, I8), fp32, strict numerics, batch 1",
+  "params_billions": 0.2628,
+  "latency": {
+    "encode_1frame": {
+      "p50_ms": 9.38,
+      "p95_ms": 10.073
+    },
+    "predict_1pass": {
+      "p50_ms": 6.139,
+      "p95_ms": 7.278
+    },
+    "select_K9": {
+      "p50_ms": 5.69,
+      "p95_ms": 7.089
+    },
+    "gpu_power_sample": "[N/A], NVIDIA GeForce RTX 4060",
+    "peak_vram_gb": 1.079,
+    "decision_tick_p50_ms": 15.07
+  },
+  "notes": [
+    "TMS scores the EXPERT LOG smoothness (reference band), not our policy",
+    "CNCE: collisions=0 by construction in log replay; latency = measured decision tick (encode + K9 select) on the 4060",
+    "LAL/OKRI/LOPS need closed-loop occluder telemetry (CARLA W31-32) - not computed (P8)"
+  ],
+  "TMS_expert_log": {
+    "median": 0.0435,
+    "min": 0.0238,
+    "max": 0.0831
+  },
+  "CNCE": {
+    "median": 202098.27,
+    "min": 48760.62,
+    "max": 223666.13
+  },
+  "episodes": [
+    {
+      "episode_id": 2121828738,
+      "T": 300,
+      "TMS_expert_log": 0.0461,
+      "CNCE": 222548.81,
+      "progress_m": 881.5
+    },
+    {
+      "episode_id": 1253660068,
+      "T": 300,
+      "TMS_expert_log": 0.0435,
+      "CNCE": 76632.55,
+      "progress_m": 303.5
+    },
+    {
+      "episode_id": 2651766402,
+      "T": 300,
+      "TMS_expert_log": 0.0376,
+      "CNCE": 217098.15,
+      "progress_m": 859.9
+    },
+    {
+      "episode_id": 4213159682,
+      "T": 300,
+      "TMS_expert_log": 0.0375,
+      "CNCE": 76296.9,
+      "progress_m": 302.2
+    },
+    {
+      "episode_id": 25089381,
+      "T": 300,
+      "TMS_expert_log": 0.0831,
+      "CNCE": 223666.13,
+      "progress_m": 885.9
+    },
+    {
+      "episode_id": 2305174300,
+      "T": 300,
+      "TMS_expert_log": 0.0436,
+      "CNCE": 218939.2,
+      "progress_m": 867.2
+    },
+    {
+      "episode_id": 3597123400,
+      "T": 300,
+      "TMS_expert_log": 0.0343,
+      "CNCE": 160118.97,
+      "progress_m": 634.2
+    },
+    {
+      "episode_id": 4203966195,
+      "T": 300,
+      "TMS_expert_log": 0.0238,
+      "CNCE": 223097.27,
+      "progress_m": 883.7
+    },
+    {
+      "episode_id": 2831231267,
+      "T": 300,
+      "TMS_expert_log": 0.0333,
+      "CNCE": 65814.88,
+      "progress_m": 260.7
+    },
+    {
+      "episode_id": 773399109,
+      "T": 300,
+      "TMS_expert_log": 0.0526,
+      "CNCE": 187098.4,
+      "progress_m": 741.1
+    },
+    {
+      "episode_id": 2973864241,
+      "T": 300,
+      "TMS_expert_log": 0.0687,
+      "CNCE": 219588.0,
+      "progress_m": 869.8
+    },
+    {
+      "episode_id": 2684089795,
+      "T": 300,
+      "TMS_expert_log": 0.0441,
+      "CNCE": 48760.62,
+      "progress_m": 193.1
+    }
+  ]
+}

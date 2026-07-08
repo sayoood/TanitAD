@@ -4,12 +4,12 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **Metric-suite live dry-run on training telemetry** — LAL/TMS/OKRI/CNCE/LOPS have only seen
-   design-oracle fixtures. Method: build a `ScenarioTelemetry` stream from a real evaluation
-   episode (evaluate_checkpoint output + work_zone_phantom oracle), run the full suite, publish
-   first real numbers to LEADERBOARD (diagnostic block, weak-claim footnote). Expected: suite
-   runs end-to-end; CNCE computable from step-latest checkpoint + 4060 watt draw. Falsifier:
-   contract mismatch ⇒ intake fix package.
+1. **Metric-suite live dry-run — PARTIALLY DONE 2026-07-08 (MVP loop):** TMS + CNCE now run on
+   REAL telemetry (12 comma-val log replays + measured 4060 decision tick): CNCE median
+   2.02×10⁵ m/(s·B), TMS expert-log band 0.024–0.083 (see LEADERBOARD efficiency block +
+   `stack/experiments/p0-latency-baseline/`). REMAINING: LAL/OKRI/LOPS need occluder-scenario
+   telemetry — run the work_zone_phantom ORACLE through `run_scenario_suite` as the wiring
+   dry-run (no real claim, contract check only), full live numbers gated on CARLA W31–32.
 2. **Competitor efficiency block in LEADERBOARD** — param counts + published compute of GAIA-3
    (15B, offline), Alpamayo-2 (32B), UniAD-class, vs TanitAD 261M live; each row sourced.
    This operationalizes W-05 (CNCE differentiation).

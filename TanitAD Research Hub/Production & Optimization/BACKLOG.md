@@ -5,11 +5,12 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
 
 ## P0 — first runs
 
-1. **Batch-1 streaming latency baseline (I8)** — the number every optimization is judged against.
-   Method: step-latest checkpoint on the 4060, pinned numerics, batch-1: encoder / operative
-   predictor / imagine-and-select (K=9 batched) at 256 px; report ms p50/p95 + peak VRAM + watts
-   (nvidia-smi). Expected: first honest CNCE denominator; Orin proxy note attached. Wall-clock
-   ~1 h.
+1. ~~Batch-1 streaming latency baseline (I8)~~ **DONE 2026-07-08 (MVP loop):** decision tick
+   15.07 ms p50 / 1.08 GB VRAM on 4060 fp32 (encode 9.38, predictor 6.14, K9 select 5.69 —
+   batching amortizes the select almost entirely). ~66 Hz un-optimized. Script:
+   `stack/scripts/latency_cnce_baseline.py`; JSON in `stack/experiments/p0-latency-baseline/`.
+   Note: nvidia-smi power read N/A on this 4060 — wattage needs another probe (HWiNFO/GPU-Z or
+   powercfg) for the CNCE watt variant.
 2. **ONNX export of encoder+predictor path** — opset pin, shape `[1,9,256,256]` static; parity
    check vs PyTorch (max |Δz| under pinned numerics ≤ 1e-4 fp32). Deliverable: export script +
    parity numbers + list of unexportable ops (grad-checkpoint flags off for export).

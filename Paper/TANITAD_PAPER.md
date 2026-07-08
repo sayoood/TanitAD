@@ -279,6 +279,22 @@ training on real data; metric decoding and multi-step imagination remain open an
 the remaining 83 % of training and gates D1/D3 will decide. No driving-competence claim is made or
 implied by decode gates.
 
+**Inference efficiency (measured, step-6500 weights; commodity RTX 4060, fp32, batch 1, pinned
+numerics):** one full decision tick — encoding the current frame stack plus a batched K = 9
+imagine-and-select tactical pass — costs **15.1 ms p50 (17.2 ms p95) at 1.08 GB peak VRAM**,
+i.e. ≈ 66 Hz *before any* TensorRT or quantization work, against a 10–20 Hz operative
+requirement. Batching amortizes candidate evaluation almost entirely (K = 9 select 5.7 ms vs
+6.1 ms for a single predictor pass) — the millisecond-planning property of §3.4 measured rather
+than asserted.
+
+**Self-knowledge, first controlled measurement (step 6500):** on 23 matched pairs of the *same*
+synthetic scene rendered under clear vs degraded weather, one-step imagination error is higher
+under degradation in 16/23 scenes (median paired shift +1.6; sign test p ≈ 0.047) — while every
+*unpaired* comparison sits at chance and a diagonal-Mahalanobis latent detector is dominated by
+within-corpus route shift. The familiarity signal exists but is weak and confounded this early;
+the paired protocol is pre-registered for re-measurement at 50 % and 100 % of training. Gate D8
+proper runs on real never-trained OOD probes.
+
 ## 8. Roadmap
 
 Completion of the first run and the full gate ladder; closed-loop evaluation (CARLA harness) for

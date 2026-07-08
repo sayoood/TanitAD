@@ -40,11 +40,17 @@
 | D4 (tactical lift) | not run | — | — | — |
 | D5 (routing edge) | not run | — | — | — |
 | D6 (generalization slope) | not run | — | — | — |
-| D8 (OOD AUROC) | not run | — | — | — |
+| D8 (OOD AUROC) | not run (gate) — **paired preview at step 6.5k**: 16/23 same-scene clear→degraded pairs show higher imagination error (p≈0.047); unpaired scores ~chance | `stack/experiments/p0-d8-preview/` | d8-preview-sc05-v2 | 2026-07-08 |
 | D9 (H15 hidden-sector imagination) | not run | — | — | — |
 
 ## Efficiency ledger (CNCE inputs)
 
 | Checkpoint | Params | FLOPs/decision | Batch-1 latency 4060 | Orin projection | Date |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| p0-sB01 step 6500 | 262.8 M | TBD | **decision tick 15.07 ms p50** (encode 9.38 + K9 select 5.69; predictor pass 6.14; p95 ≈ 17.2), fp32 un-optimized, peak VRAM **1.08 GB**, strict numerics, I8 batch-1 | TBD (Phase 1; TRT/quant headroom on top of ~66 Hz fp32) | 2026-07-08 |
+
+**First real TMS/CNCE rows** (diagnostic; `stack/experiments/p0-latency-baseline/`): CNCE on 12
+comma-val log replays with the measured tick = median **2.02×10⁵ m/(s·B-params)** (collisions=0 by
+construction — log replay, footnote stands); TMS expert-log reference band median 0.044 (min 0.024,
+max 0.083) — a *reference band* for later closed-loop comparison, not a policy claim. LAL/OKRI/LOPS
+remain unmeasured pending CARLA occluder telemetry (W31–32) — P8: no telemetry, no number.
