@@ -186,6 +186,67 @@ def compute_lal(tel: ScenarioTelemetry,
 
 
 # --------------------------------------------------------------------------- #
+# 1b. LAL-v2 — anticipatory deceleration lead (integrated 2026-07-09, intake   #
+#     `2026-07-09-lal-v2-anticipation`). LAL-v1 measures reaction HARDNESS     #
+#     (jerk threshold) and is blind to comfort-bounded anticipatory slowing —  #
+#     proven non-discriminative on the first live SC-01 run (both policies     #
+#     -0.7 s). LAL-v2 detects sustained speed drop vs the free-cruise          #
+#     reference; >0 = slowed BEFORE line-of-sight (the H15 edge). Assumes the  #
+#     clip STARTS in free cruise (true for the SC-01 contract).                #
+# --------------------------------------------------------------------------- #
+LAL2_DROP_FRAC = 0.15   # speed must fall >=15% below free-cruise to count
+LAL2_REF_FRAC = 0.30    # free-cruise ref = max speed over first 30% of clip
+LAL2_HOLD = 3           # steps the drop must persist (reject one-sample dips)
+
+
+def decel_onset_index(ego_v,
+                      drop_frac: float = LAL2_DROP_FRAC,
+                      ref_frac: float = LAL2_REF_FRAC,
+                      hold: int = LAL2_HOLD):
+    """Index of the first sustained deceleration onset, or None."""
+    v = np.asarray(ego_v, dtype=float)
+    T = v.size
+    if T == 0:
+        return None
+    ref_n = max(1, int(round(ref_frac * T)))
+    v_ref = float(np.max(v[:ref_n]))
+    if v_ref <= 0.0:
+        return None
+    thresh = (1.0 - drop_frac) * v_ref
+    below = v <= thresh
+    for i in np.flatnonzero(below):
+        j = min(int(i) + hold, T - 1)
+        if v[j] <= thresh + 1e-9:       # sustained, not a transient dip
+            return int(i)
+    return None
+
+
+def compute_lal_v2(ego_v, hazard_los_flag, dt: float = 0.1,
+                   timestamp_s=None,
+                   drop_frac: float = LAL2_DROP_FRAC,
+                   ref_frac: float = LAL2_REF_FRAC,
+                   hold: int = LAL2_HOLD) -> float:
+    """LAL_v2 = t_LoS - t_decel_onset (s; >0 => slowed before line-of-sight).
+
+    Latent, pre-LoS generalization of the TTB/TTC family: credits braking that
+    begins before the hazard is detectable at all. Sentinels shared with v1:
+    0.0 if the hazard never reaches LoS; LAL_NO_REACTION if never decelerates.
+    """
+    los = np.asarray(hazard_los_flag, dtype=bool)
+    v = np.asarray(ego_v, dtype=float)
+    t = (np.asarray(timestamp_s, dtype=float) if timestamp_s is not None
+         else np.arange(v.size, dtype=float) * dt)
+    los_idx = np.flatnonzero(los)
+    if los_idx.size == 0:
+        return 0.0
+    t_los = float(t[int(los_idx[0])])
+    onset = decel_onset_index(v, drop_frac, ref_frac, hold)
+    if onset is None:
+        return LAL_NO_REACTION
+    return float(t_los - t[onset])
+
+
+# --------------------------------------------------------------------------- #
 # 2. Tactical Maneuver Stability (TMS)                                         #
 # --------------------------------------------------------------------------- #
 def compute_tms(tel: ScenarioTelemetry,
@@ -275,11 +336,15 @@ def run_scenario_suite(tel: ScenarioTelemetry, model_name: str = "TanitAD") -> d
     return {
         "model": model_name,
         "LAL_s": round(compute_lal(tel), 4),
+        "LAL_v2_s": round(compute_lal_v2(tel.ego_v, tel.hazard_los_flag,
+                                         tel.dt, tel.timestamp_s), 4),
         "TMS": round(compute_tms(tel), 4),
         "OKRI": round(compute_okri(tel), 4),
         "CNCE": round(compute_cnce(tel), 4),
         "LOPS": round(compute_lops(tel), 4),
-        "_directions": {"LAL_s": ">0 proactive", "TMS": "->1 smooth",
+        "_directions": {"LAL_s": ">0 proactive (reaction-onset, hard-brake)",
+                        "LAL_v2_s": ">0 anticipation lead (decel-onset)",
+                        "TMS": "->1 smooth",
                         "OKRI": "lower safer", "CNCE": "higher efficient",
                         "LOPS": "->1 tracks hidden"},
     }

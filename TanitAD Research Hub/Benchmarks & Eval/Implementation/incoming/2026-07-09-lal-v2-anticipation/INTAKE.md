@@ -64,4 +64,12 @@ Add the 7 tests to `stack/tests/test_metrics.py`.
 
 ## Verdict (orchestrator writes here)
 
-_pending triage_
+- **Verdict:** **integrate**
+- **Date / by:** 2026-07-09 morning / MVP orchestrator (loop)
+- **Reason:** exactly the fix for the LAL-v1 non-discrimination flagged in `2d87acb`; analytic
+  tests; TTB-family lineage makes it recognizable. v1 kept and relabeled (reaction-onset) —
+  non-breaking.
+- **Integrated as:** `stack/tanitad/eval/metrics.py` (constants + `decel_onset_index` +
+  `compute_lal_v2`; `run_scenario_suite` now emits BOTH `LAL_s` and `LAL_v2_s` with direction
+  labels) + `stack/tests/test_lal_v2.py` (imports rewired). Suite 188 green. The next SC-01 run
+  (≥3-seed, your backlog P0.2) reports LAL-v2 automatically via the suite.
