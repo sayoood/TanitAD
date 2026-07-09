@@ -86,6 +86,19 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-025 — Workflow hardening: cron drumbeat + fixed-clock reports (2026-07-09 evening, after Sayed's dissatisfaction — justified)
+
+**Problem:** the loop ran on self-re-arming wakeups (single-slot, silently killed by one missed
+re-arm — happened twice: overnight 01–06h and afternoon 15:30–19:45), and reports rode on that
+fragile loop; the 18:00 evening-report task also failed silently. **Fix (structural):**
+(1) recurring **cron drumbeat** fires the loop every ~28 min independent of prior-turn behavior
+(job 65fd34d5; session crons auto-expire after 7 days → the loop's weekly duty includes
+re-creating them, and each iteration verifies them via CronList);
+(2) **fixed-clock detailed program reports 3×/day (07:57, 12:57, 17:57)** — chat + push + a
+durable file in `Project Steering/Reports/` committed to the repo (job 117e9409);
+(3) ScheduleWakeup remains only as a fast-path accelerator between drumbeats, never the sole
+continuity mechanism. Per-iteration mini-reports (D-023) unchanged.
+
 ## D-024 — Never-idle resource utilization (2026-07-09, directed by Sayed)
 
 If the loop is otherwise waiting and a resource is free (local 4060, pod1 when not training, pod2,
