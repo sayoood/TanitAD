@@ -86,6 +86,19 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-026 — Multi-agent workflows + event monitors + agent worktrees + project skills (2026-07-09 night, directed by Sayed)
+
+**Adopted:** (1) **Workflow orchestration** (explicit opt-in given) for four programs: stack audit
+(adversarially-verified findings, pre-30k), literature sweep (multi-angle fan-out over anchor
+citation graphs), scenario-database scaling (parallel authoring + red-team verification), and
+validated architecture design/experiments (judge panel over design variants — scheduled after the
+K-step/arm-B evidence lands). Sequencing: audit+literature tonight; database scaling next; the
+architecture panel on arm evidence. (2) **Persistent Monitors** replace polling for milestone
+events (30k checkpoint save, arm progress, stall signatures). (3) **Agent worktree isolation** —
+agents work in isolated git worktrees/branches (`agent/<discipline>-<date>`), orchestrator merges;
+kills the shared-tree lock collisions (3 h git hang, swept commits). (4) **Project skills** for
+one-word rituals: /gate-eval, /program-report, /fleet-status.
+
 ## D-025 — Workflow hardening: cron drumbeat + fixed-clock reports (2026-07-09 evening, after Sayed's dissatisfaction — justified)
 
 **Problem:** the loop ran on self-re-arming wakeups (single-slot, silently killed by one missed

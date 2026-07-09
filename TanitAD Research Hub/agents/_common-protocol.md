@@ -81,6 +81,19 @@ research note — these numbers feed the efficiency story (CNCE).
 - G-F: session-end ritual done: STATE.md updated (incl. `LAST_RUN`, `QUALITY` line), files committed
   with message `hub(<discipline>): <what> — <why>`, pushed.
 
+## Worktree isolation (D-026, 2026-07-09 — MANDATORY)
+
+The shared working tree caused git-lock collisions (a 3 h hang blocked all commits on 2026-07-09).
+Therefore, FIRST action after reading this file: **enter an isolated git worktree** — call the
+`EnterWorktree` tool if available in your session; otherwise create one manually:
+`git worktree add ../TanitAD-agent-<discipline> -b agent/<discipline>-<YYYYMMDD>` and work there.
+At session end: commit in your worktree, push your `agent/<discipline>-<date>` branch, and note the
+branch name in your STATE.md `LAST_RUN` line. **Never commit directly to `main` from an agent
+session.** The MVP orchestrator merges agent branches into main during loop triage (fast-forward or
+merge; conflicts resolved by the orchestrator). Exception: if worktree creation fails, fall back to
+the old behavior but retry any lock error for max 10 minutes, then log and skip the commit (the
+orchestrator sweeps).
+
 ## Boundaries (updated per D-011 — hub/MVP separation)
 
 - **NEVER write into `stack/`** or other core MVP artifacts. Code and code-change proposals go into
