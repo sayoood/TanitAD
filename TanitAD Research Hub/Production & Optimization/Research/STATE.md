@@ -1,35 +1,45 @@
 # Production & Optimization — STATE
 
-- **LAST_RUN:** 2026-07-08 (run #1, Saturday agent)
-- **QUALITY:** full (one measured experiment with numbers + one compliance review with a tested
-  intake package; both gates G-H and G-P1/G-P2 met)
+- **LAST_RUN:** 2026-07-09 (run #2, Saturday agent)
+- **QUALITY:** full (one measured experiment with decision-grade numbers + one compliance review
+  with a tested intake package; G-H, G-P1, G-P2 met. TRT-proper toolchain-blocked but the mandated
+  measured experiment ran — precursor, not a skip.)
 - **Phase:** 0
 
 ## Where this stream stands (one paragraph)
 
-First run of the Production & Optimization stream (D-020 §3). The operative-path **ONNX export is
-proven**: encoder+readout and the multi-horizon predictor export clean at opset 17 (legacy) and
-opset 18 (dynamo, torch-2.11's default) with PyTorch parity max|Δz| 8.8e-6 / 1.2e-5 (tol 1e-4) and
-**zero unexportable ops** — the TensorRT-on-Orin path is unblocked. Compliance review #1 of
-`tanitad/data/` found and fixed (as one tested intake package) a **cache-key collision** in
-`epcache` that is the same silent-wrong-data class as the cosmos chunk-pairing bug, plus a
-`save_episode` fail-fast guard. `PRODUCTION_READINESS.md` now records the data cluster as reviewed
-and the ONNX export path as done.
+Run #2. **Precision policy is now measured:** on 64 real comma2k19 windows (step-6500, 4060),
+**fp16 is decision-safe** (imagine-and-select agreement 95.3 %, encoder rel-err 7.8e-4, decoded-
+waypoint shift 3.9 cm mean) but **bf16 is NOT** (67.2 % agreement — 1/3 maneuver picks flip —
+rel-err 7.2e-3, 47.7 cm mean/3.58 m max shift), both finite. **Deploy TRT-fp16, never bf16**; the
+G-P2 point made concrete (speed alone would have picked bf16). TensorRT-proper is **toolchain-
+blocked** (`import tensorrt`→missing, ORT CPU-only) so the engine build is split to P1.4a (install
+`tensorrt`+`onnxruntime-gpu` or build on an idle pod) with a **pre-registered fp16 acceptance bar**.
+Compliance review #2 of `tanitad/models/` shipped a fail-fast intake (operative-predictor
+`assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests, export-safe). Review #1
+(data cluster) was **integrated (integrate-with-changes)** by the orchestrator — no further action.
 
 ## Next actions (checkboxes)
 
-- [ ] **Next run (P1.4):** TensorRT fp16 engine from the two ONNX graphs on the 4060 — GPU latency
-      vs PyTorch + accuracy Δ (max|Δz|) on 100 held-out real windows. ONNX parity already cleared.
-- [ ] Read the orchestrator verdict on `2026-07-08-data-cluster-compliance` and adapt.
-- [ ] Compliance review #2 target: `tanitad/models/` (numerics/determinism/malformed-window
-      handling) — note the encoder/predictor are already ONNX-clean.
-- [ ] Carry the two logged review-#1 findings (DONE-marker-unused; short-episode silent drop) into
-      a later package.
+- [ ] **Next run — P1.4a:** build the TRT-fp16 engine once the toolchain is in (dev-box
+      `tensorrt`+`onnxruntime-gpu`, or on the pod when a trainer is idle); verify against the fp16
+      bar (agreement ≥95 %, wp-shift ≤~4 cm). If GPU stays contended, do review #3 (`stack/scripts/`)
+      instead and defer P1.4a to a clean-GPU window.
+- [ ] **P1.4b:** clean latency re-measure on an exclusive, clock-pinned 4060 → publish fp16 absolute
+      Hz + clean VRAM delta (this run's absolutes were CarlaUE4-contended).
+- [ ] Carry logged review-#2 findings into a numerics package: `tactical_pred` fail-fast +
+      `imagination_nll` `exp(-logvar)` clamp (backlog P1.7).
 
 ## Standing facts / gotchas (this stream)
 
-- RTX 4060 is the declared Orin latency proxy (I8). Decision-tick baseline: 15.07 ms p50 / 1.08 GB
-  VRAM fp32 (2026-07-08 MVP loop).
+- RTX 4060 is the declared Orin latency proxy (I8). Clean decision-tick baseline: **15.07 ms p50 /
+  1.08 GB VRAM fp32** (2026-07-08 MVP loop, exclusive GPU). **Absolute latency needs an exclusive,
+  clock-pinned GPU** — the 2026-07-09 run was CarlaUE4-contended (99 % util) and read 33.5 ms; only
+  the accuracy deltas and speedup *ratios* survive contention, not absolute Hz or per-precision VRAM.
+- **Precision policy: fp16 on the decision path, never bf16** (measured 2026-07-09). Keep the ViT
+  tower ≥fp16. TRT-fp16 acceptance bar pre-registered (≥95 % agreement, ≤~4 cm wp-shift on 64 windows).
+- **TensorRT not installed on the dev box** (`import tensorrt`→missing; ORT CPU EP only). The ONNX
+  IR is exported + parity-clean, so only the toolchain/engine step remains.
 - ONNX export deps (`onnx`, `onnxruntime`, `onnxscript`) installed in the venv — **export/dev only**,
   never in the inference runtime wheel.
 - Windows dynamo ONNX export crashes on emoji progress under cp1252 → run with `PYTHONUTF8=1`.

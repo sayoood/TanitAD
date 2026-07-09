@@ -2,6 +2,40 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-09 (run #2)
+
+- **FP16 is decision-safe on the operative path; BF16 is NOT.** Measured on 64
+  real comma2k19 windows (step-6500), imagine-and-select over a K=9 fan decoded
+  by one fixed fp64 probe: **fp16** → selection agreement **95.3 %** (3/64 flips),
+  encoder rel-err 7.8e-4, decoded-waypoint shift **3.9 cm mean/19 cm max**;
+  **bf16** → agreement **67.2 %** (21/64 flips), rel-err 7.2e-3, shift
+  **47.7 cm mean/3.58 m max**. Both finite (no overflow). Mechanism: the deltas
+  are **precision-limited, not range-limited**, so fp16's 10 mantissa bits vs
+  bf16's 8 (~9× lower latent error) decide it; a tight argmin fan amplifies 9× →
+  5 % vs 33 % flips. **Deploy TRT-fp16, never bf16, on the decision path.**
+  Cosine stays ≈1.0 for both → cosine is too coarse; score precision in the
+  DECISION space (agreement, waypoint metres), not latent space (G-P2).
+  Source: `Implementation/half_precision/half_precision_step6500.json`.
+- **TensorRT-proper is not installable on the dev box as-is:** `import tensorrt`
+  → ModuleNotFoundError; **onnxruntime exposes only the CPU EP** (no CUDA/TRT
+  provider). A TRT-fp16 engine build needs `tensorrt` + `onnxruntime-gpu` (CUDA
+  12 EP) installed, or an idle-pod build. Non-paid → EXECUTE-class, sequence
+  behind a clean-GPU window. Source: measured this run (`nvidia-smi`, ORT
+  `get_available_providers()`).
+- **Latency benchmarks need an EXCLUSIVE, clock-pinned GPU.** This run's absolute
+  latency was contended — the 4060 was at 99 % util with a local `CarlaUE4` (~4 GB)
+  + python resident, inflating the fp32 decision tick to 33.5 ms vs the clean
+  15.07 ms (2026-07-08). Numerics/accuracy are contention-immune; **absolute
+  latency/Hz and per-precision peak-VRAM are not** (VRAM also double-counts the
+  resident fp32 reference). Pin clocks (`nvidia-smi -lgc`) + no other compute apps
+  before quoting I8/CNCE absolutes. Source: measured this run.
+- **Operative predictor had an `assert`-only input guard** (`predictor.py:73`) →
+  stripped under `python -O`, a wrong (shorter) window then **re-aligns on every
+  axis and runs silently** (silent-wrong-data class); wrong dims threw cryptic
+  matmul `RuntimeError`s. Fixed via `validate_operative_inputs` (named-axis
+  `ValueError`s, `-O`-proof, shape-int checks constant-fold on ONNX export).
+  Source: `Implementation/incoming/2026-07-09-models-predictor-failfast/`.
+
 ## 2026-07-08 (run #1)
 
 - **The TanitAD-4B operative path is ONNX-exportable with no op changes.** encoder+readout

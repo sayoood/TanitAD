@@ -13,7 +13,7 @@ compatibility (ONNX/TRT).
 | Module | Reviewed | Open issues | Notes |
 |---|---|---|---|
 | `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08** | 2 fixed (intake), 2 logged | review #1 done → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests); DONE-marker-unused + short-episode-silent-drop logged for later |
-| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | — | — | review #2. NOTE: encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5) — no export-blocking ops |
+| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-09** | 1 fixed (intake), 2 logged | review #2 done → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests, export-safe). Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow. Encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5). SigReg correctly pins fp32; `eval()` disables F-5 grad-ckpt |
 | `tanitad/instruments/` | — | — | |
 | `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | |
 | `stack/scripts/` + training loop | — | — | review #3; ops-fragility history F-5/F-6/F-7 |
@@ -29,6 +29,23 @@ compatibility (ONNX/TRT).
   2.11 default); parity vs PyTorch max|Δz| **8.8e-6 / 1.2e-5** (tol 1e-4). No unexportable ops —
   MHA/FiLM/causal-triu all supported. `eval()` disables the grad-checkpoint (F-5) lever for export.
   ORT-CPU is 1.4–4.4× SLOWER than Torch-CPU (expected; ONNX value = TRT-on-Orin IR, not CPU speed).
+- **Precision policy (MEASURED 2026-07-09, 4060, step-6500, 64 real windows):**
+  deploy **fp16** on the decision path, **never bf16**. fp16 → imagine-and-select
+  agreement 95.3 %, encoder rel-err 7.8e-4, decoded-waypoint shift 3.9 cm mean;
+  bf16 → agreement **67.2 %** (1/3 maneuver picks flip), rel-err 7.2e-3, shift
+  **47.7 cm mean/3.58 m max**. Both finite (precision-limited, not range-limited).
+  Keep the ViT tower ≥fp16. Pre-registered TRT-fp16 acceptance bar: match fp16
+  (agreement ≥95 %, wp-shift ≤~4 cm) on these 64 windows. Source:
+  `Implementation/half_precision/half_precision_step6500.json`.
+- **TensorRT toolchain NOT installed on the dev box:** `import tensorrt` →
+  ModuleNotFoundError; onnxruntime has **CPU EP only**. TRT-fp16 engine build
+  needs `tensorrt` + `onnxruntime-gpu` (CUDA-12 EP) or an idle-pod build (backlog
+  P1.4a). ONNX IR already exported + parity-clean, so the graph side is ready.
+- **Latency-measurement hygiene:** absolute I8/CNCE latency must be taken on an
+  EXCLUSIVE, clock-pinned GPU. The 2026-07-09 run was contended (local CarlaUE4 +
+  python, 99 % util) → fp32 tick read 33.5 ms vs the clean 15.07 ms; accuracy is
+  contention-immune but absolute latency/Hz and per-precision peak-VRAM are not
+  (VRAM double-counts the resident fp32 reference). Clean re-run = backlog P1.4b.
 - INT8 on ViT: native TensorRT is a known trap — OwLite/ModelOpt route confirmed (Phase 1). ModelOpt
   PTQ = in-place + calibration dataloader, QDQ nodes; keep the ViT tower FP16, quantize predictor/
   heads first, accuracy metric = probe-fit delta.
@@ -43,5 +60,5 @@ compatibility (ONNX/TRT).
 | Stage | Status | Detail |
 |---|---|---|
 | ONNX (encoder+predictor) | **DONE 2026-07-08** | opset 17 (legacy) & 18 (dynamo); static [1,9,256,256] + [1,8,2048]/[1,8,2]; parity 8.8e-6 / 1.2e-5; no plugins needed |
-| TensorRT fp16 | **unblocked (next run)** | build from the ONNX graphs on the 4060; report GPU latency + accuracy Δ on 100 held-out windows (backlog P1.4) |
+| TensorRT fp16 | **toolchain-blocked** (P1.4a) | `import tensorrt`→missing, ORT CPU-only. **fp16 precursor MEASURED 2026-07-09**: fp16 decision-safe (agreement 95.3 %, wp-shift 3.9 cm), bf16 NOT (67.2 %, 47.7 cm). Acceptance bar pre-registered. Install `tensorrt`+`onnxruntime-gpu` or build on idle pod |
 | Quantization (OwLite/ModelOpt) | not started | Phase 1; ModelOpt PTQ (calib loader + QDQ); ViT tower FP16; accuracy metric = probe-fit delta |
