@@ -4,7 +4,10 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **Colab CLI burst harness — INSTALL TESTED 2026-07-08 (MVP loop), auth gate reached.**
+1. ~~Colab CLI burst harness~~ **DONE 2026-07-09 00:50 (MVP loop + Sayed's OAuth):** end-to-end
+   validated — `colab run --gpu T4` = fresh T4, torch cu128 CUDA job, auto-release, **33 s
+   cold-to-done, $0**. Agent pattern + etiquette: `Implementation/colab_burst/README.md`.
+   (History below:)
    Facts established: the OFFICIAL `googlecolab/google-colab-cli` is GitHub-source only (not on
    PyPI), requires **py≥3.12**, and is **Linux/macOS only** → installed on **pod2** in a py3.12
    venv (`/opt/colabcli`, symlinked to `/usr/local/bin/colab`); agents on the Windows dev machine
