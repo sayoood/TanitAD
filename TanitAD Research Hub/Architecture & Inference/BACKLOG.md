@@ -10,18 +10,38 @@ Format per item: goal / method / resource / expected number / falsifier.
    OVER-PROVISIONED** (knee ≪ 512, well inside the predicted 20–60 band → efficiency-moat evidence for H3).
    Feeds D-021. **Remaining:** re-run at the FINAL Stage-0 ckpt (rank still climbing 35→43) before any resize.
    Artifact: `Research/2026-07-08-spectral_step6500.json` + note §5b.
-2. **K-step rollout loss bake-off (K=2)** — test the "multistep-as-augmentation" finding
-   (arXiv 2512.24497) on our predictor.
-   Method: branch trainer config, feed predictions back for K=2 alongside single-window loss;
-   2×3k-step arms at matched compute on Colab A100 or idle pod; compare D2 dir-acc + imag-rel
-   on the same probe protocol. Expected: D2 ≥ +0.02 or drop it. Falsifier: no D2/D3 improvement
-   at matched steps → record negative, close item.
+2. **[✅ DONE 2026-07-09 — K-step rollout bake-off, first measured arm]** Matched-compute K=2 vs K=1
+   (2×2000 steps, real comma2k19, 4060, 11.74 M reduced-but-real probe, OFAT-verified). Rollout is
+   **nearly free (+0.5 % wall-clock, 0 params)**. **Metric lesson:** the planned falsifier (D2 dir-acc)
+   **saturated at 1.0** → non-discriminative; the discriminative signal is **`imag_rel`**, on which K=2
+   cuts 1-step latent-pred error vs persistence **2.914→1.049 (−64 %)** but does NOT help the 4-step
+   horizon → **K must match the decode horizon**. D1 FAIL + D3 BLOCKED at this scale ⇒ no decision-grade
+   claim (D-004). Artifact: `Research/2026-07-09-...md` + `Implementation/kstep_bakeoff_probe/`.
+   **Superseded by P0 #2b + #2c below.**
+
+2b. **Decision-grade K-step sweep K∈{1,2,4} at OPERATIVE scale** — the real bake-off arm.
+   Method: matched-compute trained arms from the pod2 step-8k `ckpt_full.pt` (Phase C, idle-pod or
+   Colab L4/A100-with-ledger-row); primary metric **`imag_rel` per horizon** (NOT dir-acc — it
+   saturates) + D3 ratio once imagination horizons are extended. Expected: K=4 lowers `imag_rel` at
+   horizons ≤4 without D2 regression; falsifier: no `imag_rel` improvement at matched steps → drop
+   K-step. **D-018 Tactic → escalate to Sayed before it touches the trained config.**
+
+2c. **Extend imagination horizons past 0.4 s** (predictor imagines k∈{1,2,4}=0.4 s; the plan's D3 is 2 s).
+   Couples with 2b (K must cover the horizon). Method: add longer horizons to `predictor.horizons` in a
+   prototype; measure `imag_rel`/D3 at 1 s/2 s. Falsifier gate: D3. Escalate before trained-config change.
 
 ## P1
 
-3. **RoPE in FiLM/AdaLN conditioning** — one-lever bake-off vs learned positional embedding
-   (2512.24497 "AdaLN+RoPE best"). Smoke-scale first (d256 on 4060, 1k steps, probe fit),
-   promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier: Δ within noise → close.
+3. **RoPE + AdaLN conditioning** — one-lever bake-off vs FiLM/learned positional embedding
+   (2512.24497 "AdaLN+RoPE best"). Smoke-scale first (d256 on 4060, 1k steps, probe fit — reuse the
+   `kstep_bakeoff_probe` harness), promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier:
+   Δ within noise → close. **Prior lowered (arXiv 2605.08567):** AdaLN vs cross-attn is a wash for
+   LOW-dim actions and our actions are 2-D → expect small Δ; keep AdaLN (not cross-attn), test cheap.
+3b. **Orthogonality instrument for `spectral.py`** — from arXiv 2605.26379: LeJEPA's optimal-planning
+   guarantee needs the identified latent to be linear+**orthogonal**. Add a check that the trained
+   readout covariance is ~isotropic/diagonal (an I-row, gates the D-021 sizing claim's admissibility,
+   not an architecture change). Ship as an intake with a test. Cheap, makes the theorem falsifiable
+   on our own checkpoint.
 4. **H4 arm-B prep: frozen DINOv3 encoder path** — implement the frozen-encoder variant behind
    a config flag in a prototype (Implementation/ folder, NOT stack/); measure probe fit on 500
    comma windows vs our step-latest checkpoint. Caveat from 2512.24497: DINO > V-JEPA for

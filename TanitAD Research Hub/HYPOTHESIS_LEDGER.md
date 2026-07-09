@@ -58,6 +58,17 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   (navhard, Apr-2026) — another latent-WM board leader → "world model" still not differentiating (H0/H6),
   wedge stays hierarchy+efficiency+imagination+self-monitoring. See
   `Benchmarks & Eval/Research/2026-07-09-sc01-live-metric-audit-and-lal-v2.md`.
+- 2026-07-09: Architecture & Inference (Wed) — **H5 K-step rollout, first measured arm** (no status
+  change, P8: reduced-scale directional probe, D1 FAIL + D3 BLOCKED ⇒ no gate passed, D-004). Matched-compute
+  K=2 vs K=1 (2×2000 steps, real comma2k19, 4060, OFAT-verified): rollout is **nearly free (+0.5 % wall-clock,
+  0 params)**; the backlog falsifier metric (D2 dir-acc) **saturated at 1.0** so it can't discriminate; the
+  discriminative signal `imag_rel` shows K=2 cuts 1-step latent-pred error vs persistence **2.914→1.049 (−64 %)**
+  but does **not** help the 4-step horizon (I4 1.451→1.645) → **K must match the decode horizon** (K≈4 for the
+  2-s D3 claim). Decision-grade = operative-scale K∈{1,2,4} sweep from pod2 step-8k. Also **H3 strengthened
+  (external theory, no status change):** *When Does LeJEPA Learn a World Model?* (arXiv 2605.26379, LeCun/Klindt)
+  proves LeJEPA/SIGReg gives **linear+orthogonal latent identifiability under a UNIQUE Gaussian prior →
+  optimal latent-space planning** — grounds our SIGReg-only anti-collapse AND the linear transition proxy in
+  `p0-spectral-sizing` (D-021). See `Architecture & Inference/Research/2026-07-09-kstep-rollout-bakeoff-and-lejepa-identifiability.md`.
 - 2026-07-08: Architecture & Inference (Wed) — **H3 first trained-checkpoint measurement** (no status
   change, P8: mid-training + feeds D-021, not a passed gate): spectral-sizing on the step-6500 ckpt (fit
   R²=0.99, operator effective rank ≈43, energy knee 31, k*=21) → the action-conditioned transition operator

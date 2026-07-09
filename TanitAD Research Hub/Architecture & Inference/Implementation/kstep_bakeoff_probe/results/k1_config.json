@@ -1,0 +1,68 @@
+{
+  "encoder": {
+    "in_channels": 9,
+    "image_size": 128,
+    "patch_size": 16,
+    "d_model": 256,
+    "depth": 6,
+    "n_heads": 4,
+    "grad_checkpoint": false
+  },
+  "predictor": {
+    "d_model": 256,
+    "depth": 4,
+    "n_heads": 4,
+    "window": 8,
+    "horizons": [
+      1,
+      2,
+      4
+    ],
+    "action_dim": 2,
+    "residual": true,
+    "change_weighted": true
+  },
+  "tactical_pred": null,
+  "readout": {
+    "grid": 4,
+    "d_readout": 64
+  },
+  "tactical": {
+    "n_maneuvers": 9,
+    "horizon": 4
+  },
+  "h15": {
+    "enabled": false,
+    "mask_prob": 0.5,
+    "weight": 0.5,
+    "depth": 3,
+    "observed_weight": 0.1
+  },
+  "loss": {
+    "sigreg": {
+      "n_slices": 128,
+      "beta": 1.0,
+      "weight": 0.1
+    },
+    "pred_weight": 1.0,
+    "inv_dyn_weight": 0.5
+  },
+  "train": {
+    "lr": 0.0003,
+    "weight_decay": 0.05,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "batch_size": 32,
+    "accum_steps": 1,
+    "save_every": 2001,
+    "steps": 2000,
+    "warmup_steps": 100,
+    "device": "auto",
+    "seed": 0,
+    "log_every": 50,
+    "out_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\0f90878e-1794-4344-8770-5b180a9fd688\\scratchpad\\kstep_run\\k1",
+    "rollout_k": 1
+  }
+}
