@@ -124,7 +124,8 @@ def los_clear(world, ego, walker) -> bool:
     return True
 
 
-def run_policy(client, policy: str, sc: WorkZonePhantomScenario, out: Path):
+def run_policy(client, policy: str, sc: WorkZonePhantomScenario, out: Path,
+               seed: int = 0):
     import carla
     world = client.get_world()
     bp = world.get_blueprint_library()
@@ -143,7 +144,9 @@ def run_policy(client, policy: str, sc: WorkZonePhantomScenario, out: Path):
     lane_w = chain[0].lane_width
     log = {k: [] for k in ("v", "steer", "lat_ms", "los", "dblind", "occ",
                            "wm", "gt", "incur")}
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
+    # honest seed variance: jitter the approach speed (±0.4 m/s per seed step)
+    sc.v_cruise = sc.v_cruise + 0.4 * (seed % 3 - 1)
     taper_loc = chain_point(chain, sc.taper_s).transform.location
     prev_steer = 0.0
     incursion = 0.0
@@ -237,10 +240,11 @@ def run_policy(client, policy: str, sc: WorkZonePhantomScenario, out: Path):
         wm_hazard_xy=np.array(log["wm"], dtype=float),
         gt_hazard_xy=np.array(log["gt"], dtype=float),
         dt=sc.dt, collisions=0, params_billions=0.2628)
-    suite = run_scenario_suite(tel, model_name=f"carla-live:{policy}")
+    suite = run_scenario_suite(tel, model_name=f"carla-live:{policy}:s{seed}")
     suite["closure_incursion_m"] = round(float(incursion), 2)
+    suite["seed"] = seed
     suite["_label"] = "LIVE CARLA physics, SCRIPTED policy (not our model)"
-    (out / f"telemetry_{policy}.json").write_text(json.dumps(
+    (out / f"telemetry_{policy}_s{seed}.json").write_text(json.dumps(
         {k: (np.asarray(vv).tolist() if k != "incur" else vv[-1])
          for k, vv in log.items()}, default=float))
     return suite
@@ -253,6 +257,8 @@ def main():
     ap.add_argument("--port", type=int, default=2000)
     ap.add_argument("--map", default="Town04")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--seeds", type=int, default=1,
+                    help="run seeds 0..N-1 per policy (>=3-seed rule for CI)")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -261,11 +267,15 @@ def main():
     client.set_timeout(120.0)
     if args.map not in client.get_world().get_map().name:
         client.load_world(args.map)
-    sc = WorkZonePhantomScenario()
     results = {}
     for policy in ("reactive", "world_model"):
-        results[policy] = run_policy(client, policy, sc, out)
-        print(f"[carla] {policy}: {json.dumps(results[policy], indent=1)}")
+        for seed in range(args.seeds):
+            sc = WorkZonePhantomScenario()           # fresh (seed jitters it)
+            key = f"{policy}_s{seed}"
+            results[key] = run_policy(client, policy, sc, out, seed=seed)
+            print(f"[carla] {key}: LAL_v2={results[key].get('LAL_v2_s')} "
+                  f"OKRI={results[key].get('OKRI')} "
+                  f"LOPS={results[key].get('LOPS')}", flush=True)
     (out / "suite_results.json").write_text(json.dumps(results, indent=2))
     print(f"[carla] results -> {out / 'suite_results.json'}")
 

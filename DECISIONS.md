@@ -86,6 +86,14 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-024 — Never-idle resource utilization (2026-07-09, directed by Sayed)
+
+If the loop is otherwise waiting and a resource is free (local 4060, pod1 when not training, pod2,
+Colab burst), **start the next feasible work package** from the Phase 0 plan / discipline backlogs
+on the best-fit resource — accelerate toward the master plan. Feasibility guardrails unchanged:
+training has absolute priority on its pod (I/O-throttle anything sharing it — the 2026-07-09 stall
+lesson), resource-ledger rules for paid compute, honest labeling of preview-grade results.
+
 ## D-023 — Per-iteration loop reporting (2026-07-09, directed by Sayed)
 
 **Every autonomous loop iteration ends with a detailed report in chat:** (1) current progress
