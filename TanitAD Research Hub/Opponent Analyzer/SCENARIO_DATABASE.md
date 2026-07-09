@@ -20,6 +20,17 @@ excellence-proven`. *Excellence-proven* = TanitAD metric beats the entry's bar o
 (closed-loop where applicable) AND the opponent failure is FACT-documented — then the row is a
 public claim candidate.
 
+**Scenario-data doctrine (Sayed directive 2026-07-09 — two strictly separated lanes):**
+- **TRAINING lane:** scenario *classes* trained via synthetic corpora (WorldModel-Synthetic-Scenarios
+  once D-022 lands; Cosmos pre-rendered variants) and — Phase 1 — **targeted generation**: the
+  Cosmos toolkit conditioned on OUR scenario geometries (weather × density × layout sweeps of
+  opponent-failure classes) and **NuRec neural reconstructions** of real drives perturbed with
+  scenario elements (real geometry + synthetic hazard — closes CARLA's visual gap). PhysicalAI-family
+  license firewall applies (internal use; public claims stay comma+Cosmos).
+- **EVAL lane (never trained):** held-out CARLA closed-loop builds, Cosmos matched pairs (SC-05),
+  nuScenes OOD probe. Separation enforced by I3 splits + I7 fingerprints + domain disjointness —
+  class-level generalization is the claim; clip-level leakage is structurally impossible.
+
 ---
 
 ## SC-01 — Work-zone phantom lane / cone-taper entry  [W-01] ★★★ headline

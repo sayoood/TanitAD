@@ -55,3 +55,27 @@ def test_lever_is_runnable_and_one_factor():
     changed = lever_diff(base, variant)
     assert set(changed) == {"train.rollout_k"}   # OFAT isolation holds
     assert variant.train.rollout_k == 4
+
+
+def test_cached_data_mode(tmp_path):
+    import torch as _t
+
+    from tanitad.data.mixing import save_episode
+    from tanitad.data.toy_driving import ToyEpisode
+    from tanitad.train.train_worldmodel import _build_datasets
+
+    cfg = smoke_config()
+    for split in ("train", "val"):
+        d = tmp_path / f"toy-{split}-abc123"
+        d.mkdir()
+        for i in range(2):
+            ep = ToyEpisode(
+                frames=_t.zeros(30, cfg.encoder.in_channels,
+                                cfg.encoder.image_size, cfg.encoder.image_size,
+                                dtype=_t.uint8),
+                actions=_t.zeros(30, 2), poses=_t.zeros(30, 4), episode_id=i)
+            save_episode(ep, str(d / f"ep_{i:05d}.pt"))
+    tr, va = _build_datasets(cfg, 2, "cached", str(tmp_path))
+    assert len(tr) > 0 and len(va) > 0
+    item = tr[0]
+    assert "future_actions" in item

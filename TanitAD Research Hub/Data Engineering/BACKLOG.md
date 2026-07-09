@@ -19,6 +19,13 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P1
 
+2b. **NuRec feasibility probe (Sayed suggestion 2026-07-09, scenario-data doctrine):** what NuRec
+   (neural-reconstruction) assets exist in the PhysicalAI-AV HF family (NuRec/NCore variants),
+   their format (Gaussian-splat? USD?), license class, and whether reconstructed scenes can be
+   perturbed (insert cones/occluders) with available tooling. Deliverable: yes/no adoption note +
+   one downloaded sample inspected. Feeds the Phase-1 targeted-generation WP (Cosmos-conditioned
+   scenario sweeps + NuRec real-geometry eval scenes).
+
 3. **Zenseact ZOD pilot loader** — real-CAN corpus #2 (EU/night distribution comma lacks);
    ~3–4 h loader cost, contract tests on 5 drives; feeds H4 arm-B diversity. Expected: CORPUS_META
    fingerprint byte-compatible; A8 consequence stat reported. License: research/NC — tag like

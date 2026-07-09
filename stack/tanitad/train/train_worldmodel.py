@@ -118,6 +118,29 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         print(f"[data] mix: {train.mix_report()} "
               f"(real windows {len(real_train)}, sim windows {len(sim_ds)})")
         return train, real_val          # validation stays REAL-only (D-010)
+    if data == "cached":
+        # Train directly from pre-built epcache dirs (ep_*.pt) — the bake-off
+        # arm path: pod2 has the episode caches (public HF dataset) but not
+        # the raw videos. data_root = cache root containing *train*/*val* dirs.
+        from pathlib import Path as _P
+
+        from tanitad.data._contract import EpisodeWindowDataset
+        from tanitad.data.mixing import load_episode
+        assert data_root, "--data-root required for cached (epcache root)"
+        root = _P(data_root)
+
+        def mk(pattern):
+            d = sorted(root.glob(pattern))
+            assert d, f"no cache dir matching {pattern} under {root}"
+            eps = [load_episode(str(p), mmap=True)
+                   for p in sorted(d[-1].glob("ep_*.pt"))]
+            assert eps, f"no episodes in {d[-1]}"
+            return EpisodeWindowDataset(eps, window=cfg.predictor.window,
+                                        max_horizon=max_h)
+        tr, va = mk("*train*"), mk("*val*")
+        print(f"[data] cached: {len(tr)} train / {len(va)} val windows "
+              f"from {root}")
+        return tr, va
     if data == "physicalai":
         from tanitad.data._contract import EpisodeWindowDataset
         from tanitad.data.physicalai import (build_episode, discover_r0_clips,
@@ -399,10 +422,12 @@ def main():
                                          "data (PRIMARY, D-009)")
     ap.add_argument("--smoke", action="store_true", help="alias for --config smoke")
     ap.add_argument("--data",
-                    choices=["toy", "comma2k19", "physicalai", "realmix", "mix"],
+                    choices=["toy", "comma2k19", "physicalai", "realmix", "mix",
+                             "cached"],
                     default="toy",
                     help="toy = CI fixture only (D-009); realmix = comma2k19 + "
-                         "PhysicalAI R0 (D-012); mix = real+sim episodes (D-010)")
+                         "PhysicalAI R0 (D-012); mix = real+sim episodes (D-010); "
+                         "cached = pre-built epcache dirs (bake-off arms)")
     ap.add_argument("--data-root", type=str, default=None,
                     help="comma2k19 extracted root (contains Chunk_*/...)")
     ap.add_argument("--sim-root", type=str, default=None,
@@ -418,6 +443,8 @@ def main():
                     help="gradient-accumulation steps (F-5)")
     ap.add_argument("--grad-checkpoint", action="store_true",
                     help="recompute encoder activations (F-5 memory lever)")
+    ap.add_argument("--rollout-k", type=int, default=None,
+                    help="K-step recursive rollout loss (bake-off lever; 1=off)")
     ap.add_argument("--no-amp", action="store_true",
                     help="disable bf16 autocast (training default: on for cuda)")
     ap.add_argument("--out", type=str, default=None)
@@ -439,6 +466,8 @@ def main():
         cfg.train.accum_steps = args.accum
     if args.grad_checkpoint:
         cfg.encoder.grad_checkpoint = True
+    if args.rollout_k:
+        cfg.train.rollout_k = args.rollout_k
     if args.out:
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
