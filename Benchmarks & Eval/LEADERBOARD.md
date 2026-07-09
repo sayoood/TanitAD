@@ -41,9 +41,9 @@
 
 | Gate | Status | Value | Exp-ID | Date |
 |---|---|---|---|---|
-| D1 (probe ADE) | **FAIL** (mid-training preview, step 5k/30k) | ADE@1s 10.94 m (bar < 1.0) | p0-sB01-gates-step5000 | 2026-07-08 |
-| D2 (imagination ranking) | **PASS** (mid-training preview, step 5k/30k) | dir-acc P1 **0.872** / P4 **0.940** (bar 0.7, chance 0.5); imag-rel 9.73 diagnostic — the A13 pattern ON REAL DATA | p0-sB01-gates-step5000 | 2026-07-08 |
-| D3 (imagined-ADE ratio) | **BLOCKED** (I4 3.83 — doctrine refuses the claim) | @0.4 s horizon | p0-sB01-gates-step5000 | 2026-07-08 |
+| D1 (probe ADE) | **FAIL, halving** (step 14k/30k; 10.94 at 5k) | ADE@1s **5.18 m** (bar < 1.0) — on trend toward the bar by 30k | p0-sB01-gates-step14000 | 2026-07-09 |
+| D2 (imagination ranking) | **PASS, improved** (step 14k/30k) | dir-acc P1 **0.917** / P4 **1.000** (bar 0.7, chance 0.5; 0.872/0.940 at 5k); imag-rel 7.42 diagnostic (9.73 at 5k) — A13 pattern holds | p0-sB01-gates-step14000 | 2026-07-09 |
+| D3 (imagined-ADE ratio) | **BLOCKED, closing** (I4 3.05; 3.83 at 5k — approaching the persistence threshold) | @0.4 s horizon | p0-sB01-gates-step14000 | 2026-07-09 |
 | D4 (tactical lift) | not run | — | — | — |
 | D5 (routing edge) | not run | — | — | — |
 | D6 (generalization slope) | not run | — | — | — |
