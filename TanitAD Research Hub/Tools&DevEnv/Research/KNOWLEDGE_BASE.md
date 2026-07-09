@@ -3,6 +3,24 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
+  host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
+  ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit
+  at creation, unchangeable in a running container; (2) UE4.24 can't render Vulkan offscreen (Epic
+  bug) → needs OpenGL or an X server. Turnkey fix = pod template with `NVIDIA_DRIVER_CAPABILITIES=all`
+  (must incl. `graphics`), gate on `vulkaninfo | grep deviceName` BEFORE installing CARLA, then Xvfb
+  `:99` + `CarlaUE4.sh -RenderOffScreen`. NOT urgent (milestone 1 needs no pixels) — impact: D-014/Phase-B —
+  `2026-07-09-carla-render-blocker-and-testsuite-io-cost.md` §1
+- [2026-07-09] [measured] Test-suite G-E cost is dominated by **Google-Drive hydration latency**, not
+  compute: cold 40.6 s vs warm 10.7 s (same 181-pass suite; reported test time 9.2 s; stack src is only
+  0.44 MB / 87 files). Fix = pin `stack/` to Drive "Available offline" → cold≈warm, ~30 s saved per cold
+  agent run (all 6 weekly agents), zero code. Regression-guard shipped (`profile_testsuite.py check`) —
+  impact: G-E/CI/backlog#3 — `2026-07-09-carla-render-blocker-and-testsuite-io-cost.md` §2–3
+- [2026-07-09] [tooling] AlpaSim is now a PUBLIC GitHub repo (`NVlabs/alpasim`) + AlpaGym closed-loop RL;
+  Alpamayo-2 Super 32 B inference/weights "this summer". Moves from announced→clonable, but still
+  40–60 GB VRAM/Docker/HF-gated → verdict unchanged: **Phase-1 cloud, not Phase-0** (P5); watch for a
+  lighter reference policy to seed our closed-loop harness — impact: P5/H1/opponent —
+  [NVlabs/alpasim](https://github.com/NVlabs/alpasim)
 - [2026-07-13] [built] MetaDrive front-camera RGB path unblocks the D-010 sim arm: sim episodes were
   `[T,1,64,64]` BEV, real (comma2k19) is `[T,6,256,256]`; `MixedWindowDataset._check_contract` rejected
   the mismatch → sim arm was structurally dead. New intake pkg renders 6ch/256 2-frame RGB stacks

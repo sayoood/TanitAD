@@ -1,36 +1,42 @@
 # STATE — Tools&DevEnv
 
-LAST_RUN: 2026-07-13 (W2, second weekly run)
-QUALITY: full (G-A…G-F + G-T1 met; live MetaDrive rollout still gated on the supervised source install)
+LAST_RUN: 2026-07-09 (W3, third weekly run)
+QUALITY: full (G-A…G-F + G-H + G-T1 met; measured experiment = test-suite I/O cost)
 
 ## HANDOFF
-Backlog #1 is now b/c-complete **as an intake package** (D-011), pending orchestrator triage:
-`Tools&DevEnv/Implementation/incoming/2026-07-13-metadrive-frontcam-perturbation/`
-(`tanitad_metadrive_frontcam.py` + tests + `INTAKE.md`). It adds the **front-camera RGB path**
-(6ch/256, comma2k19-identical) that unblocks the D-010 sim arm — the merged 1ch BEV adapter is
-structurally rejected by `MixedWindowDataset` (proven by test). 17 standalone tests pass; 0 new deps.
+Note: repo advanced past this discipline's backlog during W2–W3 — the orchestrator/loop shipped the
+CARLA harness live (`stack/scripts/carla_work_zone.py`, SC-01 measured OKRI 32.4 vs 12.8 in `-nullrhi`)
+and the Colab burst harness (backlog P0.1 DONE, `Implementation/colab_burst/README.md`). So this run
+pivoted to the two live gaps: (a) the pod2 **camera-rendering blocker** root-cause + turnkey recipe,
+and (b) the **G-E cost** every agent pays. Both landed.
 
-**To finish the LIVE path (supervised session, ~10 min):**
-1. `pip install git+https://github.com/metadriverse/metadrive.git` then `pip install -e stack/.[sim]`.
-2. `pytest stack/tests/test_metadrive_frontcam.py -m slow -q` (after integration) — confirm 6ch/256
-   frames render and `frame_change_fraction > 0.01` (A8) on real front-cam.
-3. Settle the `obs["image"]` BGR/row-flip caveat vs a saved PNG.
-4. Wire `populate_scene()` object spawns for occluder/blocked-route (currently `NotImplementedError`;
-   MetaDrive `engine.spawn_object` signature is version-sensitive).
+**Two things pending action:**
+1. **Intake triage** — `Implementation/incoming/2026-07-09-testsuite-io-profiling/`
+   (`profile_testsuite.py` + 9 tests + INTAKE). Proposed target `stack/scripts/profile_testsuite.py`;
+   pairs with the future `ci.ps1` (backlog #3) as its timing guard.
+2. **Sayed, ~1 click (free G-E win):** pin `stack/` to Google Drive **"Available offline"** → removes
+   the measured ~30 s cold-I/O tax per agent run (cold 40.6 s → ≈ warm 10.7 s). Evidence in the note §2.
 
-Backlog #1(a) verdict (PyPI no-go py3.13, source=GO) unchanged.
+**CARLA camera pixels (when checkpoint-driven ego eval is on the critical path — NOT urgent):** recreate
+the pod from a template with `NVIDIA_DRIVER_CAPABILITIES=all` (must incl. `graphics`); gate on
+`vulkaninfo | grep deviceName` BEFORE installing CARLA (nvidia-smi is not sufficient); then Xvfb :99 +
+`CarlaUE4.sh -RenderOffScreen`. Full recipe: research note §1. Milestone 1 (LAL/OKRI/LOPS) needs no pixels.
 
-**Next backlog item (#2):** `episode → Rerun .rrd` replay/viz overlay (predicted-vs-actual trajectory +
-BEV). Doubles as the D3 imagined-vs-oracle visual. Rerun is the chosen tool (`pip install rerun-sdk`);
-measure its setup cost for G-T1.
+**Prior open thread (MetaDrive):** superseded by D-014 (MetaDrive retired). The `2026-07-13-metadrive-
+frontcam-perturbation/` intake remains for reference only; sim closed-loop = CARLA now.
 
 ## Done this run
-- Intake pkg `2026-07-13-metadrive-frontcam-perturbation/`: front-cam RGB (`frontcam_frame`,
-  `assemble_frontcam_episode` → 6ch/256 comma2k19-identical), perturbation policy (`perturb_action`),
-  scenario configs (cruise/occluder/blocked-route), `generate_and_save` via `mixing.save_episode`.
-- 17 standalone tests pass (1.67 s, no sim). Full stack suite unaffected: 46 passed / 1 skipped.
-- Research note `2026-07-13-metadrive-frontcam-rgb-and-perturbation.md`; KB delta (3 findings).
-- G-T1 measured: pure path GO (import 1.38 s, 0 new deps); live rollout gated on supervised install.
+- **Root-caused the pod2 CARLA camera-rendering blocker** (was "not fixable in-container", now with the
+  *why*): RunPod compute-only driver caps + UE4.24 Vulkan-offscreen bug. Turnkey graphics-pod recipe with
+  a single `vulkaninfo` go/no-go probe → research note §1, KB.
+- **G-H measured experiment (backlog P1.5):** test-suite I/O decomposition — cold 40.6 s / warm 10.7 s /
+  reported-test 9.2 s / stack-src 0.44 MB. Finding: G-E cost is Drive **hydration latency**, not compute.
+  Falsifier ("tests slow due to torch/compute") refuted. Actionable: pin `stack/` offline.
+- **Implementation increment (G-E):** intake pkg `2026-07-09-testsuite-io-profiling/` — `profile_testsuite.py`
+  (`profile`/`check`, stdlib-only) + 9 pkg tests (0.30 s) + end-to-end `check` OK (181 passed, exit 0).
+- Research note `2026-07-09-carla-render-blocker-and-testsuite-io-cost.md`; KB delta (3 findings);
+  AlpaSim now-public tooling update.
+- G-T1: profiler GO (0 deps, 0 min setup); CARLA graphics-pod = one probe-gated supervised op, $0 until eval-critical.
 
 ## Open threads / proposals to raise
 - AlpaGym closed-loop RL post-training with our own <100 M driver — A100-gated Phase-1 proposal (draft to
