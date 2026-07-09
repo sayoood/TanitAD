@@ -42,10 +42,15 @@ Format per item: goal / method / resource / expected number / falsifier.
    readout covariance is ~isotropic/diagonal (an I-row, gates the D-021 sizing claim's admissibility,
    not an architecture change). Ship as an intake with a test. Cheap, makes the theorem falsifiable
    on our own checkpoint.
-4. **H4 arm-B prep: frozen DINOv3 encoder path** — implement the frozen-encoder variant behind
-   a config flag in a prototype (Implementation/ folder, NOT stack/); measure probe fit on 500
-   comma windows vs our step-latest checkpoint. Caveat from 2512.24497: DINO > V-JEPA for
-   planning readout — this is the arm most likely to beat us; be honest.
+4. **H4 arm-B: frozen DINOv3 world model — PROMOTED (Sayed ask 2026-07-09), design fixed:**
+   (a) precompute DINOv3-**B/16** features once over the comma epcaches (16×16 grid @256px matches
+   our readout geometry; pod2 post-arms or Colab T4 — embarrassingly parallel); (b) train
+   predictor+readout on frozen features (`--data cached` path, ~110M trainable, low VRAM, fast);
+   (c) same D1/D2 probe protocol vs our 15k ckpt (preview) and 30k (decision-grade), same held-out
+   routes, I7-checked. B/16 = fair-compute match to our 99.5M encoder; DINOv3-L later as the
+   foundation-scale upper bound. Caveat stands (2512.24497: DINO > V-JEPA for planning readouts —
+   the arm most likely to beat us; be honest). Owner: loop or Wed agent, whoever reaches it first;
+   queued behind the K-step arms on pod2.
 5. **Tactical horizon ablation** — measure D2 at horizons {8, 16} separately (gate runner already
    emits per-horizon rows); decide if the 16-horizon head earns its 26.5M params.
 
