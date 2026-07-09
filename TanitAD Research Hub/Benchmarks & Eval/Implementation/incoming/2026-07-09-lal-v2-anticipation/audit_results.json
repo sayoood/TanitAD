@@ -1,0 +1,160 @@
+{
+  "audit": "SC-01 first-live-CARLA metric run (2026-07-08)",
+  "source": "stack/experiments/p0-carla-workzone/suite_results_v1.json",
+  "A_LAL_discrimination": {
+    "jerk_threshold": -1.5,
+    "reactive_LAL_v1": -0.1,
+    "reactive_LAL_v2": -0.3,
+    "sweep": [
+      {
+        "smooth_s": 1.0,
+        "peak_decel_jerk": -27.504,
+        "trips_v1_threshold": true,
+        "LAL_v1_anti": 3.6,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": true,
+        "LAL_v2_anti": 3.1,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 2.0,
+        "peak_decel_jerk": -8.146,
+        "trips_v1_threshold": true,
+        "LAL_v1_anti": 3.5,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": true,
+        "LAL_v2_anti": 2.7,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 3.0,
+        "peak_decel_jerk": -3.741,
+        "trips_v1_threshold": true,
+        "LAL_v1_anti": 3.5,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": true,
+        "LAL_v2_anti": 2.3,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 4.0,
+        "peak_decel_jerk": -2.128,
+        "trips_v1_threshold": true,
+        "LAL_v1_anti": 3.4,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": true,
+        "LAL_v2_anti": 1.9,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 5.0,
+        "peak_decel_jerk": -1.369,
+        "trips_v1_threshold": false,
+        "LAL_v1_anti": -999.0,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": false,
+        "LAL_v2_anti": 1.5,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 6.0,
+        "peak_decel_jerk": -0.953,
+        "trips_v1_threshold": false,
+        "LAL_v1_anti": -999.0,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": false,
+        "LAL_v2_anti": 1.1,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      },
+      {
+        "smooth_s": 8.0,
+        "peak_decel_jerk": -0.538,
+        "trips_v1_threshold": false,
+        "LAL_v1_anti": -999.0,
+        "LAL_v1_react": -0.1,
+        "LAL_v1_separates": false,
+        "LAL_v2_anti": 0.3,
+        "LAL_v2_react": -0.3,
+        "LAL_v2_separates": true
+      }
+    ],
+    "v1_collapse_cliff": "LAL_v1 stops separating once the anticipatory slowdown's peak jerk stays above (less negative than) the -1.5 m/s^3 threshold"
+  },
+  "B_LOPS_recompute": {
+    "sigma": 0.3,
+    "gamma": 0.5,
+    "analytic_E_per_step_kernel": 0.8325,
+    "committed_SC01_world_model_LOPS": 0.8338,
+    "by_n_occluded": [
+      {
+        "n_occluded_steps": 10,
+        "LOPS_mean": 0.8328,
+        "LOPS_95ci": [
+          0.7819,
+          0.882
+        ],
+        "committed_0.8338_inside_ci": true
+      },
+      {
+        "n_occluded_steps": 20,
+        "LOPS_mean": 0.8328,
+        "LOPS_95ci": [
+          0.7975,
+          0.8666
+        ],
+        "committed_0.8338_inside_ci": true
+      },
+      {
+        "n_occluded_steps": 40,
+        "LOPS_mean": 0.8326,
+        "LOPS_95ci": [
+          0.8075,
+          0.8573
+        ],
+        "committed_0.8338_inside_ci": true
+      },
+      {
+        "n_occluded_steps": 80,
+        "LOPS_mean": 0.8325,
+        "LOPS_95ci": [
+          0.815,
+          0.8499
+        ],
+        "committed_0.8338_inside_ci": true
+      }
+    ]
+  },
+  "C_OKRI_seed_power": {
+    "okri_gap": 19.54,
+    "rule": "n > (2*1.96*SD/gap)^2  (95% CI non-overlap, same scene)",
+    "note": "per-seed SD must be MEASURED on the >=3-seed pod run; the rows below are a sensitivity table, not a claim",
+    "table": [
+      {
+        "assumed_per_seed_SD": 5.0,
+        "seeds_needed_for_CI_separation": 2,
+        "raw": 1.01
+      },
+      {
+        "assumed_per_seed_SD": 10.0,
+        "seeds_needed_for_CI_separation": 5,
+        "raw": 4.02
+      },
+      {
+        "assumed_per_seed_SD": 15.0,
+        "seeds_needed_for_CI_separation": 10,
+        "raw": 9.06
+      },
+      {
+        "assumed_per_seed_SD": 20.0,
+        "seeds_needed_for_CI_separation": 17,
+        "raw": 16.1
+      }
+    ]
+  }
+}

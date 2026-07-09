@@ -29,6 +29,18 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-09: Benchmarks & Eval (Thu) — **H15 instrument-hardening** (no status change, P8: measured on
+  scripted policies + a noise model, not our checkpoint). The first live CARLA SC-01 run exposed **LAL-v1
+  as blind to smooth anticipation** (both policies −0.7; the −1.5 m/s³ jerk trigger never fires on a
+  comfort-bounded ease-off). Shipped **LAL-v2** (deceleration-onset by speed drop; the pre-line-of-sight
+  generalization of TTB) → +0.3…+3.1 s anticipation lead vs −0.3 s reactive (7 analytic tests). Independent
+  recompute confirmed **SC-01 LOPS 0.834** matches the analytic E=0.8325 of the injected σ=0.3 noise model
+  (inside 95% CI, N=5000) → reproducible, but reactive's 0.0 is *structural* → proves latent-track presence
+  not quality (honest bound on the H15 edge). OKRI ≥3-seed CI-separation rule made numeric (gap 19.5; ~2
+  seeds at SD≈5, SD to be measured on the pod re-run). Ecosystem: DriveFuture 55.5 / DrivoR 56.3 EPDMS
+  (navhard, Apr-2026) — another latent-WM board leader → "world model" still not differentiating (H0/H6),
+  wedge stays hierarchy+efficiency+imagination+self-monitoring. See
+  `Benchmarks & Eval/Research/2026-07-09-sc01-live-metric-audit-and-lal-v2.md`.
 - 2026-07-08: Architecture & Inference (Wed) — **H3 first trained-checkpoint measurement** (no status
   change, P8: mid-training + feeds D-021, not a passed gate): spectral-sizing on the step-6500 ckpt (fit
   R²=0.99, operator effective rank ≈43, energy knee 31, k*=21) → the action-conditioned transition operator

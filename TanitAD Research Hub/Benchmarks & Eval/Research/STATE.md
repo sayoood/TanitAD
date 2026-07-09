@@ -1,9 +1,28 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-16 (Thursday weekly agent, W29) — base commit `ff89194`
-QUALITY: full (all gates G-A…G-F, G-B1, G-B2 met; loop iteration 1 of 3, well under budget)
+LAST_RUN: 2026-07-09 (Thursday weekly agent) — base commit `c4375f8`
+QUALITY: full (all gates G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4,
+well under budget: 2 web searches, ≈1.4 h)
 
-## Where this discipline stands
+## Latest run (2026-07-09) — SC-01 live-metric audit + LAL-v2
+
+The first **live CARLA** SC-01 run (committed 2026-07-08) ran my metric suite on real physics and flagged
+two instruments as broken. I executed my **independent-test role** on it (measured experiment, local CPU,
+$0):
+- **LAL-v2 shipped** (intake `Implementation/incoming/2026-07-09-lal-v2-anticipation/`, 7 analytic tests,
+  standalone-green): LAL-v1's −1.5 m/s³ jerk trigger is blind to smooth comfort-bounded anticipation
+  (reproduced the live −0.7/−0.7 null; cliff located exactly at −1.5 m/s³). LAL-v2 (deceleration-onset by
+  speed drop; TTB generalization) gives +0.3…+3.1 s lead vs −0.3 s reactive across the whole smoothness
+  sweep.
+- **SC-01 LOPS 0.834 independently recomputed** = analytic E 0.8325 of the injected σ=0.3 noise (inside
+  95% CI, N=5000) → reproducible, but reactive 0.0 is *structural* (presence not quality; P8).
+- **OKRI ≥3-seed CI-separation rule made numeric** (gap 19.5; ~2 seeds at SD≈5; SD must be measured).
+- **LEADERBOARD**: NAVSIM-v2 navhard refresh (DriveFuture 55.5 / DrivoR 56.3, Apr-2026) + first **Live
+  SC-01 block** (flagged scripted/single-seed/LAL-v1-superseded) + **competitor efficiency block** (W-05:
+  32 B/15 B vs 261 M). REGULATION_TRACE: ISMR anticipation-evidence row. Ledger: H15 instrument-hardening
+  (no upgrade, P8).
+
+## Where this discipline stands (prior, 2026-07-16 run)
 
 - **Metric suite shipped** as intake pkg `Implementation/incoming/2026-07-16-eval-metric-suite/`
   (`tanitad_metrics.py` + 22 tests + INTAKE) — LAL/TMS/OKRI/CNCE/LOPS (Deep Think 14) + trajectory
@@ -59,5 +78,9 @@ Phase-1 path).
 
 ## HANDOFF
 
-None — run completed cleanly. Deliverables committed + pushed (in `5940129`/`47a89c4` via auto-sweep, plus
-the D-014 reconciliation commit). No half-done work in flight.
+None — 2026-07-09 run completed cleanly. Deliverables: LAL-v2 intake pkg (7 tests green),
+`audit_sc01.py`+`audit_results.json`, research note, LEADERBOARD/REGULATION_TRACE/KNOWLEDGE_BASE/
+HYPOTHESIS_LEDGER/STATE/BACKLOG updates. Committed + pushed as `hub(bench-eval)`. **Open for next run /
+orchestrator:** (1) triage the LAL-v2 intake → integrate into `stack/tanitad/eval/metrics.py`; (2)
+closure-incursion detector still reads 0 (not fixed this run — backlog #3); (3) next SC-01 CARLA run must
+be ≥3 seeds + emit LAL-v2.

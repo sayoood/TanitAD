@@ -4,16 +4,20 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. ~~Metric-suite live dry-run~~ **DONE 2026-07-08 (MVP loop), two parts:** (a) TMS + CNCE on
-   REAL telemetry (12 comma-val replays + measured 4060 tick): CNCE median 2.02×10⁵ m/(s·B),
-   TMS expert band 0.024–0.083 → LEADERBOARD efficiency block. (b) **Wiring dry-run PASSED
-   end-to-end** (`scripts/scenario_suite_dryrun.py` + regression tests): work-zone oracle →
-   ScenarioTelemetry → suite; discriminative structure survives the real metrics (LAL −0.1 vs
-   +2.9 s; OKRI 120.6 vs 14.8; LOPS 0.0 vs 0.83; closure 20.8 vs 0.0 m). Live LAL/OKRI/LOPS
-   numbers remain gated on CARLA W31–32 — replace `simulate_policy` with the real rollout.
-2. **Competitor efficiency block in LEADERBOARD** — param counts + published compute of GAIA-3
-   (15B, offline), Alpamayo-2 (32B), UniAD-class, vs TanitAD 261M live; each row sourced.
-   This operationalizes W-05 (CNCE differentiation).
+1. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
+   `stack/tanitad/eval/metrics.py`, relabel LAL-v1 "reaction-onset latency", report both. Unblocks G0.6.
+   *(Metric shipped this run; integration is the orchestrator step.)*
+2. **≥3-seed SC-01 CARLA re-run** — the first live run (2026-07-08) was single-seed + scripted policy.
+   Next run: ≥3 seeds, OKRI/LOPS/TMS as mean±CI, emit LAL-v2, and **measure OKRI per-seed SD** to size
+   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Goal: first decision-grade
+   live SC-01 rows. Falsifier: CIs overlap → no "beats baseline" claim.
+3. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
+   lane-polygon check + collision sensor on the CARLA side. Flagged in commit `2d87acb`, NOT fixed this run.
+
+## Done this run (2026-07-09)
+- **Competitor efficiency block** (was P0 #2, W-05): shipped to LEADERBOARD — Alpamayo-2 32B / GAIA-3 15B
+  / DriveFuture vs TanitAD 261M, sourced to Opponent profiles.
+- ~~Metric-suite live dry-run~~ (done 2026-07-08 MVP loop): TMS/CNCE on real telemetry + wiring dry-run.
 
 ## P1
 
