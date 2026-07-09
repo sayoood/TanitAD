@@ -7,7 +7,7 @@
 > **Urban richness** = intersections / pedestrians / lights / night / weather density (comma2k19's
 > highway commute is the low anchor). **Cost to first batch** = engineer-hours to a contract episode
 > on our pipeline. **Status:** `loaded` (adapter + contract test) · `candidate` · `probe-only`.
-> Maintained by the Data Engineering agent. Last sweep: **2026-07-14**.
+> Maintained by the Data Engineering agent. Last sweep: **2026-07-09** (R1 yield measured; WorldModel-Synthetic license verified).
 
 ## Tier 1 — in the Phase-0 pipeline
 
@@ -16,7 +16,7 @@
 | **comma2k19** (`commaai/comma2k19`) | ~100 GB, 33 h, 10×8.7 GB chunks | front cam 20 fps + CAN + GNSS | **real CAN** (steer wheel, speed) | **public (MIT)** | low (highway commute only) | ~1–2 h (0 new code) | **loaded** (D-009) — public anchor |
 | **Cosmos-Drive-Dreams** (`nvidia/PhysicalAI-Autonomous-Vehicle-Cosmos-Drive-Dreams`) | 5 843 RDS-HQ clips + **81 802** synth videos, 30 fps, 121-frame chunks | 7-cam rig (front_wide_120fov used), HD map, LiDAR, 4×4 poses | derived (ego 4×4 `vehicle_pose` → steer/accel) | **public (CC-BY-4.0)** | **high** (7 weathers: rain/snow/fog/night; intersections, VRUs) | ~2–3 h (**this run**) | **loaded** (D-014, this run) — public synthetic |
 | **PhysicalAI-AV** (`nvidia/PhysicalAI-Autonomous-Vehicles`) | 1 727 h, 25 countries, 2 500+ cities | multi-cam + radar + lidar | egomotion (poses → yaw-rate/accel) | **gated/confidential** (NVIDIA AV licence, internal-dev-only, 12-mo) | **very high** | ~3–4 h | **loaded** (D-012) — `data:physicalai` tag, **no public claim** |
-| **PhysicalAI-WorldModel-Synthetic-Scenarios** (`nvidia/PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios`) | large; emergency / lanechange / nudging / pedestrian / weather_degradation | Omniverse multi-cam surround + per-cam VLM captions | scenario egomotion | **research/NC — verify card** | high (targeted long-tail) | ~3 h (mirror Cosmos loader) | **candidate** (D-014 backlog) — the H6/H15/D9 long-tail material |
+| **PhysicalAI-WorldModel-Synthetic-Scenarios** (`nvidia/PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios`) | **264 k clips / ~1 467 h / 8.3 TB**, 4K@24 fps; cut-in 32.9 % · veh–ped 21.1 % · lanechange 12.9 % · ped 12.4 % · weather-deg 9.2 % · nudging 8.8 % · emergency-veh 2.7 % | 4-cam fwd + 7-cam 360° fisheye + per-cam VLM captions + scene metadata | **⚠ NO ego pose/actions on card → IDM (H7) or video-only** | **OpenMDW-1.1 — UNGATED** (verified 2026-07-09; *preliminarily public*, proposed D-022, firewall held) | high (targeted long-tail) | **UNKNOWN** — near-zero IF poses exist; else IDM-gated (H7) | **candidate** (license✔, pose-availability = gating question) — H6/H15/D9 long-tail |
 
 ## Tier 2 — real urban corpora (H4 arm-B / H7 scale-up / D8 OOD)
 
@@ -58,7 +58,16 @@ a *tag* not a blocker (public claims stay firewalled to comma+Cosmos regardless)
 | 9 | **OpenDV-2K (YouTube)** | the 1000× thesis at scale; needs robust heterogeneous-focal canon + IDM | Phase 1 flagship experiment | DataEng |
 | 10 | comma L2D / steering-control | small real-CAN augment; cheap but low marginal value vs ZOD | opportunistic | DataEng |
 
-## Sweep notes (2026-07-14)
+## PhysicalAI-AV R1 status (measured 2026-07-09 — rank #1)
+
+Scoring the **30 already-cached egomotion chunks** (offline, R0 scorer) yields **1,926 gate-passing urban
+clips (67.6 % of 2,850)** — R1=2,000 is **74 short from cache**, needs ~1–2 more egomotion chunks. Camera
+materialisation = the **same 30 chunks as R0**, ~60 GB (per-chunk cost) → **3.85× clips for R0's bandwidth**;
+fetch-plan rule = extract ALL gate-passing clips per downloaded chunk. Selection: 23 countries, all 24 h,
+mean 8.1 m/s. Artifacts: `.../physicalai/r1/{r1_selection.parquet,R1_REPORT.json}`; tool = intake pkg
+`2026-07-09-physicalai-r1-selection/`. Next: 2-chunk top-up on pod → clear 2,000 → camera fetch.
+
+## Sweep notes (2026-07-09)
 
 - **Loaded this run:** Cosmos-Drive-Dreams — the first *publicly-claimable* rich AV corpus (CC-BY-4.0),
   closing the gap left when the license review excluded real PhysicalAI-AV from public claims.

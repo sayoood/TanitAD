@@ -4,17 +4,18 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-0. **PhysicalAI-AV R1 expansion (Sayed directive 2026-07-08: leverage all high-quality data;
-   license solved later or corpus replaced):** scale the R0 urban scorer 500 → **2,000 clips** on
-   pod1 (disk OK; run scorer + fetch during trainer idle-CPU windows; epcache build AFTER the 30k
-   run finishes — 62 GB cgroup). Deliverable: R1 clip list + fetch plan + measured ingest cost.
-   Everything tagged `data:physicalai` as always. Ranked queue: `DATASET_LANDSCAPE.md` (new section).
-1. **PhysicalAI-WorldModel-Synthetic-Scenarios license check + 50-clip pilot** (promoted from P1.4;
-   rank #2 in the acquisition queue — H6/H15/D9 long-tail + scenario-DB data rows).
-2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — for the top-3 unsourced scenarios
-   in `Opponent Analyzer/SCENARIO_DATABASE.md`, find concrete training/validation data (public
-   corpora slices, Cosmos weather variants, CARLA recipes). Deliverable: filled data-source rows
-   + one downloaded/verified sample each where public.
+0. **R1 top-up to 2,000 (measured 2026-07-09: 1,926 reachable from cache, 74 short).** Fetch **2 more
+   egomotion chunks** on the pod (~4 GB), re-run `physicalai_r1.py --target 2000` → clears 2,000. Then
+   camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
+   bandwidth → 3.85× clips free); epcache AFTER the 30k trainer finishes (62 GB cgroup). Tool + R1 report
+   already landed (intake `2026-07-09-physicalai-r1-selection/`). Expected: 2,000 urban clips, ~24 countries.
+1. **WorldModel-Synthetic-Scenarios pose probe (was "license check" — license DONE 2026-07-09: OpenMDW-1.1
+   ungated).** `huggingface_hub` file-listing on one clip's parquet set to confirm/deny an ego-pose field.
+   Decides the loader path: near-zero cosmos-mirror (if poses) vs IDM/H7 or video-only (if none). Expected:
+   yes/no pose verdict + one sample decoded. This is now the gating question, not the license.
+2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows advanced 2026-07-09 (see
+   STATE HANDOFF; pending merge into the DB). Next: fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA
+   recipes / Cosmos obstruction clips; download+verify one public sample each where public.
 
 ## P1
 

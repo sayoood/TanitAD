@@ -3,6 +3,20 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-09] [measured] **PhysicalAI-AV R1 selection from cached egomotion**: 30 cached chunks → 2,850
+  clips scored (0 errors), **1,926 pass the driving gate (67.6 %)** → R1=2,000 is 74 short of reachable
+  from cache (needs ~1–2 more egomotion chunks). Gate failures (924) are **all speed-band**. Camera fetch
+  = same 30 chunks as R0 (~60 GB) but **3.85× the clips for identical bandwidth** (per-chunk cost) →
+  fetch-plan rule: extract ALL gate-passing clips per downloaded chunk. Episode-contract PASS on a real
+  clip (`[199,9,256,256]` u8, 6.5 s/clip). Tool = intake pkg `2026-07-09-physicalai-r1-selection/` (3 tests)
+  — impact: H7/H4/DATASET_LANDSCAPE rank #1 — `2026-07-09-physicalai-r1-selection-and-worldmodel-scenarios-license.md`
+- [2026-07-09] [license/loader] **PhysicalAI-WorldModel-Synthetic-Scenarios** (`nvidia/…-Synthetic-Autonomous-Driving-Scenarios`)
+  = **OpenMDW-1.1, UNGATED** (Linux Foundation permissive; NVIDIA's Cosmos/Nemotron license) → *preliminarily
+  public-claimable* (proposed D-022; firewall held to comma+Cosmos until Sayed/legal confirms). 264 k clips /
+  8.3 TB / 4K@24 fps; families cut-in 32.9 % · veh–ped 21.1 % · lanechange 12.9 % · ped 12.4 % · **weather-deg
+  9.2 %** · nudging 8.8 % · **emergency-veh 2.7 %**. **⚠ card lists RGB+captions+metadata but NO ego pose/actions**
+  → the "near-zero cosmos-mirror" assumption is at risk; confirm a pose field before loader work (else IDM/H7 or
+  video-only). Advances SC-02/05/06 data rows — impact: D-014/H6/H15/D9/H4 — same note §2
 - [2026-07-14] [loader/license] **Cosmos-Drive-Dreams** (`nvidia/PhysicalAI-Autonomous-Vehicle-Cosmos-Drive-Dreams`)
   = **CC-BY-4.0** → the one *publicly-claimable* rich AV corpus (closes the gap left by the real
   PhysicalAI-AV exclusion). RDS-HQ: 5 843 clips + 81 802 synth videos, 7 weathers, 30 fps, per-frame
