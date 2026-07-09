@@ -29,6 +29,23 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
+  design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
+  **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first
+  **violation-rate** contrast for the hard-barrier thesis — rule_barrier **0.0** vs soft_prior **1.0**
+  over the free-path temptation sweep, and the barrier is *invariant* to temptation while the soft
+  prior's line-crossing speed grows 3.0→9.6 m/s (the mechanistic barrier-vs-soft-prior difference).
+  **H0/H6** reinforced (external): a **new emerging player, Avride** (Uber partner) is under NHTSA ODI
+  investigation for **16 crashes** tied to lane-changing / same-lane following / stationary-object
+  response; Waymo hit a **second recall + a new Dallas federal probe** (red-light running); Tesla's FSD
+  probe is now an **Engineering Analysis over 3.2 M vehicles / 9 crashes / 1 fatality** naming a failed
+  "degradation-detection" feature (W-04). **H1/H3/H5 wedge** sharpened by the deep-read of **Metis**
+  (arXiv 2606.15869): it buys inference efficiency by letting the action head *skip generative rollout*
+  (like our latent path) but is a **flat MoT, no hierarchy, no in-loop imagination, no self-monitoring,
+  and reports no param count / compute-normalized metric** → our CNCE + hierarchy + H15 + H11 remain
+  uncontested; "world model / efficient WAM" still not differentiating alone. See
+  `Opponent Analyzer/Research/2026-07-24-opponent-sweep-w3.md` + updated `WEAKNESS_CATALOG.md` /
+  `OPPONENT_PROFILES.md` / `SCENARIO_DATABASE.md`.
 - 2026-07-09: Benchmarks & Eval (Thu) — **H15 instrument-hardening** (no status change, P8: measured on
   scripted policies + a noise model, not our checkpoint). The first live CARLA SC-01 run exposed **LAL-v1
   as blind to smooth anticipation** (both policies −0.7; the −1.5 m/s³ jerk trigger never fires on a

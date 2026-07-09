@@ -14,10 +14,15 @@
   the *posterior* reality — closed ramp, cone taper, shifted lane, active work zone. A perception-reactive
   stack either fails to recognize the novel static configuration (ramp-closure sign, cone line) or cannot
   reason about the *changed drivable area*, so it drives the pre-planned path into the closure.
-- **Evidence (FACT):** Waymo **recalled 3,871 robotaxis (2026-06-18)** after **13 freeway construction-zone
-  incidents** — 6 Phoenix (failed to recognize **ramp-closure signs**), 7 SF Bay (drove **between
-  lane-closure cones**). Freeway autonomy suspended; 20+-city 2026 expansion frozen.
+- **Evidence (FACT):** Waymo **recalled 3,871 robotaxis (2026-06-18, NHTSA campaign 26E035)** after
+  **13 freeway construction-zone incidents** — 6 Phoenix Apr'26 (drove past **ramp-closure signs** into
+  pre-planned freeway work zones), 7 SF Bay May'26 (entered lanes with active construction). Waymo's own
+  NHTSA filing names the mechanism: the AV **"inappropriately prioritiz[es] the avoidance of other
+  freeway hazards and/or fail[s] to recognize the construction zone."** Waymo **pulled all robotaxis from
+  highways on 2026-05-19**; this is its **second recall in ~one month**; a fix is "under development."
+  Freeway autonomy suspended; 20+-city 2026 expansion (incl. London/Tokyo) freeway-constrained.
   — https://www.cnbc.com/2026/06/18/waymo-nhtsa-voluntary-recall-robotaxis-entered-freeway-construction-zones.html
+  , https://techcrunch.com/2026/06/18/waymo-recalls-nearly-4000-robotaxis-to-stop-them-driving-into-highway-construction-zones/
 - **TanitAD counter:** **H15** (imagine changed/unobserved drivable area from partial cues) + **H9**
   (inherent compliance with sign/cone/closure semantics via barrier terms) + **H1** fallback layer
   (stop/hand-back when the imagined map's epistemic σ is high). A latent world model that predicts the
@@ -58,21 +63,32 @@
 - **Evidence (CLAIM/FACT):** separate **NTSB/NHTSA probe into Waymo illegal school-bus stop-arm passing**
   (Austin ISD); one case reportedly attributed to human error (CLAIM). Distinct from W-02.
   — https://techcrunch.com/2026/01/23/waymo-probed-by-national-transportation-safety-board-over-illegal-school-bus-behavior/
+  **New family evidence (FACT/CLAIM, 2026-07):** a Waymo was recorded **running a red light** in Dallas
+  (Irving Blvd/Inwood Rd) amid a new federal investigation there — the same hard-discrete-rule failure
+  class (signal-phase compliance). — https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
 - **TanitAD counter:** **H9** (inherent rule compliance via RMFM / hard barrier terms — a violation-rate
   metric, not a learned soft prior). Owner of the violation-rate metric home: Benchmarks&Eval.
-- **Scenario-spec status:** `no-scenario-yet` — **candidate for the August scenario feed** ("Stop-Arm
-  Gate": stopped school bus with extended stop-arm across a multi-lane road). Flag to Thursday agent.
-- **Training-data recipe (H6):** synthetic stop-arm events (rare in real logs); barrier-term supervision
-  rather than pure imitation.
+- **Scenario-spec status:** **DRAFTED + intake pkg 2026-07-24** →
+  `Implementation/incoming/2026-07-24-stop-arm-gate-scenario/` (**SC-04**; stopped bus + deployed
+  stop-arm + occluded child + tempting free path; **11/11 offline tests**). Design-oracle result: H9
+  **violation rate rule_barrier 0.0 vs soft_prior 1.0**, barrier invariant to the free-path temptation
+  while the soft prior's line-crossing speed grows 3.0→9.6 m/s. Red-light running catalogued as **SC-14**
+  (reuses the same stop-line barrier oracle). Handoff to Benchmarks&Eval: add a `violation_rate` reducer.
+- **Training-data recipe (H6):** synthetic stop-arm + red-signal events (rare in real logs); barrier-term
+  supervision rather than pure imitation.
 
 ## W-04 — Camera-only degraded-visibility (glare, rain, airborne obscurant)
 
 - **Mechanism (INFER):** a camera-only stack with **no calibrated epistemic uncertainty** stays confident
   when the sensing channel degrades (sun glare, heavy rain, dust/smoke), so it neither slows nor hands
   back — it drives blind at speed.
-- **Evidence (FACT):** **NHTSA engineering analysis (Mar 2026)** on Tesla — camera-only FSD **"fails to
-  detect and/or warn … under degraded visibility such as glare and airborne obscurants."** Final step
-  before a possible recall. — https://www.automotiveworld.com/news/tesla-robotaxi-fleet-hits-25-as-musk-defers-scale-to-fsd-v15/
+- **Evidence (FACT):** NHTSA **upgraded** the FSD probe to an **Engineering Analysis (2026-03-18)**
+  covering **~3.2 M vehicles** (MY2016–2026 S/X/3/Y/Cybertruck) — the final investigative phase before a
+  recall. It found FSD's **"degradation-detection" feature** (meant to recognize when cameras can't see
+  and alert the driver) **"did not detect common roadway conditions that impaired camera visibility
+  and/or provide alerts … until immediately before the crash."** **9 crashes** flagged incl. **1 fatality
+  + 2 injuries** under glare/fog/dust. Miami robotaxi launched into exactly this regime (rain,
+  2026-07-03). — https://electrek.co/2026/03/19/nhtsa-upgrades-tesla-fsd-visibility-investigation-3-2-million-vehicles/
 - **TanitAD counter:** **H11** (self-monitoring w/ guarantees — degraded-visibility as a D8 OOD stressor,
   AUROC>0.85) + **H15** (epistemic σ throttles on uncertainty) + **H2** (attention-based modality steering
   to radar when the camera degrades).
@@ -116,10 +132,40 @@
 - **Scenario-spec status:** n/a. **Story beat** for the vision deck / Orchestrator.
 - **Training-data recipe (H6):** n/a.
 
+## W-08 — Baseline driving competence gaps (lane-change / same-lane / stationary object)  ★ (new 2026-07-24)
+
+- **Mechanism (INFER):** stacks that lean on **detection-then-react** rather than a forward model of
+  consequence fail the most basic longitudinal/lateral tasks under distribution shift — they brake late
+  on a stationary or slow lead because classification is uncertain, mishandle same-lane vehicles, and
+  botch lane changes. The failure is *competence*, not an exotic edge case, which makes it a broad and
+  damning surface.
+- **Evidence (FACT):** NHTSA ODI opened an investigation (**2026-05-08**) into **Avride** (Uber's
+  robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury**; ODI attributes all to
+  **"the competence of"** the system — **lane-changing, responding to other vehicles in the same lane,
+  and responding to stationary objects.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **TanitAD counter:** **H15** imagination forward-models time-to-contact on a stopped/slow lead
+  *before* the object is classified (no detection/class prior to be wrong about) + **A9** imagination-
+  error monitor on the lead region; **H1** tactical layer for lane-change consequence pricing.
+- **Scenario-spec status:** **SC-13 catalogued** (stationary-object / same-lane lead response) — a cheap
+  real-data spec on comma2k19 (mine stopped-lead segments) + CARLA cut-in/blocked_route recipes.
+- **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
+  the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
+
 ---
 
 ### Watch-list (not yet weaknesses — competitive-narrative risks)
-- **Autobrains "Liquid AI"** — the one competitor whose *efficiency pitch* overlaps ours; L2+/ADAS only,
-  no L4 WM/imagination/self-monitoring. Pre-empt any compute-normalized claim they publish. (H1/H3/H5)
-- **Metis (arXiv 2606.15869)** — academic "efficient world-action model"; nearest CNCE head-to-head.
-  Deep-read next run.
+- **Autobrains "Liquid AI"** — the one competitor whose *efficiency pitch* overlaps ours. **UPDATE
+  2026-07-24: moving UP from ADAS toward L4** — Uber + Autobrains (+ NVIDIA) announced a **Munich robotaxi
+  pilot (2026-06-02)**, apparently displacing/paralleling Uber's earlier Momenta-Munich plan. Still no
+  public hierarchical latent WM / in-loop imagination / self-monitoring-with-guarantees; but the "less
+  compute, standard sensors" message now attaches to an L4 pilot → **priority pre-empt** with
+  compute-normalized (CNCE) proof on L4-grade edge cases. (H1/H3/H5) — https://www.electrive.com/2026/06/02/uber-and-autobrains-to-partner-on-munich-robotaxi-pilot-project/
+- **Metis (arXiv 2606.15869, Fudan/HKU/Tongji/Li Auto, subm. 2026-06-14)** — **deep-read done this run.**
+  An "efficient world-action model": Mixture-of-Transformers with separate video-generation and
+  action-prediction experts + an **asymmetric attention mask that lets the action head skip generative
+  rollout at inference** (its efficiency lever — conceptually our latent/no-pixel path). SOTA on NAVSIM
+  navhard/navtest + CityWalker. **But:** flat MoT (**no hierarchy**), **no in-loop imagination for
+  planning**, **no self-monitoring/OOD guarantee**, and it reports **no parameter count / no
+  compute-normalized metric** → *not* a true CNCE competitor yet. Gap to exploit: publish params + a
+  compute-normalized causal-efficacy number Metis doesn't. Nearest academic head-to-head — track its
+  code (github.com/LogosRoboticsGroup/Metis) for a param disclosure. (H1/H3/H5/H15/H11)

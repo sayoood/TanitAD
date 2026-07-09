@@ -66,13 +66,25 @@ public claim candidate.
 
 ## SC-04 — Stop-arm gate (school-bus stop-arm passing)  [W-03] ★★
 - **Opponent evidence (CLAIM):** NTSB/NHTSA probe into a Waymo passing a school bus with deployed
-  stop-arm (one incident attributed to human error, unverified).
-- **Description:** stopped school bus, stop-arm out; correct behavior is a hard stop regardless of
-  apparent free path — a rule barrier, not a cost trade-off.
-- **TanitAD mechanism:** H9 inherent rule compliance (hard barrier terms; violation-rate metric).
-- **Data sources:** CARLA bus asset + scripted stop-arm; US dashcam corpora screening (DataEng).
-- **Metric hooks:** violation rate (must be exactly 0), stop distance distribution.
-- **Status:** catalogued → **spec scheduled** (Opponent Analyzer backlog P0.1, August feed).
+  stop-arm (Austin ISD; one incident attributed to human error, unverified).
+- **Description:** stopped school bus, stop-arm out, occluded child crossing in front of the bus;
+  correct behavior is a hard stop at/before the stop line regardless of apparent free path — a rule
+  barrier, not a cost trade-off.
+- **TanitAD mechanism:** H9 inherent rule compliance (hard barrier terms; violation-rate metric) +
+  H15 latent estimate of the child occluded by the bus body.
+- **Data sources:** CARLA `Town10HD` bus asset + scripted stop-arm + walker.child; US dashcam corpora
+  screening (DataEng handoff).
+- **Metric hooks:** **violation rate (must be exactly 0)**, stop-distance margin distribution, OKRI/LOPS
+  toward the occluded child. **Handoff to Benchmarks & Eval (Thu):** add a `violation_rate` reducer over
+  the scenario `_extra.stop_arm_violation` field (a rate, not a soft score) alongside `scenario_metrics`.
+- **Status:** **spec-drafted, 2026-07-24** — intake pkg
+  `Implementation/incoming/2026-07-24-stop-arm-gate-scenario/` (`stop_arm_gate.py` + telemetry oracle,
+  **11/11 offline tests**, awaiting orchestrator triage). Design-oracle numbers (P8, not our model):
+  **violation rate rule_barrier 0.0 / soft_prior 1.0** over the free-path sweep {0…12} m; barrier stops
+  0.4 m before the line at v=0; soft prior rolls through at 8.3 m/s and its line-crossing speed grows
+  monotonically 3.0→9.6 m/s with the temptation while the barrier is invariant; OKRI toward the child
+  80% lower at 4 B vs 15 B params. **Next:** DataEng sources the bus asset / real footage; Benchmarks &
+  Eval wires the violation-rate reducer; then live-measure our checkpoint on CARLA-on-pod.
 
 ## SC-05 — Degraded-visibility overdriving (glare / rain / obscurant)  [W-04] ★★
 - **Opponent evidence (FACT):** NHTSA engineering analysis (Mar 2026) on Tesla FSD — "fails to
@@ -182,15 +194,51 @@ public claim candidate.
 - **Metric hooks:** non-nominal-intersection detection rate (proxy), deferral correctness.
 - **Status:** catalogued (Phase-2 horizon; kept for coverage honesty).
 
+## SC-13 — Stationary-object / same-lane lead response  [W-08]  ★★ (new 2026-07-24)
+- **Opponent evidence (FACT):** NHTSA ODI opened an investigation (2026-05-08) into **Avride** (Uber's
+  robotaxi partner, Yandex SDG lineage) after identifying **16 crashes + 1 minor injury**; ODI states
+  all relate to **"the competence of"** the driving system — specifically **changing lanes, responding
+  to other vehicles in the same lane, and responding to stationary objects.**
+  — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Description:** a stopped/slow lead vehicle or a stationary object (stalled car, debris, disabled
+  vehicle) in the ego lane; correct behavior is early, smooth deceleration to a safe following
+  distance — the classic "stationary-object braking" failure that also underlies phantom/late braking.
+- **TanitAD mechanism:** H15 imagination predicts the *consequence* of the closing gap (forward-model
+  time-to-contact) before the object is classified — no dependence on a detection/classification prior,
+  which is exactly where competence-limited stacks fail; A9 imagination-error monitor on the lead region.
+- **Data sources:** comma2k19 has abundant real lead-vehicle following (mine slow/stopped-lead segments,
+  license-clean); CARLA stationary-object + cut-in recipes (blocked_route family). DataEng handoff:
+  tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
+- **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
+  min-TTC distribution; collisions=0 bar.
+- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
+  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
+  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+
+## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
+- **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving
+  Blvd / Inwood Rd (2026-07, primary dashcam footage; per-incident causation CLAIM); coincides with a
+  new federal investigation + recall activity in the Dallas market.
+  — https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
+- **Description:** a red or newly-red signal on the ego approach; correct behavior is a hard stop at the
+  line — a discrete rule barrier, not a soft trade-off against an apparently clear intersection.
+- **TanitAD mechanism:** H9 directional/phase barrier term (same hard-barrier machinery as SC-04);
+  violation-rate metric = 0. Shares the Stop-Arm Gate oracle structure (stop line + barrier vs soft
+  prior) — a near-free spec once SC-04 integrates.
+- **Data sources:** CARLA signalized-junction recipes with phase control; comma2k19 intersection
+  segments (INFER-quality for real red-light approaches).
+- **Metric hooks:** violation rate (0 bar), stop-distance margin at the line.
+- **Status:** **catalogued** (2026-07-24; reuses SC-04 machinery — flagged as the cheapest next spec).
+
 ---
 
 ## Coverage matrix (mechanism × scenario)
 
 | Mechanism | Scenarios |
 |---|---|
-| H15 imagination (unobserved/changed area) | SC-01, SC-02, SC-03, SC-05, SC-09, SC-11 |
-| H9 rule/closure barriers | SC-01, SC-04, SC-09, SC-11 |
-| A9/D8 self-monitoring + fallback | SC-05, SC-06, SC-07, SC-08, SC-10, SC-12 |
+| H15 imagination (unobserved/changed area) | SC-01, SC-02, SC-03, SC-05, SC-09, SC-11, SC-13 |
+| H9 rule/closure barriers | SC-01, SC-04, SC-09, SC-11, SC-14 |
+| A9/D8 self-monitoring + fallback | SC-05, SC-06, SC-07, SC-08, SC-10, SC-12, SC-13 |
 | Strategic graph (re-route/stop memory) | SC-06, SC-08 |
 
 Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric fragility) live in
@@ -201,5 +249,6 @@ Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric frag
 | ID | Stage | Excellence bar | Proven? |
 |---|---|---|---|
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
+| SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-02…SC-04, SC-06…SC-12 | catalogued | per-entry bars set at spec time | — |
+| SC-02…SC-03, SC-06…SC-14 | catalogued | per-entry bars set at spec time | — |

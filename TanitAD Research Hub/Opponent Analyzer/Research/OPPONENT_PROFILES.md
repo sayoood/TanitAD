@@ -2,7 +2,7 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last full sweep: **2026-07-17**.
+> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2 deltas below, tagged **Δ 07-24**).
 
 ---
 
@@ -26,10 +26,16 @@
 - **Approach (FACT):** modular+learned stack, HD maps, large multi-sensor fleet; freeway autonomy since
   Nov 2025.
 - **Business (FACT):** best-capitalized Western operator; 2026 plan = 20+ new cities + London/Tokyo intl.
-- **Safety record (FACT):** **recall of 3,871 vehicles (2026-06-18)** for freeway construction-zone entry
-  (freeway autonomy suspended, expansion frozen); NTSB **HWY26FH008** school-zone pedestrian braking-late
-  case; separate probe into **school-bus stop-arm** passing; NHTSA SGO **697 incidents** (1 fatality, 23
-  hospitalizations) in the Jun'25–May'26 window; CA DMV **19,234 mi/disengagement**.
+- **Safety record (FACT):** **recall of 3,871 vehicles (2026-06-18, NHTSA 26E035)** for freeway
+  construction-zone entry (freeway autonomy suspended, expansion frozen); NTSB **HWY26FH008** school-zone
+  pedestrian braking-late case; separate probe into **school-bus stop-arm** passing; NHTSA SGO **697
+  incidents** (1 fatality, 23 hospitalizations) in the Jun'25–May'26 window; CA DMV **19,234
+  mi/disengagement**.
+- **Δ 07-24 (FACT):** the construction-zone recall was Waymo's **second in ~one month**; it **pulled all
+  robotaxis from highways on 2026-05-19** and the fix is still "under development." Its own filing names
+  the mechanism (mis-prioritizing hazard-avoidance / not recognizing the work zone). **New Dallas market
+  trouble:** a Waymo recorded **running a red light** (Irving Blvd/Inwood Rd) amid a **new federal
+  investigation** there → widens the rule-compliance surface (SC-04/SC-14, W-03).
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
   anticipation** (W-02), **rule-compliance edges** (W-03); map-dependence; cost/vehicle + geofence
@@ -43,6 +49,9 @@
 - **Business (FACT):** Q1'26 total rev **$34.3 M (+145% YoY)**, robotaxi rev **$8.6 M (+395% YoY)**; 2026
   fleet target **3,500+**, 20+ cities; live in **Croatia (first EU commercial robotaxi)** + **Dubai**;
   9 countries.
+- **Δ 07-24 (FACT):** robotaxi fleet now **exceeded 1,700 units** (toward the raised 3,500 target); added
+  **Guangzhou**; **raised** 2026 robotaxi-revenue and fleet targets on record Q1. Growth real but the
+  revenue-vs-fleet gap (W-06) is unchanged — $8.6 M robotaxi rev against a 1,700+ (→3,500) fleet.
 - **Strengths (INFER):** fleet scale, China + Middle East + first-mover EU footprint, steep growth.
 - **Exploitable weaknesses:** **thin unit economics** vs fleet (W-06); same compute-heavy multi-sensor
   stack (W-05); geopolitics limits Western data/market access.
@@ -53,9 +62,15 @@
 - **Approach (FACT):** two divisions — production L2++ software for OEMs, and robotaxi; GM + Tencent backed.
 - **Business (FACT):** **HK IPO ~$752 M**, ~**$9 B** valuation, trading 2026-07-08; 60% proceeds→R&D,
   20%→robotaxi; approvals Suzhou/Shanghai; **Abu Dhabi + Munich 2026**; Uber L4 pilot.
-- **Strengths (INFER):** OEM data flywheel, China scale, GM/Tencent + public capital.
+- **Δ 07-24 (FACT):** listed 2026-07-08 at HK$295.6 (~HK$69.6 B ≈ **$8.9 B** cap, rose on debut);
+  cornerstones incl. **Mercedes-Benz + BYD + GIC/Fidelity**. Shipped its own **R7 Reinforcement-Learning
+  World Model (Apr 2026)** and first self-developed chip **X7** (in SAIC-VW ID.ERA 9X) → Momenta now also
+  has a "world model," reinforcing that *"world model" is table stakes, not a differentiator*. **Uber's
+  Munich robotaxi plan appears to have shifted from Momenta to Autobrains+NVIDIA** (see Autobrains) — a
+  competitive-loss signal for Momenta's international robotaxi leg.
+- **Strengths (INFER):** OEM data flywheel, China scale, GM/Tencent + public capital, own WM + own silicon.
 - **Exploitable weaknesses:** **strategy split** now locked by public-market scrutiny; opaque safety case;
-  geopolitics.
+  geopolitics; R7 is a *generative RL* WM (compute/data-heavy) with no hierarchy/self-monitoring claim.
 - **What would beat them:** a single coherent efficiency+safety thesis (vs their L2++/L4 straddle) with a
   transparent, regulation-native safety case (H9/H11).
 
@@ -63,11 +78,16 @@
 - **Approach (FACT):** liquid neural networks + **modular agentic AI**, marketed as **edge-cases with less
   compute on standard sensors**; Skills product line (Oct 2024).
 - **Business (FACT):** **$140 M+** funding; BMW/Toyota/Continental/Temasek.
-- **Strengths (INFER):** low-compute narrative overlaps ours; strong Tier-1/OEM channel; real mass-market
-  ADAS focus.
-- **Exploitable weaknesses:** **sub-L3 / ADAS, not L4**; "liquid" = runtime adaptivity, **not** a
-  hierarchical latent world model, no imagination, no self-monitoring-with-guarantees, no
-  action-free-video data-efficiency claim.
+- **Δ 07-24 (FACT):** **Uber + Autobrains (+ NVIDIA) Munich robotaxi pilot announced 2026-06-02**,
+  apparently displacing/paralleling Uber's earlier Momenta-Munich plan → Autobrains is **stepping up from
+  ADAS toward an L4 pilot.** This is the sharpest watch-list escalation this run: their "edge-cases with
+  less compute" message now rides an L4 deployment. — https://www.electrive.com/2026/06/02/uber-and-autobrains-to-partner-on-munich-robotaxi-pilot-project/
+- **Strengths (INFER):** low-compute narrative overlaps ours; strong Tier-1/OEM channel; now an Uber L4
+  pilot partner.
+- **Exploitable weaknesses:** still **no public hierarchical latent WM, no in-loop imagination, no
+  self-monitoring-with-guarantees, no action-free-video data-efficiency claim**; "liquid" = runtime
+  adaptivity. The L4 pilot raises their exposure to exactly the L4 edge cases (work-zone, occlusion,
+  rule-barrier) our scenario database is built on.
 - **What would beat them:** own the L4 world-model + safety-case ground they don't play on, and pre-empt
   their efficiency messaging with **compute-normalized (CNCE) proof** on L4-grade edge cases.
 
@@ -76,7 +96,14 @@
   Chain-of-Causation traces; open dataset **1,700+ h / 25 countries / 2,500+ cities**.
 - **Role (INFER):** **supply chain, not competitor** — their data/sim (Cosmos-Drive-Dreams, PhysicalAI-AV)
   feed our training mix; their **32 B on-car VLA is our foil** on efficiency.
-- **Exploitable weaknesses:** 32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
+- **Δ 07-24 (FACT):** the **Mercedes-Benz CLA** becomes the **first production vehicle to ship NVIDIA's
+  entire AV stack** (US, this quarter) → Alpamayo goes from reference model to shipped product. Family now
+  spans **10 B (Alpamayo 1 Nano / 1.5 Nano) → 32 B (2 Super)** — i.e. NVIDIA has a *smaller* tier that
+  partially answers the efficiency critique, but 10 B on-car is still ~40× our ~261 M active envelope.
+  **AlpaSim** (open-source closed-loop sim) is on GitHub → a *usable asset* for our CARLA-alternative
+  closed-loop eval (flag to Tools&DevEnv). Our CNCE wedge holds; watch whether a Nano-tier CNCE number
+  ever gets published.
+- **Exploitable weaknesses:** 10–32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
   interpretability vs our *inherent* fallback + self-monitoring.
 - **What would beat them (as a narrative):** ~261 M-on-Orin at comparable causal efficacy (CNCE), inherent
   (not traced) safety. Keep consuming their open assets.
@@ -84,20 +111,44 @@
 ## Tesla  (US · camera-only E2E · robotaxi)  — emerging player
 - **Approach (FACT):** camera-only end-to-end FSD; unsupervised robotaxi (Miami launch 2026-07-03; 5
   territories; TX fleet ~42 vs Waymo 577).
-- **Safety (FACT/CLAIM):** **NHTSA engineering analysis (Mar 2026)** — camera-only FSD fails under
+- **Safety (FACT/CLAIM):** **NHTSA engineering analysis (2026-03-18)** — camera-only FSD fails under
   **degraded visibility (glare/obscurants)**, pre-recall step; Austin ~**14 crashes / 800 k mi** (CLAIM,
   ~4× US-driver rate by Tesla's metric); scale deferred to unreleased FSD v15.
+- **Δ 07-24 (FACT):** the EA covers **~3.2 M vehicles / 9 crashes / 1 fatality + 2 injuries** and names
+  the failed **"degradation-detection"** feature (doesn't flag impaired cameras until immediately
+  pre-crash). Separately, Tesla **unredacted its 17 Austin robotaxi ADS incidents** (Jul'25–Mar'26; 13
+  property-only, 1 hospitalization, **2 involving teleoperators**). Miami robotaxi launched into rain
+  (2026-07-03) — a live stress of exactly the open case. This is the strongest single validation of our
+  H11/H15/H2 axis in the field.
 - **Strengths (INFER):** fleet-data scale, vertical integration, cost focus.
 - **Exploitable weaknesses:** **no calibrated epistemic uncertainty** → confident-when-blind (W-04);
   camera-only sensing; monolithic E2E, no self-monitoring guarantee.
 - **What would beat them:** H11 self-monitoring (degraded-visibility AUROC) + H15 epistemic σ + H2
   sensor-modality steering (radar fallback) — exactly the axis their open NHTSA case is about.
 
+## Avride  (US/intl · Uber robotaxi partner · Yandex SDG lineage)  — emerging player (new 2026-07-24)
+- **Approach (FACT/INFER):** self-driving stack spun out of Yandex's SDG group, deployed via **Uber** in
+  US pilot markets (incl. Dallas). Modular AV stack (INFER — architecture not publicly detailed).
+- **Business (FACT):** Uber robotaxi partner; scaling in Dallas and other US pilots alongside Uber's
+  multi-vendor strategy (also Waymo, Momenta, Autobrains, NVIDIA).
+- **Safety (FACT):** **NHTSA ODI investigation opened 2026-05-08** — **16 crashes + 1 minor injury**; ODI
+  says all concern **"the competence of"** the system: **lane-changing, same-lane vehicle response, and
+  stationary-object response.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Strengths (INFER):** Uber distribution + demand aggregation; Yandex AV heritage.
+- **Exploitable weaknesses:** the ODI list is a **basic-competence** indictment (the cheapest, broadest
+  surface) → **W-08 / SC-13**. Our H15 consequence-forward-model targets stationary-object/same-lane
+  response directly (no detection prior to be wrong about).
+- **What would beat them:** prove excellence on the *mundane* longitudinal/lateral tasks (SC-13) that
+  their ODI flags — the least glamorous but most damning ground — at ~261 M params.
+
 ---
 
 ### Cross-field one-liner (INFER)
 Nobody occupies our Pareto point — **hierarchical latent world model, ~261 M params, data-efficient,
-real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** Mid-2026
-made the case *stronger*: competitors' public failures are our target edge cases, and the research
-field's convergence on latent WMs means our differentiation is now **hierarchy + efficiency +
-imagination + self-monitoring**, not "world model" alone.
+real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** The 07-24
+sweep made the case *stronger still*: the failures multiplied and moved down-market — Waymo's **second
+recall** + a Dallas **red-light**, Tesla's **3.2 M-vehicle** EA, and a **new entrant (Avride) under
+investigation for basic competence** — while "world model" spread to *everyone* (Momenta's R7 RL WM,
+Metis's efficient WAM, NVIDIA's shipped Alpamayo). Our moat is now unambiguously **hierarchy +
+compute-normalized efficiency (CNCE) + in-loop imagination (H15) + guaranteed self-monitoring (H11)** —
+none of which any tracked opponent demonstrates together — proven on *their own* documented edge cases.
