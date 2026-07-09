@@ -256,6 +256,7 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
     log: dict[str, float] = {}
     data_iter = iter(dl)
     accum = max(1, cfg.train.accum_steps)
+    t_data = t_step = 0.0            # per-log-window timing (crawl diagnosis)
     while step < cfg.train.steps:
       # gradient accumulation (F-5): GPU holds a micro-batch; the optimizer
       # sees batch_size*accum. SigReg runs per micro-batch — keep
@@ -264,12 +265,15 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
       for pg in opt.param_groups:
           pg["lr"] = lr
       opt.zero_grad(set_to_none=True)
+      t_s0 = time.perf_counter()
       for _micro in range(accum):
+        t_d0 = time.perf_counter()
         try:
             batch = next(data_iter)
         except StopIteration:
             data_iter = iter(dl)
             batch = next(data_iter)
+        t_data += time.perf_counter() - t_d0
         frames = batch["frames"].to(device)          # [B, W, C, H, W]
         actions = batch["actions"].to(device)        # [B, W, 2]
         fut = batch["future_frames"].to(device)      # [B, Hmax, C, H, W]
@@ -341,6 +345,7 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
         (loss / accum).backward()
       torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
       opt.step()
+      t_step += time.perf_counter() - t_s0
 
       if step > 0 and step % cfg.train.save_every == 0:
           # atomic write: a kill mid-save must not corrupt the resume point
@@ -368,8 +373,10 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
                  "sigreg": loss_sig.item(),
                  "inv": loss_inv.item(), "h15": loss_h15.item(),
                  "erank": round(erank, 1), "dim_std": round(dim_std, 5),
-                 "step_ratio": round(step_ratio, 5), "lr": lr}
-          print(json.dumps(log))
+                 "step_ratio": round(step_ratio, 5), "lr": lr,
+                 "data_s": round(t_data, 1), "step_s": round(t_step, 1)}
+          t_data = t_step = 0.0
+          print(json.dumps(log), flush=True)
       step += 1
 
     # ---- Instrument rows (D-004) on validation data ----
