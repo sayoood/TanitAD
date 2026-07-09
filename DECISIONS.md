@@ -86,6 +86,15 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-023 — Per-iteration loop reporting (2026-07-09, directed by Sayed)
+
+**Every autonomous loop iteration ends with a detailed report in chat:** (1) current progress
+(training/pods/experiments with fresh numbers), (2) next steps, (3) decisions required from Sayed
+(explicit, with defaults), (4) screening of relevant agent updates since the last iteration
+(new intakes, backlog movements, findings). The reporting duty is embedded in the loop prompt
+itself so it survives context compaction. Evening (18:00) and morning (on-request) reports
+continue as the long-form digests.
+
 ## D-021 — Latent dimension k is a measured design variable, not a hyperparameter (2026-07-08, **proposed** — awaiting Sayed)
 
 **Trigger.** The JEPA generalization theory (arXiv 2606.27014) makes the latent dimension the
