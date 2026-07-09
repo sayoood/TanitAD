@@ -51,6 +51,15 @@ Format per item: goal / method / resource / expected number / falsifier.
    foundation-scale upper bound. Caveat stands (2512.24497: DINO > V-JEPA for planning readouts —
    the arm most likely to beat us; be honest). Owner: loop or Wed agent, whoever reaches it first;
    queued behind the K-step arms on pod2.
+4b. **E2E behavior-cloning reference arm (Sayed ask 2026-07-09 — the D4 opponent):** same encoder
+   trunk + direct action-regression head (camera→steer/accel), trained on the same comma caches at
+   matched steps via `--data cached`. Purpose: gate D4's learned baseline — does imagine-and-select
+   beat direct regression at matched data/compute? Closed-loop comparison in CARLA once the
+   camera path exists; open-loop preview = action-prediction error + D2-style ranking. Cheap
+   (~100M trainable, reuses everything).
+4c. **Pixel-prediction WM reference (Phase 1, small-scale, budget line):** generative-decoder
+   variant to make "latent beats pixels on sample efficiency" (H3) measured, not cited. Explicitly
+   NOT Phase 0.
 5. **Tactical horizon ablation** — measure D2 at horizons {8, 16} separately (gate runner already
    emits per-horizon rows); decide if the 16-horizon head earns its 26.5M params.
 
