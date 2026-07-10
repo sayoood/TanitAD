@@ -33,23 +33,35 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
      OR build the engine on the pod when a trainer is idle), then build TRT-fp16 from the exported
      ONNX and verify it matches the fp16 bar (agreement ≥95 %, wp-shift ≤~4 cm). Non-paid, EXECUTE-
      class; cross-check with Tools&DevEnv. Falsifier: a TRT-unsupported op ⇒ document, don't hack.
-   - **P1.4b — clean latency re-measure** on an EXCLUSIVE, clock-pinned 4060 (`nvidia-smi -lgc`, no
-     CarlaUE4/python resident) to publish the fp16 absolute Hz + a clean fp16-vs-fp32 VRAM delta
-     (this run's absolutes were contended: fp32 tick 33.5 ms vs the clean 15.07 ms baseline).
+   - ~~**P1.4b — clean latency re-measure**~~ **DONE 2026-07-10** (idle/exclusive 4060): fp32
+     **15.76 ms / 63.5 Hz / 1.10 GB**, fp16 **13.40 ms / 74.6 Hz / 1.18×**. Clean fp32 ≈ the
+     15.07 ms baseline → the 33.5 ms 07-09 read was contention (confirmed). Remaining: **per-precision
+     VRAM** is still not clean (fp16's 1.65 GB double-counts the resident fp32 reference) → one
+     single-model-resident re-measure (small, folded into P1.4a).
+   - **P1.4a is now the clear next-run top** and the acceptance bar is a **joint** one: INT8 weights
+     on encoder+predictor + fp16 activations + readout ≥fp16 must hold ≥95 % agreement / ≤~4 cm
+     wp-shift (the fp16-act and int8-weight ~5 % terms may compound). Fallback: INT8 encoder only
+     (98.4 %, −228 MB).
 5. ~~**Compliance review #2: `stack/tanitad/models/`**~~ **DONE 2026-07-09:** intake
    `2026-07-09-models-predictor-failfast` — operative-predictor `assert`-only guard (`predictor.py:73`,
    stripped under `-O` → silent wrong-window inference) → `-O`-proof `ValueError`s, export-safe, 8 tests.
    Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow.
-6. **INT8/FP8 quantization curves** — accuracy-vs-latency per module (encoder most sensitive);
-   probe-fit delta / imagine-select agreement as the accuracy metric (the 2026-07-09 fp16/bf16
-   result is the precedent: score precision in the DECISION space, not just latent cosine).
+6. ~~**INT8/FP8 quantization curves**~~ **DONE 2026-07-10:** per-module int8 **weight-only** curve
+   scored in decision space. **ViT-encoder 98.4 % / predictor 95.3 % = SAFE; heads/all 48.4 %
+   (1.67 m) = UNSAFE → sensitivity localizes to the READOUT** (not the ViT — the "quantize heads
+   first" heuristic is REFUTED for weight-quant). Deploy: INT8 encoder+predictor weights (−552 MB
+   at 4×), readout ≥fp16. INT8 *latency* deferred to the TRT engine (P1.4a). Intake N/A (experiment,
+   not a stack change). `Implementation/int8_quant/`.
 7. **`tactical_pred` fail-fast + `imagination_nll` logvar clamp** — the two findings logged in
    review #2 (same `assert`-only guard on the tactical predictor; unclamped `exp(-logvar)` overflow
    in `imagination.py:135` → NaN LOPS/H2 trigger). Small numerics-hardening package with a falsifier.
-8. **Compliance review #3: `stack/scripts/` + training loop** — resume paths, atomic writes,
+8. ~~**Window-index silent short-episode drop**~~ **DONE 2026-07-10 (review #3):** intake
+   `2026-07-10-contract-windowing-failloud` — count + warn + `ValueError`-on-empty across
+   `_contract.py:120` / `toy_driving.py:131` / `comma2k19.py:278`, parity preserved, 10 standalone
+   tests. (Was the folded-in sub-finding of the scripts review.)
+8b. **Compliance review #4: `stack/scripts/` + training loop** — resume paths, atomic writes,
    log hygiene, cgroup awareness; the ops-fragility class (F-5/F-6/F-7, duplicate-trainer). Fold in
-   the `epcache` DONE-marker cleanup (written-never-read) + `EpisodeWindowDataset` silent
-   short-episode drop (add a dropped-window counter/log) from review #1's logged findings.
+   the `epcache` DONE-marker cleanup (written-never-read) from review #1's logged findings.
 
 ## P2
 
@@ -62,6 +74,10 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
     2026-07-08).
 
 ## Done / retired
+- (2026-07-10 run #3) P1.6 INT8 weight-quant curve DONE (localizes to the readout; ViT/predictor
+  INT8-safe, heads unsafe) + P1.4b clean-GPU latency DONE (15.76/13.40 ms fp32/fp16; contention
+  caveat confirmed) + review #3 windowing fail-loud intake (10 tests). Next-run top: **P1.4a** mixed
+  INT8+fp16 engine against the joint bar. New: 8b scripts/training-loop review #4.
 - (2026-07-09 run #2) P1.4 → precursor measured (fp16 safe / bf16 unsafe), engine build split to
   P1.4a (toolchain install) + P1.4b (clean-GPU latency); P1.5 models review #2 DONE (fail-fast intake,
   8 tests). Next-run top: P1.4a (idle-GPU/pod TRT build) or review #3 (scripts) if GPU stays contended.

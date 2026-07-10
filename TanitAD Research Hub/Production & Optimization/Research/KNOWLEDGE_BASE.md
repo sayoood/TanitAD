@@ -2,6 +2,44 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-10 (run #3)
+
+- **INT8 weight-quant sensitivity localizes to the READOUT, not the ViT tower.**
+  Per-output-channel symmetric int8 **weight-only** fake-quant (activations fp32),
+  scored in decision space on the same 64 windows (step-6500, 4060): `int8_encoder`
+  (ViT only) **98.4 %** agreement / 1 flip / 1.6 cm wp-shift; `int8_predictor`
+  **95.3 %** / 3 flips / 10.9 cm; `int8_heads` **48.4 %** / 33 flips / **1.67 m**;
+  `int8_all` **48.4 %** (== heads). Since all-model == heads while encoder-alone and
+  predictor-alone are safe, the collapse is entirely in **heads−predictor =
+  {readout, inv_dyn, imagination}** — the tell is encoder-*state* rel-err 7e-4→1.67e-2,
+  and the only state-producing module in "heads" is the **readout**. **Deploy rule:
+  INT8 the ViT encoder + predictor weights (saves 228+324 = 552 MB of 825 MB at 4×),
+  keep the readout ≥fp16.** Source: `Implementation/int8_quant/int8_quant_step6500.json`.
+- **The "ViT INT8 trap" is an ACTIVATION-quant rule, not a weight-quant rule.** The
+  KB/literature heuristic "keep the vision tower FP16, quantize heads first" is REFUTED
+  for weight-only quant here — the ViT *weights* tolerate INT8 best (98.4 %) and the
+  *heads* are sensitive. The ViT trap is about heavy-tailed activation outliers under
+  INT8 activation-scaling; ViT **weights** round cleanly. Score per-module, don't assume
+  the heuristic. Source: same run + `Research/2026-07-10-...md` §1.
+- **Clean-GPU latency (P1.4b closed):** idle/exclusive 4060, batch 1 — fp32 decision
+  tick **15.76 ms / 63.5 Hz / 1.10 GB**, fp16 **13.40 ms / 74.6 Hz / 1.18×**. Clean fp32
+  ≈ the 15.07 ms 2026-07-08 baseline → confirms the 33.5 ms 2026-07-09 read was pure
+  **contention** (falsifier fired as predicted). fp16 peak-VRAM (1.65 GB) still
+  double-counts the resident fp32 reference — a clean per-precision VRAM delta needs a
+  single-model-resident run. Source: `Implementation/int8_quant/int8_quant_step6500.json`.
+- **INT8 latency is NOT claimable without fused int8 TRT kernels** (toolchain absent) —
+  today's measurable INT8 efficiency delta is the 4× **weight-memory footprint** only.
+  The eventual real engine must pass a pre-registered joint bar: fp16-act + int8-weight
+  (encoder+predictor) ≥ 95 % agreement / ≤ ~4 cm wp-shift, readout ≥fp16 (the two ~5 %
+  error terms may compound). Source: `Research/2026-07-10-...md` §1.
+- **Silent short-episode drop in all three window datasets** (`_contract.py:120`,
+  `toy_driving.py:131`, `comma2k19.py:278`): `range(t_max)` with `t_max ≤ 0` drops the
+  episode with no counter/warn/log (`comma2k19` guards the negative-range but drops just
+  as silently) → silent train-set shrink, or a `StopIteration` spin if all are too short.
+  Fixed via fail-loud `build_window_index` (count + warn + `ValueError` on empty), parity
+  preserved for valid episodes; 10 standalone tests. Source:
+  `Implementation/incoming/2026-07-10-contract-windowing-failloud/`.
+
 ## 2026-07-09 (run #2)
 
 - **FP16 is decision-safe on the operative path; BF16 is NOT.** Measured on 64

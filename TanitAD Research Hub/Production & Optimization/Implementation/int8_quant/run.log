@@ -1,0 +1,57 @@
+{
+  "SUMMARY": {
+    "fp32": {
+      "decision_tick_ms": 15.756,
+      "hz": 63.5,
+      "peak_vram_gb": 1.102,
+      "selection_agreement": 1.0,
+      "note": "reference"
+    },
+    "fp16": {
+      "decision_tick_ms": 13.397,
+      "speedup_vs_fp32": 1.176,
+      "hz": 74.6,
+      "peak_vram_gb": 1.648,
+      "note": "accuracy from half_precision_step6500.json (agreement 0.953)"
+    },
+    "int8_predictor": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 324.2,
+      "selection_agreement": 0.9531,
+      "n_flips": 3,
+      "decoded_wp_shift_m_mean": 0.1093,
+      "encoder_rel_err_mean": 0.000597,
+      "encoder_finite": true
+    },
+    "int8_heads": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 390.4,
+      "selection_agreement": 0.4844,
+      "n_flips": 33,
+      "decoded_wp_shift_m_mean": 1.6663,
+      "encoder_rel_err_mean": 0.016695,
+      "encoder_finite": true
+    },
+    "int8_encoder": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 228.3,
+      "selection_agreement": 0.9844,
+      "n_flips": 1,
+      "decoded_wp_shift_m_mean": 0.0164,
+      "encoder_rel_err_mean": 0.000703,
+      "encoder_finite": true
+    },
+    "int8_all": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 618.6,
+      "selection_agreement": 0.4844,
+      "n_flips": 33,
+      "decoded_wp_shift_m_mean": 1.6737,
+      "encoder_rel_err_mean": 0.01669,
+      "encoder_finite": true
+    }
+  },
+  "probe_imag_r2": 0.8327017426490784,
+  "n_showcase_windows": 64,
+  "ckpt_step": 6500
+}

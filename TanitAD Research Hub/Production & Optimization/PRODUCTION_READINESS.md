@@ -12,11 +12,11 @@ compatibility (ONNX/TRT).
 
 | Module | Reviewed | Open issues | Notes |
 |---|---|---|---|
-| `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08** | 2 fixed (intake), 2 logged | review #1 done → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests); DONE-marker-unused + short-episode-silent-drop logged for later |
+| `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08 / -10** | 2 fixed + 1 fixed (intake), 1 logged | review #1 → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests). **review #3 (2026-07-10) → intake `2026-07-10-contract-windowing-failloud`**: silent short-episode drop across `_contract.py:120`/`toy_driving.py:131`/`comma2k19.py:278` → count+warn+`ValueError`-on-empty, parity preserved, 10 tests. Still logged: `epcache` DONE-marker written-never-read |
 | `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-09** | 1 fixed (intake), 2 logged | review #2 done → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests, export-safe). Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow. Encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5). SigReg correctly pins fp32; `eval()` disables F-5 grad-ckpt |
 | `tanitad/instruments/` | — | — | |
 | `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | |
-| `stack/scripts/` + training loop | — | — | review #3; ops-fragility history F-5/F-6/F-7 |
+| `stack/scripts/` + training loop | — | — | review #4 (was #3); ops-fragility history F-5/F-6/F-7 |
 
 ## Deployment blockers (live list)
 
@@ -46,9 +46,15 @@ compatibility (ONNX/TRT).
   python, 99 % util) → fp32 tick read 33.5 ms vs the clean 15.07 ms; accuracy is
   contention-immune but absolute latency/Hz and per-precision peak-VRAM are not
   (VRAM double-counts the resident fp32 reference). Clean re-run = backlog P1.4b.
-- INT8 on ViT: native TensorRT is a known trap — OwLite/ModelOpt route confirmed (Phase 1). ModelOpt
-  PTQ = in-place + calibration dataloader, QDQ nodes; keep the ViT tower FP16, quantize predictor/
-  heads first, accuracy metric = probe-fit delta.
+- **INT8 weight-quant policy (MEASURED 2026-07-10, decision space, 64 windows):** INT8-safe =
+  **ViT encoder (98.4 % agreement, 1 flip) + predictor (95.3 %, 3 flips)**; INT8 red line = the
+  **readout / state-projection** (heads INT8 → 48.4 %, 33 flips, 1.67 m wp-shift; `int8_all` ==
+  `int8_heads`). Deploy INT8 encoder+predictor **weights** (−552 MB of 825 MB at 4×), readout ≥fp16.
+  **Correction:** the "native-TRT ViT INT8 trap / keep the ViT FP16" rule is an **activation**-quant
+  rule — ViT *weights* round to INT8 cleanly here. INT8 *latency* needs fused TRT int8 kernels
+  (toolchain absent); today's INT8 delta = 4× weight-memory footprint. OwLite/ModelOpt PTQ route
+  still confirmed for the real engine (calibration dataloader + QDQ). Source:
+  `Implementation/int8_quant/int8_quant_step6500.json`.
 - Target hardware (Orin/Thor) not in-house; RTX 4060 is the declared latency proxy (I8).
 - **Export ops gotcha (Windows dev machine):** the dynamo exporter prints emoji progress and crashes
   with `UnicodeEncodeError` under cp1252 — run exports with `PYTHONUTF8=1` / `PYTHONIOENCODING=utf-8`.
@@ -61,4 +67,4 @@ compatibility (ONNX/TRT).
 |---|---|---|
 | ONNX (encoder+predictor) | **DONE 2026-07-08** | opset 17 (legacy) & 18 (dynamo); static [1,9,256,256] + [1,8,2048]/[1,8,2]; parity 8.8e-6 / 1.2e-5; no plugins needed |
 | TensorRT fp16 | **toolchain-blocked** (P1.4a) | `import tensorrt`→missing, ORT CPU-only. **fp16 precursor MEASURED 2026-07-09**: fp16 decision-safe (agreement 95.3 %, wp-shift 3.9 cm), bf16 NOT (67.2 %, 47.7 cm). Acceptance bar pre-registered. Install `tensorrt`+`onnxruntime-gpu` or build on idle pod |
-| Quantization (OwLite/ModelOpt) | not started | Phase 1; ModelOpt PTQ (calib loader + QDQ); ViT tower FP16; accuracy metric = probe-fit delta |
+| Quantization (OwLite/ModelOpt) | **weight-curve MEASURED 2026-07-10** | INT8 weight-only: **encoder 98.4 % / predictor 95.3 % SAFE; readout/heads 48.4 % UNSAFE** (localized). Plan = INT8 encoder+predictor weights + readout ≥fp16 + fp16 acts; joint bar ≥95 %/≤4 cm. Real engine (int8 kernels + latency) = P1.4a; ViT-weight-INT8 is fine (trap is activation-side) |

@@ -56,6 +56,8 @@
 |---|---|---|---|---|---|
 | p0-sB01 step 6500 | 262.8 M | TBD | **decision tick 15.07 ms p50** (encode 9.38 + K9 select 5.69; predictor pass 6.14; p95 ≈ 17.2), fp32 un-optimized, peak VRAM **1.08 GB**, strict numerics, I8 batch-1 | TBD (Phase 1; TRT/quant headroom on top of ~66 Hz fp32) | 2026-07-08 |
 | p0-sB01 step 6500 — **precision sweep** | 262.8 M | — | **fp16 ~1.6× / bf16 ~1.8× vs fp32** (speedup *ratios*; absolute Hz withheld — 4060 was CarlaUE4-contended this run). **Accuracy Δ (contention-immune, 64 real windows):** fp16 imagine-select agreement **95.3 %** / enc rel-err 7.8e-4 / wp-shift 3.9 cm; bf16 **67.2 %** / 7.2e-3 / 47.7 cm | **Deploy fp16, not bf16** (Prod&Opt precision policy); TRT-fp16 acceptance bar pre-registered | 2026-07-09 |
+| p0-sB01 step 6500 — **clean latency (idle GPU)** | 262.8 M | — | fp32 **15.76 ms / 63.5 Hz / 1.10 GB**; fp16 **13.40 ms / 74.6 Hz / 1.18×** (idle/exclusive 4060, batch 1). Confirms 15.07 ms baseline; the 33.5 ms 07-09 read was contention. fp16 VRAM double-counts resident fp32 | ~66→75 Hz un-optimized; TRT/quant on top | 2026-07-10 |
+| p0-sB01 step 6500 — **INT8 weight-quant curve** | 262.8 M | — | **Efficiency Δ = 4× weight-memory** (no int8 latency claim; kernels absent). **Accuracy Δ (decision space, 64 windows):** ViT-encoder INT8 **98.4 %**/1 flip/1.6 cm (228 MB), predictor INT8 **95.3 %**/3 flips/10.9 cm (324 MB) → both SAFE; heads/all INT8 **48.4 %**/33 flips/**1.67 m** → UNSAFE (localizes to the **readout**) | **Mixed engine: INT8 encoder+predictor weights (−552 MB), readout ≥fp16** | 2026-07-10 |
 
 **First real TMS/CNCE rows** (diagnostic; `stack/experiments/p0-latency-baseline/`): CNCE on 12
 comma-val log replays with the measured tick = median **2.02×10⁵ m/(s·B-params)** (collisions=0 by
