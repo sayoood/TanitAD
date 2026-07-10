@@ -1,48 +1,55 @@
 # STATE — Architecture & Inference
 
-LAST_RUN: 2026-07-09 (Wednesday weekly agent — K-step rollout bake-off first measured arm (backlog P0 #2) + LeJEPA-identifiability theory (2605.26379) + ACWM low-dim-action AdaLN refinement)
-QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 1 measured experiment (2 trained arms) / ~2.2 h — under caps. G-H: matched-compute K=2 vs K=1 → imag_rel −64 % @1-step, no gate passed at reduced scale → no claim, feeds decision-grade Phase C)
-(Calendar: wall-clock 2026-07-09; hub notes forward-dated to mid/late-July by the autonomous loop. Dating by wall
+LAST_RUN: 2026-07-10 (Wednesday weekly agent — orthogonality/isotropy admissibility instrument (backlog P1 #3b) built + measured on step-6500 ckpt (NOT-YET-ADMISSIBLE) + isotropy-theory watch HamJEPA 2605.20107 / PGSA 2606.12471). Worktree branch: `worktree-agent-arch-inf-20260710`.
+QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 3 searches + 2 fetches + 1 measured experiment / ~2.2 h — under caps. G-E: intake pkg 8✓ standalone, stack suite 189✓/1s unchanged (touched no stack file). G-H: orthogonality instrument on step-6500 → iso_ratio_active 0.250 / rms_offdiag 0.428 → NOT-YET-ADMISSIBLE; cross-checked against spectral (cov_eff_rank 24.93 = repr_eff_rank 24.93). No gate passed → no claim; blocks a premature D-021 optimal-planning reading, D-004.)
+(Calendar: wall-clock 2026-07-10; hub notes forward-dated by the autonomous loop. Dating by wall
 clock per the Data-Eng precedent — see the run note's calendar footnote.)
 
 ## HANDOFF
 
-No half-done work. One measured experiment + theory-watch this run:
+No half-done work. One build + one measured experiment + theory-watch this run:
 
-1. **G-H measured experiment — K-step rollout bake-off first arm** (backlog P0 #2). Matched-compute
-   K=2 vs K=1 (2×2000 steps, real comma2k19, RTX 4060, 11.74 M reduced-but-real probe, OFAT-verified via
-   `lever_diff`). **Rollout ≈ free (+0.5 % wall-clock, 0 params).** Falsifier metric (D2 dir-acc) **saturated
-   at 1.0** → non-discriminative; discriminative `imag_rel` shows **K=2 cuts 1-step latent-pred error vs
-   persistence 2.914→1.049 (−64 %)** but does NOT help the 4-step horizon (I4 1.451→1.645) → **K must match
-   the decode horizon**. D1 FAIL + D3 BLOCKED both ⇒ **no decision-grade claim (D-004)**. Script+artifacts:
-   `Implementation/kstep_bakeoff_probe/` (`kstep_bakeoff_probe.py` + `results/2026-07-09-*.json`). No stack
-   code change this run (suite 188✓/1s — rose from 181 via other agents' mid-session intakes, not mine).
-   No trained-config change executed (D-018).
-2. **Theory-watch (D-013):** *When Does LeJEPA Learn a World Model?* (2605.26379) — LeJEPA/SIGReg gives
-   linear+orthogonal identifiability under a unique Gaussian prior → optimal latent-space planning; grounds
-   H3 anti-collapse AND the `p0-spectral-sizing` linear proxy (D-021). ACWM (2605.08567) — AdaLN vs cross-attn
-   is a wash for low-dim actions (ours are 2-D) → bounds the `adaln_conditioning` lever's expected Δ.
+1. **G-E + G-H — orthogonality/isotropy admissibility instrument** (backlog P1 #3b, from 2605.26379).
+   Intake pkg `Implementation/incoming/2026-07-10-orthogonality-instrument/` (`spectral_orthogonality.py`
+   + `run_orthogonality.py` + `tests/` **8✓**, pure torch, 0 deps; proposed target = extend
+   `stack/tanitad/eval/spectral.py`). Measures whether the SIGReg readout reached the isotropic-Gaussian
+   target the optimal-planning theorem needs. **Measured on step-6500** (24 val eps, 7 200 latents, 4060,
+   72 s, $0): `active_k=21` / `cov_effective_rank=24.93` **exactly reproduce** the independent spectral
+   numbers (cross-instrument sanity); `iso_ratio_active=0.250` / `cond_active=246` / `rms_offdiag_corr=0.428`
+   → **NOT-YET-ADMISSIBLE**. **Honest tempering (P8):** the D-021 over-provisioning finding stays
+   *descriptive*, but its *optimal-latent-planning* reading is **not licensed** at step-6500 — the
+   instrument *blocks* a premature claim (D-004/G-AI1). Convergence tripwire for 15k/30k. Artifact
+   `Research/2026-07-10-orth_step6500.json`. No stack file touched (suite 189✓/1s). No trained-config change (D-018).
+2. **Theory-watch (D-013):** **HamJEPA (2605.20107)** — "no geometry-independent fixed marginal target is
+   canonical"; isotropy optimal only for rotation-invariant cost (= 2605.26379's condition) → validates
+   the instrument's scoping + seeds a Phase-1 symplectic-predictor lever; beats SIGReg +3.5/+7.5/+10.6
+   probe pts on structured tasks. **PGSA (2606.12471)** — identifiability without Gaussianity via symbolic
+   grounding; statistical-WM error "grows monotonically with time" under non-Gaussian dynamics = the
+   mechanism behind our K-step horizon-degradation → reinforces H1 hierarchy. Both Lean-verified.
 
 ### Exact next steps (next Wednesday run, in priority order)
+- **P0 #1 + P1 #3b re-run — orthogonality + spectral at the FINAL Stage-0 ckpt** (15k preview / 30k
+  decision-grade). The orthogonality instrument is now the **admissibility gate** on any D-021 resize:
+  no resize is admissible until `iso_ratio_active` converges (falsifier: stalls low → withhold + escalate
+  SigReg weight, D-018). Turnkey: `run_orthogonality.py --ckpt <final> --cache-dir <val cache DIR>` (pass
+  the cache DIR, not the eval root — the `*val*` glob otherwise grabs `comma_val.tgz`; the script now
+  filters to dirs). Pair with `run_spectral.py` (rank was still climbing 35→43 at 6.5k).
 - **P0 #2b — decision-grade K∈{1,2,4} sweep at OPERATIVE scale** from the pod2 step-8k `ckpt_full.pt`
   (Phase C). Primary metric **`imag_rel` per horizon** (NOT dir-acc — proven to saturate); reuse
-  `Implementation/kstep_bakeoff_probe/kstep_bakeoff_probe.py` (swap `probe_config` for the operative config
-  + load the trained ckpt). **D-018 Tactic → escalate to Sayed before it touches the trained config.**
+  `Implementation/kstep_bakeoff_probe/kstep_bakeoff_probe.py`. **D-018 Tactic → escalate before it touches the trained config.**
 - **P0 #2c — extend imagination horizons past 0.4 s** (predictor imagines k∈{1,2,4}; D3 wants 2 s). Couples
   with 2b (K must cover the horizon). Escalate before trained-config change.
-- **P0 #1 — re-run spectral at the FINAL Stage-0 checkpoint** (rank was still climbing 35→43 at 6.5k/30k) →
-  decision-grade D-021 input. Turnkey: `run_spectral.py --ckpt <final> --cache-dir <staged val cache>`
-  (stage the val cache so the `*val*` glob doesn't grab `comma_val.tgz`).
-- **P1 #3b (build) — orthogonality instrument in `spectral.py`** (from 2605.26379): check the trained readout
-  covariance is ~isotropic (the theorem's orthogonality condition); ship as an intake with a test. Gates the
-  D-021 sizing claim's admissibility, not an architecture change.
+- **NEW build — live `iso_ratio_active` training row** (from this run's rec #3): add active-subspace
+  isotropy to the trainer's collapse-health log next to `erank`, so SIGReg-isotropy convergence is
+  watchable in-flight; feeds the "raise SigReg if it stalls" decision with a *direct* signal. Cheap
+  (reuses `spectral_orthogonality` on the readout batch). Ship as intake.
 - **P1 #3 (build) — AdaLN `CondBlock` + RoPE** in `OperativePredictor` so those `planned` levers become
   runnable; smoke-first (expect small Δ per 2605.08567). Ship each as an intake with the harness sweep
   pre-wired. **D-018: escalate before either touches the trained config.**
 - **Standing duties (D-013):** theory-watch (Balestriero/LeCun spectral-SSL IEEE SPMag 2026, Klindt +
   `github.com/klindtlab/lejepa-identifiability`, HaoChen, PKU Yisen Wang 2606.27014); citation-walk set now
-  includes Delta-JEPA / FF-JEPA / OmniDreams / **LeJEPA-identifiability (2605.26379)**; `Ressources/` inbox
-  **clear** (grep-verified last run — re-check newest-mtime each run).
+  includes Delta-JEPA / FF-JEPA / OmniDreams / LeJEPA-identifiability (2605.26379) / **HamJEPA
+  (2605.20107)** / **PGSA (2606.12471)**; `Ressources/` inbox re-check newest-mtime each run.
 
 ## Open coordination
 - Master Plan §3 puts the *gate harness* under Benchmarks & Eval (Thu). The gate runner is deliberately the

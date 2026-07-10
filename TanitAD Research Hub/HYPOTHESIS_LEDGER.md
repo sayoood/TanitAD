@@ -29,6 +29,22 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-10: Architecture & Inference (Wed) — **H3 orthogonality-instrument measurement** (no status
+  change, P8: mid-training diagnostic, feeds D-021 admissibility, not a passed gate). Built the
+  orthogonality/isotropy instrument (backlog P1 #3b) that makes the 2605.26379 optimal-planning
+  precondition falsifiable on our own checkpoint, and ran it on step-6500: `cov_effective_rank=24.93`
+  and `active_k=21` **exactly reproduce** the independent spectral-sizing numbers (cross-instrument
+  sanity), but `iso_ratio_active=0.250` / `cond_active=246` / `rms_offdiag_corr=0.428` →
+  **NOT-YET-ADMISSIBLE**: SIGReg's isotropic-Gaussian target has not converged even in the active
+  subspace at step-6500. **Honest tempering:** the D-021 over-provisioning finding stays *descriptive*
+  but its *optimal-latent-planning* interpretation is **not licensed** on this ckpt — the instrument
+  blocks a premature claim (D-004/G-AI1), with a convergence tripwire for 15k/30k (iso→1 expected;
+  stalls → withhold resize + escalate SigReg weight, D-018). Theory-watch: **HamJEPA (2605.20107)** —
+  isotropy canonical only for rotation-invariant cost, validates the instrument's scoping + seeds a
+  Phase-1 symplectic-predictor lever; **PGSA (2606.12471)** — identifiability without Gaussianity, and
+  statistical-WM error "grows monotonically with time" under non-Gaussian dynamics = the mechanism
+  behind our measured K-step horizon-degradation, reinforcing **H1** hierarchy. See
+  `Architecture & Inference/Research/2026-07-10-orthogonality-instrument-and-isotropy-theory.md`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

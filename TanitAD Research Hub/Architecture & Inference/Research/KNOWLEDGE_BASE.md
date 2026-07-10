@@ -3,6 +3,39 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-10] [repo/measured] **Orthogonality/isotropy admissibility instrument on step-6500 trained
+  ckpt** (backlog P1 #3b; 24 comma2k19 val eps, 7 200 readout latents dim 2048, 4060, 72 s, $0). Measures
+  whether the SIGReg readout reached the isotropic-Gaussian target that 2605.26379's optimal-planning
+  theorem requires. **(1) Cross-instrument check:** `cov_effective_rank=24.93` and `active_k=21` **exactly
+  reproduce** the independent spectral-sizing `repr_effective_rank=24.93` / `optimal_k=21` → the two
+  instruments read the same geometry. **(2) `iso_ratio_global=2.0e-8`** (dead-tail dominated, expected for
+  the over-provisioned 2048 readout). **(3) `iso_ratio_active=0.250` / `cond_active=246` / `rms_offdiag_corr=0.428`
+  → VERDICT: NOT-YET-ADMISSIBLE** — even within the top-21 active subspace SIGReg's isotropy has not
+  converged at step-6500 (coords redundant/correlated, not an orthogonal basis). **Honest consequence (P8):**
+  the D-021 over-provisioning finding stays *descriptive*, but its **"optimal latent planning" reading is NOT
+  licensed** on this ckpt — a convergence tripwire (expect iso→1 at 15k/30k; falsifier: stalls low → withhold
+  resize + escalate SigReg weight). Instrument doctrine: *blocks* a premature claim rather than motivating a
+  change (D-004/G-AI1) — impact: H3 / D-021 / D-008 —
+  `../Research/2026-07-10-orthogonality-instrument-and-isotropy-theory.md` + `../Implementation/incoming/2026-07-10-orthogonality-instrument/`
+- [2026-07-10] [arXiv 2605.20107] **HamJEPA — "Beyond Isotropy in JEPAs"** (Hamiltonian geometry + symplectic
+  prediction). Proves **"no geometry-independent fixed marginal target is canonical: every fixed covariance
+  shape can be maximally misaligned for some structured geometry"** — isotropy (SIGReg's target) is optimal
+  ONLY under rotation-invariant downstream cost (= exactly 2605.26379's condition). Puts the bias in the
+  cross-view coupling ((q,p) phase-space + learned Hamiltonian leapfrog + non-isotropic scale/spectral floors
+  for anti-collapse) → **beats SIGReg +3.5/+7.5/+10.6 linear-probe pts** (CIFAR-100/ImageNet-100, matched
+  epochs; ablation: the symplectic structure drives it). Validates the orthogonality-instrument's *scoping*
+  (isotropy is the right admissibility target for our Phase-0 rotation-invariant trajectory cost) + seeds a
+  **Phase-1 symplectic-predictor bake-off lever** (D-018 Tactic, escalate) — impact: H1 / H3 / H5 —
+  https://arxiv.org/abs/2605.20107
+- [2026-07-10] [arXiv 2606.12471] **PGSA — "Identifiability Without Gaussianity"** (Lean-verified). Overturns
+  the *uniqueness* half of 2605.26379: a Physics-Grounded Symbolic Architecture achieves **exact linear
+  identifiability for all physical regimes regardless of latent distribution**, replacing Gaussianity with
+  **"symbolic grounding in the causal generator."** Measured: statistical WMs have representation error
+  **"growing monotonically with time"** under non-Gaussian dynamics; PGSA holds **"near-infinite temporal
+  consistency."** = the theoretical MECHANISM behind our measured horizon-degradation (K-step `imag_rel`
+  worse at 4-step) and the D3 2-s challenge; reinforces **H1 (hierarchy as the compounding-error answer)**.
+  Symbolic grounding = heavy architectural commitment → Phase-1+ comparison thesis, NOT adoption (our
+  latent-statistical bet is deliberate) — impact: H1 / H3 — https://arxiv.org/abs/2606.12471
 - [2026-07-09] [repo/measured] **K-step rollout bake-off — first measured arm** (backlog P0 #2; matched
   compute, 4060, 2×2000 steps, real comma2k19, 11.74 M reduced-but-real probe). K=2 vs K=1, OFAT-verified
   (`lever_diff==["train.rollout_k"]`). **(1) rollout ≈ free: +0.5 % wall-clock (749.4 vs 745.4 s), 0 extra

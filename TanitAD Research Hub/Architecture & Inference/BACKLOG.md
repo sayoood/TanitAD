@@ -47,11 +47,30 @@ Format per item: goal / method / resource / expected number / falsifier.
    `kstep_bakeoff_probe` harness), promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier:
    Δ within noise → close. **Prior lowered (arXiv 2605.08567):** AdaLN vs cross-attn is a wash for
    LOW-dim actions and our actions are 2-D → expect small Δ; keep AdaLN (not cross-attn), test cheap.
-3b. **Orthogonality instrument for `spectral.py`** — from arXiv 2605.26379: LeJEPA's optimal-planning
-   guarantee needs the identified latent to be linear+**orthogonal**. Add a check that the trained
-   readout covariance is ~isotropic/diagonal (an I-row, gates the D-021 sizing claim's admissibility,
-   not an architecture change). Ship as an intake with a test. Cheap, makes the theorem falsifiable
-   on our own checkpoint.
+3b. **[✅ DONE 2026-07-10 — orthogonality/isotropy instrument built + measured]** Intake pkg
+   `incoming/2026-07-10-orthogonality-instrument/` (`spectral_orthogonality.py` + `run_orthogonality.py`
+   + 8 tests, pure torch; target = extend `stack/tanitad/eval/spectral.py`). Measured on step-6500:
+   `active_k=21` / `cov_effective_rank=24.93` **exactly reproduce** the spectral numbers (cross-check);
+   `iso_ratio_active=0.250` / `rms_offdiag_corr=0.428` → **NOT-YET-ADMISSIBLE** (SIGReg isotropy not
+   converged at step-6500) → the D-021 over-provisioning finding stays *descriptive*, the *optimal-planning*
+   reading is NOT licensed (instrument blocks it, D-004). **Superseded by 3b-final below.**
+
+3b-final. **Re-run orthogonality + spectral at the FINAL Stage-0 ckpt** (15k preview / 30k decision-grade)
+   — the admissibility gate on any D-021 resize. Method: `run_orthogonality.py --ckpt <final> --cache-dir
+   <val cache DIR>` (+ `run_spectral.py`). Expected: `iso_ratio_active` climbs toward 1 as SIGReg converges.
+   **Falsifier:** isotropy stalls low → withhold any resize AND escalate "raise SigReg weight" (D-018 Tactic).
+   No resize is admissible until this passes (D-004/G-AI1).
+
+3b-live. **Live `iso_ratio_active` training row** (from the 2026-07-10 rec #3) — add active-subspace
+   isotropy to the trainer's collapse-health log next to `erank`, so SIGReg-isotropy convergence is
+   watchable in-flight and feeds the "raise SigReg if it stalls" decision with a direct signal. Cheap
+   (reuses `spectral_orthogonality` on the readout batch). Ship as intake. Falsifier: adds >2 % step time → gate to eval-only.
+
+3b-ham. **[Phase-1 lever, from HamJEPA 2605.20107]** symplectic/Hamiltonian cross-view predictor coupling
+   as the non-isotropic alternative to isotropic SIGReg for structured driving geometry (beats SIGReg
+   +3.5–10.6 probe pts on structured tasks). One-lever bake-off vs the FiLM/SIGReg baseline; **only if**
+   the final-ckpt orthogonality gate shows isotropy is a poor fit for the driving cost geometry. Changes
+   the trained objective → **D-018 Tactic, escalate.** Design note first.
 4. **H4 arm-B: frozen DINOv3 world model — PROMOTED (Sayed ask 2026-07-09), design fixed:**
    (a) precompute DINOv3-**B/16** features once over the comma epcaches (16×16 grid @256px matches
    our readout geometry; pod2 post-arms or Colab T4 — embarrassingly parallel); (b) train
