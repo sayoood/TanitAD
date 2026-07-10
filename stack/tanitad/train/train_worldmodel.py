@@ -132,8 +132,11 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         def mk(pattern):
             d = sorted(root.glob(pattern))
             assert d, f"no cache dir matching {pattern} under {root}"
-            eps = [load_episode(str(p), mmap=True)
-                   for p in sorted(d[-1].glob("ep_*.pt"))]
+            # cgroup guard (2026-07-10 thrash diagnosis): bound the mmap working
+            # set below the container page-cache cap or throughput collapses
+            # (data_s = 73% of step_s measured at 49/55 GB cgroup fill).
+            files = sorted(d[-1].glob("ep_*.pt"))[:n_episodes]
+            eps = [load_episode(str(p), mmap=True) for p in files]
             assert eps, f"no episodes in {d[-1]}"
             return EpisodeWindowDataset(eps, window=cfg.predictor.window,
                                         max_horizon=max_h)
