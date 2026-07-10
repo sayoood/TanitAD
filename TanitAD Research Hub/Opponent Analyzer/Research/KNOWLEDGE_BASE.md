@@ -4,6 +4,38 @@
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
 
+- [2026-07-10] [NHTSA/regulatory] FACT — **FMVSS No. 135 modernization NPRM** (published 2026-06-26,
+  comments to 07-27) proposes ADS brake-standard rules and states NHTSA **"expects an ADS to be aware of
+  the operational status of each safety-critical vehicle system … and respond appropriately to
+  degradations, failures, and malfunctions"**; requests comment on a performance standard for ADS brake
+  degradation response; **withdraws AV STEP** — impact: **regulation-native tailwind for H11**
+  (self-monitoring w/ guarantees), adjacent W-04/W-07; handoff → Benchmarks&Eval REGULATION_TRACE —
+  https://www.federalregister.gov/documents/2026/06/26/2026-12981/federal-motor-vehicle-safety-standards-modernization-of-fmvss-no-135-to-accommodate-ads-equipped
+- [2026-07-10] [Avride/NHTSA] FACT — enrich: the Avride PE was **opened 2026-05-06**; NHTSA's wording is
+  verbatim SC-13 — vehicles **"did not brake for slow-moving or stopped vehicles, and struck stationary
+  objects partially blocking the roadway"** (most **< 20 mph**; the one injury = clipping a parked
+  pickup's open door, Dec 2025); operator aboard all 16, **intervened in only one**; focus "conflict
+  avoidance, driving-behaviour competence and assertiveness" — impact: **W-08/SC-13 primary evidence** —
+  https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
+- [2026-07-10] [Opponent Analyzer] INFER (design-oracle, P8) — **SC-13 Stationary-lead** scenario shipped
+  (`stationary_lead` intake, **13/13 tests**): H15 imagination_forward vs detection-then-react —
+  **collision rate 0.0 vs 0.43** over 8–25 m/s; at 15 m/s brakes **3.1 s earlier**, min-TTC **4.4 vs
+  0.77 s**, gap **29.8 vs 2.0 m**; honest falsifier — the edge decays to 0 as the competitor classifies
+  early (detect_range 20→120 m) → advantage is *specifically* acting-before-classification — impact:
+  **H15/A9; W-08** — see `2026-07-10-opponent-sweep-w4.md`
+- [2026-07-10] [NVIDIA] FACT — **AlpaGym** open-source **closed-loop RL** framework on **AlpaSim** +
+  Omniverse **NuRec** reconstructions (with Alpamayo-2 Super 32 B / 10 B Nano) — impact: usable
+  closed-loop eval asset (→ Tools&DevEnv); closed-loop now table stakes → moat = hierarchy+CNCE+
+  imagination+self-monitoring (H1/H3/H5/H15/H11) — https://nvidianews.nvidia.com/news/nvidia-alpamayo-2-super-robotaxis
+- [2026-07-10] [Wayve/Pony/Tesla] FACT/CLAIM — Wayve to deploy in **Stellantis robotaxis on Uber**
+  (CLAIM $2.8 B total raised, reconcile vs $1.2 B Series-D/$8.6 B post); Pony now **4 driver-out cities**
+  (+Zagreb) + **Singapore Punggol** via Zig; Tesla seeking **~5,000 Las Vegas robotaxi slots** while the
+  camera-only visibility EA is live — impact: distribution deltas; W-04/W-06 unchanged mechanism —
+  https://www.claimsjournal.com/news/national/2026/07/01/338559.htm
+- [2026-07-10] [arXiv] INFER — 2026 driving-WM substrate trending to **explicit rendered 4D-occupancy**
+  (GenieDrive 2512.12751; DriveFuture 2605.09701; occupancy-forecasting surveys) — expensive
+  pixel/voxel-space; our **latent consequence-forward** imagination (price TTC without rendering) is the
+  efficiency counter-position — impact: H3/H15 differentiation — https://arxiv.org/abs/2605.09701
 - [2026-07-24] [Avride/NHTSA] FACT — NHTSA ODI opened an investigation (**2026-05-08**) into **Avride**
   (Uber robotaxi partner, Yandex SDG lineage): **16 crashes + 1 minor injury**, all tied to **"the
   competence of"** the system — lane-changing, same-lane vehicle response, stationary-object response —

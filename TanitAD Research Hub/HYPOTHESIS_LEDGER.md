@@ -29,6 +29,16 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-10: Opponent Analyzer (Fri, run #3 — wall-clock; prior notes 07-17/07-24 carried
+  narrative week-labels ahead of the clock). **No status upgrade** — nothing measured on our stack (P8).
+  **H11** gains a *regulatory tailwind* (FACT): NHTSA **FMVSS-135 NPRM (2026-06-26)** proposes that an
+  ADS must be aware of each safety-critical subsystem's status and respond to degradations/failures —
+  the exact self-monitoring-with-guarantees capability (adjacent W-04, Tesla's failed
+  "degradation-detection"). **H15/A9** gains a shipped scenario: **SC-13 Stationary-lead** intake
+  (**13/13 tests**) — design-oracle collision rate imagination 0.0 vs classifier-react 0.43 (8–25 m/s),
+  3.1 s anticipation lead, with an honest built-in falsifier (edge decays to 0 as the competitor
+  classifies early). **H0/H6** reinforced: Avride PE wording is verbatim the stationary-object failure;
+  NVIDIA AlpaGym makes closed-loop RL table stakes (moat = hierarchy+CNCE+imagination+self-monitoring).
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

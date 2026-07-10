@@ -6,15 +6,14 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
 
 ## P0 — next run
 
-1. **SC-13 "Stationary-object / same-lead" scenario authoring (W-08, Avride)** — NEW top item after
-   the 2026-07-24 Avride NHTSA ODI finding (16 crashes: lane-change / same-lane / stationary-object).
-   Deliverable: scenario spec + telemetry oracle (mirror stop_arm_gate/work_zone_phantom) + intake pkg
-   with passing tests; SCENARIO_DATABASE SC-13 → `spec-drafted`. **Cheapest high-value item:** reuses the
-   comma2k19 loader (real stopped-lead segments, license-clean) + LAL-v2/OKRI hooks. Metric: OKRI + LAL-v2
-   lead time + min-TTC; H15 imagination-vs-detection lead time. Falsifier: lead time ≤ detection baseline
-   on matched segments ⇒ H15 advantage unproven here.
+1. **SC-13 real open-loop probe on comma2k19** — turn the shipped design-oracle into *real evidence*.
+   Once DataEng tags slow/stopped-lead comma2k19 segments (handoff logged), run our checkpoint's
+   predicted-TTC / imagination-error lead vs a detection-only baseline on matched segments. Deliverable:
+   a measured lead-time-vs-detection number + min-TTC/collision on real bytes; SC-13 → `data-sourced` →
+   `oracle-tested`. **This is the item that upgrades H15 from design-oracle to measured** — highest value.
+   Falsifier (pre-registered): lead ≤ detection baseline on matched segments ⇒ H15-vs-detection unproven.
 2. **SC-14 "Red-light barrier" spec** — near-free once SC-04 integrates (reuses the stop-line barrier
-   oracle; H9 violation-rate=0). Author after SC-13 if budget allows.
+   oracle; H9 violation-rate=0). **Now the cheapest authoring item** (SC-13 shipped this run).
 3. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
    step 6500: naive relative imag-error AUROC 0.34 inverted / 0.54 weather axis — falsifier
    fired, recorded in `stack/experiments/p0-d8-preview/NOTE.md`). Next experiment:
@@ -32,11 +31,15 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    keep SCENARIO_DATABASE.md the single source of truth.
 4. **Ghost Cut-Through + Blind Creep scenario specs** (W-02 occlusion amnesia, NTSB HWY26FH008)
    — telemetry oracles for D9/H15 (LOPS/OKRI hooks); CARLA live build waits on W31–32 harness.
-5. **Watch-list deep-reads** — Autobrains "Liquid AI" efficiency claims (**escalated 2026-07-24: now an
-   Uber L4 Munich pilot** — pre-empt any compute-normalized publication); **Metis deep-read DONE
-   2026-07-24** → next: monitor github.com/LogosRoboticsGroup/Metis for a param count, then run a real
-   CNCE comparability pass (with Benchmarks & Eval). New: read **AlpaSim** (NVIDIA open sim) with
-   Tools & DevEnv; adjacent-domain read of **SkyJEPA** (2606.23444) for sim-to-real transfer.
+5. **Watch-list deep-reads** — Autobrains "Liquid AI" efficiency claims (Uber L4 Munich pilot — pre-empt
+   any compute-normalized publication); monitor github.com/LogosRoboticsGroup/Metis for a param count →
+   real CNCE comparability pass (with Benchmarks & Eval). **NVIDIA AlpaGym/AlpaSim + Omniverse NuRec**
+   (closed-loop RL, 2026-07-10) — evaluate with Tools & DevEnv as an open closed-loop asset; adjacent
+   occupancy-WM read (GenieDrive 2512.12751 / DriveFuture 2605.09701) to sharpen the latent-vs-rendered
+   efficiency argument; SkyJEPA (2606.23444) for sim-to-real.
+6. **Regulatory watch (new)** — primary-source the **UNECE global driverless rulebook** (CLAIM) and
+   track the **FMVSS-135 NPRM** comment outcome (deadline 2026-07-27) for the H11 REGULATION_TRACE beat
+   (Benchmarks & Eval owns the file; supply the sourced rows).
 
 ## P2
 
@@ -46,6 +49,10 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    which TanitAD gates cover them, where coverage is zero (those become new scenario items).
 
 ## Done / retired
+- (2026-07-10-run) **SC-13 Stationary-lead scenario (W-08, Avride)** shipped via intake
+  (`stationary_lead`, 13 tests; collision rate imagination 0.0 vs classifier-react 0.43 over 8–25 m/s;
+  3.1 s anticipation lead; honest built-in falsifier). **FMVSS-135 NPRM** logged (H11 tailwind). AlpaGym
+  closed-loop RL noted. SC-13 → spec-drafted.
 - (2026-07-24-run) **Stop-Arm Gate scenario (SC-04, W-03)** shipped via intake (11 tests; violation
   rate rule_barrier 0.0 / soft_prior 1.0); **Metis deep-read** done; **Avride** profiled (W-08/SC-13);
   SC-14 (red-light) catalogued.

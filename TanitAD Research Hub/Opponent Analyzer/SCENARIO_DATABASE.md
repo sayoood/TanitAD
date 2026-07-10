@@ -206,11 +206,15 @@ public claim candidate.
 - **Status:** catalogued (Phase-2 horizon; kept for coverage honesty).
 
 ## SC-13 — Stationary-object / same-lane lead response  [W-08]  ★★ (new 2026-07-24)
-- **Opponent evidence (FACT):** NHTSA ODI opened an investigation (2026-05-08) into **Avride** (Uber's
-  robotaxi partner, Yandex SDG lineage) after identifying **16 crashes + 1 minor injury**; ODI states
-  all relate to **"the competence of"** the driving system — specifically **changing lanes, responding
-  to other vehicles in the same lane, and responding to stationary objects.**
+- **Opponent evidence (FACT):** NHTSA ODI opened a PE (**2026-05-06**, published 05-08) into **Avride**
+  (Uber's robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury** (Dallas/Austin).
+  The regulator's wording is verbatim this scenario: the vehicles **"did not brake for slow-moving or
+  stopped vehicles, and struck stationary objects partially blocking the roadway"** (most **< 20 mph**;
+  the one injury = clipping a **parked pickup's open door**, Dec 2025); a safety operator was aboard all
+  16 but **intervened in only one**. Probe focus: **"conflict avoidance, driving behaviour competence
+  and assertiveness."**
   — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+  , https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
 - **Description:** a stopped/slow lead vehicle or a stationary object (stalled car, debris, disabled
   vehicle) in the ego lane; correct behavior is early, smooth deceleration to a safe following
   distance — the classic "stationary-object braking" failure that also underlies phantom/late braking.
@@ -222,9 +226,18 @@ public claim candidate.
   tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
 - **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
   min-TTC distribution; collisions=0 bar.
-- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
-  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
-  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+- **Status:** **spec-drafted, 2026-07-10** — intake pkg
+  `Implementation/incoming/2026-07-10-stationary-lead-scenario/` (`stationary_lead.py` + telemetry
+  oracle, **13/13 offline tests**, numpy-only, awaiting orchestrator triage). Design-oracle numbers
+  (P8, NOT our model): over the approach-speed sweep {8…25} m/s **collision rate imagination_forward
+  0.000 / classifier_react 0.429**; at 15 m/s imagination brakes **3.10 s earlier** (onset 2.90 vs
+  6.00 s), keeps **min-TTC 4.40 s vs 0.77 s** and a **29.8 m vs 2.0 m** gap at half the peak jerk;
+  OKRI toward the lead 7 vs 18,220. **Honest falsifier built in:** the lead decays 3.10→−2.90 s and
+  react's collisions vanish as the competitor's `detect_range_m` grows 20→120 m — the edge is
+  *specifically* acting-before-classification. **Next:** DataEng tags comma2k19 stopped-lead segments
+  for the real open-loop probe; Benchmarks & Eval wires a `collision_rate` reducer + LAL-v2 lead;
+  then live-measure our checkpoint on CARLA-on-pod. Real-experiment falsifier: our predicted-TTC lead
+  ≤ a detection-only baseline on matched real segments ⇒ H15-vs-detection advantage unproven there.
 
 ## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
 - **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving
@@ -262,4 +275,5 @@ Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric frag
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
 | SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-02…SC-03, SC-06…SC-14 | catalogued | per-entry bars set at spec time | — |
+| SC-13 | spec-drafted | 0 collisions (closed-loop) + predicted-TTC lead > detection baseline (real) | — |
+| SC-02…SC-03, SC-06…SC-12, SC-14 | catalogued | per-entry bars set at spec time | — |

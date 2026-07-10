@@ -2,7 +2,8 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2 deltas below, tagged **Δ 07-24**).
+> Created 2026-07-17 (v1). Last sweep: **2026-07-10** (run #3 — wall-clock; prior notes 07-17/07-24
+> carried narrative week-labels ahead of the clock, see the run-3 note). Run-3 deltas tagged **Δ 07-10**.
 
 ---
 
@@ -13,6 +14,11 @@
 - **Business (FACT):** **Series D $1.2 B (Feb 2026), $8.6 B** post-money; **$1.5 B** total secured incl.
   Uber milestone capital; investors Microsoft/NVIDIA/Uber + Mercedes/Nissan/Stellantis. London robotaxi
   trials 2026; supervised consumer autonomy from 2027; 10+ markets targeted.
+- **Δ 07-10 (CLAIM/FACT):** a July-2026 report cites Wayve total raised at **$2.8 B** (treat as an
+  as-reported cumulative figure vs our logged Series-D $1.2 B / $8.6 B post-money — CLAIM, pending
+  reconciliation) and confirms Wayve will **deploy its system in Stellantis robotaxis on Uber's
+  network** (announced June) → capital → OEM+Uber distribution; on-car driver still monolithic E2E
+  (no hierarchy / no in-loop imagination / no self-monitoring guarantee). — https://www.claimsjournal.com/news/national/2026/07/01/338559.htm
 - **Strengths (INFER):** talent + capital density; UK/EU regulatory access; genuine multi-country
   generalization data; strong generative-WM data factory.
 - **Exploitable weaknesses:** generative-**pixel** WM is compute-hungry and used **offline**, not in the
@@ -36,6 +42,9 @@
   the mechanism (mis-prioritizing hazard-avoidance / not recognizing the work zone). **New Dallas market
   trouble:** a Waymo recorded **running a red light** (Irving Blvd/Inwood Rd) amid a **new federal
   investigation** there → widens the rule-compliance surface (SC-04/SC-14, W-03).
+- **Δ 07-10 (FACT):** the construction-zone recall is confirmed as Waymo's **sixth recall overall** (and
+  second in ~one month); the software remedy was **still under development as of 2026-06-13** — a
+  reliability-at-scale signal, mechanism unchanged (W-01). — https://www.cnbc.com/2026/06/18/waymo-nhtsa-voluntary-recall-robotaxis-entered-freeway-construction-zones.html
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
   anticipation** (W-02), **rule-compliance edges** (W-03); map-dependence; cost/vehicle + geofence
@@ -103,6 +112,13 @@
   **AlpaSim** (open-source closed-loop sim) is on GitHub → a *usable asset* for our CARLA-alternative
   closed-loop eval (flag to Tools&DevEnv). Our CNCE wedge holds; watch whether a Nano-tier CNCE number
   ever gets published.
+- **Δ 07-10 (FACT):** NVIDIA introduced **AlpaGym** — an open-source, high-throughput **closed-loop RL**
+  framework running models through continuous decision/observation cycles in **AlpaSim** on **Omniverse
+  NuRec** neural reconstructions, "to expose the compounding errors static datasets miss."
+  — https://nvidianews.nvidia.com/news/nvidia-alpamayo-2-super-robotaxis Two-sided: (a) a usable open
+  closed-loop asset for our eval lane (flag → Tools & DevEnv; NuRec matches our Phase-1
+  real-geometry+synthetic-hazard doctrine); (b) closed-loop RL is now table stakes → our moat is
+  *hierarchy + CNCE + in-loop imagination + guaranteed self-monitoring*, not "we do closed-loop."
 - **Exploitable weaknesses:** 10–32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
   interpretability vs our *inherent* fallback + self-monitoring.
 - **What would beat them (as a narrative):** ~261 M-on-Orin at comparable causal efficacy (CNCE), inherent
@@ -131,9 +147,15 @@
   US pilot markets (incl. Dallas). Modular AV stack (INFER — architecture not publicly detailed).
 - **Business (FACT):** Uber robotaxi partner; scaling in Dallas and other US pilots alongside Uber's
   multi-vendor strategy (also Waymo, Momenta, Autobrains, NVIDIA).
-- **Safety (FACT):** **NHTSA ODI investigation opened 2026-05-08** — **16 crashes + 1 minor injury**; ODI
-  says all concern **"the competence of"** the system: **lane-changing, same-lane vehicle response, and
-  stationary-object response.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Safety (FACT):** **NHTSA ODI PE opened 2026-05-06** (published 05-08) — **16 crashes + 1 minor
+  injury**; ODI says all concern **"the competence of"** the system: **lane-changing, same-lane vehicle
+  response, and stationary-object response.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Δ 07-10 (FACT):** the regulator's wording is verbatim the SC-13 failure — the vehicles **"did not
+  brake for slow-moving or stopped vehicles, and struck stationary objects partially blocking the
+  roadway"** (most **< 20 mph**; the one injury = clipping a parked pickup's open door, Dec 2025); a
+  safety operator was aboard all 16 but **intervened in only one**. Probe scope: "conflict avoidance,
+  driving-behaviour competence and assertiveness." → **we shipped SC-13** (`stationary_lead` intake,
+  13/13 tests): design-oracle collision rate imagination 0.0 vs classifier-react 0.43 over 8–25 m/s.
 - **Strengths (INFER):** Uber distribution + demand aggregation; Yandex AV heritage.
 - **Exploitable weaknesses:** the ODI list is a **basic-competence** indictment (the cheapest, broadest
   surface) → **W-08 / SC-13**. Our H15 consequence-forward-model targets stationary-object/same-lane
@@ -152,3 +174,13 @@ investigation for basic competence** — while "world model" spread to *everyone
 Metis's efficient WAM, NVIDIA's shipped Alpamayo). Our moat is now unambiguously **hierarchy +
 compute-normalized efficiency (CNCE) + in-loop imagination (H15) + guaranteed self-monitoring (H11)** —
 none of which any tracked opponent demonstrates together — proven on *their own* documented edge cases.
+
+**Δ 07-10 (run #3):** two reinforcements. (1) **The regulator moved onto our ground** — NHTSA's
+**FMVSS-135 NPRM (2026-06-26)** proposes that an ADS must "be aware of the operational status of each
+safety-critical system … and respond appropriately to degradations/failures" (comments to 07-27) — a
+regulation-native tailwind for **H11** (and the exact capability Tesla's failed "degradation-detection"
+lacks, W-04). (2) **Closed-loop RL went table-stakes** (NVIDIA AlpaGym/AlpaSim) *and* the academic WM
+substrate is trending to **explicit rendered 4D-occupancy** (GenieDrive/DriveFuture) — both *expensive*
+directions our **latent, consequence-forward** imagination side-steps. SC-13 (stationary-lead) is the
+cleanest demonstration: you price the closing gap from range/range-rate without rendering or
+classifying the object — precisely where Avride's stack fails.

@@ -139,15 +139,24 @@
   on a stationary or slow lead because classification is uncertain, mishandle same-lane vehicles, and
   botch lane changes. The failure is *competence*, not an exotic edge case, which makes it a broad and
   damning surface.
-- **Evidence (FACT):** NHTSA ODI opened an investigation (**2026-05-08**) into **Avride** (Uber's
-  robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury**; ODI attributes all to
-  **"the competence of"** the system — **lane-changing, responding to other vehicles in the same lane,
-  and responding to stationary objects.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Evidence (FACT):** NHTSA ODI opened a PE (**2026-05-06**, published 05-08) into **Avride** (Uber's
+  robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury** (Dallas/Austin). The
+  regulator's wording is verbatim the failure: the vehicles **"did not brake for slow-moving or stopped
+  vehicles, and struck stationary objects partially blocking the roadway"** (most **< 20 mph**; the one
+  injury = clipping a parked pickup's open door, Dec 2025); a safety operator was aboard all 16 but
+  **intervened in only one**. Probe focus: **"conflict avoidance, driving behaviour competence and
+  assertiveness."** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
 - **TanitAD counter:** **H15** imagination forward-models time-to-contact on a stopped/slow lead
   *before* the object is classified (no detection/class prior to be wrong about) + **A9** imagination-
   error monitor on the lead region; **H1** tactical layer for lane-change consequence pricing.
-- **Scenario-spec status:** **SC-13 catalogued** (stationary-object / same-lane lead response) — a cheap
-  real-data spec on comma2k19 (mine stopped-lead segments) + CARLA cut-in/blocked_route recipes.
+- **Scenario-spec status:** **DRAFTED + intake pkg 2026-07-10** →
+  `Implementation/incoming/2026-07-10-stationary-lead-scenario/` (**SC-13**; `stationary_lead.py` +
+  telemetry oracle, **13/13 offline tests**). Design-oracle: over the {8…25} m/s approach sweep
+  **collision rate imagination_forward 0.0 / classifier_react 0.43**; at 15 m/s imagination brakes
+  **3.1 s earlier**, holds **min-TTC 4.4 s vs 0.77 s** and a **29.8 m vs 2.0 m** gap. Honest falsifier
+  built in: the edge decays to 0 as the competitor classifies early (detect_range 20→120 m) — it is
+  *specifically* acting-before-classification. Real open-loop probe on comma2k19 = DataEng handoff;
+  `collision_rate` reducer = Benchmarks & Eval handoff.
 - **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
   the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
 

@@ -1,42 +1,55 @@
 # STATE — Opponent Analyzer
 
-LAST_RUN: 2026-07-24 (run #2 — deltas sweep + Stop-Arm Gate scenario + Metis deep-read)
-QUALITY: complete (all gates G-A…G-F + G-O1/G-O2 + G-H met; loop used 9/25 searches, 1 iteration)
+LAST_RUN: 2026-07-10 (run #3 — wall-clock; branch `worktree-agent-opponent-20260710`) — deltas sweep +
+SC-13 Stationary-lead scenario shipped + FMVSS-135 regulatory finding
+QUALITY: complete (all gates G-A…G-F + G-O1/G-O2 + G-H met; loop 1 iteration, 7/25 searches, < 1 h)
 
-## This run (2026-07-24)
-- **New emerging player: Avride** (Uber partner, Yandex SDG) — NHTSA ODI investigation (16 crashes,
-  competence: lane-change / same-lane / stationary-object) → new profile + **W-08** + **SC-13**.
-- **Measured experiment (G-H): Stop-Arm Gate scenario** (SC-04, W-03) shipped as intake pkg
-  `Implementation/incoming/2026-07-24-stop-arm-gate-scenario/` — **11/11 offline tests**. Design-oracle:
-  H9 **violation rate rule_barrier 0.0 / soft_prior 1.0** over the free-path sweep; barrier invariant to
-  temptation, soft prior's line-crossing speed grows 3.0→9.6 m/s; OKRI toward the occluded child 80%
-  lower at 4 B vs 15 B params. **SC-04 → spec-drafted.**
-- **Metis deep-read** (arXiv 2606.15869): efficient WAM via MoT + asymmetric mask (action head skips
-  video rollout at inference). Nearest CNCE competitor but flat/no-hierarchy/no-imagination/no-monitoring
-  and reports no params → not a true CNCE rival yet. Watch its code for a param disclosure.
-- Deltas: Waymo 2nd recall + highways pulled + Dallas red-light (**SC-14**); Tesla EA 3.2 M / 9 crashes /
-  1 fatality naming the failed "degradation-detection" feature; Momenta listed + R7 RL WM + X7 chip;
-  Autobrains→L4 (Uber Munich pilot); NVIDIA Mercedes CLA ships Alpamayo + AlpaSim open-sourced (10 B Nano
-  tier). "World model" now table stakes → moat = hierarchy+CNCE+imagination+self-monitoring.
-- Ledger: H0/H6/H9 change-log row (no status upgrade — nothing measured on our stack, P8).
-- KB: 6 new dated findings. Research note: `2026-07-24-opponent-sweep-w3.md`.
+> **Timeline note (P8):** the system wall-clock for this scheduled run is 2026-07-10 (Friday). The two
+> prior notes carry narrative week-labels (07-17 run #1, 07-24 run #2) that run ahead of the wall clock
+> (autonomous-loop artefact). This run is dated to the real clock and continues as run #3; all events
+> are cross-checked against live July-2026 web results (see the run-3 note's timeline block).
+
+## This run (2026-07-10)
+- **Measured experiment (G-H): SC-13 Stationary-lead scenario** shipped as intake pkg
+  `Implementation/incoming/2026-07-10-stationary-lead-scenario/` (`stationary_lead.py` + telemetry
+  oracle, **13/13 offline tests**, numpy-only, RTX-4060, $0). Design-oracle (P8, not our model):
+  H15 `imagination_forward` vs `classifier_react` — **collision rate 0.000 vs 0.429** over the
+  {8…25} m/s approach sweep; at 15 m/s imagination brakes **3.10 s earlier** (onset 2.90 vs 6.00 s),
+  keeps **min-TTC 4.40 vs 0.77 s** and a **29.8 vs 2.0 m** gap at half the peak jerk; OKRI 7 vs 18,220.
+  **Honest falsifier built into the oracle:** the lead decays 3.10→−2.90 s and react's collisions
+  vanish as `detect_range_m` grows 20→120 m → the edge is *specifically* acting-before-classification.
+  **SC-13 → spec-drafted.**
+- **Regulatory finding (FACT): NHTSA FMVSS-135 NPRM (2026-06-26, comments to 07-27)** — proposes that
+  an ADS "be aware of the operational status of each safety-critical vehicle system … and respond to
+  degradations/failures"; withdraws AV STEP → **regulation-native tailwind for H11**, adjacent W-04/W-07.
+- Deltas: Avride PE wording is **verbatim** the SC-13 failure ("did not brake for slow/stopped
+  vehicles, struck stationary objects"; operator intervened in 1/16); Waymo confirmed **sixth recall**;
+  NVIDIA **AlpaGym** closed-loop RL on AlpaSim+NuRec (usable asset + closed-loop now table stakes);
+  Wayve **Stellantis-on-Uber** (CLAIM $2.8 B); Pony 4 driver-out cities + Singapore; Tesla eyeing
+  ~5,000 Las Vegas slots; arXiv WM substrate trending to expensive **explicit 4D-occupancy** (our latent
+  consequence-forward path is the efficiency counter).
+- Ledger: H11/H15/A9 change-log row (no status upgrade — nothing measured on our stack, P8).
+- KB: 6 new dated findings. Research note: `2026-07-10-opponent-sweep-w4.md`.
 
 ## Recommendations logged for other disciplines (no cross-boundary writes)
-- **Benchmarks & Eval (Thu):** add a `violation_rate` reducer over `_extra.stop_arm_violation` (a rate,
-  not a soft score) + wire SC-04 into the eval set (H9). [prior run's degraded-visibility D8 stressor +
-  competitor-param CNCE recs still stand.]
-- **Data Eng (Tue):** source school-bus/stop-arm asset + screen dashcam corpora (SC-04/SC-14); **cheap
-  win** — tag stopped/slow-lead comma2k19 segments for SC-13 (Avride competence, license-clean).
-- **Tools & DevEnv (Mon):** evaluate **AlpaSim** (open-source closed-loop sim, NVIDIA/GitHub) as a
-  closed-loop asset alongside CARLA-on-pod (D5/D6, G0.5).
-- **Orchestrator:** triage Stop-Arm Gate intake; log Autobrains ADAS→L4 + Avride entrant as strategy signals.
+- **Benchmarks & Eval (Thu):** (a) add a `collision_rate` reducer over `_extra.collision` + reuse
+  `compute_lal` v2 on `ego_v` for the SC-13 anticipation lead; wire SC-13 into the eval set (H15).
+  (b) Add the **FMVSS-135 NPRM** row to `REGULATION_TRACE.md` (deadline 07-27; maps to D8/H11).
+  (c) SC-04 `violation_rate` reducer request still stands.
+- **Data Eng (Tue):** **cheapest high-value item** — tag comma2k19 slow/stopped-lead segments and build
+  the SC-13 **real open-loop probe** (predicted-TTC lead vs detection baseline on matched segments).
+- **Tools & DevEnv (Mon):** evaluate **NVIDIA AlpaGym/AlpaSim + Omniverse NuRec** as an open
+  closed-loop asset (matches the Phase-1 real-geometry+synthetic-hazard doctrine) alongside CARLA-on-pod.
+- **Orchestrator:** triage the SC-13 intake; log FMVSS-135 as an H11 tailwind (deck beat) + AlpaGym as
+  a competitive signal (closed-loop table stakes).
 
-## HANDOFF / next run (2026-07-31)
-- Deltas-only. Priorities: (1) **author SC-13 (stationary-object / same-lead) spec** as the next scenario
-  feed — reuses comma2k19 + LAL-v2/OKRI, cheapest high-value item now (Avride/W-08); (2) check orchestrator
-  verdict on the Stop-Arm Gate intake and adapt; (3) **SC-14 red-light** spec (near-free off SC-04 oracle)
-  if SC-13 lands; (4) watch **Metis** code repo for a param count → then a real CNCE head-to-head;
-  (5) refresh NHTSA SGO / any new Waymo–Tesla–Avride recall; watch whether NVIDIA publishes a Nano-tier
-  CNCE number.
-- Anchors (citation-graph walk): Wayve GAIA line; NVIDIA Alpamayo/Cosmos/AlpaSim; Momenta R7; Metis
-  2606.15869; latent-WM survey 2603.09086; hierarchy anchor 2604.03208; adjacent-domain SkyJEPA 2606.23444.
+## HANDOFF / next run
+- Deltas-only. Priorities: (1) **SC-14 red-light** spec (near-free off the SC-04 barrier oracle) —
+  cheapest next item; (2) check orchestrator verdict on the SC-13 (and SC-04) intakes and adapt;
+  (3) once DataEng tags comma2k19 stopped-lead segments, drive the **SC-13 real open-loop probe** to a
+  measured lead-time-vs-detection number (turns SC-13 from design-oracle → real evidence);
+  (4) reconcile Wayve's $2.8 B vs $1.2 B/$8.6 B; primary-source the **UNECE global driverless rulebook**
+  (CLAIM) for REGULATION_TRACE; watch **Metis** repo for a param count → real CNCE head-to-head; watch
+  for any Nano-tier (10 B) CNCE number.
+- Anchors (citation-graph walk): Wayve GAIA; NVIDIA Alpamayo/Cosmos/AlpaSim/AlpaGym; Momenta R7; Metis
+  2606.15869; occupancy-WM DriveFuture 2605.09701 / GenieDrive 2512.12751; latent-WM survey 2603.09086.
