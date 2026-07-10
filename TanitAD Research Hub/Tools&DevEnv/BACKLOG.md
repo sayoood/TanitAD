@@ -4,14 +4,19 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **CI script `stack/scripts/ci.ps1` (backlog duty #3)** — pytest + I2 tripwire on every commit,
-   wired to `profile_testsuite.py check` as its timing guard (budget: warm-overhead ≤4 s, no single
-   `call` test >6 s). Goal: one command an agent/pre-commit runs; measured wall < 15 s warm.
-   Falsifier: a newly-added slow fixture must make `ci.ps1` exit nonzero. Deliver as intake.
-2. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
+1. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
    overlay; doubles as the D3 imagined-vs-oracle visual. Note: the orchestrator already shipped a
    trajectory-fan overlay (`a25a3fe`) — SCOPE THIS as the *episode-replay* complement, don't dup.
-   `pip install rerun-sdk`; measure setup cost + one real episode → .rrd size/time for G-T1.
+   `pip install rerun-sdk` (0.32, MIT/Apache); measure setup cost + one real episode → .rrd size/time
+   (G-T1). **Re-scoped 2026-07-10:** Rerun 0.32 is now a data-layer with a **dataset-review UI** — also
+   evaluate that UI as the human triage surface for D3 imagined-vs-oracle rollouts.
+2. **CARLA deployment-perturbation knobs (findings-driven, Bench2Drive-Robust 2605.18059)** — add the
+   3 device-centric perturbation classes to the CARLA scenario harness: camera-stream failure (frame
+   drop / partial obs), ego-state error (GPS/speed/odometry noise), **compute-induced control delay**.
+   Drive the control-delay axis from the *measured* I8 tick (15.07 ms p50). Goal: a scenario config +
+   telemetry oracle so eval degradation is tied to real latency. Expected: barrier-policy robust,
+   soft-prior degrades. Falsifier: if control-delay injection changes nothing, the harness isn't
+   time-coupled. Deliver as intake (coord Benchmarks & Eval metric seam).
 
 ## P1
 
@@ -29,12 +34,18 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 ## P2
 
 6. **Windows/Linux path+encoding audit tooling** — the `|`-in-filenames and mojibake classes;
-   a lint script for non-NTFS-safe names and non-UTF8 writes in the repo.
-7. **AlpaSim clone-and-inspect** (findings-driven) — `NVlabs/alpasim` is now public. Read the repo
-   for a lighter reference policy / harness we could adapt Phase-1 (NOT a Phase-0 adopt; 40–60 GB
-   VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
+   a lint script for non-NTFS-safe names and non-UTF8 writes in the repo. **Add 2026-07-10:** flag
+   non-ASCII bytes in `.ps1` files (PS 5.1 parses BOM-less `.ps1` as ANSI → em-dash → parse error;
+   hit while building `ci.ps1`). Cheap lint, prevents a whole recurring class.
+7. **AlpaSim/AlpaGym clone-and-inspect** (findings-driven) — `NVlabs/alpasim` public; **`NVlabs/
+   alpamayo-recipes`** (2026-06) has the open closed-loop-RL post-training recipe. Read for a lighter
+   reference policy / harness to adapt Phase-1 (NOT a Phase-0 adopt; 40–60 GB VRAM). Deliverable: a
+   Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-07-10) **CI script `ci.ps1` (was P0.1, duty #3) DONE** — I2 tripwire + full suite + timing
+  budget; measured warm 11.2 s / 189 tests / exit 0; falsifier (7.0 s test) → exit 1. Intake
+  `2026-07-10-ci-script/` (pairs with `profile_testsuite.py`). Next: integrate both + pre-commit hook.
 - (2026-07-09) **Test-suite I/O profiling (was P1.5) DONE** — cold 40.6 s / warm 10.7 s measured;
   root cause = Drive hydration latency; `profile_testsuite.py` shipped via intake (9 tests). Fix =
   pin `stack/` offline (→ new P1.5 verification item).

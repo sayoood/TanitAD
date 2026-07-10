@@ -3,6 +3,31 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-10] [measured] **CI gate `ci.ps1` shipped** (backlog P0.1): I2 collapse tripwire fail-fast
+  → full suite + timing-budget (`profile_testsuite.py check`, inline fallback if absent). Warm **11.2 s
+  / 189 tests / exit 0**; falsifier (7.0 s test) → **exit 1** naming the node. Distinct exits 0/1/2 for
+  hook branching. Gotcha: PS 5.1 reads BOM-less `.ps1` as ANSI → **keep repo `.ps1` pure-ASCII** —
+  impact: CI/G-E/D-004 — intake `2026-07-10-ci-script/`, `2026-07-10-ci-gate-and-edge-viz-sweep.md` §1
+- [2026-07-10] [edge] Jetson **Thor FP8 on base ViT ≈ +20 % only, and requires ONNX Q/DQ surgery** to
+  trigger the MHA FP8 fusion (dev-forum + TensorRT#4599). Triangulates Orin INT8-regression (2026-07-06)
+  + bf16-unsafe (Prod&Opt 2026-07-09). Deploy default stays **ONNX→TensorRT FP16 static-shape**; FP8/INT8
+  on the ViT tower = measured-only, surgery-gated, decision-safety-rechecked option — impact: H5/C1/P5 —
+  [forum](https://forums.developer.nvidia.com/t/low-vit-performance-gain-on-jetson-thor-using-fp8-vs-fp16/349329),
+  [TRT#4599](https://github.com/NVIDIA/TensorRT/issues/4599)
+- [2026-07-10] [robustness] **Bench2Drive-Robust** (2605.18059) = first device-centric closed-loop
+  robustness benchmark; 3 deployment-perturbation classes: camera-stream failure (frame drop / partial
+  obs), ego-state error (GPS/speed/odometry), **compute-induced control delay (inference delay)**.
+  Reusable as CARLA scenario knobs; control-delay axis = our I8 tick made closed-loop (drive it from the
+  measured 15.07 ms) — impact: D5/D6/H11/H15 — [abs](https://arxiv.org/abs/2605.18059)
+- [2026-07-10] [tooling] **Rerun 0.32** = unified physical-AI *data layer* (MCAP/`.rrd`/LeRobot ingest,
+  chunk-processing API, **dataset-review UI**, columnar Arrow). Pick unchanged (MIT/Apache, ROS-free).
+  Re-scopes viz backlog #2: episode→`.rrd` overlay + use the review UI for D3 imagined-vs-oracle triage —
+  impact: WP-viz/D3/H5 — [releases](https://github.com/rerun-io/rerun/releases)
+- [2026-07-10] [opponent] **AlpaGym open-sourced** (`NVlabs/alpamayo-recipes`): high-throughput
+  closed-loop RL over AlpaSim + Omniverse NuRec. Verdict unchanged — closed-loop RL post-training of our
+  <100 M driver = **Phase-1 cloud** (40–60 GB VRAM, P5); watch the recipes repo for a lighter reference
+  harness to adapt — impact: P5/H1/opponent —
+  [blog](https://developer.nvidia.com/blog/how-to-post-train-autonomous-vehicle-models-in-closed-loop-with-nvidia-alpamayo/)
 - [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
   host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
   ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit
