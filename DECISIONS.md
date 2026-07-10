@@ -86,6 +86,23 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-027 — K-step rollout loss adopted for all post-30k training (2026-07-10, accepted by Sayed)
+
+**Decision.** Every training run AFTER the p0-sB01 30k record run uses the K-step recursive rollout
+loss with **rollout_k=4**: post-30k continuations, Phase-1 runs, REF-A, and future bake-off
+baselines (which then A/B against K=4 as the new base).
+
+**Evidence.** Matched-compute A/B (2026-07-10, pod2 A40, warm-start step 9,001→11,000, comma-only,
+single seed): imag_rel 1-step **8.13→1.03 (−87%)**, recursive ×4 **14.50→1.11 (−92%)**; replicates
+the Architecture agent's smoke result (−64% at K=2). Cost ~0.5% wall-clock, 0 params. Attacks the
+blocked D3 gate directly (multi-step imagination vs persistence).
+
+**Rollout safety.** `TrainConfig.rollout_k` DEFAULT remains 1 until the record run terminates
+(a watchdog auto-restart must not silently change the running 30k recipe). After termination, the
+default flips to 4 in config; until then, post-30k launches pass `--rollout-k 4` explicitly.
+Caveats recorded: single-seed, comma-only, 2k-step arms — the 30k D3 measurement and the first
+full-length K=4 run's live instruments are the confirmation layer.
+
 ## D-026 — Multi-agent workflows + event monitors + agent worktrees + project skills (2026-07-09 night, directed by Sayed)
 
 **Addendum (Sayed, 2026-07-09 ~23:00):** workflow agents run on **Sonnet 5** for all

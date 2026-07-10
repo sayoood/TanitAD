@@ -127,6 +127,9 @@ Summary of the immediate next actions:
   builds, multi-cam encoder optimization are all captured (`REFERENCE_ARCHITECTURES.md`, `811df73`).
   Orchestrator recommendation: **REF-A/REF-B first after 30k** (unblocks D4 opponent-baseline arbitration)
   unless the dashcam pilot is time-sensitive. | default: REF-A/REF-B first.
+- ~~K-step adoption~~ **DECIDED (D-027, 2026-07-10): Sayed adopted rollout_k=4 for all post-30k
+  training** (evidence: matched-compute A/B, imag_rel -87%/-92%). Config default flips after the
+  record run terminates; explicit --rollout-k 4 until then.
 - **DECISION NEEDED (D-021, proposed 2026-07-08):** latent dim k as a *measured* design variable
   (spectral knee) — keep 2048 for Phase 0, but Phase-1 resizing only with a trained-checkpoint
   spectral result + gate impact. | default: keep 2048, keep measuring (nothing blocked).
