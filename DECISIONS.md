@@ -88,6 +88,12 @@ bridge (Phase 1) sits outside this budget.
 
 ## D-026 — Multi-agent workflows + event monitors + agent worktrees + project skills (2026-07-09 night, directed by Sayed)
 
+**Addendum (Sayed, 2026-07-09 ~23:00):** workflow agents run on **Sonnet 5** for all
+workflows EXCEPT the stack audit (strongest model retained for code-review depth). Applied to the
+literature-sweep + scenario-scaling scripts (their 01:52 resume re-runs fresh on Sonnet — the
+model change invalidates the agent cache for those two; the audit resume keeps its cached
+completed agents). The architecture-design panel launches on Sonnet as well.
+
 **Adopted:** (1) **Workflow orchestration** (explicit opt-in given) for four programs: stack audit
 (adversarially-verified findings, pre-30k), literature sweep (multi-angle fan-out over anchor
 citation graphs), scenario-database scaling (parallel authoring + red-team verification), and
