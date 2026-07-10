@@ -32,6 +32,16 @@ Format per item: goal / method / resource / expected number / falsifier.
 
 ## P1
 
+3c. **REF-A/REF-B reference builds (Sayed 2026-07-09)** — full build plans in
+   `Project Steering/REFERENCE_ARCHITECTURES.md`: REF-A frozen-DINOv3 WM (feature-cache training,
+   stability measures specified) behind the K-step arms; REF-B 4B vision-action E2E (no WM,
+   budget-matched) post-30k on pod1. Pre-registered decision rules included.
+3d. **Multi-cam encoder optimization — experiment #1 (batched multi-cam encode)** — extend
+   `latency_cnce_baseline.py` with N in {1,4,7} batched encodes on the 4060; expected ~2-2.5x
+   single-cam latency at N=7 (not 7x). Investigation doc:
+   `Research/ENCODER_MULTICAM_OPTIMIZATION.md` (attack order + production-readiness table).
+
+
 3. **RoPE + AdaLN conditioning** — one-lever bake-off vs FiLM/learned positional embedding
    (2512.24497 "AdaLN+RoPE best"). Smoke-scale first (d256 on 4060, 1k steps, probe fit — reuse the
    `kstep_bakeoff_probe` harness), promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier:
