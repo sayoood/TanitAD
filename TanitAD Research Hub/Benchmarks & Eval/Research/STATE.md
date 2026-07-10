@@ -1,10 +1,34 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-09 (Thursday weekly agent) — base commit `c4375f8`
+LAST_RUN: 2026-07-10 (Thursday weekly agent) — base commit `859caa8`, branch
+`worktree-agent-bench-eval-20260710` (D-026 worktree isolation)
 QUALITY: full (all gates G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4,
-well under budget: 2 web searches, ≈1.4 h)
+well under budget: 3 web searches, ≈1.3 h)
 
-## Latest run (2026-07-09) — SC-01 live-metric audit + LAL-v2
+## Latest run (2026-07-10) — D3 decomposition independent audit + Compounding Ratio adoption
+
+Executed the **independent-test role** (agent duty #5) on the step-14k D3 decomposition that a
+gate/arch decision could rest on (Wed commits `9bbf4ca`/`c0b22b7`). Measured, local CPU, numpy-only,
+deterministic (seed 20260710), <2 s, **$0** (G-H):
+- **Falsified the naive read** "rel-error falls with k ⇒ direct heads don't compound": a synthetic
+  model with *superlinear* absolute-error compounding (err∝k¹·³) on drift∝k¹·⁵ reproduces the exact
+  **falling** rel_k → the slope is a normalization artifact of the persistence-drift denominator, not a
+  compounding readout.
+- **Confirmed the recursion 2–4× claim is REAL** — it is denominator-free, i.e. the accepted
+  **Compounding Ratio** CR (SkyJEPA 2606.23444 / Robotic-WM 2501.10100): CR **4.00 comma / 3.72
+  physicalai** at step-14k. The K-step arm's win, honestly stated, is the within-arm CR **3.90→0.385**
+  (<1 = trained rollout path is the strong one) — cleaner than the ≤2×-drift-confounded cross-model
+  "imag_rel 8.13→1.03" headline.
+- **Quantified the cross-model confound:** halving encoder drift inflates rel_k ×1.94 at identical
+  absolute error → never compare rel_k across arms; use within-model CR.
+- **Shipped:** intake `Implementation/incoming/2026-07-10-i4-compounding-instrument/`
+  (`i4_compounding.py` = CR + abs/drift companions + `compounds()`; **7 analytic-GT tests, green**);
+  audit proof `Implementation/i4_horizon_normalization_audit/` (+ result JSON); LEADERBOARD D3
+  decomposition row + measurement-doctrine footnote; KB + HYPOTHESIS_LEDGER (H1/H5 evidence, no status
+  change, P8); research note `Research/2026-07-10-d3-compounding-instrument-audit.md`; BACKLOG
+  re-prioritized (CR-integration now P0).
+
+## Prior run (2026-07-09) — SC-01 live-metric audit + LAL-v2
 
 The first **live CARLA** SC-01 run (committed 2026-07-08) ran my metric suite on real physics and flagged
 two instruments as broken. I executed my **independent-test role** on it (measured experiment, local CPU,
@@ -78,9 +102,13 @@ Phase-1 path).
 
 ## HANDOFF
 
-None — 2026-07-09 run completed cleanly. Deliverables: LAL-v2 intake pkg (7 tests green),
-`audit_sc01.py`+`audit_results.json`, research note, LEADERBOARD/REGULATION_TRACE/KNOWLEDGE_BASE/
-HYPOTHESIS_LEDGER/STATE/BACKLOG updates. Committed + pushed as `hub(bench-eval)`. **Open for next run /
-orchestrator:** (1) triage the LAL-v2 intake → integrate into `stack/tanitad/eval/metrics.py`; (2)
-closure-incursion detector still reads 0 (not fixed this run — backlog #3); (3) next SC-01 CARLA run must
-be ≥3 seeds + emit LAL-v2.
+None — 2026-07-10 run completed cleanly (worktree `worktree-agent-bench-eval-20260710`, branched from
+`859caa8`). Deliverables: `i4_compounding.py` intake (7 tests green) + audit proof
+(`i4_horizon_normalization_audit/`) + research note + LEADERBOARD/KB/HYPOTHESIS_LEDGER/STATE/BACKLOG.
+**Open for next run / orchestrator:** (1) triage the `2026-07-10-i4-compounding-instrument` intake →
+fold CR into `stack/tanitad/eval/` + `d3_decompose.analyze()` emits `{rel_k, abs_err_k, drift_k}` + CR;
+(2) the still-pending `2026-07-09-lal-v2-anticipation` intake (integrate into metrics.py); (3) re-run D3
+at 30k with abs_err/drift **exported** so CR is measured, not reconstructed; (4) SC-01 CARLA re-run
+(≥3 seeds, LAL-v2) still blocked on the CARLA-on-pod camera path; (5) closure-incursion detector still
+reads 0 (backlog P0#5). **Note for orchestrator:** the "rel-error falls with k" phrasing in D3 commit
+messages should not be read as "no compounding" — see the LEADERBOARD D3 measurement-doctrine footnote.

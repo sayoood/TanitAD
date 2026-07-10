@@ -29,6 +29,19 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-10: Benchmarks & Eval (Thu) — **D3 instrument audit; H1/H5 evidence, no status change** (P8:
+  metrology of the *reported ratios*, not a fresh GPU run). Independently audited the step-14k D3
+  decomposition (Wed commits `9bbf4ca`/`c0b22b7`). Synthetic GT (seed 20260710) shows the **"rel-error
+  falls with k ⇒ direct heads don't compound" read is a normalization artifact** — a model that
+  provably compounds superlinearly (err∝k¹·³) still yields a falling rel_k when the persistence drift
+  ∝k¹·⁵ grows faster. So **H1** is *less* corroborated by D3 than the raw note implied (the reassuring
+  "no compounding" was the denominator). But the **recursion 2–4× claim is REAL** (denominator-free =
+  the accepted **Compounding Ratio**, CR 4.00 comma / 3.72 physicalai; SkyJEPA 2606.23444, Robotic WM
+  2501.10100), and **H5 K-step arm strengthened qualitatively** by the artifact-immune within-arm CR
+  **3.90→0.385** (<1 ⇒ trained rollout path is the strong one) — cleaner than the ≤2×-drift-confounded
+  "8.13→1.03" cross-model headline. Shipped hardened instrument (`i4_compounding.py`, CR + abs/drift
+  companions, 7 analytic tests green). See
+  `Benchmarks & Eval/Research/2026-07-10-d3-compounding-instrument-audit.md`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

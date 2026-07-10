@@ -1,0 +1,64 @@
+{
+  "exp": "i4-horizon-normalization-audit",
+  "seed": 20260710,
+  "instrument": "rel_k = median(||pred_k - true_k|| / ||true_k - z_t||)  [d3_decompose.py:81]",
+  "claim1_linear_compounding_still_falls": {
+    "1": {
+      "rel_k": 0.297,
+      "abs_err_median": 0.3,
+      "drift_median": 1.0102
+    },
+    "2": {
+      "rel_k": 0.299,
+      "abs_err_median": 0.6,
+      "drift_median": 2.0041
+    },
+    "4": {
+      "rel_k": 0.3,
+      "abs_err_median": 1.2,
+      "drift_median": 4.0005
+    }
+  },
+  "claim1_superlinear_compounding_still_falls": {
+    "1": {
+      "rel_k": 0.297,
+      "abs_err_median": 0.3,
+      "drift_median": 1.0113
+    },
+    "2": {
+      "rel_k": 0.261,
+      "abs_err_median": 0.7387,
+      "drift_median": 2.8309
+    },
+    "4": {
+      "rel_k": 0.227,
+      "abs_err_median": 1.8189,
+      "drift_median": 7.9975
+    }
+  },
+  "claim2_recursion_vs_direct_denominator_free": {
+    "comma2k19": {
+      "rel_ratio": 4.004,
+      "equals_abs_error_ratio": true,
+      "verdict": "genuine (denominator-invariant)"
+    },
+    "physicalai": {
+      "rel_ratio": 3.715,
+      "equals_abs_error_ratio": true,
+      "verdict": "genuine (denominator-invariant)"
+    }
+  },
+  "claim3_collapse_masquerade": {
+    "normal_drift": {
+      "rel_k1": 0.297,
+      "abs_err_median": 0.3,
+      "drift_median": 1.0111
+    },
+    "compressed_x0.5": {
+      "rel_k1": 0.576,
+      "abs_err_median": 0.3,
+      "drift_median": 0.5206
+    },
+    "inflation_factor_at_equal_abs_error": 1.939
+  }
+}

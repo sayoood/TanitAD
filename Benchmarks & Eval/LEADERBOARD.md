@@ -44,11 +44,21 @@
 | D1 (probe ADE) | **FAIL, halving** (step 14k/30k; 10.94 at 5k) | ADE@1s **5.18 m** (bar < 1.0) — on trend toward the bar by 30k | p0-sB01-gates-step14000 | 2026-07-09 |
 | D2 (imagination ranking) | **PASS, improved** (step 14k/30k) | dir-acc P1 **0.917** / P4 **1.000** (bar 0.7, chance 0.5; 0.872/0.940 at 5k); imag-rel 7.42 diagnostic (9.73 at 5k) — A13 pattern holds | p0-sB01-gates-step14000 | 2026-07-09 |
 | D3 (imagined-ADE ratio) | **BLOCKED, closing** (I4 3.05; 3.83 at 5k — approaching the persistence threshold) | @0.4 s horizon | p0-sB01-gates-step14000 | 2026-07-09 |
+| D3 decomposition (Bench&Eval audit) | **instrument-hardened** — recursion compounding is REAL: **CR 4.00 (comma) / 3.72 (physicalai)** @ step-14k; the "rel-error falls with k" pattern is a **normalization artifact** (drift denominator grows faster), NOT "heads don't compound" | recursive/direct_k4 (denominator-free = Compounding Ratio) | p0-d3-decompose + `Implementation/incoming/2026-07-10-i4-compounding-instrument` | 2026-07-10 |
 | D4 (tactical lift) | not run | — | — | — |
 | D5 (routing edge) | not run | — | — | — |
 | D6 (generalization slope) | not run | — | — | — |
 | D8 (OOD AUROC) | not run (gate) — **paired preview at step 6.5k**: 16/23 same-scene clear→degraded pairs show higher imagination error (p≈0.047); unpaired scores ~chance | `stack/experiments/p0-d8-preview/` | d8-preview-sc05-v2 | 2026-07-08 |
 | D9 (H15 hidden-sector imagination) | not run | — | — | — |
+
+> **D3/I4 measurement doctrine (Bench&Eval audit 2026-07-10).** The I4 relative error
+> `rel_k = ‖pred_k−true_k‖ / ‖true_k−z_t‖` divides by the persistence *drift*, which grows with the
+> horizon k. Consequences, proven on synthetic ground truth (`Implementation/i4_horizon_normalization_audit/`):
+> (1) the **rel_k-vs-k slope must NOT be read as compounding** — a superlinearly-compounding model
+> reproduces a *falling* rel_k. (2) Compounding is read from the **Compounding Ratio** CR = recursive ÷
+> direct at a shared horizon (denominator-free; SkyJEPA 2606.23444 / Robotic-WM 2501.10100). (3)
+> **rel_k is not comparable across models** (encoder drift-scale confounds it ≤2×); the K-step-arm
+> "8.13→1.03" headline is honestly stated as within-arm **CR 3.90→0.385**.
 
 ## Efficiency ledger (CNCE inputs)
 

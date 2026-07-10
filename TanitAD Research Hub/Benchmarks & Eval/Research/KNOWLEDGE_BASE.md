@@ -3,6 +3,23 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-10] [this run / audit] **D3 "rel-error falls with k" is a normalization artifact, not
+  "heads don't compound".** The I4 instrument `rel_k = median(‖pred_k−true_k‖/‖true_k−z_t‖)` divides by
+  the persistence drift, which grows with k. Synthetic GT (seed 20260710): a model with *superlinear*
+  absolute-error compounding (err∝k¹·³) on drift∝k¹·⁵ reproduces a **falling** rel_k → the slope cannot
+  read compounding — impact: D3/I4 doctrine (D-004 class) / H1 — `../Implementation/i4_horizon_normalization_audit/`
+- [2026-07-10] [this run / audit] **Adopt the Compounding Ratio (CR).** CR = recursive/direct at a
+  shared horizon shares the `‖true_k−z_t‖` denominator → denominator-free = the accepted WM metrology
+  (SkyJEPA 2606.23444, Robotic WM 2501.10100; CR≈1 healthy, >1 compounds, <1 rollout locally easier).
+  D3 recursion is REAL: **CR 4.00 (comma) / 3.72 (physicalai)** at 14k. K-step arm within-arm CR
+  **3.90→0.385** = artifact-immune win (vs the cross-model "8.13→1.03" headline, ≤2× drift-confounded) —
+  impact: D3 decision-grade / H5 — `../Implementation/incoming/2026-07-10-i4-compounding-instrument/`
+- [2026-07-10] [this run / audit] **Cross-model rel_k is confounded (collapse masquerade):** halving
+  encoder latent drift inflates rel_k ×1.94 at *identical* absolute error → never compare rel_k across
+  arms (different encoders); use within-model CR — impact: bake-off rigor / G-B1 — `i4_horizon_audit_result.json`
+- [2026-07-10] [WM survey 2605.00080 / HWM] **Horizon crossover:** ≤1 s low-level 1-step WMs win;
+  ≥1.5 s a single high-level *direct* prediction beats autoregressive low-level rollout (less
+  accumulation) — grounds "K must match the decode horizon" (Arch 07-09) — impact: H1/H5 / D3 — https://arxiv.org/html/2605.00080v1
 - [2026-07-09] [this run / audit] **LAL-v1 is blind to smooth anticipation** — first-live SC-01 CARLA run
   scored LAL-v1 −0.7 for BOTH policies; reproduced the cliff exactly at the −1.5 m/s³ jerk trigger (a
   comfort-bounded ease-off, |jerk|<~2, never fires it). Shipped **LAL-v2** (deceleration-onset by speed
