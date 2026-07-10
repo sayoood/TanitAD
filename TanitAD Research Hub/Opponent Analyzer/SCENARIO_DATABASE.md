@@ -60,8 +60,10 @@ public claim candidate.
   correct behavior is speed shaped by *imagined* hidden-actor risk before any detection.
 - **TanitAD mechanism:** H15 latent object permanence + D9 hidden-sector gates; speed policy from
   epistemic variance, not detection confidence.
-- **Data sources:** CARLA scripted-occluder (config exists in metadrive/CARLA scenario set);
-  PhysicalAI-WorldModel-Synthetic-Scenarios pedestrian split (license check = DataEng backlog P1.4).
+- **Data sources:** CARLA scripted-occluder (config exists in metadrive/CARLA scenario set) = the
+  closed-loop half (ego response). WMS `pedestrian` family (OpenMDW-1.1, verified 2026-07-10) =
+  held-out **perception/imagination VALIDATION scenes** — note WMS has **no ego pose/actions**
+  (probe 2026-07-10), so it sources scenes, NOT the LAL/OKRI telemetry oracle.
 - **Metric hooks:** LOPS, OKRI, time-to-hidden-actor margin.
 - **Status:** catalogued → spec next (Opponent Analyzer backlog P1.4).
 
@@ -106,7 +108,8 @@ public claim candidate.
   steering.
 - **Data sources:** **verified available** — Cosmos-Drive-Dreams weather variants
   (Rainy/Night/Foggy in shard part-000, real-bytes verified 2026-07-08); nuScenes-rain as
-  held-out probe (never trained).
+  held-out probe (never trained); **WMS `weather_degradation` family (≈9.2 %, 4K, verified 2026-07-10)
+  = a second never-trained D8-OOD visual source** (video-only; no ego actions — perception/σ probe only).
 - **Metric hooks:** D8 AUROC healthy-vs-degraded; speed-vs-σ correlation.
 - **Status:** **data-sourced + first paired measurement** (2026-07-08, step 6500, 4060).
   Naive unpaired scores don't separate (rel AUROC 0.34 inverted vs comma; weather axis
@@ -127,7 +130,9 @@ public claim candidate.
 - **TanitAD mechanism:** strategic re-route + H9 exception handling + OOD familiarity signal
   (sirens/light patterns are rare states → fallback awareness).
 - **Data sources:** thin publicly — CARLA emergency-vehicle scenarios; synthetic audio out of
-  scope Phase 0 (visual-only proxy: light patterns). Honest gap recorded.
+  scope Phase 0 (visual-only proxy: light patterns). **WMS `emergency` family (≈2.7 %, ~7 k clips,
+  4K, verified 2026-07-10) partially fills the public visual gap** (light patterns) — video-only, no
+  ego-response telemetry (WMS has no actions), so it stays a scene source, not a closed-loop oracle.
 - **Metric hooks:** corridor-clear time; blockage duration.
 - **Status:** catalogued (Phase-1 candidate; data gap flagged).
 

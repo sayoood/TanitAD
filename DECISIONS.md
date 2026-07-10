@@ -135,6 +135,20 @@ lesson), resource-ledger rules for paid compute, honest labeling of preview-grad
 itself so it survives context compaction. Evening (18:00) and morning (on-request) reports
 continue as the long-form digests.
 
+## D-022 — Reclassify PhysicalAI-WorldModel-Synthetic-Scenarios (OpenMDW-1.1) as public-claimable (2026-07-09, **proposed** — awaiting Sayed)
+
+**Trigger.** The corpus license is **OpenMDW-1.1, ungated** (Linux-Foundation permissive; verified
+2026-07-09), which is more permissive than the current public firewall (comma2k19-MIT + Cosmos-DD-CC-BY-4.0).
+A 2026-07-10 probe further established it ships **video + captions + scene metadata only — no ego
+pose/actions** (so its use is video-only pretraining / D8-OOD probing / scenario sourcing, not
+action-conditioned training claims).
+
+**Proposed decision.** Widen the public-claim firewall to include WMS (video/derived-metric numbers
+citable in demos/papers). **Default if no answer: HOLD** — keep the firewall at comma2k19 + Cosmos-DD;
+WMS stays internal-training/eval use only. Nothing is blocked by holding (no trained claim depends on it).
+
+**Status:** proposed (strategy / license, D-018 class). Data-strategy change ⇒ Sayed decides.
+
 ## D-021 — Latent dimension k is a measured design variable, not a hyperparameter (2026-07-08, **proposed** — awaiting Sayed)
 
 **Trigger.** The JEPA generalization theory (arXiv 2606.27014) makes the latent dimension the

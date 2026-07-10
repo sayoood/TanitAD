@@ -9,13 +9,20 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
    bandwidth → 3.85× clips free); epcache AFTER the 30k trainer finishes (62 GB cgroup). Tool + R1 report
    already landed (intake `2026-07-09-physicalai-r1-selection/`). Expected: 2,000 urban clips, ~24 countries.
-1. **WorldModel-Synthetic-Scenarios pose probe (was "license check" — license DONE 2026-07-09: OpenMDW-1.1
-   ungated).** `huggingface_hub` file-listing on one clip's parquet set to confirm/deny an ego-pose field.
-   Decides the loader path: near-zero cosmos-mirror (if poses) vs IDM/H7 or video-only (if none). Expected:
-   yes/no pose verdict + one sample decoded. This is now the gating question, not the license.
-2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows advanced 2026-07-09 (see
-   STATE HANDOFF; pending merge into the DB). Next: fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA
-   recipes / Cosmos obstruction clips; download+verify one public sample each where public.
+1. ~~WorldModel-Synthetic-Scenarios pose probe~~ **DONE 2026-07-10: NO-POSE** (probe + card). Video-only
+   loader shipped (intake `2026-07-10-worldmodel-synthetic-pose-probe/`, 10✓, excluded from action mix by I7).
+   **Follow-on (new P0.1): WMS video-only pilot** — front_wide epcache on ~200 clips of the
+   `weather_degradation` family as a **never-trained D8 OOD visual probe** (complements Cosmos weather pairs
+   for SC-05). ~2–3 h, front_wide only (~3 GB). Expected: D8 AUROC healthy-vs-WMS-degraded reported; no actions.
+1b. **IDM edge-reliability guard (H7, gates all WMS/BDD pseudo-labeling).** Before any IDM pseudo-labels
+   WMS's long-tail, MEASURE the IDM's steer/accel error on **real long-tail actions**: Zenseact ZOD
+   (real CAN, EU/night/urban — backlog P1) is the validator because it has the edge distribution WITH
+   ground truth. Falsifier: IDM error on ZOD night/urban ≤ its error on comma highway ⇒ trust WMS labels;
+   else WMS stays video-only. Needs the trained IDM head (post-30k) — design note now, run when head lands.
+2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows updated 2026-07-10 with the
+   no-action caveat (WMS = perception/OOD/video-only VALIDATION scenes, NOT closed-loop telemetry). Next:
+   fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA recipes / Cosmos obstruction clips; download+verify
+   one public sample each where public.
 
 ## P1
 

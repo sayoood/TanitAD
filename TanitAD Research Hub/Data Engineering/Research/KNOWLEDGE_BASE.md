@@ -3,6 +3,28 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-10] [measured] **WorldModel-Synthetic-Scenarios pose probe = NO-POSE** (backlog P0.1 CLOSED,
+  negative). Tree probe (15 clips × 5 families): each clip is **only** `video/` + `description/`; exts
+  **only `.mp4`/`.json`**; **0 pose/action/calib files**; description keys = `{framerate, nb_frames,
+  t2w_windows(caption), metadata{weather,time_of_day,surface_type,region}}`. **HF card confirms** "no
+  ego pose/trajectory/actions/steering/CAN", OpenMDW-1.1, **no companion action dataset**. → the
+  "cosmos-mirror" assumption is **falsified**; corpus is **IDM/H7-gated or video-only**, EXCLUDED from
+  the action-conditioned D-010 mix. Real front_wide.mp4 = **4K (3840×2160), 24 fps, 462 fr/19.25 s,
+  14 MB**, A8 0.025/0.014 — frames real & decodeable, just action-unlabeled — impact: D-014/H7/H6/H15/D9
+  — `2026-07-10-worldmodel-synthetic-pose-probe-and-idm-path.md`
+- [2026-07-10] [loader] **WMS video-only loader** shipped (intake `2026-07-10-worldmodel-synthetic-pose-probe/`,
+  **10 tests ✓**): frames real (front_wide→D-016 focal-canon→D-015 9-ch), **actions/poses = NaN sentinel**
+  (`ACTION_SOURCE="idm_pending"`, no fabrication P8); `CORPUS_META["actions"]=None` makes I7 mismatch
+  comma/Cosmos → mechanical mix-exclusion; + `build_manifest` scene index (caption/weather) for the
+  scenario duty. Usable now for video-only pretraining + D8 weather OOD probe — impact: H7/D8/G-D2 — same note §2
+- [2026-07-10] [arXiv] H7 IDM caveat (decision-relevant): inverse-model errors **accumulate at
+  distribution edges** (video-WM survey 2411.02914 / VPT lineage) → a highway-trained IDM is LEAST
+  reliable exactly on WMS's long-tail (emergency/weather/ped) = the clips we most want. Rule: validate
+  IDM on held-out **real long-tail actions (ZOD, EU/night CAN)** before trusting WMS pseudo-labels.
+  **DriveWAM** (2605.28544, video-generative-prior world-action modeling) = the WMS-graduation trigger;
+  **Latent-WAM** (2603.24581) latent-space planning support; `nvidia/omni-dreams-models` now public
+  (Phase-1 sim watch) — impact: H7/H5/H3/D8 — same note §3–4
+
 - [2026-07-09] [measured] **PhysicalAI-AV R1 selection from cached egomotion**: 30 cached chunks → 2,850
   clips scored (0 errors), **1,926 pass the driving gate (67.6 %)** → R1=2,000 is 74 short of reachable
   from cache (needs ~1–2 more egomotion chunks). Gate failures (924) are **all speed-band**. Camera fetch

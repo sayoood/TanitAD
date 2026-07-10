@@ -29,6 +29,18 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-10: Data Eng — H7 data-availability delta (no status change, P8): **WorldModel-Synthetic-Scenarios
+  = NO ego pose/actions (measured probe + HF card confirm)** → the corpus is IDM/H7-gated or video-only,
+  **excluded from the action-conditioned D-010 mix** (I7 fingerprint `actions:None`). Video-only loader
+  shipped (10✓). **H7 sharpened, honestly:** IDM pseudo-label errors accumulate at distribution edges
+  (VPT/survey) → WMS's long-tail is exactly where a highway-trained IDM is least reliable ⇒ IDM must be
+  validated on **real long-tail actions (ZOD)** before WMS labels are trusted. DriveWAM (2605.28544) =
+  the graduation trigger. See `Data Engineering/Research/2026-07-10-worldmodel-synthetic-pose-probe-and-idm-path.md`.
+- 2026-07-09: Data Eng — H7/H4 data-availability delta (no status change, P8): PhysicalAI-AV **R1 yield
+  measured** (1,926 urban clips reachable from cached egomotion; +64 GB camera to materialise 3.85× R0's
+  clips). WorldModel-Synthetic-Scenarios (OpenMDW-1.1, ungated) identified as H6/H15/D9 long-tail +
+  H4-diversity source — pose availability then still open (now resolved 2026-07-10: none). See
+  `Data Engineering/Research/2026-07-09-physicalai-r1-selection-and-worldmodel-scenarios-license.md`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

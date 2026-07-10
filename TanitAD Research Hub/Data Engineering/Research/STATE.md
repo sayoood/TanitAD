@@ -1,63 +1,46 @@
 # STATE — Data Engineering
 
-LAST_RUN: 2026-07-09 (Tuesday agent)
-QUALITY: full (G-A…G-C, G-E, G-H, G-D1, G-D2 met; intake pkg 3✓ standalone, no stack files touched).
-  Shared-file rows (G-D ledger, joint SCENARIO duty, PROJECT_STATE §5) **DEFERRED — see HANDOFF**: a
-  concurrent agent was actively writing SCENARIO_DATABASE / HYPOTHESIS_LEDGER / PROJECT_STATE (mtimes
-  within 90 s of my commit) — deferred to avoid clobbering live work (repo-advances-mid-session rule, P8).
-  All deferred content is captured verbatim below and in the research note; nothing is lost.
+LAST_RUN: 2026-07-10 (Tuesday agent) — worktree branch `agent/data-engineering-20260710` (D-026).
+QUALITY: full (G-A…G-C, G-E, G-H, G-D1, G-D2 met; measured experiment with numbers; intake pkg
+  **10✓ standalone**, no stack files touched). Shared-file rows (KB, DATASET_LANDSCAPE, HYPOTHESIS_LEDGER,
+  SCENARIO_DATABASE, PROJECT_STATE §5, DECISIONS D-022) **applied in-worktree** — D-026 worktree isolation
+  removes the concurrent-write race that forced last run's deferral; the orchestrator merges the branch.
+  Last run's deferred HANDOFF rows (R1 selection + D-022) were **not** merged to main → re-applied this run.
 
-## This run (2026-07-09)
-- **PhysicalAI-AV R1 selection MEASURED** (backlog P0.0 / DATASET_LANDSCAPE rank #1; intake pkg
-  `incoming/2026-07-09-physicalai-r1-selection/`, 3 tests ✓). New tool `physicalai_r1.py` reuses the exact
-  R0 urban scorer and scores the **30 already-cached egomotion chunks** offline (no token/network):
-  **2,850 clips scored (0 errors) → 1,926 pass the driving gate (67.6 %)**. **R1=2,000 is 74 short from
-  cache** → needs ~1–2 more egomotion chunks. Gate failures (924) are **all speed-band**. Camera fetch =
-  the same 30 chunks as R0 (~60 GB) but **3.85× clips for identical bandwidth** (per-chunk cost) → fetch
-  rule: extract ALL gate-passing clips per downloaded chunk. Artifacts `.../physicalai/r1/{r1_selection.parquet,R1_REPORT.json}`.
-- **Episode-contract PASS on real bytes (G-D2/G-E):** `physicalai.build_episode` on a real R0 clip →
-  `[199,9,256,256]` u8 frames, actions `[199,2]`, poses `[199,4]`, finite/aligned, 6.5 s/clip; steer/accel/v
-  physically sane. Same pipeline serves R1.
-- **WorldModel-Synthetic-Scenarios license VERIFIED** (rank #2 / backlog P0.1): **OpenMDW-1.1, UNGATED**
-  (Linux-Foundation permissive; NVIDIA's Cosmos/Nemotron license) → *preliminarily public-claimable*. 264 k
-  clips / 8.3 TB / 4K@24; families incl. weather-deg 9.2 %, emergency-veh 2.7 %, ped ~33 %. **⚠ card lists
-  NO ego pose/actions** → "near-zero cosmos-mirror" assumption at risk; confirm a pose field before loader
-  work (else IDM/H7 or video-only). DATASET_LANDSCAPE + KB updated.
-- Note: `2026-07-09-physicalai-r1-selection-and-worldmodel-scenarios-license.md`.
+## This run (2026-07-10)
+- **WorldModel-Synthetic-Scenarios pose probe = NO-POSE (backlog P0.1 CLOSED, measured, negative).**
+  Tree probe (`probe_worldmodel_synth.py`, 15 clips × 5 families, 18.9 s): each clip = **only**
+  `video/` + `description/`; exts **only `.mp4`/`.json`**; **0 pose/action/calib files**; description
+  keys `{framerate, nb_frames, t2w_windows(caption), metadata{weather,time_of_day,surface_type,region}}`.
+  **HF card confirms** "no ego pose/trajectory/actions/steering/CAN", OpenMDW-1.1, no companion action set.
+  → the "cosmos-mirror" assumption is **falsified**; corpus is **IDM/H7-gated or video-only**, EXCLUDED
+  from the action-conditioned D-010 mix.
+- **Real bytes:** one `front_wide.mp4` = **4K (3840×2160), 24 fps (real, not mux artifact), 462 fr /
+  19.25 s, 14 MB**, A8 0.0248/0.0137 (emergency/night stop clip). Frames real, clean-decoding.
+- **Increment (G-D2/G-E):** WMS **video-only loader** (intake `2026-07-10-worldmodel-synthetic-pose-probe/`,
+  **10 tests ✓**): front_wide → D-016 focal-canon → D-015 9-ch; **actions/poses = NaN sentinel**
+  (`ACTION_SOURCE="idm_pending"`, no fabrication P8); `CORPUS_META["actions"]=None` → I7 mismatch →
+  mechanical exclusion from the action mix; + `build_manifest` (scene index for the scenario duty).
+- **Lit (D-013):** IDM errors accumulate at distribution edges (VPT/survey) → highway-IDM least reliable
+  on WMS's long-tail; DriveWAM (2605.28544) = video-generative-prior WAM (graduation trigger);
+  Latent-WAM (2603.24581); `nvidia/omni-dreams-models` now public (Phase-1 sim watch).
+- **Joint duty:** SC-02/05/06 rows updated — WMS = perception/OOD/video-only VALIDATION scenes, NOT
+  closed-loop telemetry (no ego actions).
+- Note: `2026-07-10-worldmodel-synthetic-pose-probe-and-idm-path.md`.
 
 ## Next (backlog, priority order)
 1. **R1 top-up (2 chunks) on pod** → clear 2,000; then camera-fetch (≤32 chunks, ~64 GB, ~1 h) extracting
-   ALL gate-passing clips per chunk; build epcache AFTER the 30k trainer finishes (cgroup).
-2. **WorldModel-Synthetic-Scenarios pose probe** — `huggingface_hub` file-listing on one clip's parquet set
-   to confirm/deny a pose field. Decides loader path (cosmos-mirror vs IDM/H7). ~minutes, no full download.
-3. **Loader `selection_path` param** (small follow-up intake) so `physicalai.py` loads `r1_selection.parquet`
-   without touching R0 provenance.
-4. Steering-ratio calibration log (H7 binding artifact) on real Chunk_1; A8 harness on real Chunk_1.
-5. Zenseact ZOD pilot loader (real-CAN #2, H4 arm-B, EU/night).
+   ALL gate-passing clips per chunk; build epcache AFTER the 30k trainer finishes (cgroup). *(pod-gated:
+   training has priority; check `nvidia-smi` before touching the pod.)*
+2. **WMS video-only pilot** — front_wide epcache on ~200 `weather_degradation` clips as a **never-trained
+   D8 OOD visual probe** (complements Cosmos weather pairs for SC-05). ~2–3 h, front_wide only (~3 GB).
+3. **IDM edge-reliability guard (H7)** — before any WMS/BDD pseudo-labeling, measure the trained IDM's
+   steer/accel error on **real long-tail actions (Zenseact ZOD, EU/night CAN)** vs comma highway.
+   Needs the post-30k IDM head; design note now, run when it lands.
+4. **Loader `selection_path` param** for `physicalai.py` (load `r1_selection.parquet` w/o R0 provenance).
+5. Zenseact ZOD pilot loader (real-CAN #2, EU/night — also the IDM validator for #3); steering-ratio
+   calibration log on real Chunk_1; A8 harness on real Chunk_1.
 
-## HANDOFF — DEFERRED shared-file rows (concurrent-write race; orchestrator/next run to merge)
-Deferred to avoid clobbering a live editor. Apply these verbatim when the files are quiescent:
-
-**PROJECT_STATE.md §5 session-log row (newest):**
-| 2026-07-09 (Thu) | Data Engineering agent | **PhysicalAI-AV R1 selection measured** (backlog P0.0 / rank #1): tool `physicalai_r1.py` (intake, 3✓) reuses the R0 scorer on the 30 CACHED egomotion chunks — **2,850 scored → 1,926 gate-pass (67.6 %); R1=2,000 is 74 short from cache → ~1–2 more chunks**; camera fetch = same 30 chunks as R0 (~60 GB) but **3.85× clips/GB** (extract-all rule). Episode-contract PASS on real clip (`[199,9,256,256]`, 6.5 s). **WorldModel-Synthetic-Scenarios license = OpenMDW-1.1 UNGATED** (D-022 proposed: widen public firewall — default hold) — 264 k clips, emergency-veh 2.7 %/weather 9.2 %/ped 33 %, **⚠ no ego pose on card** (loader caveat). Advances SC-02/05/06 data rows. | `.../Data Engineering/Research/2026-07-09-physicalai-r1-selection-and-worldmodel-scenarios-license.md`, `.../Implementation/incoming/2026-07-09-physicalai-r1-selection/`, `DATASET_LANDSCAPE.md` |
-
-**HYPOTHESIS_LEDGER.md change-log row:**
-- 2026-07-09: Data Eng — H7/H4 data-availability delta (no status change, P8): PhysicalAI-AV **R1 yield
-  measured** (1,926 urban clips already reachable from cached egomotion; +64 GB camera to materialise 3.85×
-  R0's clips). WorldModel-Synthetic-Scenarios (OpenMDW-1.1, ungated) identified as H6/H15/D9 long-tail +
-  H4-diversity source *conditional on a pose field* (card lists none → IDM/H7 or video-only). See
-  `Data Engineering/Research/2026-07-09-*.md`.
-
-**SCENARIO_DATABASE.md data-source rows (joint duty D-020 §5):**
-- SC-02 (occluded-ped): PhysicalAI-WorldModel-Synthetic-Scenarios **license VERIFIED ungated (OpenMDW-1.1)**;
-  ped material ≈33 % of 264 k; ⚠ pose/action availability UNVERIFIED (gating) → catalogued → *data-source
-  identified (license clear, pose caveat)*.
-- SC-05 (degraded-visibility): + weather-degradation family 9.2 % ≈ 24 k clips (second synthetic source
-  complementing Cosmos weather variants).
-- SC-06 (emergency-vehicle): **fills the documented public-data gap** — emergency-vehicle family 2.7 % ≈ 7 k
-  clips (visual light-pattern proxy; audio out of scope P0) → catalogued → *data-source identified (pose caveat)*.
-
-**DECISIONS.md — new proposed entry (D-018 ESCALATE, data-strategy):**
-- **D-022 (proposed)** — reclassify PhysicalAI-WorldModel-Synthetic-Scenarios (OpenMDW-1.1) as
-  public-claimable (widen firewall beyond comma2k19 + Cosmos-DD). Default if no answer: HOLD — keep
-  firewalled, internal training use only. Nothing blocked by holding.
+## Open decisions (Sayed)
+- **D-022 (proposed):** widen public firewall to WMS (OpenMDW-1.1). Default HOLD (firewall stays
+  comma2k19 + Cosmos-DD). Nothing blocked by holding.
