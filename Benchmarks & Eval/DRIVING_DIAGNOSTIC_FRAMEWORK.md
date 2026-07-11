@@ -112,7 +112,58 @@ Phase 0 is NOT done at "gates measured." It is done when, on single-camera + his
 Only then do more cameras / sensors / the H-stack proceed. **Proposal to formalize as a constitution
 addendum** (Project Steering/Proposals) — flagged for Sayed.
 
-## Results (append as experiments land)
-- **2026-07-12 driving_diagnostic (27k):** _running on pod1 — baselines, decode ladder, error
-  localization. Numbers appended here on completion._
-- **Step-curve (8.5k/14k/27k ADE):** _queued — cheap, existing checkpoints._
+## Results
+
+### 2026-07-12 driving_diagnostic (27k, 8 route splits, 2240 windows) — DECISIVE
+Instruments trustworthy: **I1 oracle-probe fit R²=0.91 (PASS)**, **I2 batch-consistency 3.5e-7 (PASS)**.
+
+**Decode ladder — ADE@1s (m):**
+| | ridge α1 | ridge α10 | MLP |
+|---|---|---|---|
+| **held-out** (route split) | 5.10 | 5.32 | **3.89** |
+| **oracle ceiling** (in-dist fit=eval) | 1.87 | 2.19 | **1.65** |
+| **constant-velocity baseline** | — | — | **0.28** |
+
+**Error localization — model vs CV, ADE@1s (m):**
+| stratum | model | CV | model/CV |
+|---|---|---|---|
+| **straight** (n=323) | **2.75** | **0.18** | **15×** |
+| gentle (n=75) | 4.52 | 0.41 | 11× |
+| sharp (n=38) | 2.84 | 0.79 | 3.6× |
+| comma/highway (n=238) | 2.21 | 0.20 | 11× |
+| physicalai/urban (n=198) | 4.08 | 0.36 | 11× |
+| high-speed (n=204) | 2.26 | 0.19 | 12× |
+
+**Proof-based verdict (what the numbers DO support):**
+1. **The model is ~10–15× worse than constant-velocity EVERYWHERE, including straight highway
+   (2.75 vs 0.18 m).** It fails the *easiest* case. This is NOT a "handles straights, fails curves"
+   capability gap — it is a **fundamental failure to encode/decode ego-trajectory** even trivially.
+   Sayed's read confirmed with proof.
+2. **The failure is BOTH representation AND readout, quantified:**
+   - **Readout/generalization gap** = held-out MLP 3.89 vs oracle-ceiling MLP 1.65 = **2.4× overfit**
+     across routes. Fixable with a nonlinear trajectory head + route-diverse decode training.
+     MLP < ridge at both levels → **D1's ridge gate UNDERSTATES decodability** (3.89 not 6.44).
+   - **Representation floor** = even the ORACLE in-distribution ceiling is **1.65 m**, ~9× worse than
+     CV on straights. **Even with perfect decode, the visual latent does not carry metric
+     ego-displacement at driving precision.** This is the deeper, primary problem.
+3. **HONEST CAVEAT (do not overclaim):** CV uses ground-truth pose history (privileged ego-state the
+   vision-only probe never sees). The fair question is the oracle ceiling — "from vision alone,
+   best in-distribution, how well can trajectory be recovered?" = **1.65 m@1s** — not driving-grade
+   (sub-metre needed) but not catastrophic. **D2 ranking PASSES (0.864)** → the latent carries
+   selection-relevant info even though absolute regression is poor.
+
+**Root cause — evidence-backed hypothesis (was a guess, now supported):** the model was trained to
+predict + RANK latent futures (JEPA/SigReg + imagination — D2 passes), but has **no explicit metric
+ego-trajectory training target** beyond the small inverse-dynamics head. Nothing forces the latent to
+linearly encode metric ego-displacement → oracle ceiling stuck at 1.65 m. **#1 lever: add explicit
+ego-motion / trajectory-prediction supervision** (or strongly upweight inverse-dynamics) so the
+representation is ego-grounded; the 1.65 m ceiling is the target to break. **#2 lever: nonlinear
+route-generalizing decode head** (closes 3.89→1.65). Resolution/model-size/data-mix are SECONDARY
+until the objective encodes ego-motion (straight-road failure rules resolution out as primary).
+Artifact: `stack/scripts/driving_diagnostic.py`, `/workspace/experiments/driving_diagnostic.json`.
+
+- **Step-curve (8.5k/14k/27k ADE):** queued — tests whether held-out ADE still descends at 27k
+  (readout undertraining) vs is representation-bound. Cheap; existing checkpoints.
+- **NEXT experiments this routes:** (1) explicit-ego-supervision training arm (fine-tune 27k with a
+  trajectory-prediction head + upweighted inv-dyn, measure oracle-ceiling shift); (2) route-diverse
+  MLP decode head; (3) resolution ablation (secondary); (4) REF-A/REF-B same diagnostic when trained.
