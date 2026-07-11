@@ -40,6 +40,20 @@ Format per item: goal / method / resource / expected number / falsifier.
    `latency_cnce_baseline.py` with N in {1,4,7} batched encodes on the 4060; expected ~2-2.5x
    single-cam latency at N=7 (not 7x). Investigation doc:
    `Research/ENCODER_MULTICAM_OPTIMIZATION.md` (attack order + production-readiness table).
+3d2. **REF-A stage-2b: GRID adapter (Sayed review 2026-07-11 — "expected better from DINO").**
+   The v1 adapter MEAN-POOLS the 256 DINO tokens → destroys the spatial structure the DINO-WM
+   lineage relies on (DINO-WM/EponaV2/DINO-world all keep patch tokens). Build the literature-
+   faithful variant: tokens → SpatialGridReadout-style adapter → state; retrain 30k feature-level
+   (~4.5 h on the A40, features already cached); re-run refa_probe. Expected: closes a large part
+   of the 14.2-vs-7.5 ADE gap; falsifier: if grid-REF-A still ≫ main at matched protocol, the
+   frozen-encoder deficit is real (H4 evidence, not adapter artifact). ALSO: comma-only main-model
+   probe re-run (pod1, post-30k) for the apples-to-apples row.
+3e2. **D1 kinematic floor: constant-velocity baseline row (Sayed 2026-07-11 — "7.51 is bad too").**
+   Add CV-extrapolation (velocity from pose history, extrapolate 1 s) as a baseline row next to
+   D1 in `evaluate_checkpoint.py`. Purpose: split the 7.5 m into (a) irreducible action-uncertainty
+   + protocol hardness vs (b) true encoder deficit. If CV lands ~1–2 m on comma highway, the
+   linear-probe gap is real work; if CV is also ~5–7 m, D1's threshold needs redefining as
+   baseline-relative (gate honesty). Plus unit audit ("camera" unit semantics vs metres).
 3e. **H16 active depth interrogation — offline trigger probe (Sayed's idea 2026-07-11).**
    Goal: cheapest possible falsification pass on F1 BEFORE any build. Method: replay SC-01 3-seed
    telemetry + the D8 degraded-pairs episodes; compute the H15 per-sector σ trace from an existing
