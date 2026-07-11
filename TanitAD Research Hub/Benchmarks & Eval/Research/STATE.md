@@ -1,7 +1,7 @@
 # STATE — Benchmarks & Eval
 
 LAST_RUN: 2026-07-11 (Thursday-scheduled, fired Sat) — base commit `0284a5c`; branch
-`agent/bench-eval-20260711` (worktree, D-026)
+`worktree-agent+bench-eval-20260711` (worktree, D-026)
 QUALITY: full (G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4, well under
 budget: 0 web searches — audit was local-compute, ≈1.3 h)
 
@@ -103,7 +103,7 @@ Phase-1 path).
 
 ## HANDOFF
 
-None — 2026-07-11 run completed cleanly on branch `agent/bench-eval-20260711` (worktree, D-026; the
+None — 2026-07-11 run completed cleanly on branch `worktree-agent+bench-eval-20260711` (worktree, D-026; the
 orchestrator merges to main). Deliverables: `d1_power_audit/` diagnostic + result JSON (4 tests green),
 `incoming/2026-07-11-d1-gate-bootstrap/` (`run_d1_bootstrap` + 4 tests green), research note, LEADERBOARD
 D1 row + power footnote, KB + BACKLOG + STATE. **Open for next run / orchestrator:** (1) **triage
