@@ -39,11 +39,26 @@
 
 ## TanitAD internal gate ladder (Phase 0)
 
+### FLAGSHIP — step 27,000 (≈30k / 90%), route-resampled protocol, exact training val (comma+pai), 2026-07-12
+
+| Gate | Verdict | Value | Note |
+|---|---|---|---|
+| **D1** (probe ADE@1s) | **FAIL** | **6.44 ± 0.55 m** (95% CI, 8 route splits; range 4.96–7.41) | camera-frame unit; sub-metre bar structurally unmeetable open-loop — **NOT driving-capable** at ~30 m/s (Sayed's honest verdict; diagnostic in progress to localize) |
+| **D2** (imagination ranking) | **✅ PASS** | dir-acc **0.864**, P4 fwd-dyn **0.971**, P1 fit-R² 0.98, beats persistence (0.5) | the world-model-usable-for-selection claim holds |
+| **D3** (imagined vs oracle @2s) | **FAIL, K-step-improved** | imagined **1.97 m** vs oracle **1.52 m**, ratio **1.30** | K-step (D-027) closed the ratio from ~4× (pre-K-step small-sample) |
+
+> **Flagship interpretation is UNDER ACTIVE DIAGNOSIS** (`DRIVING_DIAGNOSTIC_FRAMEWORK.md`,
+> `scripts/driving_diagnostic.py`). The 27k checkpoint is the frozen anchor; the run was stopped at
+> 90% (OOM-crawl) — resumable. Do not draw causal conclusions from D1=6.44 m until the diagnostic
+> baselines + error-localization land (is it below/above constant-velocity? uniform or curve-only?).
+
+### History (p0-sB01-realmix, step 14k)
+
 | Gate | Status | Value | Exp-ID | Date |
 |---|---|---|---|---|
-| D1 (probe ADE) | **FAIL, halving** (step 14k/30k; 10.94 at 5k) | ADE@1s **5.18 m** (bar < 1.0) — on trend toward the bar by 30k | p0-sB01-gates-step14000 | 2026-07-09 |
-| D2 (imagination ranking) | **PASS, improved** (step 14k/30k) | dir-acc P1 **0.917** / P4 **1.000** (bar 0.7, chance 0.5; 0.872/0.940 at 5k); imag-rel 7.42 diagnostic (9.73 at 5k) — A13 pattern holds | p0-sB01-gates-step14000 | 2026-07-09 |
-| D3 (imagined-ADE ratio) | **BLOCKED, closing** (I4 3.05; 3.83 at 5k — approaching the persistence threshold) | @0.4 s horizon | p0-sB01-gates-step14000 | 2026-07-09 |
+| D1 (probe ADE) | FAIL (step 14k; 10.94 at 5k) | ADE@1s 5.18 m *(single-split — see D1 protocol note: route-resampled 27k = 6.44±0.55)* | p0-sB01-gates-step14000 | 2026-07-09 |
+| D2 (imagination ranking) | PASS (step 14k) | dir-acc P1 0.917 / P4 1.000; imag-rel 7.42 | p0-sB01-gates-step14000 | 2026-07-09 |
+| D3 (imagined-ADE ratio) | BLOCKED (I4 3.05) | @0.4 s horizon | p0-sB01-gates-step14000 | 2026-07-09 |
 | D4 (tactical lift) | not run | — | — | — |
 | D5 (routing edge) | not run | — | — | — |
 | D6 (generalization slope) | not run | — | — | — |
