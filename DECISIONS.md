@@ -86,7 +86,7 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
-## D-028 — Recency-first literature scan + benchmark/edge seam ownership (2026-07-11, proposed — logged by orchestrator for Sayed confirmation)
+## D-028 — Recency-first literature scan + benchmark/edge seam ownership (2026-07-11, ADOPTED — execution-level protocol change per D-018, prompted by Sayed's direct complaint "why are such papers not identified by our agents"; already live in `agents/_common-protocol.md`)
 
 **Decision.** Every agent loop adds, alongside its fixed-query arXiv sweep, a **recency-first raw-listing
 title scan** (cs.CV / cs.RO / cs.AI "recent", last 14 days) for: (i) new AD benchmarks/datasets of ANY
@@ -104,8 +104,9 @@ closes the coverage gap.
 
 **Consequences.** `_common-protocol.md` §2 SEARCH step gains the mandatory recency-first listing scan (2e) and
 the seam-ownership rule (already applied 2026-07-11, commit `2d58b69`). AUTOPILOT-VQA and ZipDepth are screened
-into the Benchmarks & Eval and Production & Optimization backlogs respectively. Status is `proposed` pending
-Sayed's confirmation of the constitutional wording; the operational change is already live in the protocol file.
+into the Benchmarks & Eval and Production & Optimization backlogs respectively. **CONFIRMED by Sayed 2026-07-11**
+(orchestrator W30 run) — the execution-level protocol change is adopted; the change was already live in the
+protocol file.
 
 ## D-027 — K-step rollout loss adopted for all post-30k training (2026-07-10, accepted by Sayed)
 
@@ -172,6 +173,26 @@ lesson), resource-ledger rules for paid compute, honest labeling of preview-grad
 (new intakes, backlog movements, findings). The reporting duty is embedded in the loop prompt
 itself so it survives context compaction. Evening (18:00) and morning (on-request) reports
 continue as the long-form digests.
+
+## D-022 — Public-claim firewall for WorldModel-Synthetic-Scenarios (2026-07-09, **proposed / default HOLD** — ID backfilled 2026-07-11 to close the numbering gap)
+
+**Decision (proposed, default = HOLD).** Whether to reclassify NVIDIA **PhysicalAI-WorldModel-Synthetic-Scenarios**
+(OpenMDW-1.1, ungated — 264 k clips / 8.3 TB) as **public-claimable**, i.e. widen the public-claim data firewall
+beyond the current comma2k19 (MIT) + Cosmos-Drive-Dreams (CC-BY-4.0) set. A D-018-class **data-strategy escalation**
+first drafted in the Data Engineering agent's 2026-07-09 notes/STATE but never written into this log — hence the
+D-022 gap between D-021 and D-023. **Default until Sayed/legal explicitly confirm: HOLD** — keep public claims
+firewalled to comma2k19 + Cosmos-DD; WorldModel-Synthetic may be used for *training* but not cited in public
+efficiency/benchmark claims.
+
+**Rationale.** OpenMDW-1.1 is a Linux-Foundation permissive license (NVIDIA's Cosmos/Nemotron license) → the
+corpus is *preliminarily* public-claimable, but reclassifying the firewall is a licensing call with legal exposure,
+so it stays conservative until confirmed. (Contrast: real PhysicalAI-AV remains gated/confidential and is never
+public-claimable — D-002/D-012 license review.)
+
+**Status note (2026-07-11, orchestrator W30).** This entry backfills the missing ID so the log is contiguous
+(the "resolve the numbering gap" instruction). It is recorded at its **conservative default (HOLD)** — the
+substantive firewall-widening is a legal reclassification and still needs an **explicit** accept from Sayed/legal;
+it was **not** auto-adopted by closing the numbering gap. Awaiting that explicit confirmation to flip to `accepted`.
 
 ## D-021 — Latent dimension k is a measured design variable, not a hyperparameter (2026-07-08, **proposed** — awaiting Sayed)
 

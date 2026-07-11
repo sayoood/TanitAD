@@ -1,0 +1,327 @@
+{
+  "exp": "int8-weight-only-quant-curve + clean-gpu-latency",
+  "backlog": "Production&Optimization P1.6 (INT8 curves) + P1.4b (clean latency)",
+  "ckpt_step": 6500,
+  "params_billions": 0.2628,
+  "hardware": "RTX 4060 (Orin proxy, I8), batch 1, GPU idle (clean)",
+  "n_showcase_windows": 64,
+  "n_fit_windows": 105,
+  "tactical_horizon_steps": 16,
+  "probe_imag_r2": 0.8327,
+  "total_linear_conv_weight_bytes_fp32": 824860672,
+  "method": [
+    "INT8 = per-output-channel SYMMETRIC weight fake-quant (scale=max|w|/127), activations kept fp32 -> isolates the weight-quant accuracy term.",
+    "Compose with the fp16 activation term (half_precision_step6500.json) for a full-engine bound: INT8-engine err ~= fp16-act err (+) int8-weight err.",
+    "Decision metric = argmin_K||decoded_fan - subgoal|| over a K=9 steer fan, one FIXED fp64 probe across all arms -> flips attributable to weight-quant.",
+    "INT8 LATENCY not claimed (needs TRT int8 kernels; toolchain absent). INT8 efficiency delta reported today = weight-memory footprint reduction.",
+    "Latency arms (fp32/fp16) measured on an IDLE 4060 -> clean absolutes (closes P1.4b; the 2026-07-09 run was CarlaUE4-contended)."
+  ],
+  "latency_clean": {
+    "fp32": {
+      "encode_1frame": {
+        "p50_ms": 9.147,
+        "p95_ms": 9.359
+      },
+      "predict_1pass": {
+        "p50_ms": 6.515,
+        "p95_ms": 8.922
+      },
+      "select_K9": {
+        "p50_ms": 6.609,
+        "p95_ms": 7.722
+      },
+      "peak_vram_gb": 1.102,
+      "decision_tick_p50_ms": 15.756,
+      "hz": 63.5,
+      "speedup_vs_fp32": 1.0
+    },
+    "fp16": {
+      "encode_1frame": {
+        "p50_ms": 6.731,
+        "p95_ms": 14.651
+      },
+      "predict_1pass": {
+        "p50_ms": 7.582,
+        "p95_ms": 9.71
+      },
+      "select_K9": {
+        "p50_ms": 6.666,
+        "p95_ms": 8.918
+      },
+      "peak_vram_gb": 1.648,
+      "decision_tick_p50_ms": 13.397,
+      "hz": 74.6,
+      "speedup_vs_fp32": 1.176
+    }
+  },
+  "int8_groups": {
+    "int8_predictor": {
+      "quantized_weight_elems": 108071424,
+      "quantized_weight_bytes_fp32": 432285696,
+      "weight_bytes_int8": 108071424,
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 324.2,
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.014804,
+          "mean_abs": 0.000426,
+          "cosine_min": 0.999992,
+          "cosine_mean": 1.0,
+          "rel_err_mean": 0.000597,
+          "rel_err_max": 0.004202,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.053886,
+            "mean_abs": 0.001575,
+            "cosine_min": 0.999988,
+            "cosine_mean": 0.999998,
+            "rel_err_mean": 0.002001,
+            "rel_err_max": 0.005195,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.069517,
+            "mean_abs": 0.001626,
+            "cosine_min": 0.999986,
+            "cosine_mean": 0.999998,
+            "rel_err_mean": 0.00209,
+            "rel_err_max": 0.005563,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.05162,
+            "mean_abs": 0.001759,
+            "cosine_min": 0.999986,
+            "cosine_mean": 0.999997,
+            "rel_err_mean": 0.002255,
+            "rel_err_max": 0.005558,
+            "finite": true
+          }
+        },
+        "decision": {
+          "selection_agreement": 0.9531,
+          "n_flips": 3,
+          "decoded_wp_shift_m_mean": 0.1093,
+          "decoded_wp_shift_m_max": 0.3675,
+          "fan_finite": true
+        }
+      }
+    },
+    "int8_heads": {
+      "quantized_weight_elems": 130127872,
+      "quantized_weight_bytes_fp32": 520511488,
+      "weight_bytes_int8": 130127872,
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 390.4,
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.054105,
+          "mean_abs": 0.01238,
+          "cosine_min": 0.999643,
+          "cosine_mean": 0.999854,
+          "rel_err_mean": 0.016695,
+          "rel_err_max": 0.026746,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.06378,
+            "mean_abs": 0.012474,
+            "cosine_min": 0.999779,
+            "cosine_mean": 0.99988,
+            "rel_err_mean": 0.01518,
+            "rel_err_max": 0.021015,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.077837,
+            "mean_abs": 0.012538,
+            "cosine_min": 0.999771,
+            "cosine_mean": 0.999878,
+            "rel_err_mean": 0.015307,
+            "rel_err_max": 0.021384,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.058918,
+            "mean_abs": 0.012598,
+            "cosine_min": 0.999756,
+            "cosine_mean": 0.999869,
+            "rel_err_mean": 0.015875,
+            "rel_err_max": 0.022086,
+            "finite": true
+          }
+        },
+        "decision": {
+          "selection_agreement": 0.4844,
+          "n_flips": 33,
+          "decoded_wp_shift_m_mean": 1.6663,
+          "decoded_wp_shift_m_max": 1.9547,
+          "fan_finite": true
+        }
+      }
+    },
+    "int8_encoder": {
+      "quantized_weight_elems": 76087296,
+      "quantized_weight_bytes_fp32": 304349184,
+      "weight_bytes_int8": 76087296,
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 228.3,
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.011427,
+          "mean_abs": 0.000529,
+          "cosine_min": 0.999995,
+          "cosine_mean": 1.0,
+          "rel_err_mean": 0.000703,
+          "rel_err_max": 0.003277,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.048831,
+            "mean_abs": 0.000525,
+            "cosine_min": 0.999993,
+            "cosine_mean": 1.0,
+            "rel_err_mean": 0.000699,
+            "rel_err_max": 0.003859,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.045273,
+            "mean_abs": 0.00052,
+            "cosine_min": 0.999993,
+            "cosine_mean": 1.0,
+            "rel_err_mean": 0.000699,
+            "rel_err_max": 0.003829,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.042971,
+            "mean_abs": 0.00051,
+            "cosine_min": 0.999994,
+            "cosine_mean": 1.0,
+            "rel_err_mean": 0.000703,
+            "rel_err_max": 0.003833,
+            "finite": true
+          }
+        },
+        "decision": {
+          "selection_agreement": 0.9844,
+          "n_flips": 1,
+          "decoded_wp_shift_m_mean": 0.0164,
+          "decoded_wp_shift_m_max": 0.1218,
+          "fan_finite": true
+        }
+      }
+    },
+    "int8_all": {
+      "quantized_weight_elems": 206215168,
+      "quantized_weight_bytes_fp32": 824860672,
+      "weight_bytes_int8": 206215168,
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 618.6,
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.051266,
+          "mean_abs": 0.012376,
+          "cosine_min": 0.999643,
+          "cosine_mean": 0.999854,
+          "rel_err_mean": 0.01669,
+          "rel_err_max": 0.026724,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.056934,
+            "mean_abs": 0.012466,
+            "cosine_min": 0.999779,
+            "cosine_mean": 0.99988,
+            "rel_err_mean": 0.015172,
+            "rel_err_max": 0.021017,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.063563,
+            "mean_abs": 0.012527,
+            "cosine_min": 0.999771,
+            "cosine_mean": 0.999878,
+            "rel_err_mean": 0.015295,
+            "rel_err_max": 0.021383,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.055234,
+            "mean_abs": 0.012588,
+            "cosine_min": 0.999757,
+            "cosine_mean": 0.999869,
+            "rel_err_mean": 0.015865,
+            "rel_err_max": 0.022086,
+            "finite": true
+          }
+        },
+        "decision": {
+          "selection_agreement": 0.4844,
+          "n_flips": 33,
+          "decoded_wp_shift_m_mean": 1.6737,
+          "decoded_wp_shift_m_max": 1.961,
+          "fan_finite": true
+        }
+      }
+    }
+  },
+  "SUMMARY_speed_efficiency_vs_accuracy": {
+    "fp32": {
+      "decision_tick_ms": 15.756,
+      "hz": 63.5,
+      "peak_vram_gb": 1.102,
+      "selection_agreement": 1.0,
+      "note": "reference"
+    },
+    "fp16": {
+      "decision_tick_ms": 13.397,
+      "speedup_vs_fp32": 1.176,
+      "hz": 74.6,
+      "peak_vram_gb": 1.648,
+      "note": "accuracy from half_precision_step6500.json (agreement 0.953)"
+    },
+    "int8_predictor": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 324.2,
+      "selection_agreement": 0.9531,
+      "n_flips": 3,
+      "decoded_wp_shift_m_mean": 0.1093,
+      "encoder_rel_err_mean": 0.000597,
+      "encoder_finite": true
+    },
+    "int8_heads": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 390.4,
+      "selection_agreement": 0.4844,
+      "n_flips": 33,
+      "decoded_wp_shift_m_mean": 1.6663,
+      "encoder_rel_err_mean": 0.016695,
+      "encoder_finite": true
+    },
+    "int8_encoder": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 228.3,
+      "selection_agreement": 0.9844,
+      "n_flips": 1,
+      "decoded_wp_shift_m_mean": 0.0164,
+      "encoder_rel_err_mean": 0.000703,
+      "encoder_finite": true
+    },
+    "int8_all": {
+      "weight_mem_reduction_x": 4.0,
+      "weight_mem_saved_MB": 618.6,
+      "selection_agreement": 0.4844,
+      "n_flips": 33,
+      "decoded_wp_shift_m_mean": 1.6737,
+      "encoder_rel_err_mean": 0.01669,
+      "encoder_finite": true
+    }
+  }
+}
