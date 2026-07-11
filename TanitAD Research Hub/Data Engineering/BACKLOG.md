@@ -4,18 +4,21 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-0. **R1 top-up to 2,000 (measured 2026-07-09: 1,926 reachable from cache, 74 short).** Fetch **2 more
-   egomotion chunks** on the pod (~4 GB), re-run `physicalai_r1.py --target 2000` → clears 2,000. Then
-   camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
-   bandwidth → 3.85× clips free); epcache AFTER the 30k trainer finishes (62 GB cgroup). Tool + R1 report
-   already landed (intake `2026-07-09-physicalai-r1-selection/`). Expected: 2,000 urban clips, ~24 countries.
-1. **WorldModel-Synthetic-Scenarios pose probe (was "license check" — license DONE 2026-07-09: OpenMDW-1.1
-   ungated).** `huggingface_hub` file-listing on one clip's parquet set to confirm/deny an ego-pose field.
-   Decides the loader path: near-zero cosmos-mirror (if poses) vs IDM/H7 or video-only (if none). Expected:
-   yes/no pose verdict + one sample decoded. This is now the gating question, not the license.
-2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows advanced 2026-07-09 (see
-   STATE HANDOFF; pending merge into the DB). Next: fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA
-   recipes / Cosmos obstruction clips; download+verify one public sample each where public.
+0. **Land per-clip intrinsics (PROMOTED 2026-07-11 — measured: wrong focal = ~10–15× encoder drift).**
+   Replace the nominal 120° focal in `physicalai.py` with PhysicalAI `calibration/` per-clip focal; add
+   per-video focal recovery for YouTube (Y1). Wire `assert_effective_focal` (shipped intake
+   `2026-07-11-focal-invariance-validation/`) into each loader's data-card path so a no-headroom camera
+   fails at ingest. Expected: per-corpus f_eff within ±3 % of 266, guard green on comma/cosmos/physicalai.
+1. **R1 top-up to 2,000 (BLOCKED on the 30k pod run finishing; measured 2026-07-09: 1,926 reachable,
+   74 short).** When the pod frees: fetch **2 more egomotion chunks** (~4 GB), re-run
+   `physicalai_r1.py --target 2000` → clears 2,000; then camera-fetch (≤32 chunks, ~64 GB, extract ALL
+   gate-passing clips per chunk → 3.85× clips free); epcache AFTER the trainer frees the cgroup.
+   ~~WorldModel-Synthetic pose probe~~ **DONE on branch `agent/data-engineering-20260710` (`96d85eb`):
+   NO-POSE → video-only loader; awaiting orchestrator merge.**
+2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 (2026-07-09) merged; **SC-13
+   advanced to data-sourced (partial) 2026-07-11** (comma Chunk_1 stopped-lead subset measured THIN).
+   Next: **SC-13 full 10-chunk stop-go mine** (or CARLA lead-brake recipe) for the matched hard-braking
+   set; then fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA recipes / Cosmos obstruction clips.
 
 ## P1
 

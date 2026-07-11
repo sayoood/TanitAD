@@ -217,14 +217,20 @@ public claim candidate.
 - **TanitAD mechanism:** H15 imagination predicts the *consequence* of the closing gap (forward-model
   time-to-contact) before the object is classified — no dependence on a detection/classification prior,
   which is exactly where competence-limited stacks fail; A9 imagination-error monitor on the lead region.
-- **Data sources:** comma2k19 has abundant real lead-vehicle following (mine slow/stopped-lead segments,
-  license-clean); CARLA stationary-object + cut-in recipes (blocked_route family). DataEng handoff:
-  tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
+- **Data sources (MEASURED 2026-07-11, DataEng — local comma2k19 Chunk_1 CAN mine):** comma2k19 has
+  abundant *car-following*, but the **stopped-lead / stop-go subset is THIN at Chunk_1 scale**:
+  scanning all **188** local segments' CAN speed for creep-to-stop-then-resume events (v<2→>5 m/s) found
+  **only 13 events across 12/188 segments (6 %)**, all low-speed (pre-stop speed mean 3.9 / p90 4.7 m/s;
+  **0 events braking-to-stop from >8 m/s**). So a real stopped-lead open-loop probe needs the **full
+  10-chunk mine** (extrapolates to ~130 low-speed events) or **synthetic hard-braking recipes** (CARLA
+  stationary-object / blocked_route family; WorldModel-Synthetic cut-in 32.9 %). License-clean (MIT).
 - **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
   min-TTC distribution; collisions=0 bar.
-- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
-  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
-  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+- **Status:** **data-sourced (partial), 2026-07-11** — real corpus + mining recipe identified & measured;
+  the *hard* stopped-lead subset (the SC-13 falsifier's matched segments) is Chunk_1-sparse → escalate to
+  full-chunk mine or CARLA before oracle-testing. Reuses comma2k19 loader + LAL-v2/OKRI. Falsifier: if our
+  imagination-error lead time ≤ a detection-only baseline on matched stopped-lead segments, the
+  H15-vs-detection advantage is unproven here.
 
 ## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
 - **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving

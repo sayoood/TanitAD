@@ -7,7 +7,11 @@
 > **Urban richness** = intersections / pedestrians / lights / night / weather density (comma2k19's
 > highway commute is the low anchor). **Cost to first batch** = engineer-hours to a contract episode
 > on our pipeline. **Status:** `loaded` (adapter + contract test) · `candidate` · `probe-only`.
-> Maintained by the Data Engineering agent. Last sweep: **2026-07-09** (R1 yield measured; WorldModel-Synthetic license verified).
+> Maintained by the Data Engineering agent. Last sweep: **2026-07-11** (D-016 focal canonicalization
+> VALIDATED end-to-end on the trained encoder — using correct per-camera intrinsics keeps a scene's
+> encoding cos≥0.997 across a 25–100 % focal change vs cos 0.60 when ignored, ~10–15× drift; a
+> `assert_effective_focal` ingest guard now catches cameras with no FOV headroom. Every corpus row's
+> `f_eff→266` claim is therefore encoder-verified, not just nominal. Prior: 2026-07-09 R1 yield.).
 
 ## Tier 1 — in the Phase-0 pipeline
 

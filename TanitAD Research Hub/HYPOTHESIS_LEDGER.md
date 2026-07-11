@@ -30,6 +30,13 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-11: Data Engineering (Tue) — **H7** evidence (no status change, P8): **D-016 focal
+  canonicalization validated end-to-end** on the trained encoder (measured, RTX 4060, $0) — using the
+  correct per-camera intrinsics holds the SAME scene's encoding at cos ≥ 0.997 across a 25–100 % focal
+  change, vs cos 0.60 / ~10–15× relative latent drift when intrinsics are ignored. First evidence the
+  focal transform delivers focal-invariance (not just arithmetic); grounds the H7 heterogeneous-video
+  flywheel (VLM3 principle) and sets the Y-pilot-50 Y1 focal-recovery acceptance bar (±25 %→cos≥.92).
+  See `Data Engineering/Research/2026-07-11-focal-invariance-validation-and-sc13-sourcing.md`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

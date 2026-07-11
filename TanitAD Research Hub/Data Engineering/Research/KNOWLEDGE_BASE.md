@@ -3,6 +3,22 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-11] [measured] **D-016 focal canonicalization VALIDATED on the trained encoder** (first
+  end-to-end evidence, not just arithmetic). Controlled single-scene test on real Cosmos 120° clips +
+  `ckpt_full.pt` (48 scenes, RTX 4060, 7.9 s, $0): the SAME scene at focal z·f0, canonicalized with the
+  **correct** per-camera intrinsics vs the **wrong** (=f0) ones, relative latent drift — correct/wrong:
+  z1.25 0.041/0.402 (**9.8×**, cos 0.999/0.919) · z1.5 0.049/0.711 (**14.5×**, cos .999/.753) · z2.0
+  0.063/0.934 (**14.9×**, cos .997/.600). ⇒ correct intrinsics hold encoding near-identical across a
+  25–100 % focal change; wrong intrinsics ≈ a different state. **Getting focal wrong costs ~10–15×
+  encoder drift → per-clip intrinsics is high-value, and Y-pilot-50 Y1 focal-recovery bar = ±25 %→cos≥.92 /
+  ±10 %→≥.99.** Hardening `assert_effective_focal` (fail-loud when a camera can't reach F_REF; catches
+  the silent clamp) shipped. — impact: H7/D-016/D-010/Y-pilot-50 —
+  `2026-07-11-focal-invariance-validation-and-sc13-sourcing.md`, intake `2026-07-11-focal-invariance-validation/`
+- [2026-07-11] [measured] **SC-13 stopped-lead subset is THIN in comma2k19 Chunk_1** (joint duty): CAN
+  speed mine of all 188 local segments → only **13 stop-go events / 12 segments (6 %)**, all low-speed
+  (pre-stop mean 3.9 m/s, 0 events from >8 m/s). comma = abundant car-following but sparse *stopped-lead*
+  → SC-13 needs the full 10-chunk mine or CARLA/synthetic braking recipes; advanced to *data-sourced
+  (partial)*. License MIT — impact: SC-13/H15/data-sourcing — same note §3
 - [2026-07-09] [measured] **PhysicalAI-AV R1 selection from cached egomotion**: 30 cached chunks → 2,850
   clips scored (0 errors), **1,926 pass the driving gate (67.6 %)** → R1=2,000 is 74 short of reachable
   from cache (needs ~1–2 more egomotion chunks). Gate failures (924) are **all speed-band**. Camera fetch
