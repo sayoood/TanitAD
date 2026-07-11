@@ -4,6 +4,14 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
+-2. **HF recipe-dataset `Sayood/tanitad-realmix` (Sayed 2026-07-11 night).** Versionable,
+   improvable realmix WITHOUT shipping PhysicalAI-derived data (license doctrine: NEVER to HF,
+   even privately). Contents: comma-by-reference (existing public dataset), r0_selection.parquet
+   + build params + split seed + mix ratio, per-episode SHA256 of built episodes (verify-without-
+   ship), data card + rebuild instruction (fetch-camera + build_pai_cache.py — users pass NVIDIA's
+   license gate themselves; OpenDV/LAION pattern). v1 = 402-ep selection (tonight, PRIVATE until
+   Sayed's explicit "public"); v2 = R1 2,000; future: Y-track, Cosmos. Owner: MVP loop tonight,
+   then Data-Eng maintains versions.
 -1. **Data-mix-as-recipe (Sayed 2026-07-11 night: "generate the same data mix without pod1").**
    Kill the single point of failure: (a) extract the episode MANIFEST (source clip IDs, config
    hash, counts, mix ratio) from pod1's comma+physicalai epcaches post-30k → commit as
