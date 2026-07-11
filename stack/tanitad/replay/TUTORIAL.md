@@ -56,8 +56,17 @@ URL-encoded. Nothing installs locally; the viewer runs in the browser and
 pulls the stream from the pod.)
 
 **(b) Artifact (`.rrd`) — most robust:** every session records one; download
-it and open at https://app.rerun.io (drag & drop) or `rerun session1.rrd`
-locally. Doubles as the per-checkpoint review archive.
+it and open it locally with the NATIVE viewer (`rerun session1.rrd` — on the
+dev box: `C:\Users\Admin\venvs\tanitad\Scripts\rerun.exe <file>`). Doubles as
+the per-checkpoint review archive.
+
+**VERSION GOTCHA (cost us a confused hour, 2026-07-12):** .rrd files are
+viewer-version-locked. The unversioned https://app.rerun.io serves the LATEST
+viewer, which silently shows the welcome page for older recordings. Use the
+version-pinned web viewer https://app.rerun.io/version/0.34.1/ for drag &
+drop, or the native viewer (always version-matched to the SDK that recorded).
+Known logger bug (fix pending): `--serve` + `--rrd` together — the last sink
+wins and the file stays empty; record and serve in separate runs until fixed.
 
 ## 4. Reading the viewer
 
