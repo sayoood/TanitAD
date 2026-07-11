@@ -86,6 +86,27 @@ gating) with a new gate **D9**.
 upgrade in WP4). Strategic stays deliberately non-parametric (VQ + graph) in Phase 0; the frozen-LLM
 bridge (Phase 1) sits outside this budget.
 
+## D-028 — Recency-first literature scan + benchmark/edge seam ownership (2026-07-11, proposed — logged by orchestrator for Sayed confirmation)
+
+**Decision.** Every agent loop adds, alongside its fixed-query arXiv sweep, a **recency-first raw-listing
+title scan** (cs.CV / cs.RO / cs.AI "recent", last 14 days) for: (i) new AD benchmarks/datasets of ANY
+modality incl. VQA/VLM; (ii) edge-deployable perception (depth/segmentation/detection on Orin-class hardware);
+(iii) world-model / E2E-driving releases from competitor labs. **Seam ownership:** benchmark/dataset releases →
+Benchmarks & Eval always; edge-perception efficiency → Production & Optimization always (even when the topic is
+perception); a paper fitting no discipline still goes into the orchestrator screening digest — "not my
+discipline" is never a reason for zero coverage.
+
+**Rationale.** The fixed-query protocol (D-013) has two blind spots, both proven the same day: papers <14 days
+old lose to arXiv indexing lag, and papers outside every discipline's query set are never surfaced. Sayed
+hand-delivered **AUTOPILOT-VQA** (arXiv 2607.08745, 2 days old — too fresh for query indexing) and **ZipDepth**
+(outside every query set) — both missed by all six agents. The title-scan closes the recency gap; seam-ownership
+closes the coverage gap.
+
+**Consequences.** `_common-protocol.md` §2 SEARCH step gains the mandatory recency-first listing scan (2e) and
+the seam-ownership rule (already applied 2026-07-11, commit `2d58b69`). AUTOPILOT-VQA and ZipDepth are screened
+into the Benchmarks & Eval and Production & Optimization backlogs respectively. Status is `proposed` pending
+Sayed's confirmation of the constitutional wording; the operational change is already live in the protocol file.
+
 ## D-027 — K-step rollout loss adopted for all post-30k training (2026-07-10, accepted by Sayed)
 
 **Decision.** Every training run AFTER the p0-sB01 30k record run uses the K-step recursive rollout
