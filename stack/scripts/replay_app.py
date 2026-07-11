@@ -138,10 +138,53 @@ def parse_tolerances(pairs: list[str]) -> dict[str, float]:
     return tol
 
 
+def _run_export(args, engine, arms, fit_reps, replay_reps, corpora, out) -> int:
+    """--mode export: fit probes, stream the replay into a TanitResim bundle.
+
+    Writes ``<out>/session.json`` + ``<out>/frames/*.jpg`` (portable). Serve
+    the PARENT of ``<out>`` with ``scripts/resim_app.py --sessions-root``.
+    """
+    from tanitad.resim.export import export_bundle
+
+    session_name = args.session_name or Path(out).name
+    try:
+        from tanitad.refs.refb import MANEUVER_CLASSES
+        maneuver_classes = MANEUVER_CLASSES
+    except Exception:                                  # refb optional at export
+        maneuver_classes = None
+
+    with strict_numerics():
+        engine.prepare(fit_reps)
+        for arm in arms:
+            if getattr(arm, "fit_report", None):
+                print(f"[resim] {arm.name} probes: {arm.fit_report}",
+                      flush=True)
+        t0 = time.perf_counter()
+        session = export_bundle(
+            engine.run(replay_reps), out, session_name,
+            corpora=corpora,
+            arm_ckpts={a.name: getattr(a, "ckpt", "") for a in arms},
+            maneuver_classes=maneuver_classes,
+            jpeg_quality=args.jpeg_quality)
+    wall_s = time.perf_counter() - t0
+
+    n_steps = sum(len(ep["steps"]) for ep in session["episodes"])
+    print(f"[resim] bundle {session_name!r}: {len(session['episodes'])} "
+          f"episode(s), {n_steps} step(s) in {wall_s:.1f}s -> {out}",
+          flush=True)
+    for a in session["meta"]["arms"]:
+        print(f"  {a['name']}: ADE {a['ade']} m | FDE {a['fde']} m | "
+              f"latency p50 {a['latency_p50']} ms | color {a['color']}",
+              flush=True)
+    print(f"[resim] serve with: python scripts/resim_app.py --port 8888 "
+          f"--sessions-root {Path(out).parent}", flush=True)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="TanitAD open-loop replay: 3-arm test & viz harness")
-    ap.add_argument("--mode", choices=("test", "viz"), required=True)
+    ap.add_argument("--mode", choices=("test", "viz", "export"), required=True)
     ap.add_argument("--arms", nargs="+", required=True,
                     metavar="name:ckpt[:pool|grid]")
     ap.add_argument("--data-root", required=True,
@@ -161,6 +204,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="leading fraction of each corpus used to fit "
                          "probes (episode-level split)")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--session-name", default=None,
+                    help="export mode: bundle title (default: --out dir name)")
+    ap.add_argument("--jpeg-quality", type=int, default=80,
+                    help="export mode: camera-frame JPEG quality (default 80)")
     ap.add_argument("--baseline", default=None,
                     help="baseline stats.json for regression compare "
                          "(test mode)")
@@ -211,7 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     engine = ReplayEngine(arms, device=device, batch_size=args.batch,
                           stride=args.stride, half=args.half,
                           fit_stride=fit_stride,
-                          emit_frames=args.mode == "viz" or bool(args.rrd))
+                          emit_frames=args.mode in ("viz", "export")
+                          or bool(args.rrd))
+
+    if args.mode == "export":
+        return _run_export(args, engine, arms, fit_reps, replay_reps,
+                           corpora, out)
 
     logger = None
     if args.mode == "viz" or args.rrd:
