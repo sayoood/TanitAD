@@ -124,23 +124,60 @@ class DinoAdapter(nn.Module):
         return self.proj(self.norm(tokens.mean(dim=-2)))
 
 
+class DinoGridAdapter(nn.Module):
+    """Spatially-faithful adapter: standardized tokens -> SpatialGridReadout.
+
+    Stage-2b fix (Sayed review 2026-07-11): the v1 mean-pool adapter destroys
+    the spatial token layout that the DINO-WM lineage (DINO-WM, EponaV2,
+    DINO-world) relies on — and that the main model keeps via its own
+    SpatialGridReadout. This adapter reuses THAT class unchanged (grid=4,
+    d_readout=128 -> out_dim 2048, mirroring the main stack's state geometry)
+    so the REF-A comparison isolates the ENCODER, not the readout. Accepts any
+    leading shape [..., N_tokens, D].
+    """
+
+    def __init__(self, n_tokens: int = 256, d_in: int = 768, grid: int = 4,
+                 d_readout: int = 128):
+        super().__init__()
+        from tanitad.models.readout import SpatialGridReadout
+        self.readout = SpatialGridReadout(n_tokens, d_in, grid=grid,
+                                          d_readout=d_readout)
+        self.out_dim = self.readout.out_dim
+
+    def forward(self, tokens: Tensor) -> Tensor:
+        lead = tokens.shape[:-2]
+        flat = tokens.reshape(-1, *tokens.shape[-2:])
+        return self.readout(flat).reshape(*lead, self.out_dim)
+
+
 class RefAModel(nn.Module):
     """Standardizer + adapter + the UNCHANGED shared operative predictor.
 
     encode / encode_window / predict mirror the WorldModel interface the
     trainer needs, with frozen-feature token grids replacing frames.
+    ``adapter_kind``: "grid" (stage-2b default for new runs — spatially
+    faithful, state_dim = readout out_dim 2048) or "pool" (v1 mean-pool,
+    kept for loading pre-revision checkpoints).
     """
 
     def __init__(self, pred_cfg: PredictorConfig | None = None,
                  d_dino: int = 768, state_dim: int = 768,
                  bottleneck: bool = False, sigreg_slices: int = 512,
-                 sigreg_beta: float = 1.0):
+                 sigreg_beta: float = 1.0, adapter_kind: str = "pool",
+                 n_tokens: int = 256):
         super().__init__()
+        assert adapter_kind in ("pool", "grid"), adapter_kind
         self.pred_cfg = pred_cfg if pred_cfg is not None \
             else refa_predictor_config()
-        self.state_dim = state_dim
+        self.adapter_kind = adapter_kind
         self.standardizer = FeatureStandardizer(d_dino)
-        self.adapter = DinoAdapter(d_dino, state_dim, bottleneck=bottleneck)
+        if adapter_kind == "grid":
+            self.adapter: nn.Module = DinoGridAdapter(n_tokens, d_dino)
+            state_dim = self.adapter.out_dim
+        else:
+            self.adapter = DinoAdapter(d_dino, state_dim,
+                                       bottleneck=bottleneck)
+        self.state_dim = state_dim
         # Imported, never copied: the comparison isolates the encoder axis.
         self.predictor = OperativePredictor(self.pred_cfg, state_dim)
         # A5 grounding — also the cheapest anti-collapse pressure on the

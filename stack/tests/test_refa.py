@@ -171,3 +171,31 @@ def test_ckpt_roundtrip_and_resume(tmp_path):
                        ck["model"]["standardizer.mean"])
     assert torch.equal(ck2["model"]["standardizer.std"],
                        ck["model"]["standardizer.std"])
+
+
+def test_grid_adapter_spatial_sensitivity():
+    """Stage-2b (Sayed review): the grid adapter must PRESERVE token layout.
+
+    Mean-pool is permutation-invariant (spatial info destroyed); the grid
+    adapter must not be. Also pins state_dim = readout out_dim (2048 at
+    full config; 16-token toy here) and window-shape handling.
+    """
+    import torch as t
+    from tanitad.refs.refa import DinoGridAdapter, RefAModel
+
+    t.manual_seed(0)
+    ad = DinoGridAdapter(n_tokens=16, d_in=32, grid=2, d_readout=8)
+    x = t.randn(3, 5, 16, 32)                      # [B, W, N, D]
+    out = ad(x)
+    assert out.shape == (3, 5, 32)                 # 2*2*8 = out_dim
+    assert out.shape[-1] == ad.out_dim
+    perm = t.randperm(16)
+    out_p = ad(x[..., perm, :])
+    assert not t.allclose(out, out_p, atol=1e-5), \
+        "grid adapter must be sensitive to token order (spatial layout)"
+
+    # RefAModel wiring: grid kind overrides state_dim with readout out_dim.
+    m = RefAModel(adapter_kind="grid", d_dino=768, n_tokens=256)
+    assert m.state_dim == m.adapter.out_dim == 2048
+    m2 = RefAModel(adapter_kind="pool")
+    assert m2.state_dim == 768                     # v1 unchanged (ckpt compat)

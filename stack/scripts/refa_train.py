@@ -207,7 +207,8 @@ def train(args) -> dict:
     torch.manual_seed(args.seed)
 
     pred_cfg = smoke_pred_config() if args.smoke else refa_predictor_config()
-    model = RefAModel(pred_cfg, bottleneck=args.bottleneck).to(device)
+    model = RefAModel(pred_cfg, bottleneck=args.bottleneck,
+                      adapter_kind=args.adapter).to(device)
     opt = torch.optim.AdamW(param_groups(model, args.lr), lr=args.lr,
                             betas=(0.9, 0.95), weight_decay=0.05)
 
@@ -347,7 +348,11 @@ def main(argv=None):
                     help="predictor LR warmup steps; adapter gets 10x (item 4)")
     ap.add_argument("--episodes", type=int, default=0, help="0 = all")
     ap.add_argument("--bottleneck", action="store_true",
-                    help="adapter GELU bottleneck variant")
+                    help="adapter GELU bottleneck variant (pool adapter only)")
+    ap.add_argument("--adapter", choices=("pool", "grid"), default="pool",
+                    help="pool = v1 mean-pool; grid = stage-2b spatial "
+                         "readout (Sayed review 2026-07-11 — use for all "
+                         "new comparison runs)")
     ap.add_argument("--log-every", type=int, default=50)
     ap.add_argument("--save-every", type=int, default=500)
     ap.add_argument("--seed", type=int, default=0)

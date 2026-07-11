@@ -58,11 +58,13 @@ def main():
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--feat-dir", required=True)
     ap.add_argument("--episodes", type=int, default=12)   # match d1_probe count
+    ap.add_argument("--adapter", choices=("pool", "grid"), default="pool",
+                    help="must match the checkpoint's adapter kind")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = RefAModel()
+    model = RefAModel(adapter_kind=args.adapter)
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
     model.load_state_dict(ck["model"])
     step = int(ck.get("step", -1))
