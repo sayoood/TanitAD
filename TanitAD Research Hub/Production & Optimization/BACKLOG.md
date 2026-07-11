@@ -23,6 +23,16 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
 
 ## P1
 
+3b. **ZipDepth evaluation as independent safety-envelope channel (Sayed-delivered 2026-07-11,
+   D-028 seam: ours; SECOND-STEP per Sayed — not Phase 0).** 6.1M params, 77 FPS TRT-fp16 on
+   Orin NX, open weights, affine-invariant (no metric scale). When picked up: (a) run on 4060 as
+   Orin proxy, measure latency + VRAM beside our 15 ms tick (do both fit an Orin budget
+   together?); (b) qualitative artifact assessment on our val routes vs Depth-Anything-v2
+   (Sayed flagged quality gaps — quantify before any safety-envelope claim); (c) metric-scale
+   plan (camera height + ground plane vs small metric adapter). Also: pseudo-depth teacher
+   candidate for Y-track (scale-free — no metric problem there).
+   See `../2026-07-11-sayed-papers-screening.md`.
+
 4. ~~**TensorRT fp16 engine from the ONNX path**~~ **PART-DONE / toolchain-blocked 2026-07-09.**
    `import tensorrt`→ModuleNotFoundError, ORT CPU-only → engine build not runnable on the dev box.
    Ran the **honest precursor** instead (fp16/bf16 casts the same weights a TRT-fp16 engine would):

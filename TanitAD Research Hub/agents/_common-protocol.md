@@ -30,6 +30,19 @@ Iterate at most **4** times, total wall-clock budget **4 h**, at most **25 web s
       run that is not yet analyzed in the hub gets a deep analysis THIS run (highest priority).
    d. Then the broader net: conferences, engineering blogs, dataset releases, GitHub, YouTube
       technical talks, regulator news. Prioritize impact on H0–H15 and current phase goals.
+   e. **Recency-first listing scan (D-028, 2026-07-11 — mandatory):** query-based search MISSES
+      papers <14 days old (indexing lag) and papers outside your fixed queries. Each run, scan the
+      raw arXiv listing pages (cs.CV / cs.RO / cs.AI "recent", last 14 days) by TITLE for:
+      (i) new AD benchmarks/datasets of ANY modality (incl. VQA/VLM benchmarks — their taxonomies
+      and data feed our scenario DB and probe suite even though we are not a VLM shop),
+      (ii) edge-deployable perception (depth/segmentation/detection on Orin-class hardware),
+      (iii) world-model / E2E-driving releases from competitor labs. Root cause on record: Sayed
+      hand-delivered AUTOPILOT-VQA (arXiv 2607.08745, 2 days old) and ZipDepth — both missed
+      because one was too fresh for query indexing and both sat outside every agent's query set.
+   **Seam ownership (D-028):** benchmark/dataset releases → Benchmarks & Eval owns, always.
+   Edge-perception efficiency papers → Production & Optimization owns, even when the topic is
+   perception. A paper that fits no agent still goes into the orchestrator screening digest —
+   "not my discipline" is never a reason for zero coverage.
    Adjacent-domain sweep (trajectory/mobility, robotics, aviation autonomy) at least monthly —
    HiT-JEPA was missed because it lives in the urban-computing community, not the AD literature.
 3. **ANALYZE** with post-doc rigor: what does this change for TanitAD? Which hypothesis does it

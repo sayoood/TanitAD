@@ -21,6 +21,15 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P1
 
+0. **AUTOPILOT-VQA probe-transfer (arXiv 2607.08745, Sayed-delivered 2026-07-11, D-028 seam: ours).**
+   Step 1: locate the Kaggle competition dataset, record license verdict (eval-use? research-use?)
+   in the ranked-dataset list. Step 2 (if license OK): fit A3-style calibrated probes from OUR 30k
+   latents onto their 9 safety-category labels (weather, road surface, entities, impact location…)
+   on a ≤500-clip subset — external-validity number for the inherent-safety edge on never-trained
+   real incident data. Falsifier: probe AUC ≈ chance → latents do NOT carry safety-relevant scene
+   variables → H-safety evidence weakened (report honestly). Resource: 4060, hours.
+   See `../2026-07-11-sayed-papers-screening.md`.
+
 3. **WP.29 UN ADS regulation paragraph-level extraction** — close-read
    ECE-TRANS-WP.29-2026-139e.pdf 1–2 h per run; map each requirement (ISMR, DSSAD, MRM…) to a
    TanitAD artifact / ledger row in REGULATION_TRACE.md. Non-blocking Phase 0; Phase-1 safety case.
