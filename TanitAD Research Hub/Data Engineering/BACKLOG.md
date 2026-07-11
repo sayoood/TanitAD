@@ -4,6 +4,16 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
+-1. **Data-mix-as-recipe (Sayed 2026-07-11 night: "generate the same data mix without pod1").**
+   Kill the single point of failure: (a) extract the episode MANIFEST (source clip IDs, config
+   hash, counts, mix ratio) from pod1's comma+physicalai epcaches post-30k → commit as
+   `stack/DATA_MANIFEST.json` (IDs only — no license/size issue); (b) `scripts/rebuild_cache.py`:
+   any pod self-provisions the exact corpus from origin (comma via public HF tars — already
+   works; physicalai via HF chunks + deterministic epcache build, verified by sampled episode
+   checksums vs pod1). Feeds the paper's reproducibility statement. Trigger incident: throttled
+   rsync off the training pod stalled the record run (2026-07-11 ~21:30) — caches must be
+   rebuildable, not only copyable.
+
 0. **R1 top-up to 2,000 (measured 2026-07-09: 1,926 reachable from cache, 74 short).** Fetch **2 more
    egomotion chunks** on the pod (~4 GB), re-run `physicalai_r1.py --target 2000` → clears 2,000. Then
    camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
