@@ -19,6 +19,18 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P1
 
+2d. **Semantic/strategic-label dataset survey (Sayed directive 2026-07-11, from the REF-B review):**
+   comma2k19 is highway-dominated — nav-command and target-behavior learning is signal-starved
+   (REF-B's strategic layer trains on route-geometry pseudo-labels that are ~all `follow`). Survey +
+   rank datasets with RICH semantic strategic/behavior labels for Phase-1 strategic/tactical
+   training AND richer pseudo-label validation: **nuPlan** (route/mission goals, closed-loop sim),
+   **DriveLM** (graph-QA on nuScenes/CARLA), **CoVLA** (language-annotated trajectories),
+   **L2D / Learning-to-Drive** (nav-instruction driving), **Talk2Car / nuScenes annotations**,
+   **AUTOPILOT-VQA** (behavior taxonomy, see Benchmarks P1.0), **Bench2Drive** (CARLA commands).
+   Per dataset: license class (train / eval-only / no), label taxonomy depth (nav command? maneuver?
+   intention? free text?), camera/calibration compatibility, size, ingest cost. Output: ranked-list
+   rows + a recommendation for ONE Phase-1 ingest. Resource: web + HF API, no GPU.
+
 2c. **Y-pilot-50 (Sayed directive 2026-07-09): YouTube dashcam pilot** — 50 diverse videos through
    the full Y0-Y2 pipeline (self-calibration -> canonicalize -> filter -> pseudo-actions); measure
    focal-recovery spread, action agreement r vs VO, A8, probe-fit vs comma. Strategy + falsifiers:
