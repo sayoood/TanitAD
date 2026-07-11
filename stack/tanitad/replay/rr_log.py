@@ -94,7 +94,9 @@ class RerunLogger:
                  connect_url: str | None = None,
                  app_id: str = "tanitad_replay",
                  maneuver_classes: tuple[str, ...] | None = None,
-                 jpeg_quality: int | None = 85):
+                 jpeg_quality: int | None = 85,
+                 grpc_port: int | None = None,
+                 grpc_only: bool = False):
         if not HAVE_RERUN:
             raise RuntimeError(
                 "rerun-sdk is not installed — `pip install rerun-sdk` "
@@ -113,9 +115,18 @@ class RerunLogger:
         if rrd is not None:
             rr.save(str(rrd))
         if serve is not None:
-            grpc_url = rr.serve_grpc(server_memory_limit="25%")
-            rr.serve_web_viewer(web_port=int(serve), open_browser=False,
-                                connect_to=connect_url or grpc_url)
+            # Single-proxied-port pods (e.g. only 8888 exposed on RunPod):
+            # grpc_only serves ONLY the data stream on `serve`, and the user
+            # opens the HOSTED viewer app.rerun.io/?url=<proxied stream> —
+            # no second port needed.
+            kw = {"server_memory_limit": "25%"}
+            if grpc_port is not None or grpc_only:
+                kw["grpc_port"] = int(grpc_port if grpc_port is not None
+                                      else serve)
+            grpc_url = rr.serve_grpc(**kw)
+            if not grpc_only:
+                rr.serve_web_viewer(web_port=int(serve), open_browser=False,
+                                    connect_to=connect_url or grpc_url)
             self.serve_url = connect_url or grpc_url
         rr.send_blueprint(self._blueprint())
         self._styled: set[str] = set()

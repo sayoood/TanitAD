@@ -173,6 +173,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="viz mode: serve the rerun web viewer on this port")
     ap.add_argument("--connect-url", default=None,
                     help="override the viewer's data URL (HTTP-proxy setups)")
+    ap.add_argument("--grpc-only", action="store_true",
+                    help="serve ONLY the data stream on the --serve port (no "
+                         "local web viewer) — for single-proxied-port pods; "
+                         "open app.rerun.io/?url=rerun+https://<proxied>/proxy")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--half", action="store_true",
                     help="fp16 autocast on CUDA")
@@ -216,7 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.mode == "viz" and rrd is None and args.serve is None:
             rrd = str(out / "replay.rrd")     # viz without sink = artifact
         logger = RerunLogger(rrd=rrd, serve=args.serve,
-                             connect_url=args.connect_url)
+                             connect_url=args.connect_url,
+                             grpc_only=args.grpc_only)
         if rrd:
             print(f"[replay] rerun artifact -> {rrd}", flush=True)
         if logger.serve_url:
