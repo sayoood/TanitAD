@@ -1,13 +1,31 @@
 # STATE — Data Engineering
 
-LAST_RUN: 2026-07-11 (Tuesday agent) · branch `agent/data-engineering-20260711` (worktree-isolated, D-026)
-QUALITY: full (G-A…G-C, G-E, G-H, G-D1, G-D2 met). Intake pkg 8✓ standalone; `test_calib` 3✓; no stack
-  file touched. Shared-file rows (SCENARIO_DATABASE SC-13, HYPOTHESIS_LEDGER, PROJECT_STATE §5) written
-  in this isolated worktree **and** mirrored verbatim in HANDOFF below — SCENARIO_DATABASE had
-  uncommitted Opponent edits in `main` at run start (concurrent-write race), so the orchestrator merges;
-  the HANDOFF guarantees nothing is lost if the merge can't auto-resolve.
+LAST_RUN: 2026-07-11 (Tuesday agent, TWO work items) · branch `agent/data-engineering-20260711`
+  (worktree-isolated, D-026; **rebased onto current main `a7563e0` this run** so the delta is a clean
+  fast-forward — the focal commit + the pm semantic-survey commit sit directly on main's tip).
+QUALITY: full (G-A…G-C, G-E, G-H, G-D1 met; G-D2 n/a — survey/spec, no new loader shipped this run).
+  pm run: intake `2026-07-11-semantic-label-survey/` 10✓ standalone; L2D probed on **real HF bytes**;
+  no stack file touched. am run: focal-invariance 8✓ (below). Ledger/DATASET_LANDSCAPE/KB/BACKLOG updated
+  in-worktree on the rebased base (no shared-file race this run — quiescent at commit time).
 
-## This run (2026-07-11)
+## This run — pm (2026-07-11): semantic/strategic-label dataset survey (Sayed directive, REF-B review)
+- **Sayed directive P1 #2d DONE** — comma2k19's `follow`-starved strategic supervision is **sourceable**.
+  Ranked survey (DATASET_LANDSCAPE Tier 1.5): **L2D #1 (train)**, nuPlan #2, CoVLA #3, Bench2Drive #4,
+  DriveLM #5, Talk2Car #6; AUTOPILOT-VQA → Benchmarks (D-028 seam); Intention-Drive (2512.12302) = WATCH.
+- **MEASURED (G-H) — L2D taxonomy probe on real HF bytes** (`probe_l2d_taxonomy.py`, truststore, $0, ~3 min):
+  `yaak-ai/L2D` **Apache-2.0 (public-claimable)**, 100k eps / **26.5 M frames** @10 fps, 6 surround cams +
+  map; **4,219 distinct compositional nav commands** (96 % distance / 74 % speed-limit / 61 % road-class
+  tokens) **co-registered with real ego actions** (`action.continuous`-3, `action.discrete`-2) + waypoints-10
+  + rich scene state. vs comma's ~1 effective strategic class. → **recommended Phase-1 strategic-supervision
+  ingest** (filtered slice). Caveats (P8): instructions map-templated (L1/L2 not L3); `front_left` needs
+  D-016; `action[3]→[steer,accel]` sign/unit decode pending; 90 TB → stream, don't clone.
+- **Increment (G-E):** `l2d_contract_map.py` (front-cam key, 3→2 action algebra, nav-command→class parser,
+  label-entropy metric, contract-row assembler) + `tests/test_l2d_contract_map.py` **10✓ offline** on the
+  measured schema + verbatim instructions. Note `2026-07-11-semantic-strategic-label-dataset-survey.md`.
+- **Falsifier pre-registered** for the L2D recommendation (backlog P1 #2e): a 200-ep decode must show a
+  sane `[steer,accel]` and `front_left` f_eff within ±25 % post-D-016, else L2D→EVAL-only, nuPlan→train pick.
+
+## This run — am (2026-07-11): focal-invariance validation (see `2026-07-11-focal-invariance-*` note)
 - **D-016 focal canonicalization VALIDATED on the trained encoder (G-H)** — first end-to-end evidence,
   not just arithmetic. Intake `incoming/2026-07-11-focal-invariance-validation/` (8✓). Controlled
   single-scene test on real Cosmos 120° clips + `ckpt_full.pt` (48 scenes, RTX 4060, 7.9 s, $0): the
@@ -33,6 +51,9 @@ QUALITY: full (G-A…G-C, G-E, G-H, G-D1, G-D2 met). Intake pkg 8✓ standalone;
   blocked** until the run terminates. Do NOT touch the pod for agent work.
 
 ## Next (backlog, priority order)
+0. **L2D loader (Phase-1 strategic supervision — the survey's recommendation, backlog P1 #2e):** cheap
+   pre-loader experiment first (200-ep decode → action-sanity + front-cam f_eff + label-entropy gap),
+   then `stack/tanitad/data/l2d.py` (Cosmos-mirror + D-016, filtered slice). HF stream + 4060, no pod.
 1. **Land per-clip intrinsics** (promoted — this run measured that wrong focal = ~10–15× drift):
    PhysicalAI `calibration/` per-clip focal replaces the nominal 120° in `physicalai.py`; per-video
    focal recovery for YouTube (Y1). Wire `assert_effective_focal` into each loader's data-card path.

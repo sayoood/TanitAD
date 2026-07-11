@@ -30,6 +30,14 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-11 (pm): Data Engineering (Tue) — **H7 / H12** data-availability evidence (no status change, P8):
+  the REF-B strategic head's `follow`-starvation (comma2k19 ~1 effective nav-command class) is
+  **sourceable** — **L2D** (`yaak-ai/L2D`, Apache-2.0), probed on real HF bytes, carries **4,219 distinct
+  compositional nav commands co-registered with real ego actions** (`action.continuous`-3, `action.discrete`-2)
+  + waypoints + 6 cams, 100k eps / 26.5 M frames — a real, public-claimable L1/L2 supervision corpus.
+  Recommended Phase-1 ingest (filtered slice). Strengthens H12 (command conditioning) supply and the H7
+  flywheel's *labeled-bridge* availability; no upgrade until a trained REF-B arm consumes it. See
+  `Data Engineering/Research/2026-07-11-semantic-strategic-label-dataset-survey.md`.
 - 2026-07-11: Data Engineering (Tue) — **H7** evidence (no status change, P8): **D-016 focal
   canonicalization validated end-to-end** on the trained encoder (measured, RTX 4060, $0) — using the
   correct per-camera intrinsics holds the SAME scene's encoding at cos ≥ 0.997 across a 25–100 % focal

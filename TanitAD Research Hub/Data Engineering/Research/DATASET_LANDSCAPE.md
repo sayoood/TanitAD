@@ -11,7 +11,9 @@
 > VALIDATED end-to-end on the trained encoder — using correct per-camera intrinsics keeps a scene's
 > encoding cos≥0.997 across a 25–100 % focal change vs cos 0.60 when ignored, ~10–15× drift; a
 > `assert_effective_focal` ingest guard now catches cameras with no FOV headroom. Every corpus row's
-> `f_eff→266` claim is therefore encoder-verified, not just nominal. Prior: 2026-07-09 R1 yield.).
+> `f_eff→266` claim is therefore encoder-verified, not just nominal. Prior: 2026-07-09 R1 yield.
+> **pm run 2026-07-11:** semantic/strategic-label survey (Sayed directive, REF-B review) → new **Tier 1.5**
+> below; **L2D probed on real HF bytes = the recommended Phase-1 strategic-supervision ingest**.).
 
 ## Tier 1 — in the Phase-0 pipeline
 
@@ -21,6 +23,23 @@
 | **Cosmos-Drive-Dreams** (`nvidia/PhysicalAI-Autonomous-Vehicle-Cosmos-Drive-Dreams`) | 5 843 RDS-HQ clips + **81 802** synth videos, 30 fps, 121-frame chunks | 7-cam rig (front_wide_120fov used), HD map, LiDAR, 4×4 poses | derived (ego 4×4 `vehicle_pose` → steer/accel) | **public (CC-BY-4.0)** | **high** (7 weathers: rain/snow/fog/night; intersections, VRUs) | ~2–3 h (**this run**) | **loaded** (D-014, this run) — public synthetic |
 | **PhysicalAI-AV** (`nvidia/PhysicalAI-Autonomous-Vehicles`) | 1 727 h, 25 countries, 2 500+ cities | multi-cam + radar + lidar | egomotion (poses → yaw-rate/accel) | **gated/confidential** (NVIDIA AV licence, internal-dev-only, 12-mo) | **very high** | ~3–4 h | **loaded** (D-012) — `data:physicalai` tag, **no public claim** |
 | **PhysicalAI-WorldModel-Synthetic-Scenarios** (`nvidia/PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios`) | **264 k clips / ~1 467 h / 8.3 TB**, 4K@24 fps; cut-in 32.9 % · veh–ped 21.1 % · lanechange 12.9 % · ped 12.4 % · weather-deg 9.2 % · nudging 8.8 % · emergency-veh 2.7 % | 4-cam fwd + 7-cam 360° fisheye + per-cam VLM captions + scene metadata | **⚠ NO ego pose/actions on card → IDM (H7) or video-only** | **OpenMDW-1.1 — UNGATED** (verified 2026-07-09; *preliminarily public*, proposed D-022, firewall held) | high (targeted long-tail) | **UNKNOWN** — near-zero IF poses exist; else IDM-gated (H7) | **candidate** (license✔, pose-availability = gating question) — H6/H15/D9 long-tail |
+
+## Tier 1.5 — semantic / strategic-label corpora (REF-B strategic head; Sayed directive 2026-07-11)
+
+> Ranked by **label depth (L0 geometry → L1 nav-command → L2 maneuver → L3 intention/QA) × action
+> co-registration × public-claim license**. These supervise the route→maneuver→intention hierarchy,
+> not perception boxes. Firewall unchanged (public numbers = comma2k19 + Cosmos-DD + **L2D**).
+
+| Corpus | Size | Label depth | Actions co-reg? | License class | Cost→batch | Status / role |
+|---|---|---|---|---|---|---|
+| **L2D** (`yaak-ai/L2D`) | 100k eps / 26.5 M fr / 90 TB, 10 fps, 6 surround cams @1080×1920 + map | **L1+L2** — 4,219 nav cmds (96 % dist / 74 % speed-limit / 61 % road-class), U-turn/roundabout/turn/lane-change/reverse; `waypoints`-10 | **yes** — `action.continuous`-3 + `action.discrete`-2 (real) | **public (Apache-2.0)** | ~4–6 h (LeRobot parquet + video + D-016) | **candidate — RECOMMENDED Phase-1 ingest** (probed real bytes 2026-07-11; filtered-slice stream) |
+| **nuPlan** (`motional/nuplan`) | 1 282 h / 16 TB sensor subset, 4 cities, 8 cam + 5 lidar | L1 — mission goal + map-derived route centerline; agent tracks | yes (ego + tracks) | academic-free / commercial-lic (research/NC for us) | ~6 h | candidate — strongest *route/mission* signal; heavy, planning-centric (Bench&Eval link) |
+| **CoVLA** (`turingmotors`, 2408.10845) | 10k clips / 80 h, Tokyo, front cam | L2+L3 — frame captions of maneuvers + future trajectories | **yes** (actions + traj) | academic-only (NC) | ~4 h | candidate — EVAL / pseudo-label validation (no public claim) |
+| **Bench2Drive** (`Thinklab-SJTU`) | 1k–10k CARLA clips, 44 scenarios | L2+L3 — full-stack planning/behavior VQA | yes (CARLA sim) | **public (Apache-2.0)** | ~4 h (sim) | candidate — EVAL closed-loop; pairs with our CARLA arm |
+| **DriveLM** (`OpenDriveLab`, ECCV24) | 196k keyframes (nuScenes) + 5,134 CARLA routes | **L3** — graph VQA perception→pred→plan | via nuScenes/CARLA | code Apache-2.0 / **text CC-BY-NC-SA** | ~5 h | candidate — richest L3 reasoning; NC text → EVAL |
+| **Talk2Car** (`KU Leuven`) | 11,959 cmds / 850 nuScenes vids | L1 — object-referral commands | via nuScenes | nuScenes-derived (NC) | ~4 h | probe-only — command-grounding (H12), NC |
+| **AUTOPILOT-VQA** (2607.08745) | — (fresh) | L3 — behavior taxonomy | — | unverified | — | **Benchmarks & Eval owns** (D-028 seam) — defines our strategic class set |
+| **Intention-Drive** (2512.12302) | — (2026) | **L1→L3 hierarchy** (atomic cmd → abstract intention) | benchmark | 2026 release | — | WATCH — mirrors REF-B strategic→intention ladder; eval target |
 
 ## Tier 2 — real urban corpora (H4 arm-B / H7 scale-up / D8 OOD)
 

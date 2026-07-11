@@ -22,17 +22,18 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P1
 
-2d. **Semantic/strategic-label dataset survey (Sayed directive 2026-07-11, from the REF-B review):**
-   comma2k19 is highway-dominated — nav-command and target-behavior learning is signal-starved
-   (REF-B's strategic layer trains on route-geometry pseudo-labels that are ~all `follow`). Survey +
-   rank datasets with RICH semantic strategic/behavior labels for Phase-1 strategic/tactical
-   training AND richer pseudo-label validation: **nuPlan** (route/mission goals, closed-loop sim),
-   **DriveLM** (graph-QA on nuScenes/CARLA), **CoVLA** (language-annotated trajectories),
-   **L2D / Learning-to-Drive** (nav-instruction driving), **Talk2Car / nuScenes annotations**,
-   **AUTOPILOT-VQA** (behavior taxonomy, see Benchmarks P1.0), **Bench2Drive** (CARLA commands).
-   Per dataset: license class (train / eval-only / no), label taxonomy depth (nav command? maneuver?
-   intention? free text?), camera/calibration compatibility, size, ingest cost. Output: ranked-list
-   rows + a recommendation for ONE Phase-1 ingest. Resource: web + HF API, no GPU.
+2e. **L2D loader — Phase-1 strategic-supervision ingest (PROMOTED from the 2026-07-11 survey; the
+   recommended fix for REF-B's `follow`-starvation).** Build `stack/tanitad/data/l2d.py` mirroring the
+   Cosmos loader + D-016: `front_left`→`focal_crop_resize` (fixed KIA rig), stream a **filtered slice**
+   (non-`follow` maneuver tail, ~2,000 eps balanced over the 4,219 task classes), `CORPUS_META`≡comma
+   (D-017 I7), and the `l2d_contract_map.py` action/instruction helper already shipped (intake
+   `2026-07-11-semantic-label-survey/`, 10✓). **First cheap experiment (pre-loader):** decode 200 eps →
+   (a) confirm `action.continuous[3]→[steer,accel]` is physically sane (sign/unit — the recommendation's
+   falsifier); (b) `front_left` f_eff after D-016 within ±25 % (cos≥.92); (c) measure the label-entropy
+   gap (comma ~1 class vs L2D effective-#classes) to quantify REF-B starvation numerically. Falsifier
+   fail → L2D drops to EVAL-only, nuPlan becomes the train pick. Resource: HF stream + 4060, no pod.
+   ~~2d Semantic/strategic-label survey (Sayed directive)~~ **DONE 2026-07-11** → L2D #1 recommendation
+   (Apache-2.0, 4,219 nav cmds + real actions), ranked note `2026-07-11-semantic-strategic-label-dataset-survey.md`.
 
 2c. **Y-pilot-50 (Sayed directive 2026-07-09): YouTube dashcam pilot** — 50 diverse videos through
    the full Y0-Y2 pipeline (self-calibration -> canonicalize -> filter -> pseudo-actions); measure

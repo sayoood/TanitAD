@@ -3,6 +3,24 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-11] [measured] **L2D (`yaak-ai/L2D`, LeRobot) probed on real HF bytes** — the fix for REF-B's
+  `follow`-starved strategic head. **100k eps / 26.5 M frames @10 fps / Apache-2.0 (PUBLIC-claimable)**,
+  6 surround cams @1080×1920 + map view. **4,219 distinct compositional nav commands** (96 % distance /
+  74 % speed-limit / 61 % road-class tokens; U-turn/roundabout/turn/lane-change/reverse primitives)
+  **co-registered with real ego actions** (`action.continuous`-3, `action.discrete`-2) + `waypoints`-10 +
+  per-frame scene state (lanes/road/surface/max_speed/precip/conditions/lighting). vs comma2k19's ~1
+  effective strategic class. Caveats (P8): instructions are map-routing **templated (L1/L2, not L3
+  intention)**; `front_left` needs D-016 canonicalization; `action.continuous[3]→[steer,accel]` needs a
+  sign/unit decode; 90 TB → stream a filtered slice. **Recommended Phase-1 ingest.** — impact: H7/H12/REF-B
+  — `2026-07-11-semantic-strategic-label-dataset-survey.md`, probe `l2d_taxonomy_result.json`
+- [2026-07-11] [survey] **Semantic/strategic-label dataset ranking** (Sayed directive, REF-B review): by
+  label-depth × action-co-registration × public-license — **L2D #1 (train, Apache-2.0)**; nuPlan #2
+  (route/mission, heavy, academic-free); CoVLA #3 (L2/L3 captions+traj, NC→eval); Bench2Drive #4
+  (Apache-2.0 but CARLA-sim, eval); DriveLM #5 (richest L3 graph-VQA, text CC-BY-NC-SA→eval);
+  Talk2Car #6 (object-referral, NC); **AUTOPILOT-VQA → Benchmarks owns** (D-028 seam). New WATCH:
+  **Intention-Drive** (2512.12302) — atomic-cmd→abstract-intention hierarchy = REF-B's exact ladder,
+  eval target. — impact: H7/H12/D-012/REF-B — same note §3/§5
+
 - [2026-07-11] [measured] **D-016 focal canonicalization VALIDATED on the trained encoder** (first
   end-to-end evidence, not just arithmetic). Controlled single-scene test on real Cosmos 120° clips +
   `ckpt_full.pt` (48 scenes, RTX 4060, 7.9 s, $0): the SAME scene at focal z·f0, canonicalized with the
