@@ -61,7 +61,16 @@ Format per item: goal / method / resource / expected number / falsifier.
    + protocol hardness vs (b) true encoder deficit. If CV lands ~1–2 m on comma highway, the
    linear-probe gap is real work; if CV is also ~5–7 m, D1's threshold needs redefining as
    baseline-relative (gate honesty). Plus unit audit ("camera" unit semantics vs metres).
-3e. **H16 active depth interrogation — offline trigger probe (Sayed's idea 2026-07-11).**
+3e0. **Resolution-sensitivity probe (Sayed question 2026-07-11 night: does 256px cap the latents?).**
+   Mechanisms at risk: sub-patch far objects (vehicle@80m ≈ 10-15px < patch 16 → long-range
+   anticipation cap: LAL-v2/LOPS/SC-01 at range), far lane geometry (D1@2s contributor), signage
+   content (Phase-2 only). Experiment: encode val episodes at 128 / 256 / interpolated-384
+   (ViT pos-emb interpolation, no retrain for the directional read), compare D1-probe ADE per
+   horizon + D2 dir-acc + a far-hazard LAL slice. Expected: 384 helps mostly at ≥2s horizons and
+   far-hazard onset; falsifier: flat deltas → 256 is not the binding constraint, close the
+   question. Roadmap position: 256 global → Phase-1 multi-cam 256-320 → H16 native-res ROI
+   channel (source frames are 1164×874 = 4.5× linear detail unseen by the encoder) → uniform
+   bump ONLY if measured gaps survive. Resource: 4060/idle pod, hours, no retrain.
    Goal: cheapest possible falsification pass on F1 BEFORE any build. Method: replay SC-01 3-seed
    telemetry + the D8 degraded-pairs episodes; compute the H15 per-sector σ trace from an existing
    checkpoint; ask "would a σ-threshold trigger have fired on the critical sector BEFORE the
