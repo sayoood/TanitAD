@@ -15,8 +15,10 @@
   protocol now real code** (`e9b2491`, gates.py, mean over 8 splits + 95 % CI). **D-028 ADOPTED** (`7cc210f`),
   **D-022 gap resolved**, **REF-B $40 envelope confirmed by Sayed in chat** (`5dd08c2`), **H16 active-depth-
   interrogation banked** (`7cd9d7b`). Burn on plan $0/$120. **W30 hygiene debt CLEARED** (`1285524`); **Data-Eng
-  no-show REVERSED** (ran 15:14). **TOP RISKS now: (1) pod3 volume quota mis-sized 50→needs 300 GB — Sayed
-  console action, blocks REF-B data staging; (2) the step-30k decision-grade verdict STILL pending — 3rd report.**)
+  no-show REVERSED** (ran 15:14). **pod3 volume quota RESOLVED by Sayed 2026-07-11** (expanded to 300 GB from
+  his side; REF-B data staging resumes automatically, wget continues from 34/88 GB → REF-B training GO now
+  only awaits Sayed's rev2 look). **TOP RISK now: the step-30k decision-grade verdict STILL pending — 3rd report
+  (ETA ~22:15); do not over-read the confounded REF-A 14.2-vs-7.5 gap until P2 de-confounders land.**)
 - **Pod2 plan of record (Sayed-approved):** Phase A DONE (repo+stack+178-test parity; CARLA 0.9.16
   server+client version-matched; step-8k ckpt relaying). Phase B: **CARLA RUNS in `-nullrhi`**
   (Town10HD, sync stepping ~1400 ticks/s) — camera RENDERING is host-blocked (compute-only vulkan:
