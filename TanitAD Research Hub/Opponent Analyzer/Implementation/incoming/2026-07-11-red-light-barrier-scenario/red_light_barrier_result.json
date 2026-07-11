@@ -1,0 +1,23 @@
+{
+  "scenario": "SC-14 red_light_barrier",
+  "run": "opponent run #4",
+  "wallclock_date": "2026-07-11",
+  "hardware": "local (CPU numpy design-oracle)",
+  "wall_clock_s": 0.2,
+  "cost_usd": 0.0,
+  "violation_rate": {
+    "rule_barrier": 0.0,
+    "soft_prior": 1.0
+  },
+  "barrier_stop_distance_m": 1.1,
+  "okri_toward_crosser": {
+    "rule_barrier": 11632.9,
+    "soft_prior": 63764.8,
+    "reduction_pct": 81.8
+  },
+  "soft_prior_linecross_speed_mps": {
+    "clearance_0m": 3.25,
+    "clearance_12m": 10.4
+  },
+  "note": "design oracle (P8), not a measurement of the TanitAD checkpoint; reuses the SC-04 barrier-vs-soft-prior oracle. Motivated by 2 major-operator FACT sources: Waymo-Dallas red-light + Tesla EA26002 (80 traffic-violation incidents)."
+}

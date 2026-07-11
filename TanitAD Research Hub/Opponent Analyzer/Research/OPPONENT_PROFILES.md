@@ -2,7 +2,10 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2 deltas below, tagged **Δ 07-24**).
+> Created 2026-07-17 (v1). Last full sweep: **run #4, real wall-clock 2026-07-11** (deltas tagged
+> **Δ 07-11**; narrative-clock artefact — run #2's deltas are tagged Δ 07-24 but run #4 is most
+> recent). New this run: **Zoox** profile. Note: run #3 (874f78e, unmerged) added the Waymo-6th-recall /
+> Wayve-Stellantis / Pony-4-cities / AlpaGym deltas + FMVSS-135 — merge it before this branch.
 
 ---
 
@@ -13,8 +16,15 @@
 - **Business (FACT):** **Series D $1.2 B (Feb 2026), $8.6 B** post-money; **$1.5 B** total secured incl.
   Uber milestone capital; investors Microsoft/NVIDIA/Uber + Mercedes/Nissan/Stellantis. London robotaxi
   trials 2026; supervised consumer autonomy from 2027; 10+ markets targeted.
+- **Δ 07-11 (FACT):** decisive pivot to **L4 robotaxi** — **Stellantis + Wayve + Uber** partnership
+  (June 2026, jointly develop/deploy L4 across Europe/NA) + **Wayve × Nissan** prototype on **NVIDIA
+  DRIVE Hyperion** for Uber **Tokyo** pilots (late-2026); London commercial trials 2026. Wayve is
+  converting its foundation-model/GAIA-3 story into a **multi-OEM L4 deployment on NVIDIA compute.**
+  (INFER) This raises Wayve's exposure to the exact L4 edge cases in our scenario DB while the on-car
+  driver stays monolithic E2E and GAIA-3 stays an *offline* edge-case generator (not in-loop).
 - **Strengths (INFER):** talent + capital density; UK/EU regulatory access; genuine multi-country
-  generalization data; strong generative-WM data factory.
+  generalization data; strong generative-WM data factory; now a **multi-OEM (Stellantis/Nissan) +
+  Uber distribution** channel.
 - **Exploitable weaknesses:** generative-**pixel** WM is compute-hungry and used **offline**, not in the
   loop (W-05); on-car driver is monolithic E2E — **no hierarchy, no imagination-in-the-loop, no
   self-monitoring guarantee** (W-04 adjacent); L2+/robotaxi split spreads focus.
@@ -52,6 +62,9 @@
 - **Δ 07-24 (FACT):** robotaxi fleet now **exceeded 1,700 units** (toward the raised 3,500 target); added
   **Guangzhou**; **raised** 2026 robotaxi-revenue and fleet targets on record Q1. Growth real but the
   revenue-vs-fleet gap (W-06) is unchanged — $8.6 M robotaxi rev against a 1,700+ (→3,500) fleet.
+- **Δ 07-11 (FACT):** 2026 fleet goal lifted to **3,500** (now **>1,700**); markets add **Singapore,
+  South Korea, Qatar**. Q1'26 robotaxi rev **$8.7 M** → the revenue-vs-fleet gap (**W-06**) is
+  unchanged — growth is geographic, not margin. — https://www.bloomberg.com/news/articles/2026-05-26/pony-ai-lifts-2026-robotaxi-fleet-goal-to-3-500-on-fast-growth
 - **Strengths (INFER):** fleet scale, China + Middle East + first-mover EU footprint, steep growth.
 - **Exploitable weaknesses:** **thin unit economics** vs fleet (W-06); same compute-heavy multi-sensor
   stack (W-05); geopolitics limits Western data/market access.
@@ -120,11 +133,21 @@
   property-only, 1 hospitalization, **2 involving teleoperators**). Miami robotaxi launched into rain
   (2026-07-03) — a live stress of exactly the open case. This is the strongest single validation of our
   H11/H15/H2 axis in the field.
+- **Δ 07-11 (FACT):** (1) **Houston fatality (2026-06-21)** — a Model 3 under automated driving crossed
+  a lawn and **rammed a house, killing 76-yo Martha Avila in her living room**; NHTSA special crash
+  investigation opened 06-23 (46 Tesla ADS/ADAS special investigations over the decade, "more than a
+  dozen" with a fatality). (2) A **second, distinct NHTSA docket** clarified: **EA26002** (opened
+  2025-10-07, ~**2.88 M** FSD vehicles) is the **traffic-law-violation** EA — **80 incidents** (from
+  58) of **red-light running / illegal turns / oncoming-traffic entry**, **14 crashes / 23 injuries**,
+  fines ≤ $139.4 M — SEPARATE from the **visibility EA** (3.2 M, degradation-detection). So Tesla now
+  spans **two** open weaknesses: W-04 (visibility) *and* **W-03/SC-14 rule compliance.**
 - **Strengths (INFER):** fleet-data scale, vertical integration, cost focus.
 - **Exploitable weaknesses:** **no calibrated epistemic uncertainty** → confident-when-blind (W-04);
-  camera-only sensing; monolithic E2E, no self-monitoring guarantee.
+  **rule-compliance failures at scale** (red-light/illegal-turn, W-03/SC-14); camera-only sensing;
+  monolithic E2E, no self-monitoring guarantee.
 - **What would beat them:** H11 self-monitoring (degraded-visibility AUROC) + H15 epistemic σ + H2
-  sensor-modality steering (radar fallback) — exactly the axis their open NHTSA case is about.
+  sensor-modality steering (radar fallback) for W-04; **H9 inherent rule-barrier (violation-rate = 0,
+  SC-14)** for the red-light docket — exactly the axes their two open NHTSA cases are about.
 
 ## Avride  (US/intl · Uber robotaxi partner · Yandex SDG lineage)  — emerging player (new 2026-07-24)
 - **Approach (FACT/INFER):** self-driving stack spun out of Yandex's SDG group, deployed via **Uber** in
@@ -141,14 +164,37 @@
 - **What would beat them:** prove excellence on the *mundane* longitudinal/lateral tasks (SC-13) that
   their ODI flags — the least glamorous but most damning ground — at ~261 M params.
 
+## Zoox  (US · Amazon · purpose-built driverless robotaxi)  — emerging player (new 2026-07-11)
+- **Approach (FACT):** Amazon-owned; **purpose-built, bidirectional, steering-wheel-free** robotaxi
+  (not a retrofit) → requires an **FMVSS exemption** to operate commercially (petition ≤2,500
+  vehicles, under NHTSA review late-June 2026). Multi-sensor stack.
+- **Business (FACT):** Amazon-funded (acquired 2020); pre-commercial (no paid driverless rides
+  pending the exemption); test/early-rider ops in Las Vegas, SF, Austin, etc.
+- **Safety (FACT):** **recalled 332 robotaxis (2026-12-23 filing)** — software could **cross the
+  yellow centre line and stop in front of oncoming traffic near intersections** (bug surfaced
+  2025-08-26 on a wide right turn into the opposing lane; **63 crossing instances** by Dec-5);
+  **3rd software recall in ~8 months.** — https://techcrunch.com/2025/12/23/zoox-issues-software-recall-over-lane-crossings/
+- **Strengths (INFER):** Amazon capital + logistics; clean-sheet vehicle designed for autonomy;
+  no legacy-driver UX compromise.
+- **Exploitable weaknesses:** **wrong-side / oncoming-lane entry + bad intersection stop-placement**
+  (2nd FACT source for **SC-11**, and SC-08 family) — a directional/rule-barrier failure; recall
+  cadence signals stack instability; FMVSS-exemption dependence = a distinct regulatory-risk surface.
+- **What would beat them:** **H9 directional/lane barrier** (contra-flow excursion bounded by
+  imagined oncoming occupancy, SC-11) + **H15** imagined oncoming risk before any lane commit, proven
+  at ~261 M — the oncoming-lane class their recall exposes.
+
 ---
 
 ### Cross-field one-liner (INFER)
 Nobody occupies our Pareto point — **hierarchical latent world model, ~261 M params, data-efficient,
-real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** The 07-24
-sweep made the case *stronger still*: the failures multiplied and moved down-market — Waymo's **second
-recall** + a Dallas **red-light**, Tesla's **3.2 M-vehicle** EA, and a **new entrant (Avride) under
-investigation for basic competence** — while "world model" spread to *everyone* (Momenta's R7 RL WM,
-Metis's efficient WAM, NVIDIA's shipped Alpamayo). Our moat is now unambiguously **hierarchy +
-compute-normalized efficiency (CNCE) + in-loop imagination (H15) + guaranteed self-monitoring (H11)** —
-none of which any tracked opponent demonstrates together — proven on *their own* documented edge cases.
+real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** Run #4
+(2026-07-11) hardens the case: the failures keep multiplying, moving **down-market to basic
+competence** and **across operators** — a Tesla **fatality** (Houston) + a **second Tesla docket
+(EA26002, 2.88 M veh, red-light/illegal-turn)**, **Zoox's third recall** (oncoming-lane), on top of
+Avride's **basic-competence ODI** and Waymo's construction-zone recalls. The same two hard classes now
+have **two major-operator FACT sources each** — red-light/rule-barrier (Waymo + Tesla → SC-14) and
+oncoming-lane (Waymo + Zoox → SC-11) — which is exactly what turns a scenario into a public
+excellence claim. Meanwhile "world model" spread to *everyone* (Momenta R7, Metis, GigaWorld-Policy,
+shipped Alpamayo). Our moat is unambiguously **hierarchy + compute-normalized efficiency (CNCE) +
+in-loop imagination (H15) + guaranteed self-monitoring (H11)** — none of which any tracked opponent
+demonstrates together — proven on *their own* documented edge cases.

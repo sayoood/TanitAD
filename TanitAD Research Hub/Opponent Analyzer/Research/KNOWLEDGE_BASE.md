@@ -3,6 +3,38 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
+> **Ordering is by RUN, not date-string** (narrative-clock artefact): the run-#4 entries below are
+> real-wall-clock 2026-07-11 (most recent) and go on top. **Note:** run #3 = branch
+> `worktree-agent-opponent-20260710` (874f78e, 07-10, unmerged) — it owns **SC-13 stationary-lead**
+> (collision 0.000 vs 0.429) + the **FMVSS-135 H11 tailwind**; run #4 is additive (SC-14 + 2nd-source
+> evidence). Merge 874f78e before this branch.
+
+- [2026-07-11·run#4] [Tesla/NHTSA] FACT — a Tesla Model 3 under automated driving crossed a lawn and
+  rammed a Houston-area house (**2026-06-21**), **killing 76-yo Martha Avila in her living room**;
+  NHTSA opened a **special crash investigation 2026-06-23** (context: **46** Tesla ADS/ADAS special
+  crash investigations over the decade, "more than a dozen" with ≥1 fatality) — impact: **W-04
+  adjacent (confident-when-wrong loss of control); strongest single field instance** — https://fortune.com/2026/06/23/tesla-autopilot-nhtsa-investigation-houston-crash-robotaxi/
+- [2026-07-11·run#4] [Tesla/NHTSA] FACT — **EA26002** (traffic-violation EA, *distinct* from the
+  visibility EA run #3 cited): opened **2025-10-07**, ~**2.88 M** FSD vehicles; incidents **58→80 by
+  Dec-2025** (62 complaints / 14 field reports / 4 media): **red-light running, illegal turns,
+  oncoming-traffic entry**; **14 crashes / 23 injuries**; data deadline 2026-03-09; fines ≤ **$139.4
+  M** — impact: **second major-operator FACT source for W-03 / SC-14 red-light rule-barrier** — https://electrek.co/2026/02/23/tesla-nhtsa-fsd-traffic-violation-investigation-second-extension/
+- [2026-07-11·run#4] [Zoox/NHTSA] FACT — **NEW opponent.** Zoox (Amazon) recalled **332 robotaxis
+  (2026-12-23 filing)** — software could **cross the yellow centre line / stop in front of oncoming
+  traffic near intersections** (63 crossing instances by Dec-5); **3rd software recall in ~8 months**;
+  FMVSS exemption (≤2,500 veh) under NHTSA review late-June 2026 — impact: **new profile; second FACT
+  source for SC-11 wrong-side/oncoming-lane; SC-08 stop-placement family** — https://techcrunch.com/2025/12/23/zoox-issues-software-recall-over-lane-crossings/
+- [2026-07-11·run#4] [arXiv] FACT/INFER — **GigaWorld-Policy (2603.17240, open-gigaai)** efficient
+  action-centered WAM (**9× faster than Motus, +7%** on real robots; open-source) — same skip-rollout
+  efficiency lever as Metis, **robotics not AD** (watch for an AD port); **2605.07514** WAM
+  dynamic-consistency *diagnostic* supports our H11 self-monitor thesis; WM surveys 2606.00133 /
+  2603.09086 — impact: **"world model" = table stakes; moat = hierarchy+CNCE+imagination+self-monitoring** — https://arxiv.org/abs/2603.17240
+- [2026-07-11·run#4] [Opponent Analyzer] INFER (design-oracle, P8) — **SC-14 red-light barrier** shipped
+  (intake, **11/11 tests**; reuses the SC-04 barrier oracle): **violation rate rule_barrier 0.0 /
+  soft_prior 1.0** over the apparent-clearance sweep; barrier stops 1.1 m before the line and is
+  invariant to the temptation while the soft prior's line-crossing speed grows **3.2→10.4 m/s**; OKRI
+  toward the occluded crosser **−82%** at 4 B vs 15 B. Now **two** major-operator FACT sources
+  (Waymo-Dallas + Tesla EA26002) — impact: **W-03/H9/H15; SC-14 → spec-drafted** — see `2026-07-11-opponent-sweep-w5.md`
 
 - [2026-07-24] [Avride/NHTSA] FACT — NHTSA ODI opened an investigation (**2026-05-08**) into **Avride**
   (Uber robotaxi partner, Yandex SDG lineage): **16 crashes + 1 minor injury**, all tied to **"the

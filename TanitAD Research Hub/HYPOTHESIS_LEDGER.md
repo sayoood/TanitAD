@@ -29,6 +29,23 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-11 (run #4, real wall-clock; additive to run #3 = 874f78e, unmerged): Opponent Analyzer —
+  competitive-evidence deltas (no status *upgrade*; design-oracle numbers only, nothing measured on
+  our stack, P8). **H9/H15/H6** gain a shipped scenario: **SC-14 red-light barrier** intake pkg
+  (W-03 → H9/H15; **11/11 offline tests**), which **reuses the SC-04 barrier-vs-soft-prior oracle**.
+  Design oracle: **violation rate rule_barrier 0.0 / soft_prior 1.0** over the apparent-clearance
+  sweep; the barrier stops 1.1 m before the line and is invariant to the temptation while the soft
+  prior's line-crossing speed grows **3.2→10.4 m/s**; OKRI toward the occluded crosser **−82%** at
+  4 B vs 15 B. (Run #3, 874f78e, separately ships **SC-13 stationary-lead**: collision rate
+  imagination 0.000 / classifier_react 0.429, +3.10 s brake lead — H15/H9; merge that first.)
+  **H0/H6** reinforced (external): a **Tesla fatality** (Houston, 2026-06-21) + a **second distinct
+  Tesla docket EA26002** (2.88 M veh, 80 traffic-violation incidents: red-light/illegal-turn, 14
+  crashes/23 injuries) → the rule-barrier class (SC-14) now has **two** major-operator FACT sources
+  (Waymo + Tesla); **Zoox** (new tracked opponent) recalled 332 robotaxis for oncoming-lane crossing →
+  **two** FACT sources for SC-11 (Waymo + Zoox). **H1/H3/H5 wedge** unchanged: **GigaWorld-Policy**
+  (open-source efficient WAM) shares Metis's no-rollout lever but is robotics, flat, no hierarchy/
+  self-monitoring/CNCE. See `Opponent Analyzer/Research/2026-07-11-opponent-sweep-w5.md` + updated
+  catalog/profiles/scenario DB.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

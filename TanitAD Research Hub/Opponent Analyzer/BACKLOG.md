@@ -6,16 +6,13 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
 
 ## P0 — next run
 
-1. **SC-13 "Stationary-object / same-lead" scenario authoring (W-08, Avride)** — NEW top item after
-   the 2026-07-24 Avride NHTSA ODI finding (16 crashes: lane-change / same-lane / stationary-object).
-   Deliverable: scenario spec + telemetry oracle (mirror stop_arm_gate/work_zone_phantom) + intake pkg
-   with passing tests; SCENARIO_DATABASE SC-13 → `spec-drafted`. **Cheapest high-value item:** reuses the
-   comma2k19 loader (real stopped-lead segments, license-clean) + LAL-v2/OKRI hooks. Metric: OKRI + LAL-v2
-   lead time + min-TTC; H15 imagination-vs-detection lead time. Falsifier: lead time ≤ detection baseline
-   on matched segments ⇒ H15 advantage unproven here.
-2. **SC-14 "Red-light barrier" spec** — near-free once SC-04 integrates (reuses the stop-line barrier
-   oracle; H9 violation-rate=0). Author after SC-13 if budget allows.
-3. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
+1. **SC-11 "Oncoming-lane barrier" spec** — now the cheapest high-value item (**2 FACT sources**:
+   Waymo ODI + **Zoox 332-veh recall**, run #4). Reuses the barrier oracle (directional/lane barrier
+   instead of stop-line); H9 contra-flow excursion bounded by H15 imagined oncoming occupancy.
+   Deliverable: scenario spec + telemetry oracle + intake pkg with passing tests; SCENARIO_DATABASE
+   SC-11 → `spec-drafted`. Falsifier: a directional barrier that still commits to the oncoming lane
+   on an "ambiguous" marking ⇒ oracle mis-specified.
+2. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
    step 6500: naive relative imag-error AUROC 0.34 inverted / 0.54 weather axis — falsifier
    fired, recorded in `stack/experiments/p0-d8-preview/NOTE.md`). Next experiment:
    **matched-pairs weather test** — pair cosmos clips by base clip id (same scene, different
@@ -46,6 +43,13 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    which TanitAD gates cover them, where coverage is zero (those become new scenario items).
 
 ## Done / retired
+- (run #4, 2026-07-11) **SC-14 red-light barrier** shipped via intake (**11 tests**; violation rate
+  rule_barrier 0.0 / soft_prior 1.0; soft line-cross 3.2→10.4 m/s; OKRI −82%); **Zoox** profiled (new
+  opponent, SC-11 2nd source); **Tesla** Houston fatality + EA26002 (SC-14 2nd source); GigaWorld-Policy
+  screened. Deferred SC-13 to run #3 (874f78e) on discovering the duplicate.
+- (run #3, 874f78e branch, pending merge) **SC-13 stationary-lead scenario** shipped via intake
+  (collision rate imagination 0.000 / classifier_react 0.429; +3.10 s brake lead); **FMVSS-135 H11
+  tailwind**; Avride ODI enrich.
 - (2026-07-24-run) **Stop-Arm Gate scenario (SC-04, W-03)** shipped via intake (11 tests; violation
   rate rule_barrier 0.0 / soft_prior 1.0); **Metis deep-read** done; **Avride** profiled (W-08/SC-13);
   SC-14 (red-light) catalogued.

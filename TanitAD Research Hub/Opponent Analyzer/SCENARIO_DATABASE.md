@@ -179,9 +179,14 @@ public claim candidate.
 - **Metric hooks:** OKRI on the anomalous object; imag-error-vs-TTC lead time.
 - **Status:** catalogued.
 
-## SC-11 — Wrong-side / oncoming-lane entry
+## SC-11 — Wrong-side / oncoming-lane entry  ★★ (2nd FACT source 2026-07-11)
 - **Opponent evidence (FACT):** NHTSA ODI investigation (opened May 2024) into Waymo incidents
-  including wrong-side-of-road driving; multiple primary-footage events.
+  including wrong-side-of-road driving; multiple primary-footage events. **2nd source (FACT,
+  2026-07-11):** **Zoox recalled 332 robotaxis (2026-12-23 filing)** — software could **cross the
+  yellow centre line and stop in front of oncoming traffic near intersections** (63 crossing
+  instances found by Dec-5; bug surfaced on a wide right turn into the opposing lane). Two
+  independent operators now FACT-document this class → SC-11 is a strong scenario candidate.
+  — https://techcrunch.com/2025/12/23/zoox-issues-software-recall-over-lane-crossings/
 - **Description:** faced with obstruction/ambiguous markings, system commits to the oncoming lane
   without clearance; correct behavior bounds any contra-flow excursion by imagined oncoming risk.
 - **TanitAD mechanism:** H9 directional barrier + H15 imagined oncoming occupancy before any
@@ -222,15 +227,29 @@ public claim candidate.
   tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
 - **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
   min-TTC distribution; collisions=0 bar.
-- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
-  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
-  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+- **Status:** **spec-drafted, run #3 (874f78e, branch `worktree-agent-opponent-20260710`, pending
+  merge to main)** — intake pkg `Implementation/incoming/2026-07-10-stationary-lead-scenario/`
+  (`stationary_lead.py` + telemetry oracle, **offline tests**). Design-oracle numbers (P8, not our
+  model), `imagination_forward` vs `classifier_react`: over the approach-speed sweep {8…25} m/s
+  **collision rate 0.000 vs 0.429**; at 15 m/s imagination brakes **3.10 s earlier** (onset 2.90 vs
+  6.00 s), keeps **min-TTC 4.40 s vs 0.77 s** and a **29.8 m vs 2.0 m** gap; OKRI toward the lead
+  **7 vs 18,220**. Honest built-in falsifier: the lead decays 3.10→−2.90 s as the competitor's
+  `detect_range_m` grows 20→120 m — the edge is specific to hard-to-classify stationary objects (run
+  #4 independently reproduced this crossover before deferring to run #3). **Second-opponent evidence
+  added run #4 (2026-07-11):** Zoox oncoming-lane recall + Tesla EA26002 broaden the competence
+  surface behind W-08. **Next:** DataEng tags real stopped-lead comma2k19 segments; Benchmarks & Eval
+  reduces `_extra.collided` → collision rate; then live-measure on CARLA-on-pod.
 
 ## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
 - **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving
   Blvd / Inwood Rd (2026-07, primary dashcam footage; per-incident causation CLAIM); coincides with a
   new federal investigation + recall activity in the Dallas market.
   — https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
+  **2nd major-operator source (FACT, 2026-07-11):** NHTSA **EA26002** (~2.88 M Tesla FSD vehicles)
+  documents **80 traffic-violation incidents (from 58 at opening)** incl. **red-light running,
+  illegal turns, oncoming-traffic entry**, **14 crashes / 23 injuries** → the red-light rule-barrier
+  class is now FACT-documented across **Waymo *and* Tesla**, strengthening SC-14's excellence-claim
+  value. — https://electrek.co/2026/02/23/tesla-nhtsa-fsd-traffic-violation-investigation-second-extension/
 - **Description:** a red or newly-red signal on the ego approach; correct behavior is a hard stop at the
   line — a discrete rule barrier, not a soft trade-off against an apparently clear intersection.
 - **TanitAD mechanism:** H9 directional/phase barrier term (same hard-barrier machinery as SC-04);
@@ -239,7 +258,17 @@ public claim candidate.
 - **Data sources:** CARLA signalized-junction recipes with phase control; comma2k19 intersection
   segments (INFER-quality for real red-light approaches).
 - **Metric hooks:** violation rate (0 bar), stop-distance margin at the line.
-- **Status:** **catalogued** (2026-07-24; reuses SC-04 machinery — flagged as the cheapest next spec).
+- **Status:** **spec-drafted, run #4 (2026-07-11)** — intake pkg
+  `Implementation/incoming/2026-07-11-red-light-barrier-scenario/` (`red_light_barrier.py` + telemetry
+  oracle, **11/11 offline tests**, awaiting orchestrator triage). Deliberately **reuses the SC-04
+  barrier-vs-soft-prior oracle** (signal phase replaces the stop-arm) → **one violation-rate reducer
+  serves both**. Design-oracle (P8): **violation rate rule_barrier 0.0 / soft_prior 1.0** over the
+  apparent-clearance sweep {0…12} m; barrier stops **1.1 m before** the line and is invariant to the
+  temptation while the soft prior's line-crossing speed grows monotonically **3.2→10.4 m/s**; OKRI
+  toward the occluded crosser **−82%** (12,387 vs 63,765) at 4 B vs 15 B. **Two major-operator FACT
+  sources now** (Waymo-Dallas + Tesla EA26002 80-incident docket). **Next:** Benchmarks & Eval wires
+  the shared violation-rate reducer; DataEng sources a signalized-junction phase recipe; live-measure
+  our checkpoint on CARLA-on-pod.
 
 ---
 
@@ -262,4 +291,6 @@ Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric frag
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
 | SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-02…SC-03, SC-06…SC-14 | catalogued | per-entry bars set at spec time | — |
+| SC-13 | spec-drafted (run #3, 874f78e) | collision rate exactly 0 on the approach-speed sweep + brake-onset lead > classifier baseline on the stationary axis | — |
+| SC-14 | spec-drafted (run #4) | red-light violation rate exactly 0 (closed-loop) + full stop before line, invariant to apparent clearance | — |
+| SC-02…SC-03, SC-06…SC-12 | catalogued | per-entry bars set at spec time | — |

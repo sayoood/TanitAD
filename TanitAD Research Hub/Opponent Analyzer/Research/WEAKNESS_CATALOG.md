@@ -66,14 +66,23 @@
   **New family evidence (FACT/CLAIM, 2026-07):** a Waymo was recorded **running a red light** in Dallas
   (Irving Blvd/Inwood Rd) amid a new federal investigation there — the same hard-discrete-rule failure
   class (signal-phase compliance). — https://www.dallasobserver.com/news/robotaxi-crashes-in-dallas-under-scrutiny-with-nhtsa-investigation-40674744/
+  **2nd major-operator FACT source (2026-07-11):** NHTSA **EA26002** (distinct from the Tesla
+  *visibility* EA) covers ~**2.88 M** FSD vehicles for **traffic-law violations** — **80 incidents**
+  (from 58 at opening) incl. **red-light running, illegal turns, oncoming-traffic entry**, **14
+  crashes / 23 injuries**, fines ≤ $139.4 M → the signal-phase / rule-barrier class (SC-14) is now
+  FACT-documented across **Waymo *and* Tesla.** — https://electrek.co/2026/02/23/tesla-nhtsa-fsd-traffic-violation-investigation-second-extension/
 - **TanitAD counter:** **H9** (inherent rule compliance via RMFM / hard barrier terms — a violation-rate
   metric, not a learned soft prior). Owner of the violation-rate metric home: Benchmarks&Eval.
 - **Scenario-spec status:** **DRAFTED + intake pkg 2026-07-24** →
   `Implementation/incoming/2026-07-24-stop-arm-gate-scenario/` (**SC-04**; stopped bus + deployed
   stop-arm + occluded child + tempting free path; **11/11 offline tests**). Design-oracle result: H9
   **violation rate rule_barrier 0.0 vs soft_prior 1.0**, barrier invariant to the free-path temptation
-  while the soft prior's line-crossing speed grows 3.0→9.6 m/s. Red-light running catalogued as **SC-14**
-  (reuses the same stop-line barrier oracle). Handoff to Benchmarks&Eval: add a `violation_rate` reducer.
+  while the soft prior's line-crossing speed grows 3.0→9.6 m/s. **Red-light running now SC-14
+  spec-drafted (run #4, 2026-07-11)** → `Implementation/incoming/2026-07-11-red-light-barrier-scenario/`
+  (`red_light_barrier.py`, **11/11 tests**; reuses the SC-04 oracle — violation rate rule_barrier 0.0 /
+  soft_prior 1.0, soft line-cross speed grows 3.2→10.4 m/s, OKRI −82%); now with **2 major-operator
+  FACT sources** (Waymo-Dallas + Tesla EA26002). Handoff to Benchmarks&Eval: the SC-04 `violation_rate`
+  reducer applies **unchanged** to `_extra.red_light_violation` — one reducer, both scenarios.
 - **Training-data recipe (H6):** synthetic stop-arm + red-signal events (rare in real logs); barrier-term
   supervision rather than pure imitation.
 
@@ -89,6 +98,11 @@
   and/or provide alerts … until immediately before the crash."** **9 crashes** flagged incl. **1 fatality
   + 2 injuries** under glare/fog/dust. Miami robotaxi launched into exactly this regime (rain,
   2026-07-03). — https://electrek.co/2026/03/19/nhtsa-upgrades-tesla-fsd-visibility-investigation-3-2-million-vehicles/
+  **Sharpest field instance (FACT, 2026-07-11):** a Tesla Model 3 under automated driving crossed a
+  lawn and **rammed a Houston-area house on 2026-06-21, killing 76-yo Martha Avila in her living
+  room**; NHTSA opened a special crash investigation 2026-06-23 (46 Tesla ADS/ADAS special crash
+  investigations over the decade, "more than a dozen" with ≥1 fatality). Mechanism undisclosed, but
+  it is the confident-when-wrong loss-of-control class this weakness is about. — https://fortune.com/2026/06/23/tesla-autopilot-nhtsa-investigation-houston-crash-robotaxi/
 - **TanitAD counter:** **H11** (self-monitoring w/ guarantees — degraded-visibility as a D8 OOD stressor,
   AUROC>0.85) + **H15** (epistemic σ throttles on uncertainty) + **H2** (attention-based modality steering
   to radar when the camera degrades).
@@ -146,14 +160,29 @@
 - **TanitAD counter:** **H15** imagination forward-models time-to-contact on a stopped/slow lead
   *before* the object is classified (no detection/class prior to be wrong about) + **A9** imagination-
   error monitor on the lead region; **H1** tactical layer for lane-change consequence pricing.
-- **Scenario-spec status:** **SC-13 catalogued** (stationary-object / same-lane lead response) — a cheap
-  real-data spec on comma2k19 (mine stopped-lead segments) + CARLA cut-in/blocked_route recipes.
+- **Scenario-spec status:** **SC-13 spec-drafted by run #3** (874f78e, branch
+  `worktree-agent-opponent-20260710`, pending merge) — `2026-07-10-stationary-lead-scenario/`
+  (`stationary_lead.py` + telemetry oracle). Design-oracle (P8): collision rate `imagination_forward`
+  **0.000** vs `classifier_react` **0.429** over the approach-speed sweep; +3.10 s brake lead at
+  15 m/s; OKRI 7 vs 18,220 — with a built-in falsifier (edge decays as the competitor's detect_range
+  grows). **Second-opponent evidence broadening W-08 (run #4, 2026-07-11):** Zoox oncoming-lane recall
+  (see watch-list) + Tesla EA26002 → the competence surface is not one company's bug.
 - **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
   the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
 
 ---
 
 ### Watch-list (not yet weaknesses — competitive-narrative risks)
+- **Zoox (Amazon)** — **NEW tracked opponent (2026-07-11).** Recalled **332 robotaxis (2026-12-23)**
+  for **crossing the yellow centre line / stopping in front of oncoming traffic** (63 instances;
+  3rd software recall in ~8 months); FMVSS exemption (≤2,500 veh) under NHTSA review. Failure class =
+  wrong-side/oncoming-lane entry + bad intersection stop-placement → **2nd FACT source for SC-11**
+  (was Waymo-only) and SC-08. Custom purpose-built vehicle → distinct FMVSS-exemption regulatory
+  risk. Profile added to `OPPONENT_PROFILES.md`. — https://techcrunch.com/2025/12/23/zoox-issues-software-recall-over-lane-crossings/
+- **GigaWorld-Policy (arXiv 2603.17240, open-gigaai)** — **open-source** efficient action-centered
+  WAM (**9× faster than Motus, +7%** on real robots; +95% vs π-0.5 on RoboTwin 2.0). Same
+  skip-generative-rollout efficiency lever as Metis but **robotics, not AD** — watch for an AD port
+  that would make it a direct efficiency competitor. No hierarchy / no self-monitoring. (H1/H3/H5)
 - **Autobrains "Liquid AI"** — the one competitor whose *efficiency pitch* overlaps ours. **UPDATE
   2026-07-24: moving UP from ADAS toward L4** — Uber + Autobrains (+ NVIDIA) announced a **Munich robotaxi
   pilot (2026-06-02)**, apparently displacing/paralleling Uber's earlier Momenta-Munich plan. Still no
