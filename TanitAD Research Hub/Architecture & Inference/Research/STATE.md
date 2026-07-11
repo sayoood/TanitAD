@@ -1,51 +1,56 @@
 # STATE — Architecture & Inference
 
-LAST_RUN: 2026-07-09 (Wednesday weekly agent — K-step rollout bake-off first measured arm (backlog P0 #2) + LeJEPA-identifiability theory (2605.26379) + ACWM low-dim-action AdaLN refinement)
-QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 1 measured experiment (2 trained arms) / ~2.2 h — under caps. G-H: matched-compute K=2 vs K=1 → imag_rel −64 % @1-step, no gate passed at reduced scale → no claim, feeds decision-grade Phase C)
-(Calendar: wall-clock 2026-07-09; hub notes forward-dated to mid/late-July by the autonomous loop. Dating by wall
-clock per the Data-Eng precedent — see the run note's calendar footnote.)
+LAST_RUN: 2026-07-11 (Wednesday weekly agent, worktree `worktree-arch-inf-20260711` — D1 probe-capacity
+ladder + isotropy linkage: advanced the loop's live D1 discriminator (`0284a5c`); found the raw-2048 probe
+underdetermined (D≫N), PCA-to-active_k fix, NO nonlinear advantage at step-6500 (gap −15 %/−39 %),
+anisotropy-taxes-linear-probe prediction REFUTED; theory-watch Sub-JEPA 2605.09241 + layerwise-probing 2606.09646)
+QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 1 fetch + 1 measured experiment on the 4060 / ~1.4 h —
+under caps. G-H: probe-capacity ladder step-6500, measured gap −15.1 % @1s PCA-19, falsifier verdict delivered
+(≥50-ep + 14k/21k pair for decision-grade). 8 intake tests + stack 189✓/1s unaffected.)
+(Calendar: wall-clock 2026-07-11 (fired Saturday clock — narrative runs ahead). Dating by wall clock per the
+Data-Eng precedent.)
 
 ## HANDOFF
 
-No half-done work. One measured experiment + theory-watch this run:
+No half-done work. One measured experiment + theory-watch this run; all outputs committed.
 
-1. **G-H measured experiment — K-step rollout bake-off first arm** (backlog P0 #2). Matched-compute
-   K=2 vs K=1 (2×2000 steps, real comma2k19, RTX 4060, 11.74 M reduced-but-real probe, OFAT-verified via
-   `lever_diff`). **Rollout ≈ free (+0.5 % wall-clock, 0 params).** Falsifier metric (D2 dir-acc) **saturated
-   at 1.0** → non-discriminative; discriminative `imag_rel` shows **K=2 cuts 1-step latent-pred error vs
-   persistence 2.914→1.049 (−64 %)** but does NOT help the 4-step horizon (I4 1.451→1.645) → **K must match
-   the decode horizon**. D1 FAIL + D3 BLOCKED both ⇒ **no decision-grade claim (D-004)**. Script+artifacts:
-   `Implementation/kstep_bakeoff_probe/` (`kstep_bakeoff_probe.py` + `results/2026-07-09-*.json`). No stack
-   code change this run (suite 188✓/1s — rose from 181 via other agents' mid-session intakes, not mine).
-   No trained-config change executed (D-018).
-2. **Theory-watch (D-013):** *When Does LeJEPA Learn a World Model?* (2605.26379) — LeJEPA/SIGReg gives
-   linear+orthogonal identifiability under a unique Gaussian prior → optimal latent-space planning; grounds
-   H3 anti-collapse AND the `p0-spectral-sizing` linear proxy (D-021). ACWM (2605.08567) — AdaLN vs cross-attn
-   is a wash for low-dim actions (ours are 2-D) → bounds the `adaln_conditioning` lever's expected Δ.
+1. **G-H measured experiment — D1 probe-capacity ladder** (advances the loop's live `d1_probe_capacity.py`,
+   `0284a5c`). Ladder (OLS→ridge sweep→MLP-1h→MLP-2h) + in-run isotropy on step-6500. **F-1:** raw-2048 probe
+   underdetermined (D≫N=204) → `linear_ols` 24.35 m vs ridge 10.31 m @1s (regularisation artifact); **fix =
+   PCA-reduce to `active_k` (train-only basis).** **F-2:** NO nonlinear advantage — gap negative everywhere
+   (−15 %/−39 %); best probe = linear ridge (8.84 @1s vs 18.36 zero-motion) → "less-linear" branch disfavoured,
+   but directional (MLP starved at n=204). **F-3 (P8 negative):** my pre-registered "anisotropy taxes the
+   linear probe" prediction REFUTED — ridge absorbs the anisotropy; 2605.26379 orthogonality governs PLANNING
+   regret (D4–D6), not D1 probe recoverability. Intake `Implementation/incoming/2026-07-11-d1-probe-capacity-ladder/`
+   (8 tests) + `Research/2026-07-11-probe_ladder_step6500.json`. No stack change (189✓/1s).
+2. **Theory-watch (D-013 + D-028 recency scan):** Sub-JEPA (2605.09241) subspace-SIGReg = candidate remedy for
+   the `iso_active` 0.27 shortfall (isotropy gate, not D1); layerwise-probing (2606.09646) grounds the
+   linear-vs-MLP protocol. D-027 (rollout_k=4) settled my K-step thread → P0 #2b/#2c retire.
+
+### Cross-run dependency (flag for orchestrator)
+- The **2026-07-10 orthogonality branch `worktree-arch-inf-20260710` is still UNMERGED in main** (W29 report
+  flagged it). This run cross-validates its numbers (iso_active 0.25↔0.27, active_k 21↔19) and depends on the
+  isotropy instrument conceptually. **Recommend merge** (orchestrator triage). My STATE/KB/BACKLOG edits are
+  against main, so a small reconcile with that branch's same-file deltas is expected.
 
 ### Exact next steps (next Wednesday run, in priority order)
-- **P0 #2b — decision-grade K∈{1,2,4} sweep at OPERATIVE scale** from the pod2 step-8k `ckpt_full.pt`
-  (Phase C). Primary metric **`imag_rel` per horizon** (NOT dir-acc — proven to saturate); reuse
-  `Implementation/kstep_bakeoff_probe/kstep_bakeoff_probe.py` (swap `probe_config` for the operative config
-  + load the trained ckpt). **D-018 Tactic → escalate to Sayed before it touches the trained config.**
-- **P0 #2c — extend imagination horizons past 0.4 s** (predictor imagines k∈{1,2,4}; D3 wants 2 s). Couples
-  with 2b (K must cover the horizon). Escalate before trained-config change.
-- **P0 #1 — re-run spectral at the FINAL Stage-0 checkpoint** (rank was still climbing 35→43 at 6.5k/30k) →
-  decision-grade D-021 input. Turnkey: `run_spectral.py --ckpt <final> --cache-dir <staged val cache>`
-  (stage the val cache so the `*val*` glob doesn't grab `comma_val.tgz`).
-- **P1 #3b (build) — orthogonality instrument in `spectral.py`** (from 2605.26379): check the trained readout
-  covariance is ~isotropic (the theorem's orthogonality condition); ship as an intake with a test. Gates the
-  D-021 sizing claim's admissibility, not an architecture change.
-- **P1 #3 (build) — AdaLN `CondBlock` + RoPE** in `OperativePredictor` so those `planned` levers become
-  runnable; smoke-first (expect small Δ per 2605.08567). Ship each as an intake with the harness sweep
-  pre-wired. **D-018: escalate before either touches the trained config.**
-- **Standing duties (D-013):** theory-watch (Balestriero/LeCun spectral-SSL IEEE SPMag 2026, Klindt +
-  `github.com/klindtlab/lejepa-identifiability`, HaoChen, PKU Yisen Wang 2606.27014); citation-walk set now
-  includes Delta-JEPA / FF-JEPA / OmniDreams / **LeJEPA-identifiability (2605.26379)**; `Ressources/` inbox
-  **clear** (grep-verified last run — re-check newest-mtime each run).
+- **P0 #A — well-powered D1 discriminator on the pod:** PCA-to-active_k + ≥50 eps, run on the actual
+  **14k-vs-21k (or 30k) pair** for the decision-grade info-lost-vs-less-linear verdict. Turnkey: this run's
+  `probe_capacity_ladder.py --episodes 50` (already generalises to any ckpt). If no positive gap → D1
+  regression is NOT a decode-capacity artifact → escalate toward coordinate-frame/normalisation.
+- **P1 #B — characterise Sub-JEPA subspace-SIGReg (2605.09241)** as the `iso_active` remedy; design-note
+  first (which active-k dirs; loss form), smoke on 4060, D-018 escalate before any trained-config change.
+- **P1 #1 — re-run spectral + orthogonality at the FINAL Stage-0 ckpt** (30k) — rank/iso were both still
+  moving; decision-grade D-021 + admissibility input. Turnkey: `run_spectral.py`/`run_orthogonality.py`.
+- **P1 #4 — frozen-DINOv3 WM arm (H4 arm-B):** the loop shipped `dino_precompute.py` (`cda93df`) — WATCH;
+  pick up predictor-on-frozen-features training if the loop doesn't reach it.
+- **Standing duties (D-013 + D-028):** theory-watch (Balestriero/LeCun/Klindt/PKU-Yisen-Wang; citation-walk
+  now incl. Sub-JEPA / layerwise-probing) + **recency-first arXiv listing scan** (cs.CV/cs.RO/cs.AI, 14 d,
+  world-model/E2E = my seam); `Ressources/` inbox re-check newest-mtime each run.
 
 ## Open coordination
-- Master Plan §3 puts the *gate harness* under Benchmarks & Eval (Thu). The gate runner is deliberately the
-  Architecture half (standard ADE/FDE + instrument gating + model wiring) with an `extra_metrics` seam for
-  Thursday's custom suite (LAL/TMS/OKRI/CNCE/LOPS). Thursday: import `run_d1/run_d2/run_d3` and plug the
-  custom metrics through the hook rather than forking a parallel runner.
+- Master Plan §3 puts the *gate harness* under Benchmarks & Eval (Thu). The gate runner is the Architecture
+  half (ADE/FDE + instrument gating + model wiring) with an `extra_metrics` seam for Thursday's suite
+  (LAL/TMS/OKRI/CNCE/LOPS). Thursday: import `run_d1/run_d2/run_d3` and plug through the hook.
+- **D1 probe hygiene (this run):** flagged to the loop — `d1_probe_capacity.py` should PCA-reduce to
+  active_k + raise episodes before its ridge-vs-MLP read is trustworthy (D≫N confound).

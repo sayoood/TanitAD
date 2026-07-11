@@ -29,6 +29,16 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-11: Architecture & Inference (Wed) — **H3 / H5 instrument findings, no status change (P8).**
+  D1 probe-capacity ladder on step-6500 (measured, 4060): **(H5/readout)** the raw-2048 trajectory probe is
+  underdetermined (D≫N=204; `linear_ols` 24.4 m vs ridge 10.3 m @1s = regularisation artifact) → PCA-to-
+  active_k fix; at that early ckpt there is **NO nonlinear advantage** (best-linear ≤ best-MLP everywhere,
+  gap −15 %/−39 %) → the "less-linear" branch of the D1 regression is **disfavoured** (directional; MLP
+  data-starved, decision-grade needs ≥50 eps + the 14k/21k pair). **(H3/isotropy)** pre-registered
+  "anisotropy taxes the linear probe" prediction **REFUTED** — ridge absorbs the covariance anisotropy;
+  the 2605.26379 orthogonality precondition governs **planning regret (D4–D6), not D1 probe recoverability**.
+  Cross-checks the 2026-07-10 orthogonality instrument (iso_active 0.25↔0.27). **H5** also: K-step settled at
+  **K=4 (D-027 accepted)**. Note: `2026-07-11-d1-probe-capacity-ladder-and-isotropy-linkage.md`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

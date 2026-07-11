@@ -3,6 +3,38 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-11] [repo/measured] **D1 probe-capacity ladder + isotropy linkage** (step-6500 ckpt, 12 comma2k19
+  val eps, 408 latents dim-2048, 4060, 36 s, $0). Advances the loop's live D1 discriminator (`0284a5c`).
+  **(1) The raw-2048 probe is underdetermined (D≫N=204): `linear_ols` overfits 24.35 m vs ridge 10.31 m @1s
+  — a 2.4× swing from REGULARISATION, not capacity → the loop's 12-ep `d1_probe_capacity.py` sits in the
+  same regime. Fix: PCA-reduce to `active_k` (train-only basis) → N>D; `linear_ols` recovers to 10.77.**
+  **(2) NO nonlinear advantage at 6500 — gap = best_linear−best_MLP is NEGATIVE everywhere (−15 %/−13 % raw,
+  −15 %/−39 % PCA-19); best probe is a linear ridge (8.84 @1s vs 18.36 zero-motion floor → top-19 subspace
+  carries ~52 % of the 1-s motion, linearly).** Disfavours the "less-linear" branch, BUT directional not
+  decision-grade (MLP data-starved at n=204). **(3) Pre-registered prediction REFUTED (P8): anisotropy
+  (`iso_active`=0.269, cross-checks the 07-10 instrument's 0.250) does NOT tax the linear trajectory probe —
+  ridge already absorbs covariance anisotropy. The 2605.26379 orthogonality precondition governs latent-
+  PLANNING regret (D4–D6), not external-target probe recoverability (D1).** Actionable: patch d1 script to
+  PCA-reduce + ≥50 eps before any info-lost verdict; do NOT motivate a decode-capacity change from D1 (no
+  gate, D-004) — impact: H3 / H5 / D1 / D-004 —
+  `../Research/2026-07-11-d1-probe-capacity-ladder-and-isotropy-linkage.md` + `../Implementation/incoming/2026-07-11-d1-probe-capacity-ladder/`
+- [2026-07-11] [arXiv 2605.09241] **Sub-JEPA — Subspace Gaussian Regularization** regularises the
+  principal-variance subspace toward Gaussian instead of all embedding dims uniformly. Candidate REMEDY for
+  our `iso_active` shortfall (full-dim SIGReg wastes budget on the dead 2027-dim tail; global iso 2e-8): a
+  subspace variant targets the active-k directions the planner uses → could raise `iso_ratio_active` toward
+  the 2605.26379 optimal-planning precondition. The gate it moves is the ISOTROPY admissibility gate, not D1.
+  Abstract-level only (exact numbers not PDF-extractable; labelled ESTIMATE, G-AI2). Design-note-first,
+  D-018 escalate before trained-config — impact: H3 / D-021 (isotropy remedy) — https://arxiv.org/pdf/2605.09241
+- [2026-07-11] [arXiv 2606.09646] **Layerwise probing of video foundation models** (U. Amsterdam, Jun-2026)
+  names the exact discriminator: LINEAR probe = "task-relevant info directly accessible"; MLP probe (GELU +
+  LayerNorm hidden) = "present but not linearly encoded". V-JEPA strongest, esp. with temporal-dynamics
+  probes; physics info weakest early / strongest at intermediate-late depth; frame-order disruption hurts.
+  Methodological grounding for our D1 probe-capacity ladder (linear vs MLP = info-lost vs less-linear) —
+  impact: D1 / H5 (probe protocol) — https://arxiv.org/abs/2606.09646
+- [2026-07-11] [repo] **D-027 accepted: rollout_k=4 adopted for all post-30k training** (Sayed, `ff6a409`).
+  Decision evidence = matched-compute K=4 arm (`859caa8`): 1-step `imag_rel` 8.13→1.03, recursive 14.5→1.11.
+  This DECISION-GRADES my backlog P0 #2b (the operative-scale K sweep) — the K-step thread I opened
+  (2026-07-09, −64 % @1-step, "K must match horizon") is settled at K=4. P0 #2b/#2c retire — impact: H5 / D-027
 - [2026-07-09] [repo/measured] **K-step rollout bake-off — first measured arm** (backlog P0 #2; matched
   compute, 4060, 2×2000 steps, real comma2k19, 11.74 M reduced-but-real probe). K=2 vs K=1, OFAT-verified
   (`lever_diff==["train.rollout_k"]`). **(1) rollout ≈ free: +0.5 % wall-clock (749.4 vs 745.4 s), 0 extra

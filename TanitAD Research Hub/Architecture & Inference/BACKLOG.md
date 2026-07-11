@@ -5,30 +5,33 @@ Format per item: goal / method / resource / expected number / falsifier.
 
 ## P0 — next run
 
-1. **[✅ DONE 2026-07-08 — spectral-sizing on real trained latents]** Ran `run_spectral.py` on the
-   step-6500 `ckpt_full.pt` (24 val eps, 7,176 pairs, 4060): **fit R²=0.99, rank ≈43, knee 31, k*=21 →
-   OVER-PROVISIONED** (knee ≪ 512, well inside the predicted 20–60 band → efficiency-moat evidence for H3).
-   Feeds D-021. **Remaining:** re-run at the FINAL Stage-0 ckpt (rank still climbing 35→43) before any resize.
-   Artifact: `Research/2026-07-08-spectral_step6500.json` + note §5b.
-2. **[✅ DONE 2026-07-09 — K-step rollout bake-off, first measured arm]** Matched-compute K=2 vs K=1
-   (2×2000 steps, real comma2k19, 4060, 11.74 M reduced-but-real probe, OFAT-verified). Rollout is
-   **nearly free (+0.5 % wall-clock, 0 params)**. **Metric lesson:** the planned falsifier (D2 dir-acc)
-   **saturated at 1.0** → non-discriminative; the discriminative signal is **`imag_rel`**, on which K=2
-   cuts 1-step latent-pred error vs persistence **2.914→1.049 (−64 %)** but does NOT help the 4-step
-   horizon → **K must match the decode horizon**. D1 FAIL + D3 BLOCKED at this scale ⇒ no decision-grade
-   claim (D-004). Artifact: `Research/2026-07-09-...md` + `Implementation/kstep_bakeoff_probe/`.
-   **Superseded by P0 #2b + #2c below.**
+A. **Well-powered D1 discriminator on the pod (info-lost vs less-linear).** Goal: give the loop's live
+   D1 investigation (`0284a5c`) a decision-grade verdict. Method: this run's `probe_capacity_ladder.py`
+   with **PCA-to-active_k + `--episodes ≥50`**, run on the actual **14k-vs-21k (or 30k) checkpoint pair**
+   (pod, idle-only, or Colab). Resource: pod GPU (uncontended) or 4060 if ckpts pulled. Expected: at n≥50
+   the MLP is no longer starved → a real linear-vs-MLP gap emerges or it does not. Falsifier: **positive
+   gap on the later ckpt** ⇒ "less-linear" (info intact, readout mismatch) ⇒ readout/schedule remedy;
+   **no gap** ⇒ D1 regression is NOT a decode-capacity artifact ⇒ escalate toward coordinate-frame /
+   highway-normalisation (cf. `c0b22b7`). **This run established the method + the D≫N fix + a directional
+   step-6500 read (no nonlinear advantage, gap −15 %/−39 %).** Gate: D1 (D-004 — no config change from a
+   BLOCKED gate). Artifact: `Implementation/incoming/2026-07-11-d1-probe-capacity-ladder/`.
 
-2b. **Decision-grade K-step sweep K∈{1,2,4} at OPERATIVE scale** — the real bake-off arm.
-   Method: matched-compute trained arms from the pod2 step-8k `ckpt_full.pt` (Phase C, idle-pod or
-   Colab L4/A100-with-ledger-row); primary metric **`imag_rel` per horizon** (NOT dir-acc — it
-   saturates) + D3 ratio once imagination horizons are extended. Expected: K=4 lowers `imag_rel` at
-   horizons ≤4 without D2 regression; falsifier: no `imag_rel` improvement at matched steps → drop
-   K-step. **D-018 Tactic → escalate to Sayed before it touches the trained config.**
+B. **Characterise Sub-JEPA subspace-SIGReg (arXiv 2605.09241) as the `iso_active` remedy.** Goal: raise
+   `iso_ratio_active` (0.27 at 6500) toward the 2605.26379 optimal-planning precondition by regularising
+   the active-k subspace toward Gaussian instead of all 2048 dims (global iso 2e-8, budget wasted on the
+   dead tail). Method: design-note first (which dirs, loss form), then a 4060 smoke arm through the
+   bake-off harness; primary read = `iso_ratio_active` + `rms_offdiag_corr` (orthogonality instrument),
+   secondary = D2/imag_rel. Falsifier: iso_active does not rise / D2 regresses → drop. Gate moved =
+   ISOTROPY admissibility (NOT D1). **D-018 Tactic → escalate before any trained-config change.**
 
-2c. **Extend imagination horizons past 0.4 s** (predictor imagines k∈{1,2,4}=0.4 s; the plan's D3 is 2 s).
-   Couples with 2b (K must cover the horizon). Method: add longer horizons to `predictor.horizons` in a
-   prototype; measure `imag_rel`/D3 at 1 s/2 s. Falsifier gate: D3. Escalate before trained-config change.
+1. **[✅ DONE 2026-07-08 — spectral-sizing on real trained latents]** step-6500 `ckpt_full.pt`: fit
+   R²=0.99, rank ≈43, knee 31, k*=21 → OVER-PROVISIONED. **Remaining:** re-run at the FINAL Stage-0 ckpt.
+   Artifact: `Research/2026-07-08-spectral_step6500.json`.
+2. **[✅ DONE 2026-07-09 → DECISION-GRADED by D-027]** K-step rollout: my first arm (K=2 vs K=1, −64 %
+   @1-step, "K must match horizon") fed the loop's operative K=4 arm (`859caa8`, imag_rel 8.13→1.03);
+   **Sayed accepted D-027 (rollout_k=4 for all post-30k training, `ff6a409`).** Backlog items 2b/2c
+   (operative K sweep + extend horizons) are **RETIRED — settled at K=4.** Artifact:
+   `Research/2026-07-09-...md` + `Implementation/kstep_bakeoff_probe/`.
 
 ## P1
 
@@ -47,12 +50,16 @@ Format per item: goal / method / resource / expected number / falsifier.
    `kstep_bakeoff_probe` harness), promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier:
    Δ within noise → close. **Prior lowered (arXiv 2605.08567):** AdaLN vs cross-attn is a wash for
    LOW-dim actions and our actions are 2-D → expect small Δ; keep AdaLN (not cross-attn), test cheap.
-3b. **Orthogonality instrument for `spectral.py`** — from arXiv 2605.26379: LeJEPA's optimal-planning
-   guarantee needs the identified latent to be linear+**orthogonal**. Add a check that the trained
-   readout covariance is ~isotropic/diagonal (an I-row, gates the D-021 sizing claim's admissibility,
-   not an architecture change). Ship as an intake with a test. Cheap, makes the theorem falsifiable
-   on our own checkpoint.
-4. **H4 arm-B: frozen DINOv3 world model — PROMOTED (Sayed ask 2026-07-09), design fixed:**
+3b. **[✅ DONE 2026-07-10 — orthogonality/isotropy instrument]** Shipped `spectral_orthogonality.py`
+   (intake `2026-07-10-orthogonality-instrument/`, 8 tests): step-6500 → `iso_ratio_active=0.250`,
+   `cond_active=246`, `rms_offdiag_corr=0.428` → **NOT-YET-ADMISSIBLE** (SIGReg isotropy not converged;
+   D-021 "optimal" reading waits for the final ckpt). **⚠ Branch `worktree-arch-inf-20260710` UNMERGED in
+   main — recommend orchestrator merge.** Cross-checked by 2026-07-11 (iso_active 0.269, active_k 19).
+   **Remedy candidate = Sub-JEPA subspace-SIGReg (new P0 #B).**
+4. **H4 arm-B: frozen DINOv3 world model — IN MOTION BY THE LOOP (`cda93df`, 2026-07-11):**
+   `stack/scripts/dino_precompute.py` shipped (v3-with-v2-fallback, latest-frame per-timestep, fp16 token
+   grids) = step (a) of the design below. WATCH: pick up steps (b)/(c) (predictor-on-frozen training +
+   gate-matched probe comparison) if the loop doesn't reach them. Original design fixed:**
    (a) precompute DINOv3-**B/16** features once over the comma epcaches (16×16 grid @256px matches
    our readout geometry; pod2 post-arms or Colab T4 — embarrassingly parallel); (b) train
    predictor+readout on frozen features (`--data cached` path, ~110M trainable, low VRAM, fast);
