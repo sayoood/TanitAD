@@ -3,6 +3,31 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-11] [built] Commit gate `ci.ps1` (backlog #3) shipped (intake `2026-07-11-ci-gate/`):
+  fail-fast (1) I2 batch-1==batch-B tripwire on the real WorldModel encoder (~2 s, catches the
+  BatchNorm/batch-stat class that silently breaks the batch-1 Orin engine) then (2) full pytest
+  suite via `profile_testsuite.py check` (timing guard). Measured dev machine 4060: PASS total
+  17.2 s (I2 2.4 s + suite 14.8 s, 189 passed, warm overhead 1.43 s); falsifier holds — a 7.0 s
+  test → exit 1 flagged >6 s. Pure-ASCII (PS 5.1 reads no-BOM .ps1 as system codepage). 0 new deps,
+  G-T1 GO — impact: G-E/D-004-I2/CI — `2026-07-11-ci-gate-and-tensorrt-orin-qdq-trap.md` §1
+- [2026-07-11] [gotcha] TensorRT INT8 Q/DQ export **passes on RTX, FAILS on Orin(TRT 10.3)+Thor
+  (10.13.3)**: PyTorch Dynamo wraps Q/DQ scales behind reshape ops; x86/Ada silently constant-folds
+  and masks it, ARM/Blackwell parser rejects (Thor segfault post-Q/DQ-fusion; Orin "input shape
+  misaligns", both spam "invalid precision Int8, ignored"). Fix = emit Q/DQ scales as direct fp32
+  initializers, not reshape-derived. **An RTX-clean INT8 export ≠ Orin/Thor-clean** → build with
+  trtexec on-target, not only 4060 (rec to Prod-Opt `int8_quant/`). FP16 static-shape stays the
+  primary Orin path — impact: H5/C1/P5 — [forum](https://forums.developer.nvidia.com/t/tensorrt-export-fails-on-both-jetson-agx-orin-and-thor-but-passes-on-rtx/363379)
+- [2026-07-11] [tooling] **AlpaGym now PUBLIC** (`NVlabs/alpagym`, Apache-2.0): RL closed-loop
+  post-training = AlpaSim envs + Cosmos-RL orchestration; default policy Alpamayo-1.5 **10 B, ≥2
+  GPUs**, HF+W&B+uv, **no lightweight reference policy**. Verdict unchanged: **Phase-1 cloud, not
+  Phase-0** (100×+ our envelope, P5) — now clonable; Phase-0 closed-loop stays CARLA-on-pod (D-014).
+  Watch Cosmos-RL as a borrowable scorer/orchestrator, not the 10 B policy — impact: P5/H1/opponent —
+  [alpagym](https://github.com/NVlabs/alpagym)
+- [2026-07-11] [tooling] **CARLA 0.10.0 = Unreal Engine 5.5** (Lumen/Nanite, remodeled Town10,
+  InvertedAI traffic, native ROS). **Min spec RTX 3000 / ≥16 GB VRAM / Ubuntu 22.04|Win11.** We pin
+  **0.9.16 (UE4.24)** deliberately; 0.10's 16 GB floor + UE5 rebuild = Phase-1 only, not a Phase-0
+  switch. nullrhi SC-01 telemetry path unaffected; revisit 0.10 when photoreal pixels are
+  eval-critical (pairs w/ graphics-pod recipe P1.3) — impact: P5/D-014 — [release](https://carla.org/2024/12/19/release-0.10.0/)
 - [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
   host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
   ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit

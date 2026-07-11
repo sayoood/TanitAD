@@ -4,14 +4,17 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **CI script `stack/scripts/ci.ps1` (backlog duty #3)** — pytest + I2 tripwire on every commit,
-   wired to `profile_testsuite.py check` as its timing guard (budget: warm-overhead ≤4 s, no single
-   `call` test >6 s). Goal: one command an agent/pre-commit runs; measured wall < 15 s warm.
-   Falsifier: a newly-added slow fixture must make `ci.ps1` exit nonzero. Deliver as intake.
-2. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
+1. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
    overlay; doubles as the D3 imagined-vs-oracle visual. Note: the orchestrator already shipped a
    trajectory-fan overlay (`a25a3fe`) — SCOPE THIS as the *episode-replay* complement, don't dup.
    `pip install rerun-sdk`; measure setup cost + one real episode → .rrd size/time for G-T1.
+2. **INT8-on-target export verification (findings-driven, 2026-07-11 note §2)** — the TensorRT Q/DQ
+   trap makes an RTX-clean INT8 export NOT imply an Orin/Thor-clean engine. Build a tiny checker that
+   scans an exported ONNX for **reshape-fed Q/DQ scales** (the failure pattern) and a `trtexec`
+   build-smoke that MUST run on-target (Orin/Thor or the graphics-pod), not the 4060. Pairs with
+   Prod-Opt's `int8_quant/`. Expected: the checker flags Dynamo-int8 exports; falsifier: a
+   direct-fp32-initializer export passes both x86 and (when available) ARM build. BLOCKED on an ARM
+   target for the trtexec half; the ONNX-scan half runs now on the 4060.
 
 ## P1
 
@@ -35,6 +38,10 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-07-11) **CI script `ci.ps1` (was P0 #1 / backlog duty #3) DONE** — I2 tripwire + pytest via
+  `profile_testsuite.py check`; measured PASS 17.2 s (I2 2.4 s + suite 14.8 s, 189 passed, overhead
+  1.43 s); falsifier holds (7.0 s test → exit 1). Intake `2026-07-11-ci-gate/` (ci.ps1 +
+  ci_i2_tripwire.py + 3 tests). Pending triage; chains on the profiler intake below.
 - (2026-07-09) **Test-suite I/O profiling (was P1.5) DONE** — cold 40.6 s / warm 10.7 s measured;
   root cause = Drive hydration latency; `profile_testsuite.py` shipped via intake (9 tests). Fix =
   pin `stack/` offline (→ new P1.5 verification item).
