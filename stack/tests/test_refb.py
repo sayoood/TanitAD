@@ -1,13 +1,19 @@
 """REF-B tests (tanitad/refs/refb.py + scripts/refb_train.py + refb_labels.py).
 
-Pins the REF-B spec (REFERENCE_ARCHITECTURES + 2026-07-11 4-layer upgrade):
+Pins the REF-B spec (REFERENCE_ARCHITECTURES + 2026-07-11 4-layer upgrade +
+rev2 Sayed review: strategic transformer, route-derived nav commands,
+tactical d512 x 6, encoder 25):
 (a) budget-match +-2 % vs the main base250cam total (read programmatically),
+    with the strategic module in the rev2 ~9 M class,
 (b) a training step runs with finite losses and the confidence head is fully
     detached (no gradient into encoder/heads),
 (c) pseudo-label correctness on synthetic maneuvers,
-(d) the FiLM intent-conditioning path is live (sensitivity check),
+(d) the FiLM conditioning paths are live (operative intent + strategic nav),
 (e) fail-loud windowing raises on short/misaligned episodes,
-(f) ckpt save/load/resume bit-exact on fixed input.
+(f) ckpt save/load/resume bit-exact on fixed input,
+(g) nav-command derivation (rev2): correct command/sign/mask on synthetic
+    trajectories, and the trainer feed is NON-CONSTANT on a dataset with a
+    turn (regression: the layer previously trained on a constant `follow`).
 CPU-only, synthetic data.
 """
 
@@ -61,9 +67,14 @@ def _drive_episode(T: int, eid: int, yaw_rate: float = 0.0,
 
 
 def _make_cached_root(tmp_path: Path, n_train: int = 3, n_val: int = 1,
-                      T: int = 40) -> Path:
-    """Synthetic cached-mode root: *train*/*val* dirs of ep_*.pt."""
-    specs = [(0.0, 0.0), (0.25, 0.0), (0.0, -1.2)]      # keep / left / brake
+                      T: int = 200) -> Path:
+    """Synthetic cached-mode root: *train*/*val* dirs of ep_*.pt.
+
+    T=200 so the nav derivation has route-scale future (>= NAV_MIN_STEPS) in
+    the early windows. Episode 1 is a sustained GENTLE left curve: nav LEFT
+    at route scale (dyaw ~1.2 rad over ~20 s) while staying lane_keep at the
+    2 s maneuver scale (dyaw 0.12 < 0.15) — the two-horizon separation."""
+    specs = [(0.0, 0.0), (0.06, 0.0), (0.0, -1.2)]  # keep / nav-left / brake
     for split, n in (("train", n_train), ("val", n_val)):
         d = tmp_path / f"toy-{split}"
         d.mkdir()
@@ -102,9 +113,25 @@ def test_budget_matched_within_2pct():
     rel = abs(n_refb - n_main) / n_main
     assert rel <= 0.02, (f"budget mismatch: REF-B {n_refb:,} vs main "
                          f"{n_main:,} ({rel:+.3%})")
-    # Structural pins: thin strategic, zero-parameter OOD monitor.
-    assert bd["strategic"] < 10_000
+    # Structural pins: strategic is the rev2 ~9 M-class transformer module,
+    # the OOD monitor stays zero-parameter (buffers only).
+    assert 5_000_000 < bd["strategic"] < 12_000_000
     assert sum(p.numel() for p in refb.ood.parameters()) == 0
+
+
+def test_vocab_consistency_refb_vs_labels():
+    """Class-index vocabularies must agree between the architecture module
+    and the standalone label module (they cannot import each other)."""
+    from tanitad.refs.refb import MANEUVER_CLASSES, NAV_COMMANDS, ROUTE_CLASSES
+    assert len(ROUTE_CLASSES) == 3
+    assert ROUTE_CLASSES[refb_labels.ROUTE_LEFT] == "route_left"
+    assert ROUTE_CLASSES[refb_labels.ROUTE_STRAIGHT] == "route_straight"
+    assert ROUTE_CLASSES[refb_labels.ROUTE_RIGHT] == "route_right"
+    assert NAV_COMMANDS[refb_labels.NAV_FOLLOW] == "follow"
+    assert NAV_COMMANDS[refb_labels.NAV_LEFT] == "left"
+    assert NAV_COMMANDS[refb_labels.NAV_RIGHT] == "right"
+    assert NAV_COMMANDS[refb_labels.NAV_STRAIGHT] == "straight"  # reserved
+    assert MANEUVER_CLASSES[refb_labels.LANE_KEEP] == "lane_keep"
 
 
 # ---------- (b) one training step; confidence head fully detached -------------
@@ -129,8 +156,9 @@ def test_train_step_finite_and_confidence_detached(tmp_path):
     # Full loss: every component finite, every parameter trained.
     model.zero_grad(set_to_none=True)
     out = refb_train.compute_losses(model, batch)
-    for key in ("loss", "action", "seq", "wp", "man", "inv", "conf",
-                "conf_mae", "man_acc"):
+    for key in ("loss", "action", "seq", "wp", "man", "route", "inv", "conf",
+                "conf_mae", "man_acc", "route_acc", "nav_valid_frac",
+                "nav_follow_frac"):
         assert torch.isfinite(out[key].detach()), key
     out["loss"].backward()
     opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
@@ -211,7 +239,94 @@ def test_waypoint_targets_ego_frame_convention():
     assert int(win_lab[0]) == int(ep_labs[0])
 
 
-# ---------- (d) FiLM intent-conditioning path is live -------------------------
+# ---------- (g) nav-command derivation (rev2) ---------------------------------
+
+def test_nav_command_derivation_and_mask():
+    # Sustained gentle curves at route scale: dyaw = 0.06 * 0.1 * 250 = 1.5
+    # rad > 45 deg -> left/right with the repo's CCW-left sign convention.
+    left = _poses(400, yaw_rate=0.06)
+    cmd, valid = refb_labels.nav_command(left, 0)
+    assert (cmd, valid) == (refb_labels.NAV_LEFT, True)
+    cmd, valid = refb_labels.nav_command(_poses(400, yaw_rate=-0.06), 0)
+    assert (cmd, valid) == (refb_labels.NAV_RIGHT, True)
+    cmd, valid = refb_labels.nav_command(_poses(400), 0)     # straight road
+    assert (cmd, valid) == (refb_labels.NAV_FOLLOW, True)
+    # 15-25 s window: at t=249 exactly NAV_MIN_STEPS of future remain (valid);
+    # one step later the window is too short -> follow + valid=False.
+    assert refb_labels.nav_command(left, 249) == (refb_labels.NAV_LEFT, True)
+    assert refb_labels.nav_command(left, 250) == (refb_labels.NAV_FOLLOW,
+                                                  False)
+    # custom horizons stay pure-function parameters
+    assert refb_labels.nav_command(left, 0, horizon_steps=20,
+                                   min_steps=10) == (refb_labels.NAV_FOLLOW,
+                                                     True)   # dyaw 0.12 < 45deg
+    with pytest.raises(ValueError):
+        refb_labels.nav_command(left, 400)                   # t out of range
+    with pytest.raises(ValueError):
+        refb_labels.nav_command(left, 0, horizon_steps=5, min_steps=10)
+    # route-target mapping is the same 3-way derivation
+    assert refb_labels.route_target(refb_labels.NAV_FOLLOW) \
+        == refb_labels.ROUTE_STRAIGHT
+    assert refb_labels.route_target(refb_labels.NAV_LEFT) \
+        == refb_labels.ROUTE_LEFT
+    assert refb_labels.route_target(refb_labels.NAV_RIGHT) \
+        == refb_labels.ROUTE_RIGHT
+
+
+def test_trainer_feeds_nonconstant_nav_commands(tmp_path):
+    """Regression (rev2 defect fix): the strategic layer used to train on a
+    CONSTANT `follow`. On a synthetic dataset containing a turn, the trainer
+    feed must contain more than one command, never NAV_STRAIGHT, and both
+    mask states."""
+    root = _make_cached_root(tmp_path)          # episode 1 = gentle left
+    cfg = refb_smoke_config()
+    eps, _ = refb_train.load_cached_episodes(str(root), "*train*")
+    max_h = max(max(cfg.tactical.waypoint_horizons),
+                cfg.operative.action_seq - 1)
+    ds = refb_train.FailLoudWindowDataset(
+        eps, window=cfg.window, max_horizon=max_h,
+        channels=cfg.encoder.in_channels)
+    cmds = [int(ds[i]["nav_cmd"]) for i in range(len(ds))]
+    valids = [bool(ds[i]["nav_valid"]) for i in range(len(ds))]
+    assert len(set(cmds)) >= 2, "nav_cmd is constant — rev2 defect regressed"
+    assert refb_labels.NAV_LEFT in cmds
+    assert refb_labels.NAV_STRAIGHT not in cmds  # reserved, never derived
+    assert any(valids) and not all(valids)       # near-end windows masked
+    # end-to-end: a mixed batch flows through compute_losses with the derived
+    # commands (model consumes nav_cmd; route aux CE sees the valid subset).
+    per_ep = len(ds) // len(eps)
+    batch = torch.utils.data.default_collate(
+        [ds[i] for i in (0, 1, per_ep, per_ep + 1)])
+    assert len(set(batch["nav_cmd"].tolist())) >= 2
+    model = RefBModel(cfg)
+    out = refb_train.compute_losses(model, batch)
+    route = out["route"].detach()
+    assert torch.isfinite(route) and float(route) > 0
+    assert 0.0 < float(out["nav_follow_frac"]) < 1.0
+
+
+# ---------- (d) FiLM conditioning paths are live -------------------------------
+
+def test_nav_conditioning_path_strategic():
+    """Changing the nav command must change the strategic ctx/route outputs
+    once the FiLM weights are live (zero-init identity start pinned first)."""
+    torch.manual_seed(0)
+    cfg = refb_smoke_config()
+    model = RefBModel(cfg).eval()
+    states = torch.randn(2, cfg.window, model.state_dim)
+    cmd_follow = model.nav_emb(torch.tensor([0, 0]))
+    cmd_left = model.nav_emb(torch.tensor([1, 1]))
+    with torch.no_grad():
+        c1, r1 = model.strategic(states, cmd_follow)
+        c2, r2 = model.strategic(states, cmd_left)
+        assert torch.equal(c1, c2) and torch.equal(r1, r2)   # identity start
+        for blk in model.strategic.blocks:
+            nn.init.normal_(blk.film.to_scale_shift.weight, std=0.1)
+        c1, r1 = model.strategic(states, cmd_follow)
+        c2, r2 = model.strategic(states, cmd_left)
+        assert float((c1 - c2).abs().max()) > 1e-4           # ctx moves
+        assert float((r1 - r2).abs().max()) > 1e-4           # route moves
+
 
 def test_intent_film_conditioning_sensitivity():
     torch.manual_seed(0)
@@ -258,6 +373,10 @@ def test_failloud_raises_on_short_episode():
     item = ds[0]
     assert item["frames"].shape == (4, 1, 64, 64)
     assert item["future_poses"].shape == (20, 4)
+    # rev2 strategic fields ride along; T=40 < NAV_MIN_STEPS -> masked follow
+    assert int(item["nav_cmd"]) == refb_labels.NAV_FOLLOW
+    assert bool(item["nav_valid"]) is False
+    assert int(item["route_target"]) == refb_labels.ROUTE_STRAIGHT
 
 
 def test_failloud_raises_on_misalignment_and_channels():
@@ -288,8 +407,8 @@ def test_ckpt_roundtrip_and_resume(tmp_path):
             "--smoke"]
     metrics = refb_train.main(argv)
     assert metrics["final"]["step"] == 1
-    for k in ("loss", "action", "seq", "wp", "man", "inv", "conf",
-              "conf_mae", "ood_score"):
+    for k in ("loss", "action", "seq", "wp", "man", "route", "inv", "conf",
+              "conf_mae", "ood_score", "nav_valid_frac", "nav_follow_frac"):
         assert np.isfinite(metrics["final"][k]), k
     assert metrics["final"]["ood_frozen"] is True    # warmup=1 < 2 steps
     ckpt_path = out_dir / "ckpt.pt"
@@ -307,7 +426,8 @@ def test_ckpt_roundtrip_and_resume(tmp_path):
     fixed = torch.rand(2, cfg.window, 1, 64, 64)
     with torch.no_grad():
         o1, o2 = m1(fixed), m2(fixed)
-    for key in ("action_seq", "maneuver_logits", "intent", "conf_pred"):
+    for key in ("action_seq", "maneuver_logits", "intent", "route_logits",
+                "ctx", "conf_pred"):
         assert torch.equal(o1[key], o2[key]), key
         assert torch.isfinite(o1[key]).all(), key
     assert torch.equal(m1.ood.score(o1["states"][:, -1]),

@@ -6,10 +6,10 @@ The honest end-to-end opponent to the latent-world-model stack
 matched to the main model's ~261 M total within +-2 % (pinned by
 tests/test_refb.py against base250cam read programmatically).
 
-Layer map (vs the main 4B stack):
+Layer map (vs the main 4B stack; rev2 = Sayed's 2026-07-11 review):
   1. Encoder + readout : the SAME ViTEncoder/SpatialGridReadout classes,
      imported UNCHANGED, trained from scratch. The ~130 M freed by having no
-     predictor/imagination goes into a DEEPER encoder (27 blocks vs 14) and a
+     predictor/imagination goes into a DEEPER encoder (25 blocks vs 14) and a
      WIDER operative head (d768 x 6 causal blocks).
   2. Operative head (10-20 Hz): causal transformer over the encoded state
      window -> direct (steer, accel) regression + 0.5 s action sequence via
@@ -19,10 +19,16 @@ Layer map (vs the main 4B stack):
   3. Tactical head (1-2 Hz): maneuver-class distribution ("target behavior",
      pseudo-labeled by scripts/refb_labels.py) + 2 s waypoints at direct
      horizons; emits an intent token that conditions the operative head.
-     FiLM-conditioned on the strategic nav-command embedding.
-  4. Strategic (thin, Phase-0-symmetric): a small learned embedding over a
-     nav-command token {follow, left, right, straight}; default `follow` when
-     unlabeled. Interface present, capability deliberately thin.
+     d512 x 6 (rev2), FiLM-conditioned on the STRATEGIC CONTEXT TOKEN.
+  4. Strategic head (rev2): a real d384 x 4 causal transformer over the
+     shared state window, FiLM-conditioned on the nav-command embedding
+     {follow, left, right, straight} (default `follow` when unlabeled; nav
+     commands are DERIVED per window from 15-25 s of future heading by
+     scripts/refb_labels.nav_command). Outputs (a) a context token [d_ctx]
+     that conditions the tactical head, and (b) route-heading logits
+     (route_left / route_straight / route_right) trained by an auxiliary CE
+     on the same derivation — DIRECT supervision for the layer, not just
+     trickle-down gradient. ~8.4 M params (the ~9 M-class rev2 module).
   5. Fallback (label-free, NO world model):
      (a) ConfidenceHead — predicts its own realized waypoint error; inputs
          and targets are DETACHED, so its gradient can never reach the
@@ -51,8 +57,15 @@ from tanitad.models.inverse_dynamics import InverseDynamicsHead
 from tanitad.models.predictor import CausalBlock
 from tanitad.models.readout import SpatialGridReadout
 
-# Strategic vocabulary — index 0 is the unlabeled default.
+# Strategic vocabulary — index 0 is the unlabeled default. Kept 4-wide for
+# interface stability: `straight` is reserved for intersection topologies and
+# is NOT emitted by the comma pseudo-derivation (only follow/left/right are;
+# see scripts/refb_labels.nav_command).
 NAV_COMMANDS = ("follow", "left", "right", "straight")
+
+# Route-heading aux classes (rev2) — order pinned against refb_labels.py
+# by tests/test_refb.py.
+ROUTE_CLASSES = ("route_left", "route_straight", "route_right")
 
 # Tactical "target behavior" vocabulary (pseudo-labels: scripts/refb_labels.py).
 MANEUVER_CLASSES = ("lane_keep", "turn_left", "turn_right", "accelerate",
@@ -73,7 +86,7 @@ class OperativeHeadConfig:
 @dataclass
 class TacticalHeadConfig:
     d_model: int = 512
-    depth: int = 4
+    depth: int = 6                # rev2: 4 -> 6 (funded by encoder 27 -> 25)
     n_heads: int = 8
     n_maneuvers: int = len(MANEUVER_CLASSES)
     # 2 s @ 10 Hz in 0.5 s strides — direct heads, no recursion.
@@ -84,7 +97,12 @@ class TacticalHeadConfig:
 @dataclass
 class StrategicConfig:
     n_commands: int = len(NAV_COMMANDS)
-    d_cmd: int = 64               # FiLM cond dim of the tactical head
+    d_cmd: int = 128              # nav-command embedding = FiLM cond (rev2)
+    d_model: int = 384            # rev2: real transformer over the window
+    depth: int = 4
+    n_heads: int = 6
+    d_ctx: int = 256              # context token = FiLM cond of tactical
+    n_route: int = len(ROUTE_CLASSES)   # aux route-heading classes
 
 
 @dataclass
@@ -107,21 +125,23 @@ def refb_config() -> RefBConfig:
     """TanitAD-4B-E2E at main-track scale — budget-matched to base250cam.
 
     The encoder trunk is base250cam's EncoderConfig read PROGRAMMATICALLY
-    (same in_channels/image_size/patch/d_model/n_heads) with depth 27 instead
+    (same in_channels/image_size/patch/d_model/n_heads) with depth 25 instead
     of 14 — that is where the freed predictor+imagination budget (~130 M)
-    goes, together with the d768 x 6 operative head.
+    goes, together with the d768 x 6 operative head. Rev2 rebalance (Sayed
+    review): encoder 27 -> 25 funds the strategic transformer (d384 x 4) and
+    the deeper tactical head (d512 x 4 -> 6).
 
     Measured budget (count_params at instantiation, vs main 262.8 M):
-      encoder ViT d768 x 27 + readout ....... ~193.4 M
+      encoder ViT d768 x 25 + readout ....... ~179.3 M
       operative head d768 x 6 + inv-dyn ..... ~51.7 M
-      tactical head d512 x 4 ................ ~14.1 M
-      strategic nav embedding ............... ~0.0003 M (thin by design)
+      tactical head d512 x 6 ................ ~21.7 M
+      strategic d384 x 4 + nav embedding .... ~8.4 M   (rev2 ~9 M-class module)
       fallback confidence head .............. ~1.4 M   (OOD = buffers, 0 params)
-      total ................................. ~260.7 M  (-0.8 % vs main)
+      total ................................. ~262.5 M  (-0.1 % vs main)
     """
     cfg = RefBConfig()
     main_enc = base250cam_config().encoder
-    cfg.encoder = dataclasses.replace(main_enc, depth=27)
+    cfg.encoder = dataclasses.replace(main_enc, depth=25)
     cfg.readout = ReadoutConfig(grid=4, d_readout=128)      # state_dim 2048
     return cfg
 
@@ -137,7 +157,8 @@ def refb_smoke_config() -> RefBConfig:
     cfg.operative = OperativeHeadConfig(d_model=64, depth=2, n_heads=2)
     cfg.tactical = TacticalHeadConfig(d_model=32, depth=1, n_heads=2,
                                       d_intent=16)
-    cfg.strategic = StrategicConfig(d_cmd=8)
+    cfg.strategic = StrategicConfig(d_cmd=16, d_model=32, depth=1, n_heads=2,
+                                    d_ctx=16)
     cfg.fallback = FallbackConfig(hidden=32)
     return cfg
 
@@ -187,17 +208,17 @@ class OperativeHead(nn.Module):
 class TacticalHead(nn.Module):
     """Maneuver distribution + 2 s waypoints + intent token (1-2 Hz layer).
 
-    forward(states [B, W, S], cmd [B, d_cmd]) ->
+    forward(states [B, W, S], ctx [B, d_cond]) ->
         (maneuver_logits [B, M], waypoints {k: [B, 2]}, intent [B, d_intent])
     Waypoints are DIRECT per-horizon heads in the ego frame of the last window
     pose (refb_labels.ego_frame convention) — no recursion. The strategic
-    nav-command embedding conditions every block via FiLM. The frequency
-    separation (tactical every N_tac operative ticks) is enforced by the
-    caller/runtime, as in the main fourbrain stack.
+    CONTEXT TOKEN (rev2; previously the raw nav embedding) conditions every
+    block via FiLM. The frequency separation (tactical every N_tac operative
+    ticks) is enforced by the caller/runtime, as in the main fourbrain stack.
     """
 
     def __init__(self, cfg: TacticalHeadConfig, state_dim: int, window: int,
-                 d_cmd: int):
+                 d_cond: int):
         super().__init__()
         self.cfg, self.window = cfg, window
         d = cfg.d_model
@@ -205,7 +226,7 @@ class TacticalHead(nn.Module):
         self.pos = nn.Parameter(torch.zeros(1, window, d))
         nn.init.trunc_normal_(self.pos, std=0.02)
         self.blocks = nn.ModuleList(
-            CausalBlock(d, cfg.n_heads, cond_dim=d_cmd)
+            CausalBlock(d, cfg.n_heads, cond_dim=d_cond)
             for _ in range(cfg.depth))
         self.norm = nn.LayerNorm(d)
         self.maneuver_head = nn.Linear(d, cfg.n_maneuvers)
@@ -213,8 +234,50 @@ class TacticalHead(nn.Module):
             {str(k): nn.Linear(d, 2) for k in cfg.waypoint_horizons})
         self.intent_proj = nn.Linear(d, cfg.d_intent)
 
-    def forward(self, states: Tensor, cmd: Tensor
+    def forward(self, states: Tensor, ctx: Tensor
                 ) -> tuple[Tensor, dict[int, Tensor], Tensor]:
+        b, w, _ = states.shape
+        assert w == self.window, f"window mismatch: {w} != {self.window}"
+        x = self.in_proj(states) + self.pos[:, :w]
+        cond = ctx.unsqueeze(1).expand(-1, w, -1)             # [B, W, d_cond]
+        mask = torch.triu(torch.ones(w, w, device=states.device,
+                                     dtype=torch.bool), diagonal=1)
+        for blk in self.blocks:
+            x = blk(x, cond, mask)
+        h = self.norm(x[:, -1])
+        waypoints = {k: self.wp_heads[str(k)](h)
+                     for k in self.cfg.waypoint_horizons}
+        return self.maneuver_head(h), waypoints, self.intent_proj(h)
+
+
+class StrategicHead(nn.Module):
+    """Route-level layer (rev2): causal transformer over the state window,
+    FiLM-conditioned on the nav-command embedding.
+
+    forward(states [B, W, S], cmd [B, d_cmd]) ->
+        (ctx [B, d_ctx], route_logits [B, n_route])
+    `ctx` replaces the raw nav embedding as the FiLM cond of the tactical
+    head; `route_logits` (route_left / route_straight / route_right over the
+    15-25 s horizon) receive an auxiliary CE in the trainer so the layer gets
+    DIRECT supervision. Same CausalBlock/FiLM mechanism as the other layers,
+    imported unchanged.
+    """
+
+    def __init__(self, cfg: StrategicConfig, state_dim: int, window: int):
+        super().__init__()
+        self.cfg, self.window = cfg, window
+        d = cfg.d_model
+        self.in_proj = nn.Linear(state_dim, d)
+        self.pos = nn.Parameter(torch.zeros(1, window, d))
+        nn.init.trunc_normal_(self.pos, std=0.02)
+        self.blocks = nn.ModuleList(
+            CausalBlock(d, cfg.n_heads, cond_dim=cfg.d_cmd)
+            for _ in range(cfg.depth))
+        self.norm = nn.LayerNorm(d)
+        self.ctx_proj = nn.Linear(d, cfg.d_ctx)
+        self.route_head = nn.Linear(d, cfg.n_route)
+
+    def forward(self, states: Tensor, cmd: Tensor) -> tuple[Tensor, Tensor]:
         b, w, _ = states.shape
         assert w == self.window, f"window mismatch: {w} != {self.window}"
         x = self.in_proj(states) + self.pos[:, :w]
@@ -224,9 +287,7 @@ class TacticalHead(nn.Module):
         for blk in self.blocks:
             x = blk(x, cond, mask)
         h = self.norm(x[:, -1])
-        waypoints = {k: self.wp_heads[str(k)](h)
-                     for k in self.cfg.waypoint_horizons}
-        return self.maneuver_head(h), waypoints, self.intent_proj(h)
+        return self.ctx_proj(h), self.route_head(h)
 
 
 class ConfidenceHead(nn.Module):
@@ -306,11 +367,14 @@ class RefBModel(nn.Module):
             self.encoder.n_tokens, cfg.encoder.d_model,
             grid=cfg.readout.grid, d_readout=cfg.readout.d_readout)
         self.state_dim = self.readout.out_dim
-        # Strategic (thin): learned nav-command embedding, default `follow`.
+        # Strategic (rev2): nav-command embedding -> FiLM cond of a real
+        # transformer over the window; its ctx token conditions tactical.
         self.nav_emb = nn.Embedding(cfg.strategic.n_commands,
                                     cfg.strategic.d_cmd)
+        self.strategic = StrategicHead(cfg.strategic, self.state_dim,
+                                       cfg.window)
         self.tactical = TacticalHead(cfg.tactical, self.state_dim, cfg.window,
-                                     cfg.strategic.d_cmd)
+                                     cfg.strategic.d_ctx)
         self.operative = OperativeHead(cfg.operative, self.state_dim,
                                        cfg.window, cfg.tactical.d_intent)
         # Same aux as the main model (A5 grounding), same sizing rule.
@@ -339,6 +403,7 @@ class RefBModel(nn.Module):
 
         Returns dict: states [B, W, S], maneuver_logits [B, M],
         waypoints {k: [B, 2]}, intent [B, d_intent], action_seq [B, K, A],
+        route_logits [B, n_route] (strategic aux), ctx [B, d_ctx],
         conf_pred [B] (detached input path — fallback (a)).
         """
         states = self.encode_window(frames)
@@ -346,28 +411,33 @@ class RefBModel(nn.Module):
             nav_cmd = torch.zeros(states.shape[0], dtype=torch.long,
                                   device=states.device)
         cmd = self.nav_emb(nav_cmd)
-        maneuver_logits, waypoints, intent = self.tactical(states, cmd)
+        ctx, route_logits = self.strategic(states, cmd)
+        maneuver_logits, waypoints, intent = self.tactical(states, ctx)
         action_seq = self.operative(states, intent)
         conf_in = torch.cat([states[:, -1].detach(), intent.detach()], dim=-1)
         conf_pred = self.confidence(conf_in)
         return {"states": states, "maneuver_logits": maneuver_logits,
                 "waypoints": waypoints, "intent": intent,
-                "action_seq": action_seq, "conf_pred": conf_pred}
+                "action_seq": action_seq, "route_logits": route_logits,
+                "ctx": ctx, "conf_pred": conf_pred}
 
 
 def param_breakdown(model: RefBModel) -> dict[str, int]:
     """Per-layer trainable-parameter table (report + metrics.json row).
 
     inv_dyn is booked under `operative` (it is the operative-level grounding
-    aux, same as the main stack); readout under `encoder`; the OOD monitor is
-    buffers-only and contributes 0 to `fallback`.
+    aux, same as the main stack); readout under `encoder`; `strategic` =
+    transformer + nav embedding (rev2); the OOD monitor is buffers-only and
+    contributes 0 to `fallback`. Full-config measurement (vs main 262.8 M):
+    encoder ~179.3 M, operative ~51.7 M, tactical ~21.7 M, strategic ~8.4 M,
+    fallback ~1.4 M, total ~262.5 M (-0.1 %).
     """
     cnt = lambda m: sum(p.numel() for p in m.parameters())  # noqa: E731
     return {
         "encoder": cnt(model.encoder) + cnt(model.readout),
         "operative": cnt(model.operative) + cnt(model.inv_dyn),
         "tactical": cnt(model.tactical),
-        "strategic": cnt(model.nav_emb),
+        "strategic": cnt(model.strategic) + cnt(model.nav_emb),
         "fallback": cnt(model.confidence) + cnt(model.ood),
         "total": cnt(model),
     }

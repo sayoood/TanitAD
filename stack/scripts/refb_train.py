@@ -13,9 +13,19 @@ Losses (weights documented below):
     action-sequence BC   direct heads a_{t+1..t+4} vs future_actions (0.5 s)
     waypoint L2          ego-frame 2 s waypoints vs pose-derived targets
     maneuver CE          vs kinematic pseudo-labels (refb_labels.py)
+    route-heading CE     strategic aux (rev2) vs the SAME nav derivation,
+                         valid-masked, inverse-class-frequency weighted
+                         (clamped <= 10 — comma2k19 is highway-dominated, so
+                         `follow`/route_straight dominates heavily and would
+                         otherwise drown the rare left/right windows)
     inverse dynamics     same aux + weight (0.5) as the main run (fair aux)
     confidence           (conf_pred - realized waypoint error)^2, DETACHED —
                          optimizes ONLY the confidence head (fallback (a))
+Nav commands are DERIVED PER WINDOW (rev2 defect fix — the layer previously
+trained on a constant `follow`): FailLoudWindowDataset computes
+refb_labels.nav_command from 15-25 s of future episode poses and emits
+nav_cmd / nav_valid / route_target with every item; the model consumes
+nav_cmd, the aux CE consumes route_target where nav_valid.
 Fallback signals conf_mae + ood_score are computed and logged every step
 (emitted on the main run's log cadence); the feature-OOD stats freeze after
 --ood-warmup steps (fallback (b)).
@@ -55,16 +65,19 @@ from tanitad.train.train_worldmodel import cosine_lr
 
 # Loss weights. inv-dyn matches the main run's operating point
 # (LossConfig.inv_dyn_weight = 0.5 — the fair aux); the BC/waypoint terms are
-# co-equal primaries (this stack IS the action decoder); maneuver CE is a
-# 0.5 shaping term (mirrors the main trainer's 0.5 on the tactical loss);
-# the confidence weight only scales the fallback head's own learning signal
-# (its gradient cannot reach anything else — detached by construction).
+# co-equal primaries (this stack IS the action decoder); maneuver CE and the
+# rev2 route-heading aux CE are 0.5 shaping terms (mirroring the main
+# trainer's 0.5 on the tactical loss); the confidence weight only scales the
+# fallback head's own learning signal (its gradient cannot reach anything
+# else — detached by construction).
 ACTION_WEIGHT = 1.0
 SEQ_WEIGHT = 1.0
 WP_WEIGHT = 1.0
 MANEUVER_WEIGHT = 0.5
+ROUTE_WEIGHT = 0.5
 INV_WEIGHT = 0.5
 CONF_WEIGHT = 1.0
+ROUTE_CE_CLAMP = 10.0     # cap on the inverse-class-frequency CE weights
 
 
 # ---- fail-loud windowing (2026-07-10 review, REF-B strict variant) ----------
@@ -105,7 +118,12 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
 
     Raises at build time on: any too-short episode, frames/actions/poses
     length misalignment, and frame-channel mismatch vs the encoder config.
-    __getitem__/__len__ are inherited unchanged (byte-identical windows)."""
+    __len__ is inherited; __getitem__ returns the byte-identical window dict
+    EXTENDED (rev2) with the derived strategic fields:
+        nav_cmd      [] long — refb_labels.nav_command at the last window pose
+        nav_valid    [] bool — False when < NAV_MIN_STEPS of future exist
+        route_target [] long — the same 3-way derivation, aux-CE target
+    """
 
     def __init__(self, episodes: list, window: int, max_horizon: int,
                  channels: int | None = None):
@@ -129,6 +147,17 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
                                          for ep in episodes],
                                         window, max_horizon)
 
+    def __getitem__(self, i: int):
+        item = super().__getitem__(i)
+        e_i, t = self.index[i]
+        cmd, valid = refb_labels.nav_command(self.episodes[e_i].poses,
+                                             t + self.window - 1)
+        item["nav_cmd"] = torch.tensor(cmd, dtype=torch.long)
+        item["nav_valid"] = torch.tensor(valid)
+        item["route_target"] = torch.tensor(refb_labels.route_target(cmd),
+                                            dtype=torch.long)
+        return item
+
 
 def load_cached_episodes(data_root: str, pattern: str, n: int = 0):
     """Newest cache dir matching ``pattern`` under data_root -> mmap episodes
@@ -151,14 +180,18 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
 
     The confidence target is the REALIZED per-sample waypoint error with a
     fully detached graph (detached predictions AND detached head inputs
-    inside the model), so `conf` trains only the confidence head."""
+    inside the model), so `conf` trains only the confidence head. nav_cmd is
+    the per-window DERIVED command (rev2) — never a constant."""
     frames = batch["frames"].to(device)            # [B, W, C, H, W']
     actions = batch["actions"].to(device)          # [B, W, 2]
     fut_actions = batch["future_actions"].to(device)   # [B, Hmax, 2]
     fut_poses = batch["future_poses"].to(device)   # [B, Hmax, 4]
     pose_last = batch["pose_last"].to(device)      # [B, 4]
+    nav_cmd = batch["nav_cmd"].to(device)          # [B] long (derived)
+    nav_valid = batch["nav_valid"].to(device)      # [B] bool
+    route_tgt = batch["route_target"].to(device)   # [B] long
 
-    out = model(frames)                            # nav_cmd default: follow
+    out = model(frames, nav_cmd=nav_cmd)
     horizons = model.cfg.tactical.waypoint_horizons
     k_seq = model.cfg.operative.action_seq
 
@@ -175,6 +208,24 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
         pose_last, fut_poses, horizon=max(horizons))
     loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
 
+    # Strategic aux (rev2): route-heading CE on the SAME nav derivation,
+    # valid-masked, inverse-class-frequency weighted (clamped) — comma2k19
+    # is highway-dominated, so route_straight would otherwise drown the
+    # rare left/right windows.
+    n_route = model.cfg.strategic.n_route
+    if bool(nav_valid.any()):
+        tgt_v = route_tgt[nav_valid]
+        counts = torch.bincount(tgt_v, minlength=n_route).float()
+        w = (tgt_v.numel() / (n_route * counts.clamp_min(1.0))).clamp(
+            max=ROUTE_CE_CLAMP)
+        loss_route = F.cross_entropy(out["route_logits"][nav_valid], tgt_v,
+                                     weight=w)
+        route_acc = (out["route_logits"][nav_valid].argmax(-1)
+                     == tgt_v).float().mean()
+    else:                       # no route-scale future in this batch
+        loss_route = torch.zeros((), device=out["route_logits"].device)
+        route_acc = torch.zeros(())
+
     # Inverse dynamics on consecutive window states (A5 — same as main run).
     states = out["states"]
     a_hat = model.inv_dyn(states[:, -2], states[:, -1])
@@ -187,11 +238,15 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
 
     loss = (ACTION_WEIGHT * loss_action + SEQ_WEIGHT * loss_seq
             + WP_WEIGHT * loss_wp + MANEUVER_WEIGHT * loss_man
+            + ROUTE_WEIGHT * loss_route
             + INV_WEIGHT * loss_inv + CONF_WEIGHT * loss_conf)
     man_acc = (out["maneuver_logits"].argmax(-1) == man_tgt).float().mean()
     return {"loss": loss, "action": loss_action, "seq": loss_seq,
-            "wp": loss_wp, "man": loss_man, "inv": loss_inv,
-            "conf": loss_conf, "conf_mae": conf_mae, "man_acc": man_acc,
+            "wp": loss_wp, "man": loss_man, "route": loss_route,
+            "inv": loss_inv, "conf": loss_conf, "conf_mae": conf_mae,
+            "man_acc": man_acc, "route_acc": route_acc,
+            "nav_valid_frac": nav_valid.float().mean(),
+            "nav_follow_frac": (nav_cmd == 0).float().mean(),
             "states": states}
 
 
@@ -248,7 +303,9 @@ def train(args) -> dict:
                        "warmup": warmup, "schedule": "cosine (main run's)"},
          "loss_weights": {"action": ACTION_WEIGHT, "seq": SEQ_WEIGHT,
                           "wp": WP_WEIGHT, "man": MANEUVER_WEIGHT,
-                          "inv": INV_WEIGHT, "conf": CONF_WEIGHT},
+                          "route": ROUTE_WEIGHT, "inv": INV_WEIGHT,
+                          "conf": CONF_WEIGHT,
+                          "route_ce_clamp": ROUTE_CE_CLAMP},
          "param_breakdown": param_breakdown(model)},
         indent=2, default=str), encoding="utf-8")
 
@@ -306,12 +363,17 @@ def train(args) -> dict:
                 "step": step, "loss": sc(out["loss"]),
                 "action": sc(out["action"]), "seq": sc(out["seq"]),
                 "wp": sc(out["wp"]), "man": sc(out["man"]),
+                "route": sc(out["route"]),
                 "inv": sc(out["inv"]), "conf": sc(out["conf"]),
                 # fallback signals (spec item 5: log both per step)
                 "conf_mae": sc(out["conf_mae"]),
                 "ood_score": round(ood_mean, 5),
                 "ood_frozen": bool(model.ood.frozen),
                 "man_acc": sc(out["man_acc"]),
+                "route_acc": sc(out["route_acc"]),
+                # nav feed health (rev2): non-constant commands, valid share
+                "nav_valid_frac": sc(out["nav_valid_frac"]),
+                "nav_follow_frac": sc(out["nav_follow_frac"]),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
             }
@@ -337,8 +399,9 @@ def train(args) -> dict:
                 [vds[i] for i in range(min(16, len(vds)))])
             vout = compute_losses(model, vb, device)
         metrics["val"] = {k: round(float(vout[k]), 5)
-                          for k in ("action", "seq", "wp", "man", "conf_mae",
-                                    "man_acc")}
+                          for k in ("action", "seq", "wp", "man", "route",
+                                    "conf_mae", "man_acc", "route_acc",
+                                    "nav_valid_frac", "nav_follow_frac")}
         metrics["val"]["ood_score"] = round(
             float(model.ood.score(vout["states"][:, -1]).mean()), 5)
     except AssertionError:
