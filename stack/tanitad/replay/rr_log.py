@@ -50,6 +50,18 @@ EGO_COLORS = {"speed": (120, 120, 120), "yaw_rate": (170, 170, 170)}
 MANEUVER_PALETTE = ((31, 119, 180), (214, 39, 40), (148, 103, 189),
                     (140, 86, 75), (227, 119, 194), (127, 127, 127))
 
+# BEV reference frame for the labelled metric grid + scale bar (metres, ego).
+BEV_GRID_FWD = (0.0, 10.0, 20.0, 30.0)     # forward gridlines (m)
+BEV_GRID_LAT = (-10.0, 0.0, 10.0)          # lateral gridlines (m, +y = left)
+BEV_LAT_HALF = 15.0                         # lateral half-extent drawn
+BEV_FWD_MAX = 30.0                          # forward extent drawn
+BEV_AXIS_COLOR = (70, 80, 95)
+BEV_LABEL_COLOR = (150, 160, 175)
+
+
+def _hex(c: tuple[int, int, int]) -> str:
+    return "#%02x%02x%02x" % (int(c[0]), int(c[1]), int(c[2]))
+
 
 def arm_color(name: str) -> tuple[int, int, int]:
     """Consistent arm color; deterministic fallback for unknown arm names."""
@@ -131,6 +143,8 @@ class RerunLogger:
         rr.send_blueprint(self._blueprint())
         self._styled: set[str] = set()
         self._cur_ep: tuple[str, int] | None = None
+        self._legend_logged = False
+        self._log_bev_axes()
 
     # -- layout -----------------------------------------------------------
     @staticmethod
@@ -140,8 +154,10 @@ class RerunLogger:
         return rrb.Blueprint(rrb.Horizontal(
             rrb.Vertical(
                 rrb.Spatial2DView(origin="/camera", name="Camera + fans"),
-                rrb.Spatial2DView(origin="/bev", name="BEV ego (m)"),
-                rrb.TextLogView(origin="/meta", name="Episodes"),
+                rrb.Spatial2DView(origin="/bev", name="BEV ego (m, fwd=up)"),
+                rrb.Horizontal(
+                    rrb.TextLogView(origin="/meta", name="Episodes"),
+                    rrb.TextDocumentView(origin="/legend", name="Legend")),
                 row_shares=[3, 3, 1]),
             rrb.Vertical(
                 rrb.TimeSeriesView(origin="/actions/steer", name="Steer (rad)"),
@@ -155,6 +171,65 @@ class RerunLogger:
                                    name="REF-B maneuver distribution"),
                 rrb.TimeSeriesView(origin="/ego", name="Ego kinematics")),
             column_shares=[3, 3, 2]))
+
+    # -- static legends / axes ---------------------------------------------
+    def _log_bev_axes(self) -> None:
+        """Static labelled metric grid + 10 m scale bar under ``/bev/axes`` so
+        the BEV panel reads in metres without the viewer guessing the scale."""
+        grid = [to_bev(np.array([[d, -BEV_LAT_HALF], [d, BEV_LAT_HALF]]))
+                for d in BEV_GRID_FWD]
+        grid += [to_bev(np.array([[0.0, lat], [BEV_FWD_MAX, lat]]))
+                 for lat in BEV_GRID_LAT]
+        rr.log("/bev/axes/grid",
+               rr.LineStrips2D(grid, colors=[BEV_AXIS_COLOR] * len(grid),
+                               radii=0.02, draw_order=-10.0), static=True)
+        marks = [d for d in BEV_GRID_FWD if d > 0]
+        pts = np.stack([to_bev(np.array([[d, BEV_LAT_HALF * 0.9]]))[0]
+                        for d in marks])
+        self._safe_labeled_points("/bev/axes/fwd_labels", pts,
+                                  [f"{int(d)} m" for d in marks],
+                                  BEV_LABEL_COLOR)
+        bar = to_bev(np.array([[1.0, -BEV_LAT_HALF + 1.0],
+                               [11.0, -BEV_LAT_HALF + 1.0]]))
+        self._safe_labeled_strip("/bev/axes/scale_bar", [bar], "10 m",
+                                 (230, 235, 240), radii=0.08)
+
+    def _safe_labeled_points(self, path, positions, labels, color) -> None:
+        try:
+            rr.log(path, rr.Points2D(positions, labels=labels,
+                                     colors=[color] * len(labels), radii=0.01,
+                                     show_labels=True), static=True)
+        except TypeError:                              # older show_labels API
+            rr.log(path, rr.Points2D(positions, labels=labels,
+                                     colors=[color] * len(labels), radii=0.01),
+                   static=True)
+
+    def _safe_labeled_strip(self, path, strips, label, color, radii) -> None:
+        try:
+            rr.log(path, rr.LineStrips2D(strips, colors=[color], radii=radii,
+                                         labels=[label], show_labels=True),
+                   static=True)
+        except TypeError:
+            rr.log(path, rr.LineStrips2D(strips, colors=[color], radii=radii,
+                                         labels=[label]), static=True)
+
+    def _log_legend(self, arm_names) -> None:
+        """One `/legend` TextDocument mapping every arm (and GT) to its color
+        and entity paths — logged once, on the first record, when the actual
+        arm set is known."""
+        rows = ["# TanitAD replay — legend", "",
+                "| arm | color | entities |", "|---|---|---|",
+                f"| **GT** (ground truth) | `{_hex(GT_COLOR)}` | "
+                f"`/bev/gt`, `/camera/traj/gt`, `/actions/*/gt` |"]
+        for n in arm_names:
+            c = arm_color(n)
+            rows.append(f"| **{n}** | `{_hex(c)}` | `/bev/{n}`, "
+                        f"`/camera/traj/{n}`, `/error/{n}` |")
+        rows += ["", "BEV: forward = up, +y = left; grid every 10 m; "
+                 "scale bar = 10 m. Camera fans use the approximate pinhole "
+                 "ground projection (intuition, not measurement)."]
+        rr.log("/legend", rr.TextDocument(
+            "\n".join(rows), media_type=rr.MediaType.MARKDOWN), static=True)
 
     # -- primitives ---------------------------------------------------------
     def _scalar(self, path: str, value: float,
@@ -177,20 +252,30 @@ class RerunLogger:
     def _traj(self, name: str, wps: np.ndarray,
               color: tuple[int, int, int],
               frame_hw: tuple[int, int] | None) -> None:
-        """One arm's (or GT's) waypoint path into BEV + camera overlay."""
+        """One arm's (or GT's) waypoint path into BEV + camera overlay.
+
+        Both strips carry the arm ``name`` as a label so the entity tree and
+        hover tooltips read cleanly (no anonymous line strips)."""
+        label = "GT" if name == "gt" else name
         path = np.vstack([[0.0, 0.0], wps])                 # from ego origin
         rr.log(f"/bev/{name}",
-               rr.LineStrips2D([to_bev(path)], colors=[color], radii=0.12))
+               rr.LineStrips2D([to_bev(path)], colors=[color], radii=0.12,
+                               labels=[label]))
         if frame_hw is not None:
             h, w = frame_hw
             px = to_image_plane(path, h, w)
             rr.log(f"/camera/traj/{name}",
-                   rr.LineStrips2D([px], colors=[color], radii=1.5))
+                   rr.LineStrips2D([px], colors=[color], radii=1.5,
+                                   labels=[label]))
 
     # -- the record ---------------------------------------------------------
     def log_record(self, rec: TimestepRecord) -> None:
         rr.set_time("step", sequence=rec.step)
         rr.set_time("episode", sequence=rec.ep_index)
+
+        if not self._legend_logged:                   # arm set known now
+            self._log_legend(list(rec.arms.keys()))
+            self._legend_logged = True
 
         if (rec.corpus, rec.episode_id) != self._cur_ep:
             self._cur_ep = (rec.corpus, rec.episode_id)
