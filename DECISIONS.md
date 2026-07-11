@@ -108,6 +108,31 @@ into the Benchmarks & Eval and Production & Optimization backlogs respectively. 
 (orchestrator W30 run) — the execution-level protocol change is adopted; the change was already live in the
 protocol file.
 
+## D-029 — Agent-program upgrade: DevEnv product ownership, Scenario DB app, goal-loops, production-readiness (2026-07-12, directed by Sayed)
+
+**Decision.** (1) **Tools&DevEnv agent** gains two standing product responsibilities beyond classic
+tooling: **continuously develop TanitResim** (push to main directly — dev tooling, not intake-gated)
+and **build the Scenario Database App "TanitScena"** (structured store over `SCENARIO_DATABASE.md` +
+a self-contained LOCAL vector DB for semantic search + a modern TanitResim-language UI to search /
+load / visualize scenarios and surface the dataset link). DevEnv focus shifts toward designing,
+implementing and testing tools that make development easier/faster/professional, and toward
+**collaboration** — building the specific instrument another agent's backlog needs. (2) **All agents:**
+keep a `GOALS.md` (measurable objective + target + deadline), run **≥2 measured experiments/run**
+(one targeting the top program risk), operate as goal-loops (chain runs toward the goal, leave
+Monitors for gating results), and label every deliverable's **production-readiness**
+(prototype/validated/production + gap-to-next). (3) A **cross-backlog Roadmap**
+(`Project Steering/ROADMAP.md`) sequences all six disciplines' backlogs by depth/quality/production-
+readiness and the Phase-0 driving-capability gate.
+
+**Rationale.** Sayed: internal product surfaces (replay, scenario DB) materially raise team velocity
+and professionalism; agents were reporting more than experimenting; outputs need a production-
+readiness bar, not "it ran once." The single-camera driving gap (D1 6.44 m) is the top risk every
+agent's experiments should now orbit.
+
+**Consequences.** `tools-devenv-agent.md` rewritten (P1/P2/collaboration); `_common-protocol.md`
+gains the goal-loop + ≥2-experiment + production-readiness section; TanitScena scaffolding started
+by the MVP loop (2026-07-12); ROADMAP.md authored. Status: **accepted (execution-level per D-018).**
+
 ## D-027 — K-step rollout loss adopted for all post-30k training (2026-07-10, accepted by Sayed)
 
 **Decision.** Every training run AFTER the p0-sB01 30k record run uses the K-step recursive rollout

@@ -65,6 +65,22 @@ Iterate at most **4** times, total wall-clock budget **4 h**, at most **25 web s
    feeding the critique back into SEARCH/ANALYZE. If budget exhausted → commit what you have and mark
    `QUALITY: partial` in your STATE.md.
 
+## Goal-oriented autonomy & experiment cadence (D-029, Sayed 2026-07-12)
+
+Raise the bar: **more experiments, run to goals, not just weekly reports.**
+- **Standing GOAL per agent:** keep a `GOALS.md` in your discipline folder — 1–3 concrete,
+  measurable objectives with a target number and a deadline (e.g. "get D1 straight-stratum ADE
+  below constant-velocity by W33"). Each run, advance a goal with a measured step and update its
+  status; a goal with no movement for two runs is escalated in your STATE, not silently carried.
+- **≥2 measured experiments/run** (was ≥1, D-020 §4) when compute is available — at least one must
+  target the current top program risk (right now: the single-camera driving-capability gap,
+  `Benchmarks & Eval/DRIVING_DIAGNOSTIC_FRAMEWORK.md`), not only your local backlog.
+- **Loop concept:** treat your run as an inner goal-loop — RECALL → pick the goal-advancing
+  experiment → run it → measure → decide next — and, where a result gates the next step, leave a
+  Monitor/queued follow-up rather than waiting a week. Chain runs toward the goal.
+- **Production-readiness bar (D-029):** every deliverable states its readiness — prototype /
+  validated / production — and names the gap to the next level. "It runs once" is prototype, not done.
+
 ## Burst compute (use it — allocated resources must not idle, D-020 §4)
 
 Priority order for experiments:
