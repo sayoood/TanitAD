@@ -39,9 +39,17 @@
 
 ## TanitAD internal gate ladder (Phase 0)
 
+> **⚠ D1/D3 statistical-power footnote (G-B1, added 2026-07-11).** The D1/D3 open-loop decode gates are
+> reported from a **single fixed seed=0** episode split at 4–9 val episodes. A measured power audit
+> (`Research/2026-07-11-d1-ade-statistical-power-audit.md`, step-6500 ckpt, real comma2k19) shows the
+> ADE@1s estimator swings **5–7 m across split seeds** on the *same* checkpoint and has a 95 % CI
+> half-width of ±4.5 m (n=4) / ±3.1 m (n=9). **Any single-seed D1 value below is descriptive, not
+> decision-grade; a "gate movement" claim needs mean±CI over ≥5 seeds and ≥20 val eps.** The step-14k→21k
+> "D1 5.18→11.52 m regression" is inside this noise band → treat as a sampling artifact, not a signal.
+
 | Gate | Status | Value | Exp-ID | Date |
 |---|---|---|---|---|
-| D1 (probe ADE) | **FAIL, halving** (step 14k/30k; 10.94 at 5k) | ADE@1s **5.18 m** (bar < 1.0) — on trend toward the bar by 30k | p0-sB01-gates-step14000 | 2026-07-09 |
+| D1 (probe ADE) | **FAIL — NOT decision-grade at n=4–9 val eps** (single-seed; ±4.5 m noise band, see footnote) | ADE@1s 5.18 m (step-14k, 9 eps) → 11.52 m (step-21k, **4 eps**) is *inside* the estimator CI, not a regression; bar < 1.0 camera-unit unmeetable (D4–D6 arbitrate) | p0-sB01-gates-step{14000,21000} | 2026-07-11 |
 | D2 (imagination ranking) | **PASS, improved** (step 14k/30k) | dir-acc P1 **0.917** / P4 **1.000** (bar 0.7, chance 0.5; 0.872/0.940 at 5k); imag-rel 7.42 diagnostic (9.73 at 5k) — A13 pattern holds | p0-sB01-gates-step14000 | 2026-07-09 |
 | D3 (imagined-ADE ratio) | **BLOCKED, closing** (I4 3.05; 3.83 at 5k — approaching the persistence threshold) | @0.4 s horizon | p0-sB01-gates-step14000 | 2026-07-09 |
 | D4 (tactical lift) | not run | — | — | — |

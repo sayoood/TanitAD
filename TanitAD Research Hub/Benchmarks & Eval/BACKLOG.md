@@ -4,17 +4,31 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
+1. **D1/D3 bootstrap re-read (R3, this-run finding)** — re-run the step-14k **and** step-21k D1 comparison
+   with (a) a shared fixed val set of **≥20 routes** across both checkpoints and (b) the bootstrap wrapper
+   (`incoming/2026-07-11-d1-gate-bootstrap/`) → report `ade@1s_mean ± CI95`. Needs the 14k+21k checkpoints
+   (pod/loop). Goal: settle whether D1 moved at all. Expected: CIs overlap → **no regression**. Falsifier:
+   14k and 21k CIs separate → real movement (revisit). Blocks any D1 trend line in the gate narrative.
+2. **run_d1_bootstrap integration** (intake `2026-07-11-d1-gate-bootstrap`, orchestrator triage): add the
+   helper to `stack/tanitad/eval/gates.py` + `--d1-seeds N` in `evaluate_checkpoint.py`; monitor previews
+   then emit mean±CI, not single-seed points. 4 tests green.
+3. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
    `stack/tanitad/eval/metrics.py`, relabel LAL-v1 "reaction-onset latency", report both. Unblocks G0.6.
-   *(Metric shipped this run; integration is the orchestrator step.)*
-2. **≥3-seed SC-01 CARLA re-run** — the first live run (2026-07-08) was single-seed + scripted policy.
+4. **≥3-seed SC-01 CARLA re-run** — the first live run (2026-07-08) was single-seed + scripted policy.
    Next run: ≥3 seeds, OKRI/LOPS/TMS as mean±CI, emit LAL-v2, and **measure OKRI per-seed SD** to size
-   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Goal: first decision-grade
-   live SC-01 rows. Falsifier: CIs overlap → no "beats baseline" claim.
-3. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
+   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Falsifier: CIs overlap → no
+   "beats baseline" claim.
+5. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
    lane-polygon check + collision sensor on the CARLA side. Flagged in commit `2d87acb`, NOT fixed this run.
 
-## Done this run (2026-07-09)
+## Done this run (2026-07-11)
+- **D1 ADE statistical-power audit** (G-H): measured the estimator's sampling variance on the real
+  step-6500 ckpt (4060, $0) → step-21k D1 "regression" is inside the ±4.5 m noise band, NOT decision-grade.
+  Shipped `d1_power_audit/` (diagnostic, 4 tests) + `incoming/2026-07-11-d1-gate-bootstrap/` (wrapper, 4
+  tests). Adopted rule R1 (D1/D3 mean±CI over ≥5 seeds). Audited the loop's `d1_probe_capacity.py` (same
+  fragility). LEADERBOARD D1 row + statistical-power footnote.
+
+## Done earlier (2026-07-09)
 - **Competitor efficiency block** (was P0 #2, W-05): shipped to LEADERBOARD — Alpamayo-2 32B / GAIA-3 15B
   / DriveFuture vs TanitAD 261M, sourced to Opponent profiles.
 - ~~Metric-suite live dry-run~~ (done 2026-07-08 MVP loop): TMS/CNCE on real telemetry + wiring dry-run.

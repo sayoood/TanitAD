@@ -1,10 +1,31 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-09 (Thursday weekly agent) — base commit `c4375f8`
-QUALITY: full (all gates G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4,
-well under budget: 2 web searches, ≈1.4 h)
+LAST_RUN: 2026-07-11 (Thursday-scheduled, fired Sat) — base commit `0284a5c`; branch
+`agent/bench-eval-20260711` (worktree, D-026)
+QUALITY: full (G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4, well under
+budget: 0 web searches — audit was local-compute, ≈1.3 h)
 
-## Latest run (2026-07-09) — SC-01 live-metric audit + LAL-v2
+## Latest run (2026-07-11) — D1 ADE statistical-power audit (independent-test role)
+
+Executed the **independent-test / gate-audit role** on the biggest open ambiguity in the gate ladder:
+whether the **D1 ADE@1s 5.18 m (step-14k, 9 val eps) → 11.52 m (step-21k, 4 val eps)** "regression" is
+real. Measured the estimator's sampling variance on the real step-6500 ckpt + comma2k19 val cache (RTX
+4060, 80.8 s, $0):
+- Per-route ADE@1s spans **2.31–18.75 m** (CoV 0.58). Shipped single-seed `run_d1` swings **7.28 m across
+  split seeds** at 4 val eps (5.46 m at 8). Fixed-probe bootstrap 95 % CI half-width **±4.51 m (n=4)** /
+  ±3.13 (n=9) / ±2.11 (n=20).
+- **Verdict: the step-21k D1 "regression" is INSIDE the estimator's own noise band (falsifier band 3.17 m
+  < both the ±4.51 m CI and the 7.28 m seed swing) → NOT decision-grade.** 11.52 m is a hard-route-heavy
+  n=4 draw (inside the n=4 CI upper bound 13.55 m), not a checkpoint regression. Even n=9 is marginal.
+- **Audited the loop's `d1_probe_capacity.py` (`0284a5c`)**: same small-sample fragility (~6 val eps,
+  single-split ckpt-to-ckpt ADE deltas <3 m CI-noise) + corpus mixing → its "info-lost vs less-linear"
+  verdict is not decision-grade as written. Feedback: bootstrap + per-corpus + MLP-convergence check.
+- **Shipped:** `Implementation/d1_power_audit/` (diagnostic + 4 sanity tests) and intake
+  `Implementation/incoming/2026-07-11-d1-gate-bootstrap/` (`run_d1_bootstrap` mean±CI wrapper + 4 tests).
+  LEADERBOARD: D1 row rewritten + **statistical-power footnote**. KB + BACKLOG updated. Ledger: no
+  H-status change (instrument hardening; tempers all prior D1 reads, P8).
+
+## Prior run (2026-07-09) — SC-01 live-metric audit + LAL-v2
 
 The first **live CARLA** SC-01 run (committed 2026-07-08) ran my metric suite on real physics and flagged
 two instruments as broken. I executed my **independent-test role** on it (measured experiment, local CPU,
@@ -43,6 +64,10 @@ $0):
   open- and closed-loop leaderboard blocks stay separate with the non-correlation footnote (G-B1).
 - **Closed-loop gate claims** report **mean ± CI over ≥3 seeds**; "beats baseline" needs separated CIs
   (CARLA ~5 DS seed variance).
+- **(R1, 2026-07-11) Open-loop decode gates D1/D3 report mean ± CI over ≥5 split seeds** (bootstrap
+  preferred); single-seed `run_d1`/`run_d3` points are **deprecated for any "gate movement" claim**. A
+  decision-grade D1 read needs **≥20 val episodes** (measured: single-seed swing 5–7 m, CI half-width ±4.5 m
+  at n=4). The 14k→21k D1 "regression" does not survive this rule.
 
 ## Next actions (backlog, priority order)
 
@@ -78,9 +103,12 @@ Phase-1 path).
 
 ## HANDOFF
 
-None — 2026-07-09 run completed cleanly. Deliverables: LAL-v2 intake pkg (7 tests green),
-`audit_sc01.py`+`audit_results.json`, research note, LEADERBOARD/REGULATION_TRACE/KNOWLEDGE_BASE/
-HYPOTHESIS_LEDGER/STATE/BACKLOG updates. Committed + pushed as `hub(bench-eval)`. **Open for next run /
-orchestrator:** (1) triage the LAL-v2 intake → integrate into `stack/tanitad/eval/metrics.py`; (2)
-closure-incursion detector still reads 0 (not fixed this run — backlog #3); (3) next SC-01 CARLA run must
-be ≥3 seeds + emit LAL-v2.
+None — 2026-07-11 run completed cleanly on branch `agent/bench-eval-20260711` (worktree, D-026; the
+orchestrator merges to main). Deliverables: `d1_power_audit/` diagnostic + result JSON (4 tests green),
+`incoming/2026-07-11-d1-gate-bootstrap/` (`run_d1_bootstrap` + 4 tests green), research note, LEADERBOARD
+D1 row + power footnote, KB + BACKLOG + STATE. **Open for next run / orchestrator:** (1) **triage
+`2026-07-11-d1-gate-bootstrap`** → add `run_d1_bootstrap` to `stack/tanitad/eval/gates.py` + `--d1-seeds`
+in `evaluate_checkpoint.py` (monitor previews should emit mean±CI, not single-seed); (2) **R3 re-read**:
+re-run 14k+21k D1 with a shared ≥20-route val set + bootstrap before any D1 trend is reported (needs the
+two checkpoints — pod/loop); (3) still open from 2026-07-09: LAL-v2 intake triage, closure-incursion
+detector (reads 0), ≥3-seed SC-01 CARLA re-run.

@@ -3,6 +3,28 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-11] [sweep / OpenReview nG35q8pNL9] *"What Truly Matters in Trajectory Prediction for AD?"* —
+  reinforces that displacement-error (ADE/FDE) on curated sets does not track what matters for driving;
+  external support for our decode-gates-are-weak-claims stance and the R1 mean±CI discipline. Bootstrap-CI
+  on ADE/FDE is still **rare in the field** → our power-audit rigor is a differentiator, not overhead —
+  impact: validation strategy / D1 — https://openreview.net/forum?id=nG35q8pNL9
+- [2026-07-11] [sweep / NAVSIM GH+2506.04218] **No NAVSIM-v2 leaderboard delta since 2026-07-09** (PDM-Closed
+  EPDMS still 51.3 navhard; EPDMS extended-comfort compares subsequent-frame trajectories = our TMS analogue).
+  No LEADERBOARD competitor-row refresh due this run — impact: LEADERBOARD currency check — https://github.com/autonomousvision/navsim
+- [2026-07-11] [this run / power audit] **D1 ADE@1s is NOT decision-grade at the val sizes we run.** Measured
+  the estimator's sampling variance on the real step-6500 ckpt + comma2k19 val (RTX 4060, $0): per-route
+  ADE@1s spans **2.31–18.75 m** (CoV 0.58); the shipped single-seed `run_d1` swings **7.28 m across split
+  seeds** at 4 val eps (5.46 m at 8); fixed-probe bootstrap 95 % CI half-width ±4.51 m (n=4) / ±3.13 (n=9) /
+  ±2.11 (n=20). Falsifier band (½ the reported 5.18→11.52 swing) = 3.17 m → **the step-21k D1 "regression"
+  is inside the estimator's own noise band** (11.52 m sits in the n=4 CI upper bound 13.55 m). Even the n=9
+  step-14k read is marginal. → **Rule R1: D1/D3 open-loop gates report mean±CI over ≥5 seeds; single-seed
+  points deprecated for "gate movement". Decision-grade D1 needs ≥20 val eps.** — impact: validation
+  strategy / D1 / D3 integrity — `../Implementation/d1_power_audit/`, `2026-07-11-d1-ade-statistical-power-audit.md`
+- [2026-07-11] [this run / audit] **`d1_probe_capacity.py` (loop's D1 discriminator, `0284a5c`) shares the
+  small-sample fragility** — uses ~6 val eps/corpus, single-split, compares ckpt-to-ckpt ADE deltas that at
+  n≈6 are <3 m CI-noise; also mixes corpora (comma direct_k1 12.11 vs physicalai 6.88 m) in the split. Its
+  "info-lost vs less-linear" verdict is not decision-grade as written → recommend bootstrap + per-corpus +
+  MLP-convergence check (feedback to loop; no stack edit) — impact: D1 methodology — `../Implementation/incoming/2026-07-11-d1-gate-bootstrap/`
 - [2026-07-09] [this run / audit] **LAL-v1 is blind to smooth anticipation** — first-live SC-01 CARLA run
   scored LAL-v1 −0.7 for BOTH policies; reproduced the cliff exactly at the −1.5 m/s³ jerk trigger (a
   comfort-bounded ease-off, |jerk|<~2, never fires it). Shipped **LAL-v2** (deceleration-onset by speed
