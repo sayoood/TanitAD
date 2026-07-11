@@ -214,18 +214,41 @@ def _fit_probe(feats: Tensor, targets: Tensor, alpha: float) -> tuple[RidgeProbe
 def run_d1(states: Tensor, targets_xy: Tensor, episode_ids: Sequence[int],
            unit: str = "camera", i2: I2Input | None = None,
            pooled_states: Tensor | None = None, alpha: float = 1e-3,
-           val_frac: float = 0.2, seed: int = 0,
+           val_frac: float = 0.2, seed: int = 0, n_splits: int = 8,
            extra_metrics: Mapping[str, Callable] | None = None) -> GateReport:
     """D1: can a frozen probe read metric ego position out of the encoder state?
 
     ``states`` [N, S] (grid readout), ``targets_xy`` [N,2] or [N,H,2] ego
     waypoints. ``pooled_states`` [N, Sp] runs the *vs global-pool* ablation (A7).
+
+    Route-resampled protocol (2026-07-11): ADE/FDE are MEANS over ``n_splits``
+    independent episode-level splits (seeds ``seed..seed+n_splits-1``) with a
+    95 % CI in the metrics. A single split's ADE swung 5.2 -> 11.5 m on
+    identical latent information (step-21k incident; discriminator:
+    `scripts/d1_probe_capacity.py`), so single-split D1 numbers are
+    split-luck, not measurements. Verdict is judged on the mean; per-split
+    values ship in the metrics for honesty. Instrument/ablation rows are
+    reported on the first split.
     """
     assert unit in D1_ADE_MAX, f"unit must be one of {list(D1_ADE_MAX)}"
-    tr, va = split_by_episode(episode_ids, val_frac, seed)
-    probe, fit_r2 = _fit_probe(states[tr], _as_traj(targets_xy)[tr].flatten(1), alpha)
-    pred_val = probe.predict(states[va]).reshape(len(va), -1, 2)
-    ade, fde = ade_fde(pred_val, _as_traj(targets_xy)[va])
+    tgt = _as_traj(targets_xy)
+    ades: list[float] = []
+    fdes: list[float] = []
+    tr = va = pred_val = fit_r2 = None       # first split -> rows/ablation
+    for s in range(seed, seed + max(1, n_splits)):
+        tr_s, va_s = split_by_episode(episode_ids, val_frac, s)
+        probe_s, r2_s = _fit_probe(states[tr_s], tgt[tr_s].flatten(1), alpha)
+        pred_s = probe_s.predict(states[va_s]).reshape(len(va_s), -1, 2)
+        ade_s, fde_s = ade_fde(pred_s, tgt[va_s])
+        ades.append(float(ade_s))
+        fdes.append(float(fde_s))
+        if tr is None:
+            tr, va, pred_val, fit_r2 = tr_s, va_s, pred_s, r2_s
+    n = len(ades)
+    ade = sum(ades) / n
+    fde = sum(fdes) / n
+    ade_std = (sum((a - ade) ** 2 for a in ades) / max(1, n - 1)) ** 0.5
+    ade_ci95 = 1.96 * ade_std / n ** 0.5
 
     rows = [_i1_row(fit_r2), _i2_row(i2), _i3_row(episode_ids, tr, va)]
     admissible, blockers = _admissible(rows)
@@ -241,12 +264,14 @@ def run_d1(states: Tensor, targets_xy: Tensor, episode_ids: Sequence[int],
                     "grid_beats_pool": bool(ade <= pool_ade),
                     "note": "A7: spatial grid readout should decode >= global pooling"}
 
-    metrics = {"ade@1s": ade, "fde@1s": fde}
+    metrics = {"ade@1s": ade, "fde@1s": fde, "ade@1s_ci95": ade_ci95,
+               "ade@1s_splits": ades, "n_splits": n}
     if extra_metrics:
-        metrics.update({k: fn(pred_val, _as_traj(targets_xy)[va]) for k, fn in extra_metrics.items()})
+        metrics.update({k: fn(pred_val, tgt[va]) for k, fn in extra_metrics.items()})
 
     verdict = (f"BLOCKED: instruments failed {blockers}" if not admissible else
-               f"{'PASS' if passed else 'FAIL'}: ADE@1s={ade:.3f} m vs <{thr} ({unit}). "
+               f"{'PASS' if passed else 'FAIL'}: ADE@1s={ade:.3f}±{ade_ci95:.3f} m "
+               f"(95% CI, {n} route splits) vs <{thr} ({unit}). "
                f"Necessary-not-sufficient (2512.24497): closed-loop D4-D6 arbitrate.")
     return GateReport("D1", "encoder state decodable", admissible, passed,
                       rows, metrics, {"ade@1s_max": thr, "unit": unit}, ablation,
