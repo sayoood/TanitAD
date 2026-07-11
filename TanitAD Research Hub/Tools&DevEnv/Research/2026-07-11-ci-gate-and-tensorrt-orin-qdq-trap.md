@@ -1,7 +1,8 @@
 # Tools&DevEnv — 2026-07-11 (W4): commit gate shipped + TensorRT Q/DQ Orin/Thor trap
 
 **Agent:** tools-devenv-agent (Monday) · **Branch:** `worktree-agent-tools-devenv-20260711`
-**Loop budget used:** 3 web searches + 2 fetches (of 25); 1 measured experiment (G-H).
+**Loop budget used:** ~14 web ops (3 initial + 11 in the §5b sweep, of 25); 1 measured experiment
+(G-H) + 1 independent re-verification (§4b).
 **QUALITY:** full.
 
 Prior run (2026-07-09) shipped the test-suite I/O profiler and root-caused the CARLA
@@ -102,6 +103,49 @@ float32 initializers, not reshape-derived, during ONNX export.**
 - G-A: every claim above links a source or repo path. G-B: actionable recs to Prod-Opt
   (on-target INT8 build) and to the orchestrator (integrate `ci.ps1`; pin `stack/`
   offline still pending). G-E/G-H: increment shipped + measured + falsified.
+
+## 4b. Independent re-verification of the increment (P8)
+
+`ci.ps1` re-run end-to-end from the worktree copy on the same dev-machine 4060, **warm**
+process, 2026-07-11:
+
+```
+[1/2] I2 tripwire  -> OK  dev=1.74e-07 < 1e-4   (1.8 s)
+[2/2] suite+guard  -> OK  189 passed, overhead 1.081 s, wall 8.771 s   (8.9 s)
+=== CI gate PASS - total 10.7s (I2 1.8s + suite 8.9s) ===  exit 0
+```
+
+Confirms the committed §1 numbers (the §1 17.2 s was a colder run; warm reproduces at
+10.7 s, I2 dev identical to 3 sig-figs, 189 passed). The gate is reproducible and green —
+safe to advertise for orchestrator integration.
+
+## 5b. Weekly literature/tooling sweep (D-013/D-028, recency-first)
+
+Bounded sweep (11 web ops). Findings additive to §2–§3 above; each carries a G-T1
+cost+verdict where it is a tool. Full rows in the KB.
+
+- **Rerun 0.34.1 (2026-07-07)** — the episode-replay pick (backlog P0 #2) is current and
+  now ships a **Viewer-MCP** (an agent can drive the replay). Pure-Python, **G-T1 GO
+  ~15 min**. → greenlights the next increment. https://github.com/rerun-io/rerun/releases
+- **Trackio (HF, beta)** — local-first **W&B drop-in** (`import trackio as wandb`),
+  <1000 LOC, $0, no lock-in; also shims AlpaGym's W&B dependency. **G-T1 GO ~10 min**;
+  new backlog P1 #2b. https://github.com/gradio-app/trackio
+- **AlpaGym VRAM floor UPDATED** — model card = **2×24 GB** (not "40–60 GB single") + an
+  official local smoke config `alpamayo_1_5_local_2gpu_smoke`. Verdict unchanged (Phase-1
+  cloud, 100×+ envelope) but the adoption floor is lower and there is a scoped 2×GPU spike
+  path; treat 10 B Alpamayo as an oracle/data source, not a policy to adopt.
+- **ZipDepth (2607.08771, 07-09)** — **6.1 M-param** on-device monocular depth, near the
+  zero-shot accuracy of ~50× larger nets. In our <100 M edge envelope → candidate cheap
+  geometry/aux signal on Orin (H16 active-depth, `7cd9d7b`). This was a D-028 historically
+  -missed-class paper — now captured. https://arxiv.org/abs/2607.08771
+- **Bench2Drive-Robust (2605.18059)** — first closed-loop E2E-AD benchmark perturbing
+  **compute-induced inference delay** + camera-failure + ego-noise; scores the low-latency
+  regime that is our edge advantage. → **handoff to Benchmarks&Eval (Thu):** add the delay
+  axis to the eval plan (C2). https://arxiv.org/abs/2605.18059
+- **Negative results (useful):** CARLA still 0.10.0 (no point release); Jetson Orin still
+  pinned TensorRT 10.3 (no step-change — an Orin export stays a version-matching exercise);
+  dataset-streaming quiet (WebDataset stays default; MosaicML `streaming` only if we outgrow
+  single-node shards). No action on any.
 
 ## 5. Sources
 

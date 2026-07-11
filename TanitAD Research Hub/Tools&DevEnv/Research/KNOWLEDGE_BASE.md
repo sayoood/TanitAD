@@ -19,15 +19,42 @@
   primary Orin path — impact: H5/C1/P5 — [forum](https://forums.developer.nvidia.com/t/tensorrt-export-fails-on-both-jetson-agx-orin-and-thor-but-passes-on-rtx/363379)
 - [2026-07-11] [tooling] **AlpaGym now PUBLIC** (`NVlabs/alpagym`, Apache-2.0): RL closed-loop
   post-training = AlpaSim envs + Cosmos-RL orchestration; default policy Alpamayo-1.5 **10 B, ≥2
-  GPUs**, HF+W&B+uv, **no lightweight reference policy**. Verdict unchanged: **Phase-1 cloud, not
-  Phase-0** (100×+ our envelope, P5) — now clonable; Phase-0 closed-loop stays CARLA-on-pod (D-014).
-  Watch Cosmos-RL as a borrowable scorer/orchestrator, not the 10 B policy — impact: P5/H1/opponent —
+  GPUs**, HF+W&B+uv, **no lightweight reference policy**. **VRAM floor UPDATED (lit sweep): 2×24 GB**
+  (model card tested 3090/A100/H100/B200, not "40–60 GB single") + a documented local smoke config
+  `experiment=alpamayo_1_5_local_2gpu_smoke`. Our single A40 (48 GB) still can't meet the 2-GPU
+  default un-reconfigured; 4060 out. Verdict unchanged: **Phase-1 cloud, not Phase-0** (100×+ our
+  envelope, P5) — now clonable w/ an official smoke path (scoped 2×GPU spike), useful as an
+  oracle/data source not an adoptable policy; Phase-0 closed-loop stays CARLA-on-pod (D-014). Watch
+  Cosmos-RL as a borrowable scorer/orchestrator — impact: P5/H1/opponent —
   [alpagym](https://github.com/NVlabs/alpagym)
 - [2026-07-11] [tooling] **CARLA 0.10.0 = Unreal Engine 5.5** (Lumen/Nanite, remodeled Town10,
   InvertedAI traffic, native ROS). **Min spec RTX 3000 / ≥16 GB VRAM / Ubuntu 22.04|Win11.** We pin
   **0.9.16 (UE4.24)** deliberately; 0.10's 16 GB floor + UE5 rebuild = Phase-1 only, not a Phase-0
   switch. nullrhi SC-01 telemetry path unaffected; revisit 0.10 when photoreal pixels are
   eval-critical (pairs w/ graphics-pod recipe P1.3) — impact: P5/D-014 — [release](https://carla.org/2024/12/19/release-0.10.0/)
+- [2026-07-11] [tooling] **Rerun 0.34.1 (2026-07-07)** — fresh `rerun-sdk` for episode replay/viz
+  (backlog P0 #2 pick, already chosen 2026-07-06). New in 0.34: an **MCP that lets an LLM agent
+  see/drive the Viewer** (dovetails with our agentic loop), a `VoxelGridMap` archetype, gamepad 3D
+  nav. Pure-Python, no server infra. **G-T1 GO, setup ~15 min** (`pip install -U rerun-sdk`) —
+  greenlights the episode→.rrd replay increment on the 4060 — impact: WP-viz/D3/H5 —
+  [release](https://github.com/rerun-io/rerun/releases)
+- [2026-07-11] [tooling] **Trackio** (HF, beta) — local-first **W&B drop-in**: `import trackio as
+  wandb` (init/log/finish compatible), <1000 LOC, SQLite→Parquet backend, optional free sync to a
+  private HF Space. No vendor lock-in, $0. Also **shims AlpaGym's W&B dependency** (finding above).
+  Caveat: no artifact mgmt / advanced viz yet. **G-T1 GO, setup ~10 min** — candidate experiment
+  tracker for our training runs (replaces ad-hoc JSON logs) — impact: G-E/dev-tooling —
+  [trackio](https://github.com/gradio-app/trackio)
+- [2026-07-11] [paper] **ZipDepth** (2607.08771, 07-09) — **6.1 M-param** monocular depth, real-time
+  server→edge, distilled from a foundation model to near the zero-shot accuracy of ~50× larger nets.
+  Squarely in our <100 M edge envelope → candidate cheap geometry / auxiliary perception signal on
+  Orin-class targets (H16 active-depth banked, `7cd9d7b`). Was on the D-028 "historically-missed"
+  list — now captured — impact: edge-efficiency/C1/H16 — [arXiv](https://arxiv.org/abs/2607.08771)
+- [2026-07-11] [benchmark] **Bench2Drive-Robust** (2605.18059) — first closed-loop E2E-AD benchmark
+  that perturbs **compute-induced control delay (model inference delay)** + camera-stream failure +
+  ego-state noise: it scores exactly the degradations a driver hits on modest edge hardware, so our
+  low-latency constraint becomes a **rewarded advantage** rather than a penalty. Companions
+  Bench2Drive-VL / -Speed. → handoff to Benchmarks&Eval (Thu): add the inference-delay axis to the
+  eval plan — impact: eval/edge-efficiency/C2 — [arXiv](https://arxiv.org/abs/2605.18059)
 - [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
   host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
   ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit

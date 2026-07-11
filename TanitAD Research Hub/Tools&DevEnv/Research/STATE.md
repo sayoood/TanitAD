@@ -1,7 +1,8 @@
 # STATE — Tools&DevEnv
 
-LAST_RUN: 2026-07-11 (W4, fourth weekly run) — branch `worktree-agent-tools-devenv-20260711`
-QUALITY: full (G-A…G-F + G-H + G-T1 met; measured experiment = commit gate `ci.ps1` end-to-end + falsifier)
+LAST_RUN: 2026-07-11 (W4, fourth weekly run) — branch `worktree-agent-tools-devenv-20260711` (PUSHED)
+QUALITY: full (G-A…G-F + G-H + G-T1 met; measured experiment = commit gate `ci.ps1` end-to-end + falsifier;
+re-verified warm 10.7 s / exit 0 this run before push, §4b)
 
 ## HANDOFF
 Top backlog item (P0 #1, the CI script, backlog duty #3) is DONE this run. Two things pending action:
@@ -30,8 +31,14 @@ Top backlog item (P0 #1, the CI script, backlog duty #3) is DONE this run. Two t
 - **Tooling deltas:** AlpaGym now public (`NVlabs/alpagym`, Apache-2.0, 10 B/>=2-GPU default, no light
   reference policy) → Phase-1 unchanged; CARLA 0.10 = UE5.5 (16 GB VRAM floor) → we keep 0.9.16 for
   Phase 0. KB + note §3.
-- Research note `2026-07-11-ci-gate-and-tensorrt-orin-qdq-trap.md`; KB delta (4 findings, newest first);
-  BACKLOG re-prioritized (P0 #1 retired; TensorRT on-target-verify item added).
+- Research note `2026-07-11-ci-gate-and-tensorrt-orin-qdq-trap.md`; KB delta (now 8 findings, newest
+  first); BACKLOG re-prioritized (P0 #1 retired; TensorRT on-target-verify item added).
+- **Weekly lit sweep (§5b) folded in:** Rerun 0.34.1 (+Viewer-MCP) confirms the backlog-P0#2 pick,
+  G-T1 GO ~15 min → **next increment is episode→.rrd replay**; **Trackio** local-first W&B drop-in
+  (new P1 #2b, GO ~10 min, also shims AlpaGym's W&B dep); AlpaGym VRAM floor updated **2×24 GB** w/
+  local smoke config; **ZipDepth** 6.1 M on-Orin depth (→Prod-Opt/H16); **Bench2Drive-Robust**
+  inference-delay eval axis (→Benchmarks handoff). Negatives: CARLA no point release, Orin still
+  TRT 10.3, streaming quiet (WebDataset stays).
 - G-D: no hypothesis status change (tooling + deployment risk, not hypothesis evidence — P8).
 
 ## Open threads / proposals to raise
