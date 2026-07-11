@@ -22,6 +22,7 @@
 | H13 | Extraction heads | settled pattern (probes = minimal form) | trajectory + BEV probes ship | Architecture & Inference |
 | H14 | Physical grounding | Track 1 adopted (kinematic decoder + Kamm circle) | friction-violation metric | Architecture & Inference |
 | H15 | Unobserved-area imagination | **in Phase 0 per D-008** — ImaginationField implemented (advection + refine + epistemic σ), trains with the world model | **D9** (hidden-sector cosine, calibration gap, LOPS) | Architecture & Inference |
+| H16 | Active depth interrogation (tactical-commanded, σ-triggered ROI depth queries) | open — Sayed's idea 2026-07-11; composes H15 σ-trigger + H2 scheduler + ZipDepth-class specialist; Phase-1 H2 window (~Sep); dossier: `Architecture & Inference/Research/H16_ACTIVE_DEPTH_INTERROGATION.md` | F1–F3 pre-registered (trigger selectivity, energy vs always-on, metric anchor) | Architecture & Inference |
 
 ## Gate definitions (Phase 0)
 

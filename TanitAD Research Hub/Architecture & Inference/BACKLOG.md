@@ -40,6 +40,15 @@ Format per item: goal / method / resource / expected number / falsifier.
    `latency_cnce_baseline.py` with N in {1,4,7} batched encodes on the 4060; expected ~2-2.5x
    single-cam latency at N=7 (not 7x). Investigation doc:
    `Research/ENCODER_MULTICAM_OPTIMIZATION.md` (attack order + production-readiness table).
+3e. **H16 active depth interrogation — offline trigger probe (Sayed's idea 2026-07-11).**
+   Goal: cheapest possible falsification pass on F1 BEFORE any build. Method: replay SC-01 3-seed
+   telemetry + the D8 degraded-pairs episodes; compute the H15 per-sector σ trace from an existing
+   checkpoint; ask "would a σ-threshold trigger have fired on the critical sector BEFORE the
+   reveal/onset?" (pure logs + one forward pass per window, 4060). Expected: trigger fires ahead of
+   reveal on ≥70 % of occlusion events at <1 query/10 s false-positive rate in free cruise.
+   Falsifier (F1): fires uniformly / misses onsets → the trigger premise dies before we build
+   anything. Full dossier + F1–F3: `Research/H16_ACTIVE_DEPTH_INTERROGATION.md`. Cross-refs:
+   Prod-Opt backlog 3b (ZipDepth ROI cost curve), H2 scheduler window (~Sep) for the online version.
 
 
 3. **RoPE + AdaLN conditioning** — one-lever bake-off vs FiLM/learned positional embedding
