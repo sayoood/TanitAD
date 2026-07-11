@@ -50,3 +50,38 @@ TensorRT/INT8 export** (the production path) — research tricks that don't comp
 Architecture agent (Wed) owns the measured experiments (#1 first — it's a G-H-compliant experiment
 with numbers in hours); Production agent (Sat) owns export-compatibility checks; findings roll into
 the Phase-1 plan's encoder section. The architecture-design workflow panel takes these as inputs.
+
+## Addendum 2026-07-11 (Sayed sweep request): high resolution WITHOUT uniform token cost
+
+**Alpamayo's actual trick (arXiv 2511.00088, AR1):** two efficient vision-encoding strategies —
+(a) **multi-camera TRIPLANE tokenization**: per-camera features project into a fixed-size
+3D-structured latent (triplane as 3D inductive bias), so the token budget is **decoupled from
+camera count AND input resolution** (6-10 cams at high res would otherwise be thousands of
+patch tokens/timestep → no real-time); (b) **multi-camera VIDEO tokenization** (Flex-style
+temporal compression): **3.6-20x token compression** by exploiting inter-frame redundancy,
+"preserving semantic information for real-time inference". They did NOT lower resolution —
+they broke the resolution→tokens linearity.
+
+**Recent AD-relevant efficient-encoding families (2025-2026):**
+- Spatio-temporal token pruning, training-free: ST-Prune (2604.19145) — AD VLM setting.
+- Sparse token relevance for multi-view 3D: SToRe3D (2605.14110).
+- Region masking for video streams: MaskVD (2407.12067) — validates our static sky/hood masks.
+- Dynamic attention/token pruning: HEART-ViT (2512.20120), Sparsifiner (2303.13755);
+  VLM-side: SparseVILA (2510.17777).
+- Foveated processing: foveated diffusion (2603.23491) as the generative cousin of our H16.
+
+**Transfer map to TanitAD (261M latent WM, not a VLM):**
+1. **Phase-1 multi-cam candidate: fixed-budget 3D projection (triplane/BEV adapter)** over
+   per-camera ViT features — constant tokens regardless of cams; composes with H2 steering
+   (steer compute BEFORE projection). Caveat: needs calibrated rig geometry (fine Phase 1;
+   NOT Y-track). Experiment: triplane adapter at current 256px, then RAISE per-cam res under
+   the fixed budget — the Alpamayo pattern applied at our scale.
+2. **Temporal-redundancy compression**: at 10-20 Hz, consecutive frames are ~90% redundant;
+   encode-once + delta/merged tokens across the 3-frame stack (REF-A's latest-frame feature
+   reuse already exploits this at cache level — bring it into the online encoder).
+3. Static masks (existing item) + **fixed-ratio** token merging (TRT-friendly static shapes;
+   dynamic token counts break engine plans — production caveat, G-P2).
+4. H16 native-res ROI channel stays the acuity answer for the long tail.
+
+Priority: (1) and (2) become the Phase-1 encoder work-package skeleton; resolution-sensitivity
+probe (backlog 3e0) decides how urgently raw resolution matters at all.
