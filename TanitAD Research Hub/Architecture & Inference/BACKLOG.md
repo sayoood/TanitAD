@@ -40,6 +40,13 @@ Format per item: goal / method / resource / expected number / falsifier.
    `latency_cnce_baseline.py` with N in {1,4,7} batched encodes on the 4060; expected ~2-2.5x
    single-cam latency at N=7 (not 7x). Investigation doc:
    `Research/ENCODER_MULTICAM_OPTIMIZATION.md` (attack order + production-readiness table).
+3d1. **REF-A/REF-B on the FULL realmix (Sayed directive 2026-07-11 evening):** both reference
+   arms train on the SAME data mix as the main run (comma + PhysicalAI R1), not comma-only.
+   For REF-A this requires extending stage 1: DINO-precompute the PhysicalAI epcache episodes
+   (same `dino_precompute.py`, pod3→pod2 cache copy after the post-30k pod1→pod3 rsync), then
+   the flagship grid-REF-A retrains on the mixed feature corpus. The comma-only grid run
+   (in flight tonight) is kept as the pool-vs-grid ADAPTER ABLATION row, not the flagship.
+   Mix ratio: reproduce the main run's realmix ratio; record any residual loader difference.
 3d2. **REF-A stage-2b: GRID adapter (Sayed review 2026-07-11 — "expected better from DINO").**
    The v1 adapter MEAN-POOLS the 256 DINO tokens → destroys the spatial structure the DINO-WM
    lineage relies on (DINO-WM/EponaV2/DINO-world all keep patch tokens). Build the literature-
