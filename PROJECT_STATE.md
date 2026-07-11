@@ -140,11 +140,15 @@ Summary of the immediate next actions:
   discriminator shows the later checkpoint (23.5k) decodes BETTER at every capacity (ridge α10 8.54→7.02,
   α100 12.60→9.47, MLP 11.19→8.40). D1 becomes a **route-resampled mean±CI** in the gate runner before the
   30k eval. D1 improvement is now positively monotone; D1 still FAILs the sub-metre floor (30k + REF-A arbitrate).
-- **NEW (D-028, proposed 2026-07-11):** recency-first literature scan + benchmark/edge seam ownership —
-  logged for Sayed confirmation (operationally live in `_common-protocol.md`, `2d58b69`). | default: confirm.
-- **DECISION NEEDED (2026-07-11): pre-approve the REF-A trainer + post-30k spend.** REF-A precompute is done
-  (54 GB DINOv2 grids); the trainer is queued **tonight on A40 with rollout_k=4** and needs a `RESOURCE_LEDGER.md`
-  row. | default: approve REF-A on the $40 pod2 plan; hold further post-30k continuation until the 30k verdict.
+- ~~D-028 proposed~~ **CONFIRMED by Sayed 2026-07-11:** recency-first literature scan + benchmark/edge seam
+  ownership adopted (operationally live in `_common-protocol.md`, `2d58b69`; DECISIONS.md D-028 → accepted).
+- ~~DECISION NEEDED: pre-approve REF-A/post-30k spend~~ **PRE-APPROVED by Sayed 2026-07-11:** REF-A trainer
+  (A40, rollout_k=4) rides the approved pod (+$0 incremental); post-30k/REF-B continuation carries a $40
+  envelope (`RESOURCE_LEDGER.md`, rows `refa-30k`/`refb-post30k`), gated on the 30k verdict — no further ask.
+- **D-022 numbering gap RESOLVED 2026-07-11:** the missing ID is backfilled in DECISIONS.md (WorldModel-Synthetic
+  public-claim firewall — a 07-09 DE-agent proposal never logged). Recorded at its **conservative default (HOLD,
+  firewall kept to comma+Cosmos)**; the substantive public-claim reclassification is a legal call that still
+  needs an **explicit** accept (not auto-adopted by closing the gap). | default: HOLD until Sayed/legal confirm.
 - **DECISION NEEDED (D-021, proposed 2026-07-08):** latent dim k as a *measured* design variable
   (spectral knee) — keep 2048 for Phase 0, but Phase-1 resizing only with a trained-checkpoint
   spectral result + gate impact. | default: keep 2048, keep measuring (nothing blocked).
