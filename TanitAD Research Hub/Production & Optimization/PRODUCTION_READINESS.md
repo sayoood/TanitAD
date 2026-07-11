@@ -13,13 +13,20 @@ compatibility (ONNX/TRT).
 | Module | Reviewed | Open issues | Notes |
 |---|---|---|---|
 | `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08 / -10** | 2 fixed + 1 fixed (intake), 1 logged | review #1 → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests). **review #3 (2026-07-10) → intake `2026-07-10-contract-windowing-failloud`**: silent short-episode drop across `_contract.py:120`/`toy_driving.py:131`/`comma2k19.py:278` → count+warn+`ValueError`-on-empty, parity preserved, 10 tests. Still logged: `epcache` DONE-marker written-never-read |
-| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-09** | 1 fixed (intake), 2 logged | review #2 done → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests, export-safe). Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow. Encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5). SigReg correctly pins fp32; `eval()` disables F-5 grad-ckpt |
+| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-09 / -11** | 2 fixed (intake), 1 logged | review #2 → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests) — also covers `tactical_pred` (same class, `fourbrain.py:49`). **review #3-cont (2026-07-11) → intake `2026-07-11-imagination-nll-logvar-clamp`**: `imagination_nll` unclamped `exp(-logvar)` overflow (`imagination.py:135`) → **silent NaN corruption** (measured; fp16 −11.09 / fp32 −88.72 boundary, reachable in 45 SGD steps) → clamp logvar to [−8,8], in-band parity 0.0, + seeded `d9_rows`, 10 tests. Still logged: unbounded `logvar_head`; hard-clamp edge-parking (softplus reparam deferred). Encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5). SigReg correctly pins fp32; `eval()` disables F-5 grad-ckpt |
 | `tanitad/instruments/` | — | — | |
 | `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | |
 | `stack/scripts/` + training loop | — | — | review #4 (was #3); ops-fragility history F-5/F-6/F-7 |
 
 ## Deployment blockers (live list)
 
+- **Silent-NaN in the imagination loss (FOUND + FIX SHIPPED 2026-07-11, intake pending):**
+  `imagination_nll` (`imagination.py:135`) runs `exp(-logvar)` on an **unbounded** head → `+inf`
+  at logvar < **−11.09 (fp16)** / **−88.72 (fp32)** (measured == `−ln(finfo.max)`), reachable by
+  plain SGD in 45 steps (fp16). No nan/inf guard before `opt.step` (`train_worldmodel.py:330-358`)
+  → one bad cell NaN-corrupts all weights and the atomic checkpoint. Fix = clamp logvar to [−8,8]
+  (intake `2026-07-11-imagination-nll-logvar-clamp`, parity 0.0). **Still open (P1.8): the trainer
+  itself has no `loss` finiteness guard** — add one as defence-in-depth before any long run.
 - ~~No batch-1 latency baseline~~ **MEASURED 2026-07-08** (`stack/scripts/latency_cnce_baseline.py`,
   step-6500 ckpt, 4060 fp32 strict-numerics batch-1): decision tick **15.07 ms p50** (encode
   9.38 + K9 select 5.69), p95 ≈ 17.2 ms, peak VRAM **1.08 GB** → ~66 Hz un-optimized. The

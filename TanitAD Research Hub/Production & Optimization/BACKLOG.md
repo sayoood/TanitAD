@@ -52,9 +52,18 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
    first" heuristic is REFUTED for weight-quant). Deploy: INT8 encoder+predictor weights (−552 MB
    at 4×), readout ≥fp16. INT8 *latency* deferred to the TRT engine (P1.4a). Intake N/A (experiment,
    not a stack change). `Implementation/int8_quant/`.
-7. **`tactical_pred` fail-fast + `imagination_nll` logvar clamp** — the two findings logged in
-   review #2 (same `assert`-only guard on the tactical predictor; unclamped `exp(-logvar)` overflow
-   in `imagination.py:135` → NaN LOPS/H2 trigger). Small numerics-hardening package with a falsifier.
+7. ~~**`tactical_pred` fail-fast + `imagination_nll` logvar clamp**~~ **DONE 2026-07-11 (review
+   #3-cont):** intake `2026-07-11-imagination-nll-logvar-clamp` — `imagination_nll` `exp(-logvar)`
+   overflow is a **measured, reachable silent-NaN** (fp16 −11.09 / fp32 −88.72 boundary; 45 SGD
+   steps; gradient 2.8e34@−80) → clamp logvar to [−8,8], in-band parity **0.0**, + seeded `d9_rows`,
+   10 standalone tests. `tactical_pred` fail-fast **subsumed** (it is an `OperativePredictor`,
+   `fourbrain.py:49`, already covered by the review-#2 intake). `Implementation/imagination_nll_overflow/`
+   (experiment) + `Implementation/incoming/2026-07-11-imagination-nll-logvar-clamp/` (fix).
+7b. **Trainer `loss` finiteness guard (P1.8, next-run top)** — even with the clamp, add a
+   nan/inf check on `loss` before `backward`/`opt.step` in `train_worldmodel.py` (skip-step + loud
+   log, never silently corrupt the atomic checkpoint). Small intake; falsifier = inject a NaN loss,
+   assert the step is skipped and the ckpt stays finite. Generalise: grep the stack for
+   `exp`/`1/x`/`log` fed by unbounded heads (deploy-time NaN class).
 8. ~~**Window-index silent short-episode drop**~~ **DONE 2026-07-10 (review #3):** intake
    `2026-07-10-contract-windowing-failloud` — count + warn + `ValueError`-on-empty across
    `_contract.py:120` / `toy_driving.py:131` / `comma2k19.py:278`, parity preserved, 10 standalone
@@ -74,6 +83,9 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
     2026-07-08).
 
 ## Done / retired
+- (2026-07-11 run #4) P1.7 imagination-NLL logvar clamp DONE (measured silent-NaN overflow +
+  reachability + fix, 10 tests) — GPU was 100 %-contended so the measured experiment was CPU/$0.
+  Next-run top: **P1.8** trainer `loss` finiteness guard (7b). `tactical_pred` fail-fast subsumed.
 - (2026-07-10 run #3) P1.6 INT8 weight-quant curve DONE (localizes to the readout; ViT/predictor
   INT8-safe, heads unsafe) + P1.4b clean-GPU latency DONE (15.76/13.40 ms fp32/fp16; contention
   caveat confirmed) + review #3 windowing fail-loud intake (10 tests). Next-run top: **P1.4a** mixed

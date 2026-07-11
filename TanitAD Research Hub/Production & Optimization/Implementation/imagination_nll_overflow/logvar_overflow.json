@@ -1,0 +1,83 @@
+{
+  "exp": "imagination-nll logvar exp(-logvar) overflow threshold + reachability",
+  "backlog": "Production&Optimization P1.7 (numerics hardening)",
+  "target": "stack/tanitad/models/imagination.py:135 (imagination_nll)",
+  "wired_into": "stack/tanitad/train/train_worldmodel.py:338 (loss_h15 -> loss)",
+  "hardware": "CPU, deterministic (seed 0), ~1 s, $0 (GPU-contention-immune)",
+  "clamp_chosen": 8.0,
+  "method": [
+    "exp(-logvar) is computed BEFORE the *err2 multiply, so it overflows at -logvar > ln(FLOAT_MAX) independent of err2; the product is then +inf (or NaN if err2==0) -> non-finite loss.",
+    "Thresholds found by bisection on the ORIGINAL term in each dtype.",
+    "Reachability = plain SGD minimising a single cell's NLL term (the heteroscedastic incentive; analytic optimum logvar*=ln(err2)).",
+    "Clamp verified: finite over logvar in [-160,160] x err2 in [0,20], fp32 AND fp16; and parity (identity) inside [-clamp,clamp]."
+  ],
+  "overflow_threshold_logvar": {
+    "fp32": {
+      "measured": -88.723,
+      "theory_-ln(fp32_max)": -88.723
+    },
+    "fp16": {
+      "measured": -11.09,
+      "theory_-ln(fp16_max)": -11.09
+    },
+    "note": "logvar below this -> exp(-logvar)=+inf -> non-finite NLL. fp16 boundary is ~8x closer to 0 than fp32 -> far more reachable under the fp16 deployment/autocast precision."
+  },
+  "fp16_optimum_overflow": {
+    "err2_below_which_optimum_overflows_fp16": 1.527e-05,
+    "reading": "cells predicted better than this err2 have an NLL optimum logvar*=ln(err2) < the fp16 overflow boundary -> gradient descent toward the optimum crosses into +inf in fp16."
+  },
+  "gradient_dnll_dlogvar_fp32": {
+    "logvar=0.0": 0.0,
+    "logvar=-5.0": -73.707,
+    "logvar=-20.0": -242582592.0,
+    "logvar=-50.0": -2.5923527288327735e+21,
+    "logvar=-80.0": -2.7703112423383797e+34
+  },
+  "gradient_note": "d(term)/d(logvar) = 0.5*(1 - exp(-logvar)*err2); magnitude blows up as exp(-logvar) well before the hard overflow -> clip_grad_norm then collapses the whole step onto this one exploding direction.",
+  "reachability_sgd": {
+    "fp16_err2_1e-7": {
+      "logvar_star_analytic": -16.118,
+      "original": {
+        "nonfinite": true,
+        "step": 45,
+        "logvar_at_fail": -11.25
+      },
+      "clamped": {
+        "nonfinite": false,
+        "final_logvar": -8.25,
+        "final_loss": -4.0
+      }
+    },
+    "fp32_err2_1e-40": {
+      "logvar_star_analytic": -92.103,
+      "original": {
+        "nonfinite": true,
+        "step": 356,
+        "logvar_at_fail": -88.961
+      },
+      "clamped": {
+        "nonfinite": false,
+        "final_logvar": -8.25,
+        "final_loss": -4.0
+      }
+    }
+  },
+  "clamp_finiteness": {
+    "fp32": {
+      "all_finite": true,
+      "first_bad_err2": null
+    },
+    "fp16": {
+      "all_finite": true,
+      "first_bad_err2": null
+    }
+  },
+  "clamp_parity_in_band_maxabs": 0.0,
+  "VERDICT": {
+    "overflow_is_real": true,
+    "fp16_reached_by_plain_sgd": true,
+    "clamp_stays_finite_and_converges": true,
+    "parity_preserved_in_band": true,
+    "falsifier": "If plain SGD on a well-predicted cell did NOT reach a non-finite loss in fp16, the overflow would be unreachable in practice and the clamp unnecessary."
+  }
+}

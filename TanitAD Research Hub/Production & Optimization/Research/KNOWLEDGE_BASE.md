@@ -2,6 +2,39 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-11 (run #4)
+
+- **`imagination_nll` has a live silent-NaN path via unclamped `exp(-logvar)`.**
+  `imagination.py:135` computes `torch.exp(-logvar)` (logvar from an **unbounded**
+  Linear head, imagination.py:110). It overflows to `+inf` at logvar < **−88.72**
+  (fp32) / **−11.09** (fp16) — measured == theory `−ln(finfo.max)`. Wired into the
+  live trainer (`train_worldmodel.py:338`) with **no nan/inf guard** before
+  `backward`/`opt.step`, so one non-finite cell NaNs every gradient (clip_grad_norm
+  can't recover), NaNs every weight, and the atomic save persists a corrupted resume
+  point. Source: `Implementation/imagination_nll_overflow/logvar_overflow.json`,
+  `Research/2026-07-11-...md` §1.
+- **The overflow is REACHABLE, not theoretical.** The heteroscedastic NLL's own
+  per-cell optimum is `logvar* = ln(err2)`; any cell with err2 < **1.53e-5** has its
+  optimum past the fp16 boundary, so plain SGD toward it goes non-finite in **45 steps**
+  (fp16, err2=1e-7) / 356 (fp32). Gradient explodes to **2.4e8@−20, 2.8e34@−80** even
+  before overflow → clip_grad_norm collapses the step onto it. This is the textbook
+  β-NLL instability (Seitzer et al., ICLR 2022: driving logvar→−∞ on easy cells).
+  Source: same run.
+- **Fix = clamp logvar to [−8, 8] before the exp** (default `logvar_clamp=8.0`): finite
+  in fp32 AND fp16 across err2∈[0,20], and **identity in-band → parity vs the stack
+  function = 0.0 exactly** (no retraining implied). Symmetric so the "infinite-uncertainty"
+  direction is bounded too. Caveat: hard clamp has zero gradient outside the band (logvar
+  can park at the edge; loss stays bounded) — softplus reparam deferred. Also seeded
+  `d9_rows`' `randperm` (`generator=`) → reproducible D9 chance-floor. Source:
+  `Implementation/incoming/2026-07-11-imagination-nll-logvar-clamp/` (10 tests).
+- **General rule (adds to the review checklist):** any `exp`/`1/x`/`log` fed by an
+  **unbounded** head is a deploy-time NaN risk; and the trainer needs a `loss` finiteness
+  guard before `opt.step` (P1.8) as defence-in-depth. Source: this review.
+- **`tactical_pred` fail-fast is subsumed, not a separate task:** `tactical_pred` is an
+  `OperativePredictor` instance (`fourbrain.py:49`), same class as the operative predictor
+  whose `assert`-guard (`predictor.py:73`) the pending review-#2 intake already fixes — one
+  fix covers both. Source: `fourbrain.py:49`, grep this run.
+
 ## 2026-07-10 (run #3)
 
 - **INT8 weight-quant sensitivity localizes to the READOUT, not the ViT tower.**
