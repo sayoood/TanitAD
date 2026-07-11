@@ -1,20 +1,24 @@
 ﻿# STATE — Project Steering
 
-LAST_RUN: 2026-07-10 (second orchestrator report — weekly synthesis 2026-W29)
-QUALITY: full (G-S1 met — gate-status table D1–D9 + measured KPI trends: step-14k D1 5.18 m / D2
-0.917/1.000 / D3 I4 3.05 (+ honest step-21k small-sample drift caveat), 15.07 ms tick, fp16 95.3 % vs
-bf16 67.2 %, D3-decomposition (direct heads, no recursion) + K=4 arm 8.13→1.03; G-S2 met — proposals
-constitution-safe. Health check: **3/6 agents committed** `full/complete` (Tools/Arch/Opponent,
-worktree-isolated, unmerged); **3/6 not clean** (Data-Eng no output; Benchmarks no commit; Prod-Opt
-stranded 2 dirs uncommitted in main) — new D-026 failure mode flagged. Intake: 9 integrated, 4 pending
-in-window + 3 new on branches + 2 uncommitted, none >3 days. Schedule: 9/9 jobs enabled + fired 07-10.)
+LAST_RUN: 2026-07-11 (fourth orchestrator report — weekly synthesis 2026-W31; committed to main)
+QUALITY: full (G-S1 met — gate-status table D1–D9 + measured KPI trends: main D1 probe ≈7.5 m vs
+**REF-A frozen-DINO ≈14.2 m (confounded)**, step-14k D2 0.917/1.000 / D3 I4 3.05, REF-A curve
+1.19→0.465/roll 0.076, main 25.75k/30k @~1000 steps/h, REF-B rev2 −0.124 % budget, 15.07 ms tick;
+G-S2 met — proposals constitution-safe. Health check: **hygiene debt CLEARED** (`1285524` — Prod-Opt
+int8/windowing + Opponent catalogs committed, tree clean); **Data-Eng no-show REVERSED** (fired 15:14,
+semantic-datasets survey); discipline branches still empty 3rd cycle but loop carried all work, 0 loss →
+de-escalated. Intake: 2 W30-uncommitted items now committed; none >3 days. Schedule: 9/9 enabled + fired.)
 
 ## LAST REPORT
-`Project Steering/Progress Reports/2026-W29.md`. **W28 top risk RESOLVED** — trainer unblocked by mmap
-root-cause fix (`7b5faa6`), healthy ~21k/30k. Proposals: P1 ride to 30k → first decision-grade gate,
-P2 fold D3-decomp+K=4 into arch (direct heads, K=horizon), P3 close agent-commit gap + guardrail + clear
-intake wave. New top risk: 3/6 agent-commit regression. Open decisions for Sayed: post-30k spend
-pre-approval; sequence the 3 banked directives (rec: REF-A/REF-B first).
+`Project Steering/Progress Reports/2026-W31.md`. **All 3 architecture arms now exist** (main 86 %, REF-A
+30k COMPLETE, REF-B built rev1+rev2). **First head-to-head:** REF-A frozen-DINO probes ADE@1s ≈14.2 m vs
+main ≈7.5 m — frozen encoder currently WORSE but **confounded** (mean-pool adapter kills DINO spatial
+tokens; comma-only vs comma+physicalai) → **NO H4 arbitration yet**. D1 route-resampled protocol now real
+code (`e9b2491`). D-028 ADOPTED, D-022 gap resolved, REF-B $40 envelope confirmed in chat, H16 banked.
+Proposals: P1 run 30k flagship gate tonight ~22:15 (D1 route-CI + **CV kinematic-floor baseline**), P2
+de-confound REF-A (grid-adapter retrain + comma-only main re-run) → read H4 honestly, P3 Sayed unblock
+pod3 quota (50→300 GB) + build session-end guardrail. **Still pending 3rd report: the step-30k verdict.**
+Open for Sayed: pod3 volume expansion; REF-B training GO; D-021/D-022 defaults hold.
 
 ## HANDOFF
 Next run: read this STATE, then the six discipline `Research/STATE.md` `QUALITY` lines + `LEADERBOARD.md`
