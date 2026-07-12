@@ -345,6 +345,10 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
     with av.open(str(mp4)) as c:
         stream = c.streams.video[0]
         stream.thread_type = "AUTO"
+        # Cap decoder threads: AUTO otherwise spawns ~one thread per host core
+        # (~35 on a 96-core box), so N parallel build workers oversubscribe
+        # cores ~Nx and thrash. Keep N_workers * PAI_DECODE_THREADS ~= n_cores.
+        stream.thread_count = int(os.environ.get("PAI_DECODE_THREADS", "4"))
         for fr in c.decode(stream):
             rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
             if h is None:
