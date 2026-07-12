@@ -66,3 +66,51 @@ preserved (then we pursue A4/SigReg-geometry first). Config default unchanged un
 
 ## Results (append as experiments land)
 - **B1 fine-tune:** _launching on pod1 — trajectory-head + fine-tune 27k; ceiling/held-out/D2 shift._
+
+## D-016 follow-up — cross-corpus camera geometry (D3 · appended 2026-07-12)
+
+**Origin.** Sayed's urban resim overlays had GT/MAIN fans riding into the sky. The standing
+hypothesis (D-016) was *unnormalized physicalai **extrinsics** (mount pitch/height) → horizon offset*.
+The camera-extrinsics investigation (`stack/tanitad/replay/rr_log.py` per-corpus fix + the
+quantification below) **tested and REJECTED the horizon-offset hypothesis**, and surfaced a different,
+higher-leverage defect that plausibly also drives the urban ADE gap.
+
+**What was measured (proofs, from the dataset's own calibration + 40 val frames/corpus).**
+- physicalai front-wide **pitch = 0.31° ± 0.78°** (level), **height = 1.43 m**, principal point at
+  centre → calibration-derived canonical **horizon = 128.0 ± 6.1 px == h/2**. *The horizon is NOT
+  offset* — the extrinsics hypothesis is falsified (offset ≈ 0).
+- The real defect is **intrinsics canonicalization** (`stack/tanitad/data/calib.py`). The front-wide is
+  an **f-theta** lens with near-centre focal **925 px @1920**, but `calib.py` crops using the *nominal
+  rectilinear* focal `nominal_focal_from_hfov(1920,120°)=554 px`. Net: the achieved **canonical focal
+  is 925·256/533 ≈ 444 px, not the intended 266** — physicalai frames are trained at **~1.67× the
+  zoom** of comma2k19. (comma is correct: it crops with its *true* measured focal 910 px → 266.)
+- I7 "task-identity fingerprint" reports `f_eff_px = 266` for physicalai (`physicalai.py:CORPUS_META`),
+  so the skew is **silent** — I7 asserts the *nominal* value, never the *achieved* one.
+
+**Hypothesis (revised, D3).** The physicalai↔comma **focal inconsistency** (444 vs 266) breaks exactly
+the action→pixel-motion geometry consistency `calib.py` exists to enforce: the encoder must map a
+1.67×-more-zoomed image to the *same* metric ego-trajectory targets as comma, corrupting cross-corpus
+metric grounding and disproportionately inflating **urban (physicalai) ADE** (diagnostic urban 4.08 vs
+comma 2.21). Height/pitch are viz-only (fixed in the overlay PR; training never calls `to_image_plane`).
+
+**Experiment (design only — DO NOT run yet; sequence after B1).**
+1. *Cache-build fix:* in `calib.py`/`physicalai._decode_mp4`, replace the nominal-rectilinear focal
+   with the **real f-theta near-centre focal (925 px)** from `calibration/camera_intrinsics.offline`
+   (per-clip; ~180 KB/chunk) so `focal_crop_size` yields the crop that achieves a **true canonical
+   f_eff = 266**, matching comma. Rebuild physicalai train+val `_epcache`. (Cross-check: I7 must now
+   report the *achieved* 266, not the nominal.)
+2. *Fine-tune*, not full retrain: continue the 27k flagship ~8k steps on the **focal-corrected** mix
+   (same recipe as B1 so effects are separable; ideally as a B1 arm toggle).
+3. *Re-measure* the stratified diagnostic **urban vs comma ADE@1s** (+ the straight/curve strata).
+
+**Pre-registered prediction.** Focal-correcting physicalai narrows the urban−comma ADE gap by
+**≥ 30%** (urban improves materially; comma ≈ unchanged since its focal is already correct), with **no
+D2 direction-accuracy regression** (≥ 0.80).
+
+**Falsifier.** If the urban−comma gap does **not** narrow after the focal-corrected fine-tune (Δgap
+< 10%), cross-corpus focal inconsistency is **not** the urban driver → attribute the urban deficit to
+scene complexity / data diversity / label noise instead, and close this thread.
+
+**Resource.** Cache rebuild: pod2/pod3, ~1–2 h (metadata already local). Fine-tune + eval: pod1,
+~half a day. Cheap relative to B2. **Confounder to control:** rebuilding also slightly changes the
+effective FOV crop — hold episode selection fixed and log achieved f_eff per corpus.
