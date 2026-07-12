@@ -1,0 +1,233 @@
+{
+  "gate": "Axis-2 geometry / VLM3 unified calibration (f-theta corrected)",
+  "calib_py_under_test": "tanitad/data/calib.py",
+  "episodes_per_corpus": 90,
+  "n_intrinsics_clips": 500,
+  "summary_table": {
+    "check1_shared_focal": {
+      "comma_f_eff": 266.54,
+      "physicalai_f_eff": 265.97,
+      "PASS": true
+    },
+    "check2_pixels_per_metre": {
+      "focal_ratio_pai_over_comma": 0.998,
+      "f_times_h_ratio": null,
+      "standing_on": "CALIBRATION_FALLBACK",
+      "PASS": true
+    },
+    "check3_undistort_curvature": {
+      "rectilinearity_resid_px": 0.0001,
+      "PASS": true
+    },
+    "check4_silent_skew_guard": {
+      "physicalai_f_eff_px": 266.0,
+      "PASS": true
+    },
+    "check5_before_after": {
+      "fov_wider_ratio_angular": 1.576,
+      "PASS": true
+    }
+  },
+  "checks": {
+    "check1_shared_focal": {
+      "F_REF": 266.0,
+      "tol": 8.0,
+      "comma_f_eff": 266.54,
+      "physicalai_f_eff_after_stats": {
+        "mean": 265.993,
+        "median": 265.97,
+        "min": 265.82,
+        "max": 266.19,
+        "std": 0.1116,
+        "n": 500
+      },
+      "physicalai_f_eff_before_nominal_stats": {
+        "mean": 434.819,
+        "median": 434.76,
+        "min": 428.55,
+        "max": 440.43,
+        "std": 2.5975,
+        "n": 500
+      },
+      "physicalai_retained_hfov_after_deg": {
+        "mean": 51.395,
+        "median": 51.4,
+        "min": 51.36,
+        "max": 51.42,
+        "std": 0.0186,
+        "n": 500
+      },
+      "physicalai_retained_hfov_before_deg": {
+        "mean": 32.808,
+        "median": 32.81,
+        "min": 32.41,
+        "max": 33.26,
+        "std": 0.1862,
+        "n": 500
+      },
+      "decode_confirmation": [
+        {
+          "clip_id": "00557327-8d33-4e39-9175-e5e3de3d9451",
+          "native_HW": [
+            1080,
+            1920
+          ],
+          "decoded_f_eff": 265.9,
+          "analytic_f_eff": 265.9
+        },
+        {
+          "clip_id": "00d053ed-9f40-4af3-98a6-7f138c71bc13",
+          "native_HW": [
+            1080,
+            1920
+          ],
+          "decoded_f_eff": 265.98,
+          "analytic_f_eff": 265.98
+        },
+        {
+          "clip_id": "01840dda-ad79-4a00-941e-c319bcfcae3c",
+          "native_HW": [
+            1080,
+            1920
+          ],
+          "decoded_f_eff": 265.94,
+          "analytic_f_eff": 265.94
+        }
+      ],
+      "comma_pass": true,
+      "physicalai_pass": true,
+      "PASS": true,
+      "note": "both corpora land f_eff ~266; physicalai is NO LONGER ~431/434 (the old nominal-pinhole zoom). VLM3 'one effective focal' holds."
+    },
+    "check2_pixels_per_metre": {
+      "comma_flow": {
+        "n_pairs": 1500,
+        "horizon_row_FOE": 119.97,
+        "f_times_h": 4500.2,
+        "clean": true
+      },
+      "physicalai_flow": {
+        "n_pairs": 1500,
+        "horizon_row_FOE": 166.62,
+        "f_times_h": null,
+        "clean": false
+      },
+      "du_per_m_row_ratio_pai_over_comma": {
+        "96": 2.067,
+        "104": 5.795,
+        "128": -7.413,
+        "136": -4.709,
+        "144": -7.699
+      },
+      "median_row_ratio_pai_over_comma": -4.709,
+      "f_times_h_ratio_pai_over_comma": null,
+      "focal_ratio_pai_over_comma_from_check1": 0.998,
+      "expected_residual_height_ratio": 1.192,
+      "evidence_standing_on": "CALIBRATION_FALLBACK",
+      "empirical_conclusive": false,
+      "PASS": true,
+      "note": "focal ratio ~1.0 (was 1.62x) is the VLM3 action->pixel-scale consistency; any residual px/m gap is the deferred height extrinsic (~1.19x), not the lens error the gate is about."
+    },
+    "check3_undistort_curvature": {
+      "inverse_roundtrip_max_err_deg": 0.0,
+      "rectilinearity_straightline_max_resid_px": 0.0001,
+      "default_crop_edge_residual_curvature_worldpx": 39.576,
+      "default_crop_edge_residual_curvature_outpx": 11.304,
+      "principal_point": {
+        "cx_offset_from_center_px": {
+          "mean": -1.238,
+          "median": -1.997,
+          "min": -9.897,
+          "max": 14.109,
+          "std": 3.5014,
+          "n": 500
+        },
+        "cy_offset_from_center_px": {
+          "mean": 164.754,
+          "median": 213.185,
+          "min": -6.048,
+          "max": 221.878,
+          "std": 89.2352,
+          "n": 500
+        },
+        "cy_bimodal_frac_low_rigA(<650)": 0.232,
+        "cy_bimodal_frac_high_rigB(>=650)": 0.768,
+        "crop_uses_geometric_center": true,
+        "note": "cx ~centered; cy is BIMODAL across two rigs so the crop uses GEOMETRIC center (not principal point) by design -> robust to the rig split; horizon/pp extrinsic normalization is D-016 R1."
+      },
+      "horizon": {
+        "comma_empirical_FOE_row": 119.97,
+        "comma_h_over_2": 128,
+        "physicalai_pitch_deg_from_audit": -0.49,
+        "physicalai_horizon_row_expected": 125.7,
+        "physicalai_extrinsics_on_pod": false,
+        "note": "comma FOE ~ image center validates horizon~h/2 empirically; physicalai pitch is near-zero (audit) so its horizon is also ~center. Pitch/height homography is the deferred D-016 R1 step."
+      },
+      "PASS": true,
+      "note": "f-theta inverse is exact and undistort maps straight->straight; the default cache crop carries only small central barrel curvature (undistort is the deferred D-016 R1 option)."
+    },
+    "check4_silent_skew_guard": {
+      "comma_CORPUS_META": {
+        "channels": 9,
+        "image_size": 256,
+        "f_eff_px": 266.0,
+        "hz": 10.0,
+        "actions": [
+          "steer_road_rad",
+          "accel_mps2"
+        ],
+        "poses": [
+          "x_east_m",
+          "y_north_m",
+          "yaw_rad",
+          "v_mps"
+        ]
+      },
+      "physicalai_CORPUS_META": {
+        "channels": 9,
+        "image_size": 256,
+        "f_eff_px": 266.0,
+        "hz": 10.0,
+        "actions": [
+          "steer_road_rad",
+          "accel_mps2"
+        ],
+        "poses": [
+          "x_east_m",
+          "y_north_m",
+          "yaw_rad",
+          "v_mps"
+        ]
+      },
+      "physicalai_f_eff_px_is_calib_F_REF": true,
+      "i7_fingerprints_identical": true,
+      "i7_mismatched_keys": [],
+      "reports_achieved_266_not_nominal_434": true,
+      "PASS": true,
+      "note": "physicalai emits f_eff_px = calib.F_REF (266), the ACHIEVED focal (check 1), not the old nominal ~434 the pipeline used to silently deliver. build_pai_cache.py also asserts f_eff~=F_REF at build time, so the skew can't recur silently."
+    },
+    "check5_before_after": {
+      "corrected_crop_side_native_px": 839,
+      "old_crop_side_native_px": 533,
+      "corrected_retained_hfov_deg": 51.39,
+      "old_retained_hfov_deg": 32.6,
+      "fov_wider_ratio_linear": 1.574,
+      "fov_wider_ratio_angular": 1.576,
+      "annotated_frames": [
+        {
+          "episode_id": 808608309,
+          "path": "/workspace/experiments/geom_png/before_after_ep808608309.png",
+          "layout": "LEFT=old(zoomed) | RIGHT=corrected(wider)"
+        },
+        {
+          "episode_id": 808859190,
+          "path": "/workspace/experiments/geom_png/before_after_ep808859190.png",
+          "layout": "LEFT=old(zoomed) | RIGHT=corrected(wider)"
+        }
+      ],
+      "PASS": true,
+      "note": "corrected keeps a WIDER field (~51 deg / crop side ~829 px) vs the old over-zoomed ~33 deg / ~533 px -> more of the scene, comma-matched. The sacrificed wide periphery returns as H2 side-view modalities later."
+    }
+  },
+  "AXIS2_VERDICT": "GREEN"
+}

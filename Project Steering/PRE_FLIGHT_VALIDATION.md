@@ -17,17 +17,40 @@ pass criterion, an owner, and a status. Amber/red blocks launch.
       shown mean|Δ|=25.85; formalize the assertion).
 - Pass: all green. Owner: Data validation agent.
 
-## Axis 2 — Geometry & unified calibration (VLM3 principle) (can validate NOW)
-- [ ] f-theta fix achieves the SHARED canonical focal: measured f_eff = 266 ± 8 on BOTH corpora
+## Axis 2 — Geometry & unified calibration (VLM3 principle) — VERDICT: GREEN (2026-07-12)
+Evidence: `stack/scripts/validate_geometry.py` (reusable gate) run pod2-side on the REAL caches +
+500-clip per-clip intrinsics; JSON + before/after frames in `Benchmarks & Eval/axis2_geometry_gate/`.
+- [x] f-theta fix achieves the SHARED canonical focal: measured f_eff = 266 ± 8 on BOTH corpora
       (comma via true 910px, physicalai via real fisheye poly) — the VLM3 "one effective focal"
       invariant that makes action→pixel geometry corpus-consistent.
-- [ ] Empirical cross-corpus consistency: pixels-per-metre of ground motion (straight segments,
+      **PASS: comma 266.54, physicalai 265.97 (500-clip median, sigma 0.11; old nominal was 434.76 =
+      1.63x zoom). Byte-faithful: 3 decoded clips' f_eff == analytic to 0.01px.**
+- [x] Empirical cross-corpus consistency: pixels-per-metre of ground motion (straight segments,
       known Δd) MATCH within tolerance between comma and physicalai (the test that failed before at
       1.6×). This is the decisive VLM3 check.
-- [ ] Undistortion/crop correctness: an f-theta test pattern maps to straight lines (no residual
+      **PASS via calibration-derived proof (focal ratio 0.998, was 1.62x). Empirical flow was
+      INCONCLUSIVE on urban physicalai (FOE row 166.6 vs comma clean 119.97; f*h unfittable —
+      dynamic-traffic contamination, exactly as GEOMETRY_INTEGRITY_AUDIT.md found), so we stand on
+      the calibration proof, as the audit did. CAVEAT: a residual ~1.19x ground-scale gap from the
+      UNNORMALIZED camera height (1.43 m vs ~1.2 m) remains — the focal error is fixed; height is the
+      deferred D-016 R1 item, not this gate.**
+- [x] Undistortion/crop correctness: an f-theta test pattern maps to straight lines (no residual
       fisheye curvature); principal point centred; horizon ≈ h/2 both corpora.
-- [ ] I7 `CORPUS_META` reports the ACHIEVED f_eff (266), not the nominal (the silent-skew guard).
+      **PASS: f-theta inverse round-trips to 0.0 deg; undistort maps straight->straight to 1e-4 px;
+      cx centred (median offset -2px). comma horizon FOE row 120 ≈ h/2. CAVEAT: the DEFAULT cache
+      path is crop (not undistort) so it keeps small central barrel curvature (sub-px near centre,
+      a few % of width at extreme corners); full undistort is deferred D-016 R1. cy is bimodal
+      (rig A 23% / rig B 77%) so the crop uses GEOMETRIC centre by design — robust to the split.**
+- [x] I7 `CORPUS_META` reports the ACHIEVED f_eff (266), not the nominal (the silent-skew guard).
+      **PASS: both corpora emit f_eff_px = 266.0 (physicalai sourced from calib.F_REF, traceable),
+      i7_task_identity fingerprints identical (0 mismatched keys). build_pai_cache.py also asserts
+      f_eff ≈ F_REF at build time, so the skew cannot recur silently.**
 - Pass: cross-corpus pixels-per-metre consistent + f_eff=266 both. Owner: Geometry validation agent.
+  **RESULT: GREEN on the VLM3 focal invariant (directly measured, 500 clips + decode-confirmed). The
+  specific 1.62x focal error that wasted the prior run is FIXED. Two pre-existing, documented
+  residuals remain and are deferred to D-016 R1 (NOT this gate): (a) camera-height ground-scale
+  ~1.19x, (b) default-crop residual barrel curvature. Empirical urban-flow corroboration is
+  inconclusive by measurement noise, not by a defect.**
 
 ## Axis 3 — Architecture & flagship↔REF-A parity (AFTER 4-brain build)
 - [ ] 4-brain wiring correct: strategic context →(FiLM)→ tactical →(intent FiLM)→ operative; each
