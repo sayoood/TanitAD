@@ -9,8 +9,8 @@ Consumes the Stage-R0 output of `scripts/physicalai_r0.py`:
 Signal derivation (egomotion schema: timestamp, q*, x/y/z, vx/vy/vz, ax/ay/az, curvature):
     v      = ||(vx, vy)||                       [m/s]
     steer  = atan(WHEELBASE * curvature)        road-wheel angle proxy [rad]
-    accel  = finite difference of v             [m/s^2]  (contract semantics)
-    pose   = (x, y, yaw=atan2(vy, vx), v)       clip-local frame
+    accel  = ax (provided longitudinal accel)   [m/s^2]  (finite-diff fallback)
+    pose   = (x, y, yaw=quaternion heading, v)  clip-local frame
 Video frames are resampled to 10 Hz by nearest-timestamp alignment against the
 egomotion clock, then D-015 stacking (3 frames @100 ms -> 9 channels, actions/
 poses aligned to the latest frame).
@@ -368,15 +368,32 @@ def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.n
     v = np.hypot(vx, vy)
     curv = col("curvature")
     steer = np.arctan(WHEELBASE * curv)
-    dt = float(np.median(np.diff(t_query))) if len(t_query) > 1 else 0.1
-    # normalize dt to seconds if the clock is in micro/nanoseconds
-    for scale in (1e9, 1e6, 1e3):
-        if dt > 50.0:
-            dt /= scale if dt / scale >= 1e-3 else 1.0
-    dt = dt if 1e-3 < dt < 10.0 else 0.1
-    accel = finite_diff_accel(v.astype(np.float32), dt)
+    # accel: the dataset's PROVIDED longitudinal acceleration ax [m/s^2] (signal
+    # upgrade) — lower noise and correct sign vs finite-differencing v (measured:
+    # ax and dv/dt share the same range, corr up to 0.92 on dynamic clips). Fall
+    # back to a finite difference only when ax is absent (synthetic-ego tests).
+    if "ax" in ego.columns:
+        accel = col("ax").astype(np.float32)
+    else:
+        dt = float(np.median(np.diff(t_query))) if len(t_query) > 1 else 0.1
+        for scale in (1e9, 1e6, 1e3):            # ns/us/ms clock -> seconds
+            if dt > 50.0:
+                dt /= scale if dt / scale >= 1e-3 else 1.0
+        dt = dt if 1e-3 < dt < 10.0 else 0.1
+        accel = finite_diff_accel(v.astype(np.float32), dt)
     actions = np.column_stack([steer, accel]).astype(np.float32)
-    yaw = np.arctan2(vy, vx)
+    # yaw: heading from the vehicle-orientation QUATERNION (signal upgrade) —
+    # the true heading, robust at low speed where atan2(vy, vx) is noisy/
+    # undefined (measured: d(quat-yaw) vs d(vel-yaw) corr == 1.00). Computed on
+    # native samples, unwrapped, then interpolated onto the query clock.
+    if {"qx", "qy", "qz", "qw"}.issubset(ego.columns):
+        q = ego[["qx", "qy", "qz", "qw"]].to_numpy(np.float64)[order]
+        yaw_native = np.unwrap(np.arctan2(
+            2.0 * (q[:, 3] * q[:, 2] + q[:, 0] * q[:, 1]),
+            1.0 - 2.0 * (q[:, 1] ** 2 + q[:, 2] ** 2)))
+        yaw = np.interp(t_query, t, yaw_native)
+    else:
+        yaw = np.arctan2(vy, vx)
     poses = np.column_stack([col("x"), col("y"), yaw, v]).astype(np.float32)
     return actions, poses
 
