@@ -305,3 +305,26 @@ def flagship4b_smoke_config() -> StackConfig:
         d_cmd=16, d_model=32, depth=1, n_heads=2, d_ctx=16, cadence=4)
     cfg.loss.sigreg.free_dims = 8             # state_dim 512 -> 8 free, 504 regd
     return cfg
+
+
+def refa4b_config() -> StackConfig:
+    """REF-A 4-brain (D-030) — the frozen-DINO twin of the flagship.
+
+    Returns the IDENTICAL ``StackConfig`` as :func:`flagship4b_config` so every
+    SHARED brain (operative predictor + tactical_pred dynamics + trained
+    tactical/strategic policy + hierarchical grounding) is byte-for-byte the same
+    module the flagship holds. REF-A consumes ONLY the non-encoder fields
+    (``predictor`` / ``tactical_pred`` / ``tactical_policy`` / ``strategic_policy``
+    / ``readout`` grid geometry / ``loss.sigreg``); ``cfg.encoder`` is unused —
+    REF-A builds the frozen-DINO adapter instead of a from-scratch ViT. The
+    ``scripts/refa_train4b`` trainer then calls the SHARED ``flagship_loss`` with
+    ``sigreg_variant="pred_only"`` (vs the flagship's ``"full_relaxed"``), so the
+    flagship and REF-A differ ONLY in (1) the encoder and (2) the SIGReg target.
+    """
+    return flagship4b_config()
+
+
+def refa4b_smoke_config() -> StackConfig:
+    """Tiny CPU REF-A 4-brain (CI smoke / parity test / dry runs) — the flagship
+    smoke config reused verbatim (see :func:`refa4b_config`)."""
+    return flagship4b_smoke_config()
