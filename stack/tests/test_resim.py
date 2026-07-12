@@ -213,6 +213,87 @@ def test_wide_frames_are_downscaled(tmp_path):
     assert Image.open(jpg).width == 640
 
 
+# ---------- (f) image-plane projection + camera letterbox (fan-draw pins) -----
+# Regression pins for the TanitResim camera panel. Two invariants the display
+# relies on, whose violation produced Sayed's urban-session defects:
+#   1. the exporter projects forward waypoints ON/BELOW the horizon (v >= h/2) —
+#      a fan drawn ABOVE the horizon can only come from the display layer;
+#   2. the front-end letterbox map is ISOTROPIC (one scale for both axes) and
+#      keeps forward points inside the frame rect — the stretched-frame bug was
+#      an anisotropic canvas map (sx != sy) dragging the fan sideways/up.
+
+from tanitad.replay.rr_log import to_image_plane
+
+
+def _img_path(wp):
+    """Origin-prefixed ego path, exactly as the exporter builds it."""
+    return np.vstack([[0.0, 0.0], np.asarray(wp, dtype=np.float64)])
+
+
+def test_straight_ahead_projects_centered_and_below_horizon():
+    h = w = 256
+    wp = np.array([[d, 0.0] for d in (5, 10, 15, 20)], dtype=np.float64)
+    u, v = to_image_plane(_img_path(wp), h, w).T
+    # dead-centre column for a straight-ahead trajectory
+    assert np.allclose(u, w / 2, atol=1e-6)
+    # every projected point sits on/below the horizon (v >= h/2)
+    assert np.all(v >= h / 2 - 1e-9)
+    # forward distance grows => v decreases toward the horizon: the stored
+    # polyline is monotonic (equivalently: runs monotonically down to the ego).
+    assert np.all(np.diff(v) < 0)
+
+
+@pytest.mark.parametrize("wp", [
+    [[5, 0], [10, 0], [15, 0], [20, 0]],         # straight
+    [[5, 1], [10, 3], [15, 6], [20, 10]],        # hard left  (+y)
+    [[5, -1], [10, -3], [15, -6], [20, -10]],    # hard right (-y)
+    [[2, 4], [3, 8], [4, 12], [5, 16]],          # near + extreme lateral
+])
+def test_forward_trajectory_never_above_horizon(wp):
+    h = w = 256
+    v = to_image_plane(_img_path(np.array(wp, float)), h, w)[:, 1]
+    assert np.all(v >= h / 2 - 1e-9), "projected fan rose above the horizon"
+
+
+# -- letterbox canvas map (mirrors static/app.js containRect + toPx) -----------
+
+def _contain_rect(cw, ch, fw, fh):
+    scale = min(cw / fw, ch / fh)
+    dw, dh = fw * scale, fh * scale
+    return scale, (cw - dw) / 2.0, (ch - dh) / 2.0, dw, dh
+
+
+@pytest.mark.parametrize("cw,ch", [(460, 460), (709, 420), (300, 300), (1189, 420)])
+def test_letterbox_is_isotropic_and_keeps_forward_points_in_frame(cw, ch):
+    fw = fh = 256
+    scale, ox, oy, dw, dh = _contain_rect(cw, ch, fw, fh)
+    # isotropic: ONE scale for both axes => a square frame is never stretched.
+    assert scale == min(cw / fw, ch / fh)
+    # frame rect is centered and never exceeds the panel.
+    assert ox >= -1e-9 and oy >= -1e-9
+    assert dw <= cw + 1e-9 and dh <= ch + 1e-9
+    # forward, on-frame waypoints land inside the drawn frame rect.
+    wp = np.array([[5, 0.5], [10, 1.0], [15, -1.5], [20, 2.0]], dtype=np.float64)
+    for u, v in to_image_plane(_img_path(wp), fh, fw):
+        if 0 <= v <= fh:
+            cx, cy = ox + u * scale, oy + v * scale
+            assert ox - 1e-6 <= cx <= ox + dw + 1e-6
+            assert oy - 1e-6 <= cy <= oy + dh + 1e-6
+
+
+def test_export_wp_img_never_above_horizon(tmp_path):
+    # In a written bundle, every exported gt_wp_img point stays within the JPEG
+    # horizontally and never rises above that frame's horizon (v >= h/2).
+    from PIL import Image
+    bundle, session = _build(tmp_path)
+    for ep in session["episodes"]:
+        for st in ep["steps"]:
+            w, h = Image.open(bundle / "frames" / st["frame"]).size
+            for u, v in st["gt_wp_img"]:
+                assert 0 <= u <= w, f"gt_wp_img u off-frame: {u} (w={w})"
+                assert v >= h / 2 - 1e-6, f"gt_wp_img above horizon: {(u, v)}"
+
+
 # ---------- (e) FastAPI server -----------------------------------------------
 
 @pytest.fixture()

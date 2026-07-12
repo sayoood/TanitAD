@@ -427,9 +427,13 @@
   }
 
   // ---------- canvas helpers -------------------------------------------
-  function fit(canvas, cssH) {
+  // `cssW` (optional) pins the CSS width explicitly. The camera passes the
+  // wrap's width so sizing never reads the canvas's OWN transient clientWidth
+  // (which, feeding back into its height, produced the stretched-frame bug).
+  function fit(canvas, cssH, cssW) {
     var dpr = window.devicePixelRatio || 1;
-    var w = canvas.clientWidth || canvas.parentElement.clientWidth || 300;
+    var w = cssW || canvas.clientWidth || canvas.parentElement.clientWidth || 300;
+    if (cssW) canvas.style.width = cssW + "px";   // pin width (else CSS 100%)
     canvas.style.height = cssH + "px";
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(cssH * dpr);
@@ -437,6 +441,16 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, cssH);
     return { ctx: ctx, w: w, h: cssH };
+  }
+
+  // Contain-fit a frame of (fw x fh) inside a (cw x ch) panel: the frame keeps
+  // its TRUE aspect and is centered, with dark letterbox/pillarbox bars filling
+  // the remainder — never stretched. Overlays reuse the returned rect so the
+  // trajectory fan stays locked to the frame pixels it was projected against.
+  function containRect(cw, ch, fw, fh) {
+    var scale = Math.min(cw / fw, ch / fh);
+    var dw = fw * scale, dh = fh * scale;
+    return { scale: scale, ox: (cw - dw) / 2, oy: (ch - dh) / 2, dw: dw, dh: dh };
   }
 
   function polyline(ctx, pts, color, width, dashed) {
@@ -453,19 +467,37 @@
   }
 
   // ---------- camera ----------------------------------------------------
+  // Camera panel side cap: a single-arm session gives a very wide column, so
+  // cap the (square) panel and center it rather than letting it balloon;
+  // narrower multi-arm columns just use their full width.
+  var CAM_MAX = 460;
+
   function drawCamera(canvas, st, name) {
     var img = S.imgs[st.frame];
-    var natW = (img && img.naturalWidth) || 256;
-    var natH = (img && img.naturalHeight) || 192;
-    var cw = canvas.clientWidth || 300;
-    var cssH = Math.round(cw * natH / natW);
-    var f = fit(canvas, cssH);
+    var loaded = img && img.complete && img.naturalWidth;
+    // Frame's TRUE pixel size = the space wp_img was projected in (export uses
+    // the written JPEG's w,h). Default square 256 (our frames) until it loads.
+    var fw = loaded ? img.naturalWidth : 256;
+    var fh = loaded ? img.naturalHeight : 256;
+    // Panel side from the WRAP width (stable, layout-driven) — NOT the canvas's
+    // own clientWidth, whose transient value used to feed back into its height
+    // and stretch the frame. Square panel, centered in the column.
+    var wrapW = canvas.parentElement.clientWidth || canvas.clientWidth || 300;
+    var side = Math.min(wrapW, CAM_MAX);
+    canvas.style.display = "block"; canvas.style.margin = "0 auto";
+    var f = fit(canvas, side, side);
     var ctx = f.ctx;
-    var sx = f.w / natW, sy = f.h / natH;
-    if (img && img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, f.w, f.h);
-    else { ctx.fillStyle = "#0a0f18"; ctx.fillRect(0, 0, f.w, f.h); }
 
-    function toPx(p) { return [p[0] * sx, p[1] * sy]; }
+    // Letterbox: dark backdrop, then the frame contain-fit at its true aspect.
+    ctx.fillStyle = "#0a0f18"; ctx.fillRect(0, 0, f.w, f.h);
+    var r = containRect(f.w, f.h, fw, fh);
+    if (loaded) ctx.drawImage(img, r.ox, r.oy, r.dw, r.dh);
+
+    // Overlay maps frame-pixel (u,v) through the SAME contain rect (equal x/y
+    // scale => no axis distortion; forward points stay below the horizon).
+    function toPx(p) { return [r.ox + p[0] * r.scale, r.oy + p[1] * r.scale]; }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(r.ox, r.oy, r.dw, r.dh); ctx.clip();  // stay on frame
     var arm = st.arms[name];
     if (S.showGT && st.gt_wp_img) {
       var gp = st.gt_wp_img.map(toPx);
@@ -477,6 +509,7 @@
       polyline(ctx, ap, armColor(name), 2.6, false);
       ap.slice(1).forEach(function (p) { dot(ctx, p, armColor(name), 3); });
     }
+    ctx.restore();
   }
   function dot(ctx, p, color, r) {
     ctx.save(); ctx.fillStyle = color;
