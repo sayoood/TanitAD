@@ -82,7 +82,11 @@ def horizon_plan(cfg: StackConfig, op_fwd_k: int, tac_fwd_k: int,
             idxs |= {k - 1} | ({k - 2} if k >= 2 else set())
     for hs, _ in level_cfg.values():
         idxs |= {k - 1 for k in hs}
-    idxs |= {goal_h - 1}
+    # goal latent (goal_h-1) AND its change-weighting reference (goal_h-2): the
+    # goal loss uses change_weighted_mse(target=fut[goal_h-1], prev=fut[goal_h-2]),
+    # so BOTH must be encoded (else idx_of[goal_h-2] KeyErrors when the tactical/
+    # tactical_pred horizons don't happen to already cover goal_h-2).
+    idxs |= {goal_h - 1} | ({goal_h - 2} if goal_h >= 2 else set())
     if getattr(cfg.train, "rollout_k", 1) > 1:
         idxs |= set(range(cfg.train.rollout_k))
     needed = sorted(idxs)
