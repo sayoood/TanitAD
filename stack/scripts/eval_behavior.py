@@ -501,8 +501,8 @@ def imagine_and_select_eval(world, data, device, seeds, val_frac, steer_mag,
         z_end = endpoints(va, prims[p])
         xy = probe.predict(z_end)
         dist = (xy - sub_xy[va]).norm(dim=-1)
-        comfort = prims[p].pow(2).mean()
-        scores.append(dist + comfort_weight * comfort)
+        comfort = float(prims[p].pow(2).mean())   # device-agnostic scalar
+        scores.append(dist.cpu() + comfort_weight * comfort)
     sel = torch.stack(scores, dim=1).argmin(dim=1)          # [n_val] primitive idx
     sel_class = prim_class.cpu()[sel]
     truth = gt_man[va]
