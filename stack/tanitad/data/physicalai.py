@@ -24,7 +24,9 @@ from __future__ import annotations
 import io
 import math
 import os
+import warnings
 import zipfile
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -36,7 +38,8 @@ from torch import Tensor
 
 from tanitad.data._contract import finite_diff_accel
 from tanitad.data.calib import (F_REF, PHYSICALAI_FRONT_WIDE_FTHETA,
-                                FThetaIntrinsics, ftheta_crop_resize)
+                                FThetaIntrinsics, ftheta_crop_resize,
+                                ftheta_horizon_row)
 from tanitad.data.comma2k19 import stack_frames
 from tanitad.data.toy_driving import ToyEpisode
 
@@ -58,14 +61,18 @@ CORPUS_META = {
 
 # Per-clip f-theta intrinsics come from the dataset's OWN
 # calibration/camera_intrinsics feature. PROVENANCE: PhysicalAI-AV is a GATED
-# dataset, so the per-clip table is NOT committed to this (public) repo — it is
-# read from the LOCAL data dir on machines that already hold the licensed
-# dataset (``<root>/calibration/physicalai_front_wide_intrinsics.csv``, or the
-# path in ``$TANITAD_PAI_INTRINSICS``). When absent, the measured corpus-median
-# ``PHYSICALAI_FRONT_WIDE_FTHETA`` fallback (an aggregate in calib.py) is used —
-# and because the geometric-center crop depends only on the near-constant focal
-# (per-clip sigma 0.47%), it lands f_eff == F_REF (~266) for EVERY clip either
-# way, so the corrected cache is correct with or without the per-clip table.
+# dataset, so per-clip calibration is NOT committed to this (public) repo — it is
+# read (or fetched with the licensed HF token) on machines that hold the dataset.
+# Two sources, in order: (1) a local CSV table
+# (``<root>/calibration/physicalai_front_wide_intrinsics.csv`` or the path in
+# ``$TANITAD_PAI_INTRINSICS``); (2) the dataset's per-chunk parquet
+# ``calibration/camera_intrinsics/*.parquet`` (see `_intrinsics_from_parquet`).
+# When BOTH are absent, the measured corpus-median ``PHYSICALAI_FRONT_WIDE_FTHETA``
+# fallback (calib.py) still lands f_eff == F_REF (~266) via the near-constant
+# focal (per-clip sigma 0.47%) — but its cy is a RIG-B value, so the crop then
+# reverts to geometric-center (horizon NOT rig-corrected). The two-rig VERTICAL
+# fix REQUIRES a per-clip cy (source 1 or 2), which drives the principal-point-
+# centered crop in `calib.ftheta_crop_resize(center="principal")`.
 _INTR_ENV = "TANITAD_PAI_INTRINSICS"
 _INTR_BASENAME = "physicalai_front_wide_intrinsics.csv"
 _warned_fallback: set[str] = set()
@@ -88,7 +95,7 @@ def _load_intrinsics_csv(csv_path: str) -> tuple:
             poly=(float(r.fw_poly_0), float(r.fw_poly_1), float(r.fw_poly_2),
                   float(r.fw_poly_3), float(r.fw_poly_4)),
             cx=float(r.cx), cy=float(r.cy),
-            width=int(r.width), height=int(r.height))))
+            width=int(r.width), height=int(r.height), per_clip=True)))
     return tuple(rows)
 
 
@@ -105,17 +112,170 @@ def _intrinsics_table(root: str | Path | None = None) -> dict[str, FThetaIntrins
 
 def intrinsics_for_clip(clip_id: str, root: str | Path | None = None
                         ) -> FThetaIntrinsics:
-    """Real per-clip f-theta intrinsics (PREFERRED, from the local licensed data
-    dir); measured corpus-median fallback (warns once) when unavailable."""
+    """Real per-clip f-theta intrinsics (PREFERRED); measured corpus-median
+    fallback (warns once) when unavailable.
+
+    Resolution order: (1) a local CSV table (``$TANITAD_PAI_INTRINSICS`` or
+    ``<root>/calibration/physicalai_front_wide_intrinsics.csv``); (2) the
+    dataset's own per-chunk ``calibration/camera_intrinsics`` parquet (downloaded
+    on demand — see `_calib_chunk_path`); (3) the corpus-median fallback. Only
+    (1) and (2) carry ``per_clip=True`` and can drive the principal-point crop;
+    the fallback reverts that crop to geometric-center (its cy is a rig-B value).
+    """
     intr = _intrinsics_table(root).get(str(clip_id))
+    if intr is None and root is not None:
+        intr = _intrinsics_from_parquet(str(clip_id), root)
     if intr is None:
         if clip_id not in _warned_fallback:
             _warned_fallback.add(clip_id)
             print(f"[physicalai] no per-clip intrinsics for {clip_id!r}"
                   f"{' under ' + str(root) if root else ''}; using measured "
-                  f"corpus-median f-theta fallback (f_eff still ~266)", flush=True)
+                  f"corpus-median f-theta fallback (f_eff still ~266, but the crop "
+                  f"reverts to geometric-center -> horizon NOT rig-corrected)",
+                  flush=True)
         return PHYSICALAI_FRONT_WIDE_FTHETA
     return intr
+
+
+# --------------------------------------------------------------------------- #
+# Per-clip calibration from the dataset's OWN calibration/ feature (gated).     #
+# Intrinsics (cx, cy, fw_poly) key the principal-point crop; extrinsics (mount  #
+# pose) give the per-clip pitch that locates the horizon. Both live per CHUNK   #
+# (chunk == the r0-selection `chunk`); downloaded on demand to <root>.          #
+# --------------------------------------------------------------------------- #
+_HF_REPO = "nvidia/PhysicalAI-Autonomous-Vehicles"
+_FRONT_WIDE_CAM = "camera_front_wide_120fov"
+_CALIB_INTR = "camera_intrinsics"
+_CALIB_EXTR = "sensor_extrinsics"
+_warned_calib: set[str] = set()
+
+
+@dataclass(frozen=True)
+class FrontWideExtrinsics:
+    """Front-wide camera mount pose in the vehicle frame (x fwd, y left, z up),
+    from ``calibration/sensor_extrinsics``: rotation quaternion (cam->vehicle)
+    and translation [m]. Supplies the per-clip pitch that places the horizon."""
+
+    qx: float
+    qy: float
+    qz: float
+    qw: float
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+
+    def rotation_cam_to_vehicle(self) -> np.ndarray:
+        n = math.sqrt(self.qx**2 + self.qy**2 + self.qz**2 + self.qw**2) or 1.0
+        qx, qy, qz, qw = self.qx / n, self.qy / n, self.qz / n, self.qw / n
+        return np.array([
+            [1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy - qz * qw), 2 * (qx * qz + qy * qw)],
+            [2 * (qx * qy + qz * qw), 1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz - qx * qw)],
+            [2 * (qx * qz - qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)],
+        ])
+
+    def vehicle_forward_in_cam(self) -> tuple[float, float, float]:
+        """Vehicle-forward (the straight-ahead horizon ray) in the CAMERA frame
+        (+x right, +y down, +z boresight) — feed to `calib.ftheta_project_ray`."""
+        d = self.rotation_cam_to_vehicle().T @ np.array([1.0, 0.0, 0.0])
+        return (float(d[0]), float(d[1]), float(d[2]))
+
+    def optical_axis_pitch_rad(self) -> float:
+        """Downward pitch of the optical axis below horizontal [rad], +down."""
+        b = self.rotation_cam_to_vehicle() @ np.array([0.0, 0.0, 1.0])
+        return math.asin(max(-1.0, min(1.0, -float(b[2]))))
+
+
+@lru_cache(maxsize=8)
+def _chunk_of_clip(root_str: str) -> dict:
+    """clip_id -> chunk number, from the R0 selection (keys the calibration file)."""
+    sel = pd.read_parquet(Path(root_str) / "r0" / "r0_selection.parquet")
+    return dict(zip(sel["clip_id"].astype(str), sel["chunk"].astype(int)))
+
+
+def _calib_chunk_path(root: str | Path, kind: str, chunk: int,
+                      download: bool = True) -> Path | None:
+    """Local path to ``calibration/<kind>/<kind>.chunk_{chunk:04d}.parquet``,
+    fetching it from the gated HF dataset (via the repo TLS/token helpers) if it
+    is not already cached under ``root``. Returns None (warns once) on failure."""
+    rel = f"calibration/{kind}/{kind}.chunk_{chunk:04d}.parquet"
+    local = Path(root) / rel
+    if local.exists():
+        return local
+    if not download:
+        return None
+    key = f"{kind}:{chunk}"
+    try:
+        from tanitad.keys import enable_tls, load_keys
+        enable_tls()
+        load_keys()
+        import huggingface_hub
+        huggingface_hub.hf_hub_download(_HF_REPO, rel, repo_type="dataset",
+                                        local_dir=str(root))
+    except Exception as e:  # noqa: BLE001
+        if key not in _warned_calib:
+            _warned_calib.add(key)
+            warnings.warn(f"[physicalai] could not obtain {rel}: {e!r}; "
+                          f"per-clip calibration unavailable for chunk {chunk}",
+                          RuntimeWarning, stacklevel=2)
+        return None
+    return local if local.exists() else None
+
+
+def _front_wide_rows(parquet_path: str) -> pd.DataFrame:
+    """front_wide rows of a per-chunk calibration parquet, clip_id as a column
+    (the file is MultiIndexed by (clip_id, camera/sensor_name))."""
+    df = pd.read_parquet(parquet_path).reset_index()
+    name_col = "camera_name" if "camera_name" in df.columns else (
+        "sensor_name" if "sensor_name" in df.columns else None)
+    if name_col is None:                       # unnamed MultiIndex levels
+        df = df.rename(columns={"level_0": "clip_id", "level_1": "name"})
+        name_col = "name"
+    return df[df[name_col].astype(str) == _FRONT_WIDE_CAM]
+
+
+@lru_cache(maxsize=32)
+def _load_chunk_intrinsics(parquet_path: str) -> dict:
+    out = {}
+    for r in _front_wide_rows(parquet_path).itertuples(index=False):
+        out[str(r.clip_id)] = FThetaIntrinsics(
+            poly=(float(r.fw_poly_0), float(r.fw_poly_1), float(r.fw_poly_2),
+                  float(r.fw_poly_3), float(r.fw_poly_4)),
+            cx=float(r.cx), cy=float(r.cy),
+            width=int(r.width), height=int(r.height), per_clip=True)
+    return out
+
+
+@lru_cache(maxsize=32)
+def _load_chunk_extrinsics(parquet_path: str) -> dict:
+    out = {}
+    for r in _front_wide_rows(parquet_path).itertuples(index=False):
+        out[str(r.clip_id)] = FrontWideExtrinsics(
+            qx=float(r.qx), qy=float(r.qy), qz=float(r.qz), qw=float(r.qw),
+            x=float(r.x), y=float(r.y), z=float(r.z))
+    return out
+
+
+def _intrinsics_from_parquet(clip_id: str, root: str | Path
+                             ) -> FThetaIntrinsics | None:
+    chunk = _chunk_of_clip(str(root)).get(str(clip_id))
+    if chunk is None:
+        return None
+    path = _calib_chunk_path(root, _CALIB_INTR, int(chunk))
+    return _load_chunk_intrinsics(str(path)).get(str(clip_id)) if path else None
+
+
+def extrinsics_for_clip(clip_id: str, root: str | Path | None = None
+                        ) -> FrontWideExtrinsics | None:
+    """Per-clip front-wide extrinsics from the dataset's ``sensor_extrinsics``
+    calibration (downloaded on demand). None when unavailable — callers then
+    treat the mount as level (optical axis == horizon)."""
+    if root is None:
+        return None
+    chunk = _chunk_of_clip(str(root)).get(str(clip_id))
+    if chunk is None:
+        return None
+    path = _calib_chunk_path(root, _CALIB_EXTR, int(chunk))
+    return _load_chunk_extrinsics(str(path)).get(str(clip_id)) if path else None
 
 
 def discover_r0_clips(root: str | Path) -> list[dict]:
@@ -152,8 +312,15 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
     in the filename) and crop against the true radial map so the canonical
     f_eff == F_REF (comma-matched, ~266 px), instead of the old nominal-120-deg
     PINHOLE focal (554 px) that cropped a 533-px square retaining only ~16.4 deg
-    -> f_eff ~434 px, i.e. 1.6x over-zoomed vs comma. The sacrificed wide
-    periphery still returns later as H2 side-view modalities.
+    -> f_eff ~434 px, i.e. 1.6x over-zoomed vs comma.
+
+    D-016 R1 (two-rig fix): the crop is centered on the per-clip principal point
+    (cx, cy) via `ftheta_crop_resize(center="principal")` — its default — so the
+    horizon lands at the SAME output row for rig A (cy~543) and rig B (cy~755).
+    Per-clip extrinsics are resolved too (the mount pitch that locates the
+    horizon) and the achieved horizon output row is recorded in
+    ``_decode_mp4.last_calib`` for the data card / build check. The sacrificed
+    wide periphery still returns later as H2 side-view modalities.
     """
     import av
     frames = []
@@ -164,8 +331,25 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
             rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
             frames.append(rgb)
     vid = torch.stack(frames)
-    intr = intrinsics_for_clip(Path(mp4).name.split(".")[0],
-                               _physicalai_root_of(mp4))
+    clip_id = Path(mp4).name.split(".")[0]
+    root = _physicalai_root_of(mp4)
+    intr = intrinsics_for_clip(clip_id, root)
+    extr = extrinsics_for_clip(clip_id, root)
+    # Provenance: with the per-clip (cx, cy) crop the horizon output row is
+    # ~size/2 for both rigs; record it (and the legacy geometric-center row it
+    # replaces) so a build check can confirm rig A and rig B now agree.
+    h, w = int(vid.shape[-2]), int(vid.shape[-1])
+    d_cam = extr.vehicle_forward_in_cam() if extr is not None else (0.0, 0.0, 1.0)
+    applied = "principal" if intr.per_clip else "geometric"
+    _decode_mp4.last_calib = {
+        "clip_id": clip_id, "per_clip": intr.per_clip, "center": applied,
+        "cx": round(intr.cx, 1), "cy": round(intr.cy, 1),
+        "extrinsics": extr is not None,
+        "horizon_row": round(ftheta_horizon_row(intr, d_cam, h, w, size,
+                                                center=applied), 1),
+        "horizon_row_legacy_geometric": round(
+            ftheta_horizon_row(intr, d_cam, h, w, size, center="geometric"), 1),
+    }
     return ftheta_crop_resize(vid, intr, size)
 
 
