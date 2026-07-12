@@ -328,22 +328,36 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
     wide periphery still returns later as H2 side-view modalities.
     """
     import av
-    frames = []
+    clip_id = Path(mp4).name.split(".")[0]
+    root = _physicalai_root_of(mp4)
+    intr = intrinsics_for_clip(clip_id, root)
+    extr = extrinsics_for_clip(clip_id, root)
+    # Decode + f-theta crop in FRAME BATCHES so the float32 upcast inside
+    # ftheta_crop_resize never materializes the whole full-res clip at once: peak
+    # is ~one batch (~1 GB) instead of ~15-18 GB for a 604-frame 1080p clip, so
+    # many build workers can share the (~51 GB) build cgroup. Bit-identical to
+    # cropping all frames at once — the f-theta remap is per-frame independent and
+    # frame order is preserved (verified torch.equal, maxdiff 0).
+    batch = int(os.environ.get("PAI_DECODE_BATCH", "24"))
+    outs: list[Tensor] = []
+    buf: list[Tensor] = []
+    h = w = None
     with av.open(str(mp4)) as c:
         stream = c.streams.video[0]
         stream.thread_type = "AUTO"
         for fr in c.decode(stream):
             rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
-            frames.append(rgb)
-    vid = torch.stack(frames)
-    clip_id = Path(mp4).name.split(".")[0]
-    root = _physicalai_root_of(mp4)
-    intr = intrinsics_for_clip(clip_id, root)
-    extr = extrinsics_for_clip(clip_id, root)
+            if h is None:
+                h, w = int(rgb.shape[-2]), int(rgb.shape[-1])
+            buf.append(rgb)
+            if len(buf) >= batch:
+                outs.append(ftheta_crop_resize(torch.stack(buf), intr, size))
+                buf = []
+    if buf:
+        outs.append(ftheta_crop_resize(torch.stack(buf), intr, size))
     # Provenance: with the per-clip (cx, cy) crop the horizon output row is
     # ~size/2 for both rigs; record it (and the legacy geometric-center row it
     # replaces) so a build check can confirm rig A and rig B now agree.
-    h, w = int(vid.shape[-2]), int(vid.shape[-1])
     d_cam = extr.vehicle_forward_in_cam() if extr is not None else (0.0, 0.0, 1.0)
     applied = "principal" if intr.per_clip else "geometric"
     _decode_mp4.last_calib = {
@@ -355,7 +369,7 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
         "horizon_row_legacy_geometric": round(
             ftheta_horizon_row(intr, d_cam, h, w, size, center="geometric"), 1),
     }
-    return ftheta_crop_resize(vid, intr, size)
+    return torch.cat(outs)
 
 
 def quaternion_yaw(qx: np.ndarray, qy: np.ndarray, qz: np.ndarray,
