@@ -42,16 +42,23 @@ def save_episode(ep: ToyEpisode, path: str) -> None:
     if ep.poses.shape[0] != T or ep.poses.ndim != 2 or ep.poses.shape[1] != 4:
         raise ValueError(f"save_episode: poses must be [T,4] with T={T}, got "
                          f"{tuple(ep.poses.shape)}")
+    man = getattr(ep, "maneuvers", None)
+    if man is not None and (man.ndim != 1 or man.shape[0] != T):
+        raise ValueError(f"save_episode: maneuvers must be [T] with T={T}, got "
+                         f"{tuple(man.shape)}")
     if ep.frames.dtype == torch.uint8:
         u8 = ep.frames
     else:
         u8 = (ep.frames.clamp(0, 1) * 255).to(torch.uint8)
-    torch.save({
+    payload = {
         "frames_u8": u8,
         "actions": ep.actions,
         "poses": ep.poses,
         "episode_id": ep.episode_id,
-    }, path)
+    }
+    if man is not None:
+        payload["maneuvers"] = man.to(torch.long)
+    torch.save(payload, path)
 
 
 def load_episode(path: str, mmap: bool = False) -> ToyEpisode:
@@ -64,7 +71,8 @@ def load_episode(path: str, mmap: bool = False) -> ToyEpisode:
     d = torch.load(path, map_location="cpu", weights_only=True, mmap=mmap)
     return ToyEpisode(frames=d["frames_u8"],
                       actions=d["actions"], poses=d["poses"],
-                      episode_id=int(d["episode_id"]))
+                      episode_id=int(d["episode_id"]),
+                      maneuvers=d.get("maneuvers"))   # None for legacy caches
 
 
 class MixedWindowDataset(torch.utils.data.Dataset):
