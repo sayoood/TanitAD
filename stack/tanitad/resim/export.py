@@ -41,10 +41,11 @@ never has to know the projection maths)::
       ]
     }
 
-Image-plane waypoint projection reuses the replay app's approximate pinhole
-(:func:`tanitad.replay.rr_log.to_image_plane`) so the camera fans line up with
-the rerun viz exactly; BEV coordinates are the engine's ego-frame metric
-waypoints untouched.
+Image-plane waypoint projection reuses the replay app's pinhole
+(:func:`tanitad.replay.rr_log.to_image_plane`) with the record's per-corpus
+camera model (:func:`~tanitad.replay.rr_log.cam_for_corpus`) so the camera fans
+line up with the rerun viz exactly; BEV coordinates are the engine's ego-frame
+metric waypoints untouched.
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ from typing import Iterable, Sequence
 import numpy as np
 
 from tanitad.replay.engine import WAYPOINT_STEPS, TimestepRecord
-from tanitad.replay.rr_log import to_image_plane
+from tanitad.replay.rr_log import cam_for_corpus, to_image_plane
 
 # TanitResim design-language palette (branded, distinct from the rerun
 # ARM_COLORS in tanitad.replay.arms, which stays the canonical rerun palette).
@@ -171,13 +172,14 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
         frame_name = f"ep{ep}_step{j}.jpg"
         fw, fh = _write_frame(rec.frame, frames_dir / frame_name,
                               max_w, jpeg_quality)
+        cam = cam_for_corpus(rec.corpus)   # per-corpus overlay geometry (D-016)
 
         gt_wp = np.asarray(rec.gt_waypoints, dtype=np.float64)
         gt_path = np.vstack([[0.0, 0.0], gt_wp])
         step_dict: dict = {
             "step": int(rec.step),
             "frame": frame_name,
-            "gt_wp_img": _round_pts(to_image_plane(gt_path, fh, fw), 1),
+            "gt_wp_img": _round_pts(to_image_plane(gt_path, fh, fw, cam=cam), 1),
             "gt_wp_bev": _round_pts(gt_path, 3),
             "gt_action": {"steer": round(float(rec.gt_action[0]), 4),
                           "accel": round(float(rec.gt_action[1]), 4)},
@@ -200,7 +202,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             if o.waypoints is not None:
                 wp = np.asarray(o.waypoints, dtype=np.float64)
                 path = np.vstack([[0.0, 0.0], wp])
-                wp_img = _round_pts(to_image_plane(path, fh, fw), 1)
+                wp_img = _round_pts(to_image_plane(path, fh, fw, cam=cam), 1)
                 wp_bev = _round_pts(path, 3)
                 ade = round(_ade(wp, gt_wp), 4)
                 fde = float(np.linalg.norm(wp[-1] - gt_wp[-1]))

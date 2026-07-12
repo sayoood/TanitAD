@@ -27,6 +27,9 @@ is fine; constructing :class:`RerunLogger` then raises with the install hint
 
 from __future__ import annotations
 
+import math
+from dataclasses import dataclass
+
 import numpy as np
 
 from tanitad.replay.engine import TimestepRecord
@@ -44,6 +47,65 @@ except ImportError:                                    # pragma: no cover
 # D-016): f_eff 266 px at 256 px frames, camera height ~1.22 m. Labeled
 # approximate — for intuition, not measurement.
 F_EFF_256, CAM_H, X_CLIP = 266.0, 1.22, 2.0
+
+
+@dataclass(frozen=True)
+class CamProjection:
+    """Per-corpus ground-plane pinhole for the overlay fan (D-016 follow-up).
+
+    The fan is drawn with ``v = horizon_row + f * cam_h / x`` (forward x, metres)
+    and ``u = w/2 - f * y / x``. The three parameters are the corpus's *canonical*
+    camera geometry — the geometry of the 256-px frame ``calib.py`` actually
+    produces, NOT the raw sensor:
+
+    f_eff_256 : effective focal [px] at a 256-px frame.
+    cam_h     : camera height above the road plane [m].
+    pitch_deg : camera pitch below horizontal [deg]; +down raises the horizon.
+
+    comma2k19 (EON road cam, visually verified) is the default. physicalai's
+    values come from the dataset's OWN calibration (nvidia/PhysicalAI-AV
+    ``calibration/``): the front-wide is an f-theta lens whose near-centre focal
+    is 925 px @1920 -> 444 px @256 after the central crop (NOT the 266 the
+    nominal-rectilinear crop in ``calib.py`` assumes); sensor extrinsics give
+    height 1.43 m and pitch 0.31 deg +/- 0.78 (horizon 128.0 +/- 6.1 px, i.e.
+    == h/2 — the horizon is NOT offset). The overlay defect was the ~2x
+    under-estimate of ``f * cam_h`` (266*1.22=325 vs 444*1.43=635), which drew
+    the fan ~2x too close to the horizon ("pointing at the sky"), not a pitch.
+    """
+    f_eff_256: float = F_EFF_256
+    cam_h: float = CAM_H
+    pitch_deg: float = 0.0
+
+    def focal(self, h: int) -> float:
+        return self.f_eff_256 * (h / 256.0)
+
+    def horizon_row(self, h: int) -> float:
+        """Image row of the horizon (x->inf). Pitched-down cameras (+deg) put
+        the horizon above the principal row h/2."""
+        return h / 2.0 - self.focal(h) * math.tan(math.radians(self.pitch_deg))
+
+
+# comma2k19 is the historical hardcoded reference (unchanged); physicalai from
+# real calibration (see Benchmarks & Eval/FLAGSHIP_FIX_PLAN.md). pitch_deg=0.0:
+# the measured 0.31 deg is negligible (<3 px) and the full calibration (incl.
+# principal point) lands the horizon on h/2, so the material corrections are the
+# focal (266->444) and height (1.22->1.43), not the horizon.
+COMMA_CAM = CamProjection(f_eff_256=266.0, cam_h=1.22, pitch_deg=0.0)
+PHYSICALAI_CAM = CamProjection(f_eff_256=444.0, cam_h=1.43, pitch_deg=0.0)
+_CAM_BY_PREFIX = (("physicalai", PHYSICALAI_CAM), ("comma", COMMA_CAM))
+
+
+def cam_for_corpus(corpus: str | None) -> CamProjection:
+    """Resolve a corpus tag (engine tag == cache-dir name, e.g.
+    ``physicalai-val-8c0d3047924e``) to its overlay camera model. Unknown tags
+    fall back to the comma2k19 reference (fail-safe: the verified geometry)."""
+    if corpus:
+        low = corpus.lower()
+        for pre, cam in _CAM_BY_PREFIX:
+            if pre in low:
+                return cam
+    return COMMA_CAM
+
 
 GT_COLOR = ARM_COLORS["gt"]
 EGO_COLORS = {"speed": (120, 120, 120), "yaw_rate": (170, 170, 170)}
@@ -71,12 +133,18 @@ def arm_color(name: str) -> tuple[int, int, int]:
     return (64 + h % 160, 64 + (h // 7) % 160, 64 + (h // 49) % 160)
 
 
-def to_image_plane(xy: np.ndarray, h: int, w: int) -> np.ndarray:
-    """Ego ground points [N, 2] (x fwd, y left, m) -> approx pixel coords."""
+def to_image_plane(xy: np.ndarray, h: int, w: int,
+                   cam: CamProjection | None = None) -> np.ndarray:
+    """Ego ground points [N, 2] (x fwd, y left, m) -> approx pixel coords.
+
+    ``cam`` is the per-corpus camera model (:func:`cam_for_corpus`); ``None``
+    keeps the comma2k19 reference geometry, so callers that predate the
+    per-corpus split are byte-identical to the old hardcoded projection."""
+    cam = cam or COMMA_CAM
     x = np.clip(xy[:, 0], X_CLIP, None)
-    f = F_EFF_256 * (h / 256.0)
+    f = cam.focal(h)
     u = w / 2 - f * (xy[:, 1] / x)
-    v = h / 2 + f * (CAM_H / x)
+    v = cam.horizon_row(h) + f * (cam.cam_h / x)
     return np.stack([u, v], axis=1)
 
 
@@ -226,8 +294,8 @@ class RerunLogger:
             rows.append(f"| **{n}** | `{_hex(c)}` | `/bev/{n}`, "
                         f"`/camera/traj/{n}`, `/error/{n}` |")
         rows += ["", "BEV: forward = up, +y = left; grid every 10 m; "
-                 "scale bar = 10 m. Camera fans use the approximate pinhole "
-                 "ground projection (intuition, not measurement)."]
+                 "scale bar = 10 m. Camera fans use a per-corpus pinhole "
+                 "ground projection (calibrated focal/height/pitch; D-016)."]
         rr.log("/legend", rr.TextDocument(
             "\n".join(rows), media_type=rr.MediaType.MARKDOWN), static=True)
 
@@ -251,11 +319,13 @@ class RerunLogger:
 
     def _traj(self, name: str, wps: np.ndarray,
               color: tuple[int, int, int],
-              frame_hw: tuple[int, int] | None) -> None:
+              frame_hw: tuple[int, int] | None,
+              cam: CamProjection | None = None) -> None:
         """One arm's (or GT's) waypoint path into BEV + camera overlay.
 
         Both strips carry the arm ``name`` as a label so the entity tree and
-        hover tooltips read cleanly (no anonymous line strips)."""
+        hover tooltips read cleanly (no anonymous line strips). ``cam`` is the
+        per-corpus overlay camera (defaults to the comma2k19 reference)."""
         label = "GT" if name == "gt" else name
         path = np.vstack([[0.0, 0.0], wps])                 # from ego origin
         rr.log(f"/bev/{name}",
@@ -263,7 +333,7 @@ class RerunLogger:
                                labels=[label]))
         if frame_hw is not None:
             h, w = frame_hw
-            px = to_image_plane(path, h, w)
+            px = to_image_plane(path, h, w, cam=cam)
             rr.log(f"/camera/traj/{name}",
                    rr.LineStrips2D([px], colors=[color], radii=1.5,
                                    labels=[label]))
@@ -288,13 +358,14 @@ class RerunLogger:
             self._image(rec.frame)
             if rec.frame.ndim == 3:      # camera stack -> overlay projection
                 frame_hw = rec.frame.shape[0], rec.frame.shape[1]
+        cam = cam_for_corpus(rec.corpus)   # per-corpus overlay geometry (D-016)
 
         self._scalar("/ego/speed", rec.speed, EGO_COLORS["speed"],
                      "speed (m/s)")
         self._scalar("/ego/yaw_rate", rec.yaw_rate, EGO_COLORS["yaw_rate"],
                      "yaw rate (rad/s)")
 
-        self._traj("gt", rec.gt_waypoints, GT_COLOR, frame_hw)
+        self._traj("gt", rec.gt_waypoints, GT_COLOR, frame_hw, cam)
         self._scalar("/actions/steer/gt", rec.gt_action[0], GT_COLOR,
                      "gt steer")
         self._scalar("/actions/accel/gt", rec.gt_action[1], GT_COLOR,
@@ -303,7 +374,8 @@ class RerunLogger:
         for name, out in rec.arms.items():
             color = arm_color(name)
             if out.waypoints is not None:
-                self._traj(name, np.asarray(out.waypoints), color, frame_hw)
+                self._traj(name, np.asarray(out.waypoints), color, frame_hw,
+                           cam)
                 ade = float(np.linalg.norm(
                     np.asarray(out.waypoints) - rec.gt_waypoints,
                     axis=-1).mean())

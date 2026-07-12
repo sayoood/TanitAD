@@ -294,6 +294,73 @@ def test_export_wp_img_never_above_horizon(tmp_path):
                 assert v >= h / 2 - 1e-6, f"gt_wp_img above horizon: {(u, v)}"
 
 
+# ---------- (g) per-corpus camera projection (D-016 extrinsics/intrinsics) ----
+# comma2k19's EON cam is the verified reference (unchanged); physicalai's
+# front-wide is an f-theta lens whose real canonical focal is ~444 px (not the
+# 266 the nominal-rectilinear crop assumes) at height 1.43 m. The overlay defect
+# was the fan drawn ~2x too close to the horizon ("sky"), fixed by the corpus's
+# own calibrated focal+height. The horizon itself is NOT offset (pitch ~0).
+
+from tanitad.replay.rr_log import (COMMA_CAM, PHYSICALAI_CAM, CamProjection,
+                                   cam_for_corpus, to_image_plane as _tip)
+
+
+def test_comma_projection_unchanged_regression():
+    # default (no cam) and the comma cam both reproduce the OLD hardcoded
+    # formula f=266, H=1.22, horizon=h/2 exactly — comma must not move.
+    h = w = 256
+    wp = np.array([[5.0, 1.0], [10.0, -2.0], [15.0, 0.5], [20.0, 3.0]])
+    path = _img_path(wp)
+    f, x = 266.0, np.clip(path[:, 0], 2.0, None)
+    exp_u = w / 2 - f * (path[:, 1] / x)
+    exp_v = h / 2 + f * (1.22 / x)
+    for got in (_tip(path, h, w), _tip(path, h, w, cam=COMMA_CAM),
+                _tip(path, h, w, cam=cam_for_corpus("comma2k19-val-61c46fca8f7f"))):
+        assert np.allclose(got[:, 0], exp_u)
+        assert np.allclose(got[:, 1], exp_v)
+
+
+def test_cam_for_corpus_resolves_tags():
+    assert cam_for_corpus("physicalai-val-8c0d3047924e") is PHYSICALAI_CAM
+    assert cam_for_corpus("physicalai-train-eeabeca35fe1") is PHYSICALAI_CAM
+    assert cam_for_corpus("comma2k19-val-61c46fca8f7f") is COMMA_CAM
+    assert cam_for_corpus("toy-val") is COMMA_CAM        # unknown -> reference
+    assert cam_for_corpus(None) is COMMA_CAM
+
+
+def test_physicalai_cam_pushes_fan_down_onto_road():
+    # The fix: physicalai's larger focal+height push forward waypoints LOWER
+    # (larger v, onto the road) instead of bunching them up near the horizon.
+    h = w = 256
+    assert PHYSICALAI_CAM.f_eff_256 > COMMA_CAM.f_eff_256      # 444 vs 266
+    assert PHYSICALAI_CAM.cam_h > COMMA_CAM.cam_h              # 1.43 vs 1.22
+    wp = np.array([[8.0, 0.0]])                               # 8 m ahead
+    v_comma = _tip(wp, h, w, cam=COMMA_CAM)[0, 1]
+    v_phys = _tip(wp, h, w, cam=PHYSICALAI_CAM)[0, 1]
+    assert v_phys > v_comma + 10                             # clearly lower
+    # straight-ahead still dead-centre horizontally for both.
+    assert abs(_tip(wp, h, w, cam=PHYSICALAI_CAM)[0, 0] - w / 2) < 1e-6
+
+
+def test_physicalai_horizon_is_not_offset():
+    # Calibration finding: physicalai pitch ~0 -> horizon on h/2, NOT offset.
+    h = 256
+    assert abs(PHYSICALAI_CAM.horizon_row(h) - h / 2) < 1e-6
+    far = _tip(np.array([[500.0, 0.0]]), h, h, cam=PHYSICALAI_CAM)[0, 1]
+    assert abs(far - h / 2) < 2.0                            # approaches h/2
+
+
+def test_nonzero_pitch_moves_horizon_off_center():
+    # The pitch->horizon machinery: a pitched-down cam raises the horizon above
+    # h/2 and forward points approach THAT horizon, not h/2.
+    h = w = 256
+    cam = CamProjection(f_eff_256=266.0, cam_h=1.22, pitch_deg=6.0)
+    hz = cam.horizon_row(h)
+    assert hz < h / 2 - 5                                    # horizon risen
+    far = _tip(np.array([[400.0, 0.0]]), h, w, cam=cam)[0, 1]
+    assert abs(far - hz) < 2.0 and far < h / 2 - 3           # tracks the horizon
+
+
 # ---------- (e) FastAPI server -----------------------------------------------
 
 @pytest.fixture()
