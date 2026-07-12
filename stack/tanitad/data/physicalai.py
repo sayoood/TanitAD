@@ -6,14 +6,19 @@ Consumes the Stage-R0 output of `scripts/physicalai_r0.py`:
                                   + .timestamps.parquet
     <root>/labels/egomotion/egomotion.chunk_{chunk:04d}.zip   ({clip_id}.egomotion.parquet)
 
-Signal derivation (egomotion schema: timestamp, q*, x/y/z, vx/vy/vz, ax/ay/az, curvature):
+Signal derivation (egomotion schema: timestamp, qx/qy/qz/qw, x/y/z, vx/vy/vz,
+ax/ay/az, curvature) — D-016 R1 signal upgrade:
     v      = ||(vx, vy)||                       [m/s]
     steer  = atan(WHEELBASE * curvature)        road-wheel angle proxy [rad]
-    accel  = finite difference of v             [m/s^2]  (contract semantics)
-    pose   = (x, y, yaw=atan2(vy, vx), v)       clip-local frame
+    accel  = ax, the dataset's OWN longitudinal accel [m/s^2] — NOT d/dt(v),
+             which differentiates interpolation noise and lags the true signal
+    yaw    = heading from the orientation quaternion (qx,qy,qz,qw) — robust at a
+             standstill, where atan2(vy, vx) is undefined / noise-dominated
+    pose   = (x, y, yaw, v)                      clip-local frame
 Video frames are resampled to 10 Hz by nearest-timestamp alignment against the
 egomotion clock, then D-015 stacking (3 frames @100 ms -> 9 channels, actions/
-poses aligned to the latest frame).
+poses aligned to the latest frame). Each episode also carries a per-timestep
+maneuver label (refs.refb MANEUVER_CLASSES, derived by scripts/refb_labels.py).
 
 Splits: CLIP-level (each 20 s clip is an independent recording -> the I3 unit
 here is the clip; never split windows of one clip across train/val).
@@ -353,10 +358,29 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
     return ftheta_crop_resize(vid, intr, size)
 
 
+def quaternion_yaw(qx: np.ndarray, qy: np.ndarray, qz: np.ndarray,
+                   qw: np.ndarray) -> np.ndarray:
+    """Heading (yaw about +z) from a unit quaternion (qx, qy, qz, qw).
+
+    Standard ZYX Tait-Bryan yaw = atan2(2(qw qz + qx qy), 1 - 2(qy^2 + qz^2)).
+    Uses the ORIENTATION quaternion, so it is well-defined at a standstill —
+    unlike atan2(vy, vx), which is the direction of a ~zero velocity vector
+    there (pure sensor noise). Verified on R0 clips to agree with atan2(vy, vx)
+    to ~0.002 rad median while moving (test_physicalai_signals)."""
+    return np.arctan2(2.0 * (qw * qz + qx * qy),
+                      1.0 - 2.0 * (qy * qy + qz * qz))
+
+
 def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Interpolate egomotion signals at query timestamps (same clock).
 
-    Returns (actions [n,2], poses [n,4]) per the contract."""
+    Returns (actions [n,2], poses [n,4]) per the contract. Signal sources
+    (D-016 R1 upgrade): steer = atan(WHEELBASE*curvature); accel = the dataset's
+    OWN longitudinal `ax` (NOT a finite difference of v — that differentiates
+    interpolation noise and lags); yaw = orientation-quaternion heading
+    (standstill-robust). The native quaternion yaw is UNWRAPPED before
+    interpolation (so no +-pi seam is smeared across a query point) then
+    re-wrapped to (-pi, pi]."""
     t = ego["timestamp"].to_numpy(np.float64)
     order = np.argsort(t)
     t = t[order]
@@ -368,22 +392,67 @@ def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.n
     v = np.hypot(vx, vy)
     curv = col("curvature")
     steer = np.arctan(WHEELBASE * curv)
-    dt = float(np.median(np.diff(t_query))) if len(t_query) > 1 else 0.1
-    # normalize dt to seconds if the clock is in micro/nanoseconds
-    for scale in (1e9, 1e6, 1e3):
-        if dt > 50.0:
-            dt /= scale if dt / scale >= 1e-3 else 1.0
-    dt = dt if 1e-3 < dt < 10.0 else 0.1
-    accel = finite_diff_accel(v.astype(np.float32), dt)
+
+    if "ax" in ego.columns:
+        accel = col("ax")                          # measured longitudinal accel
+    else:                                          # defensive fallback only
+        dt = float(np.median(np.diff(t_query))) if len(t_query) > 1 else 0.1
+        for scale in (1e9, 1e6, 1e3):              # ns/us/ms clock -> seconds
+            if dt > 50.0:
+                dt /= scale if dt / scale >= 1e-3 else 1.0
+        dt = dt if 1e-3 < dt < 10.0 else 0.1
+        accel = finite_diff_accel(v.astype(np.float32), dt)
     actions = np.column_stack([steer, accel]).astype(np.float32)
-    yaw = np.arctan2(vy, vx)
+
+    # yaw from the orientation quaternion (standstill-robust). Unwrap the native
+    # series first so linear interpolation never crosses a +-pi discontinuity,
+    # then re-wrap to the atan2 range for cross-corpus convention parity.
+    yaw_native = np.unwrap(quaternion_yaw(
+        *(ego[c].to_numpy(np.float64)[order] for c in ("qx", "qy", "qz", "qw"))))
+    yaw_u = np.interp(t_query, t, yaw_native)
+    yaw = np.arctan2(np.sin(yaw_u), np.cos(yaw_u))
     poses = np.column_stack([col("x"), col("y"), yaw, v]).astype(np.float32)
     return actions, poses
 
 
+def _refb_labels():
+    """The REF-B kinematic labeler (scripts/refb_labels.py) — the SINGLE source
+    of truth for maneuver classes / thresholds, reused (not re-implemented) so
+    the cached per-window labels are identical to the trainer's on-the-fly ones
+    (refb_train / replay.arms call window_maneuver_labels). scripts/ is on
+    sys.path when build_pai_cache.py runs; append it (never prepend — must not
+    shadow stdlib) as a fallback for other call sites."""
+    try:
+        import refb_labels
+    except ModuleNotFoundError:
+        import sys
+        scripts = str(Path(__file__).resolve().parents[2] / "scripts")
+        if scripts not in sys.path:
+            sys.path.append(scripts)
+        import refb_labels
+    return refb_labels
+
+
+def maneuvers_for_poses(poses: Tensor) -> Tensor:
+    """Per-timestep maneuver labels aligned to `poses` [T,4] -> int64 [T].
+
+    Label at t = classify_maneuver over [t, t+LABEL_HORIZON] (refb_labels), which
+    is EXACTLY the trainer's window_maneuver_labels for a window ending at t. The
+    last LABEL_HORIZON steps have no in-episode future -> sentinel -1 (ignore
+    index; excluded from the tactical CE and from the distribution report)."""
+    rl = _refb_labels()
+    h = rl.LABEL_HORIZON
+    tt = poses.shape[0]
+    man = torch.full((tt,), -1, dtype=torch.long)
+    if tt > h:
+        man[:tt - h] = rl.maneuver_labels(poses, horizon=h).to(torch.long)
+    return man
+
+
 def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
                   decode_fn=_decode_mp4) -> ToyEpisode:
-    """One R0 clip -> contract episode at 10 Hz with D-015 stacking."""
+    """One R0 clip -> contract episode at 10 Hz with D-015 stacking + per-timestep
+    maneuver labels (refs.refb MANEUVER_CLASSES, derived from the poses)."""
     ts = pd.read_parquet(clip["timestamps"])
     tcol = next(c for c in ts.columns if "time" in c.lower())
     t_frames = ts[tcol].to_numpy(np.float64)
@@ -405,12 +474,14 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     n = min(vid.shape[0], actions.shape[0])
     stacked = stack_frames(vid[:n], n_stack)
     k = n_stack - 1
+    poses_t = torch.from_numpy(poses[k:n])
     ep_id = int.from_bytes(clip["clip_id"].encode()[:4].ljust(4, b"\0"), "big")
     # uint8 in memory; datasets convert per window (500 float32 clips ~ 236 GB).
     return ToyEpisode(frames=stacked,
                       actions=torch.from_numpy(actions[k:n]),
-                      poses=torch.from_numpy(poses[k:n]),
-                      episode_id=ep_id)
+                      poses=poses_t,
+                      episode_id=ep_id,
+                      maneuvers=maneuvers_for_poses(poses_t))
 
 
 def split_clips(clips: list[dict], val_frac: float = 0.2,
