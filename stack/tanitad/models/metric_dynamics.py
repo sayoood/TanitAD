@@ -217,3 +217,130 @@ def rollout_decode(predictor, states: Tensor, actions: Tensor,
             win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
     step_dpose = torch.stack(dposes, dim=1)              # [B, k, 3]
     return accumulate_se2(step_dpose), step_dpose
+
+
+def rollout_transitions(predictor, states: Tensor, actions: Tensor,
+                        future_actions: Tensor | None, k: int
+                        ) -> list[tuple[Tensor, Tensor]]:
+    """Roll ``predictor`` ``k`` steps under the TRUE action sequence and return
+    the per-step ``(z_prev, z_hat)`` latent transitions (the input pairs a step
+    readout decodes). Rolls the predictor ONCE so the hierarchical grounding can
+    decode SEVERAL per-level step readouts on the SAME rolled latents instead of
+    re-rolling per level (the REF-A rollout-reuse pattern). Byte-identical to the
+    roll inside :func:`rollout_decode` (unit-pinned)."""
+    win_s, win_a = states, actions
+    trans: list[tuple[Tensor, Tensor]] = []
+    for j in range(k):
+        z_hat = predictor(win_s, win_a)[1]               # 1-step head
+        trans.append((win_s[:, -1], z_hat))
+        if j < k - 1:
+            a_next = (future_actions[:, j] if future_actions is not None
+                      else win_a[:, -1])
+            win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
+            win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
+    return trans
+
+
+def decode_transitions(step_readout: StepDisplacementReadout,
+                       trans: list[tuple[Tensor, Tensor]], k: int
+                       ) -> tuple[Tensor, Tensor]:
+    """Decode the first ``k`` shared rollout transitions with ``step_readout``,
+    accumulate SE(2). Returns ``(waypoints [B, k, 2], step_dpose [B, k, 3])``.
+    ``decode_transitions(sr, rollout_transitions(...k), k)`` reproduces
+    :func:`rollout_decode` exactly (same latents, same readout)."""
+    step_dpose = torch.stack([step_readout(trans[j][0], trans[j][1])
+                              for j in range(k)], dim=1)
+    return accumulate_se2(step_dpose), step_dpose
+
+
+# --------------------------------------------------------------------------- #
+# H18 hierarchical grounding — one (invdyn, step-readout) pair per brain level #
+# --------------------------------------------------------------------------- #
+class HierarchicalGrounding(nn.Module):
+    """Metric-dynamics grounding heads at EVERY level of the 4-brain hierarchy.
+
+    One ``(MetricInverseDynamics, StepDisplacementReadout)`` pair per level:
+      - ``op``  operative  — per-step Δpose (fine, short horizon);
+      - ``tac`` tactical   — the 2 s sub-goal trajectory consequence;
+      - ``str`` strategic  — the long-horizon coarse place-to-place consequence.
+
+    Every head reads the compact STATE, so the container is state-dim-agnostic
+    and shared by the flagship (ViT+readout state) and REF-A (frozen-DINO adapter
+    state). Kept OUTSIDE the world model (as in ``finetune_traj``) and saved
+    under its own checkpoint key, so a vanilla model still loads a grounded
+    checkpoint. The per-level grounding loss is :func:`grounding_losses`.
+    """
+
+    LEVELS = ("op", "tac", "str")
+
+    def __init__(self, state_dim: int, hidden: int = 512):
+        super().__init__()
+        self.invdyn = nn.ModuleDict(
+            {lvl: MetricInverseDynamics(state_dim, hidden=hidden)
+             for lvl in self.LEVELS})
+        self.step = nn.ModuleDict(
+            {lvl: StepDisplacementReadout(state_dim, hidden=hidden)
+             for lvl in self.LEVELS})
+
+
+def grounding_losses(grounding: HierarchicalGrounding, predictor,
+                     states: Tensor, fut_states: Tensor, actions: Tensor,
+                     future_actions: Tensor | None, pose_last: Tensor,
+                     future_poses: Tensor, idx_of: dict[int, int],
+                     level_cfg: dict[str, tuple[tuple[int, ...], int]],
+                     pose_scale: float, invdyn_weight: float = 1.0,
+                     fwd_weight: float = 1.0, fwd_step_weight: float = 0.5
+                     ) -> tuple[Tensor, dict, dict]:
+    """H18 grounding at all levels (op/tac/str), mirroring finetune_traj.
+
+    ``level_cfg[level] = (invdyn_horizons, fwd_k)``. Each level contributes:
+      (a) metric-inverse-dynamics on REAL latent pairs ``(z_t, z_{t+k})`` at that
+          level's horizons -> odometry relative ego-pose (grounds the ENCODER at
+          that timescale);
+      (b) forward-metric-consistency: decode this level's step readout on the
+          predictor's TRUE-action rollout, accumulate SE(2), match the odometry
+          ego-trajectory (grounds ENCODER + PREDICTOR + this level's readout).
+
+    The operative predictor is rolled ONCE to ``max(fwd_k)`` and every level
+    decodes on the shared transitions. Metre errors are divided by ``pose_scale``
+    so the loss weights act on O(1) quantities (finetune_traj convention).
+    Returns ``(total_loss, parts, log)``; gradients reach the encoder, the
+    predictor, and EACH level's invdyn+step params (test-pinned)."""
+    device = states.device
+    k_max = max(fwd_k for _, fwd_k in level_cfg.values())
+    trans = rollout_transitions(predictor, states, actions, future_actions, k_max)
+    z_t = states[:, -1]
+    total = torch.zeros((), device=device)
+    parts: dict[str, Tensor] = {}
+    log: dict[str, float] = {}
+    for lvl, (inv_horizons, fwd_k) in level_cfg.items():
+        # (a) metric inverse dynamics on REAL pairs -> grounds the encoder
+        loss_mid = torch.zeros((), device=device)
+        mid_de = 0.0
+        for kh in inv_horizons:
+            dpose = grounding.invdyn[lvl](z_t, fut_states[:, idx_of[kh - 1]])
+            tgt = relative_ego_pose(pose_last, future_poses[:, kh - 1])
+            loss_mid = loss_mid \
+                + ((dpose[..., :2] - tgt[..., :2]) / pose_scale).pow(2).mean() \
+                + wrap_angle(dpose[..., 2] - tgt[..., 2]).pow(2).mean()
+            mid_de += float((dpose[..., :2] - tgt[..., :2]).detach()
+                            .norm(dim=-1).mean())
+        loss_mid = loss_mid / len(inv_horizons)
+        mid_de /= len(inv_horizons)
+        # (b) forward metric consistency on the SHARED rollout
+        pred_wp, pred_step = decode_transitions(grounding.step[lvl], trans, fwd_k)
+        gt_wp = gt_ego_waypoints(pose_last, future_poses, range(1, fwd_k + 1))
+        gt_step = gt_step_dposes(pose_last, future_poses, fwd_k)
+        loss_acc = ((pred_wp - gt_wp) / pose_scale).pow(2).mean()
+        loss_step = ((pred_step[..., :2] - gt_step[..., :2]) / pose_scale).pow(2).mean() \
+            + wrap_angle(pred_step[..., 2] - gt_step[..., 2]).pow(2).mean()
+        loss_fwd = loss_acc + fwd_step_weight * loss_step
+        fwd_ade = float((pred_wp.detach() - gt_wp).norm(dim=-1).mean())
+        total = total + invdyn_weight * loss_mid + fwd_weight * loss_fwd
+        parts[f"{lvl}_mid"] = loss_mid
+        parts[f"{lvl}_fwd"] = loss_fwd
+        log[f"g_{lvl}_mid"] = loss_mid.item()
+        log[f"g_{lvl}_fwd"] = loss_fwd.item()
+        log[f"g_{lvl}_mid_de_m"] = round(mid_de, 4)
+        log[f"g_{lvl}_fwd_ade_m"] = round(fwd_ade, 4)
+    return total, parts, log

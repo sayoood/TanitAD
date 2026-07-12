@@ -82,3 +82,31 @@ class SigReg(torch.nn.Module):
         # the validated (lambda=0.1, slices=512) operating point. Dividing by n
         # here was the historical ALPS-4B bug that silently disabled the loss.
         return stat.mean()
+
+
+def position_relaxed(sigreg: "SigReg", z: Tensor, free_dims: int) -> Tensor:
+    """SIGReg on the COMPLEMENT of a fixed ego-motion subspace (§B.3 relaxation).
+
+    Metric ego-position lives in a low-dimensional, structured (non-isotropic)
+    subspace; plain SIGReg drives the WHOLE embedding toward an isotropic
+    Gaussian and so actively whitens exactly that structure — the two objectives
+    partially cancel (the diagnosed step-21k regression mechanism). The remedy:
+    EXEMPT a fixed ``free_dims``-wide subspace (here the first ``free_dims``
+    state columns, the reserved ego-motion channels) from SIGReg and apply the
+    anti-collapse constraint only to the complement.
+
+    The exempt columns receive EXACTLY zero SIGReg gradient (they are not passed
+    to the statistic), so the grounding losses are free to route low-dimensional
+    metric-position structure there without SIGReg fighting it, while the
+    complement is still held against collapse. ``free_dims <= 0`` reproduces
+    plain SIGReg on the full latent. Pure function (no params) — importable and
+    unit-testable in isolation, and shared by the flagship and REF-A trainers.
+    """
+    z = z.reshape(-1, z.shape[-1])
+    d = z.shape[-1]
+    if free_dims <= 0:
+        return sigreg(z)
+    if free_dims >= d:
+        raise ValueError(f"sigreg free_dims={free_dims} must be < state dim {d} "
+                         f"— the complement would be empty (no anti-collapse)")
+    return sigreg(z[:, free_dims:])

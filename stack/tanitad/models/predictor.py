@@ -49,11 +49,20 @@ class CausalBlock(nn.Module):
 class OperativePredictor(nn.Module):
     """Predicts future compact states from a causal window of (state, action).
 
-    forward(states [B, W, D], actions [B, W, A]) -> {k: z_hat_{t+k} [B, D]}
+    forward(states [B, W, D], actions [B, W, A], intent=None)
+        -> {k: z_hat_{t+k} [B, D]}
     where t is the last window position. Residual: z_hat = z_t + delta_k.
+
+    ``intent_dim`` (optional, D-030): when set, an ``intent`` token [B, intent_dim]
+    from the tactical policy is projected and ADDED to the per-step action FiLM
+    conditioning, so the tactical brain steers the operative dynamics (closing
+    the hierarchy). ``intent=None`` reproduces the base behaviour exactly; base
+    models build the predictor with ``intent_dim=None`` (no extra params), so a
+    vanilla WorldModel checkpoint stays a strict subset of a 4b one.
     """
 
-    def __init__(self, cfg: PredictorConfig, state_dim: int):
+    def __init__(self, cfg: PredictorConfig, state_dim: int,
+                 intent_dim: int | None = None):
         super().__init__()
         self.cfg = cfg
         d = cfg.d_model
@@ -67,12 +76,24 @@ class OperativePredictor(nn.Module):
         self.heads = nn.ModuleDict(
             {str(k): nn.Linear(d, state_dim) for k in cfg.horizons})
         self.out_proj = nn.Linear(state_dim, d)  # reserved: feed predictions back
+        # Tactical-intent conditioning (D-030). Projected into the FiLM cond
+        # space and added to the action embedding. Non-zero init so a live FiLM
+        # makes the intent steer the output; FiLM's own zero-init keeps the
+        # identity start (intent has no effect until the FiLM weights train).
+        self.intent_proj = (nn.Linear(intent_dim, d)
+                            if intent_dim is not None else None)
 
-    def forward(self, states: Tensor, actions: Tensor) -> dict[int, Tensor]:
+    def forward(self, states: Tensor, actions: Tensor,
+                intent: Tensor | None = None) -> dict[int, Tensor]:
         b, w, _ = states.shape
         assert w == self.cfg.window, f"window mismatch: {w} != {self.cfg.window}"
         x = self.in_proj(states) + self.pos[:, :w]
         cond = self.act_emb(actions)                        # [B, W, D]
+        if intent is not None:
+            if self.intent_proj is None:
+                raise ValueError("predictor built without intent_dim cannot "
+                                 "consume an intent token")
+            cond = cond + self.intent_proj(intent).unsqueeze(1)   # broadcast W
         mask = torch.triu(torch.ones(w, w, device=states.device, dtype=torch.bool),
                           diagonal=1)
         for blk in self.blocks:

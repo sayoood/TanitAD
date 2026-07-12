@@ -41,6 +41,11 @@ class SigRegConfig:
     n_slices: int = 512           # random 1-D projections per step (validated)
     beta: float = 1.0             # Epps-Pulley kernel bandwidth
     weight: float = 0.1           # lambda_sigreg (keep fixed; LeJEPA single knob)
+    free_dims: int = 0            # >0: exempt the first `free_dims` state dims
+                                  # (a fixed ego-motion subspace) from SIGReg so
+                                  # anti-collapse and metric-position structure
+                                  # stop cancelling (RECOVERY_PLAN §B.3). SIGReg
+                                  # still applies to the complement. 0 = off.
 
 
 @dataclass
@@ -60,6 +65,50 @@ class ReadoutConfig:
 class TacticalConfig:
     n_maneuvers: int = 9          # discrete maneuver vocabulary (3 steer x 3 accel)
     horizon: int = 4              # imagine-and-select lookahead (steps)
+
+
+@dataclass
+class TacticalPolicyConfig:
+    """Trained tactical brain (D-030 recovery): maneuver policy + 2 s goal +
+    intent token. Ports the validated REF-B rev2 ``TacticalHead`` (budget-
+    proven) into the world model, EXTENDED with a target-latent goal head so
+    the tactical GOAL is (2 s ego sub-waypoints, target latent). A causal
+    transformer over the operative state window, FiLM-conditioned on the
+    strategic context token; emits an intent token that FiLM-conditions the
+    operative predictor — closing the hierarchy. Runs every ``cadence``
+    operative ticks (N_tac). State-dim-agnostic: composes on any compact state
+    (from-scratch ViT+readout OR frozen-DINO adapter) — shared by the flagship
+    and REF-A.
+    """
+    d_model: int = 512
+    depth: int = 6                # REF-B rev2 tactical depth
+    n_heads: int = 8
+    n_maneuvers: int = 5          # == len(refs.refb.MANEUVER_CLASSES) (test-pinned)
+    waypoint_horizons: tuple[int, ...] = (5, 10, 15, 20)   # 2 s @ 10 Hz, ego frame
+    d_intent: int = 256           # intent token dim = FiLM cond of the operative
+    cadence: int = 5              # N_tac: recompute every 5 operative steps
+
+
+@dataclass
+class StrategicPolicyConfig:
+    """Trained strategic brain (D-030 recovery): a real route-level transformer
+    over the operative state window, FiLM-conditioned on the nav-command
+    embedding. Ports the REF-B rev2 ``StrategicHead`` (d384 x 4) into the world
+    model. Outputs a context token (FiLM cond of the tactical brain) + route-
+    heading logits (route_left/straight/right) trained by an auxiliary CE. The
+    non-parametric ``StrategicGraph`` is kept as AUXILIARY memory, not the
+    brain. Runs every ``cadence`` operative ticks (N_str). State-dim-agnostic
+    (shared by the flagship and REF-A). Owns its nav embedding so it composes
+    self-contained on any model.
+    """
+    n_commands: int = 4           # == len(refs.refb.NAV_COMMANDS) (test-pinned)
+    d_cmd: int = 128              # nav-command embedding = FiLM cond
+    d_model: int = 384            # REF-B rev2 strategic width
+    depth: int = 4
+    n_heads: int = 6
+    d_ctx: int = 256              # context token = FiLM cond of the tactical brain
+    n_route: int = 3              # == len(refs.refb.ROUTE_CLASSES) (test-pinned)
+    cadence: int = 20             # N_str: recompute every 20 operative steps
 
 
 @dataclass
@@ -104,6 +153,9 @@ class StackConfig:
     predictor: PredictorConfig = field(default_factory=PredictorConfig)
     # Parametric tactical predictor (maneuver-horizon dynamics). None = off.
     tactical_pred: PredictorConfig | None = None
+    # Trained tactical/strategic policy brains (D-030). None = off (base model).
+    tactical_policy: TacticalPolicyConfig | None = None
+    strategic_policy: StrategicPolicyConfig | None = None
     readout: ReadoutConfig = field(default_factory=ReadoutConfig)
     tactical: TacticalConfig = field(default_factory=TacticalConfig)
     h15: H15Config = field(default_factory=H15Config)
@@ -175,4 +227,47 @@ def base250cam_config() -> StackConfig:
     cfg = base250_config()
     cfg.encoder = EncoderConfig(in_channels=9, image_size=256, patch_size=16,
                                 d_model=768, depth=14, n_heads=12)
+    return cfg
+
+
+def flagship4b_config() -> StackConfig:
+    """TanitAD-4B FLAGSHIP (D-030 recovery) — the FULL trained-and-wired
+    4-brain stack: operative predictor + tactical_pred dynamics + TRAINED
+    tactical policy + TRAINED strategic transformer, hierarchical grounding at
+    every level, SIGReg with the position-subspace relaxation.
+
+    Budget: the two new policy brains (~31 M) are funded by rebalancing the
+    shared trunk DOWN from base250cam (encoder 14 -> 11, operative predictor
+    12 -> 10) so the 4-brain total stays budget-matched to ~261 M (the REF-B
+    rebalance philosophy). Measured total ~260 M (test_flagship4b pins +-5 %).
+
+    Per-brain conditioning flow: strategic ctx --(FiLM)--> tactical --(intent
+    FiLM)--> operative predictor. The grounding heads live OUTSIDE the model
+    (saved under separate ckpt keys) so a vanilla WorldModel still loads a 4b
+    checkpoint. REF-A composes the IDENTICAL brains, differing only in the
+    encoder (frozen DINO + adapter) and the SIGReg target (predictor-only).
+    """
+    cfg = base250cam_config()
+    # Rebalance the shared trunk to fund the trained policy brains.
+    cfg.encoder = dataclasses.replace(cfg.encoder, depth=12)      # 14 -> 12
+    cfg.predictor = dataclasses.replace(cfg.predictor, depth=10)  # 12 -> 10
+    cfg.tactical_policy = TacticalPolicyConfig()
+    cfg.strategic_policy = StrategicPolicyConfig()
+    cfg.loss.sigreg.free_dims = 64            # §B.3 ego-motion subspace relaxation
+    return cfg
+
+
+def flagship4b_smoke_config() -> StackConfig:
+    """Tiny CPU flagship (CI smoke / tests / dry runs) — same 4-brain structure,
+    same conditioning wiring and grounding, shrunk widths and horizons (all
+    <= max_horizon 4). 1-channel 64 px episodes."""
+    cfg = smoke_config()
+    cfg.tactical_pred = PredictorConfig(d_model=32, depth=1, n_heads=2, window=4,
+                                        horizons=(3, 4), action_dim=2)
+    cfg.tactical_policy = TacticalPolicyConfig(
+        d_model=32, depth=1, n_heads=2, waypoint_horizons=(2, 4), d_intent=16,
+        cadence=2)
+    cfg.strategic_policy = StrategicPolicyConfig(
+        d_cmd=16, d_model=32, depth=1, n_heads=2, d_ctx=16, cadence=4)
+    cfg.loss.sigreg.free_dims = 8             # state_dim 512 -> 8 free, 504 regd
     return cfg
