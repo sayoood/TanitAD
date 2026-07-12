@@ -39,12 +39,32 @@ def main():
     if args.episodes:
         clips = clips[:args.episodes]
     print(f"[build] {len(clips)} clips discovered", flush=True)
+
+    # f-theta canonicalization self-check (D-016 fix, GEOMETRY_INTEGRITY_AUDIT):
+    # PROVE the corrected crop lands f_eff ~= F_REF (266) before a 40-min decode,
+    # so a bad intrinsics/poly change fails loudly instead of silently shipping
+    # the wrong zoom the audit found (nominal path was ~434 px).
+    from tanitad.data.calib import F_REF, ftheta_feff_report
+    from tanitad.data.physicalai import intrinsics_for_clip
+    if clips:
+        cid = clips[0]["clip_id"]
+        rep = ftheta_feff_report(intrinsics_for_clip(cid, args.root))
+        print(f"[build] f-theta f_eff check (clip {cid}): "
+              f"after={rep['f_eff_after']} before(nominal)={rep['f_eff_before_nominal']} "
+              f"retained_hfov={rep['retained_hfov_after_deg']}deg", flush=True)
+        assert abs(rep["f_eff_after"] - F_REF) < 8.0, (
+            f"corrected f_eff {rep['f_eff_after']} != {F_REF} (D-016); ABORT")
+
     tr, va = split_clips(clips, val_frac=0.2, seed=cfg.train.seed)   # I3
     print(f"[build] split: {len(tr)} train / {len(va)} val "
           f"(seed {cfg.train.seed})", flush=True)
 
     cache = Path(args.root) / "_epcache"
-    params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10}
+    # "calib" tags the canonicalization generation: the D-016 f-theta fix makes
+    # a FRESH cache key so the corrected cache can never collide with / silently
+    # reload the old nominal-focal (wrong-zoom) episodes.
+    params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
+              "calib": "ftheta_v1"}
     for cs, split in ((tr, "train"), (va, "val")):
         eps = build_episodes_cached(
             cs, lambda c: build_episode(c, size=cfg.encoder.image_size),

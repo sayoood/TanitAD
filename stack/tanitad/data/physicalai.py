@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import io
 import math
+import os
 import zipfile
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +35,8 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from tanitad.data._contract import finite_diff_accel
+from tanitad.data.calib import (F_REF, PHYSICALAI_FRONT_WIDE_FTHETA,
+                                FThetaIntrinsics, ftheta_crop_resize)
 from tanitad.data.comma2k19 import stack_frames
 from tanitad.data.toy_driving import ToyEpisode
 
@@ -41,11 +45,77 @@ TARGET_HZ = 10.0
 
 # I7 task-identity fingerprint (D-017) — matches comma2k19's on purpose:
 # D-016 canonicalization makes the corpora compatible; I7 PROVES it per run.
+# f_eff_px is the shared canonical focal ACHIEVED by the f-theta-correct crop
+# (calib.ftheta_crop_resize; verified ~F_REF in tests + build_pai_cache) — NOT
+# the old nominal value the pipeline used to *assume* while actually delivering
+# ~434 px. Sourced from calib.F_REF so the claim can't silently drift from the
+# canonicalization again (the pre-fix failure GEOMETRY_INTEGRITY_AUDIT.md found).
 CORPUS_META = {
-    "channels": 9, "image_size": 256, "f_eff_px": 266.0, "hz": 10.0,
+    "channels": 9, "image_size": 256, "f_eff_px": F_REF, "hz": 10.0,
     "actions": ("steer_road_rad", "accel_mps2"),
     "poses": ("x_east_m", "y_north_m", "yaw_rad", "v_mps"),
 }
+
+# Per-clip f-theta intrinsics come from the dataset's OWN
+# calibration/camera_intrinsics feature. PROVENANCE: PhysicalAI-AV is a GATED
+# dataset, so the per-clip table is NOT committed to this (public) repo — it is
+# read from the LOCAL data dir on machines that already hold the licensed
+# dataset (``<root>/calibration/physicalai_front_wide_intrinsics.csv``, or the
+# path in ``$TANITAD_PAI_INTRINSICS``). When absent, the measured corpus-median
+# ``PHYSICALAI_FRONT_WIDE_FTHETA`` fallback (an aggregate in calib.py) is used —
+# and because the geometric-center crop depends only on the near-constant focal
+# (per-clip sigma 0.47%), it lands f_eff == F_REF (~266) for EVERY clip either
+# way, so the corrected cache is correct with or without the per-clip table.
+_INTR_ENV = "TANITAD_PAI_INTRINSICS"
+_INTR_BASENAME = "physicalai_front_wide_intrinsics.csv"
+_warned_fallback: set[str] = set()
+
+
+def _physicalai_root_of(mp4: Path) -> Path | None:
+    """Recover the corpus root (the parent of ``r0/``) from a clip mp4 path."""
+    for p in Path(mp4).parents:
+        if p.name == "r0":
+            return p.parent
+    return None
+
+
+@lru_cache(maxsize=8)
+def _load_intrinsics_csv(csv_path: str) -> tuple:
+    df = pd.read_csv(csv_path, dtype={"clip_id": str})
+    rows = []
+    for r in df.itertuples(index=False):
+        rows.append((str(r.clip_id), FThetaIntrinsics(
+            poly=(float(r.fw_poly_0), float(r.fw_poly_1), float(r.fw_poly_2),
+                  float(r.fw_poly_3), float(r.fw_poly_4)),
+            cx=float(r.cx), cy=float(r.cy),
+            width=int(r.width), height=int(r.height))))
+    return tuple(rows)
+
+
+def _intrinsics_table(root: str | Path | None = None) -> dict[str, FThetaIntrinsics]:
+    """clip_id -> FThetaIntrinsics from the LOCAL per-clip table, if present."""
+    path = os.environ.get(_INTR_ENV)
+    if not path and root is not None:
+        cand = Path(root) / "calibration" / _INTR_BASENAME
+        path = str(cand) if cand.exists() else None
+    if not path or not Path(path).exists():
+        return {}
+    return dict(_load_intrinsics_csv(str(Path(path).resolve())))
+
+
+def intrinsics_for_clip(clip_id: str, root: str | Path | None = None
+                        ) -> FThetaIntrinsics:
+    """Real per-clip f-theta intrinsics (PREFERRED, from the local licensed data
+    dir); measured corpus-median fallback (warns once) when unavailable."""
+    intr = _intrinsics_table(root).get(str(clip_id))
+    if intr is None:
+        if clip_id not in _warned_fallback:
+            _warned_fallback.add(clip_id)
+            print(f"[physicalai] no per-clip intrinsics for {clip_id!r}"
+                  f"{' under ' + str(root) if root else ''}; using measured "
+                  f"corpus-median f-theta fallback (f_eff still ~266)", flush=True)
+        return PHYSICALAI_FRONT_WIDE_FTHETA
+    return intr
 
 
 def discover_r0_clips(root: str | Path) -> list[dict]:
@@ -75,7 +145,16 @@ def load_egomotion(ego_zip: Path, clip_id: str) -> pd.DataFrame:
 
 
 def _decode_mp4(mp4: Path, size: int) -> Tensor:
-    """All frames of the clip -> uint8 [N, 3, size, size] (crop-square+resize)."""
+    """All frames of the clip -> uint8 [N, 3, size, size], f-theta-correct crop.
+
+    D-016 fix (GEOMETRY_INTEGRITY_AUDIT.md): the front-wide is an f-theta
+    FISHEYE. Resolve the clip's REAL per-clip intrinsics (keyed by the clip_id
+    in the filename) and crop against the true radial map so the canonical
+    f_eff == F_REF (comma-matched, ~266 px), instead of the old nominal-120-deg
+    PINHOLE focal (554 px) that cropped a 533-px square retaining only ~16.4 deg
+    -> f_eff ~434 px, i.e. 1.6x over-zoomed vs comma. The sacrificed wide
+    periphery still returns later as H2 side-view modalities.
+    """
     import av
     frames = []
     with av.open(str(mp4)) as c:
@@ -85,15 +164,9 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
             rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
             frames.append(rgb)
     vid = torch.stack(frames)
-    # D-016: canonical effective focal. Nominal focal from the 120-deg HFOV
-    # spec until per-clip intrinsics (calibration/ feature) are ingested —
-    # the crop keeps the central ~51 deg, angularly consistent with comma2k19;
-    # the wide periphery returns later as H2 side-view modalities.
-    from tanitad.data.calib import (PHYSICALAI_FRONT_WIDE_HFOV_DEG,
-                                    focal_crop_resize, nominal_focal_from_hfov)
-    f_px = nominal_focal_from_hfov(vid.shape[-1],
-                                   PHYSICALAI_FRONT_WIDE_HFOV_DEG)
-    return focal_crop_resize(vid, f_px, size)
+    intr = intrinsics_for_clip(Path(mp4).name.split(".")[0],
+                               _physicalai_root_of(mp4))
+    return ftheta_crop_resize(vid, intr, size)
 
 
 def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
