@@ -23,6 +23,8 @@
 | H14 | Physical grounding | Track 1 adopted (kinematic decoder + Kamm circle) | friction-violation metric | Architecture & Inference |
 | H15 | Unobserved-area imagination | **in Phase 0 per D-008** — ImaginationField implemented (advection + refine + epistemic σ), trains with the world model | **D9** (hidden-sector cosine, calibration gap, LOPS) | Architecture & Inference |
 | H16 | Active depth interrogation (tactical-commanded, σ-triggered ROI depth queries) | open — Sayed's idea 2026-07-11; composes H15 σ-trigger + H2 scheduler + ZipDepth-class specialist; Phase-1 H2 window (~Sep); dossier: `Architecture & Inference/Research/H16_ACTIVE_DEPTH_INTERROGATION.md` | F1–F3 pre-registered (trigger selectivity, energy vs always-on, metric anchor) | Architecture & Inference |
+| H17 | Unified-FOV masked-periphery training (pad comma to 120°, imagine the unobserved edges) | open — Sayed 2026-07-12; inverts FOV unification, feeds H15 imagination signal + urban peripheral vision + foveated patching; dossier `Architecture & Inference/Research/UNIFIED_FOV_FOVEATED_PATCHING.md` | urban-ADE lift + imagination calibration without comma regress | Architecture & Inference |
+| H18 | Hierarchical action grounding (metric-consequence grounding at operative + tactical + strategic levels) | open — Sayed 2026-07-12; operative grounding SHIPS now (§3.7 metric-invdyn + forward-metric-consistency, proprioceptive/self-supervised); tactical/strategic extension next | per-level: grounded consequence beats ungrounded selection at that horizon | Architecture & Inference |
 
 ## Gate definitions (Phase 0)
 

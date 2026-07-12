@@ -194,6 +194,95 @@ The imagination error ‖ẑ_t − z_t‖ (relative to step scale) is a free, al
 drift at 0.1 Hz) arm a deterministic minimal-risk manoeuvre and constitute the substrate for the UN
 regulation's ISMR/DSSAD requirements — self-monitoring logs *are* the incident-reporting feed.
 
+### 3.7 Action grounding across abstraction levels
+
+**Actions are inputs whose consequences the model predicts.** The residual predictor (§3.2) is
+action-conditioned by construction: ẑ_{t+k} = z_t + Δ_k(z_{t−W+1:t}, a_{t−W+1:t}), where each action
+a = (steer, accel) enters every predictor layer as a FiLM scale/shift. Accelerate, steer and
+decelerate are therefore fed to the predictor and it estimates the resulting latent state — the
+world-model contract: *simulate the effect of your own control*. Nothing here is a target the model
+regresses; the action is an exogenous input and the future latent is its predicted effect.
+
+**The grounding gap.** JEPA prediction makes future latents predictable and rankable but does not
+force the latent to encode *metric* ego-motion. Our diagnostic (§7) showed the frozen state decodes
+ego-position 10–15× worse than a constant-velocity baseline *even in-distribution* (oracle ADE@1s
+1.65 m vs 0.28 m): the representation was under-grounded because the objective never demanded metric
+consistency, only latent predictability and within-window rank (which is why the selection gate D2
+passed while the position gate D1 failed). We close the gap with two *proprioceptive* losses that
+leave the self-supervised core untouched.
+
+**(i) Metric inverse dynamics.** A head h_ν maps a latent pair to the metric ego-displacement in
+SE(2):  Δp̂_{t→t+k} = h_ν(z_t, z_{t+k}) = (Δx, Δy, Δψ),  with
+L_mid = Σ_k ρ( Δp̂_{t→t+k} ⊖ Δp_{t→t+k} ),
+where Δp is the true relative ego-pose from odometry, ⊖ the SE(2) residual, ρ a Huber penalty. This
+strengthens the action-inverse-dynamics L_inv (§3.2, which recovers a_t): rather than the control,
+the latent pair must now recover *where the vehicle physically went*.
+
+**(ii) Forward metric consistency.** Rolling the predictor K steps under the *true* action sequence
+and decoding each predicted transition to a per-step displacement r_ξ(z_t, ẑ_{t+1}), the accumulated
+SE(2) trajectory must match odometry:
+ẑ_{t+j} = z_t ⊕ Δ_{≤j}(ẑ, a)  (recursive rollout under fed actions, §3.2, D-027);
+τ̂_{t+j} = ⊕_{i≤j} r_ξ(ẑ_{t+i−1}, ẑ_{t+i});  L_fmc = Σ_j ρ( τ̂_{t+j} ⊖ τ_{t+j} ),
+with τ the odometry ego-trajectory and ⊕ SE(2) composition. The displacement is decoded from the
+*predicted* (imagined) latent under the fed action — so **imagination itself is forced to be
+metrically correct**, exactly the quantity imagine-and-select (§3.4) consumes: the trajectory
+*emerges by rolling out grounded dynamics under actions*, never regressed in one shot. The grounded
+objective is L + λ_mid L_mid + λ_fmc L_fmc, with L (JEPA + SIGReg + imagination) unchanged.
+
+**Why the unsupervised character is preserved.** Both new targets — actions a_t (CAN bus) and
+relative poses Δp, τ (IMU / GNSS / wheel odometry) — are *proprioceptive sensor readings*, generated
+for free on every driven metre, never human annotations. Using them incurs no labelling cost and
+scales with mileage; it is the "S" of self-supervision realised through the vehicle's own motion
+senses — as vestibular and proprioceptive feedback ground egomotion in animals — not supervised
+imitation of an annotated trajectory. The 1000×-efficiency claim (§4) rests on the absence of
+*annotation*, which is untouched: no term requires a human label, the encoder is still shaped by
+SIGReg-regularised latent prediction, and the metric heads are auxiliary readouts whose gradients
+merely *orient* the same self-supervised representation toward metric ego-motion. Grounding on
+proprioception ≠ supervising on labels.
+
+**Hierarchical grounding (the unifying principle).** Grounding is not confined to low-level control.
+Each abstraction level ℓ has its own action a^ℓ, forward model g_φ^ℓ, and consequence horizon H_ℓ,
+and each is grounded to the *metric consequence at its own scale* under one common contract —
+**predict-the-metric-consequence-of-your-action**:
+ẑ^ℓ_{t+H_ℓ} = g_φ^ℓ(z^ℓ_t, a^ℓ),   L_ground^ℓ = ρ( r_ξ^ℓ(z^ℓ_t, ẑ^ℓ_{t+H_ℓ}) ⊖ Δp^ℓ_gt ).
+
+| level ℓ | action a^ℓ | horizon H_ℓ | grounded consequence |
+|---|---|---|---|
+| operative | continuous (steer, accel) ∈ ℝ² | 0.1–0.5 s | per-step Δp (SE(2)) |
+| tactical | maneuver / intent primitive m | 0.8–2 s | post-maneuver latent + metric trajectory shape |
+| strategic | route decision g (branch/exit at a place-node) | 5–30 s | place-graph transition + coarse metric route |
+
+A maneuver is thus grounded to the 2-s trajectory it *produces*, and a route decision to the
+place-to-place displacement it *produces*, each from proprioception at that horizon. This turns the
+4B hierarchy into a **stack of grounded forward models**: imagine-and-select (§3.4) ranks maneuvers
+by their grounded metric consequence, and strategic routing ranks route actions by their grounded
+place-graph consequence — one principle at three scales. Operative grounding ships now (this run);
+tactical and strategic grounding are the immediate hierarchical extension (H-ledger **H18**), and
+they compose with counterfactual action augmentation (regenerate a scene under varied actions,
+learn each level's consequence — H-ledger, `COUNTERFACTUAL_ACTION_AUGMENTATION.md`).
+
+### 3.8 Reference architectures (H1 / H4 controls)
+
+Two budget-matched (~261 M) references isolate a single axis each; both train on the *identical*
+corrected-geometry corpus (§6.1) so only the tested axis differs.
+
+- **REF-A — frozen-DINO world model (H4, encoder axis).** Identical predictor, imagination and
+  action grounding (§3.7); the from-scratch encoder f_θ is replaced by a *frozen* DINOv2 encoder plus
+  a trainable spatial-grid adapter r_A, so z_t = r_A(DINO(x_t)). Every loss including L_mid, L_fmc
+  applies to the adapter + predictor; the frozen features carry no gradient (the inherent, correct
+  asymmetry: from-scratch encoder can be reshaped by grounding, a frozen encoder can only be adapted).
+  Isolates *learned-from-scratch vs web-pretrained* representation at matched predictor and matched
+  grounding.
+- **REF-B — vision-action E2E, no world model (H1, world-model-earns-its-parameters axis).** The same
+  encoder trunk feeds direct operative (10–20 Hz (steer, accel) + 0.5 s sequence) and tactical
+  (maneuver distribution + 2 s waypoints) heads trained by behavior cloning; no predictor, no
+  imagination, no SIGReg-latent-prediction, and the freed ~130 M go into a deeper encoder + wider
+  heads (budget-matched). Its "grounding" is *direct* trajectory/action supervision — the strongest
+  fair imitation baseline and gate D4's learned opponent. By construction it lacks imagination-error
+  self-knowledge (§3.6), hidden-actor rollout (H15) and counterfactual imagine-and-select (§3.4) —
+  precisely where the world model is pre-registered to win; if REF-B matches it there, the
+  world-model premise is wounded and we report that.
+
 ## 4. Why less data suffices: theoretical grounding
 
 Three independent arguments, one measured corroboration.
@@ -295,6 +384,43 @@ within-corpus route shift. The familiarity signal exists but is weak and confoun
 the paired protocol is pre-registered for re-measurement at 50 % and 100 % of training. Gate D8
 proper runs on real never-trained OOD probes.
 
+### 7.1 Decision-grade diagnosis at ≈30 k, and two corrected errors
+
+At step 27 000 (≈30 k, 90 %; a memory-cap crawl on the record pod was stopped at 90 % and the
+checkpoint frozen), on the exact training val corpora with the *route-resampled* D1 protocol
+(mean ± 95 % CI over 8 episode splits — a single split's ADE swung 5.2→11.5 m on identical
+information, so single-split D1 is split-luck): **D1 6.44 ± 0.55 m FAIL** (camera unit,
+necessary-not-sufficient), **D2 0.864 dir-acc / 0.971 P4 PASS**, **D3 imagined-vs-oracle 1.30
+(K-step-improved from ~4×)**.
+
+**The decisive diagnostic (proofs, not narrative).** A baseline + decode-ladder + error-localization
+probe established, on real data: (i) the model is **10–15× worse than constant-velocity everywhere,
+including straight highway** (2.75 m vs 0.18 m ADE@1s) — not a curve-only capability gap but a
+failure to read its own trajectory; (ii) the deficit splits into a **2.4× readout/route-generalization
+gap** (held-out MLP 3.89 m vs oracle-in-distribution 1.65 m) *and* a **representation floor** (oracle
+1.65 m ≫ CV 0.28 m — even perfect decode cannot recover metric trajectory from the frozen latent);
+(iii) mechanistically, the JEPA objective made latents predictable and rankable (D2 passes) but never
+demanded metric ego-motion — motivating the action grounding of §3.7 as the pre-registered fix
+(target: oracle < 1.0 m, beat CV on straights, D2 ≥ 0.80).
+
+**Two basic errors, found and excluded/corrected by evidence.** (a) *Camera-geometry integrity audit.*
+Every candidate corruption of the mixed corpus was tested; all excluded (pose↔frame lag 0, action
+units/handedness consistent, no representation collapse) **except one, confirmed**: PhysicalAI's
+120° front camera is an **f-theta fisheye** (real focal ≈ 926 px @1920) that `calib.py` canonicalized
+with the *nominal rectilinear* focal (554 px), so PhysicalAI frames trained at **~1.6× the intended
+zoom** (achieved f_eff ≈ 431 vs the intended 266 shared with comma2k19) — and PhysicalAI is **60 %
+of the mix**, with no corpus conditioning, so identical ego-motion mapped to ~1.6× different pixel
+motion. The corrected f-theta canonicalization restores f_eff = 266 (verified 437→266; actions/poses
+unchanged, only frames), and all three arms retrain on the corrected geometry. (b) *Resolution.* A
+degradation sweep (256→64 px) leaves ADE flat, so input resolution is **not** the binding constraint
+on the current model (the bottleneck is grounding, per the diagnostic) — re-tested after grounding.
+
+**Reference arms (encoder axis, comma-val probe, pre-correction).** The frozen-DINO REF-A decoded
+ego-geometry *worse* than the from-scratch encoder (pool-adapter ADE@1s 17.0, grid-adapter 20.2 vs
+the main encoder's 7.0–8.5), first evidence that task-specific from-scratch SSL out-grounds web
+pretraining at this scale/task; the grounded, corrected-geometry three-way (main vs REF-A vs REF-B)
+is the H1/H4 evidence table, in progress.
+
 ## 8. Roadmap
 
 Completion of the first run and the full gate ladder; closed-loop evaluation (CARLA harness) for
@@ -317,3 +443,10 @@ Drive-JEPA arXiv:2601.22032; ALPS-4B transfer study `Ressources/AD_TRANSFER_RESE
 ### Changelog
 - v0.1 (2026-07-08): initial living version — architecture, math, doctrine, theory grounding,
   step-5000 preliminary results.
+- v0.2 (2026-07-12): added §3.7 (action grounding across abstraction levels — metric inverse
+  dynamics + forward metric consistency as proprioceptive self-supervision, with the operative/
+  tactical/strategic hierarchical extension, H18) and §3.8 (REF-A/REF-B reference architectures);
+  §7.1 decision-grade ≈30 k diagnosis (metric-grounding gap: 10–15× worse than constant-velocity,
+  oracle ceiling 1.65 m), the confirmed f-theta focal error (PhysicalAI 1.6× over-zoom, corrected)
+  and the resolution-not-binding sweep. Actions confirmed to enter the predictor as FiLM-conditioned
+  inputs whose latent consequence is predicted (§3.7).
