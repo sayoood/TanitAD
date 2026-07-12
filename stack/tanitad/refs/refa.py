@@ -36,7 +36,10 @@ from typing import Iterable
 import torch
 from torch import Tensor, nn
 
-from tanitad.config import PredictorConfig, base250cam_config
+from tanitad.config import (PredictorConfig, StrategicPolicyConfig,
+                            TacticalPolicyConfig, base250cam_config)
+from tanitad.models.fourbrain import (StrategicPolicy, TacticalPolicy,
+                                      run_hierarchy)
 from tanitad.models.inverse_dynamics import InverseDynamicsHead
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.sigreg import SigReg
@@ -151,20 +154,37 @@ class DinoGridAdapter(nn.Module):
 
 
 class RefAModel(nn.Module):
-    """Standardizer + adapter + the UNCHANGED shared operative predictor.
+    """Standardizer + adapter + the UNCHANGED shared operative predictor, and
+    (optionally, D-030) the SHARED trained tactical/strategic policy brains —
+    the frozen-DINO twin of the flagship ``WorldModel``.
 
-    encode / encode_window / predict mirror the WorldModel interface the
-    trainer needs, with frozen-feature token grids replacing frames.
+    encode / encode_window / predict / hierarchy mirror the WorldModel interface
+    the trainer needs, with frozen-feature token grids replacing frames.
     ``adapter_kind``: "grid" (stage-2b default for new runs — spatially
     faithful, state_dim = readout out_dim 2048) or "pool" (v1 mean-pool,
     kept for loading pre-revision checkpoints).
+
+    4-brain composition (``tactical_policy_cfg`` + ``strategic_policy_cfg``, a
+    matched set): builds the SAME ``StrategicPolicy`` / ``TacticalPolicy`` /
+    intent-conditioned ``OperativePredictor`` / tactical-predictor dynamics that
+    ``WorldModel`` holds, from the SAME config objects, on the adapter STATE.
+    The brains are state-dim-agnostic, so with the grid adapter matched to the
+    flagship's readout geometry (``grid`` / ``grid_d_readout``) every shared
+    brain is byte-for-byte the same shape — the frozen-DINO adapter (vs the
+    from-scratch ViT) is then the ONLY model-axis difference. Both configs None
+    (the default) reproduces the base REF-A exactly (a policy-less checkpoint is
+    a strict subset — vanilla-load safe). See :func:`fourbrain.run_hierarchy`.
     """
 
     def __init__(self, pred_cfg: PredictorConfig | None = None,
                  d_dino: int = 768, state_dim: int = 768,
                  bottleneck: bool = False, sigreg_slices: int = 512,
                  sigreg_beta: float = 1.0, adapter_kind: str = "pool",
-                 n_tokens: int = 256):
+                 n_tokens: int = 256, *, grid: int = 4,
+                 grid_d_readout: int = 128,
+                 tactical_policy_cfg: TacticalPolicyConfig | None = None,
+                 strategic_policy_cfg: StrategicPolicyConfig | None = None,
+                 tactical_pred_cfg: PredictorConfig | None = None):
         super().__init__()
         assert adapter_kind in ("pool", "grid"), adapter_kind
         self.pred_cfg = pred_cfg if pred_cfg is not None \
@@ -172,14 +192,43 @@ class RefAModel(nn.Module):
         self.adapter_kind = adapter_kind
         self.standardizer = FeatureStandardizer(d_dino)
         if adapter_kind == "grid":
-            self.adapter: nn.Module = DinoGridAdapter(n_tokens, d_dino)
+            self.adapter: nn.Module = DinoGridAdapter(
+                n_tokens, d_dino, grid=grid, d_readout=grid_d_readout)
             state_dim = self.adapter.out_dim
         else:
             self.adapter = DinoAdapter(d_dino, state_dim,
                                        bottleneck=bottleneck)
         self.state_dim = state_dim
+        # ---- 4-brain composition (D-030): the SHARED policy/predictor brains,
+        # mirroring WorldModel EXACTLY. The trained policy brains are a matched
+        # set (the hierarchy needs the strategic ctx to condition tactical):
+        # enable both or neither.
+        if (tactical_policy_cfg is None) != (strategic_policy_cfg is None):
+            raise ValueError("tactical_policy and strategic_policy must be "
+                             "enabled together (the 4-brain hierarchy)")
+        self.tactical_policy_cfg = tactical_policy_cfg
+        self.strategic_policy_cfg = strategic_policy_cfg
+        intent_dim = (tactical_policy_cfg.d_intent
+                      if tactical_policy_cfg is not None else None)
+        # Operative predictor — intent-conditioned when the tactical brain is on
+        # (identity start; ``intent_dim=None`` reproduces the base REF-A
+        # predictor exactly, so a policy-less checkpoint is a strict subset).
         # Imported, never copied: the comparison isolates the encoder axis.
-        self.predictor = OperativePredictor(self.pred_cfg, state_dim)
+        self.predictor = OperativePredictor(self.pred_cfg, state_dim,
+                                            intent_dim=intent_dim)
+        # Tactical-predictor dynamics (maneuver-horizon JEPA) — the SAME family
+        # and config the flagship uses; None = off (base REF-A).
+        self.tactical_pred = (OperativePredictor(tactical_pred_cfg, state_dim)
+                              if tactical_pred_cfg is not None else None)
+        # Trained strategic transformer + tactical policy (SHARED classes) — the
+        # state-dim-agnostic brains compose on the adapter state identically.
+        self.strategic_policy = (
+            StrategicPolicy(strategic_policy_cfg, state_dim, self.pred_cfg.window)
+            if strategic_policy_cfg is not None else None)
+        self.tactical_policy = (
+            TacticalPolicy(tactical_policy_cfg, state_dim, self.pred_cfg.window,
+                           d_cond=strategic_policy_cfg.d_ctx)
+            if tactical_policy_cfg is not None else None)
         # A5 grounding — also the cheapest anti-collapse pressure on the
         # trainable adapter space (constant states cannot encode actions).
         self.inv_dyn = InverseDynamicsHead(
@@ -195,9 +244,44 @@ class RefAModel(nn.Module):
         """[B, W, N, D] -> [B, W, S] (WorldModel.encode_window analog)."""
         return self.encode(feats)
 
-    def predict(self, states: Tensor, actions: Tensor) -> dict[int, Tensor]:
-        """Causal window -> imagined future adapter-states per horizon."""
-        return self.predictor(states, actions)
+    def predict(self, states: Tensor, actions: Tensor,
+                intent: Tensor | None = None) -> dict[int, Tensor]:
+        """Causal window -> imagined future adapter-states per horizon
+        (optionally intent-conditioned by the tactical brain, 4-brain path)."""
+        return self.predictor(states, actions, intent=intent)
+
+    def hierarchy(self, states: Tensor, actions: Tensor,
+                  nav_cmd: Tensor | None = None) -> dict:
+        """Run the shared strategic->tactical->operative chain on adapter states
+        (identical to ``WorldModel.hierarchy``; see
+        :func:`fourbrain.run_hierarchy`). Needs the 4-brain policy configs."""
+        return run_hierarchy(self, states, actions, nav_cmd)
+
+    @classmethod
+    def from_stack_config(cls, cfg, *, n_tokens: int, d_dino: int = 768,
+                          adapter_kind: str = "grid",
+                          sigreg_slices: int | None = None) -> "RefAModel":
+        """Build the 4-brain REF-A that MIRRORS ``WorldModel(cfg)`` module-for-
+        module: the SAME shared predictor / tactical_pred / tactical_policy /
+        strategic_policy from the SAME ``StackConfig``, on the frozen-DINO grid
+        adapter. The adapter reuses ``cfg.readout``'s grid geometry, so the
+        adapter state_dim equals the flagship readout's out_dim and every shared
+        brain is byte-for-byte the same shape. The ONLY model-axis difference
+        from ``WorldModel(cfg)`` is the encoder (adapter vs from-scratch ViT).
+        ``n_tokens`` is the DINO token-grid count (256 for DINOv2-B/14 @224)."""
+        assert (cfg.tactical_policy is not None
+                and cfg.strategic_policy is not None), \
+            "from_stack_config builds the 4-brain REF-A — cfg needs both policies"
+        return cls(
+            pred_cfg=cfg.predictor, d_dino=d_dino, n_tokens=n_tokens,
+            adapter_kind=adapter_kind, grid=cfg.readout.grid,
+            grid_d_readout=cfg.readout.d_readout,
+            sigreg_slices=(sigreg_slices if sigreg_slices is not None
+                           else cfg.loss.sigreg.n_slices),
+            sigreg_beta=cfg.loss.sigreg.beta,
+            tactical_policy_cfg=cfg.tactical_policy,
+            strategic_policy_cfg=cfg.strategic_policy,
+            tactical_pred_cfg=cfg.tactical_pred)
 
     @torch.no_grad()
     def adapter_dim_std(self, states: Tensor) -> float:

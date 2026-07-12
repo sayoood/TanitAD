@@ -61,6 +61,12 @@ from tanitad.train.flagship_losses import (LossWeights, build_grounding,  # noqa
                                            flagship_loss, horizon_plan)
 from tanitad.train.train_worldmodel import cosine_lr  # noqa: E402
 
+# The flagship's SIGReg target: the full latent AND predictions, with the fixed
+# ego-motion subspace exempted (position-relaxed, §B.3). The frozen-DINO twin
+# (scripts/refa_train4b) is the SAME trainer with this one argument flipped to
+# "pred_only" — the machine-checkable difference the parity test pins.
+SIGREG_VARIANT = "full_relaxed"
+
 
 # --------------------------------------------------------------------------- #
 # Dataset — fail-loud windows + nav fields (REF-B) + the maneuver pseudo-label #
@@ -296,7 +302,7 @@ def train(args) -> dict:
                 fut_states = model.encode_window(fut[:, plan.needed_fut])
                 total, log, parts = flagship_loss(
                     model, grounding, batch, states, fut_states, plan, cfg,
-                    weights=weights, sigreg_variant="full_relaxed",
+                    weights=weights, sigreg_variant=SIGREG_VARIANT,
                     sigreg_free_dims=cfg.loss.sigreg.free_dims,
                     pose_scale=args.pose_scale,
                     fwd_step_weight=args.fwd_step_weight, device=device)

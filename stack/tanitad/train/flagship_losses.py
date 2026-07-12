@@ -72,7 +72,8 @@ def horizon_plan(cfg: StackConfig, op_fwd_k: int, tac_fwd_k: int,
     if maneuver_h is None:
         maneuver_h = goal_h
     # Future frames to ENCODE: JEPA targets (k-1, change-ref k-2), tactical-pred
-    # targets, grounding metric-invdyn pairs (k-1), the goal latent (goal_h-1),
+    # targets, grounding metric-invdyn pairs (k-1), the goal latent (goal_h-1 AND
+    # its change-weight reference goal_h-2, same as the op/tacpred JEPA targets),
     # and the K-step rollout range.
     idxs: set[int] = set()
     for k in op_h:
@@ -82,7 +83,11 @@ def horizon_plan(cfg: StackConfig, op_fwd_k: int, tac_fwd_k: int,
             idxs |= {k - 1} | ({k - 2} if k >= 2 else set())
     for hs, _ in level_cfg.values():
         idxs |= {k - 1 for k in hs}
-    idxs |= {goal_h - 1}
+    # The tactical GOAL latent loss is change-weighted, so it reads BOTH the goal
+    # target (goal_h-1) and its previous state (goal_h-2) — encode both, mirroring
+    # the op/tacpred pattern above. (Dormant at smoke where goal_h-2 is already a
+    # tacpred target; at the real config goal_h=20 needs index 18 encoded.)
+    idxs |= {goal_h - 1} | ({goal_h - 2} if goal_h >= 2 else set())
     if getattr(cfg.train, "rollout_k", 1) > 1:
         idxs |= set(range(cfg.train.rollout_k))
     needed = sorted(idxs)
