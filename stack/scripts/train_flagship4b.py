@@ -52,6 +52,7 @@ from finetune_traj import start_cache_guard  # noqa: E402  (reuse the OOM guard)
 from refb_train import FailLoudWindowDataset  # noqa: E402  (fail-loud + nav fields)
 
 from tanitad.config import (flagship4b_config,  # noqa: E402
+                            flagship4b_reduced_config,
                             flagship4b_smoke_config)
 from tanitad.data.mixing import MixedWindowDataset, load_episode  # noqa: E402
 from tanitad.data.toy_driving import generate_episode  # noqa: E402
@@ -176,7 +177,9 @@ def train(args) -> dict:
     torch.manual_seed(args.seed)
     use_amp = (not args.no_amp) and device == "cuda"
 
-    cfg = flagship4b_smoke_config() if args.config == "smoke" else flagship4b_config()
+    cfg = {"smoke": flagship4b_smoke_config,
+           "flagship4b_reduced": flagship4b_reduced_config,
+           "flagship4b": flagship4b_config}[args.config]()
     if args.grad_checkpoint:
         cfg.encoder.grad_checkpoint = True
     if args.rollout_k is not None:
@@ -347,7 +350,8 @@ def main(argv=None):
     ap.add_argument("--cache-dirs", nargs="+", default=None,
                     help="epcache roots, each with *train*/*val* dirs of ep_*.pt")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--config", choices=["flagship4b", "smoke"],
+    ap.add_argument("--config",
+                    choices=["flagship4b", "flagship4b_reduced", "smoke"],
                     default="flagship4b")
     ap.add_argument("--episodes", type=int, default=0,
                     help="max episodes per cache split (0 = all); toy: #episodes")

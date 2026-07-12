@@ -257,6 +257,40 @@ def flagship4b_config() -> StackConfig:
     return cfg
 
 
+def flagship4b_reduced_config() -> StackConfig:
+    """REDUCED-but-REAL flagship for the Axis-6 empirical-lever pre-checks.
+
+    A genuine 4-brain stack (all brains trained + wired + hierarchical grounding
+    + SIGReg-position relaxation) on the REAL camera input (9-ch 256 px, patch16
+    -> 16x16 grid, state_dim 2048 — IDENTICAL data/geometry contract to the full
+    flagship), but with the shared trunk narrowed (d768->384) and shallowed
+    (encoder 12->8, operative 10->6, tactical/strategic 6/4->3) so a from-scratch
+    representation trains in a few HOURS for ~4-6 k steps on one A6000 instead of
+    ~4 DAYS. This is the small-scale rig that GATES the 4-day run: it must show
+    the oracle ceiling MOVING under SIGReg-relaxation + from-scratch grounding
+    before we spend the compute (PRE_FLIGHT_VALIDATION.md Axis 6). NOT a toy —
+    a real ViT depth 8 that genuinely learns; only smaller than the flagship.
+
+    Measured ~65 M trainable (model ~52 M + grounding heads ~13 M). The A/B lever
+    (``--sigreg-free-dims 64`` vs ``0``) is what the pre-check isolates; the
+    absolute oracle number is cross-scale vs the 1.60/1.65 full-run figures and
+    is read as a TREND, not a level (interpret honestly).
+    """
+    cfg = flagship4b_config()                     # inherit the full 4-brain wiring
+    cfg.encoder = dataclasses.replace(cfg.encoder, d_model=384, depth=8, n_heads=6)
+    cfg.predictor = dataclasses.replace(cfg.predictor, d_model=384, depth=6,
+                                        n_heads=6)
+    cfg.tactical_pred = dataclasses.replace(cfg.tactical_pred, d_model=256,
+                                            depth=3, n_heads=4)
+    cfg.tactical_policy = dataclasses.replace(cfg.tactical_policy, d_model=256,
+                                              depth=3, n_heads=4)
+    cfg.strategic_policy = dataclasses.replace(cfg.strategic_policy, d_model=256,
+                                               depth=3, n_heads=4)
+    cfg.h15 = dataclasses.replace(cfg.h15, depth=2)
+    # free_dims stays 64 (inherited); the pre-check overrides it per A/B arm.
+    return cfg
+
+
 def flagship4b_smoke_config() -> StackConfig:
     """Tiny CPU flagship (CI smoke / tests / dry runs) — same 4-brain structure,
     same conditioning wiring and grounding, shrunk widths and horizons (all

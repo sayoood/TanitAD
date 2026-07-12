@@ -397,11 +397,19 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--mlp-epochs", type=int, default=60)
     ap.add_argument("--git-hash", default="unknown")
+    ap.add_argument("--config",
+                    choices=["base250cam", "flagship4b", "flagship4b_reduced"],
+                    default="base250cam",
+                    help="architecture to instantiate for the ckpt (must match "
+                         "the training config so load_state_dict succeeds)")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    from tanitad.config import base250cam_config
+    from tanitad.config import (base250cam_config, flagship4b_config,
+                                flagship4b_reduced_config)
     from tanitad.models.fourbrain import WorldModel
+    _cfg_fn = {"base250cam": base250cam_config, "flagship4b": flagship4b_config,
+               "flagship4b_reduced": flagship4b_reduced_config}[args.config]
 
     def corpus_of(cd: str) -> str:
         low = cd.lower()
@@ -423,7 +431,7 @@ def main():
             corpora.append(corpus_of(cd))
     assert episodes, "no val episodes loaded"
 
-    world = WorldModel(base250cam_config())
+    world = WorldModel(_cfg_fn())
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
     world.load_state_dict(ck["model"] if "model" in ck else ck)
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
