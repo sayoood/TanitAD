@@ -10,13 +10,24 @@ contract as tanitad.data._contract.EpisodeWindowDataset.
 Losses: multi-horizon prediction in ADAPTER space (change-weighted, A4)
       + K-step recursive rollout (D-027: rollout_k=4 default)
       + inverse dynamics (A5)
-      + SigReg fp32 on PREDICTOR OUTPUTS ONLY (item 3, >=256-samples floor).
+      + SigReg fp32 on PREDICTOR OUTPUTS ONLY (item 3, >=256-samples floor)
+      + metric-dynamics grounding (parity with flagship B1, --mode dynamics):
+        lambda_invdyn * metric-inverse-dynamics + lambda_fwd * forward-metric-
+        consistency (tanitad.models.metric_dynamics). The metric heads live
+        OUTSIDE RefAModel (saved under separate ckpt keys) so a vanilla
+        RefAModel still loads ckpt["model"] and eval/driving_diagnostic read
+        the trained StepDisplacementReadout the same way the flagship does.
+        Grads reach the ADAPTER + predictor; the frozen DINO features carry no
+        grad (nothing to ground there — the inherent, correct main-vs-REF-A
+        asymmetry: from-scratch encoder vs frozen-DINO features).
 Param groups: adapter gets a 10x longer LR warmup than the predictor (item 4)
-plus its own gradient-norm monitor row.
+plus its own gradient-norm monitor row; the metric heads share the predictor
+warmup.
 
-Usage (pod2):
+Usage (pod2/pod3):
   python scripts/refa_train.py --data-root /opt/dino_feats \
-      --out /workspace/experiments/refa-30k --steps 30000
+      --out /workspace/experiments/refa-30k --steps 30000 \
+      --adapter grid --rollout-k 4 --invdyn-weight 2.0 --fwd-weight 1.0
 """
 
 from __future__ import annotations
@@ -32,6 +43,11 @@ from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 from tanitad.config import PredictorConfig
+from tanitad.models.metric_dynamics import (MetricInverseDynamics,
+                                            StepDisplacementReadout,
+                                            accumulate_se2, gt_ego_waypoints,
+                                            gt_step_dposes, relative_ego_pose,
+                                            wrap_angle)
 from tanitad.models.predictor import change_weighted_mse
 from tanitad.refs.refa import RefAModel, refa_predictor_config
 from tanitad.train.train_worldmodel import cosine_lr
@@ -42,6 +58,11 @@ PRED_WEIGHT = 1.0
 ROLL_WEIGHT = 0.5
 INV_WEIGHT = 0.5
 SIGREG_WEIGHT = 0.1
+# Metric-dynamics grounding weights (flagship B1 parity; finetune_traj defaults).
+INVDYN_WEIGHT = 2.0     # lambda_invdyn: metric-inverse-dynamics
+FWD_WEIGHT = 1.0        # lambda_fwd: forward-metric-consistency (rollout accum)
+POSE_SCALE = 10.0       # metre normalizer -> metric losses stay O(1) under clip
+FWD_STEP_WEIGHT = 0.5   # per-step Δpose anchor weight inside lambda_fwd
 
 
 def smoke_pred_config() -> PredictorConfig:
@@ -55,8 +76,12 @@ class FeatureWindowDataset(Dataset):
     """Windows over precomputed per-timestep DINO feature rows.
 
     A window is simply ``rows[t : t+W]`` (latest-frame features per timestep);
-    ``future_feats``/``future_actions`` follow the EpisodeWindowDataset
-    contract: rows ``t+W .. t+W+max_horizon``. Episodes are the raw dicts
+    ``future_feats``/``future_actions``/``future_poses`` follow the
+    EpisodeWindowDataset contract: rows ``t+W .. t+W+max_horizon``, with
+    ``pose_last = poses[t+W-1]``. Poses (odometry ego-pose (x,y,yaw,v) stored by
+    dino_precompute.py alongside the feature grids) are threaded with the SAME
+    window indexing as feats/actions, so the metric-dynamics grounding targets
+    align byte-for-byte with the predicted latents. Episodes are the raw dicts
     written by dino_precompute.py (mmap-loadable)."""
 
     def __init__(self, episodes: list[dict], window: int, max_horizon: int):
@@ -79,6 +104,9 @@ class FeatureWindowDataset(Dataset):
             "actions": ep["actions"][t:t + w].float(),             # [W,2]
             "future_feats": ep["feats_fp16"][t + w:t + w + h],     # [H,N,D]
             "future_actions": ep["actions"][t + w:t + w + h].float(),
+            # odometry ego-pose for the metric-dynamics grounding targets:
+            "future_poses": ep["poses"][t + w:t + w + h].float(),  # [H,4]
+            "pose_last": ep["poses"][t + w - 1].float(),           # [4]
         }
 
 
@@ -97,6 +125,27 @@ def load_feature_episodes(data_root: str, pattern: str,
     eps = [torch.load(f, map_location="cpu", weights_only=True, mmap=True)
            for f in files]
     return eps, dirs[-1]
+
+
+def build_metric_heads(state_dim: int, device: str = "cpu",
+                       hidden: int = 512) -> dict:
+    """Metric-dynamics heads for the flagship-B1 grounding (--mode dynamics
+    parity). Kept OUTSIDE RefAModel and saved under separate ckpt keys
+    ('metric_invdyn', 'step_readout') — exactly mirroring
+    finetune_traj.build_heads — so ckpt['model'] stays a vanilla RefAModel
+    state dict and eval / driving_diagnostic load the trained
+    StepDisplacementReadout by the same 'step_readout' key the flagship uses.
+
+    Both heads take ``state_dim`` (the ADAPTER output width: 768 pool / 2048
+    grid) — the metric grounding therefore shapes the ADAPTER + predictor; the
+    frozen DINO features carry no grad (nothing to ground there, the correct
+    main-vs-REF-A asymmetry)."""
+    return {
+        "metric_invdyn":
+            MetricInverseDynamics(state_dim, hidden=hidden).to(device),
+        "step_readout":
+            StepDisplacementReadout(state_dim, hidden=hidden).to(device),
+    }
 
 
 def _rollout(model: RefAModel, states: Tensor, actions: Tensor,
@@ -124,12 +173,23 @@ def _rollout(model: RefAModel, states: Tensor, actions: Tensor,
 
 
 def compute_losses(model: RefAModel, batch: dict, rollout_k: int,
-                   device: str = "cpu") -> dict:
+                   device: str = "cpu", *, metric_heads: dict | None = None,
+                   mid_horizons=None, invdyn_weight: float = INVDYN_WEIGHT,
+                   fwd_weight: float = FWD_WEIGHT, pose_scale: float = POSE_SCALE,
+                   fwd_step_weight: float = FWD_STEP_WEIGHT) -> dict:
     """One forward pass -> all loss components (tensors, differentiable).
 
     Targets are the adapter outputs of the FUTURE feature rows (predict in
     adapter space), encoded WITH gradients (A1: no stop-grad/EMA crutch) —
-    the collapse monitor + inv-dyn + SigReg-on-preds carry the stability."""
+    the collapse monitor + inv-dyn + SigReg-on-preds carry the stability.
+
+    When ``metric_heads`` is provided (``build_metric_heads``), the flagship-B1
+    metric-dynamics grounding is ADDED on top of the SSL core (which stays
+    byte-for-byte identical): ``invdyn_weight * metric-inverse-dynamics`` on
+    REAL adapter-latent pairs + ``fwd_weight * forward-metric-consistency`` that
+    REUSES the K-step rollout's predicted latents. With ``metric_heads=None``
+    (the SSL-only path exercised by test_refa) the return dict and every loss
+    are unchanged."""
     feats = batch["feats"].to(device)                    # requires_grad False
     actions = batch["actions"].to(device)
     fut_feats = batch["future_feats"].to(device)
@@ -167,18 +227,83 @@ def compute_losses(model: RefAModel, batch: dict, rollout_k: int,
 
     loss = (PRED_WEIGHT * loss_pred + ROLL_WEIGHT * loss_roll
             + INV_WEIGHT * loss_inv + SIGREG_WEIGHT * loss_sig)
-    return {"loss": loss, "pred": loss_pred, "roll": loss_roll,
-            "inv": loss_inv, "sigreg": loss_sig,
-            "n_sig": int(z_pred_all.shape[0]), "states": states}
+    out = {"pred": loss_pred, "roll": loss_roll, "inv": loss_inv,
+           "sigreg": loss_sig, "n_sig": int(z_pred_all.shape[0]),
+           "states": states}
+
+    # ----- ADD: metric-dynamics grounding (flagship B1 parity) --------------
+    # Only the encoder axis differs between the main model and REF-A, so the
+    # grounding math mirrors finetune_traj.compute_losses --mode dynamics; the
+    # only substitution is ENCODER->ADAPTER (grads reach the adapter + predictor
+    # + step readout; the frozen features carry no grad). Metre errors are
+    # divided by ``pose_scale`` so the lambda weights operate on O(1) quantities
+    # and grad-clipping does not starve the SSL gradients (the heads still emit
+    # raw metres — eval reads them directly).
+    if metric_heads is not None:
+        mid, step_ro = metric_heads["metric_invdyn"], metric_heads["step_readout"]
+        mh = list(mid_horizons) if mid_horizons is not None else list(horizons)
+        ps = pose_scale
+        pose_last = batch["pose_last"].to(device).float()        # [B, 4]
+        future_poses = batch["future_poses"].to(device).float()  # [B, Hmax, 4]
+
+        # (a) metric inverse dynamics on REAL adapter pairs (x_t, x_{t+k}) ->
+        #     odometry metric relative ego-pose (Δx, Δy, Δyaw). Grounds ADAPTER.
+        loss_mid = torch.zeros((), device=states.device)
+        metric_de = 0.0
+        for kh in mh:
+            dpose = mid(z_t, fut_states[:, kh - 1])
+            tgt = relative_ego_pose(pose_last, future_poses[:, kh - 1])
+            loss_mid = loss_mid \
+                + ((dpose[..., :2] - tgt[..., :2]) / ps).pow(2).mean() \
+                + wrap_angle(dpose[..., 2] - tgt[..., 2]).pow(2).mean()
+            metric_de += float((dpose[..., :2] - tgt[..., :2]).detach()
+                               .norm(dim=-1).mean())
+        loss_mid = loss_mid / len(mh)
+        metric_de /= len(mh)
+
+        # (b) forward metric consistency: REUSE the K-step rollout PREDICTED
+        #     latents (rolled under TRUE actions in _rollout), decode each
+        #     transition's per-step Δpose via StepDisplacementReadout, accumulate
+        #     SE(2), and L2 the trajectory vs the odometry ego-trajectory. The
+        #     transition pairs are (z_t, roll_preds[0]), (roll_preds[0],
+        #     roll_preds[1]), ... — identical to metric_dynamics.rollout_decode,
+        #     but without re-rolling the predictor (pinned in test_refa_grounding).
+        if rollout_k > 1 and roll_preds:
+            prevs = [z_t] + roll_preds[:-1]
+            step_dp = torch.stack(
+                [step_ro(prevs[j], roll_preds[j])
+                 for j in range(len(roll_preds))], dim=1)         # [B, K, 3]
+            pred_wp = accumulate_se2(step_dp)                     # [B, K, 2]
+            gt_wp = gt_ego_waypoints(pose_last, future_poses,
+                                     range(1, rollout_k + 1))
+            gt_step = gt_step_dposes(pose_last, future_poses, rollout_k)
+            loss_acc = ((pred_wp - gt_wp) / ps).pow(2).mean()
+            loss_step = ((step_dp[..., :2] - gt_step[..., :2]) / ps).pow(2).mean() \
+                + wrap_angle(step_dp[..., 2] - gt_step[..., 2]).pow(2).mean()
+            loss_fwd = loss_acc + fwd_step_weight * loss_step
+            fwd_ade = float((pred_wp.detach() - gt_wp).norm(dim=-1).mean())
+        else:
+            loss_fwd = torch.zeros((), device=states.device)
+            fwd_ade = 0.0
+
+        loss = loss + invdyn_weight * loss_mid + fwd_weight * loss_fwd
+        out.update({"metric_invdyn": loss_mid, "fwd": loss_fwd,
+                    "metric_de": round(metric_de, 4),
+                    "fwd_ade": round(fwd_ade, 4)})
+
+    out["loss"] = loss
+    return out
 
 
-def param_groups(model: RefAModel, lr: float) -> list[dict]:
+def param_groups(model: RefAModel, lr: float, extra_params=()) -> list[dict]:
     """Two named groups: 'adapter' (10x longer warmup, item 4) and
-    'predictor' (predictor trunk + heads + inv-dyn)."""
+    'predictor' (predictor trunk + heads + inv-dyn + any metric-dynamics heads
+    passed via ``extra_params`` — they share the predictor's warmup)."""
     adapter = [p for n, p in model.named_parameters()
                if n.startswith("adapter.")]
     rest = [p for n, p in model.named_parameters()
             if not n.startswith("adapter.")]
+    rest = rest + list(extra_params)
     assert adapter and rest
     return [{"params": rest, "lr": lr, "name": "predictor"},
             {"params": adapter, "lr": lr, "name": "adapter"}]
@@ -192,11 +317,17 @@ def _grad_norm(params) -> float:
     return sq ** 0.5
 
 
-def _save_ckpt(path: Path, model, opt, step: int) -> None:
-    # atomic write: a kill mid-save must not corrupt the resume point
+def _save_ckpt(path: Path, model, opt, step: int, metric_heads=None) -> None:
+    # atomic write: a kill mid-save must not corrupt the resume point. The
+    # metric heads go under their OWN keys ('metric_invdyn', 'step_readout'),
+    # so ckpt['model'] stays a vanilla RefAModel state dict (eval loads it
+    # unchanged; the flagship rollout eval reads ckpt['step_readout']).
     tmp = path.with_suffix(".tmp")
-    torch.save({"model": model.state_dict(), "opt": opt.state_dict(),
-                "step": step}, tmp)
+    blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step}
+    if metric_heads is not None:
+        for name, h in metric_heads.items():
+            blob[name] = h.state_dict()
+    torch.save(blob, tmp)
     tmp.replace(path)
     print(f"[ckpt] saved at step {step}", flush=True)
 
@@ -209,8 +340,17 @@ def train(args) -> dict:
     pred_cfg = smoke_pred_config() if args.smoke else refa_predictor_config()
     model = RefAModel(pred_cfg, bottleneck=args.bottleneck,
                       adapter_kind=args.adapter).to(device)
-    opt = torch.optim.AdamW(param_groups(model, args.lr), lr=args.lr,
-                            betas=(0.9, 0.95), weight_decay=0.05)
+    # Metric-dynamics grounding heads (flagship B1 parity), kept OUTSIDE the
+    # model (saved separately) but optimized WITH it in the predictor group.
+    metric_heads = build_metric_heads(model.state_dim, device)
+    mid_horizons = list(pred_cfg.horizons)
+    metric_params = [p for h in metric_heads.values() for p in h.parameters()]
+    opt = torch.optim.AdamW(param_groups(model, args.lr, metric_params),
+                            lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
+    ground_kw = dict(metric_heads=metric_heads, mid_horizons=mid_horizons,
+                     invdyn_weight=args.invdyn_weight, fwd_weight=args.fwd_weight,
+                     pose_scale=args.pose_scale,
+                     fwd_step_weight=args.fwd_step_weight)
 
     max_h = max(max(pred_cfg.horizons), args.rollout_k)
     train_eps, train_dir = load_feature_episodes(args.data_root, "*train*",
@@ -228,7 +368,11 @@ def train(args) -> dict:
         {"arch": "REF-A", "pred_cfg": dataclasses.asdict(pred_cfg),
          "args": vars(args),
          "loss_weights": {"pred": PRED_WEIGHT, "roll": ROLL_WEIGHT,
-                          "inv": INV_WEIGHT, "sigreg": SIGREG_WEIGHT}},
+                          "inv": INV_WEIGHT, "sigreg": SIGREG_WEIGHT,
+                          "invdyn": args.invdyn_weight, "fwd": args.fwd_weight,
+                          "pose_scale": args.pose_scale,
+                          "fwd_step_weight": args.fwd_step_weight,
+                          "mid_horizons": mid_horizons}},
         indent=2, default=str), encoding="utf-8")
 
     # Interruptible-pod resume; standardizer stats ALWAYS come from the
@@ -239,6 +383,9 @@ def train(args) -> dict:
         ck = torch.load(ckpt_path, map_location=device, weights_only=True)
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
+        for name, h in metric_heads.items():
+            if name in ck:
+                h.load_state_dict(ck[name])
         step = int(ck["step"]) + 1
         print(f"[resume] checkpoint found — resuming at step {step} "
               f"(stored standardizer stats reused)", flush=True)
@@ -268,19 +415,21 @@ def train(args) -> dict:
         t_data += time.perf_counter() - t_d0
 
         opt.zero_grad(set_to_none=True)
-        out = compute_losses(model, batch, args.rollout_k, device)
+        out = compute_losses(model, batch, args.rollout_k, device, **ground_kw)
         if step == 0 and out["n_sig"] < 256:
             print(f"WARNING: SigReg sees only {out['n_sig']} samples/step — "
                   f"statistically starved below ~256 (F-2 rule); increase "
                   f"--batch.", flush=True)
         out["loss"].backward()
         gn_adapter = _grad_norm(model.adapter.parameters())   # pre-clip, item 4
-        gnorm = float(torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0))
+        # clip model + metric heads together (they are jointly optimized).
+        gnorm = float(torch.nn.utils.clip_grad_norm_(
+            list(model.parameters()) + metric_params, 1.0))
         opt.step()
         t_step += time.perf_counter() - t_s0
 
         if step > 0 and step % args.save_every == 0:
-            _save_ckpt(ckpt_path, model, opt, step)
+            _save_ckpt(ckpt_path, model, opt, step, metric_heads)
 
         if step % args.log_every == 0 or step == args.steps - 1:
             sc = lambda t: round(float(t.detach()), 5)  # noqa: E731
@@ -290,6 +439,12 @@ def train(args) -> dict:
                 "roll": sc(out["roll"]),
                 "inv": sc(out["inv"]),
                 "sigreg": sc(out["sigreg"]),
+                # metric-dynamics grounding (flagship B1): loss components +
+                # the interpretable metre diagnostics (metric_de / fwd_ade).
+                "metric_invdyn": sc(out["metric_invdyn"]),
+                "fwd": sc(out["fwd"]),
+                "metric_de": out["metric_de"],
+                "fwd_ade": out["fwd_ade"],
                 # collapse monitor: adapter output per-dim std (trainable
                 # targets — drifting to 0 = collapse-to-easy-targets)
                 "adapter_std": round(model.adapter_dim_std(out["states"]), 5),
@@ -302,11 +457,12 @@ def train(args) -> dict:
             print(json.dumps(last_log), flush=True)
         step += 1
 
-    _save_ckpt(ckpt_path, model, opt, step - 1)     # final resume point
+    _save_ckpt(ckpt_path, model, opt, step - 1, metric_heads)  # final resume point
     metrics = {"final": last_log, "steps": step, "device": device,
                "rollout_k": args.rollout_k,
-               "n_params_trainable": sum(p.numel() for p in model.parameters()
-                                         if p.requires_grad)}
+               "n_params_trainable": (sum(p.numel() for p in model.parameters()
+                                          if p.requires_grad)
+                                      + sum(p.numel() for p in metric_params))}
     # Light val row (REAL-only val dir from the precompute), if present.
     try:
         val_eps, _ = load_feature_episodes(args.data_root, "*val*",
@@ -314,13 +470,17 @@ def train(args) -> dict:
         vds = FeatureWindowDataset(val_eps, pred_cfg.window, max_h)
         if len(vds) > 0:
             model.eval()
+            for h in metric_heads.values():
+                h.eval()
             with torch.no_grad():
                 vb = torch.utils.data.default_collate(
                     [vds[i] for i in range(min(16, len(vds)))])
-                vout = compute_losses(model, vb, args.rollout_k, device)
+                vout = compute_losses(model, vb, args.rollout_k, device,
+                                      **ground_kw)
             metrics["val"] = {
                 "pred": round(float(vout["pred"]), 5),
                 "roll": round(float(vout["roll"]), 5),
+                "metric_de": vout["metric_de"], "fwd_ade": vout["fwd_ade"],
                 "adapter_std": round(model.adapter_dim_std(vout["states"]), 5)}
     except AssertionError:
         pass                                        # no val feature dir
@@ -346,6 +506,17 @@ def main(argv=None):
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--warmup", type=int, default=500,
                     help="predictor LR warmup steps; adapter gets 10x (item 4)")
+    # Metric-dynamics grounding (flagship B1 parity, --mode dynamics).
+    ap.add_argument("--invdyn-weight", type=float, default=INVDYN_WEIGHT,
+                    help="λ_invdyn: metric-inverse-dynamics weight (def 2.0)")
+    ap.add_argument("--fwd-weight", type=float, default=FWD_WEIGHT,
+                    help="λ_fwd: forward-metric-consistency weight (def 1.0); "
+                         "reuses the K-step rollout latents (--rollout-k)")
+    ap.add_argument("--pose-scale", type=float, default=POSE_SCALE,
+                    help="metre normalizer for the metric losses (heads emit "
+                         "raw metres; eval reads them directly)")
+    ap.add_argument("--fwd-step-weight", type=float, default=FWD_STEP_WEIGHT,
+                    help="weight of the per-step Δpose anchor within λ_fwd")
     ap.add_argument("--episodes", type=int, default=0, help="0 = all")
     ap.add_argument("--bottleneck", action="store_true",
                     help="adapter GELU bottleneck variant (pool adapter only)")
