@@ -242,3 +242,25 @@ def test_pipeline_end_to_end_cpu():
         for w in worst["worst"]:
             assert {"corpus", "episode_id", "step", "gt_maneuver",
                     "pred_maneuver"} <= set(w)
+
+
+def test_flagship4b_config_collect_and_probe_cpu():
+    """The behavior eval runs on a flagship4b (smoke) WorldModel — the arch that
+    the new --config flagship4b targets. base250cam's strict load would fail on
+    a real flagship (policy keys + rebalanced depths), so --config must swap the
+    factory; here we prove the flagship4b arch flows through collect + probe and
+    that its tactical_pred turns has_tactical True."""
+    from tanitad.config import flagship4b_smoke_config
+    torch.manual_seed(0)
+    world = WorldModel(flagship4b_smoke_config()).eval()
+    window = world.predictor.cfg.window
+    eps = [generate_episode(i, steps=100, size=64) for i in range(4)]
+    corpora = ["comma2k19", "comma2k19", "physicalai", "physicalai"]
+    with strict_numerics():
+        data = eb.collect(world, eps, corpora, "cpu", window,
+                          math.radians(45.0), math.radians(20.0),
+                          stride=6, batch=4, keep_states=True)
+        assert data["has_tactical"] is True        # flagship4b has tactical_pred
+        man = eb.maneuver_probe_eval(data, [0, 1], 0.5, "cpu", epochs=10)
+    cell = man["encoder_state"]["_all"]["linear"]
+    assert 0.0 <= cell["seed_mean_std"]["balanced_accuracy"][0] <= 1.0

@@ -501,6 +501,96 @@ def imagination_gates(arm: ArmSpec, grid: RefGrid, feat_by_id, device, batch,
 
 
 # --------------------------------------------------------------------------- #
+# Behavior — tactical maneuver + strategic route DECODABILITY (arm-agnostic)   #
+# reuses eval_behavior's PRIMARY instrument verbatim (fit_classifier +         #
+# probe_metrics + gt labels), so the numbers reconcile with eval_behavior.py.  #
+# --------------------------------------------------------------------------- #
+def _behavior_probe(X, y, eid, n_classes, class_names, majority, seeds,
+                    val_frac, epochs, device) -> dict:
+    """Route-parity linear decodability probe — REPLICATES
+    ``eval_behavior.maneuver_probe_eval`` _all/linear cell exactly (same
+    split_by_episode, same fit_classifier, same per-seed balanced-accuracy
+    mean), so a behavior block computed here reconciles with eval_behavior.py."""
+    import eval_behavior as eb
+    eid_list = [int(e) for e in eid]
+    n_ep = len(set(eid_list))
+    if n_ep < 2 or len(eid_list) < 40:
+        return {"skipped": f"too few (ep={n_ep}, n={len(eid_list)})"}
+    accs, bals, f1s = [], [], []
+    for seed in seeds:
+        tr, va = split_by_episode(eid_list, val_frac, seed)
+        if len(tr) < 20 or len(va) < 10:
+            continue
+        pred, _ = eb.fit_classifier(X[tr], y[tr].long(), X[va], n_classes,
+                                    kind="linear", epochs=epochs, seed=seed,
+                                    device=device)
+        cm = eb.confusion_matrix(y[va].long(), pred, n_classes)
+        accs.append(eb.accuracy(cm))
+        bals.append(eb.balanced_accuracy(cm))
+        f1s.append(eb.macro_f1(cm))
+    if not bals:
+        return {"skipped": "no valid splits"}
+    balacc = sum(bals) / len(bals)
+    return {"balanced_accuracy": round(balacc, 4),
+            "macro_f1": round(sum(f1s) / len(f1s), 4),
+            "accuracy": round(sum(accs) / len(accs), 4),
+            "chance_balacc": round(1.0 / n_classes, 4),
+            "beats_chance": bool(balacc > 1.0 / n_classes),
+            "n": len(eid_list), "n_seeds": len(bals),
+            "classes": list(class_names)}
+
+
+def behavior_block(states, grid: RefGrid, device, *, seeds, val_frac, epochs,
+                   turn_deg) -> dict:
+    """Per-arm behavior: tactical maneuver-selection + strategic route-intent
+    DECODABILITY of the compact state (eval_behavior's PRIMARY instrument),
+    arm-agnostic (any encode_window state), on the SAME episode grid as D1-D3.
+    GT labels are kinematic (eval_behavior.gt_maneuver / route_intent). The
+    SELECTION heads (flagship tactical_policy / REF-B tactical head) are per-arch
+    and reported natively elsewhere; the probe is what compares like-with-like."""
+    import math
+
+    import eval_behavior as eb
+    turn_rad = math.radians(turn_deg)
+    man_p, route_p, valid_p = [], [], []
+    for ei, ep in enumerate(grid.episodes):
+        lasts = [last for (e, _t, last) in grid.windows if e == ei]
+        if not lasts:
+            continue
+        lt = torch.tensor(lasts)
+        poses = _poses4(ep.poses)
+        man_p.append(eb.gt_maneuver(poses, lt))
+        r, v = eb.route_intent(poses, lt, poses.shape[0], turn_rad)
+        route_p.append(r)
+        valid_p.append(v)
+    man = torch.cat(man_p).long()
+    route = torch.cat(route_p).long()
+    valid = torch.cat(valid_p).bool()
+    eid = torch.tensor([int(e) for e in grid.eid])
+
+    maneuver = _behavior_probe(states, man, eid, eb.N_MAN, eb.MANEUVER_CLASSES,
+                               eb.LANE_KEEP, seeds, val_frac, epochs, device)
+    vidx = valid.nonzero(as_tuple=True)[0]
+    if len(vidx) >= 40:
+        route_res = _behavior_probe(states[vidx], route[vidx], eid[vidx],
+                                    eb.N_ROUTE, eb.ROUTE_CLASSES, 1, seeds,
+                                    val_frac, epochs, device)
+    else:
+        route_res = {"skipped": f"too few route-valid windows ({len(vidx)})"}
+    balance = {c: round(float((man == i).float().mean()), 4)
+               for i, c in enumerate(eb.MANEUVER_CLASSES)}
+    return {
+        "maneuver_decode": maneuver,
+        "route_decode": route_res,
+        "gt_maneuver_balance": balance,
+        "n_route_valid": int(valid.sum()),
+        "note": ("arm-agnostic decodability probe (eval_behavior PRIMARY "
+                 "instrument) on the compact state; balanced_accuracy vs chance "
+                 "(1/n_classes). Selection heads are per-arch, reported natively."),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Arm builders — construct + load each checkpoint in its real save format       #
 # --------------------------------------------------------------------------- #
 def _load_ck(path, device):
@@ -694,18 +784,21 @@ def armspec_from_resim_arm(resim_arm, device) -> ArmSpec:
 
 def compute_arm_gates(resim_arms, reps, device, *, n_splits=8, val_frac=0.2,
                       seed=0, mlp_epochs=60, batch=8, stride=8,
-                      git_hash="unknown", oracle_target=1.65) -> dict:
+                      git_hash="unknown", oracle_target=1.65,
+                      behavior_epochs=40, behavior_turn_deg=45.0) -> dict:
     """Run the formal gate suite over TanitResim replay arms + episodes.
 
     Reuses :func:`compare` verbatim (same reference grid, same decode_parity,
-    same run_d1/d2/d3, same verdict), so a checkpoint gated here reconciles
-    exactly with a ``compare_arms.py`` run on the same episodes/stride."""
+    same run_d1/d2/d3, same behavior probe, same verdict), so a checkpoint gated
+    here reconciles exactly with a ``compare_arms.py`` run on the same
+    episodes/stride."""
     frame_val = [(rep.episode, rep.corpus) for rep in reps]
     armspecs = [armspec_from_resim_arm(a, device) for a in resim_arms]
     return compare(armspecs, frame_val, {}, device, n_splits=n_splits,
                    val_frac=val_frac, seed=seed, mlp_epochs=mlp_epochs,
                    batch=batch, stride=stride, git_hash=git_hash,
-                   oracle_target=oracle_target)
+                   oracle_target=oracle_target, behavior_epochs=behavior_epochs,
+                   behavior_turn_deg=behavior_turn_deg)
 
 
 def compact_gate_blocks(report: dict) -> dict:
@@ -722,6 +815,9 @@ def compact_gate_blocks(report: dict) -> dict:
         d = r["decode"]
         g = r.get("grounded") or {}
         im = r.get("imagination") or {}
+        bh = r.get("behavior") or {}
+        man = bh.get("maneuver_decode") or {}
+        rte = bh.get("route_decode") or {}
         out["arms"][name] = {
             "D1": d["d1_status"],
             "d1_ade_0_2s": round(d["d1_ade_0_2s"], 4),
@@ -735,6 +831,9 @@ def compact_gate_blocks(report: dict) -> dict:
             "grounded_ade_0_2s": (round(g["ade_0_2s"], 4)
                                   if g.get("ade_0_2s") is not None else None),
             "grounded_beats_cv": g.get("beats_cv_overall"),
+            "maneuver_balacc": man.get("balanced_accuracy"),
+            "maneuver_beats_chance": man.get("beats_chance"),
+            "route_balacc": rte.get("balanced_accuracy"),
         }
     return out
 
@@ -872,6 +971,15 @@ def render_markdown(report: dict) -> str:
             lambda r: f3(r["imagination"]["d3_ratio"]) if r.get("imagination") else "N/A"),
         row("D3 gate (<=1.5x)",
             lambda r: r["imagination"]["d3_status"] if r.get("imagination") else "N/A"),
+        row("maneuver decode bal-acc",
+            lambda r: (f3((r["behavior"]["maneuver_decode"] or {}).get("balanced_accuracy"))
+                       if r.get("behavior") else "N/A")),
+        row("maneuver beats chance",
+            lambda r: (str((r["behavior"]["maneuver_decode"] or {}).get("beats_chance"))
+                       if r.get("behavior") else "N/A")),
+        row("route-intent decode bal-acc",
+            lambda r: (f3((r["behavior"]["route_decode"] or {}).get("balanced_accuracy"))
+                       if r.get("behavior") else "N/A")),
     ]
     # verdict
     v = report["verdict"]
@@ -893,7 +1001,8 @@ def render_markdown(report: dict) -> str:
 
 
 def compare(arms: list, frame_val, feat_by_id, device, *, n_splits, val_frac,
-            seed, mlp_epochs, batch, stride, git_hash, oracle_target) -> dict:
+            seed, mlp_epochs, batch, stride, git_hash, oracle_target,
+            behavior_epochs: int = 0, behavior_turn_deg: float = 45.0) -> dict:
     grid = build_reference_grid(frame_val, arms[0].window, stride)
     # every arm must share the window (identical anchors) — fail loud otherwise.
     for a in arms:
@@ -923,10 +1032,15 @@ def compare(arms: list, frame_val, feat_by_id, device, *, n_splits, val_frac,
             grounded = grounded_rollout_ade(arm, grid, feat_by_id, device, batch)
             imag = imagination_gates(arm, grid, feat_by_id, device, batch,
                                      val_frac, seed, i2)
+            behavior = (behavior_block(
+                states, grid, device,
+                seeds=list(range(seed, seed + n_splits)), val_frac=val_frac,
+                epochs=behavior_epochs, turn_deg=behavior_turn_deg)
+                if behavior_epochs > 0 else None)
             per_arm[arm.name] = {"step": arm.step, "kind": arm.kind,
                                  "state_dim": arm.state_dim, "decode": decode,
                                  "grounded": grounded, "imagination": imag,
-                                 "notes": arm.notes}
+                                 "behavior": behavior, "notes": arm.notes}
     verdict = build_verdict(per_arm, base_de)
     return {
         "exp": "phase0-three-arm-compare", "git_hash": git_hash,
@@ -934,6 +1048,7 @@ def compare(arms: list, frame_val, feat_by_id, device, *, n_splits, val_frac,
                  "val_frac": val_frac, "seed": seed, "stride": stride,
                  "mlp_epochs": mlp_epochs, "waypoint_steps": list(WP_STEPS),
                  "camera_ade_max_m": CAMERA_ADE_MAX,
+                 "behavior_epochs": behavior_epochs,
                  "oracle_ceiling_target_m": oracle_target},
         "val": {"n_common_episodes": len(frame_val),
                 "n_windows": len(grid.windows),
@@ -976,6 +1091,13 @@ def main():
                          "oracle ceiling is 1.52-1.65m; a 0.68m target has been "
                          "cited by steering but is NOT in-tree — override here "
                          "once confirmed. The harness ALSO measures the ceiling.")
+    ap.add_argument("--behavior-epochs", type=int, default=40,
+                    help="probe epochs for the behavior block (tactical maneuver "
+                         "+ strategic route decodability); 0 with --no-behavior")
+    ap.add_argument("--no-behavior", action="store_true",
+                    help="skip the behavior block (decode + grounded only)")
+    ap.add_argument("--behavior-turn-deg", type=float, default=45.0,
+                    help="route-intent turn threshold (deg) for GT route labels")
     ap.add_argument("--git-hash", default="unknown")
     args = ap.parse_args()
 
@@ -1009,7 +1131,9 @@ def main():
                      n_splits=args.n_splits, val_frac=args.val_frac,
                      seed=args.seed, mlp_epochs=args.mlp_epochs, batch=args.batch,
                      stride=args.stride, git_hash=args.git_hash,
-                     oracle_target=args.oracle_target)
+                     oracle_target=args.oracle_target,
+                     behavior_epochs=0 if args.no_behavior else args.behavior_epochs,
+                     behavior_turn_deg=args.behavior_turn_deg)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

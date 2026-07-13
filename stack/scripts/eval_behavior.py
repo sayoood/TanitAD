@@ -767,14 +767,29 @@ def main():
     ap.add_argument("--select-max-windows", type=int, default=2000)
     ap.add_argument("--no-select", action="store_true",
                     help="skip the imagine-and-select section")
+    ap.add_argument("--config", default="base250cam",
+                    choices=["base250cam", "base250", "smoke", "flagship4b",
+                             "flagship4b_reduced", "flagship4b_smoke"],
+                    help="model architecture to instantiate — MUST match the "
+                         "checkpoint (strict load). flagship4b for a real "
+                         "4-brain flagship ckpt (it adds tactical/strategic "
+                         "policy keys + rebalanced depths base250cam cannot "
+                         "load); flagship4b_smoke for CI/tests.")
     ap.add_argument("--git-hash", default="unknown")
     args = ap.parse_args()
 
     import math
-    from tanitad.config import base250cam_config
+    from tanitad.config import (base250_config, base250cam_config,
+                                flagship4b_config, flagship4b_reduced_config,
+                                flagship4b_smoke_config, smoke_config)
     from tanitad.data.mixing import load_episode
     from tanitad.instruments.numerics import strict_numerics
     from tanitad.models.fourbrain import WorldModel
+
+    _CFG = {"base250cam": base250cam_config, "base250": base250_config,
+            "smoke": smoke_config, "flagship4b": flagship4b_config,
+            "flagship4b_reduced": flagship4b_reduced_config,
+            "flagship4b_smoke": flagship4b_smoke_config}
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     out_dir = Path(args.out)
@@ -791,7 +806,7 @@ def main():
             corpora.append(_corpus_of(cd))
     assert episodes, "no val episodes loaded"
 
-    world = WorldModel(base250cam_config())
+    world = WorldModel(_CFG[args.config]())
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
     sd = ck["model"] if "model" in ck else ck
     world.load_state_dict(sd)

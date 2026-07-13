@@ -332,6 +332,10 @@
       nums.appendChild(gateNum("grounded", fmt(gm.grounded_ade_0_2s, 3) + " m"));
     if (gm.d2_dir_acc != null)
       nums.appendChild(gateNum("D2 dir-acc", fmt(gm.d2_dir_acc, 2)));
+    if (gm.maneuver_balacc != null)
+      nums.appendChild(gateNum("maneuver", fmt(gm.maneuver_balacc, 2) + " bal-acc"));
+    if (gm.route_balacc != null)
+      nums.appendChild(gateNum("route", fmt(gm.route_balacc, 2) + " bal-acc"));
     box.appendChild(nums);
     return box;
   }

@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -63,6 +64,75 @@ import compare_arms as ca  # noqa: E402
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# --------------------------------------------------------------------------- #
+# Optional pod pull (dev-box deploy) — refresh the local ckpt + a val subset   #
+# from a training pod over ssh/scp. READ-ONLY on the pod (never writes there); #
+# scp of a checkpoint file is non-disruptive to the running trainer.           #
+# --------------------------------------------------------------------------- #
+def _run(cmd: list, dry: bool):
+    """Run (or, with ``dry``, just print) a shell-FREE command (list argv).
+    Returns the CompletedProcess (or None in dry-run)."""
+    print(f"[pull{':dry-run' if dry else ''}] {' '.join(cmd)}", flush=True)
+    if dry:
+        return None
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def _ssh_mtime(host: str, remote: str, dry: bool):
+    """Remote file mtime (epoch int) via ssh stat; None if unavailable."""
+    cp = _run(["ssh", host, "stat", "-c", "%Y", remote], dry)
+    if cp is None or cp.returncode != 0:
+        return None
+    try:
+        return int(cp.stdout.strip())
+    except ValueError:
+        return None
+
+
+def pull_val_subset(host: str, remote_val: str, local_val: Path, n: int,
+                    dry: bool) -> None:
+    """One-time: pull the FIRST ``n`` ``ep_*.pt`` of a pod val cache into a
+    local ``*val*`` dir. Shell-FREE + cross-platform: (1) list the subset ON
+    THE POD via one ssh (so the glob/sort/head run remotely), (2) one scp of the
+    explicit remote files. Idempotent (skips if already pulled)."""
+    dest = local_val / "physicalai-val"
+    lst_cmd = ["ssh", host,
+               f"cd {remote_val} && ls ep_*.pt | sort | head -{n}"]
+    if dry:                                   # show commands only; touch nothing
+        _run(lst_cmd, dry=True)
+        print(f"[pull:dry-run] scp -q {host}:{remote_val}/ep_XXXX.pt ... "
+              f"(first {n}) {dest}/", flush=True)
+        return
+    dest.mkdir(parents=True, exist_ok=True)
+    if any(dest.glob("ep_*.pt")):
+        return
+    # (1) list the first n episode files on the pod (remote glob/sort/head)
+    lst = _run(lst_cmd, dry=False)
+    if lst is None or lst.returncode != 0:
+        print(f"[pull] WARNING val list failed: {getattr(lst,'stderr','')!r}",
+              flush=True)
+        return
+    files = [f for f in lst.stdout.split() if f.endswith(".pt")]
+    srcs = [f"{host}:{remote_val}/{f}" for f in files]
+    if srcs:
+        _run(["scp", "-q", *srcs, str(dest) + "/"], dry=False)
+
+
+def pull_ckpt(host: str, remote_ckpt: str, local_ckpt: Path,
+              last_mtime, dry: bool):
+    """scp the pod checkpoint locally only when its remote mtime changed
+    (the trainer overwrites ckpt.pt every save) — avoids re-pulling ~1 GB each
+    poll. Returns (new_mtime, pulled_bool)."""
+    mtime = _ssh_mtime(host, remote_ckpt, dry)
+    if not dry and mtime is not None and mtime == last_mtime:
+        return last_mtime, False
+    if not dry:
+        local_ckpt.parent.mkdir(parents=True, exist_ok=True)
+    cp = _run(["scp", "-q", f"{host}:{remote_ckpt}", str(local_ckpt)], dry)
+    ok = dry or (cp is not None and cp.returncode == 0)
+    return (mtime if mtime is not None else last_mtime), ok
 
 
 def _find_ckpt(exp_dir: Path, pattern: str) -> Path | None:
@@ -92,7 +162,9 @@ def run_suite(args, ckpt, device, frame_val, feat_by_id) -> dict:
                         n_splits=args.n_splits, val_frac=args.val_frac,
                         seed=args.seed, mlp_epochs=args.mlp_epochs,
                         batch=args.batch, stride=args.stride,
-                        git_hash=args.git_hash, oracle_target=args.oracle_target)
+                        git_hash=args.git_hash, oracle_target=args.oracle_target,
+                        behavior_epochs=0 if args.no_behavior else args.behavior_epochs,
+                        behavior_turn_deg=args.behavior_turn_deg)
     report["ckpt"] = str(ckpt)
     report["watch_arm"] = args.arm
     return report
@@ -167,10 +239,27 @@ def main():
                     help="dir the trainer writes ckpt.pt into")
     ap.add_argument("--ckpt-glob", default="ckpt.pt",
                     help="checkpoint filename/glob to watch (e.g. 'ckpt*.pt')")
-    ap.add_argument("--frame-cache-dirs", nargs="+", required=True,
-                    help="val frame caches (flagship/refb) — <root>/*val*/ep_*.pt")
+    ap.add_argument("--frame-cache-dirs", nargs="+", default=None,
+                    help="val frame caches (flagship/refb) — <root>/*val*/ep_*.pt "
+                         "(auto-set to the pulled val dir when --pull-host is used)")
     ap.add_argument("--refa-feat-dir", default=None,
                     help="val DINO features (refa arm)")
+    # -- pod pull (dev-box deploy): auto-refresh ckpt + val subset over ssh --
+    ap.add_argument("--pull-host", default=None,
+                    help="ssh alias of the training pod (e.g. tanitad-pod2). "
+                         "Enables auto-pull of ckpt + a val subset to the 4060, "
+                         "non-disruptive to training (read-only scp).")
+    ap.add_argument("--pull-ckpt", default=None,
+                    help="remote checkpoint path (scp'd to <exp-dir>/<ckpt-glob> "
+                         "each poll when its mtime changes)")
+    ap.add_argument("--pull-val", default=None,
+                    help="remote val cache dir (first N ep_*.pt streamed once "
+                         "to <exp-dir>/val_subset/physicalai-val)")
+    ap.add_argument("--pull-val-episodes", type=int, default=None,
+                    help="val subset size to pull (default: --episodes)")
+    ap.add_argument("--dry-run-pull", action="store_true",
+                    help="print the exact scp/ssh pull commands and exit "
+                         "(shows the standing command; runs nothing)")
     ap.add_argument("--out", default=None, help="report dir (default exp-dir/gates)")
     ap.add_argument("--gate-log", default=None,
                     help="JSONL gate log (default <out>/gate_log.jsonl)")
@@ -181,6 +270,11 @@ def main():
     ap.add_argument("--val-frac", type=float, default=0.2)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--mlp-epochs", type=int, default=60)
+    ap.add_argument("--behavior-epochs", type=int, default=40,
+                    help="probe epochs for the behavior block (0 with --no-behavior)")
+    ap.add_argument("--no-behavior", action="store_true",
+                    help="skip the behavior block (decode + grounded gates only)")
+    ap.add_argument("--behavior-turn-deg", type=float, default=45.0)
     ap.add_argument("--pose-tol", type=float, default=1e-2)
     ap.add_argument("--oracle-target", type=float, default=1.65)
     ap.add_argument("--git-hash", default="unknown")
@@ -194,6 +288,31 @@ def main():
 
     device = ("cuda" if torch.cuda.is_available() and torch.cuda.device_count() > 0
               else "cpu")
+    n_val_pull = args.pull_val_episodes or args.episodes
+    ckpt_local = Path(args.exp_dir) / args.ckpt_glob
+    val_local = Path(args.exp_dir) / "val_subset"
+
+    # -- pod pull: --dry-run-pull just SHOWS the exact standing commands --------
+    if args.dry_run_pull:
+        if not (args.pull_host and args.pull_ckpt):
+            raise SystemExit("--dry-run-pull needs --pull-host + --pull-ckpt")
+        if args.pull_val:
+            pull_val_subset(args.pull_host, args.pull_val, val_local,
+                            n_val_pull, dry=True)
+        pull_ckpt(args.pull_host, args.pull_ckpt, ckpt_local, None, dry=True)
+        print("WATCH_GATES_DRY_RUN_DONE", flush=True)
+        return
+
+    # -- pod pull: fetch the val subset ONCE, point the watcher at it ----------
+    if args.pull_host and args.pull_val:
+        pull_val_subset(args.pull_host, args.pull_val, val_local, n_val_pull,
+                        dry=False)
+        if not args.frame_cache_dirs:
+            args.frame_cache_dirs = [str(val_local)]
+    if not args.frame_cache_dirs:
+        raise SystemExit("--frame-cache-dirs is required (or use --pull-host "
+                         "+ --pull-val to auto-provision it)")
+
     need_feature = args.arm == "refa"
     out_dir = Path(args.out) if args.out else Path(args.exp_dir) / "gates"
     gate_log = Path(args.gate_log) if args.gate_log else out_dir / "gate_log.jsonl"
@@ -210,8 +329,12 @@ def main():
           f"val_episodes={len(frame_val)} gate_log={gate_log}", flush=True)
 
     seen: set = set()
+    last_mtime = None
     iters = 0
     while True:
+        if args.pull_host and args.pull_ckpt:      # refresh ckpt when it changed
+            last_mtime, _ = pull_ckpt(args.pull_host, args.pull_ckpt,
+                                      ckpt_local, last_mtime, dry=False)
         one_pass(args, device, frame_val, feat_by_id, seen, gate_log, out_dir)
         iters += 1
         if args.once or (args.max_iters and iters >= args.max_iters):
