@@ -90,7 +90,10 @@ while :; do
   if is_done; then log "DONE detected — stopping"; write_hb done; break; fi
   if [ ! -d "$WORKDIR" ]; then log "WORKDIR $WORKDIR missing — retry in ${backoff}s"; write_hb blocked; sleep "$backoff"; continue; fi
   log "launch attempt (restarts=${RESTARTS}) in ${WORKDIR}"
-  ( cd "$WORKDIR" && exec bash -c "$TRAIN_CMD" ) >>"$TRAIN_OUT" 2>&1 &
+  # exec 9>&- : close the flock fd in the child so the trainer + its DataLoader
+  # workers do NOT inherit the lock (else a killed-supervisor restart races a
+  # lingering worker still holding fd 9 -> "another supervisor holds lock").
+  ( exec 9>&-; cd "$WORKDIR" && exec bash -c "$TRAIN_CMD" ) >>"$TRAIN_OUT" 2>&1 &
   CHILD_PID=$!
   log "trainer pid=${CHILD_PID}"
   # inline heartbeat while the child lives (no extra helper process to lose)
