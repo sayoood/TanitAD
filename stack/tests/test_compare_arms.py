@@ -90,7 +90,7 @@ def _save_refb(tmp: Path) -> str:
     return str(p)
 
 
-def _run(tmp: Path):
+def _run(tmp: Path, behavior_epochs: int = 0):
     raw_root, feat_root = _build_val(tmp)
     arms = [
         ca.build_flagship(_save_flagship(tmp), "smoke", DEV),
@@ -103,7 +103,7 @@ def _run(tmp: Path):
     common, feat_by_id, ids = ca.load_common_val(frame_val, feat_eps, True, 1e-2)
     report = ca.compare(arms, common, feat_by_id, DEV, n_splits=3, val_frac=0.2,
                         seed=0, mlp_epochs=6, batch=8, stride=8, git_hash="test",
-                        oracle_target=1.65)
+                        oracle_target=1.65, behavior_epochs=behavior_epochs)
     return report
 
 
@@ -251,3 +251,58 @@ def test_compact_gate_blocks_shape(tmp_path):
         assert "d1_ade_0_2s" in b and "oracle_ceiling_ade_0_2s" in b
     assert set(blocks["baselines"]) == {"constant_velocity", "go_straight",
                                         "constant_yaw_rate"}
+
+
+# --------------------------------------------------------------------------- #
+# Behavior gate (item 1): arm-agnostic maneuver/route decodability, wired into #
+# the unified suite and reconciling with eval_behavior.py.                     #
+# --------------------------------------------------------------------------- #
+def test_behavior_probe_reconciles_with_eval_behavior(tmp_path):
+    """compare_arms._behavior_probe REPLICATES eval_behavior.maneuver_probe_eval
+    (encoder_state / _all / linear) byte-for-byte on the same data — so the
+    behavior block in the unified suite reconciles with eval_behavior.py."""
+    import math
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import eval_behavior as eb
+    from tanitad.config import flagship4b_smoke_config
+    torch.manual_seed(0)
+    world = WorldModel(flagship4b_smoke_config()).eval()
+    window = world.predictor.cfg.window
+    eps = [generate_episode(i, steps=110, size=64) for i in range(4)]
+    corpora = ["c", "c", "p", "p"]
+    from tanitad.instruments.numerics import strict_numerics
+    with strict_numerics():
+        data = eb.collect(world, eps, corpora, DEV, window, math.radians(45.0),
+                          math.radians(20.0), stride=6, batch=4, keep_states=True)
+        seeds, vf, ep = [0, 1, 2], 0.5, 10
+        mine = ca._behavior_probe(data["encoder_state"], data["man"],
+                                  data["eid_global"], eb.N_MAN,
+                                  eb.MANEUVER_CLASSES, eb.LANE_KEEP, seeds, vf,
+                                  ep, DEV)
+        theirs = eb.maneuver_probe_eval(data, seeds, vf, DEV, ep)
+    cell = theirs["encoder_state"]["_all"]["linear"]
+    assert abs(mine["balanced_accuracy"]
+               - cell["seed_mean_std"]["balanced_accuracy"][0]) < 1e-4
+
+
+def test_behavior_flows_into_suite_and_compact_blocks(tmp_path):
+    """With behavior_epochs>0 every arm gets a behavior block, and the compact
+    block (stats.json / UI) carries maneuver + route bal-acc."""
+    r = _run(tmp_path, behavior_epochs=8)
+    for name in ("flagship", "refa", "refb"):
+        bh = r["arms"][name]["behavior"]
+        assert bh is not None
+        assert "maneuver_decode" in bh and "route_decode" in bh
+    blocks = ca.compact_gate_blocks(r)
+    for name in ("flagship", "refa", "refb"):
+        assert "maneuver_balacc" in blocks["arms"][name]
+        assert "route_balacc" in blocks["arms"][name]
+
+
+def test_behavior_off_by_default(tmp_path):
+    """behavior_epochs=0 (compare default) keeps the block absent — protects the
+    other tests' runtime and the decode-only fast path."""
+    r = _run(tmp_path)
+    assert r["arms"]["flagship"]["behavior"] is None

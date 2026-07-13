@@ -225,7 +225,8 @@ def compute_gate_report(arms, replay_reps, device, args):
                 n_splits=args.gate_splits, val_frac=args.gate_val_frac,
                 seed=args.seed, mlp_epochs=args.gate_mlp_epochs,
                 batch=args.batch, stride=args.stride,
-                oracle_target=args.oracle_target)
+                oracle_target=args.oracle_target,
+                behavior_epochs=0 if args.no_behavior else args.behavior_epochs)
         return report, gates.compact_gate_blocks(report)
     except Exception as e:                              # gates must never break replay
         print(f"[replay] WARNING: formal gate computation failed ({e!r}) — "
@@ -294,6 +295,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="route-resampled episode splits for the D1 gate")
     ap.add_argument("--gate-val-frac", type=float, default=0.2)
     ap.add_argument("--gate-mlp-epochs", type=int, default=60)
+    ap.add_argument("--behavior-epochs", type=int, default=40,
+                    help="probe epochs for the behavior block (tactical maneuver "
+                         "+ strategic route decodability)")
+    ap.add_argument("--no-behavior", action="store_true",
+                    help="skip the behavior block in the gate suite")
     ap.add_argument("--oracle-target", type=float, default=1.65,
                     help="grounded-ADE maturity reference (m); repo oracle "
                          "ceiling is 1.52-1.65m (see phase0_go_criteria.md)")

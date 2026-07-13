@@ -264,3 +264,136 @@ python scripts/replay_app.py --mode export --main-config flagship4b \
     --episodes 150 --out /workspace/resim/flagship-30k
 python scripts/resim_app.py --port 8888 --sessions-root /workspace/resim
 ```
+
+---
+
+## 10. Behavior gate (tactical maneuver + strategic route), unified
+
+`eval_behavior.py` now takes `--config` (`flagship4b` / `flagship4b_reduced` /
+`base250cam` / `smoke` / ...) — it previously hard-coded `base250cam_config()`
+and strict-loaded, so it could not open a flagship4b checkpoint (the 4-brain
+policy keys + rebalanced depths). Standalone:
+
+```bash
+python scripts/eval_behavior.py --ckpt <dir>/ckpt.pt --config flagship4b \
+    --cache-dirs /workspace/data/physicalai_phase0/_epcache --out <dir>/behavior
+```
+
+**Behavior is also wired into the unified suite** (compare_arms / replay_app /
+watch_gates) as a per-arm `behavior` block, arm-agnostic and on the SAME episode
+grid as D1–D3:
+
+- **maneuver decodability** (tactical): balanced-accuracy of a class-weighted
+  linear probe `compact state -> GT maneuver class` (kinematic labels,
+  `eval_behavior.gt_maneuver`), reported vs chance (1/5) with `beats_chance`;
+- **route-intent decodability** (strategic): the same probe `state -> GT route
+  {left,straight,right}` on route-valid windows.
+
+These are `eval_behavior`'s PRIMARY instrument (the flagship has no trained
+maneuver/route *head* in Phase 0 — decodability is a prerequisite for any future
+selection head; the selector itself is a Phase-0 gap). The block reuses
+`eval_behavior.fit_classifier` + `probe_metrics` + labels **verbatim** and
+replicates the `maneuver_probe_eval` encoder_state/_all/linear cell exactly, so
+the unified number **reconciles byte-for-byte** with a standalone
+`eval_behavior.py --config flagship4b` run (pinned by
+`tests/test_compare_arms.test_behavior_probe_reconciles_with_eval_behavior`).
+The imagine-and-select secondary and the per-arch native maneuver/route heads
+(flagship `tactical_policy`, REF-B `TacticalHead`) stay in `eval_behavior.py`
+proper. Toggle with `--behavior-epochs` / `--no-behavior` (on by default in the
+CLI, replay, and watch; off in the `compare()` library default to keep unit
+tests fast).
+
+---
+
+## 11. Turnkey watch_gates deploy (dev-box 4060, auto-pull from pod2)
+
+`watch_gates.py` can auto-pull the flagship's checkpoint + a val subset off the
+training pod and gate them on the 4060 — non-disruptive to training (read-only
+scp; the gate suite never runs on the training GPU). The pull is shell-free
+(one ssh to list the val subset on the pod, one scp for it; a `stat`-guarded scp
+of the checkpoint only when its mtime changes, so a ~1 GB ckpt is not re-pulled
+each poll).
+
+**Standing command** (fires 5k/10k/20k/30k gates automatically as pod2
+overwrites `ckpt.pt` every 1000 steps):
+
+```bash
+python scripts/watch_gates.py --arm flagship --flagship-config flagship4b \
+    --exp-dir  /local/pull/flagship-30k \
+    --pull-host tanitad-pod2 \
+    --pull-ckpt /workspace/experiments/flagship4b-phase0-30k/ckpt.pt \
+    --pull-val  /workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11 \
+    --pull-val-episodes 150 \
+    --episodes 150 --interval-s 600
+```
+
+- val subset pulled ONCE to `--exp-dir/val_subset/physicalai-val/`; ckpt scp'd
+  to `--exp-dir/ckpt.pt` whenever its pod mtime changes; each new step appends a
+  row to `--exp-dir/gates/gate_log.jsonl` + writes `gates_step<STEP>.json/.md`.
+- Preview the exact scp/ssh commands without running anything (or without a
+  configured `tanitad-pod2` alias) via `--dry-run-pull`.
+- Requires the `tanitad-pod2` ssh alias in `~/.ssh/config` (IP/port change on pod
+  restart — update the alias). On Git Bash, prefix `MSYS_NO_PATHCONV=1` (or run
+  from PowerShell) so the POSIX remote paths are not mangled.
+
+**Reconcile check:** the on-pod first gate at step 1000 reported grounded ADE
+7.18 m vs CV 0.825 m (immature, as expected pre-training). A dev-box watch run at
+the same step on the same 150-ep val subset must land in that neighbourhood
+(within route-split CI); a large divergence means a val-subset or config
+mismatch, not a real gate change.
+
+---
+
+## 12. Val provisioning for the 3-arm comparison (trigger on the REF pods)
+
+All three arms must be evaluated on the **same val episode ids** (§5). Here is
+exactly what each pod must produce and how `compare_arms.py` consumes it. The
+flagship's `physicalai-val` cache is the **canonical** episode set; REF-A's
+features and REF-B's eval both key off its `episode_id`s.
+
+| # | producer | artifact | contract | status |
+|---|---|---|---|---|
+| 1 | **pod2 (flagship)** | frame val cache | `physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11/ep_*.pt` (600 eps): `frames_u8`, `actions`, `poses`, `episode_id` | **exists** — the canonical set |
+| 2 | **REF-A pod** | val **DINO features** | `<feat-dir>/ep_*.pt`: `feats_fp16 [T,256,768]`, `actions`, `poses`, `episode_id` — computed on the SAME `physicalai-val` clips (same ids/poses) | **MUST PROVISION** (REF builds skip val) |
+| 3 | **REF-B pod** | — (reuses #1) | REF-B evaluates on the shared frame val cache #1; no REF-B-specific val artifact | reuses #1 |
+
+**Provisioning actions when a REF pod finishes training:**
+
+- **REF-A** — run `dino_precompute.py` over the physicalai epcache root (it
+  globs `*train*`/`*val*`); `--train-n 0` skips train so only the val subset is
+  encoded, `--val-n 150` bounds the shared subset:
+  ```bash
+  # on the REF-A pod — writes <out>/physicalai-val-0c5f7dac3b11-<tag>/ep_*.pt
+  # with feats_fp16 [T,256,768] + the SOURCE actions/poses/episode_id (same clip)
+  python scripts/dino_precompute.py \
+      --cache-root /workspace/data/physicalai_phase0/_epcache \
+      --out /opt/dino_feats --train-n 0 --val-n 150
+  ```
+  (The `_epcache` root must contain both a `*train*` and a `*val*` dir — the
+  flagship's does. Output tag is `dinov3-b16` or `dinov2-b14`, recorded in
+  `<out>/META.json`.) Ship `<out>/physicalai-val-...-<tag>/ep_*.pt` to wherever
+  `compare_arms.py` runs; `episode_id`/`poses` are copied from the source, so the
+  feature file is the same clip in DINO space.
+- **REF-B / flagship** — only the checkpoints need to reach the compare host
+  (`scp <pod>:<exp>/ckpt.pt`); both read frame val cache #1.
+- **Shared subset** — use the first `N` (deterministic sorted `ep_*.pt`, e.g.
+  150) so every arm can hold it in memory and cross-pod fairness holds. Compute
+  REF-A features for exactly those ids.
+
+**How `compare_arms.py` consumes them (fairness enforced in code):**
+```bash
+python scripts/compare_arms.py \
+    --flagship-ckpt <flagship>/ckpt.pt --flagship-config flagship4b \
+    --refa-ckpt <refa>/ckpt.pt --refa-adapter grid \
+    --refb-ckpt <refb>/ckpt.pt \
+    --frame-cache-dirs <dir with physicalai-val-0c5f7dac3b11> \
+    --refa-feat-dir    <dir with physicalai-val-...-dinov2-b14> \
+    --episodes 150 --out <out>/arm_compare
+```
+`load_common_val` intersects the frame cache (#1) and the DINO features (#2) by
+`episode_id`, keeps only episodes present in **both**, and asserts their `poses`
+match to `--pose-tol` — so even if the feature subset and the frame subset differ
+at the edges, the arms are scored on exactly the shared intersection, and the
+episode-id list used is emitted in the report. If REF-A features are missing,
+omit `--refa-ckpt`/`--refa-feat-dir` and the flagship↔REF-B comparison still runs
+on the full frame val.
