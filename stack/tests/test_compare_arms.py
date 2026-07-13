@@ -205,3 +205,49 @@ def test_no_feature_arm_keeps_all_frame_episodes(tmp_path):
     common, feat_by_id, ids = ca.load_common_val(frame_val, [], False, 1e-2)
     assert ids == VAL_IDS
     assert feat_by_id == {}
+
+
+# --------------------------------------------------------------------------- #
+# TanitResim integration: the SAME checkpoint gated via the compare_arms       #
+# builder AND via the resim MainArm -> ArmSpec adapter must reconcile.         #
+# --------------------------------------------------------------------------- #
+def test_resim_arm_reconciles_with_builder(tmp_path):
+    """replay_app.py gates a checkpoint through armspec_from_resim_arm; a
+    compare_arms.py run builds it via build_flagship. Same weights + same
+    episodes => byte-identical D1 (and grounded) — the DRY-shared gate code."""
+    from tanitad.replay.arms import MainArm
+    raw_root, _ = _build_val(tmp_path)
+    ckpt = _save_flagship(tmp_path)
+    frame_val = ca.load_frame_val([str(raw_root)], 8)
+    kw = dict(n_splits=3, val_frac=0.2, seed=0, mlp_epochs=6, batch=8,
+              stride=8, git_hash="t", oracle_target=1.65)
+
+    arm_builder = ca.build_flagship(ckpt, "smoke", DEV)
+    rep_a = ca.compare([arm_builder], frame_val, {}, DEV, **kw)
+
+    main = MainArm(ckpt, cfg=flagship4b_smoke_config(), device=DEV)
+    arm_resim = ca.armspec_from_resim_arm(main, DEV)
+    rep_b = ca.compare([arm_resim], frame_val, {}, DEV, **kw)
+
+    da = rep_a["arms"]["flagship"]["decode"]["d1_ade_0_2s"]
+    db = rep_b["arms"]["main"]["decode"]["d1_ade_0_2s"]
+    assert abs(da - db) < 1e-4, f"D1 reconcile failed: {da} vs {db}"
+    # grounded rollout also reconciles (both load grounding from the same ckpt)
+    ga = rep_a["arms"]["flagship"]["grounded"]["ade_0_2s"]
+    gb = rep_b["arms"]["main"]["grounded"]["ade_0_2s"]
+    assert abs(ga - gb) < 1e-3, f"grounded reconcile failed: {ga} vs {gb}"
+
+
+def test_compact_gate_blocks_shape(tmp_path):
+    """compact_gate_blocks (fed to stats.json + the UI) has the per-arm gate
+    fields the resim panel + GO banner read."""
+    r = _run(tmp_path)
+    blocks = ca.compact_gate_blocks(r)
+    assert set(blocks) >= {"arms", "baselines", "verdict", "n_val_episodes",
+                           "n_windows"}
+    for name in ("flagship", "refa", "refb"):
+        b = blocks["arms"][name]
+        assert b["D1"] in {"PASS", "FAIL", "BLOCKED"}
+        assert "d1_ade_0_2s" in b and "oracle_ceiling_ade_0_2s" in b
+    assert set(blocks["baselines"]) == {"constant_velocity", "go_straight",
+                                        "constant_yaw_rate"}

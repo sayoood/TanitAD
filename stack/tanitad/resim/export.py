@@ -125,7 +125,9 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                   corpora: Sequence[str] | None = None,
                   arm_ckpts: dict[str, str] | None = None,
                   maneuver_classes: Sequence[str] | None = None,
-                  jpeg_quality: int = 80, max_w: int = 640) -> dict:
+                  jpeg_quality: int = 80, max_w: int = 640,
+                  arm_gates: dict | None = None,
+                  gates_summary: dict | None = None) -> dict:
     """Stream ``records`` into a portable session bundle under ``out_dir``.
 
     ``records`` is consumed once (a generator is fine); every record must
@@ -133,6 +135,13 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     Returns the written ``session.json`` dict. Raises on an empty stream or a
     frameless record — a bundle with nothing to show is a wiring bug, not an
     empty success (repo fail-loud doctrine).
+
+    ``arm_gates`` (per-arm compact D1-D3 gate block) and ``gates_summary``
+    (shared baselines + Phase-0 GO verdict) come from
+    ``compare_arms.compact_gate_blocks`` — the SAME formal gate code the
+    ``compare_arms.py`` / ``watch_gates.py`` harness uses, so the UI gate panel
+    reconciles with a standalone gate run. Both optional (overlays-only bundle
+    when omitted).
     """
     out = Path(out_dir)
     frames_dir = out / "frames"
@@ -274,6 +283,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
         "ade": round(float(np.mean(arm_ade[n])), 4) if arm_ade[n] else None,
         "fde": round(float(np.mean(arm_fde[n])), 4) if arm_fde[n] else None,
         "latency_p50": _p50(arm_lat[n]),
+        "gates": (arm_gates.get(n) if arm_gates else None),
     } for n in arm_names]
 
     session = {
@@ -286,6 +296,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             "corpora": list(corpora) if corpora else corpora_seen,
             "arms": arms_meta,
             "episodes": ep_meta,
+            "gates": gates_summary,      # shared baselines + Phase-0 GO verdict
         },
         "episodes": episodes_out,
     }

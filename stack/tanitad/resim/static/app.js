@@ -282,6 +282,9 @@
     head.appendChild(legendEl(true, false));
     app.appendChild(head);
 
+    // Phase-0 GO verdict banner (shared formal-gate suite)
+    if (S.sess.meta.gates) app.appendChild(buildGoBanner(S.sess.meta.gates));
+
     // arm columns
     var cols = el("div", "arm-cols");
     armNames().forEach(function (n) {
@@ -293,6 +296,68 @@
     app.appendChild(buildMaster(dom));
 
     S.dom = dom;
+  }
+
+  // --- formal-gate UI (D1-D3 + Phase-0 GO verdict) ------------------------
+  function gateBadge(label, status) {
+    var s = (status || "N/A").toString().toUpperCase();
+    var cls = "gate-badge gate-" +
+      (s === "PASS" ? "pass" : s === "FAIL" ? "fail" :
+        s === "BLOCKED" ? "blocked" : "na");
+    var b = el("span", cls);
+    b.appendChild(el("span", "gb-k", label));
+    b.appendChild(el("span", "gb-v", s));
+    return b;
+  }
+
+  function gateNum(k, v) {
+    var m = el("div", "m");
+    m.appendChild(el("div", "k", k));
+    m.appendChild(el("div", "v", v));
+    return m;
+  }
+
+  function buildGatesPanel(name, gm) {
+    var box = el("div", "gates-panel");
+    box.appendChild(el("div", "cap", "Formal gates (D1–D3, necessary-not-sufficient)"));
+    var badges = el("div", "gate-badges");
+    badges.appendChild(gateBadge("D1", gm.D1));
+    badges.appendChild(gateBadge("D2", gm.D2));
+    badges.appendChild(gateBadge("D3", gm.D3));
+    box.appendChild(badges);
+    var nums = el("div", "metrics gate-metrics");
+    nums.appendChild(gateNum("D1 ADE", fmt(gm.d1_ade_0_2s, 3) + " m"));
+    nums.appendChild(gateNum("oracle", fmt(gm.oracle_ceiling_ade_0_2s, 3) + " m"));
+    if (gm.grounded_ade_0_2s != null)
+      nums.appendChild(gateNum("grounded", fmt(gm.grounded_ade_0_2s, 3) + " m"));
+    if (gm.d2_dir_acc != null)
+      nums.appendChild(gateNum("D2 dir-acc", fmt(gm.d2_dir_acc, 2)));
+    box.appendChild(nums);
+    return box;
+  }
+
+  function buildGoBanner(gates) {
+    var box = el("div", "go-banner");
+    var v = gates.verdict || {};
+    var pm = (v.per_metric || {}).d1_decode_ade_0_2s || {};
+    var winner = pm.winner_lowest || "—";
+    var bl = gates.baselines || {};
+    var txt = "Phase-0 gates — CV floor " +
+      fmt(bl.constant_velocity, 2) + " m · D1 decode winner: " + winner;
+    var edge = v.hierarchy_edge_necessary_conditions;
+    if (edge) {
+      txt += " · flagship beats refs (D1): " +
+        edge.flagship_beats_refs_on_d1_decode +
+        " · grounded>CV: " + edge.flagship_grounded_beats_cv_floor;
+    }
+    var main = el("div", "go-main", txt);
+    box.appendChild(main);
+    var sub = el("div", "go-sub",
+      "Necessary, not sufficient — closed-loop D4–D6 arbitrate (see phase0_go_criteria.md). " +
+      "Gated on " + (gates.n_val_episodes || "?") + " val episodes / " +
+      (gates.n_windows || "?") + " windows.");
+    box.appendChild(sub);
+    return box;
   }
 
   function buildArmColumn(name, dom) {
@@ -315,6 +380,9 @@
     metrics.appendChild(mAde); metrics.appendChild(mLat);
     hd.appendChild(metrics);
     col.appendChild(hd);
+
+    // formal gates (D1-D3 + oracle ceiling) — the shared compare_arms suite
+    if (armMeta.gates) col.appendChild(buildGatesPanel(name, armMeta.gates));
 
     // camera
     col.appendChild(el("div", "cap", "Camera + trajectory fan"));

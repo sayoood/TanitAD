@@ -187,6 +187,34 @@ button.primary { background: linear-gradient(180deg, #f5b301, #d99a00); color: #
 .heads .man .gtmark { color: var(--gt); font-weight: 700; }
 .heads .none { font-size: 11px; color: var(--ink-faint); font-style: italic; }
 
+/* ---------- formal gates (D1-D3 + Phase-0 GO verdict) ---------- */
+.go-banner {
+  background: var(--panel-solid); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: 10px;
+  padding: 9px 14px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.go-banner .go-main { font-size: 13px; font-weight: 600; color: var(--ink); }
+.go-banner .go-sub { font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+.gates-panel {
+  background: #0e162288; border: 1px solid var(--line-soft);
+  border-radius: 9px; padding: 8px 9px 9px; margin-bottom: 4px;
+}
+.gates-panel .cap { margin: 0 0 6px; }
+.gate-badges { display: flex; gap: 7px; margin-bottom: 8px; }
+.gate-badge {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  flex: 1; padding: 4px 2px; border-radius: 7px; border: 1px solid #ffffff12;
+}
+.gate-badge .gb-k { font-size: 9.5px; color: var(--ink-faint); letter-spacing: .5px; }
+.gate-badge .gb-v { font-size: 11.5px; font-weight: 700; font-family: var(--mono); letter-spacing: .5px; }
+.gate-pass    { background: #12351f; border-color: #2fbf7155; } .gate-pass .gb-v { color: #4fe08a; }
+.gate-fail    { background: #3a1622; border-color: #f5577a55; } .gate-fail .gb-v { color: #ff7a97; }
+.gate-blocked { background: #34290c; border-color: #f5b30155; } .gate-blocked .gb-v { color: #f5b301; }
+.gate-na      { background: #1a2436; border-color: var(--line-soft); } .gate-na .gb-v { color: var(--ink-faint); }
+.gate-metrics { display: flex; gap: 14px; flex-wrap: wrap; }
+.gate-metrics .m .k { font-size: 9.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .6px; }
+.gate-metrics .m .v { font-size: 12.5px; font-weight: 700; font-family: var(--mono); }
+
 /* ---------- master panel ---------- */
 .master {
   background: var(--panel-solid); border: 1px solid var(--line);

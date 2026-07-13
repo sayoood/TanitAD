@@ -222,3 +222,45 @@ saves) — fine for a single milestone, not for a tight poll loop.
 The dev-box path also keeps the comparison honest across pods: all three arms'
 checkpoints are pulled to one machine and evaluated on one shared val subset with
 one code path.
+
+---
+
+## 9. Unified eval in TanitResim (visual overlays + formal gates, one tool)
+
+The formal gate suite is wired into **TanitResim** so one tool gives visual
+overlays + per-arm metrics + the formal D1–D3 gates + the Phase-0 GO verdict, in
+BOTH the script and the web UI. The gate code has ONE home
+(`compare_arms.py`); `replay_app.py` adapts each loaded replay arm
+(`MainArm`/`RefAArm`/`RefBArm`) into the same `ArmSpec` and calls
+`compare_arms.compute_arm_gates` — so a checkpoint gated inside TanitResim
+reconciles **byte-for-byte** with a standalone `compare_arms.py` run on the same
+episodes (pinned by `tests/test_compare_arms.test_resim_arm_reconciles_with_builder`).
+
+- **`replay_app.py --mode test`** — `stats.json` gains, per arm,
+  `arms[name].gates` (D1/D2/D3 PASS/FAIL/BLOCKED + `d1_ade_0_2s`,
+  `oracle_ceiling_ade_0_2s`, `grounded_ade_0_2s`, `d2_dir_acc`, `d3_ratio`) plus
+  a top-level `gates` block (shared baselines + Phase-0 GO verdict). The existing
+  ADE/FDE/action/maneuver/latency stats are untouched.
+- **`replay_app.py --mode export` / `viz`** — the session bundle
+  (`session.json`) carries `meta.arms[*].gates` + `meta.gates` (verdict +
+  baselines); `--mode viz` writes the same gated `stats.json` as `test`.
+- **Web UI** (`resim/static/app.js` + `style.css`) — a per-arm **Formal gates**
+  panel (D1/D2/D3 status badges + D1 ADE / oracle ceiling / grounded ADE / D2
+  dir-acc) renders alongside the camera-fan and head-readout panels, and a
+  **Phase-0 GO banner** (CV floor, D1 decode winner, flagship hierarchy-edge
+  conditions, the necessary-not-sufficient caveat) sits under the session header.
+
+Set `--main-config flagship4b` so TanitResim's `main` arm IS the 4-brain
+flagship (visualized + gated). Gates run over ALL loaded val episodes (the gate
+does its own internal route-resampled splits), NOT the resim fit/replay overlay
+split — that is what makes the numbers reconcile with `compare_arms.py`. Opt out
+with `--no-gates`; a gate failure never breaks the overlay/stats output.
+
+Unified command (flagship + REF-A + REF-B, overlays + gates + UI bundle):
+```bash
+python scripts/replay_app.py --mode export --main-config flagship4b \
+    --arms main:<flagship>/ckpt.pt refa:<refa>/ckpt.pt:grid refb:<refb>/ckpt.pt \
+    --data-root /workspace/data/physicalai/_epcache --corpus-glob '*val*' \
+    --episodes 150 --out /workspace/resim/flagship-30k
+python scripts/resim_app.py --port 8888 --sessions-root /workspace/resim
+```

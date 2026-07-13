@@ -596,6 +596,150 @@ def build_refb(ckpt, smoke, device) -> ArmSpec:
 
 
 # --------------------------------------------------------------------------- #
+# TanitResim bridge — adapt an already-loaded replay arm into an ArmSpec so    #
+# the SAME gate code runs from replay_app.py (one home, no divergent copies).  #
+# --------------------------------------------------------------------------- #
+def armspec_from_resim_arm(resim_arm, device) -> ArmSpec:
+    """Build a gate :class:`ArmSpec` from a loaded ``tanitad.replay.arms`` arm
+    (MainArm / RefAArm / RefBArm) WITHOUT re-loading weights — the resim arm's
+    own model + encoder path is reused, so replay_app and compare_arms decode
+    the IDENTICAL states through the IDENTICAL gate functions. Grounding /
+    step-readout are loaded from the arm's checkpoint on demand (the resim arms
+    do not carry them) so grounded-rollout ADE is available when present."""
+    name = resim_arm.name
+    notes: list[str] = []
+
+    def _grounding_op():
+        from tanitad.models.metric_dynamics import (HierarchicalGrounding,
+                                                    StepDisplacementReadout)
+        try:
+            ck = torch.load(resim_arm.ckpt, map_location=device,
+                            weights_only=True)
+        except Exception:
+            return None, notes
+        sd_key = "grounding" if "grounding" in ck else (
+            "step_readout" if "step_readout" in ck else None)
+        return ck, sd_key
+
+    if name == "main":
+        world = resim_arm.world
+        ck, sd_key = _grounding_op()
+        step_readout = None
+        if sd_key == "grounding":
+            from tanitad.models.metric_dynamics import HierarchicalGrounding
+            gr = HierarchicalGrounding(world.state_dim).to(device).eval()
+            gr.load_state_dict(ck["grounding"])
+            step_readout = gr.step["op"]
+        else:
+            notes.append("no 'grounding' in ckpt — grounded-rollout ADE N/A")
+        return ArmSpec(
+            name="main", kind="frame", model=world, window=resim_arm.window,
+            encode_window=world.encode_window, encode_one=world.encode,
+            state_dim=world.state_dim, step=resim_arm.step,
+            predictor=world.predictor,
+            imagine1=lambda s, a: world.imagine(s, a)[1],
+            grounded_step_readout=step_readout,
+            native_label="grounded operative rollout under true actions",
+            notes=notes)
+
+    if name == "refa":
+        model = resim_arm.model
+        tok = resim_arm.tokenizer            # ToyTokenizer or DinoV2Tokenizer
+
+        def enc_win(fw):                     # [B,W,C,H,W'] -> [B,W,S]
+            b, w = fw.shape[:2]
+            grids = tok(fw.reshape(b * w, *fw.shape[2:]))
+            return model.encode_window(grids.reshape(b, w, *grids.shape[1:]))
+
+        ck, sd_key = _grounding_op()
+        step_readout = None
+        if sd_key == "step_readout":
+            from tanitad.models.metric_dynamics import StepDisplacementReadout
+            step_readout = StepDisplacementReadout(model.state_dim).to(
+                device).eval()
+            step_readout.load_state_dict(ck["step_readout"])
+        else:
+            notes.append("no 'step_readout' in ckpt — grounded-rollout ADE N/A")
+        return ArmSpec(
+            name="refa", kind="frame", model=model, window=resim_arm.window,
+            encode_window=enc_win,
+            encode_one=lambda f: model.encode(tok(f)),
+            state_dim=model.state_dim, step=resim_arm.step,
+            predictor=model.predictor,
+            imagine1=lambda s, a: model.predict(s, a)[1],
+            grounded_step_readout=step_readout,
+            native_label="grounded operative rollout under true actions "
+                         "(online-tokenized adapter state)",
+            notes=notes + ["REF-A tokenizes frames online for the gate pass "
+                           "(same encoder path as replay)"])
+
+    if name == "refb":
+        model = resim_arm.model
+
+        def native_wp(fw):
+            wp = model(fw)["waypoints"]
+            return torch.stack([wp[k] for k in WP_STEPS], dim=1)
+
+        return ArmSpec(
+            name="refb", kind="frame", model=model, window=resim_arm.window,
+            encode_window=model.encode_window, encode_one=model.encode,
+            state_dim=model.state_dim, step=resim_arm.step,
+            native_waypoints=native_wp,
+            native_label="direct tactical waypoint head (behaviour cloning, "
+                         "NO world model)",
+            notes=["REF-B: no imagination (D2/D3 N/A), no grounded rollout"])
+
+    raise ValueError(f"unknown resim arm name {name!r}")
+
+
+def compute_arm_gates(resim_arms, reps, device, *, n_splits=8, val_frac=0.2,
+                      seed=0, mlp_epochs=60, batch=8, stride=8,
+                      git_hash="unknown", oracle_target=1.65) -> dict:
+    """Run the formal gate suite over TanitResim replay arms + episodes.
+
+    Reuses :func:`compare` verbatim (same reference grid, same decode_parity,
+    same run_d1/d2/d3, same verdict), so a checkpoint gated here reconciles
+    exactly with a ``compare_arms.py`` run on the same episodes/stride."""
+    frame_val = [(rep.episode, rep.corpus) for rep in reps]
+    armspecs = [armspec_from_resim_arm(a, device) for a in resim_arms]
+    return compare(armspecs, frame_val, {}, device, n_splits=n_splits,
+                   val_frac=val_frac, seed=seed, mlp_epochs=mlp_epochs,
+                   batch=batch, stride=stride, git_hash=git_hash,
+                   oracle_target=oracle_target)
+
+
+def compact_gate_blocks(report: dict) -> dict:
+    """Per-arm compact gate block for stats.json / the UI (the full instrument
+    rows stay in the report). One block per arm + the shared verdict."""
+    out: dict = {"arms": {}, "baselines": {}, "verdict": report["verdict"],
+                 "n_val_episodes": report["val"]["n_common_episodes"],
+                 "n_windows": report["val"]["n_windows"],
+                 "camera_ade_max_m": report["eval"]["camera_ade_max_m"],
+                 "oracle_ceiling_target_m": report["eval"]["oracle_ceiling_target_m"]}
+    for n in ("constant_velocity", "go_straight", "constant_yaw_rate"):
+        out["baselines"][n] = round(report["baselines"][n]["ade_0_2s"], 4)
+    for name, r in report["arms"].items():
+        d = r["decode"]
+        g = r.get("grounded") or {}
+        im = r.get("imagination") or {}
+        out["arms"][name] = {
+            "D1": d["d1_status"],
+            "d1_ade_0_2s": round(d["d1_ade_0_2s"], 4),
+            "oracle_ceiling_ade_0_2s": round(d["oracle_ceiling_ade_0_2s"], 4),
+            "heldout_over_oracle": (round(d["heldout_over_oracle"], 4)
+                                    if d["heldout_over_oracle"] else None),
+            "D2": im.get("d2_status", "N/A"),
+            "d2_dir_acc": im.get("d2_dir_acc"),
+            "D3": im.get("d3_status", "N/A"),
+            "d3_ratio": (round(im["d3_ratio"], 4) if im.get("d3_ratio") else None),
+            "grounded_ade_0_2s": (round(g["ade_0_2s"], 4)
+                                  if g.get("ade_0_2s") is not None else None),
+            "grounded_beats_cv": g.get("beats_cv_overall"),
+        }
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # Comparison + verdict                                                         #
 # --------------------------------------------------------------------------- #
 def _min_winner(vals: dict):

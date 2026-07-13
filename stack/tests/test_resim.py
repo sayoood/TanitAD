@@ -151,6 +151,46 @@ def test_export_step_schema_and_heads(tmp_path):
     assert refb["maneuver_gt"] == 0 and refb["nav_cmd"] == 1
 
 
+# ---------- (a2) formal-gate panel data (compare_arms integration) -----------
+
+def test_export_attaches_formal_gates(tmp_path):
+    """arm_gates + gates_summary (from compare_arms.compact_gate_blocks) flow
+    into the bundle so the UI gate panel + GO banner have their data."""
+    arm_gates = {
+        "main": {"D1": "PASS", "d1_ade_0_2s": 0.42,
+                 "oracle_ceiling_ade_0_2s": 0.30, "D2": "PASS",
+                 "d2_dir_acc": 0.88, "D3": "PASS", "d3_ratio": 1.1,
+                 "grounded_ade_0_2s": 0.55, "grounded_beats_cv": True},
+        "refb": {"D1": "FAIL", "d1_ade_0_2s": 1.9,
+                 "oracle_ceiling_ade_0_2s": 0.31, "D2": "N/A",
+                 "d2_dir_acc": None, "D3": "N/A", "d3_ratio": None,
+                 "grounded_ade_0_2s": 2.1, "grounded_beats_cv": False},
+    }
+    gates_summary = {
+        "baselines": {"constant_velocity": 0.28, "go_straight": 0.31,
+                      "constant_yaw_rate": 0.30},
+        "verdict": {"per_metric": {"d1_decode_ade_0_2s":
+                                   {"winner_lowest": "main"}}},
+        "n_val_episodes": 12, "n_windows": 240,
+        "camera_ade_max_m": 1.0, "oracle_ceiling_target_m": 1.65}
+    bundle, session = _build(tmp_path, "gated", arm_gates=arm_gates,
+                             gates_summary=gates_summary)
+    meta = session["meta"]
+    assert meta["gates"] == gates_summary
+    by = {a["name"]: a for a in meta["arms"]}
+    assert by["main"]["gates"]["D1"] == "PASS"
+    assert by["main"]["gates"]["grounded_beats_cv"] is True
+    assert by["refb"]["gates"]["D2"] == "N/A"
+
+
+def test_export_gates_optional(tmp_path):
+    """A bundle exported without gates is still valid (overlays-only)."""
+    bundle, session = _build(tmp_path, "nogates")
+    assert session["meta"]["gates"] is None
+    for a in session["meta"]["arms"]:
+        assert a["gates"] is None
+
+
 def test_worst_step_tracks_largest_error(tmp_path):
     # ADE grows with t (scale 1+0.1t), so the last step of each episode is worst.
     _, session = _build(tmp_path)

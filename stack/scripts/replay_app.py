@@ -52,11 +52,14 @@ from pathlib import Path
 
 # Bind the script to ITS OWN checkout's `tanitad` (worktrees/pods may carry
 # an editable install pointing at a different checkout — silent version skew
-# in a regression gate would be poison).
+# in a regression gate would be poison). Add the scripts dir too so the shared
+# formal-gate code in compare_arms.py imports (one home, no divergent copies).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch
 
+import compare_arms as gates
 from tanitad.instruments.numerics import strict_numerics
 from tanitad.replay import stats as replay_stats
 from tanitad.replay.arms import MainArm, RefAArm, RefBArm, ToyTokenizer
@@ -91,8 +94,25 @@ def parse_arm_spec(spec: str) -> tuple[str, str, str | None]:
     return name, rest, opt
 
 
+def _main_cfg(main_config: str | None, smoke: bool):
+    """Config for the ``main`` arm. ``--main-config`` lets the main-track arm be
+    the flagship 4-brain (so TanitResim can visualize + gate the real flagship),
+    else the historical default (smoke/base250cam)."""
+    from tanitad.config import (base250cam_config, flagship4b_config,
+                                flagship4b_reduced_config,
+                                flagship4b_smoke_config, smoke_config)
+    table = {"smoke": smoke_config, "base250cam": base250cam_config,
+             "flagship4b": flagship4b_config,
+             "flagship4b_reduced": flagship4b_reduced_config,
+             "flagship4b_smoke": flagship4b_smoke_config}
+    if main_config:
+        return table[main_config]()
+    return smoke_config() if smoke else base250cam_config()
+
+
 def build_arms(specs: list[str], smoke: bool, device: str,
-               refa_tokenizer: str, imag_rel: bool) -> list:
+               refa_tokenizer: str, imag_rel: bool,
+               main_config: str | None = None) -> list:
     """Instantiate arm adapters from CLI specs (fail-loud on duplicates)."""
     parsed = [parse_arm_spec(s) for s in specs]
     if len({p[0] for p in parsed}) != len(parsed):
@@ -101,8 +121,7 @@ def build_arms(specs: list[str], smoke: bool, device: str,
     arms = []
     for name, ckpt, opt in parsed:
         if name == "main":
-            from tanitad.config import base250cam_config, smoke_config
-            cfg = smoke_config() if smoke else base250cam_config()
+            cfg = _main_cfg(main_config, smoke)
             arms.append(MainArm(ckpt, cfg=cfg, device=device,
                                 compute_imag_rel=imag_rel))
         elif name == "refa":
@@ -159,13 +178,24 @@ def _run_export(args, engine, arms, fit_reps, replay_reps, corpora, out) -> int:
             if getattr(arm, "fit_report", None):
                 print(f"[resim] {arm.name} probes: {arm.fit_report}",
                       flush=True)
+        # Formal gates (shared code) BEFORE streaming export so the bundle
+        # carries the D1-D3 verdict alongside the overlays. Gate over ALL val
+        # episodes (fit + replay) so numbers reconcile with compare_arms.py.
+        _report, gate_blocks = compute_gate_report(
+            arms, list(fit_reps) + list(replay_reps), engine.device, args)
         t0 = time.perf_counter()
         session = export_bundle(
             engine.run(replay_reps), out, session_name,
             corpora=corpora,
             arm_ckpts={a.name: getattr(a, "ckpt", "") for a in arms},
             maneuver_classes=maneuver_classes,
-            jpeg_quality=args.jpeg_quality)
+            jpeg_quality=args.jpeg_quality,
+            arm_gates=(gate_blocks["arms"] if gate_blocks else None),
+            gates_summary=({k: gate_blocks[k] for k in
+                            ("baselines", "verdict", "n_val_episodes",
+                             "n_windows", "camera_ade_max_m",
+                             "oracle_ceiling_target_m")}
+                           if gate_blocks else None))
     wall_s = time.perf_counter() - t0
 
     n_steps = sum(len(ep["steps"]) for ep in session["episodes"])
@@ -179,6 +209,28 @@ def _run_export(args, engine, arms, fit_reps, replay_reps, corpora, out) -> int:
     print(f"[resim] serve with: python scripts/resim_app.py --port 8888 "
           f"--sessions-root {Path(out).parent}", flush=True)
     return 0
+
+
+def compute_gate_report(arms, replay_reps, device, args):
+    """Formal D1-D3 gates + baselines + Phase-0 GO verdict over the replay arms,
+    via the SHARED compare_arms gate code (one metric path — reconciles with a
+    compare_arms.py run on the same episodes). Returns (full_report,
+    compact_blocks) or (None, None) on failure/opt-out (never breaks replay)."""
+    if args.no_gates:
+        return None, None
+    try:
+        with strict_numerics():
+            report = gates.compute_arm_gates(
+                arms, replay_reps, device,
+                n_splits=args.gate_splits, val_frac=args.gate_val_frac,
+                seed=args.seed, mlp_epochs=args.gate_mlp_epochs,
+                batch=args.batch, stride=args.stride,
+                oracle_target=args.oracle_target)
+        return report, gates.compact_gate_blocks(report)
+    except Exception as e:                              # gates must never break replay
+        print(f"[replay] WARNING: formal gate computation failed ({e!r}) — "
+              f"stats/overlays still written; gates omitted", flush=True)
+        return None, None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -229,6 +281,23 @@ def main(argv: list[str] | None = None) -> int:
                     help="fp16 autocast on CUDA")
     ap.add_argument("--smoke", action="store_true",
                     help="smoke-sized model configs (CI/demo)")
+    ap.add_argument("--main-config", default=None,
+                    choices=("smoke", "base250cam", "flagship4b",
+                             "flagship4b_reduced", "flagship4b_smoke"),
+                    help="config for the 'main' arm (default: base250cam, or "
+                         "smoke with --smoke). Set flagship4b to gate/visualize "
+                         "the real 4-brain flagship.")
+    ap.add_argument("--no-gates", action="store_true",
+                    help="skip the formal D1-D3 gate suite (overlays + ADE/FDE "
+                         "stats only)")
+    ap.add_argument("--gate-splits", type=int, default=8,
+                    help="route-resampled episode splits for the D1 gate")
+    ap.add_argument("--gate-val-frac", type=float, default=0.2)
+    ap.add_argument("--gate-mlp-epochs", type=int, default=60)
+    ap.add_argument("--oracle-target", type=float, default=1.65,
+                    help="grounded-ADE maturity reference (m); repo oracle "
+                         "ceiling is 1.52-1.65m (see phase0_go_criteria.md)")
+    ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--refa-tokenizer", choices=("dino", "toy"),
                     default="dino")
     ap.add_argument("--no-imag-rel", action="store_true",
@@ -242,7 +311,8 @@ def main(argv: list[str] | None = None) -> int:
     out.mkdir(parents=True, exist_ok=True)
 
     arms = build_arms(args.arms, args.smoke, device, args.refa_tokenizer,
-                      imag_rel=not args.no_imag_rel)
+                      imag_rel=not args.no_imag_rel,
+                      main_config=args.main_config)
     reps = load_corpora(args.data_root, episodes=args.episodes,
                         pattern=args.corpus_glob)
     needs_fit = any(a.requires_fit for a in arms)
@@ -305,15 +375,33 @@ def main(argv: list[str] | None = None) -> int:
         "arms": {a.name: a.describe() for a in arms},
     }
     stats = replay_stats.aggregate(records, meta=meta)
+
+    # Formal D1-D3 gates + baselines + Phase-0 GO verdict (shared gate code).
+    # Gate over ALL loaded val episodes (the gate does its own internal
+    # route-resampled splits) so the numbers reconcile with a compare_arms.py
+    # run on the same cache — NOT the resim fit/replay overlay split.
+    report, gate_blocks = compute_gate_report(arms, reps, device, args)
+    if gate_blocks is not None:
+        for name, block in gate_blocks["arms"].items():
+            if name in stats["arms"]:
+                stats["arms"][name]["gates"] = block
+        stats["gates"] = {k: gate_blocks[k] for k in
+                          ("baselines", "verdict", "n_val_episodes",
+                           "n_windows", "camera_ade_max_m",
+                           "oracle_ceiling_target_m")}
+
     stats_path = out / "stats.json"
     stats_path.write_text(json.dumps(stats, indent=2), encoding="utf-8")
     print(f"[replay] {len(records)} windows in {wall_s:.1f}s -> {stats_path}",
           flush=True)
     for name, m in stats["arms"].items():
+        g = m.get("gates", {})
+        gate_txt = (f" | D1 {g['D1']} (ade {g['d1_ade_0_2s']:.3f}) "
+                    f"D2 {g['D2']} D3 {g['D3']}" if g else "")
         print(f"  {name}: ADE {m['ade']:.3f} m | "
               f"ADE@20 {m['ade@20']:.3f} m | "
               f"steer MAE {m.get('steer_mae', float('nan')):.4f} | "
-              f"latency p50 {m['latency_p50_ms']:.1f} ms", flush=True)
+              f"latency p50 {m['latency_p50_ms']:.1f} ms{gate_txt}", flush=True)
 
     exit_code = 0
     if args.baseline:
