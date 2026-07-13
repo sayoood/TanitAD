@@ -17,7 +17,10 @@
 # -----------------------------------------------------------------------------
 RUNS_DIR="${RUNS_DIR:-/workspace/ops/runs.d}"
 HOOK_LOG="${HOOK_LOG:-/workspace/ops/boot.log}"
-SUPERVISOR="${SUPERVISOR:-/workspace/TanitAD/stack/scripts/supervise_run.sh}"
+# Resolve the supervisor next to THIS script so the bundle is relocatable
+# (deployed to /workspace/ops/bin, outside the git checkout -> survives git clean).
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo /workspace/ops/bin)"
+SUPERVISOR="${SUPERVISOR:-${SELF_DIR}/supervise_run.sh}"
 
 mkdir -p "$(dirname "$HOOK_LOG")" "$RUNS_DIR" 2>/dev/null || true
 

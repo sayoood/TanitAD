@@ -16,7 +16,7 @@
 # live on /workspace and persist regardless.
 # -----------------------------------------------------------------------------
 set -u
-HOOK="${HOOK:-/workspace/TanitAD/stack/scripts/pod_boot_hook.sh}"
+HOOK="${HOOK:-/workspace/ops/bin/pod_boot_hook.sh}"
 STUB="${STUB:-/pre_start.sh}"
 BEGIN="# >>> tanitad-boot >>>"
 END="# <<< tanitad-boot <<<"
