@@ -14,6 +14,17 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 3. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
    lane-polygon check + collision sensor on the CARLA side. Flagged in commit `2d87acb`, NOT fixed this run.
 
+## Done this run (2026-07-13) — backlog #3 "available NOW, no simulator" first pass
+- **Robustness suite exercised on the ungated synthetic corpora** (Sayed-directed, pod-independent,
+  dev-box/4060, $0). Intake `2026-07-13-cosmos-robustness-first-pass` + note
+  `Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`. First data-only numbers on 13
+  Cosmos-Drive-Dreams clips (annotation tars only — the suite is pixel-free, no 43 GB shard):
+  **OKRI median 21.1 (0.06–268), headline**; LOPS path validated via oracle (0.844 ≈ analytic 0.8325);
+  TMS/LAL-v1/LAL-v2 characterized with failure modes quantified. **WorldModel-Synthetic-Scenarios
+  ruled out as a data-only geometric source** (video + VLM-caption only, no pose/boxes — documented).
+  40 contract tests green. Gaps: pose-jerk noise (TMS/LAL-v1), LAL-v2 free-cruise assumption, CNCE
+  latency/params + LOPS/collisions still model-dependent → CARLA-on-pod.
+
 ## Done this run (2026-07-09)
 - **Competitor efficiency block** (was P0 #2, W-05): shipped to LEADERBOARD — Alpamayo-2 32B / GAIA-3 15B
   / DriveFuture vs TanitAD 261M, sourced to Opponent profiles.

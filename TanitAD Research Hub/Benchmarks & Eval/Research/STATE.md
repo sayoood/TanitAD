@@ -1,10 +1,32 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-09 (Thursday weekly agent) — base commit `c4375f8`
-QUALITY: full (all gates G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4,
-well under budget: 2 web searches, ≈1.4 h)
+LAST_RUN: 2026-07-13 (Sayed-directed pod-independent task) — backlog #3 first pass
+QUALITY: full (data-only first pass on real ungated corpora; pipeline validated end-to-end; 40 tests
+green; $0, dev-box/4060, no pod touched)
 
-## Latest run (2026-07-09) — SC-01 live-metric audit + LAL-v2
+## Latest run (2026-07-13) — backlog #3 first pass on the ungated synthetic corpora
+
+Exercised the robustness suite on the ungated synthetic corpora (the "available NOW, no simulator"
+half of backlog #3), dev-box/4060 only, $0. Deliverable: intake
+`Implementation/incoming/2026-07-13-cosmos-robustness-first-pass/` + note
+`Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`.
+- **First data-only numbers on 13 Cosmos-Drive-Dreams clips.** The suite is **pixel-free** → needs only
+  the small per-clip RDS-HQ annotation tars (ego `vehicle_pose` + `all_object_info` 3D boxes +
+  intrinsics, ~15 MB/clip), **not** the 43 GB video shards. **OKRI** median **21.1** (0.06–268),
+  non-trivial on 12/13 — the headline data-only robustness number, scaling v²×occlusion as designed.
+- **LOPS path validated on real occlusion geometry**: data-only LOPS = 0.0 (honest, no model estimate);
+  perfect-perception oracle (wm=gt+N(0,0.3)) → mean **0.844** vs analytic **0.8325** (the 2026-07-09
+  σ=0.3 constant). Occlusion detector fires on 13/13 clips.
+- **WorldModel-Synthetic-Scenarios is video + VLM-caption ONLY** (no ego pose / no 3D boxes; probe in
+  `worldmodel_structure.json`) → cannot feed the geometric suite data-only; needs a perception/pose
+  model (same dependency as the closed loop). Stays a scene-diversity source.
+- **Gaps quantified:** pose-derived jerk is noise-amplified → TMS collapses (median 0.039; 0.117 with
+  5-tap smoothing) and LAL-v1 positivity is a jerk-noise artifact (re-confirms H15); LAL-v2 free-cruise
+  assumption violated on 7/13 logged clips; CNCE (latency/params) + LOPS/collisions still model-dependent.
+- Nothing touches the running contract — glue is a consumer awaiting orchestrator triage (proposed
+  target `stack/scripts/`).
+
+## Prior run (2026-07-09) — SC-01 live-metric audit + LAL-v2 (base commit `c4375f8`)
 
 The first **live CARLA** SC-01 run (committed 2026-07-08) ran my metric suite on real physics and flagged
 two instruments as broken. I executed my **independent-test role** on it (measured experiment, local CPU,
@@ -52,9 +74,12 @@ $0):
       scenarios emitting the exact `ScenarioTelemetry` columns → wire LAL+LOPS / OKRI+TMS / CNCE. **Retargeted
       per D-014 (MetaDrive retired):** substrate is now **CARLA-on-pod (Docker, W31–32)** for the closed-loop
       occluder-LOPS path — the scenario/occluder/perturbation logic is sim-agnostic and ports to the CARLA
-      adapter. **Available NOW, no simulator:** the ungated synthetic corpora
-      `PhysicalAI-WorldModel-Synthetic` (pedestrian/emergency/nudging/weather long-tail) + `Cosmos-Drive-Dreams`
-      can exercise LOPS/OKRI/LAL on pre-rendered occlusion clips before CARLA lands — a cheaper first pass.
+      adapter. **Available NOW, no simulator — FIRST PASS DONE 2026-07-13**
+      (`Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`): `Cosmos-Drive-Dreams` feeds the suite
+      data-only (ego pose + 3D boxes → OKRI/TMS/LAL numbers, occlusion geometry validated; LOPS oracle ≈
+      analytic). **`PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios` is video + VLM-caption
+      only** (no pose/boxes) → NOT a data-only geometric source. Remaining here = the scripted occluder
+      scenarios (Ghost Cut-Through / Blind Creep / Choke Weave) on CARLA-on-pod for real LOPS/CNCE.
 - [ ] Backlog #4: full paragraph-level extraction of `ECE-TRANS-WP.29-2026-139e.pdf` into REGULATION_TRACE.
 - [ ] Backlog #5 (gate-result audit): once a Wednesday D-gate has a real number, recompute one independently
       (fresh seed) — the Mission-Plan independent-test role.
