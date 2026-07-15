@@ -32,6 +32,16 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-15: Benchmarks & Eval (Thu) — **instrument/denominator hardening, no status change (P8).**
+  The **D1** decode-gate denominator is corrected: the driving diagnostic's "10–15× worse than
+  constant-velocity" rests on a single-CV floor (≈0.28 m@1s), but a tested best-of-3 kinematic floor
+  (CV / go-straight / **CTRV**, 26 132 anchors, comma-val + Cosmos-DD) is **≈0.056 m@1s** (CTRV wins
+  55–58 %). → flagship held-out 6.44 m = **~115× the honest floor** (direction of the D1-FAIL verdict
+  *reinforced*, not overturned; **H3** decodability gates D1–D3, **H13** probes). D1 should divide by
+  the per-stratum best-of-3 floor (`skill_score`), and curvature strata must be speed-gated (v≥2 m/s;
+  κ=yaw_rate/v singular at v→0). External support for the diagnostic's #1 remedy: **IDOL** inverse-
+  dynamics-guided prediction (arXiv 2605.31476) → ego-motion grounding (**H1/H18**). Nothing measured
+  on our model this run (denominator only). Intake `Benchmarks & Eval/Implementation/incoming/2026-07-15-baseline-floor/`.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

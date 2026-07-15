@@ -167,3 +167,29 @@ Artifact: `stack/scripts/driving_diagnostic.py`, `/workspace/experiments/driving
 - **NEXT experiments this routes:** (1) explicit-ego-supervision training arm (fine-tune 27k with a
   trajectory-prediction head + upweighted inv-dyn, measure oracle-ceiling shift); (2) route-diverse
   MLP decode head; (3) resolution ablation (secondary); (4) REF-A/REF-B same diagnostic when trained.
+
+### 2026-07-15 baseline_floor (Benchmarks & Eval) — §A denominator corrected + speed-gate fix
+Data-only, $0, local CPU; 26 132 anchors (comma2k19-val 25 110 + Cosmos-DD 1 022), 10 Hz.
+Metric shipped tested (8 analytic tests): `Implementation/incoming/2026-07-15-baseline-floor/`.
+The §0/§A single-CV floor (CV ADE@1s ≈ 0.28 m) is **not** the honest denominator — CV is the
+weakest kinematic null on curves. Best-of-3 (CV / go-straight / **CTRV**), per-stratum, median ADE@1s:
+
+| stratum (comma-hwy, v=25) | n | **best floor** | CV | CTRV | CV/CTRV |
+|---|---:|---:|---:|---:|---:|
+| straight | 18 785 | **0.056** | 0.088 | 0.062 | 1.4× |
+| gentle | 3 008 | **0.059** | 0.275 | 0.060 | **4.6×** |
+| sharp (genuine, speed-gated) | 212 | **0.164** | 0.404 | 0.167 | 2.4× |
+
+- **Denominator correction:** the honest floor is **~0.056 m@1s** (CTRV-dominated, wins 55–58 %),
+  not 0.28 m. → model held-out 6.44 m = **~115× the floor** (not 10–15×); oracle-ceiling 1.65 m =
+  **~29× floor**. Verdict *direction unchanged and reinforced*; **use `skill_score` = model_ADE ÷
+  per-stratum best-of-3 floor** in the D1 gate, not a single CV scalar.
+- **Protocol fix (adopt before the next `driving_diagnostic` run):** speed-gate the curvature strata
+  (v ≥ 2 m/s). 12.4 % of comma anchors are near-standstill (median 0.01 m/s); ungated, GNSS yaw-jitter
+  mislabels them "sharp" (κ = yaw_rate/v singular at v→0) with a spurious 0.003 m floor. §C strata are
+  otherwise standstill-polluted.
+- **§D2 update:** the ungated Cosmos-DD sample is **not** a curve/maneuver source (0 % genuine sharp,
+  95.8 % straight); comma-highway carries more real curve content. The curve-scarcity remedy needs the
+  semantic-label survey (nuPlan/DriveLM/CoVLA), not more Cosmos-DD.
+- Caveat (P8): baselines use privileged GT ego-state → this is the denominator, not a model competitor.
+  Full note: `Research/2026-07-15-baseline-floor-honest-denominator.md`.

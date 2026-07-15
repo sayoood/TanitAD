@@ -1,5 +1,33 @@
 # STATE — Benchmarks & Eval
 
+LAST_RUN: 2026-07-15 (Thursday scheduled) — baseline-floor honest denominator; branch `agent/benchmarks-eval-20260715` (worktree off bench tip e17435e, D-026)
+QUALITY: full (2 measured experiments with numbers; new metric ships with 8 analytic tests; $0, dev-box CPU, no pod touched)
+
+## Latest run (2026-07-15) — the honest denominator for the driving-capability gap
+
+Targeted the #1 program risk (single-camera driving gap, `DRIVING_DIAGNOSTIC_FRAMEWORK.md`). Data-only,
+$0, local CPU, 26 132 anchors (comma2k19-val + Cosmos-DD). Deliverable: intake
+`Implementation/incoming/2026-07-15-baseline-floor/` (metric + 8 tests + run + results) + note
+`Research/2026-07-15-baseline-floor-honest-denominator.md`.
+- **Shipped a tested best-of-3 kinematic-baseline floor** (CV / go-straight / **CTRV** + `skill_score`,
+  speed-gated curvature strata; 8 analytic-ground-truth tests green). Proposed target
+  `stack/tanitad/eval/baselines.py`, plugs into the D1 gate `extra_metrics` seam.
+- **F1 (measured):** the diagnostic's single-CV floor (≈0.28 m@1s) is not honest — the best-of-3 floor is
+  **≈0.056 m@1s** (CTRV wins 55–58 %; CV overstates the floor 4.6× on curves). → flagship held-out 6.44 m =
+  **~115× the trivial floor** (framework verdict *reinforced*, not overturned). **D1 should divide by the
+  per-stratum best-of-3 floor.**
+- **F2 (protocol fix):** curvature stratification must be speed-gated (v≥2 m/s) — 12.4 % of comma anchors
+  are standstill yaw-noise mislabeled "sharp" (κ=yaw_rate/v singular at v→0). Appended to the framework §Results.
+- **F3 (data):** the ungated Cosmos-DD sample is a poor maneuver source (0 % genuine sharp, 95.8 % straight);
+  comma-highway carries more real curve content. Refines 2026-07-13 note + framework §D2 → Data-Eng flag.
+- **Ecosystem (D-028 seam):** logged Occluded-nuScenes (2510.18552) + Bench2Drive-Robust (2605.18059,
+  occlusion×latency = our edge pair) + IDOL (2605.31476, supports the diagnostic root-cause remedy).
+- **Caveat (P8):** baselines use privileged GT ego-state → this is the *denominator*, not a model
+  competitor; no model ADE computed (pod busy with refb-speed-30k). Follow-up: `skill_score` on a checkpoint.
+- Created `GOALS.md` (D-029, was missing) — G1 driving-gap denominator advanced.
+
+## Prior run (2026-07-13) — backlog #3 first pass on the ungated synthetic corpora
+_(historical — LAST_RUN before 2026-07-15)_
 LAST_RUN: 2026-07-13 (Sayed-directed pod-independent task) — backlog #3 first pass
 QUALITY: full (data-only first pass on real ungated corpora; pipeline validated end-to-end; 40 tests
 green; $0, dev-box/4060, no pod touched)

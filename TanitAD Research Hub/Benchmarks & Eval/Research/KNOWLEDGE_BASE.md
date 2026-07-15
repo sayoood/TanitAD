@@ -3,6 +3,33 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-15] [this run / measured] **The honest trivial-baseline floor is CTRV best-of-3 ≈ 0.056–0.06 m@1s,
+  not the single-CV 0.28 m** the driving diagnostic used. 26 132 anchors (comma-val + Cosmos-DD), 10 Hz. CV
+  is the weakest kinematic null on curves (gentle CV 0.275 vs CTRV 0.060 = 4.6×); CTRV wins 55–58 % of anchors.
+  → model held-out 6.44 m = **~115× floor** (not 10–15×), verdict direction reinforced; **D1 gate should use
+  `skill_score` = model_ADE ÷ per-stratum best-of-3 floor** — impact: D1 gate / DRIVING_DIAGNOSTIC §A / WP6 —
+  `../Implementation/incoming/2026-07-15-baseline-floor/`
+- [2026-07-15] [this run / measured] **Curvature stratification must be speed-gated** (v ≥ 2 m/s): 12.4 % of
+  comma anchors are near-standstill (median 0.01 m/s) where κ=yaw_rate/v is singular → GNSS yaw-jitter
+  mislabels them "sharp" with a spurious 0.003 m floor. The framework's `driving_diagnostic` §C strata are
+  standstill-polluted without the gate — impact: diagnostic protocol / P8 — same intake.
+- [2026-07-15] [this run / measured] **The ungated Cosmos-Drive-Dreams sample is a poor maneuver source:**
+  95.8 % straight, 1.8 % gentle, **0 % genuine sharp**, median 12.9 m/s. comma-highway carries MORE real curve
+  content (12 % gentle + 0.8 % highway-speed sharp). Refines the 2026-07-13 note (Cosmos-DD = scene-diversity
+  only) + framework §D2 (curve-scarcity remedy needs semantic-label survey, not more Cosmos-DD) — impact:
+  Data-Eng curve-scarcity / backlog #3 — same intake.
+- [2026-07-15] [arXiv 2506.04218 / NAVSIM v2] **NAVSIM v2 uses a constant-velocity agent as a triviality
+  FILTER** (removes frames a CV agent solves with PDMS>0.8). Community precedent that the CV floor is
+  load-bearing AND stratum-sensitive → validates our per-stratum best-of-3 skill denominator — impact:
+  validation strategy / D1 gate — https://arxiv.org/html/2506.04218v1
+- [2026-07-15] [arXiv 2510.18552 / 2605.18059] **New occlusion-robustness benchmarks (D-028 seam, ours):**
+  **Occluded-nuScenes** (multi-sensor: 4 camera + parameterised radar/LiDAR occlusion types) — public,
+  citable stressor for our OKRI/LOPS suite; **Bench2Drive-Robust** (closed-loop AD under occlusion **and
+  inference latency**; SimLingo degrades sharply) = our exact edge pair OKRI/LOPS × CNCE — impact:
+  LEADERBOARD watch / occlusion suite — https://arxiv.org/abs/2510.18552 · https://arxiv.org/html/2605.18059
+- [2026-07-15] [arXiv 2605.31476] **IDOL — Inverse-Dynamics-Guided Future Prediction** — external support for
+  the diagnostic's #1 root-cause lever (inverse-dynamics / ego-motion supervision grounds the latent).
+  Pointer to Architecture; no status change (P8) — impact: DRIVING_DIAGNOSTIC root cause / H1 — https://arxiv.org/pdf/2605.31476
 - [2026-07-09] [this run / audit] **LAL-v1 is blind to smooth anticipation** — first-live SC-01 CARLA run
   scored LAL-v1 −0.7 for BOTH policies; reproduced the cliff exactly at the −1.5 m/s³ jerk trigger (a
   comfort-bounded ease-off, |jerk|<~2, never fires it). Shipped **LAL-v2** (deceleration-onset by speed

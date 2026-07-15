@@ -4,15 +4,30 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
+1. **`skill_score` on a real checkpoint (G1, top program risk).** The 2026-07-15 run shipped the honest
+   best-of-3 floor (≈0.056 m@1s); the next step is the first *model-relative* number: run the flagship /
+   refa / refb-speed held-out ADE per stratum ÷ the per-stratum floor. **Blocked on a pullable checkpoint**
+   (pod running refb-speed-30k). Falsifier: skill_score ≤ 3 on straights → model near-trivial-competitive,
+   "fundamental failure" reading softens. Resource: 4060/CPU, hours.
+2. **`skill_score` + best-of-3 floor into the gate runner** (orchestrator triage of intake
+   `2026-07-15-baseline-floor`): wire into the D1 `extra_metrics` seam so every D1 number reports the
+   stratified skill denominator, not raw ADE. Speed-gate the curvature strata.
+3. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
    `stack/tanitad/eval/metrics.py`, relabel LAL-v1 "reaction-onset latency", report both. Unblocks G0.6.
-   *(Metric shipped this run; integration is the orchestrator step.)*
-2. **≥3-seed SC-01 CARLA re-run** — the first live run (2026-07-08) was single-seed + scripted policy.
+4. **≥3-seed SC-01 CARLA re-run** (G2) — the first live run (2026-07-08) was single-seed + scripted policy.
    Next run: ≥3 seeds, OKRI/LOPS/TMS as mean±CI, emit LAL-v2, and **measure OKRI per-seed SD** to size
-   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Goal: first decision-grade
-   live SC-01 rows. Falsifier: CIs overlap → no "beats baseline" claim.
-3. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
+   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Blocked on CARLA-on-pod
+   (D-014, Tools&DevEnv). Falsifier: CIs overlap → no "beats baseline" claim.
+5. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
    lane-polygon check + collision sensor on the CARLA side. Flagged in commit `2d87acb`, NOT fixed this run.
+
+## Done this run (2026-07-15) — the honest denominator (G1 advanced)
+- **Tested best-of-3 kinematic-baseline floor shipped** (CV/go-straight/CTRV + `skill_score`, speed-gated
+  strata; 8 analytic tests). Measured on 26 132 real anchors (comma-val + Cosmos-DD): honest floor
+  **≈0.056 m@1s** (CTRV-dominated), correcting the framework's single-CV 0.28 m → model gap ~115× floor.
+  Found+fixed the standstill yaw-noise stratification artifact (speed-gate). Cosmos-DD confirmed a poor
+  maneuver source (0 % genuine sharp). Intake `2026-07-15-baseline-floor` + note. Framework §Results, KB,
+  ledger, LEADERBOARD (floor block), GOALS updated.
 
 ## Done this run (2026-07-13) — backlog #3 "available NOW, no simulator" first pass
 - **Robustness suite exercised on the ungated synthetic corpora** (Sayed-directed, pod-independent,

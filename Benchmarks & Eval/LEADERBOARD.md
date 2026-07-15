@@ -25,6 +25,28 @@
 > (HC/EC) ([navsim/docs/metrics.md](https://github.com/autonomousvision/navsim/blob/main/docs/metrics.md),
 > 2026). DDC/TLC/LK are the recognizable analogue of our H9 violation-rate / closure-incursion signal.
 
+## Trivial-baseline floor (the honest open-loop denominator) — measured by us, 2026-07-15
+
+> Our own open-loop ADE must be read against the *best* trivial kinematic null, per stratum — not a
+> single constant-velocity number. Measured on 26 132 anchors (comma2k19-val 25 110 + Cosmos-DD 1 022),
+> 10 Hz, privileged GT ego-state. CTRV (constant-turn-rate-velocity) wins 55–58 % of anchors; CV wins
+> 20–30 % (CV is the weakest null on curves). **Report `skill_score` = model_ADE ÷ best-of-3 floor.**
+
+| stratum (comma-hwy, v=25 m/s) | n | **best-of-3 floor ADE@1s** | CV@1s | CTRV@1s | floor@2s |
+|---|---:|---:|---:|---:|---:|
+| straight | 18 785 | **0.056 m** | 0.088 | 0.062 | 0.206 |
+| gentle | 3 008 | **0.059 m** | 0.275 | 0.060 | 0.228 |
+| sharp (genuine, speed-gated ≥2 m/s) | 212 | **0.164 m** | 0.404 | 0.167 | 0.608 |
+
+> **Caveat (G-B1):** baselines use privileged GT ego-state the vision model never sees → this is the
+> *denominator*, not a model competitor; the fair vision target is the oracle-ceiling (1.65 m@1s,
+> `DRIVING_DIAGNOSTIC_FRAMEWORK.md` §B). Against the 0.056 m floor, the flagship's held-out D1 ADE@1s =
+> 6.44 m is **~115× the trivial floor** (the framework's "10–15× worse than CV" used a looser single-CV
+> 0.28 m denominator). Curvature strata are speed-gated (κ=yaw_rate/v singular at v→0; 12.4 % of comma
+> anchors are near-standstill and excluded from the curve strata). Source: this run,
+> `Implementation/incoming/2026-07-15-baseline-floor/`. Community precedent: NAVSIM v2 uses a CV agent as
+> a triviality filter (arXiv 2506.04218).
+
 ## Closed-loop (Bench2Drive, CARLA — the arbiter block) — context numbers
 
 | System | Driving Score | Success Rate | Source / date | Note |
