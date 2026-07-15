@@ -2,7 +2,9 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2 deltas below, tagged **Δ 07-24**).
+> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2, **Δ 07-24**). Run #3 deltas tagged
+> **Δ 07-15** (wall-clock date; the hub's narrative clock runs ahead — run #3 post-dates run #2's
+> narrative stamp but is dated to real time, see `Research/2026-07-15-opponent-sweep-run3.md`).
 
 ---
 
@@ -36,6 +38,11 @@
   the mechanism (mis-prioritizing hazard-avoidance / not recognizing the work zone). **New Dallas market
   trouble:** a Waymo recorded **running a red light** (Irving Blvd/Inwood Rd) amid a **new federal
   investigation** there → widens the rule-compliance surface (SC-04/SC-14, W-03).
+- **Δ 07-15 (FACT):** NHTSA sent Waymo (and Tesla) a letter (**2026-07-08**) over a **"clear pattern"**
+  of **first-responder / emergency-scene interference**, with a ~one-month fix deadline; trigger context
+  included Waymo robotaxis **stalling in San Francisco's July-4 gridlock** (some towed, dead batteries).
+  → new **W-09 / SC-15** (emergency-scene interference) + fresh SC-08 (stall) evidence.
+  — https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
   anticipation** (W-02), **rule-compliance edges** (W-03); map-dependence; cost/vehicle + geofence
@@ -52,6 +59,12 @@
 - **Δ 07-24 (FACT):** robotaxi fleet now **exceeded 1,700 units** (toward the raised 3,500 target); added
   **Guangzhou**; **raised** 2026 robotaxi-revenue and fleet targets on record Q1. Growth real but the
   revenue-vs-fleet gap (W-06) is unchanged — $8.6 M robotaxi rev against a 1,700+ (→3,500) fleet.
+- **Δ 07-15 (FACT, honesty delta on W-06):** Pony.ai now reports **break-even operations in a single
+  city (Guangzhou)**, raised its goal to **10,000+ vehicles**, and signed a **Bolt** EU ride-hail
+  partnership. City-level break-even ≠ company-level profitability, but it **partially blunts** our
+  "thin unit economics" framing → shift the W-06 argument to **compute-normalized cost-per-safe-mile
+  (CNCE) + data-efficiency slope** (recorded straight, P8).
+  — https://thenextweb.com/news/pony-ai-lifts-3500-robotaxi-fleet-target-2026
 - **Strengths (INFER):** fleet scale, China + Middle East + first-mover EU footprint, steep growth.
 - **Exploitable weaknesses:** **thin unit economics** vs fleet (W-06); same compute-heavy multi-sensor
   stack (W-05); geopolitics limits Western data/market access.
@@ -120,6 +133,9 @@
   property-only, 1 hospitalization, **2 involving teleoperators**). Miami robotaxi launched into rain
   (2026-07-03) — a live stress of exactly the open case. This is the strongest single validation of our
   H11/H15/H2 axis in the field.
+- **Δ 07-15 (FACT):** a **fatal Model-3 Autopilot crash** (Katy, TX; **76-yo killed**) is under a new
+  federal probe; Tesla also named in NHTSA's **first-responder-interference** pattern (W-09) alongside
+  Waymo. — https://www.cnbc.com/2026/06/22/tesla-nhtsa-model-3-crash-autopilot-katy-texas.html
 - **Strengths (INFER):** fleet-data scale, vertical integration, cost focus.
 - **Exploitable weaknesses:** **no calibrated epistemic uncertainty** → confident-when-blind (W-04);
   camera-only sensing; monolithic E2E, no self-monitoring guarantee.
@@ -131,9 +147,15 @@
   US pilot markets (incl. Dallas). Modular AV stack (INFER — architecture not publicly detailed).
 - **Business (FACT):** Uber robotaxi partner; scaling in Dallas and other US pilots alongside Uber's
   multi-vendor strategy (also Waymo, Momenta, Autobrains, NVIDIA).
-- **Safety (FACT):** **NHTSA ODI investigation opened 2026-05-08** — **16 crashes + 1 minor injury**; ODI
-  says all concern **"the competence of"** the system: **lane-changing, same-lane vehicle response, and
-  stationary-object response.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Safety (FACT):** **NHTSA ODI (PE26003) opened 2026-05-08** — **16 crashes + 1 minor injury** (Dallas
+  + Austin, Jan–Mar, all **under a safety monitor**); ODI says all concern **"the competence of"** the
+  system: **lane-changing, same-lane vehicle response, and stationary-object response.**
+  — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Δ 07-15 (FACT):** the ODI language is sharper than first catalogued — *"responding to **stationary
+  objects partially obstructing the lane ahead**"* and **"excessive assertiveness and insufficient
+  capability … may constitute traffic safety violations."** → **SC-13 spec-drafted this run** (forward-
+  simulated oracle; `imagination` anticipates, `detection_reactive` collides, collision rate 0.00 vs
+  0.60). — https://thenextweb.com/news/avride-uber-robotaxi-crashes-nhtsa-investigation
 - **Strengths (INFER):** Uber distribution + demand aggregation; Yandex AV heritage.
 - **Exploitable weaknesses:** the ODI list is a **basic-competence** indictment (the cheapest, broadest
   surface) → **W-08 / SC-13**. Our H15 consequence-forward-model targets stationary-object/same-lane

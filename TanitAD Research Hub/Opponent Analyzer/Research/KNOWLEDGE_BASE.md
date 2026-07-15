@@ -3,6 +3,36 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
+> **Ordering note:** the entries dated **2026-07-15 are run #3** and are the *newest* (the hub's
+> narrative clock runs ahead of wall-clock, so run #3's real date sorts below run #2's 07-24 stamp).
+
+- [2026-07-15] [Opponent Analyzer] INFER (design-oracle, P8) — **SC-13 Stationary-Lead** shipped
+  (forward-simulated oracle, real kinematics, **16/16 tests**): in the documented late-classification
+  regime **`detection_reactive` COLLIDES** (min-TTC 0.09 s, LAL-v2 **−0.50 s**) while **`imagination`
+  anticipates** (LAL-v2 **+2.30 s**, min-TTC 1.83 s, no collision, **OKRI −73 %**); **collision rate
+  0.60 (reactive) / 0.00 (imagination)** over the classification-range sweep, invariant to the
+  competence knob — impact: **W-08 / SC-13 → H15/A9** — see `2026-07-15-opponent-sweep-run3.md`
+- [2026-07-15] [Avride/NHTSA] FACT — ODI language sharpened (vs the 07-24 entry): the crashes involve
+  *"responding to **stationary objects partially obstructing the lane ahead**"* and NHTSA flags
+  **"excessive assertiveness and insufficient capability … may also constitute traffic safety
+  violations,"** all **under a safety monitor** (Dallas + Austin, Jan–Mar) — impact: validates SC-13
+  geometry (partial in-lane obstruction); **W-08** — https://thenextweb.com/news/avride-uber-robotaxi-crashes-nhtsa-investigation
+- [2026-07-15] [NHTSA/Waymo/Tesla] FACT — NHTSA letter (**2026-07-08**) warns Waymo **and** Tesla over a
+  **"clear pattern"** of **first-responder / emergency-scene interference**, ~one-month fix deadline;
+  trigger included Waymo robotaxis **stalling in SF's July-4 gridlock** (some towed, dead batteries) —
+  impact: **new W-09 / SC-15** (emergency-scene interference); fresh SC-08 evidence; A9/D8 + H1 fallback
+  — https://www.benzinga.com/markets/tech/26/07/60351872/nhtsa-warns-autonomous-vehicle-companies-over-clear-pattern-of-first-responder-interference
+- [2026-07-15] [Pony.ai] FACT — reports **break-even operations in one city (Guangzhou)**, raised goal to
+  **10,000+ vehicles**, **Bolt** EU ride-hail partnership — impact: **honesty delta on W-06** (partially
+  blunts "thin unit economics"; shift the argument to CNCE + data-efficiency slope, P8) — https://thenextweb.com/news/pony-ai-lifts-3500-robotaxi-fleet-target-2026
+- [2026-07-15] [Tesla/NHTSA] FACT — new federal probe into a **fatal Model-3 Autopilot crash** (Katy, TX;
+  76-yo killed); Tesla also in the first-responder-interference pattern — impact: **W-04 field weight;
+  W-09** — https://www.cnbc.com/2026/06/22/tesla-nhtsa-model-3-crash-autopilot-katy-texas.html
+- [2026-07-15] [arXiv] FACT/INFER — latent-WM surge continues: **Latent-WAM** (2603.24581),
+  **DriveWorld-VLA** (2602.06521), **DriveFuture** (2605.09701), **World Models survey** (2606.00133).
+  Reinforces "latent WM = table stakes"; none reports hierarchy + in-loop imagination + self-monitoring +
+  a compute-normalized metric together — impact: moat read unchanged; deep-read Latent-WAM/DriveWorld-VLA
+  next — https://arxiv.org/abs/2603.24581
 
 - [2026-07-24] [Avride/NHTSA] FACT — NHTSA ODI opened an investigation (**2026-05-08**) into **Avride**
   (Uber robotaxi partner, Yandex SDG lineage): **16 crashes + 1 minor injury**, all tied to **"the

@@ -1,0 +1,51 @@
+{
+  "scenario": "SC-13 stationary_lead",
+  "note": "design-oracle (P8), not a trained-model claim",
+  "default": {
+    "obj_s": 110.0,
+    "v_cruise": 20.0,
+    "detect_range_m": 30.0
+  },
+  "policies": {
+    "detection_reactive": {
+      "collision": true,
+      "min_ttc_s": 0.09,
+      "lal_v2_lead_s": -0.5,
+      "decel_onset_s": 4.5,
+      "t_los_s": 4.0,
+      "stop_gap_m": 0.0,
+      "okri": 32941.0
+    },
+    "imagination": {
+      "collision": false,
+      "min_ttc_s": 1.835,
+      "lal_v2_lead_s": 2.3,
+      "decel_onset_s": 1.7,
+      "t_los_s": 4.0,
+      "stop_gap_m": 3.0,
+      "okri": 8800.0
+    }
+  },
+  "collision_rate_sweep_detect_ranges_m": [
+    50,
+    40,
+    30,
+    20,
+    10
+  ],
+  "collision_rate": {
+    "detection_reactive": 0.6,
+    "imagination": 0.0
+  },
+  "reactive_threshold_m_approx": 33.3,
+  "reactive_min_ttc_by_detect_m": {
+    "60": 2.987,
+    "50": 2.377,
+    "40": 1.549,
+    "34": 0.695,
+    "33": 0.038,
+    "30": 0.09,
+    "20": 0.053,
+    "10": 0.053
+  }
+}

@@ -6,16 +6,20 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
 
 ## P0 — next run
 
-1. **SC-13 "Stationary-object / same-lead" scenario authoring (W-08, Avride)** — NEW top item after
-   the 2026-07-24 Avride NHTSA ODI finding (16 crashes: lane-change / same-lane / stationary-object).
-   Deliverable: scenario spec + telemetry oracle (mirror stop_arm_gate/work_zone_phantom) + intake pkg
-   with passing tests; SCENARIO_DATABASE SC-13 → `spec-drafted`. **Cheapest high-value item:** reuses the
-   comma2k19 loader (real stopped-lead segments, license-clean) + LAL-v2/OKRI hooks. Metric: OKRI + LAL-v2
-   lead time + min-TTC; H15 imagination-vs-detection lead time. Falsifier: lead time ≤ detection baseline
-   on matched segments ⇒ H15 advantage unproven here.
+1. **SC-13 real open-loop probe (comma2k19 stopped-lead) — the trained-model step.** The oracle is
+   shipped (spec-drafted); the falsifier can only be answered on real data. Once DataEng tags stopped/
+   slow-lead comma2k19 segments (Tue handoff), score our checkpoint's decel-onset/imagination-error
+   lead vs a detection-only baseline on matched segments. Deliverable: a measured lead-time table +
+   min-TTC distribution. Falsifier: lead ≤ baseline ⇒ H15-vs-detection advantage unproven → escalate to
+   the H15 σ-head. **Gated on the DataEng tagging handoff** — if not ready, advance SC-14 instead.
 2. **SC-14 "Red-light barrier" spec** — near-free once SC-04 integrates (reuses the stop-line barrier
-   oracle; H9 violation-rate=0). Author after SC-13 if budget allows.
-3. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
+   oracle; H9 violation-rate=0). **Now top authoring item** (SC-13 spec done). FACT evidence in hand
+   (Dallas red-light, W-03 family). Deliverable: `red_light_barrier.py` oracle + tests + intake.
+3. **SC-15 "Emergency-scene interference" spec (W-09, NEW)** — Waymo+Tesla NHTSA first-responder letter
+   (2026-07-08). Distinct from SC-06 (moving EV): non-nominal-scene recognition → H1 fallback / stop
+   placement. Needs the CARLA emergency-scene + stall-injection harness (Tools & DevEnv) → author the
+   oracle now (OOD-recognition + corridor-clear + TMS hooks), live-measure when the harness lands.
+4. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
    step 6500: naive relative imag-error AUROC 0.34 inverted / 0.54 weather axis — falsifier
    fired, recorded in `stack/experiments/p0-d8-preview/NOTE.md`). Next experiment:
    **matched-pairs weather test** — pair cosmos clips by base clip id (same scene, different
@@ -46,6 +50,11 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    which TanitAD gates cover them, where coverage is zero (those become new scenario items).
 
 ## Done / retired
+- (2026-07-15-run #3) **SC-13 Stationary-Lead scenario** shipped via intake (**16 tests**, forward-
+  simulated oracle with real kinematics): `imagination` anticipates (LAL-v2 +2.30 s, no collision) vs
+  `detection_reactive` collides (min-TTC 0.09 s); collision rate 0.00 vs 0.60, invariant to the
+  detection-competence knob. **W-09** (first-responder interference, Waymo+Tesla) + **SC-15** catalogued;
+  **GOALS.md** created (D-029 gap); W-06 honesty delta (Pony break-even) logged.
 - (2026-07-24-run) **Stop-Arm Gate scenario (SC-04, W-03)** shipped via intake (11 tests; violation
   rate rule_barrier 0.0 / soft_prior 1.0); **Metis deep-read** done; **Avride** profiled (W-08/SC-13);
   SC-14 (red-light) catalogued.

@@ -116,6 +116,12 @@
   to cover the tail). Nobody has a credible **data-efficiency-from-action-free-video** story.
 - **Evidence (FACT):** Pony.ai Q1'26 robotaxi revenue **$8.6 M** against a **3,500-vehicle** 2026 target.
   — https://mlq.ai/news/v2/pony-ai-q1-revenue-more-than-doubles-to-343m-as-robotaxi-sales-surge-nearly-fivefold/
+- **Honesty delta (FACT, 2026-07-15, P8):** Pony.ai now reports **break-even operations in a single
+  city (Guangzhou)**, a raised goal of **10,000+ vehicles**, and a **Bolt** EU ride-hail partnership.
+  City-level break-even ≠ company-level profitability, but this **partially blunts** the "they don't
+  make money" framing → our W-06 argument must shift from *revenue-vs-fleet* to **compute-normalized
+  cost-per-safe-mile (CNCE) + a data-efficiency slope** they still have no answer to.
+  — https://thenextweb.com/news/pony-ai-lifts-3500-robotaxi-fleet-target-2026
 - **TanitAD counter:** **H3** (latent WM data efficiency) + **H7** (1000× leverage via IDM + focal
   canonicalization). The data-efficiency slope experiment is the headline proof (Data Eng, Phase 1).
 - **Scenario-spec status:** n/a (data-slope experiment, not a scenario). Owner: Data Eng.
@@ -139,17 +145,46 @@
   on a stationary or slow lead because classification is uncertain, mishandle same-lane vehicles, and
   botch lane changes. The failure is *competence*, not an exotic edge case, which makes it a broad and
   damning surface.
-- **Evidence (FACT):** NHTSA ODI opened an investigation (**2026-05-08**) into **Avride** (Uber's
-  robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury**; ODI attributes all to
-  **"the competence of"** the system — **lane-changing, responding to other vehicles in the same lane,
-  and responding to stationary objects.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Evidence (FACT):** NHTSA ODI (PE26003) opened an investigation (**2026-05-08**) into **Avride** (Uber's
+  robotaxi partner, Yandex SDG lineage) after **16 crashes + 1 minor injury** (Dallas + Austin, Jan–Mar,
+  all **under a safety monitor**); ODI attributes all to **"the competence of"** the system — **lane-
+  changing, responding to other vehicles in the same lane, and responding to stationary objects.**
+  **Sharpened 2026-07-15 (FACT):** the ODI specifies *"responding to **stationary objects partially
+  obstructing the lane ahead**"* and characterises the behaviour as **"excessive assertiveness and
+  insufficient capability"** that **"may also constitute traffic safety violations."**
+  — https://www.cnbc.com/2026/05/08/us-opens-probe-into-startup-avride-self-driving-crashes-in-texas.html
+  , https://thenextweb.com/news/avride-uber-robotaxi-crashes-nhtsa-investigation
 - **TanitAD counter:** **H15** imagination forward-models time-to-contact on a stopped/slow lead
   *before* the object is classified (no detection/class prior to be wrong about) + **A9** imagination-
   error monitor on the lead region; **H1** tactical layer for lane-change consequence pricing.
-- **Scenario-spec status:** **SC-13 catalogued** (stationary-object / same-lane lead response) — a cheap
-  real-data spec on comma2k19 (mine stopped-lead segments) + CARLA cut-in/blocked_route recipes.
+- **Scenario-spec status:** **SC-13 spec-drafted 2026-07-15** — intake pkg
+  `Implementation/incoming/2026-07-15-stationary-lead-scenario/` (**forward-simulated** oracle, real
+  kinematics, **16/16 tests**). Design-oracle: **`detection_reactive` collides** (min-TTC 0.09 s,
+  LAL-v2 −0.50 s), **`imagination` anticipates** (LAL-v2 **+2.30 s**, min-TTC 1.83 s, no collision,
+  OKRI −73 %); **collision rate 0.60 (reactive) / 0.00 (imagination)** over the classification-range
+  sweep, invariant to the competence knob. Handoff to Benchmarks & Eval: `collision_rate` reducer +
+  `min_ttc_s`.
 - **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
   the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
+
+## W-09 — Emergency-scene interference / first-responder blocking  ★ (new 2026-07-15)
+
+- **Mechanism (INFER):** stacks with no reliable **non-nominal-scene recognition** neither detect an
+  active emergency scene nor degrade for it — they drive through, block the corridor, or freeze in the
+  way. A cross-opponent, regulator-flagged pattern (a *behaviour* class, not one vendor's bug).
+- **Evidence (FACT):** NHTSA sent Waymo **and** Tesla a letter (**2026-07-08**) over a **"clear
+  pattern"** of first-responder interference and gave AV developers ~a month to fix emergency-scene
+  detection; trigger context included Waymo robotaxis **stalling in San Francisco's July-4 gridlock**
+  (some towed after batteries died).
+  — https://www.benzinga.com/markets/tech/26/07/60351872/nhtsa-warns-autonomous-vehicle-companies-over-clear-pattern-of-first-responder-interference
+  , https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
+- **TanitAD counter:** **A9/D8** OOD-familiarity flags the rare emergency-scene state → **H1 fallback**
+  owns the degraded behaviour (well-placed stop, corridor-clear) + strategic re-route/stop memory.
+  Distinct from SC-06 (yield to a *moving* emergency vehicle).
+- **Scenario-spec status:** **SC-15 catalogued** (emergency-scene interference); enriches SC-06/SC-08.
+  Needs CARLA emergency-scene + connectivity-loss/stall injection (Tools & DevEnv, blocked_route family).
+- **Training-data recipe (H6):** synthetic emergency scenes (responders/cones/apparatus) + stall
+  injection; label the non-nominal-scene regime for the OOD head.
 
 ---
 

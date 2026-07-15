@@ -32,6 +32,17 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-15: Opponent Analyzer (Fri, run #3) — **evidence rows, no status upgrade (P8 — nothing
+  measured on our trained stack).** **H15/A9** (+H1 tactical): SC-13 Stationary-Lead scenario shipped
+  (forward-simulated design-oracle, real kinematics, 16/16 tests) — a *consequence forward-model*
+  archetype anticipates a stationary in-lane object (LAL-v2 lead **+2.30 s**, no collision) where a
+  *detect-then-react* archetype collides (min-TTC 0.09 s, LAL-v2 −0.50 s); collision rate 0.00 vs 0.60,
+  invariant to the detection-competence knob. Grounded in the FACT Avride ODI (*"stationary objects
+  partially obstructing the lane ahead"*, W-08). **H0/H6:** first-responder-interference weakness (W-09,
+  Waymo+Tesla, NHTSA 07-08) added; latent-WM surge continues (still no rival with hierarchy + in-loop
+  imagination + self-monitoring + a compute-normalized metric together). **W-06 honesty (P8):** Pony.ai
+  reports Guangzhou city-level break-even → the unit-economics argument shifts to CNCE + data-efficiency
+  slope. See `Opponent Analyzer/Research/2026-07-15-opponent-sweep-run3.md`.
 - 2026-07-15: Architecture & Inference (Wed) — **H15 imagination edge verified LIVE-ACTIVE in the
   flagship (no status change, P8)**, resolving the 2026-07-14 program-report §8 `h15=0.0` WATCH. Measured
   on the exact code path (GPU): imagination module **built** (22.06 M params), gradient reaches it (L1

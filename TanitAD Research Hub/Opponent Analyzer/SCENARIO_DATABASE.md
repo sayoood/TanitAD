@@ -222,9 +222,24 @@ public claim candidate.
   tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
 - **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
   min-TTC distribution; collisions=0 bar.
-- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
-  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
-  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+- **Status:** **spec-drafted, 2026-07-15 (run #3)** — intake pkg
+  `Implementation/incoming/2026-07-15-stationary-lead-scenario/` (`stationary_lead.py` + **forward-
+  simulated** telemetry oracle with real kinematics: position/speed/TTC/collision, **16/16 offline
+  tests**, awaiting orchestrator triage). Design-oracle numbers (P8, NOT our model): default
+  late-classification regime (object 110 m, cruise 20 m/s, classification range 30 m) —
+  **`detection_reactive` COLLIDES** (min-TTC 0.09 s, LAL-v2 lead **−0.50 s**); **`imagination` does
+  NOT** (LAL-v2 lead **+2.30 s**, min-TTC **1.83 s**, stops 3.0 m short, **OKRI −73 %**: 8.8k vs 32.9k).
+  **Collision rate over the classification-range sweep {50,40,30,20,10} m: detection_reactive 0.60 /
+  imagination 0.00.** Invariance property: reactive collides once classification range < its ~33 m
+  emergency stopping distance (min-TTC 2.99 → 0.04 s as it fires later); imagination's min-TTC is
+  invariant (1.83 s) and its lead grows +0.80 → +3.30 s — the analogue of SC-04's barrier-invariance,
+  here invariance to the *detection-competence knob*. Evidence sharpened this run (FACT): ODI language
+  is *"stationary objects **partially obstructing the lane ahead**"* + *"excessive assertiveness /
+  insufficient capability"* → a *partial* in-lane obstruction, exactly this geometry. **Next:** DataEng
+  tags stopped/slow-lead comma2k19 segments (real open-loop probe); Benchmarks & Eval wires a
+  `collision_rate` reducer + `min_ttc_s`; then live-measure our checkpoint on CARLA-on-pod. Falsifier:
+  imagination-error/decel-onset lead ≤ a detection-only baseline on matched segments ⇒ H15-vs-detection
+  advantage unproven here.
 
 ## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
 - **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving
@@ -241,6 +256,24 @@ public claim candidate.
 - **Metric hooks:** violation rate (0 bar), stop-distance margin at the line.
 - **Status:** **catalogued** (2026-07-24; reuses SC-04 machinery — flagged as the cheapest next spec).
 
+## SC-15 — Emergency-scene interference / first-responder blocking  [W-09]  ★ (new 2026-07-15)
+- **Opponent evidence (FACT):** NHTSA sent Waymo **and** Tesla a letter (**2026-07-08**) over a
+  **"clear pattern"** of first-responder interference and gave AV developers ~a month to fix
+  emergency-scene detection; trigger context included Waymo robotaxis **stalling in San Francisco's
+  July-4 gridlock** (some towed after batteries died). Cross-opponent, regulator-driven, with a
+  deadline. — https://www.benzinga.com/markets/tech/26/07/60351872/nhtsa-warns-autonomous-vehicle-companies-over-clear-pattern-of-first-responder-interference
+  , https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
+- **Description:** an active emergency scene (responders, cones, apparatus, blocked lane) on the ego's
+  route; correct behaviour is *recognising the non-nominal scene* and degrading — slow, yield the
+  corridor, or a well-placed stop — never driving through or freezing in the way.
+- **TanitAD mechanism:** A9/D8 OOD-familiarity flags the rare emergency-scene state → strategic
+  re-route + **H1 fallback** owns the degraded behaviour (well-placed stop, corridor-clear); shares
+  SC-08's stop-placement machinery. Distinct from SC-06 (yield to a *moving* emergency vehicle).
+- **Data sources:** thin publicly — CARLA emergency-scene + connectivity-loss/stall injection
+  (blocked_route family); real footage from the NHTSA docket if released. Honest data gap.
+- **Metric hooks:** scene-recognition (OOD) rate; corridor-clear time; blockage duration; TMS.
+- **Status:** **catalogued** (2026-07-15). Enriches SC-06/SC-08 evidence; spec after SC-14.
+
 ---
 
 ## Coverage matrix (mechanism × scenario)
@@ -249,8 +282,8 @@ public claim candidate.
 |---|---|
 | H15 imagination (unobserved/changed area) | SC-01, SC-02, SC-03, SC-05, SC-09, SC-11, SC-13 |
 | H9 rule/closure barriers | SC-01, SC-04, SC-09, SC-11, SC-14 |
-| A9/D8 self-monitoring + fallback | SC-05, SC-06, SC-07, SC-08, SC-10, SC-12, SC-13 |
-| Strategic graph (re-route/stop memory) | SC-06, SC-08 |
+| A9/D8 self-monitoring + fallback | SC-05, SC-06, SC-07, SC-08, SC-10, SC-12, SC-13, SC-15 |
+| Strategic graph (re-route/stop memory) | SC-06, SC-08, SC-15 |
 
 Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric fragility) live in
 `WEAKNESS_CATALOG.md` and feed the CNCE/leaderboard and narrative streams instead.
@@ -262,4 +295,5 @@ Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric frag
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
 | SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-02…SC-03, SC-06…SC-14 | catalogued | per-entry bars set at spec time | — |
+| SC-13 | spec-drafted | collision rate exactly 0 across the classification-range sweep + min-TTC margin > detection-reactive baseline (closed-loop) | — |
+| SC-02…SC-03, SC-06…SC-12, SC-14, SC-15 | catalogued | per-entry bars set at spec time | — |
