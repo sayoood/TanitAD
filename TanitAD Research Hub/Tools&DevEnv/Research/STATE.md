@@ -12,6 +12,18 @@ Shipped the top backlog item (**CI commit gate**, P0 #1). No half-done work; sui
 committed into `stack/` directly, not via intake — fast-forward to `main` is safe (3 new files, no
 model code touched, suite green).
 
+**⚠ CONSOLIDATION FLAG (orchestrator — pick ONE ci-gate):** the CI gate was built **three times on
+three unmerged branches**, none in `main` (which is why main's backlog still showed it undone):
+`worktree-agent+tools-devenv-20260710` (9b0ba24, intake pkg `2026-07-10-ci-script/`, pure-PS ci.ps1
+delegating to the also-unmerged `profile_testsuite.py`), `worktree-agent-tools-devenv-20260711`
+(1f21f98, verified that one), and this run (8916bee). **Recommend merging THIS one** — it is the only
+version that (a) handles the current 363-test reality with a **quick(8.3s)+full(24.4s) split** (the
+07-10 "<15s full suite" target is unmeetable now the suite grew 181→363), (b) has a **unit-tested
+Python core** (12 tests) rather than untested PowerShell, and (c) is **self-contained** (no dependency
+on the unmerged `profile_testsuite.py`). Preserve the 07-10/07-11 **KB lit-sweep findings** separately
+(TensorRT-Orin QDQ trap, Rerun 0.34.1, Trackio, ZipDepth, Bench2Drive-Robust) — they are additive and
+orthogonal to the code choice. Retire the 07-10 `2026-07-10-ci-script/` intake as superseded.
+
 **Hand-offs to other agents:**
 - → **Benchmarks & Eval / Opponent (D-028 seam):** two July-2026 closed-loop releases are your
   territory, flagged not deep-dived — **CLEAR** (Closed-Loop RL at Scale, arXiv 2607.02841) and
