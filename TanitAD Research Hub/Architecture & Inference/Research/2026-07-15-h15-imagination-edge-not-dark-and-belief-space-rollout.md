@@ -2,8 +2,9 @@
 
 > Wednesday weekly agent. Consumed this week's Monday (Tools&DevEnv 2026-07-13, MetaDrive front-cam —
 > superseded by D-014) and Tuesday (Data Eng 2026-07-14, Cosmos-Drive-Dreams loader + AV landscape)
-> outputs. Wall-clock 2026-07-15. Budget used: **4 web searches + 2 fetches + 1 measured experiment
-> (GPU) + 1 shipped increment** / ~1.6 h — well under the 25-search / 4-iteration / 4-h caps.
+> outputs. Wall-clock 2026-07-15. Budget used: **4 web searches + 2 fetches + 2 measured GPU
+> experiments (H15 liveness diagnostic + H15 per-tick latency) + 1 shipped increment** / ~1.9 h —
+> well under the 25-search / 4-iteration / 4-h caps.
 > Calendar note: some hub notes are loop-forward-dated; I date by wall-clock (Data-Eng precedent).
 
 ---
@@ -69,6 +70,30 @@ not a coincidence.
 3. **Gate that would falsify a future imagination claim:** **D9** (hidden-sector cosine / calibration
    gap / LOPS) and **D8** (imagination-error self-monitor AUROC > 0.85, H11). `h15_fire_frac` is now a
    pre-gate liveness instrument for both.
+
+## 2b. Second measured experiment (G-H, D-029) — what does the H15 edge COST per tick? (Efficiency moat)
+
+H15 also runs at **inference** (the A9 imagination-error self-monitor, brain 4), so its per-tick
+latency is a deployment question. Measured **batch-1 on the RTX 4060** (the Orin latency proxy) at the
+**REAL flagship4b scale** (263.44 M total; imagination **22.06 M = 8.4 % of params**). Latency is
+weight-VALUE-invariant (shapes/dtypes only) → untrained instantiation is valid for timing. Artifact:
+`Implementation/h15_logging_diagnostic/{h15_latency.py, results/2026-07-15-h15_latency.json}`.
+
+| dtype | encode_tokens | **imagination (marginal H15)** | operative predictor | core tick (enc+pred) | **H15 % of core** |
+|---|---|---|---|---|---|
+| fp32 | 7.67 ms | **2.25 ms** | 5.52 ms | 13.18 ms | **17.0 %** |
+| fp16 | 4.26 ms | **1.35 ms** | 6.40 ms | 10.66 ms | **12.7 %** |
+
+**Read:** the imagination edge adds **~1.3–2.2 ms/tick (~13–17 % of the core decision tick)** — roughly
+proportional to its 8.4 % param share (slightly super-proportional: depth-3 attention over 256 tokens +
+a `grid_sample` advection), and it is only paid when the A9 monitor is engaged. **Verdict: the
+self-monitoring edge is affordable on Orin-class hardware** — no efficiency-moat regression from H15.
+Honest details (P8): (a) **fp16 makes the predictor SLOWER** (6.40 vs 5.52 ms) while the encoder speeds
+up markedly (7.67→4.26) — at batch-1 the tiny predictor forward is launch/convert-bound, not
+tensor-core-bound, so fp16 buys nothing there; the win is entirely in the ViT (consistent with Prod-Opt
+"deploy TRT-fp16 for the tower"). (b) These are un-fused eager-mode forwards; a TRT-fused engine will
+lower all three — the *fraction* is the robust number, the absolute ms is an upper bound. (c) 4060 was
+near-idle at run start (~10 % util); no contention flagged. G-AI2: all numbers **measured**.
 
 ## 3. Implementation increment (intake pkg — D-011, G-E)
 

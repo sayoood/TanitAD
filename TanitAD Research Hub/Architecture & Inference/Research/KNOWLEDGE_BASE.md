@@ -14,6 +14,16 @@
   meter (`h15`/`h15_fired`/`h15_fire_frac`) shipped as intake (6✓); `h15_fire_frac→0` is now the *real*
   dark-edge alarm — impact: H15 / D9 / D8 — `../Research/2026-07-15-h15-imagination-edge-not-dark-and-belief-space-rollout.md`
   + `../Implementation/incoming/2026-07-15-h15-logging-fidelity/`
+- [2026-07-15] [repo/measured] **H15 imagination edge is affordable per tick** (CNCE/Efficiency moat).
+  Batch-1, RTX 4060, flagship4b scale (263.44 M total, imagination 22.06 M = 8.4 % of params); latency
+  weight-value-invariant so untrained instantiation valid for timing. **fp32:** encode 7.67 ms /
+  imagination 2.25 ms / predictor 5.52 ms → core tick 13.18 ms → **H15 = 17.0 % of core**. **fp16:** 4.26
+  / 1.35 / 6.40 → 10.66 ms → **12.7 %**. So the A9 self-monitor adds ~1.3–2.2 ms/tick (~roughly its param
+  share), only when engaged → no efficiency-moat regression. Honest: **fp16 makes the small predictor
+  SLOWER** (6.40 vs 5.52; batch-1 launch/convert-bound, not tensor-core-bound) — the fp16 win is entirely
+  in the ViT tower (matches Prod-Opt "TRT-fp16 the tower"); eager un-fused, so absolute ms is an upper
+  bound, the fraction is robust — impact: H5 / CNCE / H15 —
+  `../Implementation/h15_logging_diagnostic/results/2026-07-15-h15_latency.json`
 - [2026-07-15] [arXiv 2605.25313] **UWM-JEPA — belief-space imagination WM.** Density-matrix latent +
   learned unitary predictor imagine multiple compatible hidden futures; *"the construction preserves the
   joint-state spectrum exactly during rollout, so the predictor itself cannot dissipate the represented

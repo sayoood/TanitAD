@@ -1,7 +1,7 @@
 # STATE — Architecture & Inference
 
 LAST_RUN: 2026-07-15 (Wednesday weekly agent — resolved the flagship `h15=0.0` WATCH: imagination edge is LIVE-ACTIVE, the log was a last-micro artifact (46.3% false-zero); shipped an accum-window meter intake (6✓); UWM-JEPA belief-space theory-watch → new multi-step-imagination backlog)
-QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 1 measured GPU experiment + 1 shipped increment / ~1.6 h — under caps. G-H: H15 diagnostic on the exact flagship code path — imagination built (22 M), grad reaches it (L1 44.6) + encoder (36.7), fire rate 0.45≈mask_prob; `h15=0.0` = logging artifact, NOT a dark edge → observability fix, no config change (D-018 restraint on a phantom))
+QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 2 measured GPU experiments + 1 shipped increment / ~1.9 h — under caps. G-H #1: H15 liveness diagnostic on the exact flagship code path — imagination built (22 M), grad reaches it (L1 44.6) + encoder (36.7), fire rate 0.45≈mask_prob; `h15=0.0` = logging artifact, NOT a dark edge → observability fix, no config change (D-018 restraint on a phantom). G-H #2 (D-029 edge-targeting): H15 per-tick latency, batch-1 4060 flagship4b scale — imagination 1.35–2.25 ms = 12.7–17.0 % of core tick at 8.4 % of params → self-monitor affordable on Orin, no efficiency-moat regression; fp16 speeds the ViT but SLOWS the small predictor)
 (Calendar: wall-clock 2026-07-15. Dating by wall clock per the Data-Eng precedent.)
 
 ## HANDOFF
