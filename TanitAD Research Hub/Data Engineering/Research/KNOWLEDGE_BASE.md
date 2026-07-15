@@ -3,6 +3,29 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-15] [measured/gate] **WorldModel-Synthetic-Scenarios is POSE-LESS** (BACKLOG P0.1 gate CLOSED on
+  real bytes): each clip = `<family>/<clip>/{description,video}`; `video/` = **7 camera mp4s** (front_wide,
+  front_tele, 3 fisheyes, rear_left/right) @24 fps ~462 frames; `description/<cam>.json` = a **Qwen2.5-7B
+  caption + `{weather,time_of_day,surface_type,region}`**, NOT a pose. No vehicle_pose/CAN/trajectory anywhere.
+  → the "near-zero cosmos-mirror" assumption is DEAD; loader path is (a) video-only, (b) **IDM/H7 pseudo-label**
+  (Phase-1, needs a trained inv-dyn head), or (c) **usable-today semantic-label index** (captions+metadata →
+  BACKLOG P1 2d + SC-02/05/06). Families emergency/lanechange/nudging/pedestrian/weather_degradation. Do NOT
+  fetch the 8.3 TB pixels until (b)/(c) scheduled — impact: H7/D-014/D-022/BACKLOG — `2026-07-15-worldmodel-pose-gate-and-pandaset-geometry.md` §1
+- [2026-07-15] [measured/loader] **PandaSet loader shipped (intake, 16✓) + a grounded D-016 GEOMETRY BLOCKER.**
+  CC-BY-4.0 real-urban adapter (plan §7 #2), reuses cosmos geometry (motion-heading 4×4 → poses_to_signals),
+  I7≡comma2k19, I3 seq-split. Grounded on REAL front calib (arXiv 2112.12610: fx=1970.01, 1920×1080, k1=−0.589):
+  centered square-crop canonicalization is **height-bound** (ideal crop 1896 px > 1080 frame height) → lands
+  **f_eff=467 px vs canonical 266** (~1.75× scale mismatch) → NOT drop-in; **rule: any fx>1122 px on a 1080-tall
+  frame is height-bound.** Distortion k1=−0.589 also ignored by the pinhole path. Loader **fails loud**
+  (GeometryError) so it can't pollute the mix. Fix = D-016 R1 pad-crop+undistort in calib.py — a **prerequisite
+  for the whole owned real-urban tier** (ZOD/Udacity hit it too), promoted from "R1 nicety" to blocking — impact:
+  H7/H4/D-016/OWN_DATASET_PLAN — same note §2
+- [2026-07-15] [HF sweep/D-012] New `nvidia/PhysicalAI-Autonomous-Vehicle-Cosmos-Synthetic` (card-only, no data
+  payload yet — watch; sibling of Cosmos-DD). `Newsflare/…-autonomous-driving-videos` = commercial stock video
+  (copyright barrier, excluded, like OpenDV). No new ungated real-AV video corpus → owned real-urban gap stays
+  **ZOD-shaped** (plan §7 #1). Literature: IDM/latent-action-in-the-wild now dense (2601.05230, 2602.16229,
+  LatentVLA, FLAM) → frozen-encoder IDM+WM on unlabelled video is the standard recipe → makes pose-less corpora
+  (WorldModel-Synth, YouTube) trainable via the comma/ZOD real-CAN bridge — impact: H7/D-012 — same note §3–4
 - [2026-07-09] [measured] **PhysicalAI-AV R1 selection from cached egomotion**: 30 cached chunks → 2,850
   clips scored (0 errors), **1,926 pass the driving gate (67.6 %)** → R1=2,000 is 74 short of reachable
   from cache (needs ~1–2 more egomotion chunks). Gate failures (924) are **all speed-band**. Camera fetch
