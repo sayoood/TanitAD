@@ -3,6 +3,27 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-15] [repo/measured] **The flagship H15 imagination edge is NOT dark — the log is unfaithful**
+  (resolves the 2026-07-14 program-report §8 WATCH `h15=0.0`). GPU diagnostic on the exact code path
+  (`train_flagship4b.h15_loss` + `flagship4b_smoke_config`): imagination module **built** (22.06 M params,
+  `h15.enabled=True`), gradient **reaches** it (L1 44.6) **and the encoder** (L1 36.7), fire rate **0.4525**
+  ≈ `mask_prob` 0.5, mean loss when fired **0.611**. `h15=0.0` is a **logging artifact** — `log["h15"]`
+  records the LAST accum micro, 0.0 whenever its gate didn't fire; **46.3 % of all log rows falsely read
+  `h15=0.0` while the edge trained**, true idle only 6.3 % (theory (0.5)⁴=0.0625 ✓). **Do NOT change the
+  trained config** (would chase a phantom, D-018 restraint). Fix = observability: an accumulation-window
+  meter (`h15`/`h15_fired`/`h15_fire_frac`) shipped as intake (6✓); `h15_fire_frac→0` is now the *real*
+  dark-edge alarm — impact: H15 / D9 / D8 — `../Research/2026-07-15-h15-imagination-edge-not-dark-and-belief-space-rollout.md`
+  + `../Implementation/incoming/2026-07-15-h15-logging-fidelity/`
+- [2026-07-15] [arXiv 2605.25313] **UWM-JEPA — belief-space imagination WM.** Density-matrix latent +
+  learned unitary predictor imagine multiple compatible hidden futures; *"the construction preserves the
+  joint-state spectrum exactly during rollout, so the predictor itself cannot dissipate the represented
+  uncertainty."* Numbers: hidden-velocity 5-step forward-sim **0.77 vs 0.53** (LSTM-JEPA); blind rollout
+  loses **<10** probe-R² pts short-horizon vs **41/68** baselines. Translations for our H15 (sector-mask
+  1-step + advection + per-cell σ): (a) **we train imagination at 1 step only** → multi-step belief rollout
+  (where object-permanence/OOD pays off) is untrained → new backlog P0; (b) **our epistemic σ may dissipate
+  over the operative K-step rollout** — if it collapses with horizon, the H11/D8 self-monitor trigger
+  silently dies where anticipation matters; UWM-JEPA gives the mechanism (spectrum preservation) + the
+  falsifier (blind-rollout R²-retention by horizon) — impact: H15 / H11 / D8 / D9 — https://arxiv.org/abs/2605.25313
 - [2026-07-09] [repo/measured] **K-step rollout bake-off — first measured arm** (backlog P0 #2; matched
   compute, 4060, 2×2000 steps, real comma2k19, 11.74 M reduced-but-real probe). K=2 vs K=1, OFAT-verified
   (`lever_diff==["train.rollout_k"]`). **(1) rollout ≈ free: +0.5 % wall-clock (749.4 vs 745.4 s), 0 extra

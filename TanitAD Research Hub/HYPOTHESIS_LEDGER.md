@@ -32,6 +32,15 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-15: Architecture & Inference (Wed) — **H15 imagination edge verified LIVE-ACTIVE in the
+  flagship (no status change, P8)**, resolving the 2026-07-14 program-report §8 `h15=0.0` WATCH. Measured
+  on the exact code path (GPU): imagination module **built** (22.06 M params), gradient reaches it (L1
+  44.6) + the encoder (L1 36.7), fire rate 0.45 ≈ `mask_prob`; `h15=0.0` is a **logging artifact** (last-
+  micro sample of a stochastic gate — 46.3 % of rows false-zero while training). Edge is healthy; **the
+  log was lying** → observability fix shipped (accum-window meter, intake 6✓), `h15_fire_frac→0` now the
+  real dark-edge alarm. **No trained-config change** (D-018 restraint on a phantom). Theory-watch: UWM-JEPA
+  (2605.25313, belief-space imagination) surfaces two H15 design gaps (1-step-only training; possible σ
+  dissipation over rollout → H11/D8 trigger risk) as a new falsifiable backlog experiment.
 - 2026-07-24: Opponent Analyzer (Fri, run #2) — competitive-evidence deltas (no status *upgrade*;
   design-oracle numbers only, nothing measured on our stack, P8). **H9** gains a shipped scenario:
   **Stop-Arm Gate** intake pkg (W-03 → H9/H15; **11/11 offline tests**) with the first

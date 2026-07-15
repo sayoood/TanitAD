@@ -5,6 +5,25 @@ Format per item: goal / method / resource / expected number / falsifier.
 
 ## P0 — next run
 
+0a. **[✅ DONE 2026-07-15 — H15 imagination edge liveness (resolved the `h15=0.0` WATCH)]** GPU
+   diagnostic on the exact flagship code path: imagination BUILT (22.06 M), grad reaches it (L1 44.6) +
+   encoder (L1 36.7), fire rate 0.4525≈`mask_prob`, mean-when-fired 0.611. `h15=0.0` = LOGGING ARTIFACT
+   (last-micro sample; 46.3 % of rows false-zero while training; true idle 6.3 %). **Edge healthy, no
+   config change (D-018).** Shipped observability fix (intake `2026-07-15-h15-logging-fidelity`, 6✓).
+   Artifact: `Implementation/h15_logging_diagnostic/` + `Research/2026-07-15-*.md`.
+
+0b. **Multi-step belief-rollout imagination (UWM-JEPA 2605.25313-motivated) — NEW top item.**
+   Goal: does training H15 on a **K-step** masked rollout (advect+refine over k∈{1,2,4}, NLL each step)
+   beat the current **1-step-only** imagination, and does the per-cell **epistemic σ persist or dissipate
+   over the operative K-step rollout**? Method: prototype the K-step masked-rollout loss in
+   `Implementation/` (reuse `ImaginationField` + `sector_mask`); on a held-out ckpt measure (i) σ-retention
+   vs horizon, (ii) blind-rollout probe-R² retention (UWM-JEPA's metric) vs a no-imagination baseline.
+   Resource: 4060 / idle-pod, hours, $0. Expected: σ persists and R²-retention beats baseline at horizons
+   ≤4 → multi-step training earns its place; **Falsifier:** σ collapses toward 0 with horizon OR R² drops
+   as fast as no-imagination → 1-step is sufficient, close the item. **Gate:** D9 (calibration) + D8
+   (self-monitor AUROC). **D-018:** escalate before any trained-config change. Cross-ref: the σ-dissipation
+   risk directly threatens the H11/D8 self-monitor trigger at long horizons.
+
 1. **[✅ DONE 2026-07-08 — spectral-sizing on real trained latents]** Ran `run_spectral.py` on the
    step-6500 `ckpt_full.pt` (24 val eps, 7,176 pairs, 4060): **fit R²=0.99, rank ≈43, knee 31, k*=21 →
    OVER-PROVISIONED** (knee ≪ 512, well inside the predicted 20–60 band → efficiency-moat evidence for H3).

@@ -1,29 +1,43 @@
 # STATE — Architecture & Inference
 
-LAST_RUN: 2026-07-09 (Wednesday weekly agent — K-step rollout bake-off first measured arm (backlog P0 #2) + LeJEPA-identifiability theory (2605.26379) + ACWM low-dim-action AdaLN refinement)
-QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 1 measured experiment (2 trained arms) / ~2.2 h — under caps. G-H: matched-compute K=2 vs K=1 → imag_rel −64 % @1-step, no gate passed at reduced scale → no claim, feeds decision-grade Phase C)
-(Calendar: wall-clock 2026-07-09; hub notes forward-dated to mid/late-July by the autonomous loop. Dating by wall
-clock per the Data-Eng precedent — see the run note's calendar footnote.)
+LAST_RUN: 2026-07-15 (Wednesday weekly agent — resolved the flagship `h15=0.0` WATCH: imagination edge is LIVE-ACTIVE, the log was a last-micro artifact (46.3% false-zero); shipped an accum-window meter intake (6✓); UWM-JEPA belief-space theory-watch → new multi-step-imagination backlog)
+QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 4 searches + 2 fetches + 1 measured GPU experiment + 1 shipped increment / ~1.6 h — under caps. G-H: H15 diagnostic on the exact flagship code path — imagination built (22 M), grad reaches it (L1 44.6) + encoder (36.7), fire rate 0.45≈mask_prob; `h15=0.0` = logging artifact, NOT a dark edge → observability fix, no config change (D-018 restraint on a phantom))
+(Calendar: wall-clock 2026-07-15. Dating by wall clock per the Data-Eng precedent.)
 
 ## HANDOFF
 
-No half-done work. One measured experiment + theory-watch this run:
+No half-done work. One measured experiment + intake + theory-watch this run:
 
-1. **G-H measured experiment — K-step rollout bake-off first arm** (backlog P0 #2). Matched-compute
-   K=2 vs K=1 (2×2000 steps, real comma2k19, RTX 4060, 11.74 M reduced-but-real probe, OFAT-verified via
-   `lever_diff`). **Rollout ≈ free (+0.5 % wall-clock, 0 params).** Falsifier metric (D2 dir-acc) **saturated
-   at 1.0** → non-discriminative; discriminative `imag_rel` shows **K=2 cuts 1-step latent-pred error vs
-   persistence 2.914→1.049 (−64 %)** but does NOT help the 4-step horizon (I4 1.451→1.645) → **K must match
-   the decode horizon**. D1 FAIL + D3 BLOCKED both ⇒ **no decision-grade claim (D-004)**. Script+artifacts:
-   `Implementation/kstep_bakeoff_probe/` (`kstep_bakeoff_probe.py` + `results/2026-07-09-*.json`). No stack
-   code change this run (suite 188✓/1s — rose from 181 via other agents' mid-session intakes, not mine).
-   No trained-config change executed (D-018).
-2. **Theory-watch (D-013):** *When Does LeJEPA Learn a World Model?* (2605.26379) — LeJEPA/SIGReg gives
-   linear+orthogonal identifiability under a unique Gaussian prior → optimal latent-space planning; grounds
-   H3 anti-collapse AND the `p0-spectral-sizing` linear proxy (D-021). ACWM (2605.08567) — AdaLN vs cross-attn
-   is a wash for low-dim actions (ours are 2-D) → bounds the `adaln_conditioning` lever's expected Δ.
+1. **G-H measured experiment — "is the H15 imagination edge dark, or is the log lying?"** (resolves the
+   2026-07-14 program-report §8 WATCH). GPU diagnostic on the exact code path (`train_flagship4b.h15_loss`
+   + `flagship4b_smoke_config`): imagination module **BUILT** (22.06 M, `h15.enabled=True`), gradient
+   **reaches** it (L1 44.6) **and the encoder** (L1 36.7), fire rate **0.4525**≈`mask_prob` 0.5, mean loss
+   when fired **0.611**. `h15=0.0` is a **LOGGING ARTIFACT** — `log["h15"]` = last accum micro, 0.0 whenever
+   its stochastic gate didn't fire; **46.3 % of all rows false-zero while training** (true idle 6.3 %, theory
+   (0.5)⁴=0.0625 ✓). **Verdict: edge healthy, log unfaithful → no trained-config change (D-018 restraint).**
+   Artifacts: `Implementation/h15_logging_diagnostic/` (`h15_diagnostic.py` + `results/2026-07-15-*.json`).
+2. **Increment (G-E) — intake `2026-07-15-h15-logging-fidelity`** (`h15_meter.py` + 6 tests, standalone-
+   green, no torch): accum-window meter emitting `h15`/`h15_fired`/`h15_fire_frac`; 3-line trainer wiring
+   diff proposed; target `stack/tanitad/train/h15_meter.py`. `h15_fire_frac→0` is now the REAL dark-edge
+   alarm. Stack suite 343✓/2s unchanged by me (pre-existing untracked-test breakage flagged — see below).
+3. **Theory-watch (D-013):** **UWM-JEPA (2605.25313)** belief-space imagination — spectrum-preserving
+   rollout "cannot dissipate the represented uncertainty" (5-step hidden-velocity 0.77 vs 0.53). Two H15
+   design gaps fall out: **we train imagination 1-step only**; **epistemic σ may dissipate over the
+   operative K-step rollout** (H11/D8 trigger risk). Var-JEPA/VJEPA (variational σ grounding, watch);
+   speculative-decoding/flow-matching AD heads (H5, parked).
+
+### FLAGGED for orchestrator (not mine to fix)
+- `stack/tests/test_physicalai_rig.py` (untracked, another agent's in-flight PhysicalAI-rig work) fails
+  **collection**: `ImportError: cannot import name 'ftheta_horizon_row' from tanitad.data.calib`. This
+  halts a bare `pytest` for the WHOLE stack suite. Owner must add the symbol to `calib.py` or drop the
+  import. I ran green via `--ignore`.
 
 ### Exact next steps (next Wednesday run, in priority order)
+- **P0-new — multi-step belief-rollout imagination (UWM-JEPA-motivated).** Train H15 on a K-step masked
+  rollout (advect+refine over k∈{1,2,4}, NLL each step); measure **epistemic-σ retention vs horizon** +
+  **blind-rollout probe-R² retention** on a held-out ckpt. Falsifier: σ collapses / R² drops as fast as a
+  no-imagination baseline → 1-step training is sufficient, close. 4060/idle-pod, no config change until the
+  read is in (then D-018 escalate). Couples with the σ-dissipation risk to H11/D8.
 - **P0 #2b — decision-grade K∈{1,2,4} sweep at OPERATIVE scale** from the pod2 step-8k `ckpt_full.pt`
   (Phase C). Primary metric **`imag_rel` per horizon** (NOT dir-acc — proven to saturate); reuse
   `Implementation/kstep_bakeoff_probe/kstep_bakeoff_probe.py` (swap `probe_config` for the operative config
