@@ -4,14 +4,18 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **CI script `stack/scripts/ci.ps1` (backlog duty #3)** — pytest + I2 tripwire on every commit,
-   wired to `profile_testsuite.py check` as its timing guard (budget: warm-overhead ≤4 s, no single
-   `call` test >6 s). Goal: one command an agent/pre-commit runs; measured wall < 15 s warm.
-   Falsifier: a newly-added slow fixture must make `ci.ps1` exit nonzero. Deliver as intake.
+1. **TanitResim P1 measured gap (D-029 continuous product)** — pick ONE real researcher pain point
+   from `RESIM_ROADMAP.md` and ship it push-to-`main`: **3-arm view** (REF-B has now landed —
+   flagship/REF-A/REF-B side-by-side) OR **checkpoint A/B diff** panel. Measure: load time for a real
+   episode + one before/after screenshot. This discipline's #1 standing duty went untouched
+   2026-07-15; do not skip two runs.
 2. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
    overlay; doubles as the D3 imagined-vs-oracle visual. Note: the orchestrator already shipped a
    trajectory-fan overlay (`a25a3fe`) — SCOPE THIS as the *episode-replay* complement, don't dup.
    `pip install rerun-sdk`; measure setup cost + one real episode → .rrd size/time for G-T1.
+3. **`ci_check.py --self-test` mode** — monkeypatch a batch-stat layer into a throwaway module and
+   assert CI exits 2, closing the I2-red-live falsifier (currently unit-tested only). Small, high
+   confidence. Also: wire `-WarmBudgetS 35` into the loop's commit path once the full suite > 30 s.
 
 ## P1
 
@@ -35,6 +39,11 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-07-15) **CI commit gate `ci.ps1` (was P0 #1) DONE** — I2 tripwire (fail-fast) + per-test
+  latency budget (>6 s → block, falsifier CONFIRMED) + suite-green + opt-in warm-wall. Unit-tested
+  core `ci_check.py` (12 tests). Measured warm wall: quick gate **8.3 s** / full gate **24.4 s** (363
+  tests). 0 new deps. Committed to `stack/` (D-029 tooling exception, not intake). Old "<15 s full
+  suite" target retired as stale (suite grew 181→351). `2026-07-15-ci-commit-gate-and-latency-budget.md`.
 - (2026-07-09) **Test-suite I/O profiling (was P1.5) DONE** — cold 40.6 s / warm 10.7 s measured;
   root cause = Drive hydration latency; `profile_testsuite.py` shipped via intake (9 tests). Fix =
   pin `stack/` offline (→ new P1.5 verification item).

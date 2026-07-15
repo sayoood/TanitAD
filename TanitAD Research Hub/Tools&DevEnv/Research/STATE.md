@@ -1,47 +1,53 @@
 # STATE — Tools&DevEnv
 
-LAST_RUN: 2026-07-09 (W3, third weekly run)
-QUALITY: full (G-A…G-F + G-H + G-T1 met; measured experiment = test-suite I/O cost)
+LAST_RUN: 2026-07-15 (weekly run; worktree branch `worktree-tools-devenv-20260715`)
+QUALITY: full (G-A…G-F + G-H + G-T1 met; measured experiment = CI commit-gate wall-clock + falsifier)
 
 ## HANDOFF
-Note: repo advanced past this discipline's backlog during W2–W3 — the orchestrator/loop shipped the
-CARLA harness live (`stack/scripts/carla_work_zone.py`, SC-01 measured OKRI 32.4 vs 12.8 in `-nullrhi`)
-and the Colab burst harness (backlog P0.1 DONE, `Implementation/colab_burst/README.md`). So this run
-pivoted to the two live gaps: (a) the pod2 **camera-rendering blocker** root-cause + turnkey recipe,
-and (b) the **G-E cost** every agent pays. Both landed.
+Shipped the top backlog item (**CI commit gate**, P0 #1). No half-done work; suite green (363/2s).
 
-**Two things pending action:**
-1. **Intake triage** — `Implementation/incoming/2026-07-09-testsuite-io-profiling/`
-   (`profile_testsuite.py` + 9 tests + INTAKE). Proposed target `stack/scripts/profile_testsuite.py`;
-   pairs with the future `ci.ps1` (backlog #3) as its timing guard.
-2. **Sayed, ~1 click (free G-E win):** pin `stack/` to Google Drive **"Available offline"** → removes
-   the measured ~30 s cold-I/O tax per agent run (cold 40.6 s → ≈ warm 10.7 s). Evidence in the note §2.
+**Ready for orchestrator merge (tooling → `main`, not intake):** commit on
+`worktree-tools-devenv-20260715` adds `stack/scripts/ci_check.py` + `stack/scripts/ci.ps1` +
+`stack/tests/test_ci.py`. Per D-029 dev-tooling exception (same convention as resim/replay/scena),
+committed into `stack/` directly, not via intake — fast-forward to `main` is safe (3 new files, no
+model code touched, suite green).
 
-**CARLA camera pixels (when checkpoint-driven ego eval is on the critical path — NOT urgent):** recreate
-the pod from a template with `NVIDIA_DRIVER_CAPABILITIES=all` (must incl. `graphics`); gate on
-`vulkaninfo | grep deviceName` BEFORE installing CARLA (nvidia-smi is not sufficient); then Xvfb :99 +
-`CarlaUE4.sh -RenderOffScreen`. Full recipe: research note §1. Milestone 1 (LAL/OKRI/LOPS) needs no pixels.
+**Hand-offs to other agents:**
+- → **Benchmarks & Eval / Opponent (D-028 seam):** two July-2026 closed-loop releases are your
+  territory, flagged not deep-dived — **CLEAR** (Closed-Loop RL at Scale, arXiv 2607.02841) and
+  **Fail2Drive** (closed-loop generalization benchmark, arXiv 2604.08535).
+- → **Whoever owns the loop / D-025 program-report:** adopt `pwsh stack/scripts/ci.ps1 -Quick`
+  (8.3 s) as the pre-commit / pre-report screen — it names the failing invariant instead of a raw
+  pytest dump.
+- → **CARLA closed-loop (my own P1.3):** mirror Bench2Drive's 220-route disentangled structure
+  (5 × 44 scenarios × weather × location, ~150 m), not one monolithic drive.
 
-**Prior open thread (MetaDrive):** superseded by D-014 (MetaDrive retired). The `2026-07-13-metadrive-
-frontcam-perturbation/` intake remains for reference only; sim closed-loop = CARLA now.
+**Still pending Sayed (carried from W3, ~1 click each):**
+1. Pin `stack/` to Drive **"Available offline"** → removes the ~30 s cold-I/O tax that now compounds
+   on top of every `ci.ps1` run (backlog P1.5 verifies once pinned).
+2. Graphics-capable pod recreation → unblocks CARLA camera pixels (P1.3). NOT urgent.
 
 ## Done this run
-- **Root-caused the pod2 CARLA camera-rendering blocker** (was "not fixable in-container", now with the
-  *why*): RunPod compute-only driver caps + UE4.24 Vulkan-offscreen bug. Turnkey graphics-pod recipe with
-  a single `vulkaninfo` go/no-go probe → research note §1, KB.
-- **G-H measured experiment (backlog P1.5):** test-suite I/O decomposition — cold 40.6 s / warm 10.7 s /
-  reported-test 9.2 s / stack-src 0.44 MB. Finding: G-E cost is Drive **hydration latency**, not compute.
-  Falsifier ("tests slow due to torch/compute") refuted. Actionable: pin `stack/` offline.
-- **Implementation increment (G-E):** intake pkg `2026-07-09-testsuite-io-profiling/` — `profile_testsuite.py`
-  (`profile`/`check`, stdlib-only) + 9 pkg tests (0.30 s) + end-to-end `check` OK (181 passed, exit 0).
-- Research note `2026-07-09-carla-render-blocker-and-testsuite-io-cost.md`; KB delta (3 findings);
-  AlpaSim now-public tooling update.
-- G-T1: profiler GO (0 deps, 0 min setup); CARLA graphics-pod = one probe-gated supervised op, $0 until eval-critical.
+- **`ci.ps1` CI commit gate (backlog P0 #1, DONE):** I2 tripwire (fail-fast) → per-test latency
+  budget (>6 s `call` → block) → suite-green + opt-in warm-wall budget. Unit-tested core
+  `ci_check.py` (12 tests, 0.20 s). Measured: **quick gate 8.3 s** / **full gate 24.4 s** (363
+  tests). Falsifier CONFIRMED (7 s test → full gate exit 1). `ci.ps1` verified end-to-end on Windows
+  PowerShell 5.1 (auto-resolves venv). 0 new deps → G-T1 GO.
+- Reframed the stale "<15 s full suite" target: suite grew 181→351 tests (breadth, not slow tests);
+  split into fast pre-commit quick gate + full gate. Honest metric-moved note (P8).
+- Research note + KB delta (3 findings) + tooling sweep (AlpaGym/Bench2Drive currency, verdicts
+  unchanged) + BACKLOG re-prioritized + created **RESIM_ROADMAP.md** (was a mission-named but missing
+  artifact).
 
 ## Open threads / proposals to raise
-- AlpaGym closed-loop RL post-training with our own <100 M driver — A100-gated Phase-1 proposal (draft to
-  `Project Steering/Proposals/` once D1–D3 pass). NVIDIA Alpamayo 2 Super (32 B) + OmniDreams confirm the
-  closed-loop-RL-on-sim direction at scale; our edge stays efficiency/labels (P5/C2), not scale.
-- Note to Wed (Architecture): sim frames are now the SAME tensor as real (`[6,256,256]`) — no ONNX-shape
-  divergence between sim-eval and deployment. Keep the encoder input static at `[6,256,256]`; keep ViT
-  shapes static + norms batch-free for the ONNX→TensorRT FP16 Orin path (INT8 deferred, must be measured).
+- **`ci_check.py --self-test` mode** (next-run candidate): monkeypatch a batch-stat layer into a
+  throwaway module and assert CI exits 2 — closes the I2-red-live falsifier without touching real
+  model code. Currently I2-red is unit-tested only.
+- Turn on the warm-wall budget in the loop's invocation (`-WarmBudgetS 35`) once the full suite
+  crosses ~30 s, so "the suite is getting slow" is loud, not discovered.
+- AlpaGym closed-loop RL post-training with our own <100 M driver — A100-gated Phase-1 proposal
+  (draft to `Project Steering/Proposals/` once D1–D3 pass). Verdict unchanged: efficiency/labels
+  edge, not scale (P5/C2).
+- TanitResim P1 / TanitScena P2 continuous products: not touched this run (chose the highest-leverage
+  cross-agent item, the CI gate). Next run: pick a measured real gap from `RESIM_ROADMAP.md`
+  (3-arm view now REF-B has landed, or checkpoint A/B diff).

@@ -3,6 +3,24 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-15] [built+measured] **CI commit gate `ci.ps1`** (backlog P0 #1): one command = I2
+  tripwire (fail-fast, exit 2) → per-test latency budget (slowest `call` > 6 s → exit 1, the
+  registered falsifier — **CONFIRMED**, a 7 s test blocks the full gate) → suite-green + opt-in
+  warm-wall budget. Logic in unit-tested `ci_check.py` (12 tests/0.20 s), `ci.ps1` thin
+  venv-resolving wrapper. Measured warm wall: **quick pre-commit gate 8.3 s** (curated safety
+  subset, 38 tests), **full gate 24.4 s** (363 tests). 0 new deps. NOTE: the old "full suite < 15 s"
+  target is stale — suite grew 181→351 tests, ~21 s warm, driven by breadth not slow tests (slowest
+  single `call` 1.97 s) → split into fast-quick + full gates — impact: G-E/CI/all-agents —
+  `2026-07-15-ci-commit-gate-and-latency-budget.md`
+- [2026-07-15] [tooling] **AlpaGym** = NVIDIA's new high-throughput **closed-loop RL** framework
+  (Alpamayo family, open on GitHub); AlpaSim open E2E sim; Alpamayo-2 Super 32 B weights "this
+  summer". Verdict unchanged: **Phase-1 cloud, not Phase-0** (40–60 GB VRAM). AlpaGym is the
+  reference for our own Phase-1 closed-loop-RL harness over a <100 M driver — impact: P5/H1/opponent —
+  [newsroom](https://nvidianews.nvidia.com/news/alpamayo-autonomous-vehicle-development)
+- [2026-07-15] [reference] **Bench2Drive** closed-loop protocol = **220 routes (5 × 44 scenarios ×
+  weather × location, ~150 m each)**, task-disentangled to cut seed variance. This is the structure
+  our **CARLA-on-pod closed-loop runner (P1.3) should mirror** — short scenario-attributed routes,
+  not one monolithic drive — impact: P1.3/H1/H11 — [OpenReview](https://openreview.net/forum?id=y09S5rdaWY)
 - [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
   host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
   ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit
