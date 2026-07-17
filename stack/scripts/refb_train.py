@@ -77,7 +77,12 @@ MANEUVER_WEIGHT = 0.5
 ROUTE_WEIGHT = 0.5
 INV_WEIGHT = 0.5
 CONF_WEIGHT = 1.0
+AUX_ACCEL_WEIGHT = 0.5    # longitudinal-accel grounding aux (mirrors inv-dyn)
+AUX_YAW_WEIGHT = 0.5      # refbpatch: yaw-rate grounding aux (mirrors accel)
+PATH_WEIGHT = 1.0         # refbpatch: fixed-distance path (geometry) L2
+TURN_WEIGHT_LAMBDA = 3.0  # refbpatch: up-weight turning windows in the wp loss
 ROUTE_CE_CLAMP = 10.0     # cap on the inverse-class-frequency CE weights
+DEFAULT_JERK_WEIGHT = 0.02  # longitudinal-waypoint jerk (3rd-diff) penalty
 
 
 # ---- fail-loud windowing (2026-07-10 review, REF-B strict variant) ----------
@@ -175,7 +180,8 @@ def load_cached_episodes(data_root: str, pattern: str, n: int = 0):
 
 # ---- losses ------------------------------------------------------------------
 
-def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
+def compute_losses(model: RefBModel, batch: dict, device: str = "cpu",
+                    jerk_weight: float = DEFAULT_JERK_WEIGHT) -> dict:
     """One forward pass -> all loss components (tensors, differentiable).
 
     The confidence target is the REALIZED per-sample waypoint error with a
@@ -190,8 +196,11 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
     nav_cmd = batch["nav_cmd"].to(device)          # [B] long (derived)
     nav_valid = batch["nav_valid"].to(device)      # [B] bool
     route_tgt = batch["route_target"].to(device)   # [B] long
+    v0 = pose_last[:, 3]                            # [B] current ego speed (t0)
 
-    out = model(frames, nav_cmd=nav_cmd)
+    # Speed-input (gated): v0 is proprioception, leakage-safe (t=0 only).
+    out = model(frames, nav_cmd=nav_cmd,
+                v0=v0 if model.cfg.speed_input else None)
     horizons = model.cfg.tactical.waypoint_horizons
     k_seq = model.cfg.operative.action_seq
 
@@ -201,9 +210,21 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
     loss_seq = (action_seq[:, 1:] - fut_actions[:, :k_seq - 1]).pow(2).mean()
 
     # Tactical: ego-frame waypoint L2 + maneuver CE (kinematic pseudo-labels).
+    patched = bool(model.cfg.path_dists)           # refbpatch active?
+    max_h = max(horizons)
     wp_tgt = refb_labels.waypoint_targets(pose_last, fut_poses, horizons)
     wp_pred = torch.stack([out["waypoints"][k] for k in horizons], dim=1)
-    loss_wp = (wp_pred - wp_tgt).pow(2).mean()
+    if patched:
+        # Turn-weighted: up-weight windows by net 2 s heading change so the 74%
+        # straight majority doesn't drown the curves (per-sample weight, then
+        # renormalize so the loss scale stays comparable).
+        wp_se = (wp_pred - wp_tgt).pow(2).mean(dim=(1, 2))          # [B]
+        dh = refb_labels.wrap_to_pi(fut_poses[:, max_h - 1, 2]
+                                    - pose_last[:, 2]).abs()        # [B] rad
+        w = 1.0 + TURN_WEIGHT_LAMBDA * dh
+        loss_wp = (wp_se * w).sum() / w.sum()
+    else:
+        loss_wp = (wp_pred - wp_tgt).pow(2).mean()
     man_tgt = refb_labels.window_maneuver_labels(
         pose_last, fut_poses, horizon=max(horizons))
     loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
@@ -236,14 +257,76 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu") -> dict:
     loss_conf = (out["conf_pred"] - err).pow(2).mean()
     conf_mae = (out["conf_pred"] - err).abs().mean()
 
+    # Jerk smoothness: mean-squared 3rd-difference of the predicted
+    # LONGITUDINAL (ego +x) waypoint path over the tactical horizons. Purely
+    # a regularizer on wp_pred -> gradient flows through the waypoint heads.
+    long_path = wp_pred[..., 0]                    # [B, n_horizons]
+    if long_path.shape[1] >= 4:
+        loss_jerk = torch.diff(long_path, n=3, dim=1).pow(2).mean()
+    else:                                          # < 4 horizons: 3rd-diff n/a
+        loss_jerk = torch.zeros((), device=long_path.device)
+
+    # Aux-accel (rides with --speed-input): predict longitudinal accel from
+    # the latent, supervised by REALIZED accel = finite-diff of the dataset
+    # speed over one step (dt=0.1). Leakage-safe: uses t=0 and t+1 only.
+    if model.cfg.aux_accel and "accel_pred" in out:
+        dt = 0.1
+        accel_tgt = (fut_poses[:, 0, 3] - pose_last[:, 3]) / dt      # [B]
+        accel_pred = out["accel_pred"]                              # [B]
+        loss_aux_accel = (accel_pred - accel_tgt).pow(2).mean()
+        ss_res = (accel_pred.detach() - accel_tgt).pow(2).sum()
+        ss_tot = (accel_tgt - accel_tgt.mean()).pow(2).sum().clamp_min(1e-8)
+        aux_accel_r2 = 1.0 - ss_res / ss_tot                       # detached
+    else:
+        loss_aux_accel = torch.zeros((), device=states.device)
+        aux_accel_r2 = torch.zeros((), device=states.device)
+
+    # Aux-yaw (refbpatch): predict yaw-rate from the latent, supervised by the
+    # REALIZED yaw-rate = wrapped Δyaw over one step (dt=0.1). Leakage-safe
+    # (t=0 and t+1 only). Forces the encoder to represent ego-rotation, the
+    # signal REF-B was missing (states->yaw R2 was 0.11).
+    if model.cfg.aux_yaw and "yaw_pred" in out:
+        dt = 0.1
+        yaw_tgt = refb_labels.wrap_to_pi(fut_poses[:, 0, 2]
+                                         - pose_last[:, 2]) / dt     # [B]
+        yaw_pred = out["yaw_pred"]
+        loss_aux_yaw = (yaw_pred - yaw_tgt).pow(2).mean()
+        ss_res = (yaw_pred.detach() - yaw_tgt).pow(2).sum()
+        ss_tot = (yaw_tgt - yaw_tgt.mean()).pow(2).sum().clamp_min(1e-8)
+        aux_yaw_r2 = 1.0 - ss_res / ss_tot                          # detached
+    else:
+        loss_aux_yaw = torch.zeros((), device=states.device)
+        aux_yaw_r2 = torch.zeros((), device=states.device)
+
+    # Fixed-distance path (refbpatch): regress ego-frame waypoints at fixed
+    # ARC-LENGTHS against the distance-resampled GT path — a speed-INVARIANT
+    # geometry signal (v0-free head) that forces the tactical latent to encode
+    # path shape rather than kinematic extrapolation.
+    if model.cfg.path_dists and "path_waypoints" in out:
+        path_tgt = refb_labels.path_targets(pose_last, fut_poses,
+                                            model.cfg.path_dists)
+        path_pred = torch.stack([out["path_waypoints"][d]
+                                 for d in model.cfg.path_dists], dim=1)
+        loss_path = (path_pred - path_tgt).pow(2).mean()
+    else:
+        loss_path = torch.zeros((), device=states.device)
+
     loss = (ACTION_WEIGHT * loss_action + SEQ_WEIGHT * loss_seq
             + WP_WEIGHT * loss_wp + MANEUVER_WEIGHT * loss_man
             + ROUTE_WEIGHT * loss_route
-            + INV_WEIGHT * loss_inv + CONF_WEIGHT * loss_conf)
+            + INV_WEIGHT * loss_inv + CONF_WEIGHT * loss_conf
+            + jerk_weight * loss_jerk
+            + AUX_ACCEL_WEIGHT * loss_aux_accel
+            + AUX_YAW_WEIGHT * loss_aux_yaw
+            + PATH_WEIGHT * loss_path)
     man_acc = (out["maneuver_logits"].argmax(-1) == man_tgt).float().mean()
     return {"loss": loss, "action": loss_action, "seq": loss_seq,
             "wp": loss_wp, "man": loss_man, "route": loss_route,
             "inv": loss_inv, "conf": loss_conf, "conf_mae": conf_mae,
+            "jerk": loss_jerk, "aux_accel": loss_aux_accel,
+            "aux_accel_r2": aux_accel_r2,
+            "aux_yaw": loss_aux_yaw, "aux_yaw_r2": aux_yaw_r2,
+            "path": loss_path,
             "man_acc": man_acc, "route_acc": route_acc,
             "nav_valid_frac": nav_valid.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
@@ -276,6 +359,17 @@ def train(args) -> dict:
         else main_tr.log_every
 
     cfg = refb_smoke_config() if args.smoke else refb_config()
+    # Ego-dynamics arm (gated): --speed-input turns on BOTH the v0 speed
+    # embedding and the aux-accel grounding head. Off -> byte-identical model.
+    cfg.speed_input = args.speed_input or args.refbpatch
+    cfg.aux_accel = args.speed_input or args.refbpatch
+    # refbpatch (2026-07-17): the curve/ego-shortcut fix bundle — aux yaw-rate
+    # head + v0 dropout + fixed-distance path head (+ turn-weighted wp loss in
+    # compute_losses). Implies --speed-input. See refb.py RefBConfig.
+    if args.refbpatch:
+        cfg.aux_yaw = True
+        cfg.ego_dropout = 0.5
+        cfg.path_dists = (2, 5, 10, 20)
     if args.grad_checkpoint:
         cfg.encoder.grad_checkpoint = True
     model = RefBModel(cfg).to(device)
@@ -290,7 +384,13 @@ def train(args) -> dict:
                                channels=cfg.encoder.in_channels)
     assert len(ds) >= batch, \
         f"only {len(ds)} windows for batch {batch} — add episodes"
-    dl = DataLoader(ds, batch_size=batch, shuffle=True, drop_last=True)
+    # --workers >0 parallelizes the mmap window decode (MooseFS latency hiding;
+    # 46% of step time was data at workers=0). Sample order is unchanged.
+    dl_kw = dict(batch_size=batch, shuffle=True, drop_last=True)
+    if getattr(args, "workers", 0) > 0:
+        dl_kw.update(num_workers=args.workers, persistent_workers=True,
+                     prefetch_factor=4, pin_memory=True)
+    dl = DataLoader(ds, **dl_kw)
     print(f"[refb] train: {len(train_eps)} episodes / {len(ds)} windows "
           f"from {train_dir}", flush=True)
 
@@ -338,7 +438,8 @@ def train(args) -> dict:
         t_data += time.perf_counter() - t_d0
 
         opt.zero_grad(set_to_none=True)
-        out = compute_losses(model, batch_d, device)
+        out = compute_losses(model, batch_d, device,
+                             jerk_weight=args.jerk_weight)
         out["loss"].backward()
         gnorm = float(torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0))
         opt.step()
@@ -365,6 +466,12 @@ def train(args) -> dict:
                 "wp": sc(out["wp"]), "man": sc(out["man"]),
                 "route": sc(out["route"]),
                 "inv": sc(out["inv"]), "conf": sc(out["conf"]),
+                "jerk": sc(out["jerk"]), "aux_accel": sc(out["aux_accel"]),
+                "aux_accel_r2": sc(out["aux_accel_r2"]),
+                # refbpatch signals: yaw-rate decodability + path geometry loss
+                "aux_yaw": sc(out["aux_yaw"]),
+                "aux_yaw_r2": sc(out["aux_yaw_r2"]),
+                "path": sc(out["path"]),
                 # fallback signals (spec item 5: log both per step)
                 "conf_mae": sc(out["conf_mae"]),
                 "ood_score": round(ood_mean, 5),
@@ -432,6 +539,18 @@ def main(argv=None):
                          "monitor freezes (fallback (b))")
     ap.add_argument("--grad-checkpoint", action="store_true",
                     help="recompute encoder activations (F-5 memory lever)")
+    ap.add_argument("--speed-input", action="store_true",
+                    help="feed v0 = pose_last[:,3] (current ego speed) as "
+                         "proprioception; also enables the aux-accel head")
+    ap.add_argument("--workers", type=int, default=0,
+                    help="DataLoader workers (0 = in-loop decode, old behavior)")
+    ap.add_argument("--refbpatch", action="store_true",
+                    help="curve/ego-shortcut fix bundle (implies --speed-input):"
+                         " aux yaw-rate head + v0 dropout(0.5) + fixed-distance "
+                         "path head + turn-weighted waypoint loss")
+    ap.add_argument("--jerk-weight", type=float, default=DEFAULT_JERK_WEIGHT,
+                    help="weight on the longitudinal-waypoint jerk (3rd-"
+                         "difference) smoothness penalty (0 disables)")
     ap.add_argument("--log-every", type=int, default=None)
     ap.add_argument("--save-every", type=int, default=None)
     ap.add_argument("--seed", type=int, default=0)

@@ -175,6 +175,38 @@ def route_target(nav_cmd: int) -> int:
     return _NAV_TO_ROUTE[nav_cmd]
 
 
+def path_targets(pose_last: Tensor, future_poses: Tensor,
+                 dists: tuple[float, ...]) -> Tensor:
+    """refbpatch: ego-frame waypoints sampled at fixed ARC-LENGTHS `dists`
+    (metres): [B, len(dists), 2]. This is the GT future path resampled by
+    cumulative distance travelled, NOT by time — so the target encodes path
+    GEOMETRY independent of speed (the TF++ path/speed decouple). Targets beyond
+    the realized path length clamp to the final path point (short/slow windows).
+
+    Target-only (operates on GT poses, no model graph) — the path head regresses
+    these directly, forcing the tactical latent to encode speed-invariant shape."""
+    B, H, _ = future_poses.shape
+    yaw = pose_last[:, 2]
+    pts = ego_frame(future_poses[:, :, :2] - pose_last[:, None, :2],
+                    yaw[:, None])                          # [B, H, 2]
+    origin = torch.zeros(B, 1, 2, device=pts.device, dtype=pts.dtype)
+    path = torch.cat([origin, pts], dim=1)                 # [B, H+1, 2]
+    seg = (path[:, 1:] - path[:, :-1]).norm(dim=-1)        # [B, H]
+    cum = torch.cat([origin[:, :, 0], torch.cumsum(seg, dim=1)], dim=1)  # [B,H+1]
+    out = []
+    for d in dists:
+        dd = torch.full((B,), float(d), device=path.device, dtype=path.dtype)
+        j = ((cum <= dd[:, None]).long().sum(dim=1) - 1).clamp(0, H - 1)  # [B]
+        j1 = (j + 1).clamp(max=H)
+        c0 = torch.gather(cum, 1, j[:, None]).squeeze(1)
+        c1 = torch.gather(cum, 1, j1[:, None]).squeeze(1)
+        p0 = torch.gather(path, 1, j[:, None, None].expand(-1, 1, 2)).squeeze(1)
+        p1 = torch.gather(path, 1, j1[:, None, None].expand(-1, 1, 2)).squeeze(1)
+        t = ((dd - c0) / (c1 - c0).clamp_min(1e-6)).clamp(0.0, 1.0)[:, None]
+        wp = torch.where((dd > cum[:, -1])[:, None], path[:, -1],
+                         p0 + t * (p1 - p0))
+        out.append(wp)
+    return torch.stack(out, dim=1)                         # [B, len(dists), 2]
 def waypoint_targets(pose_last: Tensor, future_poses: Tensor,
                      horizons: tuple[int, ...]) -> Tensor:
     """Ego-frame 2 s waypoint targets: [B, len(horizons), 2].

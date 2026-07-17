@@ -119,6 +119,18 @@ class RefBConfig:
     tactical: TacticalHeadConfig = field(default_factory=TacticalHeadConfig)
     strategic: StrategicConfig = field(default_factory=StrategicConfig)
     fallback: FallbackConfig = field(default_factory=FallbackConfig)
+    # Ego-dynamics additions (2026-07-14). Gated; default off == the
+    # pre-2026-07-14 REF-B EXACTLY (no extra params, byte-identical
+    # state_dict, so existing checkpoints resume). Both are switched on
+    # together by the trainer's --speed-input flag.
+    speed_input: bool = False      # feed v0 = pose_last[:,3] as proprioception
+    aux_accel: bool = False        # aux longitudinal-accel head (+ logged r2)
+    # --- refbpatch (2026-07-17) — all gated, default off == pre-patch REF-B
+    # EXACTLY (no extra params, state_dict byte-identical, ckpts still load).
+    # Turned on together by the trainer's --refbpatch flag.
+    aux_yaw: bool = False          # aux yaw-rate head (fixes yaw-blind encoder)
+    ego_dropout: float = 0.0       # p(drop v0) in training — breaks the shortcut
+    path_dists: tuple = ()         # fixed-ARC-LENGTH path head (m); () == off
 
 
 def refb_config() -> RefBConfig:
@@ -247,7 +259,10 @@ class TacticalHead(nn.Module):
         h = self.norm(x[:, -1])
         waypoints = {k: self.wp_heads[str(k)](h)
                      for k in self.cfg.waypoint_horizons}
-        return self.maneuver_head(h), waypoints, self.intent_proj(h)
+        # h (the tactical last-token latent) is returned so RefBModel's gated
+        # refbpatch path head can regress speed-invariant geometry from the
+        # SAME latent that produces the fixed-time waypoints.
+        return self.maneuver_head(h), waypoints, self.intent_proj(h), h
 
 
 class StrategicHead(nn.Module):
@@ -385,6 +400,32 @@ class RefBModel(nn.Module):
         self.confidence = ConfidenceHead(
             self.state_dim + cfg.tactical.d_intent, cfg.fallback.hidden)
         self.ood = FeatureOOD(self.state_dim)
+        # Ego-dynamics additions (gated; see RefBConfig). speed_emb embeds the
+        # current ego speed v0 to the nav-command dim and is ADDED to the nav
+        # embedding, so the proprioceptive signal conditions the strategic
+        # layer (and everything it conditions). accel_head predicts
+        # longitudinal accel from the last window state — an operative-level
+        # grounding aux like inv_dyn (NOT detached). Both are None (and absent
+        # from state_dict) when their flags are off, keeping an off-flag model
+        # byte-identical to the pre-2026-07-14 REF-B.
+        self.speed_emb = (nn.Linear(1, cfg.strategic.d_cmd)
+                          if cfg.speed_input else None)
+        self.accel_head = (nn.Sequential(
+            nn.Linear(self.state_dim, 128), nn.GELU(), nn.Linear(128, 1))
+            if cfg.aux_accel else None)
+        # refbpatch (gated). yaw_head: aux yaw-rate from the last window state
+        # (same shape/role as accel_head) — forces the encoder to represent
+        # ego-rotation (REF-B's states->yaw R2 was 0.11). path_heads: fixed-
+        # ARC-LENGTH ego-frame waypoints off the tactical latent h — a speed-
+        # invariant geometry signal (TF++ path/speed decouple) that does NOT
+        # see v0, so it can't shortcut. Both None (absent from state_dict) when
+        # off, keeping an off-flag model byte-identical to pre-patch REF-B.
+        self.yaw_head = (nn.Sequential(
+            nn.Linear(self.state_dim, 128), nn.GELU(), nn.Linear(128, 1))
+            if cfg.aux_yaw else None)
+        self.path_heads = (nn.ModuleDict(
+            {str(d): nn.Linear(cfg.tactical.d_model, 2) for d in cfg.path_dists})
+            if cfg.path_dists else None)
 
     # --- WorldModel-compatible encode surface -------------------------------
     def encode(self, frames: Tensor) -> Tensor:
@@ -398,28 +439,55 @@ class RefBModel(nn.Module):
         return self.encode(flat).reshape(b, w, -1)
 
     # ------------------------------------------------------------------------
-    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None) -> dict:
-        """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`).
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None) -> dict:
+        """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`),
+        v0 [B] optional current ego speed (pose_last[:,3]); consumed only when
+        the speed-input flag is on (self.speed_emb is not None).
 
         Returns dict: states [B, W, S], maneuver_logits [B, M],
         waypoints {k: [B, 2]}, intent [B, d_intent], action_seq [B, K, A],
         route_logits [B, n_route] (strategic aux), ctx [B, d_ctx],
-        conf_pred [B] (detached input path — fallback (a)).
+        conf_pred [B] (detached input path — fallback (a)), and — when the
+        aux-accel head is enabled — accel_pred [B] (longitudinal-accel aux).
         """
         states = self.encode_window(frames)
         if nav_cmd is None:                       # unlabeled -> follow (idx 0)
             nav_cmd = torch.zeros(states.shape[0], dtype=torch.long,
                                   device=states.device)
         cmd = self.nav_emb(nav_cmd)
+        if self.speed_emb is not None and v0 is not None:
+            # Proprioceptive speed conditioning: embed v0 and ADD it to the
+            # nav-command embedding (leakage-safe — v0 is the t=0 speed only,
+            # never future). refbpatch: in training, drop v0 per-sample with
+            # p=ego_dropout (Bernoulli-zero) so the trajectory head cannot rely
+            # on kinematic extrapolation and must read the scene half the time.
+            # Eval (model.eval()) always passes the true v0.
+            v0_in = v0.to(cmd.dtype).reshape(-1, 1)
+            if self.training and self.cfg.ego_dropout > 0.0:
+                keep = (torch.rand(v0_in.shape[0], 1, device=v0_in.device)
+                        >= self.cfg.ego_dropout).to(v0_in.dtype)
+                v0_in = v0_in * keep
+            cmd = cmd + self.speed_emb(v0_in)
         ctx, route_logits = self.strategic(states, cmd)
-        maneuver_logits, waypoints, intent = self.tactical(states, ctx)
+        maneuver_logits, waypoints, intent, tac_h = self.tactical(states, ctx)
         action_seq = self.operative(states, intent)
         conf_in = torch.cat([states[:, -1].detach(), intent.detach()], dim=-1)
         conf_pred = self.confidence(conf_in)
-        return {"states": states, "maneuver_logits": maneuver_logits,
-                "waypoints": waypoints, "intent": intent,
-                "action_seq": action_seq, "route_logits": route_logits,
-                "ctx": ctx, "conf_pred": conf_pred}
+        out = {"states": states, "maneuver_logits": maneuver_logits,
+               "waypoints": waypoints, "intent": intent,
+               "action_seq": action_seq, "route_logits": route_logits,
+               "ctx": ctx, "conf_pred": conf_pred}
+        if self.accel_head is not None:
+            # Operative-level grounding aux (NOT detached): longitudinal accel
+            # predicted from the last window state.
+            out["accel_pred"] = self.accel_head(states[:, -1]).squeeze(-1)
+        if self.yaw_head is not None:            # refbpatch: aux yaw-rate
+            out["yaw_pred"] = self.yaw_head(states[:, -1]).squeeze(-1)
+        if self.path_heads is not None:          # refbpatch: fixed-distance path
+            out["path_waypoints"] = {
+                d: self.path_heads[str(d)](tac_h) for d in self.cfg.path_dists}
+        return out
 
 
 def param_breakdown(model: RefBModel) -> dict[str, int]:
@@ -433,11 +501,19 @@ def param_breakdown(model: RefBModel) -> dict[str, int]:
     fallback ~1.4 M, total ~262.5 M (-0.1 %).
     """
     cnt = lambda m: sum(p.numel() for p in m.parameters())  # noqa: E731
+    # Gated ego-dynamics modules (0 when their flags are off): speed_emb is
+    # booked under `strategic` (added alongside nav_emb), accel_head under
+    # `operative` (an operative-level grounding aux, like inv_dyn).
+    speed = cnt(model.speed_emb) if model.speed_emb is not None else 0
+    accel = cnt(model.accel_head) if model.accel_head is not None else 0
+    # refbpatch: yaw_head booked with operative auxes; path_heads with tactical.
+    yaw = cnt(model.yaw_head) if model.yaw_head is not None else 0
+    path = cnt(model.path_heads) if model.path_heads is not None else 0
     return {
         "encoder": cnt(model.encoder) + cnt(model.readout),
-        "operative": cnt(model.operative) + cnt(model.inv_dyn),
-        "tactical": cnt(model.tactical),
-        "strategic": cnt(model.strategic) + cnt(model.nav_emb),
+        "operative": cnt(model.operative) + cnt(model.inv_dyn) + accel + yaw,
+        "tactical": cnt(model.tactical) + path,
+        "strategic": cnt(model.strategic) + cnt(model.nav_emb) + speed,
         "fallback": cnt(model.confidence) + cnt(model.ood),
         "total": cnt(model),
     }
