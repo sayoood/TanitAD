@@ -62,6 +62,15 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   low-dim subspace," NOT LeJEPA "optimal planning."** (Global isotropy ~0 is over-provisioning by design,
   not failure — the active-subspace read is the correct one.) Rules out latent capacity as a D1 bottleneck
   (G1); flagged the 07-10 instrument for orchestrator merge. See `Architecture & Inference/Research/2026-07-17-blind-rollout-uncertainty-dissipation-and-readout-orthogonality.md`.
+- 2026-07-15: Data Eng (Tue) — **H7 data-availability delta (no status change, P8).** WorldModel-Synthetic-
+  Scenarios (264k clips) **confirmed POSE-LESS on real bytes** → its pixels need an H7 inverse-dynamics head
+  (Phase-1); its per-clip Qwen captions + weather/tod/region metadata are a **usable-now semantic-label index**.
+  IDM/latent-action literature now dense (2601.05230 in-the-wild, 2602.16229 factored, LatentVLA, FLAM) →
+  frozen-encoder IDM+WM on unlabelled video (our frozen-DINO REF-A lineage) is the standard recipe, with the
+  comma/ZOD **real CAN** as the labelled bridge. H4 arm-B: **PandaSet** (CC-BY-4.0) loader shipped (intake, 16✓)
+  but geometry-BLOCKED (front fx=1970 → f_eff 467≠266, D-016 R1 pad-crop+undistort needed — a blocking
+  prerequisite for the whole owned real-urban tier incl. ZOD). See
+  `Data Engineering/Research/2026-07-15-worldmodel-pose-gate-and-pandaset-geometry.md`.
 - 2026-07-15: Architecture & Inference (Wed) — **H15 imagination edge verified LIVE-ACTIVE in the
   flagship (no status change, P8)**, resolving the 2026-07-14 program-report §8 `h15=0.0` WATCH. Measured
   on the exact code path (GPU): imagination module **built** (22.06 M params), gradient reaches it (L1

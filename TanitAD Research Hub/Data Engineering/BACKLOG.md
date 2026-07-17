@@ -27,13 +27,33 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
    bandwidth → 3.85× clips free); epcache AFTER the 30k trainer finishes (62 GB cgroup). Tool + R1 report
    already landed (intake `2026-07-09-physicalai-r1-selection/`). Expected: 2,000 urban clips, ~24 countries.
-1. **WorldModel-Synthetic-Scenarios pose probe (was "license check" — license DONE 2026-07-09: OpenMDW-1.1
-   ungated).** `huggingface_hub` file-listing on one clip's parquet set to confirm/deny an ego-pose field.
-   Decides the loader path: near-zero cosmos-mirror (if poses) vs IDM/H7 or video-only (if none). Expected:
-   yes/no pose verdict + one sample decoded. This is now the gating question, not the license.
-2. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows advanced 2026-07-09 (see
-   STATE HANDOFF; pending merge into the DB). Next: fill SC-04 (stop-arm) + SC-11 (wrong-side) with CARLA
-   recipes / Cosmos obstruction clips; download+verify one public sample each where public.
+1. ~~**D-016 R1 pad-crop + undistort**~~ **DONE 2026-07-17** (intake `2026-07-17-d016-r1-pinhole-rectify/`, 9✓).
+   Built `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad) → PandaSet **467→266.0
+   exact** (drop-in), 37.7% masked periphery, 109px k1 corrected; comma reference untouched (266.0/99.6%). New
+   **`observed_frac ≥ ~0.5` ingest gate** (Udacity-like falsifies at 0.13). **NOW P0 (integration):** fold into
+   `stack/tanitad/data/calib.py` + flip PandaSet `_canonicalize` (GeometryError → observed_frac guard) + carry
+   `observed_frac` into the data card, then **verify ONE real PandaSet sequence on the HF mirror** (real-bytes
+   drop-in — the last mile to `drop_in=True` on real bytes for G1). Fisheye (ZOD) already covered by `ftheta_*`.
+1b. **ZOD pilot loader (owned real-urban #1, real-CAN #2).** Geometry unblocked (fisheye → existing
+   `ftheta_undistort`; the rectify family is now proven end-to-end). Fetch 5 drives from the ZOD host, canonicalize
+   via `ftheta_*`, contract-test, recover the camera-yaw offset (motion vs quaternion heading, the PandaSet method).
+   License CC-BY-SA (owned public shard). Expected: `observed_frac`, A8 stat, drop-in PASS on real bytes.
+1c. **`stats` uint8-safe (small fix, found 2026-07-17).** `frame_change_fraction`/`consequence_dominance_stats`
+   silently mis-measure on uint8 epcache frames (a direct call gave ~0.74 vs the true 0.06). Auto-`to_float_frames`
+   or assert dtype. Trivial intake; prevents future A8 mis-reads.
+2. **WorldModel-Synth semantic-label index (NEW P0 — the usable-today value; pose gate CLOSED 2026-07-15 =
+   pose-less).** Build a scenario/semantic table from the (tiny) `description/*.json` across all 5 families:
+   per-clip `{family, weather, time_of_day, surface_type, region, qwen_caption}`. Serves BACKLOG P1 2d
+   (semantic-label survey — comma is `follow`-starved) + SCENARIO_DATABASE mining (caption-searchable
+   SC-02/05/06). Cheap (metadata only, no 8.3 TB pixels). Expected: a queryable index + per-family/weather/region
+   counts. (Action-conditioned use of the pixels stays a Phase-1 IDM target, G2.)
+3. **PandaSet real-bytes verification (`verify_real_clip`)** — after item 1 lands, fetch one sequence from the
+   `georghess/pandaset` HF mirror (~44.5 GB zip; large-disk/pod job) → confirm world-frame planarity/axis order,
+   camera↔pose timestamp alignment, and recover the constant camera-yaw offset (motion-heading vs `heading`
+   quaternion). Expected: episode-contract PASS on real bytes + offset stability across sequences.
+4. **SCENARIO_DATABASE data sourcing (joint duty, D-020 §5)** — SC-02/05/06 rows advanced 2026-07-15 (WorldModel
+   pose-less video+caption sources merged into the DB). Next: fill SC-04 (stop-arm) + SC-11 (wrong-side) with
+   CARLA recipes / Cosmos obstruction clips; download+verify one public sample each where public.
 
 ## P1
 
@@ -83,6 +103,10 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    robustness beyond two corpora.
 
 ## Done / retired
+- (2026-07-15) **WorldModel-Synth pose probe DONE** (was P0.1) → **POSE-LESS** on real bytes (captions+metadata,
+  no pose/CAN). "Cosmos-mirror loader" for it is RETIRED; re-filed as semantic-index (new P0.2) + Phase-1 IDM.
+- (2026-07-15) **PandaSet loader shipped** (intake `2026-07-15-pandaset-loader/`, 16✓) — CC-BY-4.0 owned core;
+  pose/signal/contract path validated, geometry BLOCKED (→ new P0.1 D-016 R1).
 - (2026-07-08) Cosmos loader integrated; verify_real_clip PASSED on real bytes (A8=0.109,
   60/60 pose pairing after base-id fix). Layout finding documented.
 - (2026-07-08 loop) **Cosmos T=39 RESOLVED + chunk-pairing bug fixed**: videos = 121-frame

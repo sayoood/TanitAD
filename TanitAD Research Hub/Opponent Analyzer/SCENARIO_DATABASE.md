@@ -61,7 +61,10 @@ public claim candidate.
 - **TanitAD mechanism:** H15 latent object permanence + D9 hidden-sector gates; speed policy from
   epistemic variance, not detection confidence.
 - **Data sources:** CARLA scripted-occluder (config exists in metadrive/CARLA scenario set);
-  PhysicalAI-WorldModel-Synthetic-Scenarios pedestrian split (license check = DataEng backlog P1.4).
+  **WorldModel-Synthetic-Scenarios pedestrian split** (ped 12.4% + veh-ped 21.1% of 264k; OpenMDW ungated)
+  — **verified 2026-07-15: POSE-LESS** (7-cam video + Qwen captions + weather/tod/region, no actions) → an
+  **EVAL-lane / scenario-mining** source (caption-searchable) and an H7-IDM training target, **not** an
+  action-labelled training source until the IDM head exists.
 - **Metric hooks:** LOPS, OKRI, time-to-hidden-actor margin.
 - **Status:** catalogued → spec next (Opponent Analyzer backlog P1.4).
 
@@ -105,8 +108,11 @@ public claim candidate.
 - **TanitAD mechanism:** H11 self-monitoring (D8 OOD AUROC), H15 epistemic σ throttle, H2 modality
   steering.
 - **Data sources:** **verified available** — Cosmos-Drive-Dreams weather variants
-  (Rainy/Night/Foggy in shard part-000, real-bytes verified 2026-07-08); nuScenes-rain as
-  held-out probe (never trained).
+  (Rainy/Night/Foggy in shard part-000, real-bytes verified 2026-07-08); **WorldModel-Synthetic-Scenarios
+  `weather_degradation` family (9.2% of 264k ≈ 24k clips, OpenMDW ungated; pose-less video+caption, verified
+  2026-07-15)** as a second degraded-half source for the paired set; nuScenes-rain as held-out probe (never
+  trained). Note (DataEng): an **own photometric-degradation augmentation** (fog/rain/glare filters on
+  clean-source frames) can make the D8 paired set arbitrarily large — OWN_DATASET_PLAN §5.2.
 - **Metric hooks:** D8 AUROC healthy-vs-degraded; speed-vs-σ correlation.
 - **Status:** **data-sourced + first paired measurement** (2026-07-08, step 6500, 4060).
   Naive unpaired scores don't separate (rel AUROC 0.34 inverted vs comma; weather axis
