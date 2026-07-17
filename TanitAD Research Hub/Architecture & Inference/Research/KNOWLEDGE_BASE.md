@@ -3,6 +3,37 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-17] [repo/measured] **Blind K-step belief rollout DISSIPATES uncertainty + collapses to an
+  attractor — the H11/D8 σ-trigger is anti-calibrated past 1 step.** Rolled the trained 1-step
+  ImaginationField fully blind on real comma2k19 (step-6500 base250cam ckpt, 4060, 2 seeds). Hidden-cell
+  centered-cosine fidelity **0.357 (k1) → 0.011 (k4, = chance) → negative**; it **beats the persistence
+  baseline only at k=1** and falls below it from k≥2. Epistemic σ (hidden log-variance) **falls
+  monotonically −7.79 → −8.55** (more confident as predictions become worthless = FALSE confidence);
+  belief energy **collapses ~11× by k4** (0.101→0.008) while inter-sample cosine **rises 0.21→0.57** →
+  every sample drifts to a **common attractor** (true-token energy flat ~0.33, so it is the model, not
+  the scene). **The cause is the recursion, not the 1-step prediction:** *freezing* the k=1 imagination
+  and holding it retains **~0.25 cosine FLAT across all 8 horizons** and beats persistence throughout.
+  Confirms the 2026-07-15 UWM-JEPA risk and the **"Biased Dreams" (2604.25416) attractor prediction**,
+  measured. Two D-018 responses (escalate, don't execute): (A) train multi-step belief rollout (0b build);
+  (B) operate imagination **parallel-horizon (non-autoregressive)** from the last real obs — freeze-1
+  shows (B) recovers fidelity for free (recommended default). **Cap the operative H15 self-monitor at
+  1-step until a multi-step σ is validated.** No H15 status change (P8, pre-reset directional ckpt) —
+  impact: H15 / H11 / D8 / D9 — `../Research/2026-07-17-blind-rollout-uncertainty-dissipation-and-readout-orthogonality.md`
+  + `../Implementation/belief_rollout_diagnostic/`
+- [2026-07-17] [repo/measured] **Readout orthogonality — VERIFIED the stranded 2026-07-10 instrument
+  (not a duplicate); D-021 = subspace ID, NOT "optimal planning" on the pre-reset ckpt.** While drafting a
+  3b instrument I found a theoretically-superior one already built 2026-07-10 but **never merged** (branch
+  `worktree-agent-arch-inf-20260710`); **withdrew my draft**, ran the prior `orthogonality_report`
+  unchanged on the step-6500 ckpt (n=2600 real states > S=2048) → **reproduces exactly:** active_k=23,
+  **iso_ratio_active 0.254** (< 0.5), cond_active 218, rms_offdiag 0.424, cov_eff_rank 26, verdict
+  **NOT-YET-ADMISSIBLE**. Key correction: **global** isotropy ~0 is over-provisioning **by design**, NOT a
+  failure — the theorem-relevant read is the **active-subspace** isotropy (my draft lacked this). My
+  independent global read (isotropy 0.000, off-diagonal 0.999) corroborates over-provisioning from the
+  coordinate angle. Two instruments now agree the readout is over-provisioned (op-rank ≈43, repr active-rank
+  ≈23–26 ≪ 2048) AND not yet orthogonal → latent *capacity* is not a D1 bottleneck. SIGReg slice-Gaussianity
+  ≠ active-subspace isotropy (cond 218) → whitening lever (D-018 escalate). **Process: flagged the stranded
+  07-10 instrument for orchestrator merge (3rd week unmerged).** — impact: H3 / D-021 / D-008 —
+  `../Implementation/orthogonality_verification/`
 - [2026-07-15] [repo/measured] **The flagship H15 imagination edge is NOT dark — the log is unfaithful**
   (resolves the 2026-07-14 program-report §8 WATCH `h15=0.0`). GPU diagnostic on the exact code path
   (`train_flagship4b.h15_loss` + `flagship4b_smoke_config`): imagination module **built** (22.06 M params,

@@ -12,17 +12,25 @@ Format per item: goal / method / resource / expected number / falsifier.
    config change (D-018).** Shipped observability fix (intake `2026-07-15-h15-logging-fidelity`, 6✓).
    Artifact: `Implementation/h15_logging_diagnostic/` + `Research/2026-07-15-*.md`.
 
-0b. **Multi-step belief-rollout imagination (UWM-JEPA 2605.25313-motivated) — NEW top item.**
-   Goal: does training H15 on a **K-step** masked rollout (advect+refine over k∈{1,2,4}, NLL each step)
-   beat the current **1-step-only** imagination, and does the per-cell **epistemic σ persist or dissipate
-   over the operative K-step rollout**? Method: prototype the K-step masked-rollout loss in
-   `Implementation/` (reuse `ImaginationField` + `sector_mask`); on a held-out ckpt measure (i) σ-retention
-   vs horizon, (ii) blind-rollout probe-R² retention (UWM-JEPA's metric) vs a no-imagination baseline.
-   Resource: 4060 / idle-pod, hours, $0. Expected: σ persists and R²-retention beats baseline at horizons
-   ≤4 → multi-step training earns its place; **Falsifier:** σ collapses toward 0 with horizon OR R² drops
-   as fast as no-imagination → 1-step is sufficient, close the item. **Gate:** D9 (calibration) + D8
-   (self-monitor AUROC). **D-018:** escalate before any trained-config change. Cross-ref: the σ-dissipation
-   risk directly threatens the H11/D8 self-monitor trigger at long horizons.
+0b. **[✅ DIAGNOSED 2026-07-17 — blind-rollout σ dissipation + attractor collapse MEASURED]** Rolled
+   the trained 1-step field blind on real comma2k19 (2 seeds, 4060, $0): fidelity 0.357→0.011 (chance)
+   by k4; **σ dissipates** (−7.79→−8.55 = more confident as it decays); **attractor collapse**
+   (inter-sample cos 0.21→0.57, belief energy −11×) — the "Biased Dreams" 2604.25416 prediction, measured.
+   **Cause = the recursion:** freezing the k=1 imagination holds ~0.25 cosine flat across 8 horizons.
+   Falsifier MET (σ collapses AND rolled fidelity < no-imagination baseline by k≥2). Artifact:
+   `Implementation/belief_rollout_diagnostic/` + `Research/2026-07-17-*.md`. **Splits into 0b-A / 0b-B below.**
+
+0b-A. **Prototype multi-step belief-rollout TRAINING (the build).** Supervise the *recursive* path with
+   NLL at k∈{1,2,4} (reuse `ImaginationField`+`sector_mask`), add an anti-attractor term (penalise belief
+   energy collapse / inter-sample cosine growth). Target on a held-out ckpt: **σ grows monotonically with
+   horizon** and rolled fidelity ≥ freeze-1 (~0.25). Resource 4060/idle-pod, $0. **Falsifier:** σ still
+   dissipates after multi-step training → the ImaginationField architecture (not the recipe) is the ceiling
+   → adopt 0b-B permanently. **Gate:** D9 + D8. **D-018:** escalate before trained-config change.
+0b-B. **Parallel-horizon (non-autoregressive) operative imagination — cheap safe default.** Predict each
+   horizon directly from the last real observation (like the predictor's parallel heads) instead of
+   feeding beliefs back. freeze-1 already shows this recovers ~0.25 flat fidelity with no retrain. Ship as
+   an operative-inference option + measure D8 AUROC on degraded-visibility episodes. **D-018:** escalate
+   before it becomes the operative default (it changes self-monitor semantics).
 
 1. **[✅ DONE 2026-07-08 — spectral-sizing on real trained latents]** Ran `run_spectral.py` on the
    step-6500 `ckpt_full.pt` (24 val eps, 7,176 pairs, 4060): **fit R²=0.99, rank ≈43, knee 31, k*=21 →
@@ -105,11 +113,13 @@ Format per item: goal / method / resource / expected number / falsifier.
    `kstep_bakeoff_probe` harness), promote to Colab arm only if smoke shows ≥ +2% probe fit. Falsifier:
    Δ within noise → close. **Prior lowered (arXiv 2605.08567):** AdaLN vs cross-attn is a wash for
    LOW-dim actions and our actions are 2-D → expect small Δ; keep AdaLN (not cross-attn), test cheap.
-3b. **Orthogonality instrument for `spectral.py`** — from arXiv 2605.26379: LeJEPA's optimal-planning
-   guarantee needs the identified latent to be linear+**orthogonal**. Add a check that the trained
-   readout covariance is ~isotropic/diagonal (an I-row, gates the D-021 sizing claim's admissibility,
-   not an architecture change). Ship as an intake with a test. Cheap, makes the theorem falsifiable
-   on our own checkpoint.
+3b. **[✅ DONE 2026-07-17 — VERIFIED the stranded 2026-07-10 instrument; withdrew my duplicate]** The
+   instrument already exists (branch `worktree-agent-arch-inf-20260710`, unmerged); ran it unchanged on
+   step-6500 (n=2600>S): **iso_ratio_active 0.254 < 0.5 → NOT-YET-ADMISSIBLE** → D-021 = subspace ID, not
+   "optimal planning" (global isotropy ~0 = over-provisioning by design, not the admissibility number).
+   Artifact `Implementation/orthogonality_verification/`. Follow-ups: **(i) orchestrator MERGE the 07-10
+   instrument** (3rd week stranded); **(ii) re-run on the flagship @30k** (decision-grade — expect iso to
+   rise as SIGReg converges); **(iii) readout-whitening bake-off lever** if we want the corollary back (D-018).
 4. **H4 arm-B: frozen DINOv3 world model — PROMOTED (Sayed ask 2026-07-09), design fixed:**
    (a) precompute DINOv3-**B/16** features once over the comma epcaches (16×16 grid @256px matches
    our readout geometry; pod2 post-arms or Colab T4 — embarrassingly parallel); (b) train
