@@ -27,14 +27,20 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    camera-fetch (≤32 chunks, ~64 GB, ~1 h pod) **extracting ALL gate-passing clips per chunk** (per-chunk
    bandwidth → 3.85× clips free); epcache AFTER the 30k trainer finishes (62 GB cgroup). Tool + R1 report
    already landed (intake `2026-07-09-physicalai-r1-selection/`). Expected: 2,000 urban clips, ~24 countries.
-1. **D-016 R1 pad-crop + undistort (NEW P0, surfaced 2026-07-15 with numbers — the owned real-urban BLOCKER).**
-   Square-crop canonicalization is height-bound on 16:9 frames: any `fx>1122 px` on a 1080-tall frame cannot
-   reach f_eff=266 (PandaSet front fx=1970 → 467; +k1=−0.589 distortion ignored). Propose an intake for
-   `stack/tanitad/data/calib.py`: a **pad/letterbox-aware crop** (replicate-pad below-frame overflow so the
-   square may exceed frame height — the SAME mechanism as the in-flight rig-B fix) **+ optional undistort** from
-   shipped distortion coeffs. Falsifier: `front_camera_canonicalization` reports `drop_in=True` (f_eff 266±5%)
-   for PandaSet AND ZOD after the fix. **Unblocks PandaSet + the whole owned real-urban tier (G1).** Expected:
-   PandaSet flips BLOCKED→drop-in; one real sequence episode-contract PASS on real bytes.
+1. ~~**D-016 R1 pad-crop + undistort**~~ **DONE 2026-07-17** (intake `2026-07-17-d016-r1-pinhole-rectify/`, 9✓).
+   Built `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad) → PandaSet **467→266.0
+   exact** (drop-in), 37.7% masked periphery, 109px k1 corrected; comma reference untouched (266.0/99.6%). New
+   **`observed_frac ≥ ~0.5` ingest gate** (Udacity-like falsifies at 0.13). **NOW P0 (integration):** fold into
+   `stack/tanitad/data/calib.py` + flip PandaSet `_canonicalize` (GeometryError → observed_frac guard) + carry
+   `observed_frac` into the data card, then **verify ONE real PandaSet sequence on the HF mirror** (real-bytes
+   drop-in — the last mile to `drop_in=True` on real bytes for G1). Fisheye (ZOD) already covered by `ftheta_*`.
+1b. **ZOD pilot loader (owned real-urban #1, real-CAN #2).** Geometry unblocked (fisheye → existing
+   `ftheta_undistort`; the rectify family is now proven end-to-end). Fetch 5 drives from the ZOD host, canonicalize
+   via `ftheta_*`, contract-test, recover the camera-yaw offset (motion vs quaternion heading, the PandaSet method).
+   License CC-BY-SA (owned public shard). Expected: `observed_frac`, A8 stat, drop-in PASS on real bytes.
+1c. **`stats` uint8-safe (small fix, found 2026-07-17).** `frame_change_fraction`/`consequence_dominance_stats`
+   silently mis-measure on uint8 epcache frames (a direct call gave ~0.74 vs the true 0.06). Auto-`to_float_frames`
+   or assert dtype. Trivial intake; prevents future A8 mis-reads.
 2. **WorldModel-Synth semantic-label index (NEW P0 — the usable-today value; pose gate CLOSED 2026-07-15 =
    pose-less).** Build a scenario/semantic table from the (tiny) `description/*.json` across all 5 families:
    per-clip `{family, weather, time_of_day, surface_type, region, qwen_caption}`. Serves BACKLOG P1 2d

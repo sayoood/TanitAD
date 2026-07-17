@@ -3,6 +3,22 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-17] [measured/tool] **D-016 R1 pinhole rectify UNBLOCKS the owned real-urban tier.** New primitive
+  `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad; mirrors the existing fisheye
+  `ftheta_undistort`) lands `f_eff=266` **exactly by construction** where the square-crop is height-bound.
+  Measured (grounded real intrinsics): **PandaSet front 467→266.0** (drop-in), at a cost of **37.7% masked
+  periphery** (native VFOV 30.7° < canonical 51.4°; sky/hood band unobserved, road band retained) + **109px k1
+  barrel distortion corrected**; comma2k19 reference untouched (266.0, 99.6% observed). **New ingest rule:** gate
+  every source on `observed_frac ≥ ~0.5` — Udacity-like falsifies at 0.13 (narrow FOV = 87% mask). Undistort
+  correctness: fwd↔iterative-inverse <1e-4, checkerboard recovery corr>0.9. Contract-drop-in (G-D2). Intake pkg
+  `2026-07-17-d016-r1-pinhole-rectify/` (9✓). Coverage map: pinhole (PandaSet/Udacity/comma) → this; fisheye
+  (ZOD KB/PhysicalAI/Cosmos f-theta) → existing `ftheta_*` — impact: D-016/G1/OWN_DATASET_PLAN/H17 —
+  `2026-07-17-d016-r1-pinhole-rectify-unblocks-owned-real-urban.md`
+- [2026-07-17] [measured/pitfall] **A8 on 12 real comma-val eps (3,600 frames): 0.0596@0.05 / 0.0240@0.10**
+  (curr-frame slice) — reproduces the 2026-07-07 baseline (~0.053/0.012), low-consequence highway regime holds
+  on held-out val. **Harness pitfall:** `stats.frame_change_fraction` assumes float [0,1] but the epcache stores
+  uint8 [0,255] → a direct caller gets a meaningless ~0.74 (uint8 subtract wraps); convert via `to_float_frames`
+  first. BACKLOG: make `stats` uint8-safe — impact: H3/A8, stats harness — same note §4
 - [2026-07-15] [measured/gate] **WorldModel-Synthetic-Scenarios is POSE-LESS** (BACKLOG P0.1 gate CLOSED on
   real bytes): each clip = `<family>/<clip>/{description,video}`; `video/` = **7 camera mp4s** (front_wide,
   front_tele, 3 fisheyes, rear_left/right) @24 fps ~462 frames; `description/<cam>.json` = a **Qwen2.5-7B

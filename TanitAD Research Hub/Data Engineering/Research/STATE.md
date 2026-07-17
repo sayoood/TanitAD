@@ -1,9 +1,39 @@
 # STATE — Data Engineering
 
-LAST_RUN: 2026-07-15 (Tuesday agent) — branch `agent/data-engineering-20260715` (worktree `C:/Users/Admin/wt-de`, D-026)
-QUALITY: full (G-A…G-E, G-H, G-D1, G-D2 met; intake pkg 16✓ standalone; no `stack/` files touched).
+LAST_RUN: 2026-07-17 (Tuesday agent) — branch `agent/data-engineering-20260717` (worktree `C:/Users/Admin/wt-de-0717`, D-026)
+QUALITY: full (G-A…G-E, G-H, G-D1, G-D2 met; intake pkg 9✓ standalone; 2 measured experiments; no `stack/` files touched).
 
-## This run (2026-07-15)
+## This run (2026-07-17)
+- **D-016 R1 pinhole rectify BUILT + validated — the owned real-urban BLOCKER (last run's #1) is RESOLVED for the
+  pinhole family.** New primitive `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad;
+  mirrors the existing fisheye `ftheta_undistort`) lands `f_eff=266` **exactly by construction**. Intake pkg
+  `2026-07-17-d016-r1-pinhole-rectify/` (`calib_r1.py` + tests + report + INTAKE), **9/9 tests ✓ standalone**.
+  Measured on grounded real intrinsics ($0, CPU): **PandaSet front 467→266.0** (BLOCKED→drop-in), cost **37.7%
+  masked periphery** (native VFOV 30.7° < canonical 51.4°; sky/hood unobserved, road band kept) + **109px k1
+  distortion corrected**; comma2k19 reference untouched (266.0, 99.6% observed). **New ingest rule: gate every
+  source on `observed_frac ≥ ~0.5`** — Udacity-like falsifies at 0.13 (narrow FOV = 87% mask). Undistort
+  correctness: fwd↔iterative-inverse <1e-4 + checkerboard recovery corr>0.9; contract-drop-in (G-D2).
+- **Secondary (real bytes): A8 on 12 comma-val eps (3,600 frames) = 0.0596@0.05 / 0.0240@0.10**, reproduces the
+  2026-07-07 baseline. Found a harness pitfall: `stats` needs float, epcache is uint8 (direct uint8 call → bogus
+  ~0.74). BACKLOG: make `stats` uint8-safe.
+- **Coverage map now complete:** pinhole (PandaSet/Udacity/comma) → `pinhole_rectify` (this); fisheye (ZOD
+  Kannala-Brandt / PhysicalAI / Cosmos f-theta) → existing `ftheta_*`. Every owned real-urban source has a rectify
+  path → OWN_DATASET_PLAN §0 "one owned dataset, real episodes" is geometrically unblocked (GOAL G1 movement).
+- **Housekeeping:** committed the untracked `OWN_DATASET_PLAN.md` (2026-07-13 plan v1, was sitting untracked in
+  the shared main tree) into this branch.
+- Note: `2026-07-17-d016-r1-pinhole-rectify-unblocks-owned-real-urban.md`.
+
+## Next (backlog, priority order)
+1. **MVP integration of the R1 rectify** — fold `calib_r1.py` symbols into `stack/tanitad/data/calib.py`; flip
+   PandaSet `_canonicalize` to `pinhole_rectify` + carry `observed_frac` into the data card (GeometryError →
+   `observed_frac<floor` guard). Then **verify one real PandaSet sequence on the HF mirror** (real-bytes drop-in).
+2. **ZOD pilot loader** (real-CAN #2, owned candidate #1) — fisheye via existing `ftheta_undistort`; the rectify
+   family is now proven, so ZOD is unblocked on geometry. Fetch+verify one real drive; recover camera-yaw offset.
+3. **`stats` uint8-safe** (small fix) — auto-`to_float_frames` or assert dtype so no future A8 mis-measure.
+4. **WorldModel-Synth semantic-label index** (pose-less; captions+metadata are the usable-today value).
+5. **R1 top-up to 2,000** (1,926 reachable, 74 short) — pod job, BLOCKED (pod busy: 3-arm bake-off training).
+
+## Prior run (2026-07-15)
 - **WorldModel-Synthetic-Scenarios pose gate CLOSED (BACKLOG P0.1) — POSE-LESS, measured on real bytes.** HF
   tree walk + real-clip fetch: each clip = `<family>/<clip>/{description,video}`; `video/` = **7 camera mp4s**
   (front_wide/front_tele/3 fisheyes/rear L/R) @24 fps ~462 frames; `description/<cam>.json` = a **Qwen2.5-7B

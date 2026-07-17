@@ -14,6 +14,12 @@ a goal with no movement for two runs is escalated in STATE, not silently carried
 - **Status (2026-07-15):** PandaSet loader shipped + **fails loud** on the blocker (16✓); the blocker is now
   quantified and promoted from "R1 nicety" to blocking. Next: land the pad-crop → flip PandaSet drop-in →
   fetch+verify one real ZOD drive + one PandaSet sequence. **Movement: yes.**
+- **Status (2026-07-17):** blocking dependency **RESOLVED for the pinhole family** — `pinhole_rectify` built +
+  validated (intake `2026-07-17-d016-r1-pinhole-rectify/`, 9✓): PandaSet **467→266.0 exact drop-in** (synthetic
+  bytes; 37.7% masked periphery measured), comma reference untouched, fisheye family (ZOD) covered by existing
+  `ftheta_*`. Every owned real-urban source now has a proven rectify path. **Remaining to close G1:** MVP
+  integration + `drop_in=True` + contract-PASS on **real** PandaSet & ZOD bytes (2 corpora). **Movement: yes
+  (geometry blocker cleared; real-bytes verification is the last mile).**
 
 ## G2 — Close the H7 data-efficiency loop (pose-less → trainable)
 - **Target:** a working inverse-dynamics (IDM) head that pseudo-labels a pose-less corpus (WorldModel-Synth
