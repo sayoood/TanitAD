@@ -4,15 +4,53 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
+1. **`skill_score` on a real checkpoint (G1, top program risk).** The floor (≈0.056 m@1s ADE, 07-15) and
+   the metric-BEV **open-loop L2 shortcut ceiling (0.66 m avg, 07-17)** are both shipped; the missing half
+   is the first *model-relative* number. **New concrete step:** add a metric-BEV ego-frame trajectory decode
+   to `driving_diagnostic.py` (so the model number lives in the SAME space as the 0.66 m shortcut, not
+   camera-frame) → emit `skill_score = model_L2 ÷ shortcut` per stratum. **Blocked on a pullable post-reset
+   checkpoint** (pods training; gated HF `Sayood/*`). Local `ckpt_full.pt` is pre-reset camera-frame → NOT
+   comparable (do not use, G-B1). Falsifier: skill_score ≤ 3 on straights → model near-trivial-competitive.
+2. **`skill_score` + floor + open-loop-L2 into the gate runner** (orchestrator triage of intakes
+   `2026-07-15-baseline-floor` + `2026-07-17-openloop-l2-egostatus-shortcut`): wire into the D1
+   `extra_metrics` seam so every D1 number reports the stratified skill denominator AND a metric-BEV L2 vs
+   the ego-status shortcut, not raw camera-frame ADE. Speed-gate the curvature strata.
+3. **LAL-v2 integration** (intake `2026-07-09-lal-v2-anticipation`, orchestrator triage): merge into
    `stack/tanitad/eval/metrics.py`, relabel LAL-v1 "reaction-onset latency", report both. Unblocks G0.6.
-   *(Metric shipped this run; integration is the orchestrator step.)*
-2. **≥3-seed SC-01 CARLA re-run** — the first live run (2026-07-08) was single-seed + scripted policy.
+4. **≥3-seed SC-01 CARLA re-run** (G2) — the first live run (2026-07-08) was single-seed + scripted policy.
    Next run: ≥3 seeds, OKRI/LOPS/TMS as mean±CI, emit LAL-v2, and **measure OKRI per-seed SD** to size
-   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Goal: first decision-grade
-   live SC-01 rows. Falsifier: CIs overlap → no "beats baseline" claim.
-3. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
+   future runs (audit Result C: gap 19.5; ~2 seeds at SD≈5, up to 17 at SD≈20). Blocked on CARLA-on-pod
+   (D-014, Tools&DevEnv). Falsifier: CIs overlap → no "beats baseline" claim.
+5. **Closure-incursion detector fix** (H9, Friday co-own) — reads 0 on the reactive run; needs a
    lane-polygon check + collision sensor on the CARLA side. Flagged in commit `2d87acb`, NOT fixed this run.
+
+## Done this run (2026-07-17) — leaderboard-comparable denominator (G1 advanced)
+- **nuScenes-style open-loop L2 protocol + no-vision ego-status shortcut shipped** (intake
+  `2026-07-17-openloop-l2-egostatus-shortcut`, 8 analytic tests). Metric-BEV ego frame, both averaging
+  conventions, `collision_rate` proxy, `RidgeTrajectoryHead` (AD-MLP repro). Measured on 7 920 comma-hwy
+  val anchors (held out by clip): **shortcut ceiling avg L2 0.66 m** ≈ CTRV; **comma is 73.9 % straight =
+  nuScenes' 73.9 %** → open-loop L2 is a weak capability test. `skill_score = model_L2 ÷ 0.66 m` now in
+  community units. cosmos-urban: learned shortcut (1.19 m) beats the kinematic floor (1.34). LEADERBOARD
+  (open-loop-L2 block), KB, GOALS, ledger updated. Blocker: model-relative number needs a post-reset ckpt.
+
+## Done this run (2026-07-15) — the honest denominator (G1 advanced)
+- **Tested best-of-3 kinematic-baseline floor shipped** (CV/go-straight/CTRV + `skill_score`, speed-gated
+  strata; 8 analytic tests). Measured on 26 132 real anchors (comma-val + Cosmos-DD): honest floor
+  **≈0.056 m@1s** (CTRV-dominated), correcting the framework's single-CV 0.28 m → model gap ~115× floor.
+  Found+fixed the standstill yaw-noise stratification artifact (speed-gate). Cosmos-DD confirmed a poor
+  maneuver source (0 % genuine sharp). Intake `2026-07-15-baseline-floor` + note. Framework §Results, KB,
+  ledger, LEADERBOARD (floor block), GOALS updated.
+
+## Done this run (2026-07-13) — backlog #3 "available NOW, no simulator" first pass
+- **Robustness suite exercised on the ungated synthetic corpora** (Sayed-directed, pod-independent,
+  dev-box/4060, $0). Intake `2026-07-13-cosmos-robustness-first-pass` + note
+  `Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`. First data-only numbers on 13
+  Cosmos-Drive-Dreams clips (annotation tars only — the suite is pixel-free, no 43 GB shard):
+  **OKRI median 21.1 (0.06–268), headline**; LOPS path validated via oracle (0.844 ≈ analytic 0.8325);
+  TMS/LAL-v1/LAL-v2 characterized with failure modes quantified. **WorldModel-Synthetic-Scenarios
+  ruled out as a data-only geometric source** (video + VLM-caption only, no pose/boxes — documented).
+  40 contract tests green. Gaps: pose-jerk noise (TMS/LAL-v1), LAL-v2 free-cruise assumption, CNCE
+  latency/params + LOPS/collisions still model-dependent → CARLA-on-pod.
 
 ## Done this run (2026-07-09)
 - **Competitor efficiency block** (was P0 #2, W-05): shipped to LEADERBOARD — Alpamayo-2 32B / GAIA-3 15B

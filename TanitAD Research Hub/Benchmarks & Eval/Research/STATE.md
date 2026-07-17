@@ -1,10 +1,83 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-09 (Thursday weekly agent) — base commit `c4375f8`
-QUALITY: full (all gates G-A…G-F, G-B1, G-B2, **G-H measured experiment** met; loop iteration 1 of 4,
-well under budget: 2 web searches, ≈1.4 h)
+LAST_RUN: 2026-07-17 (Thursday scheduled) — open-loop L2 + ego-status shortcut ceiling; branch `agent/benchmarks-eval-20260717` (worktree off bench tip e8fca8e, D-026, off-Drive)
+QUALITY: full (1 measured experiment with held-out numbers; new metric ships with 8 analytic tests; $0, dev-box CPU, no pod touched)
 
-## Latest run (2026-07-09) — SC-01 live-metric audit + LAL-v2
+## Latest run (2026-07-17) — the denominator in leaderboard-comparable units (G1 advanced)
+
+Continued the #1 program-risk work (single-camera driving gap) — took the denominator from our internal
+camera-frame/floor units into **community-comparable nuScenes-style open-loop L2** (metric-BEV ego frame).
+Data-only, $0, local CPU, 7 920 comma-hwy + 318 cosmos-urban held-out (clip-level) val anchors.
+Deliverable: intake `Implementation/incoming/2026-07-17-openloop-l2-egostatus-shortcut/` (module + 8 tests
++ run + results) + note `Research/2026-07-17-openloop-l2-egostatus-shortcut.md`.
+- **Shipped the open-loop L2 protocol** (metric-BEV metres, both UniAD-`pointwise` / ST-P3-`cumulative`
+  conventions, collision proxy) + a **no-vision learned ego-status shortcut** (`RidgeTrajectoryHead`,
+  AD-MLP repro, arXiv 2312.03031). Proposed target `stack/tanitad/eval/openloop_l2.py`.
+- **F1 (measured):** the no-vision shortcut ceiling on comma-hwy = **avg L2 0.66 m** (0.144/0.552/1.256
+  @1/2/3s), statistically tied with CTRV (0.656) → **`skill_score = model_L2 ÷ 0.66 m` now defined in
+  leaderboard units.** cosmos-urban: the *learned* shortcut (1.19 m) beats the fixed kinematic floor (1.34).
+- **F2 (methodology):** **comma highway is 73.9 % straight — identical to nuScenes' 73.9 %** → our open-loop
+  val inherits the exact ego-status-shortcut pathology; aggregate open-loop L2 is a **weak capability test**.
+  The driving-capability verdict must be per-stratum `skill_score` + closed-loop, never an aggregate L2.
+- **F3 (hygiene):** nuScenes L2 has two undisclosed averaging conventions differing ~2× — every TanitAD/
+  competitor L2 row must state which (G-B1). Added a pre-registered open-loop **reporting protocol** to
+  LEADERBOARD (shortcut ceiling + skill_score + open⊥closed footnote + unit disclosure beside every number).
+- **Caveat/blocker (P8):** the model-relative number needs a post-reset ckpt decoded in metric-BEV ego
+  frame; local `ckpt_full.pt` is pre-reset **camera-frame** (not comparable → NOT used, G-B1); post-reset
+  ckpts on pods (training, off-limits) / gated HF. Queued: add a metric-BEV decode to `driving_diagnostic.py`.
+
+## Prior run (2026-07-15) — the honest denominator for the driving-capability gap
+
+Targeted the #1 program risk (single-camera driving gap, `DRIVING_DIAGNOSTIC_FRAMEWORK.md`). Data-only,
+$0, local CPU, 26 132 anchors (comma2k19-val + Cosmos-DD). Deliverable: intake
+`Implementation/incoming/2026-07-15-baseline-floor/` (metric + 8 tests + run + results) + note
+`Research/2026-07-15-baseline-floor-honest-denominator.md`.
+- **Shipped a tested best-of-3 kinematic-baseline floor** (CV / go-straight / **CTRV** + `skill_score`,
+  speed-gated curvature strata; 8 analytic-ground-truth tests green). Proposed target
+  `stack/tanitad/eval/baselines.py`, plugs into the D1 gate `extra_metrics` seam.
+- **F1 (measured):** the diagnostic's single-CV floor (≈0.28 m@1s) is not honest — the best-of-3 floor is
+  **≈0.056 m@1s** (CTRV wins 55–58 %; CV overstates the floor 4.6× on curves). → flagship held-out 6.44 m =
+  **~115× the trivial floor** (framework verdict *reinforced*, not overturned). **D1 should divide by the
+  per-stratum best-of-3 floor.**
+- **F2 (protocol fix):** curvature stratification must be speed-gated (v≥2 m/s) — 12.4 % of comma anchors
+  are standstill yaw-noise mislabeled "sharp" (κ=yaw_rate/v singular at v→0). Appended to the framework §Results.
+- **F3 (data):** the ungated Cosmos-DD sample is a poor maneuver source (0 % genuine sharp, 95.8 % straight);
+  comma-highway carries more real curve content. Refines 2026-07-13 note + framework §D2 → Data-Eng flag.
+- **Ecosystem (D-028 seam):** logged Occluded-nuScenes (2510.18552) + Bench2Drive-Robust (2605.18059,
+  occlusion×latency = our edge pair) + IDOL (2605.31476, supports the diagnostic root-cause remedy).
+- **Caveat (P8):** baselines use privileged GT ego-state → this is the *denominator*, not a model
+  competitor; no model ADE computed (pod busy with refb-speed-30k). Follow-up: `skill_score` on a checkpoint.
+- Created `GOALS.md` (D-029, was missing) — G1 driving-gap denominator advanced.
+
+## Prior run (2026-07-13) — backlog #3 first pass on the ungated synthetic corpora
+_(historical — LAST_RUN before 2026-07-15)_
+LAST_RUN: 2026-07-13 (Sayed-directed pod-independent task) — backlog #3 first pass
+QUALITY: full (data-only first pass on real ungated corpora; pipeline validated end-to-end; 40 tests
+green; $0, dev-box/4060, no pod touched)
+
+## Latest run (2026-07-13) — backlog #3 first pass on the ungated synthetic corpora
+
+Exercised the robustness suite on the ungated synthetic corpora (the "available NOW, no simulator"
+half of backlog #3), dev-box/4060 only, $0. Deliverable: intake
+`Implementation/incoming/2026-07-13-cosmos-robustness-first-pass/` + note
+`Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`.
+- **First data-only numbers on 13 Cosmos-Drive-Dreams clips.** The suite is **pixel-free** → needs only
+  the small per-clip RDS-HQ annotation tars (ego `vehicle_pose` + `all_object_info` 3D boxes +
+  intrinsics, ~15 MB/clip), **not** the 43 GB video shards. **OKRI** median **21.1** (0.06–268),
+  non-trivial on 12/13 — the headline data-only robustness number, scaling v²×occlusion as designed.
+- **LOPS path validated on real occlusion geometry**: data-only LOPS = 0.0 (honest, no model estimate);
+  perfect-perception oracle (wm=gt+N(0,0.3)) → mean **0.844** vs analytic **0.8325** (the 2026-07-09
+  σ=0.3 constant). Occlusion detector fires on 13/13 clips.
+- **WorldModel-Synthetic-Scenarios is video + VLM-caption ONLY** (no ego pose / no 3D boxes; probe in
+  `worldmodel_structure.json`) → cannot feed the geometric suite data-only; needs a perception/pose
+  model (same dependency as the closed loop). Stays a scene-diversity source.
+- **Gaps quantified:** pose-derived jerk is noise-amplified → TMS collapses (median 0.039; 0.117 with
+  5-tap smoothing) and LAL-v1 positivity is a jerk-noise artifact (re-confirms H15); LAL-v2 free-cruise
+  assumption violated on 7/13 logged clips; CNCE (latency/params) + LOPS/collisions still model-dependent.
+- Nothing touches the running contract — glue is a consumer awaiting orchestrator triage (proposed
+  target `stack/scripts/`).
+
+## Prior run (2026-07-09) — SC-01 live-metric audit + LAL-v2 (base commit `c4375f8`)
 
 The first **live CARLA** SC-01 run (committed 2026-07-08) ran my metric suite on real physics and flagged
 two instruments as broken. I executed my **independent-test role** on it (measured experiment, local CPU,
@@ -52,9 +125,12 @@ $0):
       scenarios emitting the exact `ScenarioTelemetry` columns → wire LAL+LOPS / OKRI+TMS / CNCE. **Retargeted
       per D-014 (MetaDrive retired):** substrate is now **CARLA-on-pod (Docker, W31–32)** for the closed-loop
       occluder-LOPS path — the scenario/occluder/perturbation logic is sim-agnostic and ports to the CARLA
-      adapter. **Available NOW, no simulator:** the ungated synthetic corpora
-      `PhysicalAI-WorldModel-Synthetic` (pedestrian/emergency/nudging/weather long-tail) + `Cosmos-Drive-Dreams`
-      can exercise LOPS/OKRI/LAL on pre-rendered occlusion clips before CARLA lands — a cheaper first pass.
+      adapter. **Available NOW, no simulator — FIRST PASS DONE 2026-07-13**
+      (`Research/2026-07-13-backlog3-synthetic-corpora-first-pass.md`): `Cosmos-Drive-Dreams` feeds the suite
+      data-only (ego pose + 3D boxes → OKRI/TMS/LAL numbers, occlusion geometry validated; LOPS oracle ≈
+      analytic). **`PhysicalAI-WorldModel-Synthetic-Autonomous-Driving-Scenarios` is video + VLM-caption
+      only** (no pose/boxes) → NOT a data-only geometric source. Remaining here = the scripted occluder
+      scenarios (Ghost Cut-Through / Blind Creep / Choke Weave) on CARLA-on-pod for real LOPS/CNCE.
 - [ ] Backlog #4: full paragraph-level extraction of `ECE-TRANS-WP.29-2026-139e.pdf` into REGULATION_TRACE.
 - [ ] Backlog #5 (gate-result audit): once a Wednesday D-gate has a real number, recompute one independently
       (fresh seed) — the Mission-Plan independent-test role.
