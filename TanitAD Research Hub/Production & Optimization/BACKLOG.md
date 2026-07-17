@@ -43,19 +43,30 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
      OR build the engine on the pod when a trainer is idle), then build TRT-fp16 from the exported
      ONNX and verify it matches the fp16 bar (agreement ≥95 %, wp-shift ≤~4 cm). Non-paid, EXECUTE-
      class; cross-check with Tools&DevEnv. Falsifier: a TRT-unsupported op ⇒ document, don't hack.
-   - **P1.4b — clean latency re-measure** on an EXCLUSIVE, clock-pinned 4060 (`nvidia-smi -lgc`, no
-     CarlaUE4/python resident) to publish the fp16 absolute Hz + a clean fp16-vs-fp32 VRAM delta
-     (this run's absolutes were contended: fp32 tick 33.5 ms vs the clean 15.07 ms baseline).
+   - ~~**P1.4b — clean latency re-measure**~~ **DONE 2026-07-17** (exclusive 4060): fp32
+     **14.79 ms/67.6 Hz/1.10 GB** (reproduces 15.07 ms → 33.5 ms was contention); fp16
+     **10.67 ms/93.7 Hz/1.39×** (safe 95.3 %); bf16 same 1.39× unsafe. fp16's win is ALL
+     encoder (8.98→4.69 ms); predictor/select batch-1 latency-floored. Clocks not
+     admin-pinnable (p50/p95×100 mitigates). `half_precision_clean_20260717.json`.
+   - **P1.4c (NEW) — one-process-per-precision VRAM harness.** The fp16/bf16 peak-VRAM in
+     P1.4b is co-resident-inflated (accuracy harness keeps the fp32 reference alive;
+     261 M×2 B ≈ the 0.52 GB gap). Measure each precision in a fresh process for a true
+     fp16 standalone footprint. Local, $0, EXECUTE-class.
 5. ~~**Compliance review #2: `stack/tanitad/models/`**~~ **DONE 2026-07-09:** intake
    `2026-07-09-models-predictor-failfast` — operative-predictor `assert`-only guard (`predictor.py:73`,
    stripped under `-O` → silent wrong-window inference) → `-O`-proof `ValueError`s, export-safe, 8 tests.
    Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow.
-6. **INT8/FP8 quantization curves** — accuracy-vs-latency per module (encoder most sensitive);
-   probe-fit delta / imagine-select agreement as the accuracy metric (the 2026-07-09 fp16/bf16
-   result is the precedent: score precision in the DECISION space, not just latent cosine).
-7. **`tactical_pred` fail-fast + `imagination_nll` logvar clamp** — the two findings logged in
-   review #2 (same `assert`-only guard on the tactical predictor; unclamped `exp(-logvar)` overflow
-   in `imagination.py:135` → NaN LOPS/H2 trigger). Small numerics-hardening package with a falsifier.
+6. **INT8/FP8 quantization curves** — accuracy-vs-latency per module. **Re-scoped 2026-07-17
+   (P1.4b finding):** at batch-1 the predictor/heads are latency-floored — quantizing them buys
+   ~0 tick; the encoder holds the time and must stay ≥fp16 (bf16 unsafe). So this is a **VRAM/
+   energy** play, not a batch-1-latency play; measure VRAM + energy delta beside the accuracy
+   delta (probe-fit / imagine-select agreement in DECISION space). ViT INT8 = the OwLite/ModelOpt
+   trap; ViT tower FP16, quantize heads first.
+7. **`tactical_pred` fail-fast** (+ merge the unmerged `2026-07-09-models-predictor-failfast`).
+   The **`imagination_nll` logvar clamp is DONE** (2026-07-17, intake
+   `2026-07-17-imagination-logvar-clamp`, 17 tests). Remaining: the operative/tactical predictor
+   `assert w==window` guard is still live at `predictor.py:89` (the review-#2 intake never merged);
+   re-flag or fold into the next models package. Small, no falsifier needed (fail-fast).
 8. **Compliance review #3: `stack/scripts/` + training loop** — resume paths, atomic writes,
    log hygiene, cgroup awareness; the ops-fragility class (F-5/F-6/F-7, duplicate-trainer). Fold in
    the `epcache` DONE-marker cleanup (written-never-read) + `EpisodeWindowDataset` silent
@@ -72,6 +83,12 @@ optimization experiment. G-P2: accuracy delta next to every speed delta.
     2026-07-08).
 
 ## Done / retired
+- (2026-07-17 run #3) **P1.4b clean-GPU latency DONE** (fp32 14.79 ms/67.6 Hz, fp16 1.39×/93.7 Hz,
+  encoder-only win, precision policy reproduced); **review #3 imagination_nll logvar clamp DONE**
+  (intake, 17 tests). New: P1.4c one-process VRAM harness; P1.6 re-scoped to VRAM/energy. **Next-run
+  top:** P1.4a (TRT engine — install `tensorrt`+`onnxruntime-gpu` or idle-pod build) OR compliance
+  review #3 `stack/scripts/`+training-loop (ops-fragility F-5/6/7; the pod-monitor stale-target +
+  dead-trainer-relaunch history makes this timely) — pick review #3 if the GPU is contended.
 - (2026-07-09 run #2) P1.4 → precursor measured (fp16 safe / bf16 unsafe), engine build split to
   P1.4a (toolchain install) + P1.4b (clean-GPU latency); P1.5 models review #2 DONE (fail-fast intake,
   8 tests). Next-run top: P1.4a (idle-GPU/pod TRT build) or review #3 (scripts) if GPU stays contended.
