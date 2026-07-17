@@ -1,9 +1,32 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-15 (Thursday scheduled) — baseline-floor honest denominator; branch `agent/benchmarks-eval-20260715` (worktree off bench tip e17435e, D-026)
-QUALITY: full (2 measured experiments with numbers; new metric ships with 8 analytic tests; $0, dev-box CPU, no pod touched)
+LAST_RUN: 2026-07-17 (Thursday scheduled) — open-loop L2 + ego-status shortcut ceiling; branch `agent/benchmarks-eval-20260717` (worktree off bench tip e8fca8e, D-026, off-Drive)
+QUALITY: full (1 measured experiment with held-out numbers; new metric ships with 8 analytic tests; $0, dev-box CPU, no pod touched)
 
-## Latest run (2026-07-15) — the honest denominator for the driving-capability gap
+## Latest run (2026-07-17) — the denominator in leaderboard-comparable units (G1 advanced)
+
+Continued the #1 program-risk work (single-camera driving gap) — took the denominator from our internal
+camera-frame/floor units into **community-comparable nuScenes-style open-loop L2** (metric-BEV ego frame).
+Data-only, $0, local CPU, 7 920 comma-hwy + 318 cosmos-urban held-out (clip-level) val anchors.
+Deliverable: intake `Implementation/incoming/2026-07-17-openloop-l2-egostatus-shortcut/` (module + 8 tests
++ run + results) + note `Research/2026-07-17-openloop-l2-egostatus-shortcut.md`.
+- **Shipped the open-loop L2 protocol** (metric-BEV metres, both UniAD-`pointwise` / ST-P3-`cumulative`
+  conventions, collision proxy) + a **no-vision learned ego-status shortcut** (`RidgeTrajectoryHead`,
+  AD-MLP repro, arXiv 2312.03031). Proposed target `stack/tanitad/eval/openloop_l2.py`.
+- **F1 (measured):** the no-vision shortcut ceiling on comma-hwy = **avg L2 0.66 m** (0.144/0.552/1.256
+  @1/2/3s), statistically tied with CTRV (0.656) → **`skill_score = model_L2 ÷ 0.66 m` now defined in
+  leaderboard units.** cosmos-urban: the *learned* shortcut (1.19 m) beats the fixed kinematic floor (1.34).
+- **F2 (methodology):** **comma highway is 73.9 % straight — identical to nuScenes' 73.9 %** → our open-loop
+  val inherits the exact ego-status-shortcut pathology; aggregate open-loop L2 is a **weak capability test**.
+  The driving-capability verdict must be per-stratum `skill_score` + closed-loop, never an aggregate L2.
+- **F3 (hygiene):** nuScenes L2 has two undisclosed averaging conventions differing ~2× — every TanitAD/
+  competitor L2 row must state which (G-B1). Added a pre-registered open-loop **reporting protocol** to
+  LEADERBOARD (shortcut ceiling + skill_score + open⊥closed footnote + unit disclosure beside every number).
+- **Caveat/blocker (P8):** the model-relative number needs a post-reset ckpt decoded in metric-BEV ego
+  frame; local `ckpt_full.pt` is pre-reset **camera-frame** (not comparable → NOT used, G-B1); post-reset
+  ckpts on pods (training, off-limits) / gated HF. Queued: add a metric-BEV decode to `driving_diagnostic.py`.
+
+## Prior run (2026-07-15) — the honest denominator for the driving-capability gap
 
 Targeted the #1 program risk (single-camera driving gap, `DRIVING_DIAGNOSTIC_FRAMEWORK.md`). Data-only,
 $0, local CPU, 26 132 anchors (comma2k19-val + Cosmos-DD). Deliverable: intake

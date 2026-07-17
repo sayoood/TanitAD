@@ -47,6 +47,31 @@
 > `Implementation/incoming/2026-07-15-baseline-floor/`. Community precedent: NAVSIM v2 uses a CV agent as
 > a triviality filter (arXiv 2506.04218).
 
+## Community-standard open-loop L2 (metric-BEV) + the ego-status shortcut ceiling — measured by us, 2026-07-17
+
+> The number the field ranks driving on is **nuScenes-style open-loop L2** (metric-BEV, ego frame, m).
+> A model that sees **no pixels** and regresses waypoints from ego-status alone (AD-MLP, arXiv 2312.03031)
+> scores ~0.29 m on nuScenes because **73.9 % of nuScenes is straight cruising**. Any open-loop L2 must be
+> read against this **shortcut ceiling**. We measured it on our own val (metric-BEV ego frame, held out by
+> clip, both averaging conventions; `Implementation/incoming/2026-07-17-openloop-l2-egostatus-shortcut/`).
+
+| predictor (comma-hwy, v≈25 m/s, 7 920 val anchors) | L2@1s | L2@2s | L2@3s | **avg** | note |
+|---|---:|---:|---:|---:|---|
+| stop (null) | 24.88 | 49.85 | 74.89 | 49.87 | sanity: = v·t distance travelled |
+| best-of-3 kinematic floor | 0.122 | 0.479 | 1.102 | **0.571** | per-anchor min of CV/CTRV/go-straight |
+| **ego-status shortcut** (no vision, learned, held-out) | 0.144 | 0.552 | 1.256 | **0.658** | ≈ CTRV (0.656); the AD-MLP ceiling on our data |
+| **TanitAD** | — | — | — | — | needs metric-BEV decode of a post-reset ckpt → `skill_score` |
+
+> **comma highway is 73.9 % straight** — coincidentally identical to nuScenes' 73.9 % → our open-loop val
+> inherits the **same ego-status-shortcut pathology**. cosmos-urban (318 anchors, v≈10.6 m/s, all straight):
+> shortcut avg L2 **1.191 m** *beats* the kinematic floor 1.335 m (learns systematic urban deceleration).
+> **Reporting protocol (G-B1, pre-registered):** every TanitAD open-loop L2 ships beside (i) this
+> shortcut ceiling, (ii) `skill_score = model_L2 ÷ 0.66 m`, (iii) the open-loop⊥closed-loop footnote,
+> (iv) unit disclosure (camera-frame vs metric-BEV). **Caveat (P8):** the shortcut uses privileged GT
+> ego-state → a *denominator*, not a model competitor; the fair vision target is the oracle ceiling
+> (1.65 m@1s, `DRIVING_DIAGNOSTIC_FRAMEWORK.md` §B). Convention note: `pointwise`=UniAD (L2 at exactly t),
+> `cumulative`=ST-P3/VAD (mean up to t) — they differ ~2×; we report pointwise here, both in the JSON.
+
 ## Closed-loop (Bench2Drive, CARLA — the arbiter block) — context numbers
 
 | System | Driving Score | Success Rate | Source / date | Note |

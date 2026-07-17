@@ -32,6 +32,15 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-17: Benchmarks & Eval (Thu) — **validation-methodology hardening, no status change (P8).**
+  Put the D1 denominator in **leaderboard-comparable units**: a no-vision ego-status shortcut (AD-MLP
+  repro, arXiv 2312.03031) scores **avg open-loop L2 0.66 m** on comma-hwy (metric-BEV, held-out) — tied
+  with CTRV → `skill_score = model_L2 ÷ 0.66 m`. **comma is 73.9 % straight = nuScenes' 73.9 %** → aggregate
+  open-loop L2 is a **weak capability test**, reinforcing that **H3** decodability gates (D1–D3) are
+  necessary-not-sufficient and the driving verdict needs per-stratum skill_score + **closed-loop** (D4–D6,
+  arXiv 2605.00066) — no open-loop L2 alone arbitrates the single-camera driving claim. Nothing measured on
+  our model (denominator only; local ckpt pre-reset camera-frame, not comparable). Intake
+  `Benchmarks & Eval/Implementation/incoming/2026-07-17-openloop-l2-egostatus-shortcut/`.
 - 2026-07-15: Benchmarks & Eval (Thu) — **instrument/denominator hardening, no status change (P8).**
   The **D1** decode-gate denominator is corrected: the driving diagnostic's "10–15× worse than
   constant-velocity" rests on a single-CV floor (≈0.28 m@1s), but a tested best-of-3 kinematic floor

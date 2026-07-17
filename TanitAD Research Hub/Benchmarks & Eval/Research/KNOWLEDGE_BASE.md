@@ -3,6 +3,20 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-17] [this run / measured] **The ego-status shortcut ceiling on OUR data = avg L2 0.66 m
+  (comma-hwy, metric-BEV, held-out by clip).** A no-vision ~20-param ridge from ego-status history scores
+  0.144/0.552/1.256 m @1/2/3s — statistically tied with CTRV (0.656) — the AD-MLP shortcut (2312.03031)
+  reproduced on comma. **`skill_score = model_L2 ÷ 0.66 m` now defined in leaderboard-comparable units.**
+  cosmos-urban: the *learned* shortcut (1.19 m) beats the fixed kinematic floor (1.34) — impact: G1 /
+  validation strategy / D1 — `../Implementation/incoming/2026-07-17-openloop-l2-egostatus-shortcut/`
+- [2026-07-17] [arXiv 2312.03031, CVPR'24 / this run] **comma highway is 73.9 % straight — identical to
+  nuScenes' 73.9 %** (the ego-status-critique figure). Our open-loop val inherits the *exact* shortcut
+  pathology: aggregate open-loop L2 is dominated by trivial straight cruising → a **weak capability test**
+  (community-unit restatement of "10–15× worse than CV" + 2605.00066). Verdict must be per-stratum
+  `skill_score` + closed-loop, never an aggregate open-loop L2 — impact: G1 / DIAGNOSTIC §A/C — https://arxiv.org/abs/2312.03031
+- [2026-07-17] [protocol] **nuScenes L2 has two undisclosed averaging conventions** — `pointwise` (UniAD:
+  L2 at exactly t) vs `cumulative` (ST-P3/VAD: mean up to t); they differ ~2×. Any TanitAD L2 row (and any
+  competitor row we cite) must state which — impact: G-B1 leaderboard hygiene — `openloop_l2.py`
 - [2026-07-15] [this run / measured] **The honest trivial-baseline floor is CTRV best-of-3 ≈ 0.056–0.06 m@1s,
   not the single-CV 0.28 m** the driving diagnostic used. 26 132 anchors (comma-val + Cosmos-DD), 10 Hz. CV
   is the weakest kinematic null on curves (gentle CV 0.275 vs CTRV 0.060 = 4.6×); CTRV wins 55–58 % of anchors.
