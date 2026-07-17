@@ -4,14 +4,15 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 
 ## P0 — next run
 
-1. **CI script `stack/scripts/ci.ps1` (backlog duty #3)** — pytest + I2 tripwire on every commit,
-   wired to `profile_testsuite.py check` as its timing guard (budget: warm-overhead ≤4 s, no single
-   `call` test >6 s). Goal: one command an agent/pre-commit runs; measured wall < 15 s warm.
-   Falsifier: a newly-added slow fixture must make `ci.ps1` exit nonzero. Deliver as intake.
-2. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
+1. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV
    overlay; doubles as the D3 imagined-vs-oracle visual. Note: the orchestrator already shipped a
    trajectory-fan overlay (`a25a3fe`) — SCOPE THIS as the *episode-replay* complement, don't dup.
    `pip install rerun-sdk`; measure setup cost + one real episode → .rrd size/time for G-T1.
+2. **Speed up `test_replay_app_test_mode_and_regression_gate` (10.86 s, the suite tall pole)** —
+   ≈20–23 % of total wall; the one test worth optimizing. Goal: get it under ~4 s (fixture reuse /
+   smaller synthetic bundle) so `ci_gate`'s per-test budget can tighten from 15 s toward the original
+   6 s intent. Falsifier: if it stays >6 s after the split, the cost is the FastAPI TestClient boot,
+   not the payload → keep 15 s and document.
 
 ## P1
 
@@ -35,6 +36,11 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
    VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-07-17) **CI gate `ci.ps1`/`ci_gate.py` (was P0.1, backlog #3) DONE** — one-command self-testing
+  gate; fails on failure/collection-error/slow-test/wall/missing-tripwire. 11/11 falsifiers; caught the
+  live RED suite (exit 1, 3.9 s); clean 343+2skip 47–57 s. Intake `2026-07-17-ci-gate/`. Note: the
+  original "wire to profile_testsuite.py + <15 s warm" target was stale (suite grew 181→343 tests, warm
+  ~47 s); shipped as a standalone JUnit-based gate with a 15 s per-test / 90 s wall budget instead.
 - (2026-07-09) **Test-suite I/O profiling (was P1.5) DONE** — cold 40.6 s / warm 10.7 s measured;
   root cause = Drive hydration latency; `profile_testsuite.py` shipped via intake (9 tests). Fix =
   pin `stack/` offline (→ new P1.5 verification item).

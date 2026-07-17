@@ -3,6 +3,31 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-17] [built] `ci_gate` — one-command self-testing pytest gate (backlog P0.1). Fails on
+  pytest failure OR **collection error** (defers to pytest exit code → never a false GREEN), per-test
+  >15 s, wall >90 s, or a missing/failing required tripwire (default the I2 encoder batch-consistency
+  test). Stdlib-only, OS-agnostic (`ci.ps1` Win wrapper / `python ci_gate.py` on pod). Measured:
+  11/11 falsifiers; catches the live broken suite in 3.9 s; clean suite 343+2skip 47–57 s — impact:
+  G-E/CI/D-004 — intake `2026-07-17-ci-gate/`, note `2026-07-17-…-bench2drive-speed.md` §2
+- [2026-07-17] [root-cause] The stack suite was **RED for every agent** on 2026-07-17: an untracked
+  TDD test `tests/test_physicalai_rig.py` (Data-Eng D-016 R1 two-rig fix) imports `ftheta_horizon_row`
+  / `ftheta_project_ray` / `ftheta_crop_box` + `center=`/`per_clip=` that committed `calib.py` never
+  shipped → `pytest` exit 2 at collection, 0 of 343 tests run. Fix-forward = `ci_gate` makes it a hard
+  gate; remediation (land calib impl or xfail) is Data-Eng/orchestrator — impact: G-E-all-agents —
+  note §1
+- [2026-07-17] [tooling] Agent tooling on the Windows dev box must be **ASCII-clean stdout**: `ci_gate`
+  v1 crashed with `UnicodeEncodeError` printing `✓/✗` under the cp1252 console. Use ASCII markers (or
+  force UTF-8) in any script an agent/CI runs on this box — impact: G-T1/all-tooling — note §2
+- [2026-07-17] [opponent] NVIDIA **Alpamayo 2 Super = 34 B** (corrects prior KB "32 B"), closed-loop via
+  AlpaGym on AlpaSim; GitHub/HF "this summer". NVIDIA shipped a "post-train AV in closed-loop with
+  Alpamayo" dev blog + an Alpamayo-1 trajectory-latency paper (arXiv 2605.08975, on our C2/P5 edge
+  thesis). Verdict unchanged: Phase-1 cloud (40–60 GB) — impact: P5/H1/opponent —
+  [newsroom](https://nvidianews.nvidia.com/news/nvidia-alpamayo-2-super-robotaxis)
+- [2026-07-17] [benchmark] **Bench2Drive-Speed (Mar 2026)** grades closed-loop *speed customization* —
+  directly validates the program's speed/scale reset (v0-as-action-channel, probe R² 0.61→0.965) and is
+  a Phase-1 closed-loop eval target. **Dev10** = 10-clip quick-dev subset (fast iteration); Bench2Drive-VL
+  (Oct 2025) = closed-loop VLM QA. Seam: Benchmarks&Eval owns — impact: H4/speed/eval —
+  [Bench2Drive](https://github.com/Thinklab-SJTU/Bench2Drive)
 - [2026-07-09] [root-cause] CARLA camera-rendering on pod2 (GIPA/vulkaninfo NULL) = TWO stacked
   host-level causes: (1) RunPod pods launch `NVIDIA_DRIVER_CAPABILITIES=compute,utility` → no Vulkan
   ICD / EGL device in-container (nvidia-smi works, vulkaninfo NULL) — set by NVIDIA Container Toolkit
