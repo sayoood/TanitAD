@@ -60,11 +60,13 @@ def main():
           f"(seed {cfg.train.seed})", flush=True)
 
     cache = Path(args.root) / "_epcache"
-    # "calib" tags the canonicalization generation: the D-016 f-theta fix makes
-    # a FRESH cache key so the corrected cache can never collide with / silently
-    # reload the old nominal-focal (wrong-zoom) episodes.
+    # "calib" tags the canonicalization generation: each f-theta fix makes a
+    # FRESH cache key so a corrected cache can never collide with / silently
+    # reload superseded episodes. v1: nominal->f-theta focal fix. v2: per-clip
+    # (cx,cy) principal-point-centered crop (two-rig vertical fix) — different
+    # pixels for rig-B clips, so it MUST invalidate any v1 (geometric-center) cache.
     params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
-              "calib": "ftheta_v1"}
+              "calib": "ftheta_v2"}
     for cs, split in ((tr, "train"), (va, "val")):
         eps = build_episodes_cached(
             cs, lambda c: build_episode(c, size=cfg.encoder.image_size),

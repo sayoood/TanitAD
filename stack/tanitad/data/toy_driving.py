@@ -28,6 +28,9 @@ class ToyEpisode:
     actions: Tensor       # [T, 2] action taken between t and t+1
     poses: Tensor         # [T, 4] (x, y, yaw, v)
     episode_id: int
+    maneuvers: Tensor | None = None   # [T] int64 per-timestep maneuver class
+    #   (refs.refb.MANEUVER_CLASSES; -1 = unlabelable tail). Optional so toy/
+    #   comma builds that don't derive it stay unchanged; persisted when present.
 
 
 def _road_centerline(rng: np.random.Generator, n_pts: int = 400,

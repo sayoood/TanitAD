@@ -299,8 +299,9 @@ def check3_undistort_curvature(intr_list, comma_flow_foe) -> dict:
     crop_edge_sagitta_frac = round(crop_edge_sagitta_worldpx /
                                    (2 * f_world * math.tan(th_can)) * 256, 3)
 
-    # (d) principal point: geometric center is the crop convention; report the
-    # real (cx,cy) offset + the known bimodal cy split (rig A ~543 / rig B ~754).
+    # (d) principal point: the crop is now centered on the per-clip (cx,cy).
+    # Report the real (cx,cy) offset + the bimodal cy split (rig A ~543 /
+    # rig B ~755) that centering corrects.
     cxs = np.array([i.cx for _c, i in intr_list])
     cys = np.array([i.cy for _c, i in intr_list])
     W = intr_list[0][1].width if intr_list else 1920
@@ -310,10 +311,13 @@ def check3_undistort_curvature(intr_list, comma_flow_foe) -> dict:
         "cy_offset_from_center_px": _stats(cys - H / 2.0),
         "cy_bimodal_frac_low_rigA(<650)": round(float((cys < 650).mean()), 3),
         "cy_bimodal_frac_high_rigB(>=650)": round(float((cys >= 650).mean()), 3),
-        "crop_uses_geometric_center": True,
-        "note": ("cx ~centered; cy is BIMODAL across two rigs so the crop uses "
-                 "GEOMETRIC center (not principal point) by design -> robust to "
-                 "the rig split; horizon/pp extrinsic normalization is D-016 R1."),
+        "crop_center": "principal (per-clip cx,cy)",
+        "note": ("cx ~centered; cy is BIMODAL across two rigs (A~543 / B~755). "
+                 "The crop centers on each clip's per-clip (cx,cy) "
+                 "(calib.ftheta_crop_resize center='principal') so the horizon "
+                 "lands at the SAME output row for both rigs; the median fallback "
+                 "(no per-clip cy) reverts to geometric-center. Full pitch/height "
+                 "homography is the deferred D-016 R1 step."),
     }
 
     # (e) horizon ~ h/2. comma: empirical FOE row (validated method). physicalai:
@@ -328,8 +332,10 @@ def check3_undistort_curvature(intr_list, comma_flow_foe) -> dict:
         "physicalai_horizon_row_expected": pai_horizon_expected,
         "physicalai_extrinsics_on_pod": False,
         "note": ("comma FOE ~ image center validates horizon~h/2 empirically; "
-                 "physicalai pitch is near-zero (audit) so its horizon is also "
-                 "~center. Pitch/height homography is the deferred D-016 R1 step."),
+                 "physicalai pitch is near-zero (audit) so its horizon is ~cy, "
+                 "and the per-clip (cx,cy) crop puts cy at the output center for "
+                 "BOTH rigs -> horizon ~row 128 regardless of the rig split. Full "
+                 "pitch/height homography is the deferred D-016 R1 step."),
     }
 
     comma_h_ok = (comma_flow_foe is None) or (96 <= comma_flow_foe <= 160)

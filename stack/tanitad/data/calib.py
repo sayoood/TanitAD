@@ -16,15 +16,19 @@ tighter central crop (~51 deg retained) — angularly consistent with comma;
 the sacrificed wide periphery is precisely what H2 modality steering
 re-introduces later as dedicated side views.
 
-Extrinsics (mount height/pitch/roll) are NOT yet normalized — recorded as a
-known limitation in D-016; horizon-alignment homography is the R1 follow-up
-(Deep Think 8). Per-clip intrinsics from PhysicalAI `calibration/` replace the
-nominal-FOV focal when the DataEng agent lands them.
+Extrinsics (mount height/pitch/roll) are NOT yet fully normalized (full pitch/
+height homography is the R1 follow-up, Deep Think 8) — but the two-rig VERTICAL
+principal-point split is fixed here: `ftheta_crop_resize(center="principal")`
+centers the crop on each clip's per-clip (cx, cy), so the horizon lands at the
+same output row for rig A (cy~543) and rig B (cy~755). Per-clip intrinsics from
+PhysicalAI `calibration/` (loaded in data/physicalai.py) drive both the focal
+canonicalization and this centering.
 """
 
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 
 import torch
@@ -101,6 +105,12 @@ class FThetaIntrinsics:
     (columns ``fw_poly_0..4``, ``cx``, ``cy``, ``width``, ``height``);
     ``fw_poly_1`` is the paraxial focal dr/dtheta|_0. Poly is evaluated with
     Horner so it works on floats and on tensors (undistort grid) alike.
+
+    ``per_clip`` records whether (cx, cy) are this clip's REAL measured principal
+    point (True) or the corpus-median fallback (False). The principal-point-
+    centered crop (`ftheta_crop_resize(center="principal")`) REQUIRES per_clip=
+    True: the front-wide has two rigs with cy ~543 (A) and ~755 (B), so a single
+    global cy is wrong for one of them and must never drive a centered crop.
     """
 
     poly: tuple[float, ...]
@@ -108,6 +118,7 @@ class FThetaIntrinsics:
     cy: float
     width: int = 1920
     height: int = 1080
+    per_clip: bool = False
 
     def r_of_theta(self, theta):
         """Fisheye radius [native px] for incidence angle ``theta`` [rad]."""
@@ -139,13 +150,15 @@ class FThetaIntrinsics:
 # Corpus-median fallback (MEASURED 2026-07-12 over the 500 R0-selected clips /
 # 30 calibration chunks; per-clip focal sigma 0.47%). USED ONLY when a per-clip
 # entry is unavailable. NOTE: the vertical principal point is BIMODAL across two
-# rigs (cy~543 for 23% of clips, cy~754 for 77%) — so principal-point-dependent
-# processing MUST use per-clip cy, never this median. The default crop-based
-# canonicalization below is geometric-centered and does NOT use (cx, cy), so it
-# is robust to the rig split; (cx, cy) here serve only the undistort helper.
+# rigs (cy~543 for 23% of clips, cy~755 for 77%) — so principal-point-dependent
+# processing MUST use per-clip cy, never this median. cy=753.18 here is a RIG-B
+# value; there is NO single correct global cy. Hence ``per_clip=False``: it pins
+# f_eff via the near-constant focal (robust to the rig split) and feeds the
+# undistort helper, but it must NEVER drive the (cx, cy)-centered crop — that
+# path refuses this fallback and reverts to geometric-center with a warning.
 PHYSICALAI_FRONT_WIDE_FTHETA = FThetaIntrinsics(
     poly=(0.0, 927.5032, 23.1353, -58.5012, 16.5067),
-    cx=958.0, cy=753.18, width=1920, height=1080)
+    cx=958.0, cy=753.18, width=1920, height=1080, per_clip=False)
 
 
 def ftheta_crop_size(intr: FThetaIntrinsics, size: int = 256,
@@ -163,33 +176,140 @@ def ftheta_crop_size(intr: FThetaIntrinsics, size: int = 256,
     return max(32, min(c, min(intr.height, intr.width)))
 
 
-def ftheta_crop_resize(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
-                       f_ref: float = F_REF) -> Tensor:
-    """[T,3,H,W] uint8/float -> [T,3,size,size] uint8, f-theta-correct canonical.
+_warned_geometric = [False]
 
-    Geometric-center square crop (side `ftheta_crop_size`) retaining the shared
-    canonical half-angle, then bilinear resize. Geometric-center (not principal-
-    point) matches comma2k19's convention and stays in-frame for BOTH PhysicalAI
-    rigs; horizon/principal-point (extrinsic) normalization is the deferred
-    D-016 R1 step. Achieved edge-referenced f_eff is stored in `.last_f_eff`
-    (measured by round-tripping the integer crop through the real poly, not
-    assumed), so a data card / build check reports the TRUE value.
+
+def ftheta_crop_box(intr: FThetaIntrinsics, h: int, w: int, size: int = 256,
+                    f_ref: float = F_REF, *, center: str = "principal"
+                    ) -> tuple[int, int, int]:
+    """Square-crop box ``(c, top, left)`` in DECODED pixels for a ``h x w`` frame.
+
+    ``c`` is the f-theta-correct side (`ftheta_crop_size`, scaled to the decoded
+    resolution) — the SAME for both centerings, so the achieved f_eff is
+    identical either way. Only the box POSITION differs:
+
+    - ``center="geometric"``: top-left at ((h-c)//2, (w-c)//2) (legacy; matches
+      comma2k19's convention). Robust to the rig split but leaves the horizon at
+      DIFFERENT output rows for rig A (cy~543) vs rig B (cy~755).
+    - ``center="principal"``: crop centered on the per-clip principal point
+      (cx, cy), so the optical axis (θ=0, the straight-ahead horizon of a level
+      mount) lands at the OUTPUT CENTER for every clip regardless of rig. The
+      box may extend past the frame edge (rig B's cy is ~215 px below the
+      geometric center, so a centered crop overflows the bottom by ~90 px);
+      `ftheta_crop_resize` pads that genuinely-unobserved region rather than
+      shifting the box (which would reintroduce the per-rig offset).
     """
-    t, _, h, w = vid.shape
-    # intrinsics are defined on the native sensor; scale the crop if the decoded
-    # frame differs in resolution (front_wide mp4 decodes at native 1920x1080).
     sx = w / float(intr.width)
     sy = h / float(intr.height)
     c_native = ftheta_crop_size(intr, size, f_ref)
     c = int(round(c_native * min(sx, sy)))
     c = max(32, min(c, min(h, w)))
-    top, left = (h - c) // 2, (w - c) // 2
-    out = vid[..., top:top + c, left:left + c].float()
+    if center == "principal":
+        top = int(round(intr.cy * sy - c / 2.0))
+        left = int(round(intr.cx * sx - c / 2.0))
+    elif center == "geometric":
+        top, left = (h - c) // 2, (w - c) // 2
+    else:
+        raise ValueError(f"center must be 'principal' or 'geometric', got {center!r}")
+    return c, top, left
+
+
+def ftheta_crop_resize(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
+                       f_ref: float = F_REF, *, center: str = "principal"
+                       ) -> Tensor:
+    """[T,3,H,W] uint8/float -> [T,3,size,size] uint8, f-theta-correct canonical.
+
+    Square crop of side `ftheta_crop_size` (retaining the shared canonical
+    half-angle), then bilinear resize. ``center`` selects where the square sits:
+
+    - ``"principal"`` (default, D-016 R1 fix): centered on the clip's per-clip
+      (cx, cy). This puts the horizon/optical-axis at the SAME output row for
+      BOTH camera rigs (cy~543 and cy~755) — the two-rig vertical inconsistency
+      the geometric crop produced. REQUIRES ``intr.per_clip`` (a real measured
+      principal point); with the corpus-median fallback it warns once and
+      reverts to geometric-center (the fallback cy is a rig-B value — wrong for
+      rig A). Where a rig-B crop overflows the native bottom edge (near-field
+      road the sensor never captured), the missing rows are replicate-padded so
+      cy stays at the true crop center.
+    - ``"geometric"``: legacy center ((h-c)//2, (w-c)//2); comma2k19's
+      convention, robust to the rig split but horizon-inconsistent across rigs.
+
+    Achieved edge-referenced f_eff (independent of centering — the crop SIDE is
+    unchanged) is stored in `.last_f_eff`, measured by round-tripping the integer
+    crop through the real poly so a data card / build check reports the TRUE
+    value.
+    """
+    t, _, h, w = vid.shape
+    eff_center = center
+    if center == "principal" and not intr.per_clip:
+        if not _warned_geometric[0]:
+            _warned_geometric[0] = True
+            warnings.warn(
+                "ftheta_crop_resize(center='principal') needs a per-clip principal "
+                "point but got the corpus-median fallback (per_clip=False; cy is a "
+                "rig-B value). Reverting to geometric-center — the horizon will be "
+                "rig-inconsistent. Provide per-clip calibration to enable the fix.",
+                RuntimeWarning, stacklevel=2)
+        eff_center = "geometric"
+
+    c, top, left = ftheta_crop_box(intr, h, w, size, f_ref, center=eff_center)
+    # Clip the box to the frame, then replicate-pad the shortfall back to c x c so
+    # the principal point stays at the exact crop center even when the box spills
+    # past a native edge (rig B). Float only the (<= c x c) crop, never the clip.
+    y0, y1 = max(0, top), min(h, top + c)
+    x0, x1 = max(0, left), min(w, left + c)
+    out = vid[..., y0:y1, x0:x1].float()
+    pt, pb, pl, pr = y0 - top, (top + c) - y1, x0 - left, (left + c) - x1
+    if pt or pb or pl or pr:
+        out = F.pad(out, (pl, pr, pt, pb), mode="replicate")
     out = F.interpolate(out, size=(size, size), mode="bilinear",
                         align_corners=False)
+    sx, sy = w / float(intr.width), h / float(intr.height)
     theta_edge = intr.theta_of_r((c / min(sx, sy)) / 2.0)
     ftheta_crop_resize.last_f_eff = (size / 2.0) / math.tan(theta_edge)
     return out.clamp(0, 255).to(torch.uint8)
+
+
+def ftheta_project_ray(intr: FThetaIntrinsics,
+                       d_cam: tuple[float, float, float]) -> tuple[float, float]:
+    """Forward f-theta projection of a camera-frame ray -> native pixel (u, v).
+
+    Camera convention (matches `ftheta_undistort_grid`): +x right, +y DOWN, +z
+    the optical axis / boresight. A ray at incidence angle θ = atan2(‖x,y‖, z)
+    maps to radius r(θ) from the principal point along its azimuth:
+    ``u = cx + r·x/ρ``, ``v = cy + r·y/ρ`` (ρ = ‖x,y‖). The boresight (0,0,1)
+    projects to exactly (cx, cy). Used to locate the horizon (the vehicle-forward
+    horizontal ray, transformed into the camera frame via the clip's extrinsics)
+    so the rig-consistency of the crop can be verified in pixels.
+    """
+    x, y, z = float(d_cam[0]), float(d_cam[1]), float(d_cam[2])
+    rho = math.hypot(x, y)
+    if rho < 1e-9:
+        return intr.cx, intr.cy
+    r = float(intr.r_of_theta(math.atan2(rho, z)))
+    return intr.cx + r * x / rho, intr.cy + r * y / rho
+
+
+def ftheta_horizon_row(intr: FThetaIntrinsics,
+                       d_cam: tuple[float, float, float] = (0.0, 0.0, 1.0),
+                       h: int = 1080, w: int = 1920, size: int = 256,
+                       f_ref: float = F_REF, *, center: str = "principal"
+                       ) -> float:
+    """Output ROW that the horizon ray ``d_cam`` (vehicle-forward, in the camera
+    frame — from the clip's extrinsics) lands on after the crop+resize.
+
+    This is the metric that proves the two-rig fix: for ``center="principal"`` it
+    is ~size/2 minus a small per-clip pitch term for EVERY clip (rig A and rig B
+    alike, since the crop is centered on each clip's cy); for the legacy
+    ``center="geometric"`` it is offset by (cy - h/2)·size/c, i.e. ~66 rows lower
+    for rig B (cy~755) than rig A (cy~543). ``d_cam`` defaults to the optical axis
+    (0,0,1), i.e. a perfectly level mount whose horizon is exactly the principal
+    point.
+    """
+    _u, v = ftheta_project_ray(intr, d_cam)
+    sy = h / float(intr.height)
+    c, top, _left = ftheta_crop_box(intr, h, w, size, f_ref, center=center)
+    return (v * sy - top) * size / c
 
 
 def ftheta_feff_report(intr: FThetaIntrinsics, size: int = 256,
@@ -223,10 +343,13 @@ def ftheta_undistort_grid(intr: FThetaIntrinsics, size: int = 256,
 
     This is the fully-rectilinear option for the deferred D-016 R1 step. It is
     NOT the default cache build: 77% of PhysicalAI clips (rig B) have the
-    principal point low in the frame (cy~754), so a pinhole ray fan centered on
-    the optical axis samples below the native bottom edge (near-field road out of
-    frame). The default `ftheta_crop_resize` avoids that. Kept + tested so the
-    f-theta forward map is executable and R1 can adopt it with per-rig extrinsics.
+    principal point low in the frame (cy~755), so a full pinhole ray fan centered
+    on the optical axis samples FAR below the native bottom edge (near-field road
+    the sensor never captured). The default `ftheta_crop_resize(center=
+    "principal")` also centers on (cx, cy) but retains only the +/-c/2 canonical
+    patch, so it spills past the edge by at most ~90 px (replicate-padded) rather
+    than fanning a full undistorted field. Kept + tested so the f-theta forward
+    map is executable and R1 can adopt it with per-rig extrinsics.
     """
     ys, xs = torch.meshgrid(
         torch.arange(size, dtype=torch.float32),

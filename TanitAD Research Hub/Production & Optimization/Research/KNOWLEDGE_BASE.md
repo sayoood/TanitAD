@@ -2,6 +2,39 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-17 (run #3)
+
+- **Clean-GPU absolutes (the 33.5 ms was contention, not a regression).** On the
+  now-EXCLUSIVE 4060 (step-6500, 64 real windows), the fp32 decision tick is
+  **14.79 ms / 67.6 Hz / 1.102 GB** — reproduces the 15.07 ms clean baseline
+  (2026-07-08), confirming the 2026-07-09 33.5 ms was purely CarlaUE4 contention.
+  fp16 **10.67 ms / 93.7 Hz / 1.39×**. Both far above the 10–20 Hz operative
+  requirement before any TRT/quant (3.4–4.7× headroom). Source:
+  `Implementation/half_precision/half_precision_clean_20260717.json`.
+- **fp16's whole speedup is the ViT ENCODER** (encode 8.98 → 4.69 ms ≈ 1.9×); the
+  predictor + K9-select passes barely move (5.81 → 5.99 ms) — at batch-1 they are
+  launch/memory-bound, not compute-bound. **Production consequence: the batch-1
+  latency lever is encoder precision.** INT8/FP8 on the predictor/heads (planned
+  P1.6) buys ~0 batch-1 latency; the encoder holds the time and must stay ≥fp16
+  (bf16 unsafe). Re-order P1.6: **quantize for VRAM/energy, not batch-1 latency.**
+- **Precision policy reproduced to the digit on the clean run:** fp16 SAFE
+  (agreement **95.3 %**, 3/64 flips, wp-shift 3.9 cm mean/19 cm max, enc rel-err
+  7.8e-4); bf16 UNSAFE (**67.2 %**, 21/64 flips, 47.7 cm mean/**3.58 m max**,
+  7.2e-3). Same numbers as 2026-07-09 across a different probe fit → the policy is
+  reproducible. Deploy fp16, never bf16 (G-P2: bf16 is the *same* 1.39× but flips
+  1 in 3 maneuvers).
+- **Half-precision peak-VRAM is NOT lower in the current harness — it's a co-residency
+  artifact.** fp16/bf16 read 1.65 GB vs fp32 1.10 GB because the accuracy harness keeps
+  the fp32 reference model resident (261 M × 2 B ≈ the 0.52 GB delta). Only the fp32
+  standalone (1.10 GB) is trustworthy; clean fp16 VRAM needs a one-process-per-precision
+  harness (backlog P1.4c). Never quote the co-resident number as fp16's footprint.
+- **H15 `imagination_nll` had an unclamped `exp(-logvar)` overflow** (`imagination.py:135`):
+  `logvar=-100 → loss=inf → NaN grads`. LIVE in `train_worldmodel.py:338` (flagship),
+  `train_flagship4b.py:164`, `finetune_traj.py:217`; the logvar also `.exp()`s in
+  `replay/arms.py:284` (OKRI/LOPS/H2 export). Fix = clamp logvar to `[-10,10]` at the
+  head output + defensively in the nll (behaviour-preserving in-range, allclose test).
+  Source: `Implementation/incoming/2026-07-17-imagination-logvar-clamp/` (17 tests).
+
 ## 2026-07-09 (run #2)
 
 - **FP16 is decision-safe on the operative path; BF16 is NOT.** Measured on 64

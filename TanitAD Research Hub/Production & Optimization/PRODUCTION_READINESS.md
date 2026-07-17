@@ -13,7 +13,7 @@ compatibility (ONNX/TRT).
 | Module | Reviewed | Open issues | Notes |
 |---|---|---|---|
 | `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08** | 2 fixed (intake), 2 logged | review #1 done → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests); DONE-marker-unused + short-episode-silent-drop logged for later |
-| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-09** | 1 fixed (intake), 2 logged | review #2 done → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:73`, 8 tests, export-safe). Logged: same guard on `tactical_pred`; `imagination_nll` unclamped `exp(-logvar)` overflow. Encoder+predictor **ONNX-clean** at opset 17 & 18/dynamo (parity ≤1.2e-5). SigReg correctly pins fp32; `eval()` disables F-5 grad-ckpt |
+| `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-17** | 2 fixed (intakes), 1 logged | review #2 → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:89`, 8 tests, export-safe; **still unmerged** — the assert is live at `predictor.py:89`, same class covers `tactical_pred`). **review #3 (2026-07-17) → intake `2026-07-17-imagination-logvar-clamp`:** the logged `imagination_nll` unclamped `exp(-logvar)` overflow is now FIXED (clamp logvar to [-10,10] at head + in nll; `logvar=-100→inf` reproduced; 17 tests) — a live NaN-a-training-run mode in the flagship path (`train_worldmodel.py:338`) + NaN in the OKRI/LOPS export (`replay/arms.py:284`). Encoder+predictor **ONNX-clean** opset 17/18 (parity ≤1.2e-5). SigReg pins fp32; `eval()` disables F-5 grad-ckpt |
 | `tanitad/instruments/` | — | — | |
 | `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | |
 | `stack/scripts/` + training loop | — | — | review #3; ops-fragility history F-5/F-6/F-7 |
@@ -41,11 +41,20 @@ compatibility (ONNX/TRT).
   ModuleNotFoundError; onnxruntime has **CPU EP only**. TRT-fp16 engine build
   needs `tensorrt` + `onnxruntime-gpu` (CUDA-12 EP) or an idle-pod build (backlog
   P1.4a). ONNX IR already exported + parity-clean, so the graph side is ready.
-- **Latency-measurement hygiene:** absolute I8/CNCE latency must be taken on an
-  EXCLUSIVE, clock-pinned GPU. The 2026-07-09 run was contended (local CarlaUE4 +
-  python, 99 % util) → fp32 tick read 33.5 ms vs the clean 15.07 ms; accuracy is
-  contention-immune but absolute latency/Hz and per-precision peak-VRAM are not
-  (VRAM double-counts the resident fp32 reference). Clean re-run = backlog P1.4b.
+- ~~**Latency-measurement hygiene / P1.4b clean re-measure**~~ **DONE 2026-07-17
+  (clean, exclusive 4060):** fp32 tick **14.79 ms / 67.6 Hz / 1.102 GB** (reproduces
+  the 15.07 ms baseline → the 2026-07-09 33.5 ms WAS CarlaUE4 contention); fp16
+  **10.67 ms / 93.7 Hz / 1.39×**, decision-safe (95.3 % agreement, 3.9 cm wp-shift);
+  bf16 same 1.39× but unsafe (67.2 %). ~68 Hz fp32 / ~94 Hz fp16 = 3.4–4.7× headroom
+  over the 10–20 Hz requirement before TRT/quant. **fp16's whole win is the ViT
+  encoder** (8.98→4.69 ms ≈1.9×); predictor/select are batch-1 latency-floored →
+  the latency lever is encoder precision, P1.6 quant is a VRAM/energy play not a
+  batch-1-latency play. Clocks not admin-pinnable on this box (p50/p95 over 100 reps
+  mitigates). Source: `half_precision_clean_20260717.json`.
+- **Per-precision peak-VRAM still needs a one-process harness (P1.4c):** the fp16/bf16
+  VRAM rows (1.65 GB) are co-resident-inflated (the accuracy harness keeps the fp32
+  reference model alive; 261 M×2 B ≈ the 0.52 GB delta). Only fp32 standalone (1.10 GB)
+  is clean. Measure each precision in its own process for a true fp16 footprint.
 - INT8 on ViT: native TensorRT is a known trap — OwLite/ModelOpt route confirmed (Phase 1). ModelOpt
   PTQ = in-place + calibration dataloader, QDQ nodes; keep the ViT tower FP16, quantize predictor/
   heads first, accuracy metric = probe-fit delta.

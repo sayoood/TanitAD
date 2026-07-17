@@ -1,0 +1,203 @@
+{
+  "exp": "half-precision-latency-accuracy",
+  "backlog": "Production&Optimization P1.4 (TRT-fp16 precursor; TRT toolchain not installed)",
+  "ckpt_step": 6500,
+  "params_billions": 0.2628,
+  "hardware": "RTX 4060 (Orin proxy, I8), batch 1",
+  "n_showcase_windows": 64,
+  "n_fit_windows": 105,
+  "tactical_horizon_steps": 16,
+  "probe_imag_r2": 0.8327,
+  "notes": [
+    "fp32 latents computed under strict_numerics (pinned reference).",
+    "Latency measured identically for all precisions (tensor-core paths on).",
+    "probe_imag is a single fp64 ridge map, IDENTICAL across precisions -> any selection flip is attributable to WM precision, not the probe.",
+    "imagine-and-select pick = argmin_K ||decoded_fan - subgoal|| (subgoal = GT ego displacement at the 1.6 s tactical horizon).",
+    "TensorRT-proper: `import tensorrt` -> ModuleNotFoundError; ORT CPU-only. TRT-fp16 engine build needs the NVIDIA TRT toolchain (propose install)."
+  ],
+  "precisions": {
+    "fp32": {
+      "latency": {
+        "encode_1frame": {
+          "p50_ms": 8.98,
+          "p95_ms": 9.583
+        },
+        "predict_1pass": {
+          "p50_ms": 6.401,
+          "p95_ms": 10.115
+        },
+        "select_K9": {
+          "p50_ms": 5.812,
+          "p95_ms": 7.276
+        },
+        "peak_vram_gb": 1.102,
+        "decision_tick_p50_ms": 14.792
+      },
+      "accuracy_vs_fp32": "reference",
+      "decision": {
+        "selection_agreement": 1.0,
+        "note": "self (reference)"
+      }
+    },
+    "fp16": {
+      "latency": {
+        "encode_1frame": {
+          "p50_ms": 4.686,
+          "p95_ms": 8.507
+        },
+        "predict_1pass": {
+          "p50_ms": 6.012,
+          "p95_ms": 7.526
+        },
+        "select_K9": {
+          "p50_ms": 5.986,
+          "p95_ms": 7.696
+        },
+        "peak_vram_gb": 1.648,
+        "decision_tick_p50_ms": 10.672
+      },
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.013732,
+          "mean_abs": 0.000596,
+          "cosine_min": 0.999993,
+          "cosine_mean": 1.0,
+          "rel_err_mean": 0.000785,
+          "rel_err_max": 0.003839,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.047889,
+            "mean_abs": 0.000657,
+            "cosine_min": 0.999991,
+            "cosine_mean": 1.0,
+            "rel_err_mean": 0.000867,
+            "rel_err_max": 0.00443,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.04879,
+            "mean_abs": 0.000654,
+            "cosine_min": 0.999991,
+            "cosine_mean": 0.999999,
+            "rel_err_mean": 0.000875,
+            "rel_err_max": 0.004397,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.047282,
+            "mean_abs": 0.000646,
+            "cosine_min": 0.999991,
+            "cosine_mean": 0.999999,
+            "rel_err_mean": 0.00088,
+            "rel_err_max": 0.004421,
+            "finite": true
+          }
+        }
+      },
+      "decision": {
+        "selection_agreement": 0.9531,
+        "n_flips": 3,
+        "decoded_wp_shift_m_mean": 0.0392,
+        "decoded_wp_shift_m_max": 0.1897,
+        "selected_wp_shift_m_mean": 0.0312,
+        "fan_finite": true
+      }
+    },
+    "bf16": {
+      "latency": {
+        "encode_1frame": {
+          "p50_ms": 4.419,
+          "p95_ms": 5.563
+        },
+        "predict_1pass": {
+          "p50_ms": 6.276,
+          "p95_ms": 7.603
+        },
+        "select_K9": {
+          "p50_ms": 6.217,
+          "p95_ms": 7.47
+        },
+        "peak_vram_gb": 1.647,
+        "decision_tick_p50_ms": 10.636
+      },
+      "accuracy_vs_fp32": {
+        "encoder_state": {
+          "max_abs": 0.066473,
+          "mean_abs": 0.005678,
+          "cosine_min": 0.999525,
+          "cosine_mean": 0.999968,
+          "rel_err_mean": 0.007153,
+          "rel_err_max": 0.034682,
+          "finite": true
+        },
+        "predictor": {
+          "h1": {
+            "max_abs": 0.275678,
+            "mean_abs": 0.006053,
+            "cosine_min": 0.999445,
+            "cosine_mean": 0.999962,
+            "rel_err_mean": 0.00776,
+            "rel_err_max": 0.034628,
+            "finite": true
+          },
+          "h2": {
+            "max_abs": 0.27573,
+            "mean_abs": 0.006009,
+            "cosine_min": 0.999441,
+            "cosine_mean": 0.999962,
+            "rel_err_mean": 0.00775,
+            "rel_err_max": 0.034617,
+            "finite": true
+          },
+          "h4": {
+            "max_abs": 0.240864,
+            "mean_abs": 0.005923,
+            "cosine_min": 0.999443,
+            "cosine_mean": 0.999961,
+            "rel_err_mean": 0.007828,
+            "rel_err_max": 0.034525,
+            "finite": true
+          }
+        }
+      },
+      "decision": {
+        "selection_agreement": 0.6719,
+        "n_flips": 21,
+        "decoded_wp_shift_m_mean": 0.4772,
+        "decoded_wp_shift_m_max": 3.5774,
+        "selected_wp_shift_m_mean": 0.4883,
+        "fan_finite": true
+      }
+    }
+  },
+  "SUMMARY_speed_vs_accuracy": {
+    "fp32": {
+      "decision_tick_ms": 14.792,
+      "speedup_vs_fp32": 1.0,
+      "hz": 67.6,
+      "peak_vram_gb": 1.102
+    },
+    "fp16": {
+      "decision_tick_ms": 10.672,
+      "speedup_vs_fp32": 1.386,
+      "hz": 93.7,
+      "peak_vram_gb": 1.648,
+      "selection_agreement": 0.9531,
+      "encoder_rel_err_mean": 0.000785,
+      "encoder_finite": true,
+      "decoded_wp_shift_m_mean": 0.0392
+    },
+    "bf16": {
+      "decision_tick_ms": 10.636,
+      "speedup_vs_fp32": 1.391,
+      "hz": 94.0,
+      "peak_vram_gb": 1.647,
+      "selection_agreement": 0.6719,
+      "encoder_rel_err_mean": 0.007153,
+      "encoder_finite": true,
+      "decoded_wp_shift_m_mean": 0.4772
+    }
+  }
+}

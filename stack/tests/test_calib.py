@@ -64,7 +64,9 @@ def test_ftheta_physicalai_achieves_shared_focal():
     intr = PHYSICALAI_FRONT_WIDE_FTHETA
     assert 920 < intr.paraxial_focal < 935            # measured real focal
     vid = torch.randint(0, 255, (3, 3, 1080, 1920), dtype=torch.uint8)
-    out = ftheta_crop_resize(vid, intr, 256)
+    # the median fallback is per_clip=False -> use the geometric path explicitly
+    # (the principal path requires a per-clip cy; see test_physicalai_rig.py)
+    out = ftheta_crop_resize(vid, intr, 256, center="geometric")
     assert out.shape == (3, 3, 256, 256) and out.dtype == torch.uint8
     assert abs(ftheta_crop_resize.last_f_eff - F_REF) / F_REF < 0.01
     # retained field ~ comma's ~51 deg (NOT 120, and NOT the buggy ~33)

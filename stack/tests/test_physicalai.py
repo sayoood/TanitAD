@@ -55,6 +55,8 @@ def test_signals_derivation():
     t = np.linspace(0.0, 20.0, N)
     ego = pd.DataFrame({"timestamp": t, "vx": np.full(N, 8.0),
                         "vy": np.zeros(N), "x": 8.0 * t, "y": np.zeros(N),
+                        "qx": np.zeros(N), "qy": np.zeros(N), "qz": np.zeros(N),
+                        "qw": np.ones(N),               # identity quaternion -> yaw 0 (east)
                         "curvature": np.full(N, 0.01)})
     actions, poses = signals_at(ego, np.linspace(0.0, 20.0, 201))
     assert abs(actions[50, 0] - np.arctan(WHEELBASE * 0.01)) < 1e-6  # steer
