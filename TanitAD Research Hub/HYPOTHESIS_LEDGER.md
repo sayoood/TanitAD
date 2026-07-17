@@ -32,6 +32,20 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-17: Architecture & Inference (Wed) — **two measured constraints, no status changes (P8,
+  pre-reset directional step-6500 ckpt).** (1) **H15/H11/D8:** the 1-step-trained ImaginationField
+  **dissipates epistemic σ and collapses to an attractor under blind autoregressive K-step rollout**
+  (hidden-cell fidelity 0.357→0.011=chance by k4; σ log-var −7.79→−8.55 = *more* confident as it
+  degrades; inter-sample cosine 0.21→0.57; belief energy −11× by k4) — the exact H11/D8 σ-trigger risk
+  flagged 2026-07-15, now measured on real comma2k19, matching "Biased Dreams" (2604.25416). Cause is
+  the *recursion*: freezing the k=1 imagination holds ~0.25 cosine flat across 8 horizons. **Constraint:
+  cap the operative H15 self-monitor at 1-step / parallel-horizon until a multi-step-trained σ is
+  validated** (D-018 escalate). (2) **H3/D-021:** found + **verified the stranded 2026-07-10
+  orthogonality instrument** (unmerged 3 wks; withdrew my duplicate draft) — reproduces exactly on the
+  step-6500 ckpt (n=2600>S): **iso_ratio_active 0.254 < 0.5, NOT-YET-ADMISSIBLE** → **D-021 = "identifies a
+  low-dim subspace," NOT LeJEPA "optimal planning."** (Global isotropy ~0 is over-provisioning by design,
+  not failure — the active-subspace read is the correct one.) Rules out latent capacity as a D1 bottleneck
+  (G1); flagged the 07-10 instrument for orchestrator merge. See `Architecture & Inference/Research/2026-07-17-blind-rollout-uncertainty-dissipation-and-readout-orthogonality.md`.
 - 2026-07-15: Architecture & Inference (Wed) — **H15 imagination edge verified LIVE-ACTIVE in the
   flagship (no status change, P8)**, resolving the 2026-07-14 program-report §8 `h15=0.0` WATCH. Measured
   on the exact code path (GPU): imagination module **built** (22.06 M params), gradient reaches it (L1
