@@ -81,20 +81,44 @@ Raise the bar: **more experiments, run to goals, not just weekly reports.**
 - **Production-readiness bar (D-029):** every deliverable states its readiness — prototype /
   validated / production — and names the gap to the next level. "It runs once" is prototype, not done.
 
-## Burst compute (use it — allocated resources must not idle, D-020 §4)
+## Burst compute — RESOURCE MANDATE (Sayed-directed 2026-07-17; upgraded from "use it")
 
-Priority order for experiments:
-1. **Local RTX 4060** (always available; also the Orin latency proxy — I8 batch-1 profiling).
-2. **Google Colab via CLI** (`Keys.txt` has the Google account; use `colab` CLI or notebook
-   execution via `google-colab-tools`; T4/A100 bursts for bake-off arms and probe fits that exceed
-   the 4060). Keep sessions ≤ 2 h, save all artifacts back into your `Implementation/` folder —
-   Colab storage is ephemeral.
-3. **The pod, only if idle**: check first (`ssh tanitad-pod "nvidia-smi --query-gpu=utilization.gpu
-   --format=csv,noheader"`); training has absolute priority — if a trainer is running, the pod is
-   off-limits for agents. Never touch `/workspace/runs/` of the active run.
-4. New paid resources: NEVER — propose a `RESOURCE_LEDGER.md` entry instead (Sayed approves).
-Every experiment records: hardware used, wall-clock, and cost (0 if local/Colab-free) in the
-research note — these numbers feed the efficiency story (CNCE).
+**Compute-starved runs are the fleet's #1 quality ceiling** (2026-07-17 fleet review: most runs were
+CPU/paper-bound while the 4060, Colab and a dedicated A40 eval pod sat idle). From now on:
+
+**M-1. Every run executes ≥1 experiment on real compute.** Paper-only/CPU-only runs are gate
+failures unless your agent file scopes a research-only week. "I had no GPU" is no longer valid —
+you have four:
+1. **Local RTX 4060 8GB** (always available; also the Orin latency proxy — I8 batch-1 profiling).
+   Feature precompute, probes, ablations on cached latents, blind-rollout diagnostics, CPU-smoke →
+   GPU-smoke of every training patch.
+2. **THE DEDICATED EVAL POD (`ssh tanitad-eval`, A40 48GB) — standing, open to every agent.**
+   It runs **TanitEval** (`/root/taniteval`, `PYTHONPATH=/root/taniteval:/root/TanitAD/stack
+   python3 -m taniteval.runner {run|ab|imagination|regression|report}`) with the canonical 40-ep
+   held-out val, all 4 arm checkpoints under `/root/models/`, frozen-encoder caches, ffmpeg, and
+   the camera-overlay/BEV tooling. Model-scale evals, probes, panels and profiling belong HERE,
+   not on your laptop CPU. Check `nvidia-smi` first; coordinate long jobs via a
+   `/root/taniteval/results/LOCK.<agent>` touch-file.
+3. **Google Colab via CLI** (`Keys.txt` has the account; T4 bursts free). Package any job that
+   exceeds the 4060 as a **job card**: self-contained script/notebook + data-pull cell (HF gated
+   repos) + results-push cell (back into your `Implementation/` folder — Colab storage is
+   ephemeral, ≤2h sessions). Job cards are also the handoff format when you're compute-blocked.
+4. **Training pods — read-only unless you own the run**: pod1 (REF-B refbpatch), pod2 (flagship —
+   **ABSOLUTE no-touch while training: 99% RAM; never add memory-resident work**), pod3 (REF-A,
+   idle between runs = burst-usable). Logs/ckpt reads are fine; relay ckpts via the memory-safe
+   scp+fadvise pattern (see `Project Steering/FLEET_REVIEW_2026-07-17.md` §ops).
+5. New paid resources: NEVER — propose a `RESOURCE_LEDGER.md` row instead (Sayed approves).
+
+**M-2. Resource declaration (new gate G-I).** Your STATE `LAST_RUN` block must name: resource(s)
+used, wall-clock, cost, and — if you used less than the eval pod — one line on why the bigger
+resource wasn't needed. The orchestrator audits G-I weekly; two consecutive undeclared runs =
+escalation to Sayed.
+
+**M-3. Blocked ≠ idle.** If your experiment needs compute you can't get this run, you still ship:
+the runnable job card + pre-registered falsifier, and you escalate the block in STATE. Next-run
+you (or any agent) executes the card.
+
+Every experiment records hardware, wall-clock, cost in the research note (feeds CNCE).
 
 ## Quality gates (all agents; your file may add more)
 
@@ -109,6 +133,11 @@ research note — these numbers feed the efficiency story (CNCE).
   note (hardware, wall-clock, result vs expectation, falsifier verdict); `BACKLOG.md` re-prioritized.
 - G-F: session-end ritual done: STATE.md updated (incl. `LAST_RUN`, `QUALITY` line), files committed
   with message `hub(<discipline>): <what> — <why>`, pushed.
+- G-I (RESOURCE MANDATE, 2026-07-17): resource declaration in STATE (resource used, wall-clock,
+  cost, why-not-bigger). ≥1 real-compute experiment per run (4060 / eval pod / Colab) or a runnable
+  job card + escalation. Same-day merge: your branch lands on the shared tip (or is flagged for
+  orchestrator merge in STATE) before session end — no stranded-branch debt (D-026 hardened; the
+  2026-07-17 review found ~15k lines stranded across 8 branches).
 
 ## Worktree isolation (D-026, 2026-07-09 — MANDATORY)
 

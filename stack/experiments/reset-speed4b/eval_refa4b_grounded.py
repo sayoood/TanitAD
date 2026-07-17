@@ -104,11 +104,12 @@ def build_model(args):
             if cfg.tactical_pred is not None:
                 object.__setattr__(cfg.tactical_pred, "action_dim", 3)
         return RefAModelPlus.from_stack_config(cfg, n_tokens=256,
-                                               adapter_kind=args.adapter)
+                                               adapter_kind=args.adapter,
+                                               d_dino=args.d_dino)
     pc = refa_predictor_config()
     if args.speed_input:
         pc = dataclasses.replace(pc, action_dim=3)
-    return RefAModelPlus(pc, adapter_kind=args.adapter)
+    return RefAModelPlus(pc, adapter_kind=args.adapter, d_dino=args.d_dino)
 
 
 def main():
@@ -126,6 +127,8 @@ def main():
     ap.add_argument("--adapter", default="temporal")
     ap.add_argument("--four-brain", action="store_true")
     ap.add_argument("--speed-input", action="store_true")
+    ap.add_argument("--d-dino", type=int, default=768,
+                    help="768 = DINOv2-B/14, 1280 = I-JEPA ViT-H/14")
     args = ap.parse_args()
     assert args.fwd_k >= K_MAX
     device = "cuda" if torch.cuda.is_available() else "cpu"

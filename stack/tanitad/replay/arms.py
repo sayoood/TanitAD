@@ -281,7 +281,7 @@ class MainArm(_LatentArm):
             tokens = self.world.encode_tokens(batch.frames[:, -1])
             vis = torch.ones(tokens.shape[:2], device=tokens.device)
             _, logvar = self.world.imagination(tokens, vis)
-        return (0.5 * logvar.float()).exp().mean(-1).cpu()
+        return (0.5 * logvar.float().clamp(-10.0, 10.0)).exp().mean(-1).cpu()
 
     def describe(self) -> dict:
         d = super().describe()

@@ -2,6 +2,28 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stranded branches
+(~15k lines) — that debt class is now YOURS to prevent structurally.
+
+1. **D-026 guardrail (the highest-leverage tool in the fleet):** a session-end check every agent
+   runs (wire into `_common-protocol.md` G-F/G-I): (a) unmerged agent branches vs tip → warn +
+   auto-open the merge; (b) uncommitted deliverable files in hub areas → block session end;
+   (c) INTAKE.md files with empty ORCHESTRATOR VERDICT older than 3 days → escalate list.
+   Deliverable: `tools/session_guard.py` + protocol wiring + a green run on the current tree.
+2. **ci_gate extension:** fold the newly-merged suites into the one-command gate — test_lake (9),
+   test_refa_flagship_parity, test_eval_behavior (22), the calib trio (test_calib + test_calib_r1
+   + test_physicalai_rig as ONE unit), the metric-suite tests (22). Report the new green total +
+   wall-clock; keep it under 5 min or shard it.
+3. **Colab job-card bootstrap (mandate M-1.3 enabler):** `tools/colab_job_template.py` — data-pull
+   cell (HF gated, token from Keys.txt read-in-place), run cell, results-push cell (back to the
+   repo Implementation/ dir) + a README teaching the pattern. Prove it end-to-end with one real
+   job (e.g. a probe fit on cached latents). Every agent's M-3 escalation path depends on this.
+4. **Eval-pod access hygiene:** a `tools/evalpod.md` one-pager (SSH alias, TanitEval CLI, the
+   LOCK touch-file convention, the pod2 no-touch rule, the memory-safe ckpt relay pattern) so
+   every agent can use the pod without re-learning the ops constraints from incident history.
+
 ## P0 — next run
 
 1. **`episode → Rerun .rrd` replay/viz (backlog duty #2)** — predicted-vs-actual trajectory + BEV

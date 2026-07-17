@@ -2,6 +2,34 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. Review verdict on your work: D-016 R1
+rectify (A), PandaSet loader (A), OWN_DATASET_PLAN (A), Lake Phase-A (A−, REAL not scaffolding —
+byte-equivalence gate genuinely tested). All merged to the tip 2026-07-17. The strategic gap:
+everything servable today is highway-heavy (74% straight — the exact enabling condition of the
+ego-status shortcut pathology; nuScenes is 73.9%). The corpus-diversity gain is PENDING on you.
+
+1. **ZOD ingest — the #1 unlock (urban/night/winter + real CAN; SplatAD's home dataset).**
+   Loader (~3-4h, 4060) per OWN_DATASET_PLAN §ZOD: CC-BY-SA → SEPARATE shard (ShareAlike firewall
+   in `license_guard` already supports it). Package the bulk feature-precompute as a **Colab job
+   card** (T4) — this is the flagship use-case for mandate M-1.3. Falsifier: ZOD's front-cam
+   geometry can't reach f_eff=266 at ≥50% observed_frac → escalate to Sayed with the measured
+   number before building further.
+2. **Run the lake FOR REAL: Cosmos + PandaSet ingestors at scale** (they're implemented, never
+   run at scale) → publish **tanitad-own lake v0** (comma + cosmos + pandaset) to HF gated —
+   kills the per-pod rebuild ritual. PandaSet real-bytes verification (`verify_real_clip`) rides
+   pod3 when idle (M-1.4). Deliverable: lake catalog row counts + one pod pulling the lake
+   instead of rebuilding.
+3. **Curve-rebalance mix for flagship-v2:** from lake metadata, quantify the straight/gentle/sharp
+   window distribution per source; propose the training mix (turn-weighted sampling) that moves
+   the corpus from 74% straight toward ~55-60%; measure what PandaSet+ZOD actually contribute.
+   This is the data-side half of the REF-B curve failure (the loss-side half shipped in refbpatch).
+4. **R1 rectify + rig-cy calib consolidation:** land `calib_r1.py` symbols into
+   `stack/tanitad/data/calib.py`, flip PandaSet `_decode_frames` to `pinhole_rectify`, and run
+   the THREE calib suites (test_calib, test_calib_r1, test_physicalai_rig) as ONE gate (they
+   share symbols — the review flagged the consistency risk).
+
 ## P0 — next run
 
 -2. **HF recipe-dataset `Sayood/tanitad-realmix` (Sayed 2026-07-11 night).** Versionable,

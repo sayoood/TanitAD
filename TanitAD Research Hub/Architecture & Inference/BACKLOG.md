@@ -3,6 +3,38 @@
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 Format per item: goal / method / resource / expected number / falsifier.
 
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context you must load first: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The flagship-speed arm
+crossed CV (0.628 vs 0.825 ade@2s @19k, TanitEval fresh) but is still above the CTRV kinematic
+oracle (0.544); the imagination panel measured vision_use 12.9% / imagination 8.7%; the planning
+panel found the tactical/strategic brains SPEED-STARVED (tactical wp 3.38 m — v0 never reaches
+them) while goal-latent imagination is strong (cos 0.885 — decode is the bottleneck, not the
+latent). Your σ-dissipation finding (fidelity dead by k4; freeze-1 holds 0.25) is the third leg of
+the same story: 1-step imagination is good, recursion + decode waste it.
+
+1. **E1+E2 on the operative flagship@30k (drops your pre-reset caveat → decision-grade).**
+   Method: your `Implementation/belief_rollout_diagnostic/blind_rollout.py` + orthogonality
+   instrument, pointed at `/root/models/flagship-speed/ckpt.pt` on the EVAL POD (not the 4060 —
+   model-scale). Cross-read against TanitEval's imagination panel (`results/imag_*.json`).
+   Expected: σ-dissipation reproduces on the speed flagship; falsifier: it doesn't → the speedjerk
+   recipe already fixed it (report which ingredient).
+2. **Parallel-horizon imagination decode (your 0b-B) — prototype + measure.** Predict each horizon
+   direct-from-last-observation instead of autoregressive feedback; run the SAME imagination panel
+   (conditions D/E) with it on the eval pod. Expected: condition-D ADE improves toward ~0.65 (from
+   0.734); falsifier: no gain → recursion is not the operative bottleneck at 20 steps.
+3. **Flagship-v2 retrain pack — design + CPU/4060-smoke EVERY lever now** so the retrain starts
+   the day the 30k verdict lands: (a) v0+yr0 into tactical+strategic brains (the 3.38 m fix; same
+   leakage-safe pattern as the operative v0); (b) future-ACTION dropout p≈0.3 (grow imagination
+   share); (c) rollout-k 4→12-20 (close the train/eval gap); (d) goal-conditioned step-readout —
+   decode the trajectory FROM the 0.885-cos goal latent; (e) nav-command dropout (strategic must
+   infer route from vision; route-from-vision is 67.5% vs 100% echo); (f) TMS jerk penalty on
+   rollout paths (tms 0.09 → target ≥0.3). Each lever: one config flag, one smoke test, one
+   pre-registered falsifier. Deliverable: `flagship_v2_pack.md` + patches on a branch.
+4. **refbpatch aux_yaw_r2 verdict at 4k** (pod1 log read, $0): if r² < 0.3 by 4k, the trained-ViT
+   yaw representation needs the fallback (feed yr0 as input — decide with Sayed); if ≥0.7, the
+   aux-head path is confirmed — write the verdict into HYPOTHESIS_LEDGER (H18).
+
 ## P0 — next run
 
 0a. **[✅ DONE 2026-07-15 — H15 imagination edge liveness (resolved the `h15=0.0` WATCH)]** GPU

@@ -2,6 +2,34 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. **TanitEval is now the canonical eval
+substrate** — a deployed app on the eval pod (`/root/taniteval`: fresh grounded-rollout benchmarks,
+CTRV baseline, paired-bootstrap A/B, BEV+camera-overlay viz, imagination panel, tactical/strategic
+planning panel, regression goldens, report generator). Your 2026-07-15/17 deliverables (best-of-3
+floor, Ridge ego-status ceiling, both-convention L2) were graded A in review and are CONVERGENT
+with TanitEval's findings (your CTRV 0.545 ≈ its 0.544 on different corpora). Your job now is to
+make TanitEval bulletproof, not to build a parallel harness (compare_arms.py's pod-pull machinery
+is superseded; its behavior-decodability block and `eval_behavior --config` fix are lifted).
+
+1. **Port your floors/ceilings INTO TanitEval and recompute on the canonical val (EVAL POD).**
+   `baseline_predictors.py` best-of-3 (CV/go-straight/CTRV, speed-gated strata) + the learned
+   `RidgeTrajectoryHead` ego-status ceiling + both-convention L2 + per-stratum `skill_score` →
+   `taniteval/bench.py` rows beside CTRV. Deliverable: leaderboard shows floor/ceiling/skill_score
+   for all 4 arms + flagship@30k when it lands. Falsifier: ridge ceiling ≤ CTRV on the canonical
+   val → the learned shortcut adds nothing here (report; keep CTRV as the bar).
+2. **Route base-rate + behavior-decodability into the planning panel (EVAL POD, hours).** The
+   flagship's route-from-vision 67.5% is UNJUDGED without the majority-class base rate — compute
+   it; add your `_behavior_probe` (linear decodability vs chance) to `taniteval/planning.py`.
+3. **Closed-loop bring-up = your #1 multi-run arc (CARLA-on-pod, W31-32, with Opponent).** The
+   open-loop⊥closed-loop rule you adopted makes everything above "weak claims" — the arbiter is
+   LAL/OKRI/LOPS/CNCE on live scenarios. Wire Opponent's SC-13/W-09/SC-06 scripts to emit
+   `ScenarioTelemetry`; your metric suite is sim-agnostic and ready. Escalate the pod/ledger row
+   via M-3 if blocked.
+4. **Nightly TanitEval ownership:** the regression goldens + `nightly.sh` are yours now — arm the
+   detached scheduler, watch for regressions when flagship@30k / refbpatch ckpts rotate in.
+
 ## P0 — next run
 
 1. **`skill_score` on a real checkpoint (G1, top program risk).** The floor (≈0.056 m@1s ADE, 07-15) and

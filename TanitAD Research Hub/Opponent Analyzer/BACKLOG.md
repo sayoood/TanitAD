@@ -1,6 +1,30 @@
 # Opponent Analyzer — Experiment Backlog
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
+
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. Your SC-13 (collision 0.0 vs 0.4) + W-09
+first-responder work is on the tip. The gap: ALL your numbers are design-oracle — nothing yet
+measured on OUR checkpoints. That changes now; the eval pod + TanitEval give you the substrate.
+
+1. **Stationary-Lead ON OUR FLAGSHIP (first non-oracle number, EVAL POD).** Port SC-13's
+   consequence-forward-model contrast onto TanitEval windows: select val windows matching the
+   stationary-lead signature (lead Δv → 0, closing), run flagship-speed's imagination panel
+   machinery (real vs mean vision, actions withheld) on exactly those windows → does OUR
+   world model's imagined future distinguish the stalled lead earlier than a reactive proxy?
+   Deliverable: the first SC-13 row with a MEASURED TanitAD number. Falsifier: no separation →
+   the consequence-forward-model thesis needs the closed loop (say so; it sharpens the CARLA ask).
+2. **Executable scenario scripts (with Benchmarks): SC-13 / W-09 / SC-06 → CARLA-ready** —
+   parametrized spawns + trigger logic emitting `ScenarioTelemetry` columns verbatim, tested
+   against the oracle path on the 4060. These are the first closed-loop excellence rows when the
+   CARLA pod lands (W31-32).
+3. **W-09 first-responder scenario spec deepened to NHTSA's directive taxonomy** (flashing lights,
+   flares, smoke, cones as separate perturbation axes) — each axis maps to an H15-imagination or
+   H2-steering claim we can test, not just a narrative.
+4. **Keep the weekly sweep** (your existing cadence) but every FACT row now carries a "testable on
+   our stack? Y/N + how" column — the review found your evidence quality high but under-connected
+   to our checkpoints.
 Joint duty (D-020 §5): you own `SCENARIO_DATABASE.md` scenario entries + opponent evidence;
 DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + excellence rows.
 

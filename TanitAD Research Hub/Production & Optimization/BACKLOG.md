@@ -3,6 +3,26 @@
 Prioritized roadmap (D-020 §3/§4). Each run: one module-cluster compliance review + ≥1 measured
 optimization experiment. G-P2: accuracy delta next to every speed delta.
 
+## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
+
+Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. Review verdict: your fp16 latency (A),
+logvar-clamp (A — APPLIED 2026-07-17 to the live pod2 stack + repo mainline; the running process
+resumes on the patched build at its next restart), parity test (A). Your fp16 diagnosis (the whole
+win is the ViT; predictor is launch-bound) re-scopes this backlog.
+
+1. **TRT-fp16 engine for flagship@30k — BOTH targets:** eval pod A40 (throughput/server row) AND
+   the 4060 (Orin-proxy deployment row). Report Hz + VRAM + decision-agreement vs fp32 (your
+   95.3% bar). This turns your 93.7 Hz microbench into a deployable engine artifact.
+3. **Predictor batch-1 latency attack (the launch-bound 5.8 ms):** CUDA-graph capture and/or
+   `torch.compile(mode="reduce-overhead")` on the operative tick; measure on both GPUs. Expected:
+   1.3-2× on the predictor half; falsifier: <10% → the tick is memory-bound, close the item and
+   record the roofline number.
+2. **P1.4c VRAM-isolation harness fix** (your own flag: fp16/bf16 VRAM rows were polluted by the
+   co-resident fp32 reference) + re-scoped P1.6 quant (VRAM/energy, NOT batch-1 latency).
+4. **Ops hardening continuation:** the NaN-clamp pattern generalized — sweep the stack for other
+   unbounded `exp`/`log`/`div` on learned outputs (grep-audit + witness tests, 4060). The review
+   found this class kills runs silently (F-5/6/7); one sweep closes the class.
+
 ## P0 — first runs
 
 1. ~~Batch-1 streaming latency baseline (I8)~~ **DONE 2026-07-08 (MVP loop):** decision tick

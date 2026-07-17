@@ -120,7 +120,8 @@ class ImaginationField(nn.Module):
         for blk in self.blocks:
             x = blk(x)
         x = self.norm(x)
-        return x, self.logvar_head(x).squeeze(-1)
+        # numerics guard (prod-opt 2026-07-17): bounded logvar - exp overflow
+        return x, self.logvar_head(x).squeeze(-1).clamp(-10.0, 10.0)
 
 
 def imagination_nll(pred: Tensor, target: Tensor, logvar: Tensor, vis: Tensor,
@@ -132,6 +133,7 @@ def imagination_nll(pred: Tensor, target: Tensor, logvar: Tensor, vis: Tensor,
     consistency weight so the field stays anchored where it can see.
     """
     err2 = (pred - target).pow(2).mean(dim=-1)                 # [B, N]
+    logvar = logvar.clamp(-10.0, 10.0)   # defensive exp-overflow guard
     nll = 0.5 * (torch.exp(-logvar) * err2 + logvar)
     w = (1.0 - vis) + observed_weight * vis
     return (w * nll).sum() / w.sum().clamp_min(1e-8)
