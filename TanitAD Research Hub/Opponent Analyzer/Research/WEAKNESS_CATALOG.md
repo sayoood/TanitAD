@@ -5,8 +5,38 @@
 > status** (with the Thursday Benchmarks&Eval agent), **training-data recipe** (H6 pipeline).
 > An entry with no counter is marked `no-counter-yet` (a strategy gap for the Orchestrator).
 > Created 2026-07-17 (v1). Newest / highest-priority first.
+> Last delta: **run #3 (narrative 2026-07-31; real wall-clock 2026-07-17)** — new **W-09**; W-08 → spec-drafted.
 
 ---
+
+## W-09 — First-responder / emergency-scene interference  ★ headline (new, run #3)
+
+- **Mechanism (INFER):** an AV with no *imagined* model of an emergency scene, and no calibrated OOD
+  signal for "this intersection/scene is non-nominal," treats a flare/cone/flashing-light/smoke tableau
+  as ordinary drivable space. It has no state for "an emergency corridor exists that I must clear," and no
+  authority-override context, so it drives into the scene, blocks the corridor, or freezes — the failure
+  is *presence-of-mind*, not perception of a single object.
+- **Evidence (FACT):** NHTSA ODI issued a formal **ADS-developers letter (2026-07-08)** demanding every
+  AV developer present fixes **by end of July 2026** for a **"clear pattern"** of robotaxis interfering
+  with first responders — driving into active emergency scenes, blocking ambulances/fire crews, and
+  **failing to recognize flashing lights, flares, smoke, fire, and traffic cones.** In **≥6 incidents
+  through March 2026** first responders had to **physically take control of Waymo vehicles**; a June 2026
+  case: an officer moved a Waymo blocking responders at a **natural-gas explosion.** Administrator
+  Jonathan Morrison: the failure is a **"functional insufficiency"** and **"Emergency scenes are not rare
+  or extreme 'edge cases.'"** — https://techcrunch.com/2026/07/08/feds-demand-autonomous-vehicle-companies-stop-interfering-with-first-responders/
+  , https://www.nhtsa.gov/sites/nhtsa.gov/files/2026-07/ADS-developers-letter-july-2026.pdf
+- **TanitAD counter:** **H15** imagines the emergency-scene actors + hazard field (flares/cones/personnel)
+  before classification; **H11** self-monitoring flags the non-nominal scene as OOD → **A9 fallback**
+  degrades to yield / clear-the-corridor rather than rule-literal continuation; **H9** exception-handling
+  permits the rule-relaxation a cleared corridor needs (mount curb line, hold). Cone/flare/smoke share the
+  W-01 changed-drivable-area machinery.
+- **Scenario-spec status:** maps to **SC-06** (emergency-vehicle interaction) — this run **elevates SC-06**
+  from catalogued (2023-Cruise anecdote + "data gap") to a **live, FACT-documented, all-operator federal
+  action.** Next scenario feed candidate: emergency-scene approach (flashing-light / cone / stopped-
+  responder-vehicle) with a corridor-clear metric (Benchmarks & Eval handoff, §3 of the run-#3 note).
+- **Training-data recipe (H6):** CARLA emergency-vehicle + light-pattern + cone/flare assets (visual-only
+  proxy — no audio Phase-0, honest limit); screen dashcam corpora for flashing-light / emergency-scene
+  events (DataEng handoff). The "non-nominal scene detected" flag is an OOD-head label (shared with W-04).
 
 ## W-01 — Work-zone / construction-zone brittleness  ★ headline
 
@@ -21,7 +51,12 @@
   freeway hazards and/or fail[s] to recognize the construction zone."** Waymo **pulled all robotaxis from
   highways on 2026-05-19**; this is its **second recall in ~one month**; a fix is "under development."
   Freeway autonomy suspended; 20+-city 2026 expansion (incl. London/Tokyo) freeway-constrained.
+  **Run-#3 delta (FACT/INFER):** the work-zone recall is now one item in a **broad federal surface** —
+  Waymo simultaneously carries the first-responder directive (W-09), the Dallas red-light (SC-14), the
+  stop-arm probe (SC-04) and NTSB HWY26FH008 (SC-02), while Uber diversifies away to Avride/Autobrains/
+  Momenta/Wayve/Nuro (the "robotaxi ultimatum" — fighting NHTSA *and* its distributor at once).
   — https://www.cnbc.com/2026/06/18/waymo-nhtsa-voluntary-recall-robotaxis-entered-freeway-construction-zones.html
+  , https://businessmodelanalyst.com/nhtsa-robotaxi-ultimatum-waymo-uber/
   , https://techcrunch.com/2026/06/18/waymo-recalls-nearly-4000-robotaxis-to-stop-them-driving-into-highway-construction-zones/
 - **TanitAD counter:** **H15** (imagine changed/unobserved drivable area from partial cues) + **H9**
   (inherent compliance with sign/cone/closure semantics via barrier terms) + **H1** fallback layer
@@ -146,14 +181,29 @@
 - **TanitAD counter:** **H15** imagination forward-models time-to-contact on a stopped/slow lead
   *before* the object is classified (no detection/class prior to be wrong about) + **A9** imagination-
   error monitor on the lead region; **H1** tactical layer for lane-change consequence pricing.
-- **Scenario-spec status:** **SC-13 catalogued** (stationary-object / same-lane lead response) — a cheap
-  real-data spec on comma2k19 (mine stopped-lead segments) + CARLA cut-in/blocked_route recipes.
+- **Scenario-spec status:** **SC-13 spec-drafted** (run #3) — intake pkg
+  `Implementation/incoming/2026-07-31-stationary-lead-scenario/` (`stationary_lead.py` + telemetry oracle,
+  **14/14 offline tests**). Design-oracle over the classification-ambiguity sweep {0…1}: **collision rate
+  imagination 0.0 / detection-reactive 0.4**; **braking-onset lead time +1.20 s vs −1.26 s**; the forward
+  model is **invariant to ambiguity** (min-TTC 2.88 s, min-gap 10.75 m at every level) while the reactive
+  policy degrades monotonically (min-TTC → 0, drops the lead at ambiguity ≥ 0.75); OKRI ~3.2× lower. New
+  FACT detail: NHTSA video shows Avride "failing to avoid slow-moving vehicles ahead, and striking
+  stationary objects"; **only 1 of 16** safety monitors even attempted to intervene.
+  — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
 - **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
   the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
 
 ---
 
 ### Watch-list (not yet weaknesses — competitive-narrative risks)
+- **Academic hierarchy surfacing (run #3, FACT):** **SGDrive** (arXiv 2601.05640) markets *"scene-to-goal
+  hierarchical world cognition"* for driving — the first tracked academic line to make **hierarchy**
+  explicit (our H1 differentiator). Not yet with our combination (efficiency + in-loop imagination +
+  self-monitoring), and no param/CNCE number. **Action:** Architecture deep-read — is the hierarchy at
+  planning time (our claim) or representation-only? Pre-empt with a CNCE + in-loop-imagination contrast.
+- **Uber multi-vendor L4 marketplace (run #3, INFER):** Uber now aggregates Waymo, Avride, Autobrains+
+  NVIDIA, Momenta, Wayve, Nuro/Lucid, WeRide. The **distribution moat is Uber's**, not any stack's →
+  *raises* the premium on a defensible technical moat (efficiency + safety-case). Narrative asset for H0.
 - **Autobrains "Liquid AI"** — the one competitor whose *efficiency pitch* overlaps ours. **UPDATE
   2026-07-24: moving UP from ADAS toward L4** — Uber + Autobrains (+ NVIDIA) announced a **Munich robotaxi
   pilot (2026-06-02)**, apparently displacing/paralleling Uber's earlier Momenta-Munich plan. Still no

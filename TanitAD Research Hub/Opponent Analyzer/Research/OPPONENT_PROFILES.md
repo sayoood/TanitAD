@@ -2,7 +2,8 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last full sweep: **2026-07-24** (run #2 deltas below, tagged **Δ 07-24**).
+> Created 2026-07-17 (v1). Last sweep: **run #3, narrative 2026-07-31 (real wall-clock 2026-07-17)** —
+> deltas tagged **Δ 07-31**; prior **Δ 07-24** kept for history.
 
 ---
 
@@ -13,6 +14,9 @@
 - **Business (FACT):** **Series D $1.2 B (Feb 2026), $8.6 B** post-money; **$1.5 B** total secured incl.
   Uber milestone capital; investors Microsoft/NVIDIA/Uber + Mercedes/Nissan/Stellantis. London robotaxi
   trials 2026; supervised consumer autonomy from 2027; 10+ markets targeted.
+- **Δ 07-31 (FACT):** Series-D extended with **+$60 M from AMD, Arm, Qualcomm** (multi-compute-platform
+  breadth — a "plug-and-play across SoCs" play); **Tokyo pilot late 2026 (Nissan LEAF)** added to London.
+  Still no signal that GAIA moves *in-loop* — it stays an offline data/eval factory (W-05 intact).
 - **Strengths (INFER):** talent + capital density; UK/EU regulatory access; genuine multi-country
   generalization data; strong generative-WM data factory.
 - **Exploitable weaknesses:** generative-**pixel** WM is compute-hungry and used **offline**, not in the
@@ -36,6 +40,11 @@
   the mechanism (mis-prioritizing hazard-avoidance / not recognizing the work zone). **New Dallas market
   trouble:** a Waymo recorded **running a red light** (Irving Blvd/Inwood Rd) amid a **new federal
   investigation** there → widens the rule-compliance surface (SC-04/SC-14, W-03).
+- **Δ 07-31 (FACT/INFER):** now carries the **NHTSA first-responder directive (2026-07-08, W-09)** — ≥6
+  incidents where responders had to physically move Waymo vehicles; a June natural-gas-explosion case;
+  fix due end-July. Press frames a **"robotaxi ultimatum": Waymo fighting NHTSA and its distributor (Uber)
+  at once** as Uber diversifies to Avride/Autobrains/Momenta/Wayve/Nuro. The failure surface is now
+  **broad + federal** (W-01/W-03/W-09 all live), not a single recall. — https://businessmodelanalyst.com/nhtsa-robotaxi-ultimatum-waymo-uber/
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
   anticipation** (W-02), **rule-compliance edges** (W-03); map-dependence; cost/vehicle + geofence
@@ -52,6 +61,9 @@
 - **Δ 07-24 (FACT):** robotaxi fleet now **exceeded 1,700 units** (toward the raised 3,500 target); added
   **Guangzhou**; **raised** 2026 robotaxi-revenue and fleet targets on record Q1. Growth real but the
   revenue-vs-fleet gap (W-06) is unchanged — $8.6 M robotaxi rev against a 1,700+ (→3,500) fleet.
+- **Δ 07-31 (FACT):** **Q2'26 — 200+ Gen-7 robotaxis produced, revenue +76%**; weekly paid orders **+119%
+  vs January**, Labor-Day daily orders **+544% YoY**. But Q1 **net loss widened to $50.4 M** — the
+  scale-up is real, the **unit economics (W-06) are not improving**: order/fleet growth outruns margin.
 - **Strengths (INFER):** fleet scale, China + Middle East + first-mover EU footprint, steep growth.
 - **Exploitable weaknesses:** **thin unit economics** vs fleet (W-06); same compute-heavy multi-sensor
   stack (W-05); geopolitics limits Western data/market access.
@@ -68,7 +80,9 @@
   has a "world model," reinforcing that *"world model" is table stakes, not a differentiator*. **Uber's
   Munich robotaxi plan appears to have shifted from Momenta to Autobrains+NVIDIA** (see Autobrains) — a
   competitive-loss signal for Momenta's international robotaxi leg.
-- **Strengths (INFER):** OEM data flywheel, China scale, GM/Tencent + public capital, own WM + own silicon.
+- **Δ 07-31 (FACT):** the reason for Uber's Munich switch is now explicit — **EU political resistance to
+  sensitive Chinese key-tech** blocked the Momenta plan. Confirms an **EU-market-access weakness** for
+  Momenta (and Pony) that our **Western/EU-clean data + compliance posture** turns into a wedge.
 - **Exploitable weaknesses:** **strategy split** now locked by public-market scrutiny; opaque safety case;
   geopolitics; R7 is a *generative RL* WM (compute/data-heavy) with no hierarchy/self-monitoring claim.
 - **What would beat them:** a single coherent efficiency+safety thesis (vs their L2++/L4 straddle) with a
@@ -103,6 +117,11 @@
   **AlpaSim** (open-source closed-loop sim) is on GitHub → a *usable asset* for our CARLA-alternative
   closed-loop eval (flag to Tools&DevEnv). Our CNCE wedge holds; watch whether a Nano-tier CNCE number
   ever gets published.
+- **Δ 07-31 (FACT):** CLA ships as **MB.Drive Assist Pro** — L2++ point-to-point urban under supervision
+  on **10 cameras / 5 radars / 12 ultrasonics**; Alpamayo positioned *explicitly* to solve the "long tail
+  / rare weird edge cases." Family unchanged (10 B Nano → 32 B Super); **still no Nano-tier CNCE number**
+  → the efficiency critique is unanswered on the metric that matters. "Solve the long tail" is the same
+  claim we make — but at 10 B on-car vs our ~261 M; the CNCE contrast is the whole argument.
 - **Exploitable weaknesses:** 10–32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
   interpretability vs our *inherent* fallback + self-monitoring.
 - **What would beat them (as a narrative):** ~261 M-on-Orin at comparable causal efficacy (CNCE), inherent
@@ -134,6 +153,11 @@
 - **Safety (FACT):** **NHTSA ODI investigation opened 2026-05-08** — **16 crashes + 1 minor injury**; ODI
   says all concern **"the competence of"** the system: **lane-changing, same-lane vehicle response, and
   stationary-object response.** — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+- **Δ 07-31 (FACT):** PE opened **2026-05-06**; 16 crashes span **Dec'25–Mar'26** (**≥9 Dallas**, rest
+  Austin) in Hyundai **Ioniq 5** robotaxis; NHTSA video shows "unsafe lane changes into the path of other
+  cars, **failing to avoid slow-moving vehicles ahead, and striking stationary objects.**" Damning: **all
+  16 ran with a safety monitor in the seat, and only *one* attempted to intervene** → the failures are
+  fast + systematic. Directly reinforces **SC-13** (this run's measured experiment).
 - **Strengths (INFER):** Uber distribution + demand aggregation; Yandex AV heritage.
 - **Exploitable weaknesses:** the ODI list is a **basic-competence** indictment (the cheapest, broadest
   surface) → **W-08 / SC-13**. Our H15 consequence-forward-model targets stationary-object/same-lane
@@ -141,14 +165,47 @@
 - **What would beat them:** prove excellence on the *mundane* longitudinal/lateral tasks (SC-13) that
   their ODI flags — the least glamorous but most damning ground — at ~261 M params.
 
+## Zoox  (US · Amazon · purpose-built robotaxi)  — emerging player (new 2026-07-31)
+- **Approach (FACT):** purpose-built, no-manual-controls robotaxi (bidirectional "toaster"); multi-sensor.
+- **Business (FACT):** unveiled a **production-intent** vehicle (Jun 2026); large-scale Bay-Area production
+  starting; free rides in Las Vegas + SF, select Austin/Miami, testing in 6 more cities.
+- **Status (FACT):** **gated on NHTSA approval** to operate up to **2,500** no-manual-controls vehicles
+  commercially — its bottleneck is **regulatory** (FMVSS exemption), not (publicly) capability.
+- **Exploitable weaknesses (INFER):** compute-heavy multi-sensor stack (W-05); no public efficiency /
+  self-monitoring / imagination story; commercial timing at the mercy of the exemption decision.
+- **What would beat them:** the same CNCE + safety-case wedge; not a scenario-DB priority yet (limited
+  public failure evidence).
+
+## WeRide  (China/intl · robotaxi via Uber · NASDAQ)  — emerging player (new 2026-07-31)
+- **Approach (FACT):** multi-sensor L4 robotaxi; heavy **Middle-East** footprint via Uber.
+- **Business (FACT):** fully-driverless fare-charging via Uber in **Dubai (2026-03-31)**, plus Abu
+  Dhabi/Riyadh; **1,200+ vehicle Middle-East commitment** by ~2027.
+- **Exploitable weaknesses (INFER):** same W-05/W-06 (compute-heavy, thin economics); geopolitics limits
+  Western data/market access (shared with Pony/Momenta).
+- **What would beat them:** data-efficiency + cost-per-vehicle (H3/H7); Western/EU-clean posture.
+
+## Nuro  (US · L4 stack supplier · Uber+Lucid)  — emerging player (new 2026-07-31)
+- **Approach (FACT):** shifted from delivery pods to **licensing its L4 driver**; supplies the stack for
+  the **Uber+Lucid** robotaxi (Lucid builds the car, Nuro the driver).
+- **Business (FACT):** Uber deal expanded to **≥35,000 Lucid vehicles** (from 20 k, Jul 2025); Uber
+  investment ~$500 M; first SF-Bay service later 2026.
+- **Exploitable weaknesses (INFER):** supplier model = margin squeezed between Uber + Lucid; compute-heavy
+  multi-sensor (W-05); no public efficiency/self-monitoring story.
+- **What would beat them:** own the efficient + safety-case ground; our stack is a *driver* too — CNCE is
+  the licensing-pitch differentiator.
+
 ---
 
 ### Cross-field one-liner (INFER)
 Nobody occupies our Pareto point — **hierarchical latent world model, ~261 M params, data-efficient,
-real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** The 07-24
-sweep made the case *stronger still*: the failures multiplied and moved down-market — Waymo's **second
-recall** + a Dallas **red-light**, Tesla's **3.2 M-vehicle** EA, and a **new entrant (Avride) under
-investigation for basic competence** — while "world model" spread to *everyone* (Momenta's R7 RL WM,
-Metis's efficient WAM, NVIDIA's shipped Alpamayo). Our moat is now unambiguously **hierarchy +
-compute-normalized efficiency (CNCE) + in-loop imagination (H15) + guaranteed self-monitoring (H11)** —
-none of which any tracked opponent demonstrates together — proven on *their own* documented edge cases.
+real-time on Orin, in-loop imagination + guaranteed self-monitoring, regulation-native.** Run #3 hardens
+the case further and **from the regulator's own mouth**: NHTSA (Administrator Morrison) declared that
+**"emergency scenes are not rare or extreme edge cases"** and failing them is a **"functional
+insufficiency"** — i.e. the federal regulator now states the scenario-database thesis verbatim, gives
+*every* operator a July deadline (W-09/SC-06), and calls AVs a "danger to the public." Meanwhile Waymo
+fights NHTSA *and* Uber at once; the L4 field is a **multi-vendor Uber marketplace** (Waymo/Avride/
+Autobrains/Momenta/Wayve/Nuro/WeRide + Zoox pending) where the **distribution moat is Uber's, not any
+stack's**; "world model" is commoditized and **hierarchy is starting to appear** (SGDrive). Our moat is
+unambiguously **hierarchy + compute-normalized efficiency (CNCE) + in-loop imagination (H15) + guaranteed
+self-monitoring (H11)** — none demonstrated together by any tracked opponent — proven on *their own*
+FACT-documented failures, at ~261 M params where they run 10–32 B.

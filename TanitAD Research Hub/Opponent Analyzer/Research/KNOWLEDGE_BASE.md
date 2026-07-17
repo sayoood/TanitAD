@@ -4,6 +4,39 @@
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
 
+- [2026-07-31 · run #3, real 2026-07-17] [NHTSA] FACT — ODI issued a formal **ADS-developers letter
+  (2026-07-08)** demanding every AV developer fix, **by end of July 2026**, a **"clear pattern"** of
+  robotaxis interfering with first responders (driving into emergency scenes; blocking ambulances/fire;
+  failing to recognize **flashing lights, flares, smoke, fire, cones**). ≥6 incidents through Mar 2026
+  needed responders to **physically move Waymo vehicles**. Morrison: **"functional insufficiency"**;
+  **"Emergency scenes are not rare or extreme edge cases"** — impact: **new W-09; SC-06 elevated →
+  H15/H11/A9/H9**; strongest external endorsement of the scenario-DB thesis (H0/H6) — https://techcrunch.com/2026/07/08/feds-demand-autonomous-vehicle-companies-stop-interfering-with-first-responders/
+- [2026-07-31 · run #3] [Opponent Analyzer] INFER (design-oracle, P8) — **Stationary-Lead** scenario
+  (SC-13, W-08) shipped: over the classification-ambiguity sweep {0…1}, **collision rate imagination 0.0
+  / detection-reactive 0.4**; **braking-onset lead time +1.20 s vs −1.26 s**; forward model **invariant
+  to ambiguity** (min-TTC 2.88 s) while reactive degrades to a collision (drops the lead ≥ 0.75); OKRI
+  ~3.2× lower (**14/14 tests**) — impact: **H15/A9**, first collision-rate + lead-time contrast for the
+  consequence-forward-model thesis — see `2026-07-31-opponent-sweep-w4.md`
+- [2026-07-31 · run #3] [Avride/NHTSA] FACT (delta) — PE opened **2026-05-06**; the 16 crashes span
+  Dec'25–Mar'26 (**≥9 Dallas**, rest Austin), Hyundai **Ioniq 5** on Uber; NHTSA video: "unsafe lane
+  changes into the path of other cars, **failing to avoid slow-moving vehicles ahead, and striking
+  stationary objects**"; **all 16 under a safety monitor, only 1 attempted to intervene** — impact:
+  reinforces **W-08/SC-13** (systematic, not marginal) — https://www.nbcdfw.com/news/local/robotaxi-operator-under-investigation-for-crashes-in-dallas/4023503/
+- [2026-07-31 · run #3] [Wayve/Pony/NVIDIA/Uber-field] FACT — **Wayve +$60 M** (AMD/Arm/Qualcomm) Series-D
+  extension + **Tokyo pilot late'26 (Nissan LEAF)**; **Pony Q2'26 200+ Gen-7 built, rev +76%**, orders
+  +119% vs Jan (net loss Q1 $50.4 M — W-06 unchanged); **NVIDIA/Mercedes CLA = MB.Drive Assist Pro** L2++
+  (10cam/5radar/12us), Alpamayo pitched to solve the "long tail," **no Nano-tier CNCE number**; Uber is now
+  a **multi-vendor L4 marketplace** (Waymo/Avride/Autobrains/Momenta/Wayve/Nuro/WeRide) — impact: W-05/W-06
+  hold; distribution moat is Uber's → technical-moat premium rises (H0) — https://blogs.nvidia.com/blog/drive-av-software-mercedes-benz-cla/
+- [2026-07-31 · run #3] [emerging: Zoox/WeRide/Nuro] FACT — **Zoox** production-intent robotaxi unveiled
+  (Jun'26), gated on NHTSA approval for up to **2,500** no-manual-controls vehicles (regulatory, not
+  capability, bottleneck); **WeRide** driverless-fare via Uber in **Dubai (Mar 31'26)** + Abu Dhabi/Riyadh
+  (1,200+ by ~2027); **Nuro+Lucid+Uber** expanded to **≥35,000 Lucid** vehicles, SF-Bay later'26 — impact:
+  L4 field widening; all compute-heavy multi-sensor (W-05) — https://www.cnbc.com/2026/06/24/amazons-zoox-unveils-redesigned-robotaxi-ahead-of-upcoming-expansion.html
+- [2026-07-31 · run #3] [arXiv] FACT/INFER — AD latent-WM surge continues; **hierarchy now surfacing** —
+  **SGDrive** (2601.05640) "scene-to-goal *hierarchical* world cognition"; **DriveFuture** (2605.09701,
+  1st NAVSIM-v2 navhard Apr'26); **EponaV2** (2605.14696); **Latent-WAM** (2603.24581) — impact: H1
+  differentiator being explored (not yet with our combination); deep-read SGDrive next (Architecture) — https://arxiv.org/abs/2601.05640
 - [2026-07-24] [Avride/NHTSA] FACT — NHTSA ODI opened an investigation (**2026-05-08**) into **Avride**
   (Uber robotaxi partner, Yandex SDG lineage): **16 crashes + 1 minor injury**, all tied to **"the
   competence of"** the system — lane-changing, same-lane vehicle response, stationary-object response —

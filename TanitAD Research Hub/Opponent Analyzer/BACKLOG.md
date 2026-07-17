@@ -6,15 +6,20 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
 
 ## P0 — next run
 
-1. **SC-13 "Stationary-object / same-lead" scenario authoring (W-08, Avride)** — NEW top item after
-   the 2026-07-24 Avride NHTSA ODI finding (16 crashes: lane-change / same-lane / stationary-object).
-   Deliverable: scenario spec + telemetry oracle (mirror stop_arm_gate/work_zone_phantom) + intake pkg
-   with passing tests; SCENARIO_DATABASE SC-13 → `spec-drafted`. **Cheapest high-value item:** reuses the
-   comma2k19 loader (real stopped-lead segments, license-clean) + LAL-v2/OKRI hooks. Metric: OKRI + LAL-v2
-   lead time + min-TTC; H15 imagination-vs-detection lead time. Falsifier: lead time ≤ detection baseline
-   on matched segments ⇒ H15 advantage unproven here.
+1. **SC-06 / W-09 "Emergency-scene interference" scenario authoring** — NEW top item after the
+   **NHTSA 2026-07-08 first-responder directive** (all-operator, end-July deadline; "emergency scenes are
+   not edge cases"). Deliverable: scenario spec + telemetry oracle (mirror stop_arm_gate/stationary_lead)
+   + intake pkg with passing tests; SC-06 → `spec-drafted`. Geometry: ego approaches an emergency scene
+   (stopped responder vehicle + flashing-light/cone/flare tableau + a partially-blocked corridor);
+   archetypes `rule_literal` (drives in / blocks corridor — the documented failure) vs `imagine_and_yield`
+   (H15 imagines scene actors + H11 OOD-flags the non-nominal scene → A9 yields/clears). Metrics:
+   corridor-clear time, blockage duration, **non-nominal-scene-detected flag** (OOD proxy). Falsifier:
+   imagine_and_yield corridor-clear ≤ rule_literal ⇒ no anticipation advantage here. Reuses the W-01
+   changed-drivable-area machinery for cone/flare recognition.
 2. **SC-14 "Red-light barrier" spec** — near-free once SC-04 integrates (reuses the stop-line barrier
-   oracle; H9 violation-rate=0). Author after SC-13 if budget allows.
+   oracle; H9 violation-rate=0). Author after SC-06 if budget allows. *(Note: SC-14 already authored
+   speculatively on the unmerged `agent/opponent-20260715` branch — check the orchestrator's dedup verdict
+   before re-authoring.)*
 3. **W-04 degraded-visibility D8 stressor — REVISED after first measurement** (2026-07-08,
    step 6500: naive relative imag-error AUROC 0.34 inverted / 0.54 weather axis — falsifier
    fired, recorded in `stack/experiments/p0-d8-preview/NOTE.md`). Next experiment:
@@ -32,11 +37,13 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    keep SCENARIO_DATABASE.md the single source of truth.
 4. **Ghost Cut-Through + Blind Creep scenario specs** (W-02 occlusion amnesia, NTSB HWY26FH008)
    — telemetry oracles for D9/H15 (LOPS/OKRI hooks); CARLA live build waits on W31–32 harness.
-5. **Watch-list deep-reads** — Autobrains "Liquid AI" efficiency claims (**escalated 2026-07-24: now an
-   Uber L4 Munich pilot** — pre-empt any compute-normalized publication); **Metis deep-read DONE
-   2026-07-24** → next: monitor github.com/LogosRoboticsGroup/Metis for a param count, then run a real
-   CNCE comparability pass (with Benchmarks & Eval). New: read **AlpaSim** (NVIDIA open sim) with
-   Tools & DevEnv; adjacent-domain read of **SkyJEPA** (2606.23444) for sim-to-real transfer.
+5. **Watch-list deep-reads** — **SGDrive (2601.05640) — NEW top read**: "scene-to-goal *hierarchical*
+   world cognition" — is the hierarchy at planning time (our H1 claim) or representation-only? First
+   tracked academic line to make hierarchy explicit; pre-empt with a CNCE + in-loop-imagination contrast
+   (Architecture handoff). Autobrains "Liquid AI" (Uber L4 Munich pilot — pre-empt any compute-normalized
+   publication); **Metis** — monitor github.com/LogosRoboticsGroup/Metis for a param count, then a real
+   CNCE comparability pass (with Benchmarks & Eval); read **AlpaSim** (NVIDIA open sim) with Tools &
+   DevEnv; adjacent-domain read of **SkyJEPA** (2606.23444) for sim-to-real transfer.
 
 ## P2
 
@@ -46,6 +53,11 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    which TanitAD gates cover them, where coverage is zero (those become new scenario items).
 
 ## Done / retired
+- (run #3, narrative 2026-07-31 / real 2026-07-17) **Stationary-Lead scenario (SC-13, W-08)** shipped via
+  intake (**14 tests**; collision rate imagination 0.0 / detection-reactive 0.4; lead time +1.20 s vs
+  −1.26 s; invariant to ambiguity). **New W-09** (first-responder/emergency-scene) from the NHTSA 07-08
+  directive → **SC-06 elevated**. Deltas sweep (Waymo ultimatum / Wayve +$60 M / Pony Q2 / Zoox/WeRide/
+  Nuro) + field-scan (SGDrive hierarchy signal).
 - (2026-07-24-run) **Stop-Arm Gate scenario (SC-04, W-03)** shipped via intake (11 tests; violation
   rate rule_barrier 0.0 / soft_prior 1.0); **Metis deep-read** done; **Avride** profiled (W-08/SC-13);
   SC-14 (red-light) catalogued.

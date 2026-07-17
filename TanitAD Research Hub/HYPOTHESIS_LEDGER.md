@@ -32,6 +32,22 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-31 (real wall-clock 2026-07-17): Opponent Analyzer (Fri, run #3) — competitive-evidence deltas
+  (no status *upgrade*; design-oracle numbers only, nothing measured on our stack, P8). **H15/A9** gain a
+  shipped scenario: **Stationary-Lead** intake pkg (W-08 → H15/A9; **14/14 offline tests**) — the first
+  **collision-rate + braking-onset-lead-time** contrast for the consequence-forward-model thesis: over the
+  classification-ambiguity sweep {0…1}, collision rate **imagination 0.0 vs detection-reactive 0.4**,
+  lead time **+1.20 s vs −1.26 s**, and the forward model is **invariant to ambiguity** (min-TTC 2.88 s)
+  while the reactive policy degrades to a collision (drops the lead ≥ 0.75). **H0/H6/H11** reinforced
+  (external, decisive): NHTSA's **2026-07-08 first-responder directive** demands every operator fix
+  emergency-scene interference by end-July, with Administrator Morrison stating **"emergency scenes are
+  not rare or extreme edge cases"** and calling the failure a **"functional insufficiency"** — the
+  federal regulator now voices the scenario-database thesis verbatim (→ new **W-09**, **SC-06** elevated,
+  maps H15/H11/A9/H9). Field-scan: **hierarchy surfacing** in academic AD-WM work (SGDrive 2601.05640) —
+  H1 differentiator being explored, not yet with our combination. See
+  `Opponent Analyzer/Research/2026-07-31-opponent-sweep-w4.md` + updated `WEAKNESS_CATALOG.md` /
+  `OPPONENT_PROFILES.md` / `SCENARIO_DATABASE.md`.
+
 - 2026-07-15: Architecture & Inference (Wed) — **H15 imagination edge verified LIVE-ACTIVE in the
   flagship (no status change, P8)**, resolving the 2026-07-14 program-report §8 `h15=0.0` WATCH. Measured
   on the exact code path (GPU): imagination module **built** (22.06 M params), gradient reaches it (L1

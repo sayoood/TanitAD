@@ -118,18 +118,29 @@ public claim candidate.
   σ-head. Full record: `stack/experiments/p0-d8-preview/NOTE.md` + result JSONs. Honest
   status stays **data-sourced** (no oracle module yet; paired protocol now exists).
 
-## SC-06 — Emergency-vehicle interaction failure
-- **Opponent evidence (FACT):** Cruise–fire-truck collision (SF, Aug 2023); SF fire department's
-  documented obstruction complaints (2023).
-- **Description:** active emergency vehicle (siren/lights, contra-flow or intersection takeover);
-  correct behavior is early yield + clearing the corridor, including rule-exceptions (mount curb
-  line, pass red).
-- **TanitAD mechanism:** strategic re-route + H9 exception handling + OOD familiarity signal
-  (sirens/light patterns are rare states → fallback awareness).
-- **Data sources:** thin publicly — CARLA emergency-vehicle scenarios; synthetic audio out of
-  scope Phase 0 (visual-only proxy: light patterns). Honest gap recorded.
-- **Metric hooks:** corridor-clear time; blockage duration.
-- **Status:** catalogued (Phase-1 candidate; data gap flagged).
+## SC-06 — Emergency-vehicle / emergency-scene interference  [W-09]  ★★ (evidence upgraded run #3)
+- **Opponent evidence (FACT — upgraded 2026-07-08):** NHTSA ODI issued a formal **ADS-developers letter**
+  demanding every AV developer present fixes **by end of July 2026** for a **"clear pattern"** of
+  robotaxis interfering with first responders — driving into emergency scenes, blocking ambulances/fire
+  crews, **failing to recognize flashing lights, flares, smoke, fire, cones.** ≥6 incidents through Mar
+  2026 required responders to **physically move Waymo vehicles**; a June 2026 natural-gas-explosion case.
+  Administrator Morrison: a **"functional insufficiency"**; **"Emergency scenes are not rare or extreme
+  edge cases."** (Prior evidence: Cruise–fire-truck collision, SF Aug 2023; SFFD obstruction complaints.)
+  — https://techcrunch.com/2026/07/08/feds-demand-autonomous-vehicle-companies-stop-interfering-with-first-responders/
+- **Description:** active emergency vehicle / scene (siren/lights, flares, cones, personnel, contra-flow
+  or intersection takeover); correct behavior is early yield + **clearing the corridor**, including
+  rule-exceptions (mount curb line, pass red, hold clear of the scene).
+- **TanitAD mechanism:** **H15** imagines the scene actors + hazard field before classification; **H11**
+  self-monitoring flags the non-nominal scene OOD → **A9 fallback** yields / clears the corridor; **H9**
+  exception handling; strategic re-route for corridor memory. (Light/flare/cone recognition shares W-01
+  changed-drivable-area machinery.)
+- **Data sources:** CARLA emergency-vehicle + light-pattern + cone/flare assets (visual-only proxy —
+  synthetic audio out of scope Phase 0, honest limit); screen dashcam corpora for flashing-light events
+  (DataEng handoff). 
+- **Metric hooks:** corridor-clear time; blockage duration; **non-nominal-scene-detected flag** (OOD
+  proxy, shared with SC-05). Benchmarks & Eval handoff: define the corridor-clear + detection reducers.
+- **Status:** **catalogued, priority ↑ (federal deadline)** — next scenario-feed candidate after SC-13;
+  now backed by a live all-operator federal action, not just the 2023 anecdote. Maps to new **W-09**.
 
 ## SC-07 — Post-incident wrong response (MRM incorrectness)
 - **Opponent evidence (FACT):** Cruise pedestrian-dragging (SF, 2023-10-02) — vehicle initiated a
@@ -222,9 +233,17 @@ public claim candidate.
   tag stopped-lead / stationary-object segments in comma2k19 for a real open-loop probe.
 - **Metric hooks:** OKRI on the lead object; LAL (braking-onset lead time, LAL-v2 per 2026-07-09);
   min-TTC distribution; collisions=0 bar.
-- **Status:** **catalogued** (2026-07-24). Cheap real-data spec — reuses comma2k19 loader + LAL-v2/OKRI;
-  candidate for the next scenario feed. Falsifier: if our imagination-error lead time ≤ a detection-only
-  baseline on matched stopped-lead segments, the H15-vs-detection advantage is unproven here.
+- **Status:** **spec-drafted** (run #3, narrative 2026-07-31 / real 2026-07-17) — intake pkg
+  `Implementation/incoming/2026-07-31-stationary-lead-scenario/` (`stationary_lead.py` + telemetry oracle,
+  **14/14 offline tests**, awaiting orchestrator triage; dedup vs the unmerged `agent/opponent-20260715`
+  SC-13). Design-oracle numbers (P8, not our model), over classification-ambiguity sweep {0…1}:
+  **collision rate imagination_forward 0.0 / detection_reactive 0.4**; **braking-onset lead time (LAL-v2)
+  +1.20 s vs −1.26 s**; the forward model is **invariant to ambiguity** (min-TTC 2.88 s, min-gap 10.75 m
+  at every level) while the reactive policy degrades monotonically (min-TTC 1.91→0.00 s; drops the lead,
+  wm→NaN, at ambiguity ≥ 0.75); OKRI toward the lead ~3.2× lower (4.6k vs 14.6k). **Next:** DataEng tags
+  comma2k19 stopped/slow-lead segments for the open-loop lead-time probe; Benchmarks & Eval adds min-TTC +
+  collision-rate reducers; then live-measure our checkpoint on CARLA-on-pod. Falsifier: imagination-error
+  lead time ≤ a detection-only baseline on matched real segments ⇒ H15-vs-detection advantage unproven here.
 
 ## SC-14 — Signal-phase compliance (red-light running)  [W-03 family]  ★ (new 2026-07-24)
 - **Opponent evidence (FACT/CLAIM):** a Waymo in **Dallas** was recorded running a red light at Irving
@@ -247,13 +266,14 @@ public claim candidate.
 
 | Mechanism | Scenarios |
 |---|---|
-| H15 imagination (unobserved/changed area) | SC-01, SC-02, SC-03, SC-05, SC-09, SC-11, SC-13 |
-| H9 rule/closure barriers | SC-01, SC-04, SC-09, SC-11, SC-14 |
+| H15 imagination (unobserved/changed area) | SC-01, SC-02, SC-03, SC-05, SC-06, SC-09, SC-11, SC-13 |
+| H9 rule/closure barriers | SC-01, SC-04, SC-06, SC-09, SC-11, SC-14 |
 | A9/D8 self-monitoring + fallback | SC-05, SC-06, SC-07, SC-08, SC-10, SC-12, SC-13 |
 | Strategic graph (re-route/stop memory) | SC-06, SC-08 |
 
-Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric fragility) live in
-`WEAKNESS_CATALOG.md` and feed the CNCE/leaderboard and narrative streams instead.
+Weakness→scenario map: W-01→SC-01/09, W-02→SC-02/03, W-03→SC-04/12/14, W-04→SC-05, W-08→SC-13,
+**W-09→SC-06**. Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric fragility)
+live in `WEAKNESS_CATALOG.md` and feed the CNCE/leaderboard and narrative streams instead.
 
 ## Excellence scoreboard (mirrors to LEADERBOARD)
 
@@ -262,4 +282,6 @@ Non-scenario weaknesses W-05 (compute), W-06 (unit economics), W-07 (metric frag
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
 | SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-02…SC-03, SC-06…SC-14 | catalogued | per-entry bars set at spec time | — |
+| SC-13 | spec-drafted | collisions == 0 + braking-onset lead time > detection baseline (real segments) | — |
+| SC-06 | catalogued (priority ↑) | corridor-clear + non-nominal-scene detection; 0 emergency-scene incursions | — |
+| SC-02…SC-03, SC-07…SC-14 | catalogued | per-entry bars set at spec time | — |
