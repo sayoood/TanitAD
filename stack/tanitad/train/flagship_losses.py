@@ -163,9 +163,32 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     cw = cfg.predictor.change_weighted if change_weighted is None else change_weighted
     z_t = states[:, -1]
 
+    # ---- v2 levers 1+5: ego vector to the planning brains + nav dropout -------
+    # ego = [v0/pose_scale, yr0] from OBSERVED poses only (t and t-1) — the
+    # tactical wp heads were speed-starved (3.38 m vs operative 0.628).
+    ego = None
+    if getattr(cfg, "v2_ego_to_planners", False):
+        v0n = pose_last[:, 3:4] / pose_scale
+        pose_prev = batch.get("pose_prev")
+        if pose_prev is not None:
+            pp = pose_prev.to(device).float()
+            dyaw = pose_last[:, 2] - pp[:, 2]
+            yr0 = torch.atan2(torch.sin(dyaw), torch.cos(dyaw)) / 0.1
+        else:                                   # old cache path: no t-1 pose
+            yr0 = torch.zeros_like(pose_last[:, 2])
+        ego = torch.cat([v0n, yr0.unsqueeze(1)], dim=1)          # [B, 2]
+        p_ed = float(getattr(cfg, "v2_ego_dropout", 0.0))
+        if model.training and p_ed > 0.0:      # shortcut guard (ChauffeurNet)
+            keep = (torch.rand(ego.shape[0], 1, device=device) >= p_ed)
+            ego = ego * keep.to(ego.dtype)
+    nav_in = nav_cmd
+    p_nd = float(getattr(cfg, "v2_nav_dropout", 0.0))
+    if model.training and p_nd > 0.0:          # lever 5: route from VISION
+        drop = torch.rand(nav_cmd.shape[0], device=device) < p_nd
+        nav_in = nav_cmd.masked_fill(drop, 0)  # 0 == follow
     # ---- the hierarchy: strategic ctx --FiLM--> tactical intent --FiLM--> op --
-    strat = model.strategic_policy(states, nav_cmd)
-    tac = model.tactical_policy(states, strat["ctx"])
+    strat = model.strategic_policy(states, nav_in, ego=ego)
+    tac = model.tactical_policy(states, strat["ctx"], ego=ego)
     preds = model.predictor(states, actions, intent=tac["intent"])
 
     # ---- JEPA (operative + tactical-predictor dynamics + K-step rollout) ------
@@ -179,8 +202,18 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     loss_roll = torch.zeros((), device=device)
     K = getattr(cfg.train, "rollout_k", 1)
     if K > 1:
+        fa_roll = fut_actions
+        p_fa = float(getattr(cfg, "v2_fa_dropout", 0.0))
+        if (model.training and p_fa > 0.0 and fut_actions is not None):
+            # v2 lever 2: per-sample future-action WITHHOLD (zero-order-hold =
+            # the fa=None semantics) so the predictor must IMAGINE the future
+            # from vision instead of leaning on given controls (imagination
+            # share was 8.7%; pure integrators show D~E in the ablation).
+            drop = torch.rand(fut_actions.shape[0], device=device) < p_fa
+            hold = actions[:, -1:].expand(-1, fut_actions.shape[1], -1)
+            fa_roll = torch.where(drop[:, None, None], hold, fut_actions)
         loss_roll = _rollout_loss(model, states, actions, fut_states,
-                                  fut_actions, idx_of, K)
+                                  fa_roll, idx_of, K)
 
     # ---- tactical GOAL: 2 s sub-waypoints (grounded L2) + goal latent (JEPA) ---
     wp_h = cfg.tactical_policy.waypoint_horizons
@@ -191,6 +224,27 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     prev_goal = fut_states[:, idx_of[plan.goal_h - 2]] if plan.goal_h >= 2 else z_t
     loss_goal = (change_weighted_mse(tac["target_latent"], goal_tgt, prev_goal)
                  if cw else (tac["target_latent"] - goal_tgt).pow(2).mean())
+
+    # ---- v2 lever 4: decode the trajectory FROM the imagined goal latent ------
+    # (goal cos=0.885 while the linear wp heads sat at 3.38 m — exploit the
+    # model's best signal instead of ignoring it).
+    loss_goalwp = torch.zeros((), device=device)
+    if getattr(model, "goal_traj_head", None) is not None:
+        gwp = model.goal_traj_head(
+            torch.cat([z_t, tac["target_latent"]], dim=-1)
+        ).view(z_t.shape[0], len(wp_h), 2)
+        loss_goalwp = ((gwp - wp_tgt) / pose_scale).pow(2).mean()
+
+    # ---- v2 lever 6: jerk (3rd-diff) penalty on predicted waypoint paths ------
+    # (rollout paths were jerky: tms 0.09 vs GT-like 0.5+; refbpatch pattern).
+    loss_jerk = torch.zeros((), device=device)
+    w_jerk = float(getattr(cfg, "v2_traj_jerk", 0.0))
+    if w_jerk > 0.0 and len(wp_h) >= 4:
+        paths = [wp_pred]
+        if getattr(model, "goal_traj_head", None) is not None:
+            paths.append(gwp)
+        loss_jerk = sum(torch.diff(p / pose_scale, n=3, dim=1).pow(2).mean()
+                        for p in paths) / len(paths)
 
     # ---- maneuver CE (class-weighted) + strategic route CE (masked, weighted) -
     loss_man = _class_weighted_ce(tac["maneuver_logits"], man_tgt,
@@ -239,13 +293,17 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
              + weights.route * loss_route
              + loss_ground                       # weights applied inside
              + weights.sigreg * loss_sig
-             + weights.inv * loss_inv)
+             + weights.inv * loss_inv
+             + 1.0 * loss_goalwp                 # v2 lever 4 (0 when off)
+             + w_jerk * loss_jerk)               # v2 lever 6 (0 when off)
 
     parts = {"pred": loss_pred, "tacpred": loss_tacpred, "roll": loss_roll,
              "goal": loss_goal, "wp": loss_wp, "man": loss_man,
              "route": loss_route, "sigreg": loss_sig, "inv": loss_inv,
-             "ground": loss_ground, **g_parts}
-    log = {"pred": loss_pred.item(), "tacpred": loss_tacpred.item(),
+             "ground": loss_ground, "goalwp": loss_goalwp, "jerk": loss_jerk,
+             **g_parts}
+    log = {"goalwp": loss_goalwp.item(), "v2jerk": loss_jerk.item(),
+           "pred": loss_pred.item(), "tacpred": loss_tacpred.item(),
            "roll": loss_roll.item(), "goal": loss_goal.item(),
            "wp": loss_wp.item(), "man": loss_man.item(),
            "route": loss_route.item(), "man_acc": round(float(man_acc), 4),

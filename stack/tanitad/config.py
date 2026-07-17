@@ -161,6 +161,15 @@ class StackConfig:
     h15: H15Config = field(default_factory=H15Config)
     loss: LossConfig = field(default_factory=LossConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
+    # ---- v2 retrain levers (fleet directive 2026-07-17). ALL default-off ==
+    # v1-identical model/loss (no extra params, ckpts resume). Enabled together
+    # by the trainer's --v2 flag.
+    v2_ego_to_planners: bool = False   # (1) v0+yr0 -> strategic+tactical brains
+    v2_ego_dropout: float = 0.0        # ego-vector dropout (shortcut guard)
+    v2_fa_dropout: float = 0.0         # (2) future-action dropout in rollout loss
+    v2_goal_decode: bool = False       # (4) goal-conditioned trajectory head
+    v2_nav_dropout: float = 0.0        # (5) nav-command dropout (route from vision)
+    v2_traj_jerk: float = 0.0          # (6) jerk penalty on predicted wp paths
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), indent=2, default=str)

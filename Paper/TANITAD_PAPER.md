@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, v0.1 (2026-07-08). Maintained per D-020: every gate evaluation appends
+**Status:** living paper, v0.3 (2026-07-17). Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record.
@@ -27,7 +27,14 @@ imagination fidelity is still far from perfect, replicating on real data the fin
 discrimination, not imagination fidelity, bounds control*. A spectral analysis of the learned
 transition operator (fit R² = 0.997) locates the task-relevant dynamics of highway-dominated driving
 in ≈ 22–35 latent dimensions, consistent with the generalization theory that motivates latent world
-models' sample-efficiency advantage. We describe the architecture, its mathematical grounding, an
+models' sample-efficiency advantage. *Second-round update (v0.3):* after a causal speed-grounding
+fix — feeding the measured ego-speed v₀ as a third action channel — the flagship arm became the
+program's first to beat constant-velocity extrapolation on every held-out open-loop metric
+(ADE@2s 0.628 ± 0.055 vs 0.825), the gain causally attributed by paired A/B (+2.21 m, win-rate
+83.8 %); yet a two-parameter kinematic oracle (CTRV, 0.544) still tops the open-loop table — an
+ego-status shortcut we replicate from the literature and adopt as the honest bar, all open-loop
+numbers remaining weak claims under the program's standing rule (arXiv 2605.00066, §7.2). We
+describe the architecture, its mathematical grounding, an
 instrument doctrine for honest measurement that caught three silent measurement hazards in its first
 week, and the falsifiable gate program by which every claimed edge will stand or fall.
 
@@ -186,6 +193,12 @@ for attention-based modality steering (H2): a sensor may be powered down exactly
 uncertainty in its field of view is low — replacing heuristic sensor schedulers with a
 world-model-native criterion. Gate D9 measures hidden-sector imagination against a shuffled-cell
 floor and requires calibration (higher variance where blind).
+
+*Measured limitation (2026-07-17, §7.2 — σ-dissipation):* the calibration property is currently
+established at **one imagination step only**. Under blind autoregressive rollout the trained field
+grows *more* confident as fidelity decays to chance; every deployed use of the variance field
+(including the §3.6 self-monitor) is therefore capped at 1-step until multi-step belief-rollout
+training or a parallel-horizon decode closes the gap.
 
 ### 3.6 Fallback and self-knowledge
 
@@ -421,6 +434,94 @@ the main encoder's 7.0–8.5), first evidence that task-specific from-scratch SS
 pretraining at this scale/task; the grounded, corrected-geometry three-way (main vs REF-A vs REF-B)
 is the H1/H4 evidence table, in progress.
 
+> **Supersession note (v0.3, 2026-07-14 reset).** §7.1 stands as the record of the *speed-blind*
+> first round. Its headline deficit ("10–15× worse than constant velocity", oracle ceiling 1.65 m)
+> was subsequently localized primarily to a **missing input** — no arm was fed the current
+> ego-speed v₀, so each was asked to infer absolute scale from monocular appearance (barely
+> decodable from a frozen encoder, probe R² = 0.61) — and is superseded by the speed-grounded
+> second round (§7.2), whose flagship beats CV on every held-out metric at 19 k. The
+> pre-correction REF-A probe numbers above are likewise void under the reset protocol (post-reset
+> REF-A: 2.14 m fwd-ADE at 30 k, plateaued — the frozen-encoder ceiling). §3.7's pre-registered
+> target "beat CV on straights" is met — on all strata and metrics — and the program's bar has
+> since been *raised* to the stricter CTRV kinematic oracle (§7.2).
+
+### 7.2 Second round: speed grounding, the first CV-beating arm, and the kinematic-oracle bar (reset 2026-07-14; results 2026-07-16/17)
+
+All numbers in this section are open-loop and therefore **weak claims** under the program's
+standing rule (open-loop ⊥ closed-loop, arXiv 2605.00066); the capability arbiter remains
+closed-loop D4–D6. Records: TanitEval (the canonical eval substrate on the eval pod,
+`/root/taniteval/results/`), `Project Steering/FLEET_REVIEW_2026-07-17.md`, intakes
+`2026-07-15-baseline-floor` and `2026-07-17-openloop-l2-egostatus-shortcut`, and
+`Benchmarks & Eval/LEADERBOARD.md`.
+
+**The missing input, found and fixed.** A four-ablation localization on the plateaued
+frozen-encoder arm attributed 71–83 % of its residual trajectory error to speed/scale *magnitude* —
+not rotation (trajectory shape was good) and not imagination. The cause was architectural, not
+representational: no arm received the measured ego-speed v₀ as input. The fix is proprioceptive in
+the sense of §3.7 — v₀ enters as a third action channel (with jerk continuity and auxiliary
+ego-motion supervision), no new labels — and was validated in isolation before committing the
+retrain (fwd-ADE 3.73 → 0.83 m, speed decodability R² 0.61 → 0.965). All three arms restarted
+2026-07-14 from scratch on the identical canonical corpus.
+
+**First arm past constant velocity.** At step 19 k of 30 k the speed-grounded flagship measures
+**ADE@2s = 0.628 ± 0.055 m** on the held-out canonical validation set (TanitEval grounded-rollout
+protocol) — the program's **first checkpoint to beat the constant-velocity baseline on every
+reported metric**: ADE 0.628 vs 0.825, FDE 1.317 vs 1.708, RMSE 0.942 vs 1.541, miss@2 m 0.180 vs
+0.313. The gain is *causally* attributed, not narrated: a paired A/B against a same-architecture
+arm trained without the speed channel gives **+2.21 m mean improvement [2.04, 2.39] with an
+83.8 % per-window win rate** (paired bootstrap). No driving-competence claim follows.
+
+**The kinematic oracle tops the table — and that is itself the finding.** A two-parameter physics
+extrapolation, CTRV (constant turn rate and velocity from v₀ + ψ̇₀ alone, zero pixels), scores
+**0.544** on the same protocol — above every learned arm. This replicates on our corpus the
+ego-status-shortcut result (AD-MLP / BEV-Planner line, arXiv 2312.03031): our validation is ≈74 %
+straight driving (73.9 % measured — coincidentally identical to nuScenes' 73.9 %), so open-loop
+L2-class metrics are dominated by kinematic extrapolation. A second, independently implemented
+instrument line inside the program converged on the same oracle (CTRV 0.545, different corpus and
+stratification) — replication, not coincidence. Consequence, pre-registered: **beat-CTRV is the
+honest open-loop bar.** The flagship stands 0.084 above it at 19 k and closing; whether it crosses
+by 30 k is the pending verdict.
+
+**How much of it is vision? (imagination panel).** A 2×2 vision-ablation plus latent-fidelity
+panel separates what each arm's predictions owe to pixels versus integrated dynamics. The
+trained-encoder flagship: **vision_use 12.9 %, imagination 8.7 %, latent-fidelity gain +0.054** —
+genuine but modest visual world-modelling on a corpus this kinematic. The frozen-encoder REF-A
+arms: 3.4 % / 1.5 % — functionally, dynamics integrators. The split variable is
+**trained-vs-frozen encoder**: the H4 axis measured functionally rather than through decode
+probes alone.
+
+**Planning brains are speed-starved; decode, not imagination, is the tactical bottleneck.** First
+tactical/strategic evaluation: maneuver accuracy 0.61 held-out, turn recall 0.75, tactical
+waypoints 3.38 m. The v₀ channel currently reaches only the operative predictor, so the upper
+brains still carry exactly the deficiency the reset fixed below them. Meanwhile goal-latent
+imagination is strong — cosine 0.885 between imagined and realized post-maneuver latents: the
+imagination is close; *decoding it to metric space* is where the 3.38 m is lost. This sharpens,
+and is consistent with, the A13 pattern of §7: latent-space selection quality keeps outrunning
+metric readout.
+
+**σ-dissipation: recursive imagination collapses with false confidence.** Rolling the
+1-step-trained H15 field blind (autoregressively) on real held-out data: fidelity falls
+0.357 → 0.011 — chance — by k = 4 while the predicted log-variance *shrinks* (−7.79 → −8.55) and
+beliefs collapse toward an attractor (inter-sample cosine 0.21 → 0.57). The field becomes more
+confident as it decays; the §3.5 calibration property is established at one step and measurably
+false under recursion. Freezing the k = 1 imagination instead holds ≈0.25 fidelity flat across 8
+horizons — **the defect is the recursion, not capacity**. Conservative corrections adopted: the
+deployed self-monitor (§3.6) consumes 1-step imagination error only; multi-step belief-rollout
+training and a parallel-horizon (non-autoregressive) decode are the pre-registered fixes.
+(Record: `Architecture & Inference/Implementation/belief_rollout_diagnostic/`.)
+
+**Frozen-encoder family is second-order; data scale dominates.** A matched comparison on 320
+episodes: I-JEPA features beat DINOv2 at every horizon (fwd-ADE 3.194 vs 3.796 at 15 k steps) at
+5.5× the encode cost — and both overfit at this corpus size. In the frozen regime, encoder family
+matters less than data scale; this refines, and does not overturn, §7.1's REF-A finding.
+
+**REF-B at 6 k: the E2E baseline is strong and yaw-blind.** Direct waypoint regression reaches
+0.868 (its RMSE already beats CV) — but its rotation-gain in curves is 0.03: the encoder is
+yaw-blind (yaw-rate probe R² = 0.11), so the arm rides the same ego-status shortcut as the
+oracles. The patch now training (refbpatch): a fixed-**distance** path head (TF++-style
+path/speed decoupling), v₀-dropout 0.5, an auxiliary yaw head, and turn-weighted loss — keeping
+REF-B the strongest fair imitation opponent for gate D4 rather than a strawman.
+
 ## 8. Roadmap
 
 Completion of the first run and the full gate ladder; closed-loop evaluation (CARLA harness) for
@@ -450,3 +551,14 @@ Drive-JEPA arXiv:2601.22032; ALPS-4B transfer study `Ressources/AD_TRANSFER_RESE
   oracle ceiling 1.65 m), the confirmed f-theta focal error (PhysicalAI 1.6× over-zoom, corrected)
   and the resolution-not-binding sweep. Actions confirmed to enter the predictor as FiLM-conditioned
   inputs whose latent consequence is predicted (§3.7).
+- v0.3 (2026-07-17): §7.2 second-round results — the 2026-07-14 speed-grounding reset (v₀ as third
+  action channel); flagship-speed @19 k is the first CV-beater on every held-out metric
+  (0.628 ± 0.055 ADE@2s; causal A/B +2.21 m [2.04, 2.39], win-rate 83.8 %); the CTRV
+  kinematic-oracle bar (0.544, ego-status shortcut replicated on our 73.9 %-straight corpus,
+  independently converged at 0.545); imagination panel (vision_use 12.9 % / imagination 8.7 % /
+  latent-gain +0.054; frozen-encoder arms are dynamics integrators); planning-brain eval (tactical
+  3.38 m, speed-starved; goal-latent cos 0.885 — decode, not imagination, is the bottleneck);
+  σ-dissipation under recursive rollout (false confidence; freeze-1 holds ≈0.25) with the 1-step
+  self-monitor cap and the §3.5 calibration caveat; matched frozen I-JEPA-vs-DINOv2 comparison;
+  REF-B @6 k yaw-blindness and refbpatch. §7.1 marked superseded-as-diagnosis by the reset;
+  abstract updated. All §7.2 numbers open-loop = weak claims (arXiv 2605.00066).

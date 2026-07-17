@@ -91,6 +91,11 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
         p_last, p1 = item["pose_last"], item["future_poses"][self.maneuver_h - 1]
         item["maneuver_label"] = refb_labels.classify_maneuver(
             p_last[2], p1[2], p_last[3], p1[3]).long()
+        # v2 lever 1: pose at t-1 (OBSERVED) so the loss can build yr0 = the
+        # wrapped yaw delta / dt without touching the future. window >= 2 always.
+        e_i, t = self.index[i]
+        item["pose_prev"] = torch.as_tensor(
+            self.episodes[e_i].poses[t + self.window - 2]).float()
         return item
 
 
@@ -190,6 +195,15 @@ def train(args) -> dict:
         cfg.encoder.grad_checkpoint = True
     if args.rollout_k is not None:
         cfg.train.rollout_k = args.rollout_k
+    # v2 retrain pack (fleet directive 2026-07-17): enable all six levers.
+    # Lever 3 (rollout-k) stays an explicit arg: pass --rollout-k 12 with --v2.
+    if args.v2:
+        cfg.v2_ego_to_planners = True
+        cfg.v2_ego_dropout = 0.25
+        cfg.v2_fa_dropout = 0.3
+        cfg.v2_goal_decode = True
+        cfg.v2_nav_dropout = 0.5
+        cfg.v2_traj_jerk = 0.02
     if args.sigreg_free_dims is not None:
         cfg.loss.sigreg.free_dims = args.sigreg_free_dims
 
@@ -370,6 +384,11 @@ def main(argv=None):
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--warmup", type=int, default=2000)
     ap.add_argument("--weight-decay", type=float, default=0.05)
+    ap.add_argument("--v2", action="store_true",
+                    help="enable the six v2 retrain levers (fleet directive "
+                         "2026-07-17): ego->planners + ego-dropout 0.25 + "
+                         "fa-dropout 0.3 + goal-decode + nav-dropout 0.5 + "
+                         "jerk 0.02; pair with --rollout-k 12")
     ap.add_argument("--rollout-k", type=int, default=None,
                     help="K-step recursive rollout (bake-off lever; default cfg)")
     # per-level grounding rollout horizons (op fine / tac 2 s / str long)

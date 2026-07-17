@@ -50,11 +50,16 @@ class StrategicPolicy(nn.Module):
     ``nav_emb`` so it is self-contained: ``forward(states, nav_cmd_long)``.
     """
 
-    def __init__(self, cfg: StrategicPolicyConfig, state_dim: int, window: int):
+    def __init__(self, cfg: StrategicPolicyConfig, state_dim: int, window: int,
+                 ego_input: bool = False):
         super().__init__()
         self.cfg, self.window = cfg, window
         d = cfg.d_model
         self.nav_emb = nn.Embedding(cfg.n_commands, cfg.d_cmd)
+        # v2 lever 1: proprioceptive [v0, yr0] added to the nav embedding
+        # (leakage-safe, t<=0 only; mirrors the operative v0 channel + the
+        # refbpatch speed_emb pattern). None when off -> state_dict identical.
+        self.ego_emb = nn.Linear(2, cfg.d_cmd) if ego_input else None
         self.in_proj = nn.Linear(state_dim, d)
         self.pos = nn.Parameter(torch.zeros(1, window, d))
         nn.init.trunc_normal_(self.pos, std=0.02)
@@ -65,10 +70,13 @@ class StrategicPolicy(nn.Module):
         self.ctx_proj = nn.Linear(d, cfg.d_ctx)
         self.route_head = nn.Linear(d, cfg.n_route)
 
-    def forward(self, states: Tensor, nav_cmd: Tensor) -> dict[str, Tensor]:
+    def forward(self, states: Tensor, nav_cmd: Tensor,
+                ego: Tensor | None = None) -> dict[str, Tensor]:
         b, w, _ = states.shape
         assert w == self.window, f"window mismatch: {w} != {self.window}"
         cmd = self.nav_emb(nav_cmd)                            # [B, d_cmd]
+        if self.ego_emb is not None and ego is not None:
+            cmd = cmd + self.ego_emb(ego.to(cmd.dtype))        # [B,2]->[B,d_cmd]
         x = self.in_proj(states) + self.pos[:, :w]
         cond = cmd.unsqueeze(1).expand(-1, w, -1)              # [B, W, d_cmd]
         mask = _causal_mask(w, states.device)
@@ -96,7 +104,7 @@ class TacticalPolicy(nn.Module):
     """
 
     def __init__(self, cfg: TacticalPolicyConfig, state_dim: int, window: int,
-                 d_cond: int):
+                 d_cond: int, ego_input: bool = False):
         super().__init__()
         self.cfg, self.window = cfg, window
         d = cfg.d_model
@@ -112,8 +120,14 @@ class TacticalPolicy(nn.Module):
             {str(k): nn.Linear(d, 2) for k in cfg.waypoint_horizons})
         self.target_latent_head = nn.Linear(d, state_dim)
         self.intent_proj = nn.Linear(d, cfg.d_intent)
+        # v2 lever 1: [v0, yr0] added to the strategic ctx cond (the tactical
+        # wp heads were speed-starved: 3.38 m vs operative 0.628).
+        self.ego_emb = nn.Linear(2, d_cond) if ego_input else None
 
-    def forward(self, states: Tensor, ctx: Tensor) -> dict:
+    def forward(self, states: Tensor, ctx: Tensor,
+                ego: Tensor | None = None) -> dict:
+        if self.ego_emb is not None and ego is not None:
+            ctx = ctx + self.ego_emb(ego.to(ctx.dtype))
         b, w, _ = states.shape
         assert w == self.window, f"window mismatch: {w} != {self.window}"
         x = self.in_proj(states) + self.pos[:, :w]
@@ -132,7 +146,8 @@ class TacticalPolicy(nn.Module):
 
 
 def run_hierarchy(model, states: Tensor, actions: Tensor,
-                  nav_cmd: Tensor | None = None) -> dict:
+                  nav_cmd: Tensor | None = None,
+                  ego: Tensor | None = None) -> dict:
     """Compose the 4-brain hierarchy on a compact state window (shared by the
     flagship WorldModel and REF-A — both hold the same brains).
 
@@ -152,8 +167,8 @@ def run_hierarchy(model, states: Tensor, actions: Tensor,
     b = states.shape[0]
     if nav_cmd is None:
         nav_cmd = torch.zeros(b, dtype=torch.long, device=states.device)
-    strat = model.strategic_policy(states, nav_cmd)
-    tac = model.tactical_policy(states, strat["ctx"])
+    strat = model.strategic_policy(states, nav_cmd, ego=ego)
+    tac = model.tactical_policy(states, strat["ctx"], ego=ego)
     preds = model.predictor(states, actions, intent=tac["intent"])
     return {"ctx": strat["ctx"], "route_logits": strat["route_logits"],
             "maneuver_logits": tac["maneuver_logits"],
@@ -197,15 +212,24 @@ class WorldModel(nn.Module):
         self.tactical_pred = (OperativePredictor(cfg.tactical_pred, self.state_dim)
                               if cfg.tactical_pred is not None else None)
         # Trained strategic transformer + tactical policy (D-030 recovery).
+        _ego = bool(getattr(cfg, "v2_ego_to_planners", False))
         self.strategic_policy = (
             StrategicPolicy(cfg.strategic_policy, self.state_dim,
-                            cfg.predictor.window)
+                            cfg.predictor.window, ego_input=_ego)
             if cfg.strategic_policy is not None else None)
         self.tactical_policy = (
             TacticalPolicy(cfg.tactical_policy, self.state_dim,
                            cfg.predictor.window,
-                           d_cond=cfg.strategic_policy.d_ctx)
+                           d_cond=cfg.strategic_policy.d_ctx, ego_input=_ego)
             if cfg.tactical_policy is not None else None)
+        # v2 lever 4: decode the 2 s trajectory FROM the imagined goal latent
+        # (goal cos=0.885 while linear wp heads sat at 3.38 m — the decode was
+        # the bottleneck, not the imagination). None when off.
+        self.goal_traj_head = (nn.Sequential(
+            nn.Linear(self.state_dim * 2, 512), nn.GELU(),
+            nn.Linear(512, 2 * len(cfg.tactical_policy.waypoint_horizons)))
+            if getattr(cfg, "v2_goal_decode", False)
+            and cfg.tactical_policy is not None else None)
         # H15: belief maintenance over unobserved sectors (D-008).
         self.imagination = (ImaginationField(cfg.encoder.d_model,
                                              self.encoder.grid_hw,
