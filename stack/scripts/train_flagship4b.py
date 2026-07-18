@@ -289,6 +289,8 @@ def train(args) -> dict:
     logf = (out_dir / "train_log.jsonl").open("a")
     t0 = time.time()
 
+    _MILESTONES = (5000, 15000, 20000, 30000)   # preserved for the gate protocol
+
     def save_ckpt(s):
         tmp = ckpt_path.with_suffix(".tmp")
         torch.save({"model": model.state_dict(),
@@ -296,6 +298,13 @@ def train(args) -> dict:
                     "opt": opt.state_dict(), "step": s}, tmp)
         tmp.replace(ckpt_path)
         print(f"[ckpt] saved at step {s} -> {ckpt_path}", flush=True)
+        # milestone archive (Sayed 2026-07-18): keep 5k/15k/20k/30k for gating.
+        for m in _MILESTONES:
+            arch = ckpt_path.with_name(f"ckpt_step{m}.pt")
+            if s >= m and not arch.exists():
+                import shutil
+                shutil.copy2(ckpt_path, arch)
+                print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
     while step < args.steps:
         lr = cosine_lr(step, args.steps, args.warmup, args.lr)

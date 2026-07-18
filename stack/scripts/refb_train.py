@@ -52,10 +52,6 @@ import time
 from pathlib import Path
 
 import torch
-import torch.multiprocessing as _tmp
-# container /dev/shm is tiny (64MB) -> fd-sharing bus-errors with
-# workers>0; file_system strategy routes tensor sharing via /tmp.
-_tmp.set_sharing_strategy("file_system")
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
@@ -342,6 +338,9 @@ def compute_losses(model: RefBModel, batch: dict, device: str = "cpu",
             "states": states}
 
 
+MILESTONES = (5000, 15000, 20000, 30000)   # preserved for the gate protocol
+
+
 def _save_ckpt(path: Path, model, opt, step: int) -> None:
     # atomic write: a kill mid-save must not corrupt the resume point
     tmp = path.with_suffix(".tmp")
@@ -349,6 +348,15 @@ def _save_ckpt(path: Path, model, opt, step: int) -> None:
                 "step": step}, tmp)
     tmp.replace(path)
     print(f"[ckpt] saved at step {step}", flush=True)
+    # milestone archive: preserve 5k/15k/20k/30k (ckpt.pt is else overwritten)
+    # so each can be gated through TanitEval (Sayed 2026-07-18).
+    for m in MILESTONES:
+        if step >= m:
+            arch = path.with_name(f"ckpt_step{m}.pt")
+            if not arch.exists():
+                import shutil
+                shutil.copy2(path, arch)
+                print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
 
 def train(args) -> dict:
@@ -398,7 +406,7 @@ def train(args) -> dict:
     dl_kw = dict(batch_size=batch, shuffle=True, drop_last=True)
     if getattr(args, "workers", 0) > 0:
         dl_kw.update(num_workers=args.workers, persistent_workers=True,
-                     prefetch_factor=4, pin_memory=True)
+                     prefetch_factor=2, pin_memory=True)
     dl = DataLoader(ds, **dl_kw)
     print(f"[refb] train: {len(train_eps)} episodes / {len(ds)} windows "
           f"from {train_dir}", flush=True)
