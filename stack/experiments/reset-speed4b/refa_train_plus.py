@@ -511,6 +511,14 @@ def train(args) -> dict:
         opt.step()
         if step > 0 and step % args.save_every == 0:
             base._save_ckpt(ckpt_path, model, opt, step, save_heads)
+            # milestone archive (Sayed 2026-07-18): keep 5k/15k/20k/30k for the
+            # gate protocol (ckpt.pt is else overwritten).
+            for _m in (5000, 15000, 20000, 30000):
+                _a = ckpt_path.with_name(f"ckpt_step{_m}.pt")
+                if step >= _m and not _a.exists():
+                    import shutil
+                    shutil.copy2(ckpt_path, _a)
+                    print(f"[ckpt] milestone archived: {_a.name}", flush=True)
         if step % args.log_every == 0 or step == args.steps - 1:
             sc = lambda t: round(float(t.detach()), 5)
             last_log = {"step": step, "loss": sc(out["loss"]),
