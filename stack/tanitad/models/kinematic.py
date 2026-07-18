@@ -40,5 +40,8 @@ def kamm_circle_violation(controls: Tensor, v: Tensor, wheelbase: float = 2.7,
     """
     a_lon = controls[..., 0]
     a_lat = v.unsqueeze(-1).pow(2) / wheelbase * torch.tan(controls[..., 1]).abs()
-    total = (a_lon.pow(2) + a_lat.pow(2)).sqrt()
+    # clamp_min inside sqrt: at total accel = 0, sqrt'(0)=inf and relu'=0 give
+    # the 0*inf=NaN sqrt-relu trap on the backward pass — bound the magnitude so
+    # a fully-feasible (near-zero accel) control never NaNs the gradient.
+    total = (a_lon.pow(2) + a_lat.pow(2)).clamp_min(1e-12).sqrt()
     return torch.relu(total - mu * g).mean()
