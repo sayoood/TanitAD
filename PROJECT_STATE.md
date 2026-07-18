@@ -162,6 +162,14 @@ Summary of the immediate next actions:
 - **Sayed task (~10 min, supervised):** MetaDrive source install on the dev machine (PyPI no-go on
   py3.13) — unblocks D-010 sim-mix live rollout, D5/D6 blocked-route and D9 occluder scenarios.
   Command sequence prepared by Tools&DevEnv (their BACKLOG P1.3).
+- **DECISION NEEDED / ESCALATION (Data-Eng 2026-07-18): request ZOD dataset access** — the ONE blocker on
+  the FLEET_REVIEW P0#1 / OWN_DATASET_PLAN §7#1 unlock (the ZOD loader is DONE + geometry falsifier PASS,
+  `2026-07-18-zod-loader/`). ZOD (CC-BY-SA-4.0) needs a signed access agreement (`opendataset@zenseact.com`;
+  HF `Zenseact/ZOD` is a code-loader, no plain download) — a license/external-action call only Sayed makes.
+  Proposal: **accept CC-BY-SA for a SEPARATE public ZOD shard** (= OWN_DATASET_PLAN §9 open-Q #1; the permissive
+  `tanitad-own-core` stays proprietary-capable). On grant, the runnable job card (pod3-idle/Colab, M-1.3) does the
+  5-drive real-bytes verify + precompute. | **default if no answer:** loader stays intake-ready + access-blocked;
+  the rest of the corpus-diversity backlog (lake-at-scale P0#2, curve-rebalance P0#3) proceeds meanwhile.
 
 ## 5. Session log (newest first, keep last ~15 entries)
 
