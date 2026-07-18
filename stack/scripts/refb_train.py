@@ -52,6 +52,10 @@ import time
 from pathlib import Path
 
 import torch
+import torch.multiprocessing as _tmp
+# container /dev/shm is tiny (64MB) -> fd-sharing bus-errors with
+# workers>0; file_system strategy routes tensor sharing via /tmp.
+_tmp.set_sharing_strategy("file_system")
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
@@ -161,6 +165,11 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
         item["nav_valid"] = torch.tensor(valid)
         item["route_target"] = torch.tensor(refb_labels.route_target(cmd),
                                             dtype=torch.long)
+        # workers>0: MooseFS mmap slices can't be shared across the worker
+        # boundary (bus error / "no such file"); clone to owned in-RAM tensors.
+        for _k, _v in item.items():
+            if torch.is_tensor(_v):
+                item[_k] = _v.clone()
         return item
 
 
