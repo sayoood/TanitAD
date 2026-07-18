@@ -1,9 +1,43 @@
 # STATE — Data Engineering
 
-LAST_RUN: 2026-07-17 (Tuesday agent) — branch `agent/data-engineering-20260717` (worktree `C:/Users/Admin/wt-de-0717`, D-026)
-QUALITY: full (G-A…G-E, G-H, G-D1, G-D2 met; intake pkg 9✓ standalone; 2 measured experiments; no `stack/` files touched).
+LAST_RUN: 2026-07-18 (Tuesday agent) — branch `agent/data-engineering-20260718` (worktree `C:/Users/Admin/wt-de-0718`, D-026)
+QUALITY: full (G-A…G-E, G-H, G-D1, G-D2, G-I met; intake pkg 19✓ standalone; 1 measured geometry experiment + a runnable job card for the compute-blocked half; no `stack/` files touched).
+RESOURCE (G-I): local RTX-4060 dev box only, ~1.6 h, $0. Why not eval-pod/Colab: this run's experiment is a pure-CPU closed-form geometry falsifier + loader unit tests — no model/GPU/real-bytes needed to answer it; the GPU half (5-drive real-bytes precompute) is ACCESS-blocked (ZOD agreement) → shipped as a job card (M-3), not skipped.
 
-## This run (2026-07-17)
+## This run (2026-07-18)
+- **ZOD loader SHIPPED — the FLEET_REVIEW P0#1 / OWN_DATASET_PLAN §7#1 unlock** (intake `2026-07-18-zod-loader/`,
+  `zod.py` + 19✓ + job card + INTAKE). CC-BY-SA-4.0 owned real-urban: 14 EU countries, day/night/seasons/weather,
+  **real CAN steer + OxTS RT3000 ego-motion** — the diversity the 74%-straight day-only mix lacks.
+- **Pre-registered geometry falsifier ANSWERED — PASS.** ZOD front = KB fisheye (3848×2168, **120° HFOV**);
+  measured (grounded on the published spec, robust to real KB coeffs): **f_eff=266.0, observed_frac=1.00,
+  drop_in=True**. ZOD is **geometrically UNBLOCKED** (no calib.py R1 needed — the fisheye path suffices; contrast
+  PandaSet height-bound at 467). Narrow-40° witness falsifies at 0.34 → gate not vacuous. **No escalation on
+  geometry** (falsifier did not trip).
+- **Key reuse result:** Kannala-Brandt radius ≡ `FThetaIntrinsics.poly` (odd powers) → `kb_to_ftheta` reuses the
+  proven crop path with ZERO new geometry math (confirms OWN_DATASET_PLAN's "fisheye→ftheta_*" with numbers).
+- **OxTS heading drives yaw** (offset-free, defined at standstill) — cleaner than PandaSet's motion-heading
+  fallback; `zod_signals` reuses tested `cosmos_drive.poses_to_signals`; CAN steer is a cross-check via
+  `can_steer_ratio` (recovered on real bytes).
+- **ESCALATION (Sayed/orchestrator): request ZOD access** (`opendataset@zenseact.com`, CC-BY-SA-4.0 + privacy/
+  no-military; HF repo is a code-loader, no plain download). The ONE blocker on the #1 owned ingest. Accept
+  CC-BY-SA for a *separate public ZOD shard* = OWN_DATASET_PLAN §9 open-Q #1 (recommend: accept).
+- **Lit/seam:** WorldLens (CVPR-26 Oral) + DrivingGen driving-WM benchmarks → Benchmarks&Eval seam; NEW urban
+  dashcam corpus arXiv 2604.01044 → curve-rebalance probe queued (P1). Red-suite (Monday's #1) already resolved —
+  suite collects 391 tests, `calib.py` ships the two-rig symbols.
+- Note: `2026-07-18-zod-loader-and-geometry-falsifier.md`.
+
+## Next (backlog, priority order)
+1. **ZOD real-bytes verification** — on ZOD access (escalated), run `zod_pilot_jobcard.md` on pod3-idle/Colab:
+   5-drive `verify_real_clip` → confirm drop-in on the REAL per-drive KB, OxTS↔camera timestamp alignment,
+   steer-ratio recovery, A8 vs comma; epcache precompute → feeds the lake (P0#2).
+2. **Run the lake at scale** (BACKLOG P0#2): Cosmos + PandaSet ingestors at scale → publish `tanitad-own` lake v0
+   (comma + cosmos + pandaset) to HF gated; PandaSet real-bytes verify rides pod3 when idle.
+3. **Curve-rebalance mix** (BACKLOG P0#3) + **probe arXiv 2604.01044** (global urban dashcam: license + actions).
+4. **calib_r1 consolidation** (BACKLOG P0#4) — PandaSet-only (ZOD needs none); land `pinhole_rectify` into
+   `stack/tanitad/data/calib.py`, run the 3 calib suites as one gate.
+5. **`stats` uint8-safe** (small fix, 2026-07-17) — auto-`to_float_frames`/assert dtype.
+
+## Prior run (2026-07-17)
 - **D-016 R1 pinhole rectify BUILT + validated — the owned real-urban BLOCKER (last run's #1) is RESOLVED for the
   pinhole family.** New primitive `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad;
   mirrors the existing fisheye `ftheta_undistort`) lands `f_eff=266` **exactly by construction**. Intake pkg

@@ -29,7 +29,7 @@
 | **nuPlan** | 1 500 h, 4 cities | cam + lidar + tracks | ego + agent tracks (planning) | research/NC | high | ~6 h | candidate (NAVSIM/planning link, Bench&Eval) |
 | **Argoverse 2** | 1 000 h sensor + 250k forecasting | 7-cam + 2 lidar | ego + tracks | research (CC-BY-NC 4.0) | high | ~6 h | candidate |
 | **Waymo Open** | 2 030 seg 20 s + motion | 5-cam + 5 lidar | ego + tracks | research/NC (Waymo licence) | high | ~6 h | candidate |
-| **Zenseact ZOD** | Frames/Sequences/Drives, ~1 473 h drives | cam (KB fisheye) + lidar + radar + CAN | **real CAN** (EU) | **CC-BY-SA-4.0** (corrected 2026-07-13 — was mis-tagged research/NC; owned-copyleft) | **high (14 EU countries, day/night, seasons/weather)** | ~5 h (fisheye→ftheta + D-016 R1 pad-crop) | **candidate #1** — owned real-urban PhysicalAI replacement (OWN_DATASET_PLAN §7) |
+| **Zenseact ZOD** | Frames/Sequences/Drives, ~1 473 h drives | cam (KB fisheye, 3848×2168, **HFOV 120°**, 10 Hz) + lidar + radar + CAN + OxTS RT3000 | **real CAN steer + OxTS ego-motion** (EU) | **CC-BY-SA-4.0** (corrected 2026-07-13; owned-copyleft) | **high (14 EU countries, day/night, seasons/weather)** | **loader DONE 2026-07-18** (`kb_to_ftheta`→ftheta; **NO D-016 R1 needed** — fisheye path suffices); real-bytes = access-gated | **candidate #1 — LOADER SHIPPED**; geometry falsifier **PASS** (f_eff=266.0, observed_frac=1.00, drop_in) |
 | **ONCE** | 1M scenes | cam + lidar | ego | research/NC | med (lidar-centric) | ~6 h | low priority |
 | **CoVLA** | ~10 k clips 30 s | front cam | **actions + language captions** | research/NC | high | ~4 h | candidate — H12 command-conditioning link |
 
