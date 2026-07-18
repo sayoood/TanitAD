@@ -10,18 +10,28 @@ logvar-clamp (A — APPLIED 2026-07-17 to the live pod2 stack + repo mainline; t
 resumes on the patched build at its next restart), parity test (A). Your fp16 diagnosis (the whole
 win is the ViT; predictor is launch-bound) re-scopes this backlog.
 
-1. **TRT-fp16 engine for flagship@30k — BOTH targets:** eval pod A40 (throughput/server row) AND
-   the 4060 (Orin-proxy deployment row). Report Hz + VRAM + decision-agreement vs fp32 (your
-   95.3% bar). This turns your 93.7 Hz microbench into a deployable engine artifact.
-3. **Predictor batch-1 latency attack (the launch-bound 5.8 ms):** CUDA-graph capture and/or
-   `torch.compile(mode="reduce-overhead")` on the operative tick; measure on both GPUs. Expected:
-   1.3-2× on the predictor half; falsifier: <10% → the tick is memory-bound, close the item and
-   record the roofline number.
-2. **P1.4c VRAM-isolation harness fix** (your own flag: fp16/bf16 VRAM rows were polluted by the
-   co-resident fp32 reference) + re-scoped P1.6 quant (VRAM/energy, NOT batch-1 latency).
-4. **Ops hardening continuation:** the NaN-clamp pattern generalized — sweep the stack for other
-   unbounded `exp`/`log`/`div` on learned outputs (grep-audit + witness tests, 4060). The review
-   found this class kills runs silently (F-5/6/7); one sweep closes the class.
+0. **(NEW, run #4 top) Combined + full-tick CUDA-graph harness (A3):** capture the WHOLE operative
+   tick (encode+predict+select) as a single CUDA graph AND measure the **fp16 encoder + graph
+   predictor combined** tick/VRAM in one process — replaces the additive ~9.1 ms / 109 Hz
+   *projection* from run #4 with a measured combined number; fold in the P1.4c one-process VRAM row.
+   Local 4060, $0, EXECUTE-class. Falsifier: combined < 1.3× over fp32 tick ⇒ the graph win doesn't
+   compose with fp16 (encoder dominates) → report and keep them as separate levers.
+1. **TRT-fp16 engine for flagship@30k — BOTH targets (JOB CARD in the 2026-07-18 note):** eval pod
+   A40 (throughput/server row) AND the 4060 (Orin-proxy deployment row). Report Hz + VRAM +
+   decision-agreement vs fp32 (95.3% bar). Toolchain-blocked on the dev box (`tensorrt` missing) →
+   run when a pod is idle or `tensorrt`+`onnxruntime-gpu` land. ONNX IR already parity-clean.
+2. **P1.4c VRAM-isolation harness fix** (fp16/bf16 VRAM rows polluted by the co-resident fp32
+   reference) — now folded into item 0's one-process harness + re-scoped P1.6 quant (VRAM/energy).
+3. ~~**Predictor batch-1 latency attack**~~ **DONE 2026-07-18 (run #4):** manual `torch.cuda.CUDAGraph`
+   = **2.57×** (predict-1) / **1.33×** (K9), rel-err **2.8e-7**, agreement **100 %**, wp-shift 0.00 m.
+   Falsifier (>10%) cleared 25× → launch-bound CONFIRMED. `torch.compile` NOT viable here (Triton
+   missing → inductor fails; dynamo-cudagraphs 20× slower) → deploy via manual capture. Both-GPU
+   ask deferred: the A40 comparison rides item 1's engine build (single-stream = 4060 is the right
+   proxy). `Implementation/predictor_latency/`.
+4. ~~**Ops hardening — numerics grep-sweep**~~ **DONE 2026-07-18 (run #4):** the class is CLOSED —
+   every learned/data `exp`/`log`/`div` in `stack/tanitad` is guarded (clamp / count-gate /
+   neg-exponent); no new site. Shipped an **11-test executable regression guard** (intake
+   `2026-07-18-numerics-safety-sweep`, test-only, all green) that keeps it closed on merges.
 
 ## P0 — first runs
 
@@ -103,6 +113,10 @@ win is the ViT; predictor is launch-bound) re-scopes this backlog.
     2026-07-08).
 
 ## Done / retired
+- (2026-07-18 run #4) **Predictor launch-bound attack DONE** (manual CUDA-graph 2.57×/1.33×, free,
+  rel-err 2.8e-7, 100% agreement; `torch.compile` non-viable on this Triton-less box) + **numerics
+  grep-sweep DONE** (class closed, 11-test regression guard intake). New top: item 0 combined+
+  full-tick graph harness (measured combined tick vs the additive ~9 ms projection). $0, 4060.
 - (2026-07-17 run #3) **P1.4b clean-GPU latency DONE** (fp32 14.79 ms/67.6 Hz, fp16 1.39×/93.7 Hz,
   encoder-only win, precision policy reproduced); **review #3 imagination_nll logvar clamp DONE**
   (intake, 17 tests). New: P1.4c one-process VRAM harness; P1.6 re-scoped to VRAM/energy. **Next-run

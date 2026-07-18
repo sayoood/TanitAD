@@ -2,6 +2,41 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-18 (run #4)
+
+- **The batch-1 predictor is launch-bound, and manual CUDA-graph capture is a FREE
+  fix.** On the exclusive 4060 (fp32, tf32 off, step-6500, 64 real comma windows,
+  200 reps), `torch.cuda.CUDAGraph` capture of the operative predictor pass:
+  predict_1pass **6.08 → 2.36 ms (2.57×)**, select_K9 **5.94 → 4.45 ms (1.33×)**;
+  accuracy vs eager max|Δ| 7.6e-6, **rel-err_max 2.8e-7**, cosine 1.0, imagine-and-
+  select **agreement 100 %**, waypoint shift **0.00 m**. The graph replays the same
+  fp32 kernels → the win is pure kernel-launch elimination. **Falsifier (>10 %)
+  cleared 25×** → run #3's launch-bound diagnosis CONFIRMED. Source:
+  `Implementation/predictor_latency/predictor_latency_20260718.json`.
+- **The gain scales inversely with batch (launch-boundedness).** batch-1 predict 2.57×
+  ≫ K=9 select 1.33× (at K=9 each kernel does 9× the work → launch overhead is a
+  smaller fraction). **Two orthogonal deploy levers: encoder = compute-bound → fp16;
+  predictor = launch-bound → CUDA graph.** Additive tick projection: fp16 encoder
+  (4.69) + graph select (4.45) ≈ **9.1 ms ≈ 109 Hz** (from ~68 Hz fp32) — projection,
+  needs a combined harness to confirm.
+- **On this Windows box the deployable graph route is MANUAL `torch.cuda.CUDAGraph`,
+  NOT `torch.compile`.** `torch.compile(mode="reduce-overhead")` → **`TritonMissing`**
+  (Triton not installed; inductor needs it for GPU codegen). `torch.compile(backend=
+  "cudagraphs")` runs Triton-free but is **~20× SLOWER** (117.8 ms) — per-call dynamo
+  guard/re-trace overhead swamps the tiny predictor. Accuracy fine in both; only manual
+  capture is viable. To enable inductor on the dev box, install a Windows Triton wheel
+  (torch 2.11+cu128). Source: this run's JSON.
+- **Numerics-safety class is CLOSED (P0 #4 grep-sweep of `stack/tanitad`).** Every
+  unbounded `exp`/`log`/div on a learned/data output is guarded: imagination
+  logvar `.clamp(-10,10)` (head+nll), OKRI/LOPS sigma `.clamp` (`arms.py:284`),
+  `FeatureOOD.score` `count<2→zeros`+`var.clamp_min(eps)` (`refb.py:366`), spectral/
+  fourbrain-erank `.clamp_min(1e-12)`, sigreg/epps/metrics bounded-by-construction
+  (neg-exponent Gaussian kernels / clamped denom). No new unguarded site. Shipped as
+  an **11-test executable regression guard** (intake `2026-07-18-numerics-safety-sweep`,
+  test-only, all green) — witnesses: unclamped nll → **inf** at logvar=-100 while the
+  guarded call is finite; head bounds logvar at 500× input scale; FeatureOOD finite
+  before 2 samples / under zero variance.
+
 ## 2026-07-17 (run #3)
 
 - **Clean-GPU absolutes (the 33.5 ms was contention, not a regression).** On the
