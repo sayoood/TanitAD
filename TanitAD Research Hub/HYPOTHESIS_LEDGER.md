@@ -268,3 +268,31 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   in AD PERCEPTION (BEV-seg, depth, VO) but NOT dominant on planning leaderboards (ResNet-34 wins NAVSIM).
   H4 is NOT negative — frozen-DINO was MIS-WIRED, not unfit. New arm = refa-dynin (frozen + yaw-rate input),
   on 2376. See [[refa-bottleneck-diagnosis]] [[speed-input-fix-validated]].
+- 2026-07-18: **H25 PROPOSED (flagship-v3 vision-reliance) + H26 PROPOSED (hierarchical cross-alignment,
+  the CORE-GOAL proof).** Both ADDITIVE to the preserved LeJEPA core (E2E ViT encoder + action-conditioned
+  OperativePredictor + SIGReg rank-stabilization — verified intact through v2, fourbrain.py:195/208/242,
+  flagship_losses total lines 287-299).
+  **H25 — Vision-reliance can be raised by DECOUPLING dynamics from the trained encoder.** Measured problem:
+  imagination panel vision_use only 12.9% — the flagship leans on fed dynamics (v0/yr0) and its trained
+  encoder REDUNDANTLY re-encodes them (yaw R2 0.89 in-latent) instead of spending capacity on scene. The
+  DINO-WM lineage keeps the encoder purely perceptual and puts dynamics in the transition; the trained-encoder
+  analog = discourage encoder-dynamics, free capacity for scene. EVIDENCE-BASED MEASURES (ranked): (1)
+  future-action dropout — ALREADY in v2, VALIDATED as the mechanism (imagination panel D vs E gap); v3 = tune
+  p / schedule it; (2) encoder-ego DECORRELATION aux — penalize mutual-info/linear-predictability between the
+  encoder latent and the fed [v0,yr0], so the encoder stops re-encoding dynamics ("Is Ego Status All You Need"
+  CVPR24 shows decoupling ego-state helps; DINO-WM keeps encoder perceptual); (3) scene-reconstruction aux head
+  (depth/seg from the encoder) — force scene content (DINOv2+Metric3Dv2 division-of-labour, +8.9 IoU); (4)
+  vision-ablation-CONSISTENCY penalty — penalize when mean-replaced vision yields a similar rollout (turn our
+  imagination-panel ablation into a training signal). Falsifier: vision_use fails to rise >15% with the measure
+  at flat ADE. Gate: vision_use >20% AND imagination >12% AND ade@2s non-regress vs v2. Cheapest+strongest =
+  (1)+(2). NOT a v2 change (v2 locked); v3 candidate, measurement-gated.
+  **H26 — Hierarchical cross-layer alignment (strategic->tactical->operative) measurably beats ungrounded
+  selection at each horizon — the CORE-GOAL proof that hierarchical E2E world-understanding+planning is
+  efficient & dominant (Sayed 2026-07-18).** Extends H1/H18. Design a cross-alignment ABLATION study in
+  TanitEval: (a) per-layer conditioning ablation — does strategic ctx improve tactical maneuver/waypoint acc?
+  does tactical intent improve operative rollout ADE? (FiLM-off vs on at each seam); (b) cross-layer agreement
+  metrics — does the strategic route match the tactical maneuver match the operative trajectory (consistency)?
+  (c) grounded-vs-ungrounded selection at each level (H18). Falsifier: ablating a layer's conditioning does NOT
+  hurt the layer below (=> hierarchy is decorative). Gate: each conditioned layer > its unconditioned control,
+  CI-separated, on the canonical val. This becomes a standing TanitEval "hierarchy panel". See
+  [[whole-program-briefing-format]].
