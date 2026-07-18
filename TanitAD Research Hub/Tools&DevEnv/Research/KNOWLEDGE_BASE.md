@@ -3,6 +3,28 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-18] [built] `tools/session_guard.py` — the D-026 session-end stranded-work guard every
+  agent runs (protocol-wired G-F/G-I). BLOCKS on uncommitted hub deliverables; WARNs on unmerged
+  `agent/*` branches vs tip (`rev-list --count tip..branch`; current branch info-only) and on
+  `incoming/*/INTAKE.md` with an unfilled `ORCHESTRATOR VERDICT` older than 3d. Tip defaults to HEAD
+  (origin/main is diverged, `0f93b98`). Stdlib-only, 15 falsifiers 5.2 s. **Live-tree run flagged the
+  real debt: 5 uncommitted hub files / 9 stranded branches / 5 stale INTAKEs (9d/5d)** — impact:
+  G-F/G-I/D-026 — note `2026-07-18-session-guard-…-edgellm.md` §1
+- [2026-07-18] [bug-lesson] `git status --porcelain` parsing: a global `.strip()` on git stdout eats
+  the leading status-column space of the **first** line (` M path` → `M path`) → fixed-offset `[3:]`
+  path parse breaks silently for the first modified file. Use `.rstrip()` (preserve leading). Caught
+  by the guard's own falsifier before ship — impact: all-tooling/G-T1 — note §1
+- [2026-07-18] [tooling] **AlpaSim (`NVlabs/alpasim`) + AlpaGym (`NVlabs/alpagym`) are now PUBLIC,
+  Apache-2.0.** AlpaSim = microservice closed-loop AV sim (NuRec neural renderer, gRPC services,
+  ready policies), eval data `PhysicalAI-AV-NuRec` HF. **AlpaGym RL default 10B policy needs 2 GPUs**
+  → no-go single-4060/A40; reference-only until a 2×A40 pod or a <100M policy swap. AlpaSim is a
+  single-A40 eval-harness smoke-test candidate (GPU-heavy NuRec → not a 4060 job) — impact:
+  P5/H1/H11/closed-loop — [alpasim](https://github.com/NVlabs/alpasim) [alpagym](https://github.com/NVlabs/alpagym)
+- [2026-07-18] [deployment] **TensorRT Edge-LLM (JetPack 7.1)** = current ViT/VLM edge-export path
+  (HF→quantize→ONNX→engine; `--visual_quantization fp8` for ViT). **NVFP4 (4× mem win) is Thor/SM110+
+  (Blackwell) ONLY — Orin cannot run NVFP4, only FP8/INT4.** Rule: lock the target chip first (Orin→
+  FP8/INT8; Thor→NVFP4). Alpamayo-R1-10B weights (~22GB) live on HF (open teacher); 34B-Super still
+  unshipped — impact: C2/P5/Orin-path — [edge-llm](https://developer.nvidia.com/blog/accelerating-llm-and-vlm-inference-for-automotive-and-robotics-with-nvidia-tensorrt-edge-llm/)
 - [2026-07-17] [built] `ci_gate` — one-command self-testing pytest gate (backlog P0.1). Fails on
   pytest failure OR **collection error** (defers to pytest exit code → never a false GREEN), per-test
   >15 s, wall >90 s, or a missing/failing required tripwire (default the I2 encoder batch-consistency

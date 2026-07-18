@@ -7,11 +7,12 @@ Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured nu
 Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stranded branches
 (~15k lines) — that debt class is now YOURS to prevent structurally.
 
-1. **D-026 guardrail (the highest-leverage tool in the fleet):** a session-end check every agent
-   runs (wire into `_common-protocol.md` G-F/G-I): (a) unmerged agent branches vs tip → warn +
-   auto-open the merge; (b) uncommitted deliverable files in hub areas → block session end;
-   (c) INTAKE.md files with empty ORCHESTRATOR VERDICT older than 3 days → escalate list.
-   Deliverable: `tools/session_guard.py` + protocol wiring + a green run on the current tree.
+1. ~~**D-026 guardrail**~~ **DONE (2026-07-18)** — `tools/session_guard.py` + `.ps1` + README + 15
+   falsifiers; protocol-wired into G-F (BLOCK on uncommitted hub deliverables) / G-I (WARN list =
+   stranded-branch check). Live-tree run flagged 5 hub files / 9 branches / 5 stale INTAKEs. Follow-ups
+   (new P0.1a): (i) wire into a real session-end hook so it can't be skipped; (ii) an `--open-merge`
+   mode the ORCHESTRATOR (not agents) runs to auto-land the WARNed branches; (iii) fold the WARN list
+   into the orchestrator's weekly triage input.
 2. **ci_gate extension:** fold the newly-merged suites into the one-command gate — test_lake (9),
    test_refa_flagship_parity, test_eval_behavior (22), the calib trio (test_calib + test_calib_r1
    + test_physicalai_rig as ONE unit), the metric-suite tests (22). Report the new green total +
@@ -38,6 +39,14 @@ Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stra
 
 ## P1
 
+0. **AlpaSim single-A40 eval-harness smoke test** (findings-driven, 2026-07-18 note §2). `NVlabs/alpasim`
+   is now public (Apache-2.0). Method: on an idle A40 pod (pod3/REF-A between runs), clone, pull one
+   `PhysicalAI-AV-NuRec` scene, run the NuRec renderer + runtime with a small policy for a short
+   rollout. Resource: 1×A40; scope the image-pull + render cost FIRST (multi-service, GPU-heavy).
+   Expected: if a rollout fits in one A40's VRAM → AlpaSim becomes a closed-loop eval candidate
+   alongside CARLA; if it needs multi-service multi-GPU → CARLA stays the Phase-0 path. Falsifier:
+   default no-go if a single-scene rollout can't run under 48 GB. AlpaGym (RL) is 2-GPU-gated →
+   explicitly NOT in scope. Deliver as a job card (Colab won't fit; A40 only).
 3. **CARLA graphics-pod recipe — dry-run when a graphics GPU is available** (findings-driven, note
    §1). On any graphics-capable pod: verify `vulkaninfo | grep deviceName` returns the GPU, then
    `Xvfb :99 + CarlaUE4.sh -RenderOffScreen`; measure boot-to-first-rendered-frame + a 100-tick
