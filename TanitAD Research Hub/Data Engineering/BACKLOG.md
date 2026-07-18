@@ -25,10 +25,14 @@ ego-status shortcut pathology; nuScenes is 73.9%). The corpus-diversity gain is 
    kills the per-pod rebuild ritual. PandaSet real-bytes verification (`verify_real_clip`) rides
    pod3 when idle (M-1.4). Deliverable: lake catalog row counts + one pod pulling the lake
    instead of rebuilding.
-3. **Curve-rebalance mix for flagship-v2:** from lake metadata, quantify the straight/gentle/sharp
-   window distribution per source; propose the training mix (turn-weighted sampling) that moves
-   the corpus from 74% straight toward ~55-60%; measure what PandaSet+ZOD actually contribute.
-   This is the data-side half of the REF-B curve failure (the loss-side half shipped in refbpatch).
+3. **Curve-rebalance mix for flagship-v2:** **MEASURED 2026-07-18** (intake `2026-07-18-curve-rebalance/`,
+   12✓): per-source D1-strata on 630 real eps — **comma 83.1% / PhysicalAI 56.0% / natural pool 63.9% straight**;
+   the ~74% ≈ a comma 0.65-0.70 mix. Turn-weight recipe `β=s(1-t)/(t(1-s))` = 1.31→2.22 to hit 57.5%; primary
+   lever is source-mix (shift comma→urban/ZOD/PandaSet, +10pp comma≈+2.7pp straight). **NOW (remaining):**
+   (a) re-run on the ZOD/PandaSet epcaches once real-bytes land (quantify what each urban corpus contributes,
+   as a delta vs comma); (b) **PROPOSE the sampler/mix change to Sayed** (D-018 tactics — ESCALATE, don't flip
+   the live trainer): `WeightedRandomSampler` over `MixedWindowDataset` window strata OR a comma-downweight for
+   flagship-v2. This is the data-side half of the REF-B curve failure (loss-side shipped in refbpatch).
 4. **R1 rectify + rig-cy calib consolidation:** land `calib_r1.py` symbols into
    `stack/tanitad/data/calib.py`, flip PandaSet `_decode_frames` to `pinhole_rectify`, and run
    the THREE calib suites (test_calib, test_calib_r1, test_physicalai_rig) as ONE gate (they
