@@ -32,6 +32,7 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-18: Fleet-review follow-up — external-survey derivation proposes H19 (discrete tactical vocabulary/LAMP), H20 (plan-persistence bridging/BridgeAD), H21 (latent GRPO-RFT/WorldRFT), H22 (shortcut-trained imagination/DreamerAD — pairs with the measured sigma-dissipation), H23 (cost-map decode head/PLAN-S), H24 (oracle-gap curriculum/ACID+our CTRV floor) as PROPOSED (not adopted; falsifiers + gates in Project Steering/Research/2026-07-17-external-survey-derivation.md). All six flagship-v2 levers externally validated (ColaVLA=goal-decode, PLAN-S=ego-to-planners).
 - 2026-07-31 (real wall-clock 2026-07-17): Opponent Analyzer (Fri, run #3) — competitive-evidence deltas
   (no status *upgrade*; design-oracle numbers only, nothing measured on our stack, P8). **H15/A9** gain a
   shipped scenario: **Stationary-Lead** intake pkg (W-08 → H15/A9; **14/14 offline tests**) — the first
@@ -217,3 +218,16 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   (IDM-as-perception) support; comma2k19 real (steer,accel,pose) pairs validated on real bytes;
   steering-ratio calibration residual named as the H7 artifact. H4 unblocked by real corpus.
 - 2026-07-05: Ledger created at kickoff from initial research synthesis.
+- 2026-07-18: REF-C REDESIGN (Sayed-directed) — the tiny-TCP first build was wrong (2022 recipe, unimodal
+  GRU reproduces our 3.38m tactical weakness, not on NAVSIM/Bench2Drive). NEW REF-C = **DiffusionDrive**
+  (anchored truncated-diffusion decoder, 88.1 NAVSIM-v1 PDMS, 60M, ResNet-34, camera-capable; Hydra-MDP++
+  86.6 camera-only) on REF-C's existing ResNet-34 encoder — a DECODER SWAP. Proven urban (NAVSIM/nuPlan)
+  AND highway (VADv2 unseen-Town05 closed-loop; DiffRefiner Bench2Drive 87.1 DS). Multimodal-by-construction
+  = the direct fix for unimodal-regression 3.38m. Our ideas graft at conditioning seams: strategic ctx->FiLM,
+  **tactical maneuver-logits -> anchor priors (VALIDATES H19: our maneuver vocab == the anchor set,
+  propose-and-refine)**, LAW aux, imagination encoder-side, metric-grounding replaces top-1 selection (=
+  Hydra-MDP scoring on LOGGED data, no simulator). DATA FIX: REF-C trains on pod3 /workspace/pai_epcache
+  (physicalai-train-51f40f5ebc21, 320-ep, SAME as REF-A) not comma — the comma run was a path error (missed
+  pai_epcache). vs 1B-VLA (LinkVLA/AnchorVLA): rejected on feasibility (language data + 1B + edge-hostile);
+  even they converge on anchor decoders, so take the component at 60M. Full design: agent transcript +
+  Architecture backlog. Anchor vocab MUST be FPS over OUR trajectories (74%-straight skew kills k-means).
