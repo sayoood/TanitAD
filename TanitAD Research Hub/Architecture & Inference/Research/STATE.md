@@ -1,35 +1,40 @@
 # STATE — Architecture & Inference
 
-LAST_RUN: 2026-07-17 (Wednesday weekly agent — 2 measured experiments on real comma2k19. E1 (NOVEL): the 1-step ImaginationField DISSIPATES epistemic σ + collapses to an attractor under blind K-step rollout (the H11/D8 trigger risk flagged 07-15, now measured, matching "Biased Dreams" 2604.25416); cause = the recursion (freeze-1 is flat-safe); shipped as a prototype with 10✓ metric tests. E2 (INTEGRITY): found a theoretically-superior orthogonality instrument already built 2026-07-10 but unmerged → WITHDREW my duplicate, VERIFIED the prior one (iso_ratio_active 0.254 NOT-YET-ADMISSIBLE) → D-021 = subspace ID not "optimal planning"; flagged the stranded pkg for merge. Created GOALS.md.)
-QUALITY: full (G-A…G-H, G-AI1, G-AI2 met; 3 searches + 2 fetches + 2 measured GPU experiments (2 seeds each) + 1 verifiable increment (blind-rollout diagnostic, 10✓ tests) / ~2.8 h — under caps. G-H #1 (H15/H11/D8, top-risk-adjacent): blind-rollout diagnostic on the trained field, real comma2k19, 4060, $0 — σ log-var −7.79→−8.55 (dissipation), fidelity 0.357→0.011 by k4, attractor cos 0.21→0.57, freeze-1 flat ~0.25 → cap operative self-monitor at 1-step (D-018 escalate, no config change). G-H #2 (H3/D-021): VERIFIED the stranded 07-10 orthogonality instrument, n=2600>S — iso_ratio_active 0.254 NOT-YET-ADMISSIBLE; global isotropy ~0 = over-provisioning by design (not failure). Both instrument-only, G-AI1 honored. No competing intake shipped (duplicate withdrawn, P8). Stack suite 343✓/2s in a fresh worktree, untouched by me.)
-(Calendar: wall-clock 2026-07-17. Dating by wall clock per the Data-Eng precedent.)
+LAST_RUN: 2026-07-18 (Wednesday weekly agent — executed backlog P0.1: re-ran E1+E2 on the OPERATIVE flagship-speed @19k on the eval-pod A40, dropping the 07-17 pre-reset caveat. E1 (blind K-step rollout, 320 windows, 2 seeds): the σ-dissipation + attractor-collapse pathology REPRODUCES on the operative model — falsifier "speed+jerk recipe fixed it" NOT met (cos_rollout→chance by k3; σ_hidden −9.461→−9.564, *lower* absolute σ = worse temporal calibration; attractor 0.219→0.805, sharper). freeze-1 holds 0.213–0.232 flat across 8 horizons (7× persistence) → parallel-horizon confirmed safe on the shipping model. NEW refinement: σ is spatially calibrated (hidden>visible +0.37; err↔var corr +0.29–0.43) but temporally anti-calibrated → target narrows to a horizon-aware σ. E2 (orthogonality, 7,964 latents): iso_ratio_active 0.254→0.546 (SIGReg converging as predicted; crossed 0.5), cond 218→61, but still NOT-YET-ADMISSIBLE (rms_offdiag 0.32>0.1); active_k≈19, cov_eff_rank≈30 ≪ 2048 → readout not the D1 bottleneck (G1) reaffirmed. New branch agent/arch-inf-20260718.)
+QUALITY: full (G-A…G-H, G-AI1, G-AI2, G-I met; RECALL from KB + 2 measured GPU experiments (2 seeds on E1) on the OPERATIVE model + 1 verifiable increment (blind_rollout_flagship.py + run_orthogonality_flagship.py, package 15✓ tests incl. 5 new parity tests) / ~2.5 h — under caps. G-H (both experiments target the TOP program risk directly): E1 blind-rollout on flagship-speed @19k, eval-pod A40, PhysicalAI val, $0 — falsifier REPRODUCES (speed recipe did NOT fix σ-dissipation); E2 orthogonality same ckpt — iso converging 0.254→0.546, still NOT-YET-ADMISSIBLE. Both instrument-only, no config change (D-018), G-AI1 honored (each recommendation names gate+falsifier). Val = PhysicalAI (pod canonical), differs from 07-17 comma — noted (P8); qualitative pathology transfers. Touched zero stack/ files.)
+RESOURCE (G-I): eval pod tanitad-eval (A40 48GB, idle on entry) — 2× blind-rollout seeds (36.4s+34.2s) + 1 orthogonality pass (~40s) + model loads, ~2 min GPU, cost $0 (standing pod, LOCK.arch-inf held). Why not bigger: this IS the pod-scale eval the mandate reserves for the A40 — the 263M flagship ckpt lives on the pod and the 4060 can't hold model+PhysicalAI-val comfortably; Colab unnecessary (job < 2 min). No 4060/Colab needed this run.
+(Calendar: wall-clock 2026-07-18. Dating by wall clock per the Data-Eng precedent.)
 
 ## HANDOFF
 
-No half-done work. Two measured experiments + one intake + bounded sweep this run:
+No half-done work. Backlog P0.1 executed: **E1+E2 re-run on the OPERATIVE flagship-speed @19k**, dropping
+the 07-17 pre-reset caveat. Both are turnkey to re-run at flagship @30k (the last step to decision-grade).
 
-1. **E1 (G-H, top-risk-adjacent) — blind K-step belief-rollout diagnostic** on the trained 1-step
-   ImaginationField (step-6500 base250cam ckpt, real comma2k19 val, 4060, 2 seeds, $0). Rolled fully
-   blind: fidelity **0.357(k1)→0.011(k4=chance)→neg**; **σ dissipates** (hidden log-var −7.79→−8.55 =
-   *more* confident as it decays); **attractor collapse** (inter-sample cos 0.21→0.57, belief energy −11×;
-   true energy flat). **Cause is the recursion:** freezing the k=1 imagination holds **~0.25 flat across 8
-   horizons** and beats persistence. Backlog-0b falsifier MET. **Constraint: cap the operative H15/D8
-   self-monitor at 1-step / parallel-horizon until a multi-step σ is validated** (D-018 escalate; no
-   config change executed). Artifacts: `Implementation/belief_rollout_diagnostic/blind_rollout.py` +
-   `results/2026-07-17-blind_rollout-seed{0,1}.json`. Note (P8): pre-reset directional ckpt.
-2. **E2 (H3/D-021) — VERIFIED a stranded instrument instead of duplicating (P8/D-026 integrity).** Found a
-   theoretically-superior orthogonality instrument already built **2026-07-10** but **unmerged** (branch
-   `worktree-agent-arch-inf-20260710`, intake `incoming/2026-07-10-orthogonality-instrument/`). **Withdrew
-   my duplicate draft**, ran the prior `orthogonality_report` unchanged on step-6500 (n=2600>S): reproduces
-   exactly — active_k 23, **iso_ratio_active 0.254 < 0.5 → NOT-YET-ADMISSIBLE**, cond_active 218, rms_offdiag
-   0.424. Correction: global isotropy ~0 is over-provisioning **by design**, the active-subspace read is the
-   admissibility number. **D-021 = "identifies a low-dim subspace," NOT "optimal planning."** Artifact +
-   merge-recommendation: `Implementation/orthogonality_verification/`. **ORCHESTRATOR: merge the 07-10 pkg.**
-   The G-E increment this run is the E1 blind-rollout diagnostic (`belief_rollout_diagnostic/`, 10✓ tests).
-3. **Bounded sweep (D-013/D-028):** new anchor **"Biased Dreams" (2604.25416)** (latent attractor behaviour
-   → E1's exact prediction); UWM-JEPA / VJEPA / Var-JEPA (σ-grounding routes); JEPA generalization theory
-   (2606.27014); recency scan (cs.RO) → BadWAM (2607.15207) Phase-1 watch. No `Ressources/` folder present.
-4. **Created `GOALS.md` (D-029):** G1 flagship-beats-CV (top risk), G2 safe multi-step H15 σ, G3 FLOPs ledger.
+1. **E1 (G-H, TOP RISK) — blind K-step belief rollout on `flagship-speed` @19k** (WorldModel flagship4b
+   action_dim=3, eval-pod A40, PhysicalAI val, 320 windows, 2 seeds, $0). **Falsifier NOT met — the
+   σ-dissipation + attractor collapse REPRODUCE on the operative model** (the speed+jerk recipe did not fix
+   the recursion). cos_rollout 0.232→chance by **k3**; σ_hidden **−9.461→−9.564** (*lower* absolute σ than
+   the −7.8 pre-reset ckpt = worse temporal calibration); attractor **0.219→0.805** (sharper than 0.57).
+   **freeze-1 holds 0.213–0.232 flat across 8 horizons (7× persistence)** → parallel-horizon confirmed safe
+   on the shipping model. **NEW refinement:** σ is *spatially* calibrated (calib_gap +0.37 hidden>visible;
+   per-cell err↔var corr +0.29–0.43) but *temporally* anti-calibrated → the design target narrows to a
+   **horizon-aware** σ, not a spatial rebuild. Constraint stands: cap operative H15/D8 self-monitor at
+   1-step / parallel-horizon until a multi-step σ is validated (D-018 escalate; no config change executed).
+   Artifacts: `Implementation/belief_rollout_diagnostic/blind_rollout_flagship.py` +
+   `results/2026-07-18-blind_rollout-flagship-speed-seed{0,1}.json`.
+2. **E2 (H3/D-021) — orthogonality on `flagship-speed` @19k** (same ckpt, 7,964 latents). **iso_ratio_active
+   0.254→0.546** (crossed 0.5 — SIGReg converging exactly as the 07-17 note predicted), cond_active 218→61,
+   rms_offdiag 0.42→0.32 — but still **NOT-YET-ADMISSIBLE** (offdiag > 0.1 → LeJEPA optimal-planning corollary
+   still withheld). active_k≈19, cov_eff_rank≈30 ≪ 2048 → **readout capacity is NOT the D1 bottleneck (G1),
+   reaffirmed on the operative model.** Artifact: `Implementation/orthogonality_verification/run_orthogonality_flagship.py`
+   + `2026-07-18-orth-flagship-speed.json`. **The 2026-07-10 orthogonality instrument is STILL UNMERGED
+   (now 3rd+ week) — ORCHESTRATOR: merge `incoming/2026-07-10-orthogonality-instrument/` into stack/tanitad/eval/.**
+3. **G-E increment:** `blind_rollout_flagship.py` + `run_orthogonality_flagship.py` shipped into the existing
+   Implementation packages; added `tests/test_flagship_parity.py` (5 tests pinning the flagship variant's
+   metric primitives bit-for-bit against `blind_rollout`) → **package 15/15 green** (tanitad venv). Touched
+   zero stack/ files.
+4. **GOALS updated (D-029):** G1 movement=yes (readout-not-bottleneck reaffirmed on operative model + iso
+   converging), G2 movement=yes (target sharpened to horizon-aware σ). G3 still carried (not yet 2 runs stale).
 
 ### FLAGGED for orchestrator (not mine to fix)
 - `stack/tests/test_physicalai_rig.py` (untracked PhysicalAI-rig work) still fails **collection** on a bare
@@ -46,11 +51,15 @@ No half-done work. Two measured experiments + one intake + bounded sweep this ru
   anti-attractor term (penalise belief-energy collapse / inter-sample-cosine growth). Target: σ grows with
   horizon, rolled fidelity ≥ freeze-1. Falsifier: σ still dissipates after training → architecture ceiling,
   adopt 0b-B permanently. Reuse `Implementation/belief_rollout_diagnostic/`. **D-018 escalate.**
-- **P0 (decision-grade re-runs the moment the flagship @30k lands) — re-run E1 (blind rollout) + E2
-  (orthogonality) + spectral on the OPERATIVE flagship ckpt.** All three are pre-reset-directional now;
-  they become decision-grade on the operative ckpt and couple to the flagship verdict (G1). Turnkey:
-  `blind_rollout.py` + `run_orthogonality.py` + `run_spectral.py` (stage the val cache so `*val*` doesn't
-  grab `comma_val.tgz`).
+- **P0 (decision-grade re-run the moment the flagship @30k lands) — re-run E1+E2 (+spectral) on flagship
+  @30k.** E1+E2 are now done at the OPERATIVE @19k (2026-07-18): σ-dissipation reproduces (validated), iso
+  converging 0.254→0.546. The @30k re-run is the ONLY remaining step from validated→decision-grade and
+  couples to the flagship-vs-CV verdict (G1). Turnkey on the eval pod (~2 min): the two staged scripts
+  `Implementation/belief_rollout_diagnostic/blind_rollout_flagship.py` +
+  `Implementation/orthogonality_verification/run_orthogonality_flagship.py` (just bump the ckpt if the path
+  changes) + `run_spectral.py`. Expected @30k: σ-dissipation persists (architecture property); iso rises
+  further toward but likely not past admissibility (falsifier for building the whitening lever: iso≥0.7 &
+  offdiag<0.1 → SIGReg gets there alone, drop 3b).
 - **P0 #2b — decision-grade K∈{1,2,4} sweep at OPERATIVE scale** from the pod2 step-8k `ckpt_full.pt`
   (Phase C). Primary metric **`imag_rel` per horizon** (NOT dir-acc — proven to saturate); reuse
   `Implementation/kstep_bakeoff_probe/kstep_bakeoff_probe.py`. **D-018 Tactic → escalate before trained-config.**

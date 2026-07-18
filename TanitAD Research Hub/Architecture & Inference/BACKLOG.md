@@ -13,12 +13,15 @@ them) while goal-latent imagination is strong (cos 0.885 — decode is the bottl
 latent). Your σ-dissipation finding (fidelity dead by k4; freeze-1 holds 0.25) is the third leg of
 the same story: 1-step imagination is good, recursion + decode waste it.
 
-1. **E1+E2 on the operative flagship@30k (drops your pre-reset caveat → decision-grade).**
-   Method: your `Implementation/belief_rollout_diagnostic/blind_rollout.py` + orthogonality
-   instrument, pointed at `/root/models/flagship-speed/ckpt.pt` on the EVAL POD (not the 4060 —
-   model-scale). Cross-read against TanitEval's imagination panel (`results/imag_*.json`).
-   Expected: σ-dissipation reproduces on the speed flagship; falsifier: it doesn't → the speedjerk
-   recipe already fixed it (report which ingredient).
+1. **[✅ DONE at @19k 2026-07-18 — @30k re-run is the only remaining decision-grade step]** E1+E2 re-run on
+   the operative `flagship-speed` @19k (eval pod A40, PhysicalAI val, 2 seeds, $0), dropping the pre-reset
+   caveat. **E1 falsifier NOT met — σ-dissipation + attractor collapse REPRODUCE** (cos_rollout→chance by
+   k3; σ_hidden −9.461→−9.564 = *lower*/worse; attractor 0.219→0.805; freeze-1 flat 0.213–0.232, 7×
+   persistence). NEW: σ spatially-calibrated (+0.37 gap; err↔var +0.29–0.43) but temporally flat → target
+   = **horizon-aware σ**. **E2: iso_ratio_active 0.254→0.546** (SIGReg converging as predicted), cond 218→61,
+   still NOT-YET-ADMISSIBLE (offdiag 0.32>0.1); readout over-provisioned (active_k≈19) → not the D1
+   bottleneck (G1). Artifacts: `blind_rollout_flagship.py` / `run_orthogonality_flagship.py` +
+   `results/2026-07-18-*`. **@30k re-run: turnkey, same two scripts, ~2 min pod — run the day @30k lands.**
 2. **Parallel-horizon imagination decode (your 0b-B) — prototype + measure.** Predict each horizon
    direct-from-last-observation instead of autoregressive feedback; run the SAME imagination panel
    (conditions D/E) with it on the eval pod. Expected: condition-D ADE improves toward ~0.65 (from
@@ -52,12 +55,19 @@ the same story: 1-step imagination is good, recursion + decode waste it.
    Falsifier MET (σ collapses AND rolled fidelity < no-imagination baseline by k≥2). Artifact:
    `Implementation/belief_rollout_diagnostic/` + `Research/2026-07-17-*.md`. **Splits into 0b-A / 0b-B below.**
 
-0b-A. **Prototype multi-step belief-rollout TRAINING (the build).** Supervise the *recursive* path with
-   NLL at k∈{1,2,4} (reuse `ImaginationField`+`sector_mask`), add an anti-attractor term (penalise belief
-   energy collapse / inter-sample cosine growth). Target on a held-out ckpt: **σ grows monotonically with
-   horizon** and rolled fidelity ≥ freeze-1 (~0.25). Resource 4060/idle-pod, $0. **Falsifier:** σ still
-   dissipates after multi-step training → the ImaginationField architecture (not the recipe) is the ceiling
-   → adopt 0b-B permanently. **Gate:** D9 + D8. **D-018:** escalate before trained-config change.
+0b-A. **Prototype multi-step belief-rollout TRAINING (the build). DESIGN ANCHOR: HAUWM/HCU (ICLR2026
+   pZuZWRuPyi) + ELVIS (2605.04709).** The 07-18 operative-model E1 confirmed σ is *spatially* calibrated
+   but *temporally* flat → the target narrows to a **horizon-aware σ**, and HAUWM gives the recipe:
+   train by **sampling random future horizons** and supervise the logvar with a **Horizon-Calibrated
+   Uncertainty loss so predictive variance must GROW with horizon**. Route (a) cheap: HCU-style horizon-
+   sampled variance target on our existing single per-cell logvar head (NLL at k∈{1,2,4} on the *recursive*
+   path + anti-attractor term penalising belief-energy collapse / inter-sample-cosine growth). Route (b):
+   small ensemble (ELVIS) only if the single head cannot express growing σ. **FIRST STEP: fetch the HAUWM
+   arXiv mirror to verify the exact HCU loss form (openreview is gated — search-abstract only so far, P8).**
+   Target on a held-out ckpt: **σ grows monotonically with horizon** AND rolled fidelity ≥ freeze-1 (~0.22).
+   Resource 4060/idle-pod, $0. **Falsifier:** σ still dissipates after HCU-style training → the
+   ImaginationField architecture (not the recipe) is the ceiling → adopt 0b-B permanently. **Gate:** D9 + D8.
+   **D-018:** escalate before trained-config change.
 0b-B. **Parallel-horizon (non-autoregressive) operative imagination — cheap safe default.** Predict each
    horizon directly from the last real observation (like the predictor's parallel heads) instead of
    feeding beliefs back. freeze-1 already shows this recovers ~0.25 flat fidelity with no retrain. Ship as

@@ -3,6 +3,36 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-18] [repo/measured] **OPERATIVE flagship-speed @19k: the σ-dissipation + attractor collapse
+  REPRODUCES (drops the pre-reset caveat); readout isotropy is CONVERGING toward admissibility.** Re-ran
+  E1+E2 (backlog P0.1) on `flagship-speed` (WorldModel flagship4b, action_dim=3, step 19000) on the eval
+  pod A40, canonical PhysicalAI val, 2 seeds, $0. **E1 (blind K-step rollout, 320 windows):** the P0.1
+  falsifier "speed+jerk fixed it" is **NOT met** — cos_rollout dies to chance by **k3** (0.232→0.016→neg),
+  σ_hidden nets **−9.461→−9.564** (more confident as it decays; *lower* absolute σ than the −7.8 pre-reset
+  ckpt = worse temporal calibration), attractor inter-sample cos **0.219→0.805** (sharper than 0.57
+  pre-reset). **freeze-1 holds 0.232→0.213 FLAT across 8 horizons, 7× persistence** → parallel-horizon is
+  the safe operative mode, confirmed on the shipping model. **Refinement:** σ is *spatially* calibrated
+  (calib_gap +0.37 hidden>visible; per-cell err↔var corr +0.29–0.43) but *temporally* anti-calibrated —
+  the design target narrows to a **horizon-aware** σ, not a spatial rebuild. **E2 (orthogonality, 7,964
+  latents):** `iso_ratio_active` **0.254→0.546** (crossed 0.5), `cond_active` **218→61**, `rms_offdiag`
+  0.42→0.32 — SIGReg converging exactly as the 07-17 note predicted; still **NOT-YET-ADMISSIBLE** (offdiag
+  0.32>0.1 → LeJEPA optimal-planning corollary still withheld). active_k≈19, cov_eff_rank≈30 ≪ 2048 →
+  **readout capacity is NOT the D1 bottleneck (G1), reaffirmed on the operative model.** No config change
+  (D-018); decision-grade re-run at @30k is turnkey (both scripts, ~2 min pod). — impact: H15 / H11 / D8 /
+  H3 / D-021 / G1 — `../Research/2026-07-18-operative-flagship-blind-rollout-and-orthogonality.md`
+  + `../Implementation/belief_rollout_diagnostic/blind_rollout_flagship.py`
+- [2026-07-18] [ICLR2026 openreview pZuZWRuPyi] **HAUWM — "Learning to Be Uncertain: Pre-training World
+  Models with Horizon-Calibrated Uncertainty" is the direct design anchor for backlog 0b-A** (the fix for
+  E1's exact failure). A probabilistic-ensemble WM predicts frames at **randomly sampled future horizons**
+  and a **Horizon-Calibrated Uncertainty (HCU) loss** shapes the latent so **predictive variance GROWS with
+  horizon** — precisely the property my 07-18 E1 found MISSING on the flagship (σ dissipates instead). Two
+  routes for 0b-A: (a) HCU-style horizon-sampled variance target on our single logvar head (cheaper, no
+  ensemble; our ImaginationField already emits per-cell logvar — just supervise it against realized
+  multi-horizon error so it must rise); (b) small ensemble à la **ELVIS** (2605.04709, ensemble-calibrated
+  latent imagination for long-horizon visual MPC) if the single head can't express growing σ. **CAVEAT
+  (P8): full text is behind OpenReview verification — mechanism is from the search abstract, the exact HCU
+  loss form is UNVERIFIED; fetch the arXiv mirror before porting.** — impact: H15 / H11 / D8 / D9 (backlog
+  0b-A) — https://openreview.net/forum?id=pZuZWRuPyi · https://arxiv.org/pdf/2605.04709
 - [2026-07-17] [repo/measured] **Blind K-step belief rollout DISSIPATES uncertainty + collapses to an
   attractor — the H11/D8 σ-trigger is anti-calibrated past 1 step.** Rolled the trained 1-step
   ImaginationField fully blind on real comma2k19 (step-6500 base250cam ckpt, 4060, 2 seeds). Hidden-cell

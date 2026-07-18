@@ -32,6 +32,21 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-07-18: Architecture & Inference (Wed) — **E1+E2 re-run on the OPERATIVE flagship-speed @19k
+  (drops the pre-reset step-6500 caveat; eval pod A40, PhysicalAI val, 2 seeds, $0). No status changes.**
+  (1) **H15/H11/D8:** the σ-dissipation + attractor-collapse pathology **REPRODUCES on the operative model**
+  — backlog P0.1 falsifier ("speed+jerk fixed it") **NOT met**. cos_rollout→chance by k3; σ_hidden
+  −9.461→−9.564 (*lower* absolute σ than pre-reset = worse temporal calibration); attractor 0.219→**0.805**
+  (sharper). **freeze-1 holds 0.213–0.232 flat across 8 horizons (7× persistence)** → the *cap operative H15
+  self-monitor at 1-step / parallel-horizon* constraint is confirmed on the shipping model. Refinement: σ is
+  *spatially* calibrated (hidden>visible +0.37; per-cell err↔var corr +0.29–0.43) but *temporally*
+  anti-calibrated → design target narrows to a **horizon-aware** σ (multi-step-rollout training, D-018
+  escalate). (2) **H3/D-021:** readout isotropy **converging as predicted** — iso_ratio_active **0.254→0.546**
+  (crossed 0.5), cond_active 218→61, but still **NOT-YET-ADMISSIBLE** (rms_offdiag 0.32>0.1 → LeJEPA
+  optimal-planning corollary still withheld). active_k≈19, cov_eff_rank≈30 ≪ 2048 → **latent capacity is not
+  the D1 bottleneck (G1), reaffirmed on the operative model.** Decision-grade re-run at flagship @30k is
+  turnkey. The 2026-07-10 orthogonality instrument is **still unmerged** (re-flagged). See
+  `Architecture & Inference/Research/2026-07-18-operative-flagship-blind-rollout-and-orthogonality.md`.
 - 2026-07-31 (real wall-clock 2026-07-17): Opponent Analyzer (Fri, run #3) — competitive-evidence deltas
   (no status *upgrade*; design-oracle numbers only, nothing measured on our stack, P8). **H15/A9** gain a
   shipped scenario: **Stationary-Lead** intake pkg (W-08 → H15/A9; **14/14 offline tests**) — the first

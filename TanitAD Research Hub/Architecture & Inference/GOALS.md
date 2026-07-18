@@ -12,20 +12,24 @@
   ensure the *architecture* is not the bottleneck (readout sizing, conditioning, imagination) when the
   verdict lands.
 - **Instrument:** gate runner D1/D2 + spectral + orthogonality on the flagship ckpt.
-- **This-run step:** E2 verified (readout active-rank ≈23–26/2048, iso_ratio_active 0.254 NOT-YET-admissible)
-  → readout capacity is NOT the binding constraint (over-provisioned *and* under-isotropic); rules out
-  "too small a latent" as the D1 failure cause. Movement: **yes.**
-- **Status:** on-track, gated on flagship @30k (~Jul-19–23).
+- **This-run step (2026-07-18):** E2 re-run on the **operative flagship-speed @19k** (not the pre-reset
+  ckpt): active_k≈19, cov_eff_rank≈30 ≪ 2048 → readout capacity is NOT the D1 bottleneck, **reaffirmed on
+  the shipping model**; and iso_ratio_active **0.254→0.546** (SIGReg converging toward the LeJEPA condition
+  as predicted). Rules out "too small / mis-shaped a latent" as the D1-failure cause. Movement: **yes.**
+- **Status:** on-track, gated on flagship @30k (~Jul-19–23) — E1+E2 re-run is turnkey the day it lands.
 
 ## G2 — Make the H15 imagination edge safe + honest for operative K-step self-monitoring
 - **Target:** an H15 σ signal that **grows monotonically with blind-rollout horizon** (calibrated
   uncertainty) at k∈{1,2,4}, validated by D8 AUROC > 0.85 on degraded-visibility episodes, by **W35
   (≈2026-08-07)**.
-- **This-run step:** E1 measured that the current 1-step field **dissipates σ** (−7.79→−8.55) and
-  **collapses to an attractor** under autoregressive rollout → target quantified, cause localized to the
-  recursion (freeze-1 is flat-safe). Movement: **yes** — baseline established, two design routes framed.
-- **Status:** on-track; next = prototype 0b multi-step-rollout training OR adopt parallel-horizon
-  operative mode (D-018 escalate before trained-config change).
+- **This-run step (2026-07-18):** E1 re-run on the **operative flagship-speed @19k** — σ-dissipation +
+  attractor collapse **REPRODUCE** (falsifier "speed recipe fixed it" NOT met); attractor sharper
+  (→0.805), absolute σ *lower* (worse). Refinement: σ is *spatially* calibrated (hidden>visible +0.37;
+  err↔var corr +0.29–0.43) but *temporally* flat → the target narrows to a **horizon-aware** σ (not a
+  spatial rebuild). freeze-1 flat-safe on the shipping model too. Movement: **yes** — target sharpened,
+  operative baseline set.
+- **Status:** on-track; next = prototype 0b-A multi-step-rollout training (horizon-aware σ + anti-attractor)
+  OR adopt 0b-B parallel-horizon operative mode (D-018 escalate before trained-config change).
 
 ## G3 — Efficiency moat: every architecture lever carries a measured quality-per-FLOP number
 - **Target:** a live FLOPs/latency ledger (backlog #5) auto-appended to every bake-off arm, with batch-1
