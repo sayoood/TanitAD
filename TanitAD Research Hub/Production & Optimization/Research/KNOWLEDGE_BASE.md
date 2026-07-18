@@ -2,6 +2,37 @@
 
 Deltas only, deduplicated, newest first. Each entry: fact + source (repo path or URL).
 
+## 2026-07-18 (run #5)
+
+- **The combined deploy tick is MEASURED — and it equals the sum of the two levers
+  (no interference).** fp16 encoder + CUDA-graph predictor/select, one decision tick,
+  4060 (fp32 ref, tf32 off, step-6500, 64 real windows, 200 reps): **17.75 → 11.16 ms,
+  56.3 → 89.6 Hz, 1.59×**, agreement **96.9 %** (2 flips/64), wp-shift **0.7 cm mean /
+  1.9 cm max**. The measured tick (11.16 ms) matches run #4's additive projection
+  (11.21 ms) to **0.4 %** → the levers compose. Both are needed: fp16 alone → 66.3 Hz,
+  +graph → 89.6 Hz. Source: `Implementation/combined_tick/combined_tick_20260718.json`.
+- **The graph is a ZERO-accuracy-cost latency lever; the only accuracy budget spent is
+  the fp16 encoder.** The 2 selection flips are identical in fp16-eager (no graph), and
+  the graph's own delta was 0.00 m (run #4, same fp32 kernels). Deploy fp16-encoder +
+  graph; keep the ViT tower ≥ fp16 (bf16 unsafe, run #3).
+- **The CUDA graph also lowers latency VARIANCE, not just the mean (clock-robustness).**
+  Graphed select is 1.92× here (8.41 → 4.37 ms) vs run #4's 1.33× (5.94 → 4.45) —
+  because the graphed replay time is near-fixed (~4.4 ms both sessions) while eager
+  scales with the (non-pinnable) GPU clock. Absolute Hz is clock-dependent (89.6 Hz this
+  session vs ~109 Hz at run #3 clocks); the graphed tick is the least clock-sensitive.
+- **P1.4c CLOSED — clean per-precision standalone VRAM (one process, no co-resident
+  reference).** fp32 **1.078 GB** (reproduces run #3's 1.10 GB → harness validated),
+  fp16 **0.560 GB** (**1.93× smaller**). The run #3/#4 fp16 1.65 GB was fp32-reference
+  co-residency pollution — **never quote it**. Source:
+  `Implementation/combined_tick/vram_{fp32,fp16}_20260718.json`.
+- **LIVE ops-fragility: non-atomic milestone-checkpoint archive** (`train_flagship4b.py:337`,
+  `refb_train.py:358`, `refa_train_plus.py:540` — all 3 pod trainers). `shutil.copy2(ckpt, arch)`
+  guarded by `not arch.exists()`: a kill mid-copy leaves `ckpt_step{m}.pt` truncated-but-existing →
+  the guard adopts it forever → the gate protocol `torch.load`s a corrupt milestone → D1/D2/D3
+  crash/garbage. Same silent-corrupt class the atomic *resume* write already guards (that path is
+  clean in every trainer). Fix = copy-to-`.partial` → `os.replace`. Source:
+  `Implementation/incoming/2026-07-18-atomic-milestone-archive/` (4 tests, failing-then-passing).
+
 ## 2026-07-18 (run #4)
 
 - **The batch-1 predictor is launch-bound, and manual CUDA-graph capture is a FREE

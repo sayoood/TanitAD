@@ -1,0 +1,105 @@
+{
+  "exp": "combined-deploy-tick",
+  "mode": "tick",
+  "backlog": "Production&Optimization A3 (run #4): measure the combined fp16+graph tick",
+  "ckpt_step": 6500,
+  "params_billions": 0.2628,
+  "hardware": "RTX 4060 (Orin proxy, I8), batch 1, tf32 off",
+  "tick_def": "decision_tick = encode(1 frame) + select_K9 (identical to run #3/#4)",
+  "tactical_horizon_steps": 4,
+  "n_accuracy_windows": 64,
+  "n_fit_windows": 108,
+  "probe_imag_r2": 0.8595,
+  "reps": 200,
+  "notes": [
+    "reference = fp32 eager tick (encode fp32 + select_K9 fp32).",
+    "fp16_graph = the DEPLOY recipe: fp16 encode + CUDA-graph fp32 select (fp16 state up-cast to fp32 into the graph's static buffers).",
+    "accuracy = END-TO-END decision cost: fp64-probe-decoded K=9 fan under the full recipe vs the fp32-eager reference fan -> agreement %, wp shift (m).",
+    "VRAM here is co-resident (fp32+fp16 worlds) -> NOT trusted; see --mode vram."
+  ],
+  "variants": {
+    "fp32_eager": {
+      "encode_1frame": {
+        "p50_ms": 9.3399,
+        "p95_ms": 9.9283
+      },
+      "select_K9": {
+        "p50_ms": 8.4089,
+        "p95_ms": 10.1703
+      },
+      "decision_tick_p50_ms": 17.7488,
+      "hz": 56.3,
+      "decision": {
+        "selection_agreement": 1.0,
+        "n_flips": 0,
+        "decoded_wp_shift_m_mean": 0.0,
+        "note": "self (reference)"
+      }
+    },
+    "fp16_eager": {
+      "encode_1frame": {
+        "p50_ms": 6.831,
+        "p95_ms": 8.2324
+      },
+      "select_K9": {
+        "p50_ms": 8.2406,
+        "p95_ms": 9.7052
+      },
+      "decision_tick_p50_ms": 15.0716,
+      "hz": 66.3,
+      "decision": {
+        "selection_agreement": 0.9688,
+        "n_flips": 2,
+        "decoded_wp_shift_m_mean": 0.0114,
+        "decoded_wp_shift_m_max": 0.056,
+        "selected_wp_shift_m_mean": 0.0112,
+        "fan_finite": true
+      }
+    },
+    "fp16_graph": {
+      "encode_1frame": {
+        "p50_ms": 6.7843,
+        "p95_ms": 8.1556
+      },
+      "select_K9": {
+        "p50_ms": 4.3749,
+        "p95_ms": 5.1319
+      },
+      "decision_tick_p50_ms": 11.1592,
+      "hz": 89.6,
+      "decision": {
+        "selection_agreement": 0.9688,
+        "n_flips": 2,
+        "decoded_wp_shift_m_mean": 0.0069,
+        "decoded_wp_shift_m_max": 0.0185,
+        "selected_wp_shift_m_mean": 0.0069,
+        "fan_finite": true
+      }
+    }
+  },
+  "SUMMARY": {
+    "fp32_eager": {
+      "decision_tick_ms": 17.7488,
+      "hz": 56.3,
+      "speedup_vs_fp32": 1.0,
+      "selection_agreement": 1.0,
+      "decoded_wp_shift_m_mean": 0.0
+    },
+    "fp16_eager": {
+      "decision_tick_ms": 15.0716,
+      "hz": 66.3,
+      "speedup_vs_fp32": 1.178,
+      "selection_agreement": 0.9688,
+      "decoded_wp_shift_m_mean": 0.0114
+    },
+    "fp16_graph": {
+      "decision_tick_ms": 11.1592,
+      "hz": 89.6,
+      "speedup_vs_fp32": 1.591,
+      "selection_agreement": 0.9688,
+      "decoded_wp_shift_m_mean": 0.0069
+    },
+    "_run4_additive_projection_ms": 11.2059,
+    "_measured_fp16_graph_ms": 11.1592
+  }
+}
