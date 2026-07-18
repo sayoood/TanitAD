@@ -1,34 +1,39 @@
-"""REF-C trainer: behavior-clone TCP-C (tanitad/refs/refc.py) from cached
-episodes.
+"""REF-C trainer: behavior-clone Anchored-Diffusion-C (tanitad/refs/refc.py)
+from cached episodes.
 
-Mirrors scripts/refb_train.py: the SAME fail-loud dataset (imported, not
-copied — FailLoudWindowDataset with the derived nav_cmd/nav_valid/
-route_target fields), the same cached-mode ep_*.pt episode dirs, the same
-atomic-ckpt/resume/jsonl-step-log/--workers machinery. Divergences are the
-POINT of the arm and are deliberate:
+Mirrors scripts/refb_train.py: the SAME fail-loud dataset (imported, not copied
+— FailLoudWindowDataset with the derived nav_cmd/nav_valid/route_target fields),
+the same cached-mode ep_*.pt episode dirs, the same atomic-ckpt/resume/jsonl-
+step-log/--workers machinery. Divergences are the POINT of the arm:
 
-    optimizer   Adam, lr 1e-4 (the TCP paper's operating point — NOT the
-                main run's AdamW/3e-4; batch/warmup/save/log cadence still
-                read programmatically from base250cam_config().train)
-    losses      wp L1 (1.0)           ego-frame waypoints at (5,10,15,20)
-                                      [refc1: fixed-distance path checkpoints
-                                      at (2,5,10,20) m via
-                                      refb_labels.path_targets]
-                control L1 (1.0)      K=4 future (steer, accel) pairs vs
-                                      future_actions[:, :4]
-                speed L1 (0.05)       v at t+5 (0.5 s) / 10.0, image-branch
-                                      head (TCP's anti-shortcut placement)
-                LAW MSE (1.0)         predicted next pooled latent vs the
-                                      no_grad-encoded frames at t+5 (LAW
-                                      bolt-on — replaces Roach distillation)
-                [refc1] speed CE (1.0) target-speed class (4 bins, [0,30] m/s)
+    optimizer   Adam, lr 1e-4 (the DiffusionDrive/TCP operating point — NOT the
+                main run's AdamW/3e-4; batch/warmup/save/log cadence still read
+                programmatically from base250cam_config().train)
+    decoder     --mode {classifier, diffusion}: classifier is the 0-step anchor-
+                selection floor; diffusion refines the winning modes with the
+                truncated-denoise steps (cfg.decoder.diffusion_steps). Both train
+                the SAME weight set (classifier == diffusion at 0 steps).
+    anchors     --anchors <file.pt>: install the FPS anchor vocabulary built by
+                scripts/build_refc_anchors.py (else the model's built-in default
+                synthetic-FPS anchors are used).
+    losses      traj-recon L1   (1.0)  the GT-assigned anchor's reconstructed
+                                       ego-frame trajectory vs the target
+                                       [refc1: fixed-distance path checkpoints
+                                       via refb_labels.path_targets]
+                anchor-cls CE   (1.0)  classify the GT-nearest anchor
+                LAW MSE         (0.5)  predicted next pooled latent vs the
+                                       no_grad-encoded frames at t+5
+                route CE        (0.1)  strategic route-heading aux
+                maneuver CE     (0.1)  kinematic maneuver pseudo-label aux
+                [refc1] speed CE (0.2) target-speed class (4 bins, [0,30] m/s)
 
-v0 = pose_last[:, 3] is ALWAYS fed (the model applies /10 scaling and the
-per-sample ego-dropout p=0.5 internally, training-gated).
+v0 = pose_last[:, 3] is ALWAYS fed (the model applies /10 scaling and the per-
+sample ego-dropout p=0.5 internally, training-gated).
 
 Usage (only AFTER Sayed's GO — implementation ships untrained):
   python scripts/refc_train.py --data-root /workspace/data \
-      --out /workspace/experiments/refc-30k --steps 30000
+      --out /workspace/experiments/refc-30k --steps 30000 --mode diffusion \
+      --anchors /workspace/experiments/refc_anchors.pt
 Smoke (CPU):
   python scripts/refc_train.py --data-root <cache> --out <dir> --steps 10 \
       --batch 8 --smoke --log-every 1
@@ -53,61 +58,78 @@ from tanitad.refs.refc import (RefCModel, param_breakdown, refc_config,
                                refc_smoke_config)
 from tanitad.train.train_worldmodel import cosine_lr
 
-# Loss weights (module docstring). wp/control are the co-equal primaries
-# (this stack IS the action decoder), speed is TCP's 0.05, LAW rides at 1.0
-# (the imagination-error signal this reference is allowed to have).
-WP_WEIGHT = 1.0
-CTRL_WEIGHT = 1.0
-SPEED_WEIGHT = 0.05
-LAW_WEIGHT = 1.0
-SPEED_CLS_WEIGHT = 1.0        # refc1 only
+# Loss weights (module docstring). traj/anchor-cls are the co-equal primaries
+# (this stack IS the trajectory decoder), LAW rides at 0.5, route/maneuver are
+# 0.1 strategic/tactical aux shaping, speed-class (refc1) at 0.2.
+TRAJ_WEIGHT = 1.0
+ANCHOR_CLS_WEIGHT = 1.0
+LAW_WEIGHT = 0.5
+ROUTE_WEIGHT = 0.1
+MANEUVER_WEIGHT = 0.1
+SPEED_CLS_WEIGHT = 0.2        # refc1 only
 
-TCP_LR = 1e-4                 # Adam lr — the TCP paper's operating point
+TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
-SPEED_AHEAD = 5               # speed target: v at t+5 (same 0.5 s horizon)
+SPEED_AHEAD = 5              # refc1 speed target: v at t+5 (same 0.5 s horizon)
 
 
 # ---- losses ------------------------------------------------------------------
 
-def compute_losses(model: RefCModel, batch: dict, device: str = "cpu") -> dict:
+def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
+                   mode: str = "diffusion") -> dict:
     """One forward pass -> all loss components (tensors, differentiable).
 
-    The LAW target is the pooled latent of the frame stack ``LAW_AHEAD``
-    steps past the window, encoded under no_grad through the SAME encoder
-    (spec item 5); the prediction path keeps gradients THROUGH the predicted
-    waypoints — that is the point of the aux."""
+    Anchor assignment: the GT trajectory target is assigned to its NEAREST anchor
+    (flattened L2); anchor-cls CE classifies that index and traj-recon L1
+    regresses the reconstructed trajectory FROM the assigned anchor. The LAW
+    target is the pooled latent LAW_AHEAD steps past the window, encoded under
+    no_grad through the SAME encoder; the prediction path keeps gradients THROUGH
+    the decoded trajectory — the point of the aux. ``mode`` picks the decoder's
+    inference mode (classifier == 0 steps, diffusion == cfg.diffusion_steps)."""
     frames = batch["frames"].to(device)            # [B, W, C, H, W']
     fut_frames = batch["future_frames"].to(device)  # [B, Hmax, C, H, W']
-    fut_actions = batch["future_actions"].to(device)   # [B, Hmax, 2]
     fut_poses = batch["future_poses"].to(device)   # [B, Hmax, 4]
     pose_last = batch["pose_last"].to(device)      # [B, 4]
     nav_cmd = batch["nav_cmd"].to(device)          # [B] long (derived)
-    v0 = pose_last[:, 3]                           # [B] current ego speed (t0)
+    nav_valid = batch["nav_valid"].to(device)      # [B] bool
+    route_tgt = batch["route_target"].to(device)   # [B] long
+    v0 = pose_last[:, 3]                            # [B] current ego speed (t0)
 
-    out = model(frames, nav_cmd=nav_cmd, v0=v0)
+    steps = model.cfg.decoder.diffusion_steps if mode == "diffusion" else 0
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps)
     cfg = model.cfg
-    k_ctrl = cfg.control.k
+    b = frames.shape[0]
 
-    # Waypoint L1: time-indexed ego-frame targets, or (refc1) fixed-distance
-    # path checkpoints via the arc-length resample.
+    # Trajectory target: time-indexed ego-frame waypoints, or (refc1) fixed-
+    # distance path checkpoints via the arc-length resample.
     if cfg.refc1:
-        wp_tgt = refb_labels.path_targets(pose_last, fut_poses, cfg.path_dists)
+        traj_tgt = refb_labels.path_targets(pose_last, fut_poses, cfg.path_dists)
     else:
-        wp_tgt = refb_labels.waypoint_targets(pose_last, fut_poses,
-                                              cfg.trajectory.horizons)
-    loss_wp = (out["wp_seq"] - wp_tgt).abs().mean()
+        traj_tgt = refb_labels.waypoint_targets(pose_last, fut_poses,
+                                                cfg.trajectory.horizons)
 
-    # Control L1: K future action pairs vs the recorded expert actions.
-    loss_ctrl = (out["actions"] - fut_actions[:, :k_ctrl]).abs().mean()
+    # Anchor assignment: nearest anchor to the GT trajectory (flattened L2).
+    anchors = model.decoder.anchors.to(traj_tgt.dtype)     # [N, S, 2]
+    dist = ((traj_tgt[:, None] - anchors[None]) ** 2).sum(dim=(-1, -2))  # [B, N]
+    a_star = dist.argmin(dim=1)                            # [B]
 
-    # Speed L1: v at t+SPEED_AHEAD / 10, image-branch head.
-    speed_tgt = fut_poses[:, SPEED_AHEAD - 1, 3] / 10.0
-    loss_speed = (out["speed_pred"] - speed_tgt).abs().mean()
+    # anchor-cls CE + traj-recon L1 (reconstruction FROM the assigned anchor).
+    loss_cls = F.cross_entropy(out["anchor_logits"], a_star)
+    recon = out["anchor_traj"][torch.arange(b, device=device), a_star]
+    loss_traj = (recon - traj_tgt).abs().mean()
 
     # LAW latent MSE: no_grad target through the same encoder.
     with torch.no_grad():
         law_tgt = model.encode_pooled(fut_frames[:, LAW_AHEAD - 1])
     loss_law = (out["law_pred"] - law_tgt).pow(2).mean()
+
+    # Maneuver CE (kinematic pseudo-labels) + route-heading CE (valid-masked,
+    # falling back to all windows so the head always trains).
+    man_tgt = refb_labels.window_maneuver_labels(
+        pose_last, fut_poses, horizon=max(cfg.trajectory.horizons))
+    loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
+    mask = nav_valid if bool(nav_valid.any()) else torch.ones_like(nav_valid)
+    loss_route = F.cross_entropy(out["route_logits"][mask], route_tgt[mask])
 
     # refc1: target-speed classification (bins over [0, speed_max]).
     if cfg.refc1:
@@ -121,12 +143,15 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu") -> dict:
         loss_speed_cls = torch.zeros((), device=out["pooled"].device)
         speed_mae = torch.zeros((), device=out["pooled"].device)
 
-    loss = (WP_WEIGHT * loss_wp + CTRL_WEIGHT * loss_ctrl
-            + SPEED_WEIGHT * loss_speed + LAW_WEIGHT * loss_law
-            + SPEED_CLS_WEIGHT * loss_speed_cls)
-    return {"loss": loss, "wp": loss_wp, "ctrl": loss_ctrl,
-            "speed": loss_speed, "law": loss_law,
+    loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
+            + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
+            + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls)
+    anchor_acc = (out["anchor_logits"].argmax(dim=1) == a_star).float().mean()
+    man_acc = (out["maneuver_logits"].argmax(dim=1) == man_tgt).float().mean()
+    return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
+            "route": loss_route, "man": loss_man,
             "speed_cls": loss_speed_cls, "speed_mae": speed_mae,
+            "anchor_acc": anchor_acc, "man_acc": man_acc,
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
             "pooled": out["pooled"]}
 
@@ -159,10 +184,16 @@ def train(args) -> dict:
     cfg = refc_smoke_config() if args.smoke else refc_config()
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
     model = RefCModel(cfg).to(device)
+    # Install the FPS anchor vocabulary (else the built-in default anchors).
+    if args.anchors:
+        anc = torch.load(args.anchors, map_location=device, weights_only=True)
+        anc = anc["anchors"] if isinstance(anc, dict) else anc
+        model.decoder.load_anchors(anc.to(device))
+        print(f"[refc] loaded {tuple(anc.shape)} anchors from {args.anchors}",
+              flush=True)
     opt = torch.optim.Adam(model.parameters(), lr=lr)
 
-    max_h = max(max(cfg.trajectory.horizons), cfg.control.k,
-                LAW_AHEAD, SPEED_AHEAD)
+    max_h = max(max(cfg.trajectory.horizons), LAW_AHEAD, SPEED_AHEAD)
     train_eps, train_dir = load_cached_episodes(args.data_root, "*train*",
                                                 args.episodes)
     ds = FailLoudWindowDataset(train_eps, window=cfg.window, max_horizon=max_h,
@@ -172,21 +203,21 @@ def train(args) -> dict:
     dl_kw = dict(batch_size=batch, shuffle=True, drop_last=True)
     if getattr(args, "workers", 0) > 0:
         dl_kw.update(num_workers=args.workers, persistent_workers=True,
-                     prefetch_factor=4, pin_memory=True)
+                     prefetch_factor=2, pin_memory=True)
     dl = DataLoader(ds, **dl_kw)
     print(f"[refc] train: {len(train_eps)} episodes / {len(ds)} windows "
-          f"from {train_dir}", flush=True)
+          f"from {train_dir} (mode={args.mode})", flush=True)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "config.json").write_text(json.dumps(
-        {"arch": "REF-C (TCP-C)", "cfg": dataclasses.asdict(cfg),
-         "args": vars(args),
-         "optimizer": {"kind": "Adam (TCP paper)", "lr": lr,
+        {"arch": "REF-C (Anchored-Diffusion-C)",
+         "cfg": dataclasses.asdict(cfg), "args": vars(args),
+         "optimizer": {"kind": "Adam (DiffusionDrive/TCP)", "lr": lr,
                        "warmup": warmup, "schedule": "cosine (main run's)"},
-         "loss_weights": {"wp": WP_WEIGHT, "ctrl": CTRL_WEIGHT,
-                          "speed": SPEED_WEIGHT, "law": LAW_WEIGHT,
-                          "speed_cls": SPEED_CLS_WEIGHT},
+         "loss_weights": {"traj": TRAJ_WEIGHT, "cls": ANCHOR_CLS_WEIGHT,
+                          "law": LAW_WEIGHT, "route": ROUTE_WEIGHT,
+                          "man": MANEUVER_WEIGHT, "speed_cls": SPEED_CLS_WEIGHT},
          "param_breakdown": param_breakdown(model)},
         indent=2, default=str), encoding="utf-8")
 
@@ -218,7 +249,7 @@ def train(args) -> dict:
         t_data += time.perf_counter() - t_d0
 
         opt.zero_grad(set_to_none=True)
-        out = compute_losses(model, batch_d, device)
+        out = compute_losses(model, batch_d, device, mode=args.mode)
         out["loss"].backward()
         gnorm = float(torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0))
         opt.step()
@@ -231,10 +262,11 @@ def train(args) -> dict:
             sc = lambda t: round(float(t.detach()), 5)  # noqa: E731
             last_log = {
                 "step": step, "loss": sc(out["loss"]),
-                "wp": sc(out["wp"]), "ctrl": sc(out["ctrl"]),
-                "speed": sc(out["speed"]), "law": sc(out["law"]),
-                "speed_cls": sc(out["speed_cls"]),
+                "traj": sc(out["traj"]), "cls": sc(out["cls"]),
+                "law": sc(out["law"]), "route": sc(out["route"]),
+                "man": sc(out["man"]), "speed_cls": sc(out["speed_cls"]),
                 "speed_mae": sc(out["speed_mae"]),
+                "anchor_acc": sc(out["anchor_acc"]), "man_acc": sc(out["man_acc"]),
                 "nav_follow_frac": sc(out["nav_follow_frac"]),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
@@ -259,11 +291,11 @@ def train(args) -> dict:
         with torch.no_grad():
             vb = torch.utils.data.default_collate(
                 [vds[i] for i in range(min(16, len(vds)))])
-            vout = compute_losses(model, vb, device)
+            vout = compute_losses(model, vb, device, mode=args.mode)
         metrics["val"] = {k: round(float(vout[k]), 5)
-                          for k in ("wp", "ctrl", "speed", "law",
-                                    "speed_cls", "speed_mae",
-                                    "nav_follow_frac")}
+                          for k in ("traj", "cls", "law", "route", "man",
+                                    "speed_cls", "speed_mae", "anchor_acc",
+                                    "man_acc", "nav_follow_frac")}
     except AssertionError:
         pass                                        # no val cache dir
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2),
@@ -280,10 +312,17 @@ def main(argv=None):
                          "ep_*.pt (the train_worldmodel --data cached layout)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--steps", type=int, default=30000)
+    ap.add_argument("--mode", choices=("classifier", "diffusion"),
+                    default="diffusion",
+                    help="decoder mode: classifier = 0-step anchor selection "
+                         "floor; diffusion = truncated-denoise refinement")
+    ap.add_argument("--anchors", default=None,
+                    help="FPS anchor vocabulary .pt (build_refc_anchors.py); "
+                         "default = the model's built-in synthetic-FPS anchors")
     ap.add_argument("--batch", type=int, default=None,
                     help="default: the main run's batch (base250cam)")
     ap.add_argument("--lr", type=float, default=None,
-                    help=f"default: the TCP paper's Adam lr ({TCP_LR})")
+                    help=f"default: the TCP/DiffusionDrive Adam lr ({TCP_LR})")
     ap.add_argument("--episodes", type=int, default=0, help="0 = all")
     ap.add_argument("--warmup", type=int, default=None,
                     help="default: the main run's warmup (base250cam, 2000)")
