@@ -41,6 +41,8 @@ from tanitad.refs.refa import refa_predictor_config
 
 K_MAX = max(WP_STEPS)
 SPEED_SCALE = 10.0        # MUST match refa_train_plus.SPEED_SCALE
+DT = 0.1                  # MUST match refa_train_plus.DT
+YAW_SCALE = 1.0           # MUST match refa_train_plus.YAW_SCALE
 
 
 class EpWrap:
@@ -56,7 +58,7 @@ class EpWrap:
 
 @torch.no_grad()
 def collect(model, step_readout, episodes, corpora, device, window, fwd_k,
-            stride, batch, speed_input=False):
+            stride, batch, speed_input=False, feed_yaw=False):
     S_wp, GT, CV, EID, COR, SPD, HDG = [], [], [], [], [], [], []
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
     need_ahead = max(K_MAX, fwd_k)
@@ -79,6 +81,18 @@ def collect(model, step_readout, episodes, corpora, device, window, fwd_k,
                                dim=-1)
                 fa = torch.cat([fa, v0.unsqueeze(1).expand(-1, fa.shape[1], -1)],
                                dim=-1)
+            if feed_yaw:
+                # yaw-rate at t=0 from the last two OBSERVED frames (leakage-safe;
+                # the SAME quantity training's yawrate0 fed). Appended AFTER v0 so
+                # the channel order is [.., v0, yr0], matching the trainer. NO
+                # ego-dropout at eval (the guard is training-only).
+                dyaw = ep.poses[last, 2] - ep.poses[last - 1, 2]
+                yr = (torch.atan2(torch.sin(dyaw), torch.cos(dyaw))
+                      / DT / YAW_SCALE).to(device).reshape(-1, 1)     # [b, 1]
+                aw = torch.cat([aw, yr.unsqueeze(1).expand(-1, aw.shape[1], -1)],
+                               dim=-1)
+                fa = torch.cat([fa, yr.unsqueeze(1).expand(-1, fa.shape[1], -1)],
+                               dim=-1)
             states = model.encode_window(fw)                       # [b, W, S]
             wp_full, _ = rollout_decode(model.predictor, states, aw, fa,
                                         step_readout, fwd_k)        # [b, fwd_k, 2]
@@ -97,18 +111,21 @@ def collect(model, step_readout, episodes, corpora, device, window, fwd_k,
 
 def build_model(args):
     """Match the trainer's build so ck['model'] loads strict."""
+    # action_dim = 2 + v0 (--speed-input) + yaw-rate (--yaw-input/--dyn-input),
+    # IDENTICAL to refa_train_plus.train so ck['model'] loads strict.
+    adim = 2 + int(args.speed_input) + int(args.yaw_input or args.dyn_input)
     if args.four_brain:
         cfg = flagship4b_config()
-        if args.speed_input:
-            object.__setattr__(cfg.predictor, "action_dim", 3)
+        if adim > 2:
+            object.__setattr__(cfg.predictor, "action_dim", adim)
             if cfg.tactical_pred is not None:
-                object.__setattr__(cfg.tactical_pred, "action_dim", 3)
+                object.__setattr__(cfg.tactical_pred, "action_dim", adim)
         return RefAModelPlus.from_stack_config(cfg, n_tokens=256,
                                                adapter_kind=args.adapter,
                                                d_dino=args.d_dino)
     pc = refa_predictor_config()
-    if args.speed_input:
-        pc = dataclasses.replace(pc, action_dim=3)
+    if adim > 2:
+        pc = dataclasses.replace(pc, action_dim=adim)
     return RefAModelPlus(pc, adapter_kind=args.adapter, d_dino=args.d_dino)
 
 
@@ -127,9 +144,16 @@ def main():
     ap.add_argument("--adapter", default="temporal")
     ap.add_argument("--four-brain", action="store_true")
     ap.add_argument("--speed-input", action="store_true")
+    ap.add_argument("--yaw-input", action="store_true",
+                    help="match a --yaw-input trainer (append yaw-rate channel)")
+    ap.add_argument("--dyn-input", action="store_true",
+                    help="match a --dyn-input trainer (append yaw-rate channel; "
+                         "the ego-dropout guard is training-only, so eval feeds "
+                         "the true [v0, yr0])")
     ap.add_argument("--d-dino", type=int, default=768,
                     help="768 = DINOv2-B/14, 1280 = I-JEPA ViT-H/14")
     args = ap.parse_args()
+    feed_yaw = args.yaw_input or args.dyn_input
     assert args.fwd_k >= K_MAX
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -157,13 +181,13 @@ def main():
     window = model.pred_cfg.window
     print(f"[refa4b-grounded] {len(episodes)} val eps, step {step}, window "
           f"{window}, fwd_k {args.fwd_k}, state_dim {model.state_dim}, "
-          f"four_brain={args.four_brain} speed_input={args.speed_input}, "
-          f"dev {device}", flush=True)
+          f"four_brain={args.four_brain} speed_input={args.speed_input} "
+          f"feed_yaw={feed_yaw}, dev {device}", flush=True)
 
     with strict_numerics():
         data = collect(model, step_readout, episodes, corpora, device, window,
                        args.fwd_k, args.stride, args.batch,
-                       speed_input=args.speed_input)
+                       speed_input=args.speed_input, feed_yaw=feed_yaw)
         n = data["pred"].shape[0]
         splits = [split_by_episode(data["eid"], args.val_frac, s)
                   for s in range(args.seed, args.seed + args.n_splits)]
@@ -211,7 +235,8 @@ def main():
                         "n_splits": args.n_splits, "val_frac": args.val_frac,
                         "waypoint_steps": list(WP_STEPS),
                         "four_brain": args.four_brain,
-                        "speed_input": args.speed_input},
+                        "speed_input": args.speed_input,
+                        "yaw_input": args.yaw_input, "dyn_input": args.dyn_input},
         "grounded_rollout_heldout": rollout_metrics,
         "grounded_rollout_full_set": full,
         "constant_velocity_heldout": cv_metrics,

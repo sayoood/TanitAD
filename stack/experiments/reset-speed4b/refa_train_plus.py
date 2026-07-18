@@ -47,9 +47,61 @@ from tanitad.train.train_worldmodel import cosine_lr  # noqa: E402
 
 DT = 0.1
 SPEED_SCALE = 10.0        # normalize m/s targets like pose_scale
+# Yaw-rate (rad/s) normalizer for the --dyn-input/--yaw-input action channel.
+# 1.0 == raw rad/s, mirroring flagship_losses' proven ego vector [v0/pose_scale,
+# yr0] (yr0 is fed raw there): highway yaw-rate is already O(0.1-1) rad/s, so the
+# act_emb Linear self-scales it. Kept as a named constant (like SPEED_SCALE) so a
+# single edit re-tunes it if the yaw channel turns out under/over-weighted.
+YAW_SCALE = 1.0
+EGO_DROPOUT_DEFAULT = 0.25  # --dyn-input anti-shortcut guard p (flagship-v2 parity)
 # 4-brain loss weights (mirror tanitad.train.flagship_losses.LossWeights defaults
 # so REF-A's four brains train to the SAME objective as the flagship's).
 FB_TACPRED_W, FB_GOAL_W, FB_WP_W, FB_MAN_W, FB_ROUTE_W = 0.5, 0.5, 1.0, 0.5, 0.5
+
+
+def _append_ego(actions, fut_actions, batch, device, *, speed_input=False,
+                yaw_input=False, dyn_input=False, ego_dropout=0.0, training=False):
+    """Append the ego-motion conditioning channel(s) to BOTH the action window
+    and the future actions (the operative/transition sees them at every step),
+    the SAME broadcast v0 uses. Returns (actions, fut_actions) unchanged when no
+    ego channel is requested (default-off == byte-identical, so existing
+    speed-input / vanilla checkpoints load and reproduce exactly).
+
+      speed_input           : append v0 = pose_last.v / SPEED_SCALE   (action_dim +1)
+      yaw_input OR dyn_input : ALSO append yr0 = wrap(yaw_t - yaw_{t-1})/dt / YAW_SCALE
+                              from OBSERVED poses only (batch['yawrate0'], t<=0,
+                              leakage-safe)                            (action_dim +1)
+
+    Channel ORDER is [.., v0, yr0] (v0 first, matching the pre-existing
+    speed-input runs). This SUPPLIES the dynamics the frozen DINO encoder cannot
+    decode (measured yaw R2 0.37 held-out) — the proven DINO-WM/LAW pattern.
+
+    Anti-shortcut guard (``dyn_input`` only): in TRAINING, per-sample Bernoulli-
+    zero the WHOLE [v0, yr0] ego vector with p=``ego_dropout`` so the predictor
+    cannot become a pure kinematic integrator and vision must still carry the
+    scene (mirrors flagship-v2 ``v2_ego_dropout`` / refbpatch v0-dropout). The
+    guard is ``training``-gated: OFF in eval, which always feeds the true ego
+    vector. Plain ``yaw_input`` (the pre-dyn variant) is deliberately UNguarded.
+    """
+    feed_yaw = yaw_input or dyn_input
+    if not (speed_input or feed_yaw):
+        return actions, fut_actions
+    chans = []
+    if speed_input:
+        chans.append(batch["pose_last"].to(device).float()[:, 3:4] / SPEED_SCALE)
+    if feed_yaw:
+        yr0 = batch["yawrate0"].to(device).float().reshape(-1, 1) / YAW_SCALE
+        chans.append(yr0)
+    ego = torch.cat(chans, dim=-1)                       # [B, n_ego]
+    if dyn_input and training and ego_dropout > 0.0:
+        keep = (torch.rand(ego.shape[0], 1, device=device)
+                >= ego_dropout).to(ego.dtype)
+        ego = ego * keep                                 # zero the JOINT vector
+    actions = torch.cat(
+        [actions, ego.unsqueeze(1).expand(-1, actions.shape[1], -1)], dim=-1)
+    fut_actions = torch.cat(
+        [fut_actions, ego.unsqueeze(1).expand(-1, fut_actions.shape[1], -1)], dim=-1)
+    return actions, fut_actions
 
 
 def compute_losses_plus(model, batch, rollout_k, device="cpu", *,
@@ -59,6 +111,7 @@ def compute_losses_plus(model, batch, rollout_k, device="cpu", *,
                         aux_heads=None, aux_speed_weight=1.0,
                         aux_yaw_weight=1.0, aux_accel_weight=1.0,
                         scale_weight=0.5, jerk_weight=0.0, speed_input=False,
+                        yaw_input=False, dyn_input=False, ego_dropout=0.0,
                         four_brain=False, fb_cfg=None, goal_h=20) -> dict:
     """refa_train.compute_losses (verbatim core) + FIX-1b aux/scale terms
     (+ the full 4-brain joint loss when ``four_brain`` — strategic route CE,
@@ -69,10 +122,13 @@ def compute_losses_plus(model, batch, rollout_k, device="cpu", *,
     actions = batch["actions"].to(device)
     fut_feats = batch["future_feats"].to(device)
     fut_actions = batch["future_actions"].to(device)
-    if speed_input:
-        v0 = batch["pose_last"].to(device).float()[:, 3:4] / SPEED_SCALE  # current ego-speed at t=0
-        actions = torch.cat([actions, v0.unsqueeze(1).expand(-1, actions.shape[1], -1)], dim=-1)
-        fut_actions = torch.cat([fut_actions, v0.unsqueeze(1).expand(-1, fut_actions.shape[1], -1)], dim=-1)
+    # ego-motion conditioning: v0 (--speed-input) and/or yaw-rate yr0
+    # (--yaw-input / guarded --dyn-input), appended as extra action channels the
+    # frozen encoder can't decode. Guard (dyn-input) is model.training-gated.
+    actions, fut_actions = _append_ego(
+        actions, fut_actions, batch, device, speed_input=speed_input,
+        yaw_input=yaw_input, dyn_input=dyn_input, ego_dropout=ego_dropout,
+        training=model.training)
 
     states = model.encode_window(feats)
     fut_states = model.encode_window(fut_feats)
@@ -276,11 +332,36 @@ def _class_weighted_ce(logits, target, n_classes, clamp=10.0):
     return F.cross_entropy(logits, target, weight=w.to(logits.dtype))
 
 
-class FeatureWindowDataset4B(base.FeatureWindowDataset):
-    """base feature windows + the 4-brain pseudo-labels (mirrors the flagship's
-    FlagshipWindowDataset): the maneuver class from the window's 2 s future
-    kinematics, and the strategic nav_cmd / nav_valid / route_target from the
-    FULL episode poses at the window anchor (25 s route lookahead — the SAME
+class _Yawrate0Mixin:
+    """Adds ``yawrate0`` = wrap(yaw[anchor] - yaw[anchor-1]) / DT (rad/s) from the
+    last two OBSERVED frames (anchor = t+window-1, so t<=0 — leakage-safe), the
+    proprioceptive yaw-rate the --yaw-input / --dyn-input action channel feeds.
+
+    Kept as a plus-module mixin so the SHARED base ``FeatureWindowDataset``
+    (scripts/refa_train.py, used by the real refa_train.py) is untouched. window
+    >= 2 always, so anchor-1 >= 1 >= 0. Cooperative super() — the mixin sits
+    ABOVE base in the MRO, so both the plain and 4B datasets inherit yawrate0."""
+
+    def __getitem__(self, i):
+        item = super().__getitem__(i)
+        e_i, t = self.index[i]
+        anchor = t + self.window - 1
+        po = self.episodes[e_i]["poses"]
+        item["yawrate0"] = (refb_labels.wrap_to_pi(po[anchor, 2] - po[anchor - 1, 2])
+                            / DT).float()
+        return item
+
+
+class FeatureWindowDatasetDyn(_Yawrate0Mixin, base.FeatureWindowDataset):
+    """Plain (non-4-brain) REF-A+ windows + yawrate0, for --yaw-input/--dyn-input
+    runs that do NOT build the 4-brain hierarchy."""
+
+
+class FeatureWindowDataset4B(_Yawrate0Mixin, base.FeatureWindowDataset):
+    """base feature windows + yawrate0 + the 4-brain pseudo-labels (mirrors the
+    flagship's FlagshipWindowDataset): the maneuver class from the window's 2 s
+    future kinematics, and the strategic nav_cmd / nav_valid / route_target from
+    the FULL episode poses at the window anchor (25 s route lookahead — the SAME
     refb_labels derivation the flagship uses, so REF-A and the flagship read
     identical label semantics)."""
 
@@ -290,7 +371,7 @@ class FeatureWindowDataset4B(base.FeatureWindowDataset):
         self.maneuver_h = maneuver_h
 
     def __getitem__(self, i):
-        item = super().__getitem__(i)
+        item = super().__getitem__(i)      # base window + _Yawrate0Mixin yawrate0
         e_i, t = self.index[i]
         p_last = item["pose_last"]
         p1 = item["future_poses"][self.maneuver_h - 1]
@@ -317,19 +398,25 @@ def train(args) -> dict:
         # flagship uses, so every shared brain is byte-for-byte the same shape;
         # the encoder (adapter vs from-scratch ViT) is the only model-axis diff.
         fb_cfg = flagship4b_config()
-        if args.speed_input:
-            object.__setattr__(fb_cfg.predictor, "action_dim", 3)
+        # action_dim = 2 base (steer, accel) + v0 (--speed-input) + yaw-rate
+        # (--yaw-input/--dyn-input). Off = 2 -> byte-identical to the base build.
+        adim = 2 + int(args.speed_input) + int(args.yaw_input or args.dyn_input)
+        if adim > 2:
+            object.__setattr__(fb_cfg.predictor, "action_dim", adim)
             if fb_cfg.tactical_pred is not None:
-                object.__setattr__(fb_cfg.tactical_pred, "action_dim", 3)
+                object.__setattr__(fb_cfg.tactical_pred, "action_dim", adim)
         model = RefAModelPlus.from_stack_config(
-            fb_cfg, n_tokens=256, adapter_kind=args.adapter).to(device)
+            fb_cfg, n_tokens=256, adapter_kind=args.adapter,
+            d_dino=args.d_dino).to(device)
         pred_cfg = fb_cfg.predictor
         goal_h = max(fb_cfg.tactical_policy.waypoint_horizons)
     else:
         pred_cfg = smoke_pred_config() if args.smoke else refa_predictor_config()
-        if args.speed_input:
-            pred_cfg = dataclasses.replace(pred_cfg, action_dim=3)
-        model = RefAModelPlus(pred_cfg, adapter_kind=args.adapter).to(device)
+        adim = 2 + int(args.speed_input) + int(args.yaw_input or args.dyn_input)
+        if adim > 2:
+            pred_cfg = dataclasses.replace(pred_cfg, action_dim=adim)
+        model = RefAModelPlus(pred_cfg, adapter_kind=args.adapter,
+                              d_dino=args.d_dino).to(device)
     metric_heads = base.build_metric_heads(model.state_dim, device)
     mid_horizons = list(pred_cfg.horizons)
     which = []
@@ -351,7 +438,8 @@ def train(args) -> dict:
                      aux_yaw_weight=args.aux_yaw_weight,
                      aux_accel_weight=args.aux_accel_weight,
                      scale_weight=args.scale_weight, jerk_weight=args.jerk_weight,
-                     speed_input=args.speed_input,
+                     speed_input=args.speed_input, yaw_input=args.yaw_input,
+                     dyn_input=args.dyn_input, ego_dropout=args.ego_dropout,
                      four_brain=args.four_brain, fb_cfg=fb_cfg, goal_h=goal_h)
     save_heads = dict(metric_heads)
     if aux_heads:
@@ -365,8 +453,12 @@ def train(args) -> dict:
         max_h = max([max_h, goal_h, maneuver_h] + tac_h)
     train_eps, train_dir = base.load_feature_episodes(args.data_root, "*train*",
                                                       args.episodes)
+    feed_yaw = args.yaw_input or args.dyn_input
     if args.four_brain:
         ds = FeatureWindowDataset4B(train_eps, pred_cfg.window, max_h, maneuver_h)
+    elif feed_yaw:
+        # non-4B yaw/dyn run needs yawrate0 threaded into the batch.
+        ds = FeatureWindowDatasetDyn(train_eps, pred_cfg.window, max_h)
     else:
         ds = base.FeatureWindowDataset(train_eps, pred_cfg.window, max_h)
     assert len(ds) >= args.batch, f"only {len(ds)} windows for batch {args.batch}"
@@ -488,6 +580,25 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="auto")
     ap.add_argument("--speed-input", action="store_true", help="feed current ego-speed v0 as 3rd action channel")
+    ap.add_argument("--yaw-input", action="store_true",
+                    help="feed current yaw-rate psi_dot as an extra action channel "
+                         "(proprioception the frozen vision can't decode, yaw R2 "
+                         "0.37 held-out); appended after v0. UNGUARDED (pre-dyn "
+                         "variant) — prefer --dyn-input for new runs")
+    ap.add_argument("--dyn-input", action="store_true",
+                    help="refa-dynin: feed yaw-rate as a conditioning channel next "
+                         "to v0 (SUPPLY dynamics, DINO-WM/LAW pattern) WITH the "
+                         "anti-shortcut ego-dropout guard on [v0, yr0] "
+                         "(--ego-dropout). Requires --speed-input. Keeps the "
+                         "encoder frozen; only the adapter/predictor train")
+    ap.add_argument("--ego-dropout", type=float, default=EGO_DROPOUT_DEFAULT,
+                    help="p(zero the WHOLE [v0, yr0] ego vector) per sample in "
+                         "TRAINING under --dyn-input, so vision must still carry "
+                         "the scene (flagship-v2 v2_ego_dropout parity); 0 = off. "
+                         "Always off in eval (training-gated)")
+    ap.add_argument("--d-dino", type=int, default=768,
+                    help="encoder feature dim of the precomputed grids "
+                         "(768 = DINOv2-B/14, 1280 = I-JEPA ViT-H/14)")
     ap.add_argument("--four-brain", action="store_true",
                     help="build+train the FULL 4-brain (strategic route + "
                          "tactical maneuver/goal-waypoint/goal-latent + tactical-"
@@ -496,6 +607,11 @@ def main(argv=None):
                          "and objective as the flagship (encoder is the only diff)")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args(argv)
+    # --dyn-input feeds the JOINT [v0, yr0] ego vector and guards it as a unit, so
+    # v0 must be present (task: yaw-rate sits "next to v0", action_dim 3 -> 4).
+    if args.dyn_input:
+        assert args.speed_input, "--dyn-input requires --speed-input (the guard " \
+            "zeros the joint [v0, yr0] ego vector; v0 must be fed)"
     return train(args)
 
 

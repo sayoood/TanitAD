@@ -61,8 +61,8 @@ class RefAModelPlus(RefAModel):
                          n_tokens=n_tokens, grid=grid,
                          grid_d_readout=grid_d_readout, **kw)
         if temporal:
-            self.adapter = TemporalGridAdapter(n_tokens, 768, grid=grid,
-                                               d_readout=grid_d_readout)
+            self.adapter = TemporalGridAdapter(n_tokens, kw.get("d_dino", 768),
+                                               grid=grid, d_readout=grid_d_readout)
             assert self.adapter.out_dim == self.state_dim, \
                 (self.adapter.out_dim, self.state_dim)
             self.adapter_kind = "temporal"
