@@ -247,3 +247,24 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   frozen-purity. Directly answers Sayed's "frozen-encoder solving the task from vision": it doesn't; the
   path is LoRA. Validates the leakage-guard theme (episode-split matters). Artifacts pod3
   /workspace/tmp/refa_distgate/. See [[refa-bottleneck-diagnosis]] [[speed-input-fix-validated]].
+- 2026-07-18: **H4 REFRAMED — the RED verdict was the EXPECTED result, not a death knell (deep DINO-in-AD
+  analysis, cited).** No proven frozen-DINO system expects the encoder to carry ego-DYNAMICS. The entire
+  DINO-world-model lineage (DINO-WM ICML25, DINO-world/Back-to-the-Features Meta FAIR, DINO-Foresight, LAW
+  ICLR25, World4Drive ICCV25, GAIA-1/2, Vista) uses frozen features for SCENE/GEOMETRY ONLY and feeds
+  proprioception/actions (speed, yaw-rate, curvature, waypoints) SEPARATELY as first-class conditioning,
+  with dynamics living in the ACTION-CONDITIONED TRANSITION model (predict future features). Our speed-vs-yaw
+  asymmetry (0.56 vs 0.37) is CONFIRMING: yaw is a pure between-frame rotation with no single-frame
+  appearance signature — DINO-VO (RA-L25) had to BOLT ON geometric-matcher+pose-head to get ego-motion from
+  frozen DINO; a per-frame semantic encoder neither does nor should encode yaw. **=> LoRA-unfreeze is the
+  WRONG axis** (it improves SCENE features +8-9 IoU on BEV-seg but CANNOT manufacture a cross-frame quantity
+  from a single-frame encoder, and adds overfit risk on 2376 eps — misdiagnoses a temporal gap as a
+  feature-adaptation gap). **CORRECTED REF-A PLAN (supersedes the LoRA rec of the prior entry):** #1 keep
+  DINO FROZEN, feed YAW-RATE/steering as an input channel (the EXACT fix that took speed R2 0.61->0.965 via
+  v0-as-action-channel — extend to rotation; we have yaw-rate in the log) — the yaw deficit becomes
+  irrelevant, not something to fix; #2 condition the world-model transition on ego-action (our 4-brain
+  already is this shape); #3 cost-volume/flow neck over consecutive frozen patch-grids ONLY if we want
+  vision to DERIVE yaw (DINO-VO/DINO-Tracker pattern) — reserve for vision-only inference/aux; #4 DEMOTE LoRA
+  (r=4-8, last-2-4 blocks) to a SCENE-polish applied after #1/#2, NOT the yaw fix. Honesty: DINOv2 is proven
+  in AD PERCEPTION (BEV-seg, depth, VO) but NOT dominant on planning leaderboards (ResNet-34 wins NAVSIM).
+  H4 is NOT negative — frozen-DINO was MIS-WIRED, not unfit. New arm = refa-dynin (frozen + yaw-rate input),
+  on 2376. See [[refa-bottleneck-diagnosis]] [[speed-input-fix-validated]].
