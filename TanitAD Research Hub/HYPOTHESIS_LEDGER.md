@@ -231,3 +231,19 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   pai_epcache). vs 1B-VLA (LinkVLA/AnchorVLA): rejected on feasibility (language data + 1B + edge-hostile);
   even they converge on anchor decoders, so take the component at 60M. Full design: agent transcript +
   Architecture backlog. Anchor vocab MUST be FPS over OUR trajectories (74%-straight skew kills k-means).
+- 2026-07-18: **H4 CLOSES NEGATIVE (decision-grade, distill pre-gate on pod3, RED).** Frozen DINOv2-B/14
+  features LACK generalizable ego-dynamics — a frozen-encoder + small-adapter design is capped below the
+  trained-encoder ceiling and cannot solve the task from vision. Method: distill the flagship's trained
+  encoder latents into a frozen-DINO adapter, probe speed/yaw R2 held-out. **CRITICAL protocol finding:
+  the verdict flips on the split.** FRAME-split (leaky, adjacent 100ms frames near-identical) gives raw-DINO
+  speed R2 0.986 = GREEN artifact; the HONEST held-out-EPISODE split gives speed 0.56 / yaw 0.37 = RED.
+  Distill converged on train (cos 0.9998) but FAILED to generalize (held cos 0.60) and never beat a plain
+  linear read of raw DINO (0.559 <= 0.596) -> the ADAPTER is not the bottleneck, the FEATURES are. Real
+  deficit = YAW/rotation: frozen 0.37 vs flagship-latent 0.89 (only 42% recovered; speed 0.60 vs 0.67 is
+  ~89%, and v0 is injected as an action channel anyway). End-to-end training shaped the flagship encoder to
+  expose yaw geometrically; frozen DINO entangles it with appearance. **RECOMMENDATION: do NOT spend
+  refa-distaux-30k; LoRA-unfreeze the last-k DINO blocks instead** (low-rank grads reshape features to
+  expose yaw — the mechanism behind the flagship's 0.89). This is the H4' reframe: minimal adaptation, not
+  frozen-purity. Directly answers Sayed's "frozen-encoder solving the task from vision": it doesn't; the
+  path is LoRA. Validates the leakage-guard theme (episode-split matters). Artifacts pod3
+  /workspace/tmp/refa_distgate/. See [[refa-bottleneck-diagnosis]] [[speed-input-fix-validated]].
