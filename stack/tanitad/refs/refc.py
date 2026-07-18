@@ -285,16 +285,17 @@ def refc_config() -> RefCConfig:
 
 
 def refc_small_config() -> RefCConfig:
-    """REF-C-small ~28 M — the low end of the size-vs-data scaling study
-    (small 28 M / base 104 M / XL 252 M on the IDENTICAL 2376-ep set: a ~9x
-    capacity range read via the 5k/15k/20k/30k milestone gates, to see where
-    bigger helps vs overfits on our data). A plain ResNet-34 trunk (base_width
-    64, blocks (3,4,6,3) -> ~21 M encoder) + a lean d=256 / 3-layer / 64-anchor
+    """REF-C-small ~55 M — the RESEARCH-anchored size (DiffusionDrive's proven
+    ~60 M scale: NAVSIM 88.1 PDMS). Low end of the size-vs-data scaling study
+    (small 55 M / base 104 M / XL 252 M on the IDENTICAL 2376-ep set, read via
+    the 5k/15k/20k/30k milestone gates, to see where bigger helps vs overfits on
+    our data). Encoder base_width 64 + deeper blocks (3,6,16,6) -> ~48 M trunk
+    (V2-class depth at ResNet-34 width) + the d=256 / 3-layer / 64-anchor
     decoder; same anchored-diffusion algorithm + LAW + strategic-ctx as base/XL,
-    imagination OFF. Tests pin the 22-35 M band."""
+    imagination OFF. Tests pin the 45-65 M band."""
     cfg = RefCConfig()
     cfg.encoder = CNNEncoderConfig(in_channels=9, image_size=256, base_width=64,
-                                   blocks=(3, 4, 6, 3))
+                                   blocks=(3, 6, 16, 6))
     cfg.decoder = DecoderConfig(d=256, n_heads=4, layers=3, ff_mult=4,
                                 aux_hidden=256, diffusion_steps=2, noise_std=0.1)
     cfg.anchors = AnchorConfig(n_anchors=64, pool_size=2048)
