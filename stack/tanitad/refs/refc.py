@@ -284,6 +284,24 @@ def refc_config() -> RefCConfig:
     return RefCConfig()
 
 
+def refc_small_config() -> RefCConfig:
+    """REF-C-small ~28 M — the low end of the size-vs-data scaling study
+    (small 28 M / base 104 M / XL 252 M on the IDENTICAL 2376-ep set: a ~9x
+    capacity range read via the 5k/15k/20k/30k milestone gates, to see where
+    bigger helps vs overfits on our data). A plain ResNet-34 trunk (base_width
+    64, blocks (3,4,6,3) -> ~21 M encoder) + a lean d=256 / 3-layer / 64-anchor
+    decoder; same anchored-diffusion algorithm + LAW + strategic-ctx as base/XL,
+    imagination OFF. Tests pin the 22-35 M band."""
+    cfg = RefCConfig()
+    cfg.encoder = CNNEncoderConfig(in_channels=9, image_size=256, base_width=64,
+                                   blocks=(3, 4, 6, 3))
+    cfg.decoder = DecoderConfig(d=256, n_heads=4, layers=3, ff_mult=4,
+                                aux_hidden=256, diffusion_steps=2, noise_std=0.1)
+    cfg.anchors = AnchorConfig(n_anchors=64, pool_size=2048)
+    cfg.strategic = StrategicCtxConfig(hidden=512, d_ctx=64)
+    return cfg
+
+
 def refc_xl_config() -> RefCConfig:
     """REF-C-XL ~260 M (flagship-matched capacity control — same-capacity vs the
     261 M flagship, removing the "REF-C is worse because smaller" confound). SAME
