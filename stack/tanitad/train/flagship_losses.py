@@ -39,6 +39,7 @@ from tanitad.models.metric_dynamics import (HierarchicalGrounding,
                                             grounding_losses, gt_ego_waypoints)
 from tanitad.models.predictor import change_weighted_mse
 from tanitad.models.sigreg import position_relaxed
+from tanitad.train.decorr import ego_decorr_loss, ego_linear_r2
 from tanitad.train.train_worldmodel import _pred_losses, _rollout_loss
 
 
@@ -117,6 +118,32 @@ def _class_weighted_ce(logits: Tensor, target: Tensor, n_classes: int,
     return F.cross_entropy(logits, target, weight=w.to(logits.dtype))
 
 
+def anchor_tactical_loss(tac: dict, anchors: Tensor, wp_tgt: Tensor,
+                         pose_scale: float) -> tuple[Tensor, Tensor, Tensor]:
+    """The TIME-anchored (DiffusionDrive/REF-C) tactical objective — replaces the
+    unimodal wp L2 when ``v2_anchor_tactical`` is on. ONE implementation shared by
+    the flagship loss and REF-A's four-brain loss (both arms hold the SAME
+    :class:`~tanitad.models.fourbrain.AnchoredTacticalDecoder`).
+
+    The GT 2 s ego waypoints ``wp_tgt`` [B, S, 2] are assigned to their NEAREST
+    anchor (flattened L2 over the fixed vocabulary ``anchors`` [N, S, 2]); the
+    anchor-cls CE classifies that index and the winner-takes-all L1 regresses ONLY
+    the assigned anchor's refined trajectory (``tac["anchor_traj"]``). Regressing
+    the assigned anchor ALONE — never pulling every anchor to GT — is what
+    preserves multimodality (mirrors scripts/refc_train's 1.0/1.0 CE/L1 recipe).
+    The WTA L1 is pose-scaled so the returned ``loss_wp`` stays comparable to the
+    old unimodal wp term (same ``weights.wp`` knob). Returns
+    ``(loss_wp := cls + wta, loss_cls, loss_wta)``."""
+    b = wp_tgt.shape[0]
+    a = anchors.to(wp_tgt.dtype)                              # [N, S, 2]
+    dist = ((wp_tgt[:, None] - a[None]) ** 2).sum(dim=(-1, -2))   # [B, N]
+    a_star = dist.argmin(dim=1)                              # [B]
+    loss_cls = F.cross_entropy(tac["anchor_logits"], a_star)
+    recon = tac["anchor_traj"][torch.arange(b, device=wp_tgt.device), a_star]
+    loss_wta = ((recon - wp_tgt) / pose_scale).abs().mean()
+    return loss_cls + loss_wta, loss_cls, loss_wta
+
+
 # --------------------------------------------------------------------------- #
 # The shared joint loss                                                        #
 # --------------------------------------------------------------------------- #
@@ -129,10 +156,12 @@ class LossWeights:
     wp: float = 1.0             # tactical GOAL waypoint L2
     man: float = 0.5            # maneuver CE
     route: float = 0.5          # strategic route CE
+    route_vis: float = 0.3      # LEVER A: nav-zeroed route-from-vision aux CE
     invdyn: float = 2.0         # hierarchical metric-invdyn (per level)
     fwd: float = 1.0            # hierarchical forward-consistency (per level)
     sigreg: float = 0.1
     inv: float = 0.5            # action inverse-dynamics (A5)
+    decorr: float = 0.05        # LEVER B: encoder<->ego linear decorrelation
 
 
 def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
@@ -167,6 +196,8 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     # ego = [v0/pose_scale, yr0] from OBSERVED poses only (t and t-1) — the
     # tactical wp heads were speed-starved (3.38 m vs operative 0.628).
     ego = None
+    ego_full = None                             # LEVER B: UNdropped ego (decorr tgt)
+    keep_mask = None                            # shared ego/v0 dropout mask
     if getattr(cfg, "v2_ego_to_planners", False):
         v0n = pose_last[:, 3:4] / pose_scale
         pose_prev = batch.get("pose_prev")
@@ -177,10 +208,34 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
         else:                                   # old cache path: no t-1 pose
             yr0 = torch.zeros_like(pose_last[:, 2])
         ego = torch.cat([v0n, yr0.unsqueeze(1)], dim=1)          # [B, 2]
+        ego_full = ego                          # capture BEFORE dropout: the TRUE
+                                                # fed dynamics the encoder must not
+                                                # re-encode (decorr target, LEVER B)
         p_ed = float(getattr(cfg, "v2_ego_dropout", 0.0))
         if model.training and p_ed > 0.0:      # shortcut guard (ChauffeurNet)
-            keep = (torch.rand(ego.shape[0], 1, device=device) >= p_ed)
-            ego = ego * keep.to(ego.dtype)
+            keep_mask = (torch.rand(ego.shape[0], 1, device=device) >= p_ed)
+            ego = ego * keep_mask.to(ego.dtype)
+
+    # ---- v0 speed-input: the PROVEN 3rd operative action channel --------------
+    # flagship-speed 0.628 m vs nospeed 2.918 m (89.4% win); ckpt forensics:
+    # act_emb.0.weight (768, 3). v0 = t=0 (last-input-frame) speed ONLY,
+    # constant-expanded over the window AND the future actions — never a future
+    # speed (leakage-safe). SPEED_SCALE contract with
+    # eval_grounded_rollout_4b_speed.py: divide by 10.0. Under v2 the SAME
+    # ego-dropout keep-mask zeroes this channel jointly with the planner ego
+    # vector (anti-kinematic-integrator guard; refa-dynin pattern).
+    if getattr(cfg, "speed_input", False):
+        v0a = pose_last[:, 3:4] / 10.0                        # [B, 1]
+        if keep_mask is not None:
+            v0a = v0a * keep_mask.to(v0a.dtype)
+        actions = torch.cat(
+            [actions, v0a.unsqueeze(1).expand(-1, actions.shape[1], -1)],
+            dim=-1)
+        if fut_actions is not None:
+            fut_actions = torch.cat(
+                [fut_actions,
+                 v0a.unsqueeze(1).expand(-1, fut_actions.shape[1], -1)],
+                dim=-1)
     nav_in = nav_cmd
     p_nd = float(getattr(cfg, "v2_nav_dropout", 0.0))
     if model.training and p_nd > 0.0:          # lever 5: route from VISION
@@ -219,7 +274,17 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     wp_h = cfg.tactical_policy.waypoint_horizons
     wp_pred = torch.stack([tac["waypoints"][k] for k in wp_h], dim=1)   # [B,H,2]
     wp_tgt = gt_ego_waypoints(pose_last, future_poses, wp_h)
-    loss_wp = ((wp_pred - wp_tgt) / pose_scale).pow(2).mean()
+    # v2 lever 8: TIME-anchored multi-anchor tactical decoder — nearest-anchor CE
+    # + winner-takes-all L1 (multimodal) REPLACES the unimodal wp L2. wp_pred is
+    # still derived (shim off the selected traj) so the jerk penalty below and any
+    # downstream tac["waypoints"] reader keep working. loss_cls/loss_wta default 0.
+    loss_cls = torch.zeros((), device=device)
+    loss_wta = torch.zeros((), device=device)
+    if getattr(cfg, "v2_anchor_tactical", False) and "anchor_traj" in tac:
+        loss_wp, loss_cls, loss_wta = anchor_tactical_loss(
+            tac, model.tactical_policy.anchor_decoder.anchors, wp_tgt, pose_scale)
+    else:
+        loss_wp = ((wp_pred - wp_tgt) / pose_scale).pow(2).mean()
     goal_tgt = fut_states[:, idx_of[plan.goal_h - 1]]
     prev_goal = fut_states[:, idx_of[plan.goal_h - 2]] if plan.goal_h >= 2 else z_t
     loss_goal = (change_weighted_mse(tac["target_latent"], goal_tgt, prev_goal)
@@ -261,12 +326,31 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
         loss_route = torch.zeros((), device=device)
         route_acc = torch.zeros((), device=device)
 
+    # ---- LEVER A: route-FROM-vision aux (v2_route_from_vision) -----------------
+    # The strategic route head is a pure command-echo (H26/H25: route_skill_vs_
+    # chance 0.0, follow-acc == base rate). v2_nav_dropout already zeroes nav 50%
+    # of the time in the MAIN CE, but stochastically. This adds an ALWAYS-ON,
+    # DETERMINISTIC aux: a SECOND strategic pass with nav FORCED to follow(0)
+    # (ego still fed — proprioception is not the command), class-weighted CE vs
+    # the true route on the valid mask, so route-from-vision trains EVERY step.
+    # Reuses the existing route_head (no new params). 0 when off or no valid nav.
+    loss_route_vis = torch.zeros((), device=device)
+    if getattr(cfg, "v2_route_from_vision", False) and bool(nav_valid.any()):
+        nav_follow = torch.zeros_like(nav_cmd)          # force follow(0) every row
+        strat_vis = model.strategic_policy(states, nav_follow, ego=ego)
+        loss_route_vis = _class_weighted_ce(
+            strat_vis["route_logits"][nav_valid], route_tgt[nav_valid], n_route)
+
     # ---- hierarchical metric grounding (op/tac/str) ---------------------------
+    # Part A loss-rebalance: cfg.v2_invdyn_gradscale (default 1.0 = no-op) softly
+    # decouples the invdyn REAL-PAIR term (a) from the encoder; term (b), JEPA,
+    # SIGReg untouched. getattr keeps non-v2 cfgs / REF-A byte-identical.
     loss_ground, g_parts, g_log = grounding_losses(
         grounding, model.predictor, states, fut_states, actions, fut_actions,
         pose_last, future_poses, idx_of, plan.level_cfg, pose_scale,
         invdyn_weight=weights.invdyn, fwd_weight=weights.fwd,
-        fwd_step_weight=fwd_step_weight)
+        fwd_step_weight=fwd_step_weight,
+        invdyn_gradscale=getattr(cfg, "v2_invdyn_gradscale", 1.0))
 
     # ---- SIGReg (variant) -----------------------------------------------------
     z_pred_all = torch.cat([preds[k] for k in cfg.predictor.horizons])
@@ -284,6 +368,19 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     a_hat = model.inv_dyn(states[:, -2], states[:, -1])
     loss_inv = (a_hat - actions[:, -2]).pow(2).mean()
 
+    # ---- LEVER B: encoder<->ego linear decorrelation (v2_encoder_ego_decorr) --
+    # Penalize z_t being LINEARLY predictive of the fed ego [v0, yr0] so the
+    # trained encoder stops REDUNDANTLY re-encoding dynamics (H25: yaw R2 0.89 in-
+    # latent) and frees capacity for SCENE. Grad flows to the ENCODER (via z_t);
+    # ego_full carries no grad. ego_r2 is a DETACHED linear-probe proxy (lower =
+    # less re-encoding) — logged only, never a training gradient. No-op (0, no log
+    # key) when the lever is off OR ego is None (non-v2). tanitad.train.decorr.
+    loss_decorr = torch.zeros((), device=device)
+    ego_r2 = None
+    if getattr(cfg, "v2_encoder_ego_decorr", False) and ego_full is not None:
+        loss_decorr = ego_decorr_loss(z_t, ego_full)
+        ego_r2 = ego_linear_r2(z_t, ego_full)
+
     total = (weights.pred * loss_pred
              + weights.tacpred * loss_tacpred
              + weights.roll * loss_roll
@@ -291,17 +388,20 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
              + weights.wp * loss_wp
              + weights.man * loss_man
              + weights.route * loss_route
+             + weights.route_vis * loss_route_vis  # LEVER A (0 when off)
              + loss_ground                       # weights applied inside
              + weights.sigreg * loss_sig
              + weights.inv * loss_inv
+             + weights.decorr * loss_decorr      # LEVER B (0 when off)
              + 1.0 * loss_goalwp                 # v2 lever 4 (0 when off)
              + w_jerk * loss_jerk)               # v2 lever 6 (0 when off)
 
     parts = {"pred": loss_pred, "tacpred": loss_tacpred, "roll": loss_roll,
-             "goal": loss_goal, "wp": loss_wp, "man": loss_man,
-             "route": loss_route, "sigreg": loss_sig, "inv": loss_inv,
-             "ground": loss_ground, "goalwp": loss_goalwp, "jerk": loss_jerk,
-             **g_parts}
+             "goal": loss_goal, "wp": loss_wp, "cls": loss_cls, "wta": loss_wta,
+             "man": loss_man, "route": loss_route, "route_vis": loss_route_vis,
+             "sigreg": loss_sig, "inv": loss_inv, "ground": loss_ground,
+             "decorr": loss_decorr, "goalwp": loss_goalwp,
+             "jerk": loss_jerk, **g_parts}
     log = {"goalwp": loss_goalwp.item(), "v2jerk": loss_jerk.item(),
            "pred": loss_pred.item(), "tacpred": loss_tacpred.item(),
            "roll": loss_roll.item(), "goal": loss_goal.item(),
@@ -312,4 +412,16 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
            "ground": loss_ground.item(),
            "nav_valid_frac": round(float(nav_valid.float().mean()), 4),
            **g_log}
+    # v2 lever 8 anchored-tactical diagnostics (only when the decoder ran).
+    if getattr(cfg, "v2_anchor_tactical", False) and "anchor_traj" in tac:
+        log.update({"cls": loss_cls.item(), "wta": loss_wta.item(),
+                    "n_modes": int(tac["n_modes"]),
+                    "conf_norm": round(float(tac["conf_norm"]), 4),
+                    "prior_norm": round(float(tac["prior_norm"]), 4)})
+    # LEVER A / LEVER B diagnostics — gated so default-off adds NO log keys.
+    if getattr(cfg, "v2_route_from_vision", False):
+        log["route_vis"] = loss_route_vis.item()
+    if ego_r2 is not None:                       # lever on AND ego present
+        log["decorr"] = loss_decorr.item()
+        log["ego_r2"] = round(float(ego_r2), 4)  # DETACHED vision-reliance proxy
     return total, log, parts

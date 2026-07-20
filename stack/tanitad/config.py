@@ -170,6 +170,71 @@ class StackConfig:
     v2_goal_decode: bool = False       # (4) goal-conditioned trajectory head
     v2_nav_dropout: float = 0.0        # (5) nav-command dropout (route from vision)
     v2_traj_jerk: float = 0.0          # (6) jerk penalty on predicted wp paths
+    v2_gated_intent: bool = False      # (7) ReZero gate on the operative intent
+                                       # term (H26: ungated intent diluted the
+                                       # action conditioning; net-harmful)
+    v2_anchor_tactical: bool = False   # (8) TIME-anchored multi-anchor (Diffusion
+                                       # Drive-style) tactical decoder: REPLACES
+                                       # the unimodal TacticalPolicy.wp_heads with
+                                       # an FPS anchor vocabulary + per-anchor
+                                       # conf/offset (nearest-anchor CE + WTA L1),
+                                       # curing the 3.4 m tactical weakness. H19
+                                       # maneuver->anchor prior is zero-init gated.
+                                       # Off == no extra params (v1 ckpts resume).
+    # ---- v3 vision-reliance levers (fleet directive 2026-07-18). Attack the
+    # measured flagship-30k weaknesses; both PARAMETER-FREE (loss-side only) so
+    # default-off is byte-identical AND on adds NO params (v1/v2 ckpts resume).
+    v2_route_from_vision: bool = False  # (9) LEVER A: an always-on nav-ZEROED
+                                       # route aux (class-weighted CE, reusing the
+                                       # strategic route_head) trains route-FROM-
+                                       # vision EVERY step, independent of the
+                                       # stochastic v2_nav_dropout. Fixes the
+                                       # command-echo strategic head (H26/H25:
+                                       # route_skill_vs_chance 0.0, follow-acc ==
+                                       # base rate). Off == no aux term, no log key.
+    v2_encoder_ego_decorr: bool = False  # (10) LEVER B: a LINEAR decorrelation
+                                       # penalty between the pooled encoder latent
+                                       # z_t and the fed ego [v0, yr0] so the
+                                       # trained encoder stops REDUNDANTLY re-
+                                       # encoding dynamics (H25: yaw R2 0.89 in-
+                                       # latent, vision_use ~12%) and frees
+                                       # capacity for scene. tanitad.train.decorr;
+                                       # conservative weight. No-op when ego is
+                                       # None (non-v2). Off == no penalty, no log
+                                       # key. Logs a DETACHED ego_r2 proxy.
+    # v0 speed-input — the PROVEN operative fix (flagship-speed 0.628 m beats
+    # CV 0.825; nospeed plateaued 2.918 m). The v1 run trained with this via a
+    # pod-side trainer that was never committed (review 2026-07-18); this flag
+    # commits it. Trainer sets predictor/tactical_pred action_dim 2 -> 3;
+    # flagship_losses appends v0 = pose_last[:,3]/10.0 (SPEED_SCALE contract
+    # with eval_grounded_rollout_4b_speed.py) to actions + future_actions.
+    speed_input: bool = False
+    # ---- Part A loss-rebalance (research 2026-07-18-loss-rebalance-and-lewm-
+    # decode.md). A straight-through gradient SCALE on the encoder-latent inputs
+    # (z_t, fut_states) as they feed the metric-inverse-dynamics REAL-PAIR term
+    # (a) of grounding_losses — that term ONLY. Softly decouples the static
+    # ego-motion probe (weight 2.0x3=6.0 of encoder-shaping mass) from the encoder
+    # trunk while leaving (i) the invdyn HEAD probes at full learning rate, (ii)
+    # the forward-consistency ROLLOUT term (b) that PRODUCES the protected 0.033 m
+    # fwd-ADE fully attached, and (iii) JEPA/SIGReg untouched. 1.0 = today exactly
+    # (byte-identical, LOSS-SIDE ONLY so param count is unchanged and ckpts
+    # resume); 0.25 = the recommended v2 start; 0.0 = full probe-detach of (a).
+    # Ablation gate {1.0, 0.5, 0.25, 0.0} at the 5k mid-checkpoint. Loss-side, so
+    # default-off adds NO params and NO log keys.
+    v2_invdyn_gradscale: float = 1.0
+    # ---- v2 label derivation (curvature-relative strategic/tactical targets,
+    # scripts/refb_labels.py v2 additions). A DATA-SIDE gate — NOT a model/loss
+    # lever: it adds NO params and changes NO state_dict keys, only the TARGET
+    # labels the window dataset emits. When True the datasets derive nav_cmd /
+    # nav_valid / route_target via the curvature-relative v2 path (nav_command_v2
+    # / route_target_v2 — a road-following curve is no longer a route `turn`, and
+    # AMBIGUOUS junction windows carry nav_valid=False so they drop out of the
+    # route CE AND the route-from-vision aux) and the maneuver label via
+    # classify_maneuver_v2. Default-off == byte-identical v1 labels (same
+    # functions, same values). Set by the flagship trainer's --v2 (independently
+    # overridable with --labels-v2 / --no-labels-v2). REF-B stays v1 unless its
+    # own path opts in.
+    v2_labels: bool = False
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), indent=2, default=str)

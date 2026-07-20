@@ -59,10 +59,17 @@ class OperativePredictor(nn.Module):
     the hierarchy). ``intent=None`` reproduces the base behaviour exactly; base
     models build the predictor with ``intent_dim=None`` (no extra params), so a
     vanilla WorldModel checkpoint stays a strict subset of a 4b one.
+
+    ``gated_intent`` (v2 lever 7): add a ReZero-style learnable scalar gate on the
+    intent term (H26 — the ungated intent_proj norm ~31.4 COMPETED WITH act_emb
+    ~28.3, diluting the action conditioning; engaging intent measured net-harmful
+    to the operative). Init 0.1 so it starts action-dominant and grows only if
+    training earns it. Default False => the term is ungated (implicit gate 1.0):
+    no extra param, byte-identical state_dict to the pre-lever model.
     """
 
     def __init__(self, cfg: PredictorConfig, state_dim: int,
-                 intent_dim: int | None = None):
+                 intent_dim: int | None = None, gated_intent: bool = False):
         super().__init__()
         self.cfg = cfg
         d = cfg.d_model
@@ -82,6 +89,11 @@ class OperativePredictor(nn.Module):
         # identity start (intent has no effect until the FiLM weights train).
         self.intent_proj = (nn.Linear(intent_dim, d)
                             if intent_dim is not None else None)
+        # ReZero gate on the intent term (H26 fix): scalar, init 0.1, so the
+        # operative starts action-dominant and the intent grows only if earned.
+        # None (default-off) leaves the term ungated => byte-identical state_dict.
+        self.intent_gate = (nn.Parameter(torch.tensor(0.1))
+                            if gated_intent and intent_dim is not None else None)
 
     def forward(self, states: Tensor, actions: Tensor,
                 intent: Tensor | None = None) -> dict[int, Tensor]:
@@ -93,7 +105,10 @@ class OperativePredictor(nn.Module):
             if self.intent_proj is None:
                 raise ValueError("predictor built without intent_dim cannot "
                                  "consume an intent token")
-            cond = cond + self.intent_proj(intent).unsqueeze(1)   # broadcast W
+            term = self.intent_proj(intent).unsqueeze(1)          # broadcast W
+            if self.intent_gate is not None:
+                term = self.intent_gate * term
+            cond = cond + term
         mask = torch.triu(torch.ones(w, w, device=states.device, dtype=torch.bool),
                           diagonal=1)
         for blk in self.blocks:

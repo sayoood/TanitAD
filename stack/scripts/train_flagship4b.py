@@ -33,6 +33,7 @@ Smoke (CPU):
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -70,6 +71,35 @@ SIGREG_VARIANT = "full_relaxed"
 
 
 # --------------------------------------------------------------------------- #
+# v3enc STAGED encoder-grounding schedule (diagnostic 2026-07-19)              #
+# --------------------------------------------------------------------------- #
+def staged_lever_schedule(step: int) -> tuple[float, int]:
+    """Effective ``(decorr_weight, rollout_k)`` at global ``step`` for the v3enc
+    run. The flagshipv2-6k diagnostic showed the four v2 encoder levers, fired
+    SIMULTANEOUSLY from step 0, strip the operative speed readout faster than it
+    re-grows (v2 never reaches v1 by 30k). This staggers the two step-conditional
+    levers so grounding is established before decorrelation + long rollout bite:
+
+        decorr weight : 0.0  for step <10000, then 0.02   (was constant 0.05)
+        rollout-k     : 4 (<5000) -> 8 (<10000) -> 12 (>=10000) (was constant 12)
+
+    The two CONSTANT levers (invdyn_gradscale 0.5, fa_dropout 0.15) are set on the
+    config in ``train`` (they do not vary with step). The plan is always built at
+    the schedule MAX (rollout_k=12) so ``needed_fut`` covers ``range(12)`` — the
+    per-step runtime K here only ever SHRINKS the K actually rolled out, never
+    exceeds the encoded futures. Pure function so the smoke can probe boundaries.
+    """
+    decorr_w = 0.0 if step < 10000 else 0.02
+    if step < 5000:
+        k = 4
+    elif step < 10000:
+        k = 8
+    else:
+        k = 12
+    return decorr_w, k
+
+
+# --------------------------------------------------------------------------- #
 # Dataset — fail-loud windows + nav fields (REF-B) + the maneuver pseudo-label #
 # --------------------------------------------------------------------------- #
 class FlagshipWindowDataset(FailLoudWindowDataset):
@@ -81,16 +111,27 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
     the loss from odometry poses (``gt_ego_waypoints``)."""
 
     def __init__(self, episodes, window: int, max_horizon: int, maneuver_h: int,
-                 channels: int | None = None):
-        super().__init__(episodes, window, max_horizon, channels=channels)
+                 channels: int | None = None, labels_v2: bool = False):
+        super().__init__(episodes, window, max_horizon, channels=channels,
+                         labels_v2=labels_v2)
         assert maneuver_h <= max_horizon, (maneuver_h, max_horizon)
         self.maneuver_h = maneuver_h
 
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
-        p_last, p1 = item["pose_last"], item["future_poses"][self.maneuver_h - 1]
-        item["maneuver_label"] = refb_labels.classify_maneuver(
-            p_last[2], p1[2], p_last[3], p1[3]).long()
+        p_last = item["pose_last"]
+        if self.labels_v2:
+            # v2 curvature-gated 2 s maneuver: a gentle highway curve (large R)
+            # that v1 calls a turn stays lane_keep; tight junction turns still
+            # turn; accel/brake/stop is preserved. classify_maneuver_v2 reads the
+            # whole sub-path arc, so feed pose_last + future_poses[:maneuver_h].
+            item["maneuver_label"] = refb_labels.window_maneuver_labels_v2(
+                p_last[None], item["future_poses"][None],
+                horizon=self.maneuver_h)[0].long()
+        else:                                  # v1 path (byte-identical)
+            p1 = item["future_poses"][self.maneuver_h - 1]
+            item["maneuver_label"] = refb_labels.classify_maneuver(
+                p_last[2], p1[2], p_last[3], p1[3]).long()
         # v2 lever 1: pose at t-1 (OBSERVED) so the loss can build yr0 = the
         # wrapped yaw delta / dt without touching the future. window >= 2 always.
         e_i, t = self.index[i]
@@ -102,7 +143,8 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
 def _wrap(episodes, cfg, plan, channels):
     return FlagshipWindowDataset(episodes, window=cfg.predictor.window,
                                  max_horizon=plan.max_horizon,
-                                 maneuver_h=plan.maneuver_h, channels=channels)
+                                 maneuver_h=plan.maneuver_h, channels=channels,
+                                 labels_v2=cfg.v2_labels)
 
 
 def _cache_split(cache_dir: Path, split: str, n: int):
@@ -195,7 +237,7 @@ def train(args) -> dict:
         cfg.encoder.grad_checkpoint = True
     if args.rollout_k is not None:
         cfg.train.rollout_k = args.rollout_k
-    # v2 retrain pack (fleet directive 2026-07-17): enable all six levers.
+    # v2 retrain pack (fleet directive 2026-07-17): enable all seven levers.
     # Lever 3 (rollout-k) stays an explicit arg: pass --rollout-k 12 with --v2.
     if args.v2:
         cfg.v2_ego_to_planners = True
@@ -204,8 +246,67 @@ def train(args) -> dict:
         cfg.v2_goal_decode = True
         cfg.v2_nav_dropout = 0.5
         cfg.v2_traj_jerk = 0.02
+        cfg.v2_gated_intent = True
+        cfg.v2_anchor_tactical = True      # (8) TIME-anchored multi-anchor decoder
+        cfg.v2_route_from_vision = True    # (9) LEVER A: always-on route-from-vision aux
+        cfg.v2_encoder_ego_decorr = True   # (10) LEVER B: encoder<->ego decorrelation
+        cfg.v2_labels = True               # (12) curvature-relative v2 strategic/
+                                           # tactical LABELS (refb_labels v2): road-
+                                           # following curves stay `follow`, ambiguous
+                                           # junction windows -> nav_valid=False (out
+                                           # of the route CE + route-from-vision aux),
+                                           # maneuver via classify_maneuver_v2.
+                                           # Override: --labels-v2 / --no-labels-v2.
+        cfg.v2_invdyn_gradscale = 0.25     # (11) Part A: soft gradient-decouple the
+                                           # metric-invdyn REAL-PAIR probe (a) from
+                                           # the encoder (research 2026-07-18);
+                                           # --invdyn-gradscale overrides for the
+                                           # {1.0,0.5,0.25,0.0} 5k ablation gate
+    # v0 speed-input — the PROVEN operative fix (review 2026-07-18: the v1 run
+    # used a pod-side trainer never committed; this commits it). Implied by
+    # --v2, standalone via --speed-input (v1 parity). action_dim 2 -> 3 on the
+    # operative + tactical_pred predictors; flagship_losses appends the channel.
+    if args.speed_input or args.v2:
+        cfg.speed_input = True
+        cfg.predictor = dataclasses.replace(cfg.predictor, action_dim=3)
+        if getattr(cfg, "tactical_pred", None) is not None:
+            cfg.tactical_pred = dataclasses.replace(cfg.tactical_pred,
+                                                    action_dim=3)
+    # lever 3 pairing: --v2 without an explicit --rollout-k gets the documented
+    # k=12 (fa-dropout + the drift fix only bite inside the K-step rollout).
+    if args.v2 and args.rollout_k is None:
+        cfg.train.rollout_k = 12
     if args.sigreg_free_dims is not None:
         cfg.loss.sigreg.free_dims = args.sigreg_free_dims
+    # Part A ablation override: wins over both the default (1.0) AND --v2's 0.25,
+    # so `--v2 --invdyn-gradscale 1.0` runs the CONTROL arm and 0.5/0.25/0.0 the
+    # ablation sweep for the 5k mid-checkpoint gate.
+    if args.invdyn_gradscale is not None:
+        cfg.v2_invdyn_gradscale = args.invdyn_gradscale
+    # --labels-v2 / --no-labels-v2 override the v2 LABEL gate independently of the
+    # rest of the --v2 pack: `--v2 --no-labels-v2` runs the v2 model levers with
+    # v1 labels (control arm); `--labels-v2` alone puts v2 labels on an otherwise-
+    # v1 run. None (neither flag) = follow whatever --v2 set above.
+    if args.labels_v2 is not None:
+        cfg.v2_labels = args.labels_v2
+
+    # ---- v3enc STAGED encoder-grounding levers (diagnostic 2026-07-19) --------
+    # Builds ON the --v2 pack. Two levers become CONSTANTS here (softer than v2);
+    # the other two (decorr weight, rollout-k) are STEP-CONDITIONAL and applied
+    # per-step in the loop via staged_lever_schedule(). Default-off (no flag) is
+    # byte-identical to v1/v2 — this whole block is skipped.
+    if args.staged_levers:
+        assert args.v2, "--staged-levers builds on the v2 pack (pass --v2 too)"
+        cfg.v2_fa_dropout = 0.15           # was 0.3 (constant; gentler withhold)
+        if args.invdyn_gradscale is None:  # explicit --invdyn-gradscale still wins
+            cfg.v2_invdyn_gradscale = 0.5  # was 0.25 (constant; softer decouple)
+        # Build the plan at the schedule MAX so needed_fut covers range(12); the
+        # runtime K (4/8/12) is set per-step in the loop and only ever <= 12.
+        cfg.train.rollout_k = 12
+        print("[staged] v3enc encoder-grounding schedule ON: decorr 0.0<10k->0.02"
+              ", rollout-k 4<5k/8<10k/12>=10k, invdyn_gradscale "
+              f"{cfg.v2_invdyn_gradscale}, fa_dropout {cfg.v2_fa_dropout}",
+              flush=True)
 
     plan = horizon_plan(cfg, op_fwd_k=args.op_fwd_k, tac_fwd_k=args.tac_fwd_k,
                         str_fwd_k=args.str_fwd_k)
@@ -234,8 +335,10 @@ def train(args) -> dict:
     weights = LossWeights(
         pred=args.pred_weight, tacpred=args.tacpred_weight, roll=args.roll_weight,
         goal=args.goal_weight, wp=args.wp_weight, man=args.man_weight,
-        route=args.route_weight, invdyn=args.invdyn_weight, fwd=args.fwd_weight,
-        sigreg=cfg.loss.sigreg.weight, inv=cfg.loss.inv_dyn_weight)
+        route=args.route_weight, route_vis=args.route_vis_weight,
+        invdyn=args.invdyn_weight, fwd=args.fwd_weight,
+        sigreg=cfg.loss.sigreg.weight, inv=cfg.loss.inv_dyn_weight,
+        decorr=args.decorr_weight)
     params = list(model.parameters()) + list(grounding.parameters())
     opt = torch.optim.AdamW(params, lr=args.lr, betas=cfg.train.betas,
                             weight_decay=args.weight_decay)
@@ -266,7 +369,7 @@ def train(args) -> dict:
         print(f"[resume] resuming at step {step}", flush=True)
 
     ptab = param_table()
-    (out_dir / "config.json").write_text(json.dumps({
+    cfg_record = {
         "arch": "flagship-4b", "config": args.config, "cfg": cfg.to_json(),
         "data": args.data, "cache_dirs": args.cache_dirs,
         "horizon_plan": {"level_cfg": {k: [list(h), fk] for k, (h, fk)
@@ -276,7 +379,15 @@ def train(args) -> dict:
                          "max_horizon": plan.max_horizon},
         "weights": vars(weights), "sigreg_free_dims": cfg.loss.sigreg.free_dims,
         "pose_scale": args.pose_scale, "param_breakdown": ptab,
-    }, indent=2, default=str), encoding="utf-8")
+    }
+    if args.staged_levers:                 # v3enc: record the step-conditional plan
+        cfg_record["staged_levers"] = {
+            "decorr_weight": "0.0 for step<10000, then 0.02",
+            "rollout_k": "4 for step<5000, 8 for step<10000, then 12",
+            "invdyn_gradscale": cfg.v2_invdyn_gradscale,
+            "fa_dropout": cfg.v2_fa_dropout}
+    (out_dir / "config.json").write_text(
+        json.dumps(cfg_record, indent=2, default=str), encoding="utf-8")
     print(f"[init] params {ptab['total_trainable']/1e6:.2f}M "
           f"(model {ptab['total_model']/1e6:.2f}M + grounding "
           f"{ptab['grounding_heads']/1e6:.3f}M) | {json.dumps(ptab)}", flush=True)
@@ -307,6 +418,12 @@ def train(args) -> dict:
                 print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
     while step < args.steps:
+        # v3enc step-conditional levers: mutate the SHARED weights/cfg the loss
+        # reads by reference (weights.decorr -> flagship_loss total; cfg.train.
+        # rollout_k -> the runtime K, always <= the plan's build-time 12). No-op
+        # unless --staged-levers (byte-identical v1/v2 otherwise).
+        if args.staged_levers:
+            weights.decorr, cfg.train.rollout_k = staged_lever_schedule(step)
         lr = cosine_lr(step, args.steps, args.warmup, args.lr)
         for pg in opt.param_groups:
             pg["lr"] = lr
@@ -394,10 +511,29 @@ def main(argv=None):
     ap.add_argument("--warmup", type=int, default=2000)
     ap.add_argument("--weight-decay", type=float, default=0.05)
     ap.add_argument("--v2", action="store_true",
-                    help="enable the six v2 retrain levers (fleet directive "
+                    help="enable the v2 retrain levers (fleet directive "
                          "2026-07-17): ego->planners + ego-dropout 0.25 + "
                          "fa-dropout 0.3 + goal-decode + nav-dropout 0.5 + "
-                         "jerk 0.02; pair with --rollout-k 12")
+                         "jerk 0.02 + gated-intent + anchor-tactical + "
+                         "speed-input; defaults rollout-k to 12 if unset")
+    ap.add_argument("--staged-levers", action="store_true",
+                    help="v3enc STAGED encoder-grounding schedule (diagnostic "
+                         "2026-07-19): builds on --v2 but stages the four encoder "
+                         "levers — decorr 0.0<10k->0.02, rollout-k 4<5k/8<10k/12, "
+                         "invdyn_gradscale 0.5, fa_dropout 0.15. Off == v1/v2 "
+                         "byte-identical")
+    ap.add_argument("--speed-input", action="store_true",
+                    help="v0 (t=0 speed / 10.0) as the 3rd operative action "
+                         "channel — the PROVEN speed fix (implied by --v2)")
+    ap.add_argument("--labels-v2", dest="labels_v2", action="store_true",
+                    default=None,
+                    help="force the v2 curvature-relative strategic/tactical "
+                         "labels ON, overriding the --v2 default (refb_labels v2: "
+                         "road-curves stay follow; ambiguous junctions get "
+                         "nav_valid=False). Default: follow --v2")
+    ap.add_argument("--no-labels-v2", dest="labels_v2", action="store_false",
+                    help="force the v2 labels OFF even under --v2 (v1-labels "
+                         "control arm)")
     ap.add_argument("--rollout-k", type=int, default=None,
                     help="K-step recursive rollout (bake-off lever; default cfg)")
     # per-level grounding rollout horizons (op fine / tac 2 s / str long)
@@ -417,8 +553,23 @@ def main(argv=None):
     ap.add_argument("--wp-weight", type=float, default=1.0)
     ap.add_argument("--man-weight", type=float, default=0.5)
     ap.add_argument("--route-weight", type=float, default=0.5)
+    ap.add_argument("--route-vis-weight", type=float, default=0.3,
+                    help="LEVER A: route-from-vision aux CE weight (v2 lever 9; "
+                         "only active with --v2 / v2_route_from_vision)")
     ap.add_argument("--invdyn-weight", type=float, default=2.0)
     ap.add_argument("--fwd-weight", type=float, default=1.0)
+    ap.add_argument("--invdyn-gradscale", type=float, default=None,
+                    help="Part A loss-rebalance (research 2026-07-18): straight-"
+                         "through gradient scale on the encoder-latent inputs to "
+                         "the metric-invdyn REAL-PAIR term (a) ONLY. 1.0 = today "
+                         "exactly (byte-identical); 0.0 = full probe-detach of "
+                         "(a); --v2 sets 0.25. Overrides --v2 for the "
+                         "{1.0,0.5,0.25,0.0} 5k ablation gate. Term (b) fwd-"
+                         "consistency, JEPA, SIGReg, and the invdyn heads are "
+                         "untouched (loss-side only; no param change)")
+    ap.add_argument("--decorr-weight", type=float, default=0.05,
+                    help="LEVER B: encoder<->ego decorrelation weight (v2 lever "
+                         "10; only active with --v2 / v2_encoder_ego_decorr)")
     ap.add_argument("--grad-checkpoint", action="store_true")
     ap.add_argument("--no-amp", action="store_true")
     ap.add_argument("--guard-limit-gb", type=float, default=60.0)

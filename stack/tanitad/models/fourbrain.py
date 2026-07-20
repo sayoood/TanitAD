@@ -86,6 +86,185 @@ class StrategicPolicy(nn.Module):
         return {"ctx": self.ctx_proj(h), "route_logits": self.route_head(h)}
 
 
+# ============================================================================
+# TIME-anchored tactical decoder (v2 lever 8) — DiffusionDrive-style multi-anchor
+# ============================================================================
+# The FPS anchor-vocabulary math mirrors tanitad.refs.refc.{synth_anchor_pool,
+# furthest_point_sample, default_anchors} (the proven REF-C/REF-B recipe). It is
+# duplicated here ON PURPOSE: refs/ is a SEPARATE package ("never entangled with
+# the main model", refs/__init__ docstring), so the flagship's own tactical
+# decoder must not import from a reference model. The functions are pure +
+# deterministic, so the two copies yield byte-identical vocabularies for equal
+# args (128 anchors over a 4096-rollout pool, seed 0).
+
+def _synth_anchor_pool(horizons: tuple[int, ...], pool_size: int, seed: int,
+                       dt: float = 0.1, device: str = "cpu") -> Tensor:
+    """Random unicycle rollouts -> ego-frame trajectory pool [pool_size, S, 2]
+    (ego starts at origin heading +x, so world positions ARE the ego waypoints)."""
+    g = torch.Generator(device=device).manual_seed(seed)
+    m = pool_size
+    v = torch.rand(m, generator=g, device=device) * 30.0            # 0..30 m/s
+    yaw_rate = (torch.rand(m, generator=g, device=device) - 0.5) * 0.7   # +-0.35
+    accel = (torch.rand(m, generator=g, device=device) - 0.5) * 6.0     # +-3
+    x = torch.zeros(m, device=device)
+    y = torch.zeros(m, device=device)
+    yaw = torch.zeros(m, device=device)
+    max_h = max(horizons)
+    pos = torch.zeros(m, max_h + 1, 2, device=device)
+    for t in range(1, max_h + 1):
+        x = x + v * torch.cos(yaw) * dt
+        y = y + v * torch.sin(yaw) * dt
+        yaw = yaw + yaw_rate * dt
+        v = (v + accel * dt).clamp_min(0.0)
+        pos[:, t, 0] = x
+        pos[:, t, 1] = y
+    return torch.stack([pos[:, h] for h in horizons], dim=1)        # [m, S, 2]
+
+
+def _furthest_point_sample(pool: Tensor, n: int, seed: int = 0) -> Tensor:
+    """Greedy FPS in flattened-L2 space [M, S, 2] -> [n, S, 2]: SPREADS the
+    vocabulary over the trajectory manifold (covers the rare curves) instead of
+    clustering on the straight majority the way k-means would. Deterministic."""
+    m = pool.shape[0]
+    if n > m:
+        raise ValueError(f"cannot FPS {n} anchors from a pool of {m}")
+    flat = pool.reshape(m, -1)
+    g = torch.Generator(device=flat.device).manual_seed(seed)
+    first = int(torch.randint(m, (1,), generator=g, device=flat.device))
+    chosen = [first]
+    dist = ((flat - flat[first]) ** 2).sum(dim=-1)
+    for _ in range(n - 1):
+        nxt = int(torch.argmax(dist))
+        chosen.append(nxt)
+        dist = torch.minimum(dist, ((flat - flat[nxt]) ** 2).sum(dim=-1))
+    return pool[torch.tensor(chosen, device=pool.device)]
+
+
+def default_time_anchors(horizons: tuple[int, ...], n_anchors: int,
+                         pool_size: int = 4096, seed: int = 0,
+                         device: str = "cpu") -> Tensor:
+    """Built-in TIME-anchored vocabulary: FPS over a synthetic unicycle pool,
+    deterministic (fixed seed) so two independently-built TacticalPolicies share
+    anchors byte-for-byte. Anchors are TIME-parameterized over ``horizons`` (the
+    tactical ``waypoint_horizons`` — the same 2 s ego-frame sub-waypoint slots the
+    unimodal wp_heads produced)."""
+    pool = _synth_anchor_pool(horizons, pool_size, seed, device=device)
+    return _furthest_point_sample(pool, n_anchors, seed=seed).contiguous()
+
+
+class _AnchorFiLM(nn.Module):
+    """Live feature-wise linear modulation (mirrors refs.refc.FiLM zero_init=False)
+    so the summary-token condition steers the anchor decoder from step 0."""
+
+    def __init__(self, cond_dim: int, d: int):
+        super().__init__()
+        self.to_scale_shift = nn.Linear(cond_dim, 2 * d)
+
+    def forward(self, x: Tensor, cond: Tensor) -> Tensor:
+        scale, shift = self.to_scale_shift(cond).chunk(2, dim=-1)
+        return x * (1.0 + scale) + shift
+
+
+class _AnchorCrossAttnLayer(nn.Module):
+    """Anchor-query cross-attention block (pre-norm, residual): cross-attend the
+    processed state-window tokens, then a FiLM(summary)-modulated MLP. Mirrors
+    refs.refc.CrossAttnLayer but over the temporal window (KV = [B, W, d]) rather
+    than a conv feature map."""
+
+    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int):
+        super().__init__()
+        self.norm_q = nn.LayerNorm(d)
+        self.cross = nn.MultiheadAttention(d, n_heads, batch_first=True)
+        self.norm_f = nn.LayerNorm(d)
+        self.film = _AnchorFiLM(cond_dim, d)
+        self.mlp = nn.Sequential(nn.Linear(d, ff_mult * d), nn.GELU(),
+                                 nn.Linear(ff_mult * d, d))
+
+    def forward(self, q: Tensor, kv: Tensor, cond: Tensor) -> Tensor:
+        h = self.norm_q(q)
+        q = q + self.cross(h, kv, kv, need_weights=False)[0]
+        q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
+        return q
+
+
+class AnchoredTacticalDecoder(nn.Module):
+    """TIME-anchored (DiffusionDrive-style) tactical trajectory decoder — the
+    multi-anchor REPLACEMENT for ``TacticalPolicy.wp_heads`` (classifier mode, the
+    REF-C ``steps=0`` floor). A fixed FPS vocabulary of ego-frame trajectory
+    ANCHORS whose queries cross-attend the processed state window and emit a
+    per-anchor confidence + per-anchor offset; the winning mode's anchor+offset is
+    the 2 s trajectory. This preserves MULTIMODALITY (the exact 3.4 m tactical
+    weakness the unimodal per-horizon heads suffered) — the trainer assigns GT to
+    its NEAREST anchor and applies anchor-cls CE + winner-takes-all L1 on that
+    anchor only (never pulling every anchor to GT).
+
+    H19 (maneuver->anchor prior): the tactical ``maneuver_head`` logits reweight
+    the anchor confidences through a learned projection, guarded by a ZERO-INIT
+    learnable SCALAR gate (``h19_gate``) so the prior starts as a strict no-op and
+    ramps only if training earns it (like REF-C's zero-init grafts / the gated-
+    intent lever). A scalar gate — NOT a LayerNorm: the REF-B run showed a
+    LayerNorm pins the prior norm at sqrt(N) and can over-bias the confidences.
+
+    forward(kv, cond, maneuver_logits) -> {anchor_logits [B, N], anchor_traj
+    [B, N, S, 2], offset [B, N, S, 2], traj [B, S, 2] (selected), sel_idx [B],
+    conf_norm, prior_norm, n_modes (diagnostics for the train log)}.
+    """
+
+    def __init__(self, d: int, horizons: tuple[int, ...], *,
+                 n_maneuvers: int, n_anchors: int = 128, n_heads: int = 8,
+                 layers: int = 2, ff_mult: int = 4, pool_size: int = 4096,
+                 seed: int = 0):
+        super().__init__()
+        self.horizons = tuple(horizons)
+        self.n_steps = len(self.horizons)
+        # Anchor vocabulary — a persistent buffer (travels with the checkpoint).
+        anchors = default_time_anchors(self.horizons, n_anchors, pool_size, seed)
+        self.register_buffer("anchors", anchors)              # [N, S, 2]
+        self.traj_proj = nn.Linear(self.n_steps * 2, d)       # anchor traj -> query
+        self.layers = nn.ModuleList(
+            _AnchorCrossAttnLayer(d, n_heads, d, ff_mult) for _ in range(layers))
+        self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
+        self.offset_head = nn.Linear(d, self.n_steps * 2)     # per-anchor offset
+        # H19: maneuver logits -> anchor prior (LIVE projection) scaled by a
+        # ZERO-INIT scalar gate (no-op at init; ramps only if earned).
+        self.maneuver_to_anchor = nn.Linear(n_maneuvers, n_anchors, bias=False)
+        self.h19_gate = nn.Parameter(torch.zeros(()))
+
+    def load_anchors(self, anchors: Tensor) -> None:
+        """Install an externally-built anchor vocabulary. Shape must match
+        [N, n_steps, 2] of the constructed decoder."""
+        if tuple(anchors.shape) != tuple(self.anchors.shape):
+            raise ValueError(f"anchor shape {tuple(anchors.shape)} != decoder "
+                             f"{tuple(self.anchors.shape)}")
+        self.anchors.copy_(anchors.to(self.anchors.dtype))
+
+    def forward(self, kv: Tensor, cond: Tensor, maneuver_logits: Tensor) -> dict:
+        """kv [B, W, d] processed state-window tokens; cond [B, d] summary token;
+        maneuver_logits [B, n_maneuvers] the tactical maneuver distribution."""
+        b = kv.shape[0]
+        anchors = self.anchors.to(kv.dtype)                   # [N, S, 2]
+        n = anchors.shape[0]
+        x0 = anchors[None].expand(b, n, self.n_steps, 2)
+        q = self.traj_proj(x0.reshape(b, n, -1))              # [B, N, d]
+        for layer in self.layers:
+            q = layer(q, kv, cond)
+        conf = self.conf_head(q).squeeze(-1)                  # [B, N]
+        offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
+        x = anchors[None] + offset                            # [B, N, S, 2]
+        # H19 maneuver prior (log-space), zero-init gated (a no-op at start).
+        prior = self.maneuver_to_anchor(
+            torch.log_softmax(maneuver_logits, dim=-1))       # [B, N]
+        gated_prior = self.h19_gate * prior
+        conf = conf + gated_prior
+        idx = conf.argmax(dim=1)                              # [B] (detached select)
+        traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
+        return {"anchor_logits": conf, "anchor_traj": x, "offset": offset,
+                "traj": traj, "sel_idx": idx,
+                "conf_norm": conf.detach().norm(dim=-1).mean(),
+                "prior_norm": gated_prior.detach().norm(dim=-1).mean(),
+                "n_modes": int(idx.unique().numel())}
+
+
 class TacticalPolicy(nn.Module):
     """Trained tactical brain (D-030) — ports REF-B rev2 ``TacticalHead`` and
     EXTENDS it with a target-latent goal head.
@@ -94,17 +273,26 @@ class TacticalPolicy(nn.Module):
     the strategic context token, that emits the tactical decision:
       - ``maneuver_logits`` [B, M] — distribution over the maneuver vocabulary;
       - ``waypoints`` {k: [B, 2]}  — the tactical GOAL position: 2 s ego-frame
-        sub-waypoints (direct per-horizon heads, no recursion);
+        sub-waypoints (direct per-horizon heads; with ``anchor_tactical`` this is
+        a shim read off the selected anchor trajectory — see below);
       - ``target_latent`` [B, S]   — the tactical GOAL latent (JEPA target at the
         2 s horizon — the "where the world should be" the operative aims for);
       - ``intent`` [B, d_intent]   — the token that FiLM-conditions the operative
         predictor, closing the hierarchy.
 
     State-dim-agnostic (shared brain). ``d_cond`` is the strategic context dim.
+
+    ``anchor_tactical`` (v2 lever 8): REPLACE the unimodal ``wp_heads`` with an
+    :class:`AnchoredTacticalDecoder` (TIME-anchored, DiffusionDrive-style) — the
+    multimodal cure for the 3.4 m tactical weakness. Off (default) is byte-
+    identical to the pre-lever brain (``wp_heads`` present, no anchor params). When
+    on the forward ALSO emits ``anchor_logits`` / ``anchor_traj`` / ``offset`` /
+    ``sel_idx`` and the ``waypoints`` dict becomes a shim off the selected traj.
     """
 
     def __init__(self, cfg: TacticalPolicyConfig, state_dim: int, window: int,
-                 d_cond: int, ego_input: bool = False):
+                 d_cond: int, ego_input: bool = False,
+                 anchor_tactical: bool = False):
         super().__init__()
         self.cfg, self.window = cfg, window
         d = cfg.d_model
@@ -116,8 +304,21 @@ class TacticalPolicy(nn.Module):
             for _ in range(cfg.depth))
         self.norm = nn.LayerNorm(d)
         self.maneuver_head = nn.Linear(d, cfg.n_maneuvers)
-        self.wp_heads = nn.ModuleDict(
-            {str(k): nn.Linear(d, 2) for k in cfg.waypoint_horizons})
+        # v2 lever 8: the TIME-anchored multi-anchor decoder REPLACES the unimodal
+        # per-horizon wp_heads when gated on. OFF builds wp_heads in the SAME slot
+        # (byte-identical init + state_dict; v1 ckpts resume); ON builds the
+        # anchored decoder instead (no dead wp_heads). Both expose a `waypoints`
+        # dict downstream (the anchored path via a shim off the selected traj).
+        self.anchor_tactical = anchor_tactical
+        if anchor_tactical:
+            self.wp_heads = None
+            self.anchor_decoder = AnchoredTacticalDecoder(
+                d, tuple(cfg.waypoint_horizons), n_maneuvers=cfg.n_maneuvers,
+                n_heads=cfg.n_heads)
+        else:
+            self.wp_heads = nn.ModuleDict(
+                {str(k): nn.Linear(d, 2) for k in cfg.waypoint_horizons})
+            self.anchor_decoder = None
         self.target_latent_head = nn.Linear(d, state_dim)
         self.intent_proj = nn.Linear(d, cfg.d_intent)
         # v2 lever 1: [v0, yr0] added to the strategic ctx cond (the tactical
@@ -136,13 +337,28 @@ class TacticalPolicy(nn.Module):
         for blk in self.blocks:
             x = blk(x, cond, mask)
         h = self.norm(x[:, -1])
-        return {
-            "maneuver_logits": self.maneuver_head(h),
-            "waypoints": {k: self.wp_heads[str(k)](h)
-                          for k in self.cfg.waypoint_horizons},
+        man_logits = self.maneuver_head(h)
+        out = {
+            "maneuver_logits": man_logits,
             "target_latent": self.target_latent_head(h),
             "intent": self.intent_proj(h),
         }
+        if self.anchor_decoder is not None:
+            # KV = the processed state window (temporal analog of REF-C's conv
+            # map); cond = the summary token h; maneuver logits drive the H19 prior.
+            dec = self.anchor_decoder(x, h, man_logits)
+            out.update(dec)
+            # Back-compat shim: per-horizon points read off the SELECTED anchor
+            # trajectory so downstream code/metrics using tac["waypoints"] still
+            # work. Each waypoints[k] is the ego-frame position at horizon k — now
+            # a point on ONE temporally-coherent anchor traj rather than an
+            # independent per-horizon regression (see the report's semantics note).
+            out["waypoints"] = {k: dec["traj"][:, i]
+                                for i, k in enumerate(self.cfg.waypoint_horizons)}
+        else:
+            out["waypoints"] = {k: self.wp_heads[str(k)](h)
+                                for k in self.cfg.waypoint_horizons}
+        return out
 
 
 def run_hierarchy(model, states: Tensor, actions: Tensor,
@@ -205,8 +421,11 @@ class WorldModel(nn.Module):
         intent_dim = (cfg.tactical_policy.d_intent
                       if cfg.tactical_policy is not None else None)
         # Operative predictor — intent-conditioned when the tactical brain is on.
-        self.predictor = OperativePredictor(cfg.predictor, self.state_dim,
-                                            intent_dim=intent_dim)
+        # v2 lever 7: ReZero gate on the intent term (H26 — ungated intent
+        # diluted the action cond). Off => byte-identical state_dict.
+        self.predictor = OperativePredictor(
+            cfg.predictor, self.state_dim, intent_dim=intent_dim,
+            gated_intent=getattr(cfg, "v2_gated_intent", False))
         # Tactical brain, parametric dynamics part: same predictor family at
         # maneuver horizons (8/16 steps) — the ALPS-4B tactical role.
         self.tactical_pred = (OperativePredictor(cfg.tactical_pred, self.state_dim)
@@ -220,7 +439,9 @@ class WorldModel(nn.Module):
         self.tactical_policy = (
             TacticalPolicy(cfg.tactical_policy, self.state_dim,
                            cfg.predictor.window,
-                           d_cond=cfg.strategic_policy.d_ctx, ego_input=_ego)
+                           d_cond=cfg.strategic_policy.d_ctx, ego_input=_ego,
+                           anchor_tactical=getattr(cfg, "v2_anchor_tactical",
+                                                   False))
             if cfg.tactical_policy is not None else None)
         # v2 lever 4: decode the 2 s trajectory FROM the imagined goal latent
         # (goal cos=0.885 while linear wp heads sat at 3.38 m — the decode was

@@ -54,6 +54,31 @@ from torch import Tensor, nn
 
 
 # --------------------------------------------------------------------------- #
+# Straight-through gradient SCALE (Part A loss-rebalance, 2026-07-18)          #
+# --------------------------------------------------------------------------- #
+def grad_scale(x: Tensor, alpha: float) -> Tensor:
+    """Straight-through gradient scale: forward returns ``x`` UNCHANGED, backward
+    multiplies the gradient w.r.t. ``x`` by ``alpha`` (``0 <= alpha <= 1``).
+
+    This is the research's ``x*alpha + x.detach()*(1-alpha)`` written as
+    ``x + (alpha-1)*(x - x.detach())`` — algebraically identical (expand:
+    ``x*alpha + (1-alpha)*x.detach()``) but computed in a straight-through order
+    so the forward value is BIT-EXACTLY ``x`` for every ``alpha`` (``x - x.detach()``
+    is a real zero in the forward, so nothing perturbs the fitted value). Only the
+    gradient flowing back INTO ``x`` is scaled; any parameter downstream of ``x``
+    (e.g. an MLP head reading it) sees the identical input value and therefore an
+    unchanged gradient.
+
+    ``alpha == 1.0`` short-circuits to ``x`` itself: a strict no-op (identical
+    graph, loss, and gradients), so the default-off path is provably byte-identical
+    to pre-change — the safety contract for an unattended multi-day run.
+    """
+    if alpha == 1.0:
+        return x
+    return x + (alpha - 1.0) * (x - x.detach())
+
+
+# --------------------------------------------------------------------------- #
 # Pure SE(2) geometry — the ONE ego-frame convention (matches d1_probe._ego)   #
 # --------------------------------------------------------------------------- #
 def ego_delta(dxy: Tensor, yaw: Tensor) -> Tensor:
@@ -289,7 +314,8 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
                      future_poses: Tensor, idx_of: dict[int, int],
                      level_cfg: dict[str, tuple[tuple[int, ...], int]],
                      pose_scale: float, invdyn_weight: float = 1.0,
-                     fwd_weight: float = 1.0, fwd_step_weight: float = 0.5
+                     fwd_weight: float = 1.0, fwd_step_weight: float = 0.5,
+                     invdyn_gradscale: float = 1.0
                      ) -> tuple[Tensor, dict, dict]:
     """H18 grounding at all levels (op/tac/str), mirroring finetune_traj.
 
@@ -305,11 +331,27 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
     decodes on the shared transitions. Metre errors are divided by ``pose_scale``
     so the loss weights act on O(1) quantities (finetune_traj convention).
     Returns ``(total_loss, parts, log)``; gradients reach the encoder, the
-    predictor, and EACH level's invdyn+step params (test-pinned)."""
+    predictor, and EACH level's invdyn+step params (test-pinned).
+
+    ``invdyn_gradscale`` (Part A loss-rebalance, 2026-07-18): a straight-through
+    gradient scale applied to the ENCODER-latent inputs ``(z_t, fut_states)`` as
+    they feed term (a) — and term (a) ONLY. It softly decouples the static
+    metric-inverse-dynamics probe from the encoder trunk (``1.0`` = today exactly,
+    ``0.0`` = a full probe-detach of (a)) WITHOUT touching (i) the invdyn HEAD
+    params (they read the identical forward value, so their gradient is unchanged
+    — full-rate readout probes), (ii) term (b) forward-consistency (the rollout
+    reads ``states``/``trans``, never the scaled views — the 0.033 m fwd-ADE is
+    produced here and stays fully attached), or (iii) JEPA/SIGReg (outside this
+    fn). Default ``1.0`` is byte-identical to pre-change."""
     device = states.device
     k_max = max(fwd_k for _, fwd_k in level_cfg.values())
     trans = rollout_transitions(predictor, states, actions, future_actions, k_max)
     z_t = states[:, -1]
+    # Part A: soft gradient-decouple ONLY term (a)'s encoder path. z_t_mid feeds
+    # the invdyn REAL-PAIR heads; the fut-state partner is scaled at the call
+    # site. `trans`/`states` (term b rollout) are read UNSCALED above, so the
+    # forward-consistency metric stays fully attached to the encoder.
+    z_t_mid = grad_scale(z_t, invdyn_gradscale)
     total = torch.zeros((), device=device)
     parts: dict[str, Tensor] = {}
     log: dict[str, float] = {}
@@ -318,7 +360,9 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
         loss_mid = torch.zeros((), device=device)
         mid_de = 0.0
         for kh in inv_horizons:
-            dpose = grounding.invdyn[lvl](z_t, fut_states[:, idx_of[kh - 1]])
+            dpose = grounding.invdyn[lvl](
+                z_t_mid, grad_scale(fut_states[:, idx_of[kh - 1]],
+                                    invdyn_gradscale))
             tgt = relative_ego_pose(pose_last, future_poses[:, kh - 1])
             loss_mid = loss_mid \
                 + ((dpose[..., :2] - tgt[..., :2]) / pose_scale).pow(2).mean() \
