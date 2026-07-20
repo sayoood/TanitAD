@@ -2,7 +2,7 @@
 
 # TanitDataSet — Two Datasets + VLM Augmentation Strategy
 
-*Rev 3 · 2026-07-19 · adds the **smart curation + filtering strategy**, the **record schema** (extends the live `LakeRecord`), the **v3-vocabulary label mapping**, the **VLM deployment recipe** (fleet checked — recipe-only, no contention), and the **phased build plan + infra asks**. Rev 2 content (two-dataset doctrine, source tables, VLM engine, prompts) preserved.*
+*Rev 4 · 2026-07-20 · **the VLM pilot actually ran**: §8.5-8.8 add verified gating, the deployed model + real serving recipe, measured throughput/adherence, and the two design changes the data forced (mint `VTARGET` + `LONMODE` kinematically). Rev 3 §8.1-8.4 kept for provenance. Rev 3 content (curation + filtering, record schema, v3 label mapping, phased plan) and Rev 2 content (two-dataset doctrine, source tables, VLM engine, prompts) preserved.*
 Sources: [sensor survey](Research/2026-07-19-tanitdataset-v1-sensor-survey.md) · [semantic survey](Research/2026-07-19-tanitdataset-v1-semantic-survey.md) · [VLM survey](Research/2026-07-19-vlm-augmentation-survey.md) · vocabulary [V3_GOAL_VOCABULARY_V1](../Architecture%20%26%20Inference/V3_GOAL_VOCABULARY_V1.md) · code `stack/tanitad/lake/schema.py`, `stack/scripts/refb_labels.py`, `stack/tanitad/data/_contract.py`
 
 ---
@@ -17,8 +17,8 @@ Build **two** camera-first datasets under **one schema and one pipeline**; gener
 - **VLM engine:** **Qwen3-VL-8B** (Apache-2.0) for bulk captions/tags + **Cosmos-Reason2-8B** (NVIDIA Open Model License, a Qwen3-VL post-train → same serving path) for Chain-of-Causation, risk, physics. Both commercial-clean. Frontier models (Gemini/GPT/Claude) are **research-set only**.
 - **Every VLM label maps to the frozen [v3 goal vocabulary](../Architecture%20%26%20Inference/V3_GOAL_VOCABULARY_V1.md)** (VTARGET / VSOURCE / LONMODE / HEADWAY / lead-state / sign-reads / scene tags), **banded and provenance-stamped** `{kinematic|map|vlm|human|sim}` — §7.4.
 - **Curation is the moat** (§7): stratified scene-balance so we don't drown in straight-highway free-flow, **up-sampling of the known weakness strata** (high-speed longitudinal, stop-and-go, cut-ins, merges, curves), a mined **safety-event split**, and a **frozen per-tier eval slice**.
-- **VLM pilot status (§8):** fleet checked live. pod2/pod3 pinned at 100% (flagship + REF-A training — untouched). Eval-pod A40 GPU is idle **but** the box is mid evals+P2 cycle (load-avg 21-27) with no driving data staged; pod1's A6000 is idle **but** has comma2k19 staged behind a live eval babysitter poised to fire GPU jobs. **No pod offers a cleanly-free GPU + staged data + no pending job** → per the brief's "do NOT contend" rule, the pilot is **recipe-only** here. Cosmos-Reason2-8B verified: gated (accept the NVIDIA Open Model License once), BF16-only, **32 GB-min** → A40/A6000 qualify, the local 4060 (8 GB) cannot. The recipe (§8) is one command away the moment a GPU frees.
-- **Infra asks (§9):** a dedicated ≥32 GB labeling GPU (or a scheduled eval-pod window); one-click Cosmos-Reason2 license acceptance on the HF account; ~15-60 TB for the C-core normalized cache + the L2D-subset scope decision.
+- ✅ **VLM pilot EXECUTED 2026-07-20 (§8.5-8.8):** **48 clips labeled** into the frozen v3 tactical vocabulary on the eval-pod A40 — **100 % JSON parse, 99.1 % token adherence** (all word-token slots ~100 %), **~257 clips/GPU-hr** uncontended, **zero packages installed** on the shared pod. Deployed model = **`nvidia/Cosmos-Reason1-7B`** (ungated, 16.58 GB, stock `transformers`). **Cosmos3-Nano is ungated but unservable on the current fleet** — 16 B / 34.89 GB, docker-only official path and RunPod pods can't run docker → dedicated-hardware follow-up. Two design changes forced by the data: **mint `VTARGET` and `LONMODE` kinematically, not from the VLM.** Full write-up: [pilot note](Research/2026-07-20-cosmos3-vlm-pilot.md).
+- **Infra asks (§9):** a dedicated ≥32 GB labeling GPU (or a scheduled eval-pod window); ~~one-click Cosmos-Reason2 license acceptance~~ **obsolete — the chosen model is ungated and needs no token**; ~15-60 TB for the C-core normalized cache + the L2D-subset scope decision.
 
 ---
 
@@ -240,6 +240,12 @@ The augmentation is worthless if it doesn't feed the planner's option space. Eac
 
 ## 8. VLM deployment recipe & pilot status  *(Deliverable 2)*
 
+> **✅ REV 4 — PILOT EXECUTED 2026-07-20.** 48 clips labeled end-to-end into the frozen v3 tactical
+> vocabulary on the eval-pod A40. **100 % JSON parse, 99.1 % token adherence** on all word-token
+> slots. Full write-up: [2026-07-20-cosmos3-vlm-pilot](Research/2026-07-20-cosmos3-vlm-pilot.md).
+> §8.1–8.4 below are the superseded rev-3 recipe-only plan, kept for provenance; **§8.5–8.8 are the
+> verified state.**
+
 ### 8.1 Live fleet check (2026-07-19, read-only)
 
 | Pod | GPU | Util / mem | State | Verdict |
@@ -305,6 +311,110 @@ At 16 keyframes/clip downscaled to ~0.5-1 MP (~8 k vision tokens prefill), terse
 
 ---
 
+### 8.5 ✅ Verified gating (byte-pull checked 2026-07-20)
+
+| Model | Gated? | License | Size | Serving |
+|---|---|---|---|---|
+| **`nvidia/Cosmos3-Nano`** | **NO** — ungated | OpenMDW-1.1 (commercial + NC OK) | **16 B / 34.89 GB** BF16 | `cosmos3_omni` — **docker / vllm-omni / sglang-diffusion only** |
+| `nvidia/Cosmos3-Super` | **NO** — ungated | OpenMDW-1.1 | 64 B / 30 shards | same |
+| **`nvidia/Cosmos-Reason1-7B`** | **NO** — ungated | NVIDIA Open Model License | 7 B / **16.58 GB** BF16 | **stock `transformers`** (`qwen2_5_vl`) |
+| `nvidia/Cosmos-Reason2-8B` | **yes** (auto-accept) | NVIDIA Open Model License | 8.77 B | vLLM ≥0.11 |
+| `Qwen/Qwen3-VL-8B-Instruct` | NO | Apache-2.0 | 8 B | vLLM / transformers |
+
+**Rev-3's "accept the Cosmos-Reason2 license" infra ask is obsolete** for the pilot path: the chosen
+model needs **no token and no license click-through**. (Reason2-8B remains gated; Cosmos3 is not.)
+
+### 8.6 Chosen model: **`nvidia/Cosmos-Reason1-7B`** — and why not Cosmos3
+
+Sayed's 2026-07-20 call was Cosmos3. On evidence it **cannot be served on the current fleet**, so the
+pilot ran the sanctioned fallback and Cosmos3 moves to a dedicated-hardware follow-up:
+
+- **Official Cosmos3 serving path is a docker container** (`docker pull vllm/vllm-omni:cosmos3`) —
+  **RunPod pods cannot run docker; they are containers.** Hard blocker.
+- The pip alternative `vllm-omni` 0.24.0 carries **81 dependencies** incl. an exact
+  `diffusers==0.38.0` pin → must be venv-isolated; installing it on a pod that also runs
+  TanitEval/training risks re-pinning torch under a live job.
+- **34.89 GB of weights on a 46 GB A40 leaves ~11 GB** for vision/KV/VAE — the model card itself
+  prescribes `--enable-layerwise-offload` / `--tensor-parallel-size` for this case. Single-A40 is the
+  marginal path, not the happy path.
+- Cosmos3-Nano's checkpoint is dominated by `transformer/diffusion_pytorch_model-*` (≈33.9 GB) — it
+  is a **generation** omnimodel. Its real value to TanitAD is **neural weather/lighting re-rendering
+  (§6.2) + action-conditioned world simulation**, not bulk labeling.
+- ⚠️ **Trap:** PyPI **`cosmos` (0.6 MB, 0 deps) is NOT NVIDIA's framework.** The real one is
+  `pip install -e` from `github.com/NVIDIA/cosmos-framework`.
+
+### 8.7 The verified serving recipe (zero environment mutation)
+
+```bash
+# tanitad-eval already had torch 2.8.0+cu128 + transformers 5.14.1 -> NOTHING was installed.
+python3 -c "from huggingface_hub import snapshot_download; snapshot_download('nvidia/Cosmos-Reason1-7B')"
+#   16 GB in ~10 s, no HF token required (ungated).
+
+# load (NB: device_map= needs `accelerate`, absent -> load on CPU then move):
+#   AutoModelForImageTextToText.from_pretrained(id, dtype=torch.bfloat16).to("cuda")
+#   -> 16.64 GB resident on the A40, 10 s load.
+
+# label: 8 keyframes/clip @ 896x512, two schema-locked passes per clip
+#   PASS A perception  -> scene_tags + sign_reads + lead_state
+#   PASS B tactical+CoC-> v3 TACTICAL slots + chain-of-causation
+```
+Scripts on `tanitad-eval:/root`: `prep_clips.py` → `label_clips.py --tag reason1` (resumable,
+checkpoints per clip) → `analyze_pilot.py`. Sidecars in `/root/vlm_pilot/out/reason1/`.
+**vLLM is NOT required** — and avoiding it is what kept the shared eval pod safe.
+
+### 8.8 Measured results — and the two design changes they force
+
+**Throughput:** 48 clips / 96 VLM calls in **23.5 min**. ~30 s/clip while sharing the card with a
+TanitEval probe (**123 clips/GPU-hr**); **~14 s/clip once uncontended → ~257 clips/GPU-hr**, ~10 953
+tok in / 336 out per clip. This is *unbatched transformers*; vLLM continuous batching should add
+several × on top, so §8.4's 0.6–1.2 k clips/GPU-hr remains the right planning number for a batched
+production pass.
+
+**Adherence:** JSON parse **48/48 (100 %)** both passes. VSOURCE / LONMODE / HEADWAY / DYN / TACPOINT
+/ LIGHTSTATE / INTERACT / RISK = **100 % in-vocab**; LATMANEUVER 92 %; **overall 94 %, or 99.1 %
+excluding VTARGET**.
+
+> **Design change 1 — never ask a VLM for `VTARGET`.** It fabricates band edges (`v(7.3-8.2)`,
+> `v(11.7-13.5]`) rather than copying from the 23-token grid → **48 % violation**, while every
+> *word*-token slot is ~100 %. 92 % of the fabrications snap back to the grid, but the snapped value
+> agrees with the kinematic 85th-pct band only **45 %** of the time. §7.4 already specifies VTARGET
+> as `kinematic + vlm(cap)` — **mint it from the pose track** (exact, free) and use the VLM only for
+> the sign cap and for `VSOURCE` (the *why*). Enumerated numeric ranges are the wrong ask for a 7 B VLM.
+
+> **Design change 2 — mint `LONMODE` kinematically too.** The 48 clips are **24 drives × 2 weather
+> renders with identical ego motion**, giving a free label-stability probe: LATMANEUVER/LIGHTSTATE
+> **100 %** stable, VTARGET/DYN 92 %, HEADWAY 79 %, TACPOINT 75 %, VSOURCE 67 %, **LONMODE 62 %**
+> (RISK 33 %, correctly tracking weather). The VLM's **longitudinal** reasoning is not
+> appearance-invariant — the same axis the flagship is weakest on. **Adopt render-pair stability as a
+> standing QA metric** (we own Cosmos-DD; re-rendering costs nothing and needs no human GT) and gate
+> any slot below ~80 % stability out of training labels until kinematically minted.
+
+**Quality vs ground truth** (render condition carried in the filename): weather **75 %** (15/20),
+time_of_day **75 %** (21/28).
+
+**Mandatory consistency gates** — cheap, and each caught a real defect in 48 clips:
+
+| Gate | Pilot violation rate |
+|---|---|
+| reject `value_kph` when `type != speed_limit` (a *directional* sign was read as a 65 kph limit) | — |
+| `VSOURCE=sign_limit` ⇒ a sign read must exist | **4/48 (8 %)** |
+| `HEADWAY=unknown` ⇒ when no lead present | **6/48 (12.5 %)** |
+| VLM `LONMODE` vs kinematic mint — disagreement ⇒ flag hard/ambiguous | implement per §7.4 |
+| `LONMODE=follow_lead` ⇒ lead present | 0/48 ✅ (already consistent) |
+
+Also: `lead_state.present` fired on **42/48 (88 %)** — likely over-detection, tighten the prompt.
+And **`coc_trace` returned the structured object in only 3/48 (6 %)** — the rest collapsed to (good)
+prose, which blocks `critical_agents` → `INTERACT` mining and the safety-event `physics_flag`. Fix
+with a separate CoC call, a flattened schema, or constrained decoding **before** the CoC pass scales.
+
+**Data gotchas found (cost hours if rediscovered):** Cosmos-DD clip timestamps are **microseconds**
+(reading them as ns gives 15 000 Hz and 17 000 m/s); weather suffixes can contain `_`
+(`Golden_hour`) so parse filenames structurally, not by `split("_")`; and `vehicle_pose/` + `pose/` +
+`pinhole_intrinsic/` ship alongside `generation/` — real ego motion is available (300 poses / 20 s,
+~15 Hz) and should be used rather than asking the VLM to guess speed.
+
+---
+
 ## 9. Phased build plan + infra asks  *(Deliverable 3)*
 
 **Storage model.** The cost driver is the **normalized `[T,9,256,256]` uint8 cache**, not raw footage. At the D-015 3-frame RGB stack, a normalized episode is ≈ **0.15-0.4 GB uint8** (memory anchor: 584 float32 eps ≈ 400 GB → ~0.17 GB/ep uint8). Labels/sidecars are negligible (~KB/clip). Raw is *transient staging*, deleted after normalization.
@@ -321,7 +431,7 @@ At 16 keyframes/clip downscaled to ~0.5-1 MP (~8 k vision tokens prefill), terse
 ### Infra asks (explicit, to Sayed)
 
 1. **A dedicated ≥32 GB labeling GPU** (A40/A6000-class), **or** a scheduled eval-pod window when evals+P2 are idle. A GPU is technically free *now* (eval-pod A40) but the box is mid-cycle — a dedicated card avoids contending with the running evals. Budget ~500-900 A40-GPU-hours for the v1 C-core pass.
-2. **Accept the Cosmos-Reason2 gated license** — one click-through on the HF account (Sayood token) to enable `nvidia/Cosmos-Reason2-8B` pulls. Qwen3-VL is ungated.
+2. ~~**Accept the Cosmos-Reason2 gated license**~~ — **OBSOLETE (2026-07-20).** The deployed labeler `nvidia/Cosmos-Reason1-7B` is **ungated** (as are Cosmos3-Nano/Super and Qwen3-VL) and pulls with no token at all. Nothing to click. *New ask in its place:* **a pod with docker (or a dedicated GPU + isolated venv) if we want Cosmos3-Nano** — see §8.6.
 3. **Storage** — ~15-60 TB for the C-core normalized cache + a transient raw-staging area for the L2D-subset download (watch the MooseFS ~466 GB per-pod quota that `df` hides). ~10-30 TB more for the R internal cache.
 4. **Confirm the anonymization pipeline** as a hard `ship`-gate before any EU-real ingest.
 5. **The five open decisions below** still need sign-off before TBs move.
@@ -336,4 +446,4 @@ At 16 keyframes/clip downscaled to ~0.5-1 MP (~8 k vision tokens prefill), terse
 6. **nuScenes/nuPlan paid commercial path** — pursue (moves the nuScenes economy from R into C legally) or stay firewalled?
 
 ---
-*Watch-items: Cosmos 3 (CES 2026, heavier unified platform, not a drop-in labeler); ROVR Open (ego-motion undocumented); Open MARS (license TBD — its multi-traversal signal is wanted, so verify). Verify at build: per-checkpoint backbone licenses for any InternVL/Ovis/Molmo; the vLLM `--limit-mm-per-prompt` honoring on the pinned Qwen3-VL build; Cosmos-Reason2 A40 throughput at our 16-frame clip length.*
+*Watch-items: ~~Cosmos 3~~ **RESOLVED 2026-07-20 (§8.6): confirmed heavier unified platform, NOT a drop-in labeler — 16 B/34.89 GB generation omnimodel, docker-only serving; keep it for neural re-rendering (§6.2), not labeling**; ROVR Open (ego-motion undocumented); Open MARS (license TBD — its multi-traversal signal is wanted, so verify). Verify at build: per-checkpoint backbone licenses for any InternVL/Ovis/Molmo; the vLLM `--limit-mm-per-prompt` honoring on the pinned Qwen3-VL build; Cosmos-Reason2 A40 throughput at our 16-frame clip length.*
