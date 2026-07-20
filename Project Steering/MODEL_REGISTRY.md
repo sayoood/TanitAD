@@ -564,9 +564,15 @@ direct-head diffusion arm essentially level with the world-model stack.
 > and the raw vocabulary already held a 0.290 m plan, so it is neither a coverage nor a
 > refinement failure.
 >
-> **The recoverable part is at the HEAD of the ranking, not the tail.** The 0.164 oracle is
-> partly a lottery (min over 256 draws whose typical member is 13.9 m off). Oracle within
-> **top-8 by confidence = 0.2026 = 87 %** of the gap; top-4 = 0.2506 = 72 %.
+> **⛔ THE ORACLE GAP IS ~92 % IRREDUCIBLE — stop quoting it as available headroom.**
+> REF-C v1.2 settled this across **47 trained arms**: a learned re-scorer recovers at most
+> **8.4 % of the gap on its own training data**. Not capacity (smaller heads are worse), not
+> overfitting (dev tracks train). The 0.1640 oracle is a **minimum over 256 candidates scored
+> against ONE realised future** — most of the distance below the incumbent is that minimum's
+> *statistics over aleatoric outcomes*, not recoverable signal. An earlier revision of this
+> section (mine) claimed "oracle within top-8 = 87 % of the gap, so fund the learned ranker".
+> That framing was wrong: top-8 bounds where the *lottery* is least severe, not what is
+> *learnable*. **Selection is no longer the productive lever on REF-C.**
 >
 > ❌ **REFUTED — do not add a target-speed term to the selection score.** REF-C v1.0 measured
 > it: cost re-ranking recovers **0.0 %** (best blend point is λ=0, the unmodified baseline;
@@ -576,13 +582,34 @@ direct-head diffusion arm essentially level with the world-model stack.
 > (MAE 1.65 vs 0.475) and makes braking windows **+0.51 m worse**. Right quantity, wrong
 > timescale.
 >
-> ✅ **Lever that survives:** a LEARNED residual over the **top-K (K≈8)** trained on
-> **joint along+cross error** — never a speed target. The incumbent confidence head is strong
-> (Spearman 0.907 vs ADE, 68 % of the chance→oracle span) so a re-scorer must beat it, not
-> replace it naively. That is **REF-C v1.2**.
+> ⚠️ **Do NOT naively "score the refined trajectory" either.** Selecting on the discarded
+> refined-pass confidence scores **1.36593 — 2.9× WORSE than baseline** — because
+> `refc_train` never supervises the conf head at denoise timesteps, so that signal is
+> *unsupervised noise*. This retroactively explains why flagship v1.5's version of the same
+> fix degraded as its fan sharpened.
+>
+> **The two selection experiments, both settled:**
+>
+> | | approach | full-set ADE@2s | verdict |
+> |---|---|---|---|
+> | **REF-C v1.0** | hand-written cost re-rank, 0 new params | 0.4714 (λ=0 best) | **0.0 % recovered** — best blend point is the untouched baseline; pure cost −171 % |
+> | **REF-C v1.2** | learned re-scorer, soft distance-weighted target, frozen decoder | **0.46251** vs 0.47144 | **+2.9 % of the gap; NOT significant** (paired Δ +0.00893, CI [−0.0062, +0.0250]) |
+>
+> v1.2's one clean win is over v1.0: **a learned ranker does what a hand-written cost provably
+> cannot** — qualitatively real, quantitatively small. Also established there: **hard-argmin is
+> the worst target in all five feature configurations** (pointwise ≈ warm-listwise >
+> cold-listwise > hard), the frozen decoder embedding is nearly worthless (+3.01 % on geometry
+> + frozen logit alone vs +3.61 % with it), and top-K is target-dependent (`regress` collapses
+> on the full fan, `soft` tolerates it; K=8–32 a flat plateau).
+>
+> **Where the lever actually is now:** REF-C **proposes** ~2× better than flagship v1.5
+> (oracle 0.164 vs 0.338) while v1.5 **mis-ranks** about half as often (0.235 vs 0.454). The
+> two arms fail in opposite directions, so the open question is proposal quality and the
+> architecture that produces it — not the ranker.
 > Evidence: `taniteval/taniteval/plan_fan.py`, `taniteval/taniteval/refc_rerank.py`,
-> `Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md`,
-> `Research/2026-07-20-refc-cost-rerank-tier0.md`.
+> `stack/tanitad/models/refc_rescorer.py`, `Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md`,
+> `Research/2026-07-20-refc-cost-rerank-tier0.md`,
+> `Research/2026-07-20-refc-v12-learned-rescorer.md`.
 
 **Beats CV in all three speed terciles** — low 0.708/0.932 ✓, med 0.586/0.934 ✓, high 0.521/0.647 ✓. By
 curvature: straight 0.523 vs 0.439 ✗, gentle 0.785 vs 1.357 ✓, sharp 0.844 vs 2.376 ✓.
