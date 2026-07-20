@@ -472,3 +472,266 @@ def route_target_v2(poses: Tensor, t: int, horizon_steps: int = NAV_HORIZON_STEP
     the v1 circularity where the input command and the target were the same
     derivation)."""
     return route_from_future(poses, t, horizon_steps, min_steps)["route"]
+
+
+# ============================================================================
+# v2.1 (2026-07-20): ADAPTIVE-HORIZON route labels that NEVER default to
+# `straight`. Fixes the three defects an 800-window audit of the v2 labeler on
+# the PhysicalAI val split measured directly.
+# ----------------------------------------------------------------------------
+# WHAT THE AUDIT FOUND (stack/scripts/route_label_audit.py, 80 episodes):
+#   D1 COVERAGE COLLAPSE. v2 needs NAV_MIN_STEPS=150 (15 s) of future and looks
+#      ahead NAV_HORIZON_STEPS=250 (25 s). PhysicalAI clips are ~199 frames
+#      (~20 s), so only the first ~5 s of every clip is judgeable at all —
+#      70 % of windows fell through the `h < min_steps` guard.
+#   D2 SILENT STRAIGHT-FALLBACK. That guard returned ROUTE_STRAIGHT (the `base`
+#      dict, v2 line ~410). "I cannot judge this" and "the road goes straight"
+#      were the SAME emitted class. Any consumer that ignored `valid` — and the
+#      label files/exports do, they carry the class — read 70 % unlabeled as
+#      70 % straight. That is what poisoned the route prior.
+#   D3 net_dyaw COMPUTED BUT UNUSED. v2 decided on peak_kappa+concentration
+#      only. A 479 m-radius, 48-degree sweep (val ep_00069) is `is_road` ->
+#      ROUTE_STRAIGHT with valid=True, i.e. it TRAINS as straight while the
+#      vehicle actually changes heading by half a right angle.
+#
+# THE v2.1 RULES
+#   R1 ADAPTIVE HORIZON — judge with whatever future exists. The gate is not
+#      "enough TIME" but "enough ROAD": ARC LENGTH actually travelled
+#      (MIN_ARC_ROUTE_M). Curvature kappa = dyaw/ds is ALREADY per-metre, so
+#      the TIGHTNESS threshold needs no rescaling by horizon — that is the
+#      whole point of a curvature-relative label. What does need rescaling is
+#      TRANSIENCE: v2's `concentration` is the share of the net heading change
+#      inside a fixed 5 s sub-window, and as the horizon shrinks that share
+#      tends to 1 for every window, junction or not. v2.1 therefore (a)
+#      measures concentration over a junction-scale stretch of ROAD
+#      (CONC_ARC_M metres) instead of a fixed number of steps, and (b) applies
+#      the transience gate ONLY when there is enough arc for a sustained
+#      alternative to exist (TRANSIENCE_MIN_ARC_M); below that, transience is
+#      not measurable and tightness alone decides (flagged in the output).
+#   R2 NEVER DEFAULT TO STRAIGHT — unjudgeable windows return ROUTE_UNKNOWN,
+#      a SENTINEL that is deliberately NOT one of the three CE classes.
+#      n_route stays 3: ROUTE_UNKNOWN always comes with valid=False, and a
+#      consumer that forgets the mask gets a loud index error instead of a
+#      silent straight. `reason` says which of the four unjudgeable/decided
+#      paths fired.
+#   R3 net_dyaw IS IN THE DECISION — TURN iff (tight AND transient) OR
+#      |net_dyaw| >= NET_DYAW_TURN_RAD. The second clause is the D3 fix: a
+#      large-radius sweep that nets 45 degrees of heading is a route event for
+#      a head that must predict WHERE THE VEHICLE IS GOING, however gentle the
+#      radius. It is a SEPARATE, NAMED rule (`reason="net_heading"`) and can be
+#      switched off (`use_net_dyaw=False`) to recover v2's strict
+#      junction-only semantics, because the two readings genuinely disagree and
+#      the audit reports both.
+#   R4 GRADED TARGETS — `mean_curv` (net_dyaw / arc, signed 1/m) and
+#      `graded_route` (tanh of mean_curv in junction units) are threshold-free
+#      and horizon-invariant by construction: a soft regression target that
+#      works on a 2 s window and a 25 s window alike, alongside the 3-class CE.
+#
+# ADDITIVE: every v1 and v2 function above is unchanged and remains the default
+# path, so shipped runs stay reproducible. v2.1 is opt-in.
+# ----------------------------------------------------------------------------
+
+# Sentinel route class. NOT a CE class — ROUTE_CLASSES stays 3 wide
+# (tanitad.refs.refb.ROUTE_CLASSES / RefBConfig.n_route are untouched).
+ROUTE_UNKNOWN = 3
+ROUTE_V21_NAMES = {ROUTE_LEFT: "left", ROUTE_STRAIGHT: "straight",
+                   ROUTE_RIGHT: "right", ROUTE_UNKNOWN: "unknown"}
+
+MIN_ARC_ROUTE_M = 20.0        # < 20 m of road travelled -> route intent is not
+                              # recoverable from the trajectory (stopped, or the
+                              # window sits at the very end of the clip)
+CONC_ARC_M = 60.0             # junction-scale stretch of ROAD over which a
+                              # discrete turn's heading change is concentrated
+TRANSIENCE_MIN_ARC_M = 150.0  # below this the window is too short for a
+                              # SUSTAINED alternative to exist, so concentration
+                              # carries no information -> gate not applied
+NET_DYAW_TURN_RAD = math.pi / 4   # 45 deg net heading change -> route turn even
+                                  # at road-following radius (the D3 fix)
+CURV_SMOOTH_ARC_M = 5.0       # curvature smoothing measured in METRES of road,
+                              # so a slow tight turn is not smoothed away and a
+                              # fast sweep is not under-smoothed
+CURV_SMOOTH_MIN_K, CURV_SMOOTH_MAX_K = 3, 15
+
+
+def _arc_smooth_k(ds: Tensor, arc_m: float = CURV_SMOOTH_ARC_M) -> int:
+    """Moving-average width (in steps) spanning ~`arc_m` metres of road."""
+    if ds.numel() == 0:
+        return CURV_SMOOTH_MIN_K
+    mean_ds = float(ds.mean().clamp_min(1e-3))
+    k = int(round(arc_m / mean_ds))
+    return max(CURV_SMOOTH_MIN_K, min(CURV_SMOOTH_MAX_K, k))
+
+
+def _arc_concentration(step_dyaw: Tensor, ds: Tensor, net_dyaw: float,
+                       conc_arc_m: float = CONC_ARC_M) -> float:
+    """Share of |net_dyaw| falling in the tightest `conc_arc_m` METRES of road.
+
+    v2 used a fixed 50-step (5 s) sub-window, which is a different physical
+    stretch of road at 5 m/s than at 30 m/s and degenerates as the horizon
+    shrinks. Arc-anchored, "transient" means the same thing at every speed and
+    every horizon: the heading change happened inside one junction-length piece
+    of road rather than being spread along the whole drive."""
+    n = step_dyaw.shape[0]
+    if n == 0 or abs(net_dyaw) <= 1e-3:
+        return 0.0
+    z = step_dyaw.new_zeros(1)
+    cum_s = torch.cat([z, torch.cumsum(ds, 0)])              # [n+1]
+    cum_d = torch.cat([z, torch.cumsum(step_dyaw, 0)])       # [n+1]
+    # first index j > i whose arc from i reaches conc_arc_m (else the window end)
+    j = torch.searchsorted(cum_s.contiguous(),
+                           (cum_s[:-1] + conc_arc_m).contiguous()).clamp(max=n)
+    sub = cum_d[j] - cum_d[:-1]                              # [n] heading per sub
+    return float(sub.abs().amax() / (abs(net_dyaw) + 1e-6))
+
+
+def route_from_future_v21(poses: Tensor, t: int,
+                          horizon_steps: int = NAV_HORIZON_STEPS,
+                          min_arc_m: float = MIN_ARC_ROUTE_M,
+                          net_dyaw_turn: float = NET_DYAW_TURN_RAD,
+                          use_net_dyaw: bool = True) -> dict:
+    """v2.1 route derivation at ``t`` — adaptive-horizon, never-straight-by-
+    default. Drop-in shape-compatible with :func:`route_from_future` plus new
+    keys. Returns:
+
+        route        int  ROUTE_LEFT / ROUTE_STRAIGHT / ROUTE_RIGHT /
+                          **ROUTE_UNKNOWN** (sentinel, never a CE class)
+        valid        bool True iff `route` is a real judgement. ROUTE_UNKNOWN
+                          always carries valid=False (and vice versa).
+        ambiguous    bool True only for the gray-zone tightness band (a gentle
+                          fork/exit not separable from a road curve without a
+                          map) — distinguishes "unknowable" from "no data".
+        reason       str  which rule fired: ``no_future`` | ``no_arc`` |
+                          ``tight_transient`` | ``net_heading`` |
+                          ``road_following`` | ``gray_zone``
+        net_dyaw     float signed CUMULATIVE heading change (rad) over the
+                          AVAILABLE future — graded target, and now a DECISION
+                          input. NOTE this differs from v2's field of the same
+                          name: v2 took the WRAPPED endpoint difference
+                          wrap(yaw[t+h]-yaw[t]), which silently folds a 270 deg
+                          roundabout into -90 deg and flips its sign. v2.1 sums
+                          the per-step wrapped deltas, so heading change beyond
+                          +-180 deg accumulates correctly and the sign is
+                          wrap-robust. v2's quantity is kept as
+                          ``net_dyaw_wrapped`` for cross-checking.
+        net_dyaw_wrapped float the v2 endpoint-difference value
+        signed_curv  float signed smoothed peak curvature (1/m, +left)
+        peak_kappa   float max |smoothed kappa| (1/m) — tightness, 1/R
+        concentration float arc-anchored transience share (see
+                          :func:`_arc_concentration`)
+        mean_curv    float net_dyaw / arc (signed 1/m) — the threshold-free,
+                          horizon-invariant graded route target
+        graded_route float tanh(mean_curv / CURV_TURN_PER_M) in (-1, 1) — the
+                          same signal squashed into junction units for a soft
+                          regression head
+        arc_m        float road length actually travelled over the window
+        h_steps      int   future steps actually used (adaptive)
+        transience_measurable bool whether the concentration gate was applied
+
+    Decision (R3): TURN iff (peak_kappa >= CURV_TURN_PER_M AND transient) OR
+    (use_net_dyaw AND |net_dyaw| >= net_dyaw_turn); else clearly gentle
+    (peak_kappa <= CURV_ROAD_PER_M) -> STRAIGHT/valid; else UNKNOWN/invalid."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    T = poses.shape[0]
+    if not 0 <= t < T:
+        raise ValueError(f"t={t} out of range for T={T}")
+    if horizon_steps < 1:
+        raise ValueError(f"horizon_steps must be >= 1, got {horizon_steps}")
+    base = {"route": ROUTE_UNKNOWN, "valid": False, "ambiguous": False,
+            "reason": "no_future", "net_dyaw": 0.0, "net_dyaw_wrapped": 0.0,
+            "signed_curv": 0.0, "peak_kappa": 0.0, "concentration": 0.0,
+            "mean_curv": 0.0, "graded_route": 0.0, "arc_m": 0.0, "h_steps": 0,
+            "transience_measurable": False}
+    h = min(int(horizon_steps), T - 1 - t)
+    if h < 1:
+        return base                                   # literally no future left
+    seg = poses[t:t + h + 1]                          # [h+1, 4]
+    d = seg[1:, :2] - seg[:-1, :2]
+    ds = d.norm(dim=-1)                               # [h] realized arc per step
+    arc = float(ds.sum())
+    step_dyaw = wrap_to_pi(seg[1:, 2] - seg[:-1, 2])
+    net_dyaw = float(step_dyaw.sum())                 # CUMULATIVE, unwrapped
+    out = dict(base, net_dyaw=net_dyaw, arc_m=arc, h_steps=int(h),
+               net_dyaw_wrapped=float(wrap_to_pi(seg[-1, 2] - seg[0, 2])))
+    if arc < min_arc_m:                               # stopped / clip tail
+        out["reason"] = "no_arc"
+        return out                                    # UNKNOWN, never straight
+
+    kappa = torch.where(ds >= MIN_ARC_M, step_dyaw / ds.clamp_min(MIN_ARC_M),
+                        torch.zeros_like(ds))
+    ks = _moving_avg(kappa, _arc_smooth_k(ds))
+    peak_i = int(ks.abs().argmax()) if ks.numel() else 0
+    peak_kappa = float(ks.abs()[peak_i]) if ks.numel() else 0.0
+    signed_curv = float(ks[peak_i]) if ks.numel() else 0.0
+    concentration = _arc_concentration(step_dyaw, ds, net_dyaw)
+    mean_curv = net_dyaw / max(arc, 1e-6)
+    out.update(signed_curv=signed_curv, peak_kappa=peak_kappa,
+               concentration=concentration, mean_curv=mean_curv,
+               graded_route=float(math.tanh(mean_curv / CURV_TURN_PER_M)),
+               transience_measurable=arc >= TRANSIENCE_MIN_ARC_M)
+
+    tight = peak_kappa >= CURV_TURN_PER_M
+    # R1: transience only discriminates when a SUSTAINED alternative could fit.
+    transient = (concentration >= CONCENTRATION_MIN
+                 if out["transience_measurable"] else True)
+    big_net = abs(net_dyaw) >= net_dyaw_turn
+    if tight and transient:
+        # Direction from the PEAK signed curvature: robust to yaw wrap on a
+        # >180 deg roundabout, where net_dyaw's sign flips (v2 regression).
+        out.update(route=ROUTE_LEFT if signed_curv > 0 else ROUTE_RIGHT,
+                   valid=True, reason="tight_transient")
+    elif use_net_dyaw and big_net:
+        # D3 fix: a gentle-radius sweep that nets >= 45 deg IS a route event.
+        # net_dyaw is the CUMULATIVE (unwrapped) heading change, so its sign is
+        # correct past +-180 deg too — no wrap ambiguity to guard against.
+        out.update(route=ROUTE_LEFT if net_dyaw > 0 else ROUTE_RIGHT,
+                   valid=True, reason="net_heading")
+    elif peak_kappa <= CURV_ROAD_PER_M:
+        out.update(route=ROUTE_STRAIGHT, valid=True, reason="road_following")
+    else:                                             # gray-zone tightness
+        out.update(route=ROUTE_UNKNOWN, valid=False, ambiguous=True,
+                   reason="gray_zone")
+    return out
+
+
+def nav_command_v21(poses: Tensor, t: int,
+                    horizon_steps: int = NAV_HORIZON_STEPS,
+                    **kw) -> tuple[int, bool]:
+    """v2.1 drop-in for :func:`nav_command_v2`: (nav_cmd, valid).
+
+    The nav COMMAND is a model INPUT and must stay inside NAV_COMMANDS, so an
+    UNKNOWN route emits NAV_FOLLOW with valid=False — exactly as v1/v2 did for
+    short windows. The difference that matters is on the TARGET side
+    (:func:`route_target_v21`), which refuses to say `straight` when it does
+    not know."""
+    r = route_from_future_v21(poses, t, horizon_steps, **kw)
+    nav = _ROUTE_TO_NAV.get(r["route"], NAV_FOLLOW)
+    return nav, bool(r["valid"])
+
+
+def route_target_v21(poses: Tensor, t: int,
+                     horizon_steps: int = NAV_HORIZON_STEPS,
+                     **kw) -> tuple[int, bool]:
+    """v2.1 route aux target at ``t`` as ``(target, valid)``.
+
+    Returns the PAIR on purpose: v2's ``route_target_v2`` returned a bare class
+    and the caller had to remember to fetch `valid` separately — the exact
+    ergonomic hole that let the silent straight-fallback reach the trainer.
+    ``target`` is ROUTE_UNKNOWN (=3, out of CE range) whenever valid is False,
+    so an unmasked cross-entropy raises instead of training a wrong class."""
+    r = route_from_future_v21(poses, t, horizon_steps, **kw)
+    return int(r["route"]), bool(r["valid"])
+
+
+def route_graded_target(poses: Tensor, t: int,
+                        horizon_steps: int = NAV_HORIZON_STEPS,
+                        **kw) -> tuple[float, float]:
+    """Threshold-free soft route target at ``t``: ``(mean_curv, net_dyaw)``.
+
+    mean_curv = net_dyaw / arc is signed curvature per metre — horizon- and
+    speed-invariant, defined for ANY amount of future (the 3-class CE is not),
+    so it supervises the windows the discrete label must mask. Regress it
+    alongside the CE; ``graded_route`` in the full dict is the same quantity
+    squashed to (-1, 1)."""
+    r = route_from_future_v21(poses, t, horizon_steps, **kw)
+    return float(r["mean_curv"]), float(r["net_dyaw"])

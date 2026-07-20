@@ -524,12 +524,12 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 
 ---
 
-### 4.1 REF-C-XL — `refc-diffusion-xl-30k` — 🟢 RUNNING, evaluated at 16 k
+### 4.1 REF-C-XL — `refc-diffusion-xl-30k` — ✅ **COMPLETE at step 29,999**
 
 | Field | Value |
 |---|---|
-| **Status** | 🟢 **RUNNING** on `tanitad-pod3`. At 2026-07-20 ~06:00 UTC: step **26,250 / 30,000** (started 2026-07-19). |
-| **Location** | `tanitad-pod3:/workspace/experiments/refc-diffusion-xl-30k/` · eval snapshot `tanitad-eval:/root/models/refc-xl-snap/ckpt.pt` (mid-training, ~16 k) |
+| **Status** | ✅ **FINISHED** on `tanitad-pod3` 2026-07-20 09:19 UTC at step **29,999 / 30,000**. GPU released. |
+| **Location** | `tanitad-pod3:/workspace/experiments/refc-diffusion-xl-30k/` (source) · **final eval copy `tanitad-eval:/root/models/refc-xl-30k/ckpt.pt`, md5 `966d4eff1ea5ddf86efba01b8344e198`** (pulled after the trainer exited, so the file was quiescent) · superseded mid-training snapshots: `refc-xl-snap` (~16 k / 28 k) |
 | **Architecture** *(from run `config.json`)* | encoder 9-ch 256 px, `base_width 124`, blocks (3,8,20,6) → 8×8×F map · measurement `{hidden 128, d_out 128}` · trajectory horizons (5,10,15,20) · anchors `{n 256, pool 4096, seed 0}` · decoder `{d 512, 8 heads, 6 layers, ff_mult 4, aux_hidden 512, diffusion_steps 2, noise_std 0.1}` · law `{hidden 2048}` · strategic `{hidden 768, d_ctx 96}` · imagination `{d 512, depth 6, 8 heads, ff_mult 4, head_hidden 1024}` · `ego_dropout 0.5` · `hierarchy true`, `graft_maneuver true`, `graft_imagination true`, `graft_target_latent false`, `grounded_selector false`, `refc1 false`, `path_dists (2,5,10,20)`, `speed_bins 4`, `speed_max 30.0` ✅ |
 | **Params** | encoder 199,496,532 · measurement 17,280 · strategic 4,133,472 · decoder 22,702,345 · imagination 20,986,339 · aux 513,960 · law 4,082,656 → **251,932,584** ✅ |
 | **Optimizer** | **Adam** (DiffusionDrive/TCP convention, *not* AdamW), lr **1e-4**, warmup 2000, cosine. Loss weights: traj 1.0, cls 1.0, law 0.5, route 0.1, man 0.1, speed_cls 0.2 ✅ |
@@ -538,16 +538,31 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 | **Code state** | `stack/tanitad/refs/refc.py` + `stack/scripts/refc_train.py` are **committed in this repo** (`6025769`, `7e9c402`, 15 refc tests). ⚠️ On pod3 the file shows as **untracked** (`?? stack/tanitad/refs/refc.py`) — the pod predates the commit; verify the pod copy matches HEAD before claiming byte-parity. |
 | **HF** | none |
 
-**Results — step ≈16,000 snapshot (`refc-xl`), 881 windows** ✅
+**Results — FINAL step 29,999 (`refc-xl-30k`), 881 windows** ✅ *(read from the raw eval run 2026-07-20)*
 
-| Metric | heldout |
-|---|---|
-| ADE@0.5s | 0.1629 ± 0.0194 |
-| ADE@1s | 0.2457 ± 0.0166 |
-| ADE@1.5s | 0.3835 ± 0.0259 |
-| **ADE@2s** | **0.5645 ± 0.0447** |
-| FDE@2s | 1.1076 |
-| miss@2m | 0.1495 |
+| Metric | **FINAL 29,999** | 28 k (provisional) | ≈16 k snapshot |
+|---|---|---|---|
+| **ADE@2s** | **0.458 ± 0.057** | 0.470 ± 0.057 | 0.5645 ± 0.0447 |
+| FDE@2s | **0.972** | — | 1.1076 |
+| miss@2m | **0.146** | 0.154 | 0.1495 |
+| TMS | 0.203 | — | — |
+
+**REF-C-XL finishes 0.006 m behind the deployed flagship v1 (0.4522)** — a budget-matched
+direct-head diffusion arm essentially level with the world-model stack.
+
+> 🔬 **The selection flaw — REF-C leaves ~0.16 m on the table in ranking alone.**
+> Read from `refc.py::AnchoredDiffusionDecoder.forward`: all 256 anchors ARE denoised (no
+> top-K gate), **but selection uses the t=0 classifier score over the ORIGINAL anchors — the
+> denoise passes return `_, off` and their own confidences are DISCARDED.** Geometry is
+> refined; ranking is not. Measured on ep11: ADE(selected) **2.572 m** vs **oracle-in-fan
+> 0.305 m** (8.4×); clip-wide selected 1.110 vs oracle 0.295, and in **111/170 frames (65 %)
+> the chosen plan is >2× worse than one already in the same fan**. The raw vocabulary already
+> held a 0.290 m plan, so this is neither a coverage nor a refinement failure. The residual is
+> dominantly **longitudinal**: ep03 f149 the ego brakes while the pick is constant-velocity at
+> v0, and proposal #203 in the same fan predicts the deceleration at 0.478 m.
+> **Lever for v1.5/v3: score the REFINED trajectory (or add a target-speed term to the
+> selection score); log oracle-in-fan vs selected to separate "can't propose" from "can't rank".**
+> Evidence: `taniteval/taniteval/plan_fan.py`, `Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md`.
 
 **Beats CV in all three speed terciles** — low 0.708/0.932 ✓, med 0.586/0.934 ✓, high 0.521/0.647 ✓. By
 curvature: straight 0.523 vs 0.439 ✗, gentle 0.785 vs 1.357 ✓, sharp 0.844 vs 2.376 ✓.
@@ -636,9 +651,9 @@ on `tanitad-eval` this session.* ✅
 | Rank | Arm | TanitEval key | Step | Params | ADE@2s | FDE@2s | miss@2m | Beats CV |
 |---:|---|---|---:|---:|---:|---:|---:|:--:|
 | 1 | **Flagship v1 (speed+jerk) FINAL** | `flagship-30k` | 29 999 | 263.4 M | **0.4522 ± 0.0312** | 0.9437 | 0.0602 | ✅ |
+| 2 | **REF-C-XL** (anchored diffusion) **FINAL** | `refc-xl-30k` | 29 999 | 251.9 M | **0.458 ± 0.057** | 0.972 | 0.146 | ✅ |
 | — | *best-of-3 kinematic floor* | — | — | — | *0.5005* | — | — | — |
 | — | *CTRV oracle* | — | — | — | *0.523* | — | — | — |
-| 2 | **REF-C-XL** (anchored diffusion) | `refc-xl` | ~16 000 | 251.9 M | **0.5645 ± 0.0447** | 1.1076 | 0.1495 | ✅ |
 | — | *no-vision ego-status ceiling* | — | — | — | *0.5735* | — | — | — |
 | 3 | **REF-B v2** (arch-v2) FINAL | `refb-v2-30k` | 29 999 | 271.6 M | **0.5921 ± 0.0685** | 1.2305 | 0.2025 | ✅ |
 | 4 | Flagship v1, 19 k relay | `flagship-speed` | 19 000 | 263.4 M | 0.6277 ± 0.0551 | 1.3173 | 0.1799 | ✅ |
