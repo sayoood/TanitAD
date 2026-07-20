@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, v0.3 (2026-07-17). Maintained per D-020: every gate evaluation appends
+**Status:** living paper, v0.4 (2026-07-19). Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record.
@@ -33,7 +33,23 @@ program's first to beat constant-velocity extrapolation on every held-out open-l
 (ADE@2s 0.628 ± 0.055 vs 0.825), the gain causally attributed by paired A/B (+2.21 m, win-rate
 83.8 %); yet a two-parameter kinematic oracle (CTRV, 0.544) still tops the open-loop table — an
 ego-status shortcut we replicate from the literature and adopt as the honest bar, all open-loop
-numbers remaining weak claims under the program's standing rule (arXiv 2605.00066, §7.2). We
+numbers remaining weak claims under the program's standing rule (arXiv 2605.00066, §7.2).
+*Third-round update (v0.4):* at the completed 30 k checkpoint the flagship is the program's **first
+sub-floor arm** — ADE@2s 0.452 ± 0.031, below the best-of-3 kinematic floor (0.500), CTRV (0.523)
+and a learned ego-status ceiling (0.574) — resolving the v0.3 pending verdict in its favour. More
+importantly, a causal panel establishes that the model **genuinely predicts scene physics on the
+windows that require it**: on windows where a kinematic oracle diverges from the realized future
+(upcoming turns/brakes), the model beats CTRV by +0.80 m and that *entire* advantage is vision —
+mean-replacing the scene inverts it to −0.53 m (vision effect **+1.32 m, CI [+1.04, +1.64]**,
+separated), the advantage grows monotonically with divergence, upcoming road curvature linearly
+decodes from the latent (R² 0.25 vs 0.03 ego-only), and occluding the road ahead perturbs the
+prediction 1.6× more than the periphery. The honest counterweight, reported with equal weight: this
+in-distribution prediction does **not** transfer to beating the kinematic floor on *unseen* corpora
+(comma2k19 real-highway ADE@2s 0.849 vs floor 0.372; Cosmos synthetic 0.583 vs 0.358) — error
+roughly doubles and the anticipation advantage collapses (0.80 → 0.15 m) — though vision-ablation
+*still* degrades the out-of-distribution prediction (comma +0.27 m, CI-separated), so the model
+reads the unseen scene but cannot net-beat a very strong highway floor: it is partly
+distribution-fit, not yet corpus-general. We
 describe the architecture, its mathematical grounding, an
 instrument doctrine for honest measurement that caught three silent measurement hazards in its first
 week, and the falsifiable gate program by which every claimed edge will stand or fall.
@@ -157,6 +173,18 @@ recombination of maneuvers and places converts sample complexity from the produc
 level cardinalities. Inference-rate layering also converts the hierarchy into an efficiency device:
 the 207 M operative path is the only component at full rate.
 
+**Making the top-down seams load-bearing (H26).** A hierarchy only earns its parameters if the
+upper level's decision measurably steers the lower one. We instrument every seam with a
+conditioning ablation (FiLM-off vs on) plus a per-window content test (real upper-level signal vs a
+constant/mean surrogate) — a standing "hierarchy panel" (§7.5). The first verdict exposed a
+concrete failure mode: the intent→operative FiLM injection was *magnitude-swamping* the action
+signal (`intent_proj` norm ‖31.4‖ vs action-embedding ‖28.3‖), so an ungated intent term either
+corrupted the operative rollout or, by design, had to be zeroed to be harmless. The architectural
+fix is a **ReZero-style learnable scalar gate on the intent term, initialised at 0.1**
+(`predictor.py`), so the seam starts near-inert and training decides how much intent to admit rather
+than fighting a swamped FiLM. This is the same "a conditioning term must not swamp the base signal"
+lesson applied to the REF-C anchored decoder's maneuver→anchor priors (§3.8).
+
 ### 3.4 Planning: imagine-and-select with calibrated decoding
 
 Given the current window and a discrete maneuver vocabulary {m_i} (9–15 parameterized action
@@ -274,6 +302,30 @@ tactical and strategic grounding are the immediate hierarchical extension (H-led
 they compose with counterfactual action augmentation (regenerate a scene under varied actions,
 learn each level's consequence — H-ledger, `COUNTERFACTUAL_ACTION_AUGMENTATION.md`).
 
+**The loss-balance tension (why the encoder became an odometer).** Grounding buys the metric at a
+cost we now measure and name. In the joint objective the *supervised* metric-motion terms —
+hierarchical grounding (`invdyn` 2.0×3 + forward-consistency `fwd` 1.0×3 = 9.0) plus the
+waypoint/maneuver/route/inverse heads — outweigh the *self-supervised world-model core* (JEPA
+prediction 1.0 + K-step rollout 0.5 + goal-latent 0.5 + SIGReg 0.1 ≈ 2.1) by **roughly 5 : 1**, and
+per §3.2 there is *no stop-gradient*: the real-pair inverse-dynamics term reads the encoder latent
+directly (no `.detach()`), so its gradient reshapes the trunk into a metric odometer. This is the
+mechanistic root of a measured symptom — the trained encoder *redundantly re-encodes* the fed
+proprioception (in-latent yaw R² 0.89) and spends little capacity on scene, so vision contributes
+only ≈ 12 % of the prediction (§7.5) and cross-corpus transfer is fragile (§7.4). One honest caveat
+keeps this from being over-read: loss *weights* are not steady-state gradient *magnitudes* — the
+MSE-type grounding terms shrink toward zero as they fit (`fwd`-ADE reaches 0.033 m), so the 5 : 1
+ratio characterises the *early trajectory that set the encoder's character*, not the late-training
+budget; a bare re-weight is therefore a weak lever, and the coupling itself is the thing to cut.
+The surgical rebalance (v2.x candidate, gated, test-pinned) is a **straight-through gradient-decouple
+(scale α = 0.25)** applied to the latents *only where they feed the real-pair "odometer" term*
+(`grounding.invdyn`, mass 6.0), leaving the forward-consistency rollout term — the one that
+*produces* the protected 0.033 m operative metric — together with JEPA and SIGReg fully attached.
+It removes the dominant trunk-reshaping pressure without touching the term that owns the metric, adds
+no learned parameter, is forward-pass-identical, and is gated at a 5 k mid-checkpoint against a
+`fwd`-ADE non-regression and a rising vision-use target. Its deeper motivation — that supervised
+heads *distort* a good representation and hurt out-of-distribution — is the two-stage question taken
+up in §8.
+
 ### 3.8 Reference architectures (H1 / H4 controls)
 
 Two budget-matched (~261 M) references isolate a single axis each; both train on the *identical*
@@ -295,6 +347,30 @@ corrected-geometry corpus (§6.1) so only the tested axis differs.
   self-knowledge (§3.6), hidden-actor rollout (H15) and counterfactual imagine-and-select (§3.4) —
   precisely where the world model is pre-registered to win; if REF-B matches it there, the
   world-model premise is wounded and we report that.
+- **REF-C — anchored multi-modal decoder (tactical-head axis, H19).** Our first tactical head was a
+  single unimodal waypoint regressor; it reproduced the known failure mode of that design — a 3.4 m
+  tactical error (§7.5) that is *mode-averaging* over a multi-modal future. REF-C replaces it with a
+  **DiffusionDrive-style anchored decoder** (arXiv 2411.15139): a fixed vocabulary of trajectory
+  *anchors* — furthest-point-sampled over our own ego-frame future trajectories, not k-means, so the
+  74 %-straight skew does not collapse the vocabulary — whose queries cross-attend the feature map and
+  emit a per-anchor confidence (nearest-anchor cross-entropy, winner-takes-all offset regression)
+  refined by truncated diffusion off one weight set (`steps = 0` reproduces the classifier
+  byte-for-byte). It is **multi-modal by construction**, validated live on REF-B v2 (n_modes ≈ 22–28),
+  and it is the graft point for our hierarchy: the tactical maneuver-logits reweight the anchor
+  confidence priors through a learned maneuver→anchor projection (**validating H19** — our maneuver
+  vocabulary *is* the anchor set, propose-and-refine), with metric grounding replacing top-1 selection
+  by scoring anchors on logged data. It is run as a 3-size scaling study (55 M / 104 M / 252 M) on the
+  identical corpus.
+
+**A label-integrity fix underneath the tactical head.** The strategic/tactical pseudo-labels were
+first reverse-engineered from *future dynamics* — the route class thresholded net heading change over
+a 15–25 s window (|Δψ| > 45°) — which is circular (the fed nav command *is* the derivation),
+degenerate on 74 %-straight highway, and conflates a gentle road curve taken at speed with a tight
+junction turn (Δψ = κ·v·t mixes curvature, speed and time). A label-quality harness measured the
+conflation: v1 **mislabels 24.5 % of road curves as route-turns**. The v2 derivation is
+*curvature-relative* (decide on κ = Δψ/Δs = 1/R, speed-invariant), which drives that conflation to
+**0.0 %** on the known-semantics corpus and explicitly flags ambiguous junctions/forks rather than
+forcing a binary — a prerequisite for any honest maneuver-accuracy or route claim.
 
 ## 4. Why less data suffices: theoretical grounding
 
@@ -480,7 +556,8 @@ L2-class metrics are dominated by kinematic extrapolation. A second, independent
 instrument line inside the program converged on the same oracle (CTRV 0.545, different corpus and
 stratification) — replication, not coincidence. Consequence, pre-registered: **beat-CTRV is the
 honest open-loop bar.** The flagship stands 0.084 above it at 19 k and closing; whether it crosses
-by 30 k is the pending verdict.
+by 30 k is the pending verdict. *(Resolved in §7.3: at the completed 30 k checkpoint the flagship
+crosses — 0.452 ± 0.031, below both CTRV and the best-of-3 floor.)*
 
 **How much of it is vision? (imagination panel).** A 2×2 vision-ablation plus latent-fidelity
 panel separates what each arm's predictions owe to pixels versus integrated dynamics. The
@@ -522,22 +599,232 @@ oracles. The patch now training (refbpatch): a fixed-**distance** path head (TF+
 path/speed decoupling), v₀-dropout 0.5, an auxiliary yaw head, and turn-weighted loss — keeping
 REF-B the strongest fair imitation opponent for gate D4 rather than a strawman.
 
-## 8. Roadmap
+### 7.3 The flagship at 30 k: the first sub-floor arm, and a causal proof of genuine scene prediction (2026-07-18)
+
+The flagship's first training run completed at 30 k. On the canonical held-out validation set
+(TanitEval, route-resampled protocol, n = 881 windows / 40 episodes) it is the program's **first
+arm below every trivial bar**: ADE@2s **0.452 ± 0.031 m** (plain mean 0.427), under the best-of-3
+kinematic floor (0.500), the CTRV oracle (0.523) and a learned ridge ego-status ceiling (0.574).
+Against the 19 k checkpoint the gain is +0.188 m at an 81.2 % per-window win rate, with miss@2 m
+0.180 → 0.060 (3×); every curvature stratum improved and the turn strata now *beat* the floor
+(skill-vs-floor straights 1.03 at-floor, gentle 0.68, sharp 0.60). One stratum remains above floor —
+top-decile high speed (1.785) — the open weakness dissected in §7.5. These are open-loop numbers and
+therefore weak claims (arXiv 2605.00066); the checkpoint is pushed to a gated model repo.
+
+The decisive result is not the aggregate but a **causal panel that isolates what the model owes to
+seeing** (TanitEval generalization panel, `taniteval/generalization.py`; ledger 2026-07-18). It
+stratifies windows by how far a kinematic oracle (CTRV) diverges from the realized future — the
+windows where anticipation, not extrapolation, is required — and ablates vision by mean-replacing the
+scene:
+
+- **Vision-tied anticipation (headline).** On high-divergence windows (upcoming turns/brakes CTRV
+  cannot extrapolate) the model beats the CTRV oracle by **+0.796 m on 94 %** of them, and that
+  *entire* advantage is vision: mean-replacing the scene **inverts** it to −0.529 m (worse than
+  CTRV). The vision effect is **+1.325 m, CI [+1.04, +1.64]** (separated from zero). The anticipation
+  is *read from the scene*, not extrapolated from dynamics.
+- **Monotone in divergence.** The advantage over CTRV rises monotonically across divergence quartiles
+  (Q1 −0.372 → Q4 +0.796) — the model beats the oracle *most* exactly where dynamics fails, and
+  correctly defers to near-inertial extrapolation where CTRV is already optimal.
+- **The latent encodes the road, not just the ego-state.** Upcoming road curvature linearly decodes
+  from the pooled latent at **R² 0.254 vs 0.031** for an ego-kinematics-only control (+0.223) — the
+  representation carries scene geometry beyond the fed proprioception.
+- **Learned physics, not memorized paths.** Predicted trajectories are physically feasible 95.9 % of
+  the time vs 97.1 % for ground truth.
+- **It reads the road ahead.** Occluding the road-ahead pixels shifts the prediction **1.60× more**
+  than occluding an equal-area periphery patch, with dynamics inputs held fixed.
+
+*Honest limits, reported with the result:* on low-divergence / near-inertial windows the model
+dynamics-guesses (correct — CTRV is optimal there); it **loses to CTRV on the top-10 % high-speed
+windows (−0.617 m)**, the §7.5 weakness; and the anticipation lead-time test is inconclusive at this
+stage (an instrument limit under action-grounded rollout, not a null result). The claim this panel
+supports is precise and bounded: *in-distribution, the model genuinely predicts scene physics on the
+windows that require it* — a causal, vision-attributed claim, distinct from and stronger than the
+aggregate ADE, and distinct from any closed-loop driving-competence claim (still unmade).
+
+### 7.4 Out-of-distribution: the honest limit (2026-07-19)
+
+With comma2k19 and Cosmos pixels staged on the eval pod, the same 30 k flagship was run on **unseen
+corpora** (ledger 2026-07-19). The in-distribution proof does **not** transfer to beating the
+kinematic floor out-of-distribution:
+
+| corpus | regime | n | model ADE@2s | best-of-3 floor | aggregate verdict | per-window win-rate vs floor |
+|---|---|---|---|---|---|---|
+| PhysicalAI | in-distribution | 881 | **0.427** | 0.523 | **beats** floor | 49.7 % |
+| comma2k19 | OOD, real highway | 2176 | **0.849** | 0.372 | **loses** | 17.5 % |
+| Cosmos | OOD, synthetic | 92 | **0.583** | 0.358 | **loses** | 29.4 % |
+
+Two things drive the gap, and both are honest. First, comma2k19 and Cosmos are highway-dominated, so
+their CTRV floor is *very* strong (≈ 0.37 m) — a hard bar precisely because the ego-status shortcut
+(§7.2) is near-optimal there. Second, the model's own error roughly **doubles** out of distribution,
+and its high-divergence anticipation advantage — the §7.3 headline — **collapses from 0.80 m to
+0.15 m**. Path feasibility on sharp-curvature windows falls from **97.8 % in-distribution to 62.8 %
+OOD**.
+
+The nuance that keeps this from being a flat negative: **vision-ablation still hurts out of
+distribution** — mean-replacing the scene degrades the comma2k19 prediction by +0.27 m (CI-separated).
+So the model *reads* the unseen scene; it simply cannot convert that reading into a net win over a
+highway floor this strong. The honest verdict: **the in-distribution genuine-prediction is real, but
+the model is partly distribution-fit — not yet a corpus-general world model.** This is exactly the
+target of the v2/v3 vision-reliance and loss-rebalance levers (§3.7, §8), for which these numbers are
+now the pre-registered OOD baseline; 24 clear/degraded Cosmos weather *pairs* are also staged, making
+a true weather counterfactual a modest panel addition.
+
+### 7.5 Hierarchy, tactical decoding, and the longitudinal weakness
+
+**Hierarchy panel (H26).** The standing seam instrumentation (§3.3) returns a mixed, honest verdict
+that sharpened with training (ledger 2026-07-18). *Grounding dominance (H18) is confirmed and grew:*
+the grounded operative rollout (0.615 m) beats the ungrounded tactical head (3.43 m) by 5× at 19 k,
+and the gap widened to Δ 2.70 m at 30 k. *Cross-layer consistency holds:* maneuver and trajectory
+agree at 0.872 (κ 0.612). *But top-down conditioning was initially inert or harmful:* at 19 k the
+intent→operative seam was magnitude-swamped (§3.3; ungated `intent_proj` ‖31.4‖ vs action ‖28.3‖ —
+the deployed rollout was intent-free by design), and per-window intent *content* was inert on both a
+trained-encoder (flagship) and a frozen-encoder (REF-A) arm. At 30 k **one seam flipped to
+load-bearing** — ctx→tactical now shows `content_matters = true` (vs-mean maneuver Δ +0.044,
+CI-separated); intent→operative remains harmful when ungated (confirming the ReZero fix of §3.3 is
+the right lever), and nav→strategic is still a pure command-echo (route-from-vision skill 0.0, an
+open v3 target). Read plainly: at 30 k the 0.45 m comes from the operative predictor plus grounded
+step-readout; the upper brains *cohere* but do not yet *drive* the operative — making the seam-scaling
+levers, not more capacity, the path to the "hierarchy is dominant" claim.
+
+**The tactical decoder and the high-speed longitudinal weakness.** The unimodal tactical head's 3.38 m
+error (§7.2) motivated the REF-C anchored-decoder replacement (§3.8). Decomposing the flagship's one
+remaining above-floor stratum with a decoupled long/lateral panel (`taniteval/pathspeed.py`,
+2026-07-18) localizes it precisely: **89 % of the 2 s squared error is along-track (speed), not
+lateral.** At high speed the model **over-predicts speed by +0.66 m/s** (longitudinal RMSE 1.38 m vs
+CTRV 0.077 m; lateral only 0.63 m), and the error compounds over the horizon (per-step displacement
+error 0.07 → 0.22 → 0.51 → 0.91 m). The mechanism: the model applies the expected-speed-*change*
+behaviour learned from common low-speed accelerate/brake events to high-speed cruise, where constant
+velocity is near-optimal — **it plans the path well but the speed poorly**, a fault hidden inside
+aggregate ADE until the decoupled metric exposed it. A targeted longitudinal fix (along-track
+up-weighting + speed-stratified sampling + an anti-overshoot term) is measurement-gated on this
+panel, deferred behind a check of whether the v2 rebalance already relieves it.
+
+## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
+
+**What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
+tension — together they locate the model precisely. In-distribution, the representation genuinely
+encodes and predicts scene physics on the windows that need it (vision effect +1.32 m, CI-separated;
+curvature R² 0.25; reads-road-ahead 1.6×). Out-of-distribution, that same vision signal survives
+(comma2k19 ablation +0.27 m, CI-separated) but is not strong enough to net-beat a highway kinematic
+floor, and the anticipation advantage collapses. The system has learned a *real but
+distribution-fit* world model. The mechanistic account of *why* is the loss-balance reading of §3.7:
+a ≈ 5 : 1 supervised-metric-to-SSL mass with no stop-gradient shaped the encoder into a metric
+odometer (yaw R² 0.89 re-encode of fed proprioception), leaving vision at ≈ 12 % of the prediction
+and the trunk under-invested in transferable scene structure.
+
+**The two-stage question (LeWM/JEPA train-then-decode).** The JEPA/latent-world-model lineage
+consistently *separates* self-supervised representation learning from action-conditioned prediction,
+and there is convergent evidence this separation is what buys out-of-distribution robustness:
+V-JEPA 2-AC freezes a self-supervised video encoder and post-trains a compact action-conditioned
+predictor for zero-shot latent MPC (arXiv 2506.09985); DINO-WM couples frozen perceptual features to
+a learned latent dynamics model and beats task-specific latents for planning (arXiv 2411.04983);
+I-JEPA/LeJEPA evaluate through a frozen encoder + attentive probe (arXiv 2511.08544). The *theorem*
+underneath is Kumar et al. (ICLR 2022, arXiv 2202.10054): full fine-tuning **distorts** good
+pretrained features and underperforms a linear probe out-of-distribution, while probe-then-gentle-tune
+(LP-FT) recovers ≈ 1 % in-distribution and ≈ 10 % OOD — which is exactly the pathology our joint
+objective exhibits, the supervised heads distorting the trunk. A **v3 that separates encoder training
+from action-conditioned prediction is therefore warranted** — but the evidence is explicit that it is
+*not* simply "freeze a generic encoder": that is REF-A (frozen DINOv2), already run and plateaued at
+2.14 m, because web-image features do not contain driving ego-motion. Our own data adds a hard warning
+— the pre-grounding JEPA latent had a **1.65 m oracle in-distribution decode ceiling** (vs the 0.033 m
+the grounded encoder reaches), so a frozen trunk risks capping the metric far above what end-to-end
+grounding achieves *unless* stage-1 self-supervision is on our own driving corpus and the
+action-conditioned predictor carries the metric. The clean de-risking move is that the §3.7
+gradient-decouple **is the ≈ 1 %-cost ablation of this v3**: if relieving the encoder's static-probe
+grounding raises vision-use while holding the 0.033 m metric, the two-phase freeze is worth building;
+if the metric collapses the moment the encoder is unshackled, a frozen v3 would hit the same 1.65 m
+ceiling and stage-1 must first be solved. Either way the decision is measurement-gated, not assumed
+(citations: Kumar 2202.10054; V-JEPA 2 2506.09985; DINO-WM 2411.04983; LeJEPA 2511.08544; LeJEPA
+identifiability 2605.26379).
+
+## 9. v3 design: hierarchical goal-vocabulary planning over the world model
+
+*Status: design contribution (2026-07-19), measurement-motivated; implementation staged (P0–P5), first
+evidence gate = the training-free planner-over-v1 experiment (§9.4). No v3 results are claimed yet.*
+
+### 9.1 Motivation from the measured failures
+Three independent measurements converge on one diagnosis. (i) The **frozen-encoder reference** (REF-A
+dyn-in, §3.8): full-val ADE@2s 2.92 m vs the trained-encoder twin's 0.452 m, losing to constant-velocity
+in every stratum; the failure is 94–99 % longitudinal — the model **regresses toward a mean speed even
+with v₀ fed as input** (over-predicts +1.72 m/s when slow, under-predicts −0.58 m/s when fast), while
+path geometry stays nearly intact (0.27 m cross-track). Monotone 5k→30k improvement rules out
+overfitting: it is a capacity ceiling of supervised regression on static features. (ii) The **hierarchy
+panel** (H26, §7.5): the strategic route head is a command echo (100 % "straight" under follow),
+the tactical head is 8× worse than the operative rollout (3.38 vs 0.43 m), and un-gated intent
+conditioning *hurts*. The hierarchy exists as structure, not as functioning planning. (iii) The
+**closed-loop probe**: open-loop 0.45 m → closed-loop 1.69 m with 22 % divergence, and the open-loop-
+decisive speed channel does not transfer. All three are the same disease: **supervised single-output
+heads collapse to conditional means and echoes**, and nothing in the stack represents *what should be
+achieved* — only what was done.
+
+### 9.2 The design: goals → options → consequences → cost → choice
+v3 restructures the hierarchy as planning over the world model (Michon's strategical/tactical/
+operational hierarchy and Donges' Navigation/Bahnführung/Stabilisierung, instantiated in a learned WM).
+A **frozen, tokenizable goal vocabulary** (110 tokens / 17 slots, v1 spec) defines: the strategic tuple
+⟨MISSION, ROUTE, VTARGET, VSOURCE, LANEOBJ, STYLE, RISK, ODD⟩ and the tactical tuple ⟨LONMODE,
+LATMANEUVER, HEADWAY, DYN, RULECTX, SIGNAL, INTERACT, TACPOINT, LIGHTSTATE⟩. The strategic module
+*predicts* its tuple from scene+navigation (target speed becomes an inferred, banded goal — "extract the
+set speed from signs" is a trained task, never a raw future-speed input, avoiding the ego-status
+shortcut). The tactical layer *proposes* options (vocabulary enumeration × a learned multi-modal
+proposal prior — the anchored decoder validated by REF-B v2's 0.646 m, the first reference arm to beat
+the CV floor in every speed stratum). The operative world model *predicts each option's consequences*
+(feature-space rollout for the frozen arms, per DINO-WM; grounded latent rollout for the flagship arm).
+A **planner** (CEM; Diffusion-ES staged) scores options on a lexicographic Rulebooks-style cost —
+safety ≻ rules ≻ mission ≻ comfort — and picks the plan; heads never decide.
+
+Three properties fall out rather than being engineered in: **longitudinal mode-switching** (free-flow ↔
+following emerges from the target-speed term competing with the gap barrier, the IDM insight — no mode
+classifier at execution); **driving style and risk degradation as cost presets** (STYLE/RISK tokens
+re-parameterize planner weights and the risk budget — behavioral degradation under weather/visibility/
+anomaly without retraining, an ISO 21448 SOTIF mitigation path); and **deliberation-on-demand**
+(`elevated_anomaly` raises the planner's compute budget — more samples, longer horizon — while `creep`/
+`hold_stop` buys time, escalating to pull-over/MRM per SAE J3016; a capability head-based E2E stacks
+cannot express, since a head spends identical compute on easy and hard scenes). Rule-conformity is a
+priority lattice (Rulebooks), so "cross the solid line to avoid the obstacle" is lattice-consistent and
+tokenized as a justified deviation with provenance rather than an exception.
+
+### 9.3 Both arms under one spine
+flagship-v3 (trained encoder, v2 lineage with measurement-gated lever staging) and refa-v3 (a
+three-arm frozen-encoder matrix: frozen generic DINOv2 as the faithful DINO-WM control; own-driving-SSL-
+then-freeze, the V-JEPA-2-AC pattern; LoRA/LP-FT partial adaptation per Kumar et al.) share the
+vocabulary, predictors, cost, and planner — turning the frozen-vs-trained encoder question (H4) into a
+controlled comparison *inside* the same planning architecture, which REF-A could not provide (it
+confounded the frozen encoder with supervised-regression heads).
+
+### 9.4 Falsifiable gates
+G1 counterfactual plan-ranking: the chosen plan must beat non-chosen options on realized outcome,
+CI-separated (the direct test of "evaluating alternatives" — replaces head-consistency as the H26
+instrument). G2 goal-causality: swapping a goal token must change the conditioned output (kills echo
+pathologies). G3 |v̂−VTARGET| tracking. G4 closed-loop drift below the 1.69 m head baseline. G5
+open-loop non-regression vs 0.452 m. The staging de-risks the thesis cheaply: the planner (cost+CEM)
+runs over the **already-trained v1 world model** with offline-minted VTARGET labels — if planning over
+frozen v1 already beats the 3.38 m tactical head and the 1.69 m closed-loop drift, the architecture is
+validated before any v3 training.
+
+## 10. Roadmap
 
 Completion of the first run and the full gate ladder; closed-loop evaluation (CARLA harness) for
 D4–D6 including opponent-derived weak-spot scenarios (a scenario database built from documented
 competitor failures, with per-scenario excellence as an explicit leaderboard section); the
 frozen-encoder comparison arm (H4); data-efficiency slope experiments toward the 1000× thesis (H7);
 modality steering driven by imagination uncertainty (H2); and NAVSIM/Bench2Drive entries once
-closed-loop gates pass.
+closed-loop gates pass. Immediate method levers set by the 30 k results: the §3.7 loss-rebalance and
+its v3 two-stage extension (§8) for vision-reliance and OOD transfer; the ReZero-gated intent seam
+(§3.3) to make top-down hierarchy load-bearing; the REF-C anchored decoder (§3.8) for multi-modal
+tactical prediction; and the targeted longitudinal fix (§7.5) for the high-speed weakness — each
+measurement-gated on the panel that exposed it.
 
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
 `TanitAD Research Hub/INITIAL_RESEARCH_SYNTHESIS.md` and the dated research notes: LeJEPA
-arXiv:2511.08544; JEPA generalization theory arXiv:2606.27014; V-JEPA-2 arXiv:2506.09985; LAW
-arXiv:2406.08481; World4Drive arXiv:2507.00603; HiT-JEPA arXiv:2507.00028; GAIA-2 arXiv:2503.20523;
-Drive-JEPA arXiv:2601.22032; ALPS-4B transfer study `Ressources/AD_TRANSFER_RESEARCH.md` v1.1.)
+arXiv:2511.08544; LeJEPA-identifiability (Klindt et al.) arXiv:2605.26379; JEPA generalization theory
+arXiv:2606.27014; V-JEPA-2 / V-JEPA-2-AC arXiv:2506.09985; DINO-WM arXiv:2411.04983; fine-tuning
+distorts features / LP-FT (Kumar et al., ICLR 2022) arXiv:2202.10054; DiffusionDrive
+arXiv:2411.15139; LAW arXiv:2406.08481; World4Drive arXiv:2507.00603; HiT-JEPA arXiv:2507.00028;
+GAIA-2 arXiv:2503.20523; Drive-JEPA arXiv:2601.22032; ego-status open-loop shortcut (AD-MLP /
+BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B transfer study
+`Ressources/AD_TRANSFER_RESEARCH.md` v1.1.)
 
 ---
 
@@ -562,3 +849,34 @@ Drive-JEPA arXiv:2601.22032; ALPS-4B transfer study `Ressources/AD_TRANSFER_RESE
   self-monitor cap and the §3.5 calibration caveat; matched frozen I-JEPA-vs-DINOv2 comparison;
   REF-B @6 k yaw-blindness and refbpatch. §7.1 marked superseded-as-diagnosis by the reset;
   abstract updated. All §7.2 numbers open-loop = weak claims (arXiv 2605.00066).
+- v0.4 (2026-07-19): 30 k first-run completion and the honest in-distribution/OOD split.
+  §7.3 flagship-30k FINAL — first sub-floor arm (ADE@2s 0.452 ± 0.031, below floor 0.500 / CTRV
+  0.523 / ego-status 0.574; resolves the v0.3 pending verdict) + the **genuine-prediction causal
+  panel** (vision effect +1.32 m CI [+1.04,+1.64] on high-CTRV-divergence windows; advantage
+  +0.80 m→inverts −0.53 m under scene mean-replace; monotone in divergence; curvature-decode R²
+  0.25 vs 0.03; reads-road-ahead 1.6×; ledger 2026-07-18). §7.4 **OOD** — does not beat the strong
+  highway floor on unseen corpora (comma2k19 0.849 vs 0.372; Cosmos 0.583 vs 0.358; error ~doubles;
+  anticipation collapses 0.80→0.15 m; path feasibility 97.8 %→62.8 %) yet vision-ablation still
+  hurts OOD (+0.27 m CI-sep) → real-but-distribution-fit, not corpus-general (ledger 2026-07-19).
+  §7.5 hierarchy (H26: ctx→tactical flipped load-bearing at 30 k, intent→operative still swamped),
+  REF-C tactical decoder, and the high-speed **longitudinal** weakness (89 % of 2 s error along-track;
+  +0.66 m/s speed over-prediction). Method: §3.3 ReZero gated-intent (init 0.1); §3.7 loss-balance
+  (≈5:1 supervised:SSL, no stop-gradient → odometer encoder; gradient-decouple α=0.25 rebalance);
+  §3.8 REF-C DiffusionDrive anchored decoder + curvature-relative label fix (24.5 %→0.0 % conflation).
+  New §8 Discussion (self-supervision reading + the two-stage LeWM/JEPA v3 question, Kumar 2202.10054
+  / V-JEPA-2-AC / DINO-WM); Roadmap renumbered §9; references extended. All open-loop = weak claims.
+- v0.5 (2026-07-19): new **§9 v3 design — hierarchical goal-vocabulary planning over the world model**
+  (Roadmap renumbered §10). Motivation triangulated from three same-day measurements: REF-A full-val
+  frozen-encoder ceiling (2.92 m, 94–99 % longitudinal, mean-speed regression despite v₀; monotone
+  curve = capacity not overfitting), H26 head degeneracy (strategic echo, tactical 8× worse than
+  operative, un-gated intent harmful), and the closed-loop gap (0.45→1.69 m, speed channel does not
+  transfer). Design: frozen goal vocabulary v1 (110 tokens / 17 slots; strategic ⟨MISSION…ODD⟩ +
+  tactical ⟨LONMODE…LIGHTSTATE⟩, Michon/Donges/J3016/SOTIF/Rulebooks-anchored), planner-based hierarchy
+  (options × WM-consequences × lexicographic cost, CEM→Diffusion-ES), target speed as inferred goal +
+  planning cost (never a raw input; anti-shortcut), style/risk as cost presets, deliberation-on-demand,
+  and the two-arm spine (flagship-v3 trained encoder vs refa-v3 frozen matrix incl. own-SSL-then-freeze
+  and LoRA/LP-FT) making H4 a controlled within-architecture comparison. Falsifiable gates G1–G5 incl.
+  the training-free planner-over-v1 de-risk. Design docs: V3_HIERARCHICAL_PLANNING_DESIGN.md +
+  V3_GOAL_VOCABULARY_V1.md. Mid-training context: REF-B v2 @20k = 0.646 (first REF-B to beat the CV
+  floor in every speed stratum; validates the time-anchored proposal decoder); flagship-v2 @6k behind
+  v1's trajectory (6.18 m), mechanism diagnostic + 10k gate pending — lever staging feeds §9.3.
