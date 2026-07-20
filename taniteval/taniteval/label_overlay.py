@@ -187,7 +187,15 @@ def render(ep_path, tag, idx, vlm_dir, out_dir, proj, fps, model, device,
     vlm = load_vlm(vlm_dir, ep_name) if vlm_dir else {}
     preds = model_preds(model, ep, device, window) if model is not None else {}
 
-    ts = list(range(0, min(T - 1, max_frames), stride_render))
+    # Render only frames that have the FULL 2 s GT path: ego_future_path
+    # truncates near the clip end and the WP_IDX markers (step 20) would index
+    # past it. This still reaches deep into the clip tail — the late-clip
+    # windows v2 could not label are exactly what we are here to show — it just
+    # stops 2 s short of the final frame.
+    ts = list(range(0, min(T - 1 - K, max_frames), stride_render))
+    if not ts:
+        print(f"[skip] {Path(ep_path).stem}: T={T} too short", flush=True)
+        return None
     xmax, ymax = 12.0, 3.0
     cache = {}
     for t in ts:
@@ -313,9 +321,11 @@ def main():
         if not spec.strip():
             continue
         idx, tag = spec.split(":")
-        stats.append(render(files[int(idx)], tag, int(idx), args.vlm, args.out,
-                            proj, args.fps, model, args.device, window,
-                            args.max_frames, args.stride_render))
+        s = render(files[int(idx)], tag, int(idx), args.vlm, args.out,
+                   proj, args.fps, model, args.device, window,
+                   args.max_frames, args.stride_render)
+        if s:
+            stats.append(s)
     with open(Path(args.out) / "label_overlay_manifest.json", "w") as f:
         json.dump(stats, f, indent=1)
     print("LABEL_OVERLAY_DONE", flush=True)
