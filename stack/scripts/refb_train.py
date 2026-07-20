@@ -371,8 +371,10 @@ def _save_ckpt(path: Path, model, opt, step: int) -> None:
         if step >= m:
             arch = path.with_name(f"ckpt_step{m}.pt")
             if not arch.exists():
-                import shutil
-                shutil.copy2(path, arch)
+                # ATOMIC — see tanitad/train/ckpt_io.py: a bare copy2 can leave a
+                # truncated milestone that exists() treats as done forever.
+                from tanitad.train.ckpt_io import atomic_archive
+                atomic_archive(path, arch)
                 print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
 

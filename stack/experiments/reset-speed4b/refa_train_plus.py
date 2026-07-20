@@ -536,8 +536,10 @@ def train(args) -> dict:
             for _m in (5000, 15000, 20000, 30000):
                 _a = ckpt_path.with_name(f"ckpt_step{_m}.pt")
                 if step >= _m and not _a.exists():
-                    import shutil
-                    shutil.copy2(ckpt_path, _a)
+                    # ATOMIC — see tanitad/train/ckpt_io.py: a bare copy2 can leave
+                    # a truncated milestone that exists() treats as done forever.
+                    from tanitad.train.ckpt_io import atomic_archive
+                    atomic_archive(ckpt_path, _a)
                     print(f"[ckpt] milestone archived: {_a.name}", flush=True)
         if step % args.log_every == 0 or step == args.steps - 1:
             sc = lambda t: round(float(t.detach()), 5)

@@ -413,8 +413,11 @@ def train(args) -> dict:
         for m in _MILESTONES:
             arch = ckpt_path.with_name(f"ckpt_step{m}.pt")
             if s >= m and not arch.exists():
-                import shutil
-                shutil.copy2(ckpt_path, arch)
+                # ATOMIC: a bare copy2 writes the final name directly, so a kill
+                # mid-copy leaves a truncated milestone that exists() then treats
+                # as done forever — the gate would later load a corrupt ckpt.
+                from tanitad.train.ckpt_io import atomic_archive
+                atomic_archive(ckpt_path, arch)
                 print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
     while step < args.steps:
