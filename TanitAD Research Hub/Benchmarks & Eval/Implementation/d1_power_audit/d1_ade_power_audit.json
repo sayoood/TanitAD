@@ -1,0 +1,86 @@
+{
+  "exp": "d1-ade-power-audit",
+  "ckpt_step": 6500,
+  "device": "cuda",
+  "n_windows": 960,
+  "n_episodes": 40,
+  "stride": 12,
+  "alpha": 0.001,
+  "steps_1s": 10,
+  "ref_gate_swing": {
+    "step14k_ade": 5.18,
+    "step21k_ade": 11.52,
+    "delta": 6.34,
+    "falsifier_band_halfdelta": 3.17,
+    "n_val_eps_14k": 9,
+    "n_val_eps_21k": 4
+  },
+  "per_episode_ade_dispersion": {
+    "val_eps": 20,
+    "ep_ade_mean": 8.731,
+    "ep_ade_sd": 5.036,
+    "ep_ade_min": 2.314,
+    "ep_ade_max": 18.753,
+    "coef_of_variation": 0.577
+  },
+  "A_fixed_probe_val_bootstrap": {
+    "n4": {
+      "n_eps": 4,
+      "reps": 3000,
+      "mean": 8.712,
+      "sd": 2.354,
+      "ci95": [
+        4.532,
+        13.554
+      ],
+      "ci95_halfwidth": 4.511
+    },
+    "n9": {
+      "n_eps": 9,
+      "reps": 3000,
+      "mean": 8.679,
+      "sd": 1.598,
+      "ci95": [
+        5.7,
+        11.964
+      ],
+      "ci95_halfwidth": 3.132
+    },
+    "n20": {
+      "n_eps": 20,
+      "reps": 3000,
+      "mean": 8.753,
+      "sd": 1.077,
+      "ci95": [
+        6.625,
+        10.854
+      ],
+      "ci95_halfwidth": 2.114
+    }
+  },
+  "B_shipped_run_d1_seed_spread": {
+    "val_frac_0.2": {
+      "val_frac": 0.2,
+      "seeds": 50,
+      "approx_val_eps": 8,
+      "mean": 5.275,
+      "sd": 1.272,
+      "min": 2.76,
+      "max": 8.216,
+      "range": 5.456
+    },
+    "val_frac_0.1": {
+      "val_frac": 0.1,
+      "seeds": 50,
+      "approx_val_eps": 4,
+      "mean": 5.017,
+      "sd": 1.744,
+      "min": 2.139,
+      "max": 9.419,
+      "range": 7.28
+    }
+  },
+  "verdict": "NOT decision-grade: estimator noise band at n=4 >= falsifier band 3.17 m",
+  "wallclock_s": 80.8,
+  "cost_usd": 0.0
+}
