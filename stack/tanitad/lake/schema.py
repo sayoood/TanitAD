@@ -63,6 +63,38 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
                                is_synthetic=False),
     "cosmos_dd": SourceLicense("owned-safe", "CC-BY-4.0", share_alike=False,
                                is_synthetic=True),
+    # --- rev-3 permissive (TanitDataSet-C shippable core, §7.1) ---
+    # tier `ship`: owned-safe, not share-alike -> commercial_ok, HF-publishable.
+    "l2d": SourceLicense("owned-safe", "Apache-2.0", share_alike=False,
+                         is_synthetic=False),          # yaak-ai L2D surround anchor
+    "pandaset": SourceLicense("owned-safe", "CC-BY-4.0", share_alike=False,
+                              is_synthetic=False),
+    "udacity": SourceLicense("owned-safe", "MIT", share_alike=False,
+                             is_synthetic=False),
+    "worldmodel_synth": SourceLicense("owned-safe", "OpenMDW-1.1",
+                                      share_alike=False, is_synthetic=True),
+    # tier `ship-sa`: owned-safe AND share-alike -> segregated copyleft shard.
+    "zod": SourceLicense("owned-safe", "CC-BY-SA-4.0", share_alike=True,
+                         is_synthetic=False),
+    # --- rev-3 NC (TanitDataSet-R research-only, tier `nc`, §3) ---
+    "nuscenes": SourceLicense("nc-research", "CC-BY-NC-4.0", share_alike=False,
+                              is_synthetic=False),
+    "waymo": SourceLicense("nc-research", "Waymo-Dataset-License",
+                           share_alike=False, is_synthetic=False),
+    "bdd100k": SourceLicense("nc-research", "BDD-NC", share_alike=False,
+                             is_synthetic=False),
+    "a2d2": SourceLicense("nc-research", "CC-BY-ND-4.0", share_alike=False,
+                          is_synthetic=False),         # no-derivatives -> NC
+    "argoverse2": SourceLicense("nc-research", "CC-BY-NC-SA-4.0",
+                                share_alike=True, is_synthetic=False),
+    "kitti360": SourceLicense("nc-research", "CC-BY-NC-SA-3.0",
+                              share_alike=True, is_synthetic=False),
+    "once": SourceLicense("nc-research", "ONCE-NC", share_alike=False,
+                          is_synthetic=False),
+    "drama": SourceLicense("nc-research", "Honda-HRI-NC", share_alike=False,
+                           is_synthetic=False),
+    "rank2tell": SourceLicense("nc-research", "Honda-HRI-NC", share_alike=False,
+                               is_synthetic=False),
     # --- firewalled: present as a guard, never ingestible in Phase A ---
     "physicalai_av": SourceLicense("gated-confidential", "NVIDIA-AV-internal",
                                    share_alike=False, is_synthetic=False),

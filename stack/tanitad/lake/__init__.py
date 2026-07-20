@@ -45,6 +45,18 @@ from tanitad.lake.schema import (  # noqa: F401
     catalog_arrow_schema,
 )
 
+# rev-3 NON-VLM enrichment pipeline (TanitDataSet §7) — additive, byte-identical
+# core. Stage 1 schema-extension + compose (enrich), Stage 2 filtering/dedup,
+# Stage 3 curation, Stage 4 kinematic goal minting, all over the frozen v3 vocab.
+from tanitad.lake.filtering import tier_of, tier_of_record  # noqa: F401,E402
+from tanitad.lake.enrich import (  # noqa: F401,E402
+    EpisodeEnrichment,
+    enrich_episode,
+    enrich_corpus,
+    run_enrichment,
+    enrichment_arrow_schema,
+)
+
 __all__ = [
     "LakeRecord",
     "SOURCE_REGISTRY",
@@ -52,4 +64,12 @@ __all__ = [
     "assemble_lake_record",
     "validate_superset",
     "catalog_arrow_schema",
+    # rev-3 pipeline
+    "tier_of",
+    "tier_of_record",
+    "EpisodeEnrichment",
+    "enrich_episode",
+    "enrich_corpus",
+    "run_enrichment",
+    "enrichment_arrow_schema",
 ]
