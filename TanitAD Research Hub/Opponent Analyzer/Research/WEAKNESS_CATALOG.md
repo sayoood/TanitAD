@@ -5,11 +5,44 @@
 > status** (with the Thursday Benchmarks&Eval agent), **training-data recipe** (H6 pipeline).
 > An entry with no counter is marked `no-counter-yet` (a strategy gap for the Orchestrator).
 > Created 2026-07-17 (v1). Newest / highest-priority first.
-> Last delta: **run #3 (narrative 2026-07-31; real wall-clock 2026-07-17)** — new **W-09**; W-08 → spec-drafted.
+> Last delta: **run #4 (narrative 2026-08-07; real wall-clock 2026-07-20)** — new **W-10**; **W-09 now
+> cross-operator** (Zoox smoke recall); W-04 gains a second operator; W-08 → first MEASURED number.
 
 ---
 
-## W-09 — First-responder / emergency-scene interference  ★ headline (new, run #3)
+## W-10 — Fleet-scale mission / energy / network-disruption blindness  ★ headline (new, run #4)
+
+- **Mechanism (INFER):** every deployed stack plans over the next few seconds of *road* and nothing
+  over the next hour of *mission*. There is no layer that reasons about the vehicle's own **energy
+  budget**, about a **network-scale disruption** (unplanned closures, a crowd egress, an event letting
+  out), or about **fleet self-interference** — dozens of vehicles from the same operator independently
+  choosing the same congested corridor and jointly creating the gridlock each of them then fails to
+  escape. The result is not one bad decision but a **correlated fleet-wide failure** that no per-vehicle
+  test can surface, ending in the same terminal state as every other failure here: stopped, in the way.
+- **Evidence (FACT):** **San Francisco, 2026-07-04.** Dozens of Waymo vehicles stalled in post-fireworks
+  gridlock around the **Presidio**; **64 vehicles** had to be retrieved by staff or tow truck, several
+  with **depleted batteries**; **unplanned road closures** around the Golden Gate Bridge show were a
+  named contributor; one **occupied** vehicle **drove over a lit firework** and a separate empty vehicle
+  reportedly caught fire after doing likewise. The SF mayor has since called for stricter rules.
+  — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/
+  , https://abc7news.com/post/waymo-fleet-clogs-presidio-july-4-fireworks-leaving-vehicles-stranded-towed/
+  (Prior family evidence: Cruise mass stall, SF June 2022, ~20 vehicles.)
+- **TanitAD counter — PARTIAL, honestly `no-counter-yet` for the fleet dimension:** our **strategic
+  brain** (H1 hierarchy) is the only layer in our architecture that *could* own mission-scale
+  feasibility — route/energy/closure memory and re-planning — and the hierarchical design intends it.
+  But **nothing about energy budget, network disruption or multi-agent self-interference is specified,
+  implemented or measured**, and a single-vehicle world model cannot represent fleet self-interference
+  at all. Claiming this as a counter today would be dishonest. Marked **`no-counter-yet`** → a strategy
+  gap for the Orchestrator: decide whether mission-feasibility is Phase-0 scope or an explicit deferral.
+- **Scenario-spec status:** feeds **SC-08** (fleet stall), whose evidence this run upgrades from the
+  2022 Cruise anecdote to a fresh large-N FACT. A *fleet-scale* scenario is out of reach of our
+  single-vehicle harness; the tractable slice is the single-vehicle one — **stranded in a corridor with
+  a degrading energy/feasibility margin** → does the strategic layer choose a well-placed stop before
+  it has no choice? That is the honest Phase-0/1 scope.
+- **Training-data recipe (H6):** none from log data — this is an architectural/strategic capability,
+  not a perception gap. Validation-only, via closed-loop route-level scenarios with injected closures.
+
+## W-09 — First-responder / emergency-scene interference  ★ headline (**cross-operator, run #4**)
 
 - **Mechanism (INFER):** an AV with no *imagined* model of an emergency scene, and no calibrated OOD
   signal for "this intersection/scene is non-nominal," treats a flare/cone/flashing-light/smoke tableau
@@ -25,6 +58,17 @@
   Jonathan Morrison: the failure is a **"functional insufficiency"** and **"Emergency scenes are not rare
   or extreme 'edge cases.'"** — https://techcrunch.com/2026/07/08/feds-demand-autonomous-vehicle-companies-stop-interfering-with-first-responders/
   , https://www.nhtsa.gov/sites/nhtsa.gov/files/2026-07/ADS-developers-letter-july-2026.pdf
+- **Run-#4 delta — the class is now CROSS-OPERATOR (FACT):** **Zoox recalled 105 vehicles** (NHTSA
+  notified **2026-07-08**, public **2026-07-17**) after a robotaxi **drove into thick smoke from an
+  active fire** (Las Vegas, **2026-06-20**), **failed to recognize the smoke**, then **suddenly braked
+  and tried to turn** and **came to a halt** — inside the scene. Waymo alone was a company story; Waymo
+  **and** Zoox under an all-operator federal directive is a **class** story, which is exactly what this
+  catalog claims. It also **fuses W-09 with W-04**: smoke is simultaneously an obscurant and an
+  emergency-scene cue, so **one OOD head must serve both** (recorded in the SC-06 intake).
+  — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
+- **Run-#4 correction (FACT, P8):** the end-of-July deadline is for companies to **present fixes in
+  meetings**, **not** to have fixes deployed. Do not overstate it in the vision deck.
+  — https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
 - **TanitAD counter:** **H15** imagines the emergency-scene actors + hazard field (flares/cones/personnel)
   before classification; **H11** self-monitoring flags the non-nominal scene as OOD → **A9 fallback**
   degrades to yield / clear-the-corridor rather than rule-literal continuation; **H9** exception-handling
@@ -124,6 +168,12 @@
   and/or provide alerts … until immediately before the crash."** **9 crashes** flagged incl. **1 fatality
   + 2 injuries** under glare/fog/dust. Miami robotaxi launched into exactly this regime (rain,
   2026-07-03). — https://electrek.co/2026/03/19/nhtsa-upgrades-tesla-fsd-visibility-investigation-3-2-million-vehicles/
+  **Run-#4 delta (FACT) — second operator, and a recall rather than a probe:** the **Zoox smoke recall
+  (105 vehicles, 2026-07-17)** is a degraded-visibility failure that reached the *recall* stage. The
+  obscurant there was **smoke from an active fire**, which makes the sharpest version of the mechanism
+  concrete: an object-classification-gated stack is **range-limited by the obscurant itself**, so its
+  reaction distance collapses exactly when the hazard is greatest. Now shared with W-09/SC-06.
+  — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
 - **TanitAD counter:** **H11** (self-monitoring w/ guarantees — degraded-visibility as a D8 OOD stressor,
   AUROC>0.85) + **H15** (epistemic σ throttles on uncertainty) + **H2** (attention-based modality steering
   to radar when the camera degrades).
@@ -190,12 +240,39 @@
   FACT detail: NHTSA video shows Avride "failing to avoid slow-moving vehicles ahead, and striking
   stationary objects"; **only 1 of 16** safety monitors even attempted to intervene.
   — https://techcrunch.com/2026/05/08/uber-partner-avride-is-under-investigation-for-self-driving-crashes/
+  **Run-#4: FIRST MEASURED NUMBER ON OUR OWN CHECKPOINT — AND IT IS NEGATIVE (SC-13 → `live-measured,
+  falsifier fired`).** On 3,241 real held-out **PhysicalAI** anchors (flagship-30k, eval-pod A40), with
+  future actions **withheld** and the speed confound controlled, the imagined-slowdown signal
+  discriminated braking beginning **2–3 s out — beyond its own 2 s rollout** — at **AUROC 0.72–0.74**
+  vs a reactive kinematic floor at **0.43**. **It did not replicate.** On **comma2k19** (8,384 anchors,
+  n=45 events) the same probe gives speed-matched **held 0.54–0.61 vs blind 0.55–0.61 vs reactive
+  0.55–0.59** — mutually indistinguishable. **We may not claim a measured consequence-forward-model
+  advantage over detection/reaction.** Two confounds keep it from being a clean refutation: comma2k19
+  is **out-of-domain** (there **CV beats the model outright**, 1.302 m vs 1.874 m ADE — a "deficit vs
+  CV" signal is unreliable where the model loses to CV) and **highway-dominated** (cruise 29.1 m/s),
+  the regime where CV is near-unbeatable. **The honest position: this weakness is real in the
+  opponents' dockets and our counter to it is still unproven on real data.** Full protocol, CIs,
+  caveats: `Research/2026-08-07-opponent-sweep-w5.md` §1; archive `Implementation/sc13-real-probe/`.
 - **Training-data recipe (H6):** comma2k19 slow/stopped-lead following (real, license-clean, oversample
   the rare stopped-lead tail); CARLA stationary-object + cut-in perturbation rollouts (negative manifold).
 
 ---
 
 ### Watch-list (not yet weaknesses — competitive-narrative risks)
+- **HWM — "Hierarchical Planning with Latent World Models" (arXiv 2604.03208, run #4, FACT) ★ the
+  sharpest differentiation risk to date.** Deep-read this run. Learns world models at **multiple
+  temporal scales in a shared latent space**; the long-horizon model's predictions become **subgoals
+  for the short-horizon model via latent matching** — no task rewards, no hierarchical policy — and it
+  reports **up to 3× less planning compute** than single-level planning. **Planning-time hierarchy —
+  our H1 claim — is now published.** Mitigations (INFER): it is **manipulation + maze navigation, not
+  driving**; **no parameter count**; **no self-monitoring/OOD guarantee**; no in-loop imagination for a
+  safety case. Two consequences: (1) H1 must be positioned as *hierarchy + efficiency + in-loop
+  imagination + self-monitoring, on driving*, never as "hierarchy" alone; (2) it is the closest
+  published relative of our **v3** direction (frozen encoder + feature-prediction + CEM/MPC planner),
+  from the DINO-WM lineage — read it as prior art, not only as a competitor.
+  **Architecture & Inference deep-read: top priority.** — https://arxiv.org/abs/2604.03208
+- **WorldRFT (2026, run #4)** — latent world-model planning with **RL fine-tuning** for AD. Newly
+  surfaced, not yet read; queued behind HWM and SGDrive.
 - **Academic hierarchy surfacing (run #3, FACT):** **SGDrive** (arXiv 2601.05640) markets *"scene-to-goal
   hierarchical world cognition"* for driving — the first tracked academic line to make **hierarchy**
   explicit (our H1 differentiator). Not yet with our combination (efficiency + in-loop imagination +

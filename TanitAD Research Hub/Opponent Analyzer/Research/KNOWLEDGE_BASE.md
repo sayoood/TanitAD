@@ -4,6 +4,52 @@
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
 
+- [2026-08-07 · run #4, real 2026-07-20] [Zoox/NHTSA] FACT — **Zoox recalled 105 vehicles** (NHTSA
+  notified **2026-07-08**, public **2026-07-17**): on **2026-06-20** a Las Vegas robotaxi **drove into
+  thick smoke from an active fire**, **failed to recognize the smoke**, then **suddenly braked, tried
+  to turn, and halted** — inside the scene — impact: **W-09 becomes CROSS-OPERATOR** (Waymo + Zoox +
+  federal directive = a *class*, not a company story) and **fuses W-09 with W-04** (smoke is obscurant
+  *and* emergency cue → **one shared OOD head**); drove the SC-06 authoring this run — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
+- [2026-08-07 · run #4] [Waymo/SF] FACT — **2026-07-04 San Francisco breakdown**: dozens of Waymos
+  stalled in post-fireworks gridlock at the **Presidio**; **64 vehicles** retrieved by staff/tow, some
+  with **depleted batteries**; **unplanned road closures** a named contributor; one **occupied** car
+  **drove over a lit firework**; SF mayor demanding stricter rules — impact: **new W-10** (fleet-scale
+  mission/energy/network-disruption blindness, marked **`no-counter-yet`**); **SC-08 evidence upgraded**
+  from the 2022 Cruise anecdote to a fresh large-N FACT — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/
+- [2026-08-07 · run #4] [TanitAD / eval pod] **MEASURED (not oracle) — NEGATIVE RESULT (P8)** — first
+  SC-13 test on our own checkpoint, and the **pre-registered falsifier FIRED on replication**.
+  flagship-30k, future actions **withheld**, speed confound controlled two ways. **In-domain
+  (PhysicalAI, 3,241 anchors, n=23 events):** braking starting **2–3 s out (outside the 2 s rollout)**
+  detected at **AUROC 0.72–0.74** vs reactive floor **0.43**. **Cross-corpus (comma2k19, 8,384 anchors,
+  n=45): held 0.54–0.61 ≈ vision-blind 0.55–0.61 ≈ reactive 0.55–0.59 — indistinguishable.** Confounds:
+  comma2k19 is out-of-domain and **CV beats the model there** (1.302 vs 1.874 m ADE), plus it is
+  highway (29.1 m/s cruise) where CV is near-unbeatable — a failed replication, not a clean refutation
+  — impact: **H15 evidence moves AGAINST the open-loop anticipation claim**; **SC-13 → live-measured
+  (falsifier fired)**; the oracle collision-rate contrast is now **unsupported** and must stay out of
+  external narrative; next test = in-domain volume + an arm that beats CV on the target corpus — see
+  `2026-08-07-opponent-sweep-w5.md` §1, archive `Implementation/sc13-real-probe/`
+- [2026-08-07 · run #4] [arXiv] FACT/INFER — **HWM, "Hierarchical Planning with Latent World Models"**
+  (**2604.03208**, Zhang/Terver/Zholus et al., Apr'26 rev Jun'26): world models at **multiple temporal
+  scales in one latent space**, long-horizon predictions used as **subgoals for the short-horizon model
+  via latent matching**, no rewards/hierarchical policy, **up to 3× less planning compute**.
+  **Planning-time hierarchy — our H1 claim — is now published**, though on **manipulation/maze, not
+  driving**, with **no param count** and **no self-monitoring/OOD guarantee** — impact: H1 must be
+  positioned as hierarchy+efficiency+in-loop-imagination+self-monitoring *on driving*; also the closest
+  published relative of the **v3** direction (DINO-WM lineage) → **Architecture deep-read, top
+  priority** — https://arxiv.org/abs/2604.03208
+- [2026-08-07 · run #4] [Opponent Analyzer] INFER (design-oracle, P8) — **Emergency-Scene** scenario
+  (SC-06, W-09) shipped, **16/16 tests**: corridor **incursion rate 0.0 (yield) vs 0.2 (rule-literal)**;
+  **blockage 0.0 s vs 2.54 s** (12.7 s at thick smoke); **detection lead time +5.70 s vs +2.84 s**
+  (−0.10 s at thick smoke). Mechanism: the obscurant collapses **object** range **90→13.5 m** while
+  **scene**-level OOD range falls only **80→68 m**. **The failure is a CLIFF not a slope** → graded
+  obscurant sweeps are mandatory — impact: **H11/H15/A9**; **blocked on SC-05's D8 detector**, which is
+  currently failing — see `2026-08-07-opponent-sweep-w5.md` §2
+- [2026-08-07 · run #4] [NHTSA/Wayve/Pony/NVIDIA] FACT (deltas) — the first-responder deadline is for
+  **presenting fixes in meetings, NOT deployed fixes** (correction, do not overstate); **Wayve $85 M
+  employee tender (07-01)** = liquidity, not new capital; **Pony** reaffirms **>3,500 robotaxis / 20+
+  cities** 2026 (**W-06 unchanged** — fleet targets still outrun revenue); **NVIDIA**: Alpamayo 1 =
+  **10 B** open weights, **2 Super = 32 B** "expected this summer", AlpaSim open — **still no Nano-tier
+  CNCE number**, our W-05 wedge stays open — https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
 - [2026-07-31 · run #3, real 2026-07-17] [NHTSA] FACT — ODI issued a formal **ADS-developers letter
   (2026-07-08)** demanding every AV developer fix, **by end of July 2026**, a **"clear pattern"** of
   robotaxis interfering with first responders (driving into emergency scenes; blocking ambulances/fire;

@@ -17,6 +17,8 @@
 - **Δ 07-31 (FACT):** Series-D extended with **+$60 M from AMD, Arm, Qualcomm** (multi-compute-platform
   breadth — a "plug-and-play across SoCs" play); **Tokyo pilot late 2026 (Nissan LEAF)** added to London.
   Still no signal that GAIA moves *in-loop* — it stays an offline data/eval factory (W-05 intact).
+- **Δ 08-07 / real 07-20 (FACT):** **$85 M employee tender (2026-07-01)** — a **liquidity event, not
+  new capital**; no technical or deployment delta in-window. W-05 unchanged. — https://wayve.ai/press/series-d/
 - **Strengths (INFER):** talent + capital density; UK/EU regulatory access; genuine multi-country
   generalization data; strong generative-WM data factory.
 - **Exploitable weaknesses:** generative-**pixel** WM is compute-hungry and used **offline**, not in the
@@ -45,13 +47,26 @@
   fix due end-July. Press frames a **"robotaxi ultimatum": Waymo fighting NHTSA and its distributor (Uber)
   at once** as Uber diversifies to Avride/Autobrains/Momenta/Wayve/Nuro. The failure surface is now
   **broad + federal** (W-01/W-03/W-09 all live), not a single recall. — https://businessmodelanalyst.com/nhtsa-robotaxi-ultimatum-waymo-uber/
+- **Δ 08-07 / real 07-20 (FACT):** **the 2026-07-04 San Francisco breakdown** — dozens of vehicles
+  stalled in post-fireworks gridlock at the **Presidio**; **64 vehicles** retrieved by staff or tow
+  truck, several with **depleted batteries**; **unplanned road closures** a named contributor; one
+  **occupied** vehicle **drove over a lit firework**; the SF mayor is calling for stricter rules. This
+  is a **different failure class from every prior entry** — not perception, not a rule edge, but
+  **mission-scale infeasibility and fleet self-interference** → **new W-10**, and it upgrades SC-08's
+  evidence from a 2022 Cruise anecdote to a fresh large-N FACT. **Correction (P8):** the NHTSA
+  first-responder deadline is for **presenting fixes in meetings**, not deployed fixes.
+  — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/ , https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
-  anticipation** (W-02), **rule-compliance edges** (W-03); map-dependence; cost/vehicle + geofence
+  anticipation** (W-02), **rule-compliance edges** (W-03), **emergency-scene interference** (W-09),
+  **fleet-scale mission/energy blindness** (W-10, new); map-dependence; cost/vehicle + geofence
   economics; no data-efficiency story.
 - **What would beat them:** own the exact edge cases their recalls expose — work-zone imagination (H15) +
   inherent rule compliance (H9) + occlusion permanence (LOPS/OKRI, D9) — at hobbyist compute, framed for
-  the new WP.29 regulation (H11/H9).
+  the new WP.29 regulation (H11/H9). **New, and honestly two-edged:** W-10 is the one weakness where we
+  have **no counter either** — a strategic layer that reasons about mission feasibility (energy, network
+  disruption) is *designed into* the 4-brain hierarchy and *implemented nowhere*. Either scope it or
+  drop the claim; do not narrate it as a differentiator until something is measured.
 
 ## Pony.ai  (China + intl · robotaxi · NASDAQ)
 - **Approach (FACT):** multi-sensor robotaxi stack; rapid geographic expansion.
@@ -64,6 +79,10 @@
 - **Δ 07-31 (FACT):** **Q2'26 — 200+ Gen-7 robotaxis produced, revenue +76%**; weekly paid orders **+119%
   vs January**, Labor-Day daily orders **+544% YoY**. But Q1 **net loss widened to $50.4 M** — the
   scale-up is real, the **unit economics (W-06) are not improving**: order/fleet growth outruns margin.
+- **Δ 08-07 / real 07-20 (FACT):** 2026 guidance reaffirmed — **>3,500 robotaxis across 20+ cities**,
+  robotaxi revenue **>3.5× 2025**; driverless **light truck** launched (Apr'26); Uber/Verne **Croatia**
+  and Stellantis **Luxembourg** e-Traveller vans progressing. No safety-docket delta in-window.
+  **W-06 unchanged — fleet targets keep outrunning revenue.** — https://ir.pony.ai/news-events/press-releases
 - **Strengths (INFER):** fleet scale, China + Middle East + first-mover EU footprint, steep growth.
 - **Exploitable weaknesses:** **thin unit economics** vs fleet (W-06); same compute-heavy multi-sensor
   stack (W-05); geopolitics limits Western data/market access.
@@ -122,6 +141,12 @@
   / rare weird edge cases." Family unchanged (10 B Nano → 32 B Super); **still no Nano-tier CNCE number**
   → the efficiency critique is unanswered on the metric that matters. "Solve the long tail" is the same
   claim we make — but at 10 B on-car vs our ~261 M; the CNCE contrast is the whole argument.
+- **Δ 08-07 / real 07-20 (FACT):** no in-window delta. Confirmed on the product page: **Alpamayo 1 = a
+  10 B chain-of-thought reasoning VLA with open weights**; **Alpamayo 2 Super = 32 B, "expected this
+  summer"** (inference code on GitHub, weights on HF); **AlpaSim** fully open on GitHub. **Still no
+  Nano-tier compute-normalized number** — our CNCE wedge stays open. **Watch item:** if the 2-Super
+  release lands with a params-vs-benchmark table, the W-05 wedge narrows and we should publish our CNCE
+  contrast first. — https://www.nvidia.com/en-us/solutions/autonomous-vehicles/alpamayo/
 - **Exploitable weaknesses:** 10–32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
   interpretability vs our *inherent* fallback + self-monitoring.
 - **What would beat them (as a narrative):** ~261 M-on-Orin at comparable causal efficacy (CNCE), inherent
@@ -171,10 +196,22 @@
   starting; free rides in Las Vegas + SF, select Austin/Miami, testing in 6 more cities.
 - **Status (FACT):** **gated on NHTSA approval** to operate up to **2,500** no-manual-controls vehicles
   commercially — its bottleneck is **regulatory** (FMVSS exemption), not (publicly) capability.
-- **Exploitable weaknesses (INFER):** compute-heavy multi-sensor stack (W-05); no public efficiency /
-  self-monitoring / imagination story; commercial timing at the mercy of the exemption decision.
-- **What would beat them:** the same CNCE + safety-case wedge; not a scenario-DB priority yet (limited
-  public failure evidence).
+- **Δ 08-07 / real 07-20 (FACT) — first hard failure evidence, and it lands on our thesis:** Zoox
+  **recalled 105 vehicles** (NHTSA notified **2026-07-08**, public **2026-07-17**) after a Las Vegas
+  robotaxi **drove into thick smoke from an active fire** (**2026-06-20**), **failed to recognize the
+  smoke**, then **suddenly braked, tried to turn, and halted** — inside the scene. The trace is the
+  documented failure mode in one line: *drove in → failed to recognize → panic brake → stopped in the
+  way.* — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
+- **Exploitable weaknesses:** compute-heavy multi-sensor stack (W-05); **degraded-visibility /
+  obscurant response (W-04) and emergency-scene interference (W-09) — now FACT-documented at recall
+  grade**, which makes Zoox the **second operator** in the W-09 class and turns it from a company story
+  into a class story; no public efficiency / self-monitoring / imagination story; commercial timing at
+  the mercy of the FMVSS exemption decision.
+- **What would beat them:** the CNCE + safety-case wedge, **plus SC-06/SC-05 directly** — a scene-level
+  OOD flag that fires on smoke *as uncertainty* rather than waiting for an object to be classifiable.
+  Honesty check (P8): that detector is **ours to prove** — SC-05's D8 probe has not yet cleared its bar,
+  so this is a targeted opportunity, not a current advantage. **Promoted from "not a scenario-DB
+  priority" to a primary SC-06 evidence source.**
 
 ## WeRide  (China/intl · robotaxi via Uber · NASDAQ)  — emerging player (new 2026-07-31)
 - **Approach (FACT):** multi-sensor L4 robotaxi; heavy **Middle-East** footprint via Uber.

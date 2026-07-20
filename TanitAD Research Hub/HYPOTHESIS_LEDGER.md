@@ -32,6 +32,41 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
 
 ## Change log
 
+- 2026-08-07 (real wall-clock 2026-07-20): Opponent Analyzer (Fri, run #4) — **H15's first REAL-DATA
+  test, and the pre-registered falsifier FIRED on replication (negative result, P8; no status change).**
+  Protocol: flagship-30k on the eval-pod A40, **future actions withheld**, a genuine speed confound
+  caught and controlled two ways (per-event ±1 m/s matching **and** v0-stratification), plus a
+  **vision-blind** control and a **reactive kinematic** floor. **In-domain (PhysicalAI, 3,241 anchors,
+  n=23 events)** the imagined-slowdown signal `D = CV_fwd − pred_fwd` detected braking beginning **2–3 s
+  out, outside its own 2 s rollout**, at **AUROC 0.723/0.740** vs reactive **0.434/0.450** (below
+  chance) and vs the **true 2 s trajectory** 0.633/0.668 — i.e. not merely tracking the near future;
+  vision-blind reached 0.654/0.685, leaving the vision increment (+0.07) unresolved at that n.
+  **It did NOT replicate.** On **comma2k19 (8,384 anchors, n=45)**: speed-matched **held 0.538/0.605 ≈
+  blind 0.608/0.549 ≈ reactive 0.588/0.549 — mutually indistinguishable.** **We may not claim a measured
+  consequence-forward-model advantage.** Two confounds keep it from being a clean refutation: comma2k19
+  is **out-of-domain** — there **constant velocity beats the model outright** (CV 1.302 m vs held
+  1.874 m ADE), and a "deficit vs CV" signal is unreliable by construction where the model loses to CV
+  — and it is **highway-dominated** (cruise 29.1 vs 17.3 m/s), the regime where CV is near-unbeatable.
+  Both corpora are under-powered; the negative is as noisy as the positive. **Net: evidence moves
+  AGAINST the open-loop form of the H15 anticipation claim, which strengthens the case for prioritizing
+  the closed loop over more open-loop probing.** **SC-13 → `live-measured (falsifier fired)`**; its
+  oracle collision-rate contrast is now **unsupported** and must not appear in external narrative.
+  Also a caught error (P8): the first probe version fed **true future actions** and scored AUROC 1.00 —
+  command leakage, not anticipation.
+  **H11:** the new **SC-06 emergency-scene** intake pkg (**16/16 tests**; corridor incursion 0.0 vs 0.2,
+  blockage 0.0 s vs 2.54 s, detection lead +5.70 s vs +2.84 s — design-oracle, P8) makes H11's
+  scene-level-OOD claim explicit **and records it as blocked**: SC-06 depends on the same detector SC-05
+  measures, and SC-05's D8 probe is currently failing (AUROC 0.34–0.59 unpaired) — SC-06 must not be
+  scored until it clears. **H1 differentiation pressure (external, FACT):** **HWM (arXiv 2604.03208)**
+  publishes **planning-time hierarchy over multi-timescale latent world models** with **3× less planning
+  compute** — our H1 claim, though on manipulation/maze, with no param count and no self-monitoring;
+  H1 must henceforth be positioned as hierarchy **+** efficiency **+** in-loop imagination **+**
+  self-monitoring, on driving. It is also the closest published prior art for the **v3** direction.
+  **H0/H6:** W-09 becomes **cross-operator** (Zoox recall, 105 vehicles, drove into fire smoke) and a
+  **new W-10** (fleet-scale mission/energy/network-disruption blindness, Waymo SF 2026-07-04, 64 vehicles
+  retrieved) is logged **`no-counter-yet` — for us too**: our strategic brain is the only layer that
+  could own it and nothing is specified or measured. See
+  `Opponent Analyzer/Research/2026-08-07-opponent-sweep-w5.md`.
 - 2026-07-18: Fleet-review follow-up — external-survey derivation proposes H19 (discrete tactical vocabulary/LAMP), H20 (plan-persistence bridging/BridgeAD), H21 (latent GRPO-RFT/WorldRFT), H22 (shortcut-trained imagination/DreamerAD — pairs with the measured sigma-dissipation), H23 (cost-map decode head/PLAN-S), H24 (oracle-gap curriculum/ACID+our CTRV floor) as PROPOSED (not adopted; falsifiers + gates in Project Steering/Research/2026-07-17-external-survey-derivation.md). All six flagship-v2 levers externally validated (ColaVLA=goal-decode, PLAN-S=ego-to-planners).
 - 2026-07-31 (real wall-clock 2026-07-17): Opponent Analyzer (Fri, run #3) — competitive-evidence deltas
   (no status *upgrade*; design-oracle numbers only, nothing measured on our stack, P8). **H15/A9** gain a
