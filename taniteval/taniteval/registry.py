@@ -143,6 +143,25 @@ MODELS = [
               "ARE the 0.5/1/1.5/2 s time waypoints, so the row is comparable "
               "to gt_ego_waypoints / every other arm. Same XL scale as "
               "refc-xl (that entry is the stale step-16000 snapshot)."),
+    dict(key="refc-xl-30k", name="REF-C-XL (anchored-diffusion, 30k FINAL)",
+         family="TanitAD", arch="refc", config_preset="xl", mode="diffusion",
+         ckpt="/root/models/refc-xl-30k/ckpt.pt", config="refc-xl",
+         encoder="trained ResNet-L (9ch, 256px, base_width 124)",
+         encoder_frozen=False, speed_input=True, action_dim=2, hf=None,
+         anti_collapse="trained encoder",
+         note="FINAL of refc-diffusion-xl-30k: ckpt `step` field reads 29999 "
+              "(the last of the 30000-step schedule; metrics.json final.step "
+              "29999, steps 30000 — report it as step-29999). Pulled 2026-07-20 "
+              "09:41 UTC pod3 -> eval over the direct agent-forwarded path, md5 "
+              "966d4eff1ea5ddf86efba01b8344e198 verified identical on both "
+              "sides; pod3 training process already exited (GPU idle) so the "
+              "source file was quiescent. Supersedes refc-xl-live (step 28000, "
+              "pulled mid-training) and refc-xl (step ~16000). Same XL config: "
+              "256 FPS anchors (externally built, refc_anchors_full.pt, carried "
+              "in the decoder.anchors buffer), d=512/6-layer decoder, 2 "
+              "truncated-denoise steps, H15 imagination + hierarchy + "
+              "maneuver->anchor grafts ON, grounded_selector OFF, refc1=False "
+              "-> the horizons ARE the 0.5/1/1.5/2 s time waypoints."),
 ]
 
 
