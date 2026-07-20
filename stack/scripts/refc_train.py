@@ -16,6 +16,14 @@ step-log/--workers machinery. Divergences are the POINT of the arm:
     anchors     --anchors <file.pt>: install the FPS anchor vocabulary built by
                 scripts/build_refc_anchors.py (else the model's built-in default
                 synthetic-FPS anchors are used).
+    labels      --labels {v1, v21}: the ROUTE AUX target derivation. ``v1`` is
+                what REF-C-XL trained with (refb_labels.route_target(nav_cmd) —
+                circular with the fed command AND straight-by-default). ``v21``
+                re-derives the route target from refb_labels.route_from_future_v21
+                (adaptive horizon, never-straight-by-default, ROUTE_UNKNOWN=3 as
+                an out-of-CE-range sentinel that the route CE MASKS OUT — never
+                clamped to `straight`). nav_cmd (a model INPUT) keeps the v1
+                derivation under both settings, so v21 changes ONE thing.
     losses      traj-recon L1   (1.0)  the GT-assigned anchor's reconstructed
                                        ego-frame trajectory vs the target
                                        [refc1: fixed-distance path checkpoints
@@ -54,7 +62,7 @@ from torch.utils.data import DataLoader
 import refb_labels
 from refb_train import FailLoudWindowDataset, load_cached_episodes
 from tanitad.config import base250cam_config
-from tanitad.refs.refc import (RefCModel, param_breakdown, refc_config,
+from tanitad.refs.refc import (N_ROUTE, RefCModel, param_breakdown, refc_config,
                                refc_small_config, refc_smoke_config,
                                refc_xl_config)
 from tanitad.train.train_worldmodel import cosine_lr
@@ -72,6 +80,67 @@ SPEED_CLS_WEIGHT = 0.2        # refc1 only
 TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
 SPEED_AHEAD = 5              # refc1 speed target: v at t+5 (same 0.5 s horizon)
+
+MILESTONES = (5000, 15000, 20000, 30000)   # scaling-study gate protocol (D-030)
+
+
+# ---- v2.1 route labels (opt-in; --labels v21) --------------------------------
+
+class RouteV21Dataset(FailLoudWindowDataset):
+    """FailLoudWindowDataset whose ROUTE AUX TARGET is re-derived by the v2.1
+    labeler (``refb_labels.route_from_future_v21``).
+
+    ONLY the route target and its validity mask change. ``nav_cmd`` is a model
+    INPUT and keeps the exact v1 derivation REF-C-XL trained with, so a v21 run
+    differs from an XL-style run in the route LABEL SET alone — not in what the
+    measurement encoder is fed (this mirrors flagship v1.5's `route_v21` mint,
+    which likewise left the fed command on the v1 path).
+
+    ``route_target`` carries ``refb_labels.ROUTE_UNKNOWN`` (= 3), deliberately
+    OUTSIDE the 3-wide CE class range, whenever ``route_valid`` is False. The
+    trainer masks those windows out of the route CE. It is NEVER clamped to
+    `straight` — an unmasked cross-entropy raising an index error is the
+    intended fail-loud behaviour (the silent straight-clamp is the exact bug the
+    v2.1 labeler exists to remove).
+
+    ``use_net_dyaw`` defaults to False per Sayed's 2026-07-20 ruling: a wide
+    sweep is ROAD FOLLOWING, not a route event.
+    """
+
+    def __init__(self, *a, use_net_dyaw: bool = False, **kw):
+        super().__init__(*a, **kw)
+        self.use_net_dyaw = bool(use_net_dyaw)
+
+    def __getitem__(self, i: int):
+        item = super().__getitem__(i)          # v1 nav_cmd/nav_valid + clones
+        e_i, t = self.index[i]
+        r = refb_labels.route_from_future_v21(
+            self.episodes[e_i].poses, t + self.window - 1,
+            use_net_dyaw=self.use_net_dyaw)
+        item["route_target"] = torch.tensor(int(r["route"]), dtype=torch.long)
+        item["route_valid"] = torch.tensor(bool(r["valid"]))
+        return item
+
+    def label_stats(self, n: int = 4000, seed: int = 0) -> dict:
+        """Route-label provenance row over ``n`` sampled windows (config.json)."""
+        g = torch.Generator().manual_seed(seed)
+        idx = torch.randperm(len(self.index), generator=g)[:min(n, len(self))]
+        counts = [0, 0, 0, 0]
+        reasons: dict[str, int] = {}
+        for i in idx.tolist():
+            e_i, t = self.index[i]
+            r = refb_labels.route_from_future_v21(
+                self.episodes[e_i].poses, t + self.window - 1,
+                use_net_dyaw=self.use_net_dyaw)
+            counts[int(r["route"])] += 1
+            reasons[r["reason"]] = reasons.get(r["reason"], 0) + 1
+        tot = max(int(idx.numel()), 1)
+        return {"n_sampled": tot,
+                "route_counts": {"left": counts[0], "straight": counts[1],
+                                 "right": counts[2], "UNKNOWN": counts[3]},
+                "route_frac": [round(c / tot, 4) for c in counts],
+                "valid_frac": round((tot - counts[3]) / tot, 4),
+                "reasons": {k: round(v / tot, 4) for k, v in sorted(reasons.items())}}
 
 
 # ---- losses ------------------------------------------------------------------
@@ -124,13 +193,34 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
         law_tgt = model.encode_pooled(fut_frames[:, LAW_AHEAD - 1])
     loss_law = (out["law_pred"] - law_tgt).pow(2).mean()
 
-    # Maneuver CE (kinematic pseudo-labels) + route-heading CE (valid-masked,
-    # falling back to all windows so the head always trains).
+    # Maneuver CE (kinematic pseudo-labels) + route-heading CE.
     man_tgt = refb_labels.window_maneuver_labels(
         pose_last, fut_poses, horizon=max(cfg.trajectory.horizons))
     loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
-    mask = nav_valid if bool(nav_valid.any()) else torch.ones_like(nav_valid)
-    loss_route = F.cross_entropy(out["route_logits"][mask], route_tgt[mask])
+    if "route_valid" in batch:
+        # v2.1 labels: mask on the ROUTE validity. route_target is
+        # ROUTE_UNKNOWN (=3, out of CE range) wherever invalid — masked out, and
+        # NEVER clamped to `straight`. An UNKNOWN surviving the mask is a
+        # labeler contract violation: raise, do not train a wrong class.
+        mask = batch["route_valid"].to(device)
+        if bool(mask.any()):
+            tgt_v = route_tgt[mask]
+            if int(tgt_v.max()) >= N_ROUTE:
+                raise ValueError(
+                    f"ROUTE_UNKNOWN survived the valid mask (max target "
+                    f"{int(tgt_v.max())} >= n_route {N_ROUTE}) — the v2.1 "
+                    f"contract is route<3 <=> valid=True")
+            loss_route = F.cross_entropy(out["route_logits"][mask], tgt_v)
+        else:                       # no judgeable window in this batch
+            loss_route = torch.zeros((), device=out["pooled"].device)
+    else:
+        # v1 labels (what REF-C-XL trained with) — byte-identical path,
+        # including the fall-back-to-all-windows behaviour.
+        mask = nav_valid if bool(nav_valid.any()) else torch.ones_like(nav_valid)
+        loss_route = F.cross_entropy(out["route_logits"][mask], route_tgt[mask])
+    route_acc = ((out["route_logits"][mask].argmax(-1) == route_tgt[mask])
+                 .float().mean() if bool(mask.any())
+                 else torch.zeros((), device=out["pooled"].device))
 
     # refc1: target-speed classification (bins over [0, speed_max]).
     if cfg.refc1:
@@ -153,6 +243,7 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "route": loss_route, "man": loss_man,
             "speed_cls": loss_speed_cls, "speed_mae": speed_mae,
             "anchor_acc": anchor_acc, "man_acc": man_acc,
+            "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
             "pooled": out["pooled"]}
 
@@ -164,6 +255,16 @@ def _save_ckpt(path: Path, model, opt, step: int) -> None:
                 "step": step}, tmp)
     tmp.replace(path)
     print(f"[ckpt] saved at step {step}", flush=True)
+    # Milestone archive (D-030 scaling study): ckpt.pt is overwritten every
+    # save_every, so preserve 5k/15k/20k/30k for the gate protocol. Atomic —
+    # a bare copy can leave a truncated file that exists() calls done forever.
+    for m in MILESTONES:
+        if step >= m:
+            arch = path.with_name(f"ckpt_step{m}.pt")
+            if not arch.exists():
+                from tanitad.train.ckpt_io import atomic_archive
+                atomic_archive(path, arch)
+                print(f"[ckpt] milestone archived: {arch.name}", flush=True)
 
 
 def train(args) -> dict:
@@ -202,8 +303,16 @@ def train(args) -> dict:
     max_h = max(max(cfg.trajectory.horizons), LAW_AHEAD, SPEED_AHEAD)
     train_eps, train_dir = load_cached_episodes(args.data_root, "*train*",
                                                 args.episodes)
-    ds = FailLoudWindowDataset(train_eps, window=cfg.window, max_horizon=max_h,
-                               channels=cfg.encoder.in_channels)
+    ds_kw = dict(window=cfg.window, max_horizon=max_h,
+                 channels=cfg.encoder.in_channels)
+    label_stats: dict | None = None
+    if args.labels == "v21":
+        ds = RouteV21Dataset(train_eps, use_net_dyaw=args.use_net_dyaw, **ds_kw)
+        label_stats = ds.label_stats()
+        print(f"[labels] v21 route (use_net_dyaw={args.use_net_dyaw}): "
+              f"{json.dumps(label_stats)}", flush=True)
+    else:
+        ds = FailLoudWindowDataset(train_eps, **ds_kw)
     assert len(ds) >= batch, \
         f"only {len(ds)} windows for batch {batch} — add episodes"
     dl_kw = dict(batch_size=batch, shuffle=True, drop_last=True)
@@ -224,6 +333,21 @@ def train(args) -> dict:
          "loss_weights": {"traj": TRAJ_WEIGHT, "cls": ANCHOR_CLS_WEIGHT,
                           "law": LAW_WEIGHT, "route": ROUTE_WEIGHT,
                           "man": MANEUVER_WEIGHT, "speed_cls": SPEED_CLS_WEIGHT},
+         # Label provenance — the artifact must describe its own labels.
+         "labels": {
+             "label_set": args.labels,
+             "route_derivation": ("refb_labels.route_from_future_v21"
+                                  if args.labels == "v21"
+                                  else "refb_labels.route_target(nav_command)"),
+             "use_net_dyaw": (bool(args.use_net_dyaw)
+                              if args.labels == "v21" else None),
+             "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+             "route_unknown_handling": ("masked out of the route CE "
+                                        "(ROUTE_UNKNOWN=3, never clamped)"
+                                        if args.labels == "v21" else "n/a"),
+             "train_label_stats": label_stats},
+         "data": {"cache_dir": str(train_dir), "n_episodes": len(train_eps),
+                  "n_windows": len(ds)},
          "param_breakdown": param_breakdown(model)},
         indent=2, default=str), encoding="utf-8")
 
@@ -273,6 +397,8 @@ def train(args) -> dict:
                 "man": sc(out["man"]), "speed_cls": sc(out["speed_cls"]),
                 "speed_mae": sc(out["speed_mae"]),
                 "anchor_acc": sc(out["anchor_acc"]), "man_acc": sc(out["man_acc"]),
+                "route_acc": sc(out["route_acc"]),
+                "route_valid_frac": sc(out["route_valid_frac"]),
                 "nav_follow_frac": sc(out["nav_follow_frac"]),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
@@ -290,9 +416,10 @@ def train(args) -> dict:
     try:
         val_eps, _ = load_cached_episodes(args.data_root, "*val*",
                                           min(args.episodes or 8, 8))
-        vds = FailLoudWindowDataset(val_eps, window=cfg.window,
-                                    max_horizon=max_h,
-                                    channels=cfg.encoder.in_channels)
+        vkw = dict(window=cfg.window, max_horizon=max_h,
+                   channels=cfg.encoder.in_channels)
+        vds = (RouteV21Dataset(val_eps, use_net_dyaw=args.use_net_dyaw, **vkw)
+               if args.labels == "v21" else FailLoudWindowDataset(val_eps, **vkw))
         model.eval()
         with torch.no_grad():
             vb = torch.utils.data.default_collate(
@@ -301,7 +428,8 @@ def train(args) -> dict:
         metrics["val"] = {k: round(float(vout[k]), 5)
                           for k in ("traj", "cls", "law", "route", "man",
                                     "speed_cls", "speed_mae", "anchor_acc",
-                                    "man_acc", "nav_follow_frac")}
+                                    "man_acc", "route_acc", "route_valid_frac",
+                                    "nav_follow_frac")}
     except AssertionError:
         pass                                        # no val cache dir
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2),
@@ -328,6 +456,15 @@ def main(argv=None):
     ap.add_argument("--anchors", default=None,
                     help="FPS anchor vocabulary .pt (build_refc_anchors.py); "
                          "default = the model's built-in synthetic-FPS anchors")
+    ap.add_argument("--labels", choices=("v1", "v21"), default="v1",
+                    help="route AUX target derivation: v1 = what REF-C-XL "
+                         "trained with (route_target(nav_cmd), straight-by-"
+                         "default); v21 = refb_labels.route_from_future_v21 "
+                         "(adaptive horizon, ROUTE_UNKNOWN masked out of the CE)")
+    ap.add_argument("--use-net-dyaw", action="store_true",
+                    help="v21 only: count a >=45 deg net heading change as a "
+                         "route turn. OFF per Sayed 2026-07-20 (a wide sweep is "
+                         "ROAD FOLLOWING)")
     ap.add_argument("--batch", type=int, default=None,
                     help="default: the main run's batch (base250cam)")
     ap.add_argument("--lr", type=float, default=None,

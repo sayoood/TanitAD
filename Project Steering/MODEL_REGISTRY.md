@@ -519,7 +519,7 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 | Preset | `--config` | Encoder | Decoder | Anchors | Imagination | Measured params | Trained? |
 |---|---|---|---|---|---|---|---|
 | `refc_small_config()` | `small` | base_width 64, blocks (3,6,16,6) | d256, 4 heads, 3 layers | 64 / pool 2048 | off | **54,690,001** ✅ | ⚠️ **only a 150-step CPU/GPU smoke** |
-| `refc_config()` | `base` | base_width 88, blocks default | d384, 4 layers | 128 / pool 4096 | off | 🟥 never instantiated (docstring says ~110 M; study calls it 104 M) | no |
+| `refc_config()` | `base` | base_width 88, blocks default | d384, 4 layers | 128 / pool 4096 | off | **104,191,577** ✅ *(measured 2026-07-20; the docstring's "~110 M" was 5.6 % high)* | 🟡 **training** — `refc-diffusion-base-v21-30k` (§4.3) |
 | `refc_xl_config()` | `xl` | base_width 124, blocks (3,8,20,6) | d512, 8 heads, 6 layers | 256 / pool 4096 | **on** | **251,932,584** ✅ | ✅ **yes** |
 
 ---
@@ -638,10 +638,28 @@ experiments/refc-smoke320/` — a **150-step, `--mode classifier`, `--config sma
    says "~55 M, tests pin the 45–65 M band". The 54,690,001 measurement confirms the *current* code.
 
 **What is genuinely OPEN:** the three-size scaling study (**small 55 M / base 104 M / XL 252 M on identical
-data, read at the 5 k/15 k/20 k/30 k milestone gates**) that D-030 commissioned **has not been run**. Only
-XL exists. Any statement about "where bigger helps vs overfits on our data" is currently **unsupported**.
-`base` has never even been instantiated, so its ~104/110 M figure is a docstring estimate, not a
-measurement. 🟥
+data, read at the 5 k/15 k/20 k/30 k milestone gates**) that D-030 commissioned. The **middle rung is now
+training** (§4.3, launched 2026-07-20) and `base` is no longer a docstring estimate — it measures
+**104,191,577**. `small` is still a 150-step smoke, and the `base` run carries a label confound, so any
+statement about "where bigger helps vs overfits on our data" remains **unsupported until §4.3 finishes and
+is evaluated**. 🟡
+
+---
+
+### 4.3 REF-C-base (medium, 104.2 M) — `refc-diffusion-base-v21-30k` — 🟡 **TRAINING**
+
+| Field | Value |
+|---|---|
+| **Status** | 🟡 launched `tanitad-pod3` 2026-07-20 ~16:40 UTC, 30,000 steps, ~1.23 s/step → **ETA ≈ 10.5 h**. GPU A40, peak 14.4 GiB of 44.4. |
+| **Location** | `tanitad-pod3:/workspace/experiments/refc-diffusion-base-v21-30k/` · log `tanitad-pod3:/tmp/refc-base-v21-30k.log` · ⚠️ **single copy, pod-only** |
+| **Params** *(measured at instantiation)* | encoder 90,458,632 · decoder 8,634,505 · strategic 1,903,680 · law 2,902,720 · aux 274,760 · measurement 17,280 · imagination **0** (graft off, XL-only) → **104,191,577** ✅ |
+| **Parity with XL** | same corpus `physicalai-train-e438721ae894` (2,376 eps / 406,099 windows), 30 k steps, **Adam** lr 1e-4 / warmup 2000 / cosine, same loss weights, `--mode diffusion`, `--batch 20 --workers 6` |
+| **Deliberate differences** | `--config base` (2.42× smaller) · **128** FPS anchors — verified a **strict prefix of XL's 256** (`refc_anchors_base128.pt`, same script/source/pool-cap/seed) · H15 imagination OFF (preset design) · **route labels v2.1** |
+| **⚠️ Confound** | XL trained with **v1** route labels (`route_target(nav_cmd)` — circular *and* straight-by-default; `labels_v2` was never set in `refc_train.py`). This run uses **v2.1** (`route_from_future_v21`, `use_net_dyaw=False`, ROUTE_UNKNOWN=3 **masked** out of the 0.1-weight CE, never clamped). **medium-vs-XL therefore conflates scale and labels.** Calibration: the flagship v1.5 end-to-end label effect was +0.025 m, not CI-separated. |
+| **Label coverage** *(4,000-window sample, in `config.json`)* | left 0.121 · straight 0.5645 · right 0.115 · **UNKNOWN 0.1995 (masked out)** → 80.05 % judgeable, vs v1's straight-by-default target |
+| **Code** | `stack/scripts/refc_train.py` gained `--labels {v1,v21}` (**default `v1` = XL-reproducible**), `RouteV21Dataset`, a fail-loud masked route CE, and 5 k/15 k/20 k/30 k **milestone archiving** (the gate series XL lacks). 15/15 `tests/test_refc.py` pass. Pod3 drift repaired before launch (`refb_labels.py` still had `use_net_dyaw=True`; `ckpt_io.py` was absent) — backups in `/workspace/ops/backup-20260720-refcmed/`. |
+| **Eval plan** | canonical `taniteval` n=881 / 40 val eps / 8-split jackknife vs XL's **0.458 ± 0.057**, plus `plan_fan` oracle-in-fan + `frac_sel_2x_worse` (note: a 128-wide fan is half XL's, so a worse oracle is partly pure coverage). Registry entry needs only `config_preset="base"` — the loader already resolves it. |
+| **Note** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` |
 
 ---
 
@@ -735,7 +753,7 @@ on `tanitad-eval` this session.* ✅
 | R4 | **Flagship v1 `--jerk-weight` / `--aux-accel` missing from the committed trainer** — the deployed model is not byte-rebuildable from HEAD | 🟠 high | `tanitad-pod2:/workspace/TanitAD/stack/scripts/train_flagship4b.py` (shows `M`) | commit the pod2 diff |
 | R5 | **`LEADERBOARD.md` is stale and in the wrong units** — newest row is camera-frame ADE@1s @27 k (2026-07-12); every current number is metric-BEV `ade_0_2s` | 🟠 high | in-repo | rewrite from §6 above, and label units |
 | R6 | **`gate-eval` skill targets a dead run** (`p0-sB01-realmix`, frozen since 2026-07-12 @ step 28,600) | 🟡 medium | `.claude/skills/gate-eval/SKILL.md` | retarget to the live arm |
-| R7 | **REF-C three-size scaling study never ran** — `base` never instantiated, `small` only smoked | 🟡 medium | n/a | run it, or retract the scaling claim |
+| R7 | **REF-C three-size scaling study never ran** — 🟡 **middle rung now training** (`base` measured 104,191,577 and launched 2026-07-20, §4.3); `small` still only smoked, and the `base` run carries a **scale/label confound** (v2.1 labels vs XL's v1) | 🟡 medium | n/a | let `base` finish + evaluate; then either add a label-controlled arm or state the confound wherever the ladder is quoted |
 | R8 | **REF-A I-JEPA canonical-val result is leak-contaminated** (80 % of val in its train set) | 🟡 medium | flagged in `taniteval/registry.py` | re-evaluate on the `f1b378` val before any comparative claim |
 | R9 | **REF-B rev2, `refa-4brain-speedyaw-30k`** have no eval record | 🟢 low | n/a | either evaluate or mark explicitly superseded |
 | R10 | **`refb-speed-30k/ckpt_prepatch_step8500.pt` is misnamed** — it is step 10,000 and byte-identical to `ckpt.pt` | 🟢 low | pod1 | rename |
@@ -772,8 +790,11 @@ they were made in the operator loop and never got an ADR.
 
 ### 8.1 Open questions this log deliberately does not close
 
-1. **REF-C scale (§4.2).** Only XL was trained. `small` was smoked; `base` never instantiated. The
-   "where does bigger help vs overfit" claim D-030 commissioned is **unsupported**. 🟥
+1. **REF-C scale (§4.2/§4.3).** `base` (104,191,577 — measured) is **training since 2026-07-20**;
+   `small` is still a 150-step smoke. And `base` runs **v2.1** route labels while XL ran **v1**, so the
+   first medium-vs-XL number conflates **scale with labels** — a clean rung needs a label-controlled
+   arm. The "where does bigger help vs overfit" claim D-030 commissioned stays **unsupported** until
+   §4.3 is evaluated. 🟡
 2. **v3enc has no result.** Every statement about staged levers working is a hypothesis with a
    pre-registered falsifier, not a finding. 🟥
 3. **Closed-loop is self-referential.** The imagination-in-the-loop harness uses the world model as both
