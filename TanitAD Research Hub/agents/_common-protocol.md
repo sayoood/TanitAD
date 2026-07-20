@@ -132,12 +132,18 @@ Every experiment records hardware, wall-clock, cost in the research note (feeds 
 - G-H (D-020): at least one backlog experiment executed with **measured numbers** in the research
   note (hardware, wall-clock, result vs expectation, falsifier verdict); `BACKLOG.md` re-prioritized.
 - G-F: session-end ritual done: STATE.md updated (incl. `LAST_RUN`, `QUALITY` line), files committed
-  with message `hub(<discipline>): <what> — <why>`, pushed.
+  with message `hub(<discipline>): <what> — <why>`, pushed. **D-026 GUARD (2026-07-18, mandatory):**
+  before you declare the session done, run `python tools/session_guard.py` (Windows:
+  `.\tools\session_guard.ps1`) from your worktree root. It **BLOCKS** on uncommitted deliverable files
+  in the hub areas — a non-zero exit means results are stranded in the working tree: commit them (or
+  discard) and re-run until it returns `RESULT: PASS`. Its WARN lines (unmerged `agent/*` branches vs
+  tip, stale INTAKE verdicts) are the debt list the orchestrator sweeps — surface them in your STATE.
 - G-I (RESOURCE MANDATE, 2026-07-17): resource declaration in STATE (resource used, wall-clock,
   cost, why-not-bigger). ≥1 real-compute experiment per run (4060 / eval pod / Colab) or a runnable
   job card + escalation. Same-day merge: your branch lands on the shared tip (or is flagged for
   orchestrator merge in STATE) before session end — no stranded-branch debt (D-026 hardened; the
-  2026-07-17 review found ~15k lines stranded across 8 branches).
+  2026-07-17 review found ~15k lines stranded across 8 branches). The `session_guard` WARN list (G-F)
+  is the mechanical check for this: an `agent/*` branch still `+N` vs tip at session end is stranded.
 
 ## Worktree isolation (D-026, 2026-07-09 — MANDATORY)
 
