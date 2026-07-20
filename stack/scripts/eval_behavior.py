@@ -78,6 +78,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import refb_labels as rl  # noqa: E402  (kinematic maneuver labels — reused)
 from d1_probe_capacity import _ego  # noqa: E402  (ego-frame convention — reused)
 
+from tanitad.eval.ckpt_compat import (SPEED_SCALE,  # noqa: E402
+                                      append_speed_channel)
+
 from tanitad.eval.gates import split_by_episode  # noqa: E402  (route parity)
 from tanitad.models.readout import RidgeProbe  # noqa: E402  (A3 calibrated probe)
 
@@ -263,7 +266,14 @@ def gt_dyaw_dv(poses: Tensor, last: Tensor, horizon: int = SELECT_H) -> Tensor:
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def collect(world, episodes, corpora, device, window, turn_rad_strict,
-            turn_rad_relaxed, stride=8, batch=8, keep_states=True) -> dict:
+            turn_rad_relaxed, stride=8, batch=8, keep_states=True,
+            speed_input=False) -> dict:
+    """``speed_input`` (3-ch operative ckpts): append v0 = poses[last,3]/
+    SPEED_SCALE as the constant 3rd action channel wherever true actions feed
+    the model (operative imagine + tactical_pred), exactly the flagship_losses
+    training contract — t=0 speed only, never a future speed. ``base_actions``
+    then carries the 3-ch windows so the imagine-and-select rollout keeps each
+    window's own v0 (see :func:`roll_operative`)."""
     cols = {k: [] for k in ("encoder_state", "operative_k4", "tactical_k8",
                             "tactical_k16", "man", "route_strict", "route_relax",
                             "route_valid", "sub_xy", "dyaw_dv", "eid_global",
@@ -281,8 +291,12 @@ def collect(world, episodes, corpora, device, window, turn_rad_strict,
         starts = list(range(0, T - window - MANEUVER_H, stride))
         for i in range(0, len(starts), batch):
             ch = starts[i:i + batch]
+            last = torch.tensor([t + window - 1 for t in ch])
             fw = torch.stack([fr[t:t + window] for t in ch]).to(device)
             aw = torch.stack([ep.actions[t:t + window] for t in ch]).to(device)
+            if speed_input:
+                v0 = (ep.poses[last, 3:4] / SPEED_SCALE).to(device)   # [b, 1]
+                aw = append_speed_channel(aw, v0)
             st = world.encode_window(fw)                       # [b, W, S]
             op = world.imagine(st, aw)                          # {1,2,4}
             cols["encoder_state"].append(st[:, -1].cpu())
@@ -294,7 +308,6 @@ def collect(world, episodes, corpora, device, window, turn_rad_strict,
             if keep_states:
                 states_full.append(st.cpu())
                 base_actions.append(aw.cpu())
-            last = torch.tensor([t + window - 1 for t in ch])
             cols["man"].append(gt_maneuver(ep.poses, last))
             rs, rv = route_intent(ep.poses, last, T, turn_rad_strict)
             rr, _ = route_intent(ep.poses, last, T, turn_rad_relaxed)
@@ -445,13 +458,21 @@ def roll_operative(world, states: Tensor, actions: Tensor,
                    seq: Tensor) -> Tensor:
     """Recursively roll the operative 1-step head under action sequence ``seq``.
 
-    states [N, W, S], actions [N, W, A], seq [K, A] (applied to every window) ->
-    endpoint latent [N, S]. This is fourbrain.TacticalSelector's rollout,
-    vectorized over windows (pinned equal by test_eval_behavior)."""
+    states [N, W, S], actions [N, W, A], seq [K, A'] (applied to every window,
+    A' == number of COMMANDED channels, typically steer+accel) -> endpoint
+    latent [N, S]. This is fourbrain.TacticalSelector's rollout, vectorized over
+    windows (pinned equal by test_eval_behavior).
+
+    Only the first ``seq.shape[-1]`` action channels are written; any extra
+    channel (the speed-input v0 at index 2) is PRESERVED from the rolled window.
+    v0 is constant across the window, so the rolled last slot already holds each
+    window's own v0 — the proven training/eval contract (t=0 speed only). For a
+    2-ch model this is byte-identical to ``a[:, -1] = seq[k]``."""
     s, a = states.clone(), actions.clone()
+    na = seq.shape[-1]
     for k in range(seq.shape[0]):
         a = torch.roll(a, -1, dims=1)
-        a[:, -1] = seq[k]
+        a[:, -1, :na] = seq[k]
         z = world.imagine(s, a)[1]
         s = torch.roll(s, -1, dims=1)
         s[:, -1] = z
@@ -491,7 +512,9 @@ def imagine_and_select_eval(world, data, device, seeds, val_frac, steer_mag,
                                        acts[b].to(device), seq).cpu())
         return torch.cat(outs) if outs else torch.empty(0)
 
-    hold = acts[tr][:, -1:].mean(0).squeeze(0).to(device).repeat(SELECT_H, 1)
+    # hold + primitives command steer/accel ONLY (2 channels); roll_operative
+    # preserves each window's own v0 channel when acts is 3-ch (speed-input).
+    hold = acts[tr][:, -1:, :2].mean(0).squeeze(0).to(device).repeat(SELECT_H, 1)
     z_fit = endpoints(tr, hold)
     probe = RidgeProbe(alpha=1.0).fit(z_fit, sub_xy[tr])
 
@@ -806,16 +829,20 @@ def main():
             corpora.append(_corpus_of(cd))
     assert episodes, "no val episodes loaded"
 
-    world = WorldModel(_CFG[args.config]())
+    from tanitad.eval.ckpt_compat import build_world_from_ckpt
+    # Self-describing ckpt: build at the TRAINED action_dim (speed-input ckpts
+    # are 3-ch) so the strict load succeeds; append the constant v0 channel to
+    # true actions in collect + the imagine-and-select rollout.
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
     sd = ck["model"] if "model" in ck else ck
-    world.load_state_dict(sd)
+    world, speed_input, _src = build_world_from_ckpt(_CFG[args.config](), ck,
+                                                     ckpt_path=args.ckpt)
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
     world = world.to(device).eval()
     window = world.predictor.cfg.window
     s0 = step0_findings(world, sd)
     print(f"[behavior] {len(episodes)} val eps, step {step}, window {window}, "
-          f"device {device}", flush=True)
+          f"speed_input {speed_input}, device {device}", flush=True)
     print(f"[behavior] STEP0: {s0['verdict']}", flush=True)
 
     tr_strict = math.radians(args.route_turn_deg)
@@ -825,7 +852,7 @@ def main():
     with strict_numerics():
         data = collect(world, episodes, corpora, device, window, tr_strict,
                        tr_relax, stride=args.stride, batch=args.batch,
-                       keep_states=not args.no_select)
+                       keep_states=not args.no_select, speed_input=speed_input)
     n = int(data["man"].numel())
     print(f"[behavior] collected {n} windows "
           f"({sum(data['route_valid'].tolist())} route-valid)", flush=True)

@@ -407,7 +407,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     from tanitad.config import (base250cam_config, flagship4b_config,
                                 flagship4b_reduced_config)
-    from tanitad.models.fourbrain import WorldModel
+    from tanitad.eval.ckpt_compat import build_world_from_ckpt
     _cfg_fn = {"base250cam": base250cam_config, "flagship4b": flagship4b_config,
                "flagship4b_reduced": flagship4b_reduced_config}[args.config]
 
@@ -431,9 +431,13 @@ def main():
             corpora.append(corpus_of(cd))
     assert episodes, "no val episodes loaded"
 
-    world = WorldModel(_cfg_fn())
+    # Self-describing ckpt: build at the TRAINED action_dim (speed-input ckpts
+    # are 3-ch) so the strict load succeeds. This diagnostic feeds NO actions
+    # to the model (encoder-state probes + kinematic baselines only), so the
+    # right-shaped build is the whole fix here.
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
-    world.load_state_dict(ck["model"] if "model" in ck else ck)
+    world, speed_input, _src = build_world_from_ckpt(_cfg_fn(), ck,
+                                                     ckpt_path=args.ckpt)
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
     world = world.to(device).eval()
     window = world.predictor.cfg.window
@@ -473,7 +477,7 @@ def main():
                    "val_frac": args.val_frac, "seed": args.seed,
                    "mlp_epochs": args.mlp_epochs, "hz": 10,
                    "waypoint_steps": list(WP_STEPS), "fp32": True,
-                   "strict_numerics": True},
+                   "strict_numerics": True, "speed_input": speed_input},
         "corpora": corpus_counts, "n_windows_total": n,
         "definitions": {
             "de@Ts": "mean over windows of ||pred(T)-gt(T)|| (point/FDE error at T)",

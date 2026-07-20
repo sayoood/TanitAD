@@ -51,9 +51,11 @@ from driving_diagnostic import (WP_STEPS, agg_metric_dicts,  # noqa: E402
 from tanitad.config import (base250cam_config, flagship4b_config,  # noqa: E402
                             flagship4b_reduced_config)
 from tanitad.data.mixing import load_episode  # noqa: E402
+from tanitad.eval.ckpt_compat import (SPEED_SCALE,  # noqa: E402
+                                      append_speed_channel,
+                                      build_world_from_ckpt)
 from tanitad.eval.gates import split_by_episode  # noqa: E402
 from tanitad.instruments.numerics import strict_numerics  # noqa: E402
-from tanitad.models.fourbrain import WorldModel  # noqa: E402
 from tanitad.models.metric_dynamics import (HierarchicalGrounding,  # noqa: E402
                                             rollout_decode)
 
@@ -64,9 +66,12 @@ _CFG = {"base250cam": base250cam_config, "flagship4b": flagship4b_config,
 
 @torch.no_grad()
 def collect(world, step_readout, episodes, corpora, device, window, fwd_k,
-            stride, batch):
+            stride, batch, speed_input=False):
     """Encode each window, roll ``fwd_k`` steps under TRUE actions, decode each
-    transition with the grounded operative step-readout + SE(2) accumulate."""
+    transition with the grounded operative step-readout + SE(2) accumulate.
+    ``speed_input`` appends v0 = poses[last,3]/SPEED_SCALE as the 3rd action
+    channel, EXACTLY as flagship_losses does in training: the t=0 speed only,
+    constant over the window AND the future actions — never a future speed."""
     S_wp, GT, CV, EID, COR, SPD, HDG = [], [], [], [], [], [], []
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
     need_ahead = max(K_MAX, fwd_k)
@@ -77,15 +82,19 @@ def collect(world, step_readout, episodes, corpora, device, window, fwd_k,
         starts = list(range(0, T - window - need_ahead, stride))
         for i in range(0, len(starts), batch):
             ch = starts[i:i + batch]
+            last = torch.tensor([t + window - 1 for t in ch])
             fw = torch.stack([fr[t:t + window] for t in ch]).to(device)
             aw = torch.stack([ep.actions[t:t + window] for t in ch]).to(device)
             fa = torch.stack([ep.actions[t + window:t + window + fwd_k]
                               for t in ch]).to(device)
+            if speed_input:
+                v0 = (ep.poses[last, 3:4] / SPEED_SCALE).to(device)   # [b, 1]
+                aw = append_speed_channel(aw, v0)
+                fa = append_speed_channel(fa, v0)
             states = world.encode_window(fw)                       # [b, W, S]
             wp_full, _ = rollout_decode(world.predictor, states, aw, fa,
                                         step_readout, fwd_k)        # [b, fwd_k, 2]
             pred_wp = wp_full.index_select(1, wp_idx.to(device)).cpu()
-            last = torch.tensor([t + window - 1 for t in ch])
             S_wp.append(pred_wp.float())
             GT.append(gt_ego_waypoints(ep.poses, last))
             CV.append(baseline_waypoints(ep.poses, last)["constant_velocity"])
@@ -136,9 +145,12 @@ def main():
             corpora.append(corpus_of(cd))
     assert episodes, "no val episodes loaded"
 
-    world = WorldModel(_CFG[args.config]())
+    # Self-describing ckpt: build at the TRAINED action_dim (speed-input ckpts
+    # are 3-ch), keep the load strict — never relax strictness to paper over a
+    # shape mismatch (strict=False would leave act_emb/inv_dyn random-init).
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
-    world.load_state_dict(ck["model"] if "model" in ck else ck)
+    world, speed_input, act_src = build_world_from_ckpt(_CFG[args.config](), ck,
+                                                        ckpt_path=args.ckpt)
     world = world.to(device).eval()
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
     assert "grounding" in ck, (
@@ -149,12 +161,13 @@ def main():
     step_readout = grounding.step["op"]          # operative per-step Δpose readout
     window = world.predictor.cfg.window
     print(f"[grounded] {len(episodes)} val episodes, ckpt step {step}, window "
-          f"{window}, fwd_k {args.fwd_k}, config {args.config}, dev {device}",
-          flush=True)
+          f"{window}, fwd_k {args.fwd_k}, config {args.config}, "
+          f"speed_input {speed_input}, dev {device}", flush=True)
 
     with strict_numerics():
         data = collect(world, step_readout, episodes, corpora, device, window,
-                       args.fwd_k, args.stride, args.batch)
+                       args.fwd_k, args.stride, args.batch,
+                       speed_input=speed_input)
         n = data["pred"].shape[0]
         splits = [split_by_episode(data["eid"], args.val_frac, s)
                   for s in range(args.seed, args.seed + args.n_splits)]
@@ -199,6 +212,7 @@ def main():
         "exp": "axis6-grounded-rollout-4b",
         "ckpt": args.ckpt, "step": step, "git_hash": args.git_hash,
         "config": args.config,
+        "speed_input": speed_input, "action_dim_source": act_src,
         "method": ("operative predictor rollout under TRUE actions (intent-free) "
                    "-> per-step Δpose via grounding.step['op'] -> SE(2) accumulate; "
                    "NO fit at eval"),

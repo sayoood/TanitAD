@@ -91,6 +91,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Reused VERBATIM (no reinvention) — the proven diagnostic + gate primitives.
 import driving_diagnostic as dd  # noqa: E402
+from tanitad.eval.ckpt_compat import (SPEED_SCALE,  # noqa: E402
+                                      append_speed_channel,
+                                      build_world_from_ckpt)
 from tanitad.eval.gates import (I2Input, run_d1, run_d2,  # noqa: E402
                                 run_d3, split_by_episode)
 from tanitad.instruments.numerics import strict_numerics  # noqa: E402
@@ -100,6 +103,16 @@ WP_STEPS = dd.WP_STEPS                 # (5,10,15,20) = 0.5/1/1.5/2 s @10Hz
 K_MAX = dd.K_MAX                       # 20
 CAMERA_ADE_MAX = 1.0                   # Plan §4 D1 camera threshold (metres, ade@1s)
 WP_IDX = torch.tensor([k - 1 for k in WP_STEPS])
+
+
+def _pred_speed_input(predictor) -> bool:
+    """True when the predictor was built with the v0 speed-input 3rd action
+    channel (act_emb widened to action_dim>=3). Read straight off the built
+    module so every arm builder (and the resim bridge) detects it uniformly."""
+    try:
+        return int(predictor.act_emb[0].in_features) >= 3
+    except Exception:
+        return False
 
 
 # --------------------------------------------------------------------------- #
@@ -122,6 +135,9 @@ class ArmSpec:
     grounded_step_readout: Optional[torch.nn.Module] = None  # flagship/refa
     native_waypoints: Optional[Callable] = None              # refb direct head
     native_label: str = ""
+    # v0 speed-input (3-ch operative action): append the constant v0 channel to
+    # true actions before every predictor rollout (grounded ADE + D2/D3).
+    speed_input: bool = False
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -380,8 +396,8 @@ def grounded_rollout_ade(arm: ArmSpec, grid: RefGrid, feat_by_id, device,
         PRED = []
         for i in range(0, len(grid.windows), batch):
             chunk = grid.windows[i:i + batch]
-            sw, aw, fa = [], [], []
-            for ei, t, _ in chunk:
+            sw, aw, fa, v0s = [], [], [], []
+            for ei, t, last in chunk:
                 ep = grid.episodes[ei]
                 if arm.kind == "feature":
                     eid = int(ep.episode_id)
@@ -396,10 +412,17 @@ def grounded_rollout_ade(arm: ArmSpec, grid: RefGrid, feat_by_id, device,
                 sw.append(feats)
                 aw.append(acts[t:t + W].float())
                 fa.append(acts[t + W:t + W + K_MAX].float())
+                # v0 = t=0 (last input frame) ego speed / SPEED_SCALE, from the
+                # SHARED reference poses (never a future speed — leakage-safe).
+                v0s.append(_poses4(ep.poses)[last, 3:4].float() / SPEED_SCALE)
             win = torch.stack(sw).to(device)
             states = arm.encode_window(win)                       # [b,W,S]
             actions = torch.stack(aw).to(device)
             fut_a = torch.stack(fa).to(device)
+            if arm.speed_input:                                   # append v0 ch
+                v0 = torch.stack(v0s).to(device)                  # [b,1]
+                actions = append_speed_channel(actions, v0)
+                fut_a = append_speed_channel(fut_a, v0)
             wp_full, _ = rollout_decode(arm.predictor, states, actions, fut_a,
                                         arm.grounded_step_readout, K_MAX)
             PRED.append(wp_full.index_select(1, WP_IDX.to(device)).cpu())
@@ -446,7 +469,7 @@ def imagination_gates(arm: ArmSpec, grid: RefGrid, feat_by_id, device, batch,
     zc, z1, zi1, zik, ztk, d1, dk, act, prev = ([] for _ in range(9))
     for i in range(0, len(grid.windows), batch):
         chunk = grid.windows[i:i + batch]
-        sw, aw = [], []
+        sw, aw, v0w = [], [], []
         nxt1, nxtk, disp1, dispk, acts_last, prevst = [], [], [], [], [], []
         for ei, t, last in chunk:
             ep = grid.episodes[ei]
@@ -468,11 +491,14 @@ def imagination_gates(arm: ArmSpec, grid: RefGrid, feat_by_id, device, batch,
             disp1.append(dd._ego(poses[last + 1, :2] - p0, yaw0))
             dispk.append(dd._ego(poses[last + k_max, :2] - p0, yaw0))
             acts_last.append(acts[last])
+            v0w.append(poses[last, 3:4] / SPEED_SCALE)            # [1] per window
             prevst.append(torch.stack([poses[last, 3],
                                        dd._wrap(poses[last, 2] - poses[last - 1, 2])]))
         win = torch.stack(sw).to(device)
         states = arm.encode_window(win)
         awt = torch.stack(aw).to(device)
+        if arm.speed_input:            # append constant v0 3rd action channel
+            awt = append_speed_channel(awt, torch.stack(v0w).to(device))
         preds = arm.predictor(states, awt)
         z_next1 = arm.encode_window(torch.stack(nxt1).unsqueeze(1).to(device))[:, 0] \
             if arm.kind == "feature" else \
@@ -600,17 +626,20 @@ def _load_ck(path, device):
 def build_flagship(ckpt, config_name, device) -> ArmSpec:
     from tanitad.config import (flagship4b_config, flagship4b_reduced_config,
                                 flagship4b_smoke_config)
-    from tanitad.models.fourbrain import WorldModel
     from tanitad.models.metric_dynamics import HierarchicalGrounding
     cfg = {"flagship4b": flagship4b_config,
            "flagship4b_reduced": flagship4b_reduced_config,
            "smoke": flagship4b_smoke_config}[config_name]()
-    world = WorldModel(cfg)
     ck = _load_ck(ckpt, device)
-    world.load_state_dict(ck["model"] if "model" in ck else ck)
+    # Self-describing ckpt: build at the trained action_dim (speed-input ckpts
+    # are 3-ch) so the load stays STRICT; append the v0 channel in the rollouts.
+    world, speed_input, _src = build_world_from_ckpt(cfg, ck, ckpt_path=ckpt)
     world = world.to(device).eval()
     step_readout = None
     notes = []
+    if speed_input:
+        notes.append("speed-input ckpt (action_dim=3): v0 channel appended in "
+                     "grounded rollout + D2/D3")
     if "grounding" in ck:
         gr = HierarchicalGrounding(world.state_dim).to(device).eval()
         gr.load_state_dict(ck["grounding"])
@@ -624,26 +653,38 @@ def build_flagship(ckpt, config_name, device) -> ArmSpec:
         step=int(ck.get("step", -1)) if isinstance(ck, dict) else -1,
         predictor=world.predictor,
         imagine1=lambda s, a: world.imagine(s, a)[1],
-        grounded_step_readout=step_readout,
+        grounded_step_readout=step_readout, speed_input=speed_input,
         native_label="grounded operative rollout under true actions "
                      "(rollout_decode -> SE(2))",
         notes=notes)
 
 
 def build_refa(ckpt, adapter, smoke, device, n_tokens=256, d_dino=768) -> ArmSpec:
+    import dataclasses
+
     from tanitad.config import PredictorConfig
+    from tanitad.eval.ckpt_compat import ckpt_action_dim
     from tanitad.models.metric_dynamics import StepDisplacementReadout
     from tanitad.refs.refa import RefAModel, refa_predictor_config
     pred_cfg = (PredictorConfig(d_model=64, depth=2, n_heads=2, window=4,
                                 horizons=(1, 2, 4), action_dim=2)
                 if smoke else refa_predictor_config())
+    ck = _load_ck(ckpt, device)
+    # Self-describing: a 3-ch operative-only REF-A ckpt widens act_emb — build
+    # the predictor at the trained action_dim so the strict load succeeds.
+    a_dim, _src = ckpt_action_dim(ck, ckpt_path=ckpt)
+    if a_dim != pred_cfg.action_dim:
+        pred_cfg = dataclasses.replace(pred_cfg, action_dim=a_dim)
     model = RefAModel(pred_cfg=pred_cfg, adapter_kind=adapter,
                       n_tokens=n_tokens, d_dino=d_dino)
-    ck = _load_ck(ckpt, device)
     model.load_state_dict(ck["model"])
     model = model.to(device).eval()
     step_readout = None
     notes = []
+    speed_input = _pred_speed_input(model.predictor)
+    if speed_input:
+        notes.append("speed-input ckpt (action_dim=3): v0 channel appended in "
+                     "grounded rollout + D2/D3")
     if "step_readout" in ck:
         step_readout = StepDisplacementReadout(model.state_dim).to(device).eval()
         step_readout.load_state_dict(ck["step_readout"])
@@ -655,7 +696,7 @@ def build_refa(ckpt, adapter, smoke, device, n_tokens=256, d_dino=768) -> ArmSpe
         encode_one=model.encode, state_dim=model.state_dim,
         step=int(ck.get("step", -1)), predictor=model.predictor,
         imagine1=lambda s, a: model.predict(s, a)[1],
-        grounded_step_readout=step_readout,
+        grounded_step_readout=step_readout, speed_input=speed_input,
         native_label="grounded operative rollout under true actions "
                      "(adapter state; rollout_decode -> SE(2))",
         notes=notes)
@@ -729,6 +770,7 @@ def armspec_from_resim_arm(resim_arm, device) -> ArmSpec:
             predictor=world.predictor,
             imagine1=lambda s, a: world.imagine(s, a)[1],
             grounded_step_readout=step_readout,
+            speed_input=_pred_speed_input(world.predictor),
             native_label="grounded operative rollout under true actions",
             notes=notes)
 
@@ -758,6 +800,7 @@ def armspec_from_resim_arm(resim_arm, device) -> ArmSpec:
             predictor=model.predictor,
             imagine1=lambda s, a: model.predict(s, a)[1],
             grounded_step_readout=step_readout,
+            speed_input=_pred_speed_input(model.predictor),
             native_label="grounded operative rollout under true actions "
                          "(online-tokenized adapter state)",
             notes=notes + ["REF-A tokenizes frames online for the gate pass "

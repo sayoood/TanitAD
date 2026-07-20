@@ -33,6 +33,8 @@ import torch
 
 from tanitad.config import base250cam_config, smoke_config  # noqa: F401
 from tanitad.data.mixing import load_episode
+from tanitad.eval.ckpt_compat import (SPEED_SCALE, append_speed_channel,
+                                      build_world_from_ckpt)
 from tanitad.eval.gates import (I2Input, gates_metrics_json, run_d1, run_d2,
                                 run_d3)
 from tanitad.eval.metrics import trajectory_extra_metrics
@@ -52,8 +54,17 @@ def _ego_frame(dxy: torch.Tensor, yaw: torch.Tensor) -> torch.Tensor:
 
 @torch.no_grad()
 def build_eval_tensors(world, episodes, device, window: int, k_max: int,
-                       stride: int = 6, batch: int = 8) -> dict:
-    """Collect everything the three gates need from contract episodes."""
+                       stride: int = 6, batch: int = 8,
+                       speed_input: bool = False) -> dict:
+    """Collect everything the three gates need from contract episodes.
+
+    ``speed_input`` (3-ch operative ckpts): append v0 = poses[last,3]/
+    SPEED_SCALE as the constant 3rd action channel wherever actions feed the
+    MODEL (``world.imagine``), exactly as flagship_losses does in training —
+    t=0 speed only, never a future speed. The returned ``actions`` tensor
+    stays the RAW recorded 2-ch actions: it is probe DATA for the D2
+    calibration / forward-dynamics probes and the spectral estimate, so it is
+    kept comparable across checkpoints."""
     out = {k: [] for k in ("states", "waypoints", "eps", "z_prev", "z_true1",
                            "z_imag1", "z_imag_k", "z_true_k", "disp1",
                            "disp_k", "actions", "prev_state")}
@@ -65,11 +76,14 @@ def build_eval_tensors(world, episodes, device, window: int, k_max: int,
         t0s = list(range(0, T - window - need_ahead, stride))
         for i in range(0, len(t0s), batch):
             chunk = t0s[i:i + batch]
+            last = torch.tensor([t + window - 1 for t in chunk])
             fw = torch.stack([frames[t:t + window] for t in chunk]).to(device)
             aw = torch.stack([ep.actions[t:t + window] for t in chunk]).to(device)
+            if speed_input:
+                v0 = (ep.poses[last, 3:4] / SPEED_SCALE).to(device)   # [b, 1]
+                aw = append_speed_channel(aw, v0)
             states = world.encode_window(fw)                     # [b, W, S]
             preds = world.imagine(states, aw)
-            last = torch.tensor([t + window - 1 for t in chunk])
             yaw0 = ep.poses[last, 2]
             p0 = ep.poses[last, :2]
             wp = torch.stack([_ego_frame(ep.poses[last + k, :2] - p0, yaw0)
@@ -99,12 +113,13 @@ def build_eval_tensors(world, episodes, device, window: int, k_max: int,
 
 
 def evaluate(world, episodes, device, exp_id: str, git_hash: str,
-             corpus_meta: dict | None = None) -> dict:
+             corpus_meta: dict | None = None, speed_input: bool = False) -> dict:
     world = world.to(device).eval()
     cfg_w = world.predictor.cfg
     k_max = max(cfg_w.horizons)
     with strict_numerics():
-        t = build_eval_tensors(world, episodes, device, cfg_w.window, k_max)
+        t = build_eval_tensors(world, episodes, device, cfg_w.window, k_max,
+                               speed_input=speed_input)
         frames_i2 = (episodes[0].frames[:16].float().div(255.0)
                      if episodes[0].frames.dtype == torch.uint8
                      else episodes[0].frames[:16]).to(device)
@@ -130,6 +145,7 @@ def evaluate(world, episodes, device, exp_id: str, git_hash: str,
     report = gates_metrics_json(exp_id, git_hash, [d1, d2, d3], extra={
         "d3_horizon_s": k_max / 10.0,
         "n_eval_windows": int(t["states"].shape[0]),
+        "speed_input": speed_input,
         "spectral": spec_d,
     })
     return report
@@ -147,11 +163,12 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     from tanitad.data.comma2k19 import CORPUS_META
-    from tanitad.models.fourbrain import WorldModel
-    cfg = base250cam_config()
-    world = WorldModel(cfg)
+    # Self-describing ckpt: build at the TRAINED action_dim (speed-input ckpts
+    # are 3-ch) so the load stays strict — never strict=False (that silently
+    # leaves act_emb/inv_dyn random-init).
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=True)
-    world.load_state_dict(ck["model"] if "model" in ck else ck)
+    world, speed_input, _src = build_world_from_ckpt(base250cam_config(), ck,
+                                                     ckpt_path=args.ckpt)
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
 
     episodes = []
@@ -160,11 +177,13 @@ def main():
         if val_dirs:
             files = sorted(val_dirs[-1].glob("ep_*.pt"))[:args.episodes]
             episodes += [load_episode(str(p), mmap=True) for p in files]
-    print(f"[eval] {len(episodes)} val episodes, checkpoint step {step}")
+    print(f"[eval] {len(episodes)} val episodes, checkpoint step {step}, "
+          f"speed_input {speed_input}")
 
     report = evaluate(world, episodes, device,
                       exp_id=f"p0-sB01-gates-step{step}",
-                      git_hash=args.git_hash, corpus_meta=CORPUS_META)
+                      git_hash=args.git_hash, corpus_meta=CORPUS_META,
+                      speed_input=speed_input)
     out = Path(args.out) / f"gates_step{step}.json"
     out.write_text(json.dumps(report, indent=2, default=str))
     print(json.dumps(report["summary"], indent=2))
