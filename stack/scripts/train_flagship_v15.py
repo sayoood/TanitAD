@@ -314,7 +314,18 @@ def main(argv=None):
     anchors_d = head.decoder.anchors
     it = iter(dl)
     t0 = time.time()
+    # Resume-aware: without this, a restart re-initialises `best` to inf and the
+    # FIRST post-restart eval overwrites a genuinely better earlier checkpoint —
+    # and a warm restart raises the LR, so that first eval is usually WORSE.
     best = float("inf")
+    best_p = out / "ckpt_best.pt"
+    if best_p.exists():
+        try:
+            best = float(torch.load(best_p, map_location="cpu",
+                                    weights_only=False)["val"]["ade@2s"])
+            print(f"[resume] carrying best val ade@2s = {best:.4f}", flush=True)
+        except Exception:
+            pass
     while step < a.steps:
         lr = cosine_lr(step, a.steps, a.warmup, a.lr)
         for pg in opt.param_groups:

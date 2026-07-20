@@ -2,7 +2,7 @@
 
 v1.5 has its OWN trajectory decoder (like REF-C), not a grounded operative
 rollout, so it needs its own ``collect`` — but everything downstream of collect
-must be the code that produced 0.4522 (v1) and 0.4703 (REF-C-XL), or the
+must be the code that produced 0.4522 (v1) and 0.458 (REF-C-XL FINAL), or the
 comparison is not a comparison. This script therefore VENDORS the eval pod's
 own modules (``taniteval/bench.py``, ``taniteval/tanitad_metrics.py``,
 ``scripts/driving_diagnostic.py``) rather than the repo's copies, which have
@@ -91,12 +91,16 @@ def collect(head, predictor, probes, cfg, states, poses, labels, eids,
             vb = labels["vt_band"][e][torch.tensor(ch)].to(device)
             rt = labels["route"][e][torch.tensor(ch)].to(device)
             rg = labels["route_graded"][e][torch.tensor(ch)].to(device)
+            # vt_speed feeds the LONGITUDINAL SELECTION term. Training optimises
+            # the score WITH it, so omitting it here would silently evaluate a
+            # different ranker than the one that was trained.
+            vs = labels["vt_speed"][e][torch.tensor(ch)].to(device)
             imag = None
             if cfg.cond_imagination:
                 imag = imagine_probes(predictor, st, ac, probes, cfg.imag_read,
                                       v0 / SPEED_SCALE)
             out = head(st, v0, imagined=imag, vt_band=vb, route=rt,
-                       route_graded=rg, steps=steps)
+                       route_graded=rg, vt_speed=vs, steps=steps)
             P.append(out["traj"].float().cpu())
             G.append(dd.gt_ego_waypoints(po, last))
             C.append(dd.baseline_waypoints(po, last)["constant_velocity"])
@@ -185,6 +189,7 @@ def main(argv=None):
     labels = {"actions": [torch.as_tensor(x, dtype=torch.float32)
                           for x in pdta["actions"]],
               "vt_band": ld[vt_key],
+              "vt_speed": ld["vt_v2" if a.label_set == "v21" else "vt_raw"],
               "route": ld["route_v21"] if a.label_set == "v21"
               else ld["route_legacy"],
               "route_graded": ld["route_graded"] if a.label_set == "v21"
@@ -209,7 +214,11 @@ def main(argv=None):
         "ade@2s_heldout": m["ade@2s"], "ade@2s_full": res["full_set"]["model"]["ade@2s"],
         "fde@2s": m["fde@2s"], "miss@2m": m["miss_rate@2m"],
         "beats_cv": res["beats_cv_ade_0_2s"],
-        "G1_beat_refc_0.4703": bool(m["ade@2s"]["mean"] < 0.4703),
+        # Gate constants read from Project Steering/MODEL_REGISTRY.md.
+        # G1 moved on 2026-07-20: REF-C-XL FINISHED at step 29,999 and its
+        # FINAL score is 0.458 (the 0.470 in circulation is the 28k provisional,
+        # and 0.5645 is the ~16k snapshot). Always gate against the final.
+        "G1_beat_refc_xl_final_0.458": bool(m["ade@2s"]["mean"] < 0.458),
         "G2_beat_v1_0.4522": bool(m["ade@2s"]["mean"] < 0.4522),
         "G3_miss_le_0.10": bool(m["miss_rate@2m"]["mean"] <= 0.10),
     }, indent=2), flush=True)

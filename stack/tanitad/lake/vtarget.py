@@ -55,6 +55,16 @@ def savgol(v: np.ndarray, win: int = SMOOTH_WIN,
 
     Zero-phase matters: a causal filter would shift the speed track in time and
     bias every horizon-indexed label. scipy is not a dependency of the lake.
+
+    Order-2 reproduces a linear ramp EXACTLY in the interior, so genuine
+    acceleration survives untouched — the property that makes it safe to smooth
+    before a hard-decel gate. The even-mirror padding is not itself linear, so
+    the first/last ``win // 2`` samples carry a bounded artefact (< one sample
+    step of the underlying ramp; measured max 0.049 m/s on a 10 m/s ramp over
+    199 frames). Harmless where it is used: the leading samples fall inside the
+    window-8 warm-up and the trailing ones only appear in windows whose
+    lookahead is already below the :func:`vtarget_v2` floor. Pinned by
+    ``tests/test_flagship_v15.py`` so the behaviour cannot drift silently.
     """
     v = np.asarray(v, dtype=np.float64)
     if v.shape[0] < win:
