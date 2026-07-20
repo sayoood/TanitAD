@@ -128,10 +128,16 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
         nav_cmd      [] long — refb_labels.nav_command at the last window pose
         nav_valid    [] bool — False when < NAV_MIN_STEPS of future exist
         route_target [] long — the same 3-way derivation, aux-CE target
+
+    ``labels_v2`` (default False, byte-identical v1) switches the strategic
+    derivation to the curvature-relative v2 path (nav_command_v2 /
+    route_target_v2): road-following curves stay `follow`, and AMBIGUOUS junction
+    windows get nav_valid=False (excluded from the route CE + route-from-vision
+    aux). REF-B leaves this off; the flagship trainer flips it via --v2.
     """
 
     def __init__(self, episodes: list, window: int, max_horizon: int,
-                 channels: int | None = None):
+                 channels: int | None = None, labels_v2: bool = False):
         for e_i, ep in enumerate(episodes):
             T = ep.frames.shape[0]
             if ep.actions.shape[0] != T or ep.poses.shape[0] != T:
@@ -148,6 +154,7 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
         # silent index; we install the fail-loud one instead.
         self.window, self.max_horizon = window, max_horizon
         self.episodes = episodes
+        self.labels_v2 = labels_v2
         self.index = build_window_index([ep.frames.shape[0]
                                          for ep in episodes],
                                         window, max_horizon)
@@ -155,12 +162,22 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
         e_i, t = self.index[i]
-        cmd, valid = refb_labels.nav_command(self.episodes[e_i].poses,
-                                             t + self.window - 1)
+        poses = self.episodes[e_i].poses
+        t_last = t + self.window - 1
+        if self.labels_v2:
+            # v2 curvature-relative derivation: a road-following curve stays
+            # `follow`/route_straight, and an AMBIGUOUS junction window gets
+            # valid=False (dropped from the route CE + the route-from-vision
+            # aux). nav_command_v2 returns the v2 `valid` mask; route_target_v2
+            # is the future-derived (non-circular) route class.
+            cmd, valid = refb_labels.nav_command_v2(poses, t_last)
+            route_tgt = refb_labels.route_target_v2(poses, t_last)
+        else:                                  # v1 path (byte-identical)
+            cmd, valid = refb_labels.nav_command(poses, t_last)
+            route_tgt = refb_labels.route_target(cmd)
         item["nav_cmd"] = torch.tensor(cmd, dtype=torch.long)
         item["nav_valid"] = torch.tensor(valid)
-        item["route_target"] = torch.tensor(refb_labels.route_target(cmd),
-                                            dtype=torch.long)
+        item["route_target"] = torch.tensor(route_tgt, dtype=torch.long)
         # workers>0: MooseFS mmap slices can't be shared across the worker
         # boundary (bus error / "no such file"); clone to owned in-RAM tensors.
         for _k, _v in item.items():

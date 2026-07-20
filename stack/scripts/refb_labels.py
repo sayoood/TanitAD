@@ -221,3 +221,254 @@ def waypoint_targets(pose_last: Tensor, future_poses: Tensor,
     wps = [ego_frame(future_poses[:, k - 1, :2] - pose_last[:, :2], yaw)
            for k in horizons]
     return torch.stack(wps, dim=1)
+
+
+# ============================================================================
+# v2 (2026-07-18): curvature-relative derivation — separate ROAD-FOLLOWING
+# (lane-keeping through a curve) from genuine ROUTE DECISIONS / junction turns.
+# ----------------------------------------------------------------------------
+# WHY: the v1 nav/maneuver derivation thresholds the NET heading change over a
+# fixed TIME window (|dyaw| > 45 deg route / > 0.15 rad @2 s tactical). Net
+# heading-over-time conflates two physically different things because dyaw =
+# kappa * v * t: a GENTLE highway curve at speed sweeps a large net heading
+# (R=300 m @30 m/s over 25 s => 143 deg) yet is pure lane-keeping, while the
+# same 45 deg fires for a tight junction turn (R=15 m). v1 therefore labels a
+# curving ROAD a route "turn" (false-turn) — degenerate on 74 %-straight
+# highway — and the derivation is CIRCULAR (the fed nav_cmd IS the target).
+#
+# FIX: decide on PATH CURVATURE  kappa = dyaw/ds  (heading change per unit
+# arc-length, signed, +left) — the physical turn tightness kappa = 1/R, which
+# is SPEED-INVARIANT. A road-following curve has small |kappa| (large radius)
+# no matter how much net heading it sweeps; a junction turn has large |kappa|
+# (small radius). Two features from ego poses alone:
+#   peak_kappa    max |smoothed kappa| over the horizon  -> tightness (1/R)
+#   concentration share of the net heading change falling in the tightest
+#                 CONC_WIN sub-window -> TRANSIENT (junction, ~1.0) vs
+#                 SUSTAINED (road sweep spread over the window, ~win/horizon)
+# A window is a genuine TURN only if it is BOTH tight (peak_kappa >= turn) AND
+# transient (concentration >= min); clearly gentle (peak_kappa <= road) is
+# road-following; the band between is AMBIGUOUS (gentle fork / exit ramp /
+# collector curve — NOT separable from a road curve without a map) and is
+# FLAGGED valid=False so the route-from-vision aux never trains on it.
+#
+# HONEST CEILING: ego kinematics recover "tight junction-scale turn vs road-
+# following curve" well, but the true ROUTE INTENT at a junction (which branch
+# the driver chose; straight-through vs the cross street; lane-level choice)
+# is a MAP/NAV-GT quantity absent from the trajectory. v2 makes the label mean
+# "sharp, transient heading change" HONESTLY and flags what it cannot know,
+# instead of pretending net-heading-over-time is a route command.
+#
+# All v1 functions above are unchanged (byte-identical) and remain the default
+# path; v2 is opt-in (validate_refb_labels.py / a future trainer flag).
+# ----------------------------------------------------------------------------
+
+DT_DEFAULT = 0.1                    # 10 Hz contract
+MIN_ARC_M = 0.10                    # arc-length floor: below this kappa is
+                                    # undefined (stopped / yaw noise) -> 0
+CURV_SMOOTH_STEPS = 5              # ~0.5 s moving-average on per-step kappa
+
+# Turn geometry (documented; swept in validate_refb_labels.py --sweep). A
+# genuine (junction-scale) turn is radius <= R_TURN_M; clearly road-following
+# is radius >= R_ROAD_M; the band between is the unrecoverable gray zone.
+R_TURN_M = 60.0                     # <= 60 m radius -> junction-scale turn
+R_ROAD_M = 150.0                    # >= 150 m radius -> road-following curve
+CURV_TURN_PER_M = 1.0 / R_TURN_M    # ~0.01667 /m
+CURV_ROAD_PER_M = 1.0 / R_ROAD_M    # ~0.00667 /m
+
+# Transience: at least CONCENTRATION_MIN of the net heading change must fall in
+# a single CONC_WIN_STEPS sub-window for a route event to count as a discrete
+# turn (a junction turn is brief; a highway sweep spreads evenly -> low share).
+CONC_WIN_STEPS = 50                 # 5 s @ 10 Hz
+CONCENTRATION_MIN = 0.5
+
+# Maneuver-scale (2 s tactical) turn threshold: same physical curvature, so a
+# highway curve at speed stays lane_keep. A 2 s window is short, so gate on the
+# window-mean curvature (net dyaw / net arc) — no separate smoothing needed.
+CURV_TURN_MAN_PER_M = CURV_TURN_PER_M
+
+
+def _moving_avg(x: Tensor, k: int) -> Tensor:
+    """Centered moving average over dim 0, reflect-padded to keep length."""
+    if k <= 1 or x.shape[0] <= k // 2:     # reflect-pad needs len > pad
+        return x
+    pad = k // 2
+    xp = torch.nn.functional.pad(x.view(1, 1, -1), (pad, pad), mode="reflect")
+    w = torch.ones(1, 1, k, dtype=x.dtype, device=x.device) / k
+    y = torch.nn.functional.conv1d(xp, w).view(-1)
+    return y[: x.shape[0]]
+
+
+def path_curvature(poses: Tensor, min_arc: float = MIN_ARC_M) -> Tensor:
+    """Signed per-step path curvature kappa[t] = wrap(yaw[t+1]-yaw[t]) / ds[t],
+    length T-1, units 1/m (+left, the repo _ego convention).
+
+    ds is the REALIZED arc length ||xy[t+1]-xy[t]|| (geometry, not v*dt), floored
+    at ``min_arc`` so a standstill (near-zero motion, noise-dominated yaw) yields
+    kappa 0 rather than a blow-up. kappa = 1/R is speed-invariant: it is the same
+    for a tight turn taken slowly or a gentle curve taken fast, which is exactly
+    what separates a junction turn from lane-keeping through a road curve."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    if poses.shape[0] < 2:
+        return poses.new_zeros(0)
+    dyaw = wrap_to_pi(poses[1:, 2] - poses[:-1, 2])
+    ds = (poses[1:, :2] - poses[:-1, :2]).norm(dim=-1).clamp_min(min_arc)
+    moving = (poses[1:, :2] - poses[:-1, :2]).norm(dim=-1) >= min_arc
+    return torch.where(moving, dyaw / ds, torch.zeros_like(dyaw))
+
+
+def classify_maneuver_v2(sub_poses: Tensor) -> Tensor:
+    """Curvature-gated 2 s maneuver class from a window sub-path.
+
+    ``sub_poses`` [B, H+1, 4] is [pose_t, future_1..future_H] per window (the
+    intermediate poses ARE needed — v2 reads the whole arc, not just endpoints).
+    Priority order matches v1 (turn > brake > accel > lane_keep); ONLY the turn
+    test changes: a turn requires the window-mean curvature |dyaw_net/ds_net| to
+    exceed CURV_TURN_MAN_PER_M, so a gentle highway curve (large R) stays
+    lane_keep even when its net dyaw exceeds v1's 0.15 rad."""
+    if sub_poses.ndim != 3 or sub_poses.shape[2] != 4:
+        raise ValueError(f"sub_poses must be [B, H+1, 4], got "
+                         f"{tuple(sub_poses.shape)}")
+    yaw0, yaw1 = sub_poses[:, 0, 2], sub_poses[:, -1, 2]
+    v0, v1 = sub_poses[:, 0, 3], sub_poses[:, -1, 3]
+    dyaw = wrap_to_pi(yaw1 - yaw0)
+    dv = v1 - v0
+    seg = (sub_poses[:, 1:, :2] - sub_poses[:, :-1, :2]).norm(dim=-1)  # [B,H]
+    arc = seg.sum(dim=1).clamp_min(MIN_ARC_M)
+    kappa = dyaw / arc                                 # window-mean curvature
+    cls = torch.full(dyaw.shape, LANE_KEEP, dtype=torch.long,
+                     device=dyaw.device)
+    cls[dv > DV_ACCEL_MS] = ACCELERATE
+    brake = (dv < DV_BRAKE_MS) | ((v1 < STOP_V_MS) & (v0 >= MOVING_V_MS))
+    cls[brake] = BRAKE_STOP
+    turn = kappa.abs() >= CURV_TURN_MAN_PER_M          # curvature-gated turn
+    cls[turn & (dyaw > 0)] = TURN_LEFT
+    cls[turn & (dyaw < 0)] = TURN_RIGHT
+    return cls
+
+
+def maneuver_labels_v2(poses: Tensor, horizon: int = LABEL_HORIZON) -> Tensor:
+    """Per-timestep v2 maneuver labels: poses [T, 4] -> [T-horizon].
+
+    Label at t reads the sub-path poses[t : t+horizon+1] (curvature over the
+    window), the v2 curvature-gated analogue of :func:`maneuver_labels`."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    if poses.shape[0] <= horizon:
+        raise ValueError(f"episode too short for labels: T={poses.shape[0]} "
+                         f"<= horizon={horizon}")
+    windows = poses.unfold(0, horizon + 1, 1).permute(0, 2, 1)  # [T-h, h+1, 4]
+    return classify_maneuver_v2(windows)
+
+
+def window_maneuver_labels_v2(pose_last: Tensor, future_poses: Tensor,
+                              horizon: int = LABEL_HORIZON) -> Tensor:
+    """Batch v2 maneuver labels from window fields: pose_last [B, 4],
+    future_poses [B, H, 4] (H >= horizon). Reads the arc pose_last +
+    future_poses[:, :horizon] (the whole 2 s sub-path)."""
+    if future_poses.shape[1] < horizon:
+        raise ValueError(f"future_poses has only {future_poses.shape[1]} "
+                         f"steps; label horizon needs {horizon}")
+    sub = torch.cat([pose_last[:, None, :], future_poses[:, :horizon]], dim=1)
+    return classify_maneuver_v2(sub)
+
+
+def route_from_future(poses: Tensor, t: int,
+                      horizon_steps: int = NAV_HORIZON_STEPS,
+                      min_steps: int = NAV_MIN_STEPS) -> dict:
+    """v2 route derivation at timestep ``t`` — the honest, curvature-relative
+    strategic signal. Returns a dict:
+
+        route        int  ROUTE_LEFT / ROUTE_STRAIGHT / ROUTE_RIGHT
+        valid        bool False when the window cannot be judged: too little
+                          future OR AMBIGUOUS (gray-zone radius — a gentle fork/
+                          exit/collector curve not separable from a road curve
+                          without a map). valid=False windows are excluded from
+                          the route-from-vision aux CE (unlearnable targets).
+        ambiguous    bool True when future exists but tightness is in the gray
+                          band (distinguishes 'no future' from 'unknowable').
+        net_dyaw     float signed net heading change (rad) over the window —
+                          the v1 signal, kept as a SOFT/graded regression target.
+        signed_curv  float signed peak path curvature (1/m) — the graded route
+                          tightness target (soft head), +left.
+        peak_kappa   float max |smoothed kappa| over the window (1/m).
+        concentration float share of |net_dyaw| in the tightest CONC_WIN sub-
+                          window (transience: junction ~1, road sweep ~win/h).
+
+    Decision: TURN iff tight (peak_kappa >= CURV_TURN_PER_M) AND transient
+    (concentration >= CONCENTRATION_MIN); clearly gentle (peak_kappa <=
+    CURV_ROAD_PER_M) -> STRAIGHT/valid; else AMBIGUOUS -> STRAIGHT/invalid."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    T = poses.shape[0]
+    if not 0 <= t < T:
+        raise ValueError(f"t={t} out of range for T={T}")
+    if min_steps < 1 or horizon_steps < min_steps:
+        raise ValueError(f"need 1 <= min_steps <= horizon_steps, got "
+                         f"min_steps={min_steps}, horizon_steps={horizon_steps}")
+    h = min(horizon_steps, T - 1 - t)
+    base = {"route": ROUTE_STRAIGHT, "valid": False, "ambiguous": False,
+            "net_dyaw": 0.0, "signed_curv": 0.0, "peak_kappa": 0.0,
+            "concentration": 0.0}
+    if h < min_steps:
+        return base                                    # no route-scale future
+    seg = poses[t:t + h + 1]                            # [h+1, 4]
+    net_dyaw = float(wrap_to_pi(seg[-1, 2] - seg[0, 2]))
+    kappa = path_curvature(seg)                        # [h]
+    ks = _moving_avg(kappa, CURV_SMOOTH_STEPS)
+    if ks.numel() == 0:
+        return base
+    peak_i = int(ks.abs().argmax())
+    peak_kappa = float(ks.abs()[peak_i])
+    signed_curv = float(ks[peak_i])
+    # concentration: tightest CONC_WIN heading share of the net heading change.
+    win = min(CONC_WIN_STEPS, kappa.shape[0])
+    if kappa.shape[0] >= 1 and abs(net_dyaw) > 1e-3:
+        # heading change over each length-`win` sub-window = sum of per-step dyaw
+        step_dyaw = wrap_to_pi(seg[1:, 2] - seg[:-1, 2])
+        sub = step_dyaw.unfold(0, win, 1).sum(dim=1) if step_dyaw.shape[0] >= win \
+            else step_dyaw.sum().view(1)
+        concentration = float(sub.abs().amax() / (abs(net_dyaw) + 1e-6))
+    else:
+        concentration = 0.0
+    out = dict(base, net_dyaw=net_dyaw, signed_curv=signed_curv,
+               peak_kappa=peak_kappa, concentration=concentration)
+    is_turn = (peak_kappa >= CURV_TURN_PER_M) and \
+              (concentration >= CONCENTRATION_MIN)
+    is_road = peak_kappa <= CURV_ROAD_PER_M
+    if is_turn:
+        # Direction from the sign of the PEAK signed curvature (+left), which is
+        # robust to yaw wrapping — a sustained >180 deg turn (roundabout/loop)
+        # wraps net_dyaw's sign, but the tightest-point curvature does not.
+        out["route"] = ROUTE_LEFT if signed_curv > 0 else ROUTE_RIGHT
+        out["valid"] = True
+    elif is_road:
+        out["route"] = ROUTE_STRAIGHT
+        out["valid"] = True
+    else:                                              # gray-zone tightness
+        out["route"] = ROUTE_STRAIGHT
+        out["valid"] = False
+        out["ambiguous"] = True
+    return out
+
+
+_ROUTE_TO_NAV = {ROUTE_LEFT: NAV_LEFT, ROUTE_STRAIGHT: NAV_FOLLOW,
+                 ROUTE_RIGHT: NAV_RIGHT}
+
+
+def nav_command_v2(poses: Tensor, t: int, horizon_steps: int = NAV_HORIZON_STEPS,
+                   min_steps: int = NAV_MIN_STEPS) -> tuple[int, bool]:
+    """v2 drop-in for :func:`nav_command`: (nav_cmd, valid) from the curvature-
+    relative :func:`route_from_future`. NAV_STRAIGHT is never emitted (reserved,
+    same interface contract as v1)."""
+    r = route_from_future(poses, t, horizon_steps, min_steps)
+    return _ROUTE_TO_NAV[r["route"]], bool(r["valid"])
+
+
+def route_target_v2(poses: Tensor, t: int, horizon_steps: int = NAV_HORIZON_STEPS,
+                    min_steps: int = NAV_MIN_STEPS) -> int:
+    """v2 route-heading aux class (route_left/straight/right) at ``t`` — the
+    curvature-relative target, NOT a function of any fed nav command (breaks
+    the v1 circularity where the input command and the target were the same
+    derivation)."""
+    return route_from_future(poses, t, horizon_steps, min_steps)["route"]
