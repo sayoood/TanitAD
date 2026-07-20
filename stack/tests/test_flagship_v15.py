@@ -6,7 +6,8 @@ Pins the v1.5 spec — a REF-C anchored-diffusion head on the FROZEN v1 trunk:
     and every conditioning arm (a / ab / abc) is constructible;
 (b) THE SCORING FIX. REF-C refines the whole anchor fan but selects with the
     t=0 classifier score, discarding the denoise passes' confidences — measured
-    at 1.110 m selected vs 0.295 m oracle-in-fan. v1.5 keeps the last denoise
+    corpus-wide at oracle-in-fan 0.1640 m with 45.4 % of picks >2x worse than
+    the fan's best. v1.5 keeps the last denoise
     pass's confidence and selects on it. Pinned: with steps>0 the refined logits
     DIFFER from the anchor logits; with steps=0 they are the same tensor (exact
     parent parity); the loss supervises the SCORE that argmax consumes, so the
@@ -183,6 +184,15 @@ def test_oracle_gap_diagnostic_is_reported_and_consistent():
     assert float(L["sel_gap"]) >= -1e-5
 
 
+# The per-anchor confidence head's BIAS is structurally unidentifiable: it is a
+# single scalar added to every anchor logit, so it cancels in the softmax over
+# anchors and its gradient is analytically zero (numerically it flickers between
+# 0 and ~1e-9). Inherited from REF-C's AnchoredDiffusionDecoder, not a v1.5
+# defect — excluded by name and asserted separately so the exclusion cannot
+# quietly grow to hide a real dead parameter.
+_UNIDENTIFIABLE = {"decoder.conf_head.bias"}
+
+
 def test_loss_reaches_every_head_parameter():
     cfg = _small()
     cfg.goal_dropout = 0.0          # deterministic: every goal seam is live
@@ -193,8 +203,19 @@ def test_loss_reaches_every_head_parameter():
                route_graded=b["route_graded"], vt_speed=b["v0"])
     v15_losses(out, head.decoder.anchors, b["traj_tgt"])["loss"].backward()
     dead = [n for n, p in head.named_parameters()
-            if p.requires_grad and (p.grad is None or not p.grad.abs().any())]
+            if p.requires_grad and (p.grad is None or not p.grad.abs().any())
+            and n not in _UNIDENTIFIABLE]
     assert dead == [], f"parameters with no gradient: {dead}"
+
+
+def test_anchor_softmax_makes_the_conf_bias_unidentifiable():
+    """Pins WHY conf_head.bias is excluded above: a constant shift across all
+    anchor logits leaves the anchor-classification CE exactly invariant."""
+    logits = torch.randn(4, 12, requires_grad=False)
+    tgt = torch.randint(0, 12, (4,))
+    base = torch.nn.functional.cross_entropy(logits, tgt)
+    shifted = torch.nn.functional.cross_entropy(logits + 3.7, tgt)
+    assert torch.allclose(base, shifted, atol=1e-5)
 
 
 # ------------------------------------- (c) anti-shortcut / goal discipline --

@@ -181,10 +181,12 @@ class V15Decoder(AnchoredDiffusionDecoder):
     (``_, off = self._decode(...)``) and then selects with ``argmax`` over the
     t=0 classifier score — i.e. it ranks the REFINED fan using the UNREFINED
     anchor's score. Scoring and refinement are decoupled. Measured consequence
-    on REF-C: selected ADE 1.110 m against an oracle-in-fan of 0.295 m clip-wide,
-    with the selected plan more than 2x worse than the best available proposal in
-    65 % of frames — a RANKING failure, not a coverage or refinement failure (the
-    0.29 m plan was already in the fan).
+    on REF-C, corpus-wide (881 windows): oracle-in-fan **0.1640 m** against a
+    selected score an order above it, with the pick more than 2x worse than the
+    fan's best in **45.4 %** of windows — a RANKING failure, not a coverage or
+    refinement failure (the 0.16 m plan was already in the fan). NOTE these are
+    the CORPUS-WIDE figures; earlier single-clip numbers (0.295 / 65 %) were
+    restated 2026-07-20 and must not be quoted.
 
     v1.5 therefore keeps the last denoise pass's confidence as
     ``refined_logits`` and selects on THAT. Both heads are supervised:
@@ -548,8 +550,8 @@ def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor) -> dict:
       ``sel_score``: the EXACT quantity ``argmax`` selects on, refined confidence
       plus the gated longitudinal term. REF-C never trained anything of the kind
       because it discarded the refined confidences, and the measured cost was a
-      ranking failure: selected 1.110 m vs oracle-in-fan 0.295 m, with the pick
-      worse than the fan's best by >2x in 65 % of frames. Supervising the score
+      ranking failure: oracle-in-fan 0.1640 m corpus-wide, with the pick worse
+      than the fan's best by >2x in 45.4 % of windows. Supervising the score
       rather than the bare logits is also what gives the longitudinal gate a
       gradient — ``argmax`` has none.
 
