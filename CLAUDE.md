@@ -48,6 +48,23 @@ Every subagent brief MUST carry the preamble in
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
+## Git hygiene — the mistake that has now happened twice
+
+**`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
+just `git add`ed.** When several agents stage work concurrently — the normal state here —
+a "quick commit of my thing" silently sweeps in a sibling's half-finished code under the
+wrong message. This has happened twice in one session (`60265d3` swallowed the eval
+tooling; `3d41bd0` swallowed REF-C v1.2's in-progress rescorer).
+
+**Rule: when the index contains other agents' work, commit with an explicit pathspec and
+do NOT follow it with `--amend`:**
+```
+git commit -F <msgfile> -- <path1> <path2>        # pathspec form, no amend afterwards
+```
+Check `git status --short` for foreign staged entries FIRST. If a long message is needed,
+write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
+whole index and defeats the pathspec.
+
 ## Invariants
 
 - **`Keys.txt` is git-ignored — NEVER commit it.** Read tokens in place
