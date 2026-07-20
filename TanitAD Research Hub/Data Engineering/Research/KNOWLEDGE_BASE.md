@@ -3,6 +3,43 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-18] [measured/mix] **Curve-rebalance measured on real bytes (FLEET P0#3): the "74% straight" is a
+  comma/HIGHWAY property, not a whole-corpus one.** 630 eps / 125,247 windows, D1 eval strata (`|net yaw@2s|`
+  <5°/5-20°/>20°): **comma2k19 83.1% straight** (10.5/6.4 gentle/sharp), **PhysicalAI 56.0%** (23.4/20.6) —
+  urban is already at the 55-60% target. Natural window pool = **63.9% straight**; the fleet's ~74% ≈ a comma
+  0.65-0.70 mix (comma 0.70/pai 0.30 → 75.0%). Two quantified levers to 57.5%: **source-mix** (+10pp comma ≈
+  +2.7pp straight → shift to urban/ZOD/PandaSet = the ZOD rationale, in numbers) and **window turn-weighted
+  sampling** β=s(1-t)/(t(1-s)) = **1.31** (natural pool) → 2.22 (comma-0.70). Recipe verified by construction;
+  a drift-guard test pins the strata to `driving_diagnostic.py`. Training-recipe change → D-018 ESCALATE before
+  flipping the trainer — impact: top-risk/D1-straight/H25/G3 — `2026-07-18-curve-rebalance-measured-and-idm-lit.md` §2
+- [2026-07-18] [arXiv/lit] **IDM/latent-action + intrinsic-canon delta (seeds G2/H7, no status change P8):**
+  Sensorimotor World Models (2606.20104, IDM-regularizer stops collapse + preserves the action — the pose-less
+  pseudo-label recipe); ACID (2607.02403, action-cycle-consistency = a per-clip pseudo-label QUALITY gate for the
+  H7 bridge); Latent-WAM (2603.24581) / DriveWAM (2605.28544) driving latent world-action models; "What Do Latent
+  Action Models Actually Learn?" (2506.15691, LAM failure-mode caution — read before trusting any latent
+  pseudo-label); **X-Lens (2607.12993)** intrinsic-guided canonicalization to a reference camera + calibration
+  tokens = the closest recent work to our D-016 `f_eff=266` / H17 unified-FOV. New datasets → Benchmarks seam:
+  global urban dashcam corpus (2604.01044, pose-less, curve/IDM candidate, license TBD), DrivingGen (2601.01528),
+  ScenePilot-4K (2601.19582), LiAuto-DriveAction (HF) — impact: H7/G2/D-016/H17/D-028 — same note §4
+- [2026-07-18] [measured/loader] **ZOD loader SHIPPED + geometry falsifier PASS — the #1 owned real-urban ingest.**
+  ZOD front is a **Kannala-Brandt fisheye** (8 MP, 3848×2168, **HFOV 120°**, 10 Hz) and KB's radius
+  `r(θ)=f(θ+k1θ³+k2θ⁵+k3θ⁷+k4θ⁹)` IS exactly `calib.FThetaIntrinsics.poly` (odd-power) → `kb_to_ftheta`
+  reuses the proven f-theta crop path with **zero new geometry math** (confirms OWN_DATASET_PLAN's
+  "fisheye→ftheta_*" with numbers). **Pre-registered falsifier ANSWERED (grounded on the published 120°
+  spec, robust to real KB coeffs): f_eff=266.0 px, observed_frac=1.00, drop_in=True** — a 120° fisheye crops
+  INWARD to canonical ~51.4° so nothing is padded. ZOD is **geometrically UNBLOCKED** (contrast PandaSet,
+  height-bound f_eff 467; **ZOD needs NO calib.py R1 change**). Narrow-40° witness falsifies (observed_frac
+  0.34) so the ≥0.5 gate is not vacuous. Real CAN steer + OxTS RT3000 (0.01 m/0.1°, @100 Hz) → OxTS heading
+  drives yaw offset-free (better than PandaSet's motion-heading fallback); `zod_signals` reuses tested
+  `cosmos_drive.poses_to_signals`. CC-BY-SA → SEPARATE shard (ShareAlike firewall). Intake `2026-07-18-zod-loader/`
+  (19✓ standalone) + runnable real-bytes job card (blocked only on ZOD ACCESS, escalated) — impact:
+  OWN_DATASET_PLAN §7#1 / FLEET_REVIEW P0#1 corpus-diversity / H4 arm-B / H7 — `2026-07-18-zod-loader-and-geometry-falsifier.md`
+- [2026-07-18] [lit/seam] **New driving-WM benchmarks + a new urban dashcam corpus.** WorldLens (CVPR-2026
+  Oral, WorldLens-26K human-rated realism/plausibility/safety) + DrivingGen (arXiv 2601.01528, generative-WM
+  bench: trajectory plausibility + controllability ≈ our D2/D4) → **Benchmarks&Eval seam** (D-028). NEW
+  **"A global dataset of continuous urban dashcam driving"** (arXiv 2604.01044) — a candidate curve-rebalance
+  urban source (BACKLOG P0#3); **license + actions-availability probe queued** (owned-tier add vs YouTube-class
+  barrier unknown until probed) — impact: D-012/curve-rebalance/H4 — same note §1
 - [2026-07-17] [measured/tool] **D-016 R1 pinhole rectify UNBLOCKS the owned real-urban tier.** New primitive
   `pinhole_rectify` (grid_sample rectify-to-canvas, Brown-Conrady undistort + pad; mirrors the existing fisheye
   `ftheta_undistort`) lands `f_eff=266` **exactly by construction** where the square-crop is height-bound.

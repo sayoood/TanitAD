@@ -10,21 +10,29 @@ byte-equivalence gate genuinely tested). All merged to the tip 2026-07-17. The s
 everything servable today is highway-heavy (74% straight — the exact enabling condition of the
 ego-status shortcut pathology; nuScenes is 73.9%). The corpus-diversity gain is PENDING on you.
 
-1. **ZOD ingest — the #1 unlock (urban/night/winter + real CAN; SplatAD's home dataset).**
-   Loader (~3-4h, 4060) per OWN_DATASET_PLAN §ZOD: CC-BY-SA → SEPARATE shard (ShareAlike firewall
-   in `license_guard` already supports it). Package the bulk feature-precompute as a **Colab job
-   card** (T4) — this is the flagship use-case for mandate M-1.3. Falsifier: ZOD's front-cam
-   geometry can't reach f_eff=266 at ≥50% observed_frac → escalate to Sayed with the measured
-   number before building further.
+1. **ZOD ingest — the #1 unlock.** **LOADER DONE 2026-07-18** (intake `2026-07-18-zod-loader/`, 19✓):
+   `kb_to_ftheta` (KB radius ≡ `FThetaIntrinsics.poly`, zero new geometry math) → CC-BY-SA SEPARATE shard;
+   OxTS-heading yaw → `cosmos_drive.poses_to_signals`. **Falsifier ANSWERED — PASS** (grounded on the published
+   120° spec, robust to real KB): **f_eff=266.0, observed_frac=1.00, drop_in=True** → geometrically UNBLOCKED,
+   NO calib.py R1 needed (fisheye path suffices; narrow-40° witness falsifies at 0.34). **NOW P0 (remaining, both
+   access-blocked → escalated):** (a) **ZOD ACCESS** — Sayed/orchestrator sign the CC-BY-SA agreement
+   (`opendataset@zenseact.com`; HF is a code-loader, no plain download); (b) **real-bytes verify** —
+   run `zod_pilot_jobcard.md` (pod3-idle/Colab T4, M-1.3): 5-drive `verify_real_clip` (drop-in on real per-drive
+   KB, OxTS↔cam alignment, steer-ratio, A8 vs comma) + epcache precompute. Orchestrator: intake `zod.py` into
+   `stack/` (additive, ready-loader).
 2. **Run the lake FOR REAL: Cosmos + PandaSet ingestors at scale** (they're implemented, never
    run at scale) → publish **tanitad-own lake v0** (comma + cosmos + pandaset) to HF gated —
    kills the per-pod rebuild ritual. PandaSet real-bytes verification (`verify_real_clip`) rides
    pod3 when idle (M-1.4). Deliverable: lake catalog row counts + one pod pulling the lake
    instead of rebuilding.
-3. **Curve-rebalance mix for flagship-v2:** from lake metadata, quantify the straight/gentle/sharp
-   window distribution per source; propose the training mix (turn-weighted sampling) that moves
-   the corpus from 74% straight toward ~55-60%; measure what PandaSet+ZOD actually contribute.
-   This is the data-side half of the REF-B curve failure (the loss-side half shipped in refbpatch).
+3. **Curve-rebalance mix for flagship-v2:** **MEASURED 2026-07-18** (intake `2026-07-18-curve-rebalance/`,
+   12✓): per-source D1-strata on 630 real eps — **comma 83.1% / PhysicalAI 56.0% / natural pool 63.9% straight**;
+   the ~74% ≈ a comma 0.65-0.70 mix. Turn-weight recipe `β=s(1-t)/(t(1-s))` = 1.31→2.22 to hit 57.5%; primary
+   lever is source-mix (shift comma→urban/ZOD/PandaSet, +10pp comma≈+2.7pp straight). **NOW (remaining):**
+   (a) re-run on the ZOD/PandaSet epcaches once real-bytes land (quantify what each urban corpus contributes,
+   as a delta vs comma); (b) **PROPOSE the sampler/mix change to Sayed** (D-018 tactics — ESCALATE, don't flip
+   the live trainer): `WeightedRandomSampler` over `MixedWindowDataset` window strata OR a comma-downweight for
+   flagship-v2. This is the data-side half of the REF-B curve failure (loss-side shipped in refbpatch).
 4. **R1 rectify + rig-cy calib consolidation:** land `calib_r1.py` symbols into
    `stack/tanitad/data/calib.py`, flip PandaSet `_decode_frames` to `pinhole_rectify`, and run
    the THREE calib suites (test_calib, test_calib_r1, test_physicalai_rig) as ONE gate (they
@@ -84,6 +92,12 @@ ego-status shortcut pathology; nuScenes is 73.9%). The corpus-diversity gain is 
    CARLA recipes / Cosmos obstruction clips; download+verify one public sample each where public.
 
 ## P1
+
+2e. **Probe "A global dataset of continuous urban dashcam driving" (arXiv 2604.01044, found 2026-07-18).**
+   NEW urban continuous-dashcam corpus — directly serves the curve-rebalance duty (P0#3: off 74% straight).
+   Probe: license class (CC / owned-tier vs YouTube-class copyright barrier), actions availability (ego-motion/CAN
+   present, or video-only → IDM/H7), camera calibration/FOV (drop-in via `kb_to_ftheta`/`focal_crop_resize`?),
+   scale, urban/night fraction. Web + HF, no GPU. Expected: landscape row + a go/no-go for a pilot loader.
 
 2d. **Semantic/strategic-label dataset survey (Sayed directive 2026-07-11, from the REF-B review):**
    comma2k19 is highway-dominated — nav-command and target-behavior learning is signal-starved

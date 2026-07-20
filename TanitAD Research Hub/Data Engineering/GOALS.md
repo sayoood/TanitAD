@@ -36,3 +36,11 @@ a goal with no movement for two runs is escalated in STATE, not silently carried
 - **Deadline:** 2026-09-01 (after G1 unblocks the corpora).
 - **Status (2026-07-15):** gated on G1. No movement this run (first run this goal is recorded) — carried, not
   escalated (fresh).
+- **Status (2026-07-18): MOVEMENT — the baseline this goal measures against is now quantified.** Curve-rebalance
+  measured the comma+PhysicalAI baseline on 630 real eps (intake `2026-07-18-curve-rebalance/`, 12✓): comma
+  **83.1%** straight, PhysicalAI **56.0%**, natural pool **63.9%** (D1 eval strata). This establishes the
+  straight-fraction denominator the ZOD/PandaSet urban add must move, AND localizes the pathology to comma/highway
+  (urban already ~56%). Two quantified levers (source-mix + turn-weight β) shipped. **Remaining for G3:** land the
+  ZOD/PandaSet real bytes (gated on G1 access), re-measure per-urban-corpus contribution, and — via an escalated
+  proposal — see whether the urban mix moves the flagship D1 straight-stratum ADE. **Movement: yes (baseline +
+  recipe measured; corpus delivery still gated on G1 access).**
