@@ -34,7 +34,9 @@ source "$RUN_ENV"
 
 SUP_LOG="${OUT}/supervisor.log"
 TRAIN_OUT="${OUT}/train.out"          # combined stdout/stderr of the trainer
-TRAIN_LOG="${OUT}/train_log.jsonl"    # the trainer's own json-lines (has "step")
+# the trainer's own json-lines (has "step"); overridable for trainers that log
+# somewhere other than OUT (e.g. REF-C prints to /tmp/refc.log via its wrapper)
+: "${TRAIN_LOG:=${OUT}/train_log.jsonl}"
 SUMMARY="${OUT}/summary.json"
 LOCK="${OPS_DIR}/locks/${RUN_ID}.lock"
 POD="$(hostname)"
@@ -57,6 +59,26 @@ elif command -v pgrep >/dev/null 2>&1; then
     log "another supervisor for $(basename "$RUN_ENV") is alive — exiting"; exit 0
   fi
 fi
+
+# --- foreign-trainer guard ---------------------------------------------------
+# The single-instance lock above only stops two SUPERVISORS. It does NOT see a
+# trainer that is already running WITHOUT a supervisor — hand-launched with
+# `ssh -f`, or under a bare while-true wrapper (e.g. /workspace/launch_refc.sh).
+# Launching a second trainer would fight over the GPU and over ckpt.pt.
+# TRAIN_MATCH (manifest, optional) is a `pgrep -f` pattern matching the REAL
+# trainer of this run. While such a process is alive we WAIT and take over only
+# once it is gone. Waiting is always safe; double-launching never is.
+foreign_trainer_pid(){
+  [ -n "${TRAIN_MATCH:-}" ] || return 1
+  local pid
+  for pid in $(pgrep -f -- "$TRAIN_MATCH" 2>/dev/null); do
+    [ "$pid" = "$$" ] && continue                    # never match ourselves
+    [ "$pid" = "${PPID:-0}" ] && continue            # nor our launcher
+    [ -n "${CHILD_PID:-}" ] && [ "$pid" = "$CHILD_PID" ] && continue
+    printf '%s' "$pid"; return 0
+  done
+  return 1
+}
 
 is_done(){
   { [ -f "$SUMMARY" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$SUMMARY" 2>/dev/null; } && return 0
@@ -82,6 +104,12 @@ JSON
 }
 
 if is_done; then log "run already DONE (summary.json) — nothing to do"; write_hb done; exit 0; fi
+# fail CLOSED: a TRAIN_MATCH we cannot evaluate means we cannot prove that
+# launching would not duplicate a live trainer -> do not launch at all.
+if [ -n "${TRAIN_MATCH:-}" ] && ! command -v pgrep >/dev/null 2>&1; then
+  log "TRAIN_MATCH set but pgrep unavailable — cannot prove no double-launch; refusing to start"
+  write_hb blocked; exit 0
+fi
 log "supervisor UP on ${POD}; OUT=${OUT}; heartbeat=${HEARTBEAT}"
 write_hb starting
 
@@ -89,6 +117,12 @@ backoff="$INIT_BACKOFF"
 while :; do
   if is_done; then log "DONE detected — stopping"; write_hb done; break; fi
   if [ ! -d "$WORKDIR" ]; then log "WORKDIR $WORKDIR missing — retry in ${backoff}s"; write_hb blocked; sleep "$backoff"; continue; fi
+  # never launch on top of a trainer we did not start (see foreign_trainer_pid)
+  if fpid="$(foreign_trainer_pid)"; then
+    [ "${WAITING:-0}" = "1" ] || log "trainer ALREADY RUNNING outside this supervisor (pid ${fpid}, TRAIN_MATCH='${TRAIN_MATCH}') — NOT launching; waiting for it to exit"
+    WAITING=1; write_hb external; sleep "$HB_PERIOD"; continue
+  fi
+  [ "${WAITING:-0}" = "1" ] && { log "external trainer gone — taking over"; WAITING=0; }
   log "launch attempt (restarts=${RESTARTS}) in ${WORKDIR}"
   # exec 9>&- : close the flock fd in the child so the trainer + its DataLoader
   # workers do NOT inherit the lock (else a killed-supervisor restart races a

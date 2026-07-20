@@ -17,6 +17,9 @@
 # -----------------------------------------------------------------------------
 RUNS_DIR="${RUNS_DIR:-/workspace/ops/runs.d}"
 HOOK_LOG="${HOOK_LOG:-/workspace/ops/boot.log}"
+# DRY_RUN=1 -> report what would happen, launch nothing. Use it to verify a
+# freshly installed manifest on a pod that is ALREADY training, with zero risk.
+DRY_RUN="${DRY_RUN:-0}"
 # Resolve the supervisor next to THIS script so the bundle is relocatable
 # (deployed to /workspace/ops/bin, outside the git checkout -> survives git clean).
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo /workspace/ops/bin)"
@@ -33,7 +36,7 @@ mkdir -p "$(dirname "$HOOK_LOG")" "$RUNS_DIR" 2>/dev/null || true
   for envf in "$RUNS_DIR"/*.env; do
     (
       # subshell: a malformed manifest can't take down the loop
-      RUN_ID=""; OUT=""; ENABLED=1
+      RUN_ID=""; OUT=""; ENABLED=1; TRAIN_MATCH=""
       # shellcheck disable=SC1090
       source "$envf" 2>/dev/null || { echo "  skip ${envf} (source failed)"; exit 0; }
       [ -n "$RUN_ID" ] && [ -n "$OUT" ] || { echo "  skip ${envf} (no RUN_ID/OUT)"; exit 0; }
@@ -43,6 +46,22 @@ mkdir -p "$(dirname "$HOOK_LOG")" "$RUNS_DIR" 2>/dev/null || true
       fi
       if command -v pgrep >/dev/null 2>&1 && pgrep -f "supervise_run.sh.*$(basename "$envf")" >/dev/null 2>&1; then
         echo "  ${RUN_ID}: supervisor already running"; exit 0
+      fi
+      # A supervisor is not the only thing that can be training. If the trainer
+      # itself is already alive (hand-launched, or under its own wrapper loop),
+      # starting a supervisor would put a SECOND trainer on the same GPU and the
+      # same ckpt.pt. Skip. Fail CLOSED when the check itself cannot be run.
+      if [ -n "$TRAIN_MATCH" ]; then
+        if ! command -v pgrep >/dev/null 2>&1; then
+          echo "  ${RUN_ID}: TRAIN_MATCH set but pgrep unavailable — skipping (cannot prove no double-launch)"; exit 0
+        fi
+        tpids="$(pgrep -f -- "$TRAIN_MATCH" 2>/dev/null | tr '\n' ' ')"
+        if [ -n "${tpids// /}" ]; then
+          echo "  ${RUN_ID}: trainer ALREADY RUNNING (pids: ${tpids}match='${TRAIN_MATCH}') — not launching"; exit 0
+        fi
+      fi
+      if [ "$DRY_RUN" = "1" ]; then
+        echo "  ${RUN_ID}: [DRY-RUN] would launch supervisor now (nothing started)"; exit 0
       fi
       mkdir -p "$OUT" 2>/dev/null || true
       echo "  ${RUN_ID}: launching detached supervisor"

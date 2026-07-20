@@ -126,6 +126,23 @@ MODELS = [
               "horizons ARE 0.5/1/1.5/2 s time waypoints, comparable to "
               "gt_ego_waypoints. NOTE: this is the XL scale arm, ~252M — NOT "
               "the 54.7M `small`/DiffusionDrive-scale preset."),
+    dict(key="refc-xl-live", name="REF-C-XL (anchored-diffusion, step 28000)",
+         family="TanitAD", arch="refc", config_preset="xl", mode="diffusion",
+         ckpt="/root/models/refc-xl-live/ckpt.pt", config="refc-xl",
+         encoder="trained ResNet-L (9ch, 256px, base_width 124)",
+         encoder_frozen=False, speed_input=True, action_dim=2, hf=None,
+         anti_collapse="trained encoder",
+         note="REF-C-XL (~252M) LATEST read-only pull from pod3 "
+              "refc-diffusion-xl-30k, direct pod3->eval scp (18.2 MB/s, md5 "
+              "531fd19cc13f411cd0bf2ef49c72ec26 verified against source, "
+              "source mtime unchanged during copy -> untorn). PROVISIONAL: "
+              "step 28000 of a 30000-step run that was STILL TRAINING at pull "
+              "time (resumed 28001, ~3.4 s/step, 30k ETA ~09:40 UTC "
+              "2026-07-20) — this is NOT the final ckpt and the number must "
+              "be reported as step-28000, not '30k'. refc1=False -> horizons "
+              "ARE the 0.5/1/1.5/2 s time waypoints, so the row is comparable "
+              "to gt_ego_waypoints / every other arm. Same XL scale as "
+              "refc-xl (that entry is the stale step-16000 snapshot)."),
 ]
 
 
