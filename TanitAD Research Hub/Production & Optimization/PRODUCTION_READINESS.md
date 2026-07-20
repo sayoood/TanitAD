@@ -15,8 +15,9 @@ compatibility (ONNX/TRT).
 | `tanitad/data/` (epcache, mixing, contract, loaders) | **2026-07-08** | 2 fixed (intake), 2 logged | review #1 done → intake `2026-07-08-data-cluster-compliance` (cache-key collision + save fail-fast, 12 tests); DONE-marker-unused + short-episode-silent-drop logged for later |
 | `tanitad/models/` (encoder, predictor, sigreg, imagination, fourbrain) | **2026-07-17** | 2 fixed (intakes), 1 logged | review #2 → intake `2026-07-09-models-predictor-failfast` (operative-predictor `assert`-only guard → `-O`-proof `ValueError`s, `predictor.py:89`, 8 tests, export-safe; **still unmerged** — the assert is live at `predictor.py:89`, same class covers `tactical_pred`). **review #3 (2026-07-17) → intake `2026-07-17-imagination-logvar-clamp`:** the logged `imagination_nll` unclamped `exp(-logvar)` overflow is now FIXED (clamp logvar to [-10,10] at head + in nll; `logvar=-100→inf` reproduced; 17 tests) — a live NaN-a-training-run mode in the flagship path (`train_worldmodel.py:338`) + NaN in the OKRI/LOPS export (`replay/arms.py:284`). Encoder+predictor **ONNX-clean** opset 17/18 (parity ≤1.2e-5). SigReg pins fp32; `eval()` disables F-5 grad-ckpt |
 | `tanitad/instruments/` | — | — | |
-| `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | |
-| `stack/scripts/` + training loop | — | — | review #3; ops-fragility history F-5/F-6/F-7 |
+| `tanitad/eval/` (gates, spectral, metrics, scenarios) | — | — | spectral exp/log/div sites audited safe (`clamp_min`) in the 2026-07-18 numerics sweep |
+| numerics-safety class (cross-cutting) | **2026-07-18** | 0 open (class closed) | run #4 grep-sweep of all learned/data `exp`/`log`/`div` sites → every one guarded (clamp / count-gate / neg-exponent); shipped **11-test regression guard** intake `2026-07-18-numerics-safety-sweep` (test-only → `stack/tests/test_numerics_safety.py`, all green) |
+| `stack/scripts/` + training loop | **2026-07-18** (part) | 1 fixed (intake), 3 logged | **review #3 (run #5):** resume-write path **atomic in every trainer** (`tmp→.replace`: `train_worldmodel.py:354`, `train_flagship4b.py:326`, `refc_train.py:136`, `refb_train.py:346`, `refa_train4b.py:303`). **LIVE BUG found + fixed:** the milestone archive is **non-atomic** in all 3 pod trainers (`train_flagship4b.py:337`, `refb_train.py:358`, `refa_train_plus.py:540`) — `shutil.copy2` guarded by `not arch.exists()` → a kill mid-copy leaves a truncated-but-existing `ckpt_step{m}.pt` the guard adopts forever → gate protocol loads a corrupt milestone. Intake `2026-07-18-atomic-milestone-archive` (`.partial`→`os.replace`, 4 tests, failing-then-passing). Logged for next run: log-hygiene (`/workspace` swallow-on-death vs `/tmp`), quota-preflight before copy (Errno122), `epcache` DONE-marker + short-episode-drop counter |
 
 ## Deployment blockers (live list)
 
@@ -37,6 +38,20 @@ compatibility (ONNX/TRT).
   Keep the ViT tower ≥fp16. Pre-registered TRT-fp16 acceptance bar: match fp16
   (agreement ≥95 %, wp-shift ≤~4 cm) on these 64 windows. Source:
   `Implementation/half_precision/half_precision_step6500.json`.
+- **DEPLOY TICK (MEASURED 2026-07-18 run #5, 4060, step-6500, 64 real windows, 200
+  reps):** the operative tick deploys as **fp16 encoder + CUDA-graph predictor/select**
+  = **17.75 → 11.16 ms, 56.3 → 89.6 Hz, 1.59×**, agreement **96.9 %** (2 flips/64),
+  wp-shift **0.7 cm mean / 1.9 cm max**. The two levers COMPOSE (measured == run #4's
+  additive projection to 0.4 %); the graph is zero-accuracy-cost (the 2 flips are the
+  fp16 encoder's) and clock-robust (fixed ~4.4 ms replay). Absolute Hz is clock-dependent
+  (non-pinnable box) but always 3–6× above the 10–20 Hz requirement. Deploy recipe:
+  fp16 ViT tower + hand-rolled `torch.cuda.CUDAGraph` on the predictor/select path.
+  Source: `Implementation/combined_tick/combined_tick_20260718.json`.
+- ~~Per-precision peak-VRAM co-residency artifact (P1.4c)~~ **CLOSED 2026-07-18 run #5**
+  (isolated one-process, exactly one model resident): fp32 **1.078 GB** (reproduces
+  run #3's 1.10 GB → harness validated), fp16 **0.560 GB** (**1.93× smaller**). The
+  run #3/#4 fp16 1.65 GB was fp32-reference co-residency — never quote it. Source:
+  `Implementation/combined_tick/vram_{fp32,fp16}_20260718.json`.
 - **TensorRT toolchain NOT installed on the dev box:** `import tensorrt` →
   ModuleNotFoundError; onnxruntime has **CPU EP only**. TRT-fp16 engine build
   needs `tensorrt` + `onnxruntime-gpu` (CUDA-12 EP) or an idle-pod build (backlog
@@ -55,6 +70,15 @@ compatibility (ONNX/TRT).
   VRAM rows (1.65 GB) are co-resident-inflated (the accuracy harness keeps the fp32
   reference model alive; 261 M×2 B ≈ the 0.52 GB delta). Only fp32 standalone (1.10 GB)
   is clean. Measure each precision in its own process for a true fp16 footprint.
+- **Predictor half is LAUNCH-BOUND — CUDA-graph capture is a free win (MEASURED 2026-07-18,
+  4060, fp32, 200 reps).** Manual `torch.cuda.CUDAGraph` on the operative predictor:
+  predict_1pass **6.08→2.36 ms (2.57×)**, select_K9 **5.94→4.45 ms (1.33×)**; rel-err vs
+  eager **2.8e-7**, imagine-and-select agreement **100 %**, waypoint shift **0.00 m** (same
+  fp32 kernels — pure launch elimination). **Deploy note: on this Triton-less Windows box the
+  graph route is MANUAL capture, NOT `torch.compile`** (inductor → `TritonMissing`;
+  `backend="cudagraphs"` → 20× slower). Additive tick projection with fp16 encoder ≈ 9.1 ms /
+  109 Hz (needs a combined harness to confirm). Source: `half_precision`-sibling
+  `Implementation/predictor_latency/predictor_latency_20260718.json`.
 - INT8 on ViT: native TensorRT is a known trap — OwLite/ModelOpt route confirmed (Phase 1). ModelOpt
   PTQ = in-place + calibration dataloader, QDQ nodes; keep the ViT tower FP16, quantize predictor/
   heads first, accuracy metric = probe-fit delta.

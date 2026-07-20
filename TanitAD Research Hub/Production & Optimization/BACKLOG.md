@@ -10,18 +10,31 @@ logvar-clamp (A — APPLIED 2026-07-17 to the live pod2 stack + repo mainline; t
 resumes on the patched build at its next restart), parity test (A). Your fp16 diagnosis (the whole
 win is the ViT; predictor is launch-bound) re-scopes this backlog.
 
-1. **TRT-fp16 engine for flagship@30k — BOTH targets:** eval pod A40 (throughput/server row) AND
-   the 4060 (Orin-proxy deployment row). Report Hz + VRAM + decision-agreement vs fp32 (your
-   95.3% bar). This turns your 93.7 Hz microbench into a deployable engine artifact.
-3. **Predictor batch-1 latency attack (the launch-bound 5.8 ms):** CUDA-graph capture and/or
-   `torch.compile(mode="reduce-overhead")` on the operative tick; measure on both GPUs. Expected:
-   1.3-2× on the predictor half; falsifier: <10% → the tick is memory-bound, close the item and
-   record the roofline number.
-2. **P1.4c VRAM-isolation harness fix** (your own flag: fp16/bf16 VRAM rows were polluted by the
-   co-resident fp32 reference) + re-scoped P1.6 quant (VRAM/energy, NOT batch-1 latency).
-4. **Ops hardening continuation:** the NaN-clamp pattern generalized — sweep the stack for other
-   unbounded `exp`/`log`/`div` on learned outputs (grep-audit + witness tests, 4060). The review
-   found this class kills runs silently (F-5/6/7); one sweep closes the class.
+0. ~~**Combined + full-tick CUDA-graph harness (A3)**~~ **DONE 2026-07-18 (run #5):** measured
+   combined tick **fp16 encoder + CUDA-graph predictor = 17.75 → 11.16 ms, 89.6 Hz, 1.59×**,
+   agreement **96.9 %** (2 flips/64, the fp16 encoder's — the graph adds 0), wp-shift 0.7 cm.
+   Measured == run #4's additive projection to **0.4 %** → levers compose (falsifier <1.3× cleared:
+   got 1.59×). Graph is also clock-robust (fixed ~4.4 ms replay). `Implementation/combined_tick/`.
+1. **TRT-fp16 engine for flagship@30k — BOTH targets (JOB CARD in the 2026-07-18 run #4 note) — NOW
+   THE TOP LATENCY ITEM:** eval pod A40 (throughput/server row) AND the 4060 (Orin-proxy deployment
+   row). Report Hz + VRAM + decision-agreement vs fp32 (95.3% bar) AND vs the CUDA-graph baseline
+   (11.16 ms — the engine must beat the free graph to be worth the toolchain). Toolchain-blocked on
+   the dev box (`tensorrt` missing) → run when a pod is idle or `tensorrt`+`onnxruntime-gpu` land.
+   ONNX IR already parity-clean.
+2. ~~**P1.4c VRAM-isolation harness fix**~~ **DONE 2026-07-18 (run #5):** clean one-process standalone
+   VRAM fp32 **1.078 GB** (reproduces run #3's 1.10 GB), fp16 **0.560 GB** (1.93× smaller). The
+   run #3/#4 fp16 1.65 GB was fp32-reference co-residency — closed. `Implementation/combined_tick/
+   vram_*.json`. P1.6 quant stays a VRAM/energy play (not batch-1 latency).
+3. ~~**Predictor batch-1 latency attack**~~ **DONE 2026-07-18 (run #4):** manual `torch.cuda.CUDAGraph`
+   = **2.57×** (predict-1) / **1.33×** (K9), rel-err **2.8e-7**, agreement **100 %**, wp-shift 0.00 m.
+   Falsifier (>10%) cleared 25× → launch-bound CONFIRMED. `torch.compile` NOT viable here (Triton
+   missing → inductor fails; dynamo-cudagraphs 20× slower) → deploy via manual capture. Both-GPU
+   ask deferred: the A40 comparison rides item 1's engine build (single-stream = 4060 is the right
+   proxy). `Implementation/predictor_latency/`.
+4. ~~**Ops hardening — numerics grep-sweep**~~ **DONE 2026-07-18 (run #4):** the class is CLOSED —
+   every learned/data `exp`/`log`/`div` in `stack/tanitad` is guarded (clamp / count-gate /
+   neg-exponent); no new site. Shipped an **11-test executable regression guard** (intake
+   `2026-07-18-numerics-safety-sweep`, test-only, all green) that keeps it closed on merges.
 
 ## P0 — first runs
 
@@ -87,10 +100,14 @@ win is the ViT; predictor is launch-bound) re-scopes this backlog.
    `2026-07-17-imagination-logvar-clamp`, 17 tests). Remaining: the operative/tactical predictor
    `assert w==window` guard is still live at `predictor.py:89` (the review-#2 intake never merged);
    re-flag or fold into the next models package. Small, no falsifier needed (fail-fast).
-8. **Compliance review #3: `stack/scripts/` + training loop** — resume paths, atomic writes,
-   log hygiene, cgroup awareness; the ops-fragility class (F-5/F-6/F-7, duplicate-trainer). Fold in
-   the `epcache` DONE-marker cleanup (written-never-read) + `EpisodeWindowDataset` silent
-   short-episode drop (add a dropped-window counter/log) from review #1's logged findings.
+8. **Compliance review #3: `stack/scripts/` + training loop** — **PART-DONE 2026-07-18 (run #5):**
+   found + fixed the LIVE **non-atomic milestone-archive** bug (`shutil.copy2` guarded by
+   `not arch.exists()` in all 3 pod trainers → a kill mid-copy silently corrupts a gate milestone;
+   intake `2026-07-18-atomic-milestone-archive`, 4 tests). **Resume-write path confirmed atomic in
+   every trainer** (`tmp→.replace`). **Remaining (next run):** (a) log-hygiene — trainer logs to
+   `/workspace` get swallowed on death vs `/tmp` (pod2 history); (b) a free-space/quota preflight
+   before the archive copy (Errno122 class); (c) the `epcache` DONE-marker cleanup (written-never-read)
+   + `EpisodeWindowDataset` silent short-episode drop (dropped-window counter) from review #1.
 
 ## P2
 
@@ -103,6 +120,16 @@ win is the ViT; predictor is launch-bound) re-scopes this backlog.
     2026-07-08).
 
 ## Done / retired
+- (2026-07-18 run #5) **Combined deploy-tick MEASURED** (fp16 enc + CUDA-graph pred = 11.16 ms/
+  89.6 Hz/1.59×, agreement 96.9 %, = additive projection to 0.4 % → levers compose) + **P1.4c clean
+  VRAM DONE** (fp32 1.08 GB / fp16 0.56 GB, co-residency artifact closed) + **review #3 PART-DONE**
+  (live non-atomic milestone-archive bug fixed, intake `2026-07-18-atomic-milestone-archive`, 4 tests).
+  **Next-run top:** P0 #1 TRT-fp16 engine (must beat the free 11.16 ms graph baseline) on an idle pod /
+  TRT box; then review #3 continuation (log-hygiene / quota-preflight). $0, 4060.
+- (2026-07-18 run #4) **Predictor launch-bound attack DONE** (manual CUDA-graph 2.57×/1.33×, free,
+  rel-err 2.8e-7, 100% agreement; `torch.compile` non-viable on this Triton-less box) + **numerics
+  grep-sweep DONE** (class closed, 11-test regression guard intake). New top: item 0 combined+
+  full-tick graph harness (measured combined tick vs the additive ~9 ms projection). $0, 4060.
 - (2026-07-17 run #3) **P1.4b clean-GPU latency DONE** (fp32 14.79 ms/67.6 Hz, fp16 1.39×/93.7 Hz,
   encoder-only win, precision policy reproduced); **review #3 imagination_nll logvar clamp DONE**
   (intake, 17 tests). New: P1.4c one-process VRAM harness; P1.6 re-scoped to VRAM/energy. **Next-run
