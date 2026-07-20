@@ -133,6 +133,72 @@ agent's experiments should now orbit.
 gains the goal-loop + ≥2-experiment + production-readiness section; TanitScena scaffolding started
 by the MVP loop (2026-07-12); ROADMAP.md authored. Status: **accepted (execution-level per D-018).**
 
+## D-030 — REF-C redesigned to a DiffusionDrive anchored decoder + 3-size scaling study (2026-07-18, **proposed** — logged by the orchestrator 2026-07-20 from commits `7e9c402`/`36d979f`/`f583bb4`; Sayed to confirm)
+
+**Decision.** Replace REF-C's 2022-era tiny-TCP unimodal GRU decoder with a **DiffusionDrive-style
+anchored truncated-diffusion decoder** (fixed anchor vocabulary cross-attends the conv map → per-anchor
+confidence + offset; truncated-diffusion steps refine the winning modes; trajectory = argmax-confidence
+anchor path), and run REF-C as a **three-size scaling study — small 55 M / base 104 M / XL 252 M** on the
+identical 2,376-episode data via milestone gates.
+
+**Rationale.** The original REF-C chassis was not a fair modern reference arm. Anchored multimodal decoding
+is the current published standard and directly tests H19 (maneuver→anchor graft). Sizes are
+research-anchored (55 M = DiffusionDrive scale, 252 M = flagship-matched) so the scaling read is clean.
+
+**Consequences.** REF-C-XL @16k already evals **0.565 m ADE@2s** — beats CV in all three speed terciles,
+2nd of the trained-encoder arms. A REF-C eval path was built into TanitEval on `tanitad-eval`
+(`refc_eval.py` + loader/registry/runner dispatch). 15 refc tests; suite green. Status: **proposed.**
+
+## D-031 — flagship-v2 RESTARTED rather than continued to 30k (2026-07-19, **proposed** — logged by the orchestrator 2026-07-20; Sayed asked the question and the restart was executed as `flagship4b-v3enc-30k`)
+
+**Decision.** Do **not** grind flagship-v2 to 30k. Restart with **staged/softened encoder-grounding
+levers** — decorr after 10k warmup @0.02, rollout-k 4→8 ramp, invdyn_gradscale 0.25→0.5, fa_dropout
+0.3→0.15 early — while keeping the healthy decode-side levers (anchored tactical, gated intent, labels-v2,
+jerk, ego→planners, route-vis) from step 0.
+
+**Rationale.** v2@6k = 6.18 m ADE@2s was diagnosed **mechanism-A** (the levers removed the kinematic speed
+shortcut *by design*; encoder speed probe R² 0.30 vs v1 0.86) — but A does not justify continuing: the
+same-step v2/v1 forward-consistency ratio is flat-to-widening (2.5→4.3×), the learning-curve exponent is
+**−0.50 vs v1's −0.84**, and a power-law projection puts v2@30k ≈ 0.27 m vs v1's actual 0.030 m — ~9×
+worse for the same ~4 days of A40. Simultaneous levers made the optimization too hard.
+
+**Consequences.** `flagship4b-v3enc-30k` launched on pod2 2026-07-19 21:42 UTC (and died at step 1,950 on
+a full-disk checkpoint write — see W33 §3). **Orchestrator recommendation attached:** pre-register the
+**OOD panel** as this run's acceptance gate, not the in-distribution one. Status: **proposed.**
+
+## D-032 — Milestone checkpoint archiving (5k/15k/20k/30k) is the gate protocol (2026-07-18, **proposed** — directed by Sayed per commit `b298cef`; logged by the orchestrator 2026-07-20)
+
+**Decision.** All trainers archive **milestone checkpoints at 5k / 15k / 20k / 30k** instead of
+overwriting a single `ckpt.pt` each save.
+
+**Rationale.** `ckpt.pt` was overwritten every save, so no earlier checkpoint survived for gate
+re-evaluation, overfitting curves, or lineage forensics. The REF-A dyn-in overfitting analysis
+(monotone 3.76 → 3.69 → 3.02 → 2.92 across milestones) is only possible because of this.
+
+**Consequences.** Applied to `refa_train_plus.py` (`6808c2d`) and the other trainers (`b298cef`).
+A **live milestone-archive corruption bug** was found and fixed by Production & Optimization on
+2026-07-18. Costs disk — relevant given pod2's 98 %-full overlay. Status: **proposed.**
+
+## D-033 — v3 direction: hierarchical world-model PLANNING; supervised heads demote to proposal priors (2026-07-19, **proposed** — co-designed with Sayed, `V3_HIERARCHICAL_PLANNING_DESIGN.md`; logged by the orchestrator 2026-07-20)
+
+**Decision.** v3 stops treating the hierarchy as three supervised heads and makes it a
+**goal → options → consequences → cost → choice** pipeline: the strategic level sets the goal (route
+intent, target-speed band, lane objective), the tactical level *proposes* plan options, and the world
+model predicts each option's consequences so the **cost function** picks the winner. Supervised heads
+survive only as proposal priors, never as decision-makers. Two arms share everything but the encoder:
+**flagship-v3** (own trained encoder) and **refa-v3** (frozen-encoder matrix: faithful DINO-WM + CEM /
+own-SSL-then-freeze / LoRA with LP-FT warmup — no naive full fine-tune).
+
+**Rationale.** Three measured pathologies all trace to head-supervision: longitudinal mean-regression
+(REF-A 94 % longitudinal; flagship high-speed the only above-floor stratum), a degenerate strategic seam
+(`route_skill_vs_chance` = 0.0, pure command echo), and an actively *harmful* intent→operative seam
+(cos vs-none −0.238). H26 alignment is asserted but not demonstrated. Making longitudinal target-speed and
+mode-switching a **planning cost** rather than a head addresses all three at once.
+
+**Consequences.** `V3_HIERARCHICAL_PLANNING_DESIGN.md` + `V3_GOAL_VOCABULARY_V1.md` authored; the goal
+vocabulary is frozen and is what Data Engineering's `TANITDATASET_V1_STRATEGY.md` maps every VLM label
+onto. Supersedes nothing yet — v1 remains the operative arm. Status: **proposed.**
+
 ## D-027 — K-step rollout loss adopted for all post-30k training (2026-07-10, accepted by Sayed)
 
 **Decision.** Every training run AFTER the p0-sB01 30k record run uses the K-step recursive rollout
