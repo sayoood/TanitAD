@@ -67,6 +67,9 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--train-n", type=int, default=400)
     ap.add_argument("--val-n", type=int, default=90)
+    # Split-selective precompute (pod3, 2026-07-12): lets the train features be
+    # regenerated on their own when only one split's epcache has been rebuilt.
+    ap.add_argument("--only", choices=["train", "val", "both"], default="both")
     args = ap.parse_args()
     device = "cuda"
     tag, model, size, _ = load_encoder(device)
@@ -74,7 +77,16 @@ def main():
 
     root = Path(args.cache_root)
     for pattern, n in (("*train*", args.train_n), ("*val*", args.val_n)):
-        src = sorted(root.glob(pattern))[-1]
+        split = "train" if "train" in pattern else "val"
+        if args.only != "both" and split != args.only:
+            continue
+        # Fail soft, not with an IndexError, when a split's cache dir is absent
+        # (the common state on a pod mid-rebuild).
+        _m = sorted(root.glob(pattern))
+        if not _m:
+            print(f"[dino] no cache dir for {pattern}; skipping", flush=True)
+            continue
+        src = _m[-1]
         dst = Path(args.out) / (src.name + f"-{tag}")
         dst.mkdir(parents=True, exist_ok=True)
         files = sorted(src.glob("ep_*.pt"))[:n]

@@ -32,6 +32,12 @@ def main():
     ap.add_argument("--episodes", type=int, default=0,
                     help="clip bound before split (0 = all; must match the "
                          "original run's --episodes for identity)")
+    # Split-selective build (pod3, 2026-07-13). split_clips() still runs on the
+    # FULL clip list, so the train cache key is byte-identical to a --only both
+    # run — this only skips the build loop for the other split, letting a
+    # disk/RAM-bound pod finish train first and backfill val later.
+    ap.add_argument("--only", choices=["train", "val", "both"], default="both",
+                    help="build only this split (default both; key unchanged)")
     args = ap.parse_args()
 
     cfg = base250cam_config()
@@ -68,6 +74,10 @@ def main():
     params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
               "calib": "ftheta_v2"}
     for cs, split in ((tr, "train"), (va, "val")):
+        if args.only != "both" and split != args.only:
+            print(f"[build] --only={args.only} -> skipping {split} split",
+                  flush=True)
+            continue
         eps = build_episodes_cached(
             cs, lambda c: build_episode(c, size=cfg.encoder.image_size),
             cache, f"physicalai-{split}", params)
