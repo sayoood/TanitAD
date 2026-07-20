@@ -550,19 +550,39 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 **REF-C-XL finishes 0.006 m behind the deployed flagship v1 (0.4522)** — a budget-matched
 direct-head diffusion arm essentially level with the world-model stack.
 
-> 🔬 **The selection flaw — REF-C leaves ~0.16 m on the table in ranking alone.**
+> 🔬 **The selection flaw — REF-C ranks with the UN-refined anchor's score.**
 > Read from `refc.py::AnchoredDiffusionDecoder.forward`: all 256 anchors ARE denoised (no
 > top-K gate), **but selection uses the t=0 classifier score over the ORIGINAL anchors — the
 > denoise passes return `_, off` and their own confidences are DISCARDED.** Geometry is
-> refined; ranking is not. Measured on ep11: ADE(selected) **2.572 m** vs **oracle-in-fan
-> 0.305 m** (8.4×); clip-wide selected 1.110 vs oracle 0.295, and in **111/170 frames (65 %)
-> the chosen plan is >2× worse than one already in the same fan**. The raw vocabulary already
-> held a 0.290 m plan, so this is neither a coverage nor a refinement failure. The residual is
-> dominantly **longitudinal**: ep03 f149 the ego brakes while the pick is constant-velocity at
-> v0, and proposal #203 in the same fan predicts the deceleration at 0.478 m.
-> **Lever for v1.5/v3: score the REFINED trajectory (or add a target-speed term to the
-> selection score); log oracle-in-fan vs selected to separate "can't propose" from "can't rank".**
-> Evidence: `taniteval/taniteval/plan_fan.py`, `Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md`.
+> refined; ranking is not.
+>
+> **CORPUS figures (n=881, canonical val — use THESE):**
+> selected **0.4714** full-set · **oracle-in-fan 0.1640** · gap **0.3075 m** ·
+> `frac_sel_2x_worse` **0.454**. ⚠️ An earlier revision of this section quoted
+> *0.295 / 65 %* — those were **single-clip** (ep11, stride-1) values mis-stated as corpus
+> figures. The ep11 illustration itself stands: ADE(selected) 2.572 m vs oracle 0.305 m (8.4×),
+> and the raw vocabulary already held a 0.290 m plan, so it is neither a coverage nor a
+> refinement failure.
+>
+> **The recoverable part is at the HEAD of the ranking, not the tail.** The 0.164 oracle is
+> partly a lottery (min over 256 draws whose typical member is 13.9 m off). Oracle within
+> **top-8 by confidence = 0.2026 = 87 %** of the gap; top-4 = 0.2506 = 72 %.
+>
+> ❌ **REFUTED — do not add a target-speed term to the selection score.** REF-C v1.0 measured
+> it: cost re-ranking recovers **0.0 %** (best blend point is λ=0, the unmodified baseline;
+> pure cost −171 %). A **GT-perfect speed-matcher scores 1.1236, WORSE than baseline**, and a
+> GT-perfect along-track-only ranker caps at 34 %. VTARGET sits +1.42 m/s above v0 and is a
+> 10–20 s free-flow *aspiration* — used as a 2 s reference it is worse than holding v0
+> (MAE 1.65 vs 0.475) and makes braking windows **+0.51 m worse**. Right quantity, wrong
+> timescale.
+>
+> ✅ **Lever that survives:** a LEARNED residual over the **top-K (K≈8)** trained on
+> **joint along+cross error** — never a speed target. The incumbent confidence head is strong
+> (Spearman 0.907 vs ADE, 68 % of the chance→oracle span) so a re-scorer must beat it, not
+> replace it naively. That is **REF-C v1.2**.
+> Evidence: `taniteval/taniteval/plan_fan.py`, `taniteval/taniteval/refc_rerank.py`,
+> `Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md`,
+> `Research/2026-07-20-refc-cost-rerank-tier0.md`.
 
 **Beats CV in all three speed terciles** — low 0.708/0.932 ✓, med 0.586/0.934 ✓, high 0.521/0.647 ✓. By
 curvature: straight 0.523 vs 0.439 ✗, gentle 0.785 vs 1.357 ✓, sharp 0.844 vs 2.376 ✓.
