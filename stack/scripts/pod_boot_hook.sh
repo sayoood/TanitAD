@@ -36,7 +36,7 @@ mkdir -p "$(dirname "$HOOK_LOG")" "$RUNS_DIR" 2>/dev/null || true
   for envf in "$RUNS_DIR"/*.env; do
     (
       # subshell: a malformed manifest can't take down the loop
-      RUN_ID=""; OUT=""; ENABLED=1; TRAIN_MATCH=""
+      RUN_ID=""; OUT=""; ENABLED=1; TRAIN_MATCH=""; TRAIN_CMD=""
       # shellcheck disable=SC1090
       source "$envf" 2>/dev/null || { echo "  skip ${envf} (source failed)"; exit 0; }
       [ -n "$RUN_ID" ] && [ -n "$OUT" ] || { echo "  skip ${envf} (no RUN_ID/OUT)"; exit 0; }
@@ -51,6 +51,26 @@ mkdir -p "$(dirname "$HOOK_LOG")" "$RUNS_DIR" 2>/dev/null || true
       # itself is already alive (hand-launched, or under its own wrapper loop),
       # starting a supervisor would put a SECOND trainer on the same GPU and the
       # same ckpt.pt. Skip. Fail CLOSED when the check itself cannot be run.
+      # DEFAULT-ON: derive TRAIN_MATCH when a manifest doesn't set one. An opt-in
+      # guard is a guard that gets forgotten — on 2026-07-20 four pod2 manifests had
+      # no TRAIN_MATCH, so the guard was inert and flagship-v2 was resumed onto a
+      # busy A40. Prefer "<trainer>.*<out-dir>", which distinguishes two runs of the
+      # same trainer; fall back to the out-dir alone (covers wrapper-script runs
+      # like REF-C's launch_refc.sh, where no .py appears in TRAIN_CMD).
+      if [ -z "$TRAIN_MATCH" ]; then
+        _script="$(printf '%s' "${TRAIN_CMD}" | grep -oE '[[:alnum:]_/.-]+\.py' | head -1)"
+        _script="${_script##*/}"
+        _outbase="$(basename "${OUT}")"
+        if [ -n "$_script" ] && [ -n "$_outbase" ]; then
+          TRAIN_MATCH="${_script}.*${_outbase}"
+        elif [ -n "$_outbase" ]; then
+          TRAIN_MATCH="${_outbase}"
+        fi
+        [ -n "$TRAIN_MATCH" ] && echo "  ${RUN_ID}: TRAIN_MATCH auto-derived as '${TRAIN_MATCH}'"
+      fi
+      if [ -z "$TRAIN_MATCH" ]; then
+        echo "  ${RUN_ID}: WARNING no TRAIN_MATCH and none derivable — cannot prove a trainer isn't already running; skipping"; exit 0
+      fi
       if [ -n "$TRAIN_MATCH" ]; then
         if ! command -v pgrep >/dev/null 2>&1; then
           echo "  ${RUN_ID}: TRAIN_MATCH set but pgrep unavailable — skipping (cannot prove no double-launch)"; exit 0
