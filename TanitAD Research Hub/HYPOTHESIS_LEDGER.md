@@ -296,3 +296,80 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   hurt the layer below (=> hierarchy is decorative). Gate: each conditioned layer > its unconditioned control,
   CI-separated, on the canonical val. This becomes a standing TanitEval "hierarchy panel". See
   [[whole-program-briefing-format]].
+- 2026-07-18: **H26 FIRST VERDICT (flagship-speed @19k, TanitEval hierarchy panel, 881 windows/40 eps) —
+  MIXED, honest.** Part B (mutual CONSISTENCY) SUPPORTED: maneuver<->trajectory agree 0.872, kappa 0.612;
+  route<->maneuver "disagreement" is expected cross-timescale (15-25s route vs 2s maneuver), not incoherence.
+  Part C (GROUNDING dominant, H18) SUPPORTED: grounded rollout 0.615m beats the ungrounded tactical head 3.43m (5x).
+  Part A (top-down CONDITIONING helps downstream) FALSIFIED @19k: nav->strategic only echoes the command (route
+  follow-acc 0.671 == majority-straight => ZERO vision route inference); ctx->tactical goal-cos separates but is
+  negligible (+0.0045); intent->operative is HARMFUL when engaged (latent-cos 0.731 real vs 0.975 none) because
+  `intent_proj` norm 31.4 SWAMPS the action-emb 28.3 in the FiLM cond -> the deployed rollout is intent-free BY
+  DESIGN (that IS the 0.615m). READ: at 19k the 0.6m comes from the OPERATIVE predictor + grounded step-readout,
+  NOT the top-down cascade; the strategic/tactical brains COHERE but do not yet DRIVE the operative.
+  ACTIONABLE (flagship-v3 lever): normalize/rescale the intent->operative FiLM cond (LayerNorm the cond, or match
+  `intent_proj` output norm to the action-emb ~28) so the seam becomes LOAD-BEARING instead of corrupting — this is
+  the concrete path to the "hierarchy is dominant" core-goal proof. Panel is data-driven + AUTO-re-runs at 30k
+  (thesis_read flips if the seams converge). nospeed@22k replicates (1/3 seams, kappa 0.583; grounded barely wins
+  b/c the no-speed operative is 3.0m not 0.6m — consistent with [[speed-input-fix-validated]]). Deployed:
+  taniteval/hierarchy.py + runner `hierarchy` subcmd + report section "02b". This same B1-class mis-scaling lesson
+  (conditioning term must not swamp the base signal) informs the REF-B refbpatch-v2 anchored-decoder wiring.
+- 2026-07-18: **H26 REFINEMENT — the intent->operative "help" is TWO reads, and per-window CONTENT is inert on
+  BOTH arms (panel preview: refa-dinov2 30k FROZEN enc vs flagship 19k TRAINED enc).** The panel now separates
+  `helps_vs_none` (engage the intent term vs zero it) from `per_window_content_helps` (real intent vs a
+  mean/constant intent). (a) helps_vs_none FLIPS by encoder: flagship (trained) intent HURTS (cos 0.731 vs 0.975 —
+  swamps), but frozen refa-dinov2 intent HELPS (0.936 vs 0.852) because the frozen encoder can't decode ego-motion
+  so the operative CO-ADAPTS to a large constant intent offset (intent_proj norm **1792** vs act_emb 14.5). (b)
+  per_window_content_helps ~= 0 on BOTH — the tactical brain's actual per-window decision adds ~nothing over a
+  constant intent. IMPLICATION: the hierarchy's top-down CONTENT is not steering the operative in either regime
+  (at most a constant offset). This is DEEPER than magnitude-swamping: the gated-intent v2 lever correctly fixes
+  the swamp (and lets a fresh run avoid co-adapting to a content-inert offset) but does NOT by itself make
+  per-window content matter. v3 OPEN QUESTION: why is per-window intent inert, and how to make the operative
+  attend to it (intent-content-usage loss? non-additive injection? tactical-output quality?) — this is the real
+  "hierarchy is dominant" core-goal lever. Frozen confound CONFIRMED: refa's intent behaves OPPOSITELY to
+  flagship's, so the refa H26 read must use per_window_content (NOT helps_vs_none) as the honest metric. Panel now
+  effect-size-gated (CI-sep AND >=0.02 acc / 0.05 m / 0.01 cos). refa dynin 5k read armed, ~15-27h out (rate
+  ~16-25 s/step, slower than est). See [[refa-bottleneck-diagnosis]] [[speed-input-fix-validated]].
+- 2026-07-18: **FLAGSHIP v1 FINAL (30k) — FIRST SUB-FLOOR ARM + H26 30k re-run PARTIAL FLIP (the armed
+  follow-up).** TanitEval full suite on the true step-29999 ckpt (n=881/40 eps): ade_0_2s **0.4522+-0.031**
+  (plain-mean 0.4271) — BELOW every trivial bar for the first time (best-of-3 floor 0.5005, CTRV 0.523, ridge
+  ego-status ceiling 0.5735). vs 19k: delta 0.188m, win 81.2%, better on EVERY curvature stratum; miss@2m
+  0.180->0.060 (3x); skill-vs-floor straights 1.488->1.032 (at-floor), gentle 0.679, sharp 0.599 (turns now
+  BEAT floor); HIGH-SPEED remains the open weakness (1.785, only stratum above floor). H26 @30k: seams
+  0/3 -> **1/3 — ctx->tactical FLIPPED to LOAD-BEARING with content_matters=true** (vs-mean maneuver
+  delta +0.044 CI-sep; per-window content NO LONGER inert on this seam — training duration alone moved it).
+  intent->operative STILL harmful (cos vs-none -0.238 ~= 19k) => the v2 gated-intent lever remains exactly
+  right. nav->strategic still pure command-echo (route_skill_vs_chance 0.0 — route-from-vision is an open
+  v3 target). H18 grounding dominance GREW (delta 2.70m). Imagination: vision_use ~12% flat (H25 still open,
+  v3). REF-B lineage note: pod1 ckpt_prepatch_step8500.pt is BYTE-IDENTICAL (md5) to refb-speed-30k/ckpt.pt
+  — one ckpt at step 10000, misnamed; benchmarked as refb-10k: 0.8255 (improving turns +0.255m vs 6k,
+  slightly regressing straights). v1 pushed to HF (Sayood/tanitad-flagship-4b-speedjerk, gated-manual).
+- 2026-07-18: **GENUINE-PREDICTION PROOF (flagship-30k, TanitEval generalization panel, 881 windows/40 eps) —
+  the model genuinely predicts scene physics where it's REQUIRED, proven CAUSALLY.** Test B (vision-ablation on
+  CTRV-divergence strata) is the headline: on high-divergence windows (upcoming turns/brakes CTRV cannot
+  extrapolate) the model beats the CTRV oracle by **+0.796m on 94%** of them, and that ENTIRE advantage is
+  VISION — mean-replacing the scene INVERTS it to -0.529m (worse than CTRV); **vision-effect +1.325m, CI
+  [+1.04,+1.64]** (separated). So the anticipation is READ FROM THE SCENE, not extrapolated from dynamics.
+  Support: (A) advantage over CTRV is MONOTONE-increasing with divergence (Q1 -0.372 -> Q4 +0.796) — beats the
+  oracle most exactly where dynamics fails; (D) upcoming road curvature linearly decodable from the pooled
+  latent R2 0.254 vs ego-kinematics-only 0.031 (**+0.223** = latent encodes SCENE not just ego-state); (E)
+  predicted paths physically-shaped 95.9% vs GT 97.1% (learned physics, not memorized); (F-proxy) occluding
+  road-ahead pixels shifts the prediction 1.60x more than periphery, dynamics fixed (reads_road_ahead). HONEST
+  LIMITS: dynamics-guesses on low-divergence/near-inertial windows (correct — CTRV IS optimal there); LOSES to
+  CTRV on top-10% high-speed (-0.617m, the open weakness); lead-time test inconclusive (instrument limit under
+  action-grounded rollout). **CROSS-CORPUS OOD IS DATA-BLOCKED**: comma2k19 + Cosmos pixels are NOT staged on
+  the eval pod, so "unseen-corpus" generalization + the real Cosmos counterfactual are UNRUN (tooling exists;
+  needs data staging or own-dataset). Panel deployed (taniteval/generalization.py + 'generalize'/'gen-all' +
+  dashboard 02d); RE-RUNS on v2 -> the vision-levers + loss-rebalance should DEEPEN the vision-effect = the
+  before/after world-class arc. See [[speed-input-fix-validated]].
+- 2026-07-19: **OOD GENERALIZATION (flagship-30k on UNSEEN corpora — comma2k19 + Cosmos NOW STAGED) — the
+  in-dist proof does NOT transfer to beating the floor OOD, but the model STILL reads the OOD scene.** Model
+  ADE@2s: physicalai (in-dist, n=881) **0.427** (BEATS CTRV floor 0.523, 49.7%); comma2k19 (OOD real hwy,
+  n=2176) **0.849** (LOSES to floor 0.372, beats 17.5%); cosmos (OOD synth, n=92) **0.583** (loses to 0.358,
+  29.4%). WHY: comma/cosmos are highway-dominated so the CTRV floor is very strong (~0.37m); model error
+  ~DOUBLES OOD, high-divergence anticipation advantage collapses 0.80m->0.15m. HONEST NUANCE: vision-ablation
+  STILL hurts on comma (0.27m, CI-sep) -> the model reads the OOD scene, it just can't net-beat the strong
+  highway floor. Path feasibility drops to **62.8%** on OOD sharp-curvature (vs 97.8% in-dist). READ: the
+  in-dist genuine-prediction is real but the model is PARTLY distribution-fit — NOT yet a corpus-general world
+  model. Exactly what v2's vision-reliance + rebalance target; the panel now RE-RUNS on comma/cosmos to measure
+  v2's OOD lift (baseline set). Cosmos pixels DOWNLOADABLE (pre-rendered 43GB shards); 24 clear/degraded weather
+  PAIRS staged -> a TRUE weather-counterfactual is now a modest panel addition. See [[flagship-longitudinal-lever]].

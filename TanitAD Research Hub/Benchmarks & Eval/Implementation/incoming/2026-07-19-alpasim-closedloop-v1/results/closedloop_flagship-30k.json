@@ -1,0 +1,450 @@
+{
+  "n_windows": 881,
+  "n_episodes": 40,
+  "summary": {
+    "closed_bike_ade@2s": 1.6852,
+    "closed_bike_ade@2s_ci95": 0.0977,
+    "closed_bike_fde@2s": 3.5296,
+    "closed_grnd_ade@2s": 2.6736,
+    "open_grnd_ade@2s": 0.4522,
+    "open_bike_ade@2s_kinematic_floor": 0.5129,
+    "cv_ade@2s": 0.8248,
+    "closed_minus_open_grnd_de@2s": 4.2722,
+    "closed_minus_open_bike_de@2s": 2.4774,
+    "divergence_rate_gt5m@2s": 0.2216,
+    "high_vs_low_speed_closed_bike_ade@2s": [
+      1.6453,
+      1.8209
+    ]
+  },
+  "protocol": {
+    "window": 8,
+    "stride": 8,
+    "hz": 10,
+    "wp_steps": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "K_steps": 20,
+    "n_splits": 8,
+    "val_frac": 0.2,
+    "ci": "8-split episode-disjoint jackknife (bench.py)",
+    "nav": "follow (deploy-realistic, no route command)",
+    "operative_step": "intent-free (deployed regime)"
+  },
+  "closedloop_ade_fde": {
+    "_path_legend": {
+      "closed_bike": "closed_bike (headline: kinematic exec of the plan)",
+      "closed_grnd": "closed_grnd (grounded step-readout of imagined roll)",
+      "open_grnd": "open_grnd (TRUE actions, gate grounded rollout)",
+      "open_bike": "open_bike (TRUE actions, bicycle fidelity FLOOR)",
+      "cv": "cv (constant-velocity trivial baseline)"
+    },
+    "_headline": "closed_bike is the headline closed-loop path; closed_grnd is the model's own metric decode",
+    "heldout": {
+      "closed_bike": {
+        "de@0.5s": {
+          "mean": 0.2267,
+          "ci95": 0.0086,
+          "std": 0.0124
+        },
+        "ade@0.5s": {
+          "mean": 0.2267,
+          "ci95": 0.0086,
+          "std": 0.0124
+        },
+        "de@1s": {
+          "mean": 0.941,
+          "ci95": 0.0345,
+          "std": 0.0498
+        },
+        "ade@1s": {
+          "mean": 0.5838,
+          "ci95": 0.0211,
+          "std": 0.0305
+        },
+        "de@1.5s": {
+          "mean": 2.0433,
+          "ci95": 0.1015,
+          "std": 0.1465
+        },
+        "ade@1.5s": {
+          "mean": 1.0703,
+          "ci95": 0.0473,
+          "std": 0.0683
+        },
+        "de@2s": {
+          "mean": 3.5296,
+          "ci95": 0.2548,
+          "std": 0.3677
+        },
+        "ade@2s": {
+          "mean": 1.6852,
+          "ci95": 0.0977,
+          "std": 0.141
+        },
+        "ade_0_2s": {
+          "mean": 1.6852,
+          "ci95": 0.0977,
+          "std": 0.141
+        },
+        "fde@2s": {
+          "mean": 3.5296,
+          "ci95": 0.2548,
+          "std": 0.3677
+        }
+      },
+      "closed_grnd": {
+        "de@0.5s": {
+          "mean": 0.4488,
+          "ci95": 0.0162,
+          "std": 0.0233
+        },
+        "ade@0.5s": {
+          "mean": 0.4488,
+          "ci95": 0.0162,
+          "std": 0.0233
+        },
+        "de@1s": {
+          "mean": 1.6636,
+          "ci95": 0.0659,
+          "std": 0.0951
+        },
+        "ade@1s": {
+          "mean": 1.0562,
+          "ci95": 0.0398,
+          "std": 0.0575
+        },
+        "de@1.5s": {
+          "mean": 3.3662,
+          "ci95": 0.16,
+          "std": 0.2309
+        },
+        "ade@1.5s": {
+          "mean": 1.8262,
+          "ci95": 0.0767,
+          "std": 0.1107
+        },
+        "de@2s": {
+          "mean": 5.2159,
+          "ci95": 0.3024,
+          "std": 0.4363
+        },
+        "ade@2s": {
+          "mean": 2.6736,
+          "ci95": 0.1253,
+          "std": 0.1808
+        },
+        "ade_0_2s": {
+          "mean": 2.6736,
+          "ci95": 0.1253,
+          "std": 0.1808
+        },
+        "fde@2s": {
+          "mean": 5.2159,
+          "ci95": 0.3024,
+          "std": 0.4363
+        }
+      },
+      "open_grnd": {
+        "de@0.5s": {
+          "mean": 0.0762,
+          "ci95": 0.0046,
+          "std": 0.0066
+        },
+        "ade@0.5s": {
+          "mean": 0.0762,
+          "ci95": 0.0046,
+          "std": 0.0066
+        },
+        "de@1s": {
+          "mean": 0.2406,
+          "ci95": 0.0259,
+          "std": 0.0374
+        },
+        "ade@1s": {
+          "mean": 0.1584,
+          "ci95": 0.0149,
+          "std": 0.0216
+        },
+        "de@1.5s": {
+          "mean": 0.5482,
+          "ci95": 0.0433,
+          "std": 0.0624
+        },
+        "ade@1.5s": {
+          "mean": 0.2883,
+          "ci95": 0.0227,
+          "std": 0.0328
+        },
+        "de@2s": {
+          "mean": 0.9437,
+          "ci95": 0.063,
+          "std": 0.0908
+        },
+        "ade@2s": {
+          "mean": 0.4522,
+          "ci95": 0.0312,
+          "std": 0.045
+        },
+        "ade_0_2s": {
+          "mean": 0.4522,
+          "ci95": 0.0312,
+          "std": 0.045
+        },
+        "fde@2s": {
+          "mean": 0.9437,
+          "ci95": 0.063,
+          "std": 0.0908
+        }
+      },
+      "open_bike": {
+        "de@0.5s": {
+          "mean": 0.0904,
+          "ci95": 0.0112,
+          "std": 0.0161
+        },
+        "ade@0.5s": {
+          "mean": 0.0904,
+          "ci95": 0.0112,
+          "std": 0.0161
+        },
+        "de@1s": {
+          "mean": 0.2945,
+          "ci95": 0.0478,
+          "std": 0.0691
+        },
+        "ade@1s": {
+          "mean": 0.1924,
+          "ci95": 0.0293,
+          "std": 0.0422
+        },
+        "de@1.5s": {
+          "mean": 0.6145,
+          "ci95": 0.1108,
+          "std": 0.1599
+        },
+        "ade@1.5s": {
+          "mean": 0.3331,
+          "ci95": 0.0563,
+          "std": 0.0813
+        },
+        "de@2s": {
+          "mean": 1.0522,
+          "ci95": 0.2006,
+          "std": 0.2895
+        },
+        "ade@2s": {
+          "mean": 0.5129,
+          "ci95": 0.0923,
+          "std": 0.1332
+        },
+        "ade_0_2s": {
+          "mean": 0.5129,
+          "ci95": 0.0923,
+          "std": 0.1332
+        },
+        "fde@2s": {
+          "mean": 1.0522,
+          "ci95": 0.2006,
+          "std": 0.2895
+        }
+      },
+      "cv": {
+        "de@0.5s": {
+          "mean": 0.1292,
+          "ci95": 0.0164,
+          "std": 0.0236
+        },
+        "ade@0.5s": {
+          "mean": 0.1292,
+          "ci95": 0.0164,
+          "std": 0.0236
+        },
+        "de@1s": {
+          "mean": 0.4653,
+          "ci95": 0.0588,
+          "std": 0.0849
+        },
+        "ade@1s": {
+          "mean": 0.2972,
+          "ci95": 0.0376,
+          "std": 0.0543
+        },
+        "de@1.5s": {
+          "mean": 0.9966,
+          "ci95": 0.1252,
+          "std": 0.1807
+        },
+        "ade@1.5s": {
+          "mean": 0.5304,
+          "ci95": 0.0668,
+          "std": 0.0964
+        },
+        "de@2s": {
+          "mean": 1.7081,
+          "ci95": 0.2137,
+          "std": 0.3084
+        },
+        "ade@2s": {
+          "mean": 0.8248,
+          "ci95": 0.1035,
+          "std": 0.1494
+        },
+        "ade_0_2s": {
+          "mean": 0.8248,
+          "ci95": 0.1035,
+          "std": 0.1494
+        },
+        "fde@2s": {
+          "mean": 1.7081,
+          "ci95": 0.2137,
+          "std": 0.3084
+        }
+      }
+    }
+  },
+  "compounding_error_grounded": {
+    "_definition": "closed_grounded point-error - open_grounded point-error per horizon (distribution-shift cost the open-loop ADE hides); grounded path both sides so only the action source differs",
+    "_caveat": "the step-readout is calibrated on TRUE-action rolled latents; under self-generated actions the imagined latents drift off that manifold, so this delta bundles genuine trajectory drift WITH step-readout off-manifold decode degradation. The bicycle delta below is controller-clean (no learned decode).",
+    "delta@0.5s": {
+      "mean": 0.3727,
+      "ci95": 0.0155,
+      "n": 881,
+      "separated": true
+    },
+    "delta@1s": {
+      "mean": 1.4229,
+      "ci95": 0.0751,
+      "n": 881,
+      "separated": true
+    },
+    "delta@1.5s": {
+      "mean": 2.818,
+      "ci95": 0.1641,
+      "n": 881,
+      "separated": true
+    },
+    "delta@2s": {
+      "mean": 4.2722,
+      "ci95": 0.2935,
+      "n": 881,
+      "separated": true
+    }
+  },
+  "compounding_error_bicycle": {
+    "_definition": "closed_bicycle_ADE - open_bicycle_ADE per horizon (policy+imagination cost above the kinematic fidelity floor)",
+    "delta@0.5s": {
+      "mean": 0.1363,
+      "ci95": 0.009,
+      "n": 881,
+      "separated": true
+    },
+    "delta@1s": {
+      "mean": 0.6466,
+      "ci95": 0.0424,
+      "n": 881,
+      "separated": true
+    },
+    "delta@1.5s": {
+      "mean": 1.4288,
+      "ci95": 0.1025,
+      "n": 881,
+      "separated": true
+    },
+    "delta@2s": {
+      "mean": 2.4774,
+      "ci95": 0.2469,
+      "n": 881,
+      "separated": true
+    }
+  },
+  "stability": {
+    "divergence_rate_gt5m@2s": {
+      "mean": 0.2216,
+      "ci95": 0.0431,
+      "n": 881,
+      "separated": true
+    },
+    "divergence_threshold_m": 5.0,
+    "lateral_deviation_growth_m": {
+      "0.5s": 0.0463,
+      "1s": 0.2271,
+      "1.5s": 0.5735,
+      "2s": 1.3462
+    },
+    "comfort": {
+      "mean_abs_accel_mps2": 2.0686,
+      "mean_abs_lat_accel_mps2": 0.9991,
+      "mean_abs_jerk_mps3": 3.6308,
+      "mean_abs_steer_rad": 0.01753,
+      "frac_steps_exceed_lon_comfort": 0.5871,
+      "frac_steps_exceed_lat_comfort": 0.0738,
+      "frac_steps_exceed_jerk_comfort": 0.3529,
+      "frac_steps_within_accel_bounds": 0.4129,
+      "bounds": {
+        "a_lon": 2.0,
+        "a_lat": 3.0,
+        "jerk": 2.0,
+        "kind": "comfort (not safety)"
+      }
+    }
+  },
+  "speed_stratified": {
+    "thresholds_mps": [
+      7.067,
+      13.325
+    ],
+    "by_speed": {
+      "low": {
+        "n": 294,
+        "closed_bike_ade@2s": 1.6453,
+        "closed_grnd_ade@2s": 2.6987,
+        "open_grnd_ade@2s": 0.3594,
+        "open_bike_ade@2s": 0.4765,
+        "closed_minus_open_grnd_ade@2s": 2.3393,
+        "divergence_rate_gt5m@2s": 0.2177,
+        "mean_speed_mps": 3.867
+      },
+      "med": {
+        "n": 293,
+        "closed_bike_ade@2s": 1.7291,
+        "closed_grnd_ade@2s": 2.8556,
+        "open_grnd_ade@2s": 0.3704,
+        "open_bike_ade@2s": 0.4647,
+        "closed_minus_open_grnd_ade@2s": 2.4852,
+        "divergence_rate_gt5m@2s": 0.1877,
+        "mean_speed_mps": 10.39
+      },
+      "high": {
+        "n": 294,
+        "closed_bike_ade@2s": 1.8209,
+        "closed_grnd_ade@2s": 2.6226,
+        "open_grnd_ade@2s": 0.5513,
+        "open_bike_ade@2s": 0.4143,
+        "closed_minus_open_grnd_ade@2s": 2.0713,
+        "divergence_rate_gt5m@2s": 0.2993,
+        "mean_speed_mps": 23.645
+      }
+    },
+    "_read": "is closed-loop drift worse at high speed (the known longitudinal weakness)?"
+  },
+  "limitations": [
+    "NO collision / drivable-area / PDM \u2014 no HD map or agent boxes in our data; this is a drift/stability closed loop, not a safety one.",
+    "SELF-REFERENTIAL: the world model is both state estimator and simulator; failures it cannot imagine are invisible (needs an external photoreal sim to cure).",
+    "waypoint->control + bicycle are a HARNESS controller (not the model); open_bike is its kinematic fidelity floor so drift stays attributable.",
+    "dataset actions correlate ~0.87 with bicycle-consistent controls (CAN signals) \u2014 residual shows up in open_bike.",
+    "open-loop L2 is a weak claim (arXiv:2605.00066); the closed-loop delta is the point, not the absolute open-loop number."
+  ],
+  "model": {
+    "key": "flagship-30k",
+    "name": "Flagship 4B (speed, 30k FINAL)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)",
+    "speed_input": true
+  },
+  "ckpt_step": 29999,
+  "wall_s": 46.6
+}

@@ -2,6 +2,18 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## v2.1 / v3 LEVER — flagship high-speed longitudinal fix (Sayed 2026-07-18, deferred from v2)
+The `taniteval/pathspeed.py` decoupled long/lat panel found flagship-30k's high-speed loss to CTRV is
+**LONGITUDINAL, not lateral**: 89% of the 2s sq-error is along-track; at high speed the model
+**over-predicts speed by +0.66 m/s** (long-RMSE 1.38m vs CTRV 0.077m; lateral only 0.63m); error
+compounds 0.07→0.91m over the horizon. It plans the PATH well, the SPEED poorly. **Lever (deferred —
+"launch v2 now, measure, add if needed"):** up-weight the along-track/speed-profile error term +
+speed-stratified/balanced sampling + possibly a speed-calibration/anti-overshoot term. GATE: read
+pathspeed longitudinal RMSE + speed-bias at the v2 5k/15k milestones FIRST (the rebalance +
+anti-shortcut levers may already reduce it); implement as v2.1 only if it persists. See
+`memory/flagship-longitudinal-lever.md`.
+
+
 ## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
 
 Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. **TanitEval is now the canonical eval
