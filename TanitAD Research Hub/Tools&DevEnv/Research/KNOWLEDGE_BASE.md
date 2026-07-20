@@ -3,6 +3,82 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-20] [measured] **The stack test suite has ZERO GPU coverage**: `grep -rl cuda
+  stack/tests/` returns nothing across all 396/531 tests, while every trainer, eval and
+  deploy tick runs on a GPU. Device/dtype placement, on-device batch-statistic leaks and
+  CUDA-only NaNs were structurally invisible to CI. Closed by `tools/gpu_tripwire.py`
+  (4 probes on the real model). Measured on the RTX 4060 (torch 2.11+cu128, fp32, 1.7 s):
+  encode CPU-vs-CUDA **9.54e-07**, imagine **7.15e-07**, I2-on-device **1.66e-07**, 0
+  non-finite grads; batch-1 encode **0.85–1.43 ms** (I8 proxy). Default tol 1e-3 = ~1000x
+  headroom; a falsifier at tol=0 proves the probes can fail — impact: G-E/CI/I2/I8 —
+  note `2026-07-20-ci-gate-v2-suite-manifest-gpu-tripwire-and-the-uncommitted-stack.md` §1–2
+- [2026-07-20] [root-cause] **40 uncommitted `stack/` paths on the shared Drive tree, 22
+  UNTRACKED** — 12 test modules (~135 tests), 9 `tanitad/lake/*` + `eval/ckpt_compat.py`
+  + `train/decorr.py`, 18 modified core files (`config.py`, `fourbrain.py`, `predictor.py`,
+  `refa.py`, `flagship_losses.py`, 10 scripts). In no commit, on no branch. Found via a
+  396-vs-531 collected discrepancy between the worktree and the Drive tree. **Strictly
+  worse than D-026's unmerged branches** (those are at least pushed). `session_guard` v1
+  called that tree clean because it only checked hub prefixes → source check added —
+  impact: D-026/G-I/all-agents — note §4
+- [2026-07-20] [tooling] `git status --porcelain` **collapses a wholly-untracked directory
+  to one `?? dir/` row** — fatal for any guard whose job is to name the missing files. Use
+  `--untracked-files=all`. Caught by a falsifier before ship, not after — impact:
+  tooling/session_guard — note §4
+- [2026-07-20] [built] **`ci_gate` v2** (`tools/ci_gate.py`, promoted out of stranded intake
+  to repo-root tooling): adds a **SUITE_MANIFEST** (16 load-bearing modules pinned to a
+  collected-count floor — a named-node tripwire only guards nodes somebody thought to name;
+  whole modules vanish silently), `--min-total` (390), `--gpu-smoke off|warn|require`,
+  `--json`. Skips stay green **unless a whole module is skipped**. Measured: both trees GATE
+  PASS, **396/39.0 s** (off-Drive worktree) and **531/60.2 s** (Drive); 57 falsifiers 15.5 s
+  — impact: G-E/CI — note §3
+- [2026-07-20] [measured] **Sharding NOT needed** (backlog condition was "<5 min or shard"):
+  worst measured tree = **60.2 s, 5x under the ceiling**. Budgets set from measurement:
+  per-test 15 s, wall 150 s. Caveat: timings are **contention-sensitive** — the same suite
+  ran 65.0 s with a 14.90 s tall pole beside a second pytest process (vs 39.0 s / 8.02 s
+  clean), so a concurrent agent run can false-positive the slow-test budget. This also
+  re-scopes backlog P0.2: `test_replay`'s "10.86 s" was partly an I/O+contention artifact —
+  impact: G-E/backlog — note §3.3–3.4
+- [2026-07-20] [verdict] **AlpaSim closed-loop on `tanitad-eval`: NO-GO** (executed
+  2026-07-19 by the investigation agent — retires my P1.0). The eval pod is itself an
+  unprivileged container with **no nested container runtime**, and AlpaSim's NuRec renderer
+  ships only as `nvcr.io/nvidia/nre/nre-ga:26.04` — no source form. Policy/driver side GO
+  (bare gRPC, adapter written); ~1.5 GB/scene, <2 GB VRAM would fit a proper host. Residual
+  ask is infra (a docker-capable GPU host), not tooling — impact: P5/closed-loop/D-014 —
+  `Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/INTAKE.md`
+- [2026-07-20] [tooling] **Rerun 0.34.0/0.34.1 ships a Viewer MCP server** — an agent can
+  see and interact with what the viewer renders, i.e. verify its own rollout overlay instead
+  of asserting it. Also `VoxelGridMap`, transform-debug UI; **breaking API changes**
+  (migration guide), pin **0.34.1** (live-stream stack-overflow fix). GO on a branch, est.
+  1–2 h SDK bump + `corpus_overlay.py` migration + ~30 min MCP wiring — impact:
+  WP-viz/TanitEval-viz-standard — [releases](https://github.com/rerun-io/rerun/releases)
+- [2026-07-20] [correction] Orin export should target **JetPack 7.2 (Jetson Linux 39.2,
+  shipped 2026-06-02)**, not the 7.1 this KB recorded: 7.2 brings the **Orin family into the
+  JetPack 7 line** (CUDA 13.2.1, TensorRT 10.16.2, unified Orin+Thor installer). NVFP4 is
+  still Thor-only; Orin still targets FP8/INT8 — impact: C1/C2/P5 —
+  [JetPack](https://developer.nvidia.com/embedded/jetpack)
+- [2026-07-20] [paper] **"Validate the Dream Before You Trust Its Verdict"** (arXiv
+  2607.07196, RSS-2026 wksp): a world model used as a test ORACLE must be accredited first;
+  L0–L4 admissibility ladder from VV&A/SOTIF. Key result: the model ranking higher on visual
+  generation quality ranks **lower** on action-following — the citable external form of our
+  open-loop-ADE ⊥ closed-loop finding (0.45 → 1.69 m). Seam: Benchmarks & Eval — impact:
+  H15/eval — [abs](https://arxiv.org/abs/2607.07196)
+- [2026-07-20] [paper] **DynaDreamer** (arXiv 2607.13410): physics-informed ego-dynamics
+  context that *modulates* a causal-Transformer WM, with a dynamics predictor keeping it
+  synced **during rollout**; +28 % urban / +61 % highway, +73 % on an unseen chassis with no
+  retraining. The principled generalization of our v0-as-3rd-action-channel fix (3.73 →
+  0.83 m, speed-R² 0.965) and a direct lever on the longitudinal 83 %. No code, no stated
+  scale → design input, not a dependency. Seam: Architecture — impact: H4/H25 —
+  [abs](https://arxiv.org/abs/2607.13410)
+- [2026-07-20] [paper] **Orbis 2** (arXiv 2607.15898, Freiburg): hierarchical driving WM
+  (coarse predictor + detail generator) trained **diffusion-forcing then teacher-forcing** —
+  a reusable rollout-stability schedule that costs only a training-schedule change. Code +
+  ckpts advertised, but generative-video scale → read the loop, do NOT run the weights —
+  impact: H15/V3-hierarchy — [abs](https://arxiv.org/abs/2607.15898)
+- [2026-07-20] [paper] **TerraZero** (arXiv 2607.13028, Applied Intuition): procedural
+  driving sim, **1.3 M agent-steps/s on one GPU**, pure-RL policies, tops InterPlan. Exactly
+  our affordable closed-loop shape (no rendering) — but **no code released**, commercial
+  vendor → WATCH, re-check in 2–4 weeks — impact: P5/closed-loop —
+  [abs](https://arxiv.org/abs/2607.13028)
 - [2026-07-18] [built] `tools/session_guard.py` — the D-026 session-end stranded-work guard every
   agent runs (protocol-wired G-F/G-I). BLOCKS on uncommitted hub deliverables; WARNs on unmerged
   `agent/*` branches vs tip (`rev-list --count tip..branch`; current branch info-only) and on

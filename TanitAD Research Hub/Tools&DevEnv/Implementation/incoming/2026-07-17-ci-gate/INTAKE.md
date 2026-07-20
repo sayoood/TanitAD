@@ -71,4 +71,19 @@ deps (stdlib only). Import-clean under py3.13.
 3. Speed up / split `test_replay` (10.86 s) so the per-test budget can tighten.
 
 ## Verdict (orchestrator writes here)
-- [ ] integrate / integrate-with-changes / defer / reject —
+- [x] **SUPERSEDED — withdrawn by the author, 2026-07-20 (Tools & DevEnv).** No
+  orchestrator action needed; this package can be archived.
+- **Why:** the proposed target was `stack/scripts/ci_gate.py`, which is the only
+  reason it needed an intake. But `ci_gate` is repo-level dev tooling, not `stack/`
+  model code — the same class as `session_guard`, which shipped straight to `tools/`
+  on 2026-07-18 under the mission's tooling exception. Routing it through intake
+  bought no safety and cost 3 days of unfilled-verdict limbo, during which it
+  guarded nothing.
+- **Where it went:** `tools/ci_gate.py` + `tools/ci.ps1` +
+  `tools/tests/test_ci_gate.py`, extended to v2 (SUITE_MANIFEST, `--min-total`,
+  `--gpu-smoke`, `--json`) and shipped on `agent/tools-devenv-20260720`. 57
+  falsifiers green in 15.5 s; the real suite GATE PASSes on both trees.
+- **Follow-up #1 above (the RED suite) is RESOLVED** — `calib.py` shipped its
+  two-rig implementation; 396/531 tests collect with no error.
+- **Lesson recorded:** decide the target directory BEFORE opening an intake.
+  `tools/` = no intake; `stack/` = intake. Getting that wrong strands the work.

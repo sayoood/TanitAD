@@ -16,6 +16,15 @@ things and turns the blocking one into a non-zero exit code:
       left only in the working tree" failure. BLOCKING: a clean session-end tree is
       the whole point of the guard.
 
+  (b2) UNCOMMITTED SOURCE under ``stack/`` and ``tools/`` — the same failure one
+      layer deeper, and empirically the worse one: on 2026-07-20 the shared Drive
+      working tree carried **40 uncommitted stack/ paths**, including 12 whole
+      untracked test modules (135 tests) and 9 untracked ``tanitad/lake/*``
+      modules that existed in no commit and on no branch anywhere. An *untracked*
+      new module is strictly more fragile than a modified tracked one — there is
+      no other copy — so the two are reported separately. WARN by default (a
+      mid-work tree is legitimately dirty), BLOCKING under ``--strict``.
+
   (c) STALE INTAKE verdicts — ``Implementation/incoming/<date>-<slug>/INTAKE.md``
       files whose ``ORCHESTRATOR VERDICT`` is still the unfilled template, older than
       ``--max-intake-age-days`` (default 3), by the folder's date prefix. ESCALATE
@@ -56,6 +65,10 @@ HUB_PREFIXES = (
     "PROJECT_STATE.md",
 )
 
+# Source areas. Uncommitted work here is not a session-end *deliverable* miss, but
+# it is the same strand class: code that exists in exactly one working tree.
+SOURCE_PREFIXES = ("stack/", "tools/")
+
 # The unfilled verdict placeholder from INTAKE_TEMPLATE.md. A verdict still equal to
 # (or containing) this — or empty — has not been triaged.
 VERDICT_PLACEHOLDER = "integrate / integrate-with-changes / defer / reject"
@@ -77,7 +90,12 @@ def git(repo: Path, *args: str) -> str:
     removed. Leading whitespace is preserved on purpose: ``git status --porcelain``
     encodes the state in the first two columns, so its first line begins with a
     space for unstaged edits (` M path`) — a full ``.strip()`` would shift that
-    line's fixed-offset path parse. Raise on non-zero exit."""
+    line's fixed-offset path parse. Raise on non-zero exit.
+
+    Callers pass ``--untracked-files=all`` to status: the default collapses a
+    wholly-untracked directory to a single ``?? stack/`` row, which is exactly
+    the wrong resolution for a guard whose job is to name the 12 test modules
+    nobody committed."""
     proc = subprocess.run(
         ["git", *args],
         cwd=str(repo),
@@ -127,12 +145,26 @@ class StaleIntake:
 
 
 @dataclass
+class UncommittedSource:
+    """Uncommitted work under the source areas, split by fragility: an untracked
+    file has no other copy anywhere, a modified one at least has its committed
+    ancestor."""
+    modified: list[str] = field(default_factory=list)
+    untracked: list[str] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return len(self.modified) + len(self.untracked)
+
+
+@dataclass
 class Report:
     base: str
     base_sha: str
     current_branch: str
     unmerged: list[UnmergedBranch] = field(default_factory=list)
     uncommitted_hub: list[str] = field(default_factory=list)
+    uncommitted_source: UncommittedSource = field(default_factory=UncommittedSource)
     stale_intakes: list[StaleIntake] = field(default_factory=list)
 
     def to_json(self) -> str:
@@ -168,21 +200,44 @@ def check_unmerged_branches(repo: Path, base: str) -> list[UnmergedBranch]:
     return out
 
 
-def check_uncommitted_hub(repo: Path, prefixes: tuple[str, ...] = HUB_PREFIXES) -> list[str]:
-    """Modified/untracked working-tree paths under the hub areas (porcelain v1)."""
-    status = git(repo, "status", "--porcelain")
-    hits: list[str] = []
-    for ln in status.splitlines():
+def _status_rows(repo: Path) -> list[tuple[str, str]]:
+    """``git status --porcelain`` as (xy, path) rows, paths de-quoted and renames
+    reduced to their destination. ``xy`` is the two-column status code (``??`` =
+    untracked)."""
+    rows: list[tuple[str, str]] = []
+    for ln in git(repo, "status", "--porcelain", "--untracked-files=all").splitlines():
         if not ln:
             continue
-        path = ln[3:].strip()
+        xy, path = ln[:2], ln[3:].strip()
         # rename lines look like "old -> new": keep the destination
         if " -> " in path:
             path = path.split(" -> ", 1)[1]
-        path = path.strip('"')
-        if any(path.startswith(p) for p in prefixes):
-            hits.append(path)
-    return sorted(set(hits))
+        rows.append((xy, path.strip('"')))
+    return rows
+
+
+def check_uncommitted_hub(repo: Path, prefixes: tuple[str, ...] = HUB_PREFIXES) -> list[str]:
+    """Modified/untracked working-tree paths under the hub areas (porcelain v1)."""
+    return sorted({p for _, p in _status_rows(repo)
+                   if any(p.startswith(pre) for pre in prefixes)})
+
+
+def check_uncommitted_source(repo: Path,
+                             prefixes: tuple[str, ...] = SOURCE_PREFIXES,
+                             ) -> UncommittedSource:
+    """Uncommitted work under the source areas, split tracked-vs-untracked.
+
+    Untracked files are listed first-class because they are the unrecoverable
+    half: the 2026-07-20 Drive tree held 12 untracked test modules and 9
+    untracked ``tanitad/lake/*`` modules that no commit or branch contained."""
+    out = UncommittedSource()
+    for xy, path in _status_rows(repo):
+        if not any(path.startswith(pre) for pre in prefixes):
+            continue
+        (out.untracked if xy == "??" else out.modified).append(path)
+    out.modified = sorted(set(out.modified))
+    out.untracked = sorted(set(out.untracked))
+    return out
 
 
 def _slug_date(slug: str) -> date | None:
@@ -254,6 +309,7 @@ def build_report(repo: Path, base: str, now: date, max_intake_age_days: int) -> 
         current_branch=current,
         unmerged=check_unmerged_branches(repo, resolved),
         uncommitted_hub=check_uncommitted_hub(repo),
+        uncommitted_source=check_uncommitted_source(repo),
         stale_intakes=check_stale_intakes(repo, now, max_intake_age_days),
     )
 
@@ -279,6 +335,24 @@ def render(report: Report, strict: bool) -> tuple[str, int]:
             lines.append(f"    {p}")
     else:
         lines.append("[ok]    hub working tree clean (no stranded deliverables)")
+
+    # (b2) uncommitted source -- WARN (block only in --strict)
+    src = report.uncommitted_source
+    if src.total:
+        if strict:
+            blocking = True
+        tag = "[BLOCK]" if strict else "[WARN] "
+        lines.append("")
+        lines.append(f"{tag} {src.total} uncommitted source path(s) under "
+                     f"{'/'.join(p.rstrip('/') for p in SOURCE_PREFIXES)}/ -- "
+                     f"{len(src.untracked)} UNTRACKED (no copy anywhere) + "
+                     f"{len(src.modified)} modified:")
+        for p in src.untracked:
+            lines.append(f"    ?? {p}")
+        for p in src.modified:
+            lines.append(f"     M {p}")
+    else:
+        lines.append("[ok]    source working tree clean")
 
     # (a) unmerged agent branches -- WARN (block only in --strict)
     strays = [b for b in report.unmerged if not b.is_current]

@@ -183,3 +183,59 @@ def test_json_mode_emits_and_returns_code(repo, capsys):
 
 def test_not_a_git_repo_returns_3(tmp_path):
     assert sg.main(["--repo", str(tmp_path)]) == 3
+
+
+# --------------------------------------------- (b2) uncommitted source (v2, 2026-07-20)
+#
+# Added after the guard's own live run missed the biggest strand on the fleet: the
+# shared Drive working tree held 40 uncommitted stack/ paths -- 12 untracked test
+# modules (135 tests) and 9 untracked tanitad/lake/* modules -- while the hub check
+# reported the tree "clean". The hub check only ever looked at hub prefixes.
+
+def test_untracked_source_is_reported_separately_from_modified(repo):
+    (repo / "stack" / "tests").mkdir(parents=True)
+    (repo / "stack" / "keep.py").write_text("x = 1\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "seed stack")
+    (repo / "stack" / "keep.py").write_text("x = 2\n", encoding="utf-8")       # modified
+    (repo / "stack" / "tests" / "test_new.py").write_text("", encoding="utf-8")  # untracked
+
+    src = sg.check_uncommitted_source(repo)
+    assert src.untracked == ["stack/tests/test_new.py"]
+    assert src.modified == ["stack/keep.py"]
+    assert src.total == 2
+
+
+def test_uncommitted_source_warns_but_does_not_block(repo):
+    """A mid-work tree is legitimately dirty -- WARN is the honest default; only
+    --strict turns it into a session-end block."""
+    (repo / "stack").mkdir()
+    (repo / "stack" / "new.py").write_text("x = 1\n", encoding="utf-8")
+    assert sg.main(["--repo", str(repo)]) == 0
+    assert sg.main(["--repo", str(repo), "--strict"]) == 1
+
+
+def test_clean_source_tree_reports_nothing(repo):
+    assert sg.check_uncommitted_source(repo).total == 0
+
+
+def test_source_check_ignores_paths_outside_the_source_prefixes(repo):
+    (repo / "scratch.txt").write_text("noise\n", encoding="utf-8")
+    assert sg.check_uncommitted_source(repo).total == 0
+
+
+def test_source_rows_survive_quoted_paths_with_spaces(repo):
+    """git quotes paths containing spaces; the destination must still be matched
+    against the prefixes (the repo is full of 'Name With Spaces' dirs)."""
+    (repo / "stack" / "a b").mkdir(parents=True)
+    (repo / "stack" / "a b" / "c.py").write_text("x\n", encoding="utf-8")
+    assert sg.check_uncommitted_source(repo).untracked == ["stack/a b/c.py"]
+
+
+def test_render_lists_the_source_paths_for_the_operator(repo):
+    (repo / "stack").mkdir()
+    (repo / "stack" / "new.py").write_text("x = 1\n", encoding="utf-8")
+    rep = sg.build_report(repo, "HEAD", sg.date.today(), 3)
+    text, code = sg.render(rep, strict=False)
+    assert code == 0
+    assert "?? stack/new.py" in text and "UNTRACKED" in text

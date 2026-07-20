@@ -4,17 +4,72 @@ Cross-cutting scripts every TanitAD session/agent runs. These are **not** MVP mo
 code, so they live at the repo root (not under `stack/`) and are maintained directly
 by the Tools & DevEnv agent — no intake round-trip. Stdlib-only, ASCII-clean stdout
 (the Windows cp1252 console lesson), OS-agnostic (a `.py` core + a `.ps1` Windows
-wrapper; on the pod call the `.py` directly).
+wrapper; on the pod call the `.py` directly). `gpu_tripwire.py` is the one exception
+to stdlib-only — it needs `torch` and the `stack/` package, by definition.
 
 | Tool | What it does | When to run |
 |---|---|---|
-| `session_guard.py` / `.ps1` | D-026 stranded-work guard: **blocks** on uncommitted hub deliverables; **warns** on unmerged `agent/*` branches vs tip and stale INTAKE verdicts. | **Session end**, every agent (protocol G-F). |
+| `ci_gate.py` / `ci.ps1` | One-command test gate: fails on failure, **collection error**, slow test, wall blow-out, a missing/red tripwire node, a **suite below its manifest floor**, a total-collected count under `--min-total`, or a CUDA parity failure. | **Before every commit/push** (protocol G-E). |
+| `gpu_tripwire.py` | CUDA device-parity probes on the real model (encode/imagine CPU-vs-GPU, I2 on device, backward-finite) + the batch-1 encode latency (I8 proxy). | Via `ci_gate --gpu-smoke`, or standalone on any GPU box. |
+| `session_guard.py` / `.ps1` | D-026 stranded-work guard: **blocks** on uncommitted hub deliverables; **warns** on uncommitted `stack/`+`tools/` source, unmerged `agent/*` branches vs tip, and stale INTAKE verdicts. | **Session end**, every agent (protocol G-F). |
+
+Tests: `pytest tools/tests/` — **55 falsifiers, 16.2 s** (2026-07-20). Each drives a
+throwaway git repo or a synthetic pytest project end-to-end; the CUDA-specific ones
+skip loudly on a CPU-only box.
+
+## ci_gate
+
+```bash
+python tools/ci_gate.py --rootdir stack                  # the standard gate
+python tools/ci_gate.py --rootdir stack --gpu-smoke require
+python tools/ci_gate.py --rootdir stack --json gate.json # for the orchestrator
+python tools/ci_gate.py --rootdir stack -- -k comma2k19  # pytest passthrough
+```
+
+Windows: `.\tools\ci.ps1` (activates the off-Drive venv; `-GpuSmoke require`, `-Json`).
+
+- **Exit 0** = GATE PASS. **Exit 1** = one or more gate reasons, all printed.
+  **Exit 3** = pytest could not be launched at all.
+- **Why a suite manifest and not just node tripwires:** a named-node tripwire only
+  guards nodes somebody thought to name. `SUITE_MANIFEST` pins the load-bearing
+  modules (instrument doctrine, calib trio, the three reference arms, eval/metric
+  surfaces) to a collected-count **floor**, so a module that is deleted, renamed, or
+  quietly halved fails the gate. Adding tests is always fine; removing them has to
+  edit that dict on purpose. `--min-total` (default 390) is the same idea for
+  wholesale loss, e.g. a broken `conftest.py` deselecting half the tree.
+- **Budgets** (measured 2026-07-20): full suite **60.2 s / 531 tests** on the Drive
+  tree, **39.3 s / 396 tests** in an off-Drive worktree; tall pole
+  `test_replay_app_test_mode_and_regression_gate` 7.2–7.9 s. Defaults are 15 s
+  per-test / 150 s wall — comfortably inside the 5-minute ceiling, so **no sharding
+  is needed** at current suite size.
+
+## gpu_tripwire
+
+```bash
+PYTHONPATH=stack python tools/gpu_tripwire.py            # human report
+PYTHONPATH=stack python tools/gpu_tripwire.py --json g.json --require-cuda
+```
+
+The `stack/tests` suite is **100 % CPU-only** (`grep -rl cuda stack/tests` returns
+nothing, measured 2026-07-20) while every trainer, eval and deploy tick runs on a
+GPU — so device/dtype/NaN regressions were invisible to CI. Four probes close that:
+
+| Probe | Asserts |
+|---|---|
+| `P1_encode_parity` | `WorldModel.encode` CPU vs CUDA, `max abs dev <= --tol` (1e-3) |
+| `P2_imagine_parity` | operative predictor, every horizon, same tolerance |
+| `P3_i2_on_device` | I2 batch-1 vs batch-B encoder consistency, **run on CUDA** (1e-4) |
+| `P4_backward_finite` | one `loss.backward()` on CUDA; every gradient finite |
+
+Measured on the local RTX 4060 (torch 2.11+cu128, fp32, 2026-07-20): all four pass
+in **1.7 s**, worst deviation **9.5e-07**, batch-1 encode **1.26 ms**. No CUDA
+visible → `--require-cuda` fails, otherwise a loud skip.
 
 ## session_guard
 
 ```bash
 python tools/session_guard.py            # gate the current worktree
-python tools/session_guard.py --strict    # branches + stale INTAKEs also block
+python tools/session_guard.py --strict    # branches, source + stale INTAKEs also block
 python tools/session_guard.py --base origin/main   # tip = a different ref
 python tools/session_guard.py --json      # machine-readable report
 ```
@@ -26,8 +81,13 @@ Windows: `.\tools\session_guard.ps1` (activates the off-Drive venv, same flags).
   Hub/`, `Project Steering/`, `PROJECT_STATE.md`, or `DECISIONS.md`. Commit or discard,
   then re-run until `RESULT: PASS`.
 - **Exit 3** = not a git repo / git unavailable.
+- The **source check** (`stack/`, `tools/`) warns rather than blocks — a mid-work tree
+  is legitimately dirty — and lists untracked files separately, because an untracked
+  module has no copy anywhere. It was added on 2026-07-20 after the shared Drive tree
+  was found holding 40 uncommitted `stack/` paths, 22 of them untracked (12 test
+  modules = 135 tests, 9 `tanitad/lake/*` modules) while the hub check said "clean".
+- Status is read with `--untracked-files=all`: the git default collapses a wholly
+  untracked directory to one `?? stack/` row, which would hide exactly those modules.
 
 The "tip" defaults to `HEAD` (the worktree's current integration point) because
 `origin/main` is intentionally diverged in this repo; pass `--base` to override.
-
-Tests: `pytest tools/tests/` (15 falsifiers, each drives a throwaway git repo).
