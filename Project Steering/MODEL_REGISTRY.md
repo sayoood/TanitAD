@@ -611,8 +611,27 @@ direct-head diffusion arm essentially level with the world-model stack.
 > `Research/2026-07-20-refc-cost-rerank-tier0.md`,
 > `Research/2026-07-20-refc-v12-learned-rescorer.md`.
 
-**Beats CV in all three speed terciles** — low 0.708/0.932 ✓, med 0.586/0.934 ✓, high 0.521/0.647 ✓. By
-curvature: straight 0.523 vs 0.439 ✗, gentle 0.785 vs 1.357 ✓, sharp 0.844 vs 2.376 ✓.
+**Strata — FINAL step 29,999** *(read live from `results/refc-xl-30k.json`; an earlier revision of this
+row printed the ~16 k model column against the FINAL header — the CV baselines were right, the model
+numbers were stale, which understated REF-C everywhere)*:
+
+| stratum | model ADE@2s | CV | n |
+|---|---|---|---|
+| speed **high** | **0.3243** | 0.6468 | 294 |
+| speed med | 0.4989 | 0.9345 | 293 |
+| speed low | 0.5912 | 0.9322 | 294 |
+| curv straight | 0.3865 | 0.4393 | 634 |
+| curv gentle | 0.6751 | 1.3566 | 125 |
+| curv sharp | 0.7040 | 2.3764 | 122 |
+
+**Beats CV in every stratum, including straight** (0.3865 vs 0.4393 — the 16 k row had it LOSING there
+at 0.523 vs 0.439; that ✗ was an artefact of the stale numbers). Overall full-set 0.47144, miss@2m
+0.14188, FDE 1.00614, TMS 0.21351.
+
+> 🔬 **The high-speed win is bigger than previously briefed.** Against flagship v1's 0.5513 in the same
+> stratum, REF-C FINAL scores **0.3243** — not the 0.330-vs-0.551 quoted from the 28 k provisional. This
+> is the stratum flagship is weakest in, and a direct-head diffusion arm beats the world-model stack
+> there by ~41 %.
 Evaluated through `taniteval.refc_eval` — REF-C has its **own** trajectory decoder, no grounded operative
 rollout (`step_readout = None`).
 
