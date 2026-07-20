@@ -19,7 +19,8 @@ never has to know the projection maths)::
         "corpora": [str, ...],
         "arms": [ {name, color, ckpt, ade, fde, latency_p50}, ... ],
         "episodes": [ {idx, corpus_tag, n_steps, per_arm_ade:{name:ade},
-                       worst_step, worst_ade, thumb}, ... ]
+                       worst_step, worst_ade, maneuver_counts:{cls:n}, thumb},
+                      ... ]
       },
       "episodes": [
         { "idx": int, "corpus_tag": str, "steps": [
@@ -29,6 +30,9 @@ never has to know the projection maths)::
               "gt_wp_bev": [[x,y]...],   # ego metres (origin-prefixed): +x fwd,
                                          #   +y left — the BEV master panel maths
               "gt_action": {steer, accel},
+              "maneuver": int | null,    # kinematic maneuver class at this
+                                         #   window (index into meta.maneuver_
+                                         #   classes); null if not computable
               "ego": {speed, yaw_rate},
               "arms": { name: {
                   "wp_img": [[u,v]...] | null,
@@ -46,20 +50,70 @@ Image-plane waypoint projection reuses the replay app's pinhole
 camera model (:func:`~tanitad.replay.rr_log.cam_for_corpus`) so the camera fans
 line up with the rerun viz exactly; BEV coordinates are the engine's ego-frame
 metric waypoints untouched.
+
+Per-window ``maneuver`` labels are the kinematic pseudo-labels of
+``scripts/refb_labels.py`` (:func:`~refb_labels.classify_maneuver` via
+:func:`~refb_labels.maneuver_labels`) — the SAME class each window's REF-B arm
+targets, but computed once here from ground-truth ego poses so the display is
+arm-independent (every bundle gets a maneuver strip, even a main-only run).
+Pass ``ego_poses`` (``{ep_index: poses[T, 4]}``) to enable it; without it the
+``maneuver`` field is ``null`` and the SPA simply hides the maneuver strip.
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
+import sys
 import time
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 
 from tanitad.replay.engine import WAYPOINT_STEPS, TimestepRecord
 from tanitad.replay.rr_log import cam_for_corpus, to_image_plane
+
+
+def _labels_module():
+    """Lazy import of ``scripts/refb_labels.py`` (kinematic maneuver labels).
+
+    ``scripts`` is not a package, so mirror
+    :func:`tanitad.replay.arms._script_module`: try a plain import first (the
+    test suite / a pod put ``scripts`` on the path) and fall back to adding the
+    sibling ``scripts`` dir. Reuses the pinned thresholds rather than
+    re-deriving them, so the display class matches REF-B's target exactly.
+    """
+    try:
+        return importlib.import_module("refb_labels")
+    except ModuleNotFoundError:
+        scripts = Path(__file__).resolve().parents[2] / "scripts"
+        if not (scripts / "refb_labels.py").exists():
+            raise
+        if str(scripts) not in sys.path:
+            sys.path.insert(0, str(scripts))
+        return importlib.import_module("refb_labels")
+
+
+def _episode_maneuvers(poses: Any, labels_mod) -> Any | None:
+    """Per-timestep maneuver class ids for one episode's poses ``[T, 4]``.
+
+    Returns the ``refb_labels.maneuver_labels`` array (length ``T - horizon``;
+    entry ``t`` is the class comparing pose ``t`` with pose ``t + horizon``) or
+    ``None`` when the poses are too short / malformed to label — a display aid
+    degrades to "no strip", it never crashes the export.
+    """
+    try:
+        import torch
+        p = poses if isinstance(poses, torch.Tensor) else torch.as_tensor(
+            np.asarray(poses), dtype=torch.float64)
+        H = int(labels_mod.LABEL_HORIZON)
+        if p.ndim != 2 or p.shape[1] != 4 or p.shape[0] <= H:
+            return None
+        return labels_mod.maneuver_labels(p, H)
+    except Exception:
+        return None
 
 # TanitResim design-language palette (branded, distinct from the rerun
 # ARM_COLORS in tanitad.replay.arms, which stays the canonical rerun palette).
@@ -125,6 +179,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                   corpora: Sequence[str] | None = None,
                   arm_ckpts: dict[str, str] | None = None,
                   maneuver_classes: Sequence[str] | None = None,
+                  ego_poses: Mapping[int, Any] | None = None,
                   jpeg_quality: int = 80, max_w: int = 640,
                   arm_gates: dict | None = None,
                   gates_summary: dict | None = None) -> dict:
@@ -142,10 +197,24 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     ``compare_arms.py`` / ``watch_gates.py`` harness uses, so the UI gate panel
     reconciles with a standalone gate run. Both optional (overlays-only bundle
     when omitted).
+
+    ``ego_poses`` maps ``ep_index`` -> that episode's ground-truth poses
+    ``[T, 4]`` (x, y, yaw, v). When given, each step gets a kinematic
+    ``maneuver`` class id (``scripts/refb_labels``) indexed by the record's
+    anchor ``t``; omit it to skip maneuver labelling.
     """
     out = Path(out_dir)
     frames_dir = out / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
+
+    # Per-episode kinematic maneuver labels (computed once, indexed by anchor
+    # t). Only when ego_poses is supplied — otherwise every step's maneuver is
+    # null and the SPA hides the strip.
+    labels_mod = _labels_module() if ego_poses else None
+    ep_man_labels: dict[int, Any] = {}
+    n_man_classes = 0
+    if maneuver_classes:
+        n_man_classes = len(list(maneuver_classes))
 
     arm_names: list[str] = []
     corpora_seen: list[str] = []
@@ -158,6 +227,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     arm_fde: dict[str, list[float]] = {}
     arm_lat: dict[str, list[float]] = {}
     ep_arm_ade: dict[int, dict[str, list[float]]] = {}
+    ep_man_counts: dict[int, dict[int, int]] = {}   # ep -> {class id: count}
 
     n_records = 0
     for rec in records:
@@ -173,6 +243,10 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             ep_corpus[ep] = rec.corpus
             ep_counter[ep] = 0
             ep_arm_ade[ep] = {}
+            ep_man_counts[ep] = {}
+            if labels_mod is not None:
+                ep_man_labels[ep] = _episode_maneuvers(
+                    ego_poses.get(ep), labels_mod)
         if rec.corpus not in corpora_seen:
             corpora_seen.append(rec.corpus)
 
@@ -183,6 +257,16 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                               max_w, jpeg_quality)
         cam = cam_for_corpus(rec.corpus)   # per-corpus overlay geometry (D-016)
 
+        # Kinematic maneuver at this window's anchor (t = record's anchor
+        # frame). None when no ego_poses / anchor beyond the labelable span.
+        maneuver: int | None = None
+        lab = ep_man_labels.get(ep)
+        if lab is not None and 0 <= int(rec.t) < int(lab.shape[0]):
+            maneuver = int(lab[int(rec.t)])
+            if 0 <= maneuver < n_man_classes or n_man_classes == 0:
+                ep_man_counts[ep][maneuver] = \
+                    ep_man_counts[ep].get(maneuver, 0) + 1
+
         gt_wp = np.asarray(rec.gt_waypoints, dtype=np.float64)
         gt_path = np.vstack([[0.0, 0.0], gt_wp])
         step_dict: dict = {
@@ -192,6 +276,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             "gt_wp_bev": _round_pts(gt_path, 3),
             "gt_action": {"steer": round(float(rec.gt_action[0]), 4),
                           "accel": round(float(rec.gt_action[1]), 4)},
+            "maneuver": maneuver,
             "ego": {"speed": round(float(rec.speed), 4),
                     "yaw_rate": round(float(rec.yaw_rate), 4)},
             "arms": {},
@@ -253,6 +338,8 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     if n_records == 0:
         raise ValueError("export_bundle got zero records — nothing to export")
 
+    man_names = list(maneuver_classes) if maneuver_classes else None
+
     # -- per-episode summaries + worst step ---------------------------------
     ep_meta: list[dict] = []
     episodes_out: list[dict] = []
@@ -263,10 +350,18 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
         worst_ade = worsts[worst_j] if worsts else 0.0
         per_arm = {n: round(float(np.mean(v)), 4)
                    for n, v in ep_arm_ade[ep].items() if v}
+        # Maneuver histogram keyed by class name (or "m<id>") for the card
+        # ribbon, in canonical class order so colors line up with the strip.
+        man_counts = ep_man_counts.get(ep, {})
+        maneuver_counts = {
+            (man_names[c] if man_names and 0 <= c < len(man_names)
+             else f"m{c}"): man_counts[c]
+            for c in sorted(man_counts)}
         ep_meta.append({
             "idx": ep, "corpus_tag": ep_corpus[ep], "n_steps": len(steps),
             "per_arm_ade": per_arm, "worst_step": worst_j,
             "worst_ade": round(float(worst_ade), 4),
+            "maneuver_counts": maneuver_counts,
             "thumb": f"ep{ep}_step0.jpg",
         })
         episodes_out.append({"idx": ep, "corpus_tag": ep_corpus[ep],

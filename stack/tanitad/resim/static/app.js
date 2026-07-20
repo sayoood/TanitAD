@@ -2,14 +2,35 @@
  *
  * Two views: (1) HOME = scenario cards, one per episode of the selected
  * session; (2) SESSION = one column per arm (camera fan + steer/accel charts
- * + head readouts) over a shared BEV + error-strip master panel with a
- * scrubber. Everything is legended. URL hash carries session/episode/step so
- * a view is shareable: #/s/<id>/e/<ep>/t/<step>. */
+ * + head readouts) over a shared master panel: BEV, error strip, a MANEUVER
+ * band (per-window kinematic class: badge + color timeline), an ACTION panel
+ * (executed GT steer/accel: gauges + synced time-series) and a scrubber.
+ * Everything is legended. URL hash carries session/episode/step so a view is
+ * shareable: #/s/<id>/e/<ep>/t/<step>. */
 (function () {
   "use strict";
 
   var GT = "#eef2f7";
   var EGO_DIM = "#63728c";
+
+  // Maneuver-class palette, keyed by canonical refb_labels class name (see
+  // scripts/refb_labels.py MANEUVER_CLASSES). Distinct hues inside the TanitAD
+  // language; an unknown/absent class -> neutral slate.
+  var MAN_COLORS = {
+    lane_keep: "#5b83b0",     // steady slate-blue
+    turn_left: "#22d3ee",     // cyan
+    turn_right: "#e35ce0",    // magenta
+    accelerate: "#63d29a",    // green
+    brake_stop: "#f2765f",    // red-orange
+  };
+  var MAN_NEUTRAL = "#3a4a66";
+  var MAN_LABELS = {          // compact badge labels
+    lane_keep: "LANE KEEP", turn_left: "TURN L", turn_right: "TURN R",
+    accelerate: "ACCEL", brake_stop: "BRAKE / STOP",
+  };
+  // Executed-action signal palette (GT control) — kept clear of arm colors.
+  var ACT_COLORS = { steer: "#9db8ff", accel: "#ffc073" };
+  var ACT_UNITS = { steer: "rad", accel: "m/s²" };
 
   var S = {
     sessions: [],        // /api/sessions summaries
@@ -50,6 +71,47 @@
   }
   function curEpisode() { return S.sess.episodes[S.ep]; }
   function curStep() { return curEpisode().steps[S.step]; }
+
+  // ---------- maneuver helpers ------------------------------------------
+  function maneuverClasses() {
+    return (S.sess && S.sess.meta.maneuver_classes) || null;
+  }
+  function maneuverName(id) {
+    if (id == null) return null;
+    var c = maneuverClasses();
+    return (c && c[id] != null) ? c[id] : ("m" + id);
+  }
+  function maneuverColor(id) {
+    if (id == null) return MAN_NEUTRAL;
+    return MAN_COLORS[maneuverName(id)] || MAN_NEUTRAL;
+  }
+  function maneuverLabel(id) {
+    var nm = maneuverName(id);
+    if (nm == null) return "NO DATA";
+    return MAN_LABELS[nm] || nm.replace(/_/g, " ").toUpperCase();
+  }
+  function episodeHasManeuvers() {
+    return curEpisode().steps.some(function (s) { return s.maneuver != null; });
+  }
+  // Dark or light ink for readable text on a solid maneuver-color badge.
+  function contrastInk(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return GT;
+    var n = parseInt(m[1], 16);
+    var lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) +
+      0.114 * (n & 255)) / 255;
+    return lum > 0.55 ? "#0a0f18" : GT;
+  }
+  // A padded value range that always includes zero (signed action signals).
+  function niceRange(vals) {
+    var v = vals.filter(function (x) { return x != null && !isNaN(x); });
+    var lo = v.length ? Math.min.apply(null, v) : -1;
+    var hi = v.length ? Math.max.apply(null, v) : 1;
+    lo = Math.min(lo, 0); hi = Math.max(hi, 0);
+    if (hi === lo) { hi += 1; lo -= 1; }
+    var pad = (hi - lo) * 0.12 || 0.1;
+    return { lo: lo - pad, hi: hi + pad };
+  }
 
   // ---------- routing ---------------------------------------------------
   function readHash() {
@@ -245,6 +307,21 @@
       row.appendChild(el("div", "val", ade == null ? "–" : fmt(ade, 2)));
       body.appendChild(row);
     });
+    // maneuver mix ribbon (episode's kinematic-class distribution)
+    var mc = e.maneuver_counts;
+    if (mc && Object.keys(mc).length) {
+      var total = Object.keys(mc).reduce(function (a, k) { return a + mc[k]; }, 0);
+      body.appendChild(el("div", "man-ribbon-cap", "maneuver mix"));
+      var ribbon = el("div", "man-ribbon");
+      Object.keys(mc).forEach(function (k) {
+        var seg = el("div", "seg");
+        seg.style.width = (total ? mc[k] / total * 100 : 0) + "%";
+        seg.style.background = MAN_COLORS[k] || MAN_NEUTRAL;
+        seg.title = k.replace(/_/g, " ") + ": " + mc[k];
+        ribbon.appendChild(seg);
+      });
+      body.appendChild(ribbon);
+    }
     card.appendChild(body);
     card.onclick = function () {
       location.hash = "#/s/" + encodeURIComponent(S.id) + "/e/" + e.idx + "/t/0";
@@ -458,6 +535,11 @@
     errSide.appendChild(el("div", "err-hint", "Click the strip to seek to a spike."));
     m.appendChild(errSide);
 
+    // maneuver band (only when the episode carries kinematic labels) + the
+    // executed-action panel — both full-width rows below the BEV/error row.
+    if (episodeHasManeuvers()) m.appendChild(buildManeuverBand(dom));
+    m.appendChild(buildActionPanel(dom));
+
     var scr = el("div", "scrubber");
     dom.play = el("button", "playbtn", "▶");
     dom.play.onclick = togglePlay;
@@ -496,6 +578,8 @@
     });
     drawBEV(S.dom.bev, st);
     drawErrorStrip(S.dom.err);
+    drawManeuver(S.dom);
+    drawAction(S.dom);
   }
 
   // ---------- canvas helpers -------------------------------------------
@@ -766,6 +850,193 @@
       var a = steps[S.step].arms[nm];
       if (a && a.ade != null) dot(ctx, [X(S.step), Y(a.ade)], armColor(nm), 2.6);
     });
+  }
+
+  // ---------- maneuver band (badge + per-window timeline strip) --------
+  function buildManeuverBand(dom) {
+    var band = el("div", "man-band");
+    var title = el("div", "panel-title");
+    title.appendChild(el("span", null,
+      "Maneuver — kinematic class (2 s lookahead)"));
+    var lg = el("div", "legend man-legend");
+    (maneuverClasses() || []).forEach(function (nm) {
+      var chip = el("span", "chip");
+      var d = el("span", "dot"); d.style.background = MAN_COLORS[nm] || MAN_NEUTRAL;
+      chip.appendChild(d);
+      chip.appendChild(el("span", null,
+        MAN_LABELS[nm] || nm.replace(/_/g, " ").toUpperCase()));
+      lg.appendChild(chip);
+    });
+    title.appendChild(lg);
+    band.appendChild(title);
+
+    var row = el("div", "man-row");
+    dom.manBadge = el("div", "man-badge");
+    row.appendChild(dom.manBadge);
+    var wrap = el("div", "man-strip-wrap");
+    dom.manStrip = el("canvas");
+    dom.manStrip.onclick = function (ev) {
+      var r = dom.manStrip.getBoundingClientRect();
+      var n = curEpisode().steps.length;
+      seek(clamp(Math.round((ev.clientX - r.left) / r.width * (n - 1)), 0, n - 1));
+    };
+    wrap.appendChild(dom.manStrip);
+    row.appendChild(wrap);
+    band.appendChild(row);
+    band.appendChild(el("div", "err-hint",
+      "Each cell = one window's maneuver; white marker = current. Click to seek."));
+    return band;
+  }
+
+  function drawManeuver(dom) {
+    if (!dom || !dom.manStrip) return;              // hidden when no labels
+    var id = curStep().maneuver;
+    var color = maneuverColor(id);
+    dom.manBadge.textContent = maneuverLabel(id);
+    dom.manBadge.style.background = id == null ? "#1b2740" : color;
+    dom.manBadge.style.color = id == null ? "var(--ink-dim)" : contrastInk(color);
+    dom.manBadge.style.borderColor = id == null ? "var(--line)" : color;
+    drawManeuverStrip(dom.manStrip);
+  }
+
+  function drawManeuverStrip(canvas) {
+    var steps = curEpisode().steps;
+    var f = fit(canvas, 30), ctx = f.ctx;
+    var n = steps.length, bw = f.w / n;
+    for (var i = 0; i < n; i++) {
+      var mid = steps[i].maneuver;
+      ctx.fillStyle = mid == null ? MAN_NEUTRAL : maneuverColor(mid);
+      ctx.fillRect(i * bw, 0, Math.ceil(bw) + 0.6, f.h);
+    }
+    // current-step marker: dark halo + white line + top caret.
+    var cx = (S.step + 0.5) * bw;
+    ctx.strokeStyle = "#0a0f18"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, f.h); ctx.stroke();
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, f.h); ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.moveTo(cx - 4, 0); ctx.lineTo(cx + 4, 0);
+    ctx.lineTo(cx, 5); ctx.closePath(); ctx.fill();
+  }
+
+  // ---------- action panel (executed GT steer/accel) -------------------
+  function buildActionPanel(dom) {
+    var panel = el("div", "act-panel");
+    var title = el("div", "panel-title");
+    title.appendChild(el("span", null,
+      "Action — executed control (ground truth)"));
+    var lg = el("div", "legend");
+    ["steer", "accel"].forEach(function (k) {
+      var chip = el("span", "chip");
+      var d = el("span", "dot"); d.style.background = ACT_COLORS[k];
+      chip.appendChild(d);
+      chip.appendChild(el("span", null, k + " (" + ACT_UNITS[k] + ")"));
+      lg.appendChild(chip);
+    });
+    title.appendChild(lg);
+    panel.appendChild(title);
+
+    var grid = el("div", "act-grid");
+    dom.actGauge = {}; dom.actSeries = {};
+    ["steer", "accel"].forEach(function (kind) {
+      var rowEl = el("div", "act-row");
+      var gcell = el("div", "act-gauge");
+      var lab = el("div", "glabel");
+      lab.appendChild(el("span", "gname", kind));
+      var gval = el("span", "gval", "–");
+      gval.style.color = ACT_COLORS[kind];
+      lab.appendChild(gval);
+      gcell.appendChild(lab);
+      var gbar = el("canvas", "gbar"); gcell.appendChild(gbar);
+      gcell.appendChild(el("div", "gunit", ACT_UNITS[kind]));
+      rowEl.appendChild(gcell);
+      var scell = el("div", "act-series-wrap");
+      var series = el("canvas"); scell.appendChild(series);
+      rowEl.appendChild(scell);
+      grid.appendChild(rowEl);
+      dom.actGauge[kind] = { bar: gbar, val: gval };
+      dom.actSeries[kind] = series;
+    });
+    panel.appendChild(grid);
+    return panel;
+  }
+
+  function drawAction(dom) {
+    if (!dom || !dom.actSeries) return;
+    var steps = curEpisode().steps;
+    ["steer", "accel"].forEach(function (kind) {
+      var vals = steps.map(function (s) {
+        return s.gt_action ? s.gt_action[kind] : null;
+      });
+      var rng = niceRange(vals);
+      var cur = vals[S.step];
+      var g = dom.actGauge[kind];
+      g.val.textContent = (cur == null || isNaN(cur)) ? "–"
+        : Number(cur).toFixed(kind === "steer" ? 3 : 2);
+      drawGauge(g.bar, cur, rng, ACT_COLORS[kind]);
+      drawActionSeries(dom.actSeries[kind], vals, rng, ACT_COLORS[kind]);
+    });
+  }
+
+  // Compact signed bar gauge: track, zero tick, colored bar from zero to the
+  // current value, and a knob — a quick sign/magnitude read of the control.
+  function drawGauge(canvas, value, rng, color) {
+    var f = fit(canvas, 26), ctx = f.ctx;
+    var mL = 7, mR = 7, pw = f.w - mL - mR, cy = f.h / 2;
+    function X(v) { return mL + (v - rng.lo) / (rng.hi - rng.lo) * pw; }
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#ffffff14"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(mL, cy); ctx.lineTo(mL + pw, cy); ctx.stroke();
+    var zx = X(0);
+    ctx.strokeStyle = "#ffffff40"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(zx, cy - 9); ctx.lineTo(zx, cy + 9); ctx.stroke();
+    if (value != null && !isNaN(value)) {
+      ctx.strokeStyle = color; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(zx, cy); ctx.lineTo(X(value), cy); ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(X(value), cy, 4.5, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  // Executed-action time-series over the episode: zero baseline + y labels,
+  // a soft area fill, the GT line, a current-step marker and value dot.
+  function drawActionSeries(canvas, vals, rng, color) {
+    var f = fit(canvas, 66), ctx = f.ctx;
+    var mL = 32, mR = 6, mT = 6, mB = 4;
+    var pw = f.w - mL - mR, ph = f.h - mT - mB;
+    var n = vals.length;
+    function X(i) { return mL + (n <= 1 ? 0 : i / (n - 1) * pw); }
+    function Y(v) {
+      return mT + (rng.hi === rng.lo ? ph / 2
+        : (rng.hi - v) / (rng.hi - rng.lo) * ph);
+    }
+    ctx.strokeStyle = "#ffffff20"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(mL, Y(0)); ctx.lineTo(mL + pw, Y(0)); ctx.stroke();
+    ctx.fillStyle = "#63728c"; ctx.font = "8.5px monospace";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.fillText("0", mL - 4, Y(0));
+    ctx.textBaseline = "top"; ctx.fillText(rng.hi.toFixed(2), mL - 4, mT);
+    ctx.textBaseline = "bottom"; ctx.fillText(rng.lo.toFixed(2), mL - 4, mT + ph);
+    // current-step marker
+    ctx.strokeStyle = "#ffffff30"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(S.step), mT); ctx.lineTo(X(S.step), mT + ph);
+    ctx.stroke();
+    var pts = vals.map(function (v, i) {
+      return (v == null || isNaN(v)) ? null : [X(i), Y(v)];
+    }).filter(Boolean);
+    if (pts.length > 1) {
+      ctx.save();
+      var grad = ctx.createLinearGradient(0, mT, 0, mT + ph);
+      grad.addColorStop(0, color + "55"); grad.addColorStop(1, color + "08");
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.moveTo(pts[0][0], Y(0));
+      pts.forEach(function (p) { ctx.lineTo(p[0], p[1]); });
+      ctx.lineTo(pts[pts.length - 1][0], Y(0)); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    polyline(ctx, pts, color, 1.8, false);
+    var cv = vals[S.step];
+    if (cv != null && !isNaN(cv)) dot(ctx, [X(S.step), Y(cv)], color, 2.8);
   }
 
   // ---------- head readouts --------------------------------------------

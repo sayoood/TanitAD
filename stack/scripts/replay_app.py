@@ -172,6 +172,12 @@ def _run_export(args, engine, arms, fit_reps, replay_reps, corpora, out) -> int:
     except Exception:                                  # refb optional at export
         maneuver_classes = None
 
+    # Ground-truth ego poses per episode -> arm-independent kinematic maneuver
+    # labels in the bundle (the engine iterates replay_reps in order, so a
+    # record's ep_index indexes this list). Every bundle gets a maneuver strip,
+    # even a main-only run with no REF-B maneuver head.
+    ego_poses = {i: rep.episode.poses for i, rep in enumerate(replay_reps)}
+
     with strict_numerics():
         engine.prepare(fit_reps)
         for arm in arms:
@@ -189,6 +195,7 @@ def _run_export(args, engine, arms, fit_reps, replay_reps, corpora, out) -> int:
             corpora=corpora,
             arm_ckpts={a.name: getattr(a, "ckpt", "") for a in arms},
             maneuver_classes=maneuver_classes,
+            ego_poses=ego_poses,
             jpeg_quality=args.jpeg_quality,
             arm_gates=(gate_blocks["arms"] if gate_blocks else None),
             gates_summary=({k: gate_blocks[k] for k in

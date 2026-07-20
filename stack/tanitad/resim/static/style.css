@@ -230,6 +230,45 @@ button.primary { background: linear-gradient(180deg, #f5b301, #d99a00); color: #
 .scrubber .playbtn { width: 40px; text-align: center; font-size: 15px; }
 .err-hint { font-size: 10.5px; color: var(--ink-faint); margin-top: 4px; }
 
+/* ---------- maneuver band (master, full width) ---------- */
+.man-band { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.man-band .man-legend { margin-left: auto; gap: 5px 12px; }
+.man-row { display: flex; align-items: stretch; gap: 12px; }
+.man-badge {
+  flex: 0 0 168px; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-weight: 800; font-size: 15px; letter-spacing: .6px;
+  border-radius: 10px; border: 1px solid var(--line); background: #1b2740;
+  padding: 8px 10px; box-shadow: 0 0 0 1px #0006 inset;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.man-strip-wrap { flex: 1 1 auto; display: flex; align-items: center; }
+.man-strip-wrap canvas { border-radius: 6px; }
+
+/* ---------- executed-action panel (master, full width) ---------- */
+.act-panel { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.act-grid { display: grid; gap: 12px; }
+.act-row { display: grid; grid-template-columns: 168px 1fr; gap: 12px; align-items: center; }
+.act-gauge {
+  background: #0e162288; border: 1px solid var(--line-soft); border-radius: 9px;
+  padding: 6px 9px 7px;
+}
+.act-gauge .glabel { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.act-gauge .gname { font-size: 11px; color: var(--ink-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.act-gauge .gval { font-size: 17px; font-weight: 700; font-family: var(--mono); }
+.act-gauge .gbar { border: 0; background: transparent; border-radius: 0; margin: 2px 0 0; }
+.act-gauge .gunit { font-size: 9.5px; color: var(--ink-faint); font-family: var(--mono); margin-top: 1px; }
+.act-series-wrap canvas { border-radius: 8px; }
+
+/* ---------- maneuver mix ribbon (home cards) ---------- */
+.man-ribbon-cap { font-size: 9.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .6px; margin: 9px 0 3px; }
+.man-ribbon { display: flex; height: 8px; border-radius: 5px; overflow: hidden; background: #0e162299; }
+.man-ribbon .seg { height: 100%; min-width: 1px; }
+
 @media (max-width: 960px) {
   .master { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .man-row { flex-direction: column; }
+  .man-badge { flex-basis: auto; }
+  .act-row { grid-template-columns: 1fr; }
 }

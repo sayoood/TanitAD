@@ -198,6 +198,68 @@ def test_worst_step_tracks_largest_error(tmp_path):
         assert em["worst_step"] == em["n_steps"] - 1
 
 
+# ---------- (h) kinematic maneuver labels from ego poses ----------------------
+# The bundle carries a per-window maneuver class (scripts/refb_labels) so the
+# SPA can draw the maneuver badge + timeline strip. Computed from GROUND-TRUTH
+# ego poses at export time (arm-independent), null when no poses are supplied.
+
+def _poses(T: int, yaw_rate: float = 0.0, v: float = 8.0) -> np.ndarray:
+    """Synthetic ego poses [T, 4] = (x, y, yaw, v). Only yaw (col 2) and v
+    (col 3) drive the maneuver class; positions are left at origin."""
+    yaw = yaw_rate * 0.1 * np.arange(T)          # dt = 0.1 s (10 Hz contract)
+    return np.stack([np.zeros(T), np.zeros(T), yaw, np.full(T, v)],
+                    axis=1).astype(np.float64)
+
+
+def test_export_maneuvers_from_ego_poses(tmp_path):
+    import refb_labels as rl
+
+    # ep0 yaws +0.4 rad over the 2 s horizon (> 0.15) -> turn_left throughout;
+    # ep1 drives straight at constant speed -> lane_keep throughout. _records()
+    # anchors both episodes' 5 steps at t = 3..7.
+    ego_poses = {0: _poses(40, yaw_rate=0.2), 1: _poses(40, yaw_rate=0.0)}
+    session = export_bundle(
+        _records(), tmp_path / "man", "Maneuver Session",
+        corpora=["toy-val"], maneuver_classes=MANEUVERS, ego_poses=ego_poses)
+
+    assert list(session["meta"]["maneuver_classes"]) == list(MANEUVERS)
+    ep0, ep1 = session["episodes"]
+    assert [s["maneuver"] for s in ep0["steps"]] == [rl.TURN_LEFT] * 5
+    assert [s["maneuver"] for s in ep1["steps"]] == [rl.LANE_KEEP] * 5
+
+    # Exact match to refb_labels.maneuver_labels indexed by the anchor t (=3+j)
+    # — the SAME kinematic label REF-B targets, computed once for display.
+    import torch
+    labs = rl.maneuver_labels(torch.as_tensor(ego_poses[0]), rl.LABEL_HORIZON)
+    for j, s in enumerate(ep0["steps"]):
+        assert s["maneuver"] == int(labs[3 + j])
+
+    # Per-episode histogram (name-keyed, canonical order) drives the home-card
+    # maneuver ribbon.
+    m0, m1 = session["meta"]["episodes"]
+    assert m0["maneuver_counts"] == {"turn_left": 5}
+    assert m1["maneuver_counts"] == {"lane_keep": 5}
+
+
+def test_export_maneuver_null_without_poses(tmp_path):
+    # No ego_poses -> maneuver stays null and the strip is hidden by the SPA.
+    _, session = _build(tmp_path)
+    for ep in session["episodes"]:
+        assert all(s["maneuver"] is None for s in ep["steps"])
+    for em in session["meta"]["episodes"]:
+        assert em["maneuver_counts"] == {}
+
+
+def test_export_maneuver_null_when_poses_too_short(tmp_path):
+    # Poses shorter than the label horizon cannot be labelled -> null, no crash.
+    ego_poses = {0: _poses(10), 1: _poses(10)}       # T=10 <= horizon (20)
+    session = export_bundle(
+        _records(), tmp_path / "short", "x",
+        maneuver_classes=MANEUVERS, ego_poses=ego_poses)
+    for ep in session["episodes"]:
+        assert all(s["maneuver"] is None for s in ep["steps"])
+
+
 # ---------- (b) portability ---------------------------------------------------
 
 def _walk_strings(obj):
