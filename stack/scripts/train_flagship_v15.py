@@ -152,7 +152,7 @@ class V15Dataset(Dataset):
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def evaluate(head, predictor, ds_val, probes, cfg, device, stride=8,
-             batch=64, episodes=40, steps=None):
+             batch=64, episodes=40, steps=None, amp=True):
     """ADE/FDE/miss at the TanitEval waypoints over the first ``episodes`` val
     episodes with stride 8 — the same windows ``taniteval`` scores."""
     head.eval()
@@ -169,12 +169,13 @@ def evaluate(head, predictor, ds_val, probes, cfg, device, stride=8,
         rt = torch.stack([x["route"] for x in items]).to(device)
         rg = torch.stack([x["route_graded"] for x in items]).to(device)
         vs = torch.stack([x["vt_speed"] for x in items]).to(device)
-        imag = None
-        if cfg.cond_imagination:
-            imag = imagine_probes(predictor, st, ac, probes, cfg.imag_read,
-                                  v0 / SPEED_SCALE)
-        out = head(st, v0, imagined=imag, vt_band=vb, route=rt,
-                   route_graded=rg, vt_speed=vs, steps=steps)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp):
+            imag = None
+            if cfg.cond_imagination:
+                imag = imagine_probes(predictor, st, ac, probes, cfg.imag_read,
+                                      v0 / SPEED_SCALE)
+            out = head(st, v0, imagined=imag, vt_band=vb, route=rt,
+                       route_graded=rg, vt_speed=vs, steps=steps)
         preds.append(out["traj"].float().cpu())
         fans.append(out["anchor_traj"].float().cpu())
         gts.append(torch.stack([x["traj_tgt"] for x in items]))
@@ -239,10 +240,13 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--no-amp", action="store_true",
+                    help="disable bf16 autocast (2.5x slower; fp32 reference)")
     a = ap.parse_args(argv)
 
     torch.manual_seed(a.seed)
     dev = a.device
+    amp = (not a.no_amp) and dev == "cuda"
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -289,6 +293,7 @@ def main(argv=None):
         if isinstance(prb, dict) else {},
         "param_breakdown": pb,
         "label_set": a.label_set, "label_stats_train": ds.label_stats,
+        "amp_bf16": amp,
         "optimizer": {"kind": "AdamW", "lr": a.lr, "wd": 0.01,
                       "warmup": a.warmup, "schedule": "cosine"},
         "loss_weights": {"traj": 1.0, "anchor_cls": 1.0, "refined_cls": 1.0},
@@ -327,20 +332,21 @@ def main(argv=None):
         vs = b["vt_speed"].to(dev, non_blocking=True)
         tgt = b["traj_tgt"].to(dev, non_blocking=True)
 
-        imag = None
-        if cfg.cond_imagination:
-            imag = imagine_probes(predictor, st, ac, probes, cfg.imag_read,
-                                  v0 / SPEED_SCALE)
-        o = head(st, v0, imagined=imag, vt_band=vb, route=rt, route_graded=rg,
-                 vt_speed=vs)
-        L = v15_losses(o, anchors_d, tgt)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp):
+            imag = None
+            if cfg.cond_imagination:
+                imag = imagine_probes(predictor, st, ac, probes, cfg.imag_read,
+                                      v0 / SPEED_SCALE)
+            o = head(st, v0, imagined=imag, vt_band=vb, route=rt,
+                     route_graded=rg, vt_speed=vs)
+            L = v15_losses(o, anchors_d, tgt)
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = float(torch.nn.utils.clip_grad_norm_(head.parameters(), 1.0))
         opt.step()
 
         if step % a.log_every == 0 or step == a.steps - 1:
-            row = {"step": step, "lr": round(lr, 7),
+            row = {"step": step, "lr": round(lr, 7), "amp": amp,
                    "loss": round(float(L["loss"]), 5),
                    "traj": round(float(L["traj"]), 5),
                    "cls": round(float(L["cls"]), 5),
@@ -359,7 +365,7 @@ def main(argv=None):
             log_f.write(json.dumps(row) + "\n"); log_f.flush()
 
         if step > 0 and step % a.eval_every == 0:
-            ev = evaluate(head, predictor, ds_val, probes, cfg, dev)
+            ev = evaluate(head, predictor, ds_val, probes, cfg, dev, amp=amp)
             ev.pop("_err"); ev.pop("_eid")
             row = {"step": step, "val": {k: round(v, 5) if isinstance(v, float)
                                          else v for k, v in ev.items()}}
@@ -382,7 +388,7 @@ def main(argv=None):
     torch.save({"head": head.state_dict(), "opt": opt.state_dict(),
                 "step": step - 1, "cfg": dataclasses.asdict(cfg)}, tmp)
     tmp.replace(ckpt_p)
-    ev = evaluate(head, predictor, ds_val, probes, cfg, dev)
+    ev = evaluate(head, predictor, ds_val, probes, cfg, dev, amp=amp)
     ev.pop("_err"); ev.pop("_eid")
     (out / "metrics.json").write_text(json.dumps(
         {"final_step": step - 1, "val": ev, "best_val_ade2s": best,

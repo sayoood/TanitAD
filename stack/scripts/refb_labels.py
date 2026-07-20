@@ -588,7 +588,15 @@ def route_from_future_v21(poses: Tensor, t: int,
                           horizon_steps: int = NAV_HORIZON_STEPS,
                           min_arc_m: float = MIN_ARC_ROUTE_M,
                           net_dyaw_turn: float = NET_DYAW_TURN_RAD,
-                          use_net_dyaw: bool = True) -> dict:
+                          # SAYED'S RULING 2026-07-20: a wide sweep is ROAD
+                          # FOLLOWING, not a route event — v2's original
+                          # semantics. The independent VLM pass agreed with v2
+                          # on the contested ep_00069 479 m case. The rule stays
+                          # implemented and switchable (pass True to recover it)
+                          # but it is NOT the default: `strategic route` means
+                          # driver intent at junction scale, not "where the road
+                          # bends over the next 20 s".
+                          use_net_dyaw: bool = False) -> dict:
     """v2.1 route derivation at ``t`` — adaptive-horizon, never-straight-by-
     default. Drop-in shape-compatible with :func:`route_from_future` plus new
     keys. Returns:

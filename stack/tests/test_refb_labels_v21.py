@@ -159,17 +159,37 @@ def test_route_target_v21_returns_target_and_mask_together():
 
 # ---------- (D) D3 net_dyaw in the decision ---------------------------------
 
-def test_wide_radius_drift_is_a_turn_under_v21():
+def test_wide_radius_drift_is_a_turn_when_the_net_heading_rule_is_ENABLED():
+    # The rule is OPT-IN since Sayed's 2026-07-20 ruling (see the default test
+    # below) — but it must keep working, because it is the switch we flip if we
+    # ever redefine `strategic route` as "where the road goes" rather than
+    # "driver intent at a junction".
     drift = _wide_drift()                               # R=479 m, 48 deg net
     r2 = R.route_from_future(drift, 0)
     assert r2["route"] == R.ROUTE_STRAIGHT and r2["valid"]      # v2: the bug
-    r = R.route_from_future_v21(drift, 0)
+    r = R.route_from_future_v21(drift, 0, use_net_dyaw=True)
     assert r["route"] == R.ROUTE_LEFT and r["valid"]
     assert r["reason"] == "net_heading"
     assert math.degrees(abs(r["net_dyaw"])) > 45.0
     assert r["peak_kappa"] < R.CURV_ROAD_PER_M          # genuinely gentle radius
-    right = R.route_from_future_v21(_poses(251, v0=16.0, yaw_rate=-0.0335), 0)
+    right = R.route_from_future_v21(_poses(251, v0=16.0, yaw_rate=-0.0335), 0,
+                                    use_net_dyaw=True)
     assert right["route"] == R.ROUTE_RIGHT
+
+
+def test_DEFAULT_is_v2_road_following_semantics():
+    """Pins Sayed's 2026-07-20 ruling: a wide sweep is ROAD FOLLOWING.
+
+    `strategic route` means driver intent at junction scale, not "where the road
+    bends over the next 20 s". The independent VLM Pass A agreed with v2 on this
+    exact 479 m case. If someone flips the default back, this test fails loudly.
+    """
+    drift = _wide_drift()                               # R=479 m, 48 deg net
+    r = R.route_from_future_v21(drift, 0)               # NO explicit flag
+    assert r["route"] == R.ROUTE_STRAIGHT
+    assert r["reason"] == "road_following"
+    # the graded target still carries the sweep, so nothing is lost downstream
+    assert abs(r["mean_curv"]) > 0.0
 
 
 def test_net_heading_rule_is_switchable_back_to_v2_semantics():
@@ -257,10 +277,25 @@ def test_transience_gate_only_applies_when_measurable():
 
 
 def test_direction_robust_to_yaw_wrap_over_180_degrees():
+    """The v2 sign-flip regression: net_dyaw must ACCUMULATE, not wrap.
+
+    v2 took the endpoint difference, so a >180 deg loop folded to the opposite
+    sign and roundabouts were labelled backwards. Asserted on net_dyaw directly
+    so it holds regardless of which decision rule is in force, then on the route
+    via the rule that actually consumes net_dyaw.
+    """
     loop_r = _poses(400, v0=8.0, yaw_rate=-8.0 / 20.0)      # R=20 m roundabout
-    assert R.route_from_future_v21(loop_r, 0)["route"] == R.ROUTE_RIGHT
     loop_l = _poses(400, v0=8.0, yaw_rate=8.0 / 20.0)
-    assert R.route_from_future_v21(loop_l, 0)["route"] == R.ROUTE_LEFT
+    # the raw signal: cumulative, unwrapped, correctly signed, |dyaw| >> 180 deg
+    nr = R.route_from_future_v21(loop_r, 0)["net_dyaw"]
+    nl = R.route_from_future_v21(loop_l, 0)["net_dyaw"]
+    assert nr < 0 and nl > 0
+    assert math.degrees(abs(nr)) > 180.0 and math.degrees(abs(nl)) > 180.0
+    # and the direction the consuming rule derives from it
+    assert R.route_from_future_v21(
+        loop_r, 0, use_net_dyaw=True)["route"] == R.ROUTE_RIGHT
+    assert R.route_from_future_v21(
+        loop_l, 0, use_net_dyaw=True)["route"] == R.ROUTE_LEFT
 
 
 def test_arc_concentration_separates_junction_from_sustained_sweep():

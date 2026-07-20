@@ -293,7 +293,14 @@ def build_labels(args):
         br = np.array([band_ix(x) for x in vtr])                   # always a band
         r21, rok, rgr, rleg, reasons = [], [], [], [], {}
         for l in last.tolist():
-            rr = refb_labels.route_from_future_v21(po, int(l))
+            # v2.1 EXPLICITLY (not config.v2_labels, which still selects v2).
+            # use_net_dyaw selects the v2.1 rule "a >=45 deg net heading change
+            # is a route event even at road-following radius" over v2's "a wide
+            # sweep is road-following". Sayed has not ruled between them, so the
+            # branch is passed explicitly and recorded in the artifact rather
+            # than inherited as a silent default.
+            rr = refb_labels.route_from_future_v21(
+                po, int(l), use_net_dyaw=args.use_net_dyaw)
             r21.append(int(rr["route"])); rok.append(bool(rr["valid"]))
             rgr.append(float(rr["graded_route"]))
             reasons[rr["reason"]] = reasons.get(rr["reason"], 0) + 1
@@ -330,6 +337,8 @@ def build_labels(args):
         (stats["route_v21_counts"][0] + stats["route_v21_counts"][2]) / nw, 4)
     stats["route_turn_frac_legacy"] = round(
         (stats["route_legacy_counts"][0] + stats["route_legacy_counts"][2]) / nw, 4)
+    stats["route_derivation"] = "refb_labels.route_from_future_v21"
+    stats["use_net_dyaw"] = bool(args.use_net_dyaw)
     torch.save({"eids": d["eids"], **out, "stats": stats,
                 "min_lookahead": args.min_lookahead}, args.out)
     print(json.dumps({"saved": args.out, **stats}, indent=2), flush=True)
@@ -365,6 +374,13 @@ def main(argv=None):
     lb.add_argument("--poses", required=True)
     lb.add_argument("--out", required=True)
     lb.add_argument("--min-lookahead", type=int, default=50)
+    lb.add_argument("--use-net-dyaw", type=int, default=0,
+                    help="0 = v2's strict junction-only semantics (DEFAULT — "
+                         "Sayed's ruling 2026-07-20: a wide sweep is ROAD "
+                         "FOLLOWING, and the independent VLM pass agreed with "
+                         "v2 on the contested 479 m case); 1 = the v2.1 "
+                         "net-heading rule. A documented variable, not a "
+                         "silent choice.")
 
     a = ap.parse_args(argv)
     if a.cmd == "states":
