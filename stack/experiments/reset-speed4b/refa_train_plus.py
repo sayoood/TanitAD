@@ -43,6 +43,7 @@ from tanitad.models.metric_dynamics import (accumulate_se2,  # noqa: E402
                                             relative_ego_pose, wrap_angle)
 from tanitad.models.predictor import change_weighted_mse  # noqa: E402
 from tanitad.refs.refa import refa_predictor_config  # noqa: E402
+from tanitad.train.flagship_losses import anchor_tactical_loss  # noqa: E402
 from tanitad.train.train_worldmodel import cosine_lr  # noqa: E402
 
 DT = 0.1
@@ -284,7 +285,17 @@ def compute_losses_plus(model, batch, rollout_k, device="cpu", *,
         wp_h = fb_cfg.tactical_policy.waypoint_horizons
         wp_pred = torch.stack([tac["waypoints"][k] for k in wp_h], dim=1)   # [B,H,2]
         wp_tgt = gt_ego_waypoints(pose_last, future_poses, wp_h)
-        loss_wp = ((wp_pred - wp_tgt) / pose_scale).pow(2).mean()
+        # v2 lever 8: TIME-anchored multi-anchor CE + WTA L1 (the SAME shared
+        # objective as flagship_losses.anchor_tactical_loss) REPLACES the unimodal
+        # wp L2 when the anchored decoder is on; else the plain per-horizon L2.
+        loss_cls = torch.zeros((), device=states.device)
+        loss_wta = torch.zeros((), device=states.device)
+        if getattr(fb_cfg, "v2_anchor_tactical", False) and "anchor_traj" in tac:
+            loss_wp, loss_cls, loss_wta = anchor_tactical_loss(
+                tac, model.tactical_policy.anchor_decoder.anchors, wp_tgt,
+                pose_scale)
+        else:
+            loss_wp = ((wp_pred - wp_tgt) / pose_scale).pow(2).mean()
         gtgt = fut_states[:, goal_h - 1]
         gprev = fut_states[:, goal_h - 2] if goal_h >= 2 else z_t
         loss_goal = (change_weighted_mse(tac["target_latent"], gtgt, gprev)
@@ -312,6 +323,11 @@ def compute_losses_plus(model, batch, rollout_k, device="cpu", *,
                     "man_acc": round(float(man_acc), 4),
                     "route_acc": round(float(route_acc), 4),
                     "nav_valid_frac": round(float(nav_valid.float().mean()), 4)})
+        if getattr(fb_cfg, "v2_anchor_tactical", False) and "anchor_traj" in tac:
+            out.update({"cls": loss_cls, "wta": loss_wta,
+                        "n_modes": int(tac["n_modes"]),
+                        "conf_norm": round(float(tac["conf_norm"]), 4),
+                        "prior_norm": round(float(tac["prior_norm"]), 4)})
 
     out["loss"] = loss
     return out
@@ -398,6 +414,10 @@ def train(args) -> dict:
         # flagship uses, so every shared brain is byte-for-byte the same shape;
         # the encoder (adapter vs from-scratch ViT) is the only model-axis diff.
         fb_cfg = flagship4b_config()
+        # v2 lever 8: the shared TIME-anchored tactical decoder. Set on fb_cfg
+        # BEFORE from_stack_config so the shared TacticalPolicy builds the anchored
+        # decoder (REF-A inherits the flagship's fourbrain change through the flag).
+        fb_cfg.v2_anchor_tactical = bool(args.anchor_tactical)
         # action_dim = 2 base (steer, accel) + v0 (--speed-input) + yaw-rate
         # (--yaw-input/--dyn-input). Off = 2 -> byte-identical to the base build.
         adim = 2 + int(args.speed_input) + int(args.yaw_input or args.dyn_input)
@@ -613,6 +633,13 @@ def main(argv=None):
                          "predictor + intent-conditioned operative) on the frozen-"
                          "DINO adapter, from flagship4b_config — the SAME brains "
                          "and objective as the flagship (encoder is the only diff)")
+    ap.add_argument("--anchor-tactical", action="store_true",
+                    help="v2 lever 8: REPLACE the unimodal tactical wp_heads with "
+                         "the shared TIME-anchored multi-anchor (DiffusionDrive) "
+                         "decoder + nearest-anchor CE / winner-takes-all L1 (the "
+                         "3.4 m tactical cure). Requires --four-brain; sets "
+                         "fb_cfg.v2_anchor_tactical so the shared TacticalPolicy "
+                         "builds the anchored decoder and the loss uses its CE+WTA")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args(argv)
     # --dyn-input feeds the JOINT [v0, yr0] ego vector and guards it as a unit, so
@@ -620,6 +647,9 @@ def main(argv=None):
     if args.dyn_input:
         assert args.speed_input, "--dyn-input requires --speed-input (the guard " \
             "zeros the joint [v0, yr0] ego vector; v0 must be fed)"
+    if args.anchor_tactical:
+        assert args.four_brain, "--anchor-tactical requires --four-brain (the " \
+            "anchored decoder lives in the shared TacticalPolicy)"
     return train(args)
 
 

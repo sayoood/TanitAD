@@ -55,7 +55,8 @@ import refb_labels
 from refb_train import FailLoudWindowDataset, load_cached_episodes
 from tanitad.config import base250cam_config
 from tanitad.refs.refc import (RefCModel, param_breakdown, refc_config,
-                               refc_smoke_config)
+                               refc_small_config, refc_smoke_config,
+                               refc_xl_config)
 from tanitad.train.train_worldmodel import cosine_lr
 
 # Loss weights (module docstring). traj/anchor-cls are the co-equal primaries
@@ -181,7 +182,12 @@ def train(args) -> dict:
     log_every = args.log_every if args.log_every is not None \
         else main_tr.log_every
 
-    cfg = refc_smoke_config() if args.smoke else refc_config()
+    # Scale preset: --smoke (tiny CPU) overrides; else --config small/base/xl
+    # selects the size-vs-data-scaling study arm (all three share refc.py's
+    # anchored-diffusion algorithm; only widths/depths/anchor-vocab differ).
+    _presets = {"small": refc_small_config, "base": refc_config,
+                "xl": refc_xl_config}
+    cfg = refc_smoke_config() if args.smoke else _presets[args.config]()
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
     model = RefCModel(cfg).to(device)
     # Install the FPS anchor vocabulary (else the built-in default anchors).
@@ -316,6 +322,9 @@ def main(argv=None):
                     default="diffusion",
                     help="decoder mode: classifier = 0-step anchor selection "
                          "floor; diffusion = truncated-denoise refinement")
+    ap.add_argument("--config", choices=("small", "base", "xl"), default="base",
+                    help="scale preset (ignored under --smoke): small ~55M "
+                         "(64 anchors) / base ~110M (128) / xl ~260M (256)")
     ap.add_argument("--anchors", default=None,
                     help="FPS anchor vocabulary .pt (build_refc_anchors.py); "
                          "default = the model's built-in synthetic-FPS anchors")

@@ -184,7 +184,8 @@ class RefAModel(nn.Module):
                  grid_d_readout: int = 128,
                  tactical_policy_cfg: TacticalPolicyConfig | None = None,
                  strategic_policy_cfg: StrategicPolicyConfig | None = None,
-                 tactical_pred_cfg: PredictorConfig | None = None):
+                 tactical_pred_cfg: PredictorConfig | None = None,
+                 tactical_anchor: bool = False):
         super().__init__()
         assert adapter_kind in ("pool", "grid"), adapter_kind
         self.pred_cfg = pred_cfg if pred_cfg is not None \
@@ -227,7 +228,8 @@ class RefAModel(nn.Module):
             if strategic_policy_cfg is not None else None)
         self.tactical_policy = (
             TacticalPolicy(tactical_policy_cfg, state_dim, self.pred_cfg.window,
-                           d_cond=strategic_policy_cfg.d_ctx)
+                           d_cond=strategic_policy_cfg.d_ctx,
+                           anchor_tactical=tactical_anchor)
             if tactical_policy_cfg is not None else None)
         # A5 grounding — also the cheapest anti-collapse pressure on the
         # trainable adapter space (constant states cannot encode actions).
@@ -281,7 +283,8 @@ class RefAModel(nn.Module):
             sigreg_beta=cfg.loss.sigreg.beta,
             tactical_policy_cfg=cfg.tactical_policy,
             strategic_policy_cfg=cfg.strategic_policy,
-            tactical_pred_cfg=cfg.tactical_pred)
+            tactical_pred_cfg=cfg.tactical_pred,
+            tactical_anchor=getattr(cfg, "v2_anchor_tactical", False))
 
     @torch.no_grad()
     def adapter_dim_std(self, states: Tensor) -> float:
