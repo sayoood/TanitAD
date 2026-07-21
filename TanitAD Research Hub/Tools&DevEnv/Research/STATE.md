@@ -1,116 +1,131 @@
 # STATE — Tools&DevEnv
 
-LAST_RUN: 2026-07-20 (W4, Monday) — branch `agent/tools-devenv-20260720`
-  (worktree `C:/Users/Admin/wt-tools-0720`, off `c4d8451` = `agent/tools-devenv-20260718`)
-QUALITY: full (G-A…G-I + G-T1 met; 2 measured experiments — `ci_gate` v2 on two real trees
-  + the CUDA device-parity tripwire on the RTX 4060)
-RESOURCE (G-I): **local RTX 4060 8 GB** (CUDA parity probes + I8 latency proxy, torch
-  2.11+cu128) + dev-box CPU (2 full pytest trees) + web sweep. ~2.3 h wall, **$0**.
-  Why not the eval pod: this run's experiments are (a) a device-*parity* check, which needs
-  a GPU but not a big one — the 4060 answers it exactly as well as an A40 and costs nothing —
-  and (b) a CI gate, a pure git/pytest workload. The A40 would have idled. The pod-worthy
-  item this run surfaced (AlpaSim closed loop) was already answered NO-GO on infra grounds
-  by the 2026-07-19 investigation — it needs a docker-capable host, not more GPU.
+LAST_RUN: 2026-07-21 (W4, Monday) — branch `agent/tools-devenv-20260721`
+  (worktree `C:/Users/Admin/wt-tools-0721`, off `8194807`)
+QUALITY: full (G-A…G-I + G-T1 met; **2 measured experiments** — the live 4-pod fleet
+  probe, 6 runs, and the rerun `.rrd` sink benchmark, 200 windows × 3 arms)
+RESOURCE (G-I): dev-box CPU + **live network to all four pods** (6 whole-fleet probe
+  runs incl. a 100 MB `dd` write test on each host), project venv
+  `C:/Users/Admin/venvs/tanitad` (py 3.13.5, torch 2.11+cu128, rerun-sdk 0.34.1).
+  **~3.1 h wall, $0.**
+  Why not the eval pod: both experiments are *about* the fleet and the host toolchain,
+  not about model compute. Experiment A measures the pods themselves — running it *on*
+  a pod would measure the wrong thing; and its two hardest findings (an MSYS-ssh pipe
+  deadlock, a `text=True` CRLF corruption) are **dev-box-specific** and only reproduce
+  from this host. Experiment B is a serialization benchmark: rerun's sink path is CPU
+  and disk, so an A40 would have idled. No GPU work was warranted, so none was taken —
+  and pod2's A40 sat idle anyway, which is escalation #1.
 
-## ESCALATION — D-026 debt is GROWING, and the worst class is NEW
-`python tools/session_guard.py --repo <Drive tree>` (2026-07-20). **For the orchestrator:**
+## ESCALATION 1 — pod2 (A40) is idle with no trainer, and has been all day
+`tools/fleet_probe.py` returned **RED `GPU_IDLE_NO_TRAINER`** on pod2 on every run
+today (0 % util, 0 MiB, **no job process at all**; disk healthy, 208–474 MB/s). The
+host is reachable and functional — it is simply doing nothing. **For Sayed /
+orchestrator: fill it or stop paying for it.** The 2026-07-17 fleet review named
+compute-starved runs the #1 quality ceiling; we are currently paying for compute and
+not spending it. Live fleet at 2026-07-21:
 
-| Class | 2026-07-18 | **2026-07-20** |
-|---|---|---|
-| uncommitted hub deliverables | 5 | **30** |
-| **uncommitted `stack/` paths** | (not checked) | **40 — 22 UNTRACKED** |
-| unmerged `agent/*` branches | 9 | **11** |
-| stale INTAKE verdicts (>3 d) | 5 | **8** |
+| host | verdict | GPU | evidence |
+|---|---|---|---|
+| pod1 A6000 | GREEN | 91 %, 14,862 MiB | `flagship4b-v3enc-expA-nodrop-2k`, step **1050**, log 6 s fresh, disk 699 MB/s |
+| **pod2 A40** | **RED** | 0 %, 0 MiB | **no job process** |
+| pod3 A40 | AMBER | 97 %, 18,729 MiB | VLM labelling (Cosmos-Reason2-8B) alive, but its log emits no step → liveness partially unverified |
+| eval A40 | GREEN | 0 %, 0 MiB | idle by design (`role=burst`) |
 
-- **Priority: the 40 uncommitted `stack/` paths.** 12 whole test modules (~135 tests),
-  9 `tanitad/lake/*` + `eval/ckpt_compat.py` + `train/decorr.py`, 18 modified core files
-  (`config.py`, `fourbrain.py`, `predictor.py`, `refa.py`, `flagship_losses.py`, 10 scripts).
-  **In no commit, on no branch, anywhere** — one `git clean` from gone. Strictly worse than
-  an unmerged branch, which is at least pushed. Found by a 396-vs-531 collected discrepancy
-  between my worktree and the Drive tree; `session_guard` v1 called that tree clean because
-  it only looked at hub prefixes. Fixed this run.
-- **Uncommitted hub deliverables incl. whole packages:** Benchmarks & Eval's
-  `2026-07-19-alpasim-closedloop-v1/` **with its results JSONs**; Architecture's
-  `V3_HIERARCHICAL_PLANNING_DESIGN.md`, `V3_GOAL_VOCABULARY_V1.md` + four 07-19 notes;
-  Data-Eng's `TANITDATASET_V1_STRATEGY.md` + three surveys; `HYPOTHESIS_LEDGER.md`;
-  `DECISIONS.md`; `PROJECT_STATE.md`; the `2026-W33` progress report.
-- **Newly stale INTAKEs:** `2026-07-15-h15-logging-fidelity`, `2026-07-15-baseline-floor`,
-  `2026-07-15-pandaset-loader` (5 d). Still unfilled at 11 d: `lal-v2-anticipation`,
-  `physicalai-r1-selection`, `models-predictor-failfast`, `testsuite-io-profiling`.
+## ESCALATION 2 — the monitor's blind spot was structural, and it is fixed at the source
+The 6-hourly monitor has missed a dead trainer **four times**. The root cause is not a
+bad check, it is the *shape* of every check: `.claude/skills/fleet-status/SKILL.md`
+grepped **hardcoded** run/log names (`p0-sB01-realmix.log`, `arm_base.log`,
+`arm_kstep.log`, `pgrep -fc train_worldmode[l]`) belonging to runs that ended weeks ago.
+**A grep that matches nothing prints nothing, and a monitor that prints nothing reports
+no anomaly.** Every arm since has been renamed, so it was blind by construction.
+
+Shipped: `tools/fleet_probe.py` (discovery-based; 20 falsifiers) **and the skill itself
+rewritten to call it**, with the four-recurrence history in the file so the next editor
+knows why hand-written greps are forbidden. The rule now enforced everywhere: **absence
+of evidence is an ALARM, not an all-clear** — a running job whose log cannot be found is
+AMBER, never GREEN.
+
+## ESCALATION 3 — D-026 debt, re-measured this run (`session_guard`, my worktree)
+Branches improved; **the intake ledger is at its worst ever**:
+
+| Class | 2026-07-18 | 2026-07-20 | **2026-07-21** |
+|---|---|---|---|
+| unmerged `agent/*` branches | 9 | 11 | **7** |
+| stale INTAKE verdicts (>3 d) | 5 | 8 | **14** |
+
+Four are 12 days old (`lal-v2-anticipation`, `physicalai-r1-selection`,
+`models-predictor-failfast`, and this discipline's own `testsuite-io-profiling`). Six
+agents produce packages; nobody triages them. This is an orchestrator-policy gap and I
+am explicitly *not* answering it with more tooling — `session_guard` has reported it
+for four runs running.
 
 ## HANDOFF
-No blocking handoff. Two things every agent should adopt **now**:
-1. `python tools/ci_gate.py --rootdir stack --gpu-smoke require` before push (on a CPU-only
-   box use `--gpu-smoke warn` — it prints and never blocks).
-2. `python tools/session_guard.py` at session end (unchanged), which now also names
-   uncommitted `stack/`/`tools/` work.
-
-**Intake ledger cleaned:** `2026-07-17-ci-gate/` verdict written by me and the package
-**withdrawn as SUPERSEDED** — `ci_gate` is repo-level tooling, so it belongs in `tools/`
-(no intake), the same class as `session_guard`. The duplicated v1 code was deleted from the
-intake dir so there is one source of truth; `INTAKE.md` stays as the record. Lesson: decide
-the target directory *before* opening an intake — `tools/` = no intake, `stack/` = intake.
-Still open for the orchestrator: `2026-07-09-testsuite-io-profiling/` (11 d, this
-discipline's own — KB says "shipped via intake" but no verdict was ever written).
+1. **Every agent: `python tools/fleet_probe.py` before asserting the fleet is healthy.**
+   Never hand-write a pod grep again; never `pgrep -f` a trainer name.
+2. **Anyone driving ssh from Python on the dev box: use
+   `C:\Windows\System32\OpenSSH\ssh.exe`, not git-bash's.** The MSYS client deadlocks
+   under `subprocess` pipes and does so **only against the busy hosts** — it manufactures
+   fake outages that look exactly like real ones. (Same payload: 2.0–2.2 s from a shell,
+   >90 s timeout from Python; native OpenSSH 0.7–2.5 s on all four hosts.)
+3. **Benchmarks & Eval / anyone holding archived `.rrd` files:** if you ever ran the
+   replay app with `--rrd` *and* `--serve`, the artifact is a **stub** — 3,196 B instead
+   of 10,593,180 B for the same input. Re-record with one sink.
+4. **Orchestrator: triage `2026-07-21-rrd-dual-sink-guard/`** (5 falsifiers, standalone
+   green). Behaviour-changing by design: `--rrd` + `--serve` starts failing loudly.
 
 ## Done this run
-- **`tools/ci_gate.py` v2** (backlog P0#2): **SUITE_MANIFEST** — 16 load-bearing modules
-  pinned to a collected-count floor, because a named-node tripwire only guards nodes somebody
-  thought to name, while whole modules vanish silently in a six-agent tree. Plus `--min-total`
-  (390), `--gpu-smoke off|warn|require`, `--json`. Skips stay green **unless a whole module is
-  skipped**. Measured: **396 / 39.0 s** (off-Drive worktree) and **531 / 60.2 s** (Drive tree),
-  both **GATE PASS**; tall pole 8.02 s. **Sharding NOT needed — 5× under the 5-min ceiling.**
-- **`tools/gpu_tripwire.py`** — closes a hole I measured before writing any code: **the whole
-  396/531-test suite is CPU-only** (`grep -rl cuda stack/tests` is empty) while every trainer,
-  eval and deploy tick runs on a GPU. Four probes on the real model, RTX 4060, 1.7 s: encode
-  parity **9.54e-07**, imagine **7.15e-07**, I2-on-device **1.66e-07**, 0 non-finite grads;
-  batch-1 encode **0.85–1.43 ms** (I8 proxy). Falsifier at `tol=0` proves the probes can fail.
-- **`session_guard` source check** — see ESCALATION. Untracked listed separately from modified.
-  A second bug caught by its own falsifier: `git status --porcelain` collapses a wholly
-  untracked directory to one `?? stack/` row → `--untracked-files=all`.
-- **Two bugs caught pre-ship by falsifiers**, not in review: the porcelain `-uall` collapse,
-  and suite-greenness treating a legitimate `skipped` as rot (the live run failed on
-  `test_scena::test_minilm_search_ranks_sc01`).
-- **Backlog text corrected against measurement:** `test_eval_behavior` is **13**, not 22;
-  **`test_calib_r1.py` does not exist** (folded into `test_calib`), so the "calib trio" is a pair.
-- `tools/tests/` **57 falsifiers, 15.5 s**. `tools/README.md` rewritten for all three tools.
-- **Literature:** Rerun **0.34.1 Viewer MCP** (agents can verify their own renders — GO, →P0.1);
-  **JetPack 7.2 correction** (Orin is in the JetPack 7 line now, plan the export against 7.2 not
-  7.1); the **L0–L4 world-model-as-oracle admissibility ladder** (2607.07196 — the citable form
-  of our open-loop ⊥ closed-loop result); **DynaDreamer** (2607.13410 — the published relative of
-  our v0-channel fix); **Orbis 2** (2607.15898 — diffusion-forcing→teacher-forcing schedule);
-  **TerraZero** (2607.13028 — 1.3 M steps/s, no code → WATCH). Nothing new on AlpaSim/CARLA/
-  Bench2Drive or dev-tooling releases.
-- Research note `2026-07-20-ci-gate-v2-suite-manifest-gpu-tripwire-and-the-uncommitted-stack.md`;
-  KB +12 deltas; BACKLOG re-prioritized (P0#2 done, P1.0 retired, 4 new findings-driven items).
+- **`tools/fleet_probe.py`** (took the top slot because the program's #1 risk moved to
+  ops). Discovers jobs from `ps` grouped by `--out` (a 6-process fan-out collapses to one
+  run), binds each to its own log via the launcher's stdout redirect walked up the ppid
+  chain, cross-checks GPU vs process table (`ORPHANED_GPU_MEMORY`, `GPU_IDLE_NO_TRAINER`),
+  catches freezes two ways (`LOG_STALE` 15 min, `STEP_NOT_ADVANCING` across probes), and
+  measures disk with a real 100 MB `dd` — never `df`, which reports the MooseFS cluster
+  and hides the per-pod quota. **Whole fleet in 9.7–11.3 s.** 20 falsifiers, 0.35 s.
+- **`.claude/skills/fleet-status/SKILL.md` rewritten** to run the probe and forbid
+  hardcoded greps.
+- **rerun sink benchmark** (`Implementation/rrd_bench/`): 52,966 B/window at jpeg85,
+  299 win/s; jpeg85 is **3.79× smaller than raw for 17 % less throughput**; and the
+  mission-P1 dual-sink bug is **reproduced and quantified — a 3,314× silent data loss**
+  (`serve_grpc()` replaces the file sink). Guard shipped via intake.
+- **Three Windows/pod traps measured and encoded** (LF-bytes payloads, native OpenSSH,
+  timeboxed per-dir `find`) — each cost real debugging time, each now has a falsifier or
+  a docstring naming the symptom.
+- **`GOALS.md` created** — it did not exist for the whole life of this discipline, which
+  is itself a finding: three runs of tooling with no standing target. G1 fleet-liveness,
+  G2 verified-viz, G3 zero-stranded-work, each with a falsifier and a measured first row.
+- KB **+11 deltas**; BACKLOG re-prioritized (old P0#1 retired as **stale on three counts**,
+  4 findings-driven items added); `tools/README.md` + suite now **77 falsifiers, 16.5 s**.
+- Research note `2026-07-21-fleet-probe-and-the-rerun-dual-sink-loss.md`.
 
 ## Open threads / proposals to raise
-- **P1.0 AlpaSim retired — it became an INFRA ask.** The 2026-07-19 investigation measured a
-  hard NO-GO: the eval pod is an unprivileged container with **no nested container runtime**
-  and AlpaSim's NuRec renderer is image-only (`nvcr.io/nvidia/nre/nre-ga:26.04`). Everything
-  else is GO and the policy adapter is written. **For Sayed: a docker-capable GPU host is now
-  the single blocker on an AlpaSim closed loop** — same infra class as the pending graphics-pod
-  ask, worth deciding once. Fallback if the answer is no: TerraZero-class rendering-free sim.
-- **`ci_gate` is still skippable** — nothing runs it automatically; it is a discipline, not a
-  gate. Wiring it into a real pre-push/session-end hook is new backlog P0.2.
-- **`gpu_tripwire` is fp32+eager only** — Prod-Opt's CUDA-graph deploy tick and every bf16
-  training path remain unguarded. New backlog P0.3 (measure the bf16 deviation before setting
-  its tolerance; do not guess it).
-- **Gate timings are contention-sensitive**: the same suite measured 39.0 s / 8.02 s clean vs
-  65.0 s / 14.90 s beside a second pytest process — within 0.1 s of a false slow-test failure.
-  The 15 s per-test budget therefore stays; tightening it toward the original 6 s intent needs
-  either fixture work or load detection (backlog P0.4).
-- **RESIM_ROADMAP.md is still missing** (third run carrying this) — mission P1 says the
-  TanitResim roadmap lives there. The Rerun 0.34.1 Viewer-MCP upgrade is the natural anchor to
-  write it around next run, together with the 3-arm view (REF-B is live).
-- Note to Architecture/Prod-Opt: DynaDreamer's rollout-time ego-dynamics propagation and
-  Orbis 2's forcing schedule are both cheap, measure-first levers on the longitudinal 83 %.
+- **The unskippable-gate gap is now the same gap three times** (`ci_gate`,
+  `session_guard`, `fleet_probe`): all three are disciplines an agent must remember, none
+  is executed automatically. A probe nobody runs is exactly as blind as the grep it
+  replaced — GOALS G1's "detected within one 6-hour cycle" is **unprovable** until a cron
+  runs it and pages on exit code 2. Now backlog P0#1.
+- **The documented rerun tee deadlocks** — `rr.set_sinks(FileSink, GrpcSink(url))` after
+  `serve_grpc()` hangs (killed at 120 s, no output; the sink connects back to its own
+  in-process server). A real tee needs two `RecordingStream`s and an explicit `recording=`
+  per log call. Backlog P0#2 with a pre-registered 5 % falsifier.
+- **`rerun-sdk` is pinned in no requirements file** anywhere in the repo, though the whole
+  viz backbone depends on it. Backlog P0#3.
+- **The Viewer-MCP is still unwired** — until an agent can see its own render, "the
+  overlay looks right" stays an assertion. Backlog P0#4; GOALS G2 is *at risk* because
+  of it.
+- **`gpu_tripwire` is still fp32+eager only** (carried from 2026-07-20) — Prod-Opt's
+  CUDA-graph deploy tick and every bf16 training path remain unguarded.
+- **`RESIM_ROADMAP.md` is still missing** — fourth run carrying this. Mission P1 says the
+  TanitResim roadmap lives there. Honest status: I have now twice chosen a fleet/CI item
+  over it because the operational risk was larger. If that is the wrong call it needs
+  Sayed's word, not another quiet deferral.
+- **TerraZero: still no public code** (5-min check). For whoever checks next: the GitHub
+  org literally named `TerraZero` is an **unrelated third party** — Applied Intuition's
+  page is `terra-applied.github.io`. An **AlpaSim E2E Closed-Loop Challenge 2026** exists
+  as a possible external yardstick if the docker-host blocker ever clears.
 
 ## Prior handoff (2026-07-09, still open)
-- **Sayed ~1 click:** pin `stack/` to Drive "Available offline" → removes the cold-I/O tax.
-  Fresh datapoint: an **off-Drive worktree runs 396 tests in 39.0 s** while the Drive tree runs
-  531 in 60.2 s (0.099 vs 0.113 s/test) — the gap has narrowed since the 40.6 s-cold/10.7 s-warm
-  measurement, but off-Drive is still the faster place to work. Verification tool ready
+- **Sayed ~1 click:** pin `stack/` to Drive "Available offline" → removes the cold-I/O tax
+  (off-Drive worktree 396 tests/39.0 s vs Drive 531/60.2 s). Tool ready
   (`profile_testsuite.py`).
-- CARLA camera pixels: graphics-capable pod recreation (`NVIDIA_DRIVER_CAPABILITIES=all`, gate
-  on `vulkaninfo`) — NOT urgent; milestone 1 (LAL/OKRI/LOPS) needs no pixels.
+- **A docker-capable GPU host** — still the single blocker on an AlpaSim closed loop; same
+  infra class as the graphics-pod ask for CARLA pixels. Worth deciding once.

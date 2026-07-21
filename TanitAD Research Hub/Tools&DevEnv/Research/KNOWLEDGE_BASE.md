@@ -3,6 +3,63 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-07-21] [root-cause] **The fleet monitor's blind spot is structural, not a bug**: every
+  check in `.claude/skills/fleet-status/SKILL.md` grepped a **hardcoded** run/log name
+  (`p0-sB01-realmix.log`, `arm_base.log`, `arm_kstep.log`, `pgrep -fc train_worldmode[l]`) —
+  all belonging to runs that ended weeks ago. A grep that matches nothing prints nothing, and
+  a monitor that prints nothing reports no anomaly. **Renaming a run silently blinds it**, and
+  every arm since has been renamed → 4 recurrences, latest 2026-07-20 05:01 UTC (2 of 4 GPUs
+  dead, the 04:55 probe clean). Fix = discovery, plus the rule **absence of evidence is an
+  ALARM, not an all-clear** — impact: TOP-RISK/ops/all-agents —
+  note `2026-07-21-fleet-probe-and-the-rerun-dual-sink-loss.md` §1
+- [2026-07-21] [built] **`tools/fleet_probe.py`** — discovers jobs from `ps` (grouped by
+  `--out`, so a 6-proc fan-out = one run) and logs from the launcher's stdout redirect walked
+  up the ppid chain; cross-checks GPU vs process table (`ORPHANED_GPU_MEMORY`,
+  `GPU_IDLE_NO_TRAINER`), catches freezes two ways (`LOG_STALE` 15 min, `STEP_NOT_ADVANCING`
+  via a state file), and measures disk with a real 100 MB `dd` (never `df`). Verdicts start
+  UNKNOWN; a job with no discoverable log is **AMBER, never GREEN**. Measured live:
+  **whole 4-pod fleet in 9.7-11.3 s**; 20 falsifiers 0.35 s — impact: TOP-RISK/ops/G-I — note §1
+- [2026-07-21] [measured] **pod2 (A40) idle with no trainer** on every probe run of 2026-07-21
+  (0 %, 0 MiB, no job process; disk healthy 208-474 MB/s). Live instance of the class the old
+  monitor missed 4x — impact: burn/M-1 resource mandate — note §1, escalated in STATE
+- [2026-07-21] [trap] **git-bash's MSYS `ssh.exe` deadlocks under `subprocess` pipes from a
+  native-Windows Python** — the identical payload runs in **2.0-2.2 s from a shell** but hangs
+  past 90 s from Python, reproducing **100 % on the two *training* hosts and 0 % on the two
+  idle ones**, i.e. *it reads exactly like a fleet outage and is not one*.
+  `C:\Windows\System32\OpenSSH\ssh.exe` ran the same payload on all 4 hosts in **0.7-2.5 s**.
+  Prefer native OpenSSH on win32 for any Python-driven pod tooling — impact: all pod tooling —
+  note §1 negative-results
+- [2026-07-21] [trap] **`subprocess.run(..., text=True)` corrupts every remote bash payload on
+  Windows**: its stdin TextIOWrapper translates `\n` -> `os.linesep`, so every `fi` arrives as
+  `fi\r` and bash dies with the misleading `syntax error: unexpected end of file`. A CRLF
+  checkout does the same. Encode payloads to LF **bytes** — impact: all remote tooling — note §1
+- [2026-07-21] [trap] **`find /workspace -maxdepth 3` times out (>90 s) on the MooseFS pods**,
+  and does so only on the *busy* ones — the naive form is blind precisely where it matters.
+  Use per-dir `timeout 8 find ... -mmin -2880` — impact: pod tooling — note §1
+- [2026-07-21] [measured] **The `--rrd` + `--serve` dual sink is a 3,314x silent data loss.**
+  rerun 0.34.1: `rr.save()` sets the file sink, `rr.serve_grpc()` **replaces** it (SDK's own
+  docstring), so only the blueprint reaches the file. 200 windows x 3 arms x 256^2:
+  rrd-only **10,593,179 B** (52,966 B/win, 299 win/s) vs dual-sink **3,196 B** (16 B/win).
+  It survived because the file is **non-zero** — *non-zero is not non-empty; test emptiness
+  only against a same-input single-sink baseline*. jpeg85 vs raw = **3.79x smaller for 17 %
+  less throughput** (default is right). Guard shipped via intake
+  `2026-07-21-rrd-dual-sink-guard/` — impact: P1 TanitResim/viz/G-T1 — note §2
+- [2026-07-21] [negative] **The documented rerun tee deadlocks**:
+  `rr.set_sinks(FileSink, GrpcSink(url))` after `serve_grpc()` hangs indefinitely (killed at
+  120 s, no output) — the GrpcSink connects back to the in-process server on the same thread.
+  A real tee needs two `RecordingStream`s + explicit `recording=` per log call — impact: viz —
+  note §2
+- [2026-07-21] [measured] **`rerun-sdk` is pinned in NO requirements file** anywhere in the repo
+  (`stack/requirements*.txt`, `pyproject.toml` -> no match) although 0.34.1 is installed and the
+  whole viz backbone depends on it. Also corrects a stale backlog premise: the "pin 0.34.1 +
+  migrate, 1-2 h" work did not exist — 0.34.1 was already in the venv and `rr_log.py` (417 lines)
+  already logs episodes — impact: reproducibility/G-T1 — note §2
+- [2026-07-21] [watch] **TerraZero still has no public code** (5-min check, backlog P1.0b).
+  Project page `terra-applied.github.io`; **the GitHub org literally named `TerraZero` is an
+  unrelated third party** — do not mistake it for Applied Intuition's release. Separately, an
+  **AlpaSim E2E Closed-Loop Challenge 2026** exists (HF space) — a possible external yardstick
+  if the docker-host blocker is ever cleared — impact: closed-loop fallback —
+  https://terra-applied.github.io/
 - [2026-07-20] [measured] **The stack test suite has ZERO GPU coverage**: `grep -rl cuda
   stack/tests/` returns nothing across all 396/531 tests, while every trainer, eval and
   deploy tick runs on a GPU. Device/dtype placement, on-device batch-statistic leaks and
