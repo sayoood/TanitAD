@@ -1,9 +1,11 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, v0.4 (2026-07-19). Maintained per D-020: every gate evaluation appends
+**Status:** living paper, v0.6 (2026-07-25). Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
-instrument rows in the referenced experiment record.
+instrument rows in the referenced experiment record. *(Version note: the status line was left at
+v0.4 while the §9 design round was already logged as v0.5 in the changelog; this results round is
+therefore v0.6, and the numbering is not silently reused.)*
 
 **Authors:** Sayed Bouzouraa; TanitAD autonomous research system.
 
@@ -49,10 +51,37 @@ in-distribution prediction does **not** transfer to beating the kinematic floor 
 roughly doubles and the anticipation advantage collapses (0.80 → 0.15 m) — though vision-ablation
 *still* degrades the out-of-distribution prediction (comma +0.27 m, CI-separated), so the model
 reads the unseen scene but cannot net-beat a very strong highway floor: it is partly
-distribution-fit, not yet corpus-general. We
+distribution-fit, not yet corpus-general. *Fourth-round update (v0.6):* the program's crux question
+this round was whether a planner can be coupled to the world model at all. Four arms that warm-started
+a *new* anchored-diffusion planner onto the already-converged 30 k world model all failed — the best
+reached ADE@2s 0.852 [0.75, 0.98] against a 0.60 bar while its WM-integrity canary rose from 0.452 to
+0.70+ — and a ~0-GPU **gradient-geometry pre-probe** refuted the obvious repair: at the coupling seam
+cos(g_wm, g_plan) = **+0.0043** over 512 windows, so gradient surgery would strip ~2 % of the planner
+gradient and is a no-op. That measurement redirected the program to **co-evolution from random
+initialisation** — v1's own recipe — and at full coupling (λ_plan = 1.0) the world-model canary
+*descends* (15.674 at random init → ≈1.4) while held-out ADE@2s falls to ≈0.48 at 40 % of training,
+its 10 k gate returning CONTINUE. **The scientific point is that planner–world-model interference was a
+warm-start artifact, not an intrinsic conflict between prediction and control** — reported as
+in-progress, on the trainer's in-loop evaluation, with the formal gate deferred. Two additive
+directions closed cleanly: a 3.77 M planner trained by analytic gradients **through the frozen** world
+model reaches 0.599 m — statistically indistinguishable from that model's own oracle-action ceiling
+(+0.194 [−0.045, +0.448]) and flat under an 11× capacity scaling — so its residual is *aleatoric*, a
+degradation-free fallback rather than a contender; and a closed-loop recovery-augmentation lever that
+looked promising at n = 12 **reversed sign at n = 40** and was withdrawn. A new **real-footage
+log-replay** closed-loop instrument (on-policy observation-OOD 1.02–1.19×, against a photoreal
+reconstruction's 3.2–3.75×) confirms across three independent instruments that a 104 M anchored-diffusion
+reference arm **out-drives the flagship's own supervised tactical head** closed-loop (ADE@2s 0.564
+[0.452, 0.676] vs 1.488 [1.329, 1.647]; departure rate 0.0134 vs 0.0318) and decomposes that deficit as
+**longitudinal, not lane-keeping**. Finally the data thesis gained its first evidence: our own frozen
+encoder plus a multi-domain inverse-dynamics head pseudo-labels action-free video well enough that
+downstream world-model pretraining captures **96 %** of the value of real labels on proxy corpora and
+**109 % speed / 71 % yaw** on the actual target, and an 80-clip Creative-Commons YouTube pilot lifts
+downstream parity-validation speed R² from −0.520 to +0.563 (≈92 % of the real-label ceiling) —
+directional, not decision-grade. We
 describe the architecture, its mathematical grounding, an
 instrument doctrine for honest measurement that caught three silent measurement hazards in its first
-week, and the falsifiable gate program by which every claimed edge will stand or fall.
+week and has since been extended by three more failure classes it learned the hard way, and the
+falsifiable gate program by which every claimed edge will stand or fall.
 
 ---
 
@@ -412,6 +441,64 @@ mechanically — camera intrinsics canonicalized to a common effective focal len
 masked by a falling loss, a data-selection bug that chose parked cars) — each invisible in the
 happy-path training curves.
 
+**The estimator correction (2026-07-20), and what it does and does not invalidate.** Every `± CI95`
+in §7.1–§7.5 above — and in v0.1–v0.4 of this paper — was produced by a block historically labelled
+*"8-split episode-disjoint jackknife."* It is neither a jackknife nor a valid standard error: it draws
+eight independent random 20 % holdouts from the same 40 validation episodes and reports 1.96·std/√8
+over overlapping estimates, so it measures **split-selection noise, not model uncertainty**. Measured
+across ten arms it is **1.28–2.06× too narrow** (median 1.51×); a coverage simulation gives **62.3 %**
+against a cluster bootstrap's 93.8 % (target 93–97 %). The **decision-grade interval is the
+episode-cluster bootstrap** over the 40 validation episodes (2000 resamples), and for two arms scored on
+the same windows the **paired** bootstrap — never a combination in quadrature. The point estimates and
+every qualitative verdict in §7.1–§7.5 stand (they were re-verified against the corrected intervals);
+the *widths* quoted there are the deprecated statistic and are retained only because removing them would
+rewrite the record. All numbers from §7.6 onward carry the corrected estimator, named inline. A second
+consequence: the split-*mean* compresses between-arm gaps (a two-arm difference read 0.006 m under the
+split-mean and 0.044 m on the full set), so ranking claims must come from the paired test, not from
+comparing two split-means.
+
+**Three failure classes added by measurement, 2026-07-21 → 07-24.** Each is a rule we now run
+*before* a claim, and each was earned by a wrong claim that a cheap check would have caught. They are
+reported here as method, not as errata, because each generalizes beyond the experiment that produced it.
+
+- **I8 — power before closure.** An effect measured on one underpowered held-out split does not
+  survive its own sign. A closed-loop recovery-augmentation lever measured **+0.0089** (a departure-rate
+  *reduction*) on a 12-episode held-out set and **−0.0302 [−0.0595, −0.0088]** — a 3.3× *increase* —
+  under a 2-fold cross-fit that puts all 40 episodes held-out (§7.7). Consequence: **every closed-loop
+  effect at the ~1 pp scale goes through a full-corpus cross-fit**, and a claim that a *direction is
+  closed* gets the cheapest metric-or-power check first — in one session four separate "this direction
+  is closed" claims were reopened by a follow-up costing zero GPU-hours.
+- **I9 — a privileged-input arm is not a headroom estimate.** A CEM search over the frozen world model
+  scored 0.132 m against a feedforward planner's 0.599 m and was quoted as "4.5× of planning headroom."
+  The search arm *optimizes against the expert's realized future*; the deployable planner cannot see it.
+  The contrast therefore varies two things — planner quality **and** access to the future — and the
+  deployable version of the same search (a learned value model, no ground-truth future) scores **1.016**,
+  CI-separated *worse* than feedforward (§7.7). Rule: **name the input asymmetry before quoting a gap as
+  headroom**; an oracle arm bounds the instrument, not the achievable policy.
+- **I10 — verify presence with the tool that owns the fact.** Two high-value modules were declared
+  "stranded outside the main tree" on the strength of a file listing that is sorted by modification time
+  and truncated at 100 results; the main-tree copies sorted past the cut. Both were present, newer, and
+  more complete. This is the two-probe rule (§Operating standard) applied to *presence*: absence, and
+  equally the presence of a problem, must be established with the tool that owns the fact — `git
+  ls-files` over a listing, a real write test over a filesystem report, the process table's owner over a
+  name match.
+
+**Two instrument definitions this round pinned down, because both had already produced a wrong number.**
+(i) **A latency figure without its definition, hardware, checkpoint and corpus is not a figure.** Two
+"ticks" coexist in this system — a *decision tick* (encode one frame + a batched K = 9 imagine-and-select)
+and a *planning tick* (encode an 8-frame window + 20 sequential predictor steps + metric accumulation,
+the path that actually produces the scored trajectory). They differ in five dimensions at once and by ~9×;
+quoting the first as the system's latency propagated for two days (§7.10). (ii) **Exact-path L2 ADE
+mis-scores benign closed-loop recovery.** A tolerance-band variant, `band_ade2d(b) = mean over waypoints
+of max(0, ‖pred − gt‖ − b)` at b = 1.0 m (half a lane half-width), showed that a measured "ADE cost"
+vanished (CI ∋ 0) for three of four configurations and shrank 74 % for the fourth — the exact-path metric
+overstated the trade ~4× by charging in-lane wiggle as error (§7.7). Closed-loop levers are now gated on
+the band metric alongside the departure rate. **A third, data-side:** the validation split
+`physicalai-val-f1b378f295ae` was found to share **78 % of its episodes (62/79) with the parity training
+set**; the evaluation harness now **refuses it in code** rather than documenting the hazard, and points
+the caller at the clean 40-episode split. Instrument rule I7 (task-identity fingerprints) is thereby
+extended from *corpus identity* to *train/eval disjointness*, enforced mechanically.
+
 ## 6. Experimental program
 
 ### 6.1 Data
@@ -699,6 +786,361 @@ aggregate ADE until the decoupled metric exposed it. A targeted longitudinal fix
 up-weighting + speed-stratified sampling + an anti-overshoot term) is measurement-gated on this
 panel, deferred behind a check of whether the v2 rebalance already relieves it.
 
+### 7.6 Coupling a planner to the world model: a warm-start artifact, not an intrinsic conflict (2026-07-22 → 07-25)
+
+The §9 design — planning over the world model rather than reading it through supervised heads — was
+built. **flagship-v4** keeps v1's trunk verbatim (from-scratch ViT encoder + readout 87.1 M,
+action-conditioned operative predictor 96.6 M, H15 imagination field 22.1 M), deletes v1's three
+supervised policy heads, and adds three *planners*: a **strategic planner** with its own predictor
+operating in a compressed 128-d subspace of the state (5.15 M), and **tactical and operative
+anchored-diffusion planners** (DiffusionDrive-style, 256 anchors, 9.77 M each — the §3.8 decoder
+promoted from a reference arm to the flagship's own proposal mechanism), plus factorised
+lateral/longitudinal/distance heads. A λ_plan curriculum couples the planner gradient into the shared
+trunk. Measured by instantiation the trainable total is **≈ 247.9 M — about 30 M *smaller* than v1**,
+because three regression heads cost more than three planners.
+
+**The instrument that makes this line legible is a world-model-integrity canary:** the *plan-free*
+operative rollout ADE@2s — the world model scored exactly as §7.3 scores it, with the planner removed
+from the path. v1's value is 0.452. It is the only quantity that separates "the planner is bad" from
+"the planner is *making* the world model bad," and it is the reason the failure below is attributable.
+
+**Four warm-started arms, one lever each, all fail — and they fail in two distinct ways.**
+
+| arm | the one lever | held-out ADE@2s (episode-cluster bootstrap) | WM canary | reading |
+|---|---|---|---|---|
+| v4 | hot trunk, lr_trunk 3e-4 | killed at ~3,500, never gated | 0.452 → ≈1.3 *(in-loop)* | the LP-FT learning rate alone degrades the WM, with the planner gradient clamped to zero |
+| v4.1 | lr_trunk 3e-5 | **0.8522 [0.7468, 0.9800]** vs a 0.60 bar | **0.4599 (PASS)** | WM healthy, **planner starved** — a controller bug decayed the planner gradient to ≈off by step 2,000 |
+| v4.2 | canary controller floored at 0.25 | 0.9869 [0.8795, 1.1088] at step 4,000 | **0.7222 (FAIL)** | protecting the planner costs the WM |
+| v4.2b | floor lowered to 0.15 | not gated | 0.697 at step 4,000, held at floor | floor-tuning exhausted between 0.15 and 0.25 |
+
+v4.1 is the informative one. Its primary fails outright — the interval sits entirely above the bar, at
+roughly twice v1's 0.427 — while its canary passes, and the paired decomposition says exactly where the
+loss lives: speed error is CI-separated *worse* than constant velocity (Δ −0.366 [−0.491, −0.245]) and
+worse than hold-v0 on steady cruise (Δ −0.559 [−0.648, −0.469]), whereas **speed-decoupled path geometry
+CI-separatedly beats CV** (+0.115 [+0.017, +0.240]). The fault is the planner's longitudinal selection,
+not the world model — the same longitudinal signature as §7.5, now inside a planner. *(Formally the gate
+renders `INCOMPLETE`: three of eight pre-registered kill secondaries have no emitter anywhere in the
+codebase. Substantively the primary fails without ambiguity. Both readings are recorded; neither is
+allowed to stand in for the other.)*
+
+**The ~0-GPU experiment that redirected the program.** The obvious repair for "two objectives fighting
+over one trunk" is gradient surgery (PCGrad-style projection at the seam). Before spending a GPU-day on
+it we measured the seam's *geometry*. On the v4.2b checkpoint, over **512 windows** of the clean
+validation split, at the single `states` seam where the planner loss enters the shared trunk:
+
+| quantity | value | reading |
+|---|---|---|
+| mean cos(g_wm, g_plan) | **+0.0043** (sd 0.064) | the two gradients are **orthogonal**, not opposed |
+| fraction of windows with cos < 0 | 0.479 | half-and-half — the sign is noise, not conflict |
+| mean fraction of ‖g_plan‖ removed by one-sided PCGrad | **0.0224** (median 0.0) | surgery would strip ~2 % — a no-op |
+| ‖g_wm‖ / ‖g_plan‖ | 0.125 / 0.030 | the planner gradient is already ~4× the weaker of the two |
+
+Two independent arguments then close the door on the whole coupling-attenuation family: the removable
+conflicting component is negligible (2.2 %), *and* the scalar floor had already attenuated the **entire**
+planner gradient to 15 % while the canary still degraded to 0.70 — surgery passes 98 % of it, i.e. *more*
+coupling than the floor, so it cannot possibly hold the world model better. **Whatever degrades the
+canary is neither the planner gradient's direction nor its magnitude.** The remaining candidate is what
+the four arms share and v1 did not: a trunk that was **already prediction-converged** when a randomly
+initialised planner was attached to it.
+
+**Co-evolution from random initialisation.** `flagship-v4-fromscratch-30k` is the same architecture and
+the same command with the trunk randomly initialised — v1's own recipe, in which world model and decision
+layer were never separately converged. The canary baseline has to be recalibrated first, and this is the
+kind of detail that silently invalidates a gate: from random init the plan-free rollout error starts at
+**15.674**, not 0.42, so the warm-start arms' ≤ 0.55 bar is unreachable in 10 k steps and meaningless
+here. The pre-registered read is the **descent trajectory**, not the level. At full coupling
+(λ_plan = 1.0) the canary descends 15.674 → 2.59 (step 7,000) → **1.371** (step 9,000), where every
+warm-start arm instead rose; held-out ADE@2s falls 0.531 (9 k) → 0.4825 (10.5 k) → 0.4788 (11.5 k) with
+miss@2 m 0.169 and best-in-fan oracle 0.242, on the clean 881-window split. The 10 k gate returned
+**CONTINUE**, restarts 0.
+
+*Honest limits, carried with the result and load-bearing:* **(i)** these from-scratch numbers are the
+**trainer's in-loop evaluation** on the clean held-out split, not the canonical `eval_flagship_v4.py`
+harness — the formal eight-metric gate is deferred behind an artifact-relay quota block. Under the
+program's own C1 rule a trainer number is not an eval number, and the one time we forgot, an in-loop
+value read ~10 % optimistic against the harness. **Treat the level as provisional and the trend as the
+claim.** **(ii)** the run is at roughly 40 % of its 30 k schedule; no final verdict is claimed here.
+**(iii)** the arm differs from v4.2b in two flags rather than one (initialisation and the λ floor),
+though the floor is *measured* inert from random init. **(iv)** an earlier reading of this same curve —
+"canary descending, co-evolution confirmed" — was retracted the same day: it rested on a single
+evaluation delta, and the next point bounced. The claim above rests on the shape of the whole descent
+through the coupling ramp, which is the only thing a noisy per-point canary supports.
+
+**What the line establishes, stated precisely.** Planner–world-model interference in this architecture is
+a **warm-start artifact** — the cost of attaching an untrained decision layer to a converged predictive
+trunk — and not an intrinsic conflict between the prediction objective and the control objective. The
+generalizable instrument is the pre-probe itself: **measure the seam's gradient geometry before buying a
+surgery**, because a near-orthogonal seam makes the entire projection family a no-op for the price of a
+few minutes of a free GPU. Whether the co-evolved arm ends *above* v1's 0.427 is open and is the next
+gate; the architectural question — can a planner be coupled at all — is answered yes.
+
+### 7.7 Two additive directions: a frozen world model's ceiling is aleatoric, and a closed-loop lever that closed
+
+Two directions were run alongside the flagship line to bound the design space rather than to win it. Both
+returned clean negatives, and both produced a measurement lesson worth more than the result.
+
+**D1 — the frozen world model with a learned planner.** v1 is frozen end-to-end (encoder, readout,
+predictor, step-readout, all `requires_grad = False`) and a **3.77 M** planner is trained *only* by
+backpropagating open-loop ADE **through** the frozen world model — the Dreamer/SHAC analytic-gradient
+pattern, with our own model as the differentiable simulator. By construction the world model cannot
+degrade. On 12 held-out episodes / 265 windows, episode-cluster bootstrap:
+
+| arm | what it is | ADE@2s | CI95 |
+|---|---|---:|---|
+| oracle-action ceiling | frozen WM rolled under **ground-truth** actions | **0.4045** | [0.310, 0.514] |
+| **W — analytic gradient through the frozen WM** | planner → actions → frozen rollout → ADE | **0.5989** | [0.374, 0.854] |
+| hold-v0 / CV | trivial floors | 0.7883 / 0.8463 | — |
+| B — action behaviour-cloning (no WM in the loss) | planner → actions, MSE to ground-truth actions | 1.0001 | [0.697, 1.354] |
+| F — direct decode off the frozen state | planner → 20 waypoints, no predictor | 3.649 | [2.632, 4.723] |
+
+Paired on the same windows: **W − CV −0.2474 [−0.505, −0.034]** (separated), **W − B −0.4012 [−0.717,
+−0.128]** (separated), **W − F −3.0501** (separated), and **W − oracle +0.1944 [−0.045, +0.448] — not
+separated.** A 3.77 M planner driving a frozen world model lands within bootstrap noise of feeding that
+world model perfect actions.
+
+Two mechanisms fall out. First, **arm F relocates the frozen-encoder ceiling**. F = 3.65 m reproduces the
+program's static-latent probe (3.89 m, §7.1) and sits squarely in the REF-A band — so the ceiling
+documented in §7.1/§7.2 and closed as H4 is a ceiling of **static decode off a JEPA latent**, not of
+freezing as such: the metric information the static latent lacks is present in the *action-conditioned
+rollout*, and routing through the frozen dynamics recovers it 6.1×. Second, **capacity is not the lever**:
+scaling W's own head family 11× (3.77 M → 30.8 M → 42.6 M) gives 0.599 → 0.601 → 0.599, none
+paired-separated, while bigger query-decoder planners *overfit* to 0.82–0.86 on 8,803 training windows.
+The residual above 0.404 is therefore **aleatoric** — the driver's future intent is not determined by the
+past — and no feedforward capacity can reduce what is unknowable.
+
+*The retraction that is the point of the direction (I9).* A CEM search over the same frozen model scored
+**0.132** and was quoted as "4.5× of planning headroom." That search **peeks at the expert's realized
+future** as its cost; the deployable planner cannot. The discriminating experiment was to build the
+deployable version — a learned value model trained on the true cost of explored candidates, then CEM
+ranking by that value with no ground-truth future. It scores **1.0162 [0.809, 1.273]**, +0.4173 [+0.237,
++0.605] CI-separated **worse** than plain feedforward, with a within-window rank correlation of 0.613
+against the true cost. The mechanism is clean: a value model learns E[cost | state], whose minimiser is
+the mean trajectory the feedforward planner already produces, and CEM then adversarially exploits its
+errors. Every deployable route hits the same ~0.60 wall (feedforward 0.599, scaled 0.601, distilled 1.40,
+learned-value 1.02). **Verdict: a ~0.60 m, degradation-free fallback — not a contender.** *(A learned
+value may still pay in a genuine closed-loop setting where the ego controls the future; that is a
+different evaluation and needs a simulator.)*
+
+**D2 — closed-loop recovery augmentation, and why it did not survive its own metric or its own n.** The
+lever fine-tunes the REF-C anchored decoder on renderer-free recovery scenarios (the ego is perturbed off
+the recorded path and must return), gated by an encoder-integrity canary. Two cheap follow-ups settled it
+in opposite directions on the same day, and both are instrument findings.
+
+*(i) Most of the measured cost was a metric artifact.* Re-scoring the **existing** rollouts under the
+tolerance band `band_ade2d(1.0)` instead of exact-path L2 makes the ADE penalty **vanish (CI ∋ 0) for
+three of four configurations** and shrink 74 % for the fourth — the exact-path metric overstated the
+trade roughly 4× by charging benign in-lane recovery as error. The band is not vacuous: the un-fine-tuned
+base itself scores 0.1997 > 0 under it.
+
+*(ii) The benefit did not survive full power.* The departure-rate improvement measured **+0.0089**
+on a 12-episode held-out set. Under a 2-fold cross-fit that puts **all 40 episodes** held-out — each
+scored by a model that never trained on it — it becomes **−0.0302 [−0.0595, −0.0088]**, CI-separated in
+the *wrong* direction: the fine-tuned arm departs the lane **3.3× more often** (0.0436 vs 0.0134), and is
+worse under the fair band metric too (−0.3655 [−0.482, −0.262]). *Stated confound:* each cross-fit fold
+trains on 20 episodes against the original's 28, so part of the reversal is reduced training data rather
+than pure statistical power. It does not rescue the lever — the cross-fit is the standard unbiased
+full-corpus estimator, and a lever whose benefit requires both a larger training fold *and* a favourable
+single split to appear at all is not robustly promotable.
+
+**Not promotable — and three things that survive it.** The **machinery** (renderer-free recovery
+augmentation, an on-policy low-OOD training harness, the tolerance-band metric, the encoder-integrity
+canary) is sound and reusable. **REF-C's encoder is safely fine-tunable**: at a *material* move
+(feature cosine 0.9658, relative L2 drift 0.263 — ~3× the previous probe) the canary still holds
+(maneuver agreement 0.9861, route agreement 0.9167), which de-risks encoder-in-the-loop work generally —
+notably it is *not* the v4 world-model degradation hazard. And the two measurement lessons (I8, and the
+band metric) now gate every closed-loop claim the program makes.
+
+### 7.8 Closed-loop benchmarking: a low-OOD instrument, and a reference arm that out-drives the flagship
+
+Open-loop does not predict closed-loop (§7.5, and the standing rule of arXiv 2605.00066), and until this
+round our only closed-loop numbers came from an imagination-in-the-loop harness that is self-referential
+and from photoreal scene reconstructions whose own fidelity confounds the result. Both gaps were closed
+by instruments, and the result they agree on is uncomfortable.
+
+**The confound that had to be removed first.** Running the reference arm **open-loop on the
+reconstructions** — a control, not a result — measured ADE@2s **1.52 m against its own real-footage
+0.473 m, a 3.21× shift** over 4 scenes / 288 predictions. Any closed-loop failure rate on those scenes
+therefore measures *model × reconstruction fidelity*, not the model. That control retracted a headline
+("REF-C fails half of closed-loop") and is now a standing prerequisite: **run the open-loop-on-the-same-
+input control before attributing a closed-loop failure to a model.**
+
+**The new instrument: real-footage log-replay.** The ego is driven on-policy through *recorded* frames,
+each tick's observation synthesized by warping the real frame to the ego's actual deviation from the
+recorded path. It has no map and no agents, so it cannot emit off-road or collision — but its
+**observation-OOD is measured, small, and bounded**. On a 12-episode envelope with paired
+episode-cluster bootstrap, the flagship's prediction is statistically *flat* out to a **2.0 m lateral**
+excursion (3 m: +0.066 [+0.010, +0.138] is the first separated rise) and separates on yaw only at **3°**
+(+0.017 [+0.001, +0.034]), rising monotonically to +0.055 at 12°. Every separated rise is ~17–20× smaller
+than the gap to the reconstruction source. On-policy through the actual rollouts, both arms sit at
+**1.02–1.20×** OOD (longitudinal stratum 1.018 / 1.004 — effectively OOD-free; junction 1.196 / 1.152)
+against the reconstruction's flat **3.75×**.
+
+**The comparison, at n = 40 episodes / 881 windows, identical windows, paired bootstrap:**
+
+| | flagship v1 (deployed strategic→tactical head) | REF-C base (104.2 M anchored diffusion) | paired Δ | separated |
+|---|---|---|---|---|
+| closed-loop ADE@2s (m) | **1.488** [1.329, 1.647] | **0.564** [0.452, 0.676] | **+0.924** [+0.781, +1.065] | yes |
+| corridor departure rate @1.75 m | **0.0318** [0.0152, 0.0531] | **0.0134** [0.0059, 0.0223] | **+0.0184** [+0.0077, +0.0328] | yes |
+| peak cross-track error (m) | 0.764 [0.530, 1.060] | 0.442 [0.314, 0.585] | +0.321 [+0.193, +0.495] | yes |
+
+This is the **third independent confirmation of the same ordering**, and the first that is neither
+underpowered nor confounded: n = 1 (retracted as a lucky scene) → a paired 12-scene reconstruction suite
+(pass 8/12 vs 2/12, mean score 0.496 vs 0.066, paired Δ −0.430 [−0.646, −0.215], sign test 8–0, p = 0.008;
+**collisions tied 1–1**) → this n = 40 real-footage run. Measured through a *completely different*
+instrument at 3× lower observation-OOD, the ordering is not an artifact of reconstruction fidelity.
+
+**What the lane metric buys is a decomposition, and it is the paper's own §7.5 signature seen from the
+other side.** In the longitudinal stratum (374 windows / 24 episodes) **both arms keep the lane nearly
+perfectly** — departure rates 0.4 % and 0.04 % — yet the flagship's ADE is **4× the reference's** (1.455
+vs 0.354, paired +1.101 [+0.906, +1.284]). The deficit is **longitudinal, not lane-keeping**, exactly the
+89 %-along-track failure signature of §7.5, now confirmed on-policy. In the junction stratum (182 windows
+/ 22 episodes) the flagship departs the corridor **~2.3× more often** with a peak cross-track error of
+2.372 m against 1.458 m — clearing a full lane. Its tactical head is a **high-deviation planner** whose
+failure mode is leaving the road, not hitting something (an independent per-plan deviation measure reads
+1.12 vs 0.34).
+
+*Honest limits.* This measures **lane-keeping drift at low observation-OOD, explicitly not off-road
+departure or collision** — the map-free, agent-free source is structurally unable to emit those. It is a
+within-source **relative** comparison of two deployed decoders through a shared pure-pursuit + kinematic-
+bicycle controller, at the 256²/f_eff = 266 cache resolution, and a different controller changes the
+absolute deviations. And it exposes a gap we now believe is close to fundamental with the assets we have:
+a real off-road/collision rate needs a **map plus reactive agents**, which means a renderer, and every
+renderer available to us sits at ~3.2× OOD — while low OOD requires real footage, which has no agents.
+Resolving both at once needs a lower-OOD reactive renderer; until then it is a genuine trade-off, and the
+honest move is to name which half a given number measures. *(An on-policy training attempt on this
+instrument was run and came back bound: the base arm rarely departs, so the objective starves. The
+instrument is a good measuring device and a poor training signal.)*
+
+The reading that matters for the architecture: **a deployed anchored-diffusion planner out-drives the
+flagship's own supervised tactical head closed-loop**, which is the same verdict §7.5 and §9.4 reached
+open-loop — the heads are a lossy readout of a good world model — now confirmed in the regime that
+arbitrates. It is a *planner* comparison, not a world-model comparison; the flagship's operative rollout
+is not in it. That is precisely why §7.6 exists.
+
+### 7.9 Data: the corpus we actually trained on, and the first evidence for the scaling thesis
+
+§4 argues that the *structure* of driving, not corpus scale, is the primary unexploited resource. That
+argument is only honest if we can say what our corpus contains and can show that the cheap-data path
+(H7 — mining action-free video with inverse dynamics) is real rather than assumed. Both were measured
+this round.
+
+**The corpus, exactly (MEASURED by loading every cached episode).** The canonical parity training set is
+**13.13 driving hours** — 2,376 clips × 19.9 s at 10 Hz, **472,627 frames**, **406,099** unique windows
+(a count that independently reproduces the training run's own log). At 30 k optimizer steps and an
+effective batch of 64 that is 1,920,000 presentations = **4.73 epochs**: the deployed flagship saw its
+corpus fewer than five times. The kinematic scenario mix is **lane_keep 59.6 % · accel 13.2 ·
+brake_stop 12.9 · turn_right 7.4 · turn_left 6.9** (14.25 % turns), speed strata ~46 % highway / ~46 %
+city / ~8 % stopped. Two structural gaps matter more than the aggregate: only **42.6 % of clips contain
+any turn at all**, and **semantic scenarios — traffic lights, roundabouts, merges — are 0 %-labeled**,
+i.e. invisible to every loss in §3. This is the concrete content behind §7.4's "partly distribution-fit"
+and behind the strategic layer's command-echo behaviour (§7.5): a route head cannot learn junction
+topology from a corpus in which most clips never turn.
+
+**A balanced 50 h corpus, built by selection.** A v2 corpus was designed and built entirely *within* the
+same NVIDIA PhysicalAI-AV source — 197 egomotion chunks already on hand yield **18,731 moving clips /
+104.6 h**, a 2× headroom — with "augmentation" defined as **distribution-balancing by selection**
+(oversampling rare classes), never synthetic perturbation. The balanced 9,000-clip selection hits its
+targets: turns **14.25 → 28.0 %**, lane_keep 59.6 → 45.0 %, junction-clip presence **37.7 → 61.3 %**. It
+is stored as a JPEG-compressed 256 px cache — **982 GB → ~25 GB** at full parity resolution, with frames
+verified **bit-identical** to the parity decode path (only JPEG quantization differs). It **breaks parity
+with the sacred key by design** and is for the next generation; the running arm finishes on the 13 h set,
+so no cross-arm comparison is contaminated. *Honest limit: kinematic selection cannot buy semantic
+scenarios — they remain 0 %, and closing them needs the separate vision-language labeling track.*
+
+**H7 — pseudo-labeling action-free video, and the first end-to-end evidence.** The mechanism is v1's
+**frozen** encoder plus a small **multi-domain inverse-dynamics head** that reads a latent window and
+emits ego-motion; unlabeled video is pseudo-labeled by it, a world model is pretrained on the
+pseudo-labels, and the benefit is measured downstream against real labels. Three measurements, in
+increasing order of what they license:
+
+1. **Direct label accuracy, stated plainly and unflatteringly.** Extracted-vs-ground-truth speed R²
+   **0.62–0.66** cross-domain, longitudinal trajectory R² **0.60**, **yaw ≈ 0 cross-class (weak)**,
+   acceleration unusable and dropped. On its own this reads as a "no."
+2. **The downstream ablation overturns the proxy.** In the regime that actually matters — abundant
+   pseudo-labeled data, scarce real labels — pseudo-label pretraining captures **~96 % of the real-label
+   pretraining benefit**: fraction-of-ceiling 0.965 (speed) / 0.984 (trajectory) on a cross-*class*
+   corpus and 0.960 / 0.917 on a same-class held-out rig, beating the random-init floor on **all 8 seeds
+   across both domains**. On the **actual parity target** with 4 seeds and readable yaw it is stronger
+   still: **109 % of ceiling on speed, 107 % on trajectory, 71 % on yaw**, every seed CI-separated from
+   the floor. The mechanism is not mysterious — pretraining needs labels that convey *structure*, and
+   tolerates noise that a direct-accuracy proxy penalizes.
+3. **The real-video pilot — the one read our own data cannot give.** 80 **Creative-Commons** dashcam
+   clips (8,960 windows), face/plate/body blurred at full resolution before downscaling, only latents,
+   pseudo-labels and pointers persisted. Pretraining on them lifts downstream parity-validation
+   **speed R² from −0.520 ± 0.200 to +0.563 ± 0.047** (3 seeds; clip-cluster bootstrap CI excludes zero
+   on *every* seed, gaps +1.37 / +0.88 / +1.05), **yaw R² 0.55 → 0.75**, and **halves trajectory ADE,
+   12.82 → 6.31 m** — **≈92 % of the real-label pretraining ceiling. The YouTube domain transfers.**
+
+*Honest counterweight, with equal weight.* The pilot is **directional, not decision-grade**: 80 clips
+against a planned ~300, 3 seeds, unknown camera intrinsics (a nominal-HFOV crop is a *named* domain-shift
+source that biases apparent-motion scale), and no ground truth of any kind on the source. Because the
+floor is negative, the raw gap is inflated — **the substantive claim is the ≈0.92 fraction of ceiling**,
+not the R² delta. Speed and trajectory are trustworthy; yaw rides a 15-clip real fine-tune. Operationally,
+clean continuous Creative-Commons forward dashcam is **scarce** (80 clips from 31 producing channels, 63
+tried, ~339 candidates), so scale is a licensing question, not a technical one.
+
+**And the negative that constrains the design.** A dedicated from-scratch encoder with explicit GAIA-2
+camera conditioning, built precisely to give the inverse-dynamics head a rig-robust latent, **failed**:
+held-out cross-rig speed R² **−0.667** against a pre-registered +0.9 bar, and — the paired, same-regime
+contrast that matters — **worse than simply freezing flagship v1's own encoder (+0.657)**, CI-separated
+on 3 of 4 arms. Explicit camera conditioning at this scale does not close the cross-rig problem; the
+deficit is upstream of rig-invariance, in representation quality. The positive discovery inside the
+negative is that **v1's own trained encoder is the stronger cross-rig substrate** — though not uniformly
+(−1.169 on a single-domain rig arm), so the problem is narrowed, not solved.
+
+### 7.10 Beyond-ADE metrics, a traffic-light gap, and the deployment envelope
+
+**The metric suite meets real models, partially.** The beyond-ADE suite (LAL anticipation lead, TMS motion
+smoothness, OKRI kinematic-risk, CNCE compute-normalized capability, LOPS latent-planning stability) had
+been validated only on synthetic fixtures. It now has **first real numbers**, measured on the deployed
+262.8 M architecture over 30 comma2k19 validation episodes on a commodity RTX 4060: **decision-tick
+latency p50 14.331 ms** (encode 9.273 + K = 9 select 5.058), **TMS median 0.0435** and **CNCE median
+210,551**. Two disclosures travel with them: the TMS figure scores the **expert log**, establishing a
+reference band, *not our policy*; and CNCE's collision term is zero by log-replay construction while its
+latency and parameter terms are weight-independent — so it is a real *architecture*-efficiency number,
+not a driving number. The remaining suite (LAL/OKRI/LOPS, and TLC below) stays **renderer-gated**: the
+simulator needed for rendered occlusion and signal geometry was confirmed absent at three separate probes.
+
+**A traffic-light scenario and metric, because the corpus has none.** §7.9 measured that signalized
+intersections are 0 %-labeled in our corpus; the evaluation side had the mirror gap — no traffic-light
+scenario and no metric for handling one. Both are now built. SC-14 is a signalized approach with an
+explicit per-step signal phase, and **TLC (Traffic-Light Compliance) = red_entry_gate × stop_quality ×
+green_flow ∈ [0, 1]**, where `red_entry_gate ∈ {0,1}` is a hard legal barrier — **a single red-light
+entry zeroes the entire score** — `stop_quality` combines stop-line margin with deceleration smoothness,
+and `green_flow` penalizes phantom braking on a genuine green. It is discriminative by construction: a
+design oracle implementing the §3.6/H9 hard rule barrier scores **TLC = 1.0**, while a soft-cost prior
+that treats the signal as one term among many runs the red and scores **0.0** (peak deceleration 3.0 m/s²
+against the barrier policy's 0.986). This is the H9 rule-compliance claim expressed as a scored scenario
+rather than an assertion — but it is a **design oracle, not our model** (P8), and the model-side number is
+renderer-gated with the rest.
+
+**Deployment precision: FP16, and INT8 rejected on evidence.** A per-layer TensorRT benchmark on real
+deployed weights settles the quantization question against the published ViT-INT8 folklore. On **latency**,
+calibrated weight+activation INT8 is **2.1 % faster on the encoder and 2.1 % slower on the predictor** —
+no win — and the per-layer profile shows why: INT8 adds a real reformatting/re-quantization tax at the
+network boundary and redistributes time inside attention without shrinking it, reproducing the documented
+TensorRT trap on our own architecture. On **accuracy**, every transformer block in both the encoder and
+the predictor tolerates weight-only INT8 at isolated cosine ≥ 0.999999 — the blocks are essentially
+immune — but the encoder's **un-normalized post-pool `readout_head`** collapses to cosine **0.566** under
+weight+activation INT8 and accounts for nearly the whole blanket failure. And the failure compounds: per
+single predictor call weight+activation INT8 looks near-perfect, yet **rolled out 20 steps on 880 held-out
+windows it costs +0.0215 m ADE@2s, past the pre-registered 0.02 m falsifier**, with the degradation ratio
+growing 27× from 0.5 s to 2 s. Weight-only INT8 passes cleanly (+0.0065 m). **FP16 is the deployment
+precision.** The exported FP16 engine reaches encoder **1.205 ms** / predictor **0.666 ms** on an Ampere
+proxy, with torch-vs-runtime parity ≤ 1.9e-6 — but *the proxy is a proxy*: TensorRT engines are not
+portable across GPU architectures, and every real Orin/Thor throughput number is hardware-blocked, not
+estimated.
+
+**The tick, defined.** Composing four levers — capturing the 20-step rollout as a CUDA graph, caching the
+encoder, FP16 weights, and dropping two unused horizon heads — takes the *planning* tick from 100.29 ms
+to **18.75 ms p50 (5.35×)**, clearing the 10 Hz budget at p99 with ~5.3× headroom, at a maximum absolute
+trajectory deviation of 0.024 m. Two cautions are part of the result: **the levers are sequenced, not
+additive** (capture first — the other three are worth ~1.0× before it), and the earlier "levers compose
+additively" finding from a 1-step select does not generalize to a 20-step rollout. Separately, an
+8-candidate imagine-and-select fan costs **20.82 ms p50**, ~0.3 ms per marginal candidate, provided the
+encoder runs once and broadcasts — which **refutes** the per-candidate-re-encoding arithmetic that had
+projected 723 ms and nearly retired the planning thesis on a calculation.
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -737,10 +1179,34 @@ ceiling and stage-1 must first be solved. Either way the decision is measurement
 (citations: Kumar 2202.10054; V-JEPA 2 2506.09985; DINO-WM 2411.04983; LeJEPA 2511.08544; LeJEPA
 identifiability 2605.26379).
 
+**What §7.6–§7.7 add to that question, and where it now stands.** Three measurements have since
+sharpened the two-stage argument in a way that partly overturns its framing. **(a) The frozen-encoder
+ceiling is a ceiling of *static decode*, not of freezing.** A planner reading the frozen v1 through its
+*dynamics* reaches 0.599 m and is statistically indistinguishable from that model's oracle-action
+ceiling, while decoding waypoints off the same frozen state lands at 3.65 m — squarely in the REF-A band
+(§7.7). The 1.65 m "frozen trunk risks capping the metric" warning above therefore applies to the
+*probe*, not to the architecture: freeze-and-plan is viable; freeze-and-regress is not. **(b) The
+two-stage separation has a measured price, and it is aleatoric.** Every deployable route over the frozen
+model saturates at ~0.60 m because the residual is future intent that the past does not determine — so
+staging buys robustness at a floor that no amount of stage-2 capacity or search can lower, and that floor
+sits above the 0.427 the jointly-trained arm already reaches in-distribution. **(c) The failure of joint
+training was not the joint objective.** Four arms that coupled a planner into an *already-converged*
+trunk degraded it; the seam's gradient geometry is near-orthogonal (cos = +0.0043), and co-evolving both
+from random initialisation reproduces v1's behaviour with the canary *descending* under full coupling
+(§7.6). Read together: the LP-FT literature's "fine-tuning distorts features" result is reproduced here
+as a **warm-start** pathology specifically, and the escape it recommends (stage, then gently tune) is one
+of two escapes — the other is never to converge the stages separately in the first place. Which of the
+two wins on out-of-distribution transfer is the open question, and the OOD panel of §7.4 is its
+pre-registered arbiter.
+
 ## 9. v3 design: hierarchical goal-vocabulary planning over the world model
 
 *Status: design contribution (2026-07-19), measurement-motivated; implementation staged (P0–P5), first
-evidence gate = the training-free planner-over-v1 experiment (§9.4). No v3 results are claimed yet.*
+evidence gate = the training-free planner-over-v1 experiment (§9.4). **Updated 2026-07-25:** the design
+has since been built as **flagship-v4** (three planners over the world model, ≈247.9 M trainable) and
+trained through five arms; its first results — four warm-start failures, the gradient-geometry pre-probe
+that redirected them, and the co-evolved arm now in training — are in **§7.6**. §9 below remains the
+design of record; §7.6 is its empirical status.*
 
 ### 9.1 Motivation from the measured failures
 Three independent measurements converge on one diagnosis. (i) The **frozen-encoder reference** (REF-A
@@ -803,16 +1269,38 @@ validated before any v3 training.
 
 ## 10. Roadmap
 
-Completion of the first run and the full gate ladder; closed-loop evaluation (CARLA harness) for
-D4–D6 including opponent-derived weak-spot scenarios (a scenario database built from documented
-competitor failures, with per-scenario excellence as an explicit leaderboard section); the
-frozen-encoder comparison arm (H4); data-efficiency slope experiments toward the 1000× thesis (H7);
-modality steering driven by imagination uncertainty (H2); and NAVSIM/Bench2Drive entries once
-closed-loop gates pass. Immediate method levers set by the 30 k results: the §3.7 loss-rebalance and
-its v3 two-stage extension (§8) for vision-reliance and OOD transfer; the ReZero-gated intent seam
-(§3.3) to make top-down hierarchy load-bearing; the REF-C anchored decoder (§3.8) for multi-modal
-tactical prediction; and the targeted longitudinal fix (§7.5) for the high-speed weakness — each
-measurement-gated on the panel that exposed it.
+The standing programme is unchanged: the full gate ladder; closed-loop evaluation for D4–D6 including
+opponent-derived weak-spot scenarios (a scenario database built from documented competitor failures,
+with per-scenario excellence as an explicit leaderboard section); the frozen-encoder comparison arm
+(H4, now closed negative); data-efficiency slope experiments toward the 1000× thesis (H7); modality
+steering driven by imagination uncertainty (H2); and NAVSIM/Bench2Drive entries once closed-loop gates
+pass. Standing method levers from the 30 k results also remain open: the §3.7 loss-rebalance and its
+two-stage extension (§8) for vision-reliance and OOD transfer, the ReZero-gated intent seam (§3.3), and
+the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first:
+
+1. **Finish the co-evolved coupled arm to 30 k and gate it on the formal eight-metric card** (§7.6).
+   Two things are required for the verdict to be quotable at all: the canonical held-out harness rather
+   than the trainer's in-loop evaluation (I-class C1), and the three pre-registered kill secondaries that
+   currently have **no emitter anywhere in the codebase** — a gate that cannot render a complete verdict
+   is an instrument failure, not a model result. The acceptance criterion is the **out-of-distribution**
+   panel of §7.4, not the in-distribution one we already pass.
+2. **Longitudinal control, now the single most-confirmed weakness.** It is the above-floor stratum
+   open-loop (§7.5), the failure axis of every v4 planner arm (§7.6), and — measured on-policy through an
+   independent instrument at n = 40 — the whole of the flagship's closed-loop deficit while lane-keeping
+   is nearly perfect (§7.8). Three independent instruments now point at one mechanism.
+3. **A lower-OOD reactive-agent instrument.** The measured trade — low observation-OOD requires real
+   footage, which has no agents; agents require a renderer, which sits at ~3.2× OOD — is the binding
+   constraint on every safety-grade closed-loop claim, and on the renderer-gated half of the beyond-ADE
+   suite including TLC (§7.8, §7.10). This is a build, not an experiment.
+4. **Train the next generation on the balanced 50 h corpus** (§7.9), whose turn and junction coverage
+   directly target the strategic seam's command-echo behaviour (§7.5) and the 42.6 %-of-clips-contain-no-
+   turn structural gap; and close the semantic-scenario 0 % with the separate labeling track.
+5. **Scale the inverse-dynamics video pipeline from the 80-clip pilot to a decision-grade harvest**
+   (~300+ clips, 4+ seeds, plus a per-video intrinsics estimator to remove the nominal-HFOV
+   approximation) — the direct path to the C2 data-efficiency slope and the first quantitative test of
+   the 1000× thesis (§7.9).
+6. **Retire the deprecated interval estimator from the historical tables** and re-publish §7.1–§7.5's
+   widths under the episode-cluster bootstrap (§5), so the paper carries one estimator throughout.
 
 ## References
 
@@ -880,3 +1368,83 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   V3_GOAL_VOCABULARY_V1.md. Mid-training context: REF-B v2 @20k = 0.646 (first REF-B to beat the CV
   floor in every speed stratum; validates the time-anchored proposal decoder); flagship-v2 @6k behind
   v1's trajectory (6.18 m), mechanism diagnostic + 10k gate pending — lever staging feeds §9.3.
+- v0.6 (2026-07-25): the coupled-planner round, two additive directions closed, the first confound-free
+  closed-loop comparison, and the data thesis's first evidence. *(Status line corrected: it had been left
+  at v0.4 while the §9 design round was already logged as v0.5; this results round is v0.6 so no number
+  is reused.)*
+  **§7.6 flagship-v4 — planner–WM coupling.** The §9 design built (≈247.9 M trainable, ~30 M *smaller*
+  than v1: three planners replace three supervised heads; strategic planner in a 128-d subspace +
+  tactical/operative anchored-diffusion at 256 anchors). Four **warm-start** arms fail: v4 (hot trunk)
+  killed ~3.5k with the canary rising under a clamped planner gradient; **v4.1 10k `ade_0_2s` 0.8522
+  [0.7468, 0.9800]** vs a 0.60 bar with canary 0.4599 PASS (WM healthy, planner starved; loss is
+  longitudinal — speed vs CV Δ −0.366 [−0.491, −0.245] separated, while speed-decoupled path geometry
+  *beats* CV +0.115 [+0.017, +0.240]); v4.2 (floor 0.25) 0.9869 with canary 0.7222 FAIL; v4.2b
+  (floor 0.15) canary 0.697. **Cosine pre-probe (~0 GPU, n=512 windows, the `states` seam):
+  cos(g_wm, g_plan) = +0.0043 (sd 0.064), 47.9 % of windows negative, PCGrad `frac_removed` 0.0224 →
+  gradient surgery REFUTED as a no-op**, and the floor had already attenuated g_plan to 15 % with the
+  canary still degrading ⇒ neither direction nor magnitude is the cause. **From-scratch co-evolution**
+  (`flagship-v4-fromscratch-30k`): canary baseline recalibrated to **15.674** at random init; at full
+  coupling λ_plan = 1.0 it **descends** 15.674 → 2.59@7k → 1.371@9k while held-out ADE@2s falls
+  0.531@9k → 0.4788@11.5k (miss@2m 0.169, oracle-in-fan 0.242); 10k gate **CONTINUE**. **Claim: the
+  coupling failure is a warm-start artifact, not an intrinsic prediction-vs-control conflict.**
+  ⚠️ from-scratch numbers are the **trainer's in-loop** clean-split evaluation, formal 8-metric gate
+  **deferred**; run is at ~40 % of 30k; an earlier one-point "canary descending confirmed" was retracted.
+  **§7.7 two additive directions.** *D1 frozen-WM + learned planner:* a 3.77 M planner trained by
+  analytic gradients through the frozen v1 reaches **0.5989 [0.374, 0.854]** — paired-beats CV
+  (−0.2474 [−0.505, −0.034]), hold-v0 and action-BC (−0.4012 [−0.717, −0.128]), and is **not separated
+  from the WM's own oracle-action ceiling 0.4045** (+0.1944 [−0.045, +0.448]); static decode off the
+  same frozen state is 3.649 (the REF-A regime) ⇒ **the frozen ceiling is a ceiling of static decode,
+  not of freezing.** Capacity is flat under 11× scaling (0.599/0.601/0.599, none separated); the wall is
+  **aleatoric**. 🔴 RETRACTED (I9): the CEM "0.132, 4.5× headroom" is **hindsight-privileged**; the
+  deployable learned-value search scores **1.0162**, +0.4173 [+0.237, +0.605] separated *worse* than
+  feedforward. Verdict: ~0.60 m degradation-free **fallback**, not a contender. *D2 closed-loop
+  recovery augmentation:* the ADE "cost" was largely a knife-edge-L2 artifact (`band_ade2d(1.0)` makes
+  it vanish CI∋0 for 3/4 configs, −74 % for the fourth), but the departure **benefit reverses at power**
+  — n=12 +0.0089 → **n=40 2-fold cross-fit −0.0302 [−0.0595, −0.0088]**, departs 3.3× more. Not
+  promotable; durable = the machinery, **REF-C's encoder is safely fine-tunable** (feat_cos 0.9658 at a
+  material move, canary holds), and two measurement lessons.
+  **§7.8 closed-loop benchmarking.** New **real-footage log-replay** instrument: on-policy observation-OOD
+  **1.02–1.20×** (longitudinal 1.018/1.004; junction 1.196/1.152) vs a photoreal reconstruction's flat
+  **3.75×**; flagship envelope flat to **2.0 m** lateral (3 m: +0.066 [+0.010, +0.138]), yaw separates at
+  **3°**. At **n = 40 eps / 881 windows**, paired: **REF-C base ADE@2s 0.564 [0.452, 0.676] vs flagship v1
+  1.488 [1.329, 1.647]** (Δ +0.924 [+0.781, +1.065]); departure@1.75 m 0.0134 vs 0.0318 (Δ +0.0184
+  [+0.0077, +0.0328]) — the **third independent confirmation** (n=1 retracted → n=12 reconstruction suite
+  pass 8/12 vs 2/12, Δ −0.430, sign-test p=0.008, collisions tied → n=40 real footage). Decomposition:
+  in longitudinal scenes both arms keep the lane (0.4 % / 0.04 % departure) yet the flagship's ADE is
+  **4×** — the deficit is **longitudinal, not lane-keeping**; in junctions the flagship departs ~2.3×
+  more (peak XTE 2.372 vs 1.458 m). ⚠️ map-free/agent-free ⇒ **lane-keeping drift, not off-road or
+  collision**; the low-OOD-vs-safety-metric gap is ~fundamental without a lower-OOD reactive renderer.
+  **§7.9 data.** Corpus MEASURED: **13.13 h / 472,627 frames / 2,376 clips × 19.9 s / 406,099 windows;
+  30 k steps = 4.73 epochs**; lane_keep 59.6 % · accel 13.2 · brake_stop 12.9 · turn_right 7.4 ·
+  turn_left 6.9; **only 42.6 % of clips contain any turn; semantic scenarios 0 %-labeled.** A balanced
+  **50 h v2 corpus** designed+built inside the same source (turns 14.25→28.0 %, junction-clip presence
+  37.7→61.3 %, key `physicalai-v2bal-4b7eeeac222d`), stored JPEG-compressed **982 GB → ~25 GB** with
+  frames bit-identical to the parity decode path; breaks parity **by design**. **H7:** direct
+  extracted-vs-GT accuracy is modest (speed R² 0.62–0.66, longitudinal-traj 0.60, **yaw ≈ 0**, accel
+  dropped) but downstream pseudo-label WM pretraining captures **~96 %** of real-label value (8 seeds,
+  two domains) and **109 % speed / 107 % traj / 71 % yaw** on the actual parity target (4 seeds); an
+  **80-clip CC YouTube pilot** lifts parity-val speed R² **−0.520 → +0.563** (3 seeds, clip-cluster CI
+  excludes 0 every seed), yaw 0.55→0.75, ADE **halved** 12.82→6.31 m ⇒ **≈92 % of the real-label
+  ceiling — the YouTube domain transfers.** ⚠️ DIRECTIONAL (80 clips, 3 seeds, unknown intrinsics; the
+  fraction-of-ceiling is the substantive claim, not the R² delta). Negative that constrains the design:
+  a from-scratch GAIA-2 camera-conditioned encoder **FAILS** cross-rig (speed R² **−0.667** vs frozen
+  v1's **+0.657**, paired CI excludes 0 on 3/4 arms).
+  **§7.10 metrics + deployment.** Traffic-light scenario **SC-14** + **TLC = red_entry_gate ×
+  stop_quality × green_flow** (a single red-run zeroes it; design oracle rule_barrier 1.0 vs soft_prior
+  0.0). First **real** beyond-ADE numbers on the deployed architecture: decision-tick **p50 14.331 ms**,
+  TMS median **0.0435** (expert-log reference band, not our policy), CNCE median **210,551**;
+  TLC/LAL/OKRI/LOPS remain **renderer-gated** (absence confirmed at 3 probes). **FP16 is the deployment
+  precision; INT8 rejected** — no latency win (encoder +2.1 %, predictor −2.1 %) and weight+activation
+  INT8 collapses the un-normalized `readout_head` to cosine 0.566, costing **+0.0215 m** ADE@2s over a
+  20-step rollout past the 0.02 m falsifier (weight-only passes at +0.0065). Composed planning tick
+  **100.29 → 18.75 ms p50 (5.35×)**, 10 Hz at p99 with 5.3× headroom, levers **sequenced not additive**;
+  an 8-candidate select fan is **20.82 ms** (~0.3 ms/candidate), refuting the 723 ms projection.
+  **§5 doctrine extended** with three method-grade failure classes — **I8** power before closure (an
+  effect on one underpowered split reversed sign at full power), **I9** a privileged-input arm is not a
+  headroom estimate, **I10** verify presence/absence with the tool that owns the fact (a truncated
+  mtime-sorted listing produced a false "stranded" claim) — plus the **estimator correction** (the
+  historical `± CI95` is `overlapping_holdout_se`, 1.28–2.06× too narrow, coverage 62.3 % vs 93.8 %;
+  decision-grade = episode-cluster bootstrap, paired for two arms), the **two-tick latency definition**
+  trap, the **tolerance-band closed-loop metric**, and a leaking validation split (**78 %** overlap) now
+  **refused in code**. §8 extended with what §7.6–§7.7 do to the two-stage question; §9 status updated to
+  point at §7.6; §10 roadmap re-ordered. All open-loop numbers remain weak claims (arXiv 2605.00066).

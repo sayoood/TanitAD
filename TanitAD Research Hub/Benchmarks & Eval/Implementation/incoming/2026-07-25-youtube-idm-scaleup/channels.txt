@@ -1,0 +1,17 @@
+# OPTIONAL channel-uploads discovery (harvest_scaleup.py --channels-file).
+# Long continuous forward-facing 4K driving channels yield many clean clips/video,
+# so channel enumeration is the highest-yield source. Each line: a channel URL or
+# /videos URL (or @handle URL). Missing/renamed channels are logged + skipped
+# gracefully — ytsearch queries_noncc.txt is the robust fallback and is sufficient
+# on its own to reach the ~500-1000 target.
+#
+# VERIFY before relying (handles drift). Well-known forward-facing driving channels
+# to consider (uncomment / add after a quick manual check that they are forward
+# dashcam, continuous, and not time-lapsed):
+# https://www.youtube.com/@JUtah/videos
+# https://www.youtube.com/@DrivingDowntown/videos
+# https://www.youtube.com/@allthingsdrive/videos
+# https://www.youtube.com/@Roadcam/videos
+#
+# Left empty by default: the harvest runs on ytsearch discovery alone. Populate this
+# file to raise yield/quality once channels are hand-verified.

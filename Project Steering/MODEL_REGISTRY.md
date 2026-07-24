@@ -1464,9 +1464,19 @@ published figures stay traceable), physicalai val, read from the raw eval JSONs 
    confounded (§4.4, RETRACTION_LOG C6).** AlpaSim NuRec (n=12, 2026-07-22): REF-C-base 33 % at-fault /
    6-of-12 pass, XL 5-of-12 — **but REF-C's open-loop ADE *on the reconstructions* is 1.52, 3.21× its
    real-footage 0.4728**, so those rates measure model × reconstruction-fidelity, not the model. What
-   survives: **base ≥ XL ordering** (score 0.345 vs 0.246, same OOD both), and **flagship v1 drives
-   collision-free (PASS, score 0.699) on the one scene all three REF-C variants crash** (`01d503d4`, n=1,
-   rollout `71f9740c`) — v1 does drive closed-loop via its tactical policy.
+   survives: **base ≥ XL ordering** (score 0.345 vs 0.246, same OOD both), and — the ONLY admissible
+   reading of the v1 scene — **v1 does drive closed-loop at all via its tactical policy** (`01d503d4`
+   collision-free, PASS score 0.699, rollout `71f9740c`).
+   ⚠️ **CORRECTED 2026-07-25 — do NOT quote that scene as "v1 beats REF-C".** The n=1 framing
+   ("the one scene all three REF-C variants crash") was a **lucky scene** and is **retracted**
+   (`RETRACTION_LOG` C7). It reverses under power, twice, on independent instruments:
+   **n=12 paired AlpaSim** — REF-C base vs flagship v1 pass **8/12 vs 2/12**, score 0.496 vs 0.066,
+   paired Δ **−0.430 [−0.646, −0.215]**, sign-test 8-0 (p = 0.008), collisions TIED; and
+   **n=40 real-footage low-OOD** (1.02–1.20× OOD, ≪ NuRec's 3.2×) — ADE@2s **0.564 [.452,.676] vs
+   1.488 [1.329,1.647]**, departure-rate 0.0134 vs 0.0318 (§4.4, LEADERBOARD §5.5).
+   **Standing closed-loop ordering: REF-C base > flagship v1, triple-confirmed.** v1's deficit is
+   **longitudinal, not lane-keeping**; its tactical head is a high-deviation planner
+   (plan_dev 1.12 vs 0.34) → offroad, not collision.
 
 ---
 
@@ -1534,10 +1544,16 @@ they were made in the operator loop and never got an ADR.
    estimator and simulator. The external cure **ran** (AlpaSim NuRec, n=12, REF-C base+XL, §4.4) — but the
    open-loop-on-reconstructions control shows REF-C is fed **3.21×-OOD** input (open-loop ADE 1.52 vs
    real-footage 0.4728), so the failure rates confound model with reconstruction-fidelity (RETRACTION_LOG
-   C6). What survives: **base ≥ XL ordering**, and **flagship v1 PASSES `01d503d4` collision-free** where
-   all three REF-C variants crash (n=1, §4.4). Still open: **n=12 is small**, only one flagship scene ran,
-   the OOD confound needs a real-footage or higher-fidelity closed-loop, and CARLA pixels remain
-   host-blocked. D5/D6 remain 🟡.
+   C6). What survives: **base ≥ XL ordering**, and that **v1 drives closed-loop at all** (`01d503d4`
+   collision-free, n=1, §4.4). ⚠️ **UPDATED 2026-07-25 — the OOD confound is now RESOLVED and the n=1
+   v1-vs-REF-C reading is RETRACTED (C7).** The real-footage low-OOD instrument eliminated the
+   reconstruction confound by construction (on-policy OOD **1.02–1.19×** vs NuRec's 3.2–3.75×; Δ=0
+   open-loop ADE 0.4045 reproduces the real level) and at **n=40** gives **REF-C base > flagship v1**
+   (ADE@2s 0.564 vs 1.488) — the same ordering as the n=12 paired AlpaSim run (8/12 vs 2/12), so it is
+   **not** a reconstruction artifact. Still open: the low-OOD instrument is **map/agent-free** → it emits
+   drift/lane-departure but **never off-road/collision** (those need reactive agents = a sim = OOD); that
+   gap is ~fundamental until a lower-OOD *reactive* renderer exists. CARLA pixels remain host-blocked.
+   D5/D6 remain 🟡.
 4. **D2/D3 gate evidence is stale** — measured at step 27 k on the *pre-reset* `p0-sB01-realmix` run, in
    camera-frame units, and never re-gated after the speed reset.
 5. **VTARGET's exact placement in the frozen goal vocabulary** should be read from
