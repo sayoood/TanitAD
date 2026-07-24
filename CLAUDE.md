@@ -81,26 +81,24 @@ Check `git status --short` for foreign staged entries FIRST. If a long message i
 write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
 whole index and defeats the pathspec.
 
-⚠️ **But the pathspec form SEGFAULTS here on certain pathspec SHAPES** (measured 2026-07-25,
-exit 139 under MSYS git / `0xC0000005` under native Windows git — both, so it is not the shell).
-It is git's **partial-commit temp-index path**; **not** fsmonitor (already `false`).
-**It is the pathspec shape, NOT the file count** *(an earlier "178+ files" reading was wrong —
-a 2-file commit then crashed too)*:
+⚠️ **The pathspec form SEGFAULTS INTERMITTENTLY here — it is FLAKY, ~50 %, and retry fixes it**
+(measured 2026-07-25: exit 139 under MSYS git *and* `0xC0000005` under native Windows git, so
+not the shell; it is git's **partial-commit temp-index path**; **not** fsmonitor, already
+`false`). *Two successive root-cause theories of mine were WRONG and are recorded here so
+nobody re-derives them: it is **neither** the file count ("178+" — a 2-file commit then
+crashed) **nor** the pathspec shape (spaces / multi-pathspec — the identical single-file
+`-- CLAUDE.md` command crashed on attempt 1 and succeeded on attempt 2).*
 
-| pathspec shape | result |
-|---|---|
-| directory **without** spaces (`stack`, `taniteval` — 81 and 149 files) | ✅ works |
-| a **single file**, even under an `A & B`-style dir | ✅ works |
-| directory **with spaces** (`"TanitAD Research Hub"`, `"…/Architecture & Inference"`) | ❌ segfault |
-| **two or more** pathspecs where any has a space | ❌ segfault (reproduced 2×) |
+**The two things that are actually true and actionable:**
+1. **Retry.** The same command usually succeeds within 2–3 attempts.
+2. **Every crash leaves a stale `.git/index.lock`**, so the *next* attempt dies with *"Another
+   git process seems to be running"* — that reads like contention but is debris. Confirm no git
+   process is alive, then `rm -f .git/index.lock` (the index survives intact). **Clear the lock
+   between every retry**, or the retry reports the wrong error and you chase a phantom.
 
-**Every crash leaves a stale `.git/index.lock`**, so the next commit dies with *"Another git
-process seems to be running"* — that reads like contention but is debris: confirm no git
-process is alive, then `rm -f .git/index.lock` (the index survives intact).
-**So: prefer ONE space-free pathspec per commit** (or one file at a time). A pathspec-free
-`git commit -F <msgfile>` uses the normal path and never crashed — but it commits the whole
-index, so it is admissible **only** after verifying no other agent has staged work
-(`git diff --cached --name-only | grep <today>`).
+A pathspec-free `git commit -F <msgfile>` uses the normal (non-partial) path and has not
+crashed — but it commits the whole index, so it is admissible **only** after verifying no other
+agent has staged work (`git diff --cached --name-only | grep <today>`).
 
 ## Operating standard — raised by Sayed 2026-07-21
 
