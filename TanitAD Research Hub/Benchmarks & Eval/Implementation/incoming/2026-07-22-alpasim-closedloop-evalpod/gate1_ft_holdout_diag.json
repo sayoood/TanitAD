@@ -1,0 +1,21 @@
+{
+  "diagnostic": "leave-3-scenes-out generalization (open-loop recovery-L1)",
+  "purpose": "overfit check for the n=15 fine-tune: does the learned recovery generalize to UNSEEN scenes?",
+  "holdout_scenes": ["780ece49 (intersection)", "c3d4065e (roundabout)", "fd3a49fa (roundabout)"],
+  "n_train_windows": 540,
+  "n_holdout_windows": 135,
+  "lr": 3e-05, "batch": 64, "decoder_only": true,
+  "metric": "selected-traj L1 vs ref_lookahead_rig recovery target (deployment path, steps=2, eval/deterministic)",
+  "curve": [
+    {"step": 0,   "sel_l1_train": 5.1626, "cls_acc_train": 0.165, "sel_l1_holdout": 4.6477, "cls_acc_holdout": 0.141},
+    {"step": 100, "sel_l1_train": 2.6682, "cls_acc_train": 0.661, "sel_l1_holdout": 4.6193, "cls_acc_holdout": 0.148},
+    {"step": 200, "sel_l1_train": 1.7404, "cls_acc_train": 0.835, "sel_l1_holdout": 4.5250, "cls_acc_holdout": 0.148},
+    {"step": 300, "sel_l1_train": 1.2126, "cls_acc_train": 0.926, "sel_l1_holdout": 4.1464, "cls_acc_holdout": 0.178},
+    {"step": 400, "sel_l1_train": 0.9181, "cls_acc_train": 0.952, "sel_l1_holdout": 4.4290, "cls_acc_holdout": 0.185},
+    {"step": 500, "sel_l1_train": 0.7997, "cls_acc_train": 0.969, "sel_l1_holdout": 4.4413, "cls_acc_holdout": 0.193},
+    {"step": 600, "sel_l1_train": 0.6881, "cls_acc_train": 0.976, "sel_l1_holdout": 4.7732, "cls_acc_holdout": 0.185},
+    {"step": 700, "sel_l1_train": 0.4738, "cls_acc_train": 0.985, "sel_l1_holdout": 4.7046, "cls_acc_holdout": 0.185},
+    {"step": 800, "sel_l1_train": 0.4329, "cls_acc_train": 0.987, "sel_l1_holdout": 4.8728, "cls_acc_holdout": 0.207}
+  ],
+  "read": "Train recovery-L1 collapses 5.16->0.43 (cls 0.99 = near-perfect in-scene). Held-out-scene recovery-L1 barely moves (4.65->4.15 best @step300, then DEGRADES to 4.87) and holdout cls_acc stays ~0.15-0.21. => the decoder MEMORIZES per-scene recovery; cross-scene generalization is weak. n=15 is insufficient for a generalizable recovery policy (matches the collection note's 'sufficient to prototype, not to train a robust policy'). Best cross-scene generalization is early (~step 300)."
+}

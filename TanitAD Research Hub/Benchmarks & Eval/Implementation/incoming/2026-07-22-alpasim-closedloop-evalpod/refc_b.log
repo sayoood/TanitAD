@@ -1,0 +1,107 @@
+device cuda
+loaded base ckpt step 29999 anchors 128
+val episodes 40
+collected windows torch.Size([881, 4, 2])
+=== bench.run top-level keys === ['n_windows', 'n_episodes', 'primary_ci', 'cluster_bootstrap', 'heldout', 'full_set', 'beats_cv_ade_0_2s', 'beats_cv_separated', 'by_curvature', 'by_speed', 'protocol']
+--- full_set --- {
+  "model": {
+    "de@0.5s": 0.07079672068357468,
+    "ade@0.5s": 0.07079672068357468,
+    "de@1s": 0.2531667649745941,
+    "ade@1s": 0.16198164224624634,
+    "de@1.5s": 0.5640147924423218,
+    "ade@1.5s": 0.2959926724433899,
+    "de@2s": 1.0031133890151978,
+    "ade@2s": 0.4727729260921478,
+    "ade_0_2s": 0.4727729260921478,
+    "fde@2s": 1.0031134289475145,
+    "rmse": 0.8523742737584619,
+    "miss_rate@2m": 0.14188422247446084,
+    "tms_openloop": 0.19565406441688538
+  },
+  "cv": {
+    "de@0.5s": 0.1296682506799698,
+    "ade@0.5s": 0.1296682506799698,
+    "de@1s": 0.4696614444255829,
+    "ade@1s": 0.2996646463871002,
+    "de@1.5s": 1.0109835863113403,
+    "ade@1.5s": 0.5367714762687683,
+    "de@2s": 1.7405647039413452,
+    "ade@2s": 0.8377195000648499,
+    "ade_0_2s": 0.8377195000648499,
+    "fde@2s": 1.7405647549887184,
+    "rmse": 1.5758308664352707,
+    "miss_rate@2m": 0.30419977298524403,
+    "tms_openloop": 0.999836802482605
+  }
+}
+--- heldout --- {
+  "model": {
+    "de@0.5s": {
+      "mean": 0.0705,
+      "ci95": 0.0074,
+      "std": 0.0107,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ade@0.5s": {
+      "mean": 0.0705,
+      "ci95": 0.0074,
+      "std": 0.0107,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "de@1s": {
+      "mean": 0.2442,
+      "ci95": 0.0255,
+      "std": 0.0369,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ade@1s": {
+      "mean": 0.1573,
+      "ci95": 0.0163,
+      "std": 0.0236,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "de@1.5s": {
+      "mean": 0.54,
+      "ci95": 0.0597,
+      "std": 0.0861,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ade@1.5s": {
+      "mean": 0.2849,
+      "ci95": 0.0307,
+      "std": 0.0444,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "de@2s": {
+      "mean": 0.9543,
+      "ci95": 0.1066,
+      "std": 0.1538,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ade@2s": {
+      "mean": 0.4523,
+      "ci95": 0.0497,
+      "std": 0.0717,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ade_0_2s": {
+      "mean": 0.4523,
+      "ci95": 0.0497,
+      "std": 0.0717,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "fde@2s": {
+      "mean": 0.9543,
+      "ci95": 0.1066,
+wall_s 20.8
+B_EVAL_DONE

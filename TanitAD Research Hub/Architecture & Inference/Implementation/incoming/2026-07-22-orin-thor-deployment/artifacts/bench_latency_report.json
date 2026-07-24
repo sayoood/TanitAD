@@ -1,0 +1,23 @@
+{
+  "gpu": "NVIDIA A40",
+  "torch": "2.8.0+cu128",
+  "K": 20,
+  "note": "predictor-only rollout proxy; NOT the full tick (cite 07-20 levers note)",
+  "predictor_1call_fp32": {
+    "p50_ms": 4.956,
+    "p99_ms": 5.075
+  },
+  "rollout_k20_eager_fp32": {
+    "p50_ms": 96.402,
+    "p99_ms": 102.549
+  },
+  "rollout_k20_graph_step_fp32": {
+    "p50_ms": 27.87,
+    "p99_ms": 27.884
+  },
+  "graph_capture": "OK (single-step, replayed 20x)",
+  "predictor_1call_fp16": {
+    "p50_ms": 4.117,
+    "p99_ms": 4.355
+  }
+}

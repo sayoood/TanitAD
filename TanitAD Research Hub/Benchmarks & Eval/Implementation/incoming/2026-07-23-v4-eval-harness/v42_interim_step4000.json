@@ -1,0 +1,85 @@
+{
+  "purpose": "decision-grade interim check requested by the coordinator mid-session: does the real held-out 4wp ade_0_2s confirm the in-loop floor-too-high read on flagship-v4.2 (lam-mult-floor 0.25) before burning the ~10h to the pre-registered 10k gate?",
+  "harness": "stack/scripts/eval_flagship_v4.py MODE B, validated against flagship-30k (v1) BEFORE any v4 checkpoint was scored (see v1_validation_proof.json: canary 0.42148 vs registry full-set 0.4271, delta -0.0056m, HARNESS_VALIDATED=true)",
+  "checkpoint": {
+    "source": "pod2:/workspace/experiments/flagship-v4.2-30k/ckpt.pt",
+    "note": "the ROLLING atomic-resume ckpt.pt, not a milestone archive -- copied at step 4000 while training (PID 91311) continued past it. Atomic-saved so a snapshot copy is internally consistent.",
+    "step": 4000,
+    "bytes": 3243109310,
+    "md5_source_pod2": "c42ae39cfbd6afd4aae58e5713d05d67",
+    "md5_eval_pod_after_transfer": "c42ae39cfbd6afd4aae58e5713d05d67",
+    "md5_match": true,
+    "transfer_method": "direct streaming relay through the dev box (ssh pod2 cat | ssh tanitad-eval cat >), read-only, no GPU/training-process touch. An HF-push shortcut was suggested twice but declined: the first attempt this session was blocked by the Claude Code auto-mode classifier (credential/external-upload pattern) and a classifier denial is not something to route around on request.",
+    "training_command_confirmed": "train_flagship_v4.py ... --lr-trunk 1e-4 --accum 4 --lam-mult-floor 0.25 (independently verified via ps -p 91311 on pod2, read-only)"
+  },
+  "evidence_class": "MEASURED (ours; artifacts: flagship-v4.2-step4000.json, driving_flagship-v4.2-step4000.json, windows_flagship-v4.2-step4000.pt, all in this folder)",
+  "results_881_windows_40_episodes": {
+    "gate_primary_ade_0_2s_4wp_episode_cluster_bootstrap": {
+      "mean": 0.9869,
+      "ci95": [0.8795, 1.1088],
+      "gate_threshold": 0.60,
+      "pass": false
+    },
+    "wm_canary_ade_2s": {
+      "value": 0.7222376465797424,
+      "threshold": 0.55,
+      "pass": false,
+      "cross_check_vs_in_loop_log_step4000": {
+        "in_loop_train_log_jsonl": 0.72224,
+        "harness_independent_measurement": 0.72224,
+        "agree": true,
+        "note": "near-exact agreement corroborates BOTH the in-loop canary reading and this harness's rollout mechanics"
+      }
+    },
+    "oracle_in_fan_4wp": {
+      "value": 0.5009031051201123,
+      "threshold": 0.30,
+      "pass": false,
+      "note": "comparable resolution to v1.5-ab's 0.3073; even the best-in-256-anchor-fan proposal is worse than that frozen-trunk reference"
+    },
+    "miss_2m": {
+      "value": 0.294,
+      "threshold": 0.10,
+      "pass": false
+    },
+    "seam_norm_ratio_max": {
+      "value": 0.1284,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "dense_headhorizons_diagnostics_train_loop_comparable_NOT_the_gate_metric": {
+      "ade_2s": 0.7651711093445777,
+      "oracle_ade": 0.41758214037074676,
+      "miss_at_2m": 0.2939841089670829
+    },
+    "vs_cv_floor_paired_episode_cluster_bootstrap": {
+      "cv_ade_0_2s_point_estimate": 0.8377,
+      "model_minus_floor_delta": -0.1492,
+      "ci95": [-0.298, 0.0256],
+      "separated": false,
+      "favours": "tie (NOT formally CI-separated -- the upper CI bound crosses zero by 0.0256 -- but the point estimate and ~99% of the CI mass sit on the worse-than-CV side)",
+      "speed_mae_vs_cv_separated_worse": true,
+      "speed_mae_vs_cv_delta": -0.3507,
+      "speed_mae_vs_cv_ci95": [-0.4208, -0.2754]
+    }
+  },
+  "context_vs_flagship_v4.1_at_its_10k_gate": {
+    "v4.1_step10000_ade_0_2s": 0.8522,
+    "v4.1_step10000_wm_canary": 0.4599,
+    "v4.2_step4000_ade_0_2s": 0.9869,
+    "v4.2_step4000_wm_canary": 0.7222,
+    "note": "v4.2 at LESS THAN HALF the steps (4000 vs 10000) is already worse than v4.1's already-failing 10k number on both the primary and the canary -- this is not a 'give it more steps' situation on the current trajectory."
+  },
+  "pre_registered_decision_rule": {
+    "confirms_floor_too_high_if": "4wp ade_0_2s >~ 0.7 AND canary >~ 0.65 -> v4.2b (fresh-from-v1 @ floor 0.15) warranted",
+    "trade_is_paying_off_if": "4wp ade_0_2s < 0.60 despite the canary -> continue v4.2",
+    "measured": "ade_0_2s = 0.9869 (>> 0.7) AND canary = 0.7222 (> 0.65)",
+    "both_committed_outcomes_were_pre_registered": true
+  },
+  "verdict": "CONFIRMS floor-too-high. Both pre-registered conditions are met, and not marginally: ade_0_2s=0.9869 is well above both the 0.60 gate bar and the 0.7 decision threshold; canary=0.7222 is above the 0.65 decision threshold and matches the in-loop log almost exactly. v4.2's lam-mult-floor=0.25 is not merely under-converged at step 4000, it is worse than v4.1's already-failing step-10000 checkpoint on every measured axis. Per the pre-registered rule, v4.2b (fresh-from-v1 restart at floor 0.15) is warranted -- this is a measurement, not a recommendation I am making unilaterally.",
+  "not_measured_this_run": {
+    "speed_benefit_recovered_frac": "no emitter anywhere in the codebase (P8, undefined)",
+    "deploy_tick_p99_ms": "needs the efficiency.py latency-panel harness, out of scope",
+    "nonav_route_beats_majority": "not reachable -- no ROUTE classifier exists on this checkpoint (P6 not landed)"
+  }
+}

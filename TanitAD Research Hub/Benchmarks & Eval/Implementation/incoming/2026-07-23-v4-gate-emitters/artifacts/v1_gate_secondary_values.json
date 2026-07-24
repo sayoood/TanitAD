@@ -1,0 +1,108 @@
+{
+  "emitted_utc": "2026-07-23T18:16:08.056701+00:00",
+  "secondaries": {
+    "deploy_tick_p99_ms": {
+      "gate_metric": "deploy_tick_p99_ms",
+      "value": 18.7641,
+      "threshold": 50.0,
+      "direction": "<=",
+      "pass": true,
+      "evidence_class": "MEASURED (NVIDIA A40; artifact = eff_levers_flagship-30k.json)",
+      "deployed_lever": "all_levers",
+      "lever_desc": "EVERY lever composed: fp16 weights + pruned horizon heads + cached 1-frame encode + whole-rollout graph",
+      "weights_dtype": "float16",
+      "precision_block": "fp32",
+      "tick_ms": {
+        "mean_ms": 18.7631,
+        "p50_ms": 18.7476,
+        "p95_ms": 18.7569,
+        "p99_ms": 18.7641,
+        "std_ms": 0.1936,
+        "iters": 200,
+        "warmup": 30
+      },
+      "accuracy_equivalence": {
+        "ade_0_2s_delta_m": -6.5893e-05,
+        "cosine": 0.99999994,
+        "finite": true,
+        "note": "the deployed composed tick must decode the SAME trajectory as the eager reference (a fast wrong tick is worthless)"
+      },
+      "gpu_exclusive": true,
+      "v4_delta_note": "v4's operative predictor is v1-verbatim; the anchored-diffusion head adds `diffusion_steps` truncated-denoise passes to the tick (the tick KNOB, V4_FLAGSHIP_DESIGN \u00a78: ~25-28 ms floor with the imagination probe, first thing cut if the arm breaches 50). Measure the composed tick on the v4 ckpt to include the head.",
+      "provenance": {
+        "eff_lever_panel": "taniteval/results/eff_levers_flagship-30k.json",
+        "emitter": "taniteval.efficiency (lever panel)"
+      }
+    },
+    "speed_benefit_recovered_frac": {
+      "gate_metric": "speed_benefit_recovered_frac",
+      "value": 0.8184,
+      "threshold": 0.7,
+      "direction": ">=",
+      "pass": true,
+      "evidence_class": "MEASURED (arm train_log + no-speed control train_log)",
+      "provenance": {
+        "arm_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+        "nospeed_control_log": "taniteval/results/trainlogs/nospeed-phase0_train_log.jsonl",
+        "reducer": "tanitad.eval.speed_benefit.recovered_frac (pinned from postmortem_a_analyze.py:205)"
+      },
+      "metric": "g_op_fwd_ade_m",
+      "bucket": [
+        8000,
+        10000
+      ],
+      "bucket_convention": "lo < step <= hi (left-open, right-closed)",
+      "arm_bucket_mean": 0.1052,
+      "nospeed_control_bucket_mean": 0.5794,
+      "n_arm_rows": 40,
+      "n_nospeed_rows": 40,
+      "formula": "(nospeed - arm) / nospeed",
+      "reading": "1.0 = zero operative-rollout error (full speed benefit); 0.0 = no better than a trunk with no speed channel",
+      "estimator": "train_log_bucket_mean_ratio (DESCRIPTIVE train-log summary, NOT a held-out eval; admissible only as a matched-step ratio vs the arm's own no-speed control)",
+      "per_2k_bucket_trajectory": {
+        "0-2000": 0.509,
+        "2000-4000": 0.6404,
+        "4000-6000": 0.6775,
+        "6000-8000": 0.757,
+        "8000-10000": 0.8184
+      },
+      "three_consecutive_2k_below_threshold": true,
+      "buckets_below_threshold": [
+        "0-2000",
+        "2000-4000",
+        "4000-6000"
+      ]
+    },
+    "nonav_route_beats_majority": {
+      "gate_metric": "nonav_route_beats_majority",
+      "value": 0,
+      "threshold": 1,
+      "direction": ">=",
+      "pass": false,
+      "evidence_class": "MEASURED (ours; hierarchy panel on the ckpt)",
+      "route_acc_follow": 0.7083,
+      "route_acc_nav_commanded": 1.0,
+      "route_acc_zeronav": 0.2361,
+      "majority_straight_rate": 0.7083,
+      "margin": 0.03,
+      "follow_pred_distribution": {
+        "route_left": 0,
+        "route_straight": 72,
+        "route_right": 0
+      },
+      "n_valid": 72,
+      "reading": "1 = the produced (no-command) route head beats always-straight -> a real strategic level; 0 = command echo / constant-straight (route_acc_follow == majority)",
+      "provenance": {
+        "hierarchy_panel": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-v4-gate-emitters/artifacts/hierarchy_flagship-30k_v1.json",
+        "emitter": "taniteval.hierarchy (seam_nav_to_strategic.vision_route_beats_majority)"
+      }
+    }
+  },
+  "secondary_value_args": [
+    "deploy_tick_p99_ms=18.7641",
+    "speed_benefit_recovered_frac=0.8184",
+    "nonav_route_beats_majority=0"
+  ],
+  "missing": [],
+  "all_three_emitted": true
+}

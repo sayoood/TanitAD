@@ -1,0 +1,94 @@
+frozen WM loaded, step 29999
+encoded 40 eps -> 881 windows (27s)
+REFS (40ep): {"oracle": {"ade2s": 0.4271, "ci": [0.3691, 0.4907], "fde2s": 0.9076, "miss2m": 0.0454}, "cv": {"ade2s": 0.8377, "ci": [0.6207, 1.078]}, "holdv0": {"ade2s": 0.7822, "ci": [0.5893, 0.9927]}}
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/transformer.py:392: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+  [fold 0] test_eps=177 n_te=177 ADE=0.7073 (394s)
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/transformer.py:392: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+  [fold 1] test_eps=176 n_te=176 ADE=0.9517 (404s)
+  [fold 2] test_eps=176 n_te=176 ADE=1.0240 (408s)
+  [fold 3] test_eps=176 n_te=176 ADE=0.8824 (398s)
+  [fold 4] test_eps=176 n_te=176 ADE=1.1873 (407s)
+W_40EP: {"ade2s": 0.9502, "ci": [0.7954, 1.1231], "fde2s": 2.0251, "miss2m": 0.3723, "n": 881, "neps": 40, "folds": 5, "protocol": "episode-disjoint k-fold CV on 40-ep val"}
+PAIRED: {"W_minus_oracle": {"delta": 0.5231, "ci": [0.3743, 0.6826], "frac_gt0": 1.0, "separated": true}, "W_minus_cv": {"delta": 0.1125, "ci": [-0.0555, 0.2953], "frac_gt0": 0.901, "separated": false}, "W_minus_holdv0": {"delta": 0.1681, "ci": [0.0141, 0.3404], "frac_gt0": 0.984, "separated": true}}
+DONE_40EP
+{
+  "config": {
+    "folds": 5,
+    "steps": 1500,
+    "bs": 24,
+    "lr": 0.0003,
+    "max_eps": 0,
+    "log": 0,
+    "out": "/root/frozenwm40/results_40ep.json"
+  },
+  "refs": {
+    "oracle": {
+      "ade2s": 0.4271,
+      "ci": [
+        0.3691,
+        0.4907
+      ],
+      "fde2s": 0.9076,
+      "miss2m": 0.0454
+    },
+    "cv": {
+      "ade2s": 0.8377,
+      "ci": [
+        0.6207,
+        1.078
+      ]
+    },
+    "holdv0": {
+      "ade2s": 0.7822,
+      "ci": [
+        0.5893,
+        0.9927
+      ]
+    }
+  },
+  "W": {
+    "ade2s": 0.9502,
+    "ci": [
+      0.7954,
+      1.1231
+    ],
+    "fde2s": 2.0251,
+    "miss2m": 0.3723,
+    "n": 881,
+    "neps": 40,
+    "folds": 5,
+    "protocol": "episode-disjoint k-fold CV on 40-ep val"
+  },
+  "paired": {
+    "W_minus_oracle": {
+      "delta": 0.5231,
+      "ci": [
+        0.3743,
+        0.6826
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    },
+    "W_minus_cv": {
+      "delta": 0.1125,
+      "ci": [
+        -0.0555,
+        0.2953
+      ],
+      "frac_gt0": 0.901,
+      "separated": false
+    },
+    "W_minus_holdv0": {
+      "delta": 0.1681,
+      "ci": [
+        0.0141,
+        0.3404
+      ],
+      "frac_gt0": 0.984,
+      "separated": true
+    }
+  },
+  "neps": 40
+}

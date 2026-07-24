@@ -1,0 +1,94 @@
+{
+  "stream": "D2 — significantly improve REF-C's planner for CLOSED-LOOP (a1f26c92)",
+  "date_berlin": "2026-07-23 (P0/P1/design); experiment RAN on eval 2026-07-23..24",
+  "host": "research+design pod-free (dev box CPU smokes); EXPERIMENT RAN on tanitad-eval A6000 (gpu_lock refc-cl-improve, acquired after abe82f1f freed it, released cleanly on completion)",
+  "measured_results": {
+    "P2a_recovery_probe": {
+      "verdict": "BLIND -> GREENLIGHT (pre-registered)",
+      "refc_covariate_shift_blind": "lateral recovery_ratio 0.0074 [0.0036,0.0115] at 1.0m (corrects <1% of the offset); yaw negligible/wrong-signed. n=881 windows/40 eps. Direct mechanism behind plan_xte 0.57->12.98m.",
+      "artifact": "recovery_probe.json / recovery_probe.log"
+    },
+    "P2b_recovery_aug_ft": {
+      "verdict": "WIN on primary (corridor_departure) WITH a separated ADE cost -> data-efficient departure-reduction lever that GENERALIZES, not yet a free upgrade",
+      "ft": "decoder-only 8,634,505 trainable (frozen 90M encoder), 28 FT eps/617 windows, envelope 1.75m/5deg, lambda_dev 0.5, 1500 steps lr 1e-4; anchor-CE 1.93->0.99",
+      "held_out_paired_base_minus_ft_12eps_264w": {
+        "overall_dCDR@1.75m": "+0.0089 [+0.0008,+0.0197] SEPARATED (base 0.0174 -> ft 0.0085, halved)",
+        "junction_dCDR": "+0.0333 [+0.0091,+0.0576] SEPARATED (strongest where heading covariate-shift dominates)",
+        "overall_dADE2s": "-0.288 [-0.428,-0.149] SEPARATED = FT WORSE ADE (base 0.587 -> ft 0.875) -- the drivability-vs-accuracy trade",
+        "peak_xte_guard": "dPEAK +0.0005 [-0.18,+0.23] n.s. -> guard HOLDS",
+        "window_departure_rate": "base 0.129 -> ft 0.057",
+        "generalization_contrast": "Gate-1 real-junction FT held-out Δ≈0 (memorised n≈15); this synthetic-recovery FT SEPARATES on held-out eps"
+      },
+      "honest_bound": "low-OOD LANE-KEEPING, not off-road/collision (needs AlpaSim); n=12 held-out eps; single seed/config; the ADE regression means DO NOT deploy this ckpt -- the pre-named fix is a gentler FT (larger lambda_dev / smaller lat_max / fewer steps) then AlpaSim",
+      "artifact": "corridor_split_results.json / recovery_ft_eval.log / recovery_ft_train.log; ft ckpt on pod /workspace/refc-recovery-ft/ckpt.pt"
+    },
+    "P2c_gentle_ft_sweep": {
+      "verdict": "TRADE IS FUNDAMENTAL for decoder-only recovery-FT (pre-registered branch 2) -- NO net win; Pareto-bound",
+      "pareto_frontier_overall_(dCDR,dADE)": "naive(+0.0089S,-0.288S) -> g2(+0.0057ns,-0.125S) -> g3(-0.0032S,-0.099S); g1 dominated. dADE separated-worse in ALL 4 (ADE never within noise of base 0.587).",
+      "configs": "g1(500,1.75,ldev1.0,1e-4)=dep-lost+ADE-worse; g2(700,1.0,ldev1.0,5e-5)=best balance (ftADE 0.713, junction dADE +0.133); g3(400,0.75,ldev2.0,5e-5)=too gentle, departs MORE",
+      "refuted": "'fewer steps alone fixes ADE' -- g1 lost the departure win AND kept the full ADE cost",
+      "cost_locus_MEASURED": "ADE damage concentrated OFF-junction (junction dADE +0.029/+0.133 = FT better; overall dragged by longitudinal/straight) -> the frozen encoder barely encodes the offset (probe ratio ~0) so the decoder over-generalizes its reactivity",
+      "next_mechanism": "1) return-to-GT-speed/progress term on the g2 config (decoder-only, WM-safe, targets the MEASURED longitudinal cost) then AlpaSim; 2) encoder-in-the-loop light-FT (higher ceiling, gate on plan-free canary) if 1 insufficient",
+      "artifact": "corridor_g1.json / corridor_g2.json / corridor_g3.json / gentle_sweep.log / GENTLE_SWEEP_PREREG.md"
+    },
+    "P2d_return_to_gt_speed_term": {
+      "verdict": "COUPLING SURVIVES the progress term -> decoder-only recovery-FT is EXHAUSTED, NOT promotable (pre-registered branch 2)",
+      "added": "--lambda-prog = extra L1 on the forward (x) recovery component, on g2",
+      "g2s1_lambda_prog_1.0": "ftADE 1.007 (WORSE than g2 0.713 and base 0.587), dCDR -0.0064 ns (departs MORE), junction dADE +0.133->-0.131 S (destroyed g2's good property) -> destabilizes",
+      "g2s2_lambda_prog_2.5": "ftADE 0.695 (ADE recovered toward base) BUT dCDR +0.0009 ns (departure win GONE) -> protects ADE only by restoring base behaviour",
+      "conclusion": "no lambda_prog holds departures AND recovers ADE; dADE separated-worse in both. The ADE cost is decoder GLOBAL over-reactivity (forced by the frozen encoder not encoding the offset, P2a ratio ~0), NOT a forward-progress error a longitudinal term can fix. Encoder is the bottleneck (twice-confirmed).",
+      "sole_remaining_lever": "encoder-in-the-loop light-FT (unfreeze last-k blocks / low lr_encoder ~5e-6), plan-free-CANARY-gated (WM must not degrade); recipe in INTAKE.md; needs a sanctioned arm + Sayed go",
+      "artifact": "corridor_g2s1.json / corridor_g2s2.json / speed_term_sweep.log / SPEED_TERM_PREREG.md"
+    },
+    "eval_gpu_released": "MEASURED (after each of 3 runs): gpu_lock status=FREE, GPU 0 MiB, no compute-apps, no D2 process running -- free for D1"
+  },
+  "additional_direction": "modifies NOTHING running; REF-C deployed weights are read-only",
+  "one_line": "In-envelope geometric recovery augmentation: teach REF-C to recover from an off-path pose (sensed only in pixels) by warping real frames with an analytic homography bounded to the MEASURED low-OOD envelope and supervising the return-to-path trajectory — the same warp operator the closed-loop instrument applies on-policy (train==test). Data-efficient (every window is a recovery example), renderer-free, non-self-referential.",
+  "builds_on_measured": {
+    "free_floor_ruled_out": "gate0b_gradient_results.json (junction offroad Δ0.000, every scene identical, yet every plan on-road) + wm_mpc_result.json (rung-3 tie) — the deficit is the EXECUTED covariate-shifted plan, not representability",
+    "covariate_shift_localised": "LOOP_STATE G1prep: ego tracks plan 0.49m; plan_xte 0.57->12.98m on-policy = textbook covariate shift in the PLAN",
+    "gate1_data_bound": "gate1_clean_loo.json: real-junction recovery FT memorises at n~15 (held-out recovery-L1 5.06->5.06, Δ≈0); CAT-K drops 49% catastrophic labels; λ_dev cuts held-out plan-shift -80%",
+    "dagger_self_referential": "dagger_result.json: DAgger on the WM HURTS (closed ADE +0.266) — on-policy states are the WM's own off-manifold latents",
+    "envelope": "P1_DECISION_GRADE_FINDINGS.md §1.2/1.3: lateral flat to 2.0m (sep 3m), yaw exact & ≤1.16x to 12°; both ~17x below NuRec's 3.2x",
+    "refc_pixels_only": "source-read refc.py::RefCModel.forward — inputs are the 8-frame window + scalar v0; NO ego-history channel"
+  },
+  "novelty_vs_landscape": {
+    "not_free_floor": "a TRAINING change reshaping the executed plan from off-path states (Gate-0/0b only reshape the plan at a fixed on-path policy)",
+    "not_gate1_FT": "synthetic in-envelope recovery from EVERY window (data-efficient) vs real recovery from 15 junction scenes (memorised)",
+    "not_dagger": "real frame warped by analytic geometry vs the WM's own imagined off-manifold latent",
+    "not_sim_rollout": "homography of a real frame (in-distribution, P1-measured) vs NuRec at 3.2x OOD",
+    "lever_accounting": "encoder FROZEN — no new encoder-touching structural lever; a data/objective lever, door stays CLOSED (RETRACTION_LOG 07-21 C4)"
+  },
+  "primary_sources_verified_this_session": [
+    "PilotNet — Bojarski et al., End to End Learning for Self-Driving Cars, 2016, arXiv:1604.07316 (shift+rotation viewpoint-transform recovery augmentation for lane-keeping) — WebFetch+WebSearch verified",
+    "ChauffeurNet — Bansal/Krizhevsky/Ogale, 2018, arXiv:1812.03079 (RSS 2019) (trajectory perturbation, no simulator) — WebFetch verified",
+    "Causal Confusion in Imitation Learning — de Haan/Jayaraman/Levine, NeurIPS 2019, arXiv:1905.11979 (more history hurts) — WebFetch verified",
+    "Diffusion Policy — Chi et al., RSS 2023, arXiv:2303.04137 (receding-horizon + action-chunking + temporal conditioning) — WebFetch verified"
+  ],
+  "deliverable_manifest": [
+    {"artifact": "P0_RESEARCH.md", "what": "deep research: the renderer-free ∧ non-self-referential ∧ data-efficient quadrant; recovery-augmentation lineage (builds on angle1/2/3, does not duplicate)", "where": "repo (staged)", "evidence": "PUBLISHED (4 verified) + INHERITED"},
+    {"artifact": "DESIGN.md", "what": "the lever for REF-C's anchored-diffusion decoder; why NEW + data-efficient; failure modes", "where": "repo (staged)", "evidence": "design"},
+    {"artifact": "PRE_REGISTRATION.md", "what": "P2a probe (gates) + P2b FT + held-out corridor eval; ALL outcomes committed", "where": "repo (staged)", "evidence": "pre-registration"},
+    {"artifact": "perturb.py", "what": "geometry — envelope sampler, warp (byte-copy of instrument), perturbed-pose recovery target, self-validation", "where": "repo (staged)", "evidence": "MEASURED (validate_identity: target_maxerr 0.0, H_maxerr 0.0)"},
+    {"artifact": "recovery_aug_ft.py", "what": "decoder-only recovery-augmentation FT; frozen-encoder forward (parity 0.0 vs model.forward); saves REF-C-shaped ckpt", "where": "repo (staged)", "evidence": "MEASURED (CPU smoke: RECOVERY_AUG_FT_SMOKE_OK, frozen-forward parity 0.0, decoder-only grad)"},
+    {"artifact": "recovery_probe.py", "what": "P2a zero-training recovery-response probe (recovery_ratio)", "where": "repo (staged)", "evidence": "MEASURED (CPU smoke: RECOVERY_PROBE_SMOKE_OK, demand tracks offset)"},
+    {"artifact": "eval_corridor_split.py", "what": "P2b PAIRED held-out corridor_departure (base vs FT), reuses lowood_lanekeep.py verbatim", "where": "repo (staged)", "evidence": "MEASURED (CPU smoke: CORRIDOR_SPLIT_SMOKE_OK, paired bootstrap detects FT-helps)"},
+    {"artifact": "RESULTS.md", "what": "P2a + P2b MEASURED results, pre-registered verdicts, honest ADE-cost caveat", "where": "repo (staged)", "evidence": "MEASURED"},
+    {"artifact": "recovery_probe.json / recovery_probe.log", "what": "P2a probe raw (REF-C covariate-shift-blind)", "where": "repo (staged) + pod /workspace/refc_cl_d2/", "evidence": "MEASURED"},
+    {"artifact": "corridor_split_results.json", "what": "P2b held-out paired corridor eval raw", "where": "repo (staged) + pod /workspace/refc_cl_d2/", "evidence": "MEASURED"},
+    {"artifact": "recovery_ft_eval.log / recovery_ft_train.log", "what": "P2b eval + FT stdout", "where": "repo (staged) + pod", "evidence": "MEASURED"},
+    {"artifact": "provenance.json", "what": "this file", "where": "repo (staged)", "evidence": "-"}
+  ],
+  "reused_read_only_not_modified": [
+    "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-lowood-lanekeeping-refc/lowood_lanekeep.py (abe82f1f instrument — imported verbatim for eval)",
+    "stack/tanitad/refs/refc.py (RefCModel)", "stack/scripts/refb_labels.py (waypoint_targets)",
+    "stack/scripts/refc_train.py (base objective, mirrored)", "taniteval/taniteval/ci.py (episode-cluster bootstrap)"
+  ],
+  "run_when_eval_free": {
+    "coordinate": "poll abe82f1f for LOWOOD_LANEKEEP_DONE; gpu_lock acquire refc-cl-improve; do NOT touch pod2/pod3/pod1",
+    "order": ["P2a recovery_probe.py (greenlights/kills for ~0 GPU)", "P2b recovery_aug_ft.py (if greenlit)", "eval_corridor_split.py (held-out paired)"],
+    "estimated_cost": "P2a ~minutes inference; P2b ~1-2 A6000-GPU-h decoder-only; eval ~LaneKeep runtime"
+  },
+  "pytest_impact": "none — all files under incoming/, no stack/ file modified",
+  "staging": "git add-ed, NOT committed / NOT pushed (Agent Operating Standard); index may carry other agents' work -> commit with explicit pathspec"
+}

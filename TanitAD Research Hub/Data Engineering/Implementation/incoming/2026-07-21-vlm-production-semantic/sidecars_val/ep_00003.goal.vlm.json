@@ -1,0 +1,141 @@
+{
+ "episode": "ep_00003",
+ "episode_id": 808477753,
+ "val_build": "physicalai-val-f1b378f295ae",
+ "n_windows": 2,
+ "scene_tags": {
+  "weather": {
+   "token": "clear",
+   "prov": "vlm"
+  },
+  "time_of_day": {
+   "token": "night",
+   "prov": "vlm"
+  },
+  "road_type": {
+   "token": "intersection",
+   "prov": "vlm"
+  },
+  "surface": {
+   "token": "wet",
+   "prov": "vlm"
+  },
+  "traffic_density": {
+   "token": "light",
+   "prov": "vlm"
+  },
+  "vru_present": {
+   "token": "false",
+   "prov": "vlm"
+  },
+  "notable_events": [
+   {
+    "event": "unprotected_turn",
+    "t": 0,
+    "offset_s": null,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   },
+   {
+    "event": "unprotected_turn",
+    "t": 40,
+    "offset_s": 8.0,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   },
+   {
+    "event": "geometry.junction",
+    "t": 40,
+    "offset_s": 12.0,
+    "band": "high",
+    "source": "pass_A_independent",
+    "prov": "vlm"
+   }
+  ],
+  "_pending": false,
+  "_axis_agreement": {
+   "weather": {
+    "agreement": 1.0,
+    "n_windows": 2
+   },
+   "time_of_day": {
+    "agreement": 1.0,
+    "n_windows": 2
+   },
+   "road_type": {
+    "agreement": 1.0,
+    "n_windows": 2
+   },
+   "surface": {
+    "agreement": 1.0,
+    "n_windows": 2
+   },
+   "traffic_density": {
+    "agreement": 1.0,
+    "n_windows": 2
+   }
+  }
+ },
+ "lead_state": {
+  "present": true,
+  "gap_m": null,
+  "closing_speed_ms": null,
+  "ttc_s": null,
+  "lane": "ego",
+  "distance_bucket": "close",
+  "relative_motion": "opening",
+  "present_rate": 1.0,
+  "agreement": {
+   "lane": 1.0,
+   "distance_bucket": 1.0,
+   "relative_motion": 1.0
+  },
+  "_metric_fields_unavailable": "gap_m / closing_speed_ms / ttc_s are metric quantities a forward camera VLM cannot measure; the 48-clip pilot measured this model fabricating band edges on 48 % of clips. The coarse categorical state is sufficient to STRATIFY a metric and insufficient to compute headway or TTC.",
+  "prov": "vlm",
+  "_pending": false
+ },
+ "sign_reads": [
+  {
+   "_pending": false,
+   "prov": "vlm",
+   "_note": "no sign read"
+  }
+ ],
+ "language": {
+  "caption": "Ego follows lead vehicle through intersection, preparing for left turn on green light at night on wet road with light traffic and clear visibility, maintaining safe distance and speed while navigating the turn with care due to wet conditions and nighttime driving challenges",
+  "coc_trace": {
+   "observation": "Ego follows lead vehicle through intersection, preparing for left turn on green light at night on wet road with light traffic and clear visibility, maintaining safe distance and speed while navigating the turn with care due to wet conditions and nighttime driving challenges",
+   "critical_agents": [],
+   "justification": "Ego vehicle is executing a left turn at the intersection, following the lead vehicle while maintaining a safe distance and speed, and the traffic light is green, allowing the turn to proceed safely",
+   "decision": "Ego vehicle continues to follow the lead vehicle through the intersection, preparing for the left turn while maintaining a safe distance and speed, and the traffic light remains green, allowing the turn to proceed safely",
+   "action": null,
+   "physics_flag": null
+  },
+  "qa": [],
+  "prov": "vlm",
+  "_pending": false,
+  "_per_window_coc": [
+   {
+    "t": 0,
+    "observation": "Ego follows lead vehicle through intersection, preparing for left turn on green light at night on wet road with light traffic and clear visibility, maintaining safe distance and speed while navigating the turn with care due to wet conditions and nighttime driving challenges",
+    "inference": "Ego vehicle is executing a left turn at the intersection, following the lead vehicle while maintaining a safe distance and speed, and the traffic light is green, allowing the turn to proceed safely",
+    "decision": "Ego vehicle continues to follow the lead vehicle through the intersection, preparing for the left turn while maintaining a safe distance and speed, and the traffic light remains green, allowing the turn to proceed safely"
+   },
+   {
+    "t": 40,
+    "observation": "Ego follows lead vehicle through intersection, preparing for left turn on green light at night on wet road with light traffic",
+    "inference": "Ego maintains safe distance, adheres to lead vehicle’s pace, and prepares for left turn as traffic light remains green",
+    "decision": "Ego continues to follow lead vehicle, maintaining safe distance and preparing for left turn at intersection"
+   }
+  ]
+ },
+ "vlm_stamp": {
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "frames_plan": "dense_early",
+  "provenance": "vlm",
+  "labeler": "scripts/vlm_semantic_labels.py"
+ }
+}

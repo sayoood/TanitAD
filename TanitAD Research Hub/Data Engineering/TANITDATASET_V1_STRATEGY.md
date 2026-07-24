@@ -329,8 +329,25 @@ model needs **no token and no license click-through**. (Reason2-8B remains gated
 Sayed's 2026-07-20 call was Cosmos3. On evidence it **cannot be served on the current fleet**, so the
 pilot ran the sanctioned fallback and Cosmos3 moves to a dedicated-hardware follow-up:
 
-- **Official Cosmos3 serving path is a docker container** (`docker pull vllm/vllm-omni:cosmos3`) —
-  **RunPod pods cannot run docker; they are containers.** Hard blocker.
+> **⚠️ RE-CHECKED 2026-07-20 (bulk pass, timeboxed 30 min) — the docker blocker below is
+> OBSOLETE, but the verdict is unchanged.** `transformers` **5.14.1** (already on tanitad-eval)
+> registers the architecture natively: `cosmos3_omni → Cosmos3OmniForConditionalGeneration`, and on
+> the pod **`AutoConfig.from_pretrained('nvidia/Cosmos3-Nano')` → `Cosmos3OmniConfig`** and
+> **`AutoProcessor` → `Qwen3VLProcessor`** both load with **zero installs** — no docker, no
+> `vllm-omni`, no `sglang`. The real blocker is the **weight layout**: the root
+> `model.safetensors.index.json` maps the *language* tensors (`layers`, `embed_tokens`, `lm_head`,
+> `norm` — 792 layer entries) **into the same `transformer/diffusion_pytorch_model-*` shards as the
+> DiT**. Understanding and generation share ONE 16 B backbone; there is no smaller
+> understanding-only subset to load. Minimum resident = **31.50 GB** (`total_size` in that index),
+> which on a 46 GB A40 shared with live TanitEval jobs leaves ~14 GB. **Verdict stands: Cosmos3-Nano
+> needs a dedicated card — for a memory reason, not a serving-stack reason.** On that card it should
+> be a one-liner (`AutoModelForImageTextToText.from_pretrained('nvidia/Cosmos3-Nano',
+> dtype=bfloat16)`); the only untested step left is whether `transformers` resolves this
+> diffusers-layout checkpoint through that index.
+
+- ~~**Official Cosmos3 serving path is a docker container** (`docker pull vllm/vllm-omni:cosmos3`) —
+  **RunPod pods cannot run docker; they are containers.** Hard blocker.~~ **Superseded — see the
+  re-check above: stock `transformers` serves the arch with zero installs.**
 - The pip alternative `vllm-omni` 0.24.0 carries **81 dependencies** incl. an exact
   `diffusers==0.38.0` pin → must be venv-isolated; installing it on a pod that also runs
   TanitEval/training risks re-pinning torch under a live job.
@@ -407,11 +424,27 @@ And **`coc_trace` returned the structured object in only 3/48 (6 %)** — the re
 prose, which blocks `critical_agents` → `INTERACT` mining and the safety-event `physics_flag`. Fix
 with a separate CoC call, a flattened schema, or constrained decoding **before** the CoC pass scales.
 
-**Data gotchas found (cost hours if rediscovered):** Cosmos-DD clip timestamps are **microseconds**
-(reading them as ns gives 15 000 Hz and 17 000 m/s); weather suffixes can contain `_`
+**Data gotchas found (cost hours if rediscovered):** weather suffixes can contain `_`
 (`Golden_hour`) so parse filenames structurally, not by `split("_")`; and `vehicle_pose/` + `pose/` +
-`pinhole_intrinsic/` ship alongside `generation/` — real ego motion is available (300 poses / 20 s,
-~15 Hz) and should be used rather than asking the VLM to guess speed.
+`pinhole_intrinsic/` ship alongside `generation/` — real ego motion is available and should be used
+rather than asking the VLM to guess speed.
+
+> **❌ CORRECTION 2026-07-20 (bulk pass) — every speed in §8.8 above is a factor 2 TOO LOW.**
+> The pilot derived the clip span from the filename timestamps (`t1-t0 = 2e7`, read as µs → 20 s)
+> and got 300 poses / 20 s = **15 Hz**. The dataset card settles it the other way, twice over:
+> (a) it states the corpus is **"5,843 10-second clips"**, and (b) its sensor table documents
+> `lidar_raw` at **10 FPS** with keys `000000`, `000003`, `000006`, … — an index **stride of 3**,
+> so the index rate is **30 Hz**. 300 indices ÷ 30 Hz = 10 s, self-consistent with (a); `pose/`
+> (2 100 = 300 × 7 cameras) and `all_object_info/` (300) carry the same 300-index grid.
+> **The true rate is 30 Hz over a 10 s clip.** Consequences: the pilot's "0–17.4 m/s (0–62 km/h),
+> plausible urban/suburban" is really **0–34.8 m/s (0–125 km/h)** — a highway-heavy corpus — and
+> the kinematic VTARGET the pilot declared authoritative was **one to several bands low on every
+> clip**. Re-derived at 30 Hz the staged corpus is v_mean **0–37.3 m/s, median 17.9 m/s (64 km/h)**.
+> *Lesson: derive the sample rate from a documented sensor, never from a filename timestamp whose
+> unit is a guess.* Also unresolved and flagged in every bulk record: the render is **121 frames**
+> against a 300-index clip, so which 121 indices it covers is not documented — pixel-motion
+> correlation was inconclusive (generated-video texture churn), so kinematics are minted from the
+> full 10 s track.
 
 ---
 

@@ -1,0 +1,517 @@
+{
+  "experiment": "dagger_planner_ft \u2014 closed-loop-aware planner fine-tune (no-renderer mechanism proof)",
+  "date": "2026-07-23",
+  "evidence_class": "MEASURED",
+  "verdict": "DAGGER_HURTS",
+  "verdict_text": "DAgger fine-tune INCREASES closed-loop drift (paired CI-separated above 0). On-policy data is the culprit, not training effort: A2 is CI-worse than the BC-FT control too (A2-A1 closed delta=+0.092, separated). => on-policy RECOVERY training does NOT reduce closed-loop drift on this harness. Interpretation: the no-renderer harness is SELF-REFERENTIAL \u2014 on-policy states are the WM's own imagined (off-manifold) latents, and aggressive logged-GT recovery targets train the head to over-react to imagination artifacts -> the closed loop OVERCORRECTS (divergence 0.22->0.39). This refutes the CHEAP HARNESS as a DAgger proving ground, NOT DAgger in a faithful sim. Per the pre-registered NEUTRAL branch: on-policy coverage is not the cheaply-demonstrable lever; the lever stays v4.2's schedule, and a decision-grade DAgger test needs AlpaSim (faithful on-policy states) + a gentler/consequence-aware objective.",
+  "open_loop_matched": true,
+  "onpolicy_isolated_hurts_vs_bc": true,
+  "decision": "Do NOT promote DAgger/rollout-in-the-loop as the next planner lever on this evidence: the cheapest discriminating experiment argues AGAINST it (on-policy recovery training WORSENS closed-loop drift here, robustly, at matched open-loop ADE). Keep the priority on v4.2's schedule fix. Defer a decision-grade DAgger test to AlpaSim (faithful, non-self-referential on-policy states) with a gentler / consequence-aware recovery objective.",
+  "headline_paired_A2_dagger_minus_A0_baseline": {
+    "closed_ade2s_delta_m": 0.2658,
+    "closed_ade2s_ci": [
+      0.0076,
+      0.5503
+    ],
+    "closed_ade2s_separated": true,
+    "divergence_delta": 0.166,
+    "divergence_ci": [
+      0.0303,
+      0.3132
+    ],
+    "divergence_separated": true,
+    "open_loop_ade2s_delta_m": 0.1074,
+    "open_loop_matched": true
+  },
+  "model": {
+    "key": "flagship-30k",
+    "name": "Flagship 4B (speed, 30k FINAL)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)",
+    "speed_input": true
+  },
+  "ckpt_step": 29999,
+  "ckpt_source": "HF Sayood/tanitad-flagship-4b-speedjerk/ckpt.pt (step 29999 = v1 FINAL)",
+  "arms": {
+    "A0_baseline": "flagship-v1 tactical_policy, unmodified (open-loop trained)",
+    "A1_bc_ft": "v1 tactical fine-tuned 150 steps on open-loop demos ONLY (control)",
+    "A2_dagger_ft": "v1 tactical fine-tuned 150 steps on demos UNION on-policy recovery data (2 DAgger rounds)",
+    "A2_dagger_1round": "A2 after a single on-policy round (aggregation-progression check)"
+  },
+  "protocol": {
+    "harness": "taniteval/taniteval/closedloop.py (task #21, no-renderer imagination-in-the-loop)",
+    "crossfit": "2-fold by episode parity; every eval window OUT-OF-SAMPLE; pooled over 12 eps",
+    "expert": "RECOVERY: logged GT future re-expressed in the drifted ego frame at the on-policy bicycle pose (validated == gt_ego_waypoints at origin, max|err| 0)",
+    "loss": "mean Euclidean point error over horizons {5,10,15,20} (directly ADE)",
+    "ft_scope": "wp_heads",
+    "trained_params": "wp_heads only (~2K) over a FROZEN trunk+WM+strategic \u2014 regularised",
+    "estimator": "episode_cluster_bootstrap / paired (taniteval/ci.py), 2000 boot",
+    "hyperparams": {
+      "total_steps": 150,
+      "batch": 64,
+      "lr": 3e-05,
+      "weight_decay": 0.0001,
+      "dagger_rounds": 2,
+      "dagger_mix": "50% demos / 50% on-policy per step",
+      "ft_scope": "wp_heads"
+    },
+    "offroad_proxy_thresholds_m": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "offroad_proxy_primary_m": 2.0,
+    "nav": "follow (deploy-realistic)",
+    "operative_step": "intent-free (deployed regime)"
+  },
+  "per_arm": {
+    "A0_baseline": {
+      "closed_ade2s": {
+        "mean": 1.7196,
+        "lo": 1.4437,
+        "hi": 2.0401,
+        "ci95": 0.2982,
+        "se": 0.1536,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "closed_fde2s": {
+        "mean": 3.575,
+        "lo": 2.9526,
+        "hi": 4.2725,
+        "ci95": 0.66,
+        "se": 0.3422,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "mean": 0.2226,
+        "lo": 0.117,
+        "hi": 0.3472,
+        "ci95": 0.1151,
+        "se": 0.0589,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "mean": 3.1469,
+        "lo": 2.242,
+        "hi": 4.1701,
+        "ci95": 0.964,
+        "se": 0.5015,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s_mean": {
+        "mean": 1.3022,
+        "lo": 0.7743,
+        "hi": 1.9336,
+        "ci95": 0.5796,
+        "se": 0.2992,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "offroad_proxy_rate": {
+        "gt_1.5m": 0.2453,
+        "gt_2.0m": 0.2,
+        "gt_3.0m": 0.1509
+      }
+    },
+    "A1_bc_ft": {
+      "closed_ade2s": {
+        "mean": 1.8934,
+        "lo": 1.5459,
+        "hi": 2.2999,
+        "ci95": 0.377,
+        "se": 0.191,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "closed_fde2s": {
+        "mean": 4.0331,
+        "lo": 3.1626,
+        "hi": 5.0743,
+        "ci95": 0.9558,
+        "se": 0.4864,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "mean": 0.3434,
+        "lo": 0.1917,
+        "hi": 0.5303,
+        "ci95": 0.1693,
+        "se": 0.0873,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "mean": 3.2291,
+        "lo": 2.4028,
+        "hi": 4.209,
+        "ci95": 0.9031,
+        "se": 0.4649,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s_mean": {
+        "mean": 1.6286,
+        "lo": 0.9187,
+        "hi": 2.4899,
+        "ci95": 0.7856,
+        "se": 0.4053,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "offroad_proxy_rate": {
+        "gt_1.5m": 0.3245,
+        "gt_2.0m": 0.2717,
+        "gt_3.0m": 0.2
+      }
+    },
+    "A2_dagger_ft": {
+      "closed_ade2s": {
+        "mean": 1.9853,
+        "lo": 1.6071,
+        "hi": 2.4121,
+        "ci95": 0.4025,
+        "se": 0.2075,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "closed_fde2s": {
+        "mean": 4.2382,
+        "lo": 3.3321,
+        "hi": 5.2638,
+        "ci95": 0.9658,
+        "se": 0.4932,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "mean": 0.3887,
+        "lo": 0.2264,
+        "hi": 0.579,
+        "ci95": 0.1763,
+        "se": 0.0887,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "mean": 3.2543,
+        "lo": 2.4137,
+        "hi": 4.2553,
+        "ci95": 0.9208,
+        "se": 0.4725,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s_mean": {
+        "mean": 1.8503,
+        "lo": 1.1108,
+        "hi": 2.7118,
+        "ci95": 0.8005,
+        "se": 0.415,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "offroad_proxy_rate": {
+        "gt_1.5m": 0.4151,
+        "gt_2.0m": 0.3585,
+        "gt_3.0m": 0.2189
+      }
+    },
+    "A2_dagger_1round": {
+      "closed_ade2s": {
+        "mean": 1.9255,
+        "lo": 1.5963,
+        "hi": 2.2763,
+        "ci95": 0.34,
+        "se": 0.1735,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "closed_fde2s": {
+        "mean": 4.0852,
+        "lo": 3.3218,
+        "hi": 4.9359,
+        "ci95": 0.8071,
+        "se": 0.4109,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "mean": 0.3925,
+        "lo": 0.2424,
+        "hi": 0.5682,
+        "ci95": 0.1629,
+        "se": 0.0825,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "mean": 3.2641,
+        "lo": 2.4198,
+        "hi": 4.2805,
+        "ci95": 0.9304,
+        "se": 0.4762,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s_mean": {
+        "mean": 1.653,
+        "lo": 1.0546,
+        "hi": 2.3052,
+        "ci95": 0.6253,
+        "se": 0.3209,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "offroad_proxy_rate": {
+        "gt_1.5m": 0.3774,
+        "gt_2.0m": 0.3019,
+        "gt_3.0m": 0.1925
+      }
+    }
+  },
+  "paired": {
+    "A2_dagger_minus_A0_baseline": {
+      "closed_ade2s": {
+        "delta": 0.2658,
+        "lo": 0.0076,
+        "hi": 0.5503,
+        "ci95": 0.2713,
+        "p_delta_gt0": 0.979,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "delta": 0.166,
+        "lo": 0.0303,
+        "hi": 0.3132,
+        "ci95": 0.1415,
+        "p_delta_gt0": 0.9955,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "delta": 0.1074,
+        "lo": -0.1201,
+        "hi": 0.3204,
+        "ci95": 0.2203,
+        "p_delta_gt0": 0.8255,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s": {
+        "delta": 0.5481,
+        "lo": 0.1546,
+        "hi": 0.9941,
+        "ci95": 0.4198,
+        "p_delta_gt0": 0.999,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "delta = A2_dagger - A0_baseline (negative = A2_dagger better)"
+    },
+    "A1_bc_minus_A0_baseline": {
+      "closed_ade2s": {
+        "delta": 0.1738,
+        "lo": -0.0786,
+        "hi": 0.4758,
+        "ci95": 0.2772,
+        "p_delta_gt0": 0.892,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "delta": 0.1208,
+        "lo": 0.0038,
+        "hi": 0.2594,
+        "ci95": 0.1278,
+        "p_delta_gt0": 0.976,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "delta": 0.0822,
+        "lo": -0.1555,
+        "hi": 0.3174,
+        "ci95": 0.2364,
+        "p_delta_gt0": 0.7475,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s": {
+        "delta": 0.3263,
+        "lo": 0.0423,
+        "hi": 0.7926,
+        "ci95": 0.3751,
+        "p_delta_gt0": 0.9975,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "delta = A1_bc - A0_baseline (negative = A1_bc better)"
+    },
+    "A2_dagger_minus_A1_bc": {
+      "closed_ade2s": {
+        "delta": 0.092,
+        "lo": 0.0148,
+        "hi": 0.1868,
+        "ci95": 0.086,
+        "p_delta_gt0": 0.996,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "divergence_gt5m_2s": {
+        "delta": 0.0453,
+        "lo": 0.0038,
+        "hi": 0.0871,
+        "ci95": 0.0417,
+        "p_delta_gt0": 0.9815,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "open_loop_head_ade2s": {
+        "delta": 0.0251,
+        "lo": -0.0247,
+        "hi": 0.0858,
+        "ci95": 0.0553,
+        "p_delta_gt0": 0.7945,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "lateral_dev_2s": {
+        "delta": 0.2217,
+        "lo": -0.0394,
+        "hi": 0.5241,
+        "ci95": 0.2818,
+        "p_delta_gt0": 0.942,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 265,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "delta = A2_dagger - A1_bc (negative = A2_dagger better)"
+    }
+  },
+  "dagger_round_progression_closed_ade2s": {
+    "A0_baseline": 1.7196,
+    "A2_1round": 1.9255,
+    "A2_2round": 1.9853
+  },
+  "caveats": [
+    "SELF-REFERENTIAL: the world model is BOTH simulator and state estimator -> this proves the DAgger MECHANISM in-harness, NOT the real off-road/safety rate. AlpaSim (photoreal, external) is required to confirm the rate (exp #4 in the planner-bottleneck synthesis).",
+    "KINEMATIC harness has NO real road boundary -> off-road is APPROXIMATED as large lateral deviation@2s (proxy thresholds pre-registered; 2.0 m primary).",
+    "n=12 local val eps (not the full 40). The cross-fit paired design (every eval window out-of-sample, shared-difficulty cancelled) is the robust part; absolute rates are wide.",
+    "The bicycle + pure-pursuit are a HARNESS controller shared by all arms; its fidelity floor cancels in the paired deltas (open_bike floor ~0.45 m ADE@2s, imagination proof).",
+    "A2 substitutes half its per-step data with on-policy states vs A1; the A2-vs-A1 paired block isolates the on-policy contribution from raw training effort."
+  ],
+  "wall_s": 193.7
+}

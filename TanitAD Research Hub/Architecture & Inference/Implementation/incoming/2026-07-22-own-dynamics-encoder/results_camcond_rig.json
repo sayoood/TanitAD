@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "experiment": "camcond_ablation_rig",
+    "design": "PRE_REGISTRATION.md (own-dynamics-encoder)",
+    "date": "2026-07-22T23:13:07Z",
+    "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "ckpt_step": 29999,
+    "device": "cuda",
+    "git_hash": "camcond-ablation-8194807",
+    "ft_blocks": 4,
+    "ft_steps": 1000,
+    "enc_lr": 5e-05,
+    "n_train_clips": 60,
+    "baseline": "single-domain rigA->rigB light-FT speed R2 = -1.65 (results_regate)",
+    "pass_rule": "cross speed R2>0.9 AND yaw R2>0.9 AND ADE<1.5x in-domain"
+  },
+  "arms": {
+    "OFF": {
+      "arm": "OFF",
+      "train_windows": 5263,
+      "val": {
+        "in_rig_heldout_rigA": {
+          "n": 3519,
+          "r2": {
+            "speed": 0.8020586233474528,
+            "yaw_rate": 0.9026340840866436,
+            "steer": 0.8090042541015847,
+            "long_accel": 0.047580440121765766
+          },
+          "mae": {
+            "speed": 2.6615082336599687,
+            "yaw_rate": 0.01892753614999595,
+            "steer": 0.01233423067589174,
+            "long_accel": 0.47512371062795583
+          },
+          "ade_2s": 4.051186320547019,
+          "de_per_horizon": [
+            1.3363108094070975,
+            2.7459185215629827,
+            4.675053752756869,
+            7.447462198461126
+          ]
+        },
+        "cross_rig_rigB": {
+          "n": 10558,
+          "r2": {
+            "speed": -2.3438564889046685,
+            "yaw_rate": 0.4841043271342649,
+            "steer": 0.48295901447780876,
+            "long_accel": -0.06981391470741949
+          },
+          "mae": {
+            "speed": 12.690478114569427,
+            "yaw_rate": 0.06243574204508715,
+            "steer": 0.04187660172144508,
+            "long_accel": 0.6151034154357492
+          },
+          "ade_2s": 14.908265574849029,
+          "de_per_horizon": [
+            6.637004097349667,
+            12.416317059174029,
+            17.796979232633163,
+            22.782761910239266
+          ]
+        }
+      },
+      "verdict": {
+        "cross_speed_r2": -2.3438564889046685,
+        "cross_yaw_r2": 0.4841043271342649,
+        "cross_steer_r2": 0.48295901447780876,
+        "cross_ade_2s": 14.908265574849029,
+        "in_domain_ade_2s": 4.051186320547019,
+        "ade_ratio": 3.679975294949163,
+        "PASS": false
+      }
+    },
+    "ON": {
+      "arm": "ON",
+      "train_windows": 5263,
+      "val": {
+        "in_rig_heldout_rigA": {
+          "n": 3519,
+          "r2": {
+            "speed": 0.8016392832980082,
+            "yaw_rate": 0.902336326360927,
+            "steer": 0.8086119366918998,
+            "long_accel": 0.04777802181300472
+          },
+          "mae": {
+            "speed": 2.6634509480879824,
+            "yaw_rate": 0.018920042976876522,
+            "steer": 0.012331549230077557,
+            "long_accel": 0.4750434925175264
+          },
+          "ade_2s": 4.049629673886783,
+          "de_per_horizon": [
+            1.3365170006846947,
+            2.7455410274088754,
+            4.675910568768067,
+            7.440550098685496
+          ]
+        },
+        "cross_rig_rigB": {
+          "n": 10558,
+          "r2": {
+            "speed": -2.252640638246295,
+            "yaw_rate": 0.47950779470312965,
+            "steer": 0.4815502321394368,
+            "long_accel": -0.07025603987183238
+          },
+          "mae": {
+            "speed": 12.440345180172859,
+            "yaw_rate": 0.06296769007118984,
+            "steer": 0.041885222740282314,
+            "long_accel": 0.6160352068934775
+          },
+          "ade_2s": 14.60732369561884,
+          "de_per_horizon": [
+            6.5102666046564295,
+            12.154262781479073,
+            17.42866992634279,
+            22.336095469997083
+          ]
+        }
+      },
+      "verdict": {
+        "cross_speed_r2": -2.252640638246295,
+        "cross_yaw_r2": 0.47950779470312965,
+        "cross_steer_r2": 0.4815502321394368,
+        "cross_ade_2s": 14.60732369561884,
+        "in_domain_ade_2s": 4.049629673886783,
+        "ade_ratio": 3.6070764173354437,
+        "PASS": false
+      }
+    }
+  },
+  "comparison": {
+    "cross_speed_r2_OFF": -2.3438564889046685,
+    "cross_speed_r2_ON": -2.252640638246295,
+    "delta_speed_r2_ON_minus_OFF": 0.09121585065837357,
+    "cross_yaw_r2_OFF": 0.4841043271342649,
+    "cross_yaw_r2_ON": 0.47950779470312965,
+    "cross_ade_OFF": 14.908265574849029,
+    "cross_ade_ON": 14.60732369561884,
+    "ON_PASS": false,
+    "OFF_PASS": false
+  }
+}

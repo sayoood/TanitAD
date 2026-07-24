@@ -1,0 +1,1778 @@
+{
+  "setup": {
+    "gpu": "NVIDIA RTX A6000",
+    "torch": "2.4.1+cu124",
+    "ckpt": "/workspace/int8_bench/ckpt/ckpt.pt",
+    "ckpt_step": 29999,
+    "action_dim_source": "config.json",
+    "speed_input": true,
+    "world_params": 263442838,
+    "registry_total_model_expected": 263442838,
+    "matches_registry_exactly": true,
+    "grounding_missing_keys": [],
+    "grounding_unexpected_keys": [],
+    "note": "built via tanitad.eval.ckpt_compat.build_world_from_ckpt (dataclasses.replace on BOTH predictor.action_dim and tactical_pred.action_dim before construction, then strict-load) -- this is the reproducible path; a naive `cfg.predictor.action_dim = 3` post-hoc mutation (as in the 2026-07-22 export_and_bench.py) under-widens tactical_pred.act_emb by 512 params (263,442,326 vs the registry's 263,442,838) because it never touches tactical_pred -- MEASURED here, a correction to the prior intake, harmless to its actual exported encoder/predictor graphs since neither touches tactical_pred."
+  },
+  "_last_updated": "2026-07-23T08:01:21Z",
+  "encoder_accuracy_sweep": {
+    "n_samples": 96,
+    "isolated_per_block": {
+      "patch_embed": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 6.184211542858975e-08,
+          "rel_l2": 0.000274256628472358,
+          "n_weight_tensors_quantized": 1
+        },
+        "int8_wa": {
+          "cosine": 0.9996789693832397,
+          "mse": 0.0004579348606057465,
+          "rel_l2": 0.02056526206433773,
+          "n_weight_tensors_quantized": 1
+        }
+      },
+      "enc_block_0": {
+        "int8_wo": {
+          "cosine": 0.9999997019767761,
+          "mse": 3.833854407275794e-07,
+          "rel_l2": 0.0006918844301253557,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999916553497314,
+          "mse": 1.2543518096208572e-05,
+          "rel_l2": 0.0037100566551089287,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_1": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 4.250098495361954e-09,
+          "rel_l2": 6.901250162627548e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999997019767761,
+          "mse": 5.993868512632616e-07,
+          "rel_l2": 0.0008049809839576483,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_2": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 3.6925749125060747e-09,
+          "rel_l2": 6.577374006155878e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999997019767761,
+          "mse": 4.818744514523132e-07,
+          "rel_l2": 0.0006978263845667243,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_3": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 9.43894296057124e-09,
+          "rel_l2": 0.00010609146556816995,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999995231628418,
+          "mse": 9.279310120291484e-07,
+          "rel_l2": 0.0009674124303273857,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_4": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 4.389145491501267e-09,
+          "rel_l2": 7.039112824713811e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999991655349731,
+          "mse": 1.4162113757265615e-06,
+          "rel_l2": 0.0011761218775063753,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_5": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 5.635644839685483e-09,
+          "rel_l2": 8.029630407691002e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999966621398926,
+          "mse": 5.723906724597327e-06,
+          "rel_l2": 0.0020844729151576757,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_6": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 7.4106689673669734e-09,
+          "rel_l2": 9.38516459427774e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999968409538269,
+          "mse": 5.56245458938065e-06,
+          "rel_l2": 0.002323373220860958,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_7": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 3.7028797805760405e-09,
+          "rel_l2": 6.794880027882755e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.999996542930603,
+          "mse": 6.225847755558789e-06,
+          "rel_l2": 0.0025823889300227165,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_8": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 4.641798501126004e-09,
+          "rel_l2": 7.647056190762669e-05,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999954104423523,
+          "mse": 8.168584827217273e-06,
+          "rel_l2": 0.002868628827854991,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_9": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 8.35790103792533e-09,
+          "rel_l2": 0.00010563804244156927,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999958872795105,
+          "mse": 6.61787044009543e-06,
+          "rel_l2": 0.0028044800274074078,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_10": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 1.8705755167047755e-08,
+          "rel_l2": 0.00015302587416954339,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9999825954437256,
+          "mse": 2.6591103960527107e-05,
+          "rel_l2": 0.005777211859822273,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "enc_block_11": {
+        "int8_wo": {
+          "cosine": 0.9999990463256836,
+          "mse": 1.481784579482337e-06,
+          "rel_l2": 0.0014031821629032493,
+          "n_weight_tensors_quantized": 5
+        },
+        "int8_wa": {
+          "cosine": 0.9994242191314697,
+          "mse": 0.0008611634257249534,
+          "rel_l2": 0.02905275486409664,
+          "n_weight_tensors_quantized": 5
+        }
+      },
+      "readout_head": {
+        "int8_wo": {
+          "cosine": 0.9994738101959229,
+          "mse": 0.0007669173646718264,
+          "rel_l2": 0.032076653093099594,
+          "n_weight_tensors_quantized": 1
+        },
+        "int8_wa": {
+          "cosine": 0.5660150051116943,
+          "mse": 0.5262749195098877,
+          "rel_l2": 7.655905723571777,
+          "n_weight_tensors_quantized": 1
+        }
+      }
+    },
+    "blanket": {
+      "fp16": {
+        "cosine": 0.9999998807907104,
+        "mse": 3.3499986784590874e-07,
+        "rel_l2": 0.000568986521102488
+      },
+      "int8_wo": {
+        "cosine": 0.9994699954986572,
+        "mse": 0.0007728791097179055,
+        "rel_l2": 0.032200127840042114
+      },
+      "int8_wa": {
+        "cosine": 0.5675597190856934,
+        "mse": 0.5271728038787842,
+        "rel_l2": 7.711310863494873
+      }
+    }
+  },
+  "predictor_accuracy_sweep": {
+    "n_samples": 96,
+    "isolated_per_block": {
+      "in_proj": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 3.749621946269599e-09,
+          "rel_l2": 6.644328823313117e-05,
+          "n_weight_tensors_quantized": 1
+        },
+        "int8_wa": {
+          "cosine": 0.9999998807907104,
+          "mse": 1.5459403357453994e-07,
+          "rel_l2": 0.000423669524025172,
+          "n_weight_tensors_quantized": 1
+        }
+      },
+      "act_emb": {
+        "int8_wo": {
+          "cosine": 0.9999997019767761,
+          "mse": 3.441106741775002e-07,
+          "rel_l2": 0.0004975374322384596,
+          "n_weight_tensors_quantized": 2
+        },
+        "int8_wa": {
+          "cosine": 0.9998741149902344,
+          "mse": 0.00015754217747598886,
+          "rel_l2": 0.010619031265377998,
+          "n_weight_tensors_quantized": 2
+        }
+      },
+      "pred_block_0": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 1.2513598157681827e-08,
+          "rel_l2": 0.00012866452743764967,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 0.9999984502792358,
+          "mse": 2.342956349821179e-06,
+          "rel_l2": 0.0017194700194522738,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_1": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 2.2064110538622117e-09,
+          "rel_l2": 5.130588397150859e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 0.9999960660934448,
+          "mse": 5.140242137713358e-06,
+          "rel_l2": 0.002253021579235792,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_2": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 2.885289118736978e-09,
+          "rel_l2": 5.984012386761606e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 0.9999999403953552,
+          "mse": 1.270412894882611e-07,
+          "rel_l2": 0.00040400720899924636,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_3": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 1.2147913786009212e-09,
+          "rel_l2": 3.9263646613107994e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 0.9999998807907104,
+          "mse": 2.9664010980923194e-07,
+          "rel_l2": 0.0005653223488479853,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_4": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 7.55754958614574e-10,
+          "rel_l2": 2.891301119234413e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 0.9999997019767761,
+          "mse": 4.1691828300827183e-07,
+          "rel_l2": 0.0006433649687096477,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_5": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 2.9412289270780434e-10,
+          "rel_l2": 1.9093136870651506e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 1.0,
+          "mse": 6.7027405847852606e-09,
+          "rel_l2": 5.26363801327534e-05,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_6": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 9.511152976315884e-10,
+          "rel_l2": 3.6042762076249346e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 1.0,
+          "mse": 2.799117382323857e-08,
+          "rel_l2": 0.00017983021098189056,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_7": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 3.734660913856658e-10,
+          "rel_l2": 2.2509739210363477e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 1.0,
+          "mse": 6.945933161972562e-09,
+          "rel_l2": 9.095168206840754e-05,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_8": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 5.321333929053651e-10,
+          "rel_l2": 2.677996235433966e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 1.0,
+          "mse": 3.546312754565406e-08,
+          "rel_l2": 0.00018435981473885477,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_block_9": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 2.1388063542460145e-10,
+          "rel_l2": 1.599884853931144e-05,
+          "n_weight_tensors_quantized": 6
+        },
+        "int8_wa": {
+          "cosine": 1.0,
+          "mse": 3.1161255797940157e-09,
+          "rel_l2": 5.305989179760218e-05,
+          "n_weight_tensors_quantized": 6
+        }
+      },
+      "pred_heads": {
+        "int8_wo": {
+          "cosine": 1.0,
+          "mse": 5.442141670641831e-08,
+          "rel_l2": 0.000266024173470214,
+          "n_weight_tensors_quantized": 3
+        },
+        "int8_wa": {
+          "cosine": 0.9999994039535522,
+          "mse": 9.467365771342884e-07,
+          "rel_l2": 0.0011340724304318428,
+          "n_weight_tensors_quantized": 3
+        }
+      }
+    },
+    "blanket": {
+      "fp16": {
+        "cosine": 1.0,
+        "mse": 7.456198147792747e-08,
+        "rel_l2": 0.00030837845406495035
+      },
+      "int8_wo": {
+        "cosine": 0.9999997019767761,
+        "mse": 4.101075035123358e-07,
+        "rel_l2": 0.0006319288513623178
+      },
+      "int8_wa": {
+        "cosine": 0.9998685121536255,
+        "mse": 0.0001677398686297238,
+        "rel_l2": 0.011655244044959545
+      }
+    }
+  },
+  "downstream_ade_proxy": {
+    "n_windows": 880,
+    "note": "TRAIN-CACHE PROXY on physicalai-train-e438721ae894 episodes 2000-2039 (NOT the canonical taniteval val set physicalai-val-0c5f7dac3b11, which lives on tanitad-eval, off-limits to this stream) -- directional evidence for the FP16-vs-INT8 accuracy delta, not a registry-quotable ADE.",
+    "wp_steps": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "per_precision": {
+      "fp32": {
+        "ade_de_metrics": {
+          "de@0.5s": 0.05281023681163788,
+          "ade@0.5s": 0.05281023681163788,
+          "de@1s": 0.19375474750995636,
+          "ade@1s": 0.12328247725963593,
+          "de@1.5s": 0.5133354663848877,
+          "ade@1.5s": 0.25330018997192383,
+          "de@2s": 0.9451582431793213,
+          "ade@2s": 0.4262646734714508,
+          "ade_0_2s": 0.4262646734714508
+        },
+        "cv_metrics": {
+          "de@0.5s": 0.1202215701341629,
+          "ade@0.5s": 0.1202215701341629,
+          "de@1s": 0.43481573462486267,
+          "ade@1s": 0.2775186002254486,
+          "de@1.5s": 0.9362686276435852,
+          "ade@1.5s": 0.49710217118263245,
+          "de@2s": 1.6118195056915283,
+          "ade@2s": 0.7757813334465027,
+          "ade_0_2s": 0.7757813334465027
+        },
+        "per_step_dpose_l2_mean_m": [
+          1.2877418994903564,
+          1.2850853204727173,
+          1.2852801084518433,
+          1.2841912508010864,
+          1.2829283475875854,
+          1.2815351486206055,
+          1.2851266860961914,
+          1.2902178764343262,
+          1.2954661846160889,
+          1.303348422050476,
+          1.3107573986053467,
+          1.3159278631210327,
+          1.3211710453033447,
+          1.324143648147583,
+          1.3269027471542358,
+          1.328264832496643,
+          1.3293083906173706,
+          1.329338788986206,
+          1.3293030261993408,
+          1.3300018310546875
+        ]
+      },
+      "fp16": {
+        "ade_de_metrics": {
+          "de@0.5s": 0.052869778126478195,
+          "ade@0.5s": 0.052869778126478195,
+          "de@1s": 0.19392208755016327,
+          "ade@1s": 0.1233959048986435,
+          "de@1.5s": 0.5134068727493286,
+          "ade@1.5s": 0.253399521112442,
+          "de@2s": 0.9451640248298645,
+          "ade@2s": 0.4263406991958618,
+          "ade_0_2s": 0.4263406991958618
+        },
+        "cv_metrics": {
+          "de@0.5s": 0.1202215701341629,
+          "ade@0.5s": 0.1202215701341629,
+          "de@1s": 0.43481573462486267,
+          "ade@1s": 0.2775186002254486,
+          "de@1.5s": 0.9362686276435852,
+          "ade@1.5s": 0.49710217118263245,
+          "de@2s": 1.6118195056915283,
+          "ade@2s": 0.7757813334465027,
+          "ade_0_2s": 0.7757813334465027
+        },
+        "per_step_dpose_l2_mean_m": [
+          1.2877247333526611,
+          1.2850407361984253,
+          1.2852277755737305,
+          1.2841219902038574,
+          1.2828487157821655,
+          1.2814514636993408,
+          1.2850356101989746,
+          1.2901757955551147,
+          1.2954121828079224,
+          1.303320050239563,
+          1.3107538223266602,
+          1.3159010410308838,
+          1.3211268186569214,
+          1.3240987062454224,
+          1.3268511295318604,
+          1.3281980752944946,
+          1.3292194604873657,
+          1.3292512893676758,
+          1.3292144536972046,
+          1.3299015760421753
+        ],
+        "delta_vs_fp32": {
+          "de@0.5s": 5.954131484031677e-05,
+          "ade@0.5s": 5.954131484031677e-05,
+          "de@1s": 0.00016734004020690918,
+          "ade@1s": 0.00011342763900756836,
+          "de@1.5s": 7.140636444091797e-05,
+          "ade@1.5s": 9.933114051818848e-05,
+          "de@2s": 5.781650543212891e-06,
+          "ade@2s": 7.602572441101074e-05,
+          "ade_0_2s": 7.602572441101074e-05
+        },
+        "degradation_grows_with_horizon": 0.0971031721203779
+      },
+      "int8_wo": {
+        "ade_de_metrics": {
+          "de@0.5s": 0.05243546888232231,
+          "ade@0.5s": 0.05243546888232231,
+          "de@1s": 0.1967664211988449,
+          "ade@1s": 0.12460096180438995,
+          "de@1.5s": 0.5190678834915161,
+          "ade@1.5s": 0.25609010457992554,
+          "de@2s": 0.9628742337226868,
+          "ade@2s": 0.4327860176563263,
+          "ade_0_2s": 0.4327860176563263
+        },
+        "cv_metrics": {
+          "de@0.5s": 0.1202215701341629,
+          "ade@0.5s": 0.1202215701341629,
+          "de@1s": 0.43481573462486267,
+          "ade@1s": 0.2775186002254486,
+          "de@1.5s": 0.9362686276435852,
+          "ade@1.5s": 0.49710217118263245,
+          "de@2s": 1.6118195056915283,
+          "ade@2s": 0.7757813334465027,
+          "ade_0_2s": 0.7757813334465027
+        },
+        "per_step_dpose_l2_mean_m": [
+          1.2880629301071167,
+          1.2855597734451294,
+          1.285750150680542,
+          1.2846754789352417,
+          1.2834250926971436,
+          1.2821630239486694,
+          1.2857824563980103,
+          1.2907423973083496,
+          1.2955595254898071,
+          1.3037999868392944,
+          1.3113749027252197,
+          1.3165996074676514,
+          1.321839451789856,
+          1.324807047843933,
+          1.3276323080062866,
+          1.329020380973816,
+          1.3298890590667725,
+          1.3298897743225098,
+          1.329768180847168,
+          1.3304283618927002
+        ],
+        "delta_vs_fp32": {
+          "de@0.5s": -0.000374767929315567,
+          "ade@0.5s": -0.000374767929315567,
+          "de@1s": 0.00301167368888855,
+          "ade@1s": 0.0013184845447540283,
+          "de@1.5s": 0.005732417106628418,
+          "ade@1.5s": 0.002789914608001709,
+          "de@2s": 0.01771599054336548,
+          "ade@2s": 0.006521344184875488,
+          "ade_0_2s": 0.006521344184875488
+        },
+        "degradation_grows_with_horizon": 47.2718959056073
+      },
+      "int8_wa": {
+        "ade_de_metrics": {
+          "de@0.5s": 0.05473102256655693,
+          "ade@0.5s": 0.05473102256655693,
+          "de@1s": 0.20483019948005676,
+          "ade@1s": 0.12978072464466095,
+          "de@1.5s": 0.5344653725624084,
+          "ade@1.5s": 0.2646755576133728,
+          "de@2s": 0.9968841671943665,
+          "ade@2s": 0.44772765040397644,
+          "ade_0_2s": 0.44772765040397644
+        },
+        "cv_metrics": {
+          "de@0.5s": 0.1202215701341629,
+          "ade@0.5s": 0.1202215701341629,
+          "de@1s": 0.43481573462486267,
+          "ade@1s": 0.2775186002254486,
+          "de@1.5s": 0.9362686276435852,
+          "ade@1.5s": 0.49710217118263245,
+          "de@2s": 1.6118195056915283,
+          "ade@2s": 0.7757813334465027,
+          "ade_0_2s": 0.7757813334465027
+        },
+        "per_step_dpose_l2_mean_m": [
+          1.2881367206573486,
+          1.2859457731246948,
+          1.2863471508026123,
+          1.285090446472168,
+          1.2842507362365723,
+          1.2827733755111694,
+          1.2863152027130127,
+          1.2908508777618408,
+          1.295807123184204,
+          1.3040306568145752,
+          1.3107759952545166,
+          1.3165979385375977,
+          1.3213917016983032,
+          1.3229447603225708,
+          1.3265926837921143,
+          1.3271254301071167,
+          1.3301172256469727,
+          1.328112244606018,
+          1.3293871879577637,
+          1.329311728477478
+        ],
+        "delta_vs_fp32": {
+          "de@0.5s": 0.0019207857549190521,
+          "ade@0.5s": 0.0019207857549190521,
+          "de@1s": 0.011075451970100403,
+          "ade@1s": 0.006498247385025024,
+          "de@1.5s": 0.021129906177520752,
+          "ade@1.5s": 0.011375367641448975,
+          "de@2s": 0.051725924015045166,
+          "ade@2s": 0.021462976932525635,
+          "ade_0_2s": 0.021462976932525635
+        },
+        "degradation_grows_with_horizon": 26.92956457146625
+      }
+    }
+  },
+  "onnx_export_real_weights": {
+    "opset": 17,
+    "window": 8,
+    "state_dim": 2048,
+    "action_dim": 3,
+    "encoder": {
+      "ok": true,
+      "onnx_mb": 348.6,
+      "parity_max_abs_delta": 1.996755599975586e-06,
+      "n_nodes": 520,
+      "sample_node_names": [
+        "/encoder/patch/Conv",
+        "/encoder/Shape",
+        "/encoder/Constant",
+        "/encoder/Constant_1",
+        "/encoder/Constant_2",
+        "/encoder/Slice",
+        "/encoder/Constant_3",
+        "/encoder/Concat",
+        "/encoder/Reshape",
+        "/encoder/Transpose",
+        "/encoder/Add",
+        "/encoder/blocks.0/norm1/LayerNormalization",
+        "/encoder/blocks.0/attn/MatMul",
+        "/encoder/blocks.0/attn/Add",
+        "/encoder/blocks.0/attn/MatMul_1",
+        "/encoder/blocks.0/attn/Add_1",
+        "/encoder/blocks.0/attn/MatMul_2",
+        "/encoder/blocks.0/attn/Add_2",
+        "/encoder/blocks.0/attn/Constant",
+        "/encoder/blocks.0/attn/Reshape",
+        "/encoder/blocks.0/attn/Transpose",
+        "/encoder/blocks.0/attn/Constant_1",
+        "/encoder/blocks.0/attn/Constant_2",
+        "/encoder/blocks.0/attn/Reshape_1",
+        "/encoder/blocks.0/attn/Reshape_2",
+        "/encoder/blocks.0/attn/Transpose_1",
+        "/encoder/blocks.0/attn/Transpose_2",
+        "/encoder/blocks.0/attn/MatMul_3",
+        "/encoder/blocks.0/attn/Constant_3",
+        "/encoder/blocks.0/attn/Mul",
+        "/encoder/blocks.0/attn/Softmax",
+        "/encoder/blocks.0/attn/MatMul_4",
+        "/encoder/blocks.0/attn/Transpose_3",
+        "/encoder/blocks.0/attn/Constant_4",
+        "/encoder/blocks.0/attn/Reshape_3",
+        "/encoder/blocks.0/attn/out_proj/MatMul",
+        "/encoder/blocks.0/attn/out_proj/Add",
+        "/encoder/blocks.0/Add",
+        "/encoder/blocks.0/norm2/LayerNormalization",
+        "/encoder/blocks.0/mlp/mlp.0/MatMul"
+      ],
+      "op_type_counts": {
+        "Conv": 1,
+        "Shape": 2,
+        "Constant": 105,
+        "Slice": 2,
+        "Concat": 2,
+        "Reshape": 51,
+        "Transpose": 51,
+        "Add": 110,
+        "LayerNormalization": 25,
+        "MatMul": 97,
+        "Mul": 36,
+        "Softmax": 12,
+        "Div": 12,
+        "Erf": 12,
+        "AveragePool": 1,
+        "Flatten": 1
+      }
+    },
+    "predictor": {
+      "ok": true,
+      "onnx_mb": 345.9,
+      "parity_max_abs_delta": 1.4901161193847656e-06,
+      "n_nodes": 664,
+      "sample_node_names": [
+        "/predictor/Constant",
+        "/predictor/in_proj/MatMul",
+        "/predictor/in_proj/Add",
+        "/predictor/Add",
+        "/predictor/act_emb/act_emb.0/MatMul",
+        "/predictor/act_emb/act_emb.0/Add",
+        "/predictor/act_emb/act_emb.1/Constant",
+        "/predictor/act_emb/act_emb.1/Div",
+        "/predictor/act_emb/act_emb.1/Erf",
+        "/predictor/act_emb/act_emb.1/Constant_1",
+        "/predictor/act_emb/act_emb.1/Add",
+        "/predictor/act_emb/act_emb.1/Mul",
+        "/predictor/act_emb/act_emb.1/Constant_2",
+        "/predictor/act_emb/act_emb.1/Mul_1",
+        "/predictor/act_emb/act_emb.2/MatMul",
+        "/predictor/act_emb/act_emb.2/Add",
+        "/predictor/Constant_1",
+        "/predictor/Trilu",
+        "/predictor/blocks.0/norm1/LayerNormalization",
+        "/predictor/blocks.0/attn/MatMul",
+        "/predictor/blocks.0/attn/Add",
+        "/predictor/blocks.0/attn/MatMul_1",
+        "/predictor/blocks.0/attn/Add_1",
+        "/predictor/blocks.0/attn/MatMul_2",
+        "/predictor/blocks.0/attn/Add_2",
+        "/predictor/blocks.0/attn/Constant",
+        "/predictor/blocks.0/attn/Reshape",
+        "/predictor/blocks.0/attn/Transpose",
+        "/predictor/blocks.0/attn/Constant_1",
+        "/predictor/blocks.0/attn/Constant_2",
+        "/predictor/blocks.0/attn/Constant_3",
+        "/predictor/blocks.0/attn/Reshape_1",
+        "/predictor/blocks.0/attn/Reshape_2",
+        "/predictor/blocks.0/attn/Transpose_1",
+        "/predictor/blocks.0/attn/Transpose_2",
+        "/predictor/blocks.0/attn/MatMul_3",
+        "/predictor/blocks.0/attn/Constant_4",
+        "/predictor/blocks.0/attn/Mul",
+        "/predictor/blocks.0/attn/Cast",
+        "/predictor/blocks.0/attn/Constant_5"
+      ],
+      "op_type_counts": {
+        "Constant": 166,
+        "MatMul": 93,
+        "Add": 136,
+        "Div": 21,
+        "Erf": 11,
+        "Mul": 62,
+        "Trilu": 1,
+        "LayerNormalization": 21,
+        "Reshape": 40,
+        "Transpose": 40,
+        "Cast": 10,
+        "Where": 10,
+        "Softmax": 10,
+        "Shape": 10,
+        "Gather": 12,
+        "Slice": 20,
+        "Gemm": 1
+      }
+    }
+  },
+  "mha_decomposition_parity": {
+    "encoder_max_abs_delta": 1.4901161193847656e-06,
+    "predictor_max_abs_delta": 1.430511474609375e-06
+  },
+  "trt_engines": {
+    "trt_version": "10.16.1.11",
+    "gpu": "NVIDIA RTX A6000",
+    "n_calib_batches": 256,
+    "encoder": {
+      "fp16": {
+        "parse_ok": true,
+        "build_ok": true,
+        "build_s": 26.7,
+        "engine_mb": 176.8,
+        "latency": {
+          "p50_ms": 1.1315,
+          "p99_ms": 1.3118,
+          "mean_ms": 1.1372
+        },
+        "fusion": {
+          "n_layers": 93,
+          "standalone_softmax": false,
+          "myelin_or_foreign": true,
+          "verdict": "fused",
+          "layer_names_sample": [
+            "Reformatting CopyNode for Input Tensor 0 to /encoder/patch/Conv",
+            "/encoder/patch/Conv",
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[world.encoder.blocks.0.norm1.weight + ONNXTRT_Broadcast.../readout/Transpose + /readout/Reshape]}",
+            "__myl_ReshTranAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_0",
+            "/encoder/blocks.0/attn/MatMul_2+/encoder/blocks.0/attn/MatMul_1+/encoder/blocks.0/attn/MatMul_myl3_1",
+            "_gemm_mha_v2_myl3_2",
+            "/encoder/blocks.0/attn/out_proj/MatMul_myl3_3",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_4",
+            "__myl_Fc_myl3_5",
+            "/encoder/blocks.0/mlp/mlp.2/MatMul_myl3_6",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_7",
+            "/encoder/blocks.1/attn/MatMul_2+/encoder/blocks.1/attn/MatMul_1+/encoder/blocks.1/attn/MatMul_myl3_8",
+            "_gemm_mha_v2_myl3_9",
+            "/encoder/blocks.1/attn/out_proj/MatMul_myl3_10",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_11",
+            "__myl_Fc_myl3_12",
+            "/encoder/blocks.1/mlp/mlp.2/MatMul_myl3_13",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_14",
+            "/encoder/blocks.2/attn/MatMul_2+/encoder/blocks.2/attn/MatMul_1+/encoder/blocks.2/attn/MatMul_myl3_15",
+            "_gemm_mha_v2_myl3_16",
+            "/encoder/blocks.2/attn/out_proj/MatMul_myl3_17",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_18",
+            "__myl_Fc_myl3_19",
+            "/encoder/blocks.2/mlp/mlp.2/MatMul_myl3_20",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_21",
+            "/encoder/blocks.3/attn/MatMul_2+/encoder/blocks.3/attn/MatMul_1+/encoder/blocks.3/attn/MatMul_myl3_22",
+            "_gemm_mha_v2_myl3_23",
+            "/encoder/blocks.3/attn/out_proj/MatMul_myl3_24",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_25",
+            "__myl_Fc_myl3_26"
+          ]
+        },
+        "per_layer_profile": {
+          "ok": true,
+          "per_layer_ms": {
+            "/encoder/patch/Conv": 0.07591,
+            "__myl_Fc_myl3_61": 0.02536,
+            "__myl_Fc_myl3_5": 0.02522,
+            "__myl_Fc_myl3_33": 0.02522,
+            "__myl_Fc_myl3_68": 0.02383,
+            "/encoder/blocks.2/mlp/mlp.2/MatMul_myl3_20": 0.02379,
+            "__myl_Fc_myl3_75": 0.02379,
+            "__myl_Fc_myl3_19": 0.02376,
+            "__myl_Fc_myl3_47": 0.02376,
+            "/encoder/blocks.6/mlp/mlp.2/MatMul_myl3_48": 0.02372,
+            "/encoder/blocks.10/mlp/mlp.2/MatMul_myl3_76": 0.02372,
+            "__myl_Fc_myl3_40": 0.02369,
+            "__myl_Fc_myl3_26": 0.02359,
+            "__myl_Fc_myl3_54": 0.02359,
+            "__myl_Fc_myl3_82": 0.02359,
+            "__myl_Fc_myl3_12": 0.02355,
+            "/encoder/blocks.1/mlp/mlp.2/MatMul_myl3_13": 0.02287,
+            "/encoder/blocks.9/mlp/mlp.2/MatMul_myl3_69": 0.02287,
+            "/encoder/blocks.8/mlp/mlp.2/MatMul_myl3_62": 0.02284,
+            "/encoder/blocks.3/mlp/mlp.2/MatMul_myl3_27": 0.02277,
+            "/encoder/blocks.7/mlp/mlp.2/MatMul_myl3_55": 0.02277,
+            "/encoder/blocks.5/mlp/mlp.2/MatMul_myl3_41": 0.0227,
+            "/encoder/blocks.4/mlp/mlp.2/MatMul_myl3_34": 0.02266,
+            "/encoder/blocks.11/mlp/mlp.2/MatMul_myl3_83": 0.02266,
+            "/encoder/blocks.0/mlp/mlp.2/MatMul_myl3_6": 0.0226,
+            "/encoder/blocks.0/attn/MatMul_2+/encoder/blocks.0/attn/MatMul_1+/encoder/blocks.0/attn/MatMul_myl3_1": 0.01751,
+            "/encoder/blocks.8/attn/MatMul_2+/encoder/blocks.8/attn/MatMul_1+/encoder/blocks.8/attn/MatMul_myl3_57": 0.01717,
+            "/encoder/blocks.4/attn/MatMul_2+/encoder/blocks.4/attn/MatMul_1+/encoder/blocks.4/attn/MatMul_myl3_29": 0.01707,
+            "/encoder/blocks.5/attn/MatMul_2+/encoder/blocks.5/attn/MatMul_1+/encoder/blocks.5/attn/MatMul_myl3_36": 0.017,
+            "/encoder/blocks.1/attn/MatMul_2+/encoder/blocks.1/attn/MatMul_1+/encoder/blocks.1/attn/MatMul_myl3_8": 0.01679,
+            "/encoder/blocks.9/attn/MatMul_2+/encoder/blocks.9/attn/MatMul_1+/encoder/blocks.9/attn/MatMul_myl3_64": 0.01676,
+            "/encoder/blocks.2/attn/MatMul_2+/encoder/blocks.2/attn/MatMul_1+/encoder/blocks.2/attn/MatMul_myl3_15": 0.01594,
+            "/encoder/blocks.6/attn/MatMul_2+/encoder/blocks.6/attn/MatMul_1+/encoder/blocks.6/attn/MatMul_myl3_43": 0.01587,
+            "/encoder/blocks.10/attn/MatMul_2+/encoder/blocks.10/attn/MatMul_1+/encoder/blocks.10/attn/MatMul_myl3_71": 0.01584,
+            "/encoder/blocks.7/attn/MatMul_2+/encoder/blocks.7/attn/MatMul_1+/encoder/blocks.7/attn/MatMul_myl3_50": 0.0158,
+            "/encoder/blocks.3/attn/MatMul_2+/encoder/blocks.3/attn/MatMul_1+/encoder/blocks.3/attn/MatMul_myl3_22": 0.01574,
+            "/encoder/blocks.11/attn/MatMul_2+/encoder/blocks.11/attn/MatMul_1+/encoder/blocks.11/attn/MatMul_myl3_78": 0.01574,
+            "Reformatting CopyNode for Input Tensor 0 to /encoder/patch/Conv": 0.01498,
+            "/encoder/blocks.6/attn/out_proj/MatMul_myl3_45": 0.01212,
+            "/encoder/blocks.2/attn/out_proj/MatMul_myl3_17": 0.01208,
+            "/encoder/blocks.10/attn/out_proj/MatMul_myl3_73": 0.01208,
+            "_gemm_mha_v2_myl3_58": 0.01195,
+            "_gemm_mha_v2_myl3_16": 0.01181,
+            "_gemm_mha_v2_myl3_37": 0.01181,
+            "_gemm_mha_v2_myl3_2": 0.01171,
+            "_gemm_mha_v2_myl3_65": 0.01171,
+            "/encoder/blocks.11/attn/out_proj/MatMul_myl3_80": 0.01167,
+            "/encoder/blocks.7/attn/out_proj/MatMul_myl3_52": 0.01164,
+            "_gemm_mha_v2_myl3_9": 0.01157,
+            "_gemm_mha_v2_myl3_23": 0.01154,
+            "/encoder/blocks.3/attn/out_proj/MatMul_myl3_24": 0.0115,
+            "_gemm_mha_v2_myl3_79": 0.0115,
+            "_gemm_mha_v2_myl3_30": 0.01147,
+            "_gemm_mha_v2_myl3_44": 0.01147,
+            "_gemm_mha_v2_myl3_51": 0.01143,
+            "_gemm_mha_v2_myl3_72": 0.01137,
+            "/encoder/blocks.0/attn/out_proj/MatMul_myl3_3": 0.01099,
+            "/encoder/blocks.8/attn/out_proj/MatMul_myl3_59": 0.01072,
+            "/encoder/blocks.4/attn/out_proj/MatMul_myl3_31": 0.01068,
+            "/encoder/blocks.9/attn/out_proj/MatMul_myl3_66": 0.01065,
+            "/encoder/blocks.5/attn/out_proj/MatMul_myl3_38": 0.01058,
+            "/encoder/blocks.1/attn/out_proj/MatMul_myl3_10": 0.01044,
+            "/readout/proj/MatMul_myl5_1": 0.00894,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_56": 0.00713,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_21": 0.00703,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_74": 0.007,
+            "__myl_AddCastMeanSubMulMean_myl3_84": 0.00686,
+            "__myl_ReshTranAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_0": 0.00666,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_63": 0.00659,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_4": 0.00655,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_49": 0.00655,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_35": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_77": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_14": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_70": 0.00645,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_11": 0.00642,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_42": 0.00638,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_7": 0.00635,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_28": 0.00635,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_53": 0.00635,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_46": 0.00628,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_81": 0.00621,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_32": 0.00621,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_60": 0.00621,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_18": 0.00618,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_25": 0.00618,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_39": 0.00618,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_67": 0.00618,
+            "__myl_AddSqrtDivMulCastMulMoveAddTranResh_myl3_85": 0.00618,
+            "/readout/pool/AveragePool": 0.00604,
+            "__myl_Cast_myl5_2": 0.0044,
+            "__myl_Resh_myl5_0": 0.00433,
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[world.encoder.blocks.0.norm1.weight + ONNXTRT_Broadcast.../readout/Transpose + /readout/Reshape]}": 0.0
+          },
+          "n_layers_reported": 93,
+          "total_ms": 1.3193
+        }
+      },
+      "int8": {
+        "parse_ok": true,
+        "build_ok": true,
+        "build_s": 124.1,
+        "engine_mb": 179.4,
+        "latency": {
+          "p50_ms": 1.108,
+          "p99_ms": 1.2761,
+          "mean_ms": 1.1117
+        },
+        "fusion": {
+          "n_layers": 95,
+          "standalone_softmax": false,
+          "myelin_or_foreign": true,
+          "verdict": "fused",
+          "layer_names_sample": [
+            "Reformatting CopyNode for Input Tensor 0 to /encoder/patch/Conv",
+            "/encoder/patch/Conv",
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[world.encoder.blocks.0.norm1.weight + ONNXTRT_Broadcast.../readout/Transpose + /readout/Reshape]}",
+            "__myl_ReshTranAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_0",
+            "/encoder/blocks.0/attn/MatMul_2+/encoder/blocks.0/attn/MatMul_1+/encoder/blocks.0/attn/MatMul_myl3_1",
+            "_gemm_mha_v2_myl3_2",
+            "/encoder/blocks.0/attn/out_proj/MatMul_myl3_3",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_4",
+            "__myl_Fc_myl3_5",
+            "/encoder/blocks.0/mlp/mlp.2/MatMul_myl3_6",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_7",
+            "/encoder/blocks.1/attn/MatMul_2+/encoder/blocks.1/attn/MatMul_1+/encoder/blocks.1/attn/MatMul_myl3_8",
+            "_gemm_mha_v2_myl3_9",
+            "/encoder/blocks.1/attn/out_proj/MatMul_myl3_10",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_11",
+            "__myl_Fc_myl3_12",
+            "/encoder/blocks.1/mlp/mlp.2/MatMul_myl3_13",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_14",
+            "/encoder/blocks.2/attn/MatMul_2+/encoder/blocks.2/attn/MatMul_1+/encoder/blocks.2/attn/MatMul_myl3_15",
+            "_gemm_mha_v2_myl3_16",
+            "/encoder/blocks.2/attn/out_proj/MatMul_myl3_17",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_18",
+            "__myl_Fc_myl3_19",
+            "/encoder/blocks.2/mlp/mlp.2/MatMul_myl3_20",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_21",
+            "/encoder/blocks.3/attn/MatMul_2+/encoder/blocks.3/attn/MatMul_1+/encoder/blocks.3/attn/MatMul_myl3_22",
+            "_gemm_mha_v2_myl3_23",
+            "/encoder/blocks.3/attn/out_proj/MatMul_myl3_24",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_25",
+            "__myl_Fc_myl3_26"
+          ]
+        },
+        "per_layer_profile": {
+          "ok": true,
+          "per_layer_ms": {
+            "/encoder/patch/Conv": 0.03936,
+            "Reformatting CopyNode for Input Tensor 0 to /encoder/patch/Conv": 0.0269,
+            "__myl_Fc_myl3_68": 0.0241,
+            "__myl_Fc_myl3_61": 0.024,
+            "__myl_Fc_myl3_54": 0.02393,
+            "__myl_Fc_myl3_12": 0.02383,
+            "__myl_Fc_myl3_47": 0.02383,
+            "__myl_Fc_myl3_82": 0.02383,
+            "__myl_Fc_myl3_75": 0.02379,
+            "__myl_Fc_myl3_40": 0.02376,
+            "__myl_Fc_myl3_26": 0.02376,
+            "__myl_Fc_myl3_19": 0.02372,
+            "__myl_Fc_myl3_33": 0.02372,
+            "__myl_Fc_myl3_5": 0.02369,
+            "/encoder/blocks.0/mlp/mlp.2/MatMul_myl3_6": 0.02318,
+            "/encoder/blocks.8/mlp/mlp.2/MatMul_myl3_62": 0.02318,
+            "/encoder/blocks.9/mlp/mlp.2/MatMul_myl3_69": 0.02318,
+            "/encoder/blocks.6/mlp/mlp.2/MatMul_myl3_48": 0.02314,
+            "/encoder/blocks.7/mlp/mlp.2/MatMul_myl3_55": 0.02314,
+            "/encoder/blocks.3/mlp/mlp.2/MatMul_myl3_27": 0.02311,
+            "/encoder/blocks.1/mlp/mlp.2/MatMul_myl3_13": 0.02307,
+            "/encoder/blocks.4/mlp/mlp.2/MatMul_myl3_34": 0.02307,
+            "/encoder/blocks.11/mlp/mlp.2/MatMul_myl3_83": 0.02307,
+            "/encoder/blocks.10/mlp/mlp.2/MatMul_myl3_76": 0.02304,
+            "/encoder/blocks.2/mlp/mlp.2/MatMul_myl3_20": 0.02301,
+            "/encoder/blocks.5/mlp/mlp.2/MatMul_myl3_41": 0.02297,
+            "/encoder/blocks.0/attn/MatMul_2+/encoder/blocks.0/attn/MatMul_1+/encoder/blocks.0/attn/MatMul_myl3_1": 0.01635,
+            "/encoder/blocks.7/attn/MatMul_2+/encoder/blocks.7/attn/MatMul_1+/encoder/blocks.7/attn/MatMul_myl3_50": 0.01632,
+            "/encoder/blocks.11/attn/MatMul_2+/encoder/blocks.11/attn/MatMul_1+/encoder/blocks.11/attn/MatMul_myl3_78": 0.01632,
+            "/encoder/blocks.10/attn/MatMul_2+/encoder/blocks.10/attn/MatMul_1+/encoder/blocks.10/attn/MatMul_myl3_71": 0.01625,
+            "/encoder/blocks.6/attn/MatMul_2+/encoder/blocks.6/attn/MatMul_1+/encoder/blocks.6/attn/MatMul_myl3_43": 0.01625,
+            "/encoder/blocks.9/attn/MatMul_2+/encoder/blocks.9/attn/MatMul_1+/encoder/blocks.9/attn/MatMul_myl3_64": 0.01621,
+            "/encoder/blocks.8/attn/MatMul_2+/encoder/blocks.8/attn/MatMul_1+/encoder/blocks.8/attn/MatMul_myl3_57": 0.01615,
+            "/encoder/blocks.2/attn/MatMul_2+/encoder/blocks.2/attn/MatMul_1+/encoder/blocks.2/attn/MatMul_myl3_15": 0.01611,
+            "/encoder/blocks.5/attn/MatMul_2+/encoder/blocks.5/attn/MatMul_1+/encoder/blocks.5/attn/MatMul_myl3_36": 0.01608,
+            "/encoder/blocks.3/attn/MatMul_2+/encoder/blocks.3/attn/MatMul_1+/encoder/blocks.3/attn/MatMul_myl3_22": 0.01608,
+            "/encoder/blocks.1/attn/MatMul_2+/encoder/blocks.1/attn/MatMul_1+/encoder/blocks.1/attn/MatMul_myl3_8": 0.01604,
+            "/encoder/blocks.4/attn/MatMul_2+/encoder/blocks.4/attn/MatMul_1+/encoder/blocks.4/attn/MatMul_myl3_29": 0.01591,
+            "_gemm_mha_v2_myl3_2": 0.01164,
+            "_gemm_mha_v2_myl3_72": 0.01143,
+            "_gemm_mha_v2_myl3_44": 0.0114,
+            "_gemm_mha_v2_myl3_16": 0.01137,
+            "_gemm_mha_v2_myl3_79": 0.0113,
+            "_gemm_mha_v2_myl3_30": 0.01126,
+            "_gemm_mha_v2_myl3_37": 0.01126,
+            "_gemm_mha_v2_myl3_51": 0.01126,
+            "_gemm_mha_v2_myl3_9": 0.01123,
+            "_gemm_mha_v2_myl3_65": 0.01123,
+            "_gemm_mha_v2_myl3_23": 0.01116,
+            "_gemm_mha_v2_myl3_58": 0.01109,
+            "/encoder/blocks.9/attn/out_proj/MatMul_myl3_66": 0.01089,
+            "/encoder/blocks.3/attn/out_proj/MatMul_myl3_24": 0.01089,
+            "/encoder/blocks.1/attn/out_proj/MatMul_myl3_10": 0.01085,
+            "/encoder/blocks.10/attn/out_proj/MatMul_myl3_73": 0.01082,
+            "/encoder/blocks.5/attn/out_proj/MatMul_myl3_38": 0.01082,
+            "/encoder/blocks.7/attn/out_proj/MatMul_myl3_52": 0.01079,
+            "/encoder/blocks.8/attn/out_proj/MatMul_myl3_59": 0.01079,
+            "/encoder/blocks.11/attn/out_proj/MatMul_myl3_80": 0.01075,
+            "/encoder/blocks.2/attn/out_proj/MatMul_myl3_17": 0.01072,
+            "/encoder/blocks.4/attn/out_proj/MatMul_myl3_31": 0.01072,
+            "/encoder/blocks.6/attn/out_proj/MatMul_myl3_45": 0.01065,
+            "/encoder/blocks.0/attn/out_proj/MatMul_myl3_3": 0.01058,
+            "/readout/proj/MatMul + /readout/proj/Add": 0.00881,
+            "__myl_ReshTranAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_0": 0.00713,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_77": 0.00703,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_32": 0.00683,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_21": 0.00666,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_70": 0.00662,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_56": 0.00659,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_14": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_28": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_35": 0.00652,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_4": 0.00645,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_42": 0.00645,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_49": 0.00638,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_7": 0.00635,
+            "__myl_AddSqrtDivMulCastMulMoveAddTranResh_myl3_85": 0.00631,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_63": 0.00628,
+            "__myl_AddCastMeanSubMulMean_myl3_84": 0.00628,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_46": 0.00621,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_25": 0.00614,
+            "/readout/pool/AveragePool": 0.00614,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_39": 0.00608,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_53": 0.00608,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_60": 0.00604,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_67": 0.00604,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_11": 0.00601,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_74": 0.00601,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_81": 0.00601,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_18": 0.00597,
+            "/readout/Reshape_1 + /readout/Transpose_1": 0.00573,
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[world.encoder.blocks.0.norm1.weight + ONNXTRT_Broadcast.../readout/Transpose + /readout/Reshape]}": 0.00556,
+            "Reformatting CopyNode for Input Tensor 0 to /readout/Reshape_1 + /readout/Transpose_1": 0.00457,
+            "reshape_before_/readout/proj/MatMul": 0.0,
+            "reshape_after_/readout/proj/MatMul + /readout/Flatten": 0.0
+          },
+          "n_layers_reported": 95,
+          "total_ms": 1.2847
+        }
+      }
+    },
+    "predictor": {
+      "fp16": {
+        "parse_ok": true,
+        "build_ok": true,
+        "build_s": 34.8,
+        "engine_mb": 176.2,
+        "latency": {
+          "p50_ms": 0.5837,
+          "p99_ms": 0.6021,
+          "mean_ms": 0.5849
+        },
+        "fusion": {
+          "n_layers": 96,
+          "standalone_softmax": false,
+          "myelin_or_foreign": true,
+          "verdict": "fused",
+          "layer_names_sample": [
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}",
+            "Reformatting CopyNode for Input Tensor 1 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}",
+            "__myl_IotaIotaCastCastAddEqlLtOrSeleNotReplConcReplConcReshCastSum_myl2_0",
+            "__myl_ReshReplConcNeqCastIotaEqlSeleOr_myl2_1",
+            "__myl_Cums_myl2_2",
+            "__myl_Sele_myl2_3",
+            "__myl_Repl_myl2_4",
+            "__myl_Scat_myl2_5",
+            "__myl_SlicMaxConc_myl2_6",
+            "__myl_FcAdd_myl2_7",
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_8",
+            "/predictor/blocks.0/attn/MatMul_2+/predictor/blocks.0/attn/MatMul_1+/predictor/blocks.0/attn/MatMul_myl2_9",
+            "_gemm_mha_v2_myl2_10",
+            "__myl_FcAdd_myl2_11",
+            "/predictor/act_emb/act_emb.0/MatMul_myl2_12",
+            "__myl_DivCastErfCastAddMulMul_myl2_13",
+            "/predictor/act_emb/act_emb.2/MatMul_myl2_14",
+            "__mye68489_myl2_15",
+            "__mye68491_myl2_16",
+            "__mye63898+__mye63886+__mye63950+__mye63938+__mye64002+__mye63990+__mye64054+__mye64042+__mye64106+__mye64094+__mye64158+__mye64146+__mye64210+__mye64198+__mye64262+__mye64250+__mye64314+__mye64302+__mye64366+__mye64354_myl2_17",
+            "__mye68493_myl2_18",
+            "__mye68495_myl2_19",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_20",
+            "__myl_Fc_myl2_21",
+            "__myl_FcAdd_myl2_22",
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_23",
+            "/predictor/blocks.1/attn/MatMul_2+/predictor/blocks.1/attn/MatMul_1+/predictor/blocks.1/attn/MatMul_myl2_24",
+            "_gemm_mha_v2_myl2_25",
+            "__myl_FcAdd_myl2_26",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_27"
+          ]
+        },
+        "per_layer_profile": {
+          "ok": true,
+          "per_layer_ms": {
+            "__mye63898+__mye63886+__mye63950+__mye63938+__mye64002+__mye63990+__mye64054+__mye64042+__mye64106+__mye64094+__mye64158+__mye64146+__mye64210+__mye64198+__mye64262+__mye64250+__mye64314+__mye64302+__mye64366+__mye64354_myl2_17": 0.04304,
+            "__myl_FcAdd_myl2_22": 0.01594,
+            "__myl_FcAdd_myl2_50": 0.01591,
+            "__myl_FcAdd_myl2_78": 0.01591,
+            "__myl_FcAdd_myl2_36": 0.01587,
+            "__myl_FcAdd_myl2_64": 0.0158,
+            "__myl_FcAdd_myl2_29": 0.0156,
+            "__myl_FcAdd_myl2_71": 0.01556,
+            "__myl_FcAdd_myl2_43": 0.01546,
+            "__myl_FcAdd_myl2_57": 0.01543,
+            "__myl_FcAdd_myl2_85": 0.01526,
+            "__myl_Fc_myl2_56": 0.01475,
+            "__myl_Fc_myl2_28": 0.01461,
+            "__myl_Fc_myl2_70": 0.01461,
+            "__myl_Fc_myl2_84": 0.01454,
+            "__myl_Fc_myl2_42": 0.01444,
+            "__myl_Fc_myl2_21": 0.01379,
+            "__myl_Fc_myl2_77": 0.01372,
+            "__myl_Fc_myl2_49": 0.01352,
+            "__myl_Fc_myl2_35": 0.01345,
+            "__myl_Fc_myl2_63": 0.01341,
+            "/predictor/blocks.0/attn/MatMul_2+/predictor/blocks.0/attn/MatMul_1+/predictor/blocks.0/attn/MatMul_myl2_9": 0.0129,
+            "/predictor/blocks.1/attn/MatMul_2+/predictor/blocks.1/attn/MatMul_1+/predictor/blocks.1/attn/MatMul_myl2_24": 0.01287,
+            "/predictor/blocks.7/attn/MatMul_2+/predictor/blocks.7/attn/MatMul_1+/predictor/blocks.7/attn/MatMul_myl2_66": 0.01283,
+            "/predictor/blocks.3/attn/MatMul_2+/predictor/blocks.3/attn/MatMul_1+/predictor/blocks.3/attn/MatMul_myl2_38": 0.01273,
+            "/predictor/blocks.9/attn/MatMul_2+/predictor/blocks.9/attn/MatMul_1+/predictor/blocks.9/attn/MatMul_myl2_80": 0.01266,
+            "/predictor/blocks.5/attn/MatMul_2+/predictor/blocks.5/attn/MatMul_1+/predictor/blocks.5/attn/MatMul_myl2_52": 0.01266,
+            "/predictor/blocks.6/attn/MatMul_2+/predictor/blocks.6/attn/MatMul_1+/predictor/blocks.6/attn/MatMul_myl2_59": 0.01253,
+            "/predictor/blocks.2/attn/MatMul_2+/predictor/blocks.2/attn/MatMul_1+/predictor/blocks.2/attn/MatMul_myl2_31": 0.01249,
+            "/predictor/blocks.4/attn/MatMul_2+/predictor/blocks.4/attn/MatMul_1+/predictor/blocks.4/attn/MatMul_myl2_45": 0.01236,
+            "/predictor/blocks.8/attn/MatMul_2+/predictor/blocks.8/attn/MatMul_1+/predictor/blocks.8/attn/MatMul_myl2_73": 0.01225,
+            "__myl_FcAdd_myl2_7": 0.01219,
+            "__myl_FcAdd_myl2_92": 0.0113,
+            "__myl_FcAdd_myl2_26": 0.0098,
+            "__myl_FcAdd_myl2_54": 0.00976,
+            "__myl_FcAdd_myl2_68": 0.00969,
+            "__myl_FcAdd_myl2_11": 0.00959,
+            "__myl_FcAdd_myl2_40": 0.00959,
+            "__myl_FcAdd_myl2_47": 0.00952,
+            "__myl_FcAdd_myl2_82": 0.00952,
+            "__myl_FcAdd_myl2_75": 0.00942,
+            "__myl_FcAdd_myl2_33": 0.00935,
+            "__myl_FcAdd_myl2_61": 0.00932,
+            "/predictor/act_emb/act_emb.2/MatMul_myl2_14": 0.00843,
+            "/predictor/act_emb/act_emb.0/MatMul_myl2_12": 0.00819,
+            "__myl_Gath_myl2_90": 0.00819,
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00775,
+            "__myl_GathCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_88": 0.00765,
+            "__myl_Cums_myl2_2": 0.00703,
+            "_gemm_mha_v2_myl2_10": 0.00631,
+            "_gemm_mha_v2_myl2_25": 0.00625,
+            "__myl_IotaIotaCastCastAddEqlLtOrSeleNotReplConcReplConcReshCastSum_myl2_0": 0.00625,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_20": 0.00618,
+            "_gemm_mha_v2_myl2_53": 0.00614,
+            "Reformatting CopyNode for Input Tensor 1 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00614,
+            "_gemm_mha_v2_myl2_46": 0.00614,
+            "_gemm_mha_v2_myl2_39": 0.00611,
+            "_gemm_mha_v2_myl2_67": 0.00611,
+            "_gemm_mha_v2_myl2_32": 0.00608,
+            "_gemm_mha_v2_myl2_60": 0.00604,
+            "_gemm_mha_v2_myl2_74": 0.00604,
+            "_gemm_mha_v2_myl2_81": 0.00601,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_23": 0.00594,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_51": 0.00587,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_69": 0.00577,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_27": 0.00573,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_55": 0.0057,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_76": 0.0057,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_8": 0.00567,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_44": 0.00567,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_58": 0.00563,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_62": 0.00563,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_65": 0.00563,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_72": 0.0056,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_30": 0.00556,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_37": 0.00556,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_48": 0.00556,
+            "__myl_CastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_79": 0.00556,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_41": 0.00553,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_83": 0.0055,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddMulAdd_myl2_34": 0.00546,
+            "__myl_ReshReplConcNeqCastIotaEqlSeleOr_myl2_1": 0.00509,
+            "__myl_Scat_myl2_5": 0.00485,
+            "__myl_SlicMaxConc_myl2_6": 0.00457,
+            "__myl_DivCastErfCastAddMulMul_myl2_13": 0.00454,
+            "Reformatting CopyNode for Output Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00451,
+            "__myl_Sele_myl2_3": 0.0044,
+            "__myl_Repl_myl2_4": 0.00437,
+            "__mye68489_myl2_15": 0.0,
+            "__mye68491_myl2_16": 0.0,
+            "__mye68493_myl2_18": 0.0,
+            "__mye68495_myl2_19": 0.0,
+            "__mye68497_myl2_86": 0.0,
+            "__mye68499_myl2_87": 0.0,
+            "__mye68501_myl2_89": 0.0,
+            "__mye68503_myl2_91": 0.0
+          },
+          "n_layers_reported": 96,
+          "total_ms": 0.8526
+        }
+      },
+      "int8": {
+        "parse_ok": true,
+        "build_ok": true,
+        "build_s": 125.8,
+        "engine_mb": 174.6,
+        "latency": {
+          "p50_ms": 0.596,
+          "p99_ms": 0.6089,
+          "mean_ms": 0.5977
+        },
+        "fusion": {
+          "n_layers": 98,
+          "standalone_softmax": false,
+          "myelin_or_foreign": true,
+          "verdict": "fused",
+          "layer_names_sample": [
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}",
+            "Reformatting CopyNode for Input Tensor 1 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}",
+            "__myl_IotaIotaCastCastAddEqlLtOrSeleNotReplConcReplConcReshCastSum_myl2_0",
+            "__myl_ReshReplConcNeqCastIotaEqlSeleOr_myl2_1",
+            "__myl_Cums_myl2_2",
+            "__myl_Sele_myl2_3",
+            "__myl_Repl_myl2_4",
+            "__myl_Scat_myl2_5",
+            "__myl_SlicMaxConc_myl2_6",
+            "/predictor/in_proj/MatMul_myl2_7",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_8",
+            "/predictor/blocks.0/attn/MatMul_2+/predictor/blocks.0/attn/MatMul_1+/predictor/blocks.0/attn/MatMul_myl2_9",
+            "_gemm_mha_v2_myl2_10",
+            "/predictor/blocks.0/attn/out_proj/MatMul_myl2_11",
+            "/predictor/act_emb/act_emb.0/MatMul_myl2_12",
+            "__myl_DivCastErfCastAddMulMul_myl2_13",
+            "/predictor/act_emb/act_emb.2/MatMul_myl2_14",
+            "__mye68519_myl2_15",
+            "__mye68521_myl2_16",
+            "__mye63898+__mye63886+__mye63950+__mye63938+__mye64002+__mye63990+__mye64054+__mye64042+__mye64106+__mye64094+__mye64158+__mye64146+__mye64210+__mye64198+__mye64262+__mye64250+__mye64314+__mye64302+__mye64366+__mye64354_myl2_17",
+            "__mye68523_myl2_18",
+            "__mye68525_myl2_19",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_20",
+            "__myl_Fc_myl2_21",
+            "/predictor/blocks.0/mlp/mlp.2/MatMul_myl2_22",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_23",
+            "/predictor/blocks.1/attn/MatMul_2+/predictor/blocks.1/attn/MatMul_1+/predictor/blocks.1/attn/MatMul_myl2_24",
+            "_gemm_mha_v2_myl2_25",
+            "/predictor/blocks.1/attn/out_proj/MatMul_myl2_26",
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_27"
+          ]
+        },
+        "per_layer_profile": {
+          "ok": true,
+          "per_layer_ms": {
+            "__mye63898+__mye63886+__mye63950+__mye63938+__mye64002+__mye63990+__mye64054+__mye64042+__mye64106+__mye64094+__mye64158+__mye64146+__mye64210+__mye64198+__mye64262+__mye64250+__mye64314+__mye64302+__mye64366+__mye64354_myl2_17": 0.04308,
+            "/predictor/blocks.0/mlp/mlp.2/MatMul_myl2_22": 0.01744,
+            "/predictor/blocks.3/mlp/mlp.2/MatMul_myl2_43": 0.01703,
+            "/predictor/blocks.1/mlp/mlp.2/MatMul_myl2_29": 0.017,
+            "/predictor/blocks.4/mlp/mlp.2/MatMul_myl2_50": 0.01693,
+            "/predictor/blocks.2/mlp/mlp.2/MatMul_myl2_36": 0.01686,
+            "/predictor/blocks.7/mlp/mlp.2/MatMul_myl2_71": 0.01683,
+            "/predictor/blocks.8/mlp/mlp.2/MatMul_myl2_78": 0.01683,
+            "/predictor/blocks.6/mlp/mlp.2/MatMul_myl2_64": 0.01679,
+            "/predictor/blocks.9/mlp/mlp.2/MatMul_myl2_86": 0.01676,
+            "/predictor/blocks.5/mlp/mlp.2/MatMul_myl2_57": 0.01673,
+            "__myl_Fc_myl2_35": 0.01478,
+            "__myl_Fc_myl2_49": 0.01471,
+            "__myl_Fc_myl2_63": 0.01468,
+            "__myl_Fc_myl2_77": 0.01468,
+            "__myl_Fc_myl2_56": 0.01437,
+            "__myl_Fc_myl2_28": 0.0143,
+            "__myl_Fc_myl2_21": 0.0143,
+            "__myl_Fc_myl2_70": 0.01413,
+            "__myl_Fc_myl2_85": 0.0141,
+            "__myl_Fc_myl2_42": 0.01403,
+            "/predictor/blocks.7/attn/MatMul_2+/predictor/blocks.7/attn/MatMul_1+/predictor/blocks.7/attn/MatMul_myl2_66": 0.01287,
+            "/predictor/blocks.4/attn/MatMul_2+/predictor/blocks.4/attn/MatMul_1+/predictor/blocks.4/attn/MatMul_myl2_45": 0.01283,
+            "/predictor/blocks.8/attn/MatMul_2+/predictor/blocks.8/attn/MatMul_1+/predictor/blocks.8/attn/MatMul_myl2_73": 0.0128,
+            "/predictor/blocks.3/attn/MatMul_2+/predictor/blocks.3/attn/MatMul_1+/predictor/blocks.3/attn/MatMul_myl2_38": 0.0128,
+            "/predictor/blocks.6/attn/MatMul_2+/predictor/blocks.6/attn/MatMul_1+/predictor/blocks.6/attn/MatMul_myl2_59": 0.0127,
+            "/predictor/blocks.2/attn/MatMul_2+/predictor/blocks.2/attn/MatMul_1+/predictor/blocks.2/attn/MatMul_myl2_31": 0.0127,
+            "/predictor/blocks.5/attn/MatMul_2+/predictor/blocks.5/attn/MatMul_1+/predictor/blocks.5/attn/MatMul_myl2_52": 0.01263,
+            "/predictor/blocks.0/attn/MatMul_2+/predictor/blocks.0/attn/MatMul_1+/predictor/blocks.0/attn/MatMul_myl2_9": 0.01256,
+            "/predictor/blocks.1/attn/MatMul_2+/predictor/blocks.1/attn/MatMul_1+/predictor/blocks.1/attn/MatMul_myl2_24": 0.01253,
+            "/predictor/blocks.9/attn/MatMul_2+/predictor/blocks.9/attn/MatMul_1+/predictor/blocks.9/attn/MatMul_myl2_80": 0.01236,
+            "/predictor/in_proj/MatMul_myl2_7": 0.01215,
+            "__myl_FcAdd_myl2_94": 0.01171,
+            "/predictor/blocks.5/attn/out_proj/MatMul_myl2_54": 0.00956,
+            "/predictor/blocks.6/attn/out_proj/MatMul_myl2_61": 0.00942,
+            "/predictor/blocks.2/attn/out_proj/MatMul_myl2_33": 0.00925,
+            "/predictor/blocks.7/attn/out_proj/MatMul_myl2_68": 0.00915,
+            "/predictor/blocks.1/attn/out_proj/MatMul_myl2_26": 0.00908,
+            "/predictor/blocks.8/attn/out_proj/MatMul_myl2_75": 0.00908,
+            "/predictor/blocks.3/attn/out_proj/MatMul_myl2_40": 0.00894,
+            "/predictor/blocks.4/attn/out_proj/MatMul_myl2_47": 0.00894,
+            "/predictor/act_emb/act_emb.2/MatMul_myl2_14": 0.00894,
+            "/predictor/blocks.9/attn/out_proj/MatMul_myl2_82": 0.00891,
+            "/predictor/blocks.0/attn/out_proj/MatMul_myl2_11": 0.00857,
+            "/predictor/act_emb/act_emb.0/MatMul_myl2_12": 0.0084,
+            "Reformatting CopyNode for Input Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00829,
+            "__myl_Gath_myl2_92": 0.00812,
+            "__myl_AddGathCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_90": 0.00778,
+            "__myl_Cums_myl2_2": 0.00717,
+            "__myl_IotaIotaCastCastAddEqlLtOrSeleNotReplConcReplConcReshCastSum_myl2_0": 0.00662,
+            "_gemm_mha_v2_myl2_25": 0.00631,
+            "Reformatting CopyNode for Input Tensor 1 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00631,
+            "_gemm_mha_v2_myl2_32": 0.00618,
+            "_gemm_mha_v2_myl2_10": 0.00614,
+            "_gemm_mha_v2_myl2_39": 0.00611,
+            "_gemm_mha_v2_myl2_60": 0.00611,
+            "_gemm_mha_v2_myl2_46": 0.00604,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_23": 0.00604,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_20": 0.00601,
+            "_gemm_mha_v2_myl2_67": 0.00597,
+            "_gemm_mha_v2_myl2_81": 0.00597,
+            "_gemm_mha_v2_myl2_74": 0.00594,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_37": 0.00591,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_79": 0.0058,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_8": 0.00577,
+            "_gemm_mha_v2_myl2_53": 0.00577,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_58": 0.00577,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_72": 0.00577,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_65": 0.00573,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_27": 0.0057,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_44": 0.0057,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_30": 0.0057,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl2_51": 0.00567,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_41": 0.00563,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_76": 0.0056,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_34": 0.00553,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_55": 0.00553,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_62": 0.00553,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_48": 0.00543,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_69": 0.00532,
+            "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAddAddMulAdd_myl2_83": 0.00532,
+            "__myl_ReshReplConcNeqCastIotaEqlSeleOr_myl2_1": 0.00512,
+            "__myl_Scat_myl2_5": 0.00461,
+            "__myl_DivCastErfCastAddMulMul_myl2_13": 0.00454,
+            "Reformatting CopyNode for Output Tensor 0 to {ForeignNode[/predictor/Constant_1_output_0.../predictor/Add_1]}": 0.00454,
+            "__myl_Sele_myl2_3": 0.00444,
+            "__myl_Repl_myl2_4": 0.00433,
+            "__myl_SlicMaxConc_myl2_6": 0.00423,
+            "__mye68519_myl2_15": 0.0,
+            "__mye68521_myl2_16": 0.0,
+            "__mye68523_myl2_18": 0.0,
+            "__mye68525_myl2_19": 0.0,
+            "__mye68527_myl2_84": 0.0,
+            "__mye68531_myl2_87": 0.0,
+            "__mye68529_myl2_88": 0.0,
+            "__mye68533_myl2_89": 0.0,
+            "__mye68535_myl2_91": 0.0,
+            "__mye68537_myl2_93": 0.0
+          },
+          "n_layers_reported": 98,
+          "total_ms": 0.8653
+        }
+      }
+    }
+  },
+  "fp16_baseline_reproduction": {
+    "baseline_source": "TanitAD Research Hub/.../incoming/2026-07-22-orin-thor-deployment/artifacts/trt_fp16_report.json (random-init weights, same A40-class arch)",
+    "this_run_gpu": "NVIDIA RTX A6000",
+    "encoder_fp16_p50_ms_this_run": 1.1315,
+    "predictor_fp16_p50_ms_this_run": 0.5837,
+    "note": "pod1 is an A6000 (SM 8.6), the 2026-07-22 baseline was measured on an A40 (SM 8.6) -- same architecture generation, different SKU, so a close-but-not-identical reproduction is expected; a large deviation would indicate an env difference worth flagging."
+  },
+  "mixed_precision_recommendation": {
+    "threshold_cosine": 0.999,
+    "components": {
+      "encoder": {
+        "per_block": [
+          {
+            "block": "readout_head",
+            "isolated_int8_weight_only_cosine": 0.9994738101959229,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.5660150051116943,
+            "isolated_int8_weight_plus_activation_safe": false,
+            "recommendation": "INT8 (weight-only) safe; keep activations FP16 unless W+A also safe"
+          },
+          {
+            "block": "enc_block_11",
+            "isolated_int8_weight_only_cosine": 0.9999990463256836,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9994242191314697,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "patch_embed",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9996789693832397,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_10",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999825954437256,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_0",
+            "isolated_int8_weight_only_cosine": 0.9999997019767761,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999916553497314,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_8",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999954104423523,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_9",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999958872795105,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_7",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.999996542930603,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_5",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999966621398926,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_6",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999968409538269,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_4",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999991655349731,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_3",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999995231628418,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_1",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999997019767761,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "enc_block_2",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999997019767761,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          }
+        ],
+        "blanket_int8_weight_only": {
+          "cosine": 0.9994699954986572,
+          "mse": 0.0007728791097179055,
+          "rel_l2": 0.032200127840042114
+        },
+        "blanket_int8_weight_plus_activation": {
+          "cosine": 0.5675597190856934,
+          "mse": 0.5271728038787842,
+          "rel_l2": 7.711310863494873
+        },
+        "blanket_fp16": {
+          "cosine": 0.9999998807907104,
+          "mse": 3.3499986784590874e-07,
+          "rel_l2": 0.000568986521102488
+        },
+        "n_blocks_unsafe_weight_only": 0,
+        "n_blocks_unsafe_weight_plus_activation": 1,
+        "verdict": "BLANKET weight-only INT8 is SAFE across the whole component (cos=0.9994699954986572) -- ship it."
+      },
+      "predictor": {
+        "per_block": [
+          {
+            "block": "act_emb",
+            "isolated_int8_weight_only_cosine": 0.9999997019767761,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9998741149902344,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_1",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999960660934448,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_0",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999984502792358,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_heads",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999994039535522,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_4",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999997019767761,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "in_proj",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999998807907104,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_3",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999998807907104,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_2",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 0.9999999403953552,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_5",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 1.0,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_6",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 1.0,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_7",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 1.0,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_8",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 1.0,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          },
+          {
+            "block": "pred_block_9",
+            "isolated_int8_weight_only_cosine": 1.0,
+            "isolated_int8_weight_only_safe": true,
+            "isolated_int8_weight_plus_activation_cosine": 1.0,
+            "isolated_int8_weight_plus_activation_safe": true,
+            "recommendation": "INT8 (weight-only AND weight+activation) safe"
+          }
+        ],
+        "blanket_int8_weight_only": {
+          "cosine": 0.9999997019767761,
+          "mse": 4.101075035123358e-07,
+          "rel_l2": 0.0006319288513623178
+        },
+        "blanket_int8_weight_plus_activation": {
+          "cosine": 0.9998685121536255,
+          "mse": 0.0001677398686297238,
+          "rel_l2": 0.011655244044959545
+        },
+        "blanket_fp16": {
+          "cosine": 1.0,
+          "mse": 7.456198147792747e-08,
+          "rel_l2": 0.00030837845406495035
+        },
+        "n_blocks_unsafe_weight_only": 0,
+        "n_blocks_unsafe_weight_plus_activation": 0,
+        "verdict": "BLANKET weight-only INT8 is SAFE across the whole component (cos=0.9999997019767761) -- ship it."
+      }
+    }
+  },
+  "orin_thor_estimates": {
+    "evidence_class": "ESTIMATED -- scaled from this run's MEASURED A6000 (SM 8.6) TensorRT latencies by PUBLISHED dense tensor-core TOPS/TFLOPS ratios. 'latency scales inversely with TOPS' is a rough COMPUTE-BOUND upper bound; it is most defensible for the ENCODER (94% of tick FLOPs, desk note SS1.2) and least defensible for the PREDICTOR/rollout, which the same desk note establishes is DRAM-BANDWIDTH-bound, not compute-bound -- see bandwidth_floor_cross_check for the more rigorous number on that component.",
+    "tops_sources": {
+      "A6000_or_A40_fp16_dense_tflops": 149.7,
+      "A6000_or_A40_int8_dense_tops": 299.3,
+      "orin_fp16_dense_tflops": 42.5,
+      "orin_int8_dense_tops": 85.0,
+      "thor_fp16_dense_tflops": 255.0,
+      "thor_fp8_dense_tflops": 518.0,
+      "thor_nvfp4_dense_tflops": 1035.0
+    },
+    "measured_a6000_this_run": {
+      "encoder_fp16_ms": 1.1315,
+      "encoder_int8_ms": 1.108,
+      "predictor_fp16_ms": 0.5837,
+      "predictor_int8_ms": 0.596
+    },
+    "encoder_estimates_ms": {
+      "orin_fp16_ms": 3.9855,
+      "orin_int8_ms": 3.9015,
+      "thor_fp16_ms": 0.6643,
+      "thor_fp8_ms": 0.327,
+      "thor_nvfp4_ms": 0.1637
+    },
+    "predictor_estimates_ms": {
+      "orin_fp16_ms": 2.056,
+      "orin_int8_ms": 2.0986,
+      "thor_fp16_ms": 0.3427,
+      "thor_fp8_ms": 0.1687,
+      "thor_nvfp4_ms": 0.0844
+    },
+    "bandwidth_floor_cross_check_ms_per_20step_rollout": {
+      "orin": {
+        "fp16": 17.9,
+        "int8": 9.4
+      },
+      "thor": {
+        "fp16": 13.4,
+        "int8_or_fp8": 7.0,
+        "nvfp4": 3.5
+      }
+    },
+    "full_tick_estimate": {
+      "orin_fp16": {
+        "naive_ms": 45.106,
+        "graph_projected_ms": 15.87,
+        "meets_10hz_naive": true,
+        "meets_10hz_graph_projected": true
+      },
+      "orin_int8": {
+        "naive_ms": 45.873,
+        "graph_projected_ms": 16.032,
+        "meets_10hz_naive": true,
+        "meets_10hz_graph_projected": true
+      },
+      "thor_fp16": {
+        "naive_ms": 7.518,
+        "graph_projected_ms": 2.645,
+        "meets_10hz_naive": true,
+        "meets_10hz_graph_projected": true
+      },
+      "thor_fp8": {
+        "naive_ms": 3.701,
+        "graph_projected_ms": 1.302,
+        "meets_10hz_naive": true,
+        "meets_10hz_graph_projected": true
+      },
+      "thor_nvfp4": {
+        "naive_ms": 1.852,
+        "graph_projected_ms": 0.652,
+        "meets_10hz_naive": true,
+        "meets_10hz_graph_projected": true
+      }
+    },
+    "tick_definition": "encoder(1 cached frame) + 20 x predictor-call; 'graph_projected' applies the 3.46x rollout speedup MEASURED from CUDA-graph capture on A40/A6000-class silicon in this repo -- a STRUCTURAL assumption carried to Jetson, not a Jetson measurement (CUDA-graph-on-TRT was not built for Orin/Thor -- hardware-blocked, no chip on hand).",
+    "budget_ms": 100.0
+  }
+}

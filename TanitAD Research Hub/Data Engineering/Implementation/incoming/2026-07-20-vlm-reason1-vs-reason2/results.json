@@ -1,0 +1,522 @@
+{
+ "out_dir": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-07-20-vlm-reason1-vs-reason2",
+ "prompt_version": "vlmroute-2026-07-20-a",
+ "val_build": "/root/valdata/physicalai-val-0c5f7dac3b11",
+ "stride": 40,
+ "n_windows_manifest": 200,
+ "n_windows_scored": 200,
+ "n_episodes": 40,
+ "unpaired_dropped": {
+  "reason1": 0,
+  "reason2": 0
+ },
+ "ci_estimator": "paired_episode_cluster_bootstrap",
+ "ground_truth": "kinematic refb_labels.route_from_future_v21 (v2.1)",
+ "arms": {
+  "reason1": {
+   "model": "nvidia/Cosmos-Reason1-7B",
+   "arch": "qwen2_5_vl",
+   "n_windows": 200,
+   "n_gt_valid": 171,
+   "n_gt_turn": 82,
+   "n_gt_straight": 89,
+   "turn_detection_recall": 0.3415,
+   "turn_detected_n": 28,
+   "direction_accuracy_given_detected": 0.7857,
+   "direction_n_detected_lr": 28,
+   "direction_n_correct": 22,
+   "direction_vs_chance": {
+    "n_detected_lr": 28,
+    "n_correct": 22,
+    "accuracy": 0.7857,
+    "binomial_p_vs_0.5": 0.003719,
+    "binomial_caveat": "ignores episode clustering; anti-conservative",
+    "cluster_bootstrap": {
+     "mean": 0.7857,
+     "lo": 0.6452,
+     "hi": 0.9231,
+     "ci95": 0.139,
+     "se": 0.0702,
+     "n_windows": 28,
+     "n_episodes": 15,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "beats_chance_95ci": true
+   },
+   "direction_association": {
+    "table_gt_left": {
+     "said_left": 14,
+     "said_right": 3
+    },
+    "table_gt_right": {
+     "said_left": 3,
+     "said_right": 8
+    },
+    "odds_ratio": 12.444,
+    "fisher_p_two_sided": 0.006158,
+    "acc_given_detected_gt_left": 0.8235,
+    "acc_given_detected_gt_right": 0.7273,
+    "test": "fisher_exact_2x2_two_sided (windows treated as independent \u2014 see clustering caveat)"
+   },
+   "left_right_bias": {
+    "n_pred_left": 17,
+    "n_pred_right": 11,
+    "n_gt_left": 52,
+    "n_gt_right": 30,
+    "left_share_of_predicted_turns": 0.6071,
+    "left_share_of_gt_turns": 0.6341,
+    "recall_left": 0.2692,
+    "recall_right": 0.2667
+   },
+   "by_n_future_frames": {
+    "4": {
+     "n": 73,
+     "correct": 36,
+     "n_turn": 40,
+     "turn_detected": 6,
+     "acc3_over_all": 0.4932,
+     "turn_detection_recall": 0.15
+    },
+    "3": {
+     "n": 34,
+     "correct": 20,
+     "n_turn": 18,
+     "turn_detected": 6,
+     "acc3_over_all": 0.5882,
+     "turn_detection_recall": 0.3333
+    },
+    "2": {
+     "n": 32,
+     "correct": 26,
+     "n_turn": 14,
+     "turn_detected": 8,
+     "acc3_over_all": 0.8125,
+     "turn_detection_recall": 0.5714
+    },
+    "1": {
+     "n": 31,
+     "correct": 28,
+     "n_turn": 10,
+     "turn_detected": 8,
+     "acc3_over_all": 0.9032,
+     "turn_detection_recall": 0.8
+    },
+    "5": {
+     "n": 1,
+     "correct": 1,
+     "n_turn": 0,
+     "turn_detected": 0,
+     "acc3_over_all": 1.0,
+     "turn_detection_recall": null
+    }
+   },
+   "straight_recall": 1.0,
+   "acc3_over_answered": 0.6529,
+   "acc3_n_answered": 170,
+   "acc3_over_all": 0.6491,
+   "abstention_rate_unknown": 0.0,
+   "u_turn_rate": 0.0,
+   "no_answer_rate": 0.0058,
+   "confusion_gt_rows": {
+    "left": {
+     "left": 14,
+     "straight": 35,
+     "right": 3,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "straight": {
+     "left": 0,
+     "straight": 89,
+     "right": 0,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "right": {
+     "left": 3,
+     "straight": 18,
+     "right": 8,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 1
+    }
+   },
+   "outcome_counts": {
+    "ok": 198,
+    "enum_violation": 2
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.01,
+   "enum_violation_tokens": [
+    "curve_left",
+    "curve_right"
+   ],
+   "road_geometry_violation_rate": 0.0,
+   "truncation_rate": 0.0,
+   "slot_fill_rate": {
+    "ROUTE": 1.0,
+    "road_geometry": 1.0,
+    "route_confidence": 1.0,
+    "route_event_time_s": 1.0,
+    "route_evidence": 1.0,
+    "sees_junction_ahead": 0.925
+   },
+   "gen_tokens_mean": 116.1,
+   "gen_tokens_p95": 150.0,
+   "prompt_tokens_mean": 2068.2,
+   "gen_seconds_mean": 4.528,
+   "gen_seconds_median": 4.213,
+   "gen_seconds_p95": 7.809,
+   "peak_vram_gib": 16.019,
+   "on_kinematic_unknown_windows": {
+    "n": 29,
+    "vlm_says": {
+     "straight": 22,
+     "left": 4,
+     "right": 2,
+     "no_answer": 1
+    }
+   },
+   "run_summary": {
+    "tag": "reason1",
+    "model": "nvidia/Cosmos-Reason1-7B",
+    "arch": "qwen2_5_vl",
+    "passes": "A",
+    "prompt_version": "vlmroute-2026-07-20-a",
+    "n_windows_run": 200,
+    "load_seconds": 5.5,
+    "weights_gib": 15.494,
+    "peak_vram_gib": 16.019,
+    "wall_seconds": 972.3,
+    "s_per_window": 4.862
+   }
+  },
+  "reason2": {
+   "model": "nvidia/Cosmos-Reason2-8B",
+   "arch": "qwen3_vl",
+   "n_windows": 200,
+   "n_gt_valid": 171,
+   "n_gt_turn": 82,
+   "n_gt_straight": 89,
+   "turn_detection_recall": 0.7683,
+   "turn_detected_n": 63,
+   "direction_accuracy_given_detected": 0.5714,
+   "direction_n_detected_lr": 63,
+   "direction_n_correct": 36,
+   "direction_vs_chance": {
+    "n_detected_lr": 63,
+    "n_correct": 36,
+    "accuracy": 0.5714,
+    "binomial_p_vs_0.5": 0.313503,
+    "binomial_caveat": "ignores episode clustering; anti-conservative",
+    "cluster_bootstrap": {
+     "mean": 0.5714,
+     "lo": 0.3999,
+     "hi": 0.7451,
+     "ci95": 0.1726,
+     "se": 0.0881,
+     "n_windows": 63,
+     "n_episodes": 19,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "beats_chance_95ci": false
+   },
+   "direction_association": {
+    "table_gt_left": {
+     "said_left": 28,
+     "said_right": 10
+    },
+    "table_gt_right": {
+     "said_left": 17,
+     "said_right": 8
+    },
+    "odds_ratio": 1.318,
+    "fisher_p_two_sided": 0.776554,
+    "acc_given_detected_gt_left": 0.7368,
+    "acc_given_detected_gt_right": 0.32,
+    "test": "fisher_exact_2x2_two_sided (windows treated as independent \u2014 see clustering caveat)"
+   },
+   "left_right_bias": {
+    "n_pred_left": 51,
+    "n_pred_right": 19,
+    "n_gt_left": 52,
+    "n_gt_right": 30,
+    "left_share_of_predicted_turns": 0.7286,
+    "left_share_of_gt_turns": 0.6341,
+    "recall_left": 0.5385,
+    "recall_right": 0.2667
+   },
+   "by_n_future_frames": {
+    "4": {
+     "n": 73,
+     "correct": 44,
+     "n_turn": 40,
+     "turn_detected": 29,
+     "acc3_over_all": 0.6027,
+     "turn_detection_recall": 0.725
+    },
+    "3": {
+     "n": 34,
+     "correct": 20,
+     "n_turn": 18,
+     "turn_detected": 13,
+     "acc3_over_all": 0.5882,
+     "turn_detection_recall": 0.7222
+    },
+    "2": {
+     "n": 32,
+     "correct": 27,
+     "n_turn": 14,
+     "turn_detected": 12,
+     "acc3_over_all": 0.8438,
+     "turn_detection_recall": 0.8571
+    },
+    "1": {
+     "n": 31,
+     "correct": 27,
+     "n_turn": 10,
+     "turn_detected": 9,
+     "acc3_over_all": 0.871,
+     "turn_detection_recall": 0.9
+    },
+    "5": {
+     "n": 1,
+     "correct": 0,
+     "n_turn": 0,
+     "turn_detected": 0,
+     "acc3_over_all": 0.0,
+     "turn_detection_recall": null
+    }
+   },
+   "straight_recall": 0.9213,
+   "acc3_over_answered": 0.6901,
+   "acc3_n_answered": 171,
+   "acc3_over_all": 0.6901,
+   "abstention_rate_unknown": 0.0,
+   "u_turn_rate": 0.0,
+   "no_answer_rate": 0.0,
+   "confusion_gt_rows": {
+    "left": {
+     "left": 28,
+     "straight": 14,
+     "right": 10,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "straight": {
+     "left": 6,
+     "straight": 82,
+     "right": 1,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "right": {
+     "left": 17,
+     "straight": 5,
+     "right": 8,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    }
+   },
+   "outcome_counts": {
+    "ok": 200
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "enum_violation_tokens": [],
+   "road_geometry_violation_rate": 0.02,
+   "truncation_rate": 0.0,
+   "slot_fill_rate": {
+    "ROUTE": 0.985,
+    "road_geometry": 0.985,
+    "route_confidence": 1.0,
+    "route_event_time_s": 1.0,
+    "route_evidence": 1.0,
+    "sees_junction_ahead": 1.0
+   },
+   "gen_tokens_mean": 91.5,
+   "gen_tokens_p95": 100.0,
+   "prompt_tokens_mean": 1732.9,
+   "gen_seconds_mean": 3.923,
+   "gen_seconds_median": 3.862,
+   "gen_seconds_p95": 4.494,
+   "peak_vram_gib": 16.94,
+   "on_kinematic_unknown_windows": {
+    "n": 29,
+    "vlm_says": {
+     "straight": 16,
+     "left": 7,
+     "right": 3,
+     "unknown": 3
+    }
+   },
+   "run_summary": {
+    "tag": "reason2",
+    "model": "nvidia/Cosmos-Reason2-8B",
+    "arch": "qwen3_vl",
+    "passes": "A",
+    "prompt_version": "vlmroute-2026-07-20-a",
+    "n_windows_run": 200,
+    "load_seconds": 5.4,
+    "weights_gib": 16.343,
+    "peak_vram_gib": 16.94,
+    "wall_seconds": 839.9,
+    "s_per_window": 4.2
+   }
+  }
+ },
+ "inter_arm_agreement_all_windows": {
+  "kappa": 0.4303,
+  "observed_agreement": 0.725,
+  "expected_agreement": 0.5173,
+  "n": 200
+ },
+ "inter_arm_agreement_gt_valid": {
+  "kappa": 0.4557,
+  "observed_agreement": 0.7427,
+  "expected_agreement": 0.5273,
+  "n": 171
+ },
+ "paired_tests": {
+  "arm_a": "reason1",
+  "arm_b": "reason2",
+  "n_episodes": 38,
+  "tests": [
+   {
+    "metric": "acc3_over_all",
+    "mcnemar": {
+     "b_a_only": 8,
+     "c_b_only": 15,
+     "n_discordant": 23,
+     "p_value": 0.21004,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.6491,
+    "mean_b": 0.6901,
+    "n": 171,
+    "n_episodes": 38,
+    "paired_ci": {
+     "delta": -0.0409,
+     "lo": -0.1163,
+     "hi": 0.0303,
+     "ci95": 0.0733,
+     "p_delta_gt0": 0.109,
+     "separated": false,
+     "n_windows": 171,
+     "n_episodes": 38,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   {
+    "metric": "turn_detected",
+    "mcnemar": {
+     "b_a_only": 1,
+     "c_b_only": 36,
+     "n_discordant": 37,
+     "p_value": 0.0,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.3415,
+    "mean_b": 0.7683,
+    "n": 82,
+    "n_episodes": 21,
+    "paired_ci": {
+     "delta": -0.4268,
+     "lo": -0.5375,
+     "hi": -0.321,
+     "ci95": 0.1083,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "n_windows": 82,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   {
+    "metric": "direction_correct_over_all_gt_turns",
+    "mcnemar": {
+     "b_a_only": 1,
+     "c_b_only": 15,
+     "n_discordant": 16,
+     "p_value": 0.000519,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.2683,
+    "mean_b": 0.439,
+    "n": 82,
+    "n_episodes": 21,
+    "paired_ci": {
+     "delta": -0.1707,
+     "lo": -0.2927,
+     "hi": -0.0595,
+     "ci95": 0.1166,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "n_windows": 82,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  ]
+ },
+ "single_arm_ci": {
+  "reason1": {
+   "acc3_over_all": {
+    "mean": 0.6491,
+    "lo": 0.523,
+    "hi": 0.7671,
+    "ci95": 0.1221,
+    "se": 0.0634,
+    "n_windows": 171,
+    "n_episodes": 38,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "direction_correct_over_all_gt_turns": {
+    "mean": 0.2683,
+    "lo": 0.1728,
+    "hi": 0.358,
+    "ci95": 0.0926,
+    "se": 0.0469,
+    "n_windows": 82,
+    "n_episodes": 21,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "reason2": {
+   "acc3_over_all": {
+    "mean": 0.6901,
+    "lo": 0.5731,
+    "hi": 0.8035,
+    "ci95": 0.1152,
+    "se": 0.0601,
+    "n_windows": 171,
+    "n_episodes": 38,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "direction_correct_over_all_gt_turns": {
+    "mean": 0.439,
+    "lo": 0.2785,
+    "hi": 0.6049,
+    "ci95": 0.1632,
+    "se": 0.0835,
+    "n_windows": 82,
+    "n_episodes": 21,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  }
+ }
+}

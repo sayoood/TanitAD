@@ -1,0 +1,47 @@
+{
+  "built_lake": "C:/Users/Admin/tanitad-data/tanitdataset/lake",
+  "records_total": 90,
+  "by_tier": {
+    "ship": 90
+  },
+  "TanitDataSet_C": {
+    "definition": "commercial tier = tier `ship` (owned-safe AND commercial_ok, no share_alike)",
+    "records": 90,
+    "per_source": {
+      "comma2k19": 90
+    },
+    "all_commercial_ok": true,
+    "hf_publishable": true,
+    "staged_push_dir": "C:/Users/Admin/tanitad-data/tanitdataset/hf_stage_C",
+    "repo_id": "Sayood/TanitDataSet-C"
+  },
+  "TanitDataSet_R": {
+    "definition": "research superset = C UNION NC (owned-safe + nc-research); internal only, never redistributed wholesale",
+    "records_tonight": 90,
+    "of_which_ship_may_leave": 90,
+    "of_which_nc_may_NOT_leave": 0,
+    "per_source": {
+      "comma2k19": 90
+    },
+    "hf_publishable_wholesale": false,
+    "note": "R == C in record content tonight: NO nc-research source is downloaded on this box.",
+    "nc_sources_registered_but_pending_download_and_adapter": [
+      "nuscenes",
+      "bdd100k",
+      "a2d2",
+      "argoverse2",
+      "kitti360",
+      "once",
+      "drama",
+      "rank2tell"
+    ],
+    "physicalai_av": "gated-confidential -> FIREWALLED, recipe-only, NEVER a lake record, NEVER pushed"
+  },
+  "refuse_class_sources": [
+    "waymo",
+    "waymax"
+  ],
+  "gated_sources": [
+    "physicalai_av"
+  ]
+}

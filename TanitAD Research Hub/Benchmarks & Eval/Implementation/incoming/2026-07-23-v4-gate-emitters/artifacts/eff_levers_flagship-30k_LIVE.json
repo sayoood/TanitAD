@@ -1,0 +1,193 @@
+{
+  "key": "flagship-30k-LIVE",
+  "model": {
+    "key": "flagship-30k"
+  },
+  "measured_utc": "2026-07-23T18:26:54Z",
+  "fp32": {
+    "env": {
+      "torch": "2.4.1+cu124",
+      "cuda": "12.4",
+      "gpu": "NVIDIA RTX A6000",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA RTX A6000",
+      "other_compute_procs": 1,
+      "util_pct": 29.0,
+      "mem_used_mb": 3816.0,
+      "sm_clock_mhz": 1800.0,
+      "exclusive": false,
+      "temp_c": 50.0,
+      "power_w": 103.7,
+      "other_compute_detail": [
+        "496994, 3808 MiB"
+      ]
+    },
+    "levers": {
+      "eager": {
+        "tick": {
+          "mean_ms": 107.7833,
+          "p50_ms": 106.753,
+          "p95_ms": 114.3286,
+          "p99_ms": 119.0195,
+          "min_ms": 105.8427,
+          "max_ms": 120.7112,
+          "std_ms": 2.629,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "\u2014",
+          "desc": "baseline: encode 8-frame window -> 20 eager sequential predictor steps -> SE(2)",
+          "weights_dtype": "float32"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 0.0,
+          "max_abs_dev_m": 0.0,
+          "finite": true,
+          "cosine": 0.9999998807907104
+        }
+      },
+      "graph_rollout": {
+        "tick": {
+          "mean_ms": 52.8036,
+          "p50_ms": 52.8691,
+          "p95_ms": 53.4497,
+          "p99_ms": 53.6934,
+          "min_ms": 51.668,
+          "max_ms": 54.7656,
+          "std_ms": 0.4751,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "L1b",
+          "desc": "eager encode + ONE CUDA graph spanning all 20 rollout steps (removes launch cost AND the CPU round-trips)",
+          "weights_dtype": "float32"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 2.285372602273128e-07,
+          "max_abs_dev_m": 4.768953658640385e-07,
+          "finite": true,
+          "cosine": 0.9999999403953552
+        }
+      },
+      "enc_cache_graph": {
+        "tick": {
+          "mean_ms": 29.2637,
+          "p50_ms": 29.2669,
+          "p95_ms": 29.4328,
+          "p99_ms": 29.5393,
+          "min_ms": 29.0386,
+          "max_ms": 29.612,
+          "std_ms": 0.1043,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "L4 = L1b+L2",
+          "desc": "cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 2.904153006966226e-07,
+          "max_abs_dev_m": 9.537034202367067e-07,
+          "finite": true,
+          "cosine": 0.9999999403953552
+        }
+      },
+      "fp16_graph_rollout": {
+        "tick": {
+          "mean_ms": 21.9236,
+          "p50_ms": 21.9249,
+          "p95_ms": 21.9351,
+          "p99_ms": 21.9392,
+          "min_ms": 21.9034,
+          "max_ms": 21.9986,
+          "std_ms": 0.0094,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "L4 = L1b+L3",
+          "desc": "fp16 weights + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 0.0008489422616548836,
+          "max_abs_dev_m": 0.0026528770104050636,
+          "finite": true,
+          "cosine": 1.0
+        }
+      },
+      "fp16_enc_cache_graph": {
+        "tick": {
+          "mean_ms": 17.037,
+          "p50_ms": 17.022,
+          "p95_ms": 17.0332,
+          "p99_ms": 17.0373,
+          "min_ms": 16.9994,
+          "max_ms": 20.0366,
+          "std_ms": 0.2133,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "L4 = L1b+L2+L3",
+          "desc": "ALL THREE composed: fp16 weights + cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 0.0011319943005219102,
+          "max_abs_dev_m": 0.002654639771208167,
+          "finite": true,
+          "cosine": 0.9999998807907104
+        }
+      },
+      "all_levers": {
+        "tick": {
+          "mean_ms": 16.7077,
+          "p50_ms": 16.6902,
+          "p95_ms": 16.6973,
+          "p99_ms": 16.8858,
+          "min_ms": 16.6748,
+          "max_ms": 19.7458,
+          "std_ms": 0.217,
+          "iters": 200,
+          "warmup": 30
+        },
+        "meta": {
+          "lever": "L1b+L2+L3+L7",
+          "desc": "EVERY lever composed: fp16 weights + pruned horizon heads + cached 1-frame encode + whole-rollout graph",
+          "weights_dtype": "float16"
+        },
+        "equivalence": {
+          "ade_0_2s_delta_m": 0.0011319943005219102,
+          "max_abs_dev_m": 0.002654639771208167,
+          "finite": true,
+          "cosine": 0.9999998807907104
+        }
+      }
+    },
+    "contamination_check": {
+      "valid": false
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA RTX A6000",
+      "other_compute_procs": 1,
+      "util_pct": 100.0,
+      "mem_used_mb": 8064.0,
+      "sm_clock_mhz": 1890.0,
+      "exclusive": false,
+      "temp_c": 72.0,
+      "power_w": 222.96,
+      "other_compute_detail": [
+        "496994, 8056 MiB"
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+train 8803w val 265w
+REFS: {"W": 0.5989, "oracle": 0.4045, "cv": 0.8463, "holdv0": 0.7883, "search_warm": 0.1322}
+=== wplus {'d': 384, 'enc': 2, 'dec': 0, 'heads': 6, 'ff': 1024, 'head': 'mlp'} bs=24 ===
+/usr/local/lib/python3.11/dist-packages/torch/nn/modules/transformer.py:307: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+    1500/5000 loss=0.5853 429s
+    3000/5000 loss=0.4379 860s
+    4500/5000 loss=0.4222 1295s
+RESULT wplus: ADE=0.5878 ci=[0.37736576795578003, 0.8225951194763184] params=4.0M train_loss=0.3652
+  vs W: [-0.0112, -0.0386, 0.0142, 0.211]
+=== med {'d': 512, 'enc': 4, 'dec': 2, 'heads': 8, 'ff': 1536, 'head': 'query'} bs=24 ===
+/usr/local/lib/python3.11/dist-packages/torch/nn/modules/transformer.py:307: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+    1500/5000 loss=0.9196 450s
+    3000/5000 loss=0.5914 900s
+    4500/5000 loss=0.5439 1346s
+RESULT med: ADE=0.8204 ci=[0.47913312911987305, 1.249864935874939] params=18.9M train_loss=0.5267
+  vs W: [0.2215, 0.0748, 0.4282, 1.0]
+=== xl {'d': 1024, 'enc': 6, 'dec': 3, 'heads': 8, 'ff': 2048, 'head': 'query'} bs=16 ===

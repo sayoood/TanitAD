@@ -1,0 +1,34 @@
+{
+ "purpose": "Join key between the TanitEval canonical val build and the val build physically present on tanitad-pod3.",
+ "canonical_val_build": "physicalai-val-0c5f7dac3b11 (40 episodes, tanitad-eval:/root/valdata) - the corpus every TanitEval/MODEL_REGISTRY number is computed on",
+ "pod3_val_build": "physicalai-val-f1b378f295ae (80 episodes, tanitad-pod3:/workspace/pai_epcache) - the only val epcache on the GPU that was free",
+ "why_they_differ": "split_clips() permutes with torch.randperm(len(clips)), so the val draw depends on the clip-count bound. The canonical build came from a 200-clip discovery (160 train / 40 val); pod3's from a 500-clip discovery (400 train / 100 val, 80 materialised). Neither is a subset of the other.",
+ "match_method": "exact pose fingerprint - the tuple of (t, net_dyaw_deg, arc_m, peak_kappa, clip_len) from refb_labels.route_from_future_v21 over all 5 stride-40 windows of each episode. A collision would require two distinct clips with identical curvature at five offsets.",
+ "n_canonical_episodes": 40,
+ "n_pod3_episodes": 80,
+ "n_matched": 8,
+ "matched_fraction_of_canonical": 0.2,
+ "expected_overlap_if_independent_draws": 8.0,
+ "map_canonical_to_pod3": {
+  "ep_00000": "ep_00000",
+  "ep_00011": "ep_00006",
+  "ep_00013": "ep_00008",
+  "ep_00018": "ep_00012",
+  "ep_00019": "ep_00013",
+  "ep_00023": "ep_00017",
+  "ep_00028": "ep_00021",
+  "ep_00037": "ep_00029"
+ },
+ "map_pod3_to_canonical": {
+  "ep_00000": "ep_00000",
+  "ep_00006": "ep_00011",
+  "ep_00008": "ep_00013",
+  "ep_00012": "ep_00018",
+  "ep_00013": "ep_00019",
+  "ep_00017": "ep_00023",
+  "ep_00021": "ep_00028",
+  "ep_00029": "ep_00037"
+ },
+ "how_to_use": "A label record from this run whose `episode` is a value of map_pod3_to_canonical can be attached directly to the canonical val window of the same `t`. The other 32 canonical episodes are NOT covered by this run.",
+ "escalation": "Labelling the remaining 32 canonical val episodes needs the canonical epcache on a free GPU pod. pod3 cannot rebuild it: its R0 root /workspace/pai_build holds only 4 discoverable clips (verified via discover_r0_clips), and pods cannot SSH each other. Options: (a) run this harness on tanitad-eval when its sweep finishes, or (b) push the 40-episode epcache (~4.7 GB) eval-pod -> HF -> pod3."
+}

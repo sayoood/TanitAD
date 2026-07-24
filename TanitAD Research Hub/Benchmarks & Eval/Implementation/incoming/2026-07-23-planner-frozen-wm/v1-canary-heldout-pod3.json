@@ -1,0 +1,25 @@
+{
+  "mode": "MODE_A_canary_only_validation",
+  "evidence_class": "MEASURED (ours; artifact = this JSON)",
+  "ckpt": "/workspace/v4run/hfcache/hub/models--Sayood--tanitad-flagship-4b-speedjerk/snapshots/17902296dee666e27ab60bccafcf889fef0ab0a8/ckpt.pt",
+  "ckpt_step": 29999,
+  "key": "v1-canary-heldout-pod3",
+  "val_cache": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+  "episodes": 40,
+  "stride": 8,
+  "batch": 16,
+  "n_windows": 879,
+  "wallclock_s": 145.7,
+  "canary_ade_2s_MEASURED": 0.4253476858139038,
+  "registry_reference": {
+    "ade_0_2s_heldout_8split_jackknife": 0.4522,
+    "ade_0_2s_full_set_plain_mean": 0.4271,
+    "source": "Project Steering/MODEL_REGISTRY.md section 1.2 (flagship4b-speedjerk-30k, TanitEval key flagship-30k, step 29999)",
+    "note": "canary_rollout computes a PLAIN corpus-wide mean over all selected windows -- the methodology-matched comparison is the FULL-SET figure (0.4271), not the 8-split episode-jackknife heldout mean (0.4522, a different statistical construction)."
+  },
+  "delta_vs_full_set": -0.0018,
+  "delta_vs_heldout": -0.0269,
+  "tolerance_m": 0.05,
+  "HARNESS_VALIDATED": true,
+  "verdict": "HARNESS VALIDATED -- reproduces the registry v1 number within tolerance; safe to proceed to a v4 checkpoint (GATE_PROTOCOL O-03 satisfied)."
+}

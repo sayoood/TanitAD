@@ -1,7 +1,41 @@
 # REF-C medium (`base`, 104.2 M) — the D-030 scaling rung, trained with v2.1 route labels
 
-**Date:** 2026-07-20 · **Status:** 🟡 TRAINING (launched, early curve below) · **Closes registry gap:** R7
-(three-size scaling study never ran) — partially: this is the **middle** rung.
+**Date:** 2026-07-20 · **Status:** ✅ **COMPLETE at 29,999 and EVALUATED 2026-07-21** (outcome below;
+full numbers in `Project Steering/MODEL_REGISTRY.md` §4.3 — the registry is the quotable source, this
+note is the design record) · **Closes registry gap:** R7 (three-size scaling study never ran) —
+partially: this is the **middle** rung.
+
+---
+
+## 0. OUTCOME (2026-07-21) — resolved against §0's pre-registered reading rule
+
+The run finished 04:44 UTC 2026-07-21 at step 29,999 and was evaluated the same morning on
+`tanitad-eval` through `taniteval.refc_eval`, on the **canonical 40-episode val build**
+(`physicalai-val-0c5f7dac3b11`, n=881), at strict parity with XL — same windows, bit-identical GT and
+bit-identical CV baseline in every stratum.
+
+| | base (104.2 M) | XL (251.9 M) | paired Δ, episode-cluster bootstrap B=2000 |
+|---|---|---|---|
+| ADE@2s full-set | **0.4728** | 0.4714 | +0.0013 [−0.0281, +0.0316] **not separated** |
+| FDE@2s | **1.0031** | 1.0061 | −0.0030 [−0.0619, +0.0584] **not separated** |
+| miss@2m | **0.1419** | 0.1419 | +0.0000 [−0.0261, +0.0272] **not separated** |
+| oracle-in-fan | 0.1914 (128 anchors) | **0.1640** (256) | +0.0275 [+0.0142, +0.0405] separated |
+| oracle-in-fan, **matched 128-anchor vocabulary** | **0.1914** | 0.2624 | −0.0710 [−0.0965, −0.0502] separated |
+| plan tick p50 fp32 | **21.78 ms** | 44.06 ms | 2.02× faster |
+
+**§0's rule fires on the "level or better ⇒ AMBIGUOUS" branch, exactly as written.** The pre-registered
+sentence stands verbatim: *"the 2.4× capacity cut costs little on 2,376 episodes, but a label change of
+unknown sign rides along."* One correction to that sentence — the label change's sign is **not**
+unknown for the quantity that matters here: on flagship v1.5 the v2.1 labels moved ADE **+0.025 m** but
+**oracle −0.058 m**, i.e. they *helped the proposal set* by more than either oracle delta measured
+above, and base is the arm that had them. So no oracle-based scaling claim is safe in either direction.
+
+**What the run does establish, cleanly:** encoder scale is **not** the fan lever. base's 128 anchors are
+a bit-exact prefix of XL's 256, and over matched first-K prefixes base's oracle is at least as good at
+K = 4, 8, 16, 32, 64 and 128; XL's whole oracle advantage arrives with anchors 129–256. Anchors are a
+buffer (0 params) and the decoder is ~1.7 ms of base's 21.8 ms tick, so **fan width is nearly free and
+encoder width demonstrably bought nothing.** The clean resolution of the *scale* question is still one
+control run: XL-with-v2.1, or base-with-v1.
 
 ---
 
@@ -314,6 +348,8 @@ jackknife**, compared against **REF-C-XL final `0.458 ± 0.057` ADE@2s** (`resul
 | `--labels v21` wiring + `RouteV21Dataset` + masked route CE + milestone archiving | `stack/scripts/refc_train.py` (staged) | repo + pod3 |
 | This note | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` | repo |
 | 128-anchor FPS vocabulary (prefix subset of XL's 256) | `tanitad-pod3:/workspace/experiments/refc_anchors_base128.pt` | ⚠️ **single copy (pod-only)** |
-| Run dir (`config.json` w/ label provenance + measured params, `ckpt.pt`, milestones, `metrics.json`) | `tanitad-pod3:/workspace/experiments/refc-diffusion-base-v21-30k/` | ⚠️ **single copy (pod-only)** |
+| Run dir (`config.json` w/ label provenance + measured params, `ckpt.pt`, milestones, `metrics.json`) | `tanitad-pod3:/workspace/experiments/refc-diffusion-base-v21-30k/` | pod3 + **final `ckpt.pt`/`config.json`/`metrics.json` mirrored to `tanitad-eval:/root/models/refc-base-30k/`** (md5 `8f10d6f934f4199e11ddc7352e074939`); the 5 k/15 k/20 k milestones remain ⚠️ **pod3-only** |
+| Eval artifacts (2026-07-21) — canonical row, per-window predictions, full 128-proposal fan, scale A/B | `taniteval/results/{refc-base-30k.json, windows_refc-base-30k.pt, fan_refc-base-30k.pt, scaleab_refc-base-30k_vs_refc-xl-30k.json, eff_refc-base-30k.json}` | repo + eval pod |
+| Scale-A/B driver (coverage-matched oracle + paired bootstrap) | `taniteval/refc_scale_ab.py` | repo + eval pod |
 | Training log | `tanitad-pod3:/tmp/refc-base-v21-30k.log` | ⚠️ **single copy, `/tmp`** |
 | Pre-sync pod file backups | `tanitad-pod3:/workspace/ops/backup-20260720-refcmed/` | pod-only |

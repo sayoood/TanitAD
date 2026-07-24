@@ -1,0 +1,102 @@
+{
+  "config": {
+    "P": 128,
+    "I": 4,
+    "n_train_win": 1000,
+    "distil_steps": 4000,
+    "chunk": 8192,
+    "out": "/root/frozenwm/mpc_results.json"
+  },
+  "refs": {
+    "W_ade2s": 0.5989,
+    "oracle_ade2s": 0.4045
+  },
+  "search": {
+    "cold": {
+      "ade2s": 0.2471,
+      "ci": [
+        0.1489,
+        0.375
+      ],
+      "fde2s": 0.4875,
+      "miss2m": 0.0792
+    },
+    "warm": {
+      "ade2s": 0.1322,
+      "ci": [
+        0.0871,
+        0.184
+      ],
+      "fde2s": 0.2298,
+      "miss2m": 0.0038
+    }
+  },
+  "amortised": {
+    "prior": {
+      "ade2s": 1.3987,
+      "ci": [
+        0.9552,
+        1.9479
+      ],
+      "fde2s": 3.1092,
+      "miss2m": 0.4981,
+      "n_distil": 1000
+    }
+  },
+  "paired": {
+    "search_warm_minus_W": {
+      "delta": -0.4668,
+      "ci": [
+        -0.692,
+        -0.2722
+      ],
+      "frac_gt0": 0.0,
+      "separated": true
+    },
+    "search_warm_minus_oracle": {
+      "delta": -0.2724,
+      "ci": [
+        -0.3707,
+        -0.1971
+      ],
+      "frac_gt0": 0.0,
+      "separated": true
+    },
+    "search_cold_minus_W": {
+      "delta": -0.3518,
+      "ci": [
+        -0.5362,
+        -0.2067
+      ],
+      "frac_gt0": 0.0,
+      "separated": true
+    },
+    "amortised_prior_minus_W": {
+      "delta": 0.7997,
+      "ci": [
+        0.2926,
+        1.3984
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    },
+    "amortised_prior_minus_oracle": {
+      "delta": 0.9941,
+      "ci": [
+        0.5678,
+        1.5175
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    },
+    "amortised_prior_minus_search_warm": {
+      "delta": 1.2665,
+      "ci": [
+        0.8217,
+        1.8194
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    }
+  }
+}

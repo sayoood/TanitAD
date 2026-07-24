@@ -1,0 +1,65 @@
+REFS: {"W": 0.5989, "oracle": 0.4045, "cv": 0.8463, "gt_search_warm": 0.1322, "gt_search_cold": 0.2471}
+collected 179200 candidates from 350 win, true-ADE range [0.004,10.183] mean 0.876 (329s)
+    V 750/3000 train_L1=0.1718 val_L1=0.1575
+    V 1500/3000 train_L1=0.1237 val_L1=0.1436
+    V 2250/3000 train_L1=0.1208 val_L1=0.1201
+    V 3000/3000 train_L1=0.1091 val_L1=0.1147
+V trained, held-out cost-pred L1=0.1147
+within-window rank-corr(V_pred, true_cost) on val: 0.613 +/- 0.463
+V_SEARCH: {"ade2s": 1.0162, "ci": [0.8092200756072998, 1.2727549076080322], "fde2s": null, "cold_gt_search": 0.248, "v_costpred_L1": 0.1147, "within_win_rank_corr": 0.613}
+PAIRED: {"Vsearch_minus_W": [0.4173, 0.2365, 0.6051, 1.0], "Vsearch_minus_oracle": [0.6116, 0.4324, 0.8497, 1.0], "Vsearch_minus_coldGT": [0.7682, 0.5865, 0.9882, 1.0], "Vsearch_minus_cv": [0.1699, -0.1618, 0.5241, 0.84]}
+VALUE_DONE
+{
+  "config": {
+    "n_collect": 350,
+    "P": 128,
+    "I": 4,
+    "v_steps": 3000,
+    "chunk": 8192,
+    "out": "/root/frozenwm/valuemodel_results.json"
+  },
+  "refs": {
+    "W": 0.5989,
+    "oracle": 0.4045,
+    "cv": 0.8463,
+    "gt_search_warm": 0.1322,
+    "gt_search_cold": 0.2471
+  },
+  "V_search": {
+    "ade2s": 1.0162,
+    "ci": [
+      0.8092200756072998,
+      1.2727549076080322
+    ],
+    "fde2s": null,
+    "cold_gt_search": 0.248,
+    "v_costpred_L1": 0.1147,
+    "within_win_rank_corr": 0.613
+  },
+  "paired": {
+    "Vsearch_minus_W": [
+      0.4173,
+      0.2365,
+      0.6051,
+      1.0
+    ],
+    "Vsearch_minus_oracle": [
+      0.6116,
+      0.4324,
+      0.8497,
+      1.0
+    ],
+    "Vsearch_minus_coldGT": [
+      0.7682,
+      0.5865,
+      0.9882,
+      1.0
+    ],
+    "Vsearch_minus_cv": [
+      0.1699,
+      -0.1618,
+      0.5241,
+      0.84
+    ]
+  }
+}

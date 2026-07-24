@@ -1,0 +1,58 @@
+{
+  "_design": "2-fold cross-fit naive recovery -> n=40 held-out; paired base-vs-FT",
+  "n_episodes_heldout": 40,
+  "n_windows": 881,
+  "power_vs_n12": 1.83,
+  "base_ckpt": "/root/models/refc-base-30k/ckpt.pt",
+  "fold_ckpts": [
+    "/workspace/refc-naive-foldA/ckpt.pt",
+    "/workspace/refc-naive-foldB/ckpt.pt"
+  ],
+  "delta_corridor_departure_base_minus_ft": {
+    "delta": -0.0302,
+    "lo": -0.0595,
+    "hi": -0.0088,
+    "ci95": 0.0253,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "delta_band_ade2d_1.0_base_minus_ft": {
+    "delta": -0.3655,
+    "lo": -0.4824,
+    "hi": -0.262,
+    "ci95": 0.1102,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "delta_closed_ade2s_exactL2_base_minus_ft": {
+    "delta": -0.6614,
+    "lo": -0.8307,
+    "hi": -0.4979,
+    "ci95": 0.1664,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "abs": {
+    "base_dep": 0.0134,
+    "ft_dep": 0.0436,
+    "base_band_ade2d": 0.1763,
+    "ft_band_ade2d": 0.5419
+  },
+  "verdict": "BOUND (departure win not separated at n=40)",
+  "evidence_class": "MEASURED (this cross-fit eval)"
+}

@@ -1,0 +1,41 @@
+{
+  "exp": "flagship4b-deployed-static-onnx-export+A40-latency",
+  "date": "2026-07-22",
+  "gpu": "NVIDIA A40",
+  "torch": "2.8.0+cu128",
+  "ckpt": "random-init (latency+graph-fidelity are weight-independent)",
+  "ckpt_step": -1,
+  "params_m": 263.44,
+  "action_dim_note": "action_dim=3 (deployed v1 speed+jerk)",
+  "opset": 17,
+  "static_shapes": true,
+  "deploy_shapes": {
+    "encoder": "[1,9,256,256]->[1,2048] (per-frame, cache-friendly)",
+    "predictor": "states[1,8,2048],actions[1,8,3]->(z1,z2,z4)"
+  },
+  "graphs": {
+    "encoder_readout": {
+      "ok": true,
+      "onnx_mb": 348.4,
+      "parity": {
+        "max_abs_delta": 1.2516975402832031e-06,
+        "tol": 0.0001,
+        "pass": true,
+        "n": 5
+      }
+    },
+    "predictor": {
+      "ok": true,
+      "onnx_mb": 315.8,
+      "parity": {
+        "max_abs_delta": 1.9073486328125e-06,
+        "tol": 0.0001,
+        "pass": true,
+        "n": 5
+      }
+    }
+  },
+  "a40_torch_latency": {
+    "error": "RuntimeError: mat1 and mat2 must have the same dtype, but got Float and Half"
+  }
+}

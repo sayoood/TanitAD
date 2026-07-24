@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "experiment": "idm_multidomain_cotrain",
+    "design": "IDM_VIDEO_PRETRAIN_DESIGN \u00a75 / encoder-strategy \u00a7C.4 / PRE_REGISTRATION multi-domain addendum",
+    "date": "2026-07-22T17:51:38Z",
+    "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "ckpt_step": 29999,
+    "ft_blocks": 4,
+    "ft_steps": 1000,
+    "enc_lr": 5e-05,
+    "git_hash": "idm-multirig-wt-8194807",
+    "the_one_change": "co-train on MULTIPLE domains jointly, test on a HELD-OUT one (vs re-gate single-domain train)",
+    "pass_rule": "held-out cross speed R2>0.9 AND yaw R2>0.9 AND ADE@2s < 1.5x in-domain heldout ADE@2s"
+  },
+  "primary_rigA_plus_comma_to_heldout_rigB": {
+    "frozen": {
+      "cross_speed_r2": -3.435,
+      "cross_yaw_r2": 0.2018,
+      "cross_ade_2s": 19.278,
+      "in_domain_ade_2s": 4.009,
+      "ade_ratio": 4.809,
+      "train_windows": 10783,
+      "PASS": false
+    },
+    "light_ft": {
+      "cross_speed_r2": -1.6076,
+      "cross_yaw_r2": -0.1524,
+      "cross_ade_2s": 13.4,
+      "in_domain_ade_2s": 3.869,
+      "ade_ratio": 3.463,
+      "train_windows": 10783,
+      "PASS": false
+    },
+    "single_domain_baseline_rigA_to_rigB": {
+      "frozen_speed_r2": -3.2093,
+      "light_ft_speed_r2": -1.6468
+    },
+    "delta_light_ft_speed_r2": 0.0392
+  },
+  "symmetric_rigA_plus_rigB_to_heldout_comma": {
+    "frozen": {
+      "cross_speed_r2": 0.4401,
+      "cross_yaw_r2": 0.0002,
+      "cross_ade_2s": 11.32,
+      "in_domain_ade_2s": 4.074,
+      "ade_ratio": 2.779,
+      "train_windows": 7905,
+      "PASS": false
+    },
+    "light_ft": {
+      "cross_speed_r2": 0.4518,
+      "cross_yaw_r2": 0.0003,
+      "cross_ade_2s": 11.329,
+      "in_domain_ade_2s": 4.197,
+      "ade_ratio": 2.699,
+      "train_windows": 7905,
+      "PASS": false
+    },
+    "single_domain_baseline_pai_to_comma": {
+      "frozen_speed_r2": 0.4058,
+      "light_ft_speed_r2": 0.4111
+    },
+    "delta_light_ft_speed_r2": 0.0407
+  },
+  "overall_verdict": {
+    "gate": "held-out cross speed R2>0.9 AND yaw R2>0.9 AND ADE<1.5x in-domain",
+    "primary_heldout_rigB": "FAIL \u2014 multi-domain light-FT speed R2 -1.61 vs single-domain -1.65 (NO recovery); frozen -3.43 vs -3.21",
+    "symmetric_heldout_comma": "FAIL \u2014 multi-domain light-FT speed R2 0.452 vs single-domain 0.411 (+0.04, marginal); far from 0.9",
+    "data_diversity_hypothesis": "REFUTED on existing assets \u2014 adding a 2nd training domain does not recover held-out-rig/corpus transfer",
+    "committed_reading": "FAIL => the cross-rig/domain collapse is REPRESENTATIONAL, not cheap data-diversity. Pre-registered justification for the expensive path: a video-SSL (V-JEPA2-style) encoder with explicit geometry, or genuinely many-rig data acquisition + a metric-scale head. Do NOT proceed to YouTube on frozen/light-FT/2-domain-cotrain.",
+    "triangulation": "consistent with V-JEPA2-AC (arXiv:2506.09985 limitations): 1M+ h SSL also does not buy rig-invariance for free \u2014 rig-robustness must be engineered, not assumed from diversity or scale."
+  }
+}

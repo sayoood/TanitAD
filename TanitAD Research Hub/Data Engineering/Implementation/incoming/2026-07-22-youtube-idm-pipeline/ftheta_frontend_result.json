@@ -1,0 +1,134 @@
+{
+  "F_REF": 266.0,
+  "size": 256,
+  "tol_pct": 1.0,
+  "sample_frame": "comma2k19 raw (lake): Chunk_1\\b0c9d2329ad1606b_2018-07-27--06-03-57\\10\\video.hevc [874x1164]",
+  "raw_shape": [
+    4,
+    3,
+    874,
+    1164
+  ],
+  "roundtrip": {
+    "pinhole_rectilinear": {
+      "fn": "focal_crop_resize",
+      "f_assumed_px": 910.0,
+      "f_eff_px": 266.545,
+      "dev_pct": 0.205,
+      "pass": true,
+      "out_shape": [
+        4,
+        3,
+        256,
+        256
+      ]
+    },
+    "ftheta_wide_principal": {
+      "fn": "ftheta_crop_resize(center=\"principal\")",
+      "per_clip": true,
+      "cy": 548.0,
+      "f_eff_px": 266.02,
+      "dev_pct": 0.007,
+      "pass": true,
+      "out_shape": [
+        4,
+        3,
+        256,
+        256
+      ]
+    },
+    "stack_frames_9ch": {
+      "fn": "stack_frames(n_stack=3)",
+      "out_shape": [
+        2,
+        9,
+        256,
+        256
+      ],
+      "channels": 9,
+      "pass": true
+    }
+  },
+  "ftheta_feff_report": {
+    "f_eff_after": 266.02,
+    "f_eff_before_nominal": 434.25,
+    "crop_side_after": 832,
+    "crop_side_before": 533,
+    "retained_hfov_after_deg": 51.39,
+    "retained_hfov_before_deg": 32.85,
+    "paraxial_focal_px": 927.5,
+    "nominal_pinhole_focal_px": 554.26
+  },
+  "error_propagation_law": {
+    "law": "f_eff_true = F_REF * (f_true / f_est)",
+    "table": [
+      {
+        "f_est_over_f_true": 0.8,
+        "crop_side_px": 701,
+        "f_eff_true_px": 332.33,
+        "f_eff_dev_pct": 24.93
+      },
+      {
+        "f_est_over_f_true": 0.9,
+        "crop_side_px": 788,
+        "f_eff_true_px": 295.63,
+        "f_eff_dev_pct": 11.14
+      },
+      {
+        "f_est_over_f_true": 0.95,
+        "crop_side_px": 832,
+        "f_eff_true_px": 280.0,
+        "f_eff_dev_pct": 5.26
+      },
+      {
+        "f_est_over_f_true": 1.0,
+        "crop_side_px": 874,
+        "f_eff_true_px": 266.54,
+        "f_eff_dev_pct": 0.2
+      },
+      {
+        "f_est_over_f_true": 1.05,
+        "crop_side_px": 874,
+        "f_eff_true_px": 266.54,
+        "f_eff_dev_pct": 0.2
+      },
+      {
+        "f_est_over_f_true": 1.1,
+        "crop_side_px": 874,
+        "f_eff_true_px": 266.54,
+        "f_eff_dev_pct": 0.2
+      },
+      {
+        "f_est_over_f_true": 1.2,
+        "crop_side_px": 874,
+        "f_eff_true_px": 266.54,
+        "f_eff_dev_pct": 0.2
+      }
+    ]
+  },
+  "real_road_vp": {
+    "note": "VP on the 256x256 canonical comma frame; model assumes horizon=128",
+    "v_row": 119.1,
+    "u_col": 143.3,
+    "votes": 7887,
+    "offset_from_128": -8.9
+  },
+  "two_vp_focal_roundtrip": {
+    "f_gt": 910.0,
+    "f_recovered": 910.0,
+    "abs_err_pct": 0.0,
+    "vp1": [
+      1401.0,
+      528.0
+    ],
+    "vp2": [
+      -586.4,
+      1853.0
+    ]
+  },
+  "canonical_sample_png": "canonical_sample.png",
+  "VERDICT": {
+    "canonicalization_roundtrips": true,
+    "summary": "pinhole f_eff=266.545, ftheta f_eff=266.02, 9ch=[2, 9, 256, 256]"
+  }
+}

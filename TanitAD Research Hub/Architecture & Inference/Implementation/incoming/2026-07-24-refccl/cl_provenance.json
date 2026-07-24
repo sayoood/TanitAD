@@ -1,0 +1,31 @@
+{
+  "arm": "LOWOOD-CL-TRAIN (decoder-only)",
+  "objective": "closed-loop-consistent on-policy recovery (RoaD/CAT-K) on the real-footage low-OOD source",
+  "base_ckpt": "/root/models/refc-base-30k/ckpt.pt",
+  "base_step": 29999,
+  "ft_slice": "0:28",
+  "dagger_rounds": 3,
+  "steps_per_round": 250,
+  "lr_head": 5e-05,
+  "unfreeze_encoder_stages": 0,
+  "lr_encoder": null,
+  "lambda_dev": 1.0,
+  "frac_inside_envelope_per_round": [
+    0.9482176303863525,
+    0.9478424191474915,
+    0.9493433237075806
+  ],
+  "n_encoder_trainable": 0,
+  "param_breakdown": {
+    "encoder": 90458632,
+    "measurement": 17280,
+    "strategic": 1903680,
+    "decoder": 8634505,
+    "imagination": 0,
+    "aux": 274760,
+    "law": 2902720,
+    "speed": 0,
+    "total": 104191577
+  },
+  "evidence_class": "MEASURED (this run)"
+}

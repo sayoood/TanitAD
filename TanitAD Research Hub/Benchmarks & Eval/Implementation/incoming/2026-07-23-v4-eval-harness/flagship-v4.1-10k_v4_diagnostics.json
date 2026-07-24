@@ -1,0 +1,68 @@
+{
+  "key": "flagship-v4.1-10k",
+  "ckpt": "/root/models/flagship-v4.1-10k/ckpt_step10000.pt",
+  "ckpt_step": 10000,
+  "evidence_class": "MEASURED (ours; artifacts = flagship-v4.1-10k.json, windows_flagship-v4.1-10k.pt)",
+  "gate_primary_ade_0_2s": {
+    "value": 0.8522,
+    "threshold": 0.6,
+    "pass": false
+  },
+  "kill_secondaries": {
+    "wm_canary_ade_2s": {
+      "value": 0.4599445164203644,
+      "threshold": 0.55,
+      "pass": true
+    },
+    "oracle_in_fan": {
+      "value": 0.4837766247426205,
+      "threshold": 0.3,
+      "pass": false,
+      "note": "4-waypoint resolution (steps 5/10/15/20), comparable to v1.5-ab's 0.3073 -- NOT the dense-20 'oracle_ade@2s' the in-loop train log prints"
+    },
+    "miss_at_2m": {
+      "value": 0.2486,
+      "threshold": 0.1,
+      "pass": false
+    },
+    "seam_norm_ratio_max": {
+      "value": 0.1796,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "encoder_touching_levers": {
+      "value": 2,
+      "threshold": 2,
+      "pass": true,
+      "evidence_class": "PUBLISHED (V4_FLAGSHIP_DESIGN.md / --print-launch design audit)",
+      "note": "static design fact (lambda_plan + strategic = 2 of 2 encoder-touching levers, door CLOSED per MODEL_REGISTRY.md retraction 07-21); not a GPU measurement, not re-derived here"
+    },
+    "speed_benefit_recovered_frac": {
+      "value": null,
+      "pass": null,
+      "note": "NOT BUILT this session -- new metric (P8), needs its own definition off the two in-repo train logs per V4_FLAGSHIP_DESIGN.md 17.3; no emitter exists yet anywhere in the codebase"
+    },
+    "deploy_tick_p99_ms": {
+      "value": null,
+      "pass": null,
+      "note": "NOT MEASURED this session -- needs the efficiency.py latency-panel harness (CUDA-graph capture, batch-1 profiling under gpu_lock.sh exclusivity); out of scope for a correctness-first harness build, flagged as the first thing to cut per V4_FLAGSHIP_DESIGN.md 8 if it misses"
+    },
+    "nonav_route_beats_majority": {
+      "value": null,
+      "pass": null,
+      "note": "NOT REACHABLE on this checkpoint -- v4.1's goal_head (GoalScalarHead) only regresses CONTINUOUS scalars (ttm/curv_3s/curv_5s/tspeed_5s); no ROUTE classifier exists yet (P6 strategic planner not landed). taniteval.hierarchy.py's vision_route_beats_majority needs a nav-conditioned route head this checkpoint does not have -- this is the produced-goal fallback (V4_FLAGSHIP_DESIGN.md 2.6) territory"
+    }
+  },
+  "diagnostics_dense_headhorizons_train_loop_comparable": {
+    "dense_headhorizons_ade_2s": 0.7110385167476945,
+    "dense_headhorizons_oracle_ade": 0.36034964168788897,
+    "dense_headhorizons_sel_gap": 0.35068887614229616,
+    "dense_headhorizons_miss_at_2m": 0.24858115777525538
+  },
+  "cross_check_ade_0_2s_selfcomputed_vs_driving_py": {
+    "selfcomputed_from_forward_pass": 0.8521944523940157,
+    "driving_py_from_persisted_windows": 0.8522,
+    "agree_within_1pct": true,
+    "note": "two independent code paths over the SAME forward-pass output (direct tensor math here vs. persisted-tensor reload + taniteval.driving.tier0 there); disagreement would indicate an ego-frame convention mismatch"
+  }
+}

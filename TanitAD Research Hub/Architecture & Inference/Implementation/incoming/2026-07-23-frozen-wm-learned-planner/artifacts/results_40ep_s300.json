@@ -1,0 +1,79 @@
+{
+  "config": {
+    "folds": 5,
+    "steps": 300,
+    "bs": 24,
+    "lr": 0.0003,
+    "max_eps": 0,
+    "log": 150,
+    "out": "/root/frozenwm40/results_40ep.json"
+  },
+  "refs": {
+    "oracle": {
+      "ade2s": 0.4271,
+      "ci": [
+        0.3691,
+        0.4907
+      ],
+      "fde2s": 0.9076,
+      "miss2m": 0.0454
+    },
+    "cv": {
+      "ade2s": 0.8377,
+      "ci": [
+        0.6207,
+        1.078
+      ]
+    },
+    "holdv0": {
+      "ade2s": 0.7822,
+      "ci": [
+        0.5893,
+        0.9927
+      ]
+    }
+  },
+  "W": {
+    "ade2s": 0.9726,
+    "ci": [
+      0.8379,
+      1.1128
+    ],
+    "fde2s": 1.9455,
+    "miss2m": 0.3995,
+    "n": 881,
+    "neps": 40,
+    "folds": 5,
+    "protocol": "episode-disjoint k-fold CV on 40-ep val"
+  },
+  "paired": {
+    "W_minus_oracle": {
+      "delta": 0.5455,
+      "ci": [
+        0.4381,
+        0.6596
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    },
+    "W_minus_cv": {
+      "delta": 0.1349,
+      "ci": [
+        -0.0436,
+        0.3196
+      ],
+      "frac_gt0": 0.93,
+      "separated": false
+    },
+    "W_minus_holdv0": {
+      "delta": 0.1904,
+      "ci": [
+        0.027,
+        0.3621
+      ],
+      "frac_gt0": 0.989,
+      "separated": true
+    }
+  },
+  "neps": 40
+}

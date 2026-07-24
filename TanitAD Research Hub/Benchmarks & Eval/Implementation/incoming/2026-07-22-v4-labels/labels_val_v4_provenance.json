@@ -1,0 +1,100 @@
+{
+  "artifact": "flagship v4 label cache",
+  "poses_source": "/workspace/v15/poses_val.pt",
+  "v21_labels_source": "/workspace/v15/labels_val.pt",
+  "n_episodes": 600,
+  "n_windows": 102532,
+  "window": 8,
+  "max_horizon": 20,
+  "min_lookahead": 50,
+  "use_net_dyaw": false,
+  "coverage": {
+    "n_windows": 102532,
+    "lat_target": 1.0,
+    "lon_target": 1.0,
+    "dist_target": 0.6339,
+    "stop_dist_target": 0.4281,
+    "route_token": 0.7958,
+    "route_valid": 0.7935,
+    "vt_valid": 0.8286,
+    "strat_scalars": {
+      "ttm": 0.2076,
+      "curv_3s": 0.6578,
+      "curv_5s": 0.6836,
+      "tspeed_5s": 0.8303
+    },
+    "lon_active_rate": 0.2581,
+    "lat_active_rate": 0.2735
+  },
+  "v21_parity": {
+    "episodes_with_mismatch": {
+      "route": 0,
+      "route_graded": 0,
+      "vt_band": 0
+    },
+    "bit_identical": true
+  },
+  "mintability": {
+    "fully_minted_kinematic": {
+      "lat_target": [
+        "lane_keep",
+        "lc_left",
+        "lc_right",
+        "nudge_left",
+        "nudge_right",
+        "abort_lc",
+        "pull_over"
+      ],
+      "lon_target": [
+        "free_cruise",
+        "stop_at_point",
+        "hold_stop",
+        "launch",
+        "creep",
+        "coast"
+      ],
+      "dist_target": [
+        "d_now",
+        "d_10_25",
+        "d_25_50",
+        "d_50_100",
+        "d_100_200",
+        "d_200_plus",
+        "d_none"
+      ],
+      "route (v2.1 class)": [
+        "left",
+        "straight",
+        "right",
+        "unknown(masked)"
+      ],
+      "route_token (v3)": [
+        "follow",
+        "turn_left",
+        "turn_right",
+        "u_turn*",
+        "exit_left*",
+        "exit_right*",
+        "merge*",
+        "roundabout*"
+      ],
+      "strategic_scalars": [
+        "ttm",
+        "curv_3s",
+        "curv_5s",
+        "tspeed_5s"
+      ]
+    },
+    "not_mintable_needs_data": {
+      "LONMODE follow_lead/close_gap/open_gap": "lead_state is a None stub -> these windows fall to free_cruise/coast; the lead modes are never emitted (LON = 'what the ego does', not 'why')",
+      "LATMANEUVER merge_in/yield_merge": "need another agent's track",
+      "ROUTE straight": "asserts a junction exists = a MAP fact; never minted",
+      "ROUTE exit/merge/roundabout (*)": "minted only on a confirmed kinematic signature (low coverage); u_turn is roundabout-confounded without a map",
+      "TACPOINT name (stop_line/crossing/queue)": "position minted (stop_dist), NAME needs vision/map -> tacpoint stays unknown"
+    },
+    "masking_rule": "unknown/out-of-horizon -> IGNORE_INDEX, never a class"
+  },
+  "parity_key": "physicalai-train-e438721ae894",
+  "skip_hash": "f09e44db (unchanged \u2014 labels re-derived on the existing pose cache; no episode re-selection)",
+  "seconds": 7659.3
+}

@@ -1,0 +1,474 @@
+{
+ "out_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\probe",
+ "prompt_version": "vlmroute-2026-07-20-a",
+ "val_build": "/workspace/pai_epcache/physicalai-val-f1b378f295ae",
+ "stride": 40,
+ "n_windows_manifest": 200,
+ "n_windows_scored": 200,
+ "n_episodes": 40,
+ "unpaired_dropped": {
+  "r2_as_written": 0,
+  "r2_right_first": 0
+ },
+ "ci_estimator": "paired_episode_cluster_bootstrap",
+ "ground_truth": "kinematic refb_labels.route_from_future_v21 (v2.1)",
+ "arms": {
+  "r2_as_written": {
+   "model": "nvidia/Cosmos-Reason2-8B",
+   "arch": "qwen3_vl",
+   "n_windows": 200,
+   "n_gt_valid": 170,
+   "n_gt_turn": 56,
+   "n_gt_straight": 114,
+   "turn_detection_recall": 0.7857,
+   "turn_detected_n": 44,
+   "direction_accuracy_given_detected": 0.4773,
+   "direction_n_detected_lr": 44,
+   "direction_n_correct": 21,
+   "direction_vs_chance": {
+    "n_detected_lr": 44,
+    "n_correct": 21,
+    "accuracy": 0.4773,
+    "binomial_p_vs_0.5": 0.880396,
+    "binomial_caveat": "ignores episode clustering; anti-conservative",
+    "cluster_bootstrap": {
+     "mean": 0.4773,
+     "lo": 0.2683,
+     "hi": 0.7021,
+     "ci95": 0.2169,
+     "se": 0.108,
+     "n_windows": 44,
+     "n_episodes": 13,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "beats_chance_95ci": false
+   },
+   "direction_association": {
+    "table_gt_left": {
+     "said_left": 15,
+     "said_right": 6
+    },
+    "table_gt_right": {
+     "said_left": 17,
+     "said_right": 6
+    },
+    "odds_ratio": 0.882,
+    "fisher_p_two_sided": 1.0,
+    "acc_given_detected_gt_left": 0.7143,
+    "acc_given_detected_gt_right": 0.2609,
+    "test": "fisher_exact_2x2_two_sided (windows treated as independent \u2014 see clustering caveat)"
+   },
+   "left_right_bias": {
+    "n_pred_left": 35,
+    "n_pred_right": 12,
+    "n_gt_left": 27,
+    "n_gt_right": 29,
+    "left_share_of_predicted_turns": 0.7447,
+    "left_share_of_gt_turns": 0.4821,
+    "recall_left": 0.5556,
+    "recall_right": 0.2069
+   },
+   "by_n_future_frames": {
+    "4": {
+     "n": 72,
+     "correct": 51,
+     "n_turn": 28,
+     "turn_detected": 21,
+     "acc3_over_all": 0.7083,
+     "turn_detection_recall": 0.75
+    },
+    "3": {
+     "n": 36,
+     "correct": 26,
+     "n_turn": 13,
+     "turn_detected": 10,
+     "acc3_over_all": 0.7222,
+     "turn_detection_recall": 0.7692
+    },
+    "2": {
+     "n": 33,
+     "correct": 28,
+     "n_turn": 11,
+     "turn_detected": 10,
+     "acc3_over_all": 0.8485,
+     "turn_detection_recall": 0.9091
+    },
+    "1": {
+     "n": 29,
+     "correct": 27,
+     "n_turn": 4,
+     "turn_detected": 3,
+     "acc3_over_all": 0.931,
+     "turn_detection_recall": 0.75
+    }
+   },
+   "straight_recall": 0.9737,
+   "acc3_over_answered": 0.7765,
+   "acc3_n_answered": 170,
+   "acc3_over_all": 0.7765,
+   "abstention_rate_unknown": 0.0,
+   "u_turn_rate": 0.0,
+   "no_answer_rate": 0.0,
+   "confusion_gt_rows": {
+    "left": {
+     "left": 15,
+     "straight": 6,
+     "right": 6,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "straight": {
+     "left": 3,
+     "straight": 111,
+     "right": 0,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "right": {
+     "left": 17,
+     "straight": 6,
+     "right": 6,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    }
+   },
+   "outcome_counts": {
+    "ok": 200
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "enum_violation_tokens": [],
+   "road_geometry_violation_rate": 0.01,
+   "truncation_rate": 0.0,
+   "slot_fill_rate": {
+    "ROUTE": 1.0,
+    "road_geometry": 0.995,
+    "route_confidence": 1.0,
+    "route_event_time_s": 1.0,
+    "route_evidence": 1.0,
+    "sees_junction_ahead": 1.0
+   },
+   "gen_tokens_mean": 91.5,
+   "gen_tokens_p95": 100.0,
+   "prompt_tokens_mean": 1732.3,
+   "gen_seconds_mean": 4.765,
+   "gen_seconds_median": 3.768,
+   "gen_seconds_p95": 11.8,
+   "peak_vram_gib": 16.94,
+   "on_kinematic_unknown_windows": {
+    "n": 30,
+    "vlm_says": {
+     "straight": 16,
+     "right": 7,
+     "left": 7
+    }
+   }
+  },
+  "r2_right_first": {
+   "model": "nvidia/Cosmos-Reason2-8B",
+   "arch": "qwen3_vl",
+   "n_windows": 200,
+   "n_gt_valid": 170,
+   "n_gt_turn": 56,
+   "n_gt_straight": 114,
+   "turn_detection_recall": 0.6964,
+   "turn_detected_n": 39,
+   "direction_accuracy_given_detected": 0.4615,
+   "direction_n_detected_lr": 39,
+   "direction_n_correct": 18,
+   "direction_vs_chance": {
+    "n_detected_lr": 39,
+    "n_correct": 18,
+    "accuracy": 0.4615,
+    "binomial_p_vs_0.5": 0.749259,
+    "binomial_caveat": "ignores episode clustering; anti-conservative",
+    "cluster_bootstrap": {
+     "mean": 0.4615,
+     "lo": 0.2498,
+     "hi": 0.6829,
+     "ci95": 0.2165,
+     "se": 0.1113,
+     "n_windows": 39,
+     "n_episodes": 12,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "beats_chance_95ci": false
+   },
+   "direction_association": {
+    "table_gt_left": {
+     "said_left": 12,
+     "said_right": 7
+    },
+    "table_gt_right": {
+     "said_left": 14,
+     "said_right": 6
+    },
+    "odds_ratio": 0.735,
+    "fisher_p_two_sided": 0.741054,
+    "acc_given_detected_gt_left": 0.6316,
+    "acc_given_detected_gt_right": 0.3,
+    "test": "fisher_exact_2x2_two_sided (windows treated as independent \u2014 see clustering caveat)"
+   },
+   "left_right_bias": {
+    "n_pred_left": 26,
+    "n_pred_right": 13,
+    "n_gt_left": 27,
+    "n_gt_right": 29,
+    "left_share_of_predicted_turns": 0.6667,
+    "left_share_of_gt_turns": 0.4821,
+    "recall_left": 0.4444,
+    "recall_right": 0.2069
+   },
+   "by_n_future_frames": {
+    "4": {
+     "n": 72,
+     "correct": 53,
+     "n_turn": 28,
+     "turn_detected": 20,
+     "acc3_over_all": 0.7361,
+     "turn_detection_recall": 0.7143
+    },
+    "3": {
+     "n": 36,
+     "correct": 27,
+     "n_turn": 13,
+     "turn_detected": 9,
+     "acc3_over_all": 0.75,
+     "turn_detection_recall": 0.6923
+    },
+    "2": {
+     "n": 33,
+     "correct": 27,
+     "n_turn": 11,
+     "turn_detected": 9,
+     "acc3_over_all": 0.8182,
+     "turn_detection_recall": 0.8182
+    },
+    "1": {
+     "n": 29,
+     "correct": 25,
+     "n_turn": 4,
+     "turn_detected": 1,
+     "acc3_over_all": 0.8621,
+     "turn_detection_recall": 0.25
+    }
+   },
+   "straight_recall": 1.0,
+   "acc3_over_answered": 0.7765,
+   "acc3_n_answered": 170,
+   "acc3_over_all": 0.7765,
+   "abstention_rate_unknown": 0.0,
+   "u_turn_rate": 0.0,
+   "no_answer_rate": 0.0,
+   "confusion_gt_rows": {
+    "left": {
+     "left": 12,
+     "straight": 8,
+     "right": 7,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "straight": {
+     "left": 0,
+     "straight": 114,
+     "right": 0,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    },
+    "right": {
+     "left": 14,
+     "straight": 9,
+     "right": 6,
+     "u_turn": 0,
+     "unknown": 0,
+     "no_answer": 0
+    }
+   },
+   "outcome_counts": {
+    "ok": 200
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "enum_violation_tokens": [],
+   "road_geometry_violation_rate": 0.0,
+   "truncation_rate": 0.0,
+   "slot_fill_rate": {
+    "ROUTE": 1.0,
+    "road_geometry": 1.0,
+    "route_confidence": 1.0,
+    "route_event_time_s": 1.0,
+    "route_evidence": 1.0,
+    "sees_junction_ahead": 1.0
+   },
+   "gen_tokens_mean": 92.2,
+   "gen_tokens_p95": 100.0,
+   "prompt_tokens_mean": 1732.3,
+   "gen_seconds_mean": 3.749,
+   "gen_seconds_median": 3.752,
+   "gen_seconds_p95": 4.104,
+   "peak_vram_gib": 16.94,
+   "on_kinematic_unknown_windows": {
+    "n": 30,
+    "vlm_says": {
+     "straight": 18,
+     "left": 7,
+     "right": 5
+    }
+   }
+  }
+ },
+ "inter_arm_agreement_all_windows": {
+  "kappa": 0.8519,
+  "observed_agreement": 0.935,
+  "expected_agreement": 0.561,
+  "n": 200
+ },
+ "inter_arm_agreement_gt_valid": {
+  "kappa": 0.8405,
+  "observed_agreement": 0.9353,
+  "expected_agreement": 0.5944,
+  "n": 170
+ },
+ "paired_tests": {
+  "arm_a": "r2_as_written",
+  "arm_b": "r2_right_first",
+  "n_episodes": 37,
+  "tests": [
+   {
+    "metric": "acc3_over_all",
+    "mcnemar": {
+     "b_a_only": 5,
+     "c_b_only": 5,
+     "n_discordant": 10,
+     "p_value": 1.0,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.7765,
+    "mean_b": 0.7765,
+    "n": 170,
+    "n_episodes": 37,
+    "paired_ci": {
+     "delta": 0.0,
+     "lo": -0.0419,
+     "hi": 0.0393,
+     "ci95": 0.0406,
+     "p_delta_gt0": 0.4505,
+     "separated": false,
+     "n_windows": 170,
+     "n_episodes": 37,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   {
+    "metric": "turn_detected",
+    "mcnemar": {
+     "b_a_only": 5,
+     "c_b_only": 0,
+     "n_discordant": 5,
+     "p_value": 0.0625,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.7857,
+    "mean_b": 0.6964,
+    "n": 56,
+    "n_episodes": 14,
+    "paired_ci": {
+     "delta": 0.0893,
+     "lo": 0.0351,
+     "hi": 0.1525,
+     "ci95": 0.0587,
+     "p_delta_gt0": 0.999,
+     "separated": true,
+     "n_windows": 56,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   {
+    "metric": "direction_correct_over_all_gt_turns",
+    "mcnemar": {
+     "b_a_only": 5,
+     "c_b_only": 2,
+     "n_discordant": 7,
+     "p_value": 0.453125,
+     "test": "mcnemar_exact_binomial"
+    },
+    "mean_a": 0.375,
+    "mean_b": 0.3214,
+    "n": 56,
+    "n_episodes": 14,
+    "paired_ci": {
+     "delta": 0.0536,
+     "lo": -0.0357,
+     "hi": 0.1373,
+     "ci95": 0.0865,
+     "p_delta_gt0": 0.841,
+     "separated": false,
+     "n_windows": 56,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  ]
+ },
+ "single_arm_ci": {
+  "r2_as_written": {
+   "acc3_over_all": {
+    "mean": 0.7765,
+    "lo": 0.6629,
+    "hi": 0.8786,
+    "ci95": 0.1079,
+    "se": 0.0559,
+    "n_windows": 170,
+    "n_episodes": 37,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "direction_correct_over_all_gt_turns": {
+    "mean": 0.375,
+    "lo": 0.2075,
+    "hi": 0.5556,
+    "ci95": 0.174,
+    "se": 0.0904,
+    "n_windows": 56,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "r2_right_first": {
+   "acc3_over_all": {
+    "mean": 0.7765,
+    "lo": 0.6524,
+    "hi": 0.8837,
+    "ci95": 0.1157,
+    "se": 0.0595,
+    "n_windows": 170,
+    "n_episodes": 37,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "direction_correct_over_all_gt_turns": {
+    "mean": 0.3214,
+    "lo": 0.1613,
+    "hi": 0.5091,
+    "ci95": 0.1739,
+    "se": 0.09,
+    "n_windows": 56,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  }
+ }
+}

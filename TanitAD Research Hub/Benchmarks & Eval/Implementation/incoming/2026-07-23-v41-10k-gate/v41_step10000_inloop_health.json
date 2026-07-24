@@ -1,0 +1,122 @@
+{
+  "artifact": "v4.1 step-10000 IN-LOOP trainer diagnostics (NOT the held-out gate primary)",
+  "evidence_class": "MEASURED (pod2 read-only file read of flagship-v4.1-30k/train.log; NOT an eval-on-pod2)",
+  "source": "tanitad-pod2:/workspace/experiments/flagship-v4.1-30k/train.log (copied verbatim to ./v4.1_train.log)",
+  "WARNING": [
+    "These are IN-LOOP trainer metrics (mean-over-anchors val ade + plan-free WM canary), NOT the card's held-out taniteval 'ade_0_2s' cluster-bootstrap on the produced-goal planner path.",
+    "CLAUDE.md: 'Trainer val watches a curve; only eval output is quotable.' Do NOT quote val.ade@2s as the gate primary.",
+    "At step 10000 the canary controller had clamped lam_mult to 1.53e-05 (planner gradient ~OFF since ~step 2000) - the WM stayed healthy partly BECAUSE the planner was gradient-starved."
+  ],
+  "step10000": {
+    "step": 10000,
+    "canary_ade@2s": 0.45994,
+    "canary_vs_base": 0.03846,
+    "lam_mult": 1.52587890625e-05,
+    "controller_action": "ok",
+    "val": {
+      "n": 881,
+      "ade@2s": 0.7054009623614126,
+      "oracle_ade@2s": 0.35978037917248645,
+      "sel_gap@2s": 0.3456205856245303,
+      "miss@2m": 0.24858115777525538
+    }
+  },
+  "canary_neighbours": [
+    {
+      "step": 7000,
+      "canary_ade@2s": 0.48552,
+      "canary_vs_base": 0.06404,
+      "lam_mult": 0.00048828125,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.6363394337533957,
+      "val_oracle_ade@2s": 0.3968916243443289,
+      "val_miss@2m": 0.2633371169125993
+    },
+    {
+      "step": 7500,
+      "canary_ade@2s": 0.51178,
+      "canary_vs_base": 0.0903,
+      "lam_mult": 0.000244140625,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.6688998725844566,
+      "val_oracle_ade@2s": 0.3740441665543871,
+      "val_miss@2m": 0.246311010215664
+    },
+    {
+      "step": 8000,
+      "canary_ade@2s": 0.53844,
+      "canary_vs_base": 0.11696,
+      "lam_mult": 0.0001220703125,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.6236434969268781,
+      "val_oracle_ade@2s": 0.3271212444199877,
+      "val_miss@2m": 0.24177071509648126
+    },
+    {
+      "step": 8500,
+      "canary_ade@2s": 0.52588,
+      "canary_vs_base": 0.1044,
+      "lam_mult": 6.103515625e-05,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.6305558678105254,
+      "val_oracle_ade@2s": 0.39307165467238453,
+      "val_miss@2m": 0.28036322360953464
+    },
+    {
+      "step": 9000,
+      "canary_ade@2s": 0.60335,
+      "canary_vs_base": 0.18187,
+      "lam_mult": 3.0517578125e-05,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.7032934406964652,
+      "val_oracle_ade@2s": 0.36850983672326054,
+      "val_miss@2m": 0.3654937570942111
+    },
+    {
+      "step": 9500,
+      "canary_ade@2s": 0.50132,
+      "canary_vs_base": 0.07984,
+      "lam_mult": 1.52587890625e-05,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.5884566317216221,
+      "val_oracle_ade@2s": 0.3456904689245408,
+      "val_miss@2m": 0.2213393870601589
+    },
+    {
+      "step": 10000,
+      "canary_ade@2s": 0.45994,
+      "canary_vs_base": 0.03846,
+      "lam_mult": 1.52587890625e-05,
+      "controller_action": "ok",
+      "val_ade@2s": 0.7054009623614126,
+      "val_oracle_ade@2s": 0.35978037917248645,
+      "val_miss@2m": 0.24858115777525538
+    },
+    {
+      "step": 10500,
+      "canary_ade@2s": 0.49629,
+      "canary_vs_base": 0.07481,
+      "lam_mult": 7.62939453125e-06,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.5972937593801068,
+      "val_oracle_ade@2s": 0.3592863010494176,
+      "val_miss@2m": 0.26220204313280365
+    },
+    {
+      "step": 11000,
+      "canary_ade@2s": 0.63346,
+      "canary_vs_base": 0.21199,
+      "lam_mult": 3.814697265625e-06,
+      "controller_action": "controller_halved_lambda",
+      "val_ade@2s": 0.5845818906582715,
+      "val_oracle_ade@2s": 0.29915719837051785,
+      "val_miss@2m": 0.20317820658342792
+    }
+  ],
+  "card_thresholds_for_reference": {
+    "primary ade_0_2s (HELD-OUT, not this)": "<=0.60",
+    "wm_canary_ade_2s": "<=0.55",
+    "oracle_in_fan": "<=0.30",
+    "miss_at_2m": "<=0.10"
+  }
+}

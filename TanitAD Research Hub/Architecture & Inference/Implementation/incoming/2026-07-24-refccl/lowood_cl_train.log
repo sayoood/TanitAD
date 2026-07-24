@@ -1,0 +1,32 @@
+[cl] LOWOOD-CL-TRAIN (decoder-only) | base step 29999 | FT eps 0:28 (28) | dagger_rounds 3 x 250 | head 8,634,505 + enc 0 | lr 5e-05 lambda_dev 1.0
+[cl] round 0: collected 10660 states, kept 10108 (frac_inside_envelope 0.948, mean|drift| 0.130m)
+{"round": 0, "step": 0, "loss": 2.0808, "traj": 0.3748, "cls": 1.3863, "dev": 0.3197, "mean_drift_m": 0.0612, "gnorm": 19.097, "elapsed_s": 170.5}
+{"round": 0, "step": 50, "loss": 1.7818, "traj": 0.3053, "cls": 1.16, "dev": 0.3164, "mean_drift_m": 0.0925, "gnorm": 48.078, "elapsed_s": 198.9}
+{"round": 0, "step": 100, "loss": 2.2853, "traj": 0.3532, "cls": 1.2264, "dev": 0.7058, "mean_drift_m": 0.056, "gnorm": 25.231, "elapsed_s": 224.7}
+{"round": 0, "step": 150, "loss": 1.9364, "traj": 0.2415, "cls": 1.2707, "dev": 0.4242, "mean_drift_m": 0.0459, "gnorm": 41.629, "elapsed_s": 252.2}
+{"round": 0, "step": 200, "loss": 1.7274, "traj": 0.3315, "cls": 1.0219, "dev": 0.3741, "mean_drift_m": 0.0532, "gnorm": 18.916, "elapsed_s": 280.2}
+{"round": 0, "step": 249, "loss": 2.4515, "traj": 0.353, "cls": 1.6497, "dev": 0.4489, "mean_drift_m": 0.1012, "gnorm": 55.555, "elapsed_s": 307.8}
+[cl] round 1: collected 10660 states, kept 10104 (frac_inside_envelope 0.948, mean|drift| 0.273m)
+{"round": 1, "step": 0, "loss": 5.2552, "traj": 0.8244, "cls": 3.7836, "dev": 0.6473, "mean_drift_m": 0.2576, "gnorm": 47.167, "elapsed_s": 474.2}
+{"round": 1, "step": 50, "loss": 2.276, "traj": 0.5748, "cls": 1.28, "dev": 0.4212, "mean_drift_m": 0.2539, "gnorm": 19.599, "elapsed_s": 504.7}
+{"round": 1, "step": 100, "loss": 2.5448, "traj": 0.3728, "cls": 1.6391, "dev": 0.5328, "mean_drift_m": 0.1826, "gnorm": 19.182, "elapsed_s": 536.1}
+{"round": 1, "step": 150, "loss": 1.5332, "traj": 0.4078, "cls": 0.866, "dev": 0.2594, "mean_drift_m": 0.1755, "gnorm": 23.956, "elapsed_s": 567.4}
+{"round": 1, "step": 200, "loss": 2.9658, "traj": 0.4941, "cls": 1.7302, "dev": 0.7416, "mean_drift_m": 0.2417, "gnorm": 64.147, "elapsed_s": 598.4}
+{"round": 1, "step": 249, "loss": 1.8382, "traj": 0.3613, "cls": 1.2729, "dev": 0.2039, "mean_drift_m": 0.2255, "gnorm": 17.348, "elapsed_s": 628.8}
+[cl] round 2: collected 10660 states, kept 10120 (frac_inside_envelope 0.949, mean|drift| 0.231m)
+{"round": 2, "step": 0, "loss": 2.0313, "traj": 0.3849, "cls": 1.4097, "dev": 0.2367, "mean_drift_m": 0.1756, "gnorm": 23.514, "elapsed_s": 794.9}
+{"round": 2, "step": 50, "loss": 2.3274, "traj": 0.4542, "cls": 1.5316, "dev": 0.3417, "mean_drift_m": 0.237, "gnorm": 35.528, "elapsed_s": 826.4}
+{"round": 2, "step": 100, "loss": 2.0481, "traj": 0.4113, "cls": 1.2873, "dev": 0.3495, "mean_drift_m": 0.172, "gnorm": 27.708, "elapsed_s": 857.2}
+{"round": 2, "step": 150, "loss": 1.8344, "traj": 0.4373, "cls": 0.9849, "dev": 0.4122, "mean_drift_m": 0.1813, "gnorm": 18.911, "elapsed_s": 888.3}
+{"round": 2, "step": 200, "loss": 2.0947, "traj": 0.3779, "cls": 1.2335, "dev": 0.4833, "mean_drift_m": 0.2056, "gnorm": 39.726, "elapsed_s": 919.0}
+{"round": 2, "step": 249, "loss": 2.1921, "traj": 0.4347, "cls": 1.3172, "dev": 0.4401, "mean_drift_m": 0.2082, "gnorm": 54.554, "elapsed_s": 948.7}
+[cl] wrote /workspace/refc-lowood-cl/ckpt.pt
+LOWOOD_CL_TRAIN_DONE
+[eval] instrument: /workspace/refc_cl_d2/lowood_lanekeep.py
+[eval] base step 29999 vs FT step 750 | holdout 28:40 (12 eps)
+[eval] OVERALL Δcorridor_departure(base-ft)=-0.0460 [-0.1201,+0.0053] separated=False
+[eval] GUARD  Δpeak_xte(base-ft)=-0.6490 [-1.4522,-0.0375] (FT must NOT increase peak_xte: Δ>=0 desired)
+[eval] PRE-REGISTERED VERDICT: NULL
+[eval] wrote /workspace/refc_cl_d2/corridor_lowood_cl.json
+CORRIDOR_SPLIT_DONE
+LCT_DONE

@@ -1,0 +1,36 @@
+{
+  "purpose": "Gate-0b gradient-nudge validation (frame/sign) before the suite run",
+  "evidence_class": "MEASURED (tanitad-eval, GPU)",
+  "replication": {
+    "max_abs_traj_diff": 0.0,
+    "max_abs_conf_diff": 0.0,
+    "verdict": "EXACT",
+    "note": "eta=0 nudged decode reproduces model.forward -> nudge is a clean superset"
+  },
+  "gradient_direction": {
+    "scene": "clipgt-00169207-9da7-44c4-a67b-a925e77056ff",
+    "start_offroad_cost_m": 12.341,
+    "cost_trajectory_m": [
+      12.341,
+      6.171,
+      3.085,
+      1.543,
+      0.771,
+      0.386,
+      0.193,
+      0.096,
+      0.048
+    ],
+    "monotone_decreasing": true,
+    "reached_onroad_lt0p5m": true,
+    "verdict": "TOWARD-DRIVABLE"
+  },
+  "collision_sign": {
+    "agent_on_anchorA": true,
+    "sel_with_mu2": 1,
+    "sel_with_mu0": 0,
+    "expected_with_mu2": 1,
+    "verdict": "AVOIDS-AGENT"
+  },
+  "overall_verdict": "GRADIENT TRUSTWORTHY - PROCEED TO SUITE"
+}

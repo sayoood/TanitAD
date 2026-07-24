@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "experiment": "idm_regate_frontend_and_lightft",
+    "design": "IDM_VIDEO_PRETRAIN_DESIGN \u00a75 FAIL-branch / PRE_REGISTRATION \u00a7R1-R3",
+    "date": "2026-07-22T16:47:14Z",
+    "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "ckpt_step": 29999,
+    "ft_blocks": 4,
+    "ft_steps": 1000,
+    "enc_lr": 5e-05,
+    "n_train_eps": 70,
+    "git_hash": "idm-regate-wt-8194807",
+    "pass_rule": "cross speed R2>0.9 AND yaw R2>0.9 AND ADE@2s < 1.5x in-domain heldout ADE@2s"
+  },
+  "fix1_frontend_disposition": {
+    "finding": "ALREADY APPLIED in baseline; re-applying is a no-op on cached frames",
+    "measured_f_eff": {
+      "physicalai_rigA": 266.13,
+      "physicalai_rigB": 266.1,
+      "comma2k19": 266.5,
+      "F_REF": 266.0,
+      "per_clip_principal": true
+    },
+    "evidence": "calib.ftheta_crop_resize(center=principal) built PhysicalAI cache (both rigs) + focal_crop_resize built comma cache; ftheta_feff_report measured on rig-A(cy552)/rig-B(cy749) clips",
+    "untested_variant": "full ftheta_undistort (true rectilinear) needs native fisheye frames (rolling-deleted) + encoder retrain (frozen fisheye-crop-trained encoder would be OOD) -> bounded follow-up, not a frozen-encoder lever"
+  },
+  "fix2_lightft": {
+    "physicalai_to_comma2k19": {
+      "frozen": {
+        "cross_speed_r2": 0.4058,
+        "cross_yaw_r2": 0.0005,
+        "cross_steer_r2": 0.3967,
+        "cross_ade_2s": 11.566,
+        "in_domain_speed_r2": 0.6158,
+        "in_domain_yaw_r2": 0.8521,
+        "in_domain_ade_2s": 5.868,
+        "ade_ratio": 1.971,
+        "PASS": false
+      },
+      "light_ft": {
+        "cross_speed_r2": 0.4111,
+        "cross_yaw_r2": 0.0004,
+        "cross_steer_r2": 0.5565,
+        "cross_ade_2s": 11.613,
+        "in_domain_speed_r2": 0.6414,
+        "in_domain_yaw_r2": 0.8528,
+        "in_domain_ade_2s": 5.791,
+        "ade_ratio": 2.005,
+        "PASS": false
+      }
+    },
+    "rigA_to_rigB": {
+      "frozen": {
+        "cross_speed_r2": -3.2093,
+        "cross_yaw_r2": -0.0057,
+        "cross_steer_r2": 0.4372,
+        "cross_ade_2s": 18.356,
+        "in_domain_speed_r2": 0.7276,
+        "in_domain_yaw_r2": 0.8585,
+        "in_domain_ade_2s": 5.445,
+        "ade_ratio": 3.371,
+        "PASS": false
+      },
+      "light_ft": {
+        "cross_speed_r2": -1.6468,
+        "cross_yaw_r2": 0.2419,
+        "cross_steer_r2": 0.4839,
+        "cross_ade_2s": 12.963,
+        "in_domain_speed_r2": 0.7032,
+        "in_domain_yaw_r2": 0.8238,
+        "in_domain_ade_2s": 5.587,
+        "ade_ratio": 2.32,
+        "PASS": false
+      }
+    }
+  },
+  "baseline_reference_full_data": {
+    "physicalai_to_comma2k19_frozen": {
+      "cross_speed_r2": 0.6572,
+      "cross_yaw_r2": 0.0005,
+      "in_domain_speed_r2": 0.9297,
+      "note": "full 555-ep train; reduced 70-ep re-gate frozen is weaker but same FAIL"
+    }
+  },
+  "overall_verdict": {
+    "gate": "cross speed R2>0.9 AND yaw R2>0.9 AND ADE<1.5x in-domain",
+    "fix1_frontend": "NO-OP (already applied); rig-B collapse NOT intrinsics-driven (measured f_eff match)",
+    "fix2_lightft_comma": "NO RECOVERY (cross speed R2 0.406 -> 0.411)",
+    "fix2_lightft_rig": "PARTIAL (cross speed -3.21 -> -1.65, yaw 0 -> 0.242, ADE -29%) but FAR from gate",
+    "NEITHER_FIX_REACHES_GATE": true,
+    "committed_reading": "the frozen-encoder supervised-IDM line needs a rethink; do NOT proceed to YouTube on this recipe. Next: encoder RETRAIN on undistorted multi-domain data + speed-prior scale head."
+  }
+}

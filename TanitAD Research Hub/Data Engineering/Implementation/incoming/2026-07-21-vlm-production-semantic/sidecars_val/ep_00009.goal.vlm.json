@@ -1,0 +1,121 @@
+{
+ "episode": "ep_00009",
+ "episode_id": 808727859,
+ "val_build": "physicalai-val-f1b378f295ae",
+ "n_windows": 1,
+ "scene_tags": {
+  "weather": {
+   "token": "cloudy",
+   "prov": "vlm"
+  },
+  "time_of_day": {
+   "token": "day",
+   "prov": "vlm"
+  },
+  "road_type": {
+   "token": "intersection",
+   "prov": "vlm"
+  },
+  "surface": {
+   "token": "wet",
+   "prov": "vlm"
+  },
+  "traffic_density": {
+   "token": "light",
+   "prov": "vlm"
+  },
+  "vru_present": {
+   "token": "false",
+   "prov": "vlm"
+  },
+  "notable_events": [
+   {
+    "event": "unprotected_turn",
+    "t": 0,
+    "offset_s": 12.0,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   }
+  ],
+  "_pending": false,
+  "_axis_agreement": {
+   "weather": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "time_of_day": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "road_type": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "surface": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "traffic_density": {
+    "agreement": 1.0,
+    "n_windows": 1
+   }
+  }
+ },
+ "lead_state": {
+  "present": false,
+  "gap_m": null,
+  "closing_speed_ms": null,
+  "ttc_s": null,
+  "lane": "none",
+  "distance_bucket": "none",
+  "relative_motion": "none",
+  "present_rate": 0.0,
+  "agreement": {
+   "lane": 1.0,
+   "distance_bucket": 1.0,
+   "relative_motion": 1.0
+  },
+  "_metric_fields_unavailable": "gap_m / closing_speed_ms / ttc_s are metric quantities a forward camera VLM cannot measure; the 48-clip pilot measured this model fabricating band edges on 48 % of clips. The coarse categorical state is sufficient to STRATIFY a metric and insufficient to compute headway or TTC.",
+  "prov": "vlm",
+  "_pending": false
+ },
+ "sign_reads": [
+  {
+   "type": "direction",
+   "value": 74,
+   "unit": "none",
+   "band": "high",
+   "prov": "vlm"
+  }
+ ],
+ "language": {
+  "caption": "Ego vehicle at intersection, preparing to turn right on green light, with clear lane markings and no immediate obstacles or lead vehicles present, allowing for a smooth maneuver under light traffic conditions on a wet road surface during daytime with cloudy weather and normal lighting conditions, with the turn angle set at 74 degrees as indicated by the sign, and the vehicle accelerating to 11.6 m/s after initiating the turn at t+11.5 s, completing the maneuver by t+16 s",
+  "coc_trace": {
+   "observation": "Ego vehicle at intersection, preparing to turn right on green light, with clear lane markings and no immediate obstacles or lead vehicles present, allowing for a smooth maneuver under light traffic conditions on a wet road surface during daytime with cloudy weather and normal lighting conditions, with the turn angle set at 74 degrees as indicated by the sign, and the vehicle accelerating to 11.6 m/s after initiating the turn at t+11.5 s, completing the maneuver by t+16 s",
+   "critical_agents": [],
+   "justification": "The ego vehicle is executing a right turn at the intersection, following the traffic signal and lane markings, with no immediate hazards or lead vehicles affecting its path, and the turn is completed smoothly without any need for yielding or adjusting speed due to external factors, indicating a routine driving scenario with a slight increase in difficulty due to the turn angle and wet road conditions",
+   "decision": "Ego vehicle proceeds to turn right at the intersection, accelerating to 11.6 m/s after the traffic light turns green, maintaining a steady speed and trajectory while navigating the turn, with no need to adjust for other vehicles or obstacles, resulting in a successful and efficient maneuver under the given conditions",
+   "action": null,
+   "physics_flag": null
+  },
+  "qa": [],
+  "prov": "vlm",
+  "_pending": false,
+  "_per_window_coc": [
+   {
+    "t": 0,
+    "observation": "Ego vehicle at intersection, preparing to turn right on green light, with clear lane markings and no immediate obstacles or lead vehicles present, allowing for a smooth maneuver under light traffic conditions on a wet road surface during daytime with cloudy weather and normal lighting conditions, with the turn angle set at 74 degrees as indicated by the sign, and the vehicle accelerating to 11.6 m/s after initiating the turn at t+11.5 s, completing the maneuver by t+16 s",
+    "inference": "The ego vehicle is executing a right turn at the intersection, following the traffic signal and lane markings, with no immediate hazards or lead vehicles affecting its path, and the turn is completed smoothly without any need for yielding or adjusting speed due to external factors, indicating a routine driving scenario with a slight increase in difficulty due to the turn angle and wet road conditions",
+    "decision": "Ego vehicle proceeds to turn right at the intersection, accelerating to 11.6 m/s after the traffic light turns green, maintaining a steady speed and trajectory while navigating the turn, with no need to adjust for other vehicles or obstacles, resulting in a successful and efficient maneuver under the given conditions"
+   }
+  ]
+ },
+ "vlm_stamp": {
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "frames_plan": "dense_early",
+  "provenance": "vlm",
+  "labeler": "scripts/vlm_semantic_labels.py"
+ }
+}

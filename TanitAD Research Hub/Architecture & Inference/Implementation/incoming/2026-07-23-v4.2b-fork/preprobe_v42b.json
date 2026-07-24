@@ -1,0 +1,73 @@
+{
+  "probe": "phase0_cosine_preprobe",
+  "date": "2026-07-23",
+  "ckpt": "/workspace/experiments/flagship-v4.2b-30k/ckpt.pt",
+  "ckpt_step": 4000,
+  "val_cache": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+  "n_windows": 512,
+  "batch": 8,
+  "n_batches_run": 64,
+  "n_skipped": 0,
+  "precision": "fp32 (autocast off); training ran bf16 \u2014 cosine is precision-robust",
+  "lambda_plan_for_g_plan": 1.0,
+  "eval_mode": true,
+  "seam_cosine_over_windows": {
+    "mean": 0.004318970210912654,
+    "sd": 0.06396163248462888,
+    "min": -0.27311286330223083,
+    "max": 0.20674987137317657,
+    "p05": -0.09713421761989594,
+    "p10": -0.07107178866863251,
+    "p50": 0.0027215292211622,
+    "p90": 0.08537829667329788,
+    "p95": 0.10782983154058456
+  },
+  "seam_frac_removed_over_windows": {
+    "mean": 0.022393383081199203,
+    "sd": 0.035589693578007904,
+    "min": 0.0,
+    "max": 0.27311283349990845,
+    "p05": 0.0,
+    "p10": 0.0,
+    "p50": 0.0,
+    "p90": 0.07107178866863251,
+    "p95": 0.09713423252105713
+  },
+  "frac_windows_conflicting_cos_lt_0": 0.478515625,
+  "g_wm_norm_over_windows": {
+    "mean": 0.12531881874747341,
+    "sd": 0.1383817907636705,
+    "min": 0.025355109944939613,
+    "max": 2.1875691413879395,
+    "p05": 0.040686652064323425,
+    "p10": 0.047262802720069885,
+    "p50": 0.09283894300460815,
+    "p90": 0.21380829811096191,
+    "p95": 0.28317931294441223
+  },
+  "g_plan_norm_over_windows": {
+    "mean": 0.029690984324815872,
+    "sd": 0.02033747421424468,
+    "min": 0.0019488554680719972,
+    "max": 0.1777447760105133,
+    "p05": 0.005400908645242453,
+    "p10": 0.009029312059283257,
+    "p50": 0.02641352079808712,
+    "p90": 0.05424632504582405,
+    "p95": 0.06635887175798416
+  },
+  "staged_deconflict_batch_diag_means": {
+    "seam_cos_mean": 0.004318970488384366,
+    "seam_frac_conflict": 0.478515625,
+    "seam_frac_removed_mean": 0.022393383289454505,
+    "seam_cos_min": -0.27311286330223083
+  },
+  "loss_weights": {
+    "w_lat": 0.05,
+    "w_lon": 0.05,
+    "w_dist": 0.05,
+    "w_jerk": 0.02,
+    "w_curv": 0.01,
+    "w_strat": 0.05
+  }
+}

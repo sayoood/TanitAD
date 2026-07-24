@@ -1,0 +1,126 @@
+{
+ "episode": "ep_00023",
+ "episode_id": 809067572,
+ "val_build": "physicalai-val-f1b378f295ae",
+ "n_windows": 1,
+ "scene_tags": {
+  "weather": {
+   "token": "clear",
+   "prov": "vlm"
+  },
+  "time_of_day": {
+   "token": "dusk",
+   "prov": "vlm"
+  },
+  "road_type": {
+   "token": "residential",
+   "prov": "vlm"
+  },
+  "surface": {
+   "token": "dry",
+   "prov": "vlm"
+  },
+  "traffic_density": {
+   "token": "light",
+   "prov": "vlm"
+  },
+  "vru_present": {
+   "token": "false",
+   "prov": "vlm"
+  },
+  "notable_events": [
+   {
+    "event": "parked_vehicle_pass",
+    "t": 0,
+    "offset_s": null,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   }
+  ],
+  "_pending": false,
+  "_axis_agreement": {
+   "weather": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "time_of_day": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "road_type": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "surface": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "traffic_density": {
+    "agreement": 1.0,
+    "n_windows": 1
+   }
+  }
+ },
+ "lead_state": {
+  "present": false,
+  "gap_m": null,
+  "closing_speed_ms": null,
+  "ttc_s": null,
+  "lane": "none",
+  "distance_bucket": "none",
+  "relative_motion": "none",
+  "present_rate": 0.0,
+  "agreement": {
+   "lane": 1.0,
+   "distance_bucket": 1.0,
+   "relative_motion": 1.0
+  },
+  "_metric_fields_unavailable": "gap_m / closing_speed_ms / ttc_s are metric quantities a forward camera VLM cannot measure; the 48-clip pilot measured this model fabricating band edges on 48 % of clips. The coarse categorical state is sufficient to STRATIFY a metric and insufficient to compute headway or TTC.",
+  "prov": "vlm",
+  "_pending": false
+ },
+ "sign_reads": [
+  {
+   "_pending": false,
+   "prov": "vlm",
+   "_note": "no sign read"
+  }
+ ],
+ "language": {
+  "caption": "Ego vehicle approaches a parked car on the right side of the road, requiring a right nudge to pass safely while maintaining a low speed and gentle maneuvering in a residential area with light traffic and clear conditions, ensuring no collision with the parked vehicle or other potential hazards ahead or behind, and no need to stop or yield to other agents as the road is straight and unobstructed except for the parked car on the right side of the road",
+  "coc_trace": {
+   "observation": "Ego vehicle approaches a parked car on the right side of the road, requiring a right nudge to pass safely while maintaining a low speed and gentle maneuvering in a residential area with light traffic and clear conditions, ensuring no collision with the parked vehicle or other potential hazards ahead or behind, and no need to stop or yield to other agents as the road is straight and unobstructed except for the parked car on the right side of the road",
+   "critical_agents": [
+    {
+     "type": "car",
+     "position": "right",
+     "behavior": "parked on the right side of the road",
+     "relevance": "critical"
+    }
+   ],
+   "justification": "The ego vehicle must carefully adjust its lateral position to avoid the parked car while maintaining a safe speed and distance, as the road is narrow and there are no other moving vehicles or pedestrians in the immediate vicinity, making the maneuver relatively straightforward but requiring attention to the parked vehicle's position and the road's edge",
+   "decision": "Ego vehicle will nudge to the right to pass the parked car safely while maintaining a low speed and gentle steering input, ensuring no contact with the parked vehicle or the road's edge, and continuing to drive straight along the residential road after passing the parked car.",
+   "action": null,
+   "physics_flag": null
+  },
+  "qa": [],
+  "prov": "vlm",
+  "_pending": false,
+  "_per_window_coc": [
+   {
+    "t": 0,
+    "observation": "Ego vehicle approaches a parked car on the right side of the road, requiring a right nudge to pass safely while maintaining a low speed and gentle maneuvering in a residential area with light traffic and clear conditions, ensuring no collision with the parked vehicle or other potential hazards ahead or behind, and no need to stop or yield to other agents as the road is straight and unobstructed except for the parked car on the right side of the road",
+    "inference": "The ego vehicle must carefully adjust its lateral position to avoid the parked car while maintaining a safe speed and distance, as the road is narrow and there are no other moving vehicles or pedestrians in the immediate vicinity, making the maneuver relatively straightforward but requiring attention to the parked vehicle's position and the road's edge",
+    "decision": "Ego vehicle will nudge to the right to pass the parked car safely while maintaining a low speed and gentle steering input, ensuring no contact with the parked vehicle or the road's edge, and continuing to drive straight along the residential road after passing the parked car."
+   }
+  ]
+ },
+ "vlm_stamp": {
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "frames_plan": "dense_early",
+  "provenance": "vlm",
+  "labeler": "scripts/vlm_semantic_labels.py"
+ }
+}

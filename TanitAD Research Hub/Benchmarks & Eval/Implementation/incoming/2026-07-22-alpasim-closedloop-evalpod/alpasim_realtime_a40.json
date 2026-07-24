@@ -1,0 +1,55 @@
+{
+  "title": "AlpaSim closed-loop real-time performance on the A40 (tanitad-eval) — MEASURED 2026-07-23",
+  "device": "NVIDIA A40 (46 GB), single GPU shared by renderer + model",
+  "sim_control_rate_hz": 5.0,
+  "sim_control_timestep_ms": 200.0,
+  "_evidence": "isolated ticks: rt_model_iso.json (rt_model_iso.py, no renderer contention). in-situ loop: rt_timing.json (rt_driver.py instrumented, flagship, 480x854). native RT factor: RUN_RECIPE s14 (10.04 sim-s / 34.5 wall).",
+
+  "verdict": {
+    "is_real_time": "resolution-dependent: NEAR real-time at 480x854 (~0.75-0.98x), SUB-real-time at native 1080x1920 (0.29x)",
+    "real_time_factor": {"res_480x854": "0.75-0.98x", "res_1080x1920_native": "0.29x"},
+    "effective_hz": {"res_480x854": "3.8-4.9 Hz (vs 5 Hz control)", "res_1080x1920": "1.45 Hz"},
+    "bottleneck": "the RENDERER (NuRec gsplat, scales ~5x 854->native and drives the RT drop) PLUS a fixable driver CPU cost (frame re-canonicalization, ~475 ms at native). The MODEL GPU forward (~30-90 ms) is NOT the bottleneck."
+  },
+
+  "in_situ_loop_480x854_model_driver": {
+    "_source": "rt_timing.json (flagship rt_driver, 129 drives, with physics)",
+    "per_step_loop_gap_ms": {"median": 204.9, "mean": 264.9, "p10": 35.8, "p90": 484.9},
+    "effective_hz_median": 4.88,
+    "rt_factor_median": 0.98,
+    "rt_factor_mean": 0.75,
+    "note": "loop_gap = wall between consecutive drive() calls = the effective per-step throughput. p90 484 ms = renderer scene-load stalls. The constant (no-model) driver loop was NOT faster (median 270-350 ms, noisier) -> the model is NOT the gate; render/environment is."
+  },
+
+  "isolated_component_ticks_ms_median": {
+    "_source": "rt_model_iso.json (A40, no renderer contention; nframes_24 = steady-state deque, nframes_10 = minimum)",
+    "model_gpu_forward": {
+      "flagship_v1": {"480x854": 90.2, "1080x1920": 91.8, "note": "8-frame DINOv2 encode + strategic + tactical; RESOLUTION-INDEPENDENT (256x256 input). ~90 ms, NOT 28 ms."},
+      "refc_base": {"480x854": 18.2, "1080x1920": "18-92 (noisy)", "note": "lighter anchored-diffusion (2 steps); ~18-40 ms. The ~28 ms estimate matches REF-C, not flagship."}
+    },
+    "frame_canon_cpu": {
+      "_what": "ftheta_crop_resize + 3-frame stack of the frame history, on CPU, inside the driver plan()",
+      "480x854": {"nframes_10": 7.4, "nframes_24_steady": 45.7},
+      "1080x1920": {"nframes_10": 177.0, "nframes_24_steady": 474.6},
+      "FINDING": "the driver RE-CANONICALIZES the WHOLE deque (up to 24 frames) EVERY step -> 475 ms of pure CPU preprocessing at native res, dwarfing the model. Caching already-canon'd frames would cut the driver plan to model-only (~30-90 ms). A real, fixable inefficiency."
+    },
+    "driver_plan_total": {
+      "flagship_v1": {"480x854": "100-109", "1080x1920": "213-500", "note": "= canon_cpu + model_gpu; range is nframes_10..24"},
+      "refc_base": {"480x854": "100-109", "1080x1920": "202-500"}
+    },
+    "renderer_nurec": "not isolated standalone (no standalone render client built); inferred as the dominant loop remainder. At native the per-step loop is ~690 ms; the driver plan (canon+model, pipelined) is ~500 ms steady; render+physics+IPC is the co-dominant remainder and scales ~5x with pixels (854->native).",
+    "physics_ipc": "small: localhost gRPC (~ms/call) + a light warp ground-mesh solve. Not isolated cleanly (constant-driver control was scene-load-noisy); folded into the loop remainder."
+  },
+
+  "corrections_to_prior_estimate": [
+    "The '~3 Hz / 0.3x' estimate holds at NATIVE 1080x1920 (0.29x) but NOT at 480x854, where it is ~0.75-0.98x (near the 5 Hz control rate) — the renderer cost scales ~5x with pixels.",
+    "The flagship model tick is ~90 ms (not ~28 ms). 28 ms ~ REF-C's lighter diffusion, or the GPU-forward measured uncontended. flagship caps at ~11 Hz on the model alone, not 35 Hz.",
+    "'renderer-bound' is right in spirit, but at native res a co-equal cost is the driver's redundant CPU frame-canon (~475 ms) — a software fix, not a GPU limit."
+  ],
+
+  "caveats": [
+    "In-situ loop numbers are confounded by (a) GPU CONTENTION — renderer + model share one A40 — and (b) gRPC CONCURRENCY (driver ThreadPool max_workers=8 overlaps drive() calls, so in-situ model_infer 396 ms > loop_gap 205 ms), and (c) renderer SCENE-LOAD stalls (BackendCache maxsize=5; multi-second p90). The ISOLATED ticks (rt_model_iso) are clean; the in-situ loop_gap is the honest effective throughput.",
+    "A clean render-vs-physics split was not obtained (the constant-driver control was dominated by scene-load stalls, n low). render+physics+IPC reported as one bucket; render dominates it.",
+    "480x854 measured this session; native 1080x1920 RT factor from RUN_RECIPE s14 (single scene, clean 0.29x)."
+  ]
+}

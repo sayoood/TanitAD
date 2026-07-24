@@ -1,0 +1,127 @@
+{
+ "episode": "ep_00014",
+ "episode_id": 808924472,
+ "val_build": "physicalai-val-f1b378f295ae",
+ "n_windows": 1,
+ "scene_tags": {
+  "weather": {
+   "token": "clear",
+   "prov": "vlm"
+  },
+  "time_of_day": {
+   "token": "day",
+   "prov": "vlm"
+  },
+  "road_type": {
+   "token": "residential",
+   "prov": "vlm"
+  },
+  "surface": {
+   "token": "dry",
+   "prov": "vlm"
+  },
+  "traffic_density": {
+   "token": "light",
+   "prov": "vlm"
+  },
+  "vru_present": {
+   "token": "false",
+   "prov": "vlm"
+  },
+  "notable_events": [
+   {
+    "event": "unprotected_turn",
+    "t": 0,
+    "offset_s": 16.0,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   },
+   {
+    "event": "geometry.junction",
+    "t": 0,
+    "offset_s": 16.0,
+    "band": "high",
+    "source": "pass_A_independent",
+    "prov": "vlm"
+   }
+  ],
+  "_pending": false,
+  "_axis_agreement": {
+   "weather": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "time_of_day": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "road_type": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "surface": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "traffic_density": {
+    "agreement": 1.0,
+    "n_windows": 1
+   }
+  }
+ },
+ "lead_state": {
+  "present": false,
+  "gap_m": null,
+  "closing_speed_ms": null,
+  "ttc_s": null,
+  "lane": "none",
+  "distance_bucket": "none",
+  "relative_motion": "none",
+  "present_rate": 0.0,
+  "agreement": {
+   "lane": 1.0,
+   "distance_bucket": 1.0,
+   "relative_motion": 1.0
+  },
+  "_metric_fields_unavailable": "gap_m / closing_speed_ms / ttc_s are metric quantities a forward camera VLM cannot measure; the 48-clip pilot measured this model fabricating band edges on 48 % of clips. The coarse categorical state is sufficient to STRATIFY a metric and insufficient to compute headway or TTC.",
+  "prov": "vlm",
+  "_pending": false
+ },
+ "sign_reads": [
+  {
+   "_pending": false,
+   "prov": "vlm",
+   "_note": "no sign read"
+  }
+ ],
+ "language": {
+  "caption": "Ego decelerates and turns right, navigating a residential curve with dashed lane markings and no visible traffic lights or signs ahead",
+  "coc_trace": {
+   "observation": "Ego decelerates and turns right, navigating a residential curve with dashed lane markings and no visible traffic lights or signs ahead",
+   "critical_agents": [],
+   "justification": "Ego follows the road's curvature, maintaining control while slowing down for the turn",
+   "decision": "Ego continues to decelerate and steer right, adhering to the road's path and markings",
+   "action": null,
+   "physics_flag": null
+  },
+  "qa": [],
+  "prov": "vlm",
+  "_pending": false,
+  "_per_window_coc": [
+   {
+    "t": 0,
+    "observation": "Ego decelerates and turns right, navigating a residential curve with dashed lane markings and no visible traffic lights or signs ahead",
+    "inference": "Ego follows the road's curvature, maintaining control while slowing down for the turn",
+    "decision": "Ego continues to decelerate and steer right, adhering to the road's path and markings"
+   }
+  ]
+ },
+ "vlm_stamp": {
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "frames_plan": "dense_early",
+  "provenance": "vlm",
+  "labeler": "scripts/vlm_semantic_labels.py"
+ }
+}

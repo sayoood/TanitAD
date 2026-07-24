@@ -16,6 +16,22 @@ Three errors propagated for days because they were copied from prose:
 
 If a doc and the registry disagree, the registry wins and the doc gets fixed.
 
+**Never quote a learning-curve exponent bare.** Any exponent carries its **fit window, R² and n**,
+or it is not admissible — and it may never decide a restart. Below **R² 0.80** there is no quotable
+exponent at all; use the matched-step ratio. Never extrapolate more than **2×** beyond the fitted
+range, and never compare exponents fit over different windows. *(Measured 2026-07-20: the same
+`g_op_fwd_ade_m` log gives −0.387/−0.505/−0.564/−0.621/−0.738 depending on the window, all at
+R² 0.09–0.58; v1's reference "−0.84" is the 1500–7500 window at R² 0.541, and on matched windows v1
+and v3enc are statistically indistinguishable.)* Restart/continue decisions follow
+`Project Steering/GATE_PROTOCOL.md` via `stack/scripts/run_gate.py`.
+
+**Never quote an interval without its estimator.** The block historically labelled *"8-split
+episode-disjoint jackknife"* is neither a jackknife nor a valid SE — it is
+`overlapping_holdout_se`, and it is **1.28–2.06× too narrow** (measured across 10 arms). The
+decision-grade interval is the **episode-cluster bootstrap** over the 40 val episodes
+(`taniteval/ci.py`); for two arms on the same windows use the **paired** version, never a
+combination in quadrature.
+
 ## Briefing a subagent — the contract
 
 Every subagent brief MUST carry the preamble in
@@ -64,6 +80,44 @@ git commit -F <msgfile> -- <path1> <path2>        # pathspec form, no amend afte
 Check `git status --short` for foreign staged entries FIRST. If a long message is needed,
 write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
 whole index and defeats the pathspec.
+
+## Operating standard — raised by Sayed 2026-07-21
+
+The program's pace goes up, and so does the bar. Five rules, each with the failure that earned it.
+
+**1. State the evidence class or don't state the claim.** Every number carries
+`MEASURED (ours + artifact path)` · `PUBLISHED (cited)` · `INHERITED (another agent/doc, NOT
+re-verified)` · `ESTIMATED` · `HYPOTHESIS`. **A claim that decides a GPU-day must be MEASURED or
+PUBLISHED — never INHERITED.** *(2026-07-21 alone: five retractions, every one from quoting a
+faster-moving source than the harness. "v1.6 is best-in-program" was a **trainer log**, ~10 % optimistic
+vs `eval_*.py`. Trainer val watches a curve; only eval output is quotable.)*
+
+**2. Absence found at ONE location is not absence.** Before writing "X does not exist", probe a second
+path, a second name, and the tool that owns the fact. *(Cost this session: the Vulkan ICD is in
+`/etc/vulkan/icd.d/`, not `/usr/share/` → "our pods cannot render" stood for **12 days** and blocked
+AlpaSim + CARLA. `ps -C python3` returns EMPTY for a healthy job because pods run
+`/workspace/venv/bin/python` → a near-miss "the VLM job is dead". `obstacle.offline` — 3D agent tracks
+on **96.90 %** of our corpus — was declared non-existent for days; our ingest reads 2 of 36 features.)*
+
+**3. Finish before you start. An artifact on one disk or in one agent's context is NOT done.**
+Definition of done = **in the repo, staged, with its provenance**. *(LAL-v2 anticipation: implemented,
+tested, **unmerged 12 days**. An orthogonality instrument: **10 days**. TanitEval, REF-B v2's
+architecture, the pod ops bundle — each stranded on a single disk.)*
+
+**4. Retractions are the learning mechanism — log the ROOT-CAUSE CLASS, not just the correction.**
+`Project Steering/RETRACTION_LOG.md` is append-only and **must be read before asserting in a known
+class**. A retraction with no class taught nobody anything.
+
+**5. Aim above the published state of the art, and settle conflicts with experiments, not deference.**
+When ambition meets inconvenient evidence, the answer is the **cheapest discriminating experiment**,
+pre-registered with **both outcomes committed in advance** — not a scoped-down goal. *(The "strategic
+choice is a ~2 % lever" refusal was **confounded**: REF-C evaluates with `nav_cmd=None`, so a decoder
+that never had a working route input learned the marginal. I nearly designed the hierarchy away on it.)*
+
+**Orchestration.** Parallel streams are the default, but: every brief carries a **priority order** so a
+killed agent still yields value; agents **bank incrementally** rather than holding a final synthesis;
+and **fan-out is capped** — uncontrolled sub-spawning exhausted the weekly API budget on 2026-07-21 and
+cost three agents' work.
 
 ## Invariants
 

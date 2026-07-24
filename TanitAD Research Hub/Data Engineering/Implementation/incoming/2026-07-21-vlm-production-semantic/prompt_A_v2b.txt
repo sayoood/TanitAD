@@ -1,0 +1,22 @@
+TASK (route intent only).
+From the FUTURE FRAMES, determine where the vehicle actually goes.
+
+ROUTE must be one of: left | straight | right | u_turn | unknown
+  If the vehicle leaves the road it is on - at a junction, ramp or driveway, or
+    by a discrete turn onto a different road - answer with the side it departs
+    toward.
+  If it stays on its current road, INCLUDING following a bend or a curve in
+    that road, answer "straight".
+  If it reverses direction onto the opposing carriageway, answer "u_turn".
+  If the future frames do not show enough to tell, answer "unknown".
+
+Return exactly:
+{"ROUTE": "<token>",
+ "route_confidence_band": "<high | medium | low>",
+ "route_evidence": "<ONE short sentence IN YOUR OWN WORDS naming which listed
+                    frame offset you read this off, and what changed in it>",
+ "route_event_time_s": <copy one of the FUTURE frame offsets listed above, or null>,
+ "road_geometry": "<one of: straight | curve_left | curve_right | junction | roundabout | merge | fork | unknown>",
+ "road_geometry_confidence_band": "<high | medium | low>",
+ "geometry_event_time_s": <copy one of the FUTURE frame offsets listed above, or null>,
+ "sees_junction_ahead": <true|false>}

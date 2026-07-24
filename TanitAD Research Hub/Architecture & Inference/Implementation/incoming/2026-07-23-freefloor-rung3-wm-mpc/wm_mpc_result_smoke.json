@@ -1,0 +1,249 @@
+{
+  "experiment": "free inference-time floor rung 3 \u2014 WM-MPPI/CEM vs single-step re-plan",
+  "date": "2026-07-23",
+  "evidence_class": "MEASURED",
+  "model": {
+    "key": "flagship-30k",
+    "alias": "flagship4b-speedjerk-30k (deployed v1)",
+    "ckpt_step": 29999,
+    "hf": "Sayood/tanitad-flagship-4b-speedjerk"
+  },
+  "harness": "taniteval/taniteval/closedloop.py (task #21) + wm_mpc.py (rung 3)",
+  "baseline_ref": {
+    "proof": "incoming/2026-07-22-imagination-closedloop-proof",
+    "B_minus_A_ade@2s": -0.213,
+    "B_ci": [
+      -0.3413,
+      -0.0527
+    ]
+  },
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py)",
+  "run_env": {
+    "device": "NVIDIA GeForce RTX 4060",
+    "batch": 8,
+    "episodes": 2,
+    "val_subset": "physicalai-val-0c5f7dac3b11 ep_00000..ep_00011 (held-out)"
+  },
+  "headline_config": {
+    "method": "mppi",
+    "K": 8,
+    "H": 8,
+    "sigma_steer": 0.008,
+    "sigma_accel": 0.4,
+    "temp": 0.7,
+    "elite_frac": 0.25,
+    "w_track": 1.0,
+    "w_progress": 0.05,
+    "w_comfort": 0.2,
+    "cost_path": "grnd",
+    "seed": 0
+  },
+  "headline": {
+    "_headline": "paired C-vs-B is the rung-3 reading; A-vs-B reproduces the -0.213 imagination proof as a sanity check",
+    "arms": {
+      "A_open_plan_bike": "single-shot open-loop (plan once, track frozen)",
+      "B_closed_bike": "single-step re-plan (imagination-in-the-loop, pure-pursuit inverse) = the -0.213 baseline",
+      "C_mpc_bike": "receding-horizon WM MPPI (K=8, H=8, grnd cost) over the flagship v1 world model"
+    },
+    "config": {
+      "method": "mppi",
+      "K": 8,
+      "H": 8,
+      "sigma_steer": 0.008,
+      "sigma_accel": 0.4,
+      "temp": 0.7,
+      "elite_frac": 0.25,
+      "w_track": 1.0,
+      "w_progress": 0.05,
+      "w_comfort": 0.2,
+      "cost_path": "grnd",
+      "seed": 0
+    },
+    "A_open_plan_bike_ade@2s": {
+      "mean": 1.9004,
+      "lo": 1.3489,
+      "hi": 2.452,
+      "ci95": 0.5515,
+      "se": 0.3835,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "B_closed_bike_ade@2s": {
+      "mean": 1.5124,
+      "lo": 1.074,
+      "hi": 1.9508,
+      "ci95": 0.4384,
+      "se": 0.3049,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "C_mpc_bike_ade@2s": {
+      "mean": 1.5179,
+      "lo": 1.0932,
+      "hi": 1.9427,
+      "ci95": 0.4248,
+      "se": 0.2954,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_C_minus_B_ade@2s": {
+      "delta": 0.0056,
+      "lo": -0.0081,
+      "hi": 0.0192,
+      "ci95": 0.0136,
+      "p_delta_gt0": 0.751,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_delta_C_minus_A_ade@2s": {
+      "delta": -0.3825,
+      "lo": -0.5093,
+      "hi": -0.2558,
+      "ci95": 0.1268,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_delta_C_minus_B_fde@2s": {
+      "delta": 0.0198,
+      "lo": 0.0195,
+      "hi": 0.0201,
+      "ci95": 0.0003,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_delta_C_minus_B_divergence_gt5m@2s": {
+      "delta": 0.0455,
+      "lo": 0.0,
+      "hi": 0.0909,
+      "ci95": 0.0455,
+      "p_delta_gt0": 0.7655,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_delta_C_minus_B_lateral_offroad@2s": {
+      "delta": 0.0315,
+      "lo": -0.03,
+      "hi": 0.0931,
+      "ci95": 0.0616,
+      "p_delta_gt0": 0.7655,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "B_divergence_gt5m@2s": {
+      "mean": 0.0227,
+      "lo": 0.0,
+      "hi": 0.0455,
+      "ci95": 0.0227,
+      "se": 0.0158,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "C_divergence_gt5m@2s": {
+      "mean": 0.0682,
+      "lo": 0.0,
+      "hi": 0.1364,
+      "ci95": 0.0682,
+      "se": 0.0474,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "B_lateral_offroad@2s": {
+      "mean": 0.5162,
+      "lo": 0.3817,
+      "hi": 0.6507,
+      "ci95": 0.1345,
+      "se": 0.0935,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "C_lateral_offroad@2s": {
+      "mean": 0.5477,
+      "lo": 0.3517,
+      "hi": 0.7438,
+      "ci95": 0.1961,
+      "se": 0.1363,
+      "reducer": "mean",
+      "n_windows": 44,
+      "n_episodes": 2,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "C_comfort": {
+      "mean_abs_accel_mps2": 1.7423,
+      "mean_abs_lat_accel_mps2": 0.3768,
+      "mean_abs_jerk_mps3": 3.8521,
+      "mean_abs_steer_rad": 0.01558,
+      "frac_steps_exceed_lon_comfort": 0.45,
+      "frac_steps_exceed_lat_comfort": 0.0,
+      "frac_steps_exceed_jerk_comfort": 0.3935,
+      "frac_steps_within_accel_bounds": 0.55,
+      "bounds": {
+        "a_lon": 2.0,
+        "a_lat": 3.0,
+        "jerk": 2.0,
+        "kind": "comfort (not safety)"
+      }
+    },
+    "reproduced_A_vs_B": {
+      "A_open_plan_bike_ade@2s": 1.9004,
+      "B_closed_bike_ade@2s": 1.5124,
+      "paired_delta_B_minus_A_ade@2s": -0.3881,
+      "expected_proof": {
+        "A": 1.9325,
+        "B": 1.7196,
+        "B_minus_A": -0.213
+      }
+    },
+    "verdict": "TIE: WM-MPPI/CEM planning (C) and the single-step re-plan (B) are NOT CI-separated on closed-loop ADE@2s -> the single-step re-plan already captures the imagination benefit at this fidelity; MPPI adds no measurable closed-loop gain -> report plainly, do NOT promote on this evidence (AlpaSim could still separate them)",
+    "n_windows": 44,
+    "n_episodes": 2,
+    "compute": {
+      "mpc_select_total_s": 12.444,
+      "n_decisions": 880,
+      "ms_per_decision_batched": 14.141,
+      "note": "batched over up to 8 windows/decision; K=8 H=8 method=mppi; batch=1 real-time figure in timing_batch1"
+    },
+    "wall_s": 20.0
+  },
+  "wall_s": 22.9
+}

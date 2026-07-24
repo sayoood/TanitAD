@@ -1,0 +1,156 @@
+frozen WM loaded (step 29999 )
+train windows 8803 (400 eps) | val windows 265 (12 eps)
+REFS: {"oracle_action_ade2s": 0.4045, "oracle_action_ade2s_ci": [0.3099, 0.5136], "oracle_action_fde2s": 0.8508, "oracle_action_miss2m": 0.0415, "cv_ade2s": 0.8463, "holdv0_ade2s": 0.7883}
+=== ARM F (bs=48) ===
+/usr/local/lib/python3.11/dist-packages/torch/nn/modules/transformer.py:307: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+  [F] 1/3000 loss=14.6950 0s
+  [F] 1000/3000 loss=1.5374 5s
+  [F] 2000/3000 loss=1.8680 10s
+  [F] 3000/3000 loss=1.6136 15s
+RESULT: {"arm": "F", "val_ade2s": 3.649, "val_ade2s_ci": [2.632, 4.7227], "val_fde2s": 5.9235, "miss2m": 0.7811, "n_val": 265, "n_train": 8803, "params": 3769768}
+=== ARM W (bs=24) ===
+/usr/local/lib/python3.11/dist-packages/torch/nn/modules/transformer.py:307: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(f"enable_nested_tensor is True, but self.use_nested_tensor is False because {why_not_sparsity_fast_path}")
+  [W] 1/3000 loss=2.2914 0s
+  [W] 1000/3000 loss=0.4441 283s
+  [W] 2000/3000 loss=0.4963 567s
+  [W] 3000/3000 loss=0.3729 853s
+RESULT: {"arm": "W", "val_ade2s": 0.5989, "val_ade2s_ci": [0.3736, 0.8539], "val_fde2s": 1.2936, "miss2m": 0.2075, "n_val": 265, "n_train": 8803, "params": 3769768}
+=== ARM B (bs=48) ===
+  [B] 1/3000 loss=0.3090 0s
+  [B] 1000/3000 loss=0.2626 5s
+  [B] 2000/3000 loss=0.2619 10s
+  [B] 3000/3000 loss=0.1794 15s
+RESULT: {"arm": "B", "val_ade2s": 1.0001, "val_ade2s_ci": [0.6967, 1.3535], "val_fde2s": 2.2544, "miss2m": 0.4151, "n_val": 265, "n_train": 8803, "params": 3769768}
+PAIRED: {"W_minus_cv": {"delta": -0.2474, "ci": [-0.5049, -0.0338], "frac_gt0": 0.006, "separated": true}, "W_minus_B": {"delta": -0.4012, "ci": [-0.7173, -0.1283], "frac_gt0": 0.001, "separated": true}, "W_minus_oracle": {"delta": 0.1944, "ci": [-0.0452, 0.4484], "frac_gt0": 0.937, "separated": false}, "W_minus_F": {"delta": -3.0501, "ci": [-4.045, -2.0777], "frac_gt0": 0.0, "separated": true}, "W_minus_holdv0": {"delta": -0.1893, "ci": [-0.3907, -0.0119], "frac_gt0": 0.016, "separated": true}, "B_minus_cv": {"delta": 0.1538, "ci": [-0.2218, 0.5868], "frac_gt0": 0.761, "separated": false}, "F_minus_cv": {"delta": 2.8027, "ci": [1.8395, 3.8417], "frac_gt0": 1.0, "separated": true}}
+ALL_ARMS_DONE
+{
+  "refs": {
+    "oracle_action_ade2s": 0.4045,
+    "oracle_action_ade2s_ci": [
+      0.3099,
+      0.5136
+    ],
+    "oracle_action_fde2s": 0.8508,
+    "oracle_action_miss2m": 0.0415,
+    "cv_ade2s": 0.8463,
+    "holdv0_ade2s": 0.7883
+  },
+  "arms": {
+    "F": {
+      "arm": "F",
+      "val_ade2s": 3.649,
+      "val_ade2s_ci": [
+        2.632,
+        4.7227
+      ],
+      "val_fde2s": 5.9235,
+      "miss2m": 0.7811,
+      "n_val": 265,
+      "n_train": 8803,
+      "params": 3769768
+    },
+    "W": {
+      "arm": "W",
+      "val_ade2s": 0.5989,
+      "val_ade2s_ci": [
+        0.3736,
+        0.8539
+      ],
+      "val_fde2s": 1.2936,
+      "miss2m": 0.2075,
+      "n_val": 265,
+      "n_train": 8803,
+      "params": 3769768
+    },
+    "B": {
+      "arm": "B",
+      "val_ade2s": 1.0001,
+      "val_ade2s_ci": [
+        0.6967,
+        1.3535
+      ],
+      "val_fde2s": 2.2544,
+      "miss2m": 0.4151,
+      "n_val": 265,
+      "n_train": 8803,
+      "params": 3769768
+    }
+  },
+  "config": {
+    "arms": "F,W,B",
+    "steps": 3000,
+    "bs": 48,
+    "lr": 0.0003,
+    "log": 1000,
+    "out": "/root/frozenwm/results.json"
+  },
+  "val_eps": 12,
+  "train_eps": 400,
+  "paired": {
+    "W_minus_cv": {
+      "delta": -0.2474,
+      "ci": [
+        -0.5049,
+        -0.0338
+      ],
+      "frac_gt0": 0.006,
+      "separated": true
+    },
+    "W_minus_B": {
+      "delta": -0.4012,
+      "ci": [
+        -0.7173,
+        -0.1283
+      ],
+      "frac_gt0": 0.001,
+      "separated": true
+    },
+    "W_minus_oracle": {
+      "delta": 0.1944,
+      "ci": [
+        -0.0452,
+        0.4484
+      ],
+      "frac_gt0": 0.937,
+      "separated": false
+    },
+    "W_minus_F": {
+      "delta": -3.0501,
+      "ci": [
+        -4.045,
+        -2.0777
+      ],
+      "frac_gt0": 0.0,
+      "separated": true
+    },
+    "W_minus_holdv0": {
+      "delta": -0.1893,
+      "ci": [
+        -0.3907,
+        -0.0119
+      ],
+      "frac_gt0": 0.016,
+      "separated": true
+    },
+    "B_minus_cv": {
+      "delta": 0.1538,
+      "ci": [
+        -0.2218,
+        0.5868
+      ],
+      "frac_gt0": 0.761,
+      "separated": false
+    },
+    "F_minus_cv": {
+      "delta": 2.8027,
+      "ci": [
+        1.8395,
+        3.8417
+      ],
+      "frac_gt0": 1.0,
+      "separated": true
+    }
+  }
+}

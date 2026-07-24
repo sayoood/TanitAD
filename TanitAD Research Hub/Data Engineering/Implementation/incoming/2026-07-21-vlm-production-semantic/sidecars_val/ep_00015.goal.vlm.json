@@ -1,0 +1,119 @@
+{
+ "episode": "ep_00015",
+ "episode_id": 808925495,
+ "val_build": "physicalai-val-f1b378f295ae",
+ "n_windows": 1,
+ "scene_tags": {
+  "weather": {
+   "token": "clear",
+   "prov": "vlm"
+  },
+  "time_of_day": {
+   "token": "day",
+   "prov": "vlm"
+  },
+  "road_type": {
+   "token": "residential",
+   "prov": "vlm"
+  },
+  "surface": {
+   "token": "dry",
+   "prov": "vlm"
+  },
+  "traffic_density": {
+   "token": "light",
+   "prov": "vlm"
+  },
+  "vru_present": {
+   "token": "false",
+   "prov": "vlm"
+  },
+  "notable_events": [
+   {
+    "event": "unprotected_turn",
+    "t": 0,
+    "offset_s": null,
+    "band": "high",
+    "source": "pass_B_context_conditioned",
+    "prov": "vlm"
+   }
+  ],
+  "_pending": false,
+  "_axis_agreement": {
+   "weather": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "time_of_day": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "road_type": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "surface": {
+    "agreement": 1.0,
+    "n_windows": 1
+   },
+   "traffic_density": {
+    "agreement": 1.0,
+    "n_windows": 1
+   }
+  }
+ },
+ "lead_state": {
+  "present": false,
+  "gap_m": null,
+  "closing_speed_ms": null,
+  "ttc_s": null,
+  "lane": "none",
+  "distance_bucket": "none",
+  "relative_motion": "none",
+  "present_rate": 0.0,
+  "agreement": {
+   "lane": 1.0,
+   "distance_bucket": 1.0,
+   "relative_motion": 1.0
+  },
+  "_metric_fields_unavailable": "gap_m / closing_speed_ms / ttc_s are metric quantities a forward camera VLM cannot measure; the 48-clip pilot measured this model fabricating band edges on 48 % of clips. The coarse categorical state is sufficient to STRATIFY a metric and insufficient to compute headway or TTC.",
+  "prov": "vlm",
+  "_pending": false
+ },
+ "sign_reads": [
+  {
+   "_pending": false,
+   "prov": "vlm",
+   "_note": "no sign read"
+  }
+ ],
+ "language": {
+  "caption": "Ego vehicle turns left on a residential road, accelerating to 9.4 m/s, with no critical agents or traffic lights present, and dashed lane markings visible ahead",
+  "coc_trace": {
+   "observation": "Ego vehicle turns left on a residential road, accelerating to 9.4 m/s, with no critical agents or traffic lights present, and dashed lane markings visible ahead",
+   "critical_agents": [],
+   "justification": "The ego vehicle is executing a left turn while maintaining speed, with no immediate obstacles or traffic signals affecting its path",
+   "decision": "Continue turning left while accelerating, maintaining lane position and speed as the road curves",
+   "action": null,
+   "physics_flag": null
+  },
+  "qa": [],
+  "prov": "vlm",
+  "_pending": false,
+  "_per_window_coc": [
+   {
+    "t": 0,
+    "observation": "Ego vehicle turns left on a residential road, accelerating to 9.4 m/s, with no critical agents or traffic lights present, and dashed lane markings visible ahead",
+    "inference": "The ego vehicle is executing a left turn while maintaining speed, with no immediate obstacles or traffic signals affecting its path",
+    "decision": "Continue turning left while accelerating, maintaining lane position and speed as the road curves"
+   }
+  ]
+ },
+ "vlm_stamp": {
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "frames_plan": "dense_early",
+  "provenance": "vlm",
+  "labeler": "scripts/vlm_semantic_labels.py"
+ }
+}

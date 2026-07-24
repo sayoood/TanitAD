@@ -1,0 +1,343 @@
+{
+  "run": "flagship v1 (WM+tactical policy) vs REF-C base (open-loop anchored diffusion) \u2014 paired closed-loop suite",
+  "label": "on NuRec reconstructions (AlpaSim NuRec, tanitad-eval A40)",
+  "framing_MANDATORY": "WITHIN-SIM RELATIVE comparison, NOT an absolute model measure. Both models are fed the SAME NuRec-reconstruction input, which is ~3.2x more OOD than REF-C's real-footage training (open-loop ADE 1.47 on these reconstructions vs 0.4728 on real PhysicalAI val, RUN_RECIPE s13). The paired design controls for scene + reconstruction fidelity, so the flagship-minus-REF-C delta isolates the PLANNER (WM+tactical-policy vs open-loop diffusion); it does NOT give either model's real-world closed-loop rate.",
+  "n_scenes": 12,
+  "one_rollout_per_scene": true,
+  "resolution": "1080x1920",
+  "canon_flagship": "f_eff=266.0 OK",
+  "canon_refc": "f_eff=266.0 OK",
+  "models": {
+    "flagship_v1": {
+      "ckpt": "flagship-30k step 29999 (HF Sayood/tanitad-flagship-4b-speedjerk)",
+      "n_scenes": 12,
+      "at_fault_collision_rate": 0.25,
+      "collision_any_rate": 0.25,
+      "offroad_rate": 0.5,
+      "pass_rate": 0.25,
+      "n_pass": 3,
+      "mean_score": 0.1147893553194053,
+      "mean_dist_to_gt": 1.9573759810093803,
+      "mean_progress": 0.315700568858762,
+      "mean_progress_rel": 0.7811443475244775,
+      "mean_plan_deviation": 1.0814810868417595,
+      "mean_dist_traveled_m": 73.62879444727713,
+      "img_is_black_rate": 0.0
+    },
+    "refc_base": {
+      "ckpt": "refc-base-30k step 29999 (104.2M, 128 anchors)",
+      "n_scenes": 12,
+      "at_fault_collision_rate": 0.25,
+      "collision_any_rate": 0.3333333333333333,
+      "offroad_rate": 0.16666666666666666,
+      "pass_rate": 0.5833333333333334,
+      "n_pass": 7,
+      "mean_score": 0.4097325375973127,
+      "mean_dist_to_gt": 1.7510799831502661,
+      "mean_progress": 0.4844431138080336,
+      "mean_progress_rel": 0.8922299963785743,
+      "mean_plan_deviation": 0.3166501664392442,
+      "mean_dist_traveled_m": 112.89644358170777,
+      "img_is_black_rate": 0.0
+    }
+  },
+  "paired_flagship_minus_refc": {
+    "n_scenes": 12,
+    "mean_score_delta": -0.2949431822779074,
+    "mean_score_delta_boot95": [
+      -0.4935792087038742,
+      -0.11694627963549675
+    ],
+    "mean_dist_to_gt_delta": 0.20629599785911393,
+    "mean_dist_to_gt_delta_boot95": [
+      -0.47341372970516543,
+      0.918670047252833
+    ],
+    "score_sign_test": {
+      "flag_better": 0,
+      "refc_better": 7,
+      "ties": 5,
+      "two_sided_p": 0.015625
+    },
+    "pass_mcnemar": {
+      "flag_pass_refc_fail": 0,
+      "refc_pass_flag_fail": 4,
+      "both_pass": 3,
+      "both_fail": 5,
+      "two_sided_p": 0.125
+    },
+    "at_fault_collision_mcnemar": {
+      "flag_collides_refc_ok": 1,
+      "refc_collides_flag_ok": 1,
+      "both_collide": 2,
+      "neither_collides": 8,
+      "two_sided_p": 1.0
+    }
+  },
+  "per_scene": [
+    {
+      "clip": "clipgt-00040136-e651-4abd-991d-0655ccda9430",
+      "flag": {
+        "rollout_id": "ff95b07e-8630-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.4741641243482241,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 4.049613936302503
+      },
+      "refc": {
+        "rollout_id": "95c6551e-862f-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.7865704442663493,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 1.2017215121466276
+      },
+      "score_delta": -0.3124063199181252
+    },
+    {
+      "clip": "clipgt-000525f6-3999-4812-9924-8adff40ca514",
+      "flag": {
+        "rollout_id": "ffa8e4b4-8630-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.5684364612242585,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.9594749009773823
+      },
+      "refc": {
+        "rollout_id": "9746cab8-862f-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.8000442004305628,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.9568039540123995
+      },
+      "score_delta": -0.2316077392063043
+    },
+    {
+      "clip": "clipgt-000548db-e266-49e5-a832-6674ab53a615",
+      "flag": {
+        "rollout_id": "f9aa930a-8630-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 2.02041581977116
+      },
+      "refc": {
+        "rollout_id": "949dd428-862f-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 4.372853573302587
+      },
+      "score_delta": 0.0
+    },
+    {
+      "clip": "clipgt-00064c58-7047-4a53-8a36-b033baaaa5fb",
+      "flag": {
+        "rollout_id": "fa6b2c78-8630-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 1.60080407544108
+      },
+      "refc": {
+        "rollout_id": "9418c5bc-862f-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.8928734370587049,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 1.4974526674520232
+      },
+      "score_delta": -0.8928734370587049
+    },
+    {
+      "clip": "clipgt-0009402a-a514-443b-9a4c-0e792f5ae581",
+      "flag": {
+        "rollout_id": "6ef29a68-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.3348716782603811,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 4.089695832154534
+      },
+      "refc": {
+        "rollout_id": "067fba48-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.41138461687068256,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 4.130497520393163
+      },
+      "score_delta": -0.07651293861030145
+    },
+    {
+      "clip": "clipgt-00097de1-5ded-4fba-a5ed-4b527678d1b0",
+      "flag": {
+        "rollout_id": "704e87fa-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.03004340143807525
+      },
+      "refc": {
+        "rollout_id": "071d1e32-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.14689929632308857
+      },
+      "score_delta": 0.0
+    },
+    {
+      "clip": "clipgt-000a3a34-1031-4f90-9bc3-5b5c132fd1ed",
+      "flag": {
+        "rollout_id": "713ad2a4-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 2.9180316210557455
+      },
+      "refc": {
+        "rollout_id": "098d155a-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 3.556876483253025
+      },
+      "score_delta": 0.0
+    },
+    {
+      "clip": "clipgt-000a74ae-5c01-486e-ab6f-7f5160136357",
+      "flag": {
+        "rollout_id": "72329ee4-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 2.8293308859016495
+      },
+      "refc": {
+        "rollout_id": "0ad19472-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.8994397789347509,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.9718607299410512
+      },
+      "score_delta": -0.8994397789347509
+    },
+    {
+      "clip": "clipgt-000e95f7-560d-4411-8069-b9f531ed3cd6",
+      "flag": {
+        "rollout_id": "bd5c3fc4-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 0.010033386238189505
+      },
+      "refc": {
+        "rollout_id": "5e1b9218-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 0.005460043187058949
+      },
+      "score_delta": 0.0
+    },
+    {
+      "clip": "clipgt-000ff49d-aa30-46ee-af57-b4a0c1143f55",
+      "flag": {
+        "rollout_id": "c12cb106-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 1.464252919338579
+      },
+      "refc": {
+        "rollout_id": "5d40acf2-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.49874441631147487,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 0.7069927616397598
+      },
+      "score_delta": -0.49874441631147487
+    },
+    {
+      "clip": "clipgt-0010ce77-d06e-43e6-bdaf-2cf8ab65cfe4",
+      "flag": {
+        "rollout_id": "c1eee7a8-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 1.572764810726298
+      },
+      "refc": {
+        "rollout_id": "5f2232ca-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "pass",
+        "score": 0.6277335572952272,
+        "collision_at_fault": 0.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 2.2025925331698897
+      },
+      "score_delta": -0.6277335572952272
+    },
+    {
+      "clip": "clipgt-001564ce-0019-4ec6-bb62-07ed2bd90f2e",
+      "flag": {
+        "rollout_id": "c5046f1c-8631-11f1-b1c8-49686605c2e9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 0.0,
+        "offroad": 1.0,
+        "dist_to_gt_trajectory": 1.9440501827673673
+      },
+      "refc": {
+        "rollout_id": "603c00e6-8630-11f1-abbd-e31a557141f9",
+        "run_uuid": "a74ede75df10b570fbb4f21c1c4645d295c9c93c3585713c609b6760eb2d4e15",
+        "status": "fail",
+        "score": 0.0,
+        "collision_at_fault": 1.0,
+        "offroad": 0.0,
+        "dist_to_gt_trajectory": 1.2629487229825225
+      },
+      "score_delta": 0.0
+    }
+  ]
+}

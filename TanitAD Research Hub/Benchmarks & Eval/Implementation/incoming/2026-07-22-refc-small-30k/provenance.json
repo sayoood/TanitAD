@@ -1,0 +1,70 @@
+{
+  "artifact": "REF-C-small (54.69M) 30k training run — closes the D-030 3-size scaling ladder",
+  "launched_utc": "2026-07-21T22:06:30Z",
+  "launched_local_berlin": "2026-07-22T00:06:30+02:00",
+  "pod": "tanitad-pod2 (A40)",
+  "trainer_pid": 57658,
+  "gpu_lock": "refc-small --pid 57658 (adopt)",
+  "out_dir_pod2": "/workspace/experiments/refc-diffusion-small-v21-30k",
+  "taniteval_key_planned": "refc-small-30k",
+  "steady_state_s_per_step": 0.92,
+  "eta_finish_utc": "~2026-07-22T05:45Z",
+  "eta_finish_local_berlin": "~2026-07-22T07:45",
+  "exact_command": "cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True nohup python3 scripts/refc_train.py --data-root /workspace/data/physicalai_phase0/_epcache --out /workspace/experiments/refc-diffusion-small-v21-30k --steps 30000 --mode diffusion --config small --anchors /workspace/experiments/refc_anchors_small64.pt --batch 20 --workers 6 --labels v21",
+  "mirrors": "refc-diffusion-base-v21-30k (registry Sec 4.3) exactly; deltas are ONLY --config small + 64-anchor vocab (holds --labels v21 constant so small-vs-base isolates SCALE)",
+  "config_measured": {
+    "total_params": 54690001,
+    "param_breakdown": {"encoder": 47862976, "measurement": 17280, "strategic": 1608768, "decoder": 2950729, "imagination": 0, "aux": 134152, "law": 2116096, "speed": 0},
+    "decoder": "d256, 4 heads, 3 layers",
+    "encoder": "base_width 64, blocks (3,6,16,6)",
+    "anchors": 64,
+    "optimizer": "Adam lr 1e-4, warmup 2000, cosine",
+    "labels": "v21 (route_from_future_v21, use_net_dyaw=False)"
+  },
+  "anchors": {
+    "file": "refc_anchors_small64.pt",
+    "shape": [64, 4, 2],
+    "derivation": "base128[:64] == full256[:64] — bit-exact nested FPS prefix (seed 0). Guarantees the scale-A/B matched-vocabulary control (torch.equal check in refc_scale_ab.analyze) passes vs both base (128) and XL (256).",
+    "verified": "torch.equal(small64, base128[:64]) AND torch.equal(base128, full256[:128]) AND torch.equal(small64, full256[:64])"
+  },
+  "parity_proofs": {
+    "train_corpus_key": "physicalai-train-e438721ae894 (2376 episodes)",
+    "n_windows": 406099,
+    "note_windows": "matches registry Sec 0.1 (2376 eps / 406099 windows) — same parity set as base/XL",
+    "v21_label_coverage": {"left": 0.121, "straight": 0.5645, "right": 0.115, "UNKNOWN_masked": 0.1995, "valid_frac": 0.8005},
+    "note_labels": "bit-identical to base run config.json (registry Sec 4.3: left 0.121 / straight 0.5645 / right 0.115 / UNKNOWN 0.1995 / 80.05% judgeable) — proves the v21 labeler on pod2's cache reproduces the base run's label distribution",
+    "param_acceptance": "refc_small_config() total == 54,690,001 (registry Sec 4.2) — proves refc.py on pod2 is current"
+  },
+  "pod2_drift_repaired_before_launch": [
+    "tanitad/train/ckpt_io.py — was ABSENT (milestone archiving would ImportError at step 5000); copied from repo HEAD (md5 c344c686)",
+    "scripts/refc_train.py — was STALE (no --labels arg); synced to repo HEAD (md5 939f327f)",
+    "scripts/refb_labels.py — synced to repo HEAD (md5 6632348b)",
+    "scripts/refb_train.py — synced to repo HEAD (md5 b29fc278)",
+    "tanitad/refs/refc.py — synced to repo HEAD (md5 b7887afe)",
+    "originals backed up on pod2 at /workspace/ops/backup-20260722-refcsmall/"
+  ],
+  "milestones_auto_archived": [5000, 15000, 20000, 30000],
+  "eval_plan": "on finish: taniteval.refc_eval (ADE/FDE/miss/strata, 40 canonical val eps) + refc_scale_ab dump+analyze vs refc-base-30k AND refc-xl-30k (oracle-in-fan, sel_gap, frac_sel_2x_worse, paired episode-cluster bootstrap via taniteval/ci.py). Persist windows_refc-small-30k.pt + fan tensor. Add registry.py entry.",
+  "decision_question": "Does small (2.4x below base) HOLD the base-XL tie, or does the fan finally degrade? If oracle-in-fan jumps at small -> scale is a lever below base (ladder has a knee). If small also ties -> REF-C is absurdly over-parameterised and v4's decoder can shrink further.",
+  "completion": {
+    "done_utc": "2026-07-22T05:16Z",
+    "final_step": 29999,
+    "wallclock_h": 7.17,
+    "final_train_loss": 1.30,
+    "transfer": "pod2->eval via HF relay (Sayood/tanitad-refc-small-evalonly, private) — model-only ckpt 219MB, md5 0e866fd85f9fc9399dd09f12bccefd0a verified both ends; scp -3 dev-box relay dropped at 72% first (too slow/flaky)",
+    "eval_pod_state": "arch-inf lock was STALE (pid gone), GPU free — no wait needed",
+    "load_test": "STRICT load PASS on eval refc.py (54,690,001 params, step 29999, anchors [64,4,2])"
+  },
+  "results_measured": {
+    "selected_ade2s_fullset": {"small": "0.5261 [0.4295,0.6262]", "base": "0.4728", "xl": "0.4714"},
+    "fde2s": {"small": "1.1115", "base": "1.0031", "xl": "1.0061"},
+    "miss2m": {"small": "0.1714", "base": "0.1419", "xl": "0.1419"},
+    "plan_tick_p50_fp32_ms": {"small": 11.50, "base": 21.78, "xl": 44.06},
+    "paired_selected_ade2s": {"small_minus_base": "+0.0533 [+0.0167,+0.0925] SEPARATED", "small_minus_xl": "+0.0546 [+0.0189,+0.0940] SEPARATED"},
+    "oracle_in_fan": {"small_64": 0.2213, "base_128": 0.1914, "base_at64": 0.2833, "xl_256": 0.1640, "xl_at64": 0.4368},
+    "oracle_matched_paired": {"small_minus_base_at64": "-0.0620 [-0.0801,-0.0435] SEPARATED (small BETTER)", "small_minus_xl_at64": "-0.2155 SEPARATED (small BETTER)"},
+    "nested_vocabulary_verified": true
+  },
+  "verdict": "Ladder has a SMALL KNEE at the bottom rung: small is SEPARATED-worse than base AND XL on selected ADE@2s by ~0.053 m (base vs XL was NOT separated). BUT the knee is ANCHOR-COUNT (64 vs 128), not encoder scale: on the matched 64-anchor vocabulary small's fan BEATS base's and far beats XL's, and small's oracle is tightest at every shared K. The 2.4x encoder/param cut did not degrade proposal quality. Extends Sec 4.3 a rung down: the fan lever is anchor-vocabulary WIDTH, not encoder scale. => v4 can shrink the encoder toward ~48M with no fan-quality loss, provided the anchor vocab stays wide (>=128, ~free buffers).",
+  "evidence_class": "MEASURED (this run + canonical eval; raw JSON in this dir + eval pod /root/taniteval/results/)"
+}

@@ -1,0 +1,27 @@
+{
+  "run": "flagship-v4",
+  "gate_step": 10000,
+  "primary_metric": "ade_0_2s",
+  "primary_threshold": 0.6,
+  "primary_direction": "<=",
+  "primary_source": "held-out taniteval full-set, planner path, produced goal",
+  "secondary": [
+    "wm_canary_ade_2s<=0.55",
+    "speed_benefit_recovered_frac>=0.70",
+    "oracle_in_fan<=0.30",
+    "miss_at_2m<=0.10",
+    "seam_norm_ratio_max<=1.0",
+    "encoder_touching_levers<=2",
+    "deploy_tick_p99_ms<=50",
+    "nonav_route_beats_majority>=1"
+  ],
+  "reference_run": "flagship-v1",
+  "reference_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+  "compare_metric": "g_op_fwd_ade_m",
+  "tau": 1.5,
+  "lever_family": "joint-planner-wm",
+  "restarts_used": 0,
+  "restart_cap": 2,
+  "registered_utc": "2026-07-22T22:58:08.547467+00:00",
+  "note": "MATERIALIZED 2026-07-23 from the verbatim pre-registered register-command in V4_FLAGSHIP_DESIGN.md 17.3 (lines 1276-1293), which predates the v4/v4.1 launch (2026-07-22). The physical .json was never staged (stranded). registered_utc = materialization time, NOT the pre-registration date. Card applies to lever-family joint-planner-wm; v4.1 is the lr_trunk=3e-5 restart scored against this same card."
+}

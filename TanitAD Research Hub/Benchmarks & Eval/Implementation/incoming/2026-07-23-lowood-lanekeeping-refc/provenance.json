@@ -1,0 +1,53 @@
+{
+  "task": "low-OOD closed-loop LANE-KEEPING instrument + REF-C 2nd arm + first absolute (low-OOD) closed-loop comparison of the two main arms",
+  "date_berlin": "2026-07-23",
+  "host": "tanitad-eval (194.68.245.76:22054, RTX A6000 46GB)",
+  "gpu_lock": "lowood-lanekeep (acquired 2026-07-23T19:14:38Z)",
+  "pod_stack_commit": "0f93b98",
+  "python": "/usr/bin/python3 (3.12.3, torch 2.8.0+cu128, CUDA available)",
+  "extends": "2026-07-23-lower-ood-closedloop-source/lowood_closedloop.py (P2 real-footage-in-the-loop, flagship-only, 12 ep, pod1)",
+  "arms": {
+    "flagship": {
+      "ckpt": "/root/models/flagship-30k/ckpt.pt",
+      "step": 29999,
+      "identity": "deployed flagship v1 (speedjerk-30k); decode = strategic_policy(nav=follow) -> tactical_policy -> waypoints[5] (0.5s lookahead)",
+      "evidence_class": "MEASURED"
+    },
+    "refc": {
+      "ckpt": "/root/models/refc-base-30k/ckpt.pt",
+      "ckpt_md5": "8f10d6f934f4199e11ddc7352e074939",
+      "md5_matches_gate1_a9147f0e": true,
+      "step": 29999,
+      "preset": "base (base_width=88, refc1=False, per config.json)",
+      "identity": "REF-C base 104.2M (anchored-diffusion); decode = model(fw, nav_cmd=None(->follow), v0=ev, steps=2)['traj'][:,0] (0.5s lookahead)",
+      "evidence_class": "MEASURED"
+    }
+  },
+  "input_contract": {
+    "frames": "canonical phase-0 val cache physicalai-val-0c5f7dac3b11 [W=8, 9ch, 256x256] in [0,1] — the SAME f-theta 3-frame stack BOTH arms trained on (f_eff=266). No re-canonicalization needed: refc_driver.py re-canonicalizes ONLY because NuRec hands it raw native f-theta; here the source is already the canonical cache => the f-theta canonical input contract is met by construction.",
+    "both_arms_see": "IDENTICAL warped real-footage window fw each tick (parity)",
+    "nav": "both arms drive nav=follow (flagship idx 0; REF-C nav_cmd=None which maps to follow idx 0 internally)",
+    "controller": "shared verbatim: 0.5s pure-pursuit (wp_to_control) -> kinematic bicycle (WHEELBASE 2.7, dt 0.1)"
+  },
+  "val": {
+    "dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "n_episodes": 40,
+    "stride": 8,
+    "batch": 16,
+    "parity_note": "40-ep clean val (registry §0.3: 40 ep -> 881 windows on tanitad-eval)"
+  },
+  "metric": {
+    "corridor_departure_rate": "fraction of on-policy steps whose |XTE| (== |signed lateral offset dlat|) exceeds a lane HALF-width threshold",
+    "primary_threshold_m": 1.75,
+    "threshold_citation": "1.75 m = half of a 3.5 m lane (US arterial / German Autobahn class: US Interstate 3.6 m, RAA Autobahn 3.5-3.75 m, urban 3.0-3.5 m). Companion grid 1.0 m (wheel-over-line for a ~1.8 m vehicle) and 2.5 m (into the adjacent lane).",
+    "companion_metrics": ["peak XTE (m)", "time-to-departure (s)", "window_departure_rate (fraction of windows that ever leave the corridor)"],
+    "tick0_selfcheck": "on-path at k=0 -> |XTE|=0 -> zero departures for every arm (asserted in-harness)"
+  },
+  "estimator": "episode-cluster bootstrap over val episodes (taniteval/ci.py, n_boot=2000) per arm; PAIRED episode-cluster bootstrap (same windows each draw) for flagship-vs-REF-C",
+  "honest_bounds": [
+    "Measures LANE-KEEPING / on-policy drift at LOW OOD. STRUCTURALLY NOT off-road/collision: the real-footage source is map-free and agent-free, so it can only emit deviation from the recorded corridor. A real off-road/collision rate needs AlpaSim (map+agents+low-OOD renderer) = the ~3.2x-OOD instrument this source exists to escape (RETRACTION_LOG 07-22/07-23).",
+    "OOD ratio uses the flagship-measured 12-ep source envelope (lowood_flagship_ci.json), applied to each arm's own on-policy deviations; INHERITED-from-12ep for the OOD mapping only. The corridor/XTE/ADE metrics need NO envelope.",
+    "Controller = shared pure-pursuit + bicycle (not each model's own controller); the deviation is each planner's tracking behaviour through the identical controller.",
+    "Resolution 256x256 / f_eff=266 phase-0 cache (native is 1080x1920); the real-footage source sidesteps reconstruction entirely (RETRACTION_LOG 07-23 native-res residual)."
+  ]
+}

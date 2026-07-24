@@ -1,0 +1,274 @@
+{
+  "meta": {
+    "experiment": "idm_downstream_benefit_ablation",
+    "date": "2026-07-24T04:27:01Z",
+    "flagship_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "device": "cuda",
+    "seeds": 5,
+    "pt_epochs": 40,
+    "ft_epochs": 60,
+    "model": "IDMHead temporal trunk over frozen v1 latents (small dynamics WM readout)",
+    "metric": "downstream speed R2 (primary) + traj ADE, on held-out real-labeled test",
+    "pre_reg": "pseudo beats floor (all seeds) AND fraction_of_ceiling>=0.5 -> GO; pseudo~=floor -> NO-GO; else report fraction+gap"
+  },
+  "domains": {
+    "comma_crossCLASS": {
+      "n_seeds": 5,
+      "speed_r2_mean_std": {
+        "floor": [
+          -0.7705,
+          0.062
+        ],
+        "pseudo": [
+          0.4468,
+          0.024
+        ],
+        "ceiling": [
+          0.4906,
+          0.0116
+        ]
+      },
+      "pseudo_benefit_mean_std": [
+        1.2173,
+        0.0595
+      ],
+      "ceiling_benefit_mean_std": [
+        1.2612,
+        0.0532
+      ],
+      "pseudo_benefit_per_seed": [
+        1.1195,
+        1.2454,
+        1.3014,
+        1.2187,
+        1.2015
+      ],
+      "ceiling_benefit_per_seed": [
+        1.1776,
+        1.3249,
+        1.3115,
+        1.2526,
+        1.2392
+      ],
+      "fraction_of_ceiling_mean": 0.965,
+      "fraction_of_ceiling_per_seed": [
+        0.951,
+        0.94,
+        0.992,
+        0.973,
+        0.97
+      ],
+      "pseudo_beats_floor_all_seeds": true,
+      "ceiling_beats_floor_all_seeds": true,
+      "per_seed": [
+        {
+          "seed": 0,
+          "floor": {
+            "speed_r2": -0.6814473270469708,
+            "ade_2s": 17.055095040207537
+          },
+          "pseudo": {
+            "speed_r2": 0.43806144280713744,
+            "ade_2s": 7.813290602053881
+          },
+          "ceiling": {
+            "speed_r2": 0.4961957651621811,
+            "ade_2s": 7.527118625370075
+          }
+        },
+        {
+          "seed": 1,
+          "floor": {
+            "speed_r2": -0.841817267740421,
+            "ade_2s": 17.92188944805316
+          },
+          "pseudo": {
+            "speed_r2": 0.4035874068792774,
+            "ade_2s": 7.92752680991071
+          },
+          "ceiling": {
+            "speed_r2": 0.4830569429885868,
+            "ade_2s": 7.63889554066709
+          }
+        },
+        {
+          "seed": 2,
+          "floor": {
+            "speed_r2": -0.8398069575592633,
+            "ade_2s": 17.330525716590454
+          },
+          "pseudo": {
+            "speed_r2": 0.46157226613504276,
+            "ade_2s": 7.653777282561205
+          },
+          "ceiling": {
+            "speed_r2": 0.47172872660614007,
+            "ade_2s": 7.725553938275847
+          }
+        },
+        {
+          "seed": 3,
+          "floor": {
+            "speed_r2": -0.750010314391504,
+            "ade_2s": 17.601049078083694
+          },
+          "pseudo": {
+            "speed_r2": 0.46871803052045957,
+            "ade_2s": 7.581579294642261
+          },
+          "ceiling": {
+            "speed_r2": 0.5025880210620459,
+            "ade_2s": 7.364055592364252
+          }
+        },
+        {
+          "seed": 4,
+          "floor": {
+            "speed_r2": -0.7395748253365912,
+            "ade_2s": 17.521057214789682
+          },
+          "pseudo": {
+            "speed_r2": 0.4619234081915772,
+            "ade_2s": 7.647654667274021
+          },
+          "ceiling": {
+            "speed_r2": 0.49958270501679913,
+            "ade_2s": 7.555887337583768
+          }
+        }
+      ]
+    },
+    "rigB_sameClass": {
+      "n_seeds": 3,
+      "speed_r2_mean_std": {
+        "floor": [
+          -2.2353,
+          0.1613
+        ],
+        "pseudo": [
+          0.1993,
+          0.0867
+        ],
+        "ceiling": [
+          0.2964,
+          0.0175
+        ]
+      },
+      "pseudo_benefit_mean_std": [
+        2.4346,
+        0.2319
+      ],
+      "ceiling_benefit_mean_std": [
+        2.5317,
+        0.1547
+      ],
+      "pseudo_benefit_per_seed": [
+        2.2931,
+        2.7616,
+        2.2492
+      ],
+      "ceiling_benefit_per_seed": [
+        2.3734,
+        2.7416,
+        2.4801
+      ],
+      "fraction_of_ceiling_mean": 0.96,
+      "fraction_of_ceiling_per_seed": [
+        0.966,
+        1.007,
+        0.907
+      ],
+      "pseudo_beats_floor_all_seeds": true,
+      "ceiling_beats_floor_all_seeds": true,
+      "per_seed": [
+        {
+          "seed": 0,
+          "floor": {
+            "speed_r2": -2.0872188825032585,
+            "ade_2s": 17.554327296352174
+          },
+          "pseudo": {
+            "speed_r2": 0.2059144793591573,
+            "ade_2s": 8.773874024501929
+          },
+          "ceiling": {
+            "speed_r2": 0.2862308577193394,
+            "ade_2s": 7.99389815132047
+          }
+        },
+        {
+          "seed": 1,
+          "floor": {
+            "speed_r2": -2.4596209869984373,
+            "ade_2s": 17.819789102841565
+          },
+          "pseudo": {
+            "speed_r2": 0.3019586230213752,
+            "ade_2s": 8.304955236342373
+          },
+          "ceiling": {
+            "speed_r2": 0.2819874771811446,
+            "ade_2s": 8.151302914093991
+          }
+        },
+        {
+          "seed": 2,
+          "floor": {
+            "speed_r2": -2.1591405010495346,
+            "ade_2s": 17.18393468120109
+          },
+          "pseudo": {
+            "speed_r2": 0.09001639614498158,
+            "ade_2s": 9.371422679417577
+          },
+          "ceiling": {
+            "speed_r2": 0.3209590816253557,
+            "ade_2s": 7.929810904161593
+          }
+        }
+      ]
+    }
+  },
+  "verdicts": {
+    "comma_crossCLASS": {
+      "fraction_of_ceiling": 0.965,
+      "pseudo_beats_floor_all_seeds": true,
+      "ceiling_beats_floor_all_seeds": true,
+      "call": "GO (pseudo beats floor all seeds AND captures >=50% of ceiling)",
+      "speed_r2": {
+        "floor": [
+          -0.7705,
+          0.062
+        ],
+        "pseudo": [
+          0.4468,
+          0.024
+        ],
+        "ceiling": [
+          0.4906,
+          0.0116
+        ]
+      }
+    },
+    "rigB_sameClass": {
+      "fraction_of_ceiling": 0.96,
+      "pseudo_beats_floor_all_seeds": true,
+      "ceiling_beats_floor_all_seeds": true,
+      "call": "GO (pseudo beats floor all seeds AND captures >=50% of ceiling)",
+      "speed_r2": {
+        "floor": [
+          -2.2353,
+          0.1613
+        ],
+        "pseudo": [
+          0.1993,
+          0.0867
+        ],
+        "ceiling": [
+          0.2964,
+          0.0175
+        ]
+      }
+    }
+  }
+}

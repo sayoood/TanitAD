@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "experiment": "idm_parity_validation",
+    "date": "2026-07-24T06:15:30Z",
+    "flagship_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "device": "cuda",
+    "seeds": 4,
+    "pt_epochs": 25,
+    "ft_epochs": 60,
+    "parity_firewall": "SIDE de-risk; own IDM split of parity-domain data; no WM arm, no re-selection of canonical WM episodes; licensing-free (parity, not YouTube).",
+    "pretrain_clips": 300,
+    "pretrain_windows": 26384,
+    "downstream": "physicalai-val (both rigs), finetune 15 / test 65",
+    "pre_reg": "pseudo beats floor (all seeds) AND substantial fraction of ceiling ON PARITY -> GO decision-grade; else caveat"
+  },
+  "arms_mean_std": {
+    "floor": {
+      "speed_r2": [
+        -0.4387,
+        0.2238
+      ],
+      "yaw_r2": [
+        0.5505,
+        0.0703
+      ],
+      "ade_2s": [
+        12.6098,
+        0.7441
+      ]
+    },
+    "pseudo": {
+      "speed_r2": [
+        0.7508,
+        0.0441
+      ],
+      "yaw_r2": [
+        0.6911,
+        0.0264
+      ],
+      "ade_2s": [
+        4.8062,
+        0.3915
+      ]
+    },
+    "ceiling": {
+      "speed_r2": [
+        0.6507,
+        0.0603
+      ],
+      "yaw_r2": [
+        0.7485,
+        0.0231
+      ],
+      "ade_2s": [
+        5.3419,
+        0.3503
+      ]
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "floor": {
+        "speed_r2": -0.7540151202721797,
+        "yaw_r2": 0.43805261902200354,
+        "ade_2s": 13.387710514590818,
+        "n": 5710
+      },
+      "pseudo": {
+        "speed_r2": 0.7327411671493845,
+        "yaw_r2": 0.7196502756191931,
+        "ade_2s": 4.945537806283794,
+        "n": 5710
+      },
+      "ceiling": {
+        "speed_r2": 0.7150742092992427,
+        "yaw_r2": 0.7584960609360472,
+        "ade_2s": 4.905861128029377,
+        "n": 5710
+      }
+    },
+    {
+      "seed": 1,
+      "floor": {
+        "speed_r2": -0.2643034959828259,
+        "yaw_r2": 0.6319087665018266,
+        "ade_2s": 11.77354368967676,
+        "n": 5710
+      },
+      "pseudo": {
+        "speed_r2": 0.6923801751345362,
+        "yaw_r2": 0.7014022018986896,
+        "ade_2s": 5.33542386937321,
+        "n": 5710
+      },
+      "ceiling": {
+        "speed_r2": 0.6372069854062269,
+        "yaw_r2": 0.7314921990951633,
+        "ade_2s": 5.500870431529607,
+        "n": 5710
+      }
+    },
+    {
+      "seed": 2,
+      "floor": {
+        "speed_r2": -0.5424718326300029,
+        "yaw_r2": 0.5676725002361664,
+        "ade_2s": 13.312847844032225,
+        "n": 5710
+      },
+      "pseudo": {
+        "speed_r2": 0.8127923261071938,
+        "yaw_r2": 0.6952321203717102,
+        "ade_2s": 4.259714048056269,
+        "n": 5710
+      },
+      "ceiling": {
+        "speed_r2": 0.6921354100234707,
+        "yaw_r2": 0.7227856082938285,
+        "ade_2s": 5.136331778744695,
+        "n": 5710
+      }
+    },
+    {
+      "seed": 3,
+      "floor": {
+        "speed_r2": -0.19414120147842295,
+        "yaw_r2": 0.5644300111168198,
+        "ade_2s": 11.965016763027283,
+        "n": 5710
+      },
+      "pseudo": {
+        "speed_r2": 0.7652945079612676,
+        "yaw_r2": 0.6481891586542571,
+        "ade_2s": 4.683996681704645,
+        "n": 5710
+      },
+      "ceiling": {
+        "speed_r2": 0.5584276630370129,
+        "yaw_r2": 0.7813760232354513,
+        "ade_2s": 5.8246920174728976,
+        "n": 5710
+      }
+    }
+  ],
+  "fraction_of_ceiling": {
+    "speed_r2": 1.092,
+    "yaw_r2": 0.71,
+    "ade_2s": 1.074
+  },
+  "pseudo_beats_floor_all_seeds": {
+    "speed_r2": true,
+    "yaw_r2": true,
+    "ade_2s": true
+  },
+  "ceiling_beats_floor_all_seeds": {
+    "speed_r2": true,
+    "yaw_r2": true,
+    "ade_2s": true
+  },
+  "verdict": "GO-decision-grade (pseudo beats floor all seeds on parity AND captures 109% of speed ceiling)"
+}

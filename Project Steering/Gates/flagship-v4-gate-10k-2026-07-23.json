@@ -1,0 +1,75 @@
+{
+  "run": "flagship-v4",
+  "card": "Project Steering/Gates/flagship-v4.card.json",
+  "current_step": 12500,
+  "gate_step": 10000,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 0.8522,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": false,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; cluster_bootstrap) CI [0.7468, 0.98]"
+  },
+  "secondary": [
+    {
+      "metric": "wm_canary_ade_2s",
+      "value": 0.4599445164203644,
+      "op": "<=",
+      "threshold": 0.55,
+      "pass": true
+    },
+    {
+      "metric": "speed_benefit_recovered_frac",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "oracle_in_fan",
+      "value": 0.4837766247426205,
+      "op": "<=",
+      "threshold": 0.3,
+      "pass": false
+    },
+    {
+      "metric": "miss_at_2m",
+      "value": 0.2486,
+      "op": "<=",
+      "threshold": 0.1,
+      "pass": false
+    },
+    {
+      "metric": "seam_norm_ratio_max",
+      "value": 0.1796,
+      "op": "<=",
+      "threshold": 1.0,
+      "pass": true
+    },
+    {
+      "metric": "encoder_touching_levers",
+      "value": 2.0,
+      "op": "<=",
+      "threshold": 2.0,
+      "pass": true
+    },
+    {
+      "metric": "deploy_tick_p99_ms",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "nonav_route_beats_majority",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    }
+  ],
+  "report_only": [],
+  "verdict": "INCOMPLETE",
+  "reason": "a pre-registered secondary gate was not measured"
+}

@@ -316,3 +316,129 @@ Paper-ready stills, in order of usefulness:
 3. `refc-planfan_step29999_ep31_highspeed-straight_f020_worstwindow.png` — the control:
    total mode collapse at 36.5 m/s, one mode, gap 0.12 m. Shows the panel reads honestly
    when there is nothing multimodal to show.
+
+---
+
+## 10. Category clips — base vs XL on the same windows (2026-07-21)
+
+**What changed.** `taniteval/taniteval/plan_fan_clips.py` drives the *same* panel over
+**category-selected** windows and renders **both** REF-C arms on each of them. Three
+additive changes to `plan_fan.py`, nothing forked: an optional **constant-velocity**
+layer in `draw_bev` (dotted amber — every ADE we quote is relative to CV, so a frame
+where the white plan sits further from GT than the dotted line is a frame the model
+*lost*), a frame-range argument on `episode_planfan`, and a HUD marker for the scored
+window. The `grounded_selector` / `sel_idx == argmax(anchor_logits)` assertions are
+unchanged and still fire per batch.
+
+**Selection is from data, not from a screenshot.** Windows are picked off the
+precomputed full-fan dumps `results/fan_refc-{base,xl}-30k.pt` (881 windows × 40
+canonical val episodes; identical `eid`, bit-identical GT and CV — asserted). The
+window→frame map is reconstructed from the dump protocol (`starts = range(0, T−8−20, 8)`,
+`last = start + 7`) and **verified**: every clip's anchor frame reproduces its dumped ADE
+to 3 dp in both arms. The BEV range is computed **jointly** over both arms so the pair is
+comparable frame-for-frame.
+
+9 windows × 2 arms = **18 clips**, 49 frames (35/43 where the episode is short), 10 Hz,
+1280×800 H.264, 0.23–0.62 MB each. Categories: `good_selection`,
+`bad_selection_good_fan`, `multimodal_junction`, `high_speed`, `cruise_steady`,
+`braking_longitudinal`.
+
+### What the clips actually show
+
+**(a) The fan is a SPEED fan, not a manoeuvre fan.** This was the surprise. Measured over
+all 881 windows on the probability-weighted 2 s endpoint of the live modes (p > 1 %):
+
+| | base (128) | XL (256) |
+|---|---|---|
+| spread **along** track, mean / median | 0.719 / 0.703 m | 0.779 / 0.748 m |
+| spread **across** track, mean / median | 0.104 / **0.014 m** | 0.122 / **0.017 m** |
+| median long/lat ratio | **32.6×** | **32.8×** |
+| windows longitudinally dominated (>2×) | 88.9 % | 88.5 % |
+| windows laterally dominated (<0.5×) | **0.0 %** | **0.0 %** |
+| selected-vs-oracle separation, longitudinal share | 80.7 % | 81.1 % |
+| oracle is a genuinely different lateral mode (\|Δlat\| > 2 m) | **12/881 (1.4 %)** | **17/881 (1.9 %)** |
+
+Even on sharp-curvature windows (\|net heading@2s\| > 20°, n = 122) the ratio is still
+1.89 / 1.63 — the lateral spread never exceeds the longitudinal one. The grey vocabulary
+shadow *does* fan out left/right; refinement + scoring collapse it onto a near-collinear
+bundle whose members differ in **how far**, not **which way**. On straight windows the
+lateral spread of the live modes is **1.4 cm**.
+
+**Consequence, and it is decision-relevant.** A strategic goal can only disambiguate a
+*lateral* mode confusion, and there are ~15 of those in the whole val set. The other
+~98 % of the selection gap is longitudinal — a **planning-cost / target-speed** problem,
+not a goal-vocabulary one. `ep09 f167` is the one genuine left-vs-right mode error in the
+set (selected left, GT right, oracle 0.62 m, CV 0.73 m): real, dramatic, and rare.
+
+**(b) The tactical head is longitudinally blind — and `graft_maneuver=True` makes that
+causal, not cosmetic.** Over the same canonical 881 windows
+(`results/planfan_clips_tactical_head_val.json`), against both published kinematic mints
+(`refb_labels.classify_maneuver` v1 / `_v2`):
+
+| | base | XL |
+|---|---|---|
+| predicted `accelerate` | **0 / 881** | **0 / 881** |
+| predicted `brake_stop` | 7 / 881 (0.8 %) | 4 / 881 (0.45 %) |
+| GT_v2 longitudinal (accel ∪ brake) | 195 / 881 (22.1 %) | same |
+| GT longitudinal but head says something lateral | **21.8 %** | **21.9 %** |
+| overall agreement v1 / v2 | 0.746 / 0.708 | 0.744 / 0.708 |
+
+The decoder adds `maneuver_to_anchor(log_softmax(maneuver_logits))` to the anchor logits
+that make the selection (§1 fact 4). That prior is ~99.5 % lateral-or-neutral, so on the
+22 % of windows where the ego is deliberately changing speed it contributes **no**
+longitudinal information and cannot down-weight a cruising anchor. Combined with §1
+fact 3 — the score is computed on the *un-refined* anchor and the denoise passes'
+confidences are discarded — **there is no longitudinal signal anywhere in the selection
+path.** That is a mechanism for the 41–45 % `frac_sel_2x_worse`, not just a correlate.
+
+**(c) The vocabulary is *sparse*, not short, at high speed — a corrected read.** In
+`high_speed_ep31_f031` (36.5 m/s → 73 m in 2 s) the grey shadow *looks* like it stops
+near 40 m, and the first reading of the panel was "the anchors cannot reach". That is
+**wrong**, and the panel is what led it astray: the anchors reach **94 m** in both arms;
+their 2 s reach is median 30 m, p90 67–71 m, and only **14–16 % of anchors clear 60 m**.
+The shadow is drawn at α≈46 / width 1, so what the eye reads as an edge is where the
+anchor *density* falls off. The honest statement is that the top speed tertile is served
+by the sparse tail of the vocabulary (vocab-oracle 0.515 m there, refined 0.13–0.23 m),
+not that it is out of range. **Lesson for the panel: the shadow layer encodes density,
+not extent — do not read a boundary off it.**
+
+**(d) Cruise is where we lose to CV, with a near-perfect plan sitting in the fan.**
+`cruise_steady ep15 f135`: base ADE 0.82 m, **oracle-in-fan 0.08 m**, CV 0.37 m — and
+**36/49** frames of that clip are worse than constant velocity, in *both* arms. The error
+bars form a clean longitudinal ladder (nothing measurable at 0.5/1 s, 1.1 m at 1.5 s,
+1.6 m at 2 s) on a straight snowy road: right shape, wrong speed. Refinement did the work
+(vocab-oracle 1.11 m → 0.08 m) and the score threw it away.
+
+**(e) base vs XL, visually.** Indistinguishable in kind. XL's fan is genuinely better
+(clip-mean oracle-in-fan lower on 6 of 9 windows; val-wide 0.164 vs 0.191) and its
+selection is not (0.4714 vs 0.4728), so the extra 128 anchors buy proposals nobody picks —
+`frac_sel_2x_worse` is *higher* for XL (0.454 vs 0.411). The 128-vs-256 difference the
+clips make visible is a wider fan under the same broken ranker.
+
+### Artifacts
+
+⚠️ PhysicalAI-AV imagery is internal-dev-only — these renders never leave the pod/repo.
+
+| artifact | eval pod | repo |
+|---|---|---|
+| 18 × `planfan_<category>_ep<NN>_f<NNN>_{base,xl}.mp4` | `results/videos/planfan-clips/` | `Research/videos-2026-07-21/` (mirror, `*.mp4` gitignored) |
+| 18 × `..._ANCHOR.png` (the scored window as a still) | same | tracked |
+| `planfan_clips_windows.json` (selection + reason) | `results/` | `taniteval/results/` |
+| `planfan_clips_summary.json` (per-clip sel/oracle/vocab/CV, 2×-worse and lost-to-CV counts) | `results/` | `taniteval/results/` |
+| `planfan_clips_tactical_head_val.json` (the 881-window tactical-head read) | `results/` | `taniteval/results/` |
+| `planfan_clips_refc-{base,xl}-30k.pt` (decoded clip records) | `results/` | pod only (regenerable in ~1 min GPU) |
+
+```bash
+# eval pod — the whole thing, ~4 min (GPU only for the two dumps)
+PYTHONPATH=/root/taniteval:/root/TanitAD/stack python3 -m taniteval.plan_fan_clips select
+PYTHONPATH=/root/taniteval:/root/TanitAD/stack python3 -m taniteval.plan_fan_clips dump --arm refc-base-30k
+PYTHONPATH=/root/taniteval:/root/TanitAD/stack python3 -m taniteval.plan_fan_clips dump --arm refc-xl-30k
+PYTHONPATH=/root/taniteval:/root/TanitAD/stack python3 -m taniteval.plan_fan_clips render
+# the anchor-reach numbers in (c):
+python3 -c "import torch;a=torch.load('/root/models/refc-xl-30k/ckpt.pt',map_location='cpu',weights_only=False)['model']['decoder.anchors'].float()[:,-1,0];print(a.max(),a.quantile(.9),a.median(),(a>60).float().mean())"
+```
+
+⚠️ **Pod drift found in passing:** `tanitad-eval:/root/TanitAD/stack/scripts/refb_labels.py`
+predates the v2 curvature-gated mint (no `classify_maneuver_v2`). The 881-window tactical
+read loaded the repo copy by path rather than overwriting the pod's stack; the pod is
+still behind.

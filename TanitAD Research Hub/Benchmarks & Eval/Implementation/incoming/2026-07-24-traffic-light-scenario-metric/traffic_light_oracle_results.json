@@ -1,0 +1,82 @@
+{
+  "exp": "sc14-traffic-light-design-oracle",
+  "note": "DESIGN-ORACLE telemetry (archetypal policies), NOT our model (P8). Synthetic fixtures.",
+  "scenario": "traffic_light (SC-14, W-03 family)",
+  "rows": {
+    "red": {
+      "rule_barrier": {
+        "TLC": 1.0,
+        "red_entry_gate": 1.0,
+        "stop_quality": 1.0,
+        "green_flow": 1.0,
+        "stop_margin_m": 3.684,
+        "peak_decel_mps2": 0.986,
+        "OKRI": 21.0061,
+        "TMS": 0.3183,
+        "LAL_s": 3.1,
+        "entered_on_red": false,
+        "phantom_brake": false
+      },
+      "soft_prior": {
+        "TLC": 0.0,
+        "red_entry_gate": 0.0,
+        "stop_quality": 0.0,
+        "green_flow": 1.0,
+        "stop_margin_m": null,
+        "peak_decel_mps2": 3.0,
+        "OKRI": 57.0665,
+        "TMS": 0.1395,
+        "LAL_s": -2.2,
+        "entered_on_red": true,
+        "phantom_brake": false
+      }
+    },
+    "green": {
+      "rule_barrier": {
+        "TLC": 1.0,
+        "red_entry_gate": 1.0,
+        "stop_quality": 1.0,
+        "green_flow": 1.0,
+        "stop_margin_m": null,
+        "peak_decel_mps2": 0.0,
+        "OKRI": 89.7731,
+        "TMS": 0.8551,
+        "LAL_s": 0.0,
+        "entered_on_red": false,
+        "phantom_brake": false
+      },
+      "soft_prior": {
+        "TLC": 0.4211,
+        "red_entry_gate": 1.0,
+        "stop_quality": 1.0,
+        "green_flow": 0.4211,
+        "stop_margin_m": null,
+        "peak_decel_mps2": 0.0,
+        "OKRI": 33.5758,
+        "TMS": 0.0318,
+        "LAL_s": 0.0,
+        "entered_on_red": false,
+        "phantom_brake": true
+      }
+    }
+  },
+  "red_run_rate": {
+    "rule_barrier": 0.0,
+    "soft_prior": 1.0
+  },
+  "temptation_sweep_soft_prior_line_speed_mps": {
+    "0.0": 2.4,
+    "4.0": 5.04,
+    "8.0": 7.68,
+    "12.0": 9.0
+  },
+  "checks": {
+    "red_barrier_TLC_1": true,
+    "red_soft_prior_TLC_0": true,
+    "green_barrier_TLC_1": true,
+    "green_soft_prior_penalized": true,
+    "red_run_rate_barrier_0": true,
+    "red_run_rate_soft_1": true,
+    "all_pass": true
+  }
+}

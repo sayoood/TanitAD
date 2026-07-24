@@ -1,0 +1,48 @@
+{
+  "experiment": "dagger_planner_ft — closed-loop-aware planner fine-tune, no-renderer mechanism proof",
+  "date": "2026-07-23",
+  "evidence_class": "MEASURED",
+  "verdict": "DAGGER_HURTS",
+  "decision": "Do NOT promote DAgger/rollout-in-the-loop as the next planner lever on this evidence; keep the planner-lever budget on v4.2's schedule fix; defer a decision-grade DAgger test to AlpaSim (faithful on-policy states) + a gentler/consequence-aware objective. Maps onto the pre-registered NEUTRAL/HURTS branch.",
+  "model": {
+    "key": "flagship-30k",
+    "alias": "flagship4b-speedjerk-30k (deployed v1)",
+    "ckpt_step": 29999,
+    "hf": "Sayood/tanitad-flagship-4b-speedjerk",
+    "tactical_head": "unimodal wp_heads {5,10,15,20} (anchor_tactical=False), 22,736,141 params"
+  },
+  "harness": "taniteval/taniteval/closedloop.py (task #21, no-renderer imagination-in-the-loop) — REUSED read-only, NOT modified",
+  "arms": {
+    "A0_baseline": "v1 tactical, unmodified (open-loop trained)",
+    "A1_bc_ft": "v1 tactical fine-tuned on open-loop demos only (control for training effort)",
+    "A2_dagger_ft": "v1 tactical fine-tuned on demos UNION on-policy recovery data (2 DAgger rounds)"
+  },
+  "expert": "RECOVERY: logged GT future re-expressed in the drifted ego frame at the on-policy bicycle pose; validated == gt_ego_waypoints at origin (dagger_probe.py, max|err| 0.0)",
+  "crossfit": "2-fold by episode parity; every eval window OUT-OF-SAMPLE; pooled over 12 held-out eps",
+  "estimator": "episode_cluster_bootstrap / paired (taniteval/ci.py), 2000 boot",
+  "n_windows": 265,
+  "n_episodes": 12,
+  "val": "physicalai-val-0c5f7dac3b11 ep_00000..ep_00011 (held-out subset; same as the imagination proof)",
+  "headline_paired_A2_dagger_minus_A0_baseline_headonly": {
+    "closed_ade2s_delta_m": 0.266, "closed_ade2s_ci": [0.008, 0.550], "separated": true,
+    "divergence_delta": 0.166, "divergence_ci": [0.030, 0.313], "separated_div": true,
+    "lateral_offroad_proxy_delta_m": 0.548, "lateral_ci": [0.155, 0.994], "separated_lat": true,
+    "open_loop_ade2s_delta_m": 0.107, "open_loop_matched": true,
+    "A2_minus_A1_closed_delta_m": 0.092, "A2_minus_A1_separated": true
+  },
+  "sanity_check": "A0 baseline reproduces the imagination proof exactly: closed_bike ADE@2s 1.720 vs 1.7196; open-loop head ADE 3.147 vs plan_direct 3.1469",
+  "compute": {
+    "device": "NVIDIA GeForce RTX 4060",
+    "venv": "C:/Users/Admin/venvs/tanitad (torch 2.11.0+cu128)",
+    "collect_batch": 8,
+    "wall_s_per_run": 193.7,
+    "runs": ["head-only (primary, dagger_result.json)", "full-head (ablation, dagger_result_fullhead.json)"]
+  },
+  "caveats": [
+    "SELF-REFERENTIAL harness (WM is both simulator and state estimator) -> MECHANISM proof, NOT a real off-road/safety rate; AlpaSim needed for the rate.",
+    "KINEMATIC (no real road boundary) -> off-road APPROXIMATED as large lateral deviation@2s (proxy).",
+    "n=12 local val eps; cross-fit paired design is the robust part, absolute rates wide.",
+    "pure DAgger, single recovery-label family; consequence-aware objective untested (pre-registered redirect)."
+  ],
+  "staged_not_pushed": true
+}

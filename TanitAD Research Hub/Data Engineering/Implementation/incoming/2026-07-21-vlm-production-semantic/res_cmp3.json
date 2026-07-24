@@ -1,0 +1,354 @@
+{
+ "out_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\ablate",
+ "arms": [
+  "ab_base",
+  "ab_dense_hist"
+ ],
+ "enums_source": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/ablate\\enums.json",
+ "comparison": {
+  "n_shared_windows": 100,
+  "n_episodes": 40,
+  "arms": [
+   "ab_base",
+   "ab_dense_hist"
+  ],
+  "cost": {
+   "ab_base": {
+    "frames_plan": "base",
+    "image_px": 448,
+    "n_images_mean": 5.4,
+    "n_future_frames_mean": 2.8,
+    "n_future_frames_max": 4,
+    "hist_offsets_s_example": [
+     0.0
+    ],
+    "future_offsets_s_example": [
+     2.0,
+     5.0,
+     10.0,
+     15.0
+    ],
+    "promptA_tokens_mean": 1983.2,
+    "genA_tokens_mean": 124.1,
+    "genA_seconds_median": 4.867,
+    "genB_seconds_median": null,
+    "peak_vram_gib": 17.0,
+    "passA_parse_fail": 0.0,
+    "passB_truncation": null
+   },
+   "ab_dense_hist": {
+    "frames_plan": "dense_hist",
+    "image_px": 448,
+    "n_images_mean": 7.0,
+    "n_future_frames_mean": 2.8,
+    "n_future_frames_max": 4,
+    "hist_offsets_s_example": [
+     0.0
+    ],
+    "future_offsets_s_example": [
+     2.0,
+     5.0,
+     10.0,
+     15.0
+    ],
+    "promptA_tokens_mean": 2317.6,
+    "genA_tokens_mean": 132.5,
+    "genA_seconds_median": 5.113,
+    "genB_seconds_median": null,
+    "peak_vram_gib": 17.132,
+    "passA_parse_fail": 0.01,
+    "passB_truncation": null
+   }
+  },
+  "route": {
+   "ab_base": {
+    "turn_detection_recall": 0.75,
+    "direction_accuracy_given_detected": 0.4286,
+    "n_detected_lr": 21,
+    "acc3_over_all": 0.7816,
+    "acc3_ci": {
+     "mean": 0.7816,
+     "lo": 0.6628,
+     "hi": 0.8791,
+     "ci95": 0.1082,
+     "se": 0.0554,
+     "n_windows": 87,
+     "n_episodes": 37,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "left_share_of_turn_calls": 0.6667
+   },
+   "ab_dense_hist": {
+    "turn_detection_recall": 0.75,
+    "direction_accuracy_given_detected": 0.381,
+    "n_detected_lr": 21,
+    "acc3_over_all": 0.7701,
+    "acc3_ci": {
+     "mean": 0.7701,
+     "lo": 0.6552,
+     "hi": 0.8681,
+     "ci95": 0.1065,
+     "se": 0.056,
+     "n_windows": 87,
+     "n_episodes": 37,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "left_share_of_turn_calls": 0.619
+   }
+  },
+  "slot_agreement": {
+   "passA.road_geometry": {
+    "kappa": 0.8265,
+    "observed_agreement": 0.92,
+    "expected_agreement": 0.5389,
+    "n": 100
+   }
+  },
+  "paired_route_acc3": {
+   "arm_a": "ab_base",
+   "arm_b": "ab_dense_hist",
+   "mean_a": 0.7816,
+   "mean_b": 0.7701,
+   "mcnemar": {
+    "b_a_only": 2,
+    "c_b_only": 1,
+    "n_discordant": 3,
+    "p_value": 1.0,
+    "test": "mcnemar_exact_binomial"
+   },
+   "n": 87,
+   "n_episodes": 37
+  }
+ },
+ "ab_base": {
+  "n_records": 100,
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "val_build": "physicalai-val-f1b378f295ae",
+  "frames_plan": "base",
+  "image_px": 448,
+  "enum_order": "as_written",
+  "n_episodes": 40,
+  "pass_A": {
+   "n_windows": 100,
+   "outcome_counts": {
+    "ok": 100
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "truncation_rate": 0.0,
+   "confidence": {
+    "distribution": {
+     "high": 97,
+     "medium": 3
+    },
+    "modal_share": 0.97,
+    "n_distinct": 2,
+    "degenerate": true,
+    "float_values_seen": null,
+    "rule": "degenerate = one answer on >=90 % of windows; such a field cannot threshold anything and should be dropped"
+   },
+   "evidence": {
+    "n_with_evidence": 100,
+    "n_unique_strings": 93,
+    "unique_rate": 0.93,
+    "prompt_copy_rate_all": 0.0,
+    "prompt_copy_rate_turn_calls": 0.0,
+    "n_turn_calls": 27,
+    "top_copied_fragments": {},
+    "detector": "6-word n-gram overlap with the shipped prompt text"
+   },
+   "event_times": {
+    "route_event_time_s": {
+     "n": 100,
+     "in_offered_set_rate": 1.0,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    },
+    "geometry_event_time_s": {
+     "n": 100,
+     "in_offered_set_rate": 1.0,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    }
+   },
+   "route_crosscheck": {
+    "CAVEAT": "CROSS-CHECK ONLY \u2014 ROUTE stays kinematic; these numbers monitor a closed finding and may never mint a label",
+    "n_gt_valid": 87,
+    "n_gt_turn": 28,
+    "turn_detection_recall": 0.75,
+    "direction_accuracy_given_detected": 0.4286,
+    "direction_n_detected_lr": 21,
+    "direction_ci": {
+     "mean": 0.4286,
+     "lo": 0.2381,
+     "hi": 0.6316,
+     "ci95": 0.1967,
+     "se": 0.0985,
+     "n_windows": 21,
+     "n_episodes": 12,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "acc3_over_all": 0.7816,
+    "fisher": {
+     "table_gt_left": {
+      "said_left": 6,
+      "said_right": 4
+     },
+     "table_gt_right": {
+      "said_left": 8,
+      "said_right": 3
+     },
+     "odds_ratio": 0.562,
+     "p_two_sided": 0.65944,
+     "acc_given_detected_gt_left": 0.6,
+     "acc_given_detected_gt_right": 0.2727
+    },
+    "left_share_of_predicted_turns": 0.6667,
+    "left_share_of_gt_turns": 0.4643,
+    "accuracy_by_confidence_band": {
+     "high": {
+      "n": 84,
+      "correct": 66,
+      "acc3": 0.7857
+     },
+     "medium": {
+      "n": 3,
+      "correct": 2,
+      "acc3": 0.6667
+     }
+    }
+   },
+   "prompt_tokens_mean": 1983.2,
+   "gen_tokens_mean": 124.1,
+   "gen_tokens_p95": 141.3,
+   "gen_seconds_median": 4.867,
+   "peak_vram_gib": 17.0
+  }
+ },
+ "ab_dense_hist": {
+  "n_records": 100,
+  "prompt_version": "vlmsem-2026-07-21-b",
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "val_build": "physicalai-val-f1b378f295ae",
+  "frames_plan": "dense_hist",
+  "image_px": 448,
+  "enum_order": "as_written",
+  "n_episodes": 40,
+  "pass_A": {
+   "n_windows": 100,
+   "outcome_counts": {
+    "ok": 99,
+    "no_json": 1
+   },
+   "parse_failure_rate": 0.01,
+   "enum_violation_rate": 0.0,
+   "truncation_rate": 0.01,
+   "confidence": {
+    "distribution": {
+     "high": 96,
+     "medium": 3,
+     "missing": 1
+    },
+    "modal_share": 0.96,
+    "n_distinct": 3,
+    "degenerate": true,
+    "float_values_seen": null,
+    "rule": "degenerate = one answer on >=90 % of windows; such a field cannot threshold anything and should be dropped"
+   },
+   "evidence": {
+    "n_with_evidence": 99,
+    "n_unique_strings": 92,
+    "unique_rate": 0.9293,
+    "prompt_copy_rate_all": 0.0,
+    "prompt_copy_rate_turn_calls": 0.0,
+    "n_turn_calls": 28,
+    "top_copied_fragments": {},
+    "detector": "6-word n-gram overlap with the shipped prompt text"
+   },
+   "event_times": {
+    "route_event_time_s": {
+     "n": 100,
+     "in_offered_set_rate": 0.94,
+     "null_rate": 0.01,
+     "fabricated_rate": 0.05,
+     "top_fabricated": {
+      "6.0": 5
+     }
+    },
+    "geometry_event_time_s": {
+     "n": 100,
+     "in_offered_set_rate": 0.94,
+     "null_rate": 0.01,
+     "fabricated_rate": 0.05,
+     "top_fabricated": {
+      "6.0": 5
+     }
+    }
+   },
+   "route_crosscheck": {
+    "CAVEAT": "CROSS-CHECK ONLY \u2014 ROUTE stays kinematic; these numbers monitor a closed finding and may never mint a label",
+    "n_gt_valid": 87,
+    "n_gt_turn": 28,
+    "turn_detection_recall": 0.75,
+    "direction_accuracy_given_detected": 0.381,
+    "direction_n_detected_lr": 21,
+    "direction_ci": {
+     "mean": 0.381,
+     "lo": 0.2222,
+     "hi": 0.5556,
+     "ci95": 0.1667,
+     "se": 0.0864,
+     "n_windows": 21,
+     "n_episodes": 12,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "acc3_over_all": 0.7701,
+    "fisher": {
+     "table_gt_left": {
+      "said_left": 4,
+      "said_right": 4
+     },
+     "table_gt_right": {
+      "said_left": 9,
+      "said_right": 4
+     },
+     "odds_ratio": 0.444,
+     "p_two_sided": 0.64582,
+     "acc_given_detected_gt_left": 0.5,
+     "acc_given_detected_gt_right": 0.3077
+    },
+    "left_share_of_predicted_turns": 0.619,
+    "left_share_of_gt_turns": 0.4643,
+    "accuracy_by_confidence_band": {
+     "high": {
+      "n": 83,
+      "correct": 66,
+      "acc3": 0.7952
+     },
+     "medium": {
+      "n": 3,
+      "correct": 1,
+      "acc3": 0.3333
+     },
+     "none": {
+      "n": 1,
+      "correct": 0,
+      "acc3": 0.0
+     }
+    }
+   },
+   "prompt_tokens_mean": 2317.6,
+   "gen_tokens_mean": 132.5,
+   "gen_tokens_p95": 147.1,
+   "gen_seconds_median": 5.113,
+   "peak_vram_gib": 17.132
+  }
+ }
+}

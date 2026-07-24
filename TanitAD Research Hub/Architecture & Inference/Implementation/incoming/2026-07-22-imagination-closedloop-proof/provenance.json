@@ -1,0 +1,46 @@
+{
+  "experiment": "imagination-in-the-loop vs single-shot open-loop closed-loop drift",
+  "date": "2026-07-22",
+  "evidence_class": "MEASURED",
+  "model": {
+    "key": "flagship-30k",
+    "alias": "flagship4b-speedjerk-30k (deployed v1)",
+    "ckpt_step": 29999,
+    "hf": "Sayood/tanitad-flagship-4b-speedjerk",
+    "md5_step_verified": 29999
+  },
+  "harness": "taniteval/taniteval/closedloop.py (no-renderer, imagination-in-loop)",
+  "arm_A_open_plan_bike": "plan ONCE on real latent, track frozen plan open-loop (predictor never stepped)",
+  "arm_B_closed_bike": "re-plan every 0.1s on the model's own imagined latent",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py)",
+  "n_windows": 265,
+  "n_episodes": 12,
+  "val": "physicalai-val-0c5f7dac3b11 ep_00000..ep_00011 (held-out subset)",
+  "compute": {
+    "device": "NVIDIA GeForce RTX 4060",
+    "batch": 8,
+    "episodes_requested": 12,
+    "val_subset": "physicalai-val-0c5f7dac3b11 ep_00000..ep_00011 (held-out)",
+    "note": "CHEAP no-renderer proof; 12-ep val subset, not the full 40"
+  },
+  "headline": {
+    "A_open_plan_bike_ade@2s": 1.9325,
+    "A_ci": [
+      1.6319,
+      2.2749
+    ],
+    "B_closed_bike_ade@2s": 1.7196,
+    "B_ci": [
+      1.4437,
+      2.0401
+    ],
+    "paired_delta_B_minus_A": -0.213,
+    "paired_ci": [
+      -0.3413,
+      -0.0527
+    ],
+    "separated": true,
+    "verdict": "IMAGINATION_HELPS"
+  },
+  "wall_s": 32.4
+}

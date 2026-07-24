@@ -1,0 +1,61 @@
+[15:59:14] rig table: 2400 clips -> rig_a 642 rig_b 1758 unknown 0
+[15:59:16] selected: rig_a 300 rig_b 300 pai_val 80 comma 90
+[15:59:21] encoder loaded: 87.0M enc + 0.1M readout, state_dim 2048, ckpt step 29999
+[15:59:22] encode 0/770 -> pai_a_00004.pt z(198, 2048)
+[15:59:55] encode 25/770 -> pai_a_00092.pt z(197, 2048)
+[16:00:25] encode 50/770 -> pai_a_00154.pt z(199, 2048)
+[16:00:57] encode 75/770 -> pai_a_00263.pt z(199, 2048)
+[16:01:30] encode 100/770 -> pai_a_00353.pt z(199, 2048)
+[16:02:02] encode 125/770 -> pai_a_00429.pt z(199, 2048)
+[16:02:35] encode 150/770 -> pai_a_00501.pt z(199, 2048)
+[16:03:07] encode 175/770 -> pai_a_00559.pt z(199, 2048)
+[16:03:38] encode 200/770 -> pai_a_00660.pt z(198, 2048)
+[16:04:10] encode 225/770 -> pai_a_00741.pt z(199, 2048)
+[16:04:41] encode 250/770 -> pai_a_00865.pt z(197, 2048)
+[16:05:13] encode 275/770 -> pai_a_00962.pt z(198, 2048)
+[16:05:47] encode 300/770 -> pai_b_00000.pt z(199, 2048)
+[16:06:21] encode 325/770 -> pai_b_00035.pt z(199, 2048)
+[16:06:52] encode 350/770 -> pai_b_00071.pt z(199, 2048)
+[16:07:23] encode 375/770 -> pai_b_00109.pt z(199, 2048)
+[16:07:55] encode 400/770 -> pai_b_00148.pt z(199, 2048)
+[16:08:26] encode 425/770 -> pai_b_00183.pt z(199, 2048)
+[16:08:58] encode 450/770 -> pai_b_00215.pt z(199, 2048)
+[16:09:29] encode 475/770 -> pai_b_00248.pt z(199, 2048)
+[16:10:01] encode 500/770 -> pai_b_00279.pt z(199, 2048)
+[16:10:32] encode 525/770 -> pai_b_00313.pt z(199, 2048)
+[16:11:04] encode 550/770 -> pai_b_00346.pt z(199, 2048)
+[16:11:36] encode 575/770 -> pai_b_00390.pt z(199, 2048)
+[16:12:08] encode 600/770 -> pai_val_00000.pt z(199, 2048)
+[16:12:39] encode 625/770 -> pai_val_00025.pt z(197, 2048)
+[16:13:10] encode 650/770 -> pai_val_00050.pt z(199, 2048)
+[16:13:42] encode 675/770 -> pai_val_00075.pt z(199, 2048)
+[16:14:27] encode 700/770 -> comma_00020.pt z(300, 2048)
+[16:15:11] encode 725/770 -> comma_00045.pt z(300, 2048)
+[16:15:54] encode 750/770 -> comma_00070.pt z(300, 2048)
+[16:16:27] encode stage done
+[16:16:27] rig-A: train 255 clips / in-rig heldout 45 clips; rig-B eval 300 clips
+[16:16:39] === Experiment #2: rig-A -> rig-B ===
+[16:17:45] [idm] epoch 1/10 train_loss 1.2407
+[16:17:53] [idm] epoch 2/10 train_loss 0.6167
+[16:18:00] [idm] epoch 3/10 train_loss 0.4767
+[16:18:09] [idm] epoch 4/10 train_loss 0.3742
+[16:18:17] [idm] epoch 5/10 train_loss 0.3117
+[16:18:25] [idm] epoch 6/10 train_loss 0.2772
+[16:18:33] [idm] epoch 7/10 train_loss 0.2589
+[16:18:41] [idm] epoch 8/10 train_loss 0.2486
+[16:18:49] [idm] epoch 9/10 train_loss 0.2439
+[16:18:57] [idm] epoch 10/10 train_loss 0.2427
+[16:18:59] === Experiment #3: PhysicalAI -> comma2k19 ===
+[16:20:14] [idm] epoch 1/10 train_loss 0.9455
+[16:20:31] [idm] epoch 2/10 train_loss 0.3171
+[16:20:47] [idm] epoch 3/10 train_loss 0.2195
+[16:21:04] [idm] epoch 4/10 train_loss 0.1865
+[16:21:21] [idm] epoch 5/10 train_loss 0.1684
+[16:21:37] [idm] epoch 6/10 train_loss 0.1590
+[16:21:53] [idm] epoch 7/10 train_loss 0.1525
+[16:22:10] [idm] epoch 8/10 train_loss 0.1488
+[16:22:26] [idm] epoch 9/10 train_loss 0.1465
+[16:22:42] [idm] epoch 10/10 train_loss 0.1454
+[16:22:43] WROTE /workspace/tmp/idm/results.json
+[16:22:43] VERDICT {"rigA_to_rigB": {"speed_r2": -2.4653742076653193, "yaw_r2": -0.10943787801389959, "steer_r2_secondary": 0.5234904734119725, "cross_ade_2s": 17.471145962442705, "in_domain_ade_2s": 4.356984336886766, "ade_ratio": 4.009917092088174, "speed_ok": false, "yaw_ok": false, "ade_ok": false, "PASS": false}, "physicalai_to_comma2k19": {"speed_r2": 0.6572436313182126, "yaw_r2": 0.00047288938804967984, "steer_r2_secondary": 0.5743300335006454, "cross_ade_2s": 6.556005759742018, "in_domain_ade_2s": 2.7330179205735945, "ade_ratio": 2.3988155036927346, "speed_ok": false, "yaw_ok": false, "ade_ok": false, "PASS": false}}
+[16:22:43] IDM_PROOF_DONE

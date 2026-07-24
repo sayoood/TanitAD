@@ -1,0 +1,24 @@
+{
+  "artifact": "Angle 2 of 3 — closed-loop training for DRIVING: the driving state of the art (2022-2026). Cited per-method survey (CARLA RL/model-based leaders; nuPlan/Waymo closed-loop planning; offline RL from logs; world-model-as-training-environment) + a decision-useful HYPOTHESIS for TanitAD's logs-only / no-live-sim regime.",
+  "author": "TanitAD research subagent (Angle 2)",
+  "compiled_local_berlin": "2026-07-23 (Europe/Berlin, UTC+2)",
+  "method": "web research only (WebSearch + WebFetch). No pod/GPU use. No sub-agent fan-out. No deep-research harness.",
+  "deliverable": "angle2_driving_sota.md (this dir)",
+  "evidence_class": "PUBLISHED (all external facts cited to paper + year + arXiv/venue) + HYPOTHESIS (all TanitAD-specific inferences explicitly tagged). No claim is INHERITED-unverified.",
+  "key_findings": [
+    "Across CARLA/nuPlan/Waymo, the closed-loop lever is training on executed rollouts (RL / closed-loop IL / offline-RL), NOT open-loop imitation; open-loop accuracy is proven misaligned with closed-loop driving (PDM CoRL2023; offline study arXiv 2508.07029).",
+    "Logs-only, no-sim: strongest published closed-loop track record = offline RL with conservatism. CQL vs best-BC on WOMD+Waymax = 54.4% vs 17.3% success, 4.1% vs 31.1% collision, 0% off-road (arXiv 2508.07029) — fixes exactly our off-road-departure failure.",
+    "nuPlan uncomfortable finding: rule-based PDM-Closed (~92 CLS-R) still beats the best LEARNED planner (CaRL 90.6, arXiv 2504.17838) in closed loop; the gap narrows only under more realistic reactive agents (2026 work, directional).",
+    "World-model-as-RL-ENVIRONMENT for a driving policy has NO established published track record: GAIA-1/2, Vista, DriveDreamer, DriveArena are used for data-gen / action-conditioned prediction / reward-scoring / closed-loop EVALUATION, not policy RL. Think2Drive trains a policy inside a learned WM but on PRIVILEGED compact state with a live CARLA (not pixels, not logs-only). WM-as-RL-env wins so far are in ROBOTICS/VLA, not driving.",
+    "Recommendation: run offline-RL-from-logs (CQL/IQL re-ranking the anchored fan) and WM/forward-model SCORING (PDM/Vista-style) BEFORE staking a GPU-week on WM-imagined RL, whose known divergence mode = our WM's ~3x OOD. Pre-registered 4-arm discriminating experiment specified in the .md."
+  ],
+  "primary_sources_fetched": [
+    "arxiv.org/html/2508.07029 (offline vs imitation, CQL closed-loop numbers)",
+    "arxiv.org/html/2504.17838v1 (CaRL recipe + nuPlan vs PDM-Closed)",
+    "arxiv.org/html/2402.16720v1 (Think2Drive DreamerV3 recipe, privileged BEV)",
+    "arxiv.org/html/2405.17398v1 (Vista reward-scoring, not RL training)",
+    "arxiv.org/abs/2408.00415 (DriveArena = eval platform, not RL trainer)"
+  ],
+  "staging": "STAGED (git add) into working tree, NOT committed, NOT pushed, per AGENT_OPERATING_STANDARD.",
+  "caveats": "2026 arXiv IDs (2510.x, 2511.x, 2602.x, 2604.x) are beyond the Jan-2026 knowledge cutoff and surfaced by search only — cited as directional, not deeply verified. Several closed-loop magnitudes are single-study (esp. the Waymax CQL-vs-BC comparison); transfer to TanitAD's NuRec/PhysicalAI regime is HYPOTHESIS."
+}

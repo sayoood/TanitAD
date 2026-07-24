@@ -10,7 +10,9 @@
 2. **v2.1 fixes it additively.** Coverage **26.0 % → 81.9 %**; genuine turns the strategic head can never
    learn **63.1 % → 8.9 %**. v2 stays byte-identical and callable, so shipped runs remain reproducible.
 3. **The VLM (Cosmos-Reason2-8B, future frames only) is a good route-event DETECTOR and a useless
-   direction reader.** IS-A-TURN agreement with v2.1 **89.3 %**; left/right agreement on the turns they
+   direction reader.** IS-A-TURN agreement with v2.1 **89.3 %** — ⚠️ **RETRACTED, see the correction in
+   §"The finding that matters"; the quotable figure is turn RECALL ~78 % (77–81 % across three
+   independent measurements)**; left/right agreement on the turns they
    both flag **52.7 %**, i.e. chance, with a 2.24:1 left prior against the road's own 0.90:1. Use it to
    find and mask events, never as a direction label.
 4. **18 overlay videos** show all four readings per frame (old / new / VLM / model) — a wrong label is
@@ -99,9 +101,36 @@ pod3. **400 windows, 80 episodes, 0 enum violations, 4.2 s/window.**
 
 | | agreement | n |
 |---|---|---|
-| **IS-A-TURN** (turn vs straight) | **89.3 %** | 338 |
+| **IS-A-TURN** (turn vs straight) | ⚠️ **89.3 %** — see correction below | 338 |
 | **DIRECTION**, both call it a turn | **52.7 %** | 112 |
 | direction on tight turns (R ≤ 60 m) | 52.7 % | 112 |
+
+> ⚠️ **CORRECTION 2026-07-21 — the 89.3 % must not be quoted as detector quality. Two problems.**
+>
+> **(1) It is AGREEMENT, not RECALL.** Agreement counts every window where the VLM and v2.1 give the
+> same turn/straight verdict — *including all the straight-straight matches*. On a corpus that is
+> **~74 % straight**, a model that answered "straight" every single time would score ~74 % agreement
+> while detecting **zero** turns. Quoting it as evidence of a "good event detector"
+> (`V35_DESIGN.md:86`, `:406`) overstates it. The decision-relevant statistic is **recall on actual
+> turns**, measured fresh in the Reason1-vs-Reason2 head-to-head: **76.8 % (63/82)**.
+>
+> **(2) The 89.3 % itself does not reproduce.** Re-scoring pod3's raw `vlm_crossval.json` rows gives
+> **80.6 %** under every denominator tried. The 52.7 % direction figure reproduces to four digits from
+> the *same rows with the same code*, so this is not a scoring-convention artefact. Per CLAUDE.md the
+> raw rows win.
+>
+> **Quotable set:** direction is chance (52.7 % banked, **57.1 %** replicated fresh on a different val
+> build, CI [0.400, 0.745] — contains 0.5); turn **recall 76.8 %** (63/82, fresh build) and **80.6 %**
+> (112/139, pod3 banked build).
+> Source: `Data Engineering/Research/2026-07-20-cosmos-reason1-vs-reason2-headtohead.md`.
+>
+> **AMENDED 2026-07-21 — two fixes to this block.** (a) The 80.6 % above was written as "turn
+> *agreement*"; the head-to-head's own §6 table lists it as **turn-detection RECALL (112/139)**, in the
+> same row as the 76.8 % (63/82). Both are recall — corrected here so the distinction this correction
+> exists to make is not itself blurred. (b) A **third** independent measurement has since landed —
+> **78.6 %** (enum-order probe, 200 held-out windows, 40 episodes). The three cluster at **77–81 %**;
+> quote **~78 %**. Source:
+> `Data Engineering/Research/2026-07-21-cosmos-reason2-production-semantic-labeling.md` §1.
 
 53 of 112 shared turns are **opposite-direction** calls. 50 % is chance. The VLM's left:right prior is
 **2.24** against the corpus's **0.90** — a model prior, not a road.
@@ -136,8 +165,11 @@ Throughput 28 s/window vs Pass A's 4.2 s. **Pass B was still running at hand-off
 
 ### Recommendation for v3 labels
 - ROUTE **direction**: kinematic v2.1, provenance `kinematic`. Not VLM.
-- ROUTE **event detection / mask**: VLM Pass A is a usable second opinion at 89.3 % — good for flagging
-  windows worth a human look, and for the `gray_zone` band the kinematics refuse.
+- ROUTE **event detection / mask**: VLM Pass A is a usable second opinion at **turn recall ~78 %**
+  (77–81 % across three independent measurements — the **89.3 %** originally quoted here is retracted, see
+  the correction in §"The finding that matters" and
+  `Data Engineering/Research/2026-07-21-cosmos-reason2-production-semantic-labeling.md` §1) — good for
+  flagging windows worth a human look, and for the `gray_zone` band the kinematics refuse.
 - Before trusting VLM direction at all it needs: native-resolution frames (we feed a 256 px cache upscaled
   to 448), denser future sampling, and an explicit direction-calibration eval. **UNVERIFIED** whether any
   of that fixes it.

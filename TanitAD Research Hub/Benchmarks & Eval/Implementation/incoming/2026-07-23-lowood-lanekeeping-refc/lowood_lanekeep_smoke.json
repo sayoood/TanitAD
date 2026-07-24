@@ -1,0 +1,929 @@
+{
+  "_design": "real-footage-in-the-loop low-OOD closed-loop LANE-KEEPING (corridor = recorded path +/- lane half-width). Deployed planner + pure-pursuit + bicycle; obs = arc-length re-indexed REAL window warped by on-policy (dlat,dpsi). Both arms, identical windows.",
+  "_honest_frame": "Measures LANE-KEEPING / on-policy drift at low OOD; STRUCTURALLY NOT off-road/collision (map-free, agent-free source). A real off-road/collision rate needs AlpaSim (the ~3.2x-OOD renderer this source escapes).",
+  "corridor_threshold_m": {
+    "primary_half_width": 1.75,
+    "grid": [
+      1.0,
+      1.75,
+      2.5
+    ],
+    "citation": "1.75 m = half of a 3.5 m lane (US arterial / DE Autobahn class); 1.0 m ~ wheel-over-line for a ~1.8 m vehicle; 2.5 m ~ into the adjacent lane."
+  },
+  "val_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "n_episodes_requested": 2,
+  "stride": 8,
+  "junction_deg_threshold": 10.0,
+  "ood_envelope": "/root/lanekeep/lowood_flagship_ci.json",
+  "ood_envelope_note": "flagship-measured source-OOD envelope, applied to EACH arm's own on-policy deviations",
+  "arms": {
+    "flagship": {
+      "ckpt": "/root/models/flagship-30k/ckpt.pt",
+      "step": 29999,
+      "speed_input": true,
+      "params_head": "strategic->tactical"
+    },
+    "refc": {
+      "ckpt": "/root/models/refc-base-30k/ckpt.pt",
+      "step": 29999,
+      "preset": "base",
+      "decode": "model(fw,nav_cmd=None,v0,steps=2)['traj'][:,0]"
+    }
+  },
+  "results": {
+    "flagship": {
+      "overall": {
+        "n_windows": 44,
+        "n_episodes": 2,
+        "closed_ade2s_m": {
+          "mean": 1.3106,
+          "lo": 0.9367,
+          "hi": 1.6845,
+          "ci95": 0.3739,
+          "se": 0.26,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0068,
+            "lo": 0.0,
+            "hi": 0.0136,
+            "ci95": 0.0068,
+            "se": 0.0047,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.0682,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.3432,
+          "lo": 0.1082,
+          "hi": 0.5781,
+          "ci95": 0.2349,
+          "se": 0.1634,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.0234,
+          "lo": 1.0075,
+          "hi": 1.0393,
+          "ci95": 0.0159,
+          "se": 0.0111,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0075,
+          "lo": 1.0018,
+          "hi": 1.0131,
+          "ci95": 0.0057,
+          "se": 0.0039,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "junction": {
+        "n_windows": 4,
+        "n_episodes": 1,
+        "closed_ade2s_m": {
+          "mean": 1.4935,
+          "lo": 1.4935,
+          "hi": 1.4935,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.05,
+            "lo": 0.05,
+            "hi": 0.05,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.25,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.7545,
+          "lo": 0.7545,
+          "hi": 0.7545,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.0785,
+          "lo": 1.0785,
+          "hi": 1.0785,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0291,
+          "lo": 1.0291,
+          "hi": 1.0291,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "longitudinal": {
+        "n_windows": 18,
+        "n_episodes": 1,
+        "closed_ade2s_m": {
+          "mean": 1.727,
+          "lo": 1.727,
+          "hi": 1.727,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0056,
+            "lo": 0.0056,
+            "hi": 0.0056,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.1111,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.5389,
+          "lo": 0.5389,
+          "hi": 0.5389,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.0305,
+          "lo": 1.0305,
+          "hi": 1.0305,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0096,
+          "lo": 1.0096,
+          "hi": 1.0096,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "junction_deg_threshold": 10.0
+    },
+    "refc": {
+      "overall": {
+        "n_windows": 44,
+        "n_episodes": 2,
+        "closed_ade2s_m": {
+          "mean": 0.3893,
+          "lo": 0.3851,
+          "hi": 0.3934,
+          "ci95": 0.0041,
+          "se": 0.0029,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.008,
+            "lo": 0.0,
+            "hi": 0.0159,
+            "ci95": 0.008,
+            "se": 0.0055,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 44,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.0682,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.1904,
+          "lo": 0.0624,
+          "hi": 0.3183,
+          "ci95": 0.128,
+          "se": 0.089,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.0141,
+          "lo": 1.001,
+          "hi": 1.0273,
+          "ci95": 0.0132,
+          "se": 0.0092,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0052,
+          "lo": 1.0002,
+          "hi": 1.0102,
+          "ci95": 0.005,
+          "se": 0.0035,
+          "reducer": "mean",
+          "n_windows": 44,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "junction": {
+        "n_windows": 4,
+        "n_episodes": 1,
+        "closed_ade2s_m": {
+          "mean": 0.5955,
+          "lo": 0.5955,
+          "hi": 0.5955,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0625,
+            "lo": 0.0625,
+            "hi": 0.0625,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 4,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.5,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.887,
+          "lo": 0.887,
+          "hi": 0.887,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.1224,
+          "lo": 1.1224,
+          "hi": 1.1224,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0419,
+          "lo": 1.0419,
+          "hi": 1.0419,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 4,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "longitudinal": {
+        "n_windows": 18,
+        "n_episodes": 1,
+        "closed_ade2s_m": {
+          "mean": 0.3384,
+          "lo": 0.3384,
+          "hi": 0.3384,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0056,
+            "lo": 0.0056,
+            "hi": 0.0056,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 1,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": 0.0556,
+          "1.75": 0.0,
+          "2.5": 0.0
+        },
+        "peak_xte_m": {
+          "mean": 0.1919,
+          "lo": 0.1919,
+          "hi": 0.1919,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "time_to_departure_s": {
+          "primary_threshold_m": 1.75,
+          "mean_among_departing": null,
+          "median_among_departing": null,
+          "n_departing_windows": 0,
+          "frac_windows_departing": 0.0
+        },
+        "ood_peak_ratio": {
+          "mean": 1.0062,
+          "lo": 1.0062,
+          "hi": 1.0062,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ood_mean_ratio": {
+          "mean": 1.0032,
+          "lo": 1.0032,
+          "hi": 1.0032,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 1,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "junction_deg_threshold": 10.0
+    }
+  },
+  "paired_flagship_vs_refc": {
+    "note": "negative delta => flagship LOWER (better) than REF-C; 'separated' == CI excludes 0 (decision predicate)",
+    "overall": {
+      "n_windows": 44,
+      "n_episodes": 2,
+      "delta_closed_ade2s_m_flagship_minus_refc": {
+        "delta": 0.9214,
+        "lo": 0.5433,
+        "hi": 1.2994,
+        "ci95": 0.3781,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 44,
+        "n_episodes": 2,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_corridor_departure_rate_flagship_minus_refc": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 44,
+        "n_episodes": 2,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_peak_xte_m_flagship_minus_refc": {
+        "delta": 0.1528,
+        "lo": 0.0458,
+        "hi": 0.2598,
+        "ci95": 0.107,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 44,
+        "n_episodes": 2,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "junction": {
+      "n_windows": 4,
+      "n_episodes": 1,
+      "delta_closed_ade2s_m_flagship_minus_refc": {
+        "delta": 0.898,
+        "lo": 0.898,
+        "hi": 0.898,
+        "ci95": 0.0,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 4,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_corridor_departure_rate_flagship_minus_refc": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 4,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_peak_xte_m_flagship_minus_refc": {
+        "delta": -0.1325,
+        "lo": -0.1325,
+        "hi": -0.1325,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 4,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "longitudinal": {
+      "n_windows": 18,
+      "n_episodes": 1,
+      "delta_closed_ade2s_m_flagship_minus_refc": {
+        "delta": 1.3886,
+        "lo": 1.3886,
+        "hi": 1.3886,
+        "ci95": 0.0,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 18,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_corridor_departure_rate_flagship_minus_refc": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 18,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_peak_xte_m_flagship_minus_refc": {
+        "delta": 0.347,
+        "lo": 0.347,
+        "hi": 0.347,
+        "ci95": 0.0,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 18,
+        "n_episodes": 1,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  }
+}

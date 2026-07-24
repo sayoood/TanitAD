@@ -1,0 +1,1494 @@
+{
+  "run": "GATE-0 free inference-time floor: REF-C-base WITH floor (ON) vs WITHOUT (OFF)",
+  "floor": "cost-guided selection over 128 denoised anchors (argmax conf - lam*offroad - mu*coll) + road-boundary safety clamp; lam=5.0 mu=0.0 clamp=0.75m",
+  "label": "on NuRec reconstructions (AlpaSim A40, 480x854, 1 rollout/scene)",
+  "framing_MANDATORY": "WITHIN-SIM RELATIVE, ~3.2x-OOD (RUN_RECIPE s13); per-category RANKING trustworthy, absolute rates not real-world. Off-road cost geometry validated (gate0_cost_validation.json).",
+  "training": "ZERO (inference-time only)",
+  "n_scenes_paired": 37,
+  "overall": {
+    "floor_on": {
+      "n": 37,
+      "at_fault_collision_rate": 0.2432,
+      "offroad_rate": 0.4865,
+      "pass_rate": 0.3784,
+      "n_pass": 14,
+      "mean_score": 0.2125,
+      "mean_dist_to_gt": 6.9658,
+      "mean_plan_deviation": 0.7588
+    },
+    "floor_off": {
+      "n": 37,
+      "at_fault_collision_rate": 0.2973,
+      "offroad_rate": 0.4865,
+      "pass_rate": 0.4054,
+      "n_pass": 15,
+      "mean_score": 0.2291,
+      "mean_dist_to_gt": 10.7496,
+      "mean_plan_deviation": 0.3325
+    },
+    "paired": {
+      "n": 37,
+      "mean_score_delta_ON_minus_OFF": -0.0166,
+      "score_delta_boot95": [
+        -0.0497,
+        0.0
+      ],
+      "mean_offroad_delta_ON_minus_OFF": 0.0,
+      "offroad_delta_boot95": [
+        -0.0811,
+        0.0811
+      ],
+      "offroad_fixed_off_to_onroad": 1,
+      "offroad_broke_onroad_to_off": 1,
+      "offroad_mcnemar_p": 1.0,
+      "score_sign_test": {
+        "ON_better": 0,
+        "OFF_better": 1,
+        "ties": 36,
+        "p": 1.0
+      }
+    }
+  },
+  "junction_intersection_plus_roundabout": {
+    "clips": [
+      "00169207",
+      "0810968d",
+      "3cc29c99",
+      "41c06176",
+      "471f2484",
+      "59cb0598",
+      "69efe005",
+      "6dcd2117",
+      "780ece49",
+      "8b04d54e",
+      "adb72a39",
+      "bc843fa0",
+      "c3d4065e",
+      "d3267951",
+      "fd3a49fa"
+    ],
+    "floor_on": {
+      "n": 15,
+      "at_fault_collision_rate": 0.2,
+      "offroad_rate": 0.8,
+      "pass_rate": 0.1333,
+      "n_pass": 2,
+      "mean_score": 0.0425,
+      "mean_dist_to_gt": 7.9029,
+      "mean_plan_deviation": 0.8574
+    },
+    "floor_off": {
+      "n": 15,
+      "at_fault_collision_rate": 0.3333,
+      "offroad_rate": 0.7333,
+      "pass_rate": 0.2,
+      "n_pass": 3,
+      "mean_score": 0.0834,
+      "mean_dist_to_gt": 14.6453,
+      "mean_plan_deviation": 0.4075
+    },
+    "paired": {
+      "n": 15,
+      "mean_score_delta_ON_minus_OFF": -0.0409,
+      "score_delta_boot95": [
+        -0.1227,
+        0.0
+      ],
+      "mean_offroad_delta_ON_minus_OFF": 0.0667,
+      "offroad_delta_boot95": [
+        0.0,
+        0.2
+      ],
+      "offroad_fixed_off_to_onroad": 0,
+      "offroad_broke_onroad_to_off": 1,
+      "offroad_mcnemar_p": 1.0,
+      "score_sign_test": {
+        "ON_better": 0,
+        "OFF_better": 1,
+        "ties": 14,
+        "p": 1.0
+      }
+    }
+  },
+  "per_category": {
+    "highway": {
+      "clips": [
+        "0e05cb0c",
+        "15dd433e",
+        "1c9774e9",
+        "3dce1d04",
+        "4fdce89c",
+        "51249fb2",
+        "ca481583",
+        "d0d8a2b6"
+      ],
+      "floor_on": {
+        "n": 8,
+        "at_fault_collision_rate": 0.375,
+        "offroad_rate": 0.25,
+        "pass_rate": 0.375,
+        "n_pass": 3,
+        "mean_score": 0.2208,
+        "mean_dist_to_gt": 9.5037,
+        "mean_plan_deviation": 0.7774
+      },
+      "floor_off": {
+        "n": 8,
+        "at_fault_collision_rate": 0.375,
+        "offroad_rate": 0.375,
+        "pass_rate": 0.375,
+        "n_pass": 3,
+        "mean_score": 0.2208,
+        "mean_dist_to_gt": 10.0327,
+        "mean_plan_deviation": 0.2344
+      },
+      "paired": {
+        "n": 8,
+        "mean_score_delta_ON_minus_OFF": 0.0,
+        "score_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "mean_offroad_delta_ON_minus_OFF": -0.125,
+        "offroad_delta_boot95": [
+          -0.375,
+          0.0
+        ],
+        "offroad_fixed_off_to_onroad": 1,
+        "offroad_broke_onroad_to_off": 0,
+        "offroad_mcnemar_p": 1.0,
+        "score_sign_test": {
+          "ON_better": 0,
+          "OFF_better": 0,
+          "ties": 8,
+          "p": 1.0
+        }
+      }
+    },
+    "intersection": {
+      "clips": [
+        "00169207",
+        "0810968d",
+        "41c06176",
+        "59cb0598",
+        "69efe005",
+        "780ece49",
+        "8b04d54e"
+      ],
+      "floor_on": {
+        "n": 7,
+        "at_fault_collision_rate": 0.4286,
+        "offroad_rate": 0.7143,
+        "pass_rate": 0.1429,
+        "n_pass": 1,
+        "mean_score": 0.0634,
+        "mean_dist_to_gt": 8.2031,
+        "mean_plan_deviation": 0.7752
+      },
+      "floor_off": {
+        "n": 7,
+        "at_fault_collision_rate": 0.7143,
+        "offroad_rate": 0.7143,
+        "pass_rate": 0.1429,
+        "n_pass": 1,
+        "mean_score": 0.0634,
+        "mean_dist_to_gt": 13.7521,
+        "mean_plan_deviation": 0.3658
+      },
+      "paired": {
+        "n": 7,
+        "mean_score_delta_ON_minus_OFF": 0.0,
+        "score_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "mean_offroad_delta_ON_minus_OFF": 0.0,
+        "offroad_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "offroad_fixed_off_to_onroad": 0,
+        "offroad_broke_onroad_to_off": 0,
+        "offroad_mcnemar_p": 1.0,
+        "score_sign_test": {
+          "ON_better": 0,
+          "OFF_better": 0,
+          "ties": 7,
+          "p": 1.0
+        }
+      }
+    },
+    "roundabout": {
+      "clips": [
+        "3cc29c99",
+        "471f2484",
+        "6dcd2117",
+        "adb72a39",
+        "bc843fa0",
+        "c3d4065e",
+        "d3267951",
+        "fd3a49fa"
+      ],
+      "floor_on": {
+        "n": 8,
+        "at_fault_collision_rate": 0.0,
+        "offroad_rate": 0.875,
+        "pass_rate": 0.125,
+        "n_pass": 1,
+        "mean_score": 0.0242,
+        "mean_dist_to_gt": 7.6403,
+        "mean_plan_deviation": 0.9294
+      },
+      "floor_off": {
+        "n": 8,
+        "at_fault_collision_rate": 0.0,
+        "offroad_rate": 0.75,
+        "pass_rate": 0.25,
+        "n_pass": 2,
+        "mean_score": 0.1009,
+        "mean_dist_to_gt": 15.4269,
+        "mean_plan_deviation": 0.4441
+      },
+      "paired": {
+        "n": 8,
+        "mean_score_delta_ON_minus_OFF": -0.0767,
+        "score_delta_boot95": [
+          -0.2301,
+          0.0
+        ],
+        "mean_offroad_delta_ON_minus_OFF": 0.125,
+        "offroad_delta_boot95": [
+          0.0,
+          0.375
+        ],
+        "offroad_fixed_off_to_onroad": 0,
+        "offroad_broke_onroad_to_off": 1,
+        "offroad_mcnemar_p": 1.0,
+        "score_sign_test": {
+          "ON_better": 0,
+          "OFF_better": 1,
+          "ties": 7,
+          "p": 1.0
+        }
+      }
+    },
+    "straight_other": {
+      "clips": [
+        "00eb506e",
+        "0ce02937",
+        "1e0f1cb2",
+        "27068a85",
+        "3416c63f",
+        "48a50c2a",
+        "8ca50753",
+        "bfb44da0"
+      ],
+      "floor_on": {
+        "n": 8,
+        "at_fault_collision_rate": 0.125,
+        "offroad_rate": 0.375,
+        "pass_rate": 0.625,
+        "n_pass": 5,
+        "mean_score": 0.4296,
+        "mean_dist_to_gt": 3.6846,
+        "mean_plan_deviation": 0.7
+      },
+      "floor_off": {
+        "n": 8,
+        "at_fault_collision_rate": 0.125,
+        "offroad_rate": 0.375,
+        "pass_rate": 0.625,
+        "n_pass": 5,
+        "mean_score": 0.4296,
+        "mean_dist_to_gt": 8.2916,
+        "mean_plan_deviation": 0.2572
+      },
+      "paired": {
+        "n": 8,
+        "mean_score_delta_ON_minus_OFF": 0.0,
+        "score_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "mean_offroad_delta_ON_minus_OFF": 0.0,
+        "offroad_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "offroad_fixed_off_to_onroad": 0,
+        "offroad_broke_onroad_to_off": 0,
+        "offroad_mcnemar_p": 1.0,
+        "score_sign_test": {
+          "ON_better": 0,
+          "OFF_better": 0,
+          "ties": 8,
+          "p": 1.0
+        }
+      }
+    },
+    "traffic_light": {
+      "clips": [
+        "03376794",
+        "2387cbf7",
+        "2a47ea01",
+        "44c3b4d5",
+        "6c0a56c4",
+        "738c453d"
+      ],
+      "floor_on": {
+        "n": 6,
+        "at_fault_collision_rate": 0.3333,
+        "offroad_rate": 0.1667,
+        "pass_rate": 0.6667,
+        "n_pass": 4,
+        "mean_score": 0.3369,
+        "mean_dist_to_gt": 5.6141,
+        "mean_plan_deviation": 0.5661
+      },
+      "floor_off": {
+        "n": 6,
+        "at_fault_collision_rate": 0.3333,
+        "offroad_rate": 0.1667,
+        "pass_rate": 0.6667,
+        "n_pass": 4,
+        "mean_score": 0.3369,
+        "mean_dist_to_gt": 5.2433,
+        "mean_plan_deviation": 0.376
+      },
+      "paired": {
+        "n": 6,
+        "mean_score_delta_ON_minus_OFF": 0.0,
+        "score_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "mean_offroad_delta_ON_minus_OFF": 0.0,
+        "offroad_delta_boot95": [
+          0.0,
+          0.0
+        ],
+        "offroad_fixed_off_to_onroad": 0,
+        "offroad_broke_onroad_to_off": 0,
+        "offroad_mcnemar_p": 1.0,
+        "score_sign_test": {
+          "ON_better": 0,
+          "OFF_better": 0,
+          "ties": 6,
+          "p": 1.0
+        }
+      }
+    }
+  },
+  "per_scene": [
+    {
+      "clip8": "00169207",
+      "category": "intersection",
+      "off": {
+        "clip8": "00169207",
+        "rollout_dir": "1f2f725a-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 39.7449,
+        "progress": 0.4274,
+        "plan_deviation": 0.6013
+      },
+      "on": {
+        "clip8": "00169207",
+        "rollout_dir": "a7fbb2b8-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 21.1475,
+        "progress": 0.4333,
+        "plan_deviation": 2.5253
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "00eb506e",
+      "category": "straight_other",
+      "off": {
+        "clip8": "00eb506e",
+        "rollout_dir": "23941fda-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.689,
+        "dist_to_gt_trajectory": 8.5527,
+        "progress": 0.5512,
+        "plan_deviation": 0.3036
+      },
+      "on": {
+        "clip8": "00eb506e",
+        "rollout_dir": "aba4d304-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.689,
+        "dist_to_gt_trajectory": 8.5527,
+        "progress": 0.5512,
+        "plan_deviation": 0.3036
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "03376794",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "03376794",
+        "rollout_dir": "1c0df09c-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5704,
+        "dist_to_gt_trajectory": 1.7827,
+        "progress": 0.4563,
+        "plan_deviation": 0.3067
+      },
+      "on": {
+        "clip8": "03376794",
+        "rollout_dir": "a3b6ca62-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5704,
+        "dist_to_gt_trajectory": 1.7827,
+        "progress": 0.4563,
+        "plan_deviation": 0.3067
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "0810968d",
+      "category": "intersection",
+      "off": {
+        "clip8": "0810968d",
+        "rollout_dir": "2496741e-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 22.9616,
+        "progress": 0.1114,
+        "plan_deviation": 0.4509
+      },
+      "on": {
+        "clip8": "0810968d",
+        "rollout_dir": "acaac664-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 3.2153,
+        "progress": 0.262,
+        "plan_deviation": 0.5739
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "0ce02937",
+      "category": "straight_other",
+      "off": {
+        "clip8": "0ce02937",
+        "rollout_dir": "62ee1fd2-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6932,
+        "dist_to_gt_trajectory": 3.0315,
+        "progress": 0.5546,
+        "plan_deviation": 0.2515
+      },
+      "on": {
+        "clip8": "0ce02937",
+        "rollout_dir": "ef606aa4-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6932,
+        "dist_to_gt_trajectory": 3.0315,
+        "progress": 0.5546,
+        "plan_deviation": 0.2515
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "0e05cb0c",
+      "category": "highway",
+      "off": {
+        "clip8": "0e05cb0c",
+        "rollout_dir": "66d43b86-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5904,
+        "dist_to_gt_trajectory": 0.4344,
+        "progress": 0.4723,
+        "plan_deviation": 0.1255
+      },
+      "on": {
+        "clip8": "0e05cb0c",
+        "rollout_dir": "f344131e-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5904,
+        "dist_to_gt_trajectory": 0.4344,
+        "progress": 0.4723,
+        "plan_deviation": 0.1255
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "15dd433e",
+      "category": "highway",
+      "off": {
+        "clip8": "15dd433e",
+        "rollout_dir": "6b7b85d6-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 4.1038,
+        "progress": 0.61,
+        "plan_deviation": 0.3277
+      },
+      "on": {
+        "clip8": "15dd433e",
+        "rollout_dir": "f8fad888-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 4.1038,
+        "progress": 0.61,
+        "plan_deviation": 0.3277
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "1c9774e9",
+      "category": "highway",
+      "off": {
+        "clip8": "1c9774e9",
+        "rollout_dir": "69a6fe34-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 44.7011,
+        "progress": 0.3208,
+        "plan_deviation": 0.3799
+      },
+      "on": {
+        "clip8": "1c9774e9",
+        "rollout_dir": "fba9b9d2-8654-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 44.7011,
+        "progress": 0.3208,
+        "plan_deviation": 0.3799
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "1e0f1cb2",
+      "category": "straight_other",
+      "off": {
+        "clip8": "1e0f1cb2",
+        "rollout_dir": "9752c2e6-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.7409,
+        "dist_to_gt_trajectory": 1.6326,
+        "progress": 0.5927,
+        "plan_deviation": 0.2443
+      },
+      "on": {
+        "clip8": "1e0f1cb2",
+        "rollout_dir": "276b4180-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.7409,
+        "dist_to_gt_trajectory": 1.6326,
+        "progress": 0.5927,
+        "plan_deviation": 0.2443
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "2387cbf7",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "2387cbf7",
+        "rollout_dir": "9f82f77e-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.4055,
+        "dist_to_gt_trajectory": 1.5903,
+        "progress": 0.3244,
+        "plan_deviation": 0.2994
+      },
+      "on": {
+        "clip8": "2387cbf7",
+        "rollout_dir": "34b5e070-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.4055,
+        "dist_to_gt_trajectory": 1.5903,
+        "progress": 0.3244,
+        "plan_deviation": 0.2994
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "27068a85",
+      "category": "straight_other",
+      "off": {
+        "clip8": "27068a85",
+        "rollout_dir": "a25e4cd2-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 23.1749,
+        "progress": 0.3368,
+        "plan_deviation": 0.2364
+      },
+      "on": {
+        "clip8": "27068a85",
+        "rollout_dir": "2e26bc48-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 10.3756,
+        "progress": 0.2975,
+        "plan_deviation": 1.2095
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "2a47ea01",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "2a47ea01",
+        "rollout_dir": "b3419d92-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.3768,
+        "dist_to_gt_trajectory": 3.1941,
+        "progress": 0.3014,
+        "plan_deviation": 0.3048
+      },
+      "on": {
+        "clip8": "2a47ea01",
+        "rollout_dir": "2ac866d2-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.3768,
+        "dist_to_gt_trajectory": 3.1941,
+        "progress": 0.3014,
+        "plan_deviation": 0.3048
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "3416c63f",
+      "category": "straight_other",
+      "off": {
+        "clip8": "3416c63f",
+        "rollout_dir": "ce9d70c0-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6675,
+        "dist_to_gt_trajectory": 1.1344,
+        "progress": 0.534,
+        "plan_deviation": 0.2346
+      },
+      "on": {
+        "clip8": "3416c63f",
+        "rollout_dir": "678f7510-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6675,
+        "dist_to_gt_trajectory": 1.1344,
+        "progress": 0.534,
+        "plan_deviation": 0.7082
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "3cc29c99",
+      "category": "roundabout",
+      "off": {
+        "clip8": "3cc29c99",
+        "rollout_dir": "dc5916a6-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.2838,
+        "progress": 0.4842,
+        "plan_deviation": 0.2646
+      },
+      "on": {
+        "clip8": "3cc29c99",
+        "rollout_dir": "620c85f6-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.4627,
+        "progress": 0.4835,
+        "plan_deviation": 0.2683
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "3dce1d04",
+      "category": "highway",
+      "off": {
+        "clip8": "3dce1d04",
+        "rollout_dir": "df3426a4-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.5355,
+        "progress": 0.5618,
+        "plan_deviation": 0.1805
+      },
+      "on": {
+        "clip8": "3dce1d04",
+        "rollout_dir": "68e8a3a0-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.5355,
+        "progress": 0.5618,
+        "plan_deviation": 0.1805
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "41c06176",
+      "category": "intersection",
+      "off": {
+        "clip8": "41c06176",
+        "rollout_dir": "edcae5f4-8657-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 24.6343,
+        "progress": 0.9958,
+        "plan_deviation": 0.4157
+      },
+      "on": {
+        "clip8": "41c06176",
+        "rollout_dir": "7afd88b2-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 23.7165,
+        "progress": 0.9958,
+        "plan_deviation": 0.715
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "44c3b4d5",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "44c3b4d5",
+        "rollout_dir": "03bb14a6-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 18.6527,
+        "progress": 0.1776,
+        "plan_deviation": 0.6821
+      },
+      "on": {
+        "clip8": "44c3b4d5",
+        "rollout_dir": "9292e4a4-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 20.8966,
+        "progress": 0.1882,
+        "plan_deviation": 0.9477
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "471f2484",
+      "category": "roundabout",
+      "off": {
+        "clip8": "471f2484",
+        "rollout_dir": "10462f62-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 24.5257,
+        "progress": 0.0443,
+        "plan_deviation": 0.5827
+      },
+      "on": {
+        "clip8": "471f2484",
+        "rollout_dir": "ac247d38-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 4.3145,
+        "progress": 0.3172,
+        "plan_deviation": 1.423
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "48a50c2a",
+      "category": "straight_other",
+      "off": {
+        "clip8": "48a50c2a",
+        "rollout_dir": "122545fc-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 25.6675,
+        "progress": 0.1916,
+        "plan_deviation": 0.4662
+      },
+      "on": {
+        "clip8": "48a50c2a",
+        "rollout_dir": "adb0fe1a-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 1.6106,
+        "progress": 0.5189,
+        "plan_deviation": 2.5617
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "4fdce89c",
+      "category": "highway",
+      "off": {
+        "clip8": "4fdce89c",
+        "rollout_dir": "2960ec6c-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5791,
+        "dist_to_gt_trajectory": 5.1159,
+        "progress": 0.4633,
+        "plan_deviation": 0.1576
+      },
+      "on": {
+        "clip8": "4fdce89c",
+        "rollout_dir": "b9fea15e-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5791,
+        "dist_to_gt_trajectory": 5.1159,
+        "progress": 0.4633,
+        "plan_deviation": 0.1576
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "51249fb2",
+      "category": "highway",
+      "off": {
+        "clip8": "51249fb2",
+        "rollout_dir": "3a7e1bd2-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.2345,
+        "progress": 0.5044,
+        "plan_deviation": 0.3295
+      },
+      "on": {
+        "clip8": "51249fb2",
+        "rollout_dir": "c753e42c-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 1.0028,
+        "progress": 0.497,
+        "plan_deviation": 1.1428
+      },
+      "offroad_delta": -1.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "59cb0598",
+      "category": "intersection",
+      "off": {
+        "clip8": "59cb0598",
+        "rollout_dir": "44fc0e70-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 4.0983,
+        "progress": 0.7652,
+        "plan_deviation": 0.4079
+      },
+      "on": {
+        "clip8": "59cb0598",
+        "rollout_dir": "dcc04076-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 4.5164,
+        "progress": 0.5172,
+        "plan_deviation": 0.9276
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "69efe005",
+      "category": "intersection",
+      "off": {
+        "clip8": "69efe005",
+        "rollout_dir": "45fd58ce-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 1.2649,
+        "progress": 0.8093,
+        "plan_deviation": 0.2929
+      },
+      "on": {
+        "clip8": "69efe005",
+        "rollout_dir": "e251cc30-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 1.2649,
+        "progress": 0.8093,
+        "plan_deviation": 0.2929
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "6c0a56c4",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "6c0a56c4",
+        "rollout_dir": "64fbd91c-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.8865,
+        "progress": 0.5827,
+        "plan_deviation": 0.3412
+      },
+      "on": {
+        "clip8": "6c0a56c4",
+        "rollout_dir": "f1a038d4-8655-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 1.0,
+        "collision_any": 1.0,
+        "offroad": 0.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.8679,
+        "progress": 0.5061,
+        "plan_deviation": 1.2162
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "6dcd2117",
+      "category": "roundabout",
+      "off": {
+        "clip8": "6dcd2117",
+        "rollout_dir": "7227f68e-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 21.6729,
+        "progress": 0.1189,
+        "plan_deviation": 0.4452
+      },
+      "on": {
+        "clip8": "6dcd2117",
+        "rollout_dir": "02102d0a-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 6.2049,
+        "progress": 0.2702,
+        "plan_deviation": 2.5636
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "738c453d",
+      "category": "traffic_light",
+      "off": {
+        "clip8": "738c453d",
+        "rollout_dir": "8171b576-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6689,
+        "dist_to_gt_trajectory": 3.3533,
+        "progress": 0.5351,
+        "plan_deviation": 0.3215
+      },
+      "on": {
+        "clip8": "738c453d",
+        "rollout_dir": "1318a01e-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6689,
+        "dist_to_gt_trajectory": 3.3533,
+        "progress": 0.5351,
+        "plan_deviation": 0.3215
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "780ece49",
+      "category": "intersection",
+      "off": {
+        "clip8": "780ece49",
+        "rollout_dir": "82688d6a-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.7083,
+        "progress": 0.468,
+        "plan_deviation": 0.2313
+      },
+      "on": {
+        "clip8": "780ece49",
+        "rollout_dir": "143ea682-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.7083,
+        "progress": 0.468,
+        "plan_deviation": 0.2313
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "8b04d54e",
+      "category": "intersection",
+      "off": {
+        "clip8": "8b04d54e",
+        "rollout_dir": "9573a2c8-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.4441,
+        "dist_to_gt_trajectory": 0.8525,
+        "progress": 0.3553,
+        "plan_deviation": 0.1603
+      },
+      "on": {
+        "clip8": "8b04d54e",
+        "rollout_dir": "2440fb8e-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.4441,
+        "dist_to_gt_trajectory": 0.8525,
+        "progress": 0.3553,
+        "plan_deviation": 0.1603
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "8ca50753",
+      "category": "straight_other",
+      "off": {
+        "clip8": "8ca50753",
+        "rollout_dir": "a95c46b4-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.0121,
+        "progress": 0.5392,
+        "plan_deviation": 0.1575
+      },
+      "on": {
+        "clip8": "8ca50753",
+        "rollout_dir": "3a3ee39c-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 2.0121,
+        "progress": 0.5392,
+        "plan_deviation": 0.1575
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "adb72a39",
+      "category": "roundabout",
+      "off": {
+        "clip8": "adb72a39",
+        "rollout_dir": "bb475dfa-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.1934,
+        "dist_to_gt_trajectory": 0.4648,
+        "progress": 0.1547,
+        "plan_deviation": 0.3975
+      },
+      "on": {
+        "clip8": "adb72a39",
+        "rollout_dir": "4caf1952-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.1934,
+        "dist_to_gt_trajectory": 0.4648,
+        "progress": 0.1547,
+        "plan_deviation": 0.3975
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "bc843fa0",
+      "category": "roundabout",
+      "off": {
+        "clip8": "bc843fa0",
+        "rollout_dir": "bc476dbc-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 14.5112,
+        "progress": 0.2561,
+        "plan_deviation": 0.2625
+      },
+      "on": {
+        "clip8": "bc843fa0",
+        "rollout_dir": "4da2da56-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 10.2798,
+        "progress": 0.2333,
+        "plan_deviation": 0.388
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "bfb44da0",
+      "category": "straight_other",
+      "off": {
+        "clip8": "bfb44da0",
+        "rollout_dir": "c78d3c42-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6459,
+        "dist_to_gt_trajectory": 1.1273,
+        "progress": 0.5168,
+        "plan_deviation": 0.1638
+      },
+      "on": {
+        "clip8": "bfb44da0",
+        "rollout_dir": "551a175e-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6459,
+        "dist_to_gt_trajectory": 1.1273,
+        "progress": 0.5168,
+        "plan_deviation": 0.1638
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "c3d4065e",
+      "category": "roundabout",
+      "off": {
+        "clip8": "c3d4065e",
+        "rollout_dir": "dfb98672-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 32.6995,
+        "progress": 0.1874,
+        "plan_deviation": 0.4764
+      },
+      "on": {
+        "clip8": "c3d4065e",
+        "rollout_dir": "6ec7c2a0-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 25.9188,
+        "progress": 0.2353,
+        "plan_deviation": 1.2084
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "ca481583",
+      "category": "highway",
+      "off": {
+        "clip8": "ca481583",
+        "rollout_dir": "ebe3b9fe-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5972,
+        "dist_to_gt_trajectory": 0.6552,
+        "progress": 0.4777,
+        "plan_deviation": 0.1164
+      },
+      "on": {
+        "clip8": "ca481583",
+        "rollout_dir": "82436b7c-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.5972,
+        "dist_to_gt_trajectory": 0.6552,
+        "progress": 0.4777,
+        "plan_deviation": 0.1164
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "d0d8a2b6",
+      "category": "highway",
+      "off": {
+        "clip8": "d0d8a2b6",
+        "rollout_dir": "ecf94eee-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 14.4808,
+        "progress": 0.4975,
+        "plan_deviation": 0.258
+      },
+      "on": {
+        "clip8": "d0d8a2b6",
+        "rollout_dir": "84d8337c-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 14.4808,
+        "progress": 0.4975,
+        "plan_deviation": 3.7889
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "d3267951",
+      "category": "roundabout",
+      "off": {
+        "clip8": "d3267951",
+        "rollout_dir": "ee25d260-8658-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 21.2125,
+        "progress": 0.0932,
+        "plan_deviation": 0.9056
+      },
+      "on": {
+        "clip8": "d3267951",
+        "rollout_dir": "83e96c9c-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 5.1337,
+        "progress": 0.3236,
+        "plan_deviation": 0.9695
+      },
+      "offroad_delta": 0.0,
+      "score_delta": 0.0
+    },
+    {
+      "clip8": "fd3a49fa",
+      "category": "roundabout",
+      "off": {
+        "clip8": "fd3a49fa",
+        "rollout_dir": "050cb908-8659-11f1-99f1-47553cb1d5a5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 0.0,
+        "status": "pass",
+        "score": 0.6135,
+        "dist_to_gt_trajectory": 3.0445,
+        "progress": 0.4908,
+        "plan_deviation": 0.2182
+      },
+      "on": {
+        "clip8": "fd3a49fa",
+        "rollout_dir": "9b8dcd48-8656-11f1-afaa-db53549d06f5",
+        "collision_at_fault": 0.0,
+        "collision_any": 0.0,
+        "offroad": 1.0,
+        "status": "fail",
+        "score": 0.0,
+        "dist_to_gt_trajectory": 3.3433,
+        "progress": 0.4839,
+        "plan_deviation": 0.2167
+      },
+      "offroad_delta": 1.0,
+      "score_delta": -0.6135
+    }
+  ]
+}

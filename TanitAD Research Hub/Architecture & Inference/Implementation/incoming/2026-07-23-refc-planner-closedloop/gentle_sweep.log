@@ -1,0 +1,72 @@
+=== START g1 steps=500 lat=1.75 yaw=5 clean=0.5 dev=1.0 lr=1e-4 ===
+[ft] base step 29999 | FT eps 0:28 (28) | 617 windows | trainable 8,634,505 (scope decoder) | envelope lat<=1.75m yaw<=5.0deg clean=0.5 lambda_dev=1.0
+{"step": 0, "loss": 2.6003, "traj": 0.4004, "cls": 1.9315, "dev": 0.2684, "frac_clean": 0.5625, "mean_recovery_m": 2.8731, "gnorm": 38.265, "elapsed_s": 0.8}
+{"step": 50, "loss": 2.644, "traj": 0.4118, "cls": 1.8594, "dev": 0.3727, "frac_clean": 0.5625, "mean_recovery_m": 1.8355, "gnorm": 39.53, "elapsed_s": 34.9}
+{"step": 100, "loss": 3.0233, "traj": 0.5878, "cls": 1.9436, "dev": 0.4919, "frac_clean": 0.625, "mean_recovery_m": 4.2385, "gnorm": 40.212, "elapsed_s": 68.6}
+{"step": 150, "loss": 3.1343, "traj": 0.5099, "cls": 2.1882, "dev": 0.4362, "frac_clean": 0.25, "mean_recovery_m": 2.7864, "gnorm": 143.414, "elapsed_s": 100.0}
+{"step": 200, "loss": 2.2421, "traj": 0.4252, "cls": 1.3642, "dev": 0.4528, "frac_clean": 0.375, "mean_recovery_m": 3.7854, "gnorm": 41.822, "elapsed_s": 131.3}
+{"step": 250, "loss": 2.3525, "traj": 0.555, "cls": 1.4244, "dev": 0.3732, "frac_clean": 0.3125, "mean_recovery_m": 2.6326, "gnorm": 51.535, "elapsed_s": 166.6}
+{"step": 300, "loss": 2.2582, "traj": 0.4388, "cls": 1.3638, "dev": 0.4556, "frac_clean": 0.5625, "mean_recovery_m": 1.8292, "gnorm": 29.043, "elapsed_s": 197.3}
+{"step": 350, "loss": 2.6748, "traj": 0.4747, "cls": 1.6927, "dev": 0.5074, "frac_clean": 0.4375, "mean_recovery_m": 2.6787, "gnorm": 51.704, "elapsed_s": 228.7}
+{"step": 400, "loss": 2.1992, "traj": 0.3538, "cls": 1.3074, "dev": 0.5381, "frac_clean": 0.75, "mean_recovery_m": 4.2527, "gnorm": 48.963, "elapsed_s": 259.4}
+{"step": 450, "loss": 2.8945, "traj": 0.5602, "cls": 1.7957, "dev": 0.5386, "frac_clean": 0.4375, "mean_recovery_m": 3.7147, "gnorm": 62.557, "elapsed_s": 293.1}
+{"step": 499, "loss": 1.9873, "traj": 0.5126, "cls": 1.0954, "dev": 0.3793, "frac_clean": 0.5625, "mean_recovery_m": 3.5577, "gnorm": 26.763, "elapsed_s": 324.3}
+[ft] wrote /workspace/refc-ft-g1/ckpt.pt
+RECOVERY_AUG_FT_DONE
+[eval] instrument: /workspace/refc_cl_d2/lowood_lanekeep.py
+[eval] base step 29999 vs FT step 500 | holdout 28:40 (12 eps)
+[eval] OVERALL Δcorridor_departure(base-ft)=+0.0019 [-0.0117,+0.0161] separated=False
+[eval] GUARD  Δpeak_xte(base-ft)=-0.2474 [-0.5280,+0.0262] (FT must NOT increase peak_xte: Δ>=0 desired)
+[eval] PRE-REGISTERED VERDICT: NULL
+[eval] wrote /workspace/refc_cl_d2/corridor_g1.json
+CORRIDOR_SPLIT_DONE
+SWEEP_CFG_DONE g1
+=== START g2 steps=700 lat=1.0 yaw=3 clean=0.5 dev=1.0 lr=5e-5 ===
+[ft] base step 29999 | FT eps 0:28 (28) | 617 windows | trainable 8,634,505 (scope decoder) | envelope lat<=1.0m yaw<=3.0deg clean=0.5 lambda_dev=1.0
+{"step": 0, "loss": 1.9016, "traj": 0.3142, "cls": 1.3189, "dev": 0.2684, "frac_clean": 0.5625, "mean_recovery_m": 2.7581, "gnorm": 52.655, "elapsed_s": 0.9}
+{"step": 50, "loss": 1.9992, "traj": 0.2813, "cls": 1.4577, "dev": 0.2602, "frac_clean": 0.5625, "mean_recovery_m": 1.6974, "gnorm": 32.739, "elapsed_s": 31.6}
+{"step": 100, "loss": 2.8164, "traj": 0.4854, "cls": 1.8833, "dev": 0.4477, "frac_clean": 0.625, "mean_recovery_m": 4.023, "gnorm": 20.803, "elapsed_s": 62.1}
+{"step": 150, "loss": 2.7009, "traj": 0.3284, "cls": 2.2184, "dev": 0.1541, "frac_clean": 0.25, "mean_recovery_m": 2.6284, "gnorm": 85.845, "elapsed_s": 92.9}
+{"step": 200, "loss": 2.3337, "traj": 0.4267, "cls": 1.5504, "dev": 0.3565, "frac_clean": 0.375, "mean_recovery_m": 3.6248, "gnorm": 49.201, "elapsed_s": 124.3}
+{"step": 250, "loss": 1.7349, "traj": 0.3869, "cls": 0.9475, "dev": 0.4005, "frac_clean": 0.3125, "mean_recovery_m": 2.3888, "gnorm": 29.95, "elapsed_s": 155.1}
+{"step": 300, "loss": 1.7952, "traj": 0.368, "cls": 1.1086, "dev": 0.3187, "frac_clean": 0.5625, "mean_recovery_m": 1.649, "gnorm": 33.927, "elapsed_s": 186.1}
+{"step": 350, "loss": 1.6467, "traj": 0.2921, "cls": 1.0899, "dev": 0.2647, "frac_clean": 0.4375, "mean_recovery_m": 2.4936, "gnorm": 36.703, "elapsed_s": 216.8}
+{"step": 400, "loss": 1.9189, "traj": 0.2834, "cls": 1.1152, "dev": 0.5203, "frac_clean": 0.75, "mean_recovery_m": 4.1893, "gnorm": 45.755, "elapsed_s": 248.1}
+{"step": 450, "loss": 2.1137, "traj": 0.4635, "cls": 1.3363, "dev": 0.314, "frac_clean": 0.4375, "mean_recovery_m": 3.5065, "gnorm": 72.252, "elapsed_s": 278.9}
+{"step": 500, "loss": 1.501, "traj": 0.3031, "cls": 0.9036, "dev": 0.2944, "frac_clean": 0.625, "mean_recovery_m": 3.1589, "gnorm": 88.744, "elapsed_s": 309.7}
+{"step": 550, "loss": 1.5206, "traj": 0.3545, "cls": 0.9137, "dev": 0.2525, "frac_clean": 0.625, "mean_recovery_m": 2.769, "gnorm": 79.781, "elapsed_s": 340.5}
+{"step": 600, "loss": 2.2553, "traj": 0.3634, "cls": 1.0967, "dev": 0.7952, "frac_clean": 0.5625, "mean_recovery_m": 4.5041, "gnorm": 35.128, "elapsed_s": 370.9}
+{"step": 650, "loss": 1.1589, "traj": 0.2874, "cls": 0.6512, "dev": 0.2204, "frac_clean": 0.5625, "mean_recovery_m": 2.3276, "gnorm": 34.585, "elapsed_s": 401.9}
+{"step": 699, "loss": 1.0849, "traj": 0.2514, "cls": 0.7334, "dev": 0.1002, "frac_clean": 0.5, "mean_recovery_m": 2.9437, "gnorm": 31.838, "elapsed_s": 432.2}
+[ft] wrote /workspace/refc-ft-g2/ckpt.pt
+RECOVERY_AUG_FT_DONE
+[eval] instrument: /workspace/refc_cl_d2/lowood_lanekeep.py
+[eval] base step 29999 vs FT step 700 | holdout 28:40 (12 eps)
+[eval] OVERALL Δcorridor_departure(base-ft)=+0.0057 [-0.0025,+0.0170] separated=False
+[eval] GUARD  Δpeak_xte(base-ft)=-0.0589 [-0.2067,+0.1147] (FT must NOT increase peak_xte: Δ>=0 desired)
+[eval] PRE-REGISTERED VERDICT: NULL
+[eval] wrote /workspace/refc_cl_d2/corridor_g2.json
+CORRIDOR_SPLIT_DONE
+SWEEP_CFG_DONE g2
+=== START g3 steps=400 lat=0.75 yaw=3 clean=0.6 dev=2.0 lr=5e-5 ===
+[ft] base step 29999 | FT eps 0:28 (28) | 617 windows | trainable 8,634,505 (scope decoder) | envelope lat<=0.75m yaw<=3.0deg clean=0.6 lambda_dev=2.0
+{"step": 0, "loss": 2.1799, "traj": 0.3086, "cls": 1.2287, "dev": 0.3212, "frac_clean": 0.6875, "mean_recovery_m": 2.9591, "gnorm": 58.49, "elapsed_s": 1.0}
+{"step": 50, "loss": 1.9372, "traj": 0.269, "cls": 1.3576, "dev": 0.1553, "frac_clean": 0.5625, "mean_recovery_m": 1.6524, "gnorm": 40.711, "elapsed_s": 32.8}
+{"step": 100, "loss": 2.8869, "traj": 0.453, "cls": 1.8214, "dev": 0.3063, "frac_clean": 0.6875, "mean_recovery_m": 4.1123, "gnorm": 39.076, "elapsed_s": 69.2}
+{"step": 150, "loss": 3.2686, "traj": 0.3874, "cls": 2.3147, "dev": 0.2833, "frac_clean": 0.3125, "mean_recovery_m": 2.7319, "gnorm": 122.97, "elapsed_s": 100.6}
+{"step": 200, "loss": 2.2381, "traj": 0.3888, "cls": 1.3788, "dev": 0.2353, "frac_clean": 0.5, "mean_recovery_m": 3.7822, "gnorm": 42.126, "elapsed_s": 130.9}
+{"step": 250, "loss": 2.169, "traj": 0.3194, "cls": 1.2433, "dev": 0.3032, "frac_clean": 0.4375, "mean_recovery_m": 2.4282, "gnorm": 44.296, "elapsed_s": 161.8}
+{"step": 300, "loss": 1.737, "traj": 0.3315, "cls": 1.012, "dev": 0.1968, "frac_clean": 0.625, "mean_recovery_m": 1.6009, "gnorm": 49.918, "elapsed_s": 192.5}
+{"step": 350, "loss": 1.441, "traj": 0.2626, "cls": 0.8135, "dev": 0.1825, "frac_clean": 0.625, "mean_recovery_m": 2.4218, "gnorm": 40.317, "elapsed_s": 223.2}
+{"step": 399, "loss": 2.0531, "traj": 0.3985, "cls": 1.2504, "dev": 0.2021, "frac_clean": 0.4375, "mean_recovery_m": 3.0585, "gnorm": 52.456, "elapsed_s": 253.7}
+[ft] wrote /workspace/refc-ft-g3/ckpt.pt
+RECOVERY_AUG_FT_DONE
+[eval] instrument: /workspace/refc_cl_d2/lowood_lanekeep.py
+[eval] base step 29999 vs FT step 400 | holdout 28:40 (12 eps)
+[eval] OVERALL Δcorridor_departure(base-ft)=-0.0032 [-0.0068,-0.0004] separated=True
+[eval] GUARD  Δpeak_xte(base-ft)=-0.3264 [-0.4877,-0.1840] (FT must NOT increase peak_xte: Δ>=0 desired)
+[eval] PRE-REGISTERED VERDICT: HURT
+[eval] wrote /workspace/refc_cl_d2/corridor_g3.json
+CORRIDOR_SPLIT_DONE
+SWEEP_CFG_DONE g3
+SWEEP_ALL_DONE

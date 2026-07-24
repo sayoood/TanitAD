@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "experiment": "youtube_idm_pilot_downstream",
+    "date": "2026-07-24T17:19:09Z",
+    "flagship_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "device": "cuda",
+    "seeds": 3,
+    "pt_epochs": 25,
+    "ft_epochs": 60,
+    "pretrain_youtube_clips": 80,
+    "pretrain_youtube_windows": 8960,
+    "downstream": "physicalai-val both rigs, finetune 15 / test 65 (parity firewall)",
+    "parity_firewall": "own IDM split of parity-domain VAL; no WM arm; no re-selection of canonical WM episodes",
+    "pre_reg": "WIN = pseudo_yt beats floor all seeds AND clip-bootstrap 95% CI of speed_r2 gap excludes 0; else BOUND",
+    "caveat": "2-3 seed pilot = DIRECTIONAL read, not decision-grade for the full harvest"
+  },
+  "arms_mean_std": {
+    "floor": {
+      "speed_r2": [
+        -0.5203,
+        0.2005
+      ],
+      "yaw_r2": [
+        0.5459,
+        0.0806
+      ],
+      "ade_2s": [
+        12.8247,
+        0.7439
+      ]
+    },
+    "pseudo_yt": {
+      "speed_r2": [
+        0.5631,
+        0.0466
+      ],
+      "yaw_r2": [
+        0.748,
+        0.0178
+      ],
+      "ade_2s": [
+        6.3101,
+        0.224
+      ]
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "floor": {
+        "speed_r2": -0.7540151202721797,
+        "yaw_r2": 0.43805261902200354,
+        "ade_2s": 13.387710514590818,
+        "n": 5710
+      },
+      "pseudo_yt": {
+        "speed_r2": 0.5905955919393358,
+        "yaw_r2": 0.7290380271149867,
+        "ade_2s": 6.240583624469434,
+        "n": 5710
+      }
+    },
+    {
+      "seed": 1,
+      "floor": {
+        "speed_r2": -0.2643034959828259,
+        "yaw_r2": 0.6319087665018266,
+        "ade_2s": 11.77354368967676,
+        "n": 5710
+      },
+      "pseudo_yt": {
+        "speed_r2": 0.6012854789620383,
+        "yaw_r2": 0.7433514272494608,
+        "ade_2s": 6.077229221436097,
+        "n": 5710
+      }
+    },
+    {
+      "seed": 2,
+      "floor": {
+        "speed_r2": -0.5424718326300029,
+        "yaw_r2": 0.5676725002361664,
+        "ade_2s": 13.312847844032225,
+        "n": 5710
+      },
+      "pseudo_yt": {
+        "speed_r2": 0.49744667476438453,
+        "yaw_r2": 0.7717583462989762,
+        "ade_2s": 6.612596770951823,
+        "n": 5710
+      }
+    }
+  ],
+  "bootstrap_ci_speed_r2_gap": [
+    {
+      "seed": 0,
+      "gap_mean": 1.3653,
+      "gap_ci95": [
+        1.0652,
+        1.7274
+      ],
+      "frac_boot_gt0": 1.0,
+      "ci_excludes_0": true
+    },
+    {
+      "seed": 1,
+      "gap_mean": 0.8766,
+      "gap_ci95": [
+        0.6502,
+        1.1667
+      ],
+      "frac_boot_gt0": 1.0,
+      "ci_excludes_0": true
+    },
+    {
+      "seed": 2,
+      "gap_mean": 1.0501,
+      "gap_ci95": [
+        0.8201,
+        1.3055
+      ],
+      "frac_boot_gt0": 1.0,
+      "ci_excludes_0": true
+    }
+  ],
+  "pseudo_yt_beats_floor_all_seeds": true,
+  "ci_excludes_0_all_seeds": true,
+  "fraction_of_ceiling_speed_r2": null,
+  "verdict": "WIN \u2014 YouTube-pilot pseudo-pretraining lifts downstream speed_r2 (all seeds + CI-separated); domain transfers -> full harvest justified (directional)"
+}

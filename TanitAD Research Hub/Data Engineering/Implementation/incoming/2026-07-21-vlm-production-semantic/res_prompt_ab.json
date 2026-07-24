@@ -1,0 +1,972 @@
+{
+ "out_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\phase1",
+ "arms": [
+  "p1_v1",
+  "p1_v2"
+ ],
+ "enums_source": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/phase1\\enums.json",
+ "p1_v1": {
+  "n_records": 40,
+  "prompt_version": "vlmroute-2026-07-20-a",
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "val_build": "physicalai-val-f1b378f295ae",
+  "frames_plan": "base",
+  "image_px": 448,
+  "enum_order": "as_written",
+  "n_episodes": 40,
+  "pass_A": {
+   "n_windows": 40,
+   "outcome_counts": {
+    "ok": 40
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "truncation_rate": 0.0,
+   "confidence": {
+    "distribution": {
+     "<float>": 40
+    },
+    "modal_share": 1.0,
+    "n_distinct": 1,
+    "degenerate": true,
+    "float_values_seen": [
+     0.99
+    ],
+    "rule": "degenerate = one answer on >=90 % of windows; such a field cannot threshold anything and should be dropped"
+   },
+   "evidence": {
+    "n_with_evidence": 40,
+    "n_unique_strings": 35,
+    "unique_rate": 0.875,
+    "prompt_copy_rate_all": 0.075,
+    "prompt_copy_rate_turn_calls": 0.2308,
+    "n_turn_calls": 13,
+    "top_copied_fragments": {
+     "a t junction and frames show": 3
+    },
+    "detector": "6-word n-gram overlap with the shipped prompt text"
+   },
+   "event_times": {
+    "route_event_time_s": {
+     "n": 40,
+     "in_offered_set_rate": 0.975,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.025,
+     "top_fabricated": {
+      "3.0": 1
+     }
+    },
+    "geometry_event_time_s": {
+     "n": 40,
+     "in_offered_set_rate": 0.0,
+     "null_rate": 1.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    }
+   },
+   "route_crosscheck": {
+    "CAVEAT": "CROSS-CHECK ONLY \u2014 ROUTE stays kinematic; these numbers monitor a closed finding and may never mint a label",
+    "n_gt_valid": 36,
+    "n_gt_turn": 14,
+    "turn_detection_recall": 0.7857,
+    "direction_accuracy_given_detected": 0.4545,
+    "direction_n_detected_lr": 11,
+    "direction_ci": {
+     "mean": 0.4545,
+     "lo": 0.1818,
+     "hi": 0.7273,
+     "ci95": 0.2727,
+     "se": 0.1512,
+     "n_windows": 11,
+     "n_episodes": 11,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "acc3_over_all": 0.7222,
+    "fisher": {
+     "table_gt_left": {
+      "said_left": 4,
+      "said_right": 1
+     },
+     "table_gt_right": {
+      "said_left": 5,
+      "said_right": 1
+     },
+     "odds_ratio": 0.8,
+     "p_two_sided": 1.0,
+     "acc_given_detected_gt_left": 0.8,
+     "acc_given_detected_gt_right": 0.1667
+    },
+    "left_share_of_predicted_turns": 0.8333,
+    "left_share_of_gt_turns": 0.4286,
+    "accuracy_by_confidence_band": {
+     "0.99": {
+      "n": 36,
+      "correct": 26,
+      "acc3": 0.7222
+     }
+    }
+   },
+   "prompt_tokens_mean": 1622.5,
+   "gen_tokens_mean": 91.5,
+   "gen_tokens_p95": 98.0,
+   "gen_seconds_median": 3.654,
+   "peak_vram_gib": 17.033
+  },
+  "pass_B": {
+   "CAVEAT": "SCHEMA ADHERENCE ONLY \u2014 Pass B sees the numeric future ego track; nothing here is accuracy and ROUTE here is not a route measurement",
+   "n_windows": 40,
+   "json_parse_rate_strict": 0.675,
+   "json_usable_rate_incl_salvage": 1.0,
+   "parse_mode_counts": {
+    "complete": 27,
+    "partial_from_raw": 13
+   },
+   "n_rows_from_salvage": 13,
+   "error_rate": 0.0,
+   "truncation_rate": 0.325,
+   "prompt_tokens_mean": 2530.4,
+   "gen_tokens_mean": 1140.7,
+   "gen_tokens_p95": 2200.0,
+   "gen_seconds_median": 24.39,
+   "n_slots": 30,
+   "mean_slot_violation_rate": 0.004,
+   "mean_informative_rate": 0.6683,
+   "event_times": {
+    "SCENARIO.geometry_event_time_s": {
+     "n": 40,
+     "in_offered_set_rate": 0.0,
+     "null_rate": 1.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    },
+    "SCENARIO.geometry_event_end_time_s": {
+     "n": 40,
+     "in_offered_set_rate": 0.0,
+     "null_rate": 1.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    },
+    "SCENARIO.scenario_event_time_s": {
+     "n": 40,
+     "in_offered_set_rate": 0.0,
+     "null_rate": 1.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    }
+   },
+   "slots": {
+    "OBS.distance_bucket": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.175,
+     "n_unknown": 21,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "OBS.lane_type": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "OBS.lead_lane": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.175,
+     "n_unknown": 21,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "OBS.light_state": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.025,
+     "n_unknown": 27,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "OBS.markings": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.55,
+     "n_unknown": 6,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "OBS.relative_motion": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.175,
+     "n_unknown": 21,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "ROUTE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.difficulty": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.lighting": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.road_geometry": {
+     "in_vocab_rate": 0.95,
+     "violation_rate": 0.05,
+     "answered_rate": 1.0,
+     "informative_rate": 0.95,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {
+      "intersection": 2
+     }
+    },
+    "SCENARIO.road_type": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.scenario_tag": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 0.25,
+     "n_unknown": 30,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.surface": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.time_of_day": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.traffic_density": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.weather": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.LANEOBJ": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.MISSION": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.ODD": {
+     "in_vocab_rate": 0.9286,
+     "violation_rate": 0.0714,
+     "answered_rate": 0.7,
+     "informative_rate": 0.65,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {
+      "none": 2
+     }
+    },
+    "STRATEGIC.RISK": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.SPEEDPOLICY": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.STYLE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.DYN": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.HEADWAY": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LATMANEUVER": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LIGHTSTATE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LONMODE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.RULECTX": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.TACPOINT": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.0,
+     "n_unknown": 28,
+     "n_missing": 12,
+     "bad_tokens": {}
+    },
+    "TACTICAL.VSOURCE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.7,
+     "informative_rate": 0.7,
+     "n_unknown": 0,
+     "n_missing": 12,
+     "bad_tokens": {}
+    }
+   }
+  },
+  "scenario": {
+   "n_windows": 40,
+   "road_geometry_passA": {
+    "straight": 27,
+    "junction": 8,
+    "curve_left": 3,
+    "curve_right": 2
+   },
+   "road_geometry_passB": {
+    "straight": 33,
+    "curve_right": 2,
+    "curve_left": 2,
+    "intersection": 2,
+    "junction": 1
+   },
+   "scenario_tag_passB": {
+    "none": 30,
+    "unprotected_turn": 5,
+    "pedestrian_crossing": 2,
+    "parked_vehicle_pass": 2,
+    "blocked_lane": 1
+   },
+   "difficulty_passB": {
+    "routine": 28,
+    "notable": 11,
+    "hard": 1
+   },
+   "cross_pass_geometry_agreement": {
+    "kappa": 0.3632,
+    "observed_agreement": 0.725,
+    "expected_agreement": 0.5681,
+    "n": 40
+   },
+   "geometry_event_time_reach": {},
+   "scenario_kinematic_crosscheck": {
+    "n_vlm_eventful_geometry": 9,
+    "vlm_eventful_rate": 0.225,
+    "n_kinematic_turn": 14,
+    "kinematic_turn_rate": 0.35,
+    "P(kinematic turn | VLM says junction/roundabout/merge/fork)": 0.7778,
+    "P(VLM says junction/roundabout/merge/fork | kinematic turn)": 0.5,
+    "fisher_p": 0.004372,
+    "CAVEAT": "NOT an accuracy check. A junction traversed STRAIGHT is a correct `junction` label with no turn signature, and a 2 s kinematic window cannot see a 5-20 s event at all. A significant association is weak positive evidence that the geometry call tracks reality; its absence would not falsify the labels."
+   },
+   "strata_populated": {
+    "straight": 33,
+    "curve_right": 2,
+    "curve_left": 2,
+    "intersection": 2,
+    "junction": 1
+   }
+  }
+ },
+ "p1_v2": {
+  "n_records": 13,
+  "prompt_version": "vlmsem-2026-07-21-a",
+  "model": "nvidia/Cosmos-Reason2-8B",
+  "val_build": "physicalai-val-f1b378f295ae",
+  "frames_plan": "base",
+  "image_px": 448,
+  "enum_order": "as_written",
+  "n_episodes": 13,
+  "pass_A": {
+   "n_windows": 13,
+   "outcome_counts": {
+    "ok": 13
+   },
+   "parse_failure_rate": 0.0,
+   "enum_violation_rate": 0.0,
+   "truncation_rate": 0.0,
+   "confidence": {
+    "distribution": {
+     "high": 13
+    },
+    "modal_share": 1.0,
+    "n_distinct": 1,
+    "degenerate": true,
+    "float_values_seen": null,
+    "rule": "degenerate = one answer on >=90 % of windows; such a field cannot threshold anything and should be dropped"
+   },
+   "evidence": {
+    "n_with_evidence": 13,
+    "n_unique_strings": 12,
+    "unique_rate": 0.9231,
+    "prompt_copy_rate_all": 0.0,
+    "prompt_copy_rate_turn_calls": 0.0,
+    "n_turn_calls": 2,
+    "top_copied_fragments": {},
+    "detector": "6-word n-gram overlap with the shipped prompt text"
+   },
+   "event_times": {
+    "route_event_time_s": {
+     "n": 13,
+     "in_offered_set_rate": 1.0,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    },
+    "geometry_event_time_s": {
+     "n": 13,
+     "in_offered_set_rate": 1.0,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.0,
+     "top_fabricated": {}
+    }
+   },
+   "route_crosscheck": {
+    "CAVEAT": "CROSS-CHECK ONLY \u2014 ROUTE stays kinematic; these numbers monitor a closed finding and may never mint a label",
+    "n_gt_valid": 12,
+    "n_gt_turn": 5,
+    "turn_detection_recall": 0.4,
+    "direction_accuracy_given_detected": 0.0,
+    "direction_n_detected_lr": 2,
+    "direction_ci": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "se": 0.0,
+     "n_windows": 2,
+     "n_episodes": 2,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "acc3_over_all": 0.5833,
+    "fisher": {
+     "table_gt_left": {
+      "said_left": 0,
+      "said_right": 0
+     },
+     "table_gt_right": {
+      "said_left": 2,
+      "said_right": 0
+     },
+     "odds_ratio": null,
+     "p_two_sided": 1.0,
+     "acc_given_detected_gt_left": null,
+     "acc_given_detected_gt_right": 0.0
+    },
+    "left_share_of_predicted_turns": 1.0,
+    "left_share_of_gt_turns": 0.2,
+    "accuracy_by_confidence_band": {
+     "high": {
+      "n": 12,
+      "correct": 7,
+      "acc3": 0.5833
+     }
+    }
+   },
+   "prompt_tokens_mean": 1805.7,
+   "gen_tokens_mean": 128.5,
+   "gen_tokens_p95": 139.6,
+   "gen_seconds_median": 5.116,
+   "peak_vram_gib": 17.259
+  },
+  "pass_B": {
+   "CAVEAT": "SCHEMA ADHERENCE ONLY \u2014 Pass B sees the numeric future ego track; nothing here is accuracy and ROUTE here is not a route measurement",
+   "n_windows": 13,
+   "json_parse_rate_strict": 0.3846,
+   "json_usable_rate_incl_salvage": 1.0,
+   "parse_mode_counts": {
+    "complete": 5,
+    "partial_from_raw": 8
+   },
+   "n_rows_from_salvage": 8,
+   "error_rate": 0.0,
+   "truncation_rate": 0.6154,
+   "prompt_tokens_mean": 2855.3,
+   "gen_tokens_mean": 2403.0,
+   "gen_tokens_p95": 3500.0,
+   "gen_seconds_median": 135.02,
+   "n_slots": 30,
+   "mean_slot_violation_rate": 0.0133,
+   "mean_informative_rate": 0.4974,
+   "event_times": {
+    "SCENARIO.geometry_event_time_s": {
+     "n": 13,
+     "in_offered_set_rate": 0.6154,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.3846,
+     "top_fabricated": {
+      "11.9": 1,
+      "15.4": 1,
+      "11.0": 1,
+      "11.3": 1,
+      "5.7": 1
+     }
+    },
+    "SCENARIO.geometry_event_end_time_s": {
+     "n": 13,
+     "in_offered_set_rate": 0.7692,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.2308,
+     "top_fabricated": {
+      "19.8": 3
+     }
+    },
+    "SCENARIO.scenario_event_time_s": {
+     "n": 13,
+     "in_offered_set_rate": 0.3077,
+     "null_rate": 0.0,
+     "fabricated_rate": 0.6923,
+     "top_fabricated": {
+      "9.4": 1,
+      "11.9": 1,
+      "15.4": 1,
+      "11.0": 1,
+      "11.3": 1
+     }
+    }
+   },
+   "slots": {
+    "OBS.distance_bucket": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.0,
+     "n_unknown": 5,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "OBS.lane_type": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "OBS.lead_lane": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.0,
+     "n_unknown": 5,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "OBS.light_state": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.0,
+     "n_unknown": 5,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "OBS.markings": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3077,
+     "n_unknown": 1,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "OBS.relative_motion": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.0,
+     "n_unknown": 5,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "ROUTE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.difficulty": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.lighting": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.road_geometry": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.road_type": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.scenario_tag": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 0.4615,
+     "n_unknown": 7,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.surface": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.time_of_day": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.traffic_density": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "SCENARIO.weather": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 1.0,
+     "informative_rate": 1.0,
+     "n_unknown": 0,
+     "n_missing": 0,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.LANEOBJ": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.MISSION": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.ODD": {
+     "in_vocab_rate": 0.6,
+     "violation_rate": 0.4,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.2308,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {
+      "none": 2
+     }
+    },
+    "STRATEGIC.RISK": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.SPEEDPOLICY": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "STRATEGIC.STYLE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.DYN": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3077,
+     "informative_rate": 0.3077,
+     "n_unknown": 0,
+     "n_missing": 9,
+     "bad_tokens": {}
+    },
+    "TACTICAL.HEADWAY": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LATMANEUVER": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LIGHTSTATE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.LONMODE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.RULECTX": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.TACPOINT": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.0,
+     "n_unknown": 5,
+     "n_missing": 8,
+     "bad_tokens": {}
+    },
+    "TACTICAL.VSOURCE": {
+     "in_vocab_rate": 1.0,
+     "violation_rate": 0.0,
+     "answered_rate": 0.3846,
+     "informative_rate": 0.3846,
+     "n_unknown": 0,
+     "n_missing": 8,
+     "bad_tokens": {}
+    }
+   }
+  },
+  "scenario": {
+   "n_windows": 13,
+   "road_geometry_passA": {
+    "straight": 11,
+    "junction": 2
+   },
+   "road_geometry_passB": {
+    "straight": 9,
+    "curve_left": 2,
+    "curve_right": 1,
+    "junction": 1
+   },
+   "scenario_tag_passB": {
+    "none": 7,
+    "unprotected_turn": 4,
+    "pedestrian_crossing": 2
+   },
+   "difficulty_passB": {
+    "routine": 7,
+    "notable": 6
+   },
+   "cross_pass_geometry_agreement": {
+    "kappa": 0.2353,
+    "observed_agreement": 0.6923,
+    "expected_agreement": 0.5976,
+    "n": 13
+   },
+   "geometry_event_time_reach": {
+    "10-20s": 5,
+    "2-5s": 2,
+    "5-10s": 4,
+    "<=2s": 2
+   },
+   "scenario_kinematic_crosscheck": {
+    "n_vlm_eventful_geometry": 2,
+    "vlm_eventful_rate": 0.1538,
+    "n_kinematic_turn": 5,
+    "kinematic_turn_rate": 0.3846,
+    "P(kinematic turn | VLM says junction/roundabout/merge/fork)": 1.0,
+    "P(VLM says junction/roundabout/merge/fork | kinematic turn)": 0.4,
+    "fisher_p": 0.128205,
+    "CAVEAT": "NOT an accuracy check. A junction traversed STRAIGHT is a correct `junction` label with no turn signature, and a 2 s kinematic window cannot see a 5-20 s event at all. A significant association is weak positive evidence that the geometry call tracks reality; its absence would not falsify the labels."
+   },
+   "strata_populated": {
+    "straight": 9,
+    "curve_left": 2,
+    "curve_right": 1,
+    "junction": 1
+   }
+  }
+ }
+}

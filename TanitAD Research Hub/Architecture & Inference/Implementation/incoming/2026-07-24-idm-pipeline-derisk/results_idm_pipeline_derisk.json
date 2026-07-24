@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "experiment": "idm_pipeline_derisk",
+    "date": "2026-07-24T03:56:09Z",
+    "flagship_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "epochs": 50,
+    "device": "cuda",
+    "pipeline": "v1 frozen encoder -> multi-domain IDM head -> per-frame pseudo-labels",
+    "proxy_note": "L2D absent on pod3; proxies = comma (cross-CLASS) + rigB-val (cross-rig same-class). Zero-shot (no target labels). pearson_r2 = affine-calibrated ceiling (weak speed prior).",
+    "pre_reg": "held-out speed/traj R2 > ~0.7 -> de-risked; else name the gap"
+  },
+  "heldout_domains": {
+    "comma_crossCLASS": {
+      "head_trained_on": "rigA+rigB (fisheye)",
+      "target": "comma (rectilinear)",
+      "in_domain_speed_ceiling_ref": 0.592,
+      "n": 11040,
+      "channels": {
+        "speed": {
+          "r2_zeroshot": 0.6248487415714459,
+          "pearson_r2_calibceiling": 0.6319665547929573,
+          "mae": 5.470972372320825,
+          "bias_meanerr": -0.6796521644932658,
+          "calib_slope": 1.081325658871125,
+          "calib_intercept": -0.9532393332508023
+        },
+        "yaw_rate": {
+          "r2_zeroshot": 0.0002591148943714705,
+          "pearson_r2_calibceiling": 0.0006764742491824662,
+          "mae": 0.2517369702329734,
+          "bias_meanerr": 0.024555081582714237,
+          "calib_slope": 0.805781529289382,
+          "calib_intercept": -0.023428750109626854
+        },
+        "long_accel": {
+          "r2_zeroshot": -0.39186859735008506,
+          "pearson_r2_calibceiling": 1.3560049124714048e-05,
+          "mae": 0.4563131486634433,
+          "bias_meanerr": 0.05362083635915088,
+          "calib_slope": 0.005913438045282502,
+          "calib_intercept": -0.012713283319369478
+        }
+      },
+      "trajectory": {
+        "ade_2s": 7.0557384090661035,
+        "de_per_horizon": [
+          2.7244255742749526,
+          5.489791771619005,
+          8.316458290407432,
+          11.692277999963022
+        ],
+        "longitudinal_ade": 7.015295384784804,
+        "lateral_ade": 0.3208818424788249,
+        "traj_x_r2": 0.5993100162465984,
+        "traj_y_r2": 0.11376552449697686
+      }
+    },
+    "rigBval_crossRIG": {
+      "head_trained_on": "rigA+comma",
+      "target": "rigB-val (episode-disjoint)",
+      "n": 4742,
+      "channels": {
+        "speed": {
+          "r2_zeroshot": 0.6574667249388304,
+          "pearson_r2_calibceiling": 0.7106513979091049,
+          "mae": 4.303918661820203,
+          "bias_meanerr": -1.653566279213699,
+          "calib_slope": 0.8357926147188374,
+          "calib_intercept": 3.5445064993794055
+        },
+        "yaw_rate": {
+          "r2_zeroshot": 0.5035074086480908,
+          "pearson_r2_calibceiling": 0.6645209281799997,
+          "mae": 0.057280352835205384,
+          "bias_meanerr": -0.02435657420541441,
+          "calib_slope": 0.7016894806028351,
+          "calib_intercept": 0.018585329557577662
+        },
+        "long_accel": {
+          "r2_zeroshot": -0.5225748958883332,
+          "pearson_r2_calibceiling": 0.0054815152661565,
+          "mae": 0.6810054191972694,
+          "bias_meanerr": -0.23077812327331157,
+          "calib_slope": 0.09996469751927758,
+          "calib_intercept": -0.08691924665367873
+        }
+      },
+      "trajectory": {
+        "ade_2s": 5.7404337144081685,
+        "de_per_horizon": [
+          2.1283952164041695,
+          4.375001438400442,
+          6.919855202158967,
+          9.538483000669094
+        ],
+        "longitudinal_ade": 5.69836410178605,
+        "lateral_ade": 0.32253786210970936,
+        "traj_x_r2": 0.6081487653047104,
+        "traj_y_r2": 0.5347270883818198
+      }
+    }
+  },
+  "in_domain_reference_rigA": {
+    "n": 3519,
+    "channels": {
+      "speed": {
+        "r2_zeroshot": 0.8620201295334539,
+        "pearson_r2_calibceiling": 0.8742197629547465,
+        "mae": 2.391470221917155,
+        "bias_meanerr": -0.2437626982236315,
+        "calib_slope": 1.1291963976912869,
+        "calib_intercept": -1.0847502274813625
+      },
+      "yaw_rate": {
+        "r2_zeroshot": 0.9236530789135408,
+        "pearson_r2_calibceiling": 0.9292623592382072,
+        "mae": 0.017059729875510344,
+        "bias_meanerr": -0.00334012449259862,
+        "calib_slope": 0.9371101438880981,
+        "calib_intercept": 0.0032581016880110117
+      },
+      "long_accel": {
+        "r2_zeroshot": 0.036159272720270086,
+        "pearson_r2_calibceiling": 0.053063404570488,
+        "mae": 0.48603647335988087,
+        "bias_meanerr": -0.06235385817148081,
+        "calib_slope": 0.7047174618006781,
+        "calib_intercept": 0.022747978754646174
+      }
+    },
+    "trajectory": {
+      "ade_2s": 3.602723680402967,
+      "de_per_horizon": [
+        1.1985332984185004,
+        2.403139592838599,
+        4.155972564884306,
+        6.653249265470461
+      ],
+      "longitudinal_ade": 3.58306569580823,
+      "lateral_ade": 0.1600019003382715,
+      "traj_x_r2": 0.6691425187720972,
+      "traj_y_r2": 0.6540868323271143
+    }
+  },
+  "wire_it_proof": {
+    "emitted": [
+      "comma_sample"
+    ],
+    "file": "/workspace/tmp/idm_derisk/sample_pseudolabels.json",
+    "example": {
+      "path": "/workspace/data/comma2k19-val-61c46fca8f7f/ep_00000.pt",
+      "n_frames": 300,
+      "n_labeled": 276,
+      "pseudo_speed_head": [
+        30.649429321289062,
+        30.66893196105957,
+        30.513383865356445,
+        30.582929611206055,
+        30.469749450683594,
+        30.05324363708496,
+        30.228342056274414,
+        30.28622817993164
+      ],
+      "gt_speed_head": [
+        27.62342071533203,
+        27.65906524658203,
+        27.68267822265625,
+        27.68364906311035,
+        27.69123649597168,
+        27.71475601196289,
+        27.75039291381836,
+        27.775943756103516
+      ],
+      "pseudo_traj0": [
+        [
+          15.70719051361084,
+          0.07829569280147552
+        ],
+        [
+          30.82789421081543,
+          0.07547224313020706
+        ],
+        [
+          45.008384704589844,
+          0.164181187748909
+        ],
+        [
+          56.35030746459961,
+          0.4452657401561737
+        ]
+      ]
+    }
+  },
+  "readiness": {
+    "comma_crossCLASS": {
+      "speed_r2_zeroshot": 0.6248487415714459,
+      "speed_pearson_r2": 0.6319665547929573,
+      "traj_x_r2": 0.5993100162465984,
+      "ade_2s": 7.0557384090661035,
+      "meets_0p7_speed_zeroshot": false,
+      "meets_0p7_speed_calibrated": false
+    },
+    "rigBval_crossRIG": {
+      "speed_r2_zeroshot": 0.6574667249388304,
+      "speed_pearson_r2": 0.7106513979091049,
+      "traj_x_r2": 0.6081487653047104,
+      "ade_2s": 5.7404337144081685,
+      "meets_0p7_speed_zeroshot": false,
+      "meets_0p7_speed_calibrated": true
+    }
+  }
+}

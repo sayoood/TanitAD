@@ -1,0 +1,61 @@
+{
+  "arm": "RefcCL — encoder-in-the-loop closed-loop-aware training of REF-C (Sayed-greenlit 2026-07-24)",
+  "date_berlin": "2026-07-24",
+  "host": "tanitad-eval A6000, gpu_lock refccl (acquired free, released cleanly on completion)",
+  "stream": "D2 (a1f26c92) — sole promotable path from the phase-2 verdict",
+  "one_line": "Unfreeze the last-k REF-C ResNet encoder stages at a low lr (5e-6 / 2e-5) on the g2 in-envelope recovery-augmentation objective, canary-gated on encoder-integrity, to test whether touching the encoder unblocks the decoder-only departure↔ADE Pareto trade WITHOUT wrecking the representation.",
+  "base": "REF-C base 104.2M (refc-base-30k, step 29999, md5 8f10d6f9...), read-only; each FT wrote a NEW ckpt",
+  "held_out_eval": "episode-disjoint 28:40 (12 eps / 264 windows), paired episode-cluster bootstrap; base corridor_departure@1.75m 0.0174, closed_ade2s 0.587",
+  "configs": {
+    "refccl_s1": "unfreeze last 1 stage (51.56M enc), lr_enc 5e-6, steps 700, g2 settings",
+    "refccl_s2": "unfreeze last 1 stage, lr_enc 2e-5 (material move), steps 700, g2 settings"
+  },
+  "results": {
+    "s1": "CANARY HOLDS (feat_cos 0.9968, man 0.9965, route 0.9653); planner WORSE (cdr 0.0174->0.0502 dCDR-0.0328 S, ade 0.587->1.077 dADE-0.490 S). Encoder barely moved -> tiny nudge destabilized the fmap-reading decoder.",
+    "s2": "CANARY HOLDS (feat_cos 0.9658, rel_l2 0.263, man 0.9861, route 0.9167) at ~3x s1's drift; NO departure win (cdr 0.0174->0.0172 dCDR+0.0002 ns), ade recovered vs s1 but still separated-worse (0.671, dADE-0.084 S)."
+  },
+  "verdict": "PRE-REGISTERED BRANCH (c): canary-intact but NO net win -> the departure<->ADE trade is NOT a frozen-encoder artifact. Branch (a) NOT reached (not promotable); branch (b) did NOT fire (canary held at both settings).",
+  "bankable_positives": [
+    "REF-C's encoder is SAFELY fine-tunable: a material last-stage move (lr_enc 2e-5, rel_l2 0.263) keeps the integrity canary HOLDING (feat_cos 0.966, aux agreement >0.91) -> the v4 WM-degradation hazard is AVOIDABLE with a low-lr last-stage FT. De-risks future encoder-touching work (fuller RefcCL co-train, camera-conditioning).",
+    "the open quadrant (renderer-free ∧ non-self-referential ∧ data-efficient recovery) is real and generalizes to held-out eps (decoder-only halves departures, beats Gate-1 memorization)."
+  ],
+  "deeper_limit_hypothesis": "the single-step in-envelope synthetic-perturbation recovery signal is a 'react harder to instantaneous lateral offset' signal; on the low-OOD instrument any config that cuts departures over-reacts enough to raise ADE, regardless of which weights train. Escape = a closed-loop-CONSISTENT objective (RoaD/CAT-K on-policy rollout recovery) -- TESTED next (LOWOOD-CL-TRAIN), result below.",
+  "followup_lowood_cl_train": {
+    "what": "the decisive renderer-free test (Research/2026-07-24-low-ood-closedloop-renderer.md §7): closed-loop-CONSISTENT on-policy CAT-K/RoaD recovery on the real-footage low-OOD source (roll REF-C forward, train to recover from poses it ACTUALLY visits). Decoder-only, 3 DAgger rounds x 250 steps, ~32k on-policy states.",
+    "envelope_honesty": "frac_inside <=1.16x envelope 0.948/0.948/0.949 across rounds; mean on-policy |drift| 0.13-0.27m; non-self-referential (real frames) -> DAGGER_HURTS trap avoided",
+    "held_out_overall": "dCDR -0.0460 [-0.120,+0.005] ns (departs MORE); dADE -0.329 [-0.732,-0.034] S (worse); cdr 0.0174->0.0634, ade 0.587->0.916",
+    "verdict": "PRE-REGISTERED BOUND: dADE still separated-worse -> the on-policy objective does NOT escape the trade; it is WORSE than synthetic D2 (on-policy drift is tiny 0.13m => RoaD/CAT-K starved of informative failures => impoverished signal => over-reacts on held-out).",
+    "closes": "the closed-loop-improvement-via-recovery-augmentation direction: the departure<->ADE trade is intrinsic to recovery-aug on the low-OOD lane-keeping instrument, independent of objective (synthetic/on-policy) AND parameter subset (decoder/encoder). The cheap instrument is EXHAUSTED for road-keeping (A).",
+    "justifies": "the renderer paths (now necessary not premature): (1) a MAP/lane-aware or tolerance-band instrument so benign recovery isn't punished as ADE; (2) Path 3 reactive-agent overlay on real frames for collision (B).",
+    "new_diagnostic": "RoaD/CAT-K on-policy training needs a policy that ACTUALLY fails on the source; on a low-OOD source where the base rarely drifts, synthetic perturbation is the STRONGER signal.",
+    "artifact": "LOWOOD_CL_TRAIN_RESULTS.md / corridor_lowood_cl.json / cl_provenance.json / lowood_cl_train.log / lowood_cl_train.py; ckpt on pod /workspace/refc-lowood-cl/"
+  },
+  "followup_tolerance_rescore": {
+    "what": "re-scored the EXISTING rollouts (base + naive-D2 + g2 + RefcCL-s2 + LOWOOD-CL) with a tolerance-band metric (band_ade2d = max(0, 2D-dev - band), fair analog of closed_ade2s forgiving benign in-lane recovery) instead of exact-path L2-ADE. NO new training. Primary band 1.0m (half the 1.75m lane-half-width); base band_ade2d(1.0)=0.1997>0 so the band is meaningful.",
+    "key_finding": "the raw-ADE 'trade' was LARGELY a knife-edge-metric artifact: under band 1.0m the ADE-penalty FULLY disappears (CI includes 0) for 3 of 4 configs (g2 -0.125->-0.024; RefcCL-s2 -0.084->-0.004; LOWOOD-CL -0.329->-0.178) and shrinks 74% for naive (-0.288->-0.076, small separated residual). Exact-path L2-ADE overstated the trade ~4x.",
+    "verdict": "STRICT pre-reg BOUND (no config: dCDR CI-excl-0 AND band_ade2d CI-incl-0) BUT the reframe is load-bearing: the residual blocker SHIFTED from ADE (mostly artifact) to the DEPARTURE signal, which is underpowered at n=12 (naive +0.008 ns here vs +0.0089 S in D2 eval -- boundary-significant), NOT a real ADE wall.",
+    "redirection": "cheapest next steps are MEASUREMENT not renderer: (1) adopt band_ade2d as the fair closed-loop metric (exact L2-ADE mis-scores benign recovery); (2) more-powered departure eval (>n=12 held-out) to resolve the marginal departure win. Renderer paths remain for reactive-agent (B) only.",
+    "artifact": "TOLERANCE_RESCORE_RESULTS.md / tolerance_rescore.json / tolerance_rescore.log / tolerance_rescore.py"
+  },
+  "followup_powered_departure_eval": {
+    "what": "2-fold cross-fit of the naive recovery recipe -> maximally-powered n=40 held-out (existing 0:28-trained ckpts cap at n=12). foldA train 0:20/eval 20:40 + foldB train 20:40/eval 0:20, pooled = all 40 eps held-out, 1.83x power. Scored under corridor_departure AND fair band_ade2d(1.0).",
+    "result_n40": "base_dep 0.0134 -> ft_dep 0.0436 (3.3x MORE); dCDR -0.0302 [-0.0595,-0.0088] SEPARATED (departs MORE); band_ade2d -0.3655 S; exact-ADE -0.6614 S",
+    "verdict": "PRE-REGISTERED BOUND decisively: the n=12 departure win (+0.0089 S) REVERSES at n=40 cross-fit (-0.0302 S) -> it was n=12 favorable-split noise -> recovery-aug is NOT a net win on road-keeping. Direction closes honestly.",
+    "confound_flagged": "cross-fit trains 20-ep folds vs the 28-ep original -> fold-FTs notably worse (ft_dep 0.044 vs 0.0085); n AND per-fold data both changed. But the standard unbiased cross-fit estimate is negative+separated, and a lever whose win needs 28 eps + a favorable split and reverses under cross-fit is not robustly promotable.",
+    "RETRACTION_FLAG": "class C5 (effect off an underpowered single split): the D2/RefcCL 'held-out departure reduction' headlines were n=12-fragile; the powered n=40 cross-fit does not support them. Forward use of 'recovery-aug reduces departures' must cite the n=40 BOUND. FLAGGED for the orchestrator to append to RETRACTION_LOG.md (subagent does not edit the log directly).",
+    "durable_positives": "the method/machinery (renderer-free recovery, on-policy harness, tolerance-band metric, encoder canary) are sound + reusable; REF-C encoder safely fine-tunable; 2 measurement lessons (use tolerance-band ADE not exact-L2; use full-corpus cross-fit not n=12) should gate future closed-loop claims.",
+    "artifact": "POWERED_DEPARTURE_RESULTS.md / powered_departure.json / powered_departure.log / powered_departure_eval.py; fold ckpts on pod /workspace/refc-naive-fold{A,B}/"
+  },
+  "registry_flag": "MODEL_REGISTRY.md: add a RefcCL row under REF-C — arm name RefcCL, base refc-base-30k, encoder-in-loop recovery-aug, held-out low-OOD lane-keeping = branch (c) NOT-promotable, canary-safe encoder-FT confirmed. NOT a deployed model (research arm). Registry edit is the registry owner's call (agents don't edit the registry directly).",
+  "deliverable_manifest": [
+    {"artifact": "PRE_REGISTRATION.md", "what": "RefcCL 3-way pre-reg + canary gate", "where": "repo (staged)"},
+    {"artifact": "RESULTS.md", "what": "s1 + s2 MEASURED + final branch-(c) verdict + bankable positives", "where": "repo (staged)", "evidence": "MEASURED"},
+    {"artifact": "corridor_refccl_s1.json / corridor_refccl_s2.json", "what": "held-out paired corridor+ADE", "where": "repo (staged) + pod", "evidence": "MEASURED"},
+    {"artifact": "canary_refccl_s1.json / canary_refccl_s2.json", "what": "encoder-integrity canary", "where": "repo (staged) + pod", "evidence": "MEASURED"},
+    {"artifact": "refccl_s1.log / refccl_s2.log", "what": "FT+eval+canary stdout", "where": "repo (staged) + pod", "evidence": "MEASURED"},
+    {"artifact": "recovery_aug_ft.py (--unfreeze-encoder-stages/--lr-encoder) + encoder_canary.py", "what": "the RefcCL machinery", "where": "../2026-07-23-refc-planner-closedloop/ (shared D2 tools, staged)", "evidence": "CPU-smoked"}
+  ],
+  "eval_released": "MEASURED after s2: gpu_lock status=FREE, GPU 0 MiB, no compute-apps, no refccl process -- free for the from-scratch 10k gate",
+  "pod_artifacts": "/workspace/refc-ft-refccl_s1/, /workspace/refc-ft-refccl_s2/ (ckpts), /workspace/refc_cl_d2/ (scripts+jsons)",
+  "staging": "git add explicit pathspec, NOT committed/pushed (Agent Operating Standard); index carries other agents' work -> commit with explicit pathspec, no --amend"
+}

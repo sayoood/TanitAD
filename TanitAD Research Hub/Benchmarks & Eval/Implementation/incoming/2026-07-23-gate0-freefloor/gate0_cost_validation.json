@@ -1,0 +1,89 @@
+{
+  "purpose": "Gate-0 off-road cost geometry validation (frame + sign) before the suite run",
+  "evidence_class": "MEASURED (tanitad-eval, offline CPU)",
+  "frame_resolution": {
+    "finding": "driver-received current.pose is in the MAP (lane) frame under IDENTITY; ds.rig.world_to_nre (translation only) must NOT be applied",
+    "gt_raw_ego_local_onroad_cost_mean_m": 0.0,
+    "gt_after_world_to_nre_offroad_cost_mean_m": 21.53,
+    "note": "the lane union spans the ego path region; first-50-lane sampling earlier gave a false 192 m gap"
+  },
+  "force_gt_driver_pose_check": {
+    "method": "real force-GT driver-received poses (refc_openloop_preds.jsonl) vs each scene lane-union, identity",
+    "sessions": {
+      "0a7361a0/clipgt-000525f6": {
+        "n": 75,
+        "cost_mean_m": 0.0,
+        "cost_max_m": 0.07,
+        "frac_onroad_lt0p5m": 1.0,
+        "clean_offroad_pt_cost_m": 202.3
+      },
+      "09e980ac/clipgt-00040136": {
+        "n": 75,
+        "cost_mean_m": 0.0,
+        "cost_max_m": 0.0,
+        "frac_onroad_lt0p5m": 1.0,
+        "clean_offroad_pt_cost_m": 132.7
+      },
+      "0299069c/clipgt-000548db": {
+        "n": 75,
+        "cost_mean_m": 0.0,
+        "cost_max_m": 0.12,
+        "frac_onroad_lt0p5m": 1.0,
+        "clean_offroad_pt_cost_m": 100.8
+      },
+      "02ddd5d8/clipgt-00064c58": {
+        "n": 75,
+        "cost_mean_m": 0.0,
+        "cost_max_m": 0.0,
+        "frac_onroad_lt0p5m": 1.0,
+        "clean_offroad_pt_cost_m": 89.6
+      }
+    },
+    "mean_frac_onroad": 1.0,
+    "verdict": "IDENTITY-CONFIRMED"
+  },
+  "alpasim_metric_alignment": {
+    "lane_polygon": "verbatim port of eval/scorers/offroad.py:_get_lane_polygon (left_edge ++ flip(right_edge))",
+    "drivable_surface": "shapely.ops.unary_union over all lanes; off-road cost = distance-to-union (0 inside)"
+  },
+  "production_select_unit_test": {
+    "scene": "clipgt-00169207-9da7-44c4-a67b-a925e77056ff",
+    "ego_pose": [
+      3.4,
+      0.0,
+      0.0
+    ],
+    "onroad_anchor_cost_m": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "offroad_anchor_cost_m": [
+      3.24,
+      11.28,
+      19.31,
+      23.54
+    ],
+    "conf": [
+      0.0,
+      12.0
+    ],
+    "floor_off_selected": 1,
+    "floor_off_expected": 1,
+    "floor_on_selected": 0,
+    "floor_on_expected": 0,
+    "floor_on_diag": {
+      "base_idx": 1,
+      "floor_idx": 0,
+      "base_off": 17.787,
+      "sel_off": 0.0,
+      "base_offmax": 23.54,
+      "sel_offmax": 0.0,
+      "clamp": false,
+      "coll_sel": 0.0
+    },
+    "verdict": "PASS"
+  },
+  "overall_verdict": "COST TRUSTWORTHY - PROCEED TO SUITE"
+}

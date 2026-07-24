@@ -1,0 +1,73 @@
+{
+  "experiment": "free inference-time floor rung 3 — WM-MPPI/CEM planning over the flagship v1 world model vs the single-step re-plan",
+  "date": "2026-07-23",
+  "evidence_class": "MEASURED",
+  "model": {
+    "key": "flagship-30k",
+    "alias": "flagship4b-speedjerk-30k (deployed v1)",
+    "ckpt_step": 29999,
+    "hf": "Sayood/tanitad-flagship-4b-speedjerk"
+  },
+  "harness": "taniteval/taniteval/closedloop.py (task #21, no-renderer kinematic) + wm_mpc.py (rung 3)",
+  "arms": {
+    "A_open_plan_bike": "single-shot open-loop (plan once, track frozen; predictor never stepped)",
+    "B_closed_bike": "single-step re-plan (imagination-in-the-loop, pure-pursuit inverse) = the -0.213 baseline",
+    "C_mpc_bike": "receding-horizon WM MPPI/CEM: sample K action seqs, roll each through the WM, select by GT-free cost (track anchor + progress + comfort). ONLY the action selection differs from B"
+  },
+  "headline_config": {
+    "method": "mppi", "K": 8, "H": 8, "sigma_steer": 0.008, "sigma_accel": 0.40,
+    "temp": 0.7, "w_track": 1.0, "w_progress": 0.05, "w_comfort": 0.20, "cost_path": "grnd"
+  },
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py)",
+  "n_windows": 265,
+  "n_episodes": 12,
+  "val": "physicalai-val-0c5f7dac3b11 ep_00000..ep_00011 (held-out subset, same as the -0.213 proof)",
+  "compute": {
+    "device": "NVIDIA GeForce RTX 4060",
+    "batch": 8,
+    "ms_per_decision_batched_K8": 14.08,
+    "registry_reference": "CEM ~20.8 ms @ K=8 (RETRACTION_LOG 07-21: encode once + broadcast, NOT re-encode per candidate)",
+    "note": "batch=1 single-ego deploy-tick timing in wm_mpc_result.json timing_batch1"
+  },
+  "sanity_check": {
+    "reproduced_A_ade@2s": 1.933,
+    "reproduced_B_ade@2s": 1.720,
+    "reproduced_B_minus_A_ade@2s": -0.213,
+    "expected_proof_B_minus_A": -0.213,
+    "note": "arms A/B produced by the UNMODIFIED closedloop functions reproduce the imagination proof EXACTLY -> harness wiring valid -> the C reading is admissible"
+  },
+  "headline_result": {
+    "A_ade@2s": 1.933,
+    "B_ade@2s": 1.720,
+    "C_ade@2s": 1.731,
+    "paired_delta_C_minus_B_ade@2s": 0.011,
+    "paired_ci": [-0.029, 0.071],
+    "separated": false,
+    "p_C_gt_B": 0.6265,
+    "paired_delta_C_minus_A_ade@2s": -0.202,
+    "paired_delta_C_minus_B_divergence_gt5m@2s": 0.004,
+    "paired_delta_C_minus_B_lateral_offroad@2s": 0.136,
+    "paired_delta_C_minus_B_lateral_offroad_ci": [0.006, 0.327],
+    "paired_delta_C_minus_B_lateral_offroad_separated_WORSE": true,
+    "verdict": "TIE (ADE + divergence); CI-separated WORSE on the lateral off-road proxy"
+  },
+  "secondary_grid_paired_delta_C_minus_B_ade@2s": {
+    "mppi_K16": {"delta": 0.005, "ci": [-0.038, 0.066], "separated": false, "ms_dec_batched": 27.51},
+    "mppi_K4": {"delta": 0.038, "ci": [-0.031, 0.133], "separated": false, "ms_dec_batched": 8.00},
+    "cem_K8": {"delta": 0.007, "ci": [-0.027, 0.054], "separated": false, "ms_dec_batched": 14.08},
+    "mppi_K8_bike_cost": {"delta": 0.087, "ci": [0.033, 0.164], "separated": true, "direction": "WORSE", "ms_dec_batched": 14.25},
+    "mppi_H12": {"delta": 0.044, "ci": [-0.025, 0.133], "separated": false, "ms_dec_batched": 21.24}
+  },
+  "timing_batch1_ms_per_decision_single_ego": {
+    "mppi_K8_H8": 49.68, "mppi_K16_H8": 48.17, "mppi_K32_H8": 62.06, "cem_K8_H8": 49.51,
+    "tick_budget_ms": 100, "note": "all comfortably under the 100 ms / 10 Hz tick; feasibility not the blocker, efficacy is"
+  },
+  "final_verdict": "TIE — WM-MPPI/CEM planning does NOT beat the single-step re-plan; every WM-cost config ties (best K16 delta +0.005), the one separated config (kinematic bike-cost) is WORSE, and the lateral off-road proxy is separated-worse. Do NOT promote rung 3 on this evidence; deferred (not refuted) to an AlpaSim-validated test. Compute is real-time.",
+  "caveats": [
+    "self-referential (WM is both state estimator and simulator) — mechanism proof, not a safety rate",
+    "kinematic no-renderer harness; off-road = large lateral-deviation proxy",
+    "n=12 val episodes; arms paired on identical windows so the DELTA is the robust part",
+    "harness VALIDATED for inference-mechanism proofs, REFUTED for training (DAgger); rung 3 is inference-only",
+    "AlpaSim (faithful, non-self-referential) is the decision-grade confirmer"
+  ]
+}

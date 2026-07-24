@@ -1,0 +1,67 @@
+{
+  "config": {
+    "arms": "large,xl,med,wplus",
+    "steps": 5000,
+    "bs": 24,
+    "lr": 0.0004,
+    "warmup": 300,
+    "log": 1000,
+    "out": "/root/frozenwm/bigplanner_results.json"
+  },
+  "refs": {
+    "W": 0.5989,
+    "oracle": 0.4045,
+    "cv": 0.8463,
+    "holdv0": 0.7883,
+    "search_warm": 0.1322
+  },
+  "arms": {
+    "large": {
+      "ade2s": 0.8565,
+      "ci": [
+        0.5043997764587402,
+        1.3161182403564453
+      ],
+      "fde2s": 1.7901,
+      "miss2m": 0.2868,
+      "params": 52801794,
+      "train_loss": 0.5097,
+      "cfg": {
+        "d": 768,
+        "enc": 5,
+        "dec": 3,
+        "heads": 8,
+        "ff": 2048,
+        "head": "query"
+      }
+    }
+  },
+  "paired": {
+    "large": {
+      "minus_W": [
+        0.2576,
+        0.1046,
+        0.4881,
+        1.0
+      ],
+      "minus_oracle": [
+        0.452,
+        0.0948,
+        0.888,
+        0.997
+      ],
+      "minus_cv": [
+        0.0102,
+        -0.0673,
+        0.0959,
+        0.569
+      ],
+      "minus_search_warm": [
+        0.7243,
+        0.4021,
+        1.1615,
+        1.0
+      ]
+    }
+  }
+}

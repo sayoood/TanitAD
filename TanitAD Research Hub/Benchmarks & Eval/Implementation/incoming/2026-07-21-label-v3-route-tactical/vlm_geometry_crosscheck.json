@@ -1,0 +1,212 @@
+{
+ "source_dir": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-07-21-vlm-production-semantic",
+ "vlm_val_build": "physicalai-val-f1b378f295ae (80 eps, pod3)",
+ "enum": [
+  "straight",
+  "curve_left",
+  "curve_right",
+  "junction",
+  "roundabout",
+  "merge",
+  "fork",
+  "unknown"
+ ],
+ "road_geometry_total": {
+  "straight": 1091,
+  "curve_right": 153,
+  "junction": 174,
+  "curve_left": 138,
+  "left": 5,
+  "fork": 1,
+  "right": 3,
+  "roundabout": 1,
+  "unknown": 10,
+  "intersection": 9
+ },
+ "road_geometry_per_file": {
+  "ab_base.jsonl": {
+   "records": 100,
+   "road_geometry": {
+    "straight": 72,
+    "curve_right": 11,
+    "junction": 4,
+    "curve_left": 12,
+    "left": 1
+   }
+  },
+  "ab_base_randenum.jsonl": {
+   "records": 100,
+   "road_geometry": {
+    "straight": 72,
+    "curve_right": 8,
+    "fork": 1,
+    "curve_left": 11,
+    "junction": 4,
+    "left": 1
+   }
+  },
+  "ab_dense_early.jsonl": {
+   "records": 100,
+   "road_geometry": {
+    "straight": 67,
+    "curve_right": 10,
+    "curve_left": 12,
+    "right": 1,
+    "junction": 5,
+    "left": 2,
+    "roundabout": 1
+   }
+  },
+  "ab_dense_hist.jsonl": {
+   "records": 100,
+   "road_geometry": {
+    "straight": 71,
+    "curve_right": 11,
+    "junction": 6,
+    "curve_left": 11
+   }
+  },
+  "ab_wide_cheap.jsonl": {
+   "records": 100,
+   "road_geometry": {
+    "straight": 72,
+    "curve_right": 11,
+    "junction": 7,
+    "curve_left": 5
+   }
+  },
+  "legacy_pod3_passA.jsonl": {
+   "records": 400,
+   "road_geometry": {
+    "straight": 253,
+    "junction": 72,
+    "curve_right": 38,
+    "curve_left": 32,
+    "unknown": 5
+   }
+  },
+  "legacy_pod3_passB.jsonl": {
+   "records": 160,
+   "road_geometry": {
+    "straight": 81,
+    "curve_right": 16,
+    "intersection": 5,
+    "curve_left": 10,
+    "junction": 2,
+    "left": 1
+   }
+  },
+  "p1_v1.jsonl": {
+   "records": 40,
+   "road_geometry": {
+    "junction": 8,
+    "straight": 51,
+    "curve_left": 5,
+    "curve_right": 3
+   }
+  },
+  "p1_v2.jsonl": {
+   "records": 13,
+   "road_geometry": {
+    "straight": 13,
+    "curve_right": 1,
+    "junction": 3,
+    "curve_left": 1
+   }
+  },
+  "p1_v2b.jsonl": {
+   "records": 3,
+   "road_geometry": {
+    "straight": 5,
+    "curve_right": 1
+   }
+  },
+  "r2_as_written.jsonl": {
+   "records": 200,
+   "road_geometry": {
+    "junction": 30,
+    "straight": 139,
+    "unknown": 3,
+    "curve_left": 14,
+    "curve_right": 14
+   }
+  },
+  "r2_right_first.jsonl": {
+   "records": 200,
+   "road_geometry": {
+    "straight": 148,
+    "curve_right": 13,
+    "curve_left": 16,
+    "junction": 23
+   }
+  },
+  "scenario_strata_val.jsonl": {
+   "records": 30,
+   "road_geometry": {
+    "straight": 17,
+    "curve_right": 4,
+    "junction": 4,
+    "curve_left": 3,
+    "unknown": 2
+   }
+  },
+  "val_full.jsonl": {
+   "records": 30,
+   "road_geometry": {
+    "straight": 30,
+    "curve_right": 12,
+    "intersection": 4,
+    "junction": 6,
+    "curve_left": 6,
+    "right": 2
+   }
+  }
+ },
+ "enum_violations": {
+  "left": 5,
+  "right": 3,
+  "intersection": 9
+ },
+ "kin_v21_windows": 230,
+ "kin_v21_net_dyaw_bands": {
+  "<45": 184,
+  ">=90": 18,
+  ">=45": 24,
+  ">=135": 4
+ },
+ "roundabout_scale_windows": [
+  {
+   "episode": "ep_00078",
+   "t": 80,
+   "net_dyaw_deg": 149.6,
+   "peak_kappa": 0.12002,
+   "arc_m": 86.7,
+   "reason": "tight_transient"
+  },
+  {
+   "episode": "ep_00015",
+   "t": 0,
+   "net_dyaw_deg": 189.4,
+   "peak_kappa": 0.07702,
+   "arc_m": 126.7,
+   "reason": "tight_transient"
+  },
+  {
+   "episode": "ep_00017",
+   "t": 0,
+   "net_dyaw_deg": 173.2,
+   "peak_kappa": 0.01939,
+   "arc_m": 269.2,
+   "reason": "gray_zone"
+  },
+  {
+   "episode": "ep_00018",
+   "t": 0,
+   "net_dyaw_deg": 137.1,
+   "peak_kappa": 0.05591,
+   "arc_m": 150.0,
+   "reason": "tight_transient"
+  }
+ ],
+ "note": "A per-window join with the kinematic v3 mint is impossible offline: three disjoint val builds, none a subset of another."
+}

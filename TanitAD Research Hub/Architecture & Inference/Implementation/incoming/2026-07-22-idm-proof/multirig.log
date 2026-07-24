@@ -1,0 +1,59 @@
+=== MULTIRIG PRIMARY {rig-A + comma} -> rig-B ===
+[17:51:34] encoder loaded: 87.0M enc + 0.1M readout, state_dim 2048, ckpt step 29999
+[17:51:38] experiment multirig: 100 train, eval {in_rigA_heldout:40, in_comma_heldout:40, cross_heldout_rigB:120}
+[17:51:44] === arm frozen (ft_blocks=0) ===
+[17:52:50]   arm ft_blocks=0: 100 train eps, 10783 windows, k_frozen=12
+[17:54:28]     step 0/1000 loss 3.8978
+[17:54:49]     step 125/1000 loss 1.0827
+[17:55:10]     step 250/1000 loss 0.5125
+[17:55:30]     step 375/1000 loss 0.5626
+[17:55:50]     step 500/1000 loss 0.5183
+[17:56:10]     step 625/1000 loss 0.4484
+[17:56:26]     step 750/1000 loss 0.3498
+[17:56:44]     step 875/1000 loss 0.3747
+[17:57:02]     step 999/1000 loss 0.3799
+[18:01:44]   frozen VERDICT {"cross_speed_r2": -3.434980112381326, "cross_yaw_r2": 0.2017695006146214, "cross_ade_2s": 19.278444325833295, "in_domain_ade_2s": 4.009015354560664, "ade_ratio": 4.80877288332211, "PASS": false}
+[18:01:44] === arm light_ft (ft_blocks=4) ===
+[18:02:45]   arm ft_blocks=4: 100 train eps, 10783 windows, k_frozen=8
+[18:04:04]     step 0/1000 loss 3.8978
+[18:05:03]     step 125/1000 loss 1.1917
+[18:06:03]     step 250/1000 loss 0.5406
+[18:07:03]     step 375/1000 loss 0.4872
+[18:08:02]     step 500/1000 loss 0.5045
+[18:09:02]     step 625/1000 loss 0.4334
+[18:10:02]     step 750/1000 loss 0.3478
+[18:11:02]     step 875/1000 loss 0.3745
+[18:12:01]     step 999/1000 loss 0.3820
+[18:16:33]   light_ft VERDICT {"cross_speed_r2": -1.6076078307648407, "cross_yaw_r2": -0.15240073765523365, "cross_ade_2s": 13.399991949956805, "in_domain_ade_2s": 3.869241503227332, "ade_ratio": 3.4632089878028753, "PASS": false}
+[18:16:33] WROTE /workspace/tmp/idm/multirig_primary.json
+[18:16:33] IDM_REGATE_DONE
+=== MULTIRIG SYMMETRIC {rig-A + rig-B} -> comma ===
+[18:16:58] encoder loaded: 87.0M enc + 0.1M readout, state_dim 2048, ckpt step 29999
+[18:17:02] experiment multirig_symm: 90 train, eval {in_rigA_heldout:40, in_rigB_heldout:40, cross_heldout_comma:90}
+[18:17:08] === arm frozen (ft_blocks=0) ===
+[18:17:46]   arm ft_blocks=0: 90 train eps, 7905 windows, k_frozen=12
+[18:18:58]     step 0/1000 loss 3.4125
+[18:19:18]     step 125/1000 loss 0.9021
+[18:19:39]     step 250/1000 loss 0.8494
+[18:19:59]     step 375/1000 loss 0.3753
+[18:20:18]     step 500/1000 loss 0.3490
+[18:20:37]     step 625/1000 loss 0.2552
+[18:20:57]     step 750/1000 loss 0.2423
+[18:21:17]     step 875/1000 loss 0.1031
+[18:21:37]     step 999/1000 loss 0.3152
+[18:26:03]   frozen VERDICT {"cross_speed_r2": 0.44014327310545986, "cross_yaw_r2": 0.00019066053438632213, "cross_ade_2s": 11.319958238949663, "in_domain_ade_2s": 4.073786995442045, "ade_ratio": 2.778731006705798, "PASS": false}
+[18:26:03] === arm light_ft (ft_blocks=4) ===
+[18:26:54]   arm ft_blocks=4: 90 train eps, 7905 windows, k_frozen=8
+[18:27:56]     step 0/1000 loss 3.4125
+[18:28:55]     step 125/1000 loss 0.7357
+[18:29:55]     step 250/1000 loss 0.6133
+[18:30:54]     step 375/1000 loss 0.4027
+[18:31:54]     step 500/1000 loss 0.3744
+[18:32:53]     step 625/1000 loss 0.2626
+[18:33:53]     step 750/1000 loss 0.2793
+[18:34:52]     step 875/1000 loss 0.1140
+[18:35:51]     step 999/1000 loss 0.3457
+[18:40:08]   light_ft VERDICT {"cross_speed_r2": 0.4517798050422356, "cross_yaw_r2": 0.00033783587152236283, "cross_ade_2s": 11.329354886995876, "in_domain_ade_2s": 4.197161033366252, "ade_ratio": 2.699290019356104, "PASS": false}
+[18:40:08] WROTE /workspace/tmp/idm/multirig_symm.json
+[18:40:08] IDM_REGATE_DONE
+ALL_MULTIRIG_DONE

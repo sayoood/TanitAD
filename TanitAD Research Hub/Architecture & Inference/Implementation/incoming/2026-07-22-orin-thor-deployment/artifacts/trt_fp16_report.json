@@ -1,0 +1,40 @@
+{
+  "trt_version": "10.16.1.11",
+  "gpu": "NVIDIA A40",
+  "precision": "FP16 (fp32 fallback allowed)",
+  "note": "A40 SM86 PROXY engine \u2014 NOT portable to Orin SM87/Thor; proves path + FP16 latency + MHA fusion",
+  "encoder": {
+    "parse_ok": true,
+    "build_ok": true,
+    "build_s": 37.5,
+    "engine_mb": 177.4,
+    "fp16_latency": {
+      "p50_ms": 1.205,
+      "p99_ms": 1.211
+    },
+    "fusion": {
+      "n_layers": 105,
+      "standalone_softmax": false,
+      "myelin_or_foreign": true,
+      "attention_named": true,
+      "verdict": "fused (myelin/foreign block, no standalone softmax)"
+    }
+  },
+  "predictor": {
+    "parse_ok": true,
+    "build_ok": true,
+    "build_s": 30.9,
+    "engine_mb": 180.7,
+    "fp16_latency": {
+      "p50_ms": 0.666,
+      "p99_ms": 0.672
+    },
+    "fusion": {
+      "n_layers": 94,
+      "standalone_softmax": false,
+      "myelin_or_foreign": true,
+      "attention_named": true,
+      "verdict": "fused (myelin/foreign block, no standalone softmax)"
+    }
+  }
+}

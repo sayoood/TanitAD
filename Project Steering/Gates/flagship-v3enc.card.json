@@ -1,0 +1,21 @@
+{
+  "run": "flagship-v3enc",
+  "gate_step": 10000,
+  "primary_metric": "ade_0_2s",
+  "primary_threshold": 2.5,
+  "primary_direction": "<=",
+  "primary_source": "held-out taniteval eval of the 10k milestone ckpt (D-032 archives it)",
+  "secondary": [
+    "encoder_speed_probe_r2>=0.55",
+    "highspeed_long_overshoot_m<=8.0"
+  ],
+  "reference_run": "flagship-v1-speedjerk-30k",
+  "reference_log": "C:/Program Files/Git/workspace/experiments/flagship4b-speedjerk-30k/train_log.jsonl",
+  "compare_metric": "g_op_fwd_ade_m",
+  "tau": 1.5,
+  "lever_family": "encoder-grounding",
+  "restarts_used": 1,
+  "restart_cap": 2,
+  "registered_utc": "2026-07-20T20:53:03.895016+00:00",
+  "note": "Pre-registered per 360-review P1. The three thresholds are the val-side gates already written down in 2026-07-19-flagshipv2-6k-diagnostic.md:196-199. The pre-5k EXPONENT is explicitly NOT a gate."
+}

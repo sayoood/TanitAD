@@ -1,0 +1,177 @@
+{
+  "corpus": "physicalai-train-e438721ae894",
+  "skip_hash": "f09e44db",
+  "cache_path": "tanitad-pod3:/workspace/pai_epcache/physicalai-train-e438721ae894",
+  "generated": "2026-07-24T13:07:52",
+  "labeler_note": "maneuver headline = STORED per-timestep v1 kinematic labeler (refb_labels.maneuver_labels, horizon 20 = 2 s); man_v2 = curvature-gated recompute. KINEMATIC ONLY \u2014 no semantics (lights/signs/peds/roundabouts unlabeled).",
+  "size": {
+    "usable_clips": 2376,
+    "skipped_clips": 24,
+    "total_frames": 472627,
+    "total_hours": 13.128527777777776,
+    "total_minutes": 787.7116666666666,
+    "clip_len_frames_mean": 198.91708374023438,
+    "clip_len_frames_median": 199.0,
+    "clip_len_frames_min": 188,
+    "clip_len_frames_max": 205,
+    "clip_len_s_mean": 19.891708374023438,
+    "clip_len_s_median": 19.9
+  },
+  "epochs": {
+    "window": 8,
+    "windows_per_clip_formula": "max(0, T - window - max_horizon)",
+    "max_horizon_operative": 20,
+    "max_horizon_operative_note": "flagship dataset windowing horizon = plan.max_horizon = max(goal_h=20, maneuver_h=20, tac_h=16, op_h=4) where goal_h=max(waypoint_horizons [5,10,15,20]); tanitad/train/flagship_losses.py:horizon_plan. NOT the tactical-predictor farthest horizon (16).",
+    "total_unique_windows": 406099,
+    "total_unique_windows_check": "472627 total_frames - 2376*(8+20) = 406099; all clips >=188 frames so no per-clip clamping; MATCHES registry run-log MEASURED count",
+    "registry_windows_ref": 406099,
+    "effective_batch": 64,
+    "effective_batch_note": "batch-size 16 x accum 4; one optimizer step consumes accum micro-batches (train_flagship4b.py:444)",
+    "steps": 30000,
+    "window_presentations": 1920000,
+    "epochs": 4.7278,
+    "alt_max_horizon_16": {
+      "note": "if windowing used the tactical-predictor farthest horizon (16) instead",
+      "total_unique_windows": 415603,
+      "epochs": 4.6198
+    }
+  },
+  "maneuver_v1_stored": {
+    "counts": {
+      "lane_keep": 253542,
+      "turn_left": 29150,
+      "turn_right": 31418,
+      "accelerate": 56231,
+      "brake_stop": 54766
+    },
+    "fractions": {
+      "lane_keep": 0.5964192544465275,
+      "turn_left": 0.0685709715436349,
+      "turn_right": 0.07390609893509163,
+      "accelerate": 0.13227493313448144,
+      "brake_stop": 0.12882874194026445
+    },
+    "valid_timesteps": 425107,
+    "sentinel_timesteps": 47520
+  },
+  "maneuver_v2_curvaturegated": {
+    "counts": {
+      "lane_keep": 260101,
+      "turn_left": 25094,
+      "turn_right": 24062,
+      "accelerate": 59346,
+      "brake_stop": 56504
+    },
+    "fractions": {
+      "lane_keep": 0.61184831113108,
+      "turn_left": 0.059029844250976814,
+      "turn_right": 0.056602220146927715,
+      "accelerate": 0.13960250007645134,
+      "brake_stop": 0.13291712439456418
+    },
+    "valid_timesteps": 425107
+  },
+  "nav_v1_follow_left_right": {
+    "counts": {
+      "follow": 88763,
+      "left": 13775,
+      "right": 13689
+    },
+    "fractions_over_valid": {
+      "follow": 0.7637037865556197,
+      "left": 0.1185180723928175,
+      "right": 0.1177781410515629
+    },
+    "valid_timesteps": 116227,
+    "invalid_timesteps": 356400,
+    "coverage": 0.24591697046508135
+  },
+  "route_v21": {
+    "counts": {
+      "left": 5716,
+      "straight": 25088,
+      "right": 5451,
+      "unknown": 11265
+    },
+    "fractions_all": {
+      "left": 0.12028619528619529,
+      "straight": 0.5279461279461279,
+      "right": 0.11470959595959596,
+      "unknown": 0.2370580808080808
+    },
+    "judgeable_fraction": 0.7629419191919192,
+    "reason_counts": {
+      "tight_transient": 11167,
+      "gray_zone": 4464,
+      "no_arc": 6801,
+      "road_following": 25088
+    },
+    "sampled_at_stride": 10,
+    "n_samples": 47520
+  },
+  "speed_mps": {
+    "n_timesteps": 472627,
+    "percentiles": {
+      "p0": 0.0,
+      "p1": 0.0,
+      "p5": 0.04338465631008148,
+      "p10": 1.8071908950805664,
+      "p25": 5.58734130859375,
+      "p50": 11.040483474731445,
+      "p75": 19.333251953125,
+      "p90": 27.70313262939453,
+      "p95": 31.72939109802246,
+      "p99": 35.96031188964844,
+      "p100": 46.646732330322266
+    },
+    "mean": 13.043913841247559,
+    "regime_fractions": {
+      "stopped_lt1": 0.07755587249994278,
+      "city_1_12": 0.45924586057662964,
+      "highway_gt12": 0.4631982445716858
+    },
+    "histogram": {
+      "0-1": 0.07755587249994278,
+      "1-2": 0.027916306629776955,
+      "2-5": 0.11580167710781097,
+      "5-8": 0.15071505308151245,
+      "8-12": 0.1648128479719162,
+      "12-16": 0.13404016196727753,
+      "16-20": 0.09297183901071548,
+      "20-25": 0.09358542412519455,
+      "25-30": 0.07603035867214203,
+      "30-100": 0.0665704682469368
+    }
+  },
+  "turn_stop_junction": {
+    "clips_with_turn_left": 659,
+    "clips_with_turn_right": 706,
+    "clips_with_any_turn": 1012,
+    "clips_with_any_turn_frac": 0.42592592592592593,
+    "clips_with_accelerate": 1410,
+    "clips_with_accelerate_frac": 0.5934343434343434,
+    "clips_with_brake_stop": 1366,
+    "clips_with_brake_stop_frac": 0.5749158249158249,
+    "clips_with_v21_junction_turn": 895,
+    "clips_with_v21_junction_turn_frac": 0.3766835016835017,
+    "net_heading_deg_mean": 29.67959213256836,
+    "net_heading_deg_median": 10.812735557556152,
+    "net_heading_deg_p90": 90.24713134765625,
+    "net_heading_deg_max": 178.946044921875,
+    "clips_net_heading_gt45deg": 594,
+    "clips_net_heading_gt45deg_frac": 0.25,
+    "clips_net_heading_gt90deg": 248,
+    "cum_abs_heading_deg_median": 21.64985466003418
+  },
+  "params_used": {
+    "hz": 10.0,
+    "window": 8,
+    "max_horizon": 16,
+    "label_horizon": 20,
+    "eff_batch": 64,
+    "steps": 30000,
+    "nav_horizon_steps": 250,
+    "nav_min_steps": 150
+  },
+  "elapsed_s": 295.4
+}

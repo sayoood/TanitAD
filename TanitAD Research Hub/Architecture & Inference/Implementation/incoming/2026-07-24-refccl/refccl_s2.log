@@ -1,0 +1,29 @@
+[ft] RefcCL (encoder-in-loop) | base step 29999 | FT eps 0:28 (28) | 617 windows | head 8,634,505 + enc 51,562,368 (unfreeze_stages=1, lr_enc=2e-05) | envelope lat<=1.0m yaw<=3.0deg clean=0.5 lambda_dev=1.0 lambda_prog=0.0
+{"step": 0, "loss": 1.9016, "traj": 0.3142, "cls": 1.3189, "dev": 0.2684, "prog": 0.3627, "frac_clean": 0.5625, "mean_recovery_m": 2.7581, "gnorm": 52.698, "elapsed_s": 1.0}
+{"step": 50, "loss": 1.8976, "traj": 0.2876, "cls": 1.3036, "dev": 0.3063, "prog": 0.2994, "frac_clean": 0.5625, "mean_recovery_m": 1.6974, "gnorm": 38.392, "elapsed_s": 33.8}
+{"step": 100, "loss": 2.6063, "traj": 0.4789, "cls": 1.7631, "dev": 0.3644, "prog": 0.4711, "frac_clean": 0.625, "mean_recovery_m": 4.023, "gnorm": 47.899, "elapsed_s": 68.4}
+{"step": 150, "loss": 2.7077, "traj": 0.312, "cls": 2.2369, "dev": 0.1589, "prog": 0.2666, "frac_clean": 0.25, "mean_recovery_m": 2.6284, "gnorm": 72.933, "elapsed_s": 102.6}
+{"step": 200, "loss": 2.2617, "traj": 0.4318, "cls": 1.4013, "dev": 0.4286, "prog": 0.3767, "frac_clean": 0.375, "mean_recovery_m": 3.6248, "gnorm": 53.02, "elapsed_s": 136.3}
+{"step": 250, "loss": 1.5974, "traj": 0.3848, "cls": 0.8533, "dev": 0.3593, "prog": 0.2992, "frac_clean": 0.3125, "mean_recovery_m": 2.3888, "gnorm": 31.911, "elapsed_s": 169.5}
+{"step": 300, "loss": 1.5894, "traj": 0.3451, "cls": 0.9689, "dev": 0.2754, "prog": 0.3586, "frac_clean": 0.5625, "mean_recovery_m": 1.649, "gnorm": 30.033, "elapsed_s": 203.2}
+{"step": 350, "loss": 1.5676, "traj": 0.2888, "cls": 1.018, "dev": 0.2608, "prog": 0.2932, "frac_clean": 0.4375, "mean_recovery_m": 2.4936, "gnorm": 39.989, "elapsed_s": 237.0}
+{"step": 400, "loss": 1.8108, "traj": 0.2777, "cls": 1.0419, "dev": 0.4913, "prog": 0.2394, "frac_clean": 0.75, "mean_recovery_m": 4.1893, "gnorm": 39.201, "elapsed_s": 271.5}
+{"step": 450, "loss": 2.0059, "traj": 0.4553, "cls": 1.2873, "dev": 0.2633, "prog": 0.4873, "frac_clean": 0.4375, "mean_recovery_m": 3.5065, "gnorm": 52.745, "elapsed_s": 304.7}
+{"step": 500, "loss": 1.324, "traj": 0.2977, "cls": 0.7176, "dev": 0.3087, "prog": 0.3538, "frac_clean": 0.625, "mean_recovery_m": 3.1589, "gnorm": 80.339, "elapsed_s": 336.3}
+{"step": 550, "loss": 1.2648, "traj": 0.2919, "cls": 0.6642, "dev": 0.3087, "prog": 0.3124, "frac_clean": 0.625, "mean_recovery_m": 2.769, "gnorm": 61.826, "elapsed_s": 367.0}
+{"step": 600, "loss": 1.8162, "traj": 0.4467, "cls": 0.7727, "dev": 0.5968, "prog": 0.5636, "frac_clean": 0.5625, "mean_recovery_m": 4.5041, "gnorm": 105.519, "elapsed_s": 400.6}
+{"step": 650, "loss": 1.2339, "traj": 0.327, "cls": 0.6006, "dev": 0.3062, "prog": 0.3714, "frac_clean": 0.5625, "mean_recovery_m": 2.3276, "gnorm": 71.505, "elapsed_s": 433.2}
+{"step": 699, "loss": 1.1328, "traj": 0.2745, "cls": 0.7029, "dev": 0.1554, "prog": 0.2601, "frac_clean": 0.5, "mean_recovery_m": 2.9437, "gnorm": 37.046, "elapsed_s": 465.4}
+[ft] wrote /workspace/refc-ft-refccl_s2/ckpt.pt
+RECOVERY_AUG_FT_DONE
+[eval] instrument: /workspace/refc_cl_d2/lowood_lanekeep.py
+[eval] base step 29999 vs FT step 700 | holdout 28:40 (12 eps)
+[eval] OVERALL Δcorridor_departure(base-ft)=+0.0002 [-0.0034,+0.0055] separated=False
+[eval] GUARD  Δpeak_xte(base-ft)=-0.1831 [-0.3258,-0.0315] (FT must NOT increase peak_xte: Δ>=0 desired)
+[eval] PRE-REGISTERED VERDICT: NULL
+[eval] wrote /workspace/refc_cl_d2/corridor_refccl_s2.json
+CORRIDOR_SPLIT_DONE
+[canary] feat_cos=0.9658 rel_l2=0.263 man_agree=0.9861 route_agree=0.9167 -> GATE=HOLDS
+[canary] wrote /workspace/refc_cl_d2/canary_refccl_s2.json
+ENCODER_CANARY_DONE
+REFCCL_S2_DONE
