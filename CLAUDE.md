@@ -81,24 +81,27 @@ Check `git status --short` for foreign staged entries FIRST. If a long message i
 write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
 whole index and defeats the pathspec.
 
-⚠️ **The pathspec form SEGFAULTS INTERMITTENTLY here — it is FLAKY, ~50 %, and retry fixes it**
-(measured 2026-07-25: exit 139 under MSYS git *and* `0xC0000005` under native Windows git, so
-not the shell; it is git's **partial-commit temp-index path**; **not** fsmonitor, already
-`false`). *Two successive root-cause theories of mine were WRONG and are recorded here so
-nobody re-derives them: it is **neither** the file count ("178+" — a 2-file commit then
-crashed) **nor** the pathspec shape (spaces / multi-pathspec — the identical single-file
-`-- CLAUDE.md` command crashed on attempt 1 and succeeded on attempt 2).*
+⚠️ **`git commit -- <pathspec>` (the partial-commit path) SEGFAULTS on this repo and is NOT
+usable as the default** (measured 2026-07-25: exit 139 under MSYS git *and* `0xC0000005` under
+native Windows git — so not the shell; **not** fsmonitor, already `false`).
 
-**The two things that are actually true and actionable:**
-1. **Retry.** The same command usually succeeds within 2–3 attempts.
-2. **Every crash leaves a stale `.git/index.lock`**, so the *next* attempt dies with *"Another
-   git process seems to be running"* — that reads like contention but is debris. Confirm no git
-   process is alive, then `rm -f .git/index.lock` (the index survives intact). **Clear the lock
-   between every retry**, or the retry reports the wrong error and you chase a phantom.
+**No mechanism is stated here on purpose.** Three of my root-cause readings were falsified in
+one session — "it's 178+ files" (a 2-file commit crashed), "it's the pathspec shape"
+(the *identical* single-file command crashed then succeeded), and "it's flaky, retry fixes it"
+(**18/18** consecutive attempts then failed against a different index state). Each fit every
+observation available at the time. **Do not re-derive a theory from a handful of runs — use the
+procedure below, which is what actually holds.**
 
-A pathspec-free `git commit -F <msgfile>` uses the normal (non-partial) path and has not
-crashed — but it commits the whole index, so it is admissible **only** after verifying no other
-agent has staged work (`git diff --cached --name-only | grep <today>`).
+1. **Prefer a pathspec-free `git commit -F <msgfile>`.** It uses the normal (non-partial) path
+   and has never crashed. It commits the WHOLE INDEX, so it is admissible **only** after
+   listing the index (`git diff --cached --name-only`) and confirming every entry is intended
+   program work — which is the check the pathspec rule above exists to force anyway. When a
+   sibling agent's deliverables are in there, say so in the commit message rather than
+   splitting them out.
+2. **Every crash leaves a stale `.git/index.lock`**, so the next attempt dies with *"Another git
+   process seems to be running"* — that reads like contention but is debris. Confirm no git
+   process is alive, then `rm -f .git/index.lock` (the index survives intact). Clear it between
+   attempts or you will chase a phantom error.
 
 ## Operating standard — raised by Sayed 2026-07-21
 
