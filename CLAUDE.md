@@ -81,16 +81,26 @@ Check `git status --short` for foreign staged entries FIRST. If a long message i
 write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
 whole index and defeats the pathspec.
 
-⚠️ **But the pathspec form SEGFAULTS on a large batch** (measured 2026-07-25): `git commit --
-<pathspec>` crashes at **178+ files** (exit 139 under MSYS git, `0xC0000005` under native
-Windows git; 81- and 149-file commits were fine). It is git's **partial-commit temp-index
-path** — *not* the path names (a single-file pathspec under the same `A & B`-style directory
-works) and *not* fsmonitor (already `false`). **Every crash leaves a stale `.git/index.lock`**,
-so the next commit dies with *"Another git process seems to be running"*: confirm no git
+⚠️ **But the pathspec form SEGFAULTS here on certain pathspec SHAPES** (measured 2026-07-25,
+exit 139 under MSYS git / `0xC0000005` under native Windows git — both, so it is not the shell).
+It is git's **partial-commit temp-index path**; **not** fsmonitor (already `false`).
+**It is the pathspec shape, NOT the file count** *(an earlier "178+ files" reading was wrong —
+a 2-file commit then crashed too)*:
+
+| pathspec shape | result |
+|---|---|
+| directory **without** spaces (`stack`, `taniteval` — 81 and 149 files) | ✅ works |
+| a **single file**, even under an `A & B`-style dir | ✅ works |
+| directory **with spaces** (`"TanitAD Research Hub"`, `"…/Architecture & Inference"`) | ❌ segfault |
+| **two or more** pathspecs where any has a space | ❌ segfault (reproduced 2×) |
+
+**Every crash leaves a stale `.git/index.lock`**, so the next commit dies with *"Another git
+process seems to be running"* — that reads like contention but is debris: confirm no git
 process is alive, then `rm -f .git/index.lock` (the index survives intact).
-**So: commit in SMALL pathspec batches.** A pathspec-free `git commit -F <msgfile>` uses the
-normal path and does not crash — but it commits the whole index, so it is admissible **only**
-after verifying no other agent has staged work (`git diff --cached --name-only | grep <today>`).
+**So: prefer ONE space-free pathspec per commit** (or one file at a time). A pathspec-free
+`git commit -F <msgfile>` uses the normal path and never crashed — but it commits the whole
+index, so it is admissible **only** after verifying no other agent has staged work
+(`git diff --cached --name-only | grep <today>`).
 
 ## Operating standard — raised by Sayed 2026-07-21
 
