@@ -81,6 +81,17 @@ Check `git status --short` for foreign staged entries FIRST. If a long message i
 write it to a file and pass `-F`, because the `--only ... && --amend` pattern re-opens the
 whole index and defeats the pathspec.
 
+⚠️ **But the pathspec form SEGFAULTS on a large batch** (measured 2026-07-25): `git commit --
+<pathspec>` crashes at **178+ files** (exit 139 under MSYS git, `0xC0000005` under native
+Windows git; 81- and 149-file commits were fine). It is git's **partial-commit temp-index
+path** — *not* the path names (a single-file pathspec under the same `A & B`-style directory
+works) and *not* fsmonitor (already `false`). **Every crash leaves a stale `.git/index.lock`**,
+so the next commit dies with *"Another git process seems to be running"*: confirm no git
+process is alive, then `rm -f .git/index.lock` (the index survives intact).
+**So: commit in SMALL pathspec batches.** A pathspec-free `git commit -F <msgfile>` uses the
+normal path and does not crash — but it commits the whole index, so it is admissible **only**
+after verifying no other agent has staged work (`git diff --cached --name-only | grep <today>`).
+
 ## Operating standard — raised by Sayed 2026-07-21
 
 The program's pace goes up, and so does the bar. Five rules, each with the failure that earned it.
