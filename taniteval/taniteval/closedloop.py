@@ -210,6 +210,81 @@ def closed_loop_rollout(model, step_readout, states0, aw, v0, speed_input,
 
 
 # --------------------------------------------------------------------------- #
+# ARM (A) — SINGLE-SHOT OPEN-LOOP plan execution (the imagination ABLATION)     #
+# --------------------------------------------------------------------------- #
+# The closed loop above (closed_bike) is ARM (B): it RE-PLANS every 0.1 s tick on
+# the model's OWN imagined latent (imagination-in-the-loop). Arm (A) is the
+# pre-registered ablation of that: plan the 2 s tactical trajectory ONCE on the
+# REAL encoded window (byte-identical to the closed loop's tick-0 plan), then
+# TRACK that FROZEN plan open-loop with the SAME pure-pursuit + bicycle controller
+# — NO re-planning, NO imagination feedback. Because both arms share the tactical
+# head, the controller and the bicycle, and are IDENTICAL at tick 0 (same
+# states0 -> same first control), the paired contrast closed_bike - open_plan_bike
+# isolates exactly ONE thing: rolling candidate consequences through the world
+# model and re-planning on them, versus committing to the single open-loop plan
+# (the REF-C-style single-shot). This is the no-renderer, on-pod analogue of the
+# AlpaSim REF-C-vs-imagination comparison in the 2026-07-22 closed-loop synthesis.
+def densify_plan(wp: dict, k: int = K_MAX, horizons=tuple(WP_STEPS)) -> torch.Tensor:
+    """Tactical waypoints ``{h: [b,2]}`` at {5,10,15,20} (+ origin at 0) ->
+    per-tick dense ego-frame path ``[b,k,2]`` at steps 1..k by piecewise-linear
+    interpolation. This is the single-shot plan the open-loop arm commits to."""
+    a0 = wp[horizons[0]]
+    b, device = a0.shape[0], a0.device
+    knot_s = [0] + list(horizons)                            # [0,5,10,15,20]
+    knot_p = [torch.zeros(b, 2, device=device)] + [wp[h] for h in horizons]
+    pts = []
+    for s in range(1, k + 1):
+        li = 0
+        while li + 1 < len(knot_s) and knot_s[li + 1] < s:
+            li += 1
+        s0, s1 = knot_s[li], knot_s[li + 1]
+        frac = (s - s0) / max(1, (s1 - s0))
+        pts.append(knot_p[li] * (1.0 - frac) + knot_p[li + 1] * frac)
+    return torch.stack(pts, dim=1)                           # [b,k,2]
+
+
+@torch.no_grad()
+def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX):
+    """ARM (A): plan ONCE on the real latent, TRACK it open-loop (no imagination).
+
+    Same strategic->tactical plan as the closed loop's first tick (deploy path,
+    state-only, nav=follow), densified to a fixed 2 s ego-frame path, then tracked
+    by the SAME pure-pursuit + bicycle controller — the plan is FROZEN (never
+    recomputed) and the world-model predictor is NEVER stepped. Returns the tracked
+    bicycle path (apples-to-apples with closed_bike) plus the raw single-shot plan
+    (plan_direct = the model's open-loop trajectory with no executor)."""
+    b = states0.shape[0]
+    nav_follow = torch.zeros(b, dtype=torch.long, device=states0.device)
+    ctx = model.strategic_policy(states0, nav_follow)["ctx"]
+    wp = model.tactical_policy(states0, ctx)["waypoints"]    # {h:[b,2]} on REAL z0
+    plan = densify_plan(wp, k)                               # [b,k,2] FROZEN path
+    x = torch.zeros(b, device=states0.device)
+    y = torch.zeros(b, device=states0.device)
+    yaw = torch.zeros(b, device=states0.device)
+    v = v0.clone()
+    steer_seq, accel_seq, pts = [], [], []
+    for kk in range(k):
+        # pure-pursuit target: the frozen plan point ~0.5 s ahead of current
+        # progress (index kk), transformed into the CURRENT ego frame.
+        ti = min(kk + LOOKAHEAD_STEP - 1, k - 1)
+        dx, dy = plan[:, ti, 0] - x, plan[:, ti, 1] - y
+        c, s = torch.cos(-yaw), torch.sin(-yaw)
+        w_look = torch.stack([dx * c - dy * s, dx * s + dy * c], dim=-1)
+        steer, accel = wp_to_control(w_look, v)
+        steer_seq.append(steer)
+        accel_seq.append(accel)
+        x = x + v * torch.cos(yaw) * DT
+        y = y + v * torch.sin(yaw) * DT
+        yaw = yaw + v / WHEELBASE * torch.tan(steer) * DT
+        v = (v + accel * DT).clamp_min(0.0)
+        pts.append(torch.stack([x, y], dim=-1))
+    return {"open_plan_bike": torch.stack(pts, dim=1),       # [b,k,2] tracked
+            "plan_direct": plan,                             # [b,k,2] raw plan
+            "steer": torch.stack(steer_seq, dim=1),
+            "accel": torch.stack(accel_seq, dim=1)}
+
+
+# --------------------------------------------------------------------------- #
 # Collection — one aligned pass building every path per window                  #
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
@@ -223,7 +298,8 @@ def collect(model, step_readout, episodes, device, speed_input=False,
     steer/accel/speed [N,K] for comfort + divergence."""
     wp_idx = torch.tensor(IDX, device=device)
     acc = {n: [] for n in ("gt", "cv", "closed_bike", "closed_grnd",
-                           "open_grnd", "open_bike", "speed", "head_deg",
+                           "open_grnd", "open_bike", "open_plan_bike",
+                           "plan_direct", "speed", "head_deg",
                            "steer", "accel", "vseq")}
     eid = []
     for ep in episodes:
@@ -256,9 +332,11 @@ def collect(model, step_readout, episodes, device, speed_input=False,
             true_steer = torch.cat([aw[:, -1:, 0], fa[:, :k - 1, 0]], dim=1)
             true_accel = torch.cat([aw[:, -1:, 1], fa[:, :k - 1, 1]], dim=1)
             open_bike, _ = bicycle_integrate(v0, true_steer, true_accel)
-            # --- closed loop (imagination in the loop) -----------------------
+            # --- closed loop (imagination in the loop) = ARM (B) -------------
             cl = closed_loop_rollout(model, step_readout, states0, aw, v0,
                                      speed_input, k)
+            # --- single-shot open-loop plan track (no imagination) = ARM (A) -
+            ol = open_loop_plan_rollout(model, states0, v0, speed_input, k)
 
             acc["gt"].append(gt_ego_waypoints(ep.poses, last).cpu())
             acc["cv"].append(
@@ -267,6 +345,8 @@ def collect(model, step_readout, episodes, device, speed_input=False,
             acc["closed_grnd"].append(cl["closed_grnd"][:, wp_idx].cpu())
             acc["open_grnd"].append(open_wp[:, wp_idx].cpu())
             acc["open_bike"].append(open_bike[:, wp_idx].cpu())
+            acc["open_plan_bike"].append(ol["open_plan_bike"][:, wp_idx].cpu())
+            acc["plan_direct"].append(ol["plan_direct"][:, wp_idx].cpu())
             acc["speed"].append(v0.cpu())
             acc["head_deg"].append(net_heading_change_deg(ep.poses, last))
             acc["steer"].append(cl["steer"].cpu())
@@ -279,7 +359,8 @@ def collect(model, step_readout, episodes, device, speed_input=False,
 
 
 # --------------------------------------------------------------------------- #
-# Aggregation — bench.py CI protocol (8-split episode-disjoint jackknife)       #
+# Aggregation — bench.py DEPRECATED CI protocol (8 OVERLAPPING random         #
+# holdouts / sqrt(8)). NOT a jackknife; anti-conservative. See taniteval/ci.py #
 # --------------------------------------------------------------------------- #
 def _de(pred, gt):
     """[N,4,2] -> [N,4] per-waypoint Euclidean point error."""
@@ -310,7 +391,9 @@ def _agg(dicts):
 
 
 def _jack(vals, eids, splits):
-    """Episode-jackknife of a per-window scalar array -> mean/ci95/n/separated.
+    """Overlapping-random-holdout aggregate of a per-window scalar array ->
+    mean/ci95/n/separated. DEPRECATED estimator (not a jackknife, see
+    taniteval/ci.py); prefer ci.episode_cluster_bootstrap for new claims.
 
     'separated' = |mean| - ci95 > 0 (the delta / rate is CI-resolved from 0)."""
     v = np.asarray(vals, dtype=float)
@@ -380,7 +463,7 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
 
     # ---- 2. Compounding-error delta (closed MINUS open), grounded path ----- #
     #   apples-to-apples: only the action/latent SOURCE differs; same SE(2)
-    #   step-readout path builder. Per-horizon jackknifed mean difference.
+    #   step-readout path builder. Per-horizon overlapping-holdout mean diff.
     de_cg = _de(win["closed_grnd"], gt)
     de_og = _de(win["open_grnd"], gt)
     de_cb = _de(win["closed_bike"], gt)
@@ -435,8 +518,70 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
             "mean_speed_mps": round(float(win["speed"][sel].mean()), 3),
         }
 
+    # ---- 5. PRE-REGISTERED: imagination-in-the-loop (B) vs single-shot open (A)
+    #   B = closed_bike       (re-plan on the model's OWN imagined latent per tick)
+    #   A = open_plan_bike    (plan ONCE on the real latent, track it open-loop)
+    #   Shared head+controller+bicycle, identical at tick 0 -> the PAIRED delta
+    #   isolates imagination-in-the-loop. Decision-grade estimator: episode-cluster
+    #   bootstrap (taniteval/ci.py, paired) over the val episodes — NOT the
+    #   deprecated overlapping-holdout used by the blocks above.
+    from taniteval import ci as _ci
+    ade_A = _de(win["open_plan_bike"], gt).mean(dim=1).numpy()   # [N] arm A ADE 0-2s
+    ade_B = _de(win["closed_bike"], gt).mean(dim=1).numpy()      # [N] arm B ADE 0-2s
+    ade_pl = _de(win["plan_direct"], gt).mean(dim=1).numpy()     # raw plan, no exec
+    fde_A = _de(win["open_plan_bike"], gt)[:, -1].numpy()
+    fde_B = _de(win["closed_bike"], gt)[:, -1].numpy()
+    div_A = (_de(win["open_plan_bike"], gt)[:, -1] > DIVERGENCE_M).float().numpy()
+    paired_ade = _ci.paired_episode_cluster_bootstrap(ade_B, ade_A, eids)  # B - A
+    paired_fde = _ci.paired_episode_cluster_bootstrap(fde_B, fde_A, eids)
+    d = paired_ade["delta"]                                       # mean(B)-mean(A)
+    if paired_ade["separated"] and d < 0:
+        verdict = ("IMAGINATION_HELPS: imagination-in-the-loop (B) has LOWER "
+                   "closed-loop ADE@2s than single-shot open-loop (A), CI-separated "
+                   "(paired episode-cluster bootstrap) -> early support for the v4 "
+                   "imagination thesis")
+    elif paired_ade["separated"] and d > 0:
+        verdict = ("IMAGINATION_HURTS: imagination-in-the-loop (B) has HIGHER "
+                   "closed-loop ADE@2s than single-shot open-loop (A), CI-separated "
+                   "-> re-planning on THIS world model's self-imagined latent "
+                   "degrades closed-loop (WM unfaithful under self-rollout; feeds "
+                   "closed-loop synthesis section 6)")
+    else:
+        verdict = ("TIE: (A) and (B) closed-loop ADE@2s NOT CI-separated -> "
+                   "imagination-as-implemented does not buy closed-loop robustness "
+                   "at this fidelity (feeds closed-loop synthesis section 6)")
+    imagination_comparison = {
+        "_hypothesis": "imagination-in-the-loop (B, re-plan on the imagined latent) "
+                       "accumulates LESS closed-loop error than single-shot open-loop "
+                       "(A, plan once + track open-loop). Pre-registered both ways.",
+        "_arms": {
+            "A_open_plan_bike": "plan ONCE on the real latent, track the frozen plan "
+            "open-loop (REF-C-style single-shot; predictor NEVER stepped)",
+            "B_closed_bike": "re-plan every 0.1 s on the model's OWN imagined latent "
+            "(imagination-in-the-loop; the harness headline closed loop)",
+            "shared": "same strategic->tactical head + pure-pursuit + bicycle; "
+            "identical at tick 0, so the paired delta isolates imagination"},
+        "_proxy_caveat": "this is the WEAK form of the v4 thesis: B re-plans on the "
+        "imagined latent but does NOT sample+select candidates by imagined "
+        "consequence (no CEM). It is the cheap no-renderer proving ground, not the "
+        "AlpaSim imagine-and-select test (closed-loop synthesis section 5).",
+        "A_open_plan_bike_ade@2s": _ci.episode_cluster_bootstrap(ade_A, eids),
+        "B_closed_bike_ade@2s": _ci.episode_cluster_bootstrap(ade_B, eids),
+        "plan_direct_ade@2s_no_executor": _ci.episode_cluster_bootstrap(ade_pl, eids),
+        "paired_delta_B_minus_A_ade@2s": paired_ade,
+        "paired_delta_B_minus_A_fde@2s": paired_fde,
+        "A_divergence_rate_gt5m@2s": _ci.episode_cluster_bootstrap(div_A, eids),
+        "B_divergence_rate_gt5m@2s": _ci.episode_cluster_bootstrap(diverged.numpy(), eids),
+        "verdict": verdict,
+    }
+
     cb2 = heldout["closed_bike"]["ade_0_2s"]
     summary = {
+        "imagination_B_minus_A_ade@2s": paired_ade["delta"],
+        "imagination_B_minus_A_separated": paired_ade["separated"],
+        "imagination_verdict": verdict.split(":")[0],
+        "A_open_plan_bike_ade@2s": imagination_comparison["A_open_plan_bike_ade@2s"]["mean"],
+        "B_closed_bike_ade@2s_paired": imagination_comparison["B_closed_bike_ade@2s"]["mean"],
         "closed_bike_ade@2s": cb2["mean"], "closed_bike_ade@2s_ci95": cb2["ci95"],
         "closed_bike_fde@2s": heldout["closed_bike"]["fde@2s"]["mean"],
         "closed_grnd_ade@2s": heldout["closed_grnd"]["ade_0_2s"]["mean"],
@@ -458,7 +603,8 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
         "protocol": {"window": WINDOW, "stride": STRIDE, "hz": 10,
                      "wp_steps": list(WP_STEPS), "K_steps": K_MAX,
                      "n_splits": n_splits, "val_frac": val_frac,
-                     "ci": "8-split episode-disjoint jackknife (bench.py)",
+                     "ci": "overlapping_holdout_se, 8 random 20% holdouts "
+                           "(DEPRECATED, not a jackknife — taniteval/ci.py)",
                      "nav": "follow (deploy-realistic, no route command)",
                      "operative_step": "intent-free (deployed regime)"},
         "closedloop_ade_fde": {
@@ -466,6 +612,7 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
             "_headline": "closed_bike is the headline closed-loop path; "
                          "closed_grnd is the model's own metric decode",
             "heldout": heldout},
+        "imagination_comparison": imagination_comparison,
         "compounding_error_grounded": compounding,
         "compounding_error_bicycle": comp_bike,
         "stability": stability,
@@ -543,6 +690,16 @@ def run_and_save(key, device="cuda", episodes=40,
           f"fde@2s={cb['fde@2s']['mean']:.3f} | open_grnd ade@2s={og['ade_0_2s']['mean']:.3f} "
           f"| closed-open Δ@2s={d2['mean']:.3f}±{d2['ci95']:.3f} "
           f"| diverge={dv['mean']:.1%} ({res['wall_s']}s) -> {outp.name}", flush=True)
+    ic = res["imagination_comparison"]
+    pa = ic["paired_delta_B_minus_A_ade@2s"]
+    print(f"[cl] {key} IMAGINATION PROOF (A=single-shot open vs B=imag-in-loop): "
+          f"A open_plan_bike ade@2s={ic['A_open_plan_bike_ade@2s']['mean']:.3f} "
+          f"[{ic['A_open_plan_bike_ade@2s']['lo']:.3f},{ic['A_open_plan_bike_ade@2s']['hi']:.3f}] | "
+          f"B closed_bike ade@2s={ic['B_closed_bike_ade@2s']['mean']:.3f} "
+          f"[{ic['B_closed_bike_ade@2s']['lo']:.3f},{ic['B_closed_bike_ade@2s']['hi']:.3f}] | "
+          f"paired Δ(B-A)={pa['delta']:.3f} [{pa['lo']:.3f},{pa['hi']:.3f}] "
+          f"separated={pa['separated']} n_ep={pa['n_episodes']}\n     verdict: {ic['verdict']}",
+          flush=True)
     return res
 
 

@@ -1,0 +1,73 @@
+{
+ "protocol": "window 8 / stride 8 / nav=follow, canonical physicalai val (40 eps, 881 windows) \u2014 same as refc_rerank.dump",
+ "labels": "stack/scripts/refb_labels.py classify_maneuver (v1, net-dyaw) and classify_maneuver_v2 (curvature-gated); loaded from the repo copy because the eval pod's stack predates v2",
+ "why": "graft_maneuver=True adds maneuver_to_anchor(log_softmax(maneuver_logits)) to the anchor logits that make the selection",
+ "arms": {
+  "refc-base-30k": {
+   "n": 881,
+   "pred": {
+    "lane_keep": 689,
+    "turn_right": 74,
+    "turn_left": 111,
+    "brake_stop": 7
+   },
+   "gt_v2": {
+    "accelerate": 105,
+    "lane_keep": 544,
+    "brake_stop": 90,
+    "turn_left": 93,
+    "turn_right": 49
+   },
+   "gt_v1": {
+    "accelerate": 93,
+    "lane_keep": 511,
+    "brake_stop": 86,
+    "turn_right": 74,
+    "turn_left": 117
+   },
+   "agree_v1": 0.7457,
+   "agree_v2": 0.7083,
+   "pred_longitudinal_frac": 0.0079,
+   "gt_longitudinal_frac": 0.2213,
+   "missed_longitudinal_frac": 0.2179,
+   "route": {
+    "route_right": 123,
+    "route_left": 164,
+    "route_straight": 594
+   }
+  },
+  "refc-xl-30k": {
+   "n": 881,
+   "pred": {
+    "lane_keep": 686,
+    "turn_right": 82,
+    "turn_left": 109,
+    "brake_stop": 4
+   },
+   "gt_v2": {
+    "accelerate": 105,
+    "lane_keep": 544,
+    "brake_stop": 90,
+    "turn_left": 93,
+    "turn_right": 49
+   },
+   "gt_v1": {
+    "accelerate": 93,
+    "lane_keep": 511,
+    "brake_stop": 86,
+    "turn_right": 74,
+    "turn_left": 117
+   },
+   "agree_v1": 0.7435,
+   "agree_v2": 0.7083,
+   "pred_longitudinal_frac": 0.0045,
+   "gt_longitudinal_frac": 0.2213,
+   "missed_longitudinal_frac": 0.2191,
+   "route": {
+    "route_straight": 796,
+    "route_right": 34,
+    "route_left": 51
+   }
+  }
+ }
+}

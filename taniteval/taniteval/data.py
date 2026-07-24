@@ -22,8 +22,35 @@ from tanitad.data.mixing import load_episode  # noqa: E402
 
 FEATCACHE = Path("/root/featcache")
 
+# Canonical validation splits (parity is sacred). The CLEAN held-out split is the
+# only admissible decision-grade physicalai val set; the f1b378 split LEAKS ~78 %
+# of its episodes into the parity TRAIN corpus (physicalai-train-e438721ae894),
+# so any number computed on it is train-contaminated. ``list_val_episodes``
+# refuses the leaky split by default — this is the single chokepoint every
+# decision-grade entrypoint (runner, closedloop, hierarchy, pathspeed,
+# efficiency, refc_rerank, planning, planner_p2, bench, generalization) routes
+# through, so the refusal covers the whole harness in one place.
+CLEAN_VAL = "physicalai-val-0c5f7dac3b11"
+LEAKY_VAL = "physicalai-val-f1b378f295ae"
 
-def list_val_episodes(val_dir: str, n: int | None = None):
+
+def list_val_episodes(val_dir: str, n: int | None = None,
+                      allow_leaky: bool = False):
+    """Sorted ``ep_*.pt`` files under ``val_dir`` (first ``n`` if given).
+
+    Refuses the known-leaky physicalai val split loudly. Other corpora
+    (comma / cosmos / physicalai OOD used by generalization) are unaffected —
+    the guard triggers only on the specific f1b378 hash. Pass
+    ``allow_leaky=True`` ONLY for a deliberate label/leakage audit, never for a
+    decision-grade eval.
+    """
+    if LEAKY_VAL in str(val_dir) and not allow_leaky:
+        raise RuntimeError(
+            f"REFUSED leaky val split {LEAKY_VAL!r}: ~78 % of its episodes leak "
+            f"into the parity train corpus e438721ae894, so every number on it "
+            f"is train-contaminated. Use the CLEAN held-out split {CLEAN_VAL!r} "
+            f"(taniteval.data.CLEAN_VAL). Pass allow_leaky=True only for a "
+            f"deliberate leakage/label audit.")
     files = sorted(Path(val_dir).glob("ep_*.pt"))
     return files[:n] if n else files
 

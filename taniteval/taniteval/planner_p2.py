@@ -22,7 +22,8 @@ WHAT IS FROZEN / REUSED (never reinvented)
     swapped: tactical head -> CEM).
   * pathspeed.{step_speed,metric_block} -> planned-speed profile for the cost +
     the honest longitudinal/lateral decomposition of the planner's error.
-  * gates.split_by_episode + bench CI protocol (8-split episode jackknife).
+  * gates.split_by_episode + bench DEPRECATED CI protocol (8 overlapping
+    random holdouts; NOT a jackknife — see taniteval/ci.py).
 
 THE COST  J(plan) = w_v·(v̂ − v_target)²                 [track the minted target]
                   + w_c·(accel² + jerk²) + w_s·steer_rate²  [comfort / smoothness]
@@ -362,7 +363,7 @@ def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
 
 
 # ======================================================================== #
-# Open-loop aggregation (8-split episode jackknife, bench CI protocol)      #
+# Open-loop aggregation (8 overlapping random holdouts, DEPRECATED)         #
 # ======================================================================== #
 def _ade2(pred, gt):
     """[N,4,2] pred vs GT -> [N] ADE over the 4 waypoints (to 2 s)."""
@@ -378,7 +379,10 @@ def _jack_scalar(vals, eids, splits):
 
 
 def _jack_paired(a, b, eids, splits):
-    """Jackknifed mean of (a-b) per window + CI-separation from 0."""
+    """Overlapping-holdout mean of (a-b) per window + CI-separation from 0.
+
+    DEPRECATED estimator (not a jackknife). Prefer
+    ci.paired_episode_cluster_bootstrap — these arms share windows."""
     d = np.asarray(a, dtype=float) - np.asarray(b, dtype=float)
     sm = np.asarray([float(np.nanmean(d[va])) for _t, va in splits if len(va)])
     mean = float(np.mean(sm))
@@ -617,7 +621,8 @@ def run_and_save(arm="flagship-30k", device="cuda", episodes=40, cl_episodes=16,
     res = {"arm": arm, "ckpt_step": L["step"],
            "protocol": {"episodes": episodes, "window": WINDOW, "stride": STRIDE,
                         "K": K_MAX, "hz": 10, "cem": CEM,
-                        "ci": "8-split episode jackknife",
+                        "ci": "overlapping_holdout_se, 8 random 20% holdouts "
+                              "(DEPRECATED, not a jackknife)",
                         "baselines_source": "closedloop_flagship-30k.json + "
                         "plan_flagship-30k.json (same harness)"},
         "open_loop": ol}

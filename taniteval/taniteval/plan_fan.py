@@ -128,6 +128,7 @@ GRID = (30, 37, 46)
 GRID_LBL = (96, 106, 120)
 SHADOW = (74, 82, 96)                     # raw-anchor vocabulary
 COL_SEL_CORE = (255, 255, 255)
+COL_CV = (250, 176, 60)                   # constant-velocity trivial baseline
 PANEL_EDGE = (58, 68, 80)
 
 # Fixed log-probability colour scale. FIXED (not per-frame renormalised) so a
@@ -241,11 +242,14 @@ def poly(traj) -> list[tuple[float, float]]:
 # BEV panel — THE STAR
 # ============================================================================
 
-def draw_bev(w, h, anchors, fan, probs, sel, gt_wp, xmax, oracle=None):
+def draw_bev(w, h, anchors, fan, probs, sel, gt_wp, xmax, oracle=None, cv=None):
     """Metric ego BEV, ego origin bottom-centre, heading up, ISOTROPIC.
 
     anchors [N,S,2] raw vocabulary · fan [N,S,2] refined proposals ·
     probs [N] softmax confidences · sel int · gt_wp [S,2] · xmax metres forward.
+    ``cv`` [S,2] draws the constant-velocity baseline — every ADE claim in the
+    programme is quoted relative to CV, so the panel is not self-contained
+    without it; it is dotted amber so it never competes with the plan or the GT.
     Rendered into its OWN image so every layer is clipped to the panel.
     """
     im = Image.new("RGB", (w, h), BEV_BG)
@@ -316,6 +320,18 @@ def draw_bev(w, h, anchors, fan, probs, sel, gt_wp, xmax, oracle=None):
                   outline=COL_SEL_CORE, width=2)
         d.text((px + 10, py - 6), f"{WP_STEPS[j] / 10:.1f}s",
                fill=(226, 232, 240), font=F_TINY)
+
+    # --- the trivial baseline (constant velocity) ---------------------------
+    # Not a model output: pure kinematics from the last pose step
+    # (driving_diagnostic.baseline_waypoints). It belongs on the panel because
+    # every ADE the programme quotes is relative to CV — a frame where the
+    # white plan is worse than this dotted line is a frame the model LOST.
+    if cv is not None:
+        _dashed(d, [m2px(x, y) for x, y in poly(cv)], COL_CV + (215,),
+                width=2, dash=4, gap=6)
+        cx_, cy_ = m2px(float(cv[-1][0]), float(cv[-1][1]))
+        d.ellipse([cx_ - 4, cy_ - 4, cx_ + 4, cy_ + 4], outline=COL_CV, width=2)
+        d.text((cx_ + 7, cy_ - 6), "CV", fill=COL_CV, font=F_TINY)
 
     # --- layer 5: GT, dashed, ON TOP (the reference must never be occluded) --
     # Per-horizon ERROR TIE-LINES first: REF-C's dominant error is LONGITUDINAL
@@ -414,14 +430,21 @@ LEGEND = (
     ("top-8 by score (thicker + waypoint dots)", (110, 206, 88)),
     ("SELECTED plan (white core + score halo)", COL_SEL_CORE),
     ("best-available proposal (oracle-in-fan)", (90, 220, 255)),
+    ("constant-velocity baseline, dotted", COL_CV),
     ("ground truth, dashed", COL_GT),
     ("per-horizon error (the 4 ADE terms)", (255, 110, 100)),
 )
 
 
-def draw_legend(d, note_lines):
+def legend_rows(with_cv: bool):
+    """The CV row is dropped when no CV is drawn — a legend entry with nothing
+    on the panel is a lie about what is on screen."""
+    return LEGEND if with_cv else tuple(r for r in LEGEND if r[1] != COL_CV)
+
+
+def draw_legend(d, note_lines, with_cv=False):
     y = LEG_Y
-    for text, col in LEGEND:
+    for text, col in legend_rows(with_cv):
         if col is None:
             d.text((LEG_X, y), text, fill=HUD_FG, font=F_SUB)
         else:
@@ -446,25 +469,30 @@ def compose(rec, ctx):
     # element access dominates the render otherwise.
     fan = rec["fan"].tolist()
     gt_wp, gt_path = rec["gt_wp"].tolist(), rec["gt_path"].tolist()
+    cv = rec["cv"].tolist() if rec.get("cv") is not None else None
     bev = draw_bev(BEV_WH[0], BEV_WH[1], ctx["anchors"], fan,
                    rec["probs"], rec["sel"], gt_wp, ctx["xmax"],
-                   oracle=rec["oracle"])
+                   oracle=rec["oracle"], cv=cv)
     im.paste(bev, BEV_XY)
     if ctx["proj"] is not None and rec["rgb"] is not None:
         im.paste(draw_cam(CAM_WH[0], CAM_WH[1], rec["rgb"], ctx["proj"],
                           fan, rec["probs"], rec["sel"], gt_path), CAM_XY)
     draw_colorbar(d, ctx["n_anchors"])
-    draw_legend(d, ctx["legend_notes"])
+    draw_legend(d, ctx["legend_notes"], with_cv=cv is not None)
 
     lim = CW - 16
     gap = rec["ade"] - rec["oracle_ade"]
+    anchor = "   <<< SCORED WINDOW" if rec.get("is_anchor") else ""
     l0 = _fit(f"{ctx['title']} · step {ctx['step']} · {ctx['corpus']} "
-              f"ep{ctx['ep']:02d} {ctx['tag']} · frame {rec['t']:03d}", F_TOP, lim)
+              f"ep{ctx['ep']:02d} {ctx['tag']} · frame {rec['t']:03d}{anchor}",
+              F_TOP, lim)
     l1 = _fit(f"tactical: {rec['man']}    strategic: route {rec['route']}    "
               f"v0 {rec['v0']:.1f} m/s", F_HUD, lim)
+    cvtxt = (f"   CV {rec['cv_ade']:.2f} m" if rec.get("cv_ade") is not None
+             else "")
     l2 = _fit(f"ADE(selected) {rec['ade']:.2f} m   oracle-in-fan "
               f"{rec['oracle_ade']:.2f} m   gap {gap:+.2f} m   "
-              f"vocab-oracle {rec['vocab_ade']:.2f} m   |   clip mean: sel "
+              f"vocab-oracle {rec['vocab_ade']:.2f} m{cvtxt}   |   clip mean: sel "
               f"{ctx['mean_ade']:.2f} / oracle {ctx['mean_oracle']:.2f} m",
               F_SUB, lim)
     l3 = _fit(f"top-1 p {rec['top1']:.3f}   entropy {rec['H']:.2f}/"
@@ -485,17 +513,32 @@ def compose(rec, ctx):
 # ============================================================================
 
 @torch.no_grad()
-def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400):
+def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400,
+                    t_lo=None, t_hi=None, want_cv=False):
     """Stride-1 REF-C decode keeping the FULL proposal set per frame.
 
     Calls the model exactly as taniteval.refc_eval.collect does (nav=follow, v0
     through the measurement encoder, ``steps`` truncated-denoise steps) so every
     number here is the same quantity the leaderboard row reports. Returns
     t -> record; t = window end (the pose the ego frame is anchored to).
+
+    ``t_lo``/``t_hi`` restrict the decode to a frame range (inclusive) so a
+    short clip around one scored window costs one short pass instead of a whole
+    episode. ``want_cv`` additionally returns the constant-velocity baseline
+    from ``driving_diagnostic.baseline_waypoints`` — the same trivial predictor
+    every leaderboard row is quoted against.
     """
     frames, poses = ep.frames, ep.poses.float()
     T = min(frames.shape[0], poses.shape[0])
-    starts = list(range(0, T - window - K))[:max_frames]
+    starts = list(range(0, T - window - K))
+    if t_lo is not None:
+        starts = [s for s in starts if s + window - 1 >= t_lo]
+    if t_hi is not None:
+        starts = [s for s in starts if s + window - 1 <= t_hi]
+    starts = starts[:max_frames]
+    cvfn = None
+    if want_cv:
+        from driving_diagnostic import baseline_waypoints as cvfn
     out = {}
     for i in range(0, len(starts), batch):
         ch = starts[i:i + batch]
@@ -516,6 +559,8 @@ def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400):
         probs = torch.softmax(logits, dim=1)
         man = o["maneuver_logits"].argmax(-1).cpu().tolist()
         route = o["route_logits"].argmax(-1).cpu().tolist()
+        cvb = (cvfn(ep.poses.float(), last)["constant_velocity"]
+               if cvfn is not None else None)
         for j, s in enumerate(ch):
             t = s + window - 1
             gt_path = ego_future_path(poses, t, K)
@@ -523,9 +568,12 @@ def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400):
             de = torch.linalg.norm(fan[j] - gt_wp[None], dim=-1).mean(-1)  # [N]
             k = int(de.argmin())
             p = probs[j]
+            cv = cvb[j] if cvb is not None else None
             out[t] = dict(
                 t=t, fan=fan[j], probs=p.tolist(), sel=int(sel[j]), oracle=k,
-                gt_wp=gt_wp, gt_path=gt_path,
+                gt_wp=gt_wp, gt_path=gt_path, cv=cv,
+                cv_ade=(None if cv is None else
+                        float(torch.linalg.norm(cv - gt_wp, dim=-1).mean())),
                 ade=float(de[int(sel[j])]), oracle_ade=float(de[k]),
                 top1=float(p.max()),
                 H=float(-(p * (p.clamp_min(1e-12)).log()).sum()),

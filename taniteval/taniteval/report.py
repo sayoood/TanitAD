@@ -395,7 +395,7 @@ def build(res_dir=Path("/root/taniteval/results"),
     for f in res_dir.glob("*.json"):
         if f.name.startswith(("ab_", "golden", "profile", "forward_", "run_",
                               "diag_", "plan_", "imag_", "hier_", "gen_",
-                              "pathspeed_")):
+                              "pathspeed_", "driving_")):
             continue
         d = json.loads(f.read_text())
         if "heldout" in d:
@@ -403,6 +403,22 @@ def build(res_dir=Path("/root/taniteval/results"),
     reg = res_dir / "regression_status.txt"
     regtxt = reg.read_text().strip() if reg.exists() else "not run"
     prof_rows, frozen_rows = _profile_html(res_dir)
+    try:                                   # efficiency panel (default axis)
+        from taniteval import efficiency
+        eff_rows = efficiency.panel_rows(res_dir)
+    except Exception as _e:                # never let the panel break the report
+        eff_rows = (f"<tr><td colspan='10' class='mono'>efficiency panel "
+                    f"unavailable: {type(_e).__name__}: {str(_e)[:100]}</td></tr>")
+    try:                                   # driving-capability panel (default axis)
+        from taniteval import driving
+        drv_rows = driving.panel_rows(res_dir)
+    except Exception as _e:                # never let the panel break the report
+        drv_rows = (f"<tr><td colspan='9' class='mono'>driving panel "
+                    f"unavailable: {type(_e).__name__}: {str(_e)[:100]}</td></tr>")
+    if not drv_rows:
+        drv_rows = ("<tr><td colspan='9' class='meta'>no driving panels yet — "
+                    "run <span class='mono'>python -m taniteval.runner "
+                    "driving-all</span> (CPU-only, no GPU)</td></tr>")
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     ext = "".join(f"<tr><td>{e['name']}</td><td class='mono'>{e['bench']}</td>"
                   f"<td class='r mono'>{e['metric']} {e['value']}</td>"
@@ -422,7 +438,8 @@ held-out val 0c5f7dac3b11 · eval pod A40<br>regression: <b>{regtxt}</b></div></
 <th class="r">vs CV</th><th class="r">windows</th></tr></thead>
 <tbody>{_lb_rows(results)}</tbody></table></div>
 <div class="note">All metrics computed fresh by <span class="mono">taniteval.runner</span>
-on the same 40 held-out episodes; 8-split episode-disjoint jackknife (±CI95).
+on the same 40 held-out episodes; ±CI95 from 8 overlapping random 20% holdouts
+(DEPRECATED estimator — not a jackknife; episode-cluster bootstrap supersedes it).
 TMS = hub smoothness metric on the predicted path (→1 smooth).</div>
 
 <div class="eyebrow">01b · Kinematic floor / ego-status ceiling / skill_score (top program risk G1)</div>
@@ -460,7 +477,8 @@ B meanVision+trueActions / D real+noActions / E meanVision+noActions.</div>
 <th>read</th></tr></thead>
 <tbody>{_hier_html(res_dir)}</tbody></table></div>
 <div class="note">Cross-layer ablation: replace each FiLM cond (weights fixed) with a
-mean/zero control and measure the downstream delta (8-split episode jackknife). A seam is
+mean/zero control and measure the downstream delta (8 overlapping random holdouts,
+DEPRECATED — not a jackknife). A seam is
 <b>load-bearing</b> only if the real upstream signal beats its control, CI-separated.
 <b>nav→strategic</b> is load-bearing by construction (the command propagates to the route
 head); the honest test is whether the follow head beats the majority-straight baseline.
@@ -521,6 +539,64 @@ From <span class="mono">taniteval.pathspeed</span> on pathspeed_&lt;arm&gt;.json
 <thead><tr><th>frozen encoder</th><th class="r">latency/8</th>
 <th class="r">throughput</th><th class="r">peak VRAM</th></tr></thead>
 <tbody>{frozen_rows}</tbody></table></div>
+
+<div class="eyebrow">04b · Inference efficiency — one planning step (window → 4 waypoints)</div>
+<div class="panel overx"><table>
+<thead><tr><th>model</th><th class="r">p50</th><th class="r">p95 / p99</th>
+<th>where the budget goes</th><th class="r">GFLOPs</th><th class="r">peak VRAM</th>
+<th class="r">params</th><th class="r">ADE@2s</th><th class="r">10 Hz budget</th>
+<th class="r">precision</th></tr></thead>
+<tbody>{eff_rows}</tbody></table></div>
+<div class="note"><b>The deployment axis.</b> Wall-clock for ONE forward planning
+step at <b>batch 1</b> (the deployment case), ≥200 warmed iterations, per-iteration
+CUDA events, <span class="mono">torch.cuda.synchronize()</span> bracketed, warmup
+discarded. Precision is applied <b>identically to every arm and recorded</b> —
+letting it drift between arms is the classic way to publish a fake 2× speedup.
+Host→device copy and uint8→float are excluded (reported separately as
+<span class="mono">input_prep</span>). <b>where the budget goes</b> is the
+architectural read: a grounded world-model arm pays for <i>20 sequential</i>
+predictor steps, an anchored-diffusion arm pays for a <i>parallel</i> anchor fan
+plus its truncated-denoise passes. GFLOPs are profiler-derived
+(<span class="mono">FlopCounterMode</span>: conv/matmul/SDPA only — a lower
+bound, elementwise and norm work excluded). <b>10 Hz budget</b> = p99 as a share
+of 100 ms. Frozen-encoder (REF-A) rows EXCLUDE the external DINOv2/I-JEPA forward
+— never compare them to a pixels-in arm unadjusted. From
+<span class="mono">taniteval.efficiency</span> on eff_&lt;arm&gt;.json (and inline
+in every <span class="mono">results/&lt;arm&gt;.json</span>).</div>
+
+<div class="eyebrow">04c · Driving capability (TanitEval v2, tier 0) — what a single ADE column hides</div>
+<div class="panel overx"><table>
+<thead><tr><th>model</th><th class="r">ADE 0–2s [CI95]</th>
+<th class="r">along / cross @2s</th><th class="r">speed MAE</th>
+<th class="r">cruise Δ vs hold-v0</th><th class="r">heading on straights</th>
+<th class="r">κ-sign</th><th class="r">tick p50</th>
+<th class="r">where the win lives</th></tr></thead>
+<tbody>{drv_rows}</tbody></table></div>
+<div class="note"><b>ADE is a component, not the verdict.</b> Every cell here is
+an <b>episode-cluster bootstrap</b> over the val episodes; every win/tie/LOST tag
+is a <b>paired</b> episode-cluster test against a trivial floor, and it is
+<b>three-way on purpose</b> — a separated interval that favours the FLOOR means
+the trivial baseline beat the model, which a sep/tie rendering would have shown
+as a win. The deprecated <span class="mono">overlapping_holdout_se</span>
+(1.28–2.06× too narrow) is <i>refused</i> by this block, not merely discouraged.
+<b>along / cross</b> = the Frenet split of the 2 s residual on the GT tangent —
+flagship v1's entire CI-separated advantage over CV is <i>cross-track</i>
+(+0.772 [+0.417, +1.191]) while along-track is <i>not separated</i> (+0.254
+[−0.028, +0.530]). <b>speed MAE</b> is measured against <b>hold-v0</b> (go
+straight at the observed entry speed) — the strongest trivial longitudinal
+floor, and the one VTARGET provably loses to at 2 s. <b>cruise Δ</b> is L1
+CRUISE-QUALITY on the longitudinally steady windows: <i>every arm in the
+program is separated AGAINST hold-v0 here</i> while winning on brake/accel —
+the two point in opposite directions and ADE averages them away.
+<b>heading on straights</b> is T3 (CV scores 1.399°). <b>κ-sign</b> = curvature
+SIGN agreement; the curvature magnitude is refused at this resolution (measured
+24× the signal). <b>tick p50</b> is the same measurement as panel 04b.
+Kinematic strata are <b>signatures, not scenarios</b> — no map, no agents, no
+scenario ground truth exist, and a 2 s window cannot see a 5–20 s intersection.
+Open-loop, weak claim (arXiv:2605.00066). From
+<span class="mono">taniteval.driving</span> on driving_&lt;arm&gt;.json (and
+inline in every <span class="mono">results/&lt;arm&gt;.json</span>); spec:
+<span class="mono">TANITEVAL_V2_METRIC_SUITE.md</span>.</div>
 
 <div class="eyebrow">05 · Strata — where the error lives (ade@1s / @2s)</div>
 <div class="panel overx"><table>

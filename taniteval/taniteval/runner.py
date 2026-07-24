@@ -4,10 +4,22 @@
   python -m taniteval.runner run-all [--episodes 40]
   python -m taniteval.runner ab --a refa-dinov2 --b refa-ijepa
   python -m taniteval.runner regression [--update-golden]
+  python -m taniteval.runner driving --model flagship-30k
+  python -m taniteval.runner driving-all
+  python -m taniteval.runner closedloop --model flagship-30k [--episodes 40]
+  python -m taniteval.runner closedloop-all
+  python -m taniteval.runner closedloop-report
   python -m taniteval.runner report
 
-Each run writes results/<key>.json (benchmark) + results/windows_<key>.pt
-(raw per-window predictions — the substrate for A/B and viz)."""
+This module is THE ONE canonical entrypoint — every eval axis is a subcommand
+here (open-loop ADE/miss via `run`, the beyond-ADE TanitEval-v2 suite inline +
+`driving`, imagination-in-the-loop `closedloop`, `hierarchy`, `generalize`,
+`pathspeed`, `efficiency`). It pins the CLEAN held-out val split and refuses the
+leaky one at the data layer (see taniteval.data.list_val_episodes).
+
+Each run writes results/<key>.json (benchmark + the inline `efficiency` and
+`driving` blocks) + results/windows_<key>.pt (raw per-window predictions — the
+substrate for A/B, viz, and the CPU-only TanitEval v2 tier-0 backfill)."""
 from __future__ import annotations
 
 import argparse
@@ -24,7 +36,7 @@ from taniteval import bench, data, loaders, rollout  # noqa: E402
 from taniteval.registry import MODELS  # noqa: E402
 
 RES = Path("/root/taniteval/results")
-VAL = "/root/valdata/physicalai-val-0c5f7dac3b11"
+VAL = f"/root/valdata/{data.CLEAN_VAL}"   # single source of truth (data.py)
 
 
 def _entry(key):
@@ -87,10 +99,57 @@ def run_one(key, episodes=40, device="cuda"):
     res["model"] = {k: e.get(k) for k in
                     ("key", "name", "arch", "encoder", "speed_input", "hf")}
     res["ckpt_step"] = L["step"]
+    # EFFICIENCY IS A DEFAULT AXIS (2026-07-20): every accuracy run also reports
+    # what one planning step COSTS — latency/stage-breakdown/FLOPs/memory/params
+    # in the SAME results JSON. Cheap (batch 1, fp32, ~10 s) so it never
+    # discourages a full eval; never fatal to the accuracy number.
+    try:
+        from taniteval import efficiency
+        res["efficiency"] = efficiency.quick(e, L, eps[0], device)
+    except Exception as ex:
+        res["efficiency"] = {"error": f"{type(ex).__name__}: {str(ex)[:160]}"}
+        print(f"[eff] {key}: efficiency panel FAILED: {res['efficiency']['error']}",
+              flush=True)
+    # DRIVING CAPABILITY IS A DEFAULT AXIS (2026-07-21): ADE is one column, not
+    # the verdict. Every accuracy run also reports the TanitEval v2 tier-0 set —
+    # cruise quality, transient response, the along/cross split, progress, path
+    # geometry, heading by curvature, curvature sign, kinematic strata — each
+    # with an episode-cluster bootstrap and a PAIRED test against BOTH trivial
+    # floors (CV and hold-v0). CPU-only over the windows already in memory
+    # (~2.4 s at B=2000), so it never competes for the GPU and never delays an
+    # eval; never fatal to the accuracy number.
+    try:
+        from taniteval import driving
+        res["driving"] = driving.quick(win, arm=key)
+    except Exception as ex:
+        res["driving"] = {"error": f"{type(ex).__name__}: {str(ex)[:160]}"}
+        print(f"[driving] {key}: driving panel FAILED: "
+              f"{res['driving']['error']}", flush=True)
     res["wall_s"] = round(time.time() - t0, 1)
     RES.mkdir(parents=True, exist_ok=True)
     rollout.save_windows(win, RES / f"windows_{key}.pt")
     (RES / f"{key}.json").write_text(json.dumps(res, indent=2, default=str))
+    eff = res.get("efficiency", {})
+    if "plan_step" in eff:
+        print(f"[run] {key} efficiency: plan step "
+              f"p50={eff['plan_step']['p50_ms']:.2f} ms "
+              f"p99={eff['plan_step']['p99_ms']:.2f} ms "
+              f"({eff['realtime']['budget_used_pct_p99']:.0f}% of the 100 ms "
+              f"budget) · {eff.get('flops', {}).get('gflops', '—')} GFLOPs · "
+              f"{eff['memory']['peak_alloc_mb']:.0f} MB peak · "
+              f"{eff['params']['total_params_m']:.1f} M params", flush=True)
+    dv = res.get("driving", {})
+    if "verdict" in dv:
+        v, hl = dv["verdict"], dv["headline"]
+        print(f"[run] {key} driving (TanitEval v2 tier-0): "
+              f"along {hl['long_abs_2s_m']['mean']:.3f} / cross "
+              f"{hl['lat_abs_2s_m']['mean']:.3f} m · speed MAE "
+              f"{hl['speed_mae_mps']['mean']:.3f} vs hold-v0 "
+              f"{dv['floor_values']['holdv0']['speed_mae_mps']['value']:.3f} "
+              f"m/s · straight heading "
+              f"{dv.get('by_curvature', {}).get('straight', {}).get('model_heading_mae_deg', '—')}° "
+              f"· win lives: {v['where_the_win_lives']} · tracks speed > CV: "
+              f"{v['tracks_speed_better_than_cv']}", flush=True)
     hm = res["heldout"]["model"]
     print(f"[run] {key} step={L['step']} n={res['n_windows']} "
           f"ade@2s={hm['ade_0_2s']['mean']:.3f}±{hm['ade_0_2s']['ci95']:.3f} "
@@ -142,8 +201,25 @@ def run_hierarchy(key, episodes=40, device="cuda", stride=8):
     from taniteval import hierarchy
     e = _entry(key)
     L = loaders.load(e, device)
-    if not L["traj_capable"] or getattr(L["model"], "tactical_policy", None) is None:
-        print(f"[hier] {key}: not a trained 4-brain arm (no policy/rollout) — skip",
+    # G1 (2026-07-20): this guard used to skip SILENTLY, which is why REF-B and
+    # REF-C have no H26 numbers — and H26 is the program's core-goal proof. A
+    # future arm whose tactical brain is not literally `tactical_policy` (v3.5
+    # plans an `AnchoredDiffusionDecoder`) would be skipped the same way and the
+    # missing panel would look like a passing one. Fail LOUD and name the brain.
+    _model = L["model"]
+    if not L["traj_capable"] or getattr(_model, "tactical_policy", None) is None:
+        _known = [n for n in ("tactical_policy", "tactical_pred", "decoder",
+                              "planner", "tactical") if getattr(_model, n, None)
+                  is not None]
+        _brains = ", ".join(f"{n}={type(getattr(_model, n)).__name__}"
+                            for n in _known) or "none found"
+        print(f"[hier] {key}: SKIPPED — no H26 hierarchy numbers for this arm.\n"
+              f"[hier]   reason: traj_capable={L['traj_capable']}, "
+              f"tactical_policy={'present' if getattr(_model, 'tactical_policy', None) is not None else 'ABSENT'}\n"
+              f"[hier]   tactical-ish attributes on {type(_model).__name__}: {_brains}\n"
+              f"[hier]   ⚠️  A SKIP IS NOT A PASS. `hierarchy.py` currently supports only\n"
+              f"[hier]       (tactical_policy + strategic_policy) arms — see hierarchy.py:225.\n"
+              f"[hier]       Generalising it is REQUIRED before v3.5's Gate H can run.",
               flush=True)
         return None
     files = data.list_val_episodes(VAL, 40)
@@ -246,6 +322,39 @@ def main():
     ps.add_argument("--episodes", type=int, default=40)
     psa = sub.add_parser("pathspeed-all"); psa.add_argument("--episodes",
                                                             type=int, default=40)
+    # NEW panel (2026-07-20): inference efficiency — the DEPLOYMENT axis.
+    # `run` already emits a cheap batch-1 fp32 read into results/<key>.json;
+    # these commands are the FULL version (precision sweep + throughput).
+    ef = sub.add_parser("efficiency"); ef.add_argument("--model", required=True)
+    ef.add_argument("--precision", default="fp32",
+                    help="comma list: fp32,tf32,amp16 (applied IDENTICALLY to "
+                         "every arm — never let it drift between arms)")
+    ef.add_argument("--batch", type=int, default=1)
+    ef.add_argument("--iters", type=int, default=200)
+    ef.add_argument("--warmup", type=int, default=30)
+    ef.add_argument("--no-throughput", action="store_true")
+    efa = sub.add_parser("eff-all")
+    efa.add_argument("--precision", default="fp32")
+    efa.add_argument("--batch", type=int, default=1)
+    efa.add_argument("--iters", type=int, default=200)
+    efa.add_argument("--warmup", type=int, default=30)
+    efa.add_argument("--no-throughput", action="store_true")
+    # NEW panel (2026-07-21): DRIVING CAPABILITY — TanitEval v2 tier-0. Emitted
+    # inline by every `run`; these commands recompute it OFFLINE from the
+    # persisted windows_<key>.pt (CPU-only, no GPU, no model load), which is why
+    # the backfill can populate the whole leaderboard without touching a pod.
+    dr = sub.add_parser("driving"); dr.add_argument("--model", required=True)
+    dr.add_argument("--n-boot", type=int, default=2000)
+    dra = sub.add_parser("driving-all")
+    dra.add_argument("--n-boot", type=int, default=2000)
+    # CLOSED-LOOP: imagination-in-the-loop rollout (the open-loop-ADE-does-not-
+    # predict-closed-loop axis). Thin dispatch — logic lives in
+    # taniteval.closedloop (own module, own clean-split leak guard).
+    cl = sub.add_parser("closedloop"); cl.add_argument("--model", required=True)
+    cl.add_argument("--episodes", type=int, default=40)
+    cla = sub.add_parser("closedloop-all")
+    cla.add_argument("--episodes", type=int, default=40)
+    sub.add_parser("closedloop-report")
     sub.add_parser("report")
     a = ap.parse_args()
     if a.cmd == "run":
@@ -303,6 +412,45 @@ def main():
             except Exception as e:
                 print(f"[pathspeed-all] {m['key']} FAILED: "
                       f"{type(e).__name__}: {str(e)[:140]}", flush=True)
+    elif a.cmd == "efficiency":
+        from taniteval import efficiency
+        efficiency.run_and_save(
+            a.model, precisions=tuple(p.strip()
+                                      for p in a.precision.split(",")),
+            batch=a.batch, iters=a.iters, warmup=a.warmup,
+            throughput=not a.no_throughput)
+    elif a.cmd == "eff-all":
+        from taniteval import efficiency
+        precs = tuple(p.strip() for p in a.precision.split(","))
+        for m in MODELS:
+            try:
+                efficiency.run_and_save(m["key"], precisions=precs,
+                                        batch=a.batch, iters=a.iters,
+                                        warmup=a.warmup,
+                                        throughput=not a.no_throughput)
+            except Exception as e:
+                print(f"[eff-all] {m['key']} FAILED: "
+                      f"{type(e).__name__}: {str(e)[:140]}", flush=True)
+    elif a.cmd == "driving":
+        from taniteval import driving
+        driving.run_and_save(a.model, res_dir=RES, n_boot=a.n_boot)
+    elif a.cmd == "driving-all":
+        from taniteval import driving
+        driving.run_all(RES, n_boot=a.n_boot)
+    elif a.cmd == "closedloop":
+        from taniteval import closedloop
+        closedloop.run_and_save(a.model, episodes=a.episodes)
+    elif a.cmd == "closedloop-all":
+        from taniteval import closedloop
+        for m in MODELS:
+            try:
+                closedloop.run_and_save(m["key"], episodes=a.episodes)
+            except Exception as e:
+                print(f"[closedloop-all] {m['key']} FAILED: "
+                      f"{type(e).__name__}: {str(e)[:140]}", flush=True)
+    elif a.cmd == "closedloop-report":
+        import closedloop_report
+        closedloop_report.main()
     elif a.cmd == "report":
         from taniteval import report
         print(report.build(RES), flush=True)

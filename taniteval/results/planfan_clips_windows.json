@@ -1,0 +1,298 @@
+{
+ "source": {
+  "refc-base-30k": "/root/taniteval/results/fan_refc-base-30k.pt",
+  "refc-xl-30k": "/root/taniteval/results/fan_refc-xl-30k.pt"
+ },
+ "n_windows": 881,
+ "n_episodes": 40,
+ "corpus": "physicalai",
+ "stride": 8,
+ "window": 8,
+ "pad": 24,
+ "speed_tertiles": [
+  7.067,
+  13.325
+ ],
+ "arm_summary": {
+  "refc-base-30k": {
+   "n_anchors": 128,
+   "mean_sel": 0.4728,
+   "mean_oracle": 0.1914,
+   "mean_gap": 0.2813,
+   "frac_sel_2x_worse": 0.4109,
+   "mean_modes": 3.625
+  },
+  "refc-xl-30k": {
+   "n_anchors": 256,
+   "mean_sel": 0.4714,
+   "mean_oracle": 0.164,
+   "mean_gap": 0.3075,
+   "frac_sel_2x_worse": 0.454,
+   "mean_modes": 4.641
+  }
+ },
+ "cv_mean_ade": 0.8377,
+ "clips": [
+  {
+   "w": 290,
+   "ep": 13,
+   "frame": 31,
+   "cat": "good_selection",
+   "why": "argmax <=1.15x oracle in BOTH arms, sel<0.6 m, moving (v0>4 m/s)",
+   "v0": 12.97,
+   "head_deg": 0.14,
+   "a_gt": -0.125,
+   "cv_ade": 0.163,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 0.023,
+     "oracle": 0.023,
+     "ratio": 1.0,
+     "top1": 0.772,
+     "H": 0.71,
+     "modes": 3
+    },
+    "refc-xl-30k": {
+     "sel": 0.018,
+     "oracle": 0.018,
+     "ratio": 1.0,
+     "top1": 0.831,
+     "H": 0.58,
+     "modes": 2
+    }
+   }
+  },
+  {
+   "w": 433,
+   "ep": 19,
+   "frame": 119,
+   "cat": "bad_selection_good_fan",
+   "why": "sel >2x oracle-in-fan AND gap >1 m in BOTH arms (the 41 % failure)",
+   "v0": 6.56,
+   "head_deg": 9.01,
+   "a_gt": -2.865,
+   "cv_ade": 3.234,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 3.703,
+     "oracle": 0.594,
+     "ratio": 6.23,
+     "top1": 0.735,
+     "H": 0.8,
+     "modes": 3
+    },
+    "refc-xl-30k": {
+     "sel": 3.483,
+     "oracle": 0.585,
+     "ratio": 5.95,
+     "top1": 0.861,
+     "H": 0.59,
+     "modes": 4
+    }
+   }
+  },
+  {
+   "w": 218,
+   "ep": 9,
+   "frame": 167,
+   "cat": "bad_selection_good_fan",
+   "why": "sel >2x oracle-in-fan AND gap >1 m in BOTH arms (the 41 % failure)",
+   "v0": 11.28,
+   "head_deg": 21.08,
+   "a_gt": 0.438,
+   "cv_ade": 0.733,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 3.435,
+     "oracle": 0.735,
+     "ratio": 4.68,
+     "top1": 0.454,
+     "H": 1.5,
+     "modes": 7
+    },
+    "refc-xl-30k": {
+     "sel": 3.444,
+     "oracle": 0.624,
+     "ratio": 5.52,
+     "top1": 0.709,
+     "H": 1.17,
+     "modes": 7
+    }
+   }
+  },
+  {
+   "w": 807,
+   "ep": 36,
+   "frame": 119,
+   "cat": "multimodal_junction",
+   "why": "|net heading@2s| >8 deg with >=5/6 modes>1% \u2014 left/straight/right live",
+   "v0": 8.55,
+   "head_deg": 10.3,
+   "a_gt": -0.266,
+   "cv_ade": 1.292,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 0.436,
+     "oracle": 0.379,
+     "ratio": 1.15,
+     "top1": 0.234,
+     "H": 1.81,
+     "modes": 6
+    },
+    "refc-xl-30k": {
+     "sel": 0.674,
+     "oracle": 0.393,
+     "ratio": 1.71,
+     "top1": 0.306,
+     "H": 2.25,
+     "modes": 12
+    }
+   }
+  },
+  {
+   "w": 760,
+   "ep": 34,
+   "frame": 95,
+   "cat": "multimodal_junction",
+   "why": "|net heading@2s| >8 deg with >=5/6 modes>1% \u2014 left/straight/right live",
+   "v0": 8.08,
+   "head_deg": 34.89,
+   "a_gt": -0.801,
+   "cv_ade": 2.301,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 1.561,
+     "oracle": 0.448,
+     "ratio": 3.49,
+     "top1": 0.402,
+     "H": 1.67,
+     "modes": 6
+    },
+    "refc-xl-30k": {
+     "sel": 1.827,
+     "oracle": 0.429,
+     "ratio": 4.26,
+     "top1": 0.288,
+     "H": 2.06,
+     "modes": 10
+    }
+   }
+  },
+  {
+   "w": 686,
+   "ep": 31,
+   "frame": 31,
+   "cat": "high_speed",
+   "why": "top speed tertile (REF-C's best)",
+   "v0": 36.55,
+   "head_deg": 2.17,
+   "a_gt": -0.009,
+   "cv_ade": 0.729,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 0.324,
+     "oracle": 0.324,
+     "ratio": 1.0,
+     "top1": 0.984,
+     "H": 0.09,
+     "modes": 2
+    },
+    "refc-xl-30k": {
+     "sel": 0.266,
+     "oracle": 0.179,
+     "ratio": 1.48,
+     "top1": 0.999,
+     "H": 0.01,
+     "modes": 1
+    }
+   }
+  },
+  {
+   "w": 119,
+   "ep": 5,
+   "frame": 79,
+   "cat": "cruise_steady",
+   "why": "mid tertile, |a_gt|<0.3 m/s^2, near-straight \u2014 where we are weak vs CV",
+   "v0": 8.8,
+   "head_deg": 0.95,
+   "a_gt": -0.009,
+   "cv_ade": 0.384,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 1.055,
+     "oracle": 0.284,
+     "ratio": 3.72,
+     "top1": 0.599,
+     "H": 0.9,
+     "modes": 3
+    },
+    "refc-xl-30k": {
+     "sel": 1.246,
+     "oracle": 0.138,
+     "ratio": 9.06,
+     "top1": 0.412,
+     "H": 1.21,
+     "modes": 4
+    }
+   }
+  },
+  {
+   "w": 347,
+   "ep": 15,
+   "frame": 135,
+   "cat": "cruise_steady",
+   "why": "mid tertile, |a_gt|<0.3 m/s^2, near-straight \u2014 where we are weak vs CV",
+   "v0": 7.08,
+   "head_deg": 1.06,
+   "a_gt": 0.04,
+   "cv_ade": 0.371,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 0.824,
+     "oracle": 0.077,
+     "ratio": 10.72,
+     "top1": 0.636,
+     "H": 1.2,
+     "modes": 6
+    },
+    "refc-xl-30k": {
+     "sel": 1.095,
+     "oracle": 0.119,
+     "ratio": 9.23,
+     "top1": 0.686,
+     "H": 1.09,
+     "modes": 6
+    }
+   }
+  },
+  {
+   "w": 614,
+   "ep": 27,
+   "frame": 159,
+   "cat": "braking_longitudinal",
+   "why": "a_gt < -1 m/s^2 at v0 > 5 m/s \u2014 the longitudinal lever",
+   "v0": 10.18,
+   "head_deg": 3.18,
+   "a_gt": -2.628,
+   "cv_ade": 2.579,
+   "arms": {
+    "refc-base-30k": {
+     "sel": 1.467,
+     "oracle": 0.243,
+     "ratio": 6.04,
+     "top1": 0.489,
+     "H": 1.52,
+     "modes": 7
+    },
+    "refc-xl-30k": {
+     "sel": 2.496,
+     "oracle": 0.123,
+     "ratio": 20.24,
+     "top1": 0.307,
+     "H": 2.06,
+     "modes": 10
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,787 @@
+{
+  "key": "refc-xl",
+  "model": {
+    "key": "refc-xl",
+    "name": "REF-C-XL (anchored-diffusion, snapshot)",
+    "arch": "refc",
+    "encoder": "trained ResNet-L (9ch, 256px, base_width 124)",
+    "config_preset": "xl",
+    "mode": "diffusion"
+  },
+  "ckpt_step": 16000,
+  "protocol": {
+    "batch": 1,
+    "window": 8,
+    "horizon_steps": 20,
+    "control_hz": 10.0,
+    "iters": 200,
+    "warmup": 30,
+    "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded",
+    "excluded": "host->device copy + uint8->float (reported separately as input_prep)"
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 99.0,
+      "mem_used_mb": 1521.0,
+      "sm_clock_mhz": 1725.0,
+      "exclusive": true,
+      "temp_c": 67.0,
+      "power_w": 175.75,
+      "other_compute_detail": []
+    },
+    "meta": {
+      "batch": 1,
+      "window": 8,
+      "input_shape": [
+        1,
+        8,
+        9,
+        256,
+        256
+      ],
+      "decode": "anchored diffusion: encode -> 1 classifier pass over 256 anchors IN PARALLEL -> 2 truncated-denoise passes -> argmax-confidence select (3 decoder passes total)",
+      "n_anchors": 256,
+      "denoise_steps": 2,
+      "decoder_passes": 3,
+      "sequential_steps": 3,
+      "excludes_frozen_encoder": false
+    },
+    "params": {
+      "total_params": 251932584,
+      "total_params_m": 251.9326,
+      "model_params_m": 251.9326,
+      "buffers_m": 0.0788,
+      "by_module_m": {
+        "encoder": 199.4965,
+        "decoder": 22.7023,
+        "imagination": 20.9863,
+        "strategic": 4.1335,
+        "law_head": 4.0827,
+        "maneuver_head": 0.511,
+        "measurement": 0.0173,
+        "route_head": 0.003
+      },
+      "aux_m": {},
+      "aux_unique_m": {},
+      "double_counted_m": 0.0,
+      "unique_model_m": 251.9326,
+      "note": "measured at instantiation from live nn.Modules, DEDUPLICATED by tensor identity (step_readout is a submodule of grounding \u2014 counting both inflates the arm). Parameters only; buffers \u2014 e.g. REF-C's anchor vocabulary \u2014 counted separately."
+    },
+    "plan_step": {
+      "mean_ms": 44.0077,
+      "p50_ms": 44.0004,
+      "p95_ms": 44.2752,
+      "p99_ms": 44.3454,
+      "min_ms": 43.7056,
+      "max_ms": 44.3996,
+      "std_ms": 0.1369,
+      "iters": 200,
+      "warmup": 30
+    },
+    "memory": {
+      "peak_alloc_mb": 1178.4,
+      "peak_reserved_mb": 1371.5,
+      "weights_resident_mb": 1048.3,
+      "activation_mb": 130.0
+    },
+    "flops": {
+      "total_flops": 702167677504,
+      "gflops": 702.168,
+      "by_op_gflops": {
+        "convolution": 673.359,
+        "addmm": 28.025,
+        "_scaled_dot_product_efficient_attention": 0.654,
+        "mm": 0.13
+      },
+      "mha_fastpath_disabled_for_count": true,
+      "method": "torch.utils.flop_counter.FlopCounterMode (conv/matmul/sdpa; excludes elementwise+norm). MHA fast path disabled during the COUNT ONLY so attention is not silently dropped; timing keeps it."
+    },
+    "stages": {
+      "imagination_h15": {
+        "mean_ms": 2.0576,
+        "p50_ms": 1.8815,
+        "p95_ms": 2.7648,
+        "p99_ms": 2.7982,
+        "min_ms": 1.8145,
+        "max_ms": 2.8181,
+        "std_ms": 0.3444,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_window_8frames": {
+        "mean_ms": 39.0607,
+        "p50_ms": 39.0431,
+        "p95_ms": 39.2851,
+        "p99_ms": 39.3941,
+        "min_ms": 38.9222,
+        "max_ms": 39.4037,
+        "std_ms": 0.1126,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_1frame": {
+        "mean_ms": 12.1536,
+        "p50_ms": 12.1496,
+        "p95_ms": 12.1608,
+        "p99_ms": 12.1876,
+        "min_ms": 12.1394,
+        "max_ms": 12.4801,
+        "std_ms": 0.0334,
+        "iters": 100,
+        "warmup": 30
+      },
+      "aux_heads_maneuver+route": {
+        "mean_ms": 0.0907,
+        "p50_ms": 0.0737,
+        "p95_ms": 0.112,
+        "p99_ms": 0.1203,
+        "min_ms": 0.0716,
+        "max_ms": 0.4305,
+        "std_ms": 0.0384,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_classifier_steps0": {
+        "mean_ms": 2.9087,
+        "p50_ms": 2.7945,
+        "p95_ms": 3.6275,
+        "p99_ms": 3.779,
+        "min_ms": 2.6355,
+        "max_ms": 3.8031,
+        "std_ms": 0.3005,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_full_steps2": {
+        "mean_ms": 8.3057,
+        "p50_ms": 8.1108,
+        "p95_ms": 9.8044,
+        "p99_ms": 10.3828,
+        "min_ms": 7.4821,
+        "max_ms": 10.5842,
+        "std_ms": 0.7083,
+        "iters": 100,
+        "warmup": 30
+      },
+      "law_head": {
+        "mean_ms": 3.0738,
+        "p50_ms": 2.9099,
+        "p95_ms": 3.931,
+        "p99_ms": 4.5387,
+        "min_ms": 2.7428,
+        "max_ms": 4.9546,
+        "std_ms": 0.4252,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "stage_shares": {
+      "encoder_pct": 88.8,
+      "encoder_ms": 39.0607,
+      "post_encoder_ms": 4.947,
+      "post_encoder_pct": 11.2,
+      "encode_1frame_ms": 12.1536,
+      "cached_window_saving_ms": 26.9071,
+      "plan_step_ms_if_encoder_cached": 17.1006,
+      "decoder_classifier_ms": 2.9087,
+      "decoder_classifier_pct": 6.6,
+      "denoise_ms": 5.397,
+      "denoise_pct": 12.3,
+      "decoder_total_ms": 8.3057,
+      "decoder_total_pct": 18.9,
+      "per_denoise_pass_ms": 2.6985,
+      "imagination_ms": 2.0576,
+      "imagination_pct": 4.7,
+      "isolated_stage_sum_ms": 52.5885,
+      "isolated_stage_sum_pct_of_plan_step": 119.5,
+      "stage_sum_note": ">100% => the stages overlap CPU-launch with GPU-execute inside the full step (launch-bound); <100% => untimed glue. Treat shares as attribution, not an exact partition."
+    },
+    "input_prep": {
+      "mean_ms": 0.4517,
+      "p50_ms": 0.4375,
+      "p95_ms": 0.505,
+      "p99_ms": 0.5051,
+      "min_ms": 0.4274,
+      "max_ms": 0.5051,
+      "std_ms": 0.0284,
+      "iters": 30,
+      "warmup": 5
+    },
+    "throughput": {
+      "by_batch": {
+        "1": {
+          "mean_ms": 44.814,
+          "p50_ms": 44.7778,
+          "windows_per_s": 22.3
+        },
+        "2": {
+          "mean_ms": 78.57,
+          "p50_ms": 78.4504,
+          "windows_per_s": 25.5
+        },
+        "4": {
+          "mean_ms": 144.8909,
+          "p50_ms": 144.7477,
+          "windows_per_s": 27.6
+        },
+        "8": {
+          "mean_ms": 279.2996,
+          "p50_ms": 279.399,
+          "windows_per_s": 28.6
+        },
+        "16": {
+          "mean_ms": 544.5053,
+          "p50_ms": 544.4156,
+          "windows_per_s": 29.4
+        },
+        "32": {
+          "mean_ms": 1088.3238,
+          "p50_ms": 1088.0453,
+          "windows_per_s": 29.4
+        }
+      },
+      "best_windows_per_s": 29.4,
+      "best_batch": 16
+    },
+    "compute_efficiency": {
+      "achieved_tflops": 15.956,
+      "gflops_per_plan_step": 702.168,
+      "note": "GFLOPs / wall-clock. Low value => latency is bound by kernel launches / serialisation, not by arithmetic; more FLOPs at a HIGHER achieved rate can still be faster."
+    },
+    "realtime": {
+      "budget_ms_at_10hz": 100.0,
+      "headroom_ms_p50": 56.0,
+      "headroom_ms_p99": 55.655,
+      "budget_used_pct_p50": 44.0,
+      "budget_used_pct_p99": 44.35,
+      "max_control_rate_hz_p50": 22.7,
+      "max_control_rate_hz_p99": 22.6,
+      "meets_10hz_p99": true
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 100.0,
+      "mem_used_mb": 1425.0,
+      "sm_clock_mhz": 1410.0,
+      "exclusive": true,
+      "temp_c": 74.0,
+      "power_w": 302.16,
+      "other_compute_detail": []
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": true,
+      "gpu_exclusive_after": true,
+      "valid": true,
+      "note": "False => another process shared the GPU; re-run, do not publish this row."
+    }
+  },
+  "tf32": {
+    "precision": {
+      "precision": "tf32",
+      "autocast": null,
+      "matmul_allow_tf32": true,
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 100.0,
+      "mem_used_mb": 1463.0,
+      "sm_clock_mhz": 1725.0,
+      "exclusive": true,
+      "temp_c": 72.0,
+      "power_w": 263.02,
+      "other_compute_detail": []
+    },
+    "meta": {
+      "batch": 1,
+      "window": 8,
+      "input_shape": [
+        1,
+        8,
+        9,
+        256,
+        256
+      ],
+      "decode": "anchored diffusion: encode -> 1 classifier pass over 256 anchors IN PARALLEL -> 2 truncated-denoise passes -> argmax-confidence select (3 decoder passes total)",
+      "n_anchors": 256,
+      "denoise_steps": 2,
+      "decoder_passes": 3,
+      "sequential_steps": 3,
+      "excludes_frozen_encoder": false
+    },
+    "params": {
+      "total_params": 251932584,
+      "total_params_m": 251.9326,
+      "model_params_m": 251.9326,
+      "buffers_m": 0.0788,
+      "by_module_m": {
+        "encoder": 199.4965,
+        "decoder": 22.7023,
+        "imagination": 20.9863,
+        "strategic": 4.1335,
+        "law_head": 4.0827,
+        "maneuver_head": 0.511,
+        "measurement": 0.0173,
+        "route_head": 0.003
+      },
+      "aux_m": {},
+      "aux_unique_m": {},
+      "double_counted_m": 0.0,
+      "unique_model_m": 251.9326,
+      "note": "measured at instantiation from live nn.Modules, DEDUPLICATED by tensor identity (step_readout is a submodule of grounding \u2014 counting both inflates the arm). Parameters only; buffers \u2014 e.g. REF-C's anchor vocabulary \u2014 counted separately."
+    },
+    "plan_step": {
+      "mean_ms": 27.8178,
+      "p50_ms": 27.8059,
+      "p95_ms": 28.0429,
+      "p99_ms": 28.0933,
+      "min_ms": 27.6467,
+      "max_ms": 28.265,
+      "std_ms": 0.1229,
+      "iters": 200,
+      "warmup": 30
+    },
+    "memory": {
+      "peak_alloc_mb": 1178.4,
+      "peak_reserved_mb": 1270.9,
+      "weights_resident_mb": 1048.3,
+      "activation_mb": 130.0
+    },
+    "flops": {
+      "total_flops": 702167677504,
+      "gflops": 702.168,
+      "by_op_gflops": {
+        "convolution": 673.359,
+        "addmm": 28.025,
+        "_scaled_dot_product_efficient_attention": 0.654,
+        "mm": 0.13
+      },
+      "mha_fastpath_disabled_for_count": true,
+      "method": "torch.utils.flop_counter.FlopCounterMode (conv/matmul/sdpa; excludes elementwise+norm). MHA fast path disabled during the COUNT ONLY so attention is not silently dropped; timing keeps it."
+    },
+    "stages": {
+      "imagination_h15": {
+        "mean_ms": 2.1431,
+        "p50_ms": 1.9808,
+        "p95_ms": 3.1357,
+        "p99_ms": 3.1944,
+        "min_ms": 1.8689,
+        "max_ms": 3.3592,
+        "std_ms": 0.3606,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_window_8frames": {
+        "mean_ms": 24.4077,
+        "p50_ms": 24.3766,
+        "p95_ms": 24.5815,
+        "p99_ms": 24.9863,
+        "min_ms": 24.2429,
+        "max_ms": 24.9902,
+        "std_ms": 0.137,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_1frame": {
+        "mean_ms": 7.7648,
+        "p50_ms": 7.7315,
+        "p95_ms": 7.8577,
+        "p99_ms": 7.8643,
+        "min_ms": 7.6842,
+        "max_ms": 8.7887,
+        "std_ms": 0.1142,
+        "iters": 100,
+        "warmup": 30
+      },
+      "aux_heads_maneuver+route": {
+        "mean_ms": 0.0868,
+        "p50_ms": 0.0898,
+        "p95_ms": 0.097,
+        "p99_ms": 0.1017,
+        "min_ms": 0.0719,
+        "max_ms": 0.1026,
+        "std_ms": 0.0079,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_classifier_steps0": {
+        "mean_ms": 2.8205,
+        "p50_ms": 2.707,
+        "p95_ms": 3.6169,
+        "p99_ms": 3.9827,
+        "min_ms": 2.6108,
+        "max_ms": 4.0212,
+        "std_ms": 0.3077,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_full_steps2": {
+        "mean_ms": 8.0048,
+        "p50_ms": 7.6761,
+        "p95_ms": 9.6593,
+        "p99_ms": 11.0063,
+        "min_ms": 7.4494,
+        "max_ms": 11.0402,
+        "std_ms": 0.798,
+        "iters": 100,
+        "warmup": 30
+      },
+      "law_head": {
+        "mean_ms": 3.0425,
+        "p50_ms": 2.7837,
+        "p95_ms": 4.1375,
+        "p99_ms": 4.216,
+        "min_ms": 2.683,
+        "max_ms": 4.2271,
+        "std_ms": 0.4832,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "stage_shares": {
+      "encoder_pct": 87.7,
+      "encoder_ms": 24.4077,
+      "post_encoder_ms": 3.4101,
+      "post_encoder_pct": 12.3,
+      "encode_1frame_ms": 7.7648,
+      "cached_window_saving_ms": 16.6429,
+      "plan_step_ms_if_encoder_cached": 11.1749,
+      "decoder_classifier_ms": 2.8205,
+      "decoder_classifier_pct": 10.1,
+      "denoise_ms": 5.1843,
+      "denoise_pct": 18.6,
+      "decoder_total_ms": 8.0048,
+      "decoder_total_pct": 28.8,
+      "per_denoise_pass_ms": 2.5921,
+      "imagination_ms": 2.1431,
+      "imagination_pct": 7.7,
+      "isolated_stage_sum_ms": 37.6849,
+      "isolated_stage_sum_pct_of_plan_step": 135.5,
+      "stage_sum_note": ">100% => the stages overlap CPU-launch with GPU-execute inside the full step (launch-bound); <100% => untimed glue. Treat shares as attribution, not an exact partition."
+    },
+    "input_prep": {
+      "mean_ms": 0.4397,
+      "p50_ms": 0.4388,
+      "p95_ms": 0.4775,
+      "p99_ms": 0.5189,
+      "min_ms": 0.4212,
+      "max_ms": 0.5189,
+      "std_ms": 0.0185,
+      "iters": 30,
+      "warmup": 5
+    },
+    "compute_efficiency": {
+      "achieved_tflops": 25.242,
+      "gflops_per_plan_step": 702.168,
+      "note": "GFLOPs / wall-clock. Low value => latency is bound by kernel launches / serialisation, not by arithmetic; more FLOPs at a HIGHER achieved rate can still be faster."
+    },
+    "realtime": {
+      "budget_ms_at_10hz": 100.0,
+      "headroom_ms_p50": 72.194,
+      "headroom_ms_p99": 71.907,
+      "budget_used_pct_p50": 27.81,
+      "budget_used_pct_p99": 28.09,
+      "max_control_rate_hz_p50": 36.0,
+      "max_control_rate_hz_p99": 35.6,
+      "meets_10hz_p99": true
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 34.0,
+      "mem_used_mb": 1463.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 69.0,
+      "power_w": 175.03,
+      "other_compute_detail": []
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": true,
+      "gpu_exclusive_after": true,
+      "valid": true,
+      "note": "False => another process shared the GPU; re-run, do not publish this row."
+    }
+  },
+  "amp16": {
+    "precision": {
+      "precision": "amp16",
+      "autocast": "float16",
+      "matmul_allow_tf32": true,
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 34.0,
+      "mem_used_mb": 1587.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 69.0,
+      "power_w": 175.03,
+      "other_compute_detail": []
+    },
+    "meta": {
+      "batch": 1,
+      "window": 8,
+      "input_shape": [
+        1,
+        8,
+        9,
+        256,
+        256
+      ],
+      "decode": "anchored diffusion: encode -> 1 classifier pass over 256 anchors IN PARALLEL -> 2 truncated-denoise passes -> argmax-confidence select (3 decoder passes total)",
+      "n_anchors": 256,
+      "denoise_steps": 2,
+      "decoder_passes": 3,
+      "sequential_steps": 3,
+      "excludes_frozen_encoder": false
+    },
+    "params": {
+      "total_params": 251932584,
+      "total_params_m": 251.9326,
+      "model_params_m": 251.9326,
+      "buffers_m": 0.0788,
+      "by_module_m": {
+        "encoder": 199.4965,
+        "decoder": 22.7023,
+        "imagination": 20.9863,
+        "strategic": 4.1335,
+        "law_head": 4.0827,
+        "maneuver_head": 0.511,
+        "measurement": 0.0173,
+        "route_head": 0.003
+      },
+      "aux_m": {},
+      "aux_unique_m": {},
+      "double_counted_m": 0.0,
+      "unique_model_m": 251.9326,
+      "note": "measured at instantiation from live nn.Modules, DEDUPLICATED by tensor identity (step_readout is a submodule of grounding \u2014 counting both inflates the arm). Parameters only; buffers \u2014 e.g. REF-C's anchor vocabulary \u2014 counted separately."
+    },
+    "plan_step": {
+      "mean_ms": 20.6954,
+      "p50_ms": 19.5645,
+      "p95_ms": 25.6934,
+      "p99_ms": 26.3702,
+      "min_ms": 17.8001,
+      "max_ms": 29.024,
+      "std_ms": 2.3703,
+      "iters": 200,
+      "warmup": 30
+    },
+    "memory": {
+      "peak_alloc_mb": 1545.5,
+      "peak_reserved_mb": 1660.9,
+      "weights_resident_mb": 1048.3,
+      "activation_mb": 497.1
+    },
+    "flops": {
+      "total_flops": 702167677504,
+      "gflops": 702.168,
+      "by_op_gflops": {
+        "convolution": 673.359,
+        "addmm": 28.025,
+        "_scaled_dot_product_flash_attention": 0.654,
+        "bmm": 0.13,
+        "mm": 0.0
+      },
+      "mha_fastpath_disabled_for_count": true,
+      "method": "torch.utils.flop_counter.FlopCounterMode (conv/matmul/sdpa; excludes elementwise+norm). MHA fast path disabled during the COUNT ONLY so attention is not silently dropped; timing keeps it."
+    },
+    "stages": {
+      "imagination_h15": {
+        "mean_ms": 2.9293,
+        "p50_ms": 2.711,
+        "p95_ms": 4.4505,
+        "p99_ms": 4.5764,
+        "min_ms": 2.6428,
+        "max_ms": 4.5889,
+        "std_ms": 0.5265,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_window_8frames": {
+        "mean_ms": 14.4304,
+        "p50_ms": 14.3501,
+        "p95_ms": 14.7393,
+        "p99_ms": 14.9278,
+        "min_ms": 14.3084,
+        "max_ms": 16.8939,
+        "std_ms": 0.2791,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_1frame": {
+        "mean_ms": 6.3436,
+        "p50_ms": 5.8282,
+        "p95_ms": 9.5283,
+        "p99_ms": 9.9229,
+        "min_ms": 5.5637,
+        "max_ms": 11.4116,
+        "std_ms": 1.2684,
+        "iters": 100,
+        "warmup": 30
+      },
+      "aux_heads_maneuver+route": {
+        "mean_ms": 0.0976,
+        "p50_ms": 0.0959,
+        "p95_ms": 0.1034,
+        "p99_ms": 0.1265,
+        "min_ms": 0.0942,
+        "max_ms": 0.1668,
+        "std_ms": 0.0079,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_classifier_steps0": {
+        "mean_ms": 3.5232,
+        "p50_ms": 3.3024,
+        "p95_ms": 4.9837,
+        "p99_ms": 5.3355,
+        "min_ms": 3.1609,
+        "max_ms": 5.3565,
+        "std_ms": 0.5375,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_full_steps2": {
+        "mean_ms": 9.8787,
+        "p50_ms": 9.232,
+        "p95_ms": 13.0394,
+        "p99_ms": 14.0215,
+        "min_ms": 8.9434,
+        "max_ms": 14.2197,
+        "std_ms": 1.3807,
+        "iters": 100,
+        "warmup": 30
+      },
+      "law_head": {
+        "mean_ms": 3.6176,
+        "p50_ms": 3.325,
+        "p95_ms": 5.0998,
+        "p99_ms": 5.3214,
+        "min_ms": 3.2283,
+        "max_ms": 5.9418,
+        "std_ms": 0.6175,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "stage_shares": {
+      "encoder_pct": 69.7,
+      "encoder_ms": 14.4304,
+      "post_encoder_ms": 6.265,
+      "post_encoder_pct": 30.3,
+      "encode_1frame_ms": 6.3436,
+      "cached_window_saving_ms": 8.0868,
+      "plan_step_ms_if_encoder_cached": 12.6086,
+      "decoder_classifier_ms": 3.5232,
+      "decoder_classifier_pct": 17.0,
+      "denoise_ms": 6.3555,
+      "denoise_pct": 30.7,
+      "decoder_total_ms": 9.8787,
+      "decoder_total_pct": 47.7,
+      "per_denoise_pass_ms": 3.1778,
+      "imagination_ms": 2.9293,
+      "imagination_pct": 14.2,
+      "isolated_stage_sum_ms": 30.9536,
+      "isolated_stage_sum_pct_of_plan_step": 149.6,
+      "stage_sum_note": ">100% => the stages overlap CPU-launch with GPU-execute inside the full step (launch-bound); <100% => untimed glue. Treat shares as attribution, not an exact partition."
+    },
+    "input_prep": {
+      "mean_ms": 0.4021,
+      "p50_ms": 0.3981,
+      "p95_ms": 0.4171,
+      "p99_ms": 0.469,
+      "min_ms": 0.3924,
+      "max_ms": 0.469,
+      "std_ms": 0.0141,
+      "iters": 30,
+      "warmup": 5
+    },
+    "compute_efficiency": {
+      "achieved_tflops": 33.929,
+      "gflops_per_plan_step": 702.168,
+      "note": "GFLOPs / wall-clock. Low value => latency is bound by kernel launches / serialisation, not by arithmetic; more FLOPs at a HIGHER achieved rate can still be faster."
+    },
+    "realtime": {
+      "budget_ms_at_10hz": 100.0,
+      "headroom_ms_p50": 80.436,
+      "headroom_ms_p99": 73.63,
+      "budget_used_pct_p50": 19.56,
+      "budget_used_pct_p99": 26.37,
+      "max_control_rate_hz_p50": 51.1,
+      "max_control_rate_hz_p99": 37.9,
+      "meets_10hz_p99": true
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 26.0,
+      "mem_used_mb": 1857.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 67.0,
+      "power_w": 151.73,
+      "other_compute_detail": []
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": true,
+      "gpu_exclusive_after": true,
+      "valid": true,
+      "note": "False => another process shared the GPU; re-run, do not publish this row."
+    }
+  },
+  "cost_per_accuracy": {
+    "ade_0_2s_heldout": 0.5645,
+    "ade_ci95": 0.0447,
+    "ade_0_2s_full_set": 0.6048359274864197,
+    "plan_step_p50_ms": 44.0004,
+    "ms_per_metre_of_ade_beaten_vs_cv": null,
+    "note": "latency and ADE side by side \u2014 the deployment trade-off read; ADE from this arm's own results JSON"
+  }
+}

@@ -1,0 +1,275 @@
+{
+  "key": "refc-xl",
+  "model": {
+    "key": "refc-xl",
+    "name": "REF-C-XL (anchored-diffusion, snapshot)",
+    "arch": "refc",
+    "encoder": "trained ResNet-L (9ch, 256px, base_width 124)",
+    "config_preset": "xl",
+    "mode": "diffusion"
+  },
+  "ckpt_step": 16000,
+  "protocol": {
+    "batch": 1,
+    "window": 8,
+    "horizon_steps": 20,
+    "control_hz": 10.0,
+    "iters": 200,
+    "warmup": 30,
+    "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded",
+    "excluded": "host->device copy + uint8->float (reported separately as input_prep)"
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 1,
+      "util_pct": 100.0,
+      "mem_used_mb": 19336.0,
+      "sm_clock_mhz": 1710.0,
+      "exclusive": false,
+      "temp_c": 72.0,
+      "power_w": 283.7,
+      "other_compute_detail": [
+        "1270125, 17874 MiB"
+      ]
+    },
+    "meta": {
+      "batch": 1,
+      "window": 8,
+      "input_shape": [
+        1,
+        8,
+        9,
+        256,
+        256
+      ],
+      "decode": "anchored diffusion: encode -> 1 classifier pass over 256 anchors IN PARALLEL -> 2 truncated-denoise passes -> argmax-confidence select (3 decoder passes total)",
+      "n_anchors": 256,
+      "denoise_steps": 2,
+      "decoder_passes": 3,
+      "sequential_steps": 3,
+      "excludes_frozen_encoder": false
+    },
+    "params": {
+      "total_params": 251932584,
+      "total_params_m": 251.9326,
+      "model_params_m": 251.9326,
+      "buffers_m": 0.0788,
+      "by_module_m": {
+        "encoder": 199.4965,
+        "decoder": 22.7023,
+        "imagination": 20.9863,
+        "strategic": 4.1335,
+        "law_head": 4.0827,
+        "maneuver_head": 0.511,
+        "measurement": 0.0173,
+        "route_head": 0.003
+      },
+      "aux_m": {},
+      "aux_unique_m": {},
+      "double_counted_m": 0.0,
+      "unique_model_m": 251.9326,
+      "note": "measured at instantiation from live nn.Modules, DEDUPLICATED by tensor identity (step_readout is a submodule of grounding \u2014 counting both inflates the arm). Parameters only; buffers \u2014 e.g. REF-C's anchor vocabulary \u2014 counted separately."
+    },
+    "plan_step": {
+      "mean_ms": 91.0958,
+      "p50_ms": 91.4766,
+      "p95_ms": 94.0936,
+      "p99_ms": 94.2877,
+      "min_ms": 87.0885,
+      "max_ms": 94.4167,
+      "std_ms": 1.504,
+      "iters": 200,
+      "warmup": 30
+    },
+    "memory": {
+      "peak_alloc_mb": 1173.2,
+      "peak_reserved_mb": 1314.9,
+      "weights_resident_mb": 1043.2,
+      "activation_mb": 130.0
+    },
+    "flops": {
+      "total_flops": 702167677504,
+      "gflops": 702.168,
+      "by_op_gflops": {
+        "convolution": 673.359,
+        "addmm": 28.025,
+        "_scaled_dot_product_efficient_attention": 0.654,
+        "mm": 0.13
+      },
+      "mha_fastpath_disabled_for_count": true,
+      "method": "torch.utils.flop_counter.FlopCounterMode (conv/matmul/sdpa; excludes elementwise+norm). MHA fast path disabled during the COUNT ONLY so attention is not silently dropped; timing keeps it."
+    },
+    "stages": {
+      "imagination_h15": {
+        "mean_ms": 1.9804,
+        "p50_ms": 1.034,
+        "p95_ms": 3.2178,
+        "p99_ms": 3.7934,
+        "min_ms": 0.8399,
+        "max_ms": 3.8314,
+        "std_ms": 1.166,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_window_8frames": {
+        "mean_ms": 75.0702,
+        "p50_ms": 80.0728,
+        "p95_ms": 86.6506,
+        "p99_ms": 89.5399,
+        "min_ms": 38.4351,
+        "max_ms": 89.6154,
+        "std_ms": 14.9853,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_1frame": {
+        "mean_ms": 25.4695,
+        "p50_ms": 26.4242,
+        "p95_ms": 26.905,
+        "p99_ms": 27.0222,
+        "min_ms": 21.9918,
+        "max_ms": 27.0517,
+        "std_ms": 1.4237,
+        "iters": 100,
+        "warmup": 30
+      },
+      "aux_heads_maneuver+route": {
+        "mean_ms": 0.0917,
+        "p50_ms": 0.022,
+        "p95_ms": 0.0271,
+        "p99_ms": 2.334,
+        "min_ms": 0.0217,
+        "max_ms": 2.3406,
+        "std_ms": 0.3947,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_classifier_steps0": {
+        "mean_ms": 3.2899,
+        "p50_ms": 3.6963,
+        "p95_ms": 3.814,
+        "p99_ms": 6.01,
+        "min_ms": 1.3829,
+        "max_ms": 6.0144,
+        "std_ms": 0.9913,
+        "iters": 100,
+        "warmup": 30
+      },
+      "decoder_full_steps2": {
+        "mean_ms": 8.7235,
+        "p50_ms": 8.79,
+        "p95_ms": 10.9976,
+        "p99_ms": 11.1127,
+        "min_ms": 5.9663,
+        "max_ms": 11.7708,
+        "std_ms": 0.9735,
+        "iters": 100,
+        "warmup": 30
+      },
+      "law_head": {
+        "mean_ms": 3.3359,
+        "p50_ms": 3.7589,
+        "p95_ms": 4.2899,
+        "p99_ms": 4.7458,
+        "min_ms": 1.444,
+        "max_ms": 5.4897,
+        "std_ms": 0.9725,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "stage_shares": {
+      "encoder_pct": 82.4,
+      "encoder_ms": 75.0702,
+      "post_encoder_ms": 16.0256,
+      "post_encoder_pct": 17.6,
+      "encode_1frame_ms": 25.4695,
+      "cached_window_saving_ms": 49.6007,
+      "plan_step_ms_if_encoder_cached": 41.4951,
+      "decoder_classifier_ms": 3.2899,
+      "decoder_classifier_pct": 3.6,
+      "denoise_ms": 5.4336,
+      "denoise_pct": 6.0,
+      "decoder_total_ms": 8.7235,
+      "decoder_total_pct": 9.6,
+      "per_denoise_pass_ms": 2.7168,
+      "imagination_ms": 1.9804,
+      "imagination_pct": 2.2,
+      "isolated_stage_sum_ms": 89.2017,
+      "isolated_stage_sum_pct_of_plan_step": 97.9,
+      "stage_sum_note": ">100% => the stages overlap CPU-launch with GPU-execute inside the full step (launch-bound); <100% => untimed glue. Treat shares as attribution, not an exact partition."
+    },
+    "input_prep": {
+      "mean_ms": 2.225,
+      "p50_ms": 2.4319,
+      "p95_ms": 2.49,
+      "p99_ms": 2.5023,
+      "min_ms": 0.5304,
+      "max_ms": 2.5023,
+      "std_ms": 0.5738,
+      "iters": 30,
+      "warmup": 5
+    },
+    "compute_efficiency": {
+      "achieved_tflops": 7.708,
+      "gflops_per_plan_step": 702.168,
+      "note": "GFLOPs / wall-clock. Low value => latency is bound by kernel launches / serialisation, not by arithmetic; more FLOPs at a HIGHER achieved rate can still be faster."
+    },
+    "realtime": {
+      "budget_ms_at_10hz": 100.0,
+      "headroom_ms_p50": 8.523,
+      "headroom_ms_p99": 5.712,
+      "budget_used_pct_p50": 91.48,
+      "budget_used_pct_p99": 94.29,
+      "max_control_rate_hz_p50": 10.9,
+      "max_control_rate_hz_p99": 10.6,
+      "meets_10hz_p99": true
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 1,
+      "util_pct": 100.0,
+      "mem_used_mb": 19338.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": false,
+      "temp_c": 74.0,
+      "power_w": 276.58,
+      "other_compute_detail": [
+        "1270125, 17874 MiB"
+      ]
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": false,
+      "gpu_exclusive_after": false,
+      "valid": false,
+      "note": "False => another process shared the GPU; re-run, do not publish this row."
+    }
+  },
+  "cost_per_accuracy": {
+    "ade_0_2s_heldout": 0.5645,
+    "ade_ci95": 0.0447,
+    "ade_0_2s_full_set": 0.6048359274864197,
+    "plan_step_p50_ms": 91.4766,
+    "ms_per_metre_of_ade_beaten_vs_cv": null,
+    "note": "latency and ADE side by side \u2014 the deployment trade-off read; ADE from this arm's own results JSON"
+  },
+  "QUARANTINED": "GPU was NOT exclusive during ['fp32']; this file is quarantined and eff_refc-xl.json was left untouched. Re-run on an idle GPU."
+}

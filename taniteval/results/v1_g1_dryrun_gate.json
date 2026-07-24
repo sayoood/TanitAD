@@ -1,0 +1,38 @@
+{
+  "artifact": "flagship v4 G1-panel-on-v1 de-risk (V4_FLAGSHIP_DESIGN 17.1b) — checkpoint-based G1 secondaries reproduced against the archived v1 checkpoint",
+  "why": "v1's answers are all published, so any panel that does NOT reproduce them is a panel bug, caught for ~0 training GPU before v4 trains a step.",
+  "provenance": {
+    "harness": "real run_gate.py + real taniteval driving eval",
+    "pod": "tanitad-eval (194.68.245.76), GPU idle, gpu_lock v4-g1-panel acquired then released",
+    "v1_ckpt": "/root/models/tanitad-flagship-4b-phase0/ckpt.pt (flagship4b-speedjerk-30k, the DEPLOYED v1)",
+    "v1_eval_json": "/root/taniteval/results/flagship-30k.json (canonical 40-ep val, physicalai-val-0c5f7dac3b11)",
+    "date": "2026-07-22"
+  },
+  "reproduced_vs_published": {
+    "ade_0_2s":                     {"got": 0.4271, "published_fullset": 0.4271, "also_heldout": 0.4522, "match": true, "source": "full_set.model.ade_0_2s"},
+    "miss_at_2m":                   {"got": 0.0602, "published": 0.0602, "match": true, "emitter_key": "miss_rate@2m", "source": "heldout.model.miss_rate@2m.mean"},
+    "wm_canary_ade_2s":             {"got": 0.4522, "published_ref": 0.452, "match": true, "note": "for v1 (no diffusion planner) the deployed grounded-operative-rollout ADE IS the canary path; heldout.model.ade_0_2s 0.4522 rounds to the design's 0.452"},
+    "speed_benefit_recovered_frac": {"got": 0.8169, "published": 0.818, "match": true, "computed": "local reducer over in-repo trainlogs (nospeed 0.5740, v1 0.1051), zero GPU"}
+  },
+  "panel_findings": [
+    "NAME: the miss metric is emitted as 'miss_rate@2m' (this JSON) / 'miss_2m' (current driving.py) — the gate card wants 'miss_at_2m'. A 3-way name drift; the P7/P8 emitter-rename must reconcile all three (extends O-08).",
+    "ESTIMATOR: flagship-30k.json has NO 'cluster_bootstrap' block, so run_gate._read_eval_metric falls back to the DEPRECATED 'heldout (overlapping_holdout_se)' for the primary. v4's eval JSON MUST emit a cluster_bootstrap block or every gate reads the estimator CLAUDE.md forbids (measured 1.28-2.06x too narrow).",
+    "REPORT-ONLY DROP (confirmed dev-box + pod): run_gate.py check only iterates card.secondary, so the 5 report-only falsifiers supplied via --secondary-value are silently discarded — not emitted to the gate JSON as design 9 claims. P8 must add a report-only channel."
+  ],
+  "gate_output": {
+    "run": "v1-g1-dryrun",
+    "current_step": 30000,
+    "gate_step": 10000,
+    "s_per_step": null,
+    "primary": {"metric": "ade_0_2s", "value": 0.4522, "threshold": 0.6, "direction": "<=", "pass": true,
+                "provenance": "heldout (DEPRECATED overlapping_holdout_se) +-0.0312"},
+    "secondary": [
+      {"metric": "wm_canary_ade_2s", "value": 0.4522, "op": "<=", "threshold": 0.55, "pass": true},
+      {"metric": "miss_at_2m", "value": 0.0602, "op": "<=", "threshold": 0.1, "pass": true},
+      {"metric": "speed_benefit_recovered_frac", "value": 0.8169, "op": ">=", "threshold": 0.7, "pass": true},
+      {"metric": "encoder_touching_levers", "value": 2.0, "op": "<=", "threshold": 2.0, "pass": true}
+    ],
+    "verdict": "CONTINUE",
+    "reason": "all pre-registered gates pass (this validates the INSTRUMENT on v1, not v1 itself)"
+  }
+}

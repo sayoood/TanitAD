@@ -27,6 +27,47 @@ MODELS = [
          encoder_frozen=False, speed_input=False, action_dim=2,
          hf="Sayood/tanitad-flagship-4b-phase0", anti_collapse="SigReg-64",
          note="No-speed ablation baseline (step 22k). Comparison only."),
+    # ---- flagship v3enc: the STAGED encoder-grounding restart (D-031 gate) ----
+    dict(key="flagship-v3enc-10k",
+         name="Flagship v3enc (staged encoder-grounding, 10k GATE)",
+         family="TanitAD", arch="flagship-worldmodel-v2",
+         ckpt="/root/models/flagship-v3enc-10k/ckpt.pt",
+         run_config="/root/models/flagship-v3enc-10k/config.json",
+         config="flagship4b", encoder="trained ViT-12 (9ch, 256px)",
+         encoder_frozen=False, speed_input=True, action_dim=3, hf=None,
+         anti_collapse="SigReg-64",
+         note="THE PRE-REGISTERED 10k GATE CHECKPOINT of flagship4b-v3enc-30k "
+              "(Project Steering/Gates/flagship-v3enc.card.json, registered "
+              "2026-07-20 20:53 UTC — primary ade_0_2s <= 2.5 m, secondary "
+              "encoder_speed_probe_r2 >= 0.55 and highspeed_long_overshoot_m "
+              "<= 8.0). v3enc is the STAGED-lever restart of v2 (restart 1/2 in "
+              "the `encoder-grounding` lever family): identical 12-lever intent, "
+              "only the SCHEDULE of the four encoder-grounding levers changed — "
+              "config.json staged_levers = decorr_weight 0.0 for step<10000 then "
+              "0.02 · rollout_k 4 (<5k) / 8 (<10k) / 12 · invdyn_gradscale 0.5 "
+              "(v2 had 0.25) · fa_dropout 0.15 (v2 had 0.3). NOTE the 10k gate "
+              "ckpt is therefore the state IMMEDIATELY BEFORE decorr switches on "
+              "and rollout_k deepens 8->12 — the levers under test have not yet "
+              "been applied at the measured step. Same v2 architecture flags as "
+              "flagship-v2-6k (anchored tactical, gated intent, ego->planners, "
+              "route-from-vision, encoder-ego decorr, goal decode, labels-v2) so "
+              "it needs TANITEVAL_STACK_OVERRIDE=/root/models/assess-20260719/"
+              "stack-v2 and rebuilds STRICT from the run's OWN config.json. "
+              "!! CONFOUND: trained on the PRE-v2.1 (broken) route labels — the "
+              "5-way route head cannot express roundabouts/exits and has NO "
+              "token for any longitudinal mode (stop_at_point/hold_stop/creep); "
+              "train_log route_acc sits at 0.0 and nav_valid_frac ~0.06. Any "
+              "route/strategic reading from this arm is uninterpretable; the "
+              "operative ADE gate is the readable part. Archived on tanitad-pod "
+              "by tanitad.train.ckpt_io.atomic_archive as ckpt_step10000.pt "
+              "(ckpt `step` field verified 10000, not just the filename) — 10k "
+              "was NOT on D-032's archive list (5k/15k/20k/30k) so this is the "
+              "ONLY 10k state that will ever exist. Pulled 2026-07-21 10:54 UTC "
+              "tanitad-pod -> eval over the direct agent-forwarded scp path "
+              "(3.42 GB in 4m06s, ~13.9 MB/s), md5 "
+              "3654a99935d456a56874359e93934b70 verified identical on both "
+              "sides. Source pod WAS TRAINING during the copy, but the archived "
+              "file is immutable (ckpt.pt is the rolling one)."),
     dict(key="refa-dinov2", name="REF-A DINOv2 4B", family="TanitAD",
          arch="refa-plus", ckpt="/root/models/tanitad-refa-dinov2-4b/ckpt.pt",
          config="flagship4b", d_dino=768, adapter="temporal",
@@ -162,6 +203,58 @@ MODELS = [
               "truncated-denoise steps, H15 imagination + hierarchy + "
               "maneuver->anchor grafts ON, grounded_selector OFF, refc1=False "
               "-> the horizons ARE the 0.5/1/1.5/2 s time waypoints."),
+    dict(key="refc-base-30k", name="REF-C-base (anchored-diffusion, 30k FINAL)",
+         family="TanitAD", arch="refc", config_preset="base", mode="diffusion",
+         ckpt="/root/models/refc-base-30k/ckpt.pt", config="refc-base",
+         encoder="trained ResNet-M (9ch, 256px, base_width 88)",
+         encoder_frozen=False, speed_input=True, action_dim=2, hf=None,
+         anti_collapse="trained encoder",
+         note="FINAL of refc-diffusion-base-v21-30k (ckpt `step` 29999, the "
+              "last of the 30000-step schedule; metrics.json final.step 29999). "
+              "The MIDDLE rung of the D-030 scale ladder: encoder 90,458,632 "
+              "params -> within 3.8% of flagship v1's 87,121,280, so this is "
+              "the near-matched ENCODER-ALLOCATION test (total 104,191,577 vs "
+              "XL's 251,932,584). Config: base_width 88 / blocks (3,6,16,6), "
+              "128 FPS anchors (refc_anchors_base128.pt — a verified strict "
+              "PREFIX of XL's 256, same script/source/pool-cap/seed), d=384 / "
+              "4-layer decoder, 2 truncated-denoise steps, hierarchy + "
+              "maneuver->anchor grafts ON, H15 imagination OFF (preset design, "
+              "XL-only), grounded_selector OFF, refc1=False -> the horizons ARE "
+              "the 0.5/1/1.5/2 s time waypoints. "
+              "!! CONFOUND vs refc-xl-30k: this run trained on route labels "
+              "**v2.1** (`route_from_future_v21`, use_net_dyaw=False, "
+              "ROUTE_UNKNOWN masked out of the 0.1-weight CE) while XL trained "
+              "on **v1** (circular, straight-by-default) — base-vs-XL "
+              "conflates SCALE, ANCHOR-COUNT and LABELS. See MODEL_REGISTRY "
+              "§4.3. Pulled 2026-07-21 05:02 UTC pod3 -> eval over the direct "
+              "agent-forwarded scp path (1.25 GB in 70 s, ~17.9 MB/s), md5 "
+              "8f10d6f934f4199e11ddc7352e074939 verified identical on both "
+              "sides; the pod3 trainer had already exited (GPU idle) so the "
+              "source file was quiescent."),
+    dict(key="refc-small-30k", name="REF-C-small (anchored-diffusion, 30k FINAL)",
+         family="TanitAD", arch="refc", config_preset="small", mode="diffusion",
+         ckpt="/root/models/refc-small-30k/ckpt.pt", config="refc-small",
+         encoder="trained ResNet-S (9ch, 256px, base_width 64)",
+         encoder_frozen=False, speed_input=True, action_dim=2, hf=None,
+         anti_collapse="trained encoder",
+         note="FINAL of refc-diffusion-small-v21-30k (ckpt `step` 29999, the "
+              "last of the 30000-step schedule; metrics.json final.step 29999, "
+              "steps 30000 -- report it as step-29999). The BOTTOM rung of the "
+              "D-030 scale ladder (small 54,690,001 / base 104,191,577 / XL "
+              "251,932,584 on the IDENTICAL 2376-ep parity set). Config: "
+              "base_width 64 / blocks (3,6,16,6) -> encoder 47,862,976, 64 FPS "
+              "anchors (refc_anchors_small64.pt == base128[:64] == full256[:64], "
+              "a bit-exact nested FPS prefix, seed 0 -> the scale-A/B "
+              "matched-vocabulary control nests vs both base and XL), d=256 / "
+              "3-layer decoder, 2 truncated-denoise steps, hierarchy + "
+              "maneuver->anchor grafts ON, H15 imagination OFF (preset design, "
+              "XL-only), grounded_selector OFF, refc1=False -> the horizons ARE "
+              "the 0.5/1/1.5/2 s time waypoints. Trained on route labels **v2.1** "
+              "(route_from_future_v21, use_net_dyaw=False) -- the SAME label set "
+              "as refc-base-30k, so small-vs-base isolates SCALE with NO label "
+              "confound (unlike base-vs-XL). Trained tanitad-pod2 2026-07-21/22, "
+              "PID 57658, ~0.92 s/step; pod2->eval via HF relay (model-only "
+              "ckpt, md5 0e866fd85f9fc9399dd09f12bccefd0a verified both ends)."),
 ]
 
 

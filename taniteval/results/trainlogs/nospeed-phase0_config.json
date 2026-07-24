@@ -1,0 +1,79 @@
+{
+  "arch": "flagship-4b",
+  "config": "flagship4b",
+  "cfg": "{\n  \"encoder\": {\n    \"in_channels\": 9,\n    \"image_size\": 256,\n    \"patch_size\": 16,\n    \"d_model\": 768,\n    \"depth\": 12,\n    \"n_heads\": 12,\n    \"grad_checkpoint\": true\n  },\n  \"predictor\": {\n    \"d_model\": 768,\n    \"depth\": 10,\n    \"n_heads\": 12,\n    \"window\": 8,\n    \"horizons\": [\n      1,\n      2,\n      4\n    ],\n    \"action_dim\": 2,\n    \"residual\": true,\n    \"change_weighted\": true\n  },\n  \"tactical_pred\": {\n    \"d_model\": 512,\n    \"depth\": 6,\n    \"n_heads\": 8,\n    \"window\": 8,\n    \"horizons\": [\n      8,\n      16\n    ],\n    \"action_dim\": 2,\n    \"residual\": true,\n    \"change_weighted\": true\n  },\n  \"tactical_policy\": {\n    \"d_model\": 512,\n    \"depth\": 6,\n    \"n_heads\": 8,\n    \"n_maneuvers\": 5,\n    \"waypoint_horizons\": [\n      5,\n      10,\n      15,\n      20\n    ],\n    \"d_intent\": 256,\n    \"cadence\": 5\n  },\n  \"strategic_policy\": {\n    \"n_commands\": 4,\n    \"d_cmd\": 128,\n    \"d_model\": 384,\n    \"depth\": 4,\n    \"n_heads\": 6,\n    \"d_ctx\": 256,\n    \"n_route\": 3,\n    \"cadence\": 20\n  },\n  \"readout\": {\n    \"grid\": 4,\n    \"d_readout\": 128\n  },\n  \"tactical\": {\n    \"n_maneuvers\": 9,\n    \"horizon\": 4\n  },\n  \"h15\": {\n    \"enabled\": true,\n    \"mask_prob\": 0.5,\n    \"weight\": 0.5,\n    \"depth\": 3,\n    \"observed_weight\": 0.1\n  },\n  \"loss\": {\n    \"sigreg\": {\n      \"n_slices\": 512,\n      \"beta\": 1.0,\n      \"weight\": 0.1,\n      \"free_dims\": 64\n    },\n    \"pred_weight\": 1.0,\n    \"inv_dyn_weight\": 0.5\n  },\n  \"train\": {\n    \"lr\": 0.0003,\n    \"weight_decay\": 0.05,\n    \"betas\": [\n      0.9,\n      0.95\n    ],\n    \"batch_size\": 64,\n    \"accum_steps\": 1,\n    \"save_every\": 500,\n    \"steps\": 60000,\n    \"warmup_steps\": 2000,\n    \"device\": \"auto\",\n    \"seed\": 0,\n    \"log_every\": 50,\n    \"out_dir\": \"experiments/dev\",\n    \"rollout_k\": 4\n  }\n}",
+  "data": "cached",
+  "cache_dirs": [
+    "/workspace/data/physicalai_phase0/_epcache"
+  ],
+  "horizon_plan": {
+    "level_cfg": {
+      "op": [
+        [
+          1,
+          2,
+          4
+        ],
+        4
+      ],
+      "tac": [
+        [
+          8,
+          16
+        ],
+        16
+      ],
+      "str": [
+        [
+          20
+        ],
+        20
+      ]
+    },
+    "goal_h": 20,
+    "maneuver_h": 20,
+    "needed_fut": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7,
+      14,
+      15,
+      18,
+      19
+    ],
+    "max_horizon": 20
+  },
+  "weights": {
+    "pred": 1.0,
+    "tacpred": 0.5,
+    "roll": 0.5,
+    "goal": 0.5,
+    "wp": 1.0,
+    "man": 0.5,
+    "route": 0.5,
+    "invdyn": 2.0,
+    "fwd": 1.0,
+    "sigreg": 0.1,
+    "inv": 0.5
+  },
+  "sigreg_free_dims": 64,
+  "pose_scale": 10.0,
+  "speed_input": false,
+  "jerk_weight": 0.0,
+  "aux_accel": false,
+  "param_breakdown": {
+    "operative": 96607490,
+    "tactical_pred": 26534912,
+    "tactical_policy": 22736141,
+    "strategic_policy": 8385027,
+    "encoder": 87121280,
+    "h15": 22055683,
+    "grounding_heads": 13432338,
+    "aux_accel": 0,
+    "total_model": 263440533,
+    "total_trainable": 276872871
+  }
+}

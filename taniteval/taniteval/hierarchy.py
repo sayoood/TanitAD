@@ -11,7 +11,7 @@ the canonical held-out val, for any WorldModel arm with trained tactical_policy
 1. CROSS-LAYER CONDITIONING ABLATION (the key proof). For each conditioning
    seam, run the downstream layer WITH the real upstream signal vs a
    mean/zero-replaced signal — SAME weights, ONLY the FiLM cond changes — and
-   report the downstream-metric delta with an episode-jackknife CI (bench.py
+   report the downstream-metric delta with an overlapping-holdout CI (bench.py
    protocol). Orientation is "helps-positive": a positive, CI>0 delta means the
    real upstream signal makes the downstream layer better -> the seam is
    LOAD-BEARING. If the CI straddles 0 the seam is DECORATIVE (reported so).
@@ -24,7 +24,7 @@ the canonical held-out val, for any WorldModel arm with trained tactical_policy
 2. CROSS-LAYER CONSISTENCY / AGREEMENT. On each window, do the layers cohere?
    strategic route (L/S/R)  <->  tactical maneuver direction (turn_l/r/keep)
    tactical maneuver dir    <->  operative rolled-trajectory net-heading dir
-   Reported as agreement rate (jackknife CI) + Cohen's kappa (beyond-chance),
+   Reported as agreement rate (overlapping-holdout CI) + Cohen's kappa,
    OVERALL and on the turn-active subset — the highway-follow corpus is
    straight-dominated, so raw agreement is inflated and kappa is the honest read.
 
@@ -35,7 +35,7 @@ the canonical held-out val, for any WorldModel arm with trained tactical_policy
    layer's decision by the grounded rollout, not the head's confidence.
 
 Reuses the EXACT grounded rollout machinery (metric_dynamics) and CI protocol
-(episode-disjoint jackknife, tanitad.eval.gates.split_by_episode) as bench.py,
+(overlapping random episode holdouts, tanitad.eval.gates.split_by_episode) as bench.py,
 so the numbers are apples-to-apples with every gate/leaderboard figure. The only
 new code is the ablation harness — the weights are never touched, only the FiLM
 conditioning tensor fed into an already-loaded checkpoint."""
@@ -152,10 +152,11 @@ def _dir_of(net_yaw):
 
 
 # --------------------------------------------------------------------------- #
-# Episode-jackknife statistics (bench.py protocol)                             #
+# Overlapping-random-holdout statistics (bench.py DEPRECATED protocol)         #
+# NOT a jackknife. New claims: taniteval/ci.py episode_cluster_bootstrap.       #
 # --------------------------------------------------------------------------- #
 def _jack(vals, eids, mask=None, n_splits=N_SPLITS):
-    """Episode-disjoint jackknife of a per-window value array (mean of the 8
+    """Overlapping-random-holdout aggregate of a per-window value array (mean of the 8
     split-means +- CI95), matching bench._agg. ``vals`` are already in the
     "helps-positive" orientation for a delta, or the raw quantity for a rate.
     Returns {mean, ci95, n, separated} — separated = (mean - ci95 > 0)."""
@@ -567,7 +568,8 @@ def _assemble(rec):
         "n_windows": N,
         "protocol": {
             "cond_replaced": "FiLM conditioning tensor only; weights fixed",
-            "ci": "8-split episode-disjoint jackknife (bench.py protocol)",
+            "ci": "overlapping_holdout_se, 8 random 20% holdouts "
+                  "(DEPRECATED, not a jackknife — taniteval/ci.py)",
             "primary_control": "mean (on-distribution); zero/none = full-removal refs",
             "intent_conditioning": "follow-command hierarchy (deploy-realistic, no route cmd given)",
         },

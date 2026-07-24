@@ -34,7 +34,8 @@ WHAT IS REUSED, NEVER REWRITTEN
   * `refc_eval.collect`'s exact decode call — nav=follow, v0 through the
       measurement encoder, `steps = cfg.decoder.diffusion_steps`
   * `bench.run`                             — the canonical 881-window harness,
-      8-split episode-disjoint jackknife, so every number stays comparable
+      8 overlapping random episode holdouts (DEPRECATED, not a jackknife),
+      so every number stays comparable
   * `closedloop.WHEELBASE`                  — bicycle constant for the steer read
 
 THE ONE MODELLING ASSUMPTION (stated, not hidden). REF-C's fan is 4 waypoints
@@ -492,7 +493,8 @@ def analyze(dump_path=DUMP, out=None):
         bench_best=best["_bench"],
         protocol=dict(val=VAL, window=WINDOW, stride=STRIDE,
                       wp_steps=list(WP_STEPS), n_splits=8, val_frac=0.2,
-                      statistic="8-split episode-disjoint jackknife (heldout) "
+                      statistic="overlapping_holdout_se, 8 random 20% holdouts "
+                                "(DEPRECATED, not a jackknife) (heldout) "
                                 "+ plain mean over all windows (full_set)",
                       claim_strength="open-loop / weak (arXiv:2605.00066)"))
     # heldout oracle, for the honest ceiling statement

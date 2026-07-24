@@ -1,0 +1,25 @@
+{
+  "mode": "MODE_A_canary_only_validation",
+  "evidence_class": "MEASURED (ours; artifact = this JSON)",
+  "ckpt": "/root/models/flagship-30k/ckpt.pt",
+  "ckpt_step": 29999,
+  "key": "v1-validation",
+  "val_cache": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "episodes": 40,
+  "stride": 8,
+  "batch": 16,
+  "n_windows": 881,
+  "wallclock_s": 72.8,
+  "canary_ade_2s_MEASURED": 0.4214799702167511,
+  "registry_reference": {
+    "ade_0_2s_heldout_8split_jackknife": 0.4522,
+    "ade_0_2s_full_set_plain_mean": 0.4271,
+    "source": "Project Steering/MODEL_REGISTRY.md section 1.2 (flagship4b-speedjerk-30k, TanitEval key flagship-30k, step 29999)",
+    "note": "canary_rollout computes a PLAIN corpus-wide mean over all selected windows -- the methodology-matched comparison is the FULL-SET figure (0.4271), not the 8-split episode-jackknife heldout mean (0.4522, a different statistical construction)."
+  },
+  "delta_vs_full_set": -0.0056,
+  "delta_vs_heldout": -0.0307,
+  "tolerance_m": 0.05,
+  "HARNESS_VALIDATED": true,
+  "verdict": "HARNESS VALIDATED -- reproduces the registry v1 number within tolerance; safe to proceed to a v4 checkpoint (GATE_PROTOCOL O-03 satisfied)."
+}

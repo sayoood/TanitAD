@@ -4,9 +4,28 @@ Computes, fresh from rollout windows, for model AND the CV baseline:
   * per-horizon ADE/DE @ {0.5, 1, 1.5, 2} s          (established gate metrics)
   * FDE@2s, RMSE, miss-rate@2m                        (hub trajectory seam)
   * TMS-openloop (trajectory smoothness, hub formula on the predicted path)
-  * 8-split episode-disjoint jackknife -> mean ± CI95 (established protocol)
+  * **episode-cluster bootstrap CI95** over the 40 val episodes   <- PRIMARY
+  * 8 overlapping random holdouts -> mean ± SE           (DEPRECATED, kept for
+    historical reproducibility only — see ``taniteval/ci.py``)
   * strata: curvature (straight/gentle/sharp) and speed terciles
 Open-loop numbers are weak claims per arXiv:2605.00066 — recorded in the output.
+
+INTERVAL PROTOCOL (changed 2026-07-20, 360-review W1/P2)
+--------------------------------------------------------
+The block historically labelled "8-split episode-disjoint jackknife" was neither
+a jackknife nor a valid standard error: it drew 8 *overlapping random* 20 %
+holdouts from the same 40 episodes and divided their dispersion by sqrt(8) as if
+they were independent. It measured split-selection noise and shrank toward zero
+as ``n_splits`` grew. See ``taniteval/ci.py`` for the full diagnosis.
+
+``run()`` now reports BOTH, and neither number can be quoted without its
+estimator name:
+  * ``cluster_bootstrap`` — resample the 40 EPISODES with replacement, B=2000,
+    recompute the metric, percentile bounds. **This is the primary interval**
+    (``result["primary_ci"] == "cluster_bootstrap"``).
+  * ``heldout`` — the old block, numerically UNCHANGED so every published
+    number stays reproducible, but each metric now carries
+    ``estimator: "overlapping_holdout_se"`` and ``deprecated: True``.
 """
 from __future__ import annotations
 
@@ -29,6 +48,7 @@ from tanitad.models.readout import RidgeProbe  # noqa: E402
 from taniteval.tanitad_metrics import (ade, fde, miss_rate,  # noqa: E402
                                        rmse_xy, TMS_ALPHA, TMS_BETA)
 from taniteval import rollout as _rollout  # noqa: E402  (canonical ego append)
+from taniteval import ci as _ci  # noqa: E402  (interval estimators, W1 fix)
 
 HORIZONS_S = {5: "0.5s", 10: "1s", 15: "1.5s", 20: "2s"}
 DT = 0.1
@@ -45,14 +65,15 @@ FLOOR_BASELINES = ("constant_velocity", "go_straight", "constant_yaw_rate")
 STRAIGHT_TRIVIAL_SKILL = 3.0    # skill_score<=this on straights => near-trivial
 
 
-def tms_openloop(pred, alpha=TMS_ALPHA, beta=TMS_BETA):
-    """Hub TMS formula applied to predicted waypoint paths [N, H, 2].
+def tms_openloop_per_window(pred, alpha=TMS_ALPHA, beta=TMS_BETA):
+    """Per-window TMS [N] — the term whose mean is :func:`tms_openloop`.
 
-    jerk = |d3 pos/dt3| (longitudinal proxy: speed 2nd derivative), steer_rate =
-    |d heading/dt|; integrals over the predicted horizon. In (0, 1]."""
+    Split out so the episode-cluster bootstrap can resample it like every other
+    per-window component. Returns an all-NaN [N] array when the horizon is too
+    short, matching the scalar function's NaN."""
     p = pred.numpy() if isinstance(pred, torch.Tensor) else np.asarray(pred)
     if p.shape[1] < 4:
-        return float("nan")
+        return np.full(p.shape[0], np.nan, dtype=np.float64)
     d = np.diff(p, axis=1)                      # [N, H-1, 2] step displacements
     v = np.linalg.norm(d, axis=-1) / DT         # speeds
     acc = np.diff(v, axis=1) / DT
@@ -61,7 +82,16 @@ def tms_openloop(pred, alpha=TMS_ALPHA, beta=TMS_BETA):
     sr = np.abs(np.diff(np.unwrap(hd, axis=1), axis=1) / DT)
     ji = jerk.sum(axis=1) * DT
     si = sr.sum(axis=1) * DT
-    return float(np.mean(1.0 / (1.0 + alpha * ji + beta * si)))
+    return 1.0 / (1.0 + alpha * ji + beta * si)
+
+
+def tms_openloop(pred, alpha=TMS_ALPHA, beta=TMS_BETA):
+    """Hub TMS formula applied to predicted waypoint paths [N, H, 2].
+
+    jerk = |d3 pos/dt3| (longitudinal proxy: speed 2nd derivative), steer_rate =
+    |d heading/dt|; integrals over the predicted horizon. In (0, 1]."""
+    pw = tms_openloop_per_window(pred, alpha, beta)
+    return float(np.mean(pw))
 
 
 def _suite(pred, gt):
@@ -80,14 +110,51 @@ def _suite(pred, gt):
 
 
 def _agg(dicts):
+    """Aggregate the per-holdout metric dicts — the DEPRECATED estimator.
+
+    **This is NOT a jackknife and its ``ci95`` is NOT a standard error for the
+    arm.** The holdouts overlap (same 40 episodes, different random 20 % draws),
+    so dividing their dispersion by sqrt(n) understates the true uncertainty and
+    the quantity shrinks toward zero as ``n_splits`` grows. Retained verbatim so
+    every published interval stays reproducible; ``run()`` reports the
+    episode-cluster bootstrap as the primary interval. See ``taniteval/ci.py``.
+
+    Every metric dict is self-labelling: a consumer that copies a number also
+    copies ``estimator`` and ``deprecated``.
+    """
     keys = dicts[0].keys()
     out = {}
     for k in keys:
         v = np.array([d[k] for d in dicts], dtype=float)
         out[k] = {"mean": round(float(np.nanmean(v)), 4),
-                  "ci95": round(float(1.96 * np.nanstd(v) / max(1, len(v)) ** .5), 4),
-                  "std": round(float(np.nanstd(v)), 4)}
+                  "ci95": round(_ci.overlapping_holdout_se(v), 4),
+                  "std": round(float(np.nanstd(v)), 4),
+                  "estimator": "overlapping_holdout_se",
+                  "deprecated": True}
     return out
+
+
+def _suite_components(pred, gt):
+    """Per-window components of :func:`_suite`, for the episode-cluster bootstrap.
+
+    Maps ``metric -> (values[N], reducer)`` such that applying the reducer over
+    ALL windows reproduces ``_suite`` exactly (asserted by
+    ``tests/test_ci.py::test_bootstrap_point_estimate_matches_full_set``).
+    ``rmse`` carries SQUARED errors with the ``rms`` reducer because
+    ``rmse_xy`` is sqrt(mean(.)), not a plain mean.
+    """
+    de = torch.linalg.norm(pred - gt, dim=-1).numpy().astype(np.float64)  # [N,4]
+    final = de[:, -1]
+    comp = {}
+    for j, (_step, name) in enumerate(sorted(HORIZONS_S.items())):
+        comp[f"de@{name}"] = (de[:, j], "mean")
+        comp[f"ade@{name}"] = (de[:, :j + 1].mean(axis=1), "mean")
+    comp["ade_0_2s"] = comp["ade@2s"]
+    comp["fde@2s"] = (final, "mean")
+    comp["rmse"] = ((de ** 2).mean(axis=1), "rms")
+    comp["miss_rate@2m"] = ((final > 2.0).astype(np.float64), "mean")
+    comp["tms_openloop"] = (tms_openloop_per_window(pred), "mean")
+    return comp
 
 
 def _strata(labels, de_m, de_c):
@@ -106,13 +173,38 @@ def _strata(labels, de_m, de_c):
     return out
 
 
-def run(data, n_splits=8, val_frac=0.2, seed=0):
-    """Full benchmark over rollout windows. Returns the results dict."""
+def run(data, n_splits=8, val_frac=0.2, seed=0, n_boot=_ci.DEFAULT_N_BOOT):
+    """Full benchmark over rollout windows. Returns the results dict.
+
+    Reports two interval blocks (see the module docstring):
+      ``cluster_bootstrap`` — PRIMARY. Episode-cluster bootstrap over the val
+        episodes, B=``n_boot``. Point estimate is the full-set metric.
+      ``heldout`` — DEPRECATED. The pre-2026-07-20 overlapping-random-holdout
+        block, numerically unchanged so published numbers stay reproducible.
+
+    ``beats_cv_ade_0_2s`` is decided on the PRIMARY (full-set) estimate, and
+    ``beats_cv_separated`` reports whether the paired episode-clustered
+    model-vs-CV interval actually excludes zero — an unseparated win is a tie,
+    not a win.
+    """
     pred, gt, cv = data["pred"], data["gt"], data["cv"]
-    splits = [split_by_episode(data["eid"], val_frac, s)
+    eid = data["eid"]
+    splits = [split_by_episode(eid, val_frac, s)
               for s in range(seed, seed + n_splits)]
     model_split = [_suite(pred[va], gt[va]) for _t, va in splits]
     cv_split = [_suite(cv[va], gt[va]) for _t, va in splits]
+    # --- PRIMARY interval: episode-cluster bootstrap (W1 fix) --------------- #
+    boot_model = _ci.bootstrap_metrics(_suite_components(pred, gt), eid,
+                                       n_boot=n_boot, seed=seed)
+    boot_cv = _ci.bootstrap_metrics(_suite_components(cv, gt), eid,
+                                    n_boot=n_boot, seed=seed)
+    # model vs CV as a PAIRED test — same windows, so pair them (far more
+    # powerful than differencing two single-arm intervals, and unlike a
+    # quadrature combination it is valid: the two estimates are not independent)
+    _ade_m = _suite_components(pred, gt)["ade_0_2s"][0]
+    _ade_c = _suite_components(cv, gt)["ade_0_2s"][0]
+    vs_cv = _ci.paired_episode_cluster_bootstrap(_ade_c, _ade_m, eid,
+                                                 n_boot=n_boot, seed=seed)
     de_m = torch.linalg.norm(pred - gt, dim=-1)
     de_c = torch.linalg.norm(cv - gt, dim=-1)
     curv = [curvature_bucket(float(h)) for h in data["head_deg"]]
@@ -120,16 +212,26 @@ def run(data, n_splits=8, val_frac=0.2, seed=0):
     spd = ["low" if float(s) < float(q[0]) else
            "high" if float(s) >= float(q[1]) else "med"
            for s in data["speed"]]
-    beats = _agg(model_split)["ade_0_2s"]["mean"] < _agg(cv_split)["ade_0_2s"]["mean"]
+    beats = boot_model["ade_0_2s"]["mean"] < boot_cv["ade_0_2s"]["mean"]
     return {
         "n_windows": int(pred.shape[0]),
+        "n_episodes": boot_model["ade_0_2s"]["n_episodes"],
+        "primary_ci": "cluster_bootstrap",
+        "cluster_bootstrap": {"model": boot_model, "cv": boot_cv,
+                              "model_vs_cv_paired": vs_cv},
         "heldout": {"model": _agg(model_split), "cv": _agg(cv_split)},
         "full_set": {"model": _suite(pred, gt), "cv": _suite(cv, gt)},
         "beats_cv_ade_0_2s": bool(beats),
+        "beats_cv_separated": bool(vs_cv["separated"] and vs_cv["delta"] > 0),
         "by_curvature": _strata(curv, de_m, de_c),
         "by_speed": _strata(spd, de_m, de_c),
         "protocol": {"n_splits": n_splits, "val_frac": val_frac,
                      "wp_steps": data.get("wp_steps"),
+                     "primary_estimator": "episode_cluster_bootstrap",
+                     "n_boot": int(n_boot),
+                     "deprecated_estimator": "overlapping_holdout_se "
+                                             "(the block formerly mislabelled "
+                                             "'8-split episode-disjoint jackknife')",
                      "claim_strength": "open-loop / weak (arXiv:2605.00066)"},
     }
 

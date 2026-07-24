@@ -9,6 +9,12 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+# The repo layout FIRST, then the pod layout — so the suite runs from a clone
+# as well as from /root/taniteval (it previously died with
+# `ModuleNotFoundError: taniteval` anywhere except the eval pod).
+sys.path.insert(0, str(HERE.parent))                       # taniteval/
+sys.path.insert(0, str(HERE.parents[1] / "stack"))
+sys.path.insert(0, str(HERE.parents[1] / "stack" / "scripts"))
 sys.path.insert(0, "/root/taniteval")
 sys.path.insert(0, "/root/TanitAD/stack")
 sys.path.insert(0, "/root/TanitAD/stack/scripts")

@@ -1,0 +1,298 @@
+{
+  "key": "flagship-30k",
+  "ckpt_step": 29999,
+  "precision": {
+    "precision": "fp32",
+    "autocast": null,
+    "matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false,
+    "cudnn_benchmark": true,
+    "weights_dtype": "float32"
+  },
+  "env": {
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A40",
+    "capability": [
+      8,
+      6
+    ]
+  },
+  "protocol": {
+    "reps": 5,
+    "iters": 200,
+    "warmup": 30
+  },
+  "question": "does CUDA-graph capture collapse the run-to-run p99 spread (the deployment-relevant number), not just the mean?",
+  "gpu_state_before": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 23.0,
+    "mem_used_mb": 1781.0,
+    "sm_clock_mhz": 1725.0,
+    "exclusive": true,
+    "temp_c": 60.0,
+    "power_w": 189.18,
+    "other_compute_detail": []
+  },
+  "build_errors": {},
+  "by_variant": {
+    "eager": {
+      "reps": [
+        {
+          "mean_ms": 99.0407,
+          "p50_ms": 99.0849,
+          "p95_ms": 101.3427,
+          "p99_ms": 102.1466,
+          "min_ms": 94.1648,
+          "max_ms": 105.8162,
+          "std_ms": 1.5418,
+          "tail_ratio_p99_over_p50": 1.0309,
+          "exclusive": true,
+          "temp_c": 63.0,
+          "sm_clock_mhz": 1710.0
+        },
+        {
+          "mean_ms": 99.5512,
+          "p50_ms": 99.6326,
+          "p95_ms": 101.5061,
+          "p99_ms": 102.5729,
+          "min_ms": 93.75,
+          "max_ms": 107.2122,
+          "std_ms": 1.6022,
+          "tail_ratio_p99_over_p50": 1.0295,
+          "exclusive": true,
+          "temp_c": 63.0,
+          "sm_clock_mhz": 1695.0
+        },
+        {
+          "mean_ms": 98.8352,
+          "p50_ms": 99.0534,
+          "p95_ms": 101.6017,
+          "p99_ms": 103.1424,
+          "min_ms": 93.5462,
+          "max_ms": 104.8493,
+          "std_ms": 1.9056,
+          "tail_ratio_p99_over_p50": 1.0413,
+          "exclusive": true,
+          "temp_c": 63.0,
+          "sm_clock_mhz": 1710.0
+        },
+        {
+          "mean_ms": 99.0154,
+          "p50_ms": 98.938,
+          "p95_ms": 101.365,
+          "p99_ms": 103.3868,
+          "min_ms": 94.103,
+          "max_ms": 107.0468,
+          "std_ms": 1.6509,
+          "tail_ratio_p99_over_p50": 1.045,
+          "exclusive": true,
+          "temp_c": 64.0,
+          "sm_clock_mhz": 1710.0
+        },
+        {
+          "mean_ms": 97.9671,
+          "p50_ms": 98.1086,
+          "p95_ms": 100.1147,
+          "p99_ms": 102.2439,
+          "min_ms": 93.4665,
+          "max_ms": 105.7328,
+          "std_ms": 1.6746,
+          "tail_ratio_p99_over_p50": 1.0422,
+          "exclusive": true,
+          "temp_c": 63.0,
+          "sm_clock_mhz": 1620.0
+        }
+      ],
+      "p50_across_reps": {
+        "min": 98.1086,
+        "max": 99.6326,
+        "spread_pct": 1.55
+      },
+      "p99_across_reps": {
+        "min": 102.1466,
+        "max": 103.3868,
+        "spread_pct": 1.21
+      },
+      "tail_ratio_mean": 1.0378
+    },
+    "graph_rollout": {
+      "reps": [
+        {
+          "mean_ms": 57.416,
+          "p50_ms": 57.4343,
+          "p95_ms": 57.6069,
+          "p99_ms": 57.7245,
+          "min_ms": 57.0337,
+          "max_ms": 58.2392,
+          "std_ms": 0.1595,
+          "tail_ratio_p99_over_p50": 1.0051,
+          "exclusive": true,
+          "temp_c": 68.0,
+          "sm_clock_mhz": 1605.0
+        },
+        {
+          "mean_ms": 57.5454,
+          "p50_ms": 57.5789,
+          "p95_ms": 57.7388,
+          "p99_ms": 57.7906,
+          "min_ms": 57.2324,
+          "max_ms": 57.8362,
+          "std_ms": 0.128,
+          "tail_ratio_p99_over_p50": 1.0037,
+          "exclusive": true,
+          "temp_c": 69.0,
+          "sm_clock_mhz": 1530.0
+        },
+        {
+          "mean_ms": 57.6491,
+          "p50_ms": 57.6617,
+          "p95_ms": 57.8462,
+          "p99_ms": 57.8813,
+          "min_ms": 57.3319,
+          "max_ms": 57.8982,
+          "std_ms": 0.1411,
+          "tail_ratio_p99_over_p50": 1.0038,
+          "exclusive": true,
+          "temp_c": 71.0,
+          "sm_clock_mhz": 1665.0
+        },
+        {
+          "mean_ms": 57.6177,
+          "p50_ms": 57.653,
+          "p95_ms": 57.8311,
+          "p99_ms": 57.8779,
+          "min_ms": 57.2669,
+          "max_ms": 57.9558,
+          "std_ms": 0.1644,
+          "tail_ratio_p99_over_p50": 1.0039,
+          "exclusive": true,
+          "temp_c": 71.0,
+          "sm_clock_mhz": 1605.0
+        },
+        {
+          "mean_ms": 57.7006,
+          "p50_ms": 57.7623,
+          "p95_ms": 57.9266,
+          "p99_ms": 57.9979,
+          "min_ms": 57.2923,
+          "max_ms": 58.3894,
+          "std_ms": 0.1794,
+          "tail_ratio_p99_over_p50": 1.0041,
+          "exclusive": true,
+          "temp_c": 72.0,
+          "sm_clock_mhz": 1530.0
+        }
+      ],
+      "p50_across_reps": {
+        "min": 57.4343,
+        "max": 57.7623,
+        "spread_pct": 0.57
+      },
+      "p99_across_reps": {
+        "min": 57.7245,
+        "max": 57.9979,
+        "spread_pct": 0.47
+      },
+      "tail_ratio_mean": 1.0041
+    },
+    "graph_fulltick": {
+      "reps": [
+        {
+          "mean_ms": 57.6516,
+          "p50_ms": 57.6796,
+          "p95_ms": 57.8831,
+          "p99_ms": 57.9236,
+          "min_ms": 57.2823,
+          "max_ms": 58.0123,
+          "std_ms": 0.1638,
+          "tail_ratio_p99_over_p50": 1.0042,
+          "exclusive": true,
+          "temp_c": 73.0,
+          "sm_clock_mhz": 1650.0
+        },
+        {
+          "mean_ms": 57.6971,
+          "p50_ms": 57.7196,
+          "p95_ms": 57.923,
+          "p99_ms": 57.9496,
+          "min_ms": 57.3172,
+          "max_ms": 58.0222,
+          "std_ms": 0.1689,
+          "tail_ratio_p99_over_p50": 1.004,
+          "exclusive": true,
+          "temp_c": 74.0,
+          "sm_clock_mhz": 1575.0
+        },
+        {
+          "mean_ms": 57.7206,
+          "p50_ms": 57.7426,
+          "p95_ms": 57.9581,
+          "p99_ms": 57.9915,
+          "min_ms": 57.3409,
+          "max_ms": 58.0124,
+          "std_ms": 0.1644,
+          "tail_ratio_p99_over_p50": 1.0043,
+          "exclusive": true,
+          "temp_c": 73.0,
+          "sm_clock_mhz": 1620.0
+        },
+        {
+          "mean_ms": 57.7363,
+          "p50_ms": 57.7534,
+          "p95_ms": 57.9728,
+          "p99_ms": 58.0259,
+          "min_ms": 57.3493,
+          "max_ms": 58.0364,
+          "std_ms": 0.1621,
+          "tail_ratio_p99_over_p50": 1.0047,
+          "exclusive": true,
+          "temp_c": 74.0,
+          "sm_clock_mhz": 1650.0
+        },
+        {
+          "mean_ms": 57.7545,
+          "p50_ms": 57.7586,
+          "p95_ms": 57.9792,
+          "p99_ms": 57.9895,
+          "min_ms": 57.339,
+          "max_ms": 58.0039,
+          "std_ms": 0.1542,
+          "tail_ratio_p99_over_p50": 1.004,
+          "exclusive": true,
+          "temp_c": 74.0,
+          "sm_clock_mhz": 1605.0
+        }
+      ],
+      "p50_across_reps": {
+        "min": 57.6796,
+        "max": 57.7586,
+        "spread_pct": 0.14
+      },
+      "p99_across_reps": {
+        "min": 57.9236,
+        "max": 58.0259,
+        "spread_pct": 0.18
+      },
+      "tail_ratio_mean": 1.0042
+    }
+  },
+  "gpu_state_after": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 100.0,
+    "mem_used_mb": 1869.0,
+    "sm_clock_mhz": 1635.0,
+    "exclusive": true,
+    "temp_c": 74.0,
+    "power_w": 283.7,
+    "other_compute_detail": []
+  },
+  "contamination_check": {
+    "gpu_exclusive_before": true,
+    "gpu_exclusive_after": true,
+    "valid": true,
+    "note": "every replicate carries its own exclusivity flag; one dirty replicate invalidates the block."
+  }
+}
