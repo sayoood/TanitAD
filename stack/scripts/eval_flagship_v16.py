@@ -7,7 +7,7 @@ one way: it loads the FULL v1.6 world model from the checkpoint (encoder +
 readout + predictor, as fine-tuned) and RE-ENCODES the val frames through it,
 instead of reading a cached-states file. Everything downstream of ``collect`` is
 still the eval pod's own vendored ``taniteval.bench`` — the same 8-split
-episode-disjoint jackknife, ``val_frac`` 0.2, CV baseline and strata that
+episode-holdout interval protocol, ``val_frac`` 0.2, CV baseline and strata that
 produced 0.4522 (v1), 0.458 (REF-C-XL) and 0.5437 (v1.5 ab) — so the number is
 comparable to those rows.
 
@@ -231,6 +231,15 @@ def main(argv=None):
                 "label_set": a.label_set, "unfreeze": ck.get("unfreeze")})
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=2), encoding="utf-8")
+    # Per-window tensors alongside the JSON (see eval_flagship_v15.py) — without
+    # them an arm can never be PAIRED against another, and paired
+    # episode-clustered tests are ~2.6x more powerful on trunk-sharing arms
+    # (measured, taniteval/recompute_ci.py). 360-review W1.
+    wp = Path(a.out).parent / f"windows_{a.key}.pt"
+    torch.save({k: data[k] for k in
+                ("pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps")
+                if k in data}, wp)
+    print(f"[windows] {wp} (enables paired episode-clustered tests)", flush=True)
     m = res["heldout"]["model"]
     print(json.dumps({
         "key": a.key, "n_windows": res["n_windows"],

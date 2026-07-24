@@ -112,14 +112,31 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="TanitResim single-port server")
     ap.add_argument("--port", type=int, default=8888)
     ap.add_argument("--host", default="0.0.0.0")
-    ap.add_argument("--sessions-root", required=True,
-                    help="directory of exported session bundles")
+    ap.add_argument("--sessions-root", default=None,
+                    help="directory of exported session bundles "
+                         "(default: a temp dir when --demo is set)")
     ap.add_argument("--static", default=None,
                     help="override the SPA static dir (default: bundled)")
+    ap.add_argument("--demo", action="store_true",
+                    help="generate a synthetic full-viz-standard bundle and "
+                         "serve it — a zero-dependency, pod-free demo")
     args = ap.parse_args(argv)
 
-    root = Path(args.sessions_root)
+    if not args.sessions_root and not args.demo:
+        ap.error("--sessions-root is required (or pass --demo)")
+
+    if args.sessions_root:
+        root = Path(args.sessions_root)
+    else:
+        import tempfile
+        root = Path(tempfile.mkdtemp(prefix="tanitresim-demo-"))
     root.mkdir(parents=True, exist_ok=True)
+
+    if args.demo:
+        from tanitad.resim.sample import make_sample_bundle
+        make_sample_bundle(root / "demo-synthetic")
+        print(f"[resim] --demo: wrote a synthetic bundle to {root}", flush=True)
+
     app = build_app(root, static=args.static)
     n = len(_bundle_dirs(root))
     print(f"[resim] serving {n} bundle(s) from {root} on "

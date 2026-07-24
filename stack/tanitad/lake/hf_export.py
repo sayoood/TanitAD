@@ -24,31 +24,77 @@ from tanitad.lake.view import LakeView, owned_safe_commercial_view
 
 
 def _data_card(repo_id: str, members: list[dict], sources: dict) -> str:
+    import collections
     n = len(members)
+    per_source = collections.Counter(m.get("source") for m in members)
+    per_split = collections.Counter(m.get("split") for m in members)
+    # Per-source license line, counts drawn from the actual staged members.
     src_lines = "\n".join(
-        f"- **{s}**: {info.get('license_name')} "
-        f"(`{info.get('license_class')}`)"
-        for s, info in sorted(sources.items()))
+        f"| `{s}` | {sources.get(s, {}).get('license_name', '?')} "
+        f"| `{sources.get(s, {}).get('license_class', 'owned-safe')}` "
+        f"| {per_source[s]} |"
+        for s in sorted(per_source))
+    split_lines = ", ".join(f"{k}: {v}" for k, v in sorted(per_split.items()))
     return f"""---
 license: other
-tags: [autonomous-driving, world-model, tanitad]
+task_categories: [robotics]
+tags: [autonomous-driving, world-model, tanitad, ego-driving, camera]
 ---
 
-# {repo_id}
+# {repo_id} — TanitDataSet-C (commercial-clean tier)
 
-TanitAD owned-safe (commercial-clean) episode view — canonical
-`[T, 9, 256, 256]` uint8 frame stacks + `actions[T,2]` + `poses[T,4]`, the
-byte-identical world-model contract (D-015/D-016).
+The **commercially-clean, HF-publishable** tier of TanitDataSet: a camera-first
+autonomous-driving corpus under one schema. Every record is `owned-safe` and
+`commercial_ok` (permissive license, **no** share-alike, **no** gated/firewalled
+or `refuse`-class source) — the tier is a per-record stamp derived structurally
+from a per-source license CONSTANT, never inferred, and a hard export guard
+refuses egress if a single row falls outside that scope.
 
-**Episodes:** {n}
+**Episodes:** {n}  ({split_lines})
 
-**Sources & licenses:**
+## Sources & licenses
+
+| source | license | class | episodes |
+|---|---|---|---|
 {src_lines}
 
-Every episode carries a `sha256` of its frame blob and a `build_params_hash`
-(verify-without-rebuild / rebuild-from-origin — the recipe never dies).
+## Record schema (the world-model contract, D-015/D-016)
 
-_Staged by the Phase-A HF exporter scaffold. Not an official release._
+Each episode is the byte-identical contract every TanitAD adapter emits:
+
+- `frames`  — `uint8 [T, 9, 256, 256]` — a 3-frame RGB stack (9 = 3×RGB),
+  canonicalized to `f_eff ≈ 266 px` (D-016 geometry canon).
+- `actions` — `f32 [T, 2]` — `(steer, accel)`, the action applied between t, t+1.
+- `poses`   — `f32 [T, 4]` — `(x, y, yaw, v)` ego trajectory.
+- per-episode metadata: `source`, `license_*`, `commercial_ok`, `sha256` of the
+  frame blob, `build_params_hash`, native intrinsics, modality flags.
+
+Stored as WebDataset tar shards (`{{id}}.frames.npy` / `.motion.npz` /
+`.meta.json`); the reader re-verifies each frame blob's `sha256` on load
+(verify-without-rebuild), so a rotted shard fails loudly instead of training on
+garbage.
+
+## Provenance & reproducibility
+
+Every episode carries a `sha256` of its exact frame bytes and a
+`build_params_hash` — a consumer can verify a shard member without rebuilding it,
+and the build recipe travels with the data (`MANIFEST.json` / `NOTICE`).
+
+## Notes for consumers
+
+- **Split granularity.** Where a source's route/clip id is preserved the split is
+  route-disjoint; for caches where only the episode survives, the split is
+  **episode-level** — rebuild from origin if you need strictly route-disjoint
+  train/val.
+- **Near-duplicates & multi-traversal.** Records are NOT dropped for perceptual
+  similarity. Homogeneous highway sources (e.g. comma2k19 — one commute route
+  re-driven) contain wanted **multi-traversal** repeats; use the catalog's
+  curation weights to control sampling frequency rather than deleting records.
+- **Anonymization.** Real camera footage may contain faces/plates. Sources here
+  are already publicly distributed under their stated licenses; still, run a
+  face/plate check appropriate to your jurisdiction before any re-distribution.
+
+_Staged by the TanitAD Phase-A HF exporter. Attribution/NOTICE ships alongside._
 """
 
 
@@ -77,10 +123,14 @@ def export_hf(lake_root: str | Path, repo_id: str, out_dir: str | Path,
     out.mkdir(parents=True, exist_ok=True)
     shard_keys = sorted({m["shard_key"] for m in members})
     if stage_shards:
-        (out / "shards").mkdir(parents=True, exist_ok=True)
+        # MIRROR the lake's partition layout (shards/<class>/<source>/<split>/
+        # shard-NNNNN.tar). A flat basename copy is WRONG: train and val each
+        # number from shard-00000, so basenames COLLIDE and silently drop/mix
+        # shards across splits. Mirroring keeps every shard and its split.
         for sk in shard_keys:
             src = lake_root / sk
-            dst = out / "shards" / Path(sk).name
+            dst = out / sk
+            dst.parent.mkdir(parents=True, exist_ok=True)
             if src.exists():
                 shutil.copyfile(src, dst)
 
@@ -90,18 +140,21 @@ def export_hf(lake_root: str | Path, repo_id: str, out_dir: str | Path,
         manifest = json.loads(man.read_text())
     sources = manifest.get("sources", {})
 
-    (out / "DATA_CARD.md").write_text(_data_card(repo_id, members, sources))
+    # UTF-8 explicitly: HF cards are UTF-8 and Windows' default cp1252 codec
+    # cannot encode the card's math glyphs (≈, ×) — a silent-on-POSIX crash.
+    (out / "DATA_CARD.md").write_text(_data_card(repo_id, members, sources),
+                                      encoding="utf-8")
     (out / "MANIFEST.json").write_text(json.dumps(
         {"repo_id": repo_id, "episodes": len(members),
-         "shards": [Path(s).name for s in shard_keys],
-         "sources": sources}, indent=2, sort_keys=True))
+         "shards": shard_keys,               # full relative keys (unique)
+         "sources": sources}, indent=2, sort_keys=True), encoding="utf-8")
     notice = lake_root / "NOTICE"
     if notice.exists():
         shutil.copyfile(notice, out / "NOTICE")
 
     summary = {
         "repo_id": repo_id, "staged_dir": str(out), "episodes": len(members),
-        "shards": [Path(s).name for s in shard_keys],
+        "shards": shard_keys, "n_shards": len(shard_keys),
         "shards_staged": bool(stage_shards),
         "guard": "passed (owned-safe, commercial_ok, SA-free)",
         "pushed": False,

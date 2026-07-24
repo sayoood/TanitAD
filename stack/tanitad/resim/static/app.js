@@ -1,12 +1,15 @@
 /* TanitResim SPA — vanilla JS + canvas, no build step.
  *
  * Two views: (1) HOME = scenario cards, one per episode of the selected
- * session; (2) SESSION = one column per arm (camera fan + steer/accel charts
- * + head readouts) over a shared master panel: BEV, error strip, a MANEUVER
- * band (per-window kinematic class: badge + color timeline), an ACTION panel
- * (executed GT steer/accel: gauges + synced time-series) and a scrubber.
- * Everything is legended. URL hash carries session/episode/step so a view is
- * shareable: #/s/<id>/e/<ep>/t/<step>. */
+ * session; (2) SESSION = one column per arm (camera fan + a decoded-intent
+ * text HUD + steer/accel charts + head readouts) over a shared master panel:
+ * BEV, error strip, a MANEUVER band (per-window kinematic class: badge + color
+ * timeline), an ACTION panel (executed GT steer/accel: gauges + synced
+ * time-series) and a scrubber. The camera HUD mirrors THE STANDARD
+ * (taniteval.corpus_overlay): each arm's decoded tactical maneuver + strategic
+ * route/goal + ADE + v0, with a BEV-only fallback note when a step's camera
+ * calibration is unrecoverable. Everything is legended. URL hash carries
+ * session/episode/step so a view is shareable: #/s/<id>/e/<ep>/t/<step>. */
 (function () {
   "use strict";
 
@@ -92,6 +95,36 @@
   }
   function episodeHasManeuvers() {
     return curEpisode().steps.some(function (s) { return s.maneuver != null; });
+  }
+
+  // ---------- decoded-intent helpers (THE STANDARD's text HUD) -----------
+  // Strategic route/goal command names, indexed by ArmOutput.nav_cmd. Data-
+  // driven from the bundle (export.NAV_COMMANDS) so the label is correct; the
+  // canonical tuple is the fallback for older bundles (the previous hard-coded
+  // ["straight","left","right"] mislabelled follow/straight).
+  function navCommands() {
+    return (S.sess && S.sess.meta.nav_commands) ||
+      ["follow", "left", "right", "straight"];
+  }
+  function navName(id) {
+    if (id == null) return null;
+    var c = navCommands();
+    return (c && c[id] != null) ? c[id] : ("cmd" + id);
+  }
+  // The arm's DECODED tactical maneuver = argmax of its maneuver_probs head
+  // (the same intent taniteval's HUD prints as "tactical: <man>"); null if the
+  // arm has no maneuver head.
+  function decodedManeuver(arm) {
+    var p = arm && arm.heads && arm.heads.maneuver_probs;
+    if (!p || !p.length) return null;
+    var mi = 0;
+    for (var i = 1; i < p.length; i++) if (p[i] > p[mi]) mi = i;
+    return mi;
+  }
+  // A step whose camera geometry was not recoverable: the exporter nulls its
+  // image-plane paths (uncalibrated corpus) -> BEV-only fallback.
+  function stepIsUncalibrated(st) {
+    return !!st && st.gt_wp_img == null;
   }
   // Dark or light ink for readable text on a solid maneuver-color badge.
   function contrastInk(hex) {
@@ -469,7 +502,14 @@
     col.appendChild(el("div", "cap", "Camera + trajectory fan"));
     var cw = el("div", "canvas-wrap");
     var cam = el("canvas");
-    cw.appendChild(cam); col.appendChild(cw);
+    cw.appendChild(cam);
+    // decoded-intent text HUD overlaid top-left on the frame (THE STANDARD:
+    // tactical maneuver + strategic route/goal + ADE + v0), populated per step.
+    var hud = el("div", "cam-hud");
+    cw.appendChild(hud);
+    dom.camHud = dom.camHud || {};
+    dom.camHud[name] = hud;
+    col.appendChild(cw);
     var ml = el("div", "mini-legend");
     var lg = el("div", "legend");
     var chip = el("span", "chip"); var cd = el("span", "dot"); cd.style.background = color;
@@ -572,6 +612,7 @@
     var st = curStep();
     armNames().forEach(function (n) {
       drawCamera(S.dom.cams[n], st, n);
+      updateCamHud(n, st);
       drawChart(S.dom.charts[n].steer, n, "steer");
       drawChart(S.dom.charts[n].accel, n, "accel");
       renderHeads(S.dom.headHost[n], n, st.arms[n]);
@@ -671,6 +712,52 @@
     ctx.save(); ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 6.2832); ctx.fill();
     ctx.restore();
+  }
+
+  // ---------- decoded-intent HUD (per-arm camera text overlay) ----------
+  // Mirrors taniteval.corpus_overlay's text HUD, per arm and co-located with
+  // the camera: the arm's decoded TACTICAL maneuver + STRATEGIC route/goal +
+  // ADE + v0, and the BEV-only fallback note on an uncalibrated step.
+  function hudRow(k, valEl) {
+    var row = el("div", "hud-intent");
+    row.appendChild(el("span", "hud-k", k));
+    row.appendChild(valEl);
+    return row;
+  }
+  function updateCamHud(name, st) {
+    var hud = S.dom.camHud && S.dom.camHud[name];
+    if (!hud) return;
+    hud.innerHTML = "";
+    var arm = st.arms[name];
+    var manId = decodedManeuver(arm);
+    var heads = (arm && arm.heads) || {};
+
+    if (manId != null) {                    // tactical: <decoded maneuver>
+      var mv = el("span", "hud-v", maneuverLabel(manId));
+      mv.style.color = maneuverColor(manId);
+      var row = hudRow("tactical", mv);
+      var gt = heads.maneuver_gt;
+      if (gt != null && gt === manId) row.appendChild(el("span", "hud-ok", "✓"));
+      else if (gt != null) row.appendChild(el("span", "hud-gt",
+        "gt " + maneuverLabel(gt).toLowerCase()));
+      hud.appendChild(row);
+    }
+    if (heads.nav_cmd != null) {            // strategic: route <goal>
+      hud.appendChild(hudRow("strategic",
+        el("span", "hud-v", "route " + (navName(heads.nav_cmd) || heads.nav_cmd))));
+    }
+    // metrics: per-arm ADE + ego v0 (always shown — the honest scalar read)
+    var ade = arm ? arm.ade : null;
+    hud.appendChild(el("div", "hud-metrics",
+      "ADE " + (ade == null ? "–" : fmt(ade, 2) + " m") +
+      "  ·  v " + fmt(st.ego.speed, 1) + " m/s"));
+    if (manId == null && heads.nav_cmd == null && ade == null)
+      hud.lastChild.textContent = "no decoded intent";
+    // BEV-only fallback note when the camera geometry was unrecoverable
+    if (stepIsUncalibrated(st)) {
+      hud.appendChild(el("div", "hud-fallback",
+        "camera overlay disabled — calibration unverified · see BEV"));
+    }
   }
 
   // ---------- steer/accel charts ---------------------------------------
@@ -1080,8 +1167,8 @@
       host.appendChild(man);
     }
     if (h.nav_cmd != null) {
-      var navNames = ["straight", "left", "right"];
-      host.appendChild(el("div", "sub", "nav command: " + (navNames[h.nav_cmd] || h.nav_cmd)));
+      host.appendChild(el("div", "sub", "strategic route / goal (nav command): " +
+        (navName(h.nav_cmd) || h.nav_cmd)));
     }
   }
   function bar(k, v, max, color, valText) {

@@ -31,7 +31,7 @@ Per window (fp16 unless noted):
   tgt          [S, 2]     GT ego-frame waypoints (refb_labels.waypoint_targets,
                           the frame TanitEval's gt_ego_waypoints uses)
   v0           []         ego speed at the window's last pose
-  eid          []         episode id — the jackknife/dev split must be
+  eid          []         episode id — the cluster/dev split must be
                           EPISODE-disjoint, never window-disjoint
 
 ~527 KB/window at N=256, d=512, F=992 (two embeddings).

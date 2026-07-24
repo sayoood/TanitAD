@@ -743,3 +743,558 @@ def route_graded_target(poses: Tensor, t: int,
     squashed to (-1, 1)."""
     r = route_from_future_v21(poses, t, horizon_steps, **kw)
     return float(r["mean_curv"]), float(r["net_dyaw"])
+
+
+# ============================================================================
+# v3 (2026-07-21): VOCABULARY-COMPLETE route tokens + DISTANCE-TO-MANEUVER,
+# and a FACTORIZED tactical labeler (LATMANEUVER x LONMODE, independent).
+# ----------------------------------------------------------------------------
+# WHY (two defects Sayed found by watching plan-fan clips, both the same disease
+# — OUR VOCABULARY IS RICHER THAN ANYTHING THAT MINTS IT):
+#
+#  DEFECT 1 — ROUTE. tanitad/lake/vocab.py freezes a 9-token ROUTE slot
+#    (`follow straight turn_left turn_right exit_left exit_right merge u_turn
+#     roundabout`) but this file emits only 3 classes + an UNKNOWN sentinel, and
+#    goal_labels.route_at collapses them to `turn_left|turn_right|follow`. FIVE
+#    tokens — exit_left, exit_right, merge, u_turn, roundabout — plus `straight`
+#    have never been minted by anything. On ep09 f167 the model is conditioned
+#    `route left / turn left` in roundabout-exit geometry: the shape descriptor
+#    is not wrong, it is not an INSTRUCTION. Note this labeler ALREADY detects
+#    the roundabout signature (v2 line ~441 and v2.1 line ~688 both guard the
+#    yaw-wrapping a ">180 deg turn (roundabout/loop)" produces) — and throws the
+#    information away to keep left/right robust.
+#
+#  DEFECT 2 — TACTICAL. `N_MANEUVERS = 5` packs THREE LATERAL classes
+#    (lane_keep/turn_left/turn_right) and TWO LONGITUDINAL ones
+#    (accelerate/brake_stop) into ONE softmax, and `classify_maneuver*` resolves
+#    the collision by PRIORITY (turn > brake > accel). vocab.py already models
+#    these as independent orthogonal slots: LATMANEUVER (9) x LONMODE (9) x
+#    TACPOINT (5). On ep19 the true state is `lane_keep` AND `stop_at_point` AND
+#    a stop point ~ahead, simultaneously; the 5-way head can say only one, so it
+#    says the lateral one. Measured consequence (both REF-C arms, 881 canonical
+#    val windows, results/planfan_clips_tactical_head_val.json): `accelerate`
+#    predicted 0/881, `brake_stop` 7/881 base + 4/881 XL, i.e. a 99.5 %
+#    lateral-or-neutral prior — which `graft_maneuver` then adds straight into
+#    the anchor logits that make the selection.
+#
+# THE DISTANCE IS THE LOAD-BEARING HALF. `roundabout` is a shape; `roundabout,
+# exit in 40 m` is an instruction. Same for `stop_at_point in 12 m`. nuPlan,
+# CARLA and every production nav stack hand their planner a distance; we hand
+# ours a class name. v3 mints the distance in METRES along the realized future
+# arc (see DIST_BAND_TOKENS for the justification of metres over seconds).
+#
+# ADDITIVE AND CONSERVATIVE BY CONSTRUCTION:
+#  * every v1 / v2 / v2.1 function above is untouched and stays the default;
+#  * ``route_from_future_v3`` CALLS ``route_from_future_v21`` for the base
+#    decision and only ever UPGRADES the token. The 3-class CE field ``route``
+#    and the ``valid`` mask are therefore byte-identical to v2.1 for every
+#    window, so switching a run to v3 cannot regress coverage (v2->v2.1 raised
+#    it 26.0 % -> 81.9 %) and the migration is exactly measurable as
+#    "token != the v2.1 token";
+#  * a richer token is emitted ONLY when its full signature is confirmed. An
+#    unconfirmed roundabout keeps v2.1's defensible turn_left/turn_right and is
+#    reported via ``reason``/``roundabout_candidate`` — a low-confidence guess
+#    never replaces an honest answer (R3).
+# ----------------------------------------------------------------------------
+
+# ---- the frozen ROUTE vocabulary, mirrored (tanitad.lake.vocab.STRATEGIC_TOKENS
+# ---- ["ROUTE"]). Pinned equal by tests/test_refb_labels_v3.py so this file and
+# ---- the vocabulary can never drift apart.
+ROUTE_V3_TOKENS = ("follow", "straight", "turn_left", "turn_right",
+                   "exit_left", "exit_right", "merge", "u_turn", "roundabout")
+TOKEN_UNKNOWN = "unknown"
+
+# v2.1 3-class -> the v3 token it means when no richer signature is confirmed.
+# NOTE `straight` is NOT the image of ROUTE_STRAIGHT: in the v3 vocabulary
+# `follow` is "keep following this road" (kinematic) while `straight` means "at
+# the junction ahead, go straight through", which asserts a junction exists —
+# a MAP fact, not a trajectory fact. goal_labels.route_at already made this
+# choice; v3 makes it explicit and never mints `straight`.
+_V21_TO_V3_TOKEN = {ROUTE_LEFT: "turn_left", ROUTE_RIGHT: "turn_right",
+                    ROUTE_STRAIGHT: "follow", ROUTE_UNKNOWN: TOKEN_UNKNOWN}
+
+# ---- DISTANCE-TO-MANEUVER (metres, not seconds) ------------------------------
+# METRES, decided and justified:
+#  1. speed-invariant. The same junction is "5 s" at 10 m/s and "2.5 s" at
+#     20 m/s — two different tokens for one physical instruction. Curvature is
+#     already per-metre in this file for exactly this reason.
+#  2. it is what the PLANNER needs: a stopping/deceleration profile is set by
+#     distance (v^2 = 2 a d), not by time.
+#  3. it is what every external source speaks: nuPlan / CARLA / OpenDRIVE / any
+#     nav stack announce "in 200 m". A future map or VLM fills the same slot
+#     without a unit conversion that would need the speed at label time.
+# Edges (PROPOSED, not frozen): 10 m ~ "you are in it" (1-2 vehicle lengths);
+# 25/50 m are the urban decision distances (a comfortable 2 m/s^2 stop from
+# 14 m/s needs ~49 m); 100/200 m are the highway announcement distances.
+DIST_BAND_EDGES_M = (10.0, 25.0, 50.0, 100.0, 200.0)
+DIST_BAND_TOKENS = ("d_now", "d_10_25", "d_25_50", "d_50_100", "d_100_200",
+                    "d_200_plus", "d_none", "d_unknown")
+# `d_none` and `d_unknown` are DIFFERENT on purpose — this is the D2 lesson of
+# v2.1 applied to the distance axis. `d_none` = "we looked over enough road and
+# there is no maneuver in range"; `d_unknown` = "the window did not reach far
+# enough to say". Collapsing them is exactly the silent-straight-fallback bug.
+DIST_LOOKED_ENOUGH_M = 100.0   # arc that must be observed before claiming d_none
+
+
+def dist_band(dist_m: float | None, observed_arc_m: float = 0.0,
+              looked_enough_m: float = DIST_LOOKED_ENOUGH_M) -> str:
+    """Metres-to-maneuver -> band token (DIST_BAND_TOKENS).
+
+    ``dist_m is None`` means no maneuver was found in the observed future: that
+    is ``d_none`` only when ``observed_arc_m >= looked_enough_m``, else
+    ``d_unknown``. Never returns a band for an unobserved horizon."""
+    if dist_m is None:
+        return "d_none" if observed_arc_m >= looked_enough_m else "d_unknown"
+    d = float(dist_m)
+    if not math.isfinite(d) or d < 0.0:
+        return "d_unknown"
+    for edge, tok in zip(DIST_BAND_EDGES_M, DIST_BAND_TOKENS):
+        if d < edge:
+            return tok
+    return DIST_BAND_TOKENS[len(DIST_BAND_EDGES_M)]      # d_200_plus
+
+
+# ---- roundabout / u-turn / exit / merge geometry (documented, swept-able) -----
+# Roundabout: the circulating radius of a real roundabout is small (design
+# inscribed radius ~8-25 m for the vehicle path), the arc is SUSTAINED at
+# roughly CONSTANT radius, the swept heading is well beyond a junction turn, and
+# the vehicle LEAVES by deflecting the other way — that exit reversal is what
+# separates "roundabout" from "a very tight long turn".
+R_ROUNDABOUT_MAX_M = 30.0
+CURV_ROUNDABOUT_PER_M = 1.0 / R_ROUNDABOUT_MAX_M          # ~0.0333 /m
+ROUNDABOUT_DYAW_RAD = math.radians(135.0)   # swept heading of the circulating arc
+ROUNDABOUT_EXIT_REV_RAD = math.radians(12.0)  # opposite-sign deflection at exit
+ROUNDABOUT_KAPPA_CV_MAX = 0.85              # sd/mean of |kappa| inside the arc:
+                                            # a constant-radius ring, not a kink
+# U-turn: ~180 deg at a very tight radius, ending ANTIPARALLEL, and WITHOUT the
+# roundabout's exit reversal.
+R_UTURN_MAX_M = 20.0
+CURV_UTURN_PER_M = 1.0 / R_UTURN_MAX_M
+UTURN_DYAW_LO_RAD, UTURN_DYAW_HI_RAD = math.radians(150.0), math.radians(195.0)
+UTURN_ANTIPARALLEL_RAD = math.radians(35.0)  # |final heading - start| within
+                                             # this of 180 deg
+# Exit / fork / merge: a lateral offset that ACCUMULATES without the sustained
+# heading change of a junction turn — the track deflects and then RUNS PARALLEL
+# again (heading returns), while the offset does not return. A road curve keeps
+# its heading change; a lane change does return but only moves ~one lane.
+EXIT_LAT_MIN_M = 8.0            # > 2 lane widths: beyond any lane change
+EXIT_NET_DYAW_MAX_RAD = math.radians(45.0)   # net heading stays modest
+EXIT_RETURN_FRAC = 0.6          # |final dyaw| <= this * peak |dyaw| = "returns"
+EXIT_PEAK_DYAW_MIN_RAD = math.radians(8.0)   # there WAS a deflection at all
+EXIT_DV_MS = -1.5               # exit ramps decelerate ...
+MERGE_DV_MS = 1.5               # ... on-ramp merges accelerate
+# ... but a LAUNCH FROM STANDSTILL also has dv >> +1.5, which is why the first
+# pass of this rule minted 13 `merge` windows on ONE stationary episode
+# (MEASURED, ep_00073 of the 100-ep val build: v0 = 0.0, dyaw = 0.0). A ramp is
+# a road-speed feature: require the whole window to stay above this.
+EXIT_MIN_SPEED_MS = 5.0
+
+
+def _future_track(poses: Tensor, t: int, horizon_steps: int) -> dict:
+    """Per-step geometry of the available future from ``t`` (v3 shared core).
+
+    Returns ds [h], step_dyaw [h], cum_dyaw [h] (CUMULATIVE, unwrapped — so a
+    >180 deg roundabout accumulates instead of folding), cum_s [h] (arc from t),
+    kappa [h] and its arc-smoothed version ks [h], plus the ego-frame future
+    track ``ego`` [h+1, 2] (+x forward, +y left, origin at pose t)."""
+    T = poses.shape[0]
+    h = max(0, min(int(horizon_steps), T - 1 - t))
+    if h < 1:
+        z = poses.new_zeros(0)
+        return {"h": 0, "ds": z, "step_dyaw": z, "cum_dyaw": z, "cum_s": z,
+                "kappa": z, "ks": z, "arc": 0.0,
+                "ego": poses.new_zeros(1, 2), "seg": poses[t:t + 1]}
+    seg = poses[t:t + h + 1]                              # [h+1, 4]
+    d = seg[1:, :2] - seg[:-1, :2]
+    ds = d.norm(dim=-1)                                   # [h]
+    step_dyaw = wrap_to_pi(seg[1:, 2] - seg[:-1, 2])      # [h]
+    kappa = torch.where(ds >= MIN_ARC_M, step_dyaw / ds.clamp_min(MIN_ARC_M),
+                        torch.zeros_like(ds))
+    ks = _moving_avg(kappa, _arc_smooth_k(ds))
+    ego = ego_frame(seg[:, :2] - seg[0, :2], seg[0, 2].expand(h + 1))
+    return {"h": h, "ds": ds, "step_dyaw": step_dyaw,
+            "cum_dyaw": torch.cumsum(step_dyaw, 0), "cum_s": torch.cumsum(ds, 0),
+            "kappa": kappa, "ks": ks, "arc": float(ds.sum()),
+            "ego": ego, "seg": seg}
+
+
+# A curvature segment only counts as a MANEUVER if it sweeps real heading.
+# kappa = dyaw/ds blows up at low speed (ds floors at MIN_ARC_M = 0.1 m), so
+# without this gate parking-lot yaw jitter reads as a junction every window:
+# MEASURED on the 100-episode val build, `d_now` was 864/2201 (39 %) before the
+# gate and is a fraction of that after. 15 deg is well below any real junction
+# turn (~90 deg) or roundabout ring, so nothing real is lost.
+SEG_MIN_DYAW_RAD = math.radians(15.0)
+# "no exit reversal was observed" is only a claim if there WAS road left to
+# observe it in. Without this, every roundabout whose clip ends mid-ring reads
+# as a u_turn (MEASURED: 36/2201 u_turns before the gate — implausible for real
+# driving, and the same ego track as an unfinished roundabout).
+UTURN_MIN_TAIL_M = 30.0
+
+
+def _curv_segments(ks: Tensor, thresh: float, min_len: int = 2) -> list[tuple]:
+    """Contiguous same-sign runs of |smoothed curvature| >= ``thresh``.
+
+    Returns ``[(i0, i1, sign), ...]`` half-open on i1. These are the discrete
+    MANEUVER EVENTS in the future track — v2/v2.1 only ever looked at the single
+    global peak, which is why they could see "there is a tight bit somewhere"
+    but never "the tight bit starts 40 m from here and sweeps 210 deg"."""
+    if ks.numel() == 0:
+        return []
+    sign = torch.sign(ks)
+    hot = ks.abs() >= thresh
+    out, i = [], 0
+    n = int(ks.shape[0])
+    while i < n:
+        if not bool(hot[i]):
+            i += 1
+            continue
+        s = float(sign[i])
+        j = i + 1
+        while j < n and bool(hot[j]) and float(sign[j]) == s:
+            j += 1
+        if j - i >= min_len:
+            out.append((i, j, s))
+        i = j
+    return out
+
+
+def _seg_stats(tr: dict, i0: int, i1: int) -> dict:
+    """Heading swept, arc length, distance-to-start and radius consistency of a
+    curvature segment (indices into the per-step arrays of ``_future_track``)."""
+    dyaw = float(tr["step_dyaw"][i0:i1].sum())
+    arc = float(tr["ds"][i0:i1].sum())
+    start_m = float(tr["cum_s"][i0 - 1]) if i0 > 0 else 0.0
+    k = tr["ks"][i0:i1].abs()
+    mean_k = float(k.mean()) if k.numel() else 0.0
+    cv = float(k.std(unbiased=False) / max(mean_k, 1e-9)) if k.numel() > 1 else 0.0
+    return {"dyaw": dyaw, "arc_m": arc, "start_m": start_m, "end_m": start_m + arc,
+            "mean_kappa": mean_k, "kappa_cv": cv}
+
+
+def _signed_reversal(tr: dict, i1: int, seg_sign: float) -> float:
+    """Heading swept AGAINST ``seg_sign`` after a segment ends (rad, >= 0).
+
+    Leaving a roundabout means deflecting back the other way; this measures how
+    much of that counter-deflection is actually observed inside the window."""
+    tail = tr["step_dyaw"][i1:]
+    if tail.numel() == 0:
+        return 0.0
+    c = torch.cumsum(tail, 0)
+    return float((-seg_sign * c).amax().clamp_min(0.0))
+
+
+def route_from_future_v3(poses: Tensor, t: int,
+                         horizon_steps: int = NAV_HORIZON_STEPS,
+                         **v21_kw) -> dict:
+    """v3 route derivation at ``t`` — the frozen 9-token ROUTE vocabulary plus
+    DISTANCE-TO-MANEUVER. A strict, additive SUPERSET of
+    :func:`route_from_future_v21`.
+
+    Returns every v2.1 key unchanged (``route`` int / ``valid`` / ``ambiguous``
+    / ``reason`` / the graded targets ...) plus:
+
+        token        str   one of ROUTE_V3_TOKENS or ``unknown`` — the frozen
+                           vocabulary token. `straight` is NEVER emitted (it
+                           asserts a junction exists = a MAP fact).
+        token_v21    str   what v2.1 alone would have said — so the migration
+                           is countable as ``token != token_v21``.
+        token_valid  bool  the TOKEN is a real judgement. This is NOT
+                           ``valid``: ``valid`` gates the 3-class CE and stays
+                           byte-identical to v2.1, while a confirmed richer
+                           signature (e.g. `merge`) is a judgement even on a
+                           window v2.1 had to mask as gray-zone.
+        upgraded     bool  token != token_v21
+        v3_rule      str   which v3 rule fired: ``v21_base`` | ``roundabout``
+                           | ``u_turn`` | ``exit`` | ``merge``. v2.1's own
+                           ``reason`` is left UNTOUCHED so the base decision
+                           stays auditable next to the upgrade.
+        dist_m       float|None arc metres from the ego pose to the START of the
+                           next junction-scale maneuver; None = none in range.
+        dist_band    str   DIST_BAND_TOKENS (d_none vs d_unknown kept distinct).
+        maneuver_arc_m float arc length of that maneuver, 0.0 if none.
+        maneuver_dyaw  float signed heading it sweeps (rad, cumulative).
+        roundabout_candidate bool a >=135 deg tight sustained arc WAS seen but
+                           its exit reversal was not observed inside the window
+                           — reported, never silently promoted to `roundabout`.
+        uturn_roundabout_confounded bool the segment that produced `u_turn`
+                           ALSO satisfies the roundabout ring geometry. Without
+                           a map these two are the SAME ego track (MEASURED: on
+                           the 100-episode val build one episode produced BOTH a
+                           `u_turn` and, at a later window, a roundabout
+                           candidate). Treat every `u_turn` carrying this flag
+                           as UNVERIFIED pending a map/VLM read.
+        n_segments   int   junction-scale curvature segments found ahead.
+
+    Decision order (first confirmed signature wins): u_turn -> roundabout ->
+    exit_left/exit_right/merge -> the v2.1 answer. Every richer token requires
+    its FULL signature; otherwise the v2.1 token stands (R3: an honest coarse
+    label beats an invented precise one)."""
+    base = route_from_future_v21(poses, t, horizon_steps, **v21_kw)
+    tok21 = _V21_TO_V3_TOKEN[base["route"]]
+    out = dict(base, token=tok21, token_v21=tok21, upgraded=False,
+               dist_m=None, dist_band="d_unknown", maneuver_arc_m=0.0,
+               maneuver_dyaw=0.0, roundabout_candidate=False,
+               uturn_roundabout_confounded=False, n_segments=0,
+               v3_rule="v21_base",
+               token_valid=bool(base["valid"]))
+    tr = _future_track(poses, t, horizon_steps)
+    if tr["h"] < 1 or tr["arc"] < MIN_ARC_ROUTE_M:
+        return out                                  # no road -> no claim at all
+
+    segs = [(i0, i1, sg) for (i0, i1, sg) in _curv_segments(tr["ks"],
+                                                            CURV_TURN_PER_M)
+            if abs(float(tr["step_dyaw"][i0:i1].sum())) >= SEG_MIN_DYAW_RAD]
+    out["n_segments"] = len(segs)
+
+    # ---- DISTANCE-TO-MANEUVER: the first junction-scale event ahead ----------
+    if segs:
+        st = _seg_stats(tr, segs[0][0], segs[0][1])
+        out["dist_m"] = st["start_m"]
+        out["maneuver_arc_m"] = st["arc_m"]
+        out["maneuver_dyaw"] = st["dyaw"]
+        out["dist_band"] = dist_band(st["start_m"], tr["arc"])
+    else:
+        out["dist_band"] = dist_band(None, tr["arc"])
+
+    # ---- richer TOKENS, each gated on its full signature ---------------------
+    for i0, i1, sgn in segs:
+        st = _seg_stats(tr, i0, i1)
+        swept = abs(st["dyaw"])
+        rev = _signed_reversal(tr, i1, sgn)
+        tail_m = tr["arc"] - st["end_m"]          # road observed AFTER the arc
+        tight_ring = st["mean_kappa"] >= CURV_ROUNDABOUT_PER_M
+        # -- u_turn: ~180 deg, very tight, ends ANTIPARALLEL, no exit reversal
+        if (st["mean_kappa"] >= CURV_UTURN_PER_M
+                and UTURN_DYAW_LO_RAD <= swept <= UTURN_DYAW_HI_RAD
+                and abs(abs(st["dyaw"]) - math.pi) <= UTURN_ANTIPARALLEL_RAD
+                and tail_m >= UTURN_MIN_TAIL_M
+                and rev < ROUNDABOUT_EXIT_REV_RAD):
+            out.update(token="u_turn", upgraded=True, token_valid=True,
+                       dist_m=st["start_m"], maneuver_arc_m=st["arc_m"],
+                       maneuver_dyaw=st["dyaw"], v3_rule="u_turn",
+                       dist_band=dist_band(st["start_m"], tr["arc"]),
+                       uturn_roundabout_confounded=bool(
+                           tight_ring and st["kappa_cv"] <= ROUNDABOUT_KAPPA_CV_MAX))
+            return out
+        # -- roundabout: sustained constant-radius ring + an OBSERVED exit
+        if tight_ring and swept >= ROUNDABOUT_DYAW_RAD \
+                and st["kappa_cv"] <= ROUNDABOUT_KAPPA_CV_MAX:
+            if rev >= ROUNDABOUT_EXIT_REV_RAD:
+                out.update(token="roundabout", upgraded=True, token_valid=True,
+                           dist_m=st["start_m"], maneuver_arc_m=st["arc_m"],
+                           maneuver_dyaw=st["dyaw"],
+                           dist_band=dist_band(st["start_m"], tr["arc"]),
+                           v3_rule="roundabout")
+                return out
+            # ring seen, exit not observed (clip ends mid-circulation): keep
+            # v2.1's defensible turn_left/turn_right and SAY SO. This is also
+            # where an unfinished ring lands that would otherwise have looked
+            # like a u_turn — the two are the SAME ego track until the exit is
+            # observed, and guessing between them is not a label.
+            out["roundabout_candidate"] = True
+
+    # -- exit / fork / merge: offset accumulates, heading RETURNS ---------------
+    if not out["upgraded"]:
+        lat = tr["ego"][:, 1]                              # +y = left, metres
+        lat_final = float(lat[-1])
+        cum = tr["cum_dyaw"]
+        peak_dyaw = float(cum.abs().amax()) if cum.numel() else 0.0
+        net_dyaw = float(cum[-1]) if cum.numel() else 0.0
+        peak_kappa = float(tr["ks"].abs().amax()) if tr["ks"].numel() else 0.0
+        dv = float(tr["seg"][-1, 3] - tr["seg"][0, 3])
+        diverges = (abs(lat_final) >= EXIT_LAT_MIN_M
+                    and abs(lat_final) >= 0.8 * float(lat.abs().amax()))
+        returns = (peak_dyaw >= EXIT_PEAK_DYAW_MIN_RAD
+                   and abs(net_dyaw) <= EXIT_RETURN_FRAC * peak_dyaw)
+        v_min = float(tr["seg"][:, 3].min())
+        if (diverges and returns and abs(net_dyaw) <= EXIT_NET_DYAW_MAX_RAD
+                and peak_kappa < CURV_TURN_PER_M
+                and v_min >= EXIT_MIN_SPEED_MS):
+            if dv <= EXIT_DV_MS:                # slowing onto a ramp = leaving
+                out.update(token="exit_left" if lat_final > 0 else "exit_right",
+                           upgraded=True, token_valid=True, v3_rule="exit")
+            elif dv >= MERGE_DV_MS:             # speeding onto a road = joining
+                out.update(token="merge", upgraded=True, token_valid=True,
+                           v3_rule="merge")
+            # else: the two are the SAME ego-track shape and the speed change
+            # does not disambiguate -> leave the v2.1 token. Honest gap.
+    return out
+
+
+def route_target_v3(poses: Tensor, t: int,
+                    horizon_steps: int = NAV_HORIZON_STEPS, **kw) -> tuple:
+    """v3 route target at ``t`` as ``(token, dist_band, valid)`` — the pair-plus
+    form for a token-vocabulary head. The 3-class CE target is unchanged: use
+    :func:`route_target_v21` for it (v3 does not touch it by construction)."""
+    r = route_from_future_v3(poses, t, horizon_steps, **kw)
+    return r["token"], r["dist_band"], bool(r["valid"])
+
+
+# ----------------------------------------------------------------------------
+# FACTORIZED TACTICAL — LATMANEUVER x LONMODE x TACPOINT, minted INDEPENDENTLY
+# ----------------------------------------------------------------------------
+# The 5-way `classify_maneuver*` above is a PRIORITY collapse of two orthogonal
+# axes. These functions mint each axis on its own, so `lane_keep` AND
+# `stop_at_point` AND a stop point 12 m ahead can all be true at once — which is
+# the actual state of the world in the ep19 pedestrian-crossing clip.
+#
+# HONEST LIMITS, stated up front rather than faked:
+#   LONMODE  follow_lead / close_gap / open_gap are LEAD-REFERENCED. `lead_state`
+#            is a None stub in this repo, so they are NOT mintable and are never
+#            emitted. Their windows fall to free_cruise/coast — which is why the
+#            LONMODE mint must be read as "what the EGO is doing", not "why".
+#   LATMAN   merge_in / yield_merge need another agent; `abort_lc` and
+#            `pull_over` are mintable but rare; the rest are ego-track facts.
+#   TACPOINT the POSITION of a stop is a trajectory fact and IS minted
+#            (``stop_dist_m``). The NAME of that point — stop_line vs pedestrian
+#            crossing vs a queue behind a lead vehicle — is NOT separable from
+#            the ego track, so the TACPOINT TOKEN stays `unknown` (VLM/map). This
+#            is the single most useful honest gap in the whole labeler: we can
+#            always say WHERE, never WHY.
+LON_KINEMATIC_TOKENS = ("free_cruise", "stop_at_point", "hold_stop", "launch",
+                        "creep", "coast")
+LON_LEAD_TOKENS = ("follow_lead", "close_gap", "open_gap")   # NOT mintable
+LAT_KINEMATIC_TOKENS = ("lane_keep", "lc_left", "lc_right", "nudge_left",
+                        "nudge_right", "abort_lc", "pull_over")
+LAT_CONTEXT_TOKENS = ("merge_in", "yield_merge")             # NOT mintable
+
+LON_HORIZON_STEPS = 20         # 2 s — the tactical head's farthest waypoint
+STOP_SEARCH_STEPS = 70         # 7 s — how far ahead a stop point is looked for.
+                               # The 2 s head CANNOT see a stop 45 m away at
+                               # 13 m/s (a comfortable 2.2 m/s^2 stop takes ~6 s);
+                               # that is why the distance exists at all. 7 s
+                               # covers the whole urban range and is under
+                               # nuPlan's 8 s planning horizon.
+LON_MIN_STEPS = 10             # < 1 s of future -> a LONMODE claim is not honest
+LAT_HORIZON_STEPS = 40         # 4 s — a lane change takes ~3-5 s
+CREEP_CEIL_MS = 2.5            # moving but below this, sustained = creep
+LANE_HALF_M = 1.75             # half a ~3.5 m lane
+LC_NET_YAW_MAX = 0.20          # rad: a lane change nets ~0 heading
+PULL_OVER_LAT_M = 2.0          # offset that ends STOPPED and stays stopped
+ABORT_LC_RETURN_FRAC = 0.5     # peak offset >= 1 lane, final < this * peak
+
+
+def lonmode_from_future(poses: Tensor, t: int,
+                        horizon: int = LON_HORIZON_STEPS,
+                        stop_search: int = STOP_SEARCH_STEPS) -> dict:
+    """LONMODE (vocab, 9) minted from the ego speed profile alone + the metric
+    DISTANCE to the stop point when one exists.
+
+    Returns ``{token, valid, active, stop_dist_m, stop_dist_band, dv, v0}``.
+    ``active`` is True for every mode except ``free_cruise`` — the "is a
+    longitudinal decision happening here" bit the 5-way head cannot carry when a
+    lateral class outranks it."""
+    T = poses.shape[0]
+    out = {"token": TOKEN_UNKNOWN, "valid": False, "active": False,
+           "stop_dist_m": None, "stop_dist_band": "d_unknown", "dv": 0.0,
+           "v0": float(poses[t, 3]) if 0 <= t < T else 0.0}
+    fut = poses[t:min(t + horizon + 1, T)]
+    if fut.shape[0] < LON_MIN_STEPS:      # not enough future to claim a mode
+        return out
+    v0 = float(poses[t, 3])
+    v_end = float(fut[-1, 3])
+    v_med = float(fut[:, 3].median())
+    out["dv"] = v_end - v0
+
+    # stop point: the first future step whose speed drops below STOP_V_MS,
+    # searched over a LONGER window than the 2 s tactical horizon, with the arc
+    # length to it (the planner's actual input).
+    ssearch = poses[t:min(t + stop_search + 1, T)]
+    arc_obs = 0.0
+    stop_i = None
+    if ssearch.shape[0] >= 2:
+        ds = (ssearch[1:, :2] - ssearch[:-1, :2]).norm(dim=-1)
+        arc_obs = float(ds.sum())
+        below = (ssearch[1:, 3] < STOP_V_MS).nonzero().flatten()
+        if below.numel():
+            stop_i = int(below[0])
+            out["stop_dist_m"] = float(ds[:stop_i + 1].sum())
+    out["stop_dist_band"] = dist_band(out["stop_dist_m"], arc_obs)
+
+    stopped = v0 < STOP_V_MS
+    if stopped and v_med < STOP_V_MS:
+        tok = "hold_stop"
+    elif stopped and out["dv"] > DV_ACCEL_MS:
+        tok = "launch"
+    elif v0 >= MOVING_V_MS and stop_i is not None:
+        tok = "stop_at_point"          # braking TO a stop, wherever it is
+    elif not stopped and v0 < CREEP_CEIL_MS and v_med < CREEP_CEIL_MS:
+        tok = "creep"
+    elif out["dv"] < DV_BRAKE_MS:
+        tok = "coast"                  # decelerating, not to a stop
+    else:
+        tok = "free_cruise"            # moving; WHY is lead-state, not ego
+    out.update(token=tok, valid=True, active=tok != "free_cruise")
+    return out
+
+
+def latmaneuver_from_future(poses: Tensor, t: int,
+                            horizon: int = LAT_HORIZON_STEPS) -> dict:
+    """LATMANEUVER (vocab, 9) minted from the ego-frame lateral profile alone.
+
+    Returns ``{token, valid, active, lat_m, peak_lat_m, net_yaw}``. A net
+    heading change beyond ``LC_NET_YAW_MAX`` is a ROUTE turn, not a within-lane
+    lateral maneuver, and reads ``lane_keep`` here (the ego does keep its lane
+    through a junction turn) — the two axes stay orthogonal on purpose."""
+    T = poses.shape[0]
+    out = {"token": TOKEN_UNKNOWN, "valid": False, "active": False,
+           "lat_m": 0.0, "peak_lat_m": 0.0, "net_yaw": 0.0}
+    h = min(int(horizon), T - 1 - t)
+    if h < 5:
+        return out
+    seg = poses[t:t + h + 1]
+    net_yaw = float(wrap_to_pi(seg[-1, 2] - seg[0, 2]))
+    lat = ego_frame(seg[:, :2] - seg[0, :2], seg[0, 2].expand(h + 1))[:, 1]
+    lat_f, peak = float(lat[-1]), float(lat.abs().amax())
+    out.update(lat_m=lat_f, peak_lat_m=peak, net_yaw=net_yaw, valid=True)
+    if abs(net_yaw) > LC_NET_YAW_MAX:
+        out["token"] = "lane_keep"
+        return out
+    stopped_end = (float(seg[-1, 3]) < STOP_V_MS
+                   and float(seg[max(0, h - 10):, 3].median()) < STOP_V_MS)
+    if abs(lat_f) >= PULL_OVER_LAT_M and stopped_end:
+        out.update(token="pull_over", active=True)
+    elif peak >= LANE_HALF_M and abs(lat_f) < ABORT_LC_RETURN_FRAC * peak:
+        out.update(token="abort_lc", active=True)
+    elif abs(lat_f) >= LANE_HALF_M:
+        out.update(token="lc_left" if lat_f > 0 else "lc_right", active=True)
+    elif abs(lat_f) >= LANE_HALF_M / 2.0:
+        out.update(token="nudge_left" if lat_f > 0 else "nudge_right",
+                   active=True)
+    else:
+        out["token"] = "lane_keep"
+    return out
+
+
+def tactical_from_future_v3(poses: Tensor, t: int,
+                            lat_horizon: int = LAT_HORIZON_STEPS,
+                            lon_horizon: int = LON_HORIZON_STEPS,
+                            stop_search: int = STOP_SEARCH_STEPS) -> dict:
+    """One window -> the FACTORIZED tactical label: LATMANEUVER, LONMODE and
+    the (honestly unknown) TACPOINT with its metric distance.
+
+        lat / lon        the per-slot dicts above
+        tacpoint         always ``unknown`` from kinematics — the POSITION is
+                         minted (``stop_dist_m``), the NAME needs vision/map
+        man5             the shipped 5-way class at this window (for A/B)
+        collapsed        True iff man5 is a LATERAL class while the factorized
+                         LONMODE is active — i.e. the 5-way label DESTROYED a
+                         live longitudinal decision. This is the count the
+                         label-side defect is measured by."""
+    lon = lonmode_from_future(poses, t, lon_horizon, stop_search)
+    lat = latmaneuver_from_future(poses, t, lat_horizon)
+    T = poses.shape[0]
+    man5 = None
+    if t + LABEL_HORIZON < T:
+        sub = poses[t:t + LABEL_HORIZON + 1][None]        # [1, H+1, 4]
+        man5 = int(classify_maneuver_v2(sub)[0])
+    return {"lat": lat, "lon": lon,
+            "tacpoint": {"token": TOKEN_UNKNOWN, "valid": False,
+                         "stop_dist_m": lon["stop_dist_m"],
+                         "stop_dist_band": lon["stop_dist_band"],
+                         "why": "position minted, NAME needs vision/map "
+                                "(stop_line vs crossing vs queue-behind-lead)"},
+            "man5": man5,
+            "collapsed": bool(man5 in (LANE_KEEP, TURN_LEFT, TURN_RIGHT)
+                              and lon["active"])}

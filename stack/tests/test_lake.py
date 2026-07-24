@@ -130,6 +130,41 @@ def test_ingest_refuses_gated(tmp_path):
         ingest_source(ing, tmp_path, tmp_path / "l", verbose=False)
 
 
+def test_refuse_class_source_refused():
+    """`refuse` (Waymax / Waymo Open) raises on assembly exactly like
+    gated-confidential — its terms follow the trained WEIGHTS, so no tier can
+    contain it (TANITDATASET_TIER_INTEGRATION §2)."""
+    from tanitad.lake.schema import (LICENSE_CLASSES, SOURCE_REGISTRY,
+                                     PERMISSIVE_SOURCES)
+    assert "refuse" in LICENSE_CLASSES
+    for src in ("waymo", "waymax"):
+        assert SOURCE_REGISTRY[src].license_class == "refuse"
+        assert not SOURCE_REGISTRY[src].commercial_ok
+        assert src not in PERMISSIVE_SOURCES        # cannot physically enter
+        ep = generate_episode(1, steps=20, size=32)
+        with pytest.raises(PermissionError, match="refuse"):
+            assemble_lake_record(ep, source=src, split="train",
+                                 build_params_hash="x")
+
+
+def test_ingest_refuses_refuse_class(tmp_path):
+    ing = Comma2k19Ingestor(size=32, decode_fn=_det_decode)
+    ing.source = "waymo"             # force the refuse firewall
+    with pytest.raises(PermissionError, match="refuse"):
+        ingest_source(ing, tmp_path, tmp_path / "l", verbose=False)
+
+
+def test_refuse_cannot_be_export_scope():
+    with pytest.raises(LicenseScopeError, match="NEVER be in an export"):
+        verify_license_scope([], allowed_classes={"refuse"})
+
+
+def test_refuse_has_no_tier():
+    from tanitad.lake.filtering import tier_of
+    with pytest.raises(ValueError, match="no tier"):
+        tier_of("refuse", False, False)
+
+
 def test_license_scope_guard_blocks_out_of_scope():
     rows = [{"episode_id": 1, "license_class": "owned-safe",
              "commercial_ok": True, "share_alike": False, "source": "comma2k19"},
@@ -198,7 +233,11 @@ def test_hf_exporter_scaffold_guards_and_stages(tmp_path):
     assert summary["pushed"] is False
     assert summary["episodes"] > 0
     assert (out / "DATA_CARD.md").exists() and (out / "MANIFEST.json").exists()
-    assert list((out / "shards").glob("*.tar"))          # shards staged
+    # shards staged, mirroring the lake partition layout (no basename collision:
+    # train + val both number from shard-00000, so a flat copy would drop shards)
+    staged = list((out / "shards").rglob("*.tar"))
+    assert staged
+    assert len(staged) == len(summary["shards"])         # nothing dropped/collided
     # an explicit push attempt must be refused in Phase A
     with pytest.raises((PermissionError, NotImplementedError)):
         export_hf(lake, "tanitad-own-core", tmp_path / "x", push=True,

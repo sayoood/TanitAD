@@ -34,7 +34,14 @@ from tanitad.data.toy_driving import ToyEpisode
 # --------------------------------------------------------------------------- #
 # License axis (spec §2.2, §6) — first-class + structural                      #
 # --------------------------------------------------------------------------- #
-LICENSE_CLASSES = ("owned-safe", "nc-research", "gated-confidential")
+# ``refuse`` (added 2026-07-21, TANITDATASET_TIER_INTEGRATION §2): a class WORSE
+# than gated-confidential. gated/nc constrain the DATA; ``refuse`` sources carry
+# terms that follow the TRAINED WEIGHTS into the model/product (Waymax §2.e bars
+# training any foundation model; Waymo Open / WOD-E2E terms reach vehicle
+# operation), so the contamination survives training and NO tier — not even an
+# internal-only one — can contain them. Its ingest handler raises exactly as
+# gated-confidential does; it may never enter the lake on any tier.
+LICENSE_CLASSES = ("owned-safe", "nc-research", "gated-confidential", "refuse")
 
 
 @dataclass(frozen=True)
@@ -79,8 +86,6 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
     # --- rev-3 NC (TanitDataSet-R research-only, tier `nc`, §3) ---
     "nuscenes": SourceLicense("nc-research", "CC-BY-NC-4.0", share_alike=False,
                               is_synthetic=False),
-    "waymo": SourceLicense("nc-research", "Waymo-Dataset-License",
-                           share_alike=False, is_synthetic=False),
     "bdd100k": SourceLicense("nc-research", "BDD-NC", share_alike=False,
                              is_synthetic=False),
     "a2d2": SourceLicense("nc-research", "CC-BY-ND-4.0", share_alike=False,
@@ -95,15 +100,24 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
                            is_synthetic=False),
     "rank2tell": SourceLicense("nc-research", "Honda-HRI-NC", share_alike=False,
                                is_synthetic=False),
+    # --- refuse: terms follow the trained WEIGHTS/model, not just the data;
+    #     no tier can contain them (TANITDATASET_TIER_INTEGRATION §2). Present
+    #     ONLY so an ingestor that tries to admit them fails loudly. ---
+    "waymo": SourceLicense("refuse", "Waymo-Dataset-License",     # WOD / WOD-E2E
+                           share_alike=False, is_synthetic=False),
+    "waymax": SourceLicense("refuse", "Waymax-NC-License-2.e",    # bars FM training
+                            share_alike=False, is_synthetic=False),
     # --- firewalled: present as a guard, never ingestible in Phase A ---
     "physicalai_av": SourceLicense("gated-confidential", "NVIDIA-AV-internal",
                                    share_alike=False, is_synthetic=False),
 }
 
 # Sources that may physically enter the Phase-A lake (permissive only).
+# Excludes BOTH hard-fail classes: gated-confidential (firewalled, recipe-only)
+# and refuse (weight-contaminating; never on any tier).
 PERMISSIVE_SOURCES = tuple(
     s for s, lic in SOURCE_REGISTRY.items()
-    if lic.license_class != "gated-confidential")
+    if lic.license_class not in ("gated-confidential", "refuse"))
 
 
 # --------------------------------------------------------------------------- #
@@ -203,6 +217,14 @@ def assemble_lake_record(ep: ToyEpisode, source: str, split: str,
         raise PermissionError(
             f"source {source!r} is gated-confidential (license {lic.license_name}) "
             f"and MUST NOT enter the lake — recipe-only per spec §3.3. Refusing.")
+    if lic.license_class == "refuse":
+        raise PermissionError(
+            f"source {source!r} is license_class 'refuse' (license "
+            f"{lic.license_name}): its terms follow the TRAINED WEIGHTS into the "
+            f"model/product (Waymax bars foundation-model training; Waymo Open / "
+            f"WOD-E2E reaches vehicle operation), so contamination survives "
+            f"training and NO tier — not even internal-only — can contain it. "
+            f"MUST NEVER enter the lake. Refusing.")
 
     meta = dict(meta or {})
     T = int(ep.frames.shape[0])

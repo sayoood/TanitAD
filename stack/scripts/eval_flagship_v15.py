@@ -7,7 +7,7 @@ comparison is not a comparison. This script therefore VENDORS the eval pod's
 own modules (``taniteval/bench.py``, ``taniteval/tanitad_metrics.py``,
 ``scripts/driving_diagnostic.py``) rather than the repo's copies, which have
 drifted, and calls ``bench.run`` unmodified: same 8-split episode-disjoint
-jackknife, same ``val_frac`` 0.2, same CV baseline, same strata.
+interval protocol, same ``val_frac`` 0.2, same CV baseline, same strata.
 
 Window protocol, copied from ``taniteval/refc_eval.py::collect``:
     first 40 val episodes (``sorted(glob('ep_*.pt'))[:40]``), window 8,
@@ -122,7 +122,7 @@ def collect(head, predictor, probes, cfg, states, poses, labels, eids,
 
 
 def real_episode_ids(val_cache: str, n: int) -> list[int]:
-    """The episode_id ints the eval pod's jackknife groups on.
+    """The episode_id ints the eval pod's interval estimator clusters on.
 
     The split is ``split_by_episode`` over these ids; using file indices instead
     would produce a DIFFERENT episode partition and therefore a different
@@ -208,6 +208,17 @@ def main(argv=None):
     res["label_set"] = a.label_set
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=2), encoding="utf-8")
+    # Persist the per-window tensors next to the JSON, exactly as the eval pod's
+    # runner does (results/windows_<key>.pt). WITHOUT this, no arm evaluated by
+    # this script can ever be PAIRED against another — which is why the v1.5
+    # a->ab imagination delta had to be combined in quadrature (invalid: the
+    # arms are not independent) instead of paired. ~96 KB. 360-review W1.
+    wp = Path(a.out).parent / f"windows_{a.key}.pt"
+    torch.save({k: data[k] for k in
+                ("pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps")
+                if k in data}, wp)
+    print(f"[windows] {wp} (per-window pred/gt/cv/eid — enables paired "
+          f"episode-clustered tests)", flush=True)
     m = res["heldout"]["model"]
     print(json.dumps({
         "key": a.key, "n_windows": res["n_windows"],

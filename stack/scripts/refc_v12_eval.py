@@ -5,7 +5,7 @@ Decodes the FROZEN refc-xl-30k exactly as ``taniteval.refc_eval.collect`` does
 ``nav_cmd=None`` -> `follow`, waypoints read at the shared WP_STEPS) and changes
 exactly ONE thing: the selection ``argmax`` runs over the LEARNED score instead
 of the frozen t=0 anchor logits. Every other quantity — episodes, GT frame, CV
-baseline, strata, the 8-split episode-disjoint jackknife in ``bench.run`` — is
+baseline, strata, the interval estimators in ``bench.run`` — is
 the harness's, so ``refc-v12`` is directly comparable to ``refc-xl-30k``'s
 0.458 row.
 
@@ -56,7 +56,7 @@ def paired_delta(base_w: torch.Tensor, sel_w: torch.Tensor, eid: list,
 
     Why paired: v1.2 and the baseline are evaluated on the SAME 881 windows
     through the SAME frozen decoder — only the selection differs. The harness's
-    unpaired jackknife CI95 on ADE@2s is ±0.057 m, so an unpaired comparison
+    unpaired overlapping-holdout CI95 on ADE@2s is ±0.057 m, so an unpaired comparison
     cannot resolve anything smaller than the entire effect we are hunting; the
     per-window difference has vastly more power. Resampling EPISODES (not
     windows) keeps the within-episode correlation honest.

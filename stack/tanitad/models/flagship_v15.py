@@ -123,6 +123,15 @@ class V15Config:
     # --- anti-shortcut discipline ------------------------------------------
     goal_dropout: float = 0.5       # (c) VTARGET dropout  (H25/H26 rule)
     ego_dropout: float = 0.5        # v0 dropout (REF-C convention)
+    ego_null_row: bool = False      # [PM] P5b: when True, a DROPPED v0 becomes a
+                                    # LEARNED null-embedding row instead of a
+                                    # zero-fill. Default False keeps v1.5 (and its
+                                    # trained checkpoints' state_dict) byte-identical;
+                                    # flagship v4 turns it ON (X15 forbids the
+                                    # zero-fill in any shipping v4 run). The rule:
+                                    # never zero-fill a channel whose zero is a
+                                    # valid in-distribution value (0.0 m/s is a
+                                    # perfectly in-distribution "stationary").
     vt_gate_init: float = 0.1       # ReZero gate on the goal seams
     sel_gate_init: float = 0.0      # longitudinal selection term: starts OFF,
                                     # training decides (and the learned value is
@@ -272,6 +281,13 @@ class FlagshipV15Head(nn.Module):
         self.measurement = nn.Sequential(
             nn.Linear(1, cfg.d_meas), nn.ReLU(inplace=True),
             nn.Linear(cfg.d_meas, cfg.d_meas), nn.ReLU(inplace=True))
+        # [PM] P5b: the learned "v0 withheld" embedding — a real row the head can
+        # tell apart from a genuine 0.0 m/s, exactly as VT_/ROUTE_DROPPED already
+        # are. Only constructed when enabled, so a v1.5 checkpoint (no such key)
+        # still loads and V15Config() stays byte-identical.
+        if cfg.ego_null_row:
+            self.ego_null = nn.Parameter(torch.zeros(cfg.d_meas))
+            nn.init.normal_(self.ego_null, std=0.02)
 
         # (c) VTARGET token through a ReZero gate (init 0.1) — norm-parity
         # monitored (H26 swamping guard).
@@ -345,11 +361,21 @@ class FlagshipV15Head(nn.Module):
         """
         cfg = self.cfg
         v = (v0 / SPEED_SCALE).reshape(-1, 1).to(self.measurement[0].weight.dtype)
-        if self.training and cfg.ego_dropout > 0:
+        if self.training and cfg.ego_dropout > 0 and cfg.ego_null_row:
+            # [PM] P5b: the DROPPED v0 gets a LEARNED null row, never a zero-fill.
+            # 0.0 m/s is in-distribution "stationary", so masking to it is a
+            # confident lie (the measured v3enc root cause); a distinct embedding
+            # row lets the head learn an explicit "no speed given" state instead.
+            drop = torch.rand(v.shape[0], 1, device=v.device) < cfg.ego_dropout
+            m = self.measurement(v)
+            m = torch.where(drop, self.ego_null.to(m.dtype)[None, :], m)
+        elif self.training and cfg.ego_dropout > 0:
             keep = (torch.rand(v.shape[0], 1, device=v.device)
                     >= cfg.ego_dropout).to(v.dtype)
-            v = v * keep
-        m = self.measurement(v)
+            v = v * keep                     # legacy zero-fill (v1.5 default; X15)
+            m = self.measurement(v)
+        else:
+            m = self.measurement(v)
         tele = {"m_norm": float(m.detach().norm(dim=-1).mean())}
         vt_keep = None
         if cfg.cond_vtarget:
@@ -603,5 +629,6 @@ def param_breakdown(head: FlagshipV15Head) -> dict[str, int]:
     out["vtarget"] = (cnt(head.vtarget_emb) + 1 if head.cfg.cond_vtarget else 0)
     out["route"] = (cnt(head.route_emb) + cnt(head.route_graded) + 1
                     if head.cfg.cond_route else 0)
+    out["ego_null"] = (head.ego_null.numel() if head.cfg.ego_null_row else 0)
     out["total"] = sum(p.numel() for p in head.parameters())
     return out

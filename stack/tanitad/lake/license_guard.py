@@ -42,6 +42,10 @@ def verify_license_scope(rows: Iterable[dict], allowed_classes: set[str],
         raise LicenseScopeError(
             "gated-confidential can NEVER be in an export scope — it is not in "
             "the lake at all (spec §3.3). Refusing to build such a guard.")
+    if "refuse" in allowed_classes:
+        raise LicenseScopeError(
+            "'refuse' can NEVER be in an export scope — such sources never enter "
+            "the lake on any tier (TANITDATASET_TIER_INTEGRATION §2). Refusing.")
 
     n = 0
     for r in rows:

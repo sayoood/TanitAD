@@ -116,6 +116,11 @@ def ingest_source(ing: SourceIngestor, root: str | Path, lake_root: str | Path,
         raise PermissionError(
             f"{ing.source!r} is gated-confidential — it must NEVER enter the "
             f"lake (recipe-only, spec §3.3). Refusing to ingest.")
+    if lic.license_class == "refuse":
+        raise PermissionError(
+            f"{ing.source!r} is license_class 'refuse' — its terms follow the "
+            f"trained weights into the model/product, so no tier can contain it "
+            f"(TANITDATASET_TIER_INTEGRATION §2). Refusing to ingest.")
 
     units = ing.discover(root)
     if max_units is not None:
@@ -196,16 +201,17 @@ def write_sidecars(lake_root: Path, ing: SourceIngestor, summary: dict) -> None:
         "per_split": summary.get("per_split", {}),
         "shards": summary.get("shards", []),
     }
-    man.write_text(json.dumps(manifest, indent=2, sort_keys=True))
+    man.write_text(json.dumps(manifest, indent=2, sort_keys=True),
+                   encoding="utf-8")
 
     notice = lake_root / "NOTICE"
-    lines = ["TanitAD Data Lake — attribution / license NOTICE",
+    lines = ["TanitAD Data Lake - attribution / license NOTICE",
              "=" * 52, ""]
     for src, info in sorted(manifest["sources"].items()):
         lines.append(f"- {src}: {info['license_name']} "
                      f"(class={info['license_class']}, "
                      f"share_alike={info['share_alike']})")
-    notice.write_text("\n".join(lines) + "\n")
+    notice.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- #
@@ -389,4 +395,94 @@ class CosmosDriveIngestor(SourceIngestor):
                  "height": 1080}}
         if unit.get("weather"):
             m["weather"] = unit["weather"]
+        return m
+
+
+# --------------------------------------------------------------------------- #
+# L2D ingestor (yaak-ai/L2D) — wraps l2d.build_episode (Apache-2.0, tier ship)  #
+# --------------------------------------------------------------------------- #
+@dataclass
+class L2DIngestor(SourceIngestor):
+    """Wraps ``l2d.build_episode`` (LeRobot v3, Apache-2.0). The map + horizon +
+    ego-indicator source. Records are drive-level de-duplicated
+    (``groupby(session_id)`` + non-overlapping unix-time tiling) and split
+    drive-disjoint (``split_unit_id = session_id``) — see ``data/l2d.py``.
+
+    Paths follow the LeRobot layout under ``lerobot_root`` (a local mirror dir);
+    ``discover`` takes the meta-episodes parquet as ``root``. Actions are
+    POSE-DERIVED (L2D's CAN steering is normalized/unscaled) -> ``action_source=
+    'pose_derived'``, ``has_can=False`` (the CAN turn_signal rides the SIGNAL vocab
+    slot, not the action). ``frame_source`` = ``none`` (state-only), ``front_camera``
+    (real pixels, ESTIMATED focal -> flagged intrinsics), or ``bev_map``
+    (intrinsics-free)."""
+
+    source: str = "l2d"
+    size: int = 256
+    n_stack: int = 3
+    val_frac: float = 0.2
+    lerobot_root: str = ""              # local mirror: has data/... and videos/...
+    frame_source: str = "none"         # none | front_camera | bev_map
+    episode_filter: Callable | None = None   # keep only locally-available episodes
+
+    def __post_init__(self):
+        self.build_params = {"size": self.size, "n_stack": self.n_stack,
+                             "frame_source": self.frame_source,
+                             "adapter": "l2d.build_episode",
+                             "dedup": "drive_level(session_id)+nonoverlap_tiling"}
+        self.action_source = "pose_derived"
+        self.has_can = False
+
+    def discover(self, root):
+        from tanitad.data import l2d
+        idx = l2d.read_episode_index(root)          # root = meta episodes parquet
+        idx = l2d.dedup_index(idx)                  # drive-level de-dup (trap #2)
+        if self.episode_filter is not None:
+            idx = [e for e in idx if self.episode_filter(e)]
+        return idx
+
+    def split_units(self, units, seed=0):
+        from tanitad.data import l2d
+        return l2d.split_by_drive(units, val_frac=self.val_frac, seed=seed)
+
+    def build_core(self, unit):
+        from tanitad.data import l2d
+        root = Path(self.lerobot_root)
+        data_pq = root / l2d.data_rel_path(unit)
+        vpath = None
+        if self.frame_source == "front_camera":
+            vpath = root / l2d.video_rel_path(unit, "front_left")
+        elif self.frame_source == "bev_map":
+            vpath = root / l2d.video_rel_path(unit, "map")
+        return l2d.build_episode(unit, data_pq, size=self.size,
+                                 n_stack=self.n_stack,
+                                 frame_source=self.frame_source, video_path=vpath)
+
+    def split_unit_id(self, unit) -> str:
+        return str(unit["session_id"])              # drive-disjoint (I3)
+
+    def unit_meta(self, unit) -> dict:
+        from tanitad.data import l2d
+        from tanitad.data.calib import F_REF
+        instr = unit["tasks"][0] if unit.get("tasks") else ""
+        route = l2d.parse_route_token(instr)
+        dist_m = l2d.parse_distance_m(instr)
+        m: dict = {"hz": 10.0, "attribution_id": "yaak-ai-L2D-Apache-2.0",
+                   "canonical_name": unit.get("canonical_name"),
+                   "session_id": unit.get("session_id"),
+                   "instruction": instr, "route_from_instruction": route,
+                   "routedist_m_from_instruction": dist_m}
+        if self.frame_source == "front_camera":
+            # L2D ships NO intrinsics; this focal is ESTIMATED (flagged) — never
+            # asserted as the real f_eff. camera-scale UNVERIFIED per the arm card.
+            m["camera_model"] = "pinhole"
+            m["f_eff_px"] = F_REF
+            m["intrinsics_native"] = {
+                "model": "pinhole", "estimated": True,
+                "hfov_deg_assumed": l2d.L2D_FRONT_HFOV_DEG_ASSUMED,
+                "params": [l2d.estimated_front_focal_px(),
+                           l2d.estimated_front_focal_px()],
+                "cx": 1920 / 2.0, "cy": 1080 / 2.0, "width": 1920, "height": 1080,
+                "note": "L2D ships no intrinsics; focal ESTIMATED from assumed HFOV"}
+        elif self.frame_source == "bev_map":
+            m["camera_model"] = "bev_render"
         return m

@@ -16,10 +16,11 @@ external runtime deps in the browser.
 ```
 tanitad/resim/
   export.py            records -> session bundle (session.json + frames/*.jpg)
+  sample.py            synthetic full-viz-standard demo bundle (no pod/ckpt)
   static/index.html    SPA shell (wordmark, #app root)
   static/style.css     TanitAD design language (dark slate, gold/cyan/magenta)
-  static/app.js        vanilla JS + canvas: home cards + session panels
-scripts/resim_app.py   FastAPI single-port server (build_app factory + CLI)
+  static/app.js        vanilla JS + canvas: home cards + session panels + HUD
+scripts/resim_app.py   FastAPI single-port server (build_app factory + CLI, --demo)
 scripts/replay_app.py  --mode export writes a bundle (added; test/viz intact)
 tests/test_resim.py    exporter schema + portability + FastAPI TestClient
 ```
@@ -35,7 +36,10 @@ between bundles. Click a card → session view.
 **Session view = side-by-side arm panels.** One **column per arm** (header: name
 + color dot + episode ADE + p50 latency), each carrying: a **camera canvas** with
 that arm's trajectory fan projected onto the road plus a toggleable GT overlay
-(white dashed); **steer/accel small-multiple charts** vs GT over the episode with
+(white dashed), and a **decoded-intent HUD** overlaid top-left — that arm's
+decoded **tactical maneuver** + **strategic route/goal** + per-frame **ADE** +
+ego **v0** (see *Viz-standard compliance* below); **steer/accel small-multiple
+charts** vs GT over the episode with
 a current-step marker; and **head readouts** (main: imag_rel per horizon + belief
 σ; refa: imag_rel; refb: confidence + OOD + a maneuver-probability bar chart with
 the GT class marked + nav command). Below the columns, a shared **master panel**:
@@ -60,6 +64,39 @@ is shareable.
 > emitted into each bundle's `session.json` (the SPA is data-driven off it). It
 > is intentionally **separate** from `tanitad.replay.arms.ARM_COLORS`, which
 > stays the canonical rerun palette (arms.py is not modified).
+
+## Viz-standard compliance
+
+TanitResim honors **THE STANDARD** (`taniteval/taniteval/corpus_overlay.py`):
+every trajectory view shows **camera projection + a metric BEV inset together**,
+a **text overlay of the decoded tactical maneuver + strategic route/goal**, and
+**ADE** — with a **BEV-only fallback** when camera calibration is unrecoverable.
+
+| Standard element (`corpus_overlay`) | TanitResim |
+|---|---|
+| 1. Camera projection (GT + pred paths on the road) | per-arm **camera canvas** + trajectory fan (GT white-dashed, arm-colored fan) |
+| 2. Metric BEV inset (calibration-independent) | shared **BEV master panel** — all arms + GT, metre grid, scale bar, legend |
+| 3a. Decoded **tactical maneuver** text (`maneuver_logits` argmax) | camera **HUD** `tactical: <maneuver>` (argmax of each arm's `maneuver_probs`) + the head-readout maneuver-distribution bar chart (GT marked) + the shared kinematic **maneuver band** |
+| 3b. **Strategic route/goal** text (`route_logits` argmax) | camera **HUD** `strategic: route <goal>` from `nav_cmd` via `meta.nav_commands` |
+| 3c. Per-frame **ADE** + **v0** | camera **HUD** `ADE … · v … m/s`, plus the column header, the error strip, and the scrubber |
+| **BEV-only fallback** (uncalibrated, e.g. cosmos f-theta) | pass corpora to `export_bundle(..., uncalibrated_corpora=…)`: image-plane paths are `null`, the camera shows the raw frame + a *"camera overlay disabled — see BEV"* note, and the BEV carries the comparison |
+
+The decoded intent is arm-specific: it reads each arm's own `maneuver_probs` /
+`nav_cmd` heads. An arm with no policy brains simply shows `ADE · v` (the fan and
+BEV still render). TanitResim's multi-arm design differs from the single-arm
+`corpus_overlay` only in laying the BEV out as a shared master panel rather than
+an in-frame inset — every camera pairs with the same metric BEV in one view.
+
+## One-command demo (no pod, no checkpoint)
+
+```
+python scripts/resim_app.py --demo
+```
+
+Generates a synthetic, deterministic bundle (`tanitad.resim.sample`) that
+exercises **every** standard element — 3 arms, decoded maneuver + route, formal
+gates, and one BEV-only-fallback episode — then serves it. Open the printed URL.
+Build the bundle without serving via `python -m tanitad.resim.sample <out-dir>`.
 
 ## Export a session bundle
 
@@ -105,9 +142,16 @@ Endpoints: `GET /` (SPA) · `GET /static/*` (assets) · `GET /api/sessions`
 
 ## Tests
 
-`tests/test_resim.py` (CPU-only): the exporter builds a valid bundle from
-synthetic records (schema + one JPEG per step), checkpoints are stored
+`tests/test_resim.py` (CPU-only, 39 tests): the exporter builds a valid bundle
+from synthetic records (schema + one JPEG per step), checkpoints are stored
 basename-only and **no absolute path leaks into session.json** (portability),
-empty/frameless streams fail loud, wide frames are downscaled, and a
-`fastapi.testclient.TestClient` drives index / sessions-list / session-fetch
-(+404) / frame-fetch (+404 guards) / static-asset serving.
+empty/frameless streams fail loud, wide frames are downscaled, image-plane
+projection stays on/below the horizon (per-corpus calibration), formal-gate data
+flows through, and a `fastapi.testclient.TestClient` drives index /
+sessions-list / session-fetch (+404) / frame-fetch (+404 path-traversal guards)
+/ static-asset serving. Viz-standard pins: `meta.nav_commands` is the canonical
+`refb.NAV_COMMANDS` order (not the old mislabelled guess), the
+`uncalibrated_corpora` fallback nulls image paths while keeping BEV + frames, and
+the `tanitad.resim.sample` demo bundle serves end-to-end covering every element.
+
+Run: `cd stack && pytest -q tests/test_resim.py`.

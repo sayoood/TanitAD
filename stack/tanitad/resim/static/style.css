@@ -171,6 +171,30 @@ button.primary { background: linear-gradient(180deg, #f5b301, #d99a00); color: #
 .cap { font-size: 10.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .7px; margin: 12px 0 5px; }
 .mini-legend { margin: 5px 0 2px; }
 
+/* ---------- decoded-intent HUD (camera text overlay, THE STANDARD) ---------- */
+.cam-hud {
+  position: absolute; top: 7px; left: 7px; right: 7px;
+  display: flex; flex-direction: column; gap: 2px;
+  pointer-events: none; z-index: 2;
+  font-family: var(--font);
+  text-shadow: 0 1px 3px #000c, 0 0 2px #000a;
+}
+.cam-hud .hud-intent { display: flex; align-items: baseline; gap: 6px; }
+.cam-hud .hud-k {
+  font-size: 9px; text-transform: uppercase; letter-spacing: .7px;
+  color: var(--ink-faint); min-width: 52px;
+}
+.cam-hud .hud-v { font-size: 13px; font-weight: 700; letter-spacing: .3px; color: var(--ink); }
+.cam-hud .hud-gt { font-size: 9.5px; color: var(--gt); opacity: .8; font-style: italic; }
+.cam-hud .hud-ok { font-size: 11px; color: #4fe08a; font-weight: 700; }
+.cam-hud .hud-metrics {
+  font-size: 10.5px; font-family: var(--mono); color: var(--ink-dim); margin-top: 1px;
+}
+.cam-hud .hud-fallback {
+  font-size: 10px; font-weight: 600; color: #f2b45a; margin-top: 3px;
+  max-width: 210px; line-height: 1.25;
+}
+
 .charts2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .chart-box { background: #0e162288; border: 1px solid var(--line-soft); border-radius: 9px; padding: 6px 6px 3px; }
 .chart-box .lbl { font-size: 10.5px; color: var(--ink-dim); font-weight: 600; padding: 0 3px; display: flex; justify-content: space-between; }

@@ -228,6 +228,65 @@ def goal_provenance_summary(goal: dict[str, dict[str, str]]) -> dict[str, int]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# v1.1 CANDIDATE — DISTANCE-TO-MANEUVER (NOT enrolled; the freeze is intact)   #
+# --------------------------------------------------------------------------- #
+# A route/tactical SHAPE is not an instruction: `roundabout` is a description,
+# `roundabout, exit in 40 m` is a command, and `stop_at_point in 12 m` is what a
+# planner can actually act on. nuPlan / CARLA / OpenDRIVE and every production
+# nav stack hand the planner a DISTANCE; we currently hand ours a class name.
+# `scripts/refb_labels.route_from_future_v3` mints these bands today.
+#
+# WHY THIS BLOCK IS NOT IN STRATEGIC_TOKENS/TACTICAL_TOKENS: enrolling a slot
+# changes GOAL_SLOTS, empty_goal(), validate_goal() and every embedding sized
+# off them — that is a VOCABULARY VERSION BUMP (v1 -> v1.1) with a migration
+# note, and V3_GOAL_VOCABULARY_V1.md is FROZEN. So the tokens + the banding
+# function live here, pinned by tests, and enrolment is Sayed's call. Nothing
+# above this line changes; every frozen count assertion still holds.
+#
+# METRES, not seconds — decided: (1) speed-invariant (the same junction is "5 s"
+# at 10 m/s and "2.5 s" at 20 m/s: two tokens for one instruction); (2) a
+# deceleration profile is set by distance (v^2 = 2ad), not time; (3) maps and
+# nav stacks speak metres, so a later map/VLM fills the identical slot with no
+# unit conversion that would need the label-time speed.
+ROUTEDIST_TOKENS = ("d_now", "d_10_25", "d_25_50", "d_50_100", "d_100_200",
+                    "d_200_plus", "d_none", "d_unknown")
+_ROUTEDIST_EDGES_M = (10.0, 25.0, 50.0, 100.0, 200.0)
+ROUTEDIST_LOOKED_ENOUGH_M = 100.0
+
+# The candidate slots a v1.1 bump would add, with their counts, so the doc<->code
+# pin keeps working the day they are enrolled.
+V11_CANDIDATE_TOKENS: dict[str, tuple[str, ...]] = {
+    "ROUTEDIST": ROUTEDIST_TOKENS,      # strategic: distance to the next route
+                                        # maneuver
+    "TACDIST": ROUTEDIST_TOKENS,        # tactical: distance to the TACPOINT
+                                        # (stop point) — same bands on purpose
+}
+assert len(ROUTEDIST_TOKENS) == 8
+assert not set(V11_CANDIDATE_TOKENS) & set(GOAL_SLOTS), \
+    "a candidate slot collides with a FROZEN slot name"
+
+
+def routedist_band(dist_m: float | None, observed_arc_m: float = 0.0,
+                   looked_enough_m: float = ROUTEDIST_LOOKED_ENOUGH_M) -> str:
+    """Metres-to-the-next-maneuver -> band token (R1: banded, never a raw float).
+
+    ``dist_m is None`` means "no maneuver found in the observed future". That is
+    ``d_none`` only when at least ``looked_enough_m`` of road was actually
+    observed; otherwise ``d_unknown``. Keeping those two apart is the v2->v2.1
+    lesson (a silent fallback that conflated "cannot judge" with a real class
+    poisoned the route prior) applied to the distance axis."""
+    if dist_m is None:
+        return "d_none" if observed_arc_m >= looked_enough_m else "d_unknown"
+    d = float(dist_m)
+    if not math.isfinite(d) or d < 0.0:
+        return "d_unknown"
+    for edge, tok in zip(_ROUTEDIST_EDGES_M, ROUTEDIST_TOKENS):
+        if d < edge:
+            return tok
+    return ROUTEDIST_TOKENS[len(_ROUTEDIST_EDGES_M)]        # d_200_plus
+
+
 def to_wire(goal: dict[str, dict[str, str]]) -> dict[str, str]:
     """Slot-prefixed flat form (R5), e.g. ``{'LONMODE': 'LON:free_cruise'}`` —
     handy for CoC prompts / embeddings. Unknown slots are dropped."""

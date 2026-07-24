@@ -308,6 +308,14 @@ def train(args) -> dict:
               f"{cfg.v2_invdyn_gradscale}, fa_dropout {cfg.v2_fa_dropout}",
               flush=True)
 
+    # ---- ego-dropout override — LAST, so it wins over --v2 (0.25) AND
+    # --staged-levers. The SAME keep-mask zeroes the planner ego vector and the
+    # v0 speed action channel; 0.0 disables both (post-mortem experiment A).
+    if args.ego_dropout is not None:
+        cfg.v2_ego_dropout = args.ego_dropout
+        print(f"[ego-dropout] v2_ego_dropout override -> {cfg.v2_ego_dropout}",
+              flush=True)
+
     plan = horizon_plan(cfg, op_fwd_k=args.op_fwd_k, tac_fwd_k=args.tac_fwd_k,
                         str_fwd_k=args.str_fwd_k)
 
@@ -315,11 +323,27 @@ def train(args) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # PRE-ARM the OOM guard BEFORE any heavy allocation / the loop.
-    if args.cache_dirs:
-        start_cache_guard(args.cache_dirs, limit_gb=args.guard_limit_gb)
+    guard_dirs = args.v2_cache if args.v2_cache else args.cache_dirs
+    if guard_dirs:
+        start_cache_guard(guard_dirs, limit_gb=args.guard_limit_gb)
 
-    ds_train, ds_val = build_datasets(cfg, plan, args.data, args.cache_dirs,
-                                      args.episodes, args.sim_frac, args.seed)
+    if args.v2_cache:
+        # v2 NEXT-GEN corpus (physicalai-v2bal): a JPEG-compressed on-disk cache
+        # far too large to hold decoded in RAM. Lazy, LRU-bounded providers feed
+        # the SAME FlagshipWindowDataset (via _wrap), so every window is
+        # byte-identical to the raw path -- only the frame SOURCE differs. This
+        # is a SEPARATE corpus and does NOT touch the raw parity path (the else
+        # branch below is unchanged; with no --v2-cache the trainer is today).
+        from tanitad.data.v2_dataset import build_v2_providers
+        providers = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)
+        ds_train = _wrap(providers, cfg, plan, cfg.encoder.in_channels)
+        ds_val = None                              # this trainer runs no val loop
+        print(f"[data] v2-cache {args.v2_cache}: {len(providers)} lazy "
+              f"providers, lru {args.v2_lru}, window {cfg.predictor.window}, "
+              f"labels_v2 {cfg.v2_labels}", flush=True)
+    else:
+        ds_train, ds_val = build_datasets(cfg, plan, args.data, args.cache_dirs,
+                                          args.episodes, args.sim_frac, args.seed)
     assert len(ds_train) >= args.batch_size, \
         f"only {len(ds_train)} windows for batch {args.batch_size}"
     dl = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True,
@@ -498,6 +522,16 @@ def main(argv=None):
                          "toy = procedural (CI / no-cache dry run)")
     ap.add_argument("--cache-dirs", nargs="+", default=None,
                     help="epcache roots, each with *train*/*val* dirs of ep_*.pt")
+    ap.add_argument("--v2-cache", nargs="+", default=None,
+                    help="v2 NEXT-GEN compressed cache dir(s) of *.v2ep.pt "
+                         "(physicalai-v2bal). Swaps the raw loader for the lazy, "
+                         "LRU-bounded v2 loader; windows stay contract-identical "
+                         "(same keys/shapes/dtypes/labels). Multiple dirs are "
+                         "concatenated (consolidated cache). NO flag == today's "
+                         "raw path, byte-identical.")
+    ap.add_argument("--v2-lru", type=int, default=64,
+                    help="per-worker LRU size (compressed clip payloads) for "
+                         "--v2-cache; bounds RAM at ~2-4 MB/clip. Default 64.")
     ap.add_argument("--out", required=True)
     ap.add_argument("--config",
                     choices=["flagship4b", "flagship4b_reduced", "smoke"],
@@ -573,6 +607,15 @@ def main(argv=None):
     ap.add_argument("--decorr-weight", type=float, default=0.05,
                     help="LEVER B: encoder<->ego decorrelation weight (v2 lever "
                          "10; only active with --v2 / v2_encoder_ego_decorr)")
+    ap.add_argument("--ego-dropout", type=float, default=None,
+                    help="override v2_ego_dropout (--v2 sets 0.25). The SAME "
+                         "Bernoulli keep-mask zeroes BOTH the planner ego vector "
+                         "AND the v0 speed action channel (flagship_losses.py:"
+                         "214-230), so 0.0 = feed the true ego + true v0 on every "
+                         "sample. Post-mortem experiment A (2026-07-21) uses "
+                         "`--ego-dropout 0.0` as its SINGLE lever against the "
+                         "v3enc invocation. Loss-side only: no param change, "
+                         "no state_dict change, ckpts resume")
     ap.add_argument("--grad-checkpoint", action="store_true")
     ap.add_argument("--no-amp", action="store_true")
     ap.add_argument("--guard-limit-gb", type=float, default=60.0)

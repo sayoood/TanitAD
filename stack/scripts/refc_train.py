@@ -143,6 +143,93 @@ class RouteV21Dataset(FailLoudWindowDataset):
                 "reasons": {k: round(v / tot, 4) for k, v in sorted(reasons.items())}}
 
 
+# ---- v3 labels (opt-in; --labels v3) -----------------------------------------
+
+class RouteV3Dataset(RouteV21Dataset):
+    """RouteV21Dataset plus the v3 VOCABULARY TOKEN + DISTANCE-TO-MANEUVER and
+    the FACTORIZED tactical slots.
+
+    THE 3-CLASS CE TARGET IS UNCHANGED. ``route_from_future_v3`` calls
+    ``route_from_future_v21`` for its decision and only ever upgrades the TOKEN,
+    so ``route_target`` / ``route_valid`` / ``nav_cmd`` here are byte-identical
+    to a ``--labels v21`` run (pinned by tests/test_refc_labels_v3_wiring.py).
+    A v3 run therefore differs from a v21 run ONLY by the ADDITIONAL fields,
+    which no head consumes yet:
+
+        route_token_idx  [] long   index into refb_labels.ROUTE_V3_TOKENS, or
+                                   len(ROUTE_V3_TOKENS) for `unknown`
+        route_dist_idx   [] long   index into refb_labels.DIST_BAND_TOKENS
+        lat_idx / lon_idx[] long   index into the KINEMATICALLY MINTABLE subsets
+                                   of the frozen vocab LATMANEUVER / LONMODE
+                                   slots, sentinel = len(table) for `unknown`
+        lon_active       [] bool   a longitudinal decision is live
+
+    Wiring the heads that consume them is a RETRAIN and Sayed's call — see
+    "TanitAD Research Hub/Architecture & Inference/
+     V3_FACTORIZED_TACTICAL_HEAD_SPEC.md". This dataset exists so the label set
+    is selectable and measurable BEFORE that decision, exactly as v21 was.
+    """
+
+    ROUTE_TOKENS = refb_labels.ROUTE_V3_TOKENS
+    DIST_TOKENS = refb_labels.DIST_BAND_TOKENS
+    LAT_TOKENS = refb_labels.LAT_KINEMATIC_TOKENS
+    LON_TOKENS = refb_labels.LON_KINEMATIC_TOKENS
+
+    @staticmethod
+    def _idx(tok: str, table) -> int:
+        return table.index(tok) if tok in table else len(table)   # sentinel
+
+    def __getitem__(self, i: int):
+        item = super().__getitem__(i)             # v21 route target, UNCHANGED
+        e_i, t = self.index[i]
+        poses = self.episodes[e_i].poses
+        last = t + self.window - 1
+        r = refb_labels.route_from_future_v3(poses, last,
+                                             use_net_dyaw=self.use_net_dyaw)
+        tac = refb_labels.tactical_from_future_v3(poses, last)
+        item["route_token_idx"] = torch.tensor(
+            self._idx(r["token"], self.ROUTE_TOKENS), dtype=torch.long)
+        item["route_dist_idx"] = torch.tensor(
+            self._idx(r["dist_band"], self.DIST_TOKENS), dtype=torch.long)
+        item["lat_idx"] = torch.tensor(
+            self._idx(tac["lat"]["token"], self.LAT_TOKENS), dtype=torch.long)
+        item["lon_idx"] = torch.tensor(
+            self._idx(tac["lon"]["token"], self.LON_TOKENS), dtype=torch.long)
+        item["lon_active"] = torch.tensor(bool(tac["lon"]["active"]))
+        return item
+
+    def label_stats(self, n: int = 4000, seed: int = 0) -> dict:
+        """v21 provenance row + the v3 token / distance / factorization mix."""
+        out = super().label_stats(n, seed)
+        g = torch.Generator().manual_seed(seed)
+        idx = torch.randperm(len(self.index), generator=g)[:min(n, len(self))]
+        tok, dist, lon, lat = {}, {}, {}, {}
+        upgraded = collapsed = rb_cand = 0
+        for i in idx.tolist():
+            e_i, t = self.index[i]
+            poses = self.episodes[e_i].poses
+            last = t + self.window - 1
+            r = refb_labels.route_from_future_v3(poses, last,
+                                                 use_net_dyaw=self.use_net_dyaw)
+            tac = refb_labels.tactical_from_future_v3(poses, last)
+            tok[r["token"]] = tok.get(r["token"], 0) + 1
+            dist[r["dist_band"]] = dist.get(r["dist_band"], 0) + 1
+            lo, la = tac["lon"]["token"], tac["lat"]["token"]
+            lon[lo] = lon.get(lo, 0) + 1
+            lat[la] = lat.get(la, 0) + 1
+            upgraded += int(r["upgraded"])
+            rb_cand += int(r["roundabout_candidate"])
+            collapsed += int(tac["collapsed"])
+        tot = max(int(idx.numel()), 1)
+        out.update(v3_token=tok, v3_dist_band=dist, v3_lon=lon, v3_lat=lat,
+                   v3_upgraded=upgraded,
+                   v3_upgraded_frac=round(upgraded / tot, 4),
+                   v3_roundabout_candidates=rb_cand,
+                   v3_collapsed_by_5way=collapsed,
+                   v3_collapsed_frac=round(collapsed / tot, 4))
+        return out
+
+
 # ---- losses ------------------------------------------------------------------
 
 def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
@@ -306,11 +393,12 @@ def train(args) -> dict:
     ds_kw = dict(window=cfg.window, max_horizon=max_h,
                  channels=cfg.encoder.in_channels)
     label_stats: dict | None = None
-    if args.labels == "v21":
-        ds = RouteV21Dataset(train_eps, use_net_dyaw=args.use_net_dyaw, **ds_kw)
+    if args.labels in ("v21", "v3"):
+        dcls = RouteV21Dataset if args.labels == "v21" else RouteV3Dataset
+        ds = dcls(train_eps, use_net_dyaw=args.use_net_dyaw, **ds_kw)
         label_stats = ds.label_stats()
-        print(f"[labels] v21 route (use_net_dyaw={args.use_net_dyaw}): "
-              f"{json.dumps(label_stats)}", flush=True)
+        print(f"[labels] {args.labels} route (use_net_dyaw="
+              f"{args.use_net_dyaw}): {json.dumps(label_stats)}", flush=True)
     else:
         ds = FailLoudWindowDataset(train_eps, **ds_kw)
     assert len(ds) >= batch, \
@@ -336,15 +424,24 @@ def train(args) -> dict:
          # Label provenance — the artifact must describe its own labels.
          "labels": {
              "label_set": args.labels,
-             "route_derivation": ("refb_labels.route_from_future_v21"
-                                  if args.labels == "v21"
-                                  else "refb_labels.route_target(nav_command)"),
+             "route_derivation": (
+                 "refb_labels.route_from_future_v21" if args.labels == "v21"
+                 else "refb_labels.route_from_future_v3 (v21 CE target "
+                      "byte-identical; TOKEN + distance-to-maneuver ADDED, no "
+                      "head consumes them yet)" if args.labels == "v3"
+                 else "refb_labels.route_target(nav_command)"),
              "use_net_dyaw": (bool(args.use_net_dyaw)
-                              if args.labels == "v21" else None),
+                              if args.labels in ("v21", "v3") else None),
              "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+             "maneuver_derivation": ("refb_labels.window_maneuver_labels "
+                                     "(v1 5-way) — UNCHANGED in every label "
+                                     "set; the LAT x LON factorization is a "
+                                     "MODEL change (retrain), specified in "
+                                     "V3_FACTORIZED_TACTICAL_HEAD_SPEC.md"),
              "route_unknown_handling": ("masked out of the route CE "
                                         "(ROUTE_UNKNOWN=3, never clamped)"
-                                        if args.labels == "v21" else "n/a"),
+                                        if args.labels in ("v21", "v3")
+                                        else "n/a"),
              "train_label_stats": label_stats},
          "data": {"cache_dir": str(train_dir), "n_episodes": len(train_eps),
                   "n_windows": len(ds)},
@@ -418,8 +515,9 @@ def train(args) -> dict:
                                           min(args.episodes or 8, 8))
         vkw = dict(window=cfg.window, max_horizon=max_h,
                    channels=cfg.encoder.in_channels)
-        vds = (RouteV21Dataset(val_eps, use_net_dyaw=args.use_net_dyaw, **vkw)
-               if args.labels == "v21" else FailLoudWindowDataset(val_eps, **vkw))
+        vcls = {"v21": RouteV21Dataset, "v3": RouteV3Dataset}.get(args.labels)
+        vds = (vcls(val_eps, use_net_dyaw=args.use_net_dyaw, **vkw)
+               if vcls is not None else FailLoudWindowDataset(val_eps, **vkw))
         model.eval()
         with torch.no_grad():
             vb = torch.utils.data.default_collate(
@@ -456,11 +554,16 @@ def main(argv=None):
     ap.add_argument("--anchors", default=None,
                     help="FPS anchor vocabulary .pt (build_refc_anchors.py); "
                          "default = the model's built-in synthetic-FPS anchors")
-    ap.add_argument("--labels", choices=("v1", "v21"), default="v1",
+    ap.add_argument("--labels", choices=("v1", "v21", "v3"), default="v1",
                     help="route AUX target derivation: v1 = what REF-C-XL "
                          "trained with (route_target(nav_cmd), straight-by-"
                          "default); v21 = refb_labels.route_from_future_v21 "
-                         "(adaptive horizon, ROUTE_UNKNOWN masked out of the CE)")
+                         "(adaptive horizon, ROUTE_UNKNOWN masked out of the "
+                         "CE); v3 = v21 PLUS the frozen-vocabulary route TOKEN, "
+                         "the distance-to-maneuver band and the factorized "
+                         "LAT/LON tactical slots as EXTRA batch fields (CE "
+                         "targets byte-identical to v21; the new fields have no "
+                         "head yet — see V3_FACTORIZED_TACTICAL_HEAD_SPEC.md)")
     ap.add_argument("--use-net-dyaw", action="store_true",
                     help="v21 only: count a >=45 deg net heading change as a "
                          "route turn. OFF per Sayed 2026-07-20 (a wide sweep is "

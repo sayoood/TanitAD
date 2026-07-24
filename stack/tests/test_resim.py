@@ -260,6 +260,107 @@ def test_export_maneuver_null_when_poses_too_short(tmp_path):
         assert all(s["maneuver"] is None for s in ep["steps"])
 
 
+# ---------- (i) viz-standard: nav_commands + BEV-only fallback ----------------
+# THE STANDARD (taniteval.corpus_overlay) needs the decoded strategic route/goal
+# label and a BEV-only fallback when camera calibration is unrecoverable.
+
+def test_meta_carries_nav_commands(tmp_path):
+    """meta.nav_commands maps ArmOutput.nav_cmd -> strategic route/goal label in
+    the canonical refb.NAV_COMMANDS order, so the SPA labels routes from DATA
+    (not the old hard-coded ["straight","left","right"] that mislabelled 0/3)."""
+    from tanitad.resim.export import NAV_COMMANDS
+    _, session = _build(tmp_path)
+    assert session["meta"]["nav_commands"] == list(NAV_COMMANDS)
+    assert session["meta"]["nav_commands"][0] == "follow"      # NOT "straight"
+    assert session["meta"]["nav_commands"][3] == "straight"    # NOT undefined
+
+
+def test_uncalibrated_corpus_nulls_image_paths_keeps_bev(tmp_path):
+    """A corpus flagged uncalibrated -> every step's gt_wp_img / arm.wp_img is
+    null (camera overlay off) while wp_bev + the frame JPEG survive: the SPA's
+    BEV-only fallback (raw frame + "see BEV" note, BEV carries the comparison)."""
+    bundle, session = _build(tmp_path, "uncal", uncalibrated_corpora=["toy-val"])
+    assert session["meta"]["uncalibrated_corpora"] == ["toy-val"]
+    for ep in session["episodes"]:
+        for st in ep["steps"]:
+            assert st["gt_wp_img"] is None          # camera overlay disabled
+            assert st["gt_wp_bev"] is not None       # BEV survives
+            for a in st["arms"].values():
+                assert a["wp_img"] is None
+                assert a["wp_bev"] is not None        # BEV comparison intact
+    n_steps = sum(len(ep["steps"]) for ep in session["episodes"])
+    assert len(list((bundle / "frames").glob("*.jpg"))) == n_steps  # frames kept
+
+
+def test_calibrated_default_projects_image_paths(tmp_path):
+    """Default (no uncalibrated_corpora) still projects the camera fan."""
+    _, session = _build(tmp_path, "cal")
+    assert session["meta"]["uncalibrated_corpora"] == []
+    st = session["episodes"][0]["steps"][0]
+    assert st["gt_wp_img"] is not None
+    assert st["arms"]["main"]["wp_img"] is not None
+
+
+# ---------- (j) synthetic sample bundle (the pod-free demo) -------------------
+
+def test_sample_bundle_exercises_full_standard(tmp_path):
+    """tanitad.resim.sample builds a valid, demoable bundle covering every
+    viz-standard element: 3 arms each with a decoded maneuver (argmax) + a nav
+    route, varied maneuvers across episodes, formal gates, and one BEV-only
+    fallback episode."""
+    from tanitad.resim.sample import make_sample_bundle
+    session = make_sample_bundle(tmp_path / "demo")
+    meta = session["meta"]
+    assert [a["name"] for a in meta["arms"]] == ["main", "refa", "refb"]
+    assert meta["nav_commands"][1] == "left"
+    assert meta["gates"] is not None and all(a["gates"] for a in meta["arms"])
+    # exactly one BEV-only-fallback corpus, present among the episodes
+    assert "cosmos-ood-demo" in meta["uncalibrated_corpora"]
+    seen_uncal = ({ep["corpus_tag"] for ep in meta["episodes"]}
+                  & set(meta["uncalibrated_corpora"]))
+    assert seen_uncal == {"cosmos-ood-demo"}
+    for ep in session["episodes"]:
+        uncal = ep["corpus_tag"] in meta["uncalibrated_corpora"]
+        for st in ep["steps"]:
+            for a in st["arms"].values():
+                probs = a["heads"].get("maneuver_probs")
+                assert probs and len(probs) == len(MANEUVERS)
+                assert 0 <= int(np.argmax(probs)) < len(MANEUVERS)   # decoded man
+                assert a["heads"].get("nav_cmd") is not None         # route/goal
+                assert (a["wp_img"] is None) == uncal   # calib eps draw the fan
+    # >=3 distinct maneuver mixes across the episodes (variety, not monotone)
+    mixes = {tuple(sorted(em["maneuver_counts"])) for em in meta["episodes"]}
+    assert len(mixes) >= 3
+
+
+def test_sample_bundle_serves_over_fastapi(tmp_path):
+    """The synthetic bundle is servable end-to-end: build_app lists it, returns
+    its session.json, and serves a frame from an uncalibrated (fallback) step."""
+    from fastapi.testclient import TestClient
+    import resim_app
+    from tanitad.resim.sample import make_sample_bundle
+    make_sample_bundle(tmp_path / "demo")
+    client = TestClient(resim_app.build_app(tmp_path))
+    ids = {s["id"] for s in client.get("/api/sessions").json()}
+    assert ids == {"demo"}
+    body = client.get("/api/session/demo").json()
+    # a frame from the BEV-only-fallback episode is still fetchable (raw camera)
+    uncal_ep = next(ep for ep in body["episodes"]
+                    if ep["corpus_tag"] in body["meta"]["uncalibrated_corpora"])
+    frame = uncal_ep["steps"][0]["frame"]
+    r = client.get(f"/frames/demo/{frame}")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+    assert uncal_ep["steps"][0]["gt_wp_img"] is None        # overlay off
+
+
+def test_cli_requires_sessions_root_or_demo():
+    """The CLI fails loud (SystemExit) when neither --sessions-root nor --demo
+    is given — no silent serve of an accidental empty temp dir."""
+    import resim_app
+    with pytest.raises(SystemExit):
+        resim_app.main(["--port", "9999"])
+
+
 # ---------- (b) portability ---------------------------------------------------
 
 def _walk_strings(obj):

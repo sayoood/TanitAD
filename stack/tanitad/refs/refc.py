@@ -18,9 +18,11 @@ rare sharp-curve / hard-brake trajectories — the modes that actually matter.
 
 Decoder (``AnchoredDiffusionDecoder``), two inference modes off ONE weight set:
   - ``steps=0`` (classifier / 0-step floor): anchor queries cross-attend the
-    8x8x512 map (d=256, 2-3 MHA layers, FiLM(condition)); emit per-anchor
-    confidence + per-anchor [n_horizons, 2] offset; traj = selected anchor +
-    offset. This is what the trainer optimises.
+    8x8xF conv map (F = base_width * 8: 512 small / 704 base / 992 XL) through
+    ``cfg.layers`` MHA layers at width ``cfg.d`` (small d=256 x 3L, base d=384 x
+    4L, XL d=512 x 6L), FiLM(condition); emit per-anchor confidence + per-anchor
+    [n_horizons, 2] offset; traj = selected anchor + offset. This is what the
+    trainer optimises.
   - ``steps>0`` (truncated diffusion): the SAME offset head refines the anchor
     trajectories over a few timestep-embedded denoising passes around the
     anchors; ``steps=0`` reproduces the classifier byte-for-byte.
@@ -51,13 +53,14 @@ Scale presets (SAME code + decoder algorithm, three sizes — the size cap was
 lifted so the budget lands where the encoder has PROVEN value: Hydra-MDP went
 86.6 -> 91.0 PDMS purely by swapping ResNet-34 -> V2-99, so the ENCODER is the
 lever, and the deeper/wider trunk is data-appropriate for the full 2376-ep set):
-  - ``refc_config`` -> REF-C-base ~110 M (primary): a widened/deepened ResNet
-    trunk (~90 M encoder, 8x8xF map preserved) + a d=384 / 4-layer / 128-anchor
-    decoder. The data-appropriate reference.
-  - ``refc_xl_config`` -> REF-C-XL ~260 M: a much wider/deeper ResNet trunk
-    (~180 M encoder, 8x8xF map preserved) + a d=512 / 6-layer / 256-anchor
-    decoder + the gated H15 imagination field (~22 M). Same-capacity control vs
-    the 261 M flagship (removes the "REF-C is worse because smaller" confound).
+  - ``refc_config`` -> REF-C-base 104,191,577 (primary): a widened/deepened
+    ResNet trunk (90,458,632 encoder, 8x8xF map preserved) + a d=384 / 4-layer /
+    128-anchor decoder. The data-appropriate reference.
+  - ``refc_xl_config`` -> REF-C-XL 251,932,584: a much wider/deeper ResNet trunk
+    (199,496,532 encoder, 8x8xF map preserved) + a d=512 / 6-layer / 256-anchor
+    decoder + the gated H15 imagination field (20,986,339). Same-capacity control
+    vs the 263 M flagship (removes the "REF-C is worse because smaller"
+    confound). All counts MEASURED (MODEL_REGISTRY.md section 4), not estimated.
   - ``refc_smoke_config`` -> tiny CPU config (CI / tests / dry runs).
 
 REF-C.1 (gated ``refc1``, default False): the trajectory targets become fixed-
@@ -175,14 +178,16 @@ class CNNEncoderConfig:
 
     The size cap was lifted to spend the budget on the encoder (the Hydra-MDP
     ResNet-34 -> V2-99 lever). REF-C-base WIDENS base_width to 88 (V2-99-class
-    trunk, ~90 M) and REF-C-XL to 168 (~180 M); both KEEP the 8x8xF conv map the
+    trunk, measured 90,458,632) and REF-C-XL to 124 with blocks (3, 8, 20, 6)
+    (measured 199,496,532 — wider AND deeper); both KEEP the 8x8xF conv map the
     anchor decoder cross-attends (grid = 8 at 256 px; F = base_width * 8, and the
     decoder's feat_proj adapts to any F — the contract is [B, F, 8, 8], not a
     fixed 512). ``blocks`` is the per-stage BasicBlock depth (widened trunk keeps
-    the deep-34 (3, 6, 16, 6) shape; XL deepens stage-3/4)."""
+    the deep-34 (3, 6, 16, 6) shape; XL deepens stage-3/4). Param counts are
+    measured, not estimated — see MODEL_REGISTRY.md section 4."""
     in_channels: int = 9          # D-015 3-frame RGB stack (latest = [-3:])
     image_size: int = 256
-    base_width: int = 88          # V2-99-class width (~90 M trunk); XL -> 168
+    base_width: int = 88          # V2-99-class width (90.5 M trunk); XL -> 124
     blocks: tuple[int, ...] = (3, 6, 16, 6)    # deep-34 (8x8xF map preserved)
 
     @property

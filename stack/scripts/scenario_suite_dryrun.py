@@ -19,6 +19,7 @@ import argparse
 import json
 
 from tanitad.eval.metrics import ScenarioTelemetry, run_scenario_suite
+from tanitad.eval.scenarios.registry import run_registered_suite
 from tanitad.eval.scenarios.work_zone_phantom import (POLICIES,
                                                       WorkZonePhantomScenario,
                                                       simulate_policy)
@@ -54,8 +55,22 @@ def main():
         "closure_wm_compliant": wm["closure_incursion_m"] == 0.0
                                 < re_["closure_incursion_m"],
     }
+    # --- traffic light (SC-14) picked up via the scenario registry ---------------------------- #
+    tl_rows = run_registered_suite(["traffic_light_red", "traffic_light_green"])
+    tl_red, tl_green = tl_rows["traffic_light_red"], tl_rows["traffic_light_green"]
+    checks.update({
+        # a rule barrier scores a perfect TLC on a clean red stop; a soft prior runs the red -> 0
+        "TLC_red_barrier_compliant": tl_red["rule_barrier"]["TLC"] == 1.0,
+        "TLC_red_soft_prior_runs_red": tl_red["soft_prior"]["TLC"] == 0.0,
+        # on green the barrier proceeds smoothly; the soft prior phantom-brakes -> penalized
+        "TLC_green_barrier_beats_soft": (tl_green["rule_barrier"]["TLC"]
+                                         > tl_green["soft_prior"]["TLC"]),
+    })
+
     report = {"exp": "scenario-suite-wiring-dryrun",
-              "scenario": sc.name, "rows": rows, "checks": checks,
+              "scenario": sc.name,
+              "scenarios": [sc.name, "traffic_light_red", "traffic_light_green"],
+              "rows": rows, "traffic_light": tl_rows, "checks": checks,
               "all_pass": all(checks.values()),
               "note": "design-oracle telemetry, NOT a model claim (P8)"}
     print(json.dumps(report, indent=2))

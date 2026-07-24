@@ -35,6 +35,10 @@ def tier_of(license_class: str, share_alike: bool, commercial_ok: bool) -> str:
     recipe-only). Derived, never inferred: it cannot drift from the license axis."""
     if license_class == "gated-confidential":
         return "firewalled"
+    if license_class == "refuse":
+        raise ValueError(
+            "license_class 'refuse' has no tier — it never enters the lake on "
+            "any tier (TANITDATASET_TIER_INTEGRATION §2)")
     if license_class == "nc-research":
         return "nc"
     if license_class == "owned-safe":

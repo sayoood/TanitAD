@@ -16,7 +16,9 @@ never has to know the projection maths)::
         "created": "YYYY-MM-DD HH:MM:SS",
         "waypoint_steps": [5, 10, 15, 20],
         "maneuver_classes": [str, ...] | null,
+        "nav_commands": [str, ...],   # strategic route/goal labels (nav_cmd idx)
         "corpora": [str, ...],
+        "uncalibrated_corpora": [str, ...],  # camera overlay off (BEV fallback)
         "arms": [ {name, color, ckpt, ade, fde, latency_p50}, ... ],
         "episodes": [ {idx, corpus_tag, n_steps, per_arm_ade:{name:ade},
                        worst_step, worst_ade, maneuver_counts:{cls:n}, thumb},
@@ -25,8 +27,10 @@ never has to know the projection maths)::
       "episodes": [
         { "idx": int, "corpus_tag": str, "steps": [
             { "step": int, "frame": "ep<i>_step<j>.jpg",
-              "gt_wp_img": [[u,v]...],   # pixel path (origin-prefixed), in the
-                                         #   EXPORTED frame's pixel space
+              "gt_wp_img": [[u,v]...] | null,  # pixel path (origin-prefixed),
+                                         #   in the EXPORTED frame's pixel space;
+                                         #   null on an uncalibrated corpus step
+                                         #   (BEV-only fallback)
               "gt_wp_bev": [[x,y]...],   # ego metres (origin-prefixed): +x fwd,
                                          #   +y left — the BEV master panel maths
               "gt_action": {steer, accel},
@@ -125,6 +129,15 @@ RESIM_COLORS: dict[str, str] = {
     "refb": "#e35ce0",
 }
 
+# Strategic route/goal command names, indexed by ``ArmOutput.nav_cmd``. MUST
+# stay in lockstep with ``tanitad.refs.refb.NAV_COMMANDS`` — mirrored (not
+# imported) so the exporter carries no torch/refb dependency. Emitted into each
+# bundle's ``meta.nav_commands`` so the SPA maps nav_cmd -> label from DATA
+# rather than a hard-coded array (the old ["straight","left","right"] guess
+# mislabelled indices 0 and 3). The decoded strategic route/goal in the viz
+# standard's text HUD ("strategic: route {route}") reads this table.
+NAV_COMMANDS: tuple[str, ...] = ("follow", "left", "right", "straight")
+
 
 def resim_color(name: str) -> str:
     """Branded arm color as a ``#rrggbb`` hex string; a stable (hash-salt-free)
@@ -182,7 +195,8 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                   ego_poses: Mapping[int, Any] | None = None,
                   jpeg_quality: int = 80, max_w: int = 640,
                   arm_gates: dict | None = None,
-                  gates_summary: dict | None = None) -> dict:
+                  gates_summary: dict | None = None,
+                  uncalibrated_corpora: Iterable[str] | None = None) -> dict:
     """Stream ``records`` into a portable session bundle under ``out_dir``.
 
     ``records`` is consumed once (a generator is fine); every record must
@@ -190,6 +204,15 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     Returns the written ``session.json`` dict. Raises on an empty stream or a
     frameless record — a bundle with nothing to show is a wiring bug, not an
     empty success (repo fail-loud doctrine).
+
+    ``uncalibrated_corpora`` names corpora whose front-camera geometry is not
+    recoverable (e.g. cosmos f-theta generations without a verified per-clip
+    calib): their steps get ``gt_wp_img=null`` / ``wp_img=null`` so the SPA
+    draws the raw frame with a "camera overlay disabled -- see BEV" note and
+    the metric BEV inset carries the GT-vs-pred comparison instead. This is
+    THE STANDARD's BEV-only fallback path (``taniteval.corpus_overlay``). The
+    frame JPEG and all BEV/metric data are still written; only the image-plane
+    projection is skipped. Omit it (default) to project every corpus.
 
     ``arm_gates`` (per-arm compact D1-D3 gate block) and ``gates_summary``
     (shared baselines + Phase-0 GO verdict) come from
@@ -206,6 +229,8 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     out = Path(out_dir)
     frames_dir = out / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
+
+    uncal = set(uncalibrated_corpora or ())        # corpora w/o camera overlay
 
     # Per-episode kinematic maneuver labels (computed once, indexed by anchor
     # t). Only when ego_poses is supplied — otherwise every step's maneuver is
@@ -256,6 +281,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
         fw, fh = _write_frame(rec.frame, frames_dir / frame_name,
                               max_w, jpeg_quality)
         cam = cam_for_corpus(rec.corpus)   # per-corpus overlay geometry (D-016)
+        cam_ok = rec.corpus not in uncal   # False -> BEV-only fallback step
 
         # Kinematic maneuver at this window's anchor (t = record's anchor
         # frame). None when no ego_poses / anchor beyond the labelable span.
@@ -272,7 +298,8 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
         step_dict: dict = {
             "step": int(rec.step),
             "frame": frame_name,
-            "gt_wp_img": _round_pts(to_image_plane(gt_path, fh, fw, cam=cam), 1),
+            "gt_wp_img": (_round_pts(to_image_plane(gt_path, fh, fw, cam=cam), 1)
+                          if cam_ok else None),
             "gt_wp_bev": _round_pts(gt_path, 3),
             "gt_action": {"steer": round(float(rec.gt_action[0]), 4),
                           "accel": round(float(rec.gt_action[1]), 4)},
@@ -296,7 +323,8 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             if o.waypoints is not None:
                 wp = np.asarray(o.waypoints, dtype=np.float64)
                 path = np.vstack([[0.0, 0.0], wp])
-                wp_img = _round_pts(to_image_plane(path, fh, fw, cam=cam), 1)
+                wp_img = (_round_pts(to_image_plane(path, fh, fw, cam=cam), 1)
+                          if cam_ok else None)
                 wp_bev = _round_pts(path, 3)
                 ade = round(_ade(wp, gt_wp), 4)
                 fde = float(np.linalg.norm(wp[-1] - gt_wp[-1]))
@@ -388,7 +416,9 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             "waypoint_steps": list(WAYPOINT_STEPS),
             "maneuver_classes": (list(maneuver_classes)
                                  if maneuver_classes else None),
+            "nav_commands": list(NAV_COMMANDS),   # strategic route/goal labels
             "corpora": list(corpora) if corpora else corpora_seen,
+            "uncalibrated_corpora": sorted(uncal),  # BEV-only fallback corpora
             "arms": arms_meta,
             "episodes": ep_meta,
             "gates": gates_summary,      # shared baselines + Phase-0 GO verdict

@@ -194,7 +194,8 @@ _UNIDENTIFIABLE = {"decoder.conf_head.bias"}
 
 
 def test_loss_reaches_every_head_parameter():
-    cfg = _small()
+    torch.manual_seed(0)            # deterministic ego-dropout mask (order-independent):
+    cfg = _small()                  # else an all-dropped batch starves measurement.0.weight
     cfg.goal_dropout = 0.0          # deterministic: every goal seam is live
     head = FlagshipV15Head(cfg).train()
     b = _batch(cfg)

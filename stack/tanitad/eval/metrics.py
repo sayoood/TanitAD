@@ -324,6 +324,152 @@ def compute_lops(tel: ScenarioTelemetry, gamma: float = LOPS_GAMMA) -> float:
 
 
 # --------------------------------------------------------------------------- #
+# 6. Traffic-Light Compliance (TLC) — SC-14 signal-phase compliance            #
+#    (added 2026-07-24, intake `2026-07-24-traffic-light-scenario-metric`).    #
+#                                                                              #
+# WHY: none of LAL/TMS/OKRI/CNCE/LOPS scores a discrete legal signal barrier.  #
+# The Dallas red-light-running failure (SCENARIO_DATABASE SC-14, W-03 family)  #
+# is a HARD rule — running a red is not a soft trade-off against an apparently #
+# clear intersection. TLC is the traffic-light-handling metric: one score in   #
+# [0, 1] (higher better) that (a) hard-fails a red-light entry, (b) rewards a   #
+# smooth stop at/before the line on red, and (c) penalizes phantom braking on  #
+# a green the ego should just proceed through.                                 #
+# --------------------------------------------------------------------------- #
+# Signal-phase encoding (this module owns it; the scenario imports these).
+SIGNAL_RED = 0
+SIGNAL_YELLOW = 1
+SIGNAL_GREEN = 2
+
+# TLC named constants (no magic numbers in the body; direction documented inline).
+TLC_CREEP_SPEED = 0.5         # m/s : at/below this the ego is "stopped", not "entering" the line
+TLC_MARGIN_COMFORT_M = 5.0    # m   : halting anywhere within this before the line is fully compliant
+TLC_MARGIN_SCALE_M = 8.0      # m   : decay scale penalizing over-cautious far-back stops (flow cost)
+TLC_COMFORT_DECEL = 2.5       # m/s^2 : comfortable deceleration ceiling for a smooth stop
+TLC_DECEL_K = 0.5             # (m/s^2)^-1 : smoothness sensitivity to braking harder than comfort
+TLC_REF_FRAC = 0.30           # free-cruise reference = max speed over the first 30% of the clip
+TLC_PHANTOM_DEADBAND = 0.05   # frac : green-phase speed dips below this are natural, not phantom braking
+TLC_PHANTOM_DROP_FRAC = 0.15  # frac : a green-phase speed drop beyond this is flagged phantom braking
+
+
+def tlc_report(ego_v, ego_s, signal_state, stopline_s,
+               dt: float = 0.1, timestamp_s=None,
+               creep_speed: float = TLC_CREEP_SPEED,
+               margin_comfort_m: float = TLC_MARGIN_COMFORT_M,
+               margin_scale_m: float = TLC_MARGIN_SCALE_M,
+               comfort_decel: float = TLC_COMFORT_DECEL,
+               decel_k: float = TLC_DECEL_K,
+               ref_frac: float = TLC_REF_FRAC,
+               phantom_deadband: float = TLC_PHANTOM_DEADBAND) -> dict:
+    """Full breakdown of the Traffic-Light Compliance score for one approach clip.
+
+    TLC = red_entry_gate * stop_quality * green_flow          (in [0, 1], higher better)
+
+      red_entry_gate  {0,1}   0 iff the ego crosses the stop line while the signal is RED
+                              above ``creep_speed`` (running the red — the discrete legal
+                              barrier; a single violation zeroes the whole score). 1 otherwise.
+      stop_quality    [0,1]   applies only when a stop is required (a RED phase is faced):
+                              margin_factor * smooth_factor.
+                                margin_factor = 1 if the ego halts in [0, margin_comfort_m]
+                                  before the line; exp(-(margin-comfort)/scale) if it stops
+                                  further back (over-cautious, a flow cost); 0 if it never
+                                  halts before the line or halts past it.
+                                smooth_factor = 1/(1 + decel_k * max(0, peak_decel - comfort_decel));
+                                  a stop within the comfortable deceleration ceiling -> 1, an
+                                  emergency slam -> < 1.
+                              1.0 (N/A) when no stop is required.
+      green_flow      [0,1]   applies only on a genuine proceed-on-green (no RED faced):
+                              1 - (severity - deadband)/(1 - deadband), where severity is the
+                              fractional speed drop below the free-cruise reference during the
+                              green approach. Holding speed -> 1; phantom-braking to a crawl -> ~0.
+                              1.0 (N/A) when a stop is required (slowing for the red is legitimate).
+
+    One intersection per clip (the ScenarioTelemetry / Bench2Drive convention). ``ego_s`` is the
+    ego's cumulative down-route distance (m); ``signal_state`` is per-step {SIGNAL_RED, _YELLOW,
+    _GREEN}. Returns every component so a report can never invert the direction.
+    """
+    v = np.asarray(ego_v, dtype=float)
+    s = np.asarray(ego_s, dtype=float)
+    sig = np.asarray(signal_state).astype(int)
+    T = v.size
+    t = (np.asarray(timestamp_s, dtype=float) if timestamp_s is not None
+         else np.arange(T, dtype=float) * dt)
+
+    # ---- red-entry gate (the hard legal barrier) --------------------------------------- #
+    crossed = np.flatnonzero(s >= stopline_s)
+    cross_idx = int(crossed[0]) if crossed.size else None
+    entered_on_red = bool(cross_idx is not None
+                          and sig[cross_idx] == SIGNAL_RED
+                          and v[cross_idx] > creep_speed)
+    red_entry_gate = 0.0 if entered_on_red else 1.0
+
+    # A stop is required iff the ego faces a RED phase in this clip (one intersection/clip).
+    must_stop = bool(np.any(sig == SIGNAL_RED))
+
+    # ---- stop quality (only when a stop is required) ----------------------------------- #
+    stopped_before_line = False
+    stop_margin_m = float("nan")
+    peak_decel = 0.0
+    if must_stop:
+        halted = np.flatnonzero((v <= creep_speed) & (s <= stopline_s + 0.1))
+        if halted.size:
+            halt_idx = int(halted[0])
+            stopped_before_line = True
+            stop_margin_m = float(stopline_s - s[halt_idx])
+        else:
+            halt_idx = T - 1
+        accel = np.gradient(v, t) if T >= 2 else np.zeros(T)
+        peak_decel = float(max(0.0, -np.min(accel[:halt_idx + 1]))) if T >= 2 else 0.0
+        if not stopped_before_line or stop_margin_m < 0.0:
+            margin_factor = 0.0
+        elif stop_margin_m <= margin_comfort_m:
+            margin_factor = 1.0
+        else:
+            margin_factor = float(np.exp(-(stop_margin_m - margin_comfort_m) / margin_scale_m))
+        smooth_factor = float(1.0 / (1.0 + decel_k * max(0.0, peak_decel - comfort_decel)))
+        stop_quality = margin_factor * smooth_factor
+    else:
+        margin_factor = smooth_factor = stop_quality = 1.0
+
+    # ---- green flow (only on a genuine proceed-on-green) ------------------------------- #
+    green_drop_frac = 0.0
+    if (not must_stop) and np.any(sig == SIGNAL_GREEN):
+        ref_n = max(1, int(round(ref_frac * T)))
+        v_ref = float(np.max(v[:ref_n]))
+        consider = (sig == SIGNAL_GREEN) & (s <= stopline_s + 0.1)
+        min_v = float(np.min(v[consider])) if consider.any() else v_ref
+        green_drop_frac = float(max(0.0, (v_ref - min_v) / v_ref)) if v_ref > 0 else 0.0
+        if green_drop_frac <= phantom_deadband:
+            green_flow = 1.0
+        else:
+            green_flow = float(np.clip(
+                1.0 - (green_drop_frac - phantom_deadband) / (1.0 - phantom_deadband), 0.0, 1.0))
+    else:
+        green_flow = 1.0
+
+    tlc = float(np.clip(red_entry_gate * stop_quality * green_flow, 0.0, 1.0))
+    return {
+        "TLC": round(tlc, 4),
+        "red_entry_gate": red_entry_gate,
+        "entered_on_red": entered_on_red,
+        "must_stop": must_stop,
+        "stopped_before_line": stopped_before_line,
+        "stop_margin_m": (round(stop_margin_m, 3) if stop_margin_m == stop_margin_m else None),
+        "peak_decel_mps2": round(peak_decel, 3),
+        "stop_quality": round(float(stop_quality), 4),
+        "green_flow": round(float(green_flow), 4),
+        "green_drop_frac": round(green_drop_frac, 4),
+        "_direction": "TLC ->1 compliant; 0 = ran a red light",
+    }
+
+
+def compute_tlc(ego_v, ego_s, signal_state, stopline_s,
+                dt: float = 0.1, timestamp_s=None, **kw) -> float:
+    """TLC scalar in [0, 1] (higher better; 0 = ran a red light). See ``tlc_report``."""
+    return tlc_report(ego_v, ego_s, signal_state, stopline_s,
+                      dt=dt, timestamp_s=timestamp_s, **kw)["TLC"]
+
+
+# --------------------------------------------------------------------------- #
 # Assembly                                                                      #
 # --------------------------------------------------------------------------- #
 def run_scenario_suite(tel: ScenarioTelemetry, model_name: str = "TanitAD") -> dict:
@@ -348,6 +494,23 @@ def run_scenario_suite(tel: ScenarioTelemetry, model_name: str = "TanitAD") -> d
                         "OKRI": "lower safer", "CNCE": "higher efficient",
                         "LOPS": "->1 tracks hidden"},
     }
+
+
+def traffic_light_metrics(tel: ScenarioTelemetry, ego_s, signal_state, stopline_s,
+                          model_name: str = "TanitAD") -> dict:
+    """Score a signalized-intersection (SC-14) clip: the base suite + the TLC metric.
+
+    ``tel`` is the standard telemetry (so LAL/TMS/OKRI/CNCE/LOPS still report — OKRI
+    here measures kinetic energy carried toward the stop-line barrier), and TLC adds
+    the traffic-light-handling verdict. ``ego_s`` / ``signal_state`` / ``stopline_s``
+    carry the signal-phase geometry that the fixed ScenarioTelemetry contract does not.
+    """
+    base = run_scenario_suite(tel, model_name=model_name)
+    tlc = tlc_report(tel.ego_v, ego_s, signal_state, stopline_s,
+                     dt=tel.dt, timestamp_s=tel.timestamp_s)
+    base.update({k: v for k, v in tlc.items() if k != "_direction"})
+    base["_directions"]["TLC"] = tlc["_direction"]
+    return base
 
 
 # --------------------------------------------------------------------------- #
