@@ -77,6 +77,8 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.checkpoint import checkpoint
 
+from tanitad.data import parity
+from tanitad.data.parity import assert_eids_parity      # PARITY GUARD (Wave-1 B)
 from tanitad.models.flagship_v15 import (SPEED_SCALE, FlagshipV15Head, V15Config,
                                          imagine_probes, param_breakdown,
                                          v15_ablation_config, v15_losses)
@@ -122,6 +124,19 @@ class V16FramesDataset(Dataset):
         if miss:
             raise SystemExit(f"epcache {cache} is missing frames for {miss} — "
                              "does --train-cache point at the split dir?")
+        # SACRED-CORPUS CONTENT CHECK (Wave-1 B): checking that the FIRST FIVE
+        # eids have a frames file is not an integrity check — a quota-truncated
+        # cache has ep_00000..ep_01199 and passes it. Verify the whole set, and
+        # the label caches' eid list, against the committed manifest. The corpus
+        # key comes from the cache PATH, so train/val self-select and the
+        # known-leaky physicalai-val-f1b378f295ae is refused outright.
+        self.parity_cache = parity.assert_parity_corpus(
+            cache, label="epcache", mode="subset" if episodes else "strict")
+        if self.parity_cache.get("corpus_key"):
+            self.parity_eids = assert_eids_parity(
+                self.eids, label=f"v16 label caches ({os.path.basename(poses_pt)})",
+                corpus_key=self.parity_cache["corpus_key"],
+                mode="subset" if episodes else "strict")
         self.label_set = label_set
         n_ep = n if not episodes else min(episodes, n)
         self.index: list[tuple[int, int]] = []

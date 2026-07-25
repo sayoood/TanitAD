@@ -49,6 +49,7 @@ import idm_head as ih  # noqa: E402
 import run_idm_proof as R  # noqa: E402  (shared ep loader for the shard loader)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))      # stack/
+from tanitad.data import parity  # noqa: E402
 from tanitad.models.dynamics_encoder import (  # noqa: E402
     CAM_PARAM_NAMES, DynEncConfig, DynamicsEncoderModel,
     dynamics_encoder_smoke_config, normalize_cam_params)
@@ -57,6 +58,18 @@ from tanitad.models.metric_dynamics import relative_ego_pose  # noqa: E402
 
 def log(m: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
+
+
+def assert_side_model_firewall(*cache_paths) -> None:
+    """The PARITY FIREWALL, asserted instead of asserted-in-prose (Wave-1 B).
+
+    This module's docstring has claimed since it was written that the dynamics
+    encoder "never reads the WM parity key `e438721ae894` … and never re-selects
+    parity episodes". Nothing enforced it: ``--pai-cache`` takes any path, and
+    pointing it at the parity split dir would silently make a SIDE model a
+    parity consumer (and add load to the corpus every WM arm shares). Now it
+    refuses."""
+    parity.assert_not_parity(*cache_paths, label="dyn-encoder (SIDE model)")
 
 
 # --------------------------------------------------------------------------- #
@@ -606,6 +619,8 @@ def main() -> None:
     else:
         log("FROM SCRATCH (Branch B — conditioning learned jointly with the encoder)")
 
+    # PARITY FIREWALL — enforced, not just documented (Wave-1 B, 2026-07-25).
+    assert_side_model_firewall(args.pai_cache, args.comma_cache, args.l2d_cache)
     rig_table = json.loads(Path(args.pai_rig_table).read_text())
     specs = build_clip_specs(args, rig_table)
     from collections import Counter

@@ -36,7 +36,10 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))          # scripts/
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))      # stack/
 import idm_head as ih  # noqa: E402
+
+from tanitad.data import parity  # noqa: E402  (sacred-corpus content check)
 
 RIG_SPLIT_CY = 650.0            # filtering.RIG_CLUSTERS physicalai_av split
 FRONT_WIDE = "camera_front_wide_120fov"
@@ -202,7 +205,17 @@ def windows_from_latents(latent_files: list[str], k: int = 4, stride: int = 2):
 # --------------------------------------------------------------------------- #
 def select_episodes(rig_table: dict, pai_cache: str, cap_a: int, cap_b: int):
     """Ordered (tag, path) lists of rig-A and rig-B PhysicalAI TRAIN episodes that
-    exist in the cache (skip indices with no ep file)."""
+    exist in the cache (skip indices with no ep file).
+
+    PARITY GUARD (Wave-1 B, 2026-07-25). ``if not p.exists(): continue`` below is
+    exactly the silent-truncation path: on a quota-killed cache this function
+    just returns fewer episodes and every downstream probe reports a number off
+    a corpus nobody can reconstruct. The CACHE DIR is therefore content-checked
+    against the committed manifest FIRST; the rig/cap selection on top is the
+    caller's own, declared subset. This one call covers every
+    ``run_idm_*`` / ``run_v1_encoder_char`` / ``run_branchb_transfer`` /
+    ``run_camcond_ablation`` probe — they all route through here."""
+    parity.assert_parity_corpus(pai_cache, label="--pai-cache/--train-cache")
     a, b = [], []
     for idx in sorted(int(i) for i in rig_table):
         rig = rig_table[str(idx)]["rig"]

@@ -43,6 +43,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 from tanitad.config import PredictorConfig
+from tanitad.data import parity
 from tanitad.models.metric_dynamics import (MetricInverseDynamics,
                                             StepDisplacementReadout,
                                             accumulate_se2, gt_ego_waypoints,
@@ -114,17 +115,24 @@ def load_feature_episodes(data_root: str, pattern: str,
                           n: int = 0) -> tuple[list[dict], Path]:
     """Load ep_*.pt feature files from the newest dir matching ``pattern``
     (dino_precompute names dirs `<cache-name>-<encoder-tag>`). mmap keeps the
-    fp16 grids on disk; windows fault in only the rows they touch."""
-    root = Path(data_root)
-    dirs = sorted(d for d in root.glob(pattern) if d.is_dir())
-    assert dirs, f"no feature dir matching {pattern} under {root}"
-    files = sorted(dirs[-1].glob("ep_*.pt"))
+    fp16 grids on disk; windows fault in only the rows they touch.
+
+    PARITY GUARD (Wave-1 B, 2026-07-25) in SUBSET mode: ``dino_precompute``
+    carries the epcache basename forward verbatim (``o = dst / f.name``) but
+    writes only the first ``--train-n`` episodes, so a REF-A feature dir is a
+    legitimate sorted PREFIX of the parity set — never the full 2 376. Subset
+    mode therefore refuses foreign / renumbered / substituted feature caches and
+    prints the shortfall LOUD, rather than pretending a prefix is strict parity.
+    This loader is shared with REF-A-4B (``refa_train4b`` imports it)."""
+    d = parity.resolve_split_dir(data_root, pattern)
+    parity.assert_parity_corpus(d, label=f"{pattern} feature dir", mode="subset")
+    files = sorted(d.glob("ep_*.pt"))
     if n:
         files = files[:n]
-    assert files, f"no ep_*.pt files in {dirs[-1]}"
+    assert files, f"no ep_*.pt files in {d}"
     eps = [torch.load(f, map_location="cpu", weights_only=True, mmap=True)
            for f in files]
-    return eps, dirs[-1]
+    return eps, d
 
 
 def build_metric_heads(state_dim: int, device: str = "cpu",

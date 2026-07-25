@@ -55,6 +55,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from tanitad.config import base250cam_config, smoke_config
+from tanitad.data import parity
 from tanitad.data._contract import EpisodeWindowDataset
 from tanitad.data.mixing import load_episode
 from tanitad.models.fourbrain import WorldModel
@@ -167,18 +168,33 @@ def start_cache_guard(cache_dirs, limit_gb: float = 60.0, period: float = 20.0
 # --------------------------------------------------------------------------- #
 # Data — combine cached corpora (comma2k19 + PhysicalAI) train splits          #
 # --------------------------------------------------------------------------- #
+def load_parity_cache(cache_dir, *, n_episodes: int = 0, label: str = "finetune"):
+    """PARITY GUARD (Wave-1 B, 2026-07-25) for ONE resolved split dir.
+
+    ``finetune_traj`` mixes corpora (comma2k19 + PhysicalAI), so most dirs it
+    sees are legitimately non-parity and only warn. When a dir DOES reference
+    the sacred corpus its episode set is content-checked against
+    ``tanitad/data/parity_manifest.json`` before any episode is unpickled.
+    ``n_episodes`` engages subset mode (an explicit ``[:n]`` truncation is a
+    deliberate re-selection, and is reported as such — not silently accepted as
+    parity)."""
+    return parity.assert_parity_corpus(
+        cache_dir, label=label, mode="subset" if n_episodes else "strict")
+
+
 def load_cached_episodes(cache_dirs, n_episodes: int, split: str = "train"):
     """Load up to ``n_episodes`` episodes per cache dir from its ``*{split}*``
     subdir (mmap). Fail-loud if a cache dir has no matching split dir/episodes."""
     eps = []
     for cd in cache_dirs:
-        dirs = sorted(Path(cd).glob(f"*{split}*"))
-        assert dirs, f"no *{split}* dir under {cd}"
-        files = sorted(dirs[-1].glob("ep_*.pt"))[:n_episodes]
-        assert files, f"no ep_*.pt in {dirs[-1]}"
+        d = parity.resolve_split_dir(cd, f"*{split}*")
+        load_parity_cache(d, n_episodes=n_episodes, label=f"{split} cache")
+        files = sorted(d.glob("ep_*.pt"))[:n_episodes] if n_episodes \
+            else sorted(d.glob("ep_*.pt"))
+        assert files, f"no ep_*.pt in {d}"
         loaded = [load_episode(str(p), mmap=True) for p in files]
         eps.extend(loaded)
-        print(f"[data] {cd}: {len(loaded)} {split} episodes from {dirs[-1].name}",
+        print(f"[data] {cd}: {len(loaded)} {split} episodes from {d.name}",
               flush=True)
     assert eps, "no episodes loaded"
     return eps

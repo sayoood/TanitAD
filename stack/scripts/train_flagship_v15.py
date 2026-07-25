@@ -51,10 +51,13 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, Dataset
 
+from tanitad.data import parity
+from tanitad.data.parity import assert_eids_parity      # PARITY GUARD (Wave-1 B)
 from tanitad.models.flagship_v15 import (SPEED_SCALE, FlagshipV15Head,
                                          imagine_probes, param_breakdown,
                                          v15_ablation_config, v15_losses)
 from v15_prep import HORIZONS, K_MAX, WINDOW, load_frozen_v1
+
 
 def _ego(dxy: torch.Tensor, yaw: torch.Tensor) -> torch.Tensor:
     c, s = torch.cos(yaw), torch.sin(yaw)
@@ -84,7 +87,8 @@ class V15Dataset(Dataset):
     """
 
     def __init__(self, states_pt: str, poses_pt: str, labels_pt: str,
-                 stride: int = 1, episodes: int = 0, label_set: str = "v21"):
+                 stride: int = 1, episodes: int = 0, label_set: str = "v21",
+                 corpus_key: str = parity.PARITY_TRAIN_KEY):
         sd = torch.load(states_pt, weights_only=False)
         pd = torch.load(poses_pt, weights_only=False)
         ld = torch.load(labels_pt, weights_only=False)
@@ -92,6 +96,13 @@ class V15Dataset(Dataset):
         if not (sd["eids"][:n] == pd["eids"][:n] == ld["eids"][:n]):
             raise SystemExit("state / pose / label caches disagree on episode "
                              "order — refusing to train on misaligned labels")
+        # SACRED-CORPUS CONTENT CHECK (Wave-1 B): the three caches agreeing with
+        # EACH OTHER does not make them the parity corpus — a label cache minted
+        # over a quota-truncated epcache is perfectly self-consistent and short.
+        # Assert the eid set against the committed manifest instead.
+        self.parity = assert_eids_parity(
+            pd["eids"][:n], label=f"v15 caches ({Path(poses_pt).name})",
+            corpus_key=corpus_key, mode="subset" if episodes else "strict")
         self.states = sd["states"]
         self.trunk_ckpt = sd.get("trunk_ckpt")
         self.label_set = label_set
@@ -271,9 +282,11 @@ def main(argv=None):
     print(f"[v15] cond={a.cond} head params={pb['total']:,} {pb}", flush=True)
 
     ds = V15Dataset(a.states_train, a.poses_train, a.labels_train,
-                    episodes=a.episodes, label_set=a.label_set)
+                    episodes=a.episodes, label_set=a.label_set,
+                    corpus_key=parity.PARITY_TRAIN_KEY)
     ds_val = V15Dataset(a.states_val, a.poses_val, a.labels_val,
-                        episodes=40, label_set=a.label_set)
+                        episodes=40, label_set=a.label_set,
+                        corpus_key=parity.PARITY_VAL_KEY)
     print(f"[data] label_set={a.label_set} train windows={len(ds)} "
           f"val windows={len(ds_val)} label_stats={json.dumps(ds.label_stats)}",
           flush=True)

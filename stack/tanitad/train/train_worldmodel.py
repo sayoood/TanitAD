@@ -124,6 +124,7 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         # the raw videos. data_root = cache root containing *train*/*val* dirs.
         from pathlib import Path as _P
 
+        from tanitad.data import parity
         from tanitad.data._contract import EpisodeWindowDataset
         from tanitad.data.mixing import load_episode
         assert data_root, "--data-root required for cached (epcache root)"
@@ -132,6 +133,13 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         def mk(pattern):
             d = sorted(root.glob(pattern))
             assert d, f"no cache dir matching {pattern} under {root}"
+            # SACRED-CORPUS CONTENT CHECK (Wave-1 B, 2026-07-25): if this split
+            # dir references the parity corpus, its episode set is verified
+            # against tanitad/data/parity_manifest.json before anything loads.
+            # ``[:n_episodes]`` below is a declared subset knob -> subset mode.
+            parity.assert_parity_corpus(
+                d[-1], label=f"--data cached {pattern}",
+                mode="subset" if n_episodes else "strict")
             # cgroup guard (2026-07-10 thrash diagnosis): bound the mmap working
             # set below the container page-cache cap or throughput collapses
             # (data_s = 73% of step_s measured at 49/55 GB cgroup fill).

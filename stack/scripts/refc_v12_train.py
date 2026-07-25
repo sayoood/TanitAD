@@ -39,6 +39,7 @@ from pathlib import Path
 
 import torch
 
+from tanitad.data import parity
 from tanitad.models.refc_rescorer import (RefCRescorer, RescorerConfig,
                                           fan_ade_from, param_breakdown,
                                           q_width, rank_metrics,
@@ -85,6 +86,35 @@ def parse_arms(spec: str) -> list[tuple]:
 
 
 # ---- cache -------------------------------------------------------------------
+
+def check_shard_cache_parity(man: dict) -> dict:
+    """Verify the DISTILLED shard cache's recorded source (Wave-1 B).
+
+    ``refc_v12_cache`` writes ``manifest.json`` with ``src`` (the epcache split
+    dir it read) and ``episodes`` (how many went in). If ``src`` names the sacred
+    corpus, the episode count must match the committed manifest — a quota-
+    truncated source would otherwise be laundered into an innocent-looking shard
+    cache and never checked again."""
+    src = str(man.get("src", ""))
+    key = parity.corpus_key_of(src) if src else None
+    if key is None:
+        print(f"[parity] ⚠ shard cache src={src!r} references no registered "
+              f"parity key — NOT cross-arm comparable with the parity arms.",
+              flush=True)
+        return {"parity": False, "src": src}
+    n = int(man.get("episodes", -1))
+    ent = parity.manifest_entry(key) or {}
+    exp = int(ent.get("episode_count", -1))
+    if 0 <= n < exp:
+        raise parity.ParityViolation(
+            f"PARITY VIOLATION [refc-v1.2 shard cache]: it was distilled from "
+            f"{src} with only {n} of {exp} parity episodes — the SOURCE cache "
+            f"was truncated. Rebuild the epcache and re-run refc_v12_cache.py.")
+    print(f"[parity] refc-v1.2 shard cache: distilled from {key} "
+          f"({n}/{exp} episodes).", flush=True)
+    return {"parity": True, "src": src, "corpus_key": key,
+            "episodes_in": n, "episodes_expected": exp}
+
 
 def load_split(root: Path, split: str, limit: int = 0,
                device: str = "cpu") -> dict:
@@ -296,6 +326,13 @@ def main(argv=None):
     cdev = args.cache_device or device
     root = Path(args.cache)
     man = json.loads((root / "manifest.json").read_text())
+    # PARITY PROVENANCE (Wave-1 B, 2026-07-25). v1.2 trains on a DISTILLED shard
+    # cache, so its contact with the sacred corpus is at BUILD time
+    # (``refc_v12_cache`` -> ``refb_train.load_cached_episodes``, now guarded).
+    # What this trainer can still verify in-process is that the shard cache it
+    # was handed actually came from the parity corpus and how many episodes went
+    # in — a truncated source shows up here as a short ``episodes`` count.
+    man["parity"] = check_shard_cache_parity(man)
     tr = load_split(root, "train", args.train_episodes, cdev)
     dv = load_split(root, "dev", args.dev_episodes, cdev)
 

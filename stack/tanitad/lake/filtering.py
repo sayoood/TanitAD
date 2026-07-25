@@ -57,13 +57,43 @@ def tier_of_record(rec) -> str:
 # The parity skipset that the strict-rebuild discipline keys on. The known PhysicalAI
 # skip (24 corrupt front-wide clips, parity key ``f09e44db``; strict-parity build key
 # ``e438721ae894``) is RECORDED here as a per-source, committed artifact so a rebuild
-# is deterministic. The concrete clip ids live pod-side with the gated dataset (not
-# committed to this public repo); ``register_corrupt`` seeds them at build time and
+# is deterministic. ``register_corrupt`` seeds clip ids at build time and
 # ``detect_corrupt`` MINTS new skips from content checks — both feed the same set.
+#
+# ⚠️ REPRODUCIBILITY, stated precisely (audited 2026-07-25, Wave-1 B). ``f09e44db…``
+# is ``sha256(",".join(sorted(skip_CLIP_IDS)))`` (``scripts/parity_skipset.sh``;
+# full expected digest in ``scripts/pod_ops/compute_skipset.py:EXPECT_HASH``).
+# Reproducing it needs TWO inputs, and the repo now holds exactly one:
+#   HAVE (committed 2026-07-25): the 24 skip POSITIONS in the ordered train list —
+#     ``PARITY_SKIP_INDICES`` below, sourced from ``tanitad/data/parity_manifest.json``
+#     (MEASURED: the 24 indices absent from the canonical 2 376-episode cache;
+#     endpoints 1798/1941 independently match ``rebuild_pai_rolling.py --skip-idx``).
+#   MISSING: the ordered 2 400-entry TRAIN CLIP-ID list that turns a position into a
+#     UUID. It derives from ``<root>/r0/r0_selection.parquet`` (3 000 rows) + the
+#     seed-0 ``torch.randperm`` 80/20 split, and lives pod-side with the GATED
+#     PhysicalAI-AV dataset. It is deliberately NOT committed here: PhysicalAI-AV is
+#     tier ``firewalled`` (``gated-confidential``, §1 above) — recipe-only, never
+#     content. Regenerate the clip-id skipset (and the hash) on a pod with
+#     ``bash scripts/parity_skipset.sh`` or ``python scripts/pod_ops/compute_skipset.py``.
+# So: the SKIPSET is now reproducible at INDEX level from this repo; the clip-id
+# HASH is not, by licence design. The trainers' integrity check keys on the index
+# level (``tanitad/data/parity.py``), which is what makes the gap tolerable.
 PARITY_SKIP_KEY = "f09e44db"          # PhysicalAI 24-corrupt-clip parity marker
 STRICT_PARITY_BUILD_KEY = "e438721ae894"
 
 CORRUPT_SKIPSET: dict[str, set[str]] = {"physicalai_av": set()}
+
+
+def parity_skip_indices() -> tuple[int, ...]:
+    """The 24 corrupt-clip POSITIONS of the ``e438721ae894`` train build, read
+    from the committed episode manifest (ONE source of truth — do not re-type
+    them here)."""
+    from tanitad.data import parity as _p
+    ent = _p.manifest_entry(_p.PARITY_TRAIN_KEY) or {}
+    return tuple(ent.get("skip_indices", ()))
+
+
+PARITY_SKIP_INDICES = parity_skip_indices()
 
 
 def register_corrupt(source: str, clip_id: str) -> None:

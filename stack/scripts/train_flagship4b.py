@@ -55,6 +55,7 @@ from refb_train import FailLoudWindowDataset  # noqa: E402  (fail-loud + nav fie
 from tanitad.config import (flagship4b_config,  # noqa: E402
                             flagship4b_reduced_config,
                             flagship4b_smoke_config)
+from tanitad.data import parity  # noqa: E402  (sacred-corpus content check)
 from tanitad.data.mixing import MixedWindowDataset, load_episode  # noqa: E402
 from tanitad.data.toy_driving import generate_episode  # noqa: E402
 from tanitad.models.fourbrain import WorldModel  # noqa: E402
@@ -148,11 +149,17 @@ def _wrap(episodes, cfg, plan, channels):
 
 
 def _cache_split(cache_dir: Path, split: str, n: int):
-    dirs = sorted(cache_dir.glob(f"*{split}*"))
-    assert dirs, f"no *{split}* dir under {cache_dir}"
-    files = sorted(dirs[-1].glob("ep_*.pt"))
+    """Load one split. PARITY GUARD (Wave-1 B, 2026-07-25): when the resolved dir
+    references the sacred corpus, its episode set is content-checked against
+    ``tanitad/data/parity_manifest.json`` BEFORE a single episode is unpickled —
+    a quota-truncated cache used to load silently here. Non-parity roots (toy /
+    comma2k19 / v2) warn once and proceed."""
+    d = parity.resolve_split_dir(cache_dir, f"*{split}*")
+    parity.assert_parity_corpus(d, label=f"cache-dirs/{split}",
+                                mode="subset" if n else "strict")
+    files = sorted(d.glob("ep_*.pt"))
     files = files[:n] if n else files
-    assert files, f"no ep_*.pt in {dirs[-1]}"
+    assert files, f"no ep_*.pt in {d}"
     return [load_episode(str(p), mmap=True) for p in files]
 
 

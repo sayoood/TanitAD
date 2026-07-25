@@ -39,6 +39,7 @@ import numpy as np
 import torch
 
 from tanitad.config import flagship4b_config
+from tanitad.data import parity
 from tanitad.refs.refc import furthest_point_sample
 
 WINDOW = 8
@@ -93,6 +94,13 @@ def load_frozen_v1(ckpt: str, device: str = "cuda"):
 @torch.no_grad()
 def build_states(args):
     model, _, step = load_frozen_v1(args.ckpt, args.device)
+    # SACRED-CORPUS CONTENT CHECK (Wave-1 B, 2026-07-25). This is the MINT point
+    # for the states/poses/labels caches the whole v1.5/v1.6/v4-label lineage
+    # consumes — a truncated epcache here silently produces a truncated,
+    # perfectly self-consistent label cache that propagates for weeks. The
+    # corpus key comes from --cache's path, so train/val self-select.
+    parity.assert_parity_corpus(args.cache, label="v15_prep --cache",
+                                mode="subset" if args.episodes else "strict")
     files = sorted(f for f in os.listdir(args.cache) if f.endswith(".pt"))
     if args.episodes:
         files = files[:args.episodes]

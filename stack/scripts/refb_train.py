@@ -57,6 +57,7 @@ from torch.utils.data import DataLoader
 
 import refb_labels
 from tanitad.config import base250cam_config
+from tanitad.data import parity
 from tanitad.data._contract import EpisodeWindowDataset
 from tanitad.data.mixing import load_episode
 from tanitad.refs.refb import (RefBModel, param_breakdown, refb_config,
@@ -188,16 +189,22 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
 
 def load_cached_episodes(data_root: str, pattern: str, n: int = 0):
     """Newest cache dir matching ``pattern`` under data_root -> mmap episodes
-    (episode-subset bound, the train_worldmodel --data cached convention)."""
-    root = Path(data_root)
-    dirs = sorted(d for d in root.glob(pattern) if d.is_dir())
-    assert dirs, f"no cache dir matching {pattern} under {root}"
-    files = sorted(dirs[-1].glob("ep_*.pt"))
+    (episode-subset bound, the train_worldmodel --data cached convention).
+
+    PARITY GUARD (Wave-1 B, 2026-07-25): if the resolved dir references the
+    sacred corpus, its episode set is content-checked against
+    ``tanitad/data/parity_manifest.json`` BEFORE the first ``load_episode`` —
+    a quota-truncated cache used to train here silently. This loader is shared
+    with REF-C (``refc_train`` imports it), so both arms are covered."""
+    d = parity.resolve_split_dir(data_root, pattern)
+    parity.assert_parity_corpus(d, label=f"{pattern} cache",
+                                mode="subset" if n else "strict")
+    files = sorted(d.glob("ep_*.pt"))
     if n:
         files = files[:n]
-    assert files, f"no ep_*.pt files in {dirs[-1]}"
+    assert files, f"no ep_*.pt files in {d}"
     eps = [load_episode(str(p), mmap=True) for p in files]
-    return eps, dirs[-1]
+    return eps, d
 
 
 # ---- losses ------------------------------------------------------------------

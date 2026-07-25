@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import refb_labels  # noqa: E402
 
+from tanitad.data import parity  # noqa: E402
 from tanitad.models.flagship_v4 import (FlagshipV4Head, V4Config,  # noqa: E402
                                         v4_config)
 from tanitad.train.flagship_losses import (LossWeights,  # noqa: E402
@@ -51,8 +52,9 @@ from tanitad.train.v4_curriculum import (IGNORE_INDEX,  # noqa: E402
                                          strategic_scalar_loss)
 
 # The canonical parity contract — refused if anything re-selects episodes.
-PARITY_KEY = "physicalai-train-e438721ae894"
-PARITY_SKIP_HASH = "f09e44db"
+# ONE source of truth: tanitad/data/parity.py + the committed episode manifest.
+PARITY_KEY = parity.PARITY_TRAIN_KEY
+PARITY_SKIP_HASH = parity.PARITY_SKIP_HASH
 
 
 # ============================================================================
@@ -565,23 +567,31 @@ def load_checkpoint_v4(path: Path, *, world, grounding, head, goal_head, opt,
 # --------------------------------------------------------------------------- #
 def _assert_parity(train_cache: str, val_cache: str) -> dict:
     """The corpus is SACRED (CLAUDE.md §Invariants): the canonical train set is
-    ``physicalai-train-e438721ae894`` (2376 eps, skip-hash ``f09e44db``). The
-    parity build key is carried in the epcache SPLIT-DIR NAME (exactly how the
-    REF-C base/XL/small runs assert it — provenance.json ``train_corpus_key``), so
-    a train cache that does not reference it means a re-selected episode set →
-    REFUSE. Returns a provenance record for config.json."""
+    ``physicalai-train-e438721ae894`` (2376 eps, skip-hash ``f09e44db``).
+
+    ⚠️ CORRECTED 2026-07-25 (Wave-1 B). This used to be a path SUBSTRING match
+    plus the comment *"episode re-selection is structurally impossible"*. It is
+    not: the loop consumes every ``ep_*.pt`` that is THERE, so a build the
+    ``/workspace`` MooseFS quota killed halfway leaves a correctly-NAMED dir
+    with fewer episodes and trained silently. Measured: a 1 200-of-2 376 cache
+    passed this function (``tests/test_parity_manifest.py``, red before the
+    fix). The check is now a real CONTENT check — count + ``sha256(sorted
+    episode uids)`` vs the committed manifest — run BEFORE any GPU allocation.
+    """
     tc = str(Path(train_cache).resolve()).replace("\\", "/")
-    if PARITY_KEY not in tc:
-        raise SystemExit(
-            f"PARITY VIOLATION: --train-cache {train_cache!r} does not reference "
-            f"the canonical corpus {PARITY_KEY}. Any re-selected episode set breaks "
-            f"cross-arm comparability and is refused (CLAUDE.md §Invariants).")
-    # The skip-hash is a property of that build key, not of an on-disk sidecar in
-    # the split dir; the loop consumes the FULL split (every ep_*.pt, no --episodes
-    # subsetting knob exists), so episode re-selection is structurally impossible.
+    train_rec = parity.assert_parity_corpus(train_cache, label="--train-cache",
+                                            require=True)
+    # val: refuses the known-LEAKY physicalai-val-f1b378f295ae outright, and
+    # count-checks physicalai-val-0c5f7dac3b11 (600). require=False so a
+    # deliberate alternative held-out set warns instead of blocking.
+    val_rec = parity.assert_parity_corpus(val_cache, label="--val-cache")
     return {"train_corpus_key": PARITY_KEY, "skip_hash": PARITY_SKIP_HASH,
             "train_cache": tc, "val_cache": str(Path(val_cache).resolve()),
-            "episode_reselection": "impossible (full-split consume, no subset knob)"}
+            "episodes_verified": train_rec["episodes_loaded"],
+            "episode_uid_sha256": train_rec["episode_uid_sha256"],
+            "episode_reselection": "refused (count + uid-digest content check "
+                                   "vs tanitad/data/parity_manifest.json)",
+            "train_parity": train_rec, "val_parity": val_rec}
 
 
 # --------------------------------------------------------------------------- #
