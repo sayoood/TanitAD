@@ -1,0 +1,89 @@
+[v4-eval] loading checkpoint /workspace/models/flagship-v4-fromscratch-15k/ckpt_step15000.pt ...
+[v4-eval] ckpt loaded in 2.1s, keys=['controller', 'goal_head', 'grounding', 'head', 'lam_mult', 'model', 'opt', 'phases', 'step']
+[v4-eval] MODE B val dataset (v4): 40 episodes, 6844 windows (window=8 max_horizon=20)
+[v4-eval] loaded TRAINED dense anchors from /workspace/models/flagship-v4-fromscratch-15k/flagship_v4_anchors_dense.pt
+[v4-eval] MODE B: loaded v4 head cfg from sibling config.json (/workspace/models/flagship-v4-fromscratch-15k/config.json)
+  n_anchors=256 horizons=1..20 (n=20) cond(states/imag/vtarget/route)=True/False/True/True factorised=True step=15000
+[v4-eval] running WM canary (wm_canary_ade_2s secondary)...
+[v4-eval] canary_ade@2s=2.0739 n=881 (93s)
+[v4-eval] running the planner path (the gate primary)...
+  [v4-eval] planner-path 16/881 windows (3s)
+  [v4-eval] planner-path 176/881 windows (30s)
+  [v4-eval] planner-path 336/881 windows (51s)
+  [v4-eval] planner-path 496/881 windows (71s)
+  [v4-eval] planner-path 656/881 windows (91s)
+  [v4-eval] planner-path 816/881 windows (112s)
+[v4-eval] windows -> /root/v4eval/results/windows_flagship-v4-fromscratch-15k.pt (enables the episode-cluster-bootstrap primary via taniteval.driving.from_windows())
+[v4-eval] -> /root/v4eval/results/flagship-v4-fromscratch-15k.json
+[driving] flagship-v4-fromscratch-15k n=881/40eps ade=0.5839 [0.4962, 0.6821] | along 0.8567 / cross 0.6387 | speed MAE 0.4940 vs hold-v0 0.4818 | win lives: both axes | tracks speed > CV: False
+{
+  "key": "flagship-v4-fromscratch-15k",
+  "ckpt": "/workspace/models/flagship-v4-fromscratch-15k/ckpt_step15000.pt",
+  "ckpt_step": 15000,
+  "evidence_class": "MEASURED (ours; artifacts = flagship-v4-fromscratch-15k.json, windows_flagship-v4-fromscratch-15k.pt)",
+  "gate_primary_ade_0_2s": {
+    "value": 0.5839,
+    "threshold": 0.6,
+    "pass": true
+  },
+  "kill_secondaries": {
+    "wm_canary_ade_2s": {
+      "value": 2.073894500732422,
+      "threshold": 0.55,
+      "pass": false
+    },
+    "oracle_in_fan": {
+      "value": 0.2797142271117374,
+      "threshold": 0.3,
+      "pass": true,
+      "note": "4-waypoint resolution (steps 5/10/15/20), comparable to v1.5-ab's 0.3073 -- NOT the dense-20 'oracle_ade@2s' the in-loop train log prints"
+    },
+    "miss_at_2m": {
+      "value": 0.1691,
+      "threshold": 0.1,
+      "pass": false
+    },
+    "seam_norm_ratio_max": {
+      "value": 0.1244,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "encoder_touching_levers": {
+      "value": 2,
+      "threshold": 2,
+      "pass": true,
+      "evidence_class": "PUBLISHED (V4_FLAGSHIP_DESIGN.md / --print-launch design audit)",
+      "note": "static design fact (lambda_plan + strategic = 2 of 2 encoder-touching levers, door CLOSED per MODEL_REGISTRY.md retraction 07-21); not a GPU measurement, not re-derived here"
+    },
+    "speed_benefit_recovered_frac": {
+      "value": null,
+      "pass": null,
+      "note": "NOT BUILT this session -- new metric (P8), needs its own definition off the two in-repo train logs per V4_FLAGSHIP_DESIGN.md 17.3; no emitter exists yet anywhere in the codebase"
+    },
+    "deploy_tick_p99_ms": {
+      "value": null,
+      "pass": null,
+      "note": "NOT MEASURED this session -- needs the efficiency.py latency-panel harness (CUDA-graph capture, batch-1 profiling under gpu_lock.sh exclusivity); out of scope for a correctness-first harness build, flagged as the first thing to cut per V4_FLAGSHIP_DESIGN.md 8 if it misses"
+    },
+    "nonav_route_beats_majority": {
+      "value": null,
+      "pass": null,
+      "note": "NOT REACHABLE on this checkpoint -- v4.1's goal_head (GoalScalarHead) only regresses CONTINUOUS scalars (ttm/curv_3s/curv_5s/tspeed_5s); no ROUTE classifier exists yet (P6 strategic planner not landed). taniteval.hierarchy.py's vision_route_beats_majority needs a nav-conditioned route head this checkpoint does not have -- this is the produced-goal fallback (V4_FLAGSHIP_DESIGN.md 2.6) territory"
+    }
+  },
+  "diagnostics_dense_headhorizons_train_loop_comparable": {
+    "dense_headhorizons_ade_2s": 0.4595726001817441,
+    "dense_headhorizons_oracle_ade": 0.2400555380458323,
+    "dense_headhorizons_sel_gap": 0.21951706130712986,
+    "dense_headhorizons_miss_at_2m": 0.16912599318955732
+  },
+  "cross_check_ade_0_2s_selfcomputed_vs_driving_py": {
+    "selfcomputed_from_forward_pass": 0.5839243086729363,
+    "driving_py_from_persisted_windows": 0.5839,
+    "agree_within_1pct": true,
+    "note": "two independent code paths over the SAME forward-pass output (direct tensor math here vs. persisted-tensor reload + taniteval.driving.tier0 there); disagreement would indicate an ego-frame convention mismatch"
+  }
+}
+
+[v4-eval] -> /root/v4eval/results/flagship-v4-fromscratch-15k_v4_diagnostics.json
+EVAL_EXIT=0
