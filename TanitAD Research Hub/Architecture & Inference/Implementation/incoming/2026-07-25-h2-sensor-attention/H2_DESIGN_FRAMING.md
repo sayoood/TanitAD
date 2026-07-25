@@ -178,11 +178,87 @@ not break cross-arm comparability; the newly-landed content-hash guard covers th
 
 ---
 
-## 8. Open questions for the PI (not agent-decidable)
+## 8. PI decisions — ANSWERED 2026-07-25 (these are now binding constraints, not open questions)
 
-1. **Sensor scope** — cameras only to start, or should radar/lidar be in the "tool" vocabulary if the AV
-   corpus carries them? *(Substrate probe will report what exists.)*
-2. **Is C-EFF (embedded efficiency) a claim we want to make**, or is C-CAP (the safety capability) the whole
-   point? It changes what we measure and how we write it up.
-3. **Roundabouts may be rare-to-absent** in a US-highway-weighted corpus ⟨count PENDING⟩. If so: drop
-   roundabouts from the first cut, or extend the corpus (a data-acquisition decision)?
+The three questions below were put to the PI and answered the same session. They are recorded here as
+**design constraints**; §2–§7 above are to be read subject to them.
+
+### D1 — Cameras only, in step 1
+No radar/lidar in the tool vocabulary for the first cut. Other modalities may be noted if the corpus
+carries them, but they are out of scope. *(Simplifies the tool vocabulary to a small discrete set of
+camera IDs — which also makes the MoE router tractable and the efficiency arithmetic clean.)*
+
+### D2 — ⭐ THE INPUT IS FRONT-CAMERA-ONLY. This is the experiment.
+> *"I would like to validate the semantic classifier and action taker based only on the front camera."*
+
+**Binding architectural constraint: at decision time the model sees ONLY the front camera.** The other
+cameras exist exclusively as (a) the source of the ground-truth label and (b) the thing that gets
+activated. **They are never model input.**
+
+This sharpens the scientific question considerably, and it is worth stating the sharpened form plainly:
+
+> **Is the NEED for an off-front camera predictable from the front camera alone?**
+
+The hypothesis is that it is — because need is **announced by front-visible scene structure**: a junction
+geometry approaching, a lead vehicle decelerating, a merge taper, a roundabout entry. The model does not
+need to *see* the hazard; it needs to recognise **a situation in which an unseen hazard becomes
+decision-relevant.** That is exactly a *semantic* competence rather than a perceptual one, which is why
+the capability belongs in the **tactical** layer and not in perception.
+
+⚠️ **The honest null must be pre-registered alongside it:** *if the need is genuinely unpredictable from
+the front camera, H2 fails — and that is a real, publishable negative* ("off-front hazard need is not
+anticipable from forward view alone"). We do not get to work around it by quietly leaking the other
+cameras into the input.
+
+### D3 — ⭐ The EFFICIENCY claim is the point (C-EFF promoted to PRIMARY)
+> *"The point is not to process all cameras the whole time, only if the situation is requesting this —
+> efficiency claim."*
+
+C-EFF is **not optional and not secondary**. The headline number is therefore:
+
+> **What fraction of frames genuinely require ≥2 cameras?**
+
+and the deployment claim is the complement of it. This reframes the whole evaluation:
+- If the fraction is small (say ~5 %), the claim is strong: **~95 % of multi-camera compute is avoidable
+  without losing the capability** — a real embedded result for a sub-300 M model.
+- If the fraction is large (say >50 %), the efficiency claim is **weak, and we need to know that before
+  building**, not after. It is a gating measurement in H2-0, not a post-hoc report.
+- The trade curve matters more than any single point: **recall of genuine need vs cameras activated.**
+  A model that activates everything achieves perfect recall and zero efficiency; the baseline to beat is
+  the always-on rig, and the metric is the Pareto frontier between missed need and compute spent.
+- **Asymmetric costs must be stated:** a missed activation is a potential safety failure; a spurious
+  activation costs only compute. The operating point should be chosen on that asymmetry, and reported —
+  never left implicit in an F1.
+
+### D4 — The corpus is NOT only highways; and additional data is authorized
+> *"use the AV dataset from NVIDIA, it's not only highways, search for intersections or roundabouts, look
+> for additional accessible data."*
+
+⚠️ **My earlier framing that the corpus is US-highway-weighted was an UNVERIFIED assumption and is
+withdrawn.** The substrate probe has been redirected to *actively search* PhysicalAI-AV for intersections
+and roundabouts using the metadata that owns the fact (map/lane annotations, the full 36-feature schema,
+junction annotations, and ego-trajectory geometry such as sustained yaw through a closed curve for
+roundabouts) — rather than sampling and inferring. Counts are to be reported separately for
+**intersection**, **roundabout**, **lane-change**, at episode and window granularity.
+
+In parallel, an **external multi-camera data survey** is running (`Data Engineering/Research/
+2026-07-25-h2-multicam-data-survey/`). Its binding constraints: **multi-camera + published extrinsics +
+3D agent tracks + ego pose** (anything single-camera cannot serve this workstream — comma2k19 included),
+our license taxonomy respected (**waymo/waymax are `refuse`**; PhysicalAI-AV is gated and must never enter
+a published tier), and **drone/BEV datasets (rounD, inD, exiD, highD) explicitly flagged as
+non-qualifying as a training source** — they have no front camera, so a rich roundabout count there must
+not masquerade as a fit.
+
+**Decision rule (pre-committed):** stay in-corpus if PhysicalAI-AV yields enough powered situations
+(the standing bar is ≥ ~40 episode-clusters per stratum); acquire external data only below that, and only
+for the specific stratum that is short.
+
+---
+
+## 9. Remaining open question for the PI
+
+**Only one is left, and it is deferred until the counts are in:** if roundabouts specifically turn out to
+be scarce in PhysicalAI-AV *and* the best external source is `nc-research`-licensed (nuScenes, A2D2, ZOD
+and similar all are), then adding them means the H2 result is **research-tier only and cannot enter the
+commercial dataset tier**. That is a strategic trade — scientific coverage vs commercial reach — and it is
+the PI's call, not an agent's. It will be put once the two surveys report actual numbers.
