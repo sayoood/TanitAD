@@ -25,6 +25,15 @@ sys.path.insert(0, "/workspace/TanitAD/stack/scripts")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import driving_diagnostic as D             # proven machinery
 from tanitad.eval.gates import split_by_episode
+# VAL-PARITY GUARD (2026-07-25): sorted(Path(cd).glob("*val*"))[-1] is a
+# LEXICOGRAPHIC max, and "physicalai-val-0c5f7dac3b11" sorts BEFORE
+# "physicalai-val-f1b378f295ae", so it SELECTED the 78.5%-leaked split
+# whenever both were materialised under one epcache root. resolve_val_dir
+# prefers the registered clean split and refuses a leaky-only root;
+# assert_val_cache then checks the episode count against the manifest's
+# registered deployments (600 full build / 40 canonical TanitEval) BEFORE a
+# single episode is read. A truncated val cache used to score silently.
+from tanitad.data import parity
 from tanitad.data.mixing import load_episode
 from tanitad.instruments.numerics import strict_numerics
 from tanitad.config import base250cam_config
@@ -94,7 +103,9 @@ def main():
     eps, cors = [], []
     for cd in args.cache_dirs:
         corp = "physicalai" if "physicalai" in cd else "comma2k19"
-        val = sorted(Path(cd).glob("*val*"))[-1]
+        val = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        parity.assert_val_cache(val, label=f"--cache-dirs {cd}",
+                                requested=args.episodes)
         for p in sorted(val.glob("ep_*.pt"))[:args.episodes]:
             eps.append(load_episode(str(p), mmap=True)); cors.append(corp)
 

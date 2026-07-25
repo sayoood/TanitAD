@@ -22,6 +22,15 @@ import torch
 from tanitad.config import base250cam_config
 from tanitad.data.mixing import load_episode
 from tanitad.eval.spectral import estimate_transition_spectrum, pairs_from_states
+# VAL-PARITY GUARD (2026-07-25): sorted(Path(cd).glob("*val*"))[-1] is a
+# LEXICOGRAPHIC max, and "physicalai-val-0c5f7dac3b11" sorts BEFORE
+# "physicalai-val-f1b378f295ae", so it SELECTED the 78.5%-leaked split
+# whenever both were materialised under one epcache root. resolve_val_dir
+# prefers the registered clean split and refuses a leaky-only root;
+# assert_val_cache then checks the episode count against the manifest's
+# registered deployments (600 full build / 40 canonical TanitEval) BEFORE a
+# single episode is read. A truncated val cache used to score silently.
+from tanitad.data import parity
 from tanitad.instruments.numerics import strict_numerics
 from tanitad.models.fourbrain import WorldModel
 
@@ -44,11 +53,12 @@ def main():
     step = int(ck.get("step", -1)) if isinstance(ck, dict) else -1
     print(f"[spectral] checkpoint loaded (step {step})")
 
-    val_dirs = sorted(Path(args.cache_dir).glob("*val*"))
-    assert val_dirs, f"no val cache under {args.cache_dir}"
+    val_dir = parity.resolve_val_dir(args.cache_dir, label="--cache-dir")
+    parity.assert_val_cache(val_dir, label="--cache-dir",
+                            requested=args.episodes)
     eps = [load_episode(str(p), mmap=True)
-           for p in sorted(val_dirs[-1].glob("ep_*.pt"))[:args.episodes]]
-    print(f"[spectral] {len(eps)} val episodes from {val_dirs[-1].name}")
+           for p in sorted(val_dir.glob("ep_*.pt"))[:args.episodes]]
+    print(f"[spectral] {len(eps)} val episodes from {val_dir.name}")
 
     zs, acts = [], []
     with torch.no_grad(), strict_numerics():

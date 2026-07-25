@@ -82,6 +82,10 @@ from tanitad.eval.ckpt_compat import (SPEED_SCALE,  # noqa: E402
                                       append_speed_channel)
 
 from tanitad.eval.gates import split_by_episode  # noqa: E402  (route parity)
+# VAL-PARITY GUARD (2026-07-25): `sorted(glob("*val*"))[-1]` is a LEXICOGRAPHIC
+# max and selected the 78.5 %-leaked split whenever both val dirs lived under
+# one epcache root; nothing checked the episode count either.
+from tanitad.data import parity  # noqa: E402
 from tanitad.models.readout import RidgeProbe  # noqa: E402  (A3 calibrated probe)
 
 MANEUVER_CLASSES = ("lane_keep", "turn_left", "turn_right", "accelerate",
@@ -820,11 +824,14 @@ def main():
 
     episodes, corpora = [], []
     for cd in args.cache_dirs:
-        vd = sorted(Path(cd).glob("*val*"))
-        if not vd:
+        try:
+            vd = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        except AssertionError:
             print(f"[behavior] WARNING no *val* under {cd}", flush=True)
             continue
-        for p in sorted(vd[-1].glob("ep_*.pt"))[:args.episodes]:
+        parity.assert_val_cache(vd, label=f"--cache-dirs {cd}",
+                                requested=args.episodes)
+        for p in sorted(vd.glob("ep_*.pt"))[:args.episodes]:
             episodes.append(load_episode(str(p), mmap=True))
             corpora.append(_corpus_of(cd))
     assert episodes, "no val episodes loaded"

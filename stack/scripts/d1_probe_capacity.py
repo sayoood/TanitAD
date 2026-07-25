@@ -25,6 +25,7 @@ from pathlib import Path
 import torch
 
 from tanitad.config import base250cam_config
+from tanitad.data import parity          # VAL-PARITY GUARD (2026-07-25)
 from tanitad.data.mixing import load_episode
 from tanitad.instruments.numerics import strict_numerics
 
@@ -93,8 +94,11 @@ def main():
     from tanitad.models.fourbrain import WorldModel
 
     eps = []
+    # VAL-PARITY GUARD: `sorted(glob("*val*"))[-1]` is a LEXICOGRAPHIC max and
+    # selected the 78.5 %-leaked split whenever both were under one root.
     for cd in args.cache_dirs:
-        val = sorted(Path(cd).glob("*val*"))[-1]
+        val = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        parity.assert_val_cache(val, label=f"--cache-dirs {cd}", requested=12)
         eps += [load_episode(str(p), mmap=True)
                 for p in sorted(val.glob("ep_*.pt"))[:12]]
 

@@ -30,7 +30,7 @@ sys.path.insert(0, "/root/taniteval")
 sys.path.insert(0, "/root/TanitAD/stack")
 sys.path.insert(0, "/root/TanitAD/stack/scripts")
 
-from taniteval import loaders                                      # noqa: E402
+from taniteval import data, loaders                                # noqa: E402
 from taniteval.cam_overlay import UP, ego_future_path, project     # noqa: E402
 from taniteval.registry import MODELS                              # noqa: E402
 from tanitad.data.mixing import load_episode                       # noqa: E402
@@ -181,7 +181,7 @@ def main():
     model, sr = L["model"], L["step_readout"]
     assert sr is not None, "flagship-30k step_readout missing"
     print(f"[load] flagship-30k step={L['step']}", flush=True)
-    files = sorted(Path(VAL).glob("ep_*.pt"))
+    files = data.list_val_episodes(VAL, label="flagship_overlay VAL")
     OUT.mkdir(parents=True, exist_ok=True)
     want = args.only if args.only is not None else args.stills_only
     clips = [c for c in CLIPS if want is None or c[0] == want]

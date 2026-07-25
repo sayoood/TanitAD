@@ -96,6 +96,15 @@ from tanitad.eval.ckpt_compat import (SPEED_SCALE,  # noqa: E402
                                       build_world_from_ckpt)
 from tanitad.eval.gates import (I2Input, run_d1, run_d2,  # noqa: E402
                                 run_d3, split_by_episode)
+# VAL-PARITY GUARD (2026-07-25): sorted(Path(cd).glob("*val*"))[-1] is a
+# LEXICOGRAPHIC max, and "physicalai-val-0c5f7dac3b11" sorts BEFORE
+# "physicalai-val-f1b378f295ae", so it SELECTED the 78.5%-leaked split
+# whenever both were materialised under one epcache root. resolve_val_dir
+# prefers the registered clean split and refuses a leaky-only root;
+# assert_val_cache then checks the episode count against the manifest's
+# registered deployments (600 full build / 40 canonical TanitEval) BEFORE a
+# single episode is read. A truncated val cache used to score silently.
+from tanitad.data import parity  # noqa: E402
 from tanitad.instruments.numerics import strict_numerics  # noqa: E402
 from tanitad.models.metric_dynamics import rollout_decode  # noqa: E402
 
@@ -162,11 +171,14 @@ def load_frame_val(cache_dirs, episodes):
     from tanitad.data.mixing import load_episode
     out = []
     for cd in cache_dirs:
-        val_dirs = sorted(Path(cd).glob("*val*"))
-        if not val_dirs:
+        try:
+            vd = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        except AssertionError:
             print(f"[compare] WARNING no *val* dir under {cd}", flush=True)
             continue
-        for p in sorted(val_dirs[-1].glob("ep_*.pt"))[:episodes]:
+        parity.assert_val_cache(vd, label=f"--cache-dirs {cd}",
+                                requested=episodes)
+        for p in sorted(vd.glob("ep_*.pt"))[:episodes]:
             out.append((load_episode(str(p), mmap=True), _corpus_of(cd)))
     return out
 
@@ -178,10 +190,17 @@ def load_feature_val(feat_dir, episodes):
     fd = Path(feat_dir)
     # Accept either a direct dir of ep_*.pt or a parent holding *val* subdirs.
     files = sorted(fd.glob("ep_*.pt"))
-    if not files:
-        val_dirs = sorted(fd.glob("*val*"))
-        if val_dirs:
-            files = sorted(val_dirs[-1].glob("ep_*.pt"))
+    if files:
+        parity.assert_val_cache(fd, label="--refa-feat-dir", requested=episodes)
+    else:
+        try:
+            vd = parity.resolve_val_dir(fd, label="--refa-feat-dir")
+        except AssertionError:
+            vd = None
+        if vd is not None:
+            parity.assert_val_cache(vd, label="--refa-feat-dir",
+                                    requested=episodes)
+            files = sorted(vd.glob("ep_*.pt"))
     out = []
     for p in files[:episodes]:
         d = torch.load(str(p), map_location="cpu", weights_only=True)

@@ -110,6 +110,11 @@ def collect(head, world, probes, cfg, poses, labels, eids, val_cache, device,
     k_max = max(dd.WP_STEPS)
     P, G, C, EID, SPD, HDG = [], [], [], [], [], []
     head.eval()
+    # VAL-PARITY GUARD (2026-07-25): this listdir used to be the ENTIRE val-side
+    # check. v1.6 RE-ENCODES these frames, so a truncated or substituted val
+    # cache changes the published ADE directly with nothing to detect it.
+    from tanitad.data import parity                          # noqa: PLC0415
+    parity.assert_val_cache(val_cache, label="--val-cache", requested=episodes)
     files = sorted(f for f in os.listdir(val_cache)
                    if f.startswith("ep_") and f.endswith(".pt"))[:episodes]
     for e in range(min(episodes, len(poses))):

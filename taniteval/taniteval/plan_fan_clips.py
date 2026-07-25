@@ -73,7 +73,7 @@ sys.path.insert(0, "/root/taniteval")
 sys.path.insert(0, "/root/TanitAD/stack")
 sys.path.insert(0, "/root/TanitAD/stack/scripts")
 
-from taniteval import loaders, plan_fan as PF                     # noqa: E402
+from taniteval import data, loaders, plan_fan as PF               # noqa: E402
 from taniteval.corpus_overlay import (HORIZON, FlatProjector,     # noqa: E402
                                       pretty_man, pretty_route)
 from taniteval.direct_overlay import OUT                          # noqa: E402
@@ -256,7 +256,11 @@ def dump(arm, device="cuda", batch=8, windows=WINDOWS_JSON):
           f"grounded_selector={model.cfg.grounded_selector}", flush=True)
 
     corp = [c for c in CORPORA if c["key"] == meta["corpus"]][0]
-    files = sorted(Path(corp["root"]).glob("ep_*.pt"))
+    # VAL-PARITY: corpus selection routes through the ONE integrity
+    # chokepoint (episode-count / registered-deployment / leaky-split
+    # refusal) instead of a bare glob.
+    files = data.list_val_episodes(corp["root"],
+                                   label=f"--corpus {corp['key']}")
     from tanitad.data.mixing import load_episode
 
     store = {}
@@ -296,7 +300,11 @@ def render(arms=ARMS, fps=10, windows=WINDOWS_JSON, stills=True, only=None):
     D = {a: torch.load(RES / f"planfan_clips_{a}.pt", map_location="cpu",
                        weights_only=False) for a in arms}
     corp = [c for c in CORPORA if c["key"] == meta["corpus"]][0]
-    files = sorted(Path(corp["root"]).glob("ep_*.pt"))
+    # VAL-PARITY: corpus selection routes through the ONE integrity
+    # chokepoint (episode-count / registered-deployment / leaky-split
+    # refusal) instead of a bare glob.
+    files = data.list_val_episodes(corp["root"],
+                                   label=f"--corpus {corp['key']}")
     proj = FlatProjector(HORIZON[meta["corpus"]])
     from tanitad.data.mixing import load_episode
     OUT.mkdir(parents=True, exist_ok=True)

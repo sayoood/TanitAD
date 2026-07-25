@@ -238,6 +238,9 @@ def main() -> None:
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--pai-cache", required=True)
     ap.add_argument("--pai-val-cache", required=True)
+    ap.add_argument("--allow-leaky-val", action="store_true",
+                    help="opt in to the KNOWN-LEAKY f1b378 val split (78.5 %% "
+                         "train overlap). The run is stamped NOT decision-grade.")
     ap.add_argument("--comma-cache", required=True)
     ap.add_argument("--order", required=True)
     ap.add_argument("--calib-root", required=True)
@@ -267,6 +270,15 @@ def main() -> None:
 
     # ---- selection ----
     a_eps, b_eps = select_episodes(rig_table, args.pai_cache, args.cap_a, args.cap_b)
+    # VAL-PARITY GUARD (2026-07-25): Wave-1 B guarded --pai-cache (train) but
+    # this val cache was still unchecked, and this script's own usage example
+    # points it at the KNOWN-LEAKY f1b378 split.
+    if args.allow_leaky_val:
+        parity.note_leaky_audit(
+            args.pai_val_cache, label="--pai-val-cache",
+            why="explicit --allow-leaky-val; IDM rig probe, NOT a held-out number")
+    else:
+        parity.assert_val_cache(args.pai_val_cache, label="--pai-val-cache")
     val_eps = [(f"pai_val_{i:05d}", str(p))
                for i, p in enumerate(sorted(Path(args.pai_val_cache).glob("ep_*.pt")))]
     comma_eps = [(f"comma_{i:05d}", str(p))

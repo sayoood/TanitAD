@@ -33,17 +33,77 @@ FEATCACHE = Path("/root/featcache")
 CLEAN_VAL = "physicalai-val-0c5f7dac3b11"
 LEAKY_VAL = "physicalai-val-f1b378f295ae"
 
+#: Provenance of the LAST ``list_val_episodes`` call, so an emitter can stamp
+#: *which* val cache produced a number into its own results JSON. Read by
+#: ``bench.run`` consumers via :func:`last_val_parity`.
+_LAST_VAL_PARITY: dict = {}
+
+
+def last_val_parity() -> dict:
+    """The integrity record of the most recent val listing (empty before any).
+
+    The blast-radius lesson, mechanised: for every number this program has
+    published, "which val cache, how many episodes" had to be RECONSTRUCTED from
+    ``n_windows == 881`` because no result JSON recorded it. From now on it is
+    recorded."""
+    return dict(_LAST_VAL_PARITY)
+
+
+def _parity_module():
+    """``tanitad.data.parity``, imported late and refusing LOUDLY if absent.
+
+    Late because a bare ImportError at module load would take down ``--help``
+    and every non-val code path on a pod whose ``stack/`` checkout is behind.
+    Refusing because an eval that cannot verify its val cache must not quietly
+    produce a number — that is the exact failure this guard exists to close."""
+    try:
+        from tanitad.data import parity                      # noqa: PLC0415
+    except Exception as ex:                                   # pragma: no cover
+        raise RuntimeError(
+            f"REFUSING to evaluate: the shared parity guard "
+            f"(tanitad.data.parity) is not importable ({type(ex).__name__}: "
+            f"{ex}). A val cache that cannot be integrity-checked produces a "
+            f"plausible-looking WRONG ADE and nothing downstream can detect it. "
+            f"Sync stack/ to this machine (PYTHONPATH must include "
+            f"<repo>/stack) and re-run.") from ex
+    return parity
+
 
 def list_val_episodes(val_dir: str, n: int | None = None,
-                      allow_leaky: bool = False):
+                      allow_leaky: bool = False, allow_partial: bool = False,
+                      label: str | None = None):
     """Sorted ``ep_*.pt`` files under ``val_dir`` (first ``n`` if given).
 
-    Refuses the known-leaky physicalai val split loudly. Other corpora
-    (comma / cosmos / physicalai OOD used by generalization) are unaffected —
-    the guard triggers only on the specific f1b378 hash. Pass
-    ``allow_leaky=True`` ONLY for a deliberate label/leakage audit, never for a
-    decision-grade eval.
+    THE val-side integrity chokepoint. Before any episode is read it asserts,
+    via the ONE shared guard ``tanitad.data.parity`` (same module the trainers
+    use — there is deliberately no second implementation):
+
+      * the split is not the known-leaky ``f1b378`` corpus;
+      * the cache's episode count is a **registered deployment** of the clean
+        val split (600 full build / 40 canonical TanitEval — manifest
+        ``known_deployments``), so a truncated or partial val cache is refused
+        instead of silently rescoring the benchmark on fewer episodes;
+      * the uid ``sha256`` matches the committed manifest **when the manifest
+        carries one**. It does not yet: no committed artifact enumerates the val
+        uids and the Wave-1 B agent correctly refused to invent a digest. The
+        one command that upgrades this to a content check, run on a pod whose
+        ``compute_skipset.py`` has just printed ``VERDICT MATCH``::
+
+            PYTHONPATH=/workspace/TanitAD/stack python3 \\
+              stack/scripts/make_parity_manifest.py --record --split val \\
+              --cache-dir <epcache>/physicalai-val-0c5f7dac3b11
+
+        then bring the changed ``parity_manifest.json`` back and stage it. Until
+        that lands this is COUNT + CACHE-IDENTITY, and it says so in its own log
+        line.
+      * ``n`` episodes were actually available (asking for 40 from a 12-episode
+        deployment used to return 12 and score it, silently).
+
+    ``allow_leaky=True`` — ONLY for a deliberate label/leakage audit.
+    ``allow_partial=True`` — ONLY for a deliberate non-decision-grade probe on a
+    partial deployment; the run is stamped ``decision_grade: False``.
     """
+    global _LAST_VAL_PARITY
     if LEAKY_VAL in str(val_dir) and not allow_leaky:
         raise RuntimeError(
             f"REFUSED leaky val split {LEAKY_VAL!r}: ~78 % of its episodes leak "
@@ -51,7 +111,20 @@ def list_val_episodes(val_dir: str, n: int | None = None,
             f"is train-contaminated. Use the CLEAN held-out split {CLEAN_VAL!r} "
             f"(taniteval.data.CLEAN_VAL). Pass allow_leaky=True only for a "
             f"deliberate leakage/label audit.")
+    lbl = label or f"val {Path(val_dir).name}"
+    if LEAKY_VAL in str(val_dir):        # allow_leaky: audit path, stays loud
+        print(f"[parity] ⚠ {lbl}: LEAKY split {LEAKY_VAL} accepted because "
+              f"allow_leaky=True. Admissible ONLY as a label/leakage audit — "
+              f"NEVER as a decision-grade number.", flush=True)
+        _LAST_VAL_PARITY = {"checked": False, "corpus_key": LEAKY_VAL,
+                            "cache_dir": str(val_dir), "leaky": True,
+                            "decision_grade": False, "label": lbl}
+    else:
+        _LAST_VAL_PARITY = _parity_module().assert_val_cache(
+            val_dir, label=lbl, requested=n,
+            decision_grade=not allow_partial)
     files = sorted(Path(val_dir).glob("ep_*.pt"))
+    _LAST_VAL_PARITY["episodes_listed"] = len(files[:n] if n else files)
     return files[:n] if n else files
 
 

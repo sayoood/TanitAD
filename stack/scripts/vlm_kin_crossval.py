@@ -38,6 +38,7 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import refb_labels as R  # noqa: E402
+from tanitad.data import parity  # VAL-PARITY GUARD (2026-07-25)
 
 NAMES = {R.ROUTE_LEFT: "left", R.ROUTE_STRAIGHT: "straight",
          R.ROUTE_RIGHT: "right", R.ROUTE_UNKNOWN: "unknown"}
@@ -130,6 +131,11 @@ def main():
     ap.add_argument("--json", default=None)
     ap.add_argument("--show", type=int, default=15)
     args = ap.parse_args()
+    # VAL-PARITY: this audit legitimately reads the known-leaky
+    # f1b378 split. It used to do so SILENTLY (a default argument);
+    # now every run discloses it and is stamped NOT decision-grade.
+    parity.note_leaky_audit(args.val, label="--val",
+                            why="it cross-validates VLM vs kinematic LABELS, not a model")
 
     rows = collect(args.vlm, args.val)
     if not rows:

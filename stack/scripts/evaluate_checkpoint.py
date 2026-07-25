@@ -38,6 +38,15 @@ from tanitad.eval.ckpt_compat import (SPEED_SCALE, append_speed_channel,
 from tanitad.eval.gates import (I2Input, gates_metrics_json, run_d1, run_d2,
                                 run_d3)
 from tanitad.eval.metrics import trajectory_extra_metrics
+# VAL-PARITY GUARD (2026-07-25): sorted(Path(cd).glob("*val*"))[-1] is a
+# LEXICOGRAPHIC max, and "physicalai-val-0c5f7dac3b11" sorts BEFORE
+# "physicalai-val-f1b378f295ae", so it SELECTED the 78.5%-leaked split
+# whenever both were materialised under one epcache root. resolve_val_dir
+# prefers the registered clean split and refuses a leaky-only root;
+# assert_val_cache then checks the episode count against the manifest's
+# registered deployments (600 full build / 40 canonical TanitEval) BEFORE a
+# single episode is read. A truncated val cache used to score silently.
+from tanitad.data import parity
 from tanitad.eval.spectral import estimate_transition_spectrum
 from tanitad.instruments.numerics import strict_numerics
 
@@ -173,10 +182,15 @@ def main():
 
     episodes = []
     for cd in args.cache_dirs:
-        val_dirs = sorted(Path(cd).glob("*val*"))
-        if val_dirs:
-            files = sorted(val_dirs[-1].glob("ep_*.pt"))[:args.episodes]
-            episodes += [load_episode(str(p), mmap=True) for p in files]
+        try:
+            vd = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        except AssertionError:
+            print(f"[eval] WARNING no *val* dir under {cd}", flush=True)
+            continue
+        parity.assert_val_cache(vd, label=f"--cache-dirs {cd}",
+                                requested=args.episodes)
+        files = sorted(vd.glob("ep_*.pt"))[:args.episodes]
+        episodes += [load_episode(str(p), mmap=True) for p in files]
     print(f"[eval] {len(episodes)} val episodes, checkpoint step {step}, "
           f"speed_input {speed_input}")
 

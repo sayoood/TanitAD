@@ -44,6 +44,7 @@ import idm_head as ih                                              # noqa: E402
 import run_idm_proof as R                                          # noqa: E402
 from tanitad.models.dynamics_encoder import (                     # noqa: E402
     DynEncConfig, DynamicsEncoderModel, normalize_cam_params)
+from tanitad.data import parity  # noqa: E402  VAL-PARITY GUARD (2026-07-25)
 from train_dynamics_encoder import clip_cam_raw                   # noqa: E402
 
 
@@ -227,6 +228,10 @@ def main():
     ap.add_argument("--flagship-ckpt", default="/workspace/tmp/idm/ckpt.pt")
     ap.add_argument("--train-cache", default="/workspace/pai_epcache/physicalai-train-e438721ae894")
     ap.add_argument("--val-cache", default="/workspace/pai_epcache/physicalai-val-f1b378f295ae")
+    ap.add_argument("--allow-leaky-val", action="store_true",
+                    help="opt in to the KNOWN-LEAKY f1b378 val "
+                         "split (78.5 %% train overlap). The run is "
+                         "stamped NOT decision-grade.")
     ap.add_argument("--comma-cache", default="/workspace/data/comma2k19-val-61c46fca8f7f")
     ap.add_argument("--train-rig-table", default="/workspace/tmp/idm/rig_table.json")
     ap.add_argument("--val-order", default="/workspace/tmp/val_clip_order.tsv")
@@ -247,6 +252,18 @@ def main():
     ta, tb = R.select_episodes(train_rig, args.train_cache, 400, 400)
     val_rig = R.build_rig_table(args.val_order, args.calib_root,
                                 str(Path(args.work) / "val_rig_table.json"))
+    # VAL-PARITY GUARD (2026-07-25): --val-cache DEFAULTED to the
+    # known-leaky physicalai-val-f1b378f295ae, 78.5 % of whose episodes are
+    # IN the parity train set (MODEL_REGISTRY.md Branch-B, corrected
+    # 2026-07-25). Nothing refused it and nothing said so, which is how the
+    # Branch-B contrast came to be computed on a contaminated val.
+    if args.allow_leaky_val:
+        parity.note_leaky_audit(
+            args.val_cache, label="--val-cache",
+            why="explicit --allow-leaky-val; rig-transfer probe, NOT a "
+                "held-out number")
+    else:
+        parity.assert_val_cache(args.val_cache, label="--val-cache")
     va, vb = R.select_episodes(val_rig, args.val_cache, 400, 400)
     comma = sorted(Path(args.comma_cache).glob("ep_*.pt"))
 

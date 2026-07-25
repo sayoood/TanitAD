@@ -2441,12 +2441,42 @@
           "labels_val_v4_provenance.json: n_episodes = 600",
           "scripts/parity_skipset.sh: assert len(val) == 600"
         ],
-        "todo": "run --record --split val on a pod against a cache that compute_skipset.py has just verified, then stage the diff"
-      }
+        "todo": "run --record --split val on a pod against a cache that compute_skipset.py has just verified, then stage the diff",
+        "deployments_added": {
+          "on": "2026-07-25",
+          "by": "val-parity-integrity workstream",
+          "why": "the val corpus is deployed as SUBSETS (600 built, 40 canonical on the eval pod); a strict ==600 check would refuse every eval this program has run, and a bare '<=600' check catches nothing. The admissible counts are therefore registered data with citations, not folklore."
+        }
+      },
+      "known_deployments": [
+        {
+          "n_episodes": 600,
+          "role": "full build (the epcache split dir on the training pods)",
+          "where": "<epcache root>/physicalai-val-0c5f7dac3b11 — pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+          "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+          "evidence_class": "MEASURED"
+        },
+        {
+          "n_episodes": 40,
+          "role": "canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)",
+          "where": "tanitad-eval:/root/valdata/physicalai-val-0c5f7dac3b11",
+          "evidence": "MODEL_REGISTRY.md:61 'Val set | physicalai-val-0c5f7dac3b11 - 40 episodes -> 881 windows, episode-disjoint from train'; 30 of 30 decision-grade taniteval/results/*.json carry n_episodes=40, n_windows=881 (the remaining 4 predate the n_episodes field and carry n_windows=881)",
+          "evidence_class": "MEASURED"
+        }
+      ],
+      "deployments_seen_but_NOT_admissible": [
+        {
+          "n_episodes": 12,
+          "where": "tanitad-pod (pod1):/root/valdata/physicalai-val-0c5f7dac3b11",
+          "why_not": "a PARTIAL deployment. It is not the 40-episode/881-window statistic every published number is quoted over, so a decision-grade eval against it silently reports a different benchmark. It already blocked a decision-grade run once.",
+          "evidence": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-lower-ood-closedloop-source/P1_DECISION_GRADE_FINDINGS.md:19 ('pod1 /root/valdata/ holds 12 eps') and LOWER_OOD_CLOSEDLOOP_DESIGN.md:96",
+          "evidence_class": "INHERITED (another agent's pod scan; not re-verified here - no pod access). Used only to REFUSE, never to license a number."
+        }
+      ]
     }
   },
   "notes": {
-    "what": "Episode manifest for the SACRED parity corpus (CLAUDE.md \u00a7Invariants). tanitad.data.parity asserts every trainer's loaded episode set against this file at startup.",
+    "what": "Episode manifest for the SACRED parity corpus (CLAUDE.md §Invariants). tanitad.data.parity asserts every trainer's loaded episode set against this file at startup.",
     "uid": "episode uid = the ep_%05d.pt basename; the index is the position in the ordered source list (tanitad/data/epcache.py), so it is the stable identity WITHIN a build key.",
     "digest": "episode_uid_sha256 = sha256('\\n'.join(sorted(uids)))",
     "limitations": "This pins WHICH episode slots are present. It does not hash episode CONTENT, so a same-name file with different tensor bytes is not detected here (the build key e438721ae894 and compute_skipset.py cover the build side).",

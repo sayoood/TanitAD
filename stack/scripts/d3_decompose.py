@@ -25,6 +25,9 @@ from pathlib import Path
 import torch
 
 from tanitad.config import base250cam_config
+from tanitad.data import parity          # VAL-PARITY GUARD (2026-07-25):
+# `sorted(glob("*val*"))[-1]` is a LEXICOGRAPHIC max and selected the
+# 78.5 %-leaked split whenever both val dirs lived under one epcache root.
 from tanitad.data.mixing import load_episode
 from tanitad.instruments.numerics import strict_numerics
 
@@ -114,9 +117,11 @@ def main():
     with strict_numerics():
         for cd in args.cache_dirs:
             name = Path(cd).parent.name                      # corpus dir name
-            val = sorted(Path(cd).glob("*val*"))
+            val = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+            parity.assert_val_cache(val, label=f"--cache-dirs {cd}",
+                                    requested=16)
             eps = [load_episode(str(p), mmap=True)
-                   for p in sorted(val[-1].glob("ep_*.pt"))[:16]]
+                   for p in sorted(val.glob("ep_*.pt"))[:16]]
             s, f, aw, fa = collect(world, eps, device, window)
             report[name] = analyze(world, s, f, aw, fa, device)
             report[name]["n_windows"] = int(s.shape[0])

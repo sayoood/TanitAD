@@ -52,6 +52,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import refb_labels as R  # noqa: E402
+from tanitad.data import parity  # VAL-PARITY GUARD (2026-07-25)
 
 MODEL_ID = os.environ.get("VLM_MODEL", "nvidia/Cosmos-Reason2-8B")
 PROMPT_VERSION = "vlmroute-2026-07-20-a"
@@ -384,6 +385,11 @@ def main():
     ap.add_argument("--limit-windows", type=int, default=0)
     ap.add_argument("--model", default=MODEL_ID)
     args = ap.parse_args()
+    # VAL-PARITY: this audit legitimately reads the known-leaky
+    # f1b378 split. It used to do so SILENTLY (a default argument);
+    # now every run discloses it and is stamped NOT decision-grade.
+    parity.note_leaky_audit(args.val, label="--val",
+                            why="it mints VLM route labels; no model is evaluated")
 
     lo, hi = (int(x) for x in args.episodes.split("-")) \
         if "-" in args.episodes else (int(args.episodes), int(args.episodes))

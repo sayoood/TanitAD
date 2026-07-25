@@ -39,6 +39,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from tanitad.data import parity          # VAL-PARITY GUARD (2026-07-25):
+# `sorted(glob("*val*"))[-1]` is a LEXICOGRAPHIC max and selected the
+# 78.5 %-leaked split whenever both val dirs lived under one epcache root.
 from tanitad.data.mixing import load_episode
 
 DT = 0.1                                   # 10 Hz contract
@@ -56,9 +59,9 @@ def corpus_of(cd: str) -> str:
 
 
 def load_val_episodes(cache_dir: str, n: int) -> list:
-    val = sorted(Path(cache_dir).glob("*val*"))
-    assert val, f"no *val* under {cache_dir}"
-    files = sorted(val[-1].glob("ep_*.pt"))[:n]
+    val = parity.resolve_val_dir(cache_dir, label=f"--cache-dirs {cache_dir}")
+    parity.assert_val_cache(val, label=f"--cache-dirs {cache_dir}", requested=n)
+    files = sorted(val.glob("ep_*.pt"))[:n]
     return [load_episode(str(p), mmap=True) for p in files]
 
 

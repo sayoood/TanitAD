@@ -72,6 +72,15 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+# VAL-PARITY GUARD (2026-07-25). `--val-cache` used to be globbed with no
+# integrity check at all, so a truncated or substituted val cache produced a
+# plausible-looking WRONG ADE that nothing downstream could detect. One shared
+# guard (`tanitad.data.parity`, the same module the trainers use) asserts the
+# leaky-split refusal + the registered episode-count deployment before a single
+# episode is read. `train_flagship_v4` already guards its own --val-cache; this
+# is its EVAL-side mirror.
+from tanitad.data import parity  # noqa: E402
+
 WP_STEPS = (5, 10, 15, 20)           # 0.5/1/1.5/2 s @10 Hz -- the ONLY convention
                                       # any other MODEL_REGISTRY.md row is quoted in
 K_MAX = max(WP_STEPS)
@@ -110,6 +119,7 @@ def build_val_dataset_base(val_cache, cfg, plan):
     validation exercises the MINIMUM moving parts (no v4 label minting)."""
     from tanitad.data.mixing import load_episode
     from train_flagship4b import FlagshipWindowDataset
+    parity.assert_val_cache(val_cache, label='--val-cache')
     files = sorted(Path(val_cache).glob("ep_*.pt"))
     if not files:
         raise SystemExit(f"[v4-eval] no ep_*.pt under {val_cache}")
@@ -130,6 +140,7 @@ def build_val_dataset_v4(val_cache, cfg, plan):
     route_graded off the batch."""
     from tanitad.data.mixing import load_episode
     from flagship_v4_data import FlagshipV4Dataset
+    parity.assert_val_cache(val_cache, label='--val-cache')
     files = sorted(Path(val_cache).glob("ep_*.pt"))
     if not files:
         raise SystemExit(f"[v4-eval] no ep_*.pt under {val_cache}")

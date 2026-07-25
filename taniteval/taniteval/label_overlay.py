@@ -292,9 +292,22 @@ def main():
                     help="REF-C run dir (ckpt.pt + config.json); omit to render "
                          "labels only")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--allow-leaky", action="store_true", default=True,
+                    help="this renderer's PURPOSE is auditing the route LABELS, "
+                         "which is exactly the audit the leaky-split escape "
+                         "hatch exists for; the run announces itself either way")
     args = ap.parse_args()
 
-    files = sorted(glob.glob(os.path.join(args.val, "ep_*.pt")))
+    # VAL-PARITY: this is the one taniteval module whose DEFAULT --val is the
+    # known-leaky f1b378 split, and that default is legitimate — it renders a
+    # LABEL audit, produces no ADE, and the VLM pass-A artefacts were computed
+    # against that cache. What was NOT legitimate is that it was silent. Routing
+    # it through the chokepoint with an explicit allow_leaky makes every frame it
+    # renders self-labelling, and makes the CLEAN split integrity-checked when
+    # someone points it there.
+    from taniteval import data as _data
+    files = _data.list_val_episodes(args.val, allow_leaky=args.allow_leaky,
+                                    label="label_overlay --val")
     assert files, f"no episodes under {args.val}"
     os.makedirs(args.out, exist_ok=True)
     proj = FlatProjector(args.horizon)

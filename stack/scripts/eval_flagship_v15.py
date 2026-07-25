@@ -127,7 +127,14 @@ def real_episode_ids(val_cache: str, n: int) -> list[int]:
     The split is ``split_by_episode`` over these ids; using file indices instead
     would produce a DIFFERENT episode partition and therefore a different
     heldout mean. mmap keeps the 117 MB frame tensors off the heap.
+
+    VAL-PARITY GUARD (2026-07-25): this listdir used to be the ENTIRE val-side
+    check — no count, no identity, no leaky-split refusal. A truncated cache
+    silently produced a smaller episode partition and therefore a different
+    heldout mean, published as if it were the 40-episode / 881-window statistic.
     """
+    from tanitad.data import parity                          # noqa: PLC0415
+    parity.assert_val_cache(val_cache, label="--val-cache", requested=n)
     files = sorted(f for f in os.listdir(val_cache) if f.startswith("ep_")
                    and f.endswith(".pt"))[:n]
     out = []

@@ -104,7 +104,7 @@ sys.path.insert(0, "/root/taniteval")
 sys.path.insert(0, "/root/TanitAD/stack")
 sys.path.insert(0, "/root/TanitAD/stack/scripts")
 
-from taniteval import loaders                                       # noqa: E402
+from taniteval import data, loaders                                  # noqa: E402
 from taniteval.cam_overlay import ego_future_path                   # noqa: E402
 from taniteval.corpus_overlay import (HORIZON, FlatProjector,       # noqa: E402
                                       pretty_man, pretty_route)
@@ -707,7 +707,11 @@ def main():
         "proposal set. For CEM/MPC candidates (v3/P2) feed this renderer the "
         "candidate rollouts + planning COST (see PLANNER_VIZ_CONCEPT.md).")
     corp = [c for c in CORPORA if c["key"] == args.corpus][0]
-    files = sorted(Path(corp["root"]).glob("ep_*.pt"))
+    # VAL-PARITY: corpus selection routes through the ONE integrity
+    # chokepoint (episode-count / registered-deployment / leaky-split
+    # refusal) instead of a bare glob.
+    files = data.list_val_episodes(corp["root"],
+                                   label=f"--corpus {corp['key']}")
     assert files, f"no episodes under {corp['root']}"
     clips = [(int(a.split(":")[0]), a.split(":")[1])
              for a in args.clips.split(",") if a.strip()]

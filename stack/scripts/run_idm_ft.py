@@ -242,6 +242,9 @@ def main() -> None:
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--pai-cache", required=True)
     ap.add_argument("--pai-val-cache", required=True)
+    ap.add_argument("--allow-leaky-val", action="store_true",
+                    help="opt in to the KNOWN-LEAKY f1b378 val split (78.5 %% "
+                         "train overlap). The run is stamped NOT decision-grade.")
     ap.add_argument("--comma-cache", required=True)
     ap.add_argument("--rig-table", required=True)
     ap.add_argument("--out", required=True)
@@ -267,6 +270,16 @@ def main() -> None:
     a_eps, b_eps = R.select_episodes(rig_table, args.pai_cache, 400, 400)
     a_paths = [p for _t, p in a_eps]
     b_paths = [p for _t, p in b_eps]
+    # VAL-PARITY GUARD (2026-07-25): this val cache was unchecked and this
+    # script's own usage example points it at the KNOWN-LEAKY f1b378 split.
+    from tanitad.data import parity                          # noqa: PLC0415
+    if args.allow_leaky_val:
+        parity.note_leaky_audit(
+            args.pai_val_cache, label="--pai-val-cache",
+            why="explicit --allow-leaky-val; IDM finetune probe, NOT a "
+                "held-out number")
+    else:
+        parity.assert_val_cache(args.pai_val_cache, label="--pai-val-cache")
     val_paths = [str(p) for p in
                  sorted(Path(args.pai_val_cache).glob("ep_*.pt"))]
     comma_paths = [str(p) for p in

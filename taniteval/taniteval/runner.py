@@ -125,6 +125,12 @@ def run_one(key, episodes=40, device="cuda"):
         res["driving"] = {"error": f"{type(ex).__name__}: {str(ex)[:160]}"}
         print(f"[driving] {key}: driving panel FAILED: "
               f"{res['driving']['error']}", flush=True)
+    # VAL PROVENANCE (2026-07-25). Until now NO result JSON recorded which val
+    # cache produced it or how many episodes stood behind it — the blast-radius
+    # question had to be answered by INFERRING the corpus from n_windows==881.
+    # `data.list_val_episodes` now returns an integrity record; stamp it, so the
+    # next audit reads it instead of reconstructing it.
+    res["val_parity"] = data.last_val_parity()
     res["wall_s"] = round(time.time() - t0, 1)
     RES.mkdir(parents=True, exist_ok=True)
     rollout.save_windows(win, RES / f"windows_{key}.pt")
@@ -150,11 +156,29 @@ def run_one(key, episodes=40, device="cuda"):
               f"{dv.get('by_curvature', {}).get('straight', {}).get('model_heading_mae_deg', '—')}° "
               f"· win lives: {v['where_the_win_lives']} · tracks speed > CV: "
               f"{v['tracks_speed_better_than_cv']}", flush=True)
-    hm = res["heldout"]["model"]
+    # THE GATE-FACING PRINT (migrated 2026-07-25). It used to read
+    # `res["heldout"]["model"]` — the DEPRECATED `overlapping_holdout_se` block.
+    # `closedloop` / `driving` / `hierarchy` had all been migrated; this line,
+    # the number a human actually reads when gating, had not.
+    #
+    # MEASURED over the 27 committed `results/windows_*.pt` fixtures: the legacy
+    # block is not merely too narrow (CI ratio 1.11-3.10x, median 1.50x) — its
+    # POINT estimate moves too, -10.5 % … +7.1 % on ade_0_2s, and the cross-arm
+    # RANKING changes in 10 of 27 positions. On v1 `flagship-30k` it printed
+    # 0.452±0.031 where the primary is 0.427 [0.368, 0.487].
+    cb = res["cluster_bootstrap"]["model"]
+    vs = res["cluster_bootstrap"]["model_vs_cv_paired"]
+    a = cb["ade_0_2s"]
     print(f"[run] {key} step={L['step']} n={res['n_windows']} "
-          f"ade@2s={hm['ade_0_2s']['mean']:.3f}±{hm['ade_0_2s']['ci95']:.3f} "
-          f"fde={hm['fde@2s']['mean']:.3f} miss@2m={hm['miss_rate@2m']['mean']:.3f} "
-          f"tms={hm['tms_openloop']['mean']:.3f} ({res['wall_s']}s)", flush=True)
+          f"eps={res['n_episodes']} "
+          f"ade@2s={a['mean']:.3f} [{a['lo']:.3f},{a['hi']:.3f}] "
+          f"fde={cb['fde@2s']['mean']:.3f} "
+          f"miss@2m={cb['miss_rate@2m']['mean']:.3f} "
+          f"tms={cb['tms_openloop']['mean']:.3f} | vs CV Δ{vs['delta']:+.3f} "
+          f"[{vs['lo']:.3f},{vs['hi']:.3f}] "
+          f"{'SEPARATED' if vs['separated'] else 'tie'} | "
+          f"estimator={a['estimator']} B={a['n_boot']} ({res['wall_s']}s)",
+          flush=True)
     return res
 
 
@@ -264,16 +288,36 @@ def run_ab(a, b):
 
 
 def regression(update=False, tol_frac=0.08):
-    """Golden-value regression: every stored result within tol of golden."""
+    """Golden-value regression: every stored result within tol of golden.
+
+    Reads the PRIMARY episode-cluster-bootstrap point estimate (2026-07-25).
+    It used to read the deprecated ``heldout`` block, whose mean-over-8-
+    overlapping-holdouts differs from the full-set metric by up to ±10.5 %
+    (MEASURED over the committed fixtures) — so a real 8 % regression could hide
+    inside the estimator gap. Results written before ``cluster_bootstrap``
+    existed fall back to ``heldout``; the source is recorded per arm so a mixed
+    golden file cannot pass as a like-for-like comparison."""
     gpath = RES / "golden.json"
     keys = ["ade_0_2s", "fde@2s", "miss_rate@2m"]
-    current = {}
+    current, sources = {}, {}
     for f in RES.glob("*.json"):
         if f.name.startswith(("ab_", "golden", "run_")):
             continue
         d = json.loads(f.read_text())
-        if "heldout" in d:
-            current[f.stem] = {k: d["heldout"]["model"][k]["mean"] for k in keys}
+        block = d.get("cluster_bootstrap", {}).get("model")
+        src = "cluster_bootstrap"
+        if not block and "heldout" in d:
+            block, src = d["heldout"]["model"], "heldout(DEPRECATED)"
+        if block and all(k in block for k in keys):
+            current[f.stem] = {k: block[k]["mean"] for k in keys}
+            sources[f.stem] = src
+    stale = sorted(k for k, v in sources.items() if v != "cluster_bootstrap")
+    if stale:
+        print(f"[regression] ⚠ {len(stale)} arm(s) have NO cluster_bootstrap "
+              f"block and were read off the DEPRECATED heldout estimator "
+              f"(different point estimate, not comparable): "
+              f"{', '.join(stale[:6])}{' …' if len(stale) > 6 else ''}. "
+              f"Re-run them so the comparison is like-for-like.", flush=True)
     if update or not gpath.exists():
         gpath.write_text(json.dumps(current, indent=2))
         print(f"[regression] golden updated ({len(current)} models)", flush=True)

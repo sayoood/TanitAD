@@ -118,8 +118,10 @@ def main():
     device = "cuda"
     e = [m for m in MODELS if m["key"] == "refb"][0]
     model = loaders.load(e, device)["model"]
-    files = sorted(Path("/root/valdata/physicalai-val-0c5f7dac3b11").glob("ep_*.pt"))
-    eps = [load_episode(str(f), mmap=True) for f in files[:40]]
+    from taniteval import data as _data
+    files = _data.list_val_episodes(f"/root/valdata/{_data.CLEAN_VAL}", 40,
+                                    label="cam_overlay --val")
+    eps = [load_episode(str(f), mmap=True) for f in files]
     # pick the two most dynamic (net heading change) + one straight
     def net_turn(ep):
         return abs(float(ep.poses[-1, 2] - ep.poses[0, 2]))

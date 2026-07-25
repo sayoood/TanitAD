@@ -157,6 +157,82 @@ def _suite_components(pred, gt):
     return comp
 
 
+# --------------------------------------------------------------------------- #
+# QUARANTINE — the deprecated estimator, under its true name                    #
+# --------------------------------------------------------------------------- #
+#: Self-labelling key for the legacy block, matching ``closedloop.LEGACY_BLOCK``
+#: and ``hierarchy.LEGACY_BLOCK`` so one grep finds every quarantined number in
+#: the harness. ``heldout`` REMAINS as a back-compat alias to the same dict on
+#: purpose: ``run_gate._deprecated_present`` looks for exactly that key to decide
+#: fail-loud-vs-fallback, and ``report`` / ``efficiency`` / ``refc_rerank`` /
+#: ``generalization`` still read it. Renaming it would silently disarm the gate's
+#: own refusal, which is the opposite of the intent.
+LEGACY_BLOCK = "legacy_overlapping_holdout_se"
+DEPRECATED_ESTIMATOR = "overlapping_holdout_se"
+ESTIMATOR_NOTE = (
+    "`heldout ± ci95` is `overlapping_holdout_se`: mean ± 1.96·std/sqrt(8) over "
+    "8 OVERLAPPING random 20 % episode holdouts. It is neither a jackknife nor a "
+    "valid SE, it is measured 1.28-2.06x too narrow across 10 arms, and its "
+    "POINT estimate is a mean-over-holdouts, not the full-set metric — so it "
+    "differs from the primary in level as well as in width.")
+
+
+def _width_ratio(new, old):
+    """new ci95 / legacy ci95 — how much the honest estimator widened this arm.
+
+    Emitted per run so the 1.28-2.06x program finding is RE-MEASURED on each
+    artifact instead of being cited from a doc."""
+    o = float(old.get("ci95", 0.0) or 0.0)
+    n = float(new.get("ci95", 0.0) or 0.0)
+    return round(n / o, 3) if o > 0 else None
+
+
+def _point_shift(new, old):
+    """primary mean − legacy mean, absolute and relative.
+
+    The width ratio is the well-known half of the problem. The POINT estimate
+    moves too — MEASURED 2026-07-25 over the 27 committed ``windows_*.pt``
+    fixtures: −10.5 % … +7.1 % on ``ade_0_2s``, and the cross-arm RANKING
+    changes in 10 of 27 positions. That is why the gate-facing print was
+    migrated, not merely annotated."""
+    o, n = float(old.get("mean", 0.0)), float(new.get("mean", 0.0))
+    return {"legacy_mean": round(o, 4), "primary_mean": round(n, 4),
+            "delta": round(n - o, 4),
+            "delta_pct": round(100.0 * (n - o) / o, 2) if o else None}
+
+
+def _quarantine(legacy, boot_model, n_splits, val_frac):
+    """Wrap the legacy block so a consumer that copies a number also copies the
+    estimator, the reason it is kept, and this arm's own narrowing factor."""
+    lm = legacy["model"]
+    return {
+        "_what": "the pre-2026-07-20 open-loop interval block: mean ± "
+                 "1.96·std/sqrt(8) over 8 OVERLAPPING random 20 % episode "
+                 "holdouts, historically mislabelled '8-split episode-disjoint "
+                 "jackknife'.",
+        "_why_kept": "reproduction of published numbers ONLY. NOT admissible "
+                     "for any decision; `cluster_bootstrap` is.",
+        "_estimator": DEPRECATED_ESTIMATOR,
+        "estimator_note": ESTIMATOR_NOTE,
+        "_alias": "also emitted as the top-level `heldout` key for back-compat "
+                  "(run_gate._deprecated_present keys on that name).",
+        "n_splits": n_splits, "val_frac": val_frac,
+        "model": lm, "cv": legacy["cv"],
+        "ci_width_ratio_new_over_legacy": {
+            "_read": "primary ci95 / legacy ci95. >1 = the deprecated interval "
+                     "was too narrow BY THAT FACTOR on this arm; the "
+                     "program-wide finding across 10 arms was 1.28-2.06x.",
+            **{m: _width_ratio(boot_model[m], lm[m])
+               for m in ("ade_0_2s", "fde@2s", "miss_rate@2m", "tms_openloop")
+               if m in lm and m in boot_model},
+        },
+        "point_estimate_shift_primary_minus_legacy": {
+            m: _point_shift(boot_model[m], lm[m])
+            for m in ("ade_0_2s", "fde@2s", "miss_rate@2m", "tms_openloop")
+            if m in lm and m in boot_model},
+    }
+
+
 def _strata(labels, de_m, de_c):
     out = {}
     for lab in sorted(set(labels)):
@@ -213,13 +289,15 @@ def run(data, n_splits=8, val_frac=0.2, seed=0, n_boot=_ci.DEFAULT_N_BOOT):
            "high" if float(s) >= float(q[1]) else "med"
            for s in data["speed"]]
     beats = boot_model["ade_0_2s"]["mean"] < boot_cv["ade_0_2s"]["mean"]
+    legacy_block = {"model": _agg(model_split), "cv": _agg(cv_split)}
     return {
         "n_windows": int(pred.shape[0]),
         "n_episodes": boot_model["ade_0_2s"]["n_episodes"],
         "primary_ci": "cluster_bootstrap",
         "cluster_bootstrap": {"model": boot_model, "cv": boot_cv,
                               "model_vs_cv_paired": vs_cv},
-        "heldout": {"model": _agg(model_split), "cv": _agg(cv_split)},
+        LEGACY_BLOCK: _quarantine(legacy_block, boot_model, n_splits, val_frac),
+        "heldout": legacy_block,
         "full_set": {"model": _suite(pred, gt), "cv": _suite(cv, gt)},
         "beats_cv_ade_0_2s": bool(beats),
         "beats_cv_separated": bool(vs_cv["separated"] and vs_cv["delta"] > 0),

@@ -47,6 +47,15 @@ from driving_diagnostic import (BASELINES, WP_STEPS, agg_metric_dicts,  # noqa: 
 from tanitad.config import base250cam_config, smoke_config  # noqa: E402
 from tanitad.data.mixing import load_episode  # noqa: E402
 from tanitad.eval.gates import split_by_episode  # noqa: E402
+# VAL-PARITY GUARD (2026-07-25): sorted(Path(cd).glob("*val*"))[-1] is a
+# LEXICOGRAPHIC max, and "physicalai-val-0c5f7dac3b11" sorts BEFORE
+# "physicalai-val-f1b378f295ae", so it SELECTED the 78.5%-leaked split
+# whenever both were materialised under one epcache root. resolve_val_dir
+# prefers the registered clean split and refuses a leaky-only root;
+# assert_val_cache then checks the episode count against the manifest's
+# registered deployments (600 full build / 40 canonical TanitEval) BEFORE a
+# single episode is read. A truncated val cache used to score silently.
+from tanitad.data import parity
 from tanitad.instruments.numerics import strict_numerics  # noqa: E402
 from tanitad.models.fourbrain import WorldModel  # noqa: E402
 from tanitad.models.metric_dynamics import (StepDisplacementReadout,  # noqa: E402
@@ -121,11 +130,14 @@ def main():
 
     episodes, corpora = [], []
     for cd in args.cache_dirs:
-        val_dirs = sorted(Path(cd).glob("*val*"))
-        if not val_dirs:
+        try:
+            vd = parity.resolve_val_dir(cd, label=f"--cache-dirs {cd}")
+        except AssertionError:
             print(f"[rollout] WARNING no *val* under {cd}", flush=True)
             continue
-        for p in sorted(val_dirs[-1].glob("ep_*.pt"))[:args.episodes]:
+        parity.assert_val_cache(vd, label=f"--cache-dirs {cd}",
+                                requested=args.episodes)
+        for p in sorted(vd.glob("ep_*.pt"))[:args.episodes]:
             episodes.append(load_episode(str(p), mmap=True))
             corpora.append(corpus_of(cd))
     assert episodes, "no val episodes loaded"

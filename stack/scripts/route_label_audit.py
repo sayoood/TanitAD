@@ -41,6 +41,7 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import refb_labels as R  # noqa: E402
+from tanitad.data import parity  # VAL-PARITY GUARD (2026-07-25)
 
 FALSE_TURN_DEG = 30.0                        # >= this net heading = a real turn
 BANDS = [(0, 15), (15, 30), (30, 45), (45, 90), (90, 1e9)]
@@ -213,6 +214,11 @@ def main():
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--json", default=None)
     args = ap.parse_args()
+    # VAL-PARITY: this audit legitimately reads the known-leaky
+    # f1b378 split. It used to do so SILENTLY (a default argument);
+    # now every run discloses it and is stamped NOT decision-grade.
+    parity.note_leaky_audit(args.val, label="--val",
+                            why="it scores route LABELS against future kinematics, not a model")
     a = audit(args.val, args.stride, args.limit)
     report(a)
     if args.json:

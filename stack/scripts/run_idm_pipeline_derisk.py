@@ -151,6 +151,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--flagship-ckpt", default="/workspace/tmp/idm/ckpt.pt")
     ap.add_argument("--train-cache", default="/workspace/pai_epcache/physicalai-train-e438721ae894")
+    # VAL-PARITY (2026-07-25): DEAD ARGUMENT — nothing in this script reads
+    # --val-cache. It is kept only for CLI compatibility with the sibling
+    # run_idm_* probes; the default names the KNOWN-LEAKY f1b378 split, which is
+    # a trap for the next reader. Do not wire it up without the same
+    # --allow-leaky-val opt-in the sibling probes now carry.
     ap.add_argument("--val-cache", default="/workspace/pai_epcache/physicalai-val-f1b378f295ae")
     ap.add_argument("--comma-cache", default="/workspace/data/comma2k19-val-61c46fca8f7f")
     ap.add_argument("--train-rig-table", default="/workspace/tmp/idm/rig_table.json")
