@@ -21,10 +21,18 @@ reconstruction `recon_ep00020.npz` (n=175 windows, held-out clip `ep_00020`, ego
 | **all** | **2.533** | **2.499** | **0.249** | **9.8 %** | **98.6 %** |
 
 ### 1.1 The structural problem, in one line
-**The ADE this program optimizes and reports is 98.6 % longitudinal by energy.** The lateral axis
-contributes **~1.4 %** of the squared-error signal. Any loss or metric built on undecomposed L2 is,
-numerically, a *longitudinal* loss — the lateral channel receives almost none of the gradient and almost
-none of the reported signal. **Lateral deviation is not "under-weighted"; it is nearly invisible.**
+**The ADE this program optimizes and reports is dominated by the longitudinal axis.** The lateral channel
+receives a small minority of the squared-error signal, so any loss or metric built on undecomposed L2 is,
+numerically, a *mostly-longitudinal* loss.
+
+> ⚠️ **CORRECTED 2026-07-25 (same day, before this doc was used for a decision).** The figure first written
+> here — *"98.6 % longitudinal / ~1.4 % lateral"* — is **`ep_00020`-specific and does NOT replicate**. The
+> HPP-1 agent measured the energy share across **8 committed arms**: it ranges **0.607–0.976**, and the
+> deployed **flagship v1 sits at 0.873** (⇒ lateral ≈ **13 %**, not 1.4 %). The *structural* claim survives —
+> longitudinal dominates everywhere measured (61–98 %), so lateral is systematically under-weighted — but
+> **"nearly invisible" was an n=1 overstatement and is withdrawn.** The quotable form is: *lateral carries
+> ~2–39 % of the squared-error signal depending on the arm, ~13 % on the deployed model.*
+> **What DOES replicate is the finding that actually matters — see §3: the compounding law holds 8/8.**
 
 This is *not* a claim that the model's lateral behaviour is bad here (it is decent — see §2). It is a claim
 about the **instrument and the objective**: they cannot see, and do not reward, the axis that causes lane
