@@ -142,7 +142,7 @@ parallel with the trainings, and they are precisely the items that make later re
 | When | Pod | Item |
 |---|---|---|
 | E1b done (~1 d) | pod3 | **E1b paired eval** — junction corridor-departure@K185, base vs FT. First real closed-loop verdict on the corrected instrument |
-| pod2 at 30k (~21 h) | pod2→eval | Flagship **ckpt backup to HF** + the **formal 8-metric gate** (HF space is free; both unblocked). ⚠️ 3 of 8 kill-secondaries still lack emitters — wire them or the gate cannot render a verdict |
+| pod2 at 30k (~21 h) | pod2→eval | Flagship **ckpt backup to HF** + the **formal 8-metric gate** (HF space is free; both unblocked). ⚠️ ~~3 of 8 kill-secondaries lack emitters~~ **CORRECTED 2026-07-25 (W1-E, MEASURED):** `v1_g1_dryrun_gate_FIXED.json` → `fixes_verified.split_8_KILL_5_REPORT = {kill_adjudicated: 8, report_only: 5, verdict_from_kill_only: "CONTINUE"}` — **all 8 kill-secondaries ARE adjudicated**; the 5 unsupplied are *report-only*. The gate CAN render a verdict; it is deferred only behind the 30k finish |
 | after HPP-0..3 | pod3 or freed pod | **HPP-4 ablation ladder** (the hierarchy proof) |
 | after cooldown 07-26 12:00 UTC | pod1/pod3 | **C2 data-efficiency slope** (H7) — the unmeasured headline. Gentle config, one run |
 | opportunistic | eval | **One recognized-benchmark number** (NAVSIM/EPDMS or Bench2Drive) — first external ground truth |

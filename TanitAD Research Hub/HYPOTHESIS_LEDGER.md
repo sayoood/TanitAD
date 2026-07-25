@@ -1,36 +1,310 @@
-# TanitAD — Hypothesis Ledger
+# TanitAD — Hypothesis Ledger (SINGLE SOURCE OF TRUTH for hypothesis status)
 
-> Living status tracker for H0–H15. Updated by the weekly agents and after every gate result.
-> Statuses: `confirmed` | `validated-toy` (proven on toy/in-house scale) | `supported` (external evidence)
-> | `open` | `at-risk` | `refuted`. Full analysis: `INITIAL_RESEARCH_SYNTHESIS.md`.
+> **This file is the only place a hypothesis status may be quoted from.** `PROGRAM_OVERVIEW.md` §3
+> points here and carries no status table of its own. Model *facts* (params, training args, results)
+> still come from `Project Steering/MODEL_REGISTRY.md`; this file tracks **questions**, not models.
+>
+> **Merged 2026-07-25** from the two divergent ledgers (this file's status table, frozen at
+> **2026-07-05**, and `Project Steering/PROGRAM_OVERVIEW.md` §3, live at **2026-07-25**).
+> Statuses, DoA and deciding evidence are carried **faithfully** from the independent audit
+> `Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/R3_hypothesis_portfolio.md`
+> and the actions from `01_EXECUTION_PLAN.md` **PART C**. Where this merge disagrees with the audit
+> it says so in **§6 — merge notes**; it never silently edits an audited verdict.
 
-| H | Short name | Status (2026-07-05) | Phase-0 gate(s) | Owner agent |
-|---|---|---|---|---|
-| H0 | E2E superiority settled | confirmed | — | Opponent Analyzer |
-| H1 | 4B architecture | validated-toy (5× hierarchy lift, ALPS-4B) | D5, D6 | Architecture & Inference |
-| H2 | Attention-based Modality Steering | supported (DriveMoE/GEMINUS) — race is on | Phase-0 exit demo | Architecture & Inference |
-| H3 | Latent world model core (LeJEPA/SigReg) | validated-toy (A1–A10) | D1, D2, D3 | Architecture & Inference |
-| H4 | Frozen encoders comparison | open (cheap to answer) — real corpus (comma2k19) ready to make it meaningful | arm B at D1–D3 | Data Engineering |
-| H5 | Efficient inference transfer | supported | CNCE tracked from day 1 | Architecture & Inference |
-| H6 | Opponent weak-spot corpus | actionable | 3 scenarios in eval set | Opponent Analyzer |
-| H7 | 1000× data via IDM + focal canonicalization | supported (VLM3, LAPA; +LAOF flow-consistency, Sensorimotor-WM 2026) — real (steer,accel) pairs from comma2k19 in hand | IDM calibration logged (steering-ratio residual = named artifact) | Data Engineering |
-| H8 | MoE beyond sensors | prio-2, interface ready | — | Architecture & Inference |
-| H9 | Inherent rule compliance (RMFM/barriers) | supported, concrete math | violation-rate metric | Benchmarks & Eval |
-| H10 | Latent RAG continual learning | validated-toy w/ known failure mode (−24 % interference → surprise-gating) | D7 (end of P0/P1) | Architecture & Inference |
-| H11 | Self-monitoring w/ guarantees | validated-toy (3 mechanisms) | D8 (AUROC > 0.85) | Benchmarks & Eval |
-| H12 | Text as part, not core | supported, cheap path (1B LLM bridge) | command-conditioning only | Architecture & Inference |
-| H13 | Extraction heads | settled pattern (probes = minimal form) | trajectory + BEV probes ship | Architecture & Inference |
-| H14 | Physical grounding | Track 1 adopted (kinematic decoder + Kamm circle) | friction-violation metric | Architecture & Inference |
-| H15 | Unobserved-area imagination | **in Phase 0 per D-008** — ImaginationField implemented (advection + refine + epistemic σ), trains with the world model | **D9** (hidden-sector cosine, calibration gap, LOPS) | Architecture & Inference |
-| H16 | Active depth interrogation (tactical-commanded, σ-triggered ROI depth queries) | open — Sayed's idea 2026-07-11; composes H15 σ-trigger + H2 scheduler + ZipDepth-class specialist; Phase-1 H2 window (~Sep); dossier: `Architecture & Inference/Research/H16_ACTIVE_DEPTH_INTERROGATION.md` | F1–F3 pre-registered (trigger selectivity, energy vs always-on, metric anchor) | Architecture & Inference |
-| H17 | Unified-FOV masked-periphery training (pad comma to 120°, imagine the unobserved edges) | open — Sayed 2026-07-12; inverts FOV unification, feeds H15 imagination signal + urban peripheral vision + foveated patching; dossier `Architecture & Inference/Research/UNIFIED_FOV_FOVEATED_PATCHING.md` | urban-ADE lift + imagination calibration without comma regress | Architecture & Inference |
-| H18 | Hierarchical action grounding (metric-consequence grounding at operative + tactical + strategic levels) | open — Sayed 2026-07-12; operative grounding SHIPS now (§3.7 metric-invdyn + forward-metric-consistency, proprioceptive/self-supervised); tactical/strategic extension next | per-level: grounded consequence beats ungrounded selection at that horizon | Architecture & Inference |
+---
 
-## Gate definitions (Phase 0)
+## 0. How to update this ledger
 
-See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thresholds, instrument rows and ablations.
+**Mandatory columns — every row, no exceptions:**
 
-## Change log
+`ID · hypothesis (short) · status · degree-of-achievement % · evidence-class ·
+deciding-artifact-path (or the literal word "untested") · gate/falsifier · action ·
+last-retested-date · owner`
+
+**The inadmissibility rule (this is the point of the file):**
+
+> **A status carrying neither a `MEASURED` artifact path nor an explicit `untested` is
+> INADMISSIBLE.** Delete the row's status rather than leave it unsourced. "Supported by the
+> literature" is `PUBLISHED` **with a citation**, and PUBLISHED never decides a GPU-day
+> (CLAUDE.md §Operating standard 1).
+
+**Five further rules, each earned:**
+
+1. **Evidence class on every status** — `MEASURED` (+ our artifact path) · `PUBLISHED` (cited) ·
+   `INHERITED` (another agent/doc, **not** re-verified) · `ESTIMATED` · `HYPOTHESIS`.
+   An `INHERITED` status may not be promoted; re-measure or leave it INHERITED.
+2. **A trainer log is not an eval number** (RETRACTION_LOG C1). Only `taniteval/`-class eval output
+   or a committed experiment artifact is quotable here.
+3. **"Closed / bound / proven" needs three things** (`01_EXECUTION_PLAN` P3): the metric's
+   **horizon and n**, the **estimator** (episode-cluster bootstrap, `taniteval/ci.py`), and a
+   **pre-registered cheapest-reopening check that was run and did not reopen it**. Without all
+   three the admissible status is **Partially**, never Confirmed. *Five closure verdicts were
+   reopened by ~$0 follow-ups in a single session.*
+4. **A settled negative may not hide an open sub-claim.** If one recipe of a hypothesis is refuted
+   and another is untested, **SPLIT the row** (see H4a/H4b, H1-*, H14-*). This rule exists because
+   "H4 CLOSED NEGATIVE" concealed a frozen-latent path reading **0.599 m**.
+5. **An un-owned "open" row is dead weight.** Give it an owner and a date, or move it to
+   **PARKED {reason, revisit-trigger}** in §3. The portfolio's true active surface must be visible.
+
+**Update cadence:** on every gate result, every retraction, and at every phase boundary. Stamp
+`last-retested` with the date of the **artifact**, not the date you edited the row.
+
+**The rule is machine-checkable — keep it that way.** Every §1 row is a 10-cell pipe row whose
+6th cell contains either a real path (`.json` / `.md` / `.pt`) **or** the literal token `untested`.
+A linter (T1-5 class) can therefore fail CI on an unsourced status without parsing prose. Do not
+add a row that breaks this shape. *(Checked 2026-07-25: 41/41 rows pass; every full path resolves
+on disk.)*
+
+**Path convention:** paths starting `taniteval/`, `stack/` or `Project Steering/` are
+**repo-relative**; everything else is **relative to `TanitAD Research Hub/`**. A `.../` prefix
+abbreviates a hub team directory (`<Team>/Implementation/incoming/…`). ⚠️ `taniteval/results/`
+also holds files suffixed **`.CONTAMINATED-20260720-*`** — this ledger cites only the clean,
+un-suffixed twins; never glob-match these paths.
+
+**Status vocabulary** (R3's, adopted): `Confirmed` · `Confirmed (neg)` (tested, clean negative) ·
+`Refuted` · `Confounded` · `Partially` · `Open` · `PARKED` · `Stale-Orphaned`.
+**Action classes** (execution-plan PART C): `PROVE` (build the decisive test) · `MEASURE`
+(instrument exists — run it) · `FIX` (broken instrument/impl before retesting) · `SPLIT` (a settled
+negative masks a live question) · `PARK` · `UN-PARK` · `RETIRE`.
+
+---
+
+## 1. The ledger
+
+**DoA** = degree-of-achievement: how far the question is *decided or the claim delivered*, 0–100 %.
+Values are R3's audited numbers. Where a parent hypothesis was **split** by this merge, the sub-row
+DoA is an **ESTIMATED decomposition** (flagged `≈`) and the parent's audited value is named — the
+audit assigned DoA to the parent only.
+
+### 1.1 Constitutional hypotheses (Mission Plan H0–H15)
+
+| ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
+|---|---|---|---:|:--:|---|---|:--:|:--:|---|
+| **H0** | E2E > rule-based | Confirmed (premise) | 100% | PUBLISHED | **untested** by us — an accepted starting point, not a TanitAD experiment (`Project Steering/Mission Plan.md` L36) | — (not our claim) | `RETIRE` | 2026-07-05 | Opponent Analyzer |
+| **H1a** *(H1-operative)* | The **operative** brain plans metrically from a latent WM | Confirmed | ≈90% *(parent H1 = 40%)* | MEASURED | `taniteval/results/driving_flagship-30k.json` — ade_0_2s **0.4522 ±0.031** (plain-mean 0.4271), below best-of-3 floor 0.5005 | D1–D3 decode gates; falsifier = fails to beat the per-stratum kinematic floor | *(delivered — feeds `PROVE`)* | 2026-07-18 | Architecture & Inference |
+| **H1b** *(H1-hierarchy-edge)* | **The 4-brain hierarchy drives better than a flat arm at matched params** | **Open — UNTESTED** | ≈5% *(parent H1 = 40%)* | — | **untested** — the D5/D6 topology gates have **NEVER RUN** (`Project Steering/Phase 0 Plan.md` §4). Only adverse datapoint (104 M REF-C ties open-loop `taniteval/results/driving_refc-base-30k.json`, beats closed-loop) is **confounded 6 ways** (`01_EXECUTION_PLAN` §A.1) | **HPP battery HP-1…HP-6** under pre-conditions PC1–PC4 (`01_EXECUTION_PLAN` §A.2–A.3); falsifier = no CI-separated advantage at matched params/steps, ≥4 seeds | **`PROVE`** (HPP-4) | **never** | Architecture & Inference + Benchmarks & Eval |
+| **H1c** *(H1-planner-coupling)* | A planner can be coupled to the WM without degrading it | *(alias — canonical row is **H27**, §1.4)* | *see H27* | *see H27* | *see H27* | *see H27* | `MEASURE` | 2026-07-25 | Architecture & Inference |
+| **H2** | Attention-based modality steering | **PARKED** (was Open) | 15% | PUBLISHED | **untested on our stack** — DriveMoE / GEMINUS only; Phase-0 exit demo unbuilt | Phase-0 exit demo; falsifier = routing on epistemic σ does not beat a learned scene router | `PARK` → §3 | **never** | Architecture & Inference |
+| **H3** | Latent WM core (LeJEPA / SIGReg) | **Confirmed** (as a representation) | 75% | MEASURED | `taniteval/results/driving_flagship-30k.json` — vision effect **+1.325 m [+1.04, +1.64]** CI-sep; `.../incoming/2026-07-23-frozen-wm-learned-planner/artifacts/results.json` — frozen WM as differentiable simulator **0.5989 [0.374, 0.854]**, not separated from oracle 0.4045 | D1/D2/D3; **falsifier still live**: SIGReg readout is `NOT-YET-ADMISSIBLE` (rms_offdiag 0.32 > 0.1) → the LeJEPA optimal-planning corollary may **not** be quoted | `MEASURE` (the *raison-d'être* — data-efficiency — is unmeasured; folds into HP-5 / C2 slope) | 2026-07-23 | Architecture & Inference |
+| **H4a** | **Frozen encoder + supervised regression** | **Confirmed (neg)** | ≈95% *(parent H4 = 85%)* | MEASURED | `taniteval/results/eff_refa-dynin-30k.json` + `driving_refa-dynin-30k.json` — **2.9196**, monotone 5k→30k (3.755→2.920: a capability ceiling, not overfitting) | closed; reopening requires a new mechanism, not a re-run | `RETIRE` (stop relitigating) | 2026-07-18 | Architecture & Inference *(frozen ledger wrongly owned this to Data Engineering)* |
+| **H4b** | **Frozen encoder + feature-prediction + planning** | **Open — and reads POSITIVE** | ≈35% *(parent H4 = 85%)* | MEASURED | `.../incoming/2026-07-23-frozen-wm-learned-planner/artifacts/results.json` — 3.77 M planner backprop-through-frozen-WM = **0.5989**; static decode off the *same* latent = **3.649 m** ⇒ the ceiling is **static decode, not freezing** | falsifier = a frozen+dynamics path cannot be pushed below the ~0.60 m aleatoric wall (H28) **and** cannot beat the trained-encoder arm on data-efficiency | **`SPLIT` (done) → keep OPEN**; the real v3 question | 2026-07-23 | Architecture & Inference |
+| **H5** | Efficient inference transfer / CNCE moat | Confirmed (deployed arm) | 80% | MEASURED | `taniteval/results/eff_flagship-30k.json` — CNCE median **210,551**; planning tick **18.75 ms p50** composed, 10 Hz at p99. ⚠️ the "11.16 ms" figure is **RETRACTED** (RETRACTION_LOG C1/C6) | tick budget met; falsifier = fails the Orin/Thor envelope on real silicon | `RETIRE` from active work | 2026-07-24 | Architecture & Inference |
+| **H6** | Opponent weak-spot corpus | Partially | 45% | MEASURED (oracle) / **untested on our model** | `Opponent Analyzer/SCENARIO_DATABASE.md` — 4 scenarios shipped (Stop-Arm, Work-Zone Phantom, Stationary-Lead, SC-14) — **design-oracle only** | model-side number is **renderer-gated** (T4-15); falsifier = our model matches the incumbent failure rate on our own scenarios | `FIX` (gated on the renderer owner) | 2026-07-24 | Opponent Analyzer |
+| **H7** | **1000× data via IDM + focal canonicalization (C2)** | **Partially — the slope is UNMEASURED** | 35% | MEASURED (**DIRECTIONAL**) | `.../incoming/2026-07-24-idm-pipeline-derisk/results_idm_pipeline_derisk.json` (pseudo-label ≈96 % of real-label value, 8 seeds) + `Benchmarks & Eval/.../incoming/2026-07-24-youtube-idm-pilot/` (80-clip pilot ≈**92 % of ceiling**). ⚠️ 80 clips / 3 seeds / unknown intrinsics, yaw ≈ 0 | **the C2 data-efficiency slope itself is `untested`**; falsifier = matched-param slope vs a supervised baseline shows no advantage | **`MEASURE` — top priority after cooldown** (≥300 clips, ≥4 seeds, GeoCalib intrinsics) | 2026-07-25 | Data Engineering |
+| **H8** | MoE beyond sensors | **PARKED** | 5% | — | **untested** — prio-2, interface ready | — | `PARK` → §3 | **never** | Architecture & Inference |
+| **H9** | Inherent rule compliance / hard barriers | Partially | 40% | MEASURED (oracle) / **untested on our model** | `Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/traffic_light_oracle_results.json` — SC-14 TLC design oracle **rule_barrier 1.0 vs soft_prior 0.0** | violation-rate metric; model-side renderer-gated. **Traffic-light handling (a specific PI ask) lives here** | `FIX` + `MEASURE` | 2026-07-24 | Benchmarks & Eval |
+| **H10** | Latent-RAG continual learning | **PARKED** (Open, toy) | 20% | INHERITED (toy) | validated-toy with a known −24 % interference mode → surprise-gating designed; **D7 untested** | D7 (end of P0/P1) | `PARK` → §3 | **never** (toy only) | Architecture & Inference |
+| **H11** | Self-monitoring with guarantees | Partially | 35% | MEASURED | D8 **preview only, p≈0.047** (AUROC > 0.85 **not reached**); σ-dissipation to chance by k=4 — `Architecture & Inference/Research/2026-07-18-operative-flagship-blind-rollout-and-orthogonality.md` | **D8 AUROC > 0.85**; falsifier = σ cannot be made horizon-calibrated | `MEASURE` (couple to **H22**, which targets exactly this measured failure) | 2026-07-18 | Benchmarks & Eval |
+| **H12** | Text as part, not core | **PARKED** (Open, supported) | 25% | PUBLISHED | **untested** — 1 B LLM bridge cited; command-conditioning only, not integrated-measured | — | `PARK` → §3 | **never** | Architecture & Inference |
+| **H13** | Extraction heads / probes | Confirmed (pattern) | 70% | MEASURED | `taniteval/results/driving_flagship-30k.json` — curvature probe R² **0.254** vs ego-only 0.031 | trajectory + BEV probes ship | `RETIRE` from active work | 2026-07-18 | Architecture & Inference |
+| **H14a** *(narrow)* | Physical grounding — **kinematic bicycle + Kamm circle** | Confirmed | ≈80% *(parent H14 = 35%)* | MEASURED | `taniteval/results/driving_flagship-30k.json` — **95.9 %** physically-shaped paths (GT 97.1 %) | friction-violation metric | *(delivered)* | 2026-07-18 | Architecture & Inference |
+| **H14b** *(broad)* | Physical grounding — **physical-law / ethics / culture injection** | **Open — UNTOUCHED** | ≈5% *(parent H14 = 35%)* | — | **untested** — no design, no instrument, no owner-date | none defined; **a gate must be written before this is admissible as a claim** | **`SPLIT` (done)** → then scope it as real work **or** `PARK` explicitly — PI decision | **never** | Architecture & Inference *(needs a PI scoping decision)* |
+| **H15** | Imagination of unobserved areas | Partially | 30% | MEASURED | module live + firing (22.06 M params, fire-rate ≈ mask_prob); **`vision_use` flat ~12 %**; σ → chance by k=4 (`.../Research/2026-07-18-operative-flagship-blind-rollout-and-orthogonality.md`) | **D9 hidden-sector driving-gain — NEVER ABLATED** (`untested`); falsifier = ablating imagination costs no driving performance | `MEASURE` (run D9) + `FIX` (k>1 decay, via H22) | 2026-07-18 | Architecture & Inference |
+
+### 1.2 Sayed-added (H16–H18)
+
+| ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
+|---|---|---|---:|:--:|---|---|:--:|:--:|---|
+| **H16** | Active depth interrogation (σ-triggered ROI depth) | **PARKED** (Open, Phase-1) | 8% | — | **untested** — dossier only: `Architecture & Inference/Research/H16_ACTIVE_DEPTH_INTERROGATION.md` | F1–F3 pre-registered (trigger selectivity, energy vs always-on, metric anchor) | `PARK` → §3 *(legitimate Phase-1 window ~Sep)* | **never** | Architecture & Inference |
+| **H17** | Unified-FOV masked-periphery training | **PARKED** (was Stale-Orphaned) | 5% | — | **untested** — dossier only: `Architecture & Inference/Research/UNIFIED_FOV_FOVEATED_PATCHING.md`; no experiment in 13 days | urban-ADE lift + imagination calibration without a comma regression | `PARK` → §3 | **never** | **— unowned** |
+| **H18** | Hierarchical action grounding | Partially (operative Confirmed) | 55% | MEASURED | grounding dominance **grew Δ 2.70 m at 30 k** (hierarchy panel over `taniteval/results/driving_flagship-30k.json`) | per level: grounded consequence beats ungrounded selection at that horizon | **`PROVE`** — folds into HPP as **supporting evidence for the hierarchy**; extend to tactical/strategic | 2026-07-18 | Architecture & Inference |
+
+### 1.3 Survey-derived proposals (H19–H24, `TanitAD Research Hub/Project Steering/Research/2026-07-17-external-survey-derivation.md` §2)
+
+| ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
+|---|---|---|---:|:--:|---|---|:--:|:--:|---|
+| **H19** | Discrete tactical vocabulary → **anchor prior** | **Confirmed** | 70% | MEASURED | `taniteval/results/driving_refc-base-30k.json` — REF-C base **0.4523**, ties flagship; realized as the flagship v4 proposal mechanism (256 anchors) | falsifier was: anchored decode does not beat unimodal regression — **refuted, it does** | `RETIRE` as a question. **Note: this is a hierarchy-SUPPORTING result** (discrete tactical structure helps) → cite in HPP | 2026-07-22 | Benchmarks & Eval |
+| **H20** | Plan-persistence bridging (BridgeAD) | **PARKED** (was Stale-Orphaned) | 5% | — | **untested** — proposed, ranked #3 do-next, no experiment | plan-stability becomes measurable once T3-11 lands (`taniteval/rollout.py:94` dense-path persistence) | `PARK` → §3 | **never** | **— unowned** |
+| **H21** | Latent RFT (GRPO / WorldRFT) | **PARKED** (Open, blocked) | 5% | — | **untested** — gated on CARLA/renderer; prep not started | — | `PARK` → §3 *(blocked on renderer T4-15)* | **never** | **— unowned** |
+| **H22** | **Shortcut-trained imagination (DreamerAD)** | **UN-PARKED → Open, scheduled** | 5% | MEASURED *(the target failure is measured; the fix is untested)* | target: σ-dissipation **0.357 → 0.011 = chance by k=4** (`.../Research/2026-07-18-operative-flagship-blind-rollout-and-orthogonality.md`). The **fix itself is `untested`** | falsifier = shortcut/multi-step-trained σ still dissipates to chance by k=4 ⇒ the cap on H15 and H11 is intrinsic | **`UN-PARK` — the one most worth reviving.** It caps **both H15 and H11**. Schedule after HPP-0 | 2026-07-18 *(target failure)* | ⚠️ **UNASSIGNED — needs an owner (see §5 escalation)** |
+| **H23** | Interpretable cost-map decode head (PLAN-S) | **PARKED** (Open, blocked) | 5% | — | **untested** — blocked on BEV pseudo-labels (Cosmos-DD / PandaSet) | — | `PARK` → §3 | **never** | **— unowned** |
+| **H24** | Oracle-gap curriculum (ACID + CTRV floor) | **PARKED** (was Stale-Orphaned) | 10% | — | **untested** — ranked **#1 do-next on 07-17**, never ran. ⚠️ the v2 corpus used **selection-balancing**, a *different* mechanism, so H24 **as specified** is still untested | falsifier = curriculum on the oracle gap gives no lift over uniform sampling at matched steps | `PARK` **or run — the audit requires an explicit decision** (see §6 note N4) | **never** | **— unowned** |
+
+### 1.4 Flagship-line (H25–H28)
+
+| ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
+|---|---|---|---:|:--:|---|---|:--:|:--:|---|
+| **H25** | Vision-decoupling — the encoder redundantly re-encodes ego dynamics | **Confounded** (under-tested, **not** refuted) | 25% | MEASURED *(of a **void instrument**)* | `taniteval/results/postmortem_b_egodropout_v3enc10k.json` — **decorr measured NEVER-ON** through the whole gate window (`decorr_w = 0.0 if step < 10000`, RETRACTION_LOG C3); `driving_flagship-v3enc-10k.json` speed probe 0.393 vs v1 0.861 | gate: `vision_use > 20 %` **and** imagination > 12 % **and** ade@2s non-regress vs v2. ⚠️ **The v3enc "RESTART" verdict is doubly suspect** — void instrument *and* a horizon-blind primary | **`FIX` then re-run, or `RETIRE`** — as-is it occupies "open" with a known-void test | 2026-07-21 | Architecture & Inference |
+| **H26** | Hierarchical cross-alignment = the core-goal proof | **Partially** (confounded history) | 30% | MEASURED | hierarchy panel at 30 k over `taniteval/results/driving_flagship-30k.json` — **1 of 3 seams load-bearing** (ctx→tactical **+0.044** CI-sep); intent→operative **harmful**; nav→strategic pure command-echo (**route_skill 0.0**) | falsifier = ablating a layer's conditioning does not hurt the layer below ⇒ the hierarchy is decorative. **The broken seams are HPP-1's work list** | **`FIX` + `PROVE`** → HPP. **Downgrade the "core-goal proof" headline to "1/3 seams, mechanism open"** until HPP-4 | 2026-07-18 | Architecture & Inference |
+| **H27** | Planner–WM coupling failure is a **warm-start artifact**, not an intrinsic objective conflict | **Partially** (supported, **in-flight**) | 55% | MEASURED (⚠️ **in-loop trainer numbers, not eval**) | `.../incoming/2026-07-23-planner-wm-gradient-coupling/` — seam cos **+0.0043** (n=512, 47.9 % negative, PCGrad removes 2.2 %); 4 warm-start arms degrade the WM (`taniteval/results/flagship-v4.1-10k.json`); random-init canary **descends** under full coupling | **the formal 8-metric gate is DEFERRED**; run at ~40 % of 30 k. Falsifier = the canary rises under λ_plan = 1.0 at 30 k | **`MEASURE`** — finish to 30 k, then the **formal** gate | 2026-07-25 *(in-loop)* | Architecture & Inference |
+| **H28** | The frozen-WM planner's residual is **aleatoric**, not capacity or search | **Confirmed (neg)** | 85% | MEASURED | `.../incoming/2026-07-23-frozen-wm-learned-planner/artifacts/bigplanner_{v2,large,mlp}.json` — 11× scaling flat **0.599 → 0.601 → 0.599** (none separated); `valuemodel_results.json` — deployable learned-value search **worse, 1.0162** [+0.237, +0.605] | closed for the *contender* question | `RETIRE` as a contender; keep frozen-WM as the honest **~0.60 m fallback**. CEM / learned-value retired as a product path | 2026-07-24 | Architecture & Inference |
+
+### 1.5 Implicit hypotheses the program actually tested (first numbered by R3)
+
+*These were tested and decided but appear in **neither** of the two source ledgers. They are the
+portfolio's largest blind spot and are now first-class rows.*
+
+| ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
+|---|---|---|---:|:--:|---|---|:--:|:--:|---|
+| **IMP-1** | **Speed-input fix** — v0 as a 3rd action channel recovers ego-dynamics | **Confirmed** | 95% | MEASURED | `taniteval/results/eff_flagship-nospeed.json` vs `eff_flagship-speed.json` — causally **+2.21 m [2.04, 2.39]** (2.918 → 0.452); REF-A fwd-ADE 3.73 → 0.83 | closed at power | `RETIRE` — **the program's strongest single positive. Write it up; it is publishable** | 2026-07-20 | Architecture & Inference |
+| **IMP-2** | **Supervised heads are a lossy readout of a good WM** | **Confirmed** | 90% | MEASURED | `MODEL_REGISTRY.md` §6 / `PROGRAM_OVERVIEW.md` §7 — P2 CEM planner beats the head **+2.257 m** open-loop, drifts **38 %** less closed-loop | closed | **Feed into HPP** — this is *why* the hierarchy must be evaluated through **planning**, not heads (motivates PC2) | 2026-07-23 | Architecture & Inference |
+| **IMP-3** | **Open-loop ⊥ closed-loop** | **Confirmed** | 90% | MEASURED | `PROGRAM_OVERVIEW.md` §5.2d — 0.452 open → **1.488 closed** (n=40); triple-confirmed n=1 → n=12 → n=40 | closed | `RETIRE` as a question; **enforce as policy — no open-loop-only claim may be called "drives"** | 2026-07-24 | Benchmarks & Eval |
+| **IMP-4** | **Closed-loop is improvable** (was "BOUND") | **Open — REOPENED 2026-07-25** | 25% | MEASURED | `.../incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44_K185.json` — corridor departure **0.35 % → 59 %** at an 18.5 s horizon (junction 84 %); `e2a_localize_heldout44.json` — offset **perceivable R² = 0.72**, 91 % downstream loss ⇒ the fix is a **training-objective** one | E1b pre-registered, renderer-free (`.../incoming/2026-07-25-e1b-failure-gated-clsft/`); falsifier = failure-gated CL-SFT does not reduce junction departure at K=185, paired | **`MEASURE`** — E1b running; paired eval on the next drumbeat | 2026-07-25 | Architecture & Inference |
+| **IMP-5** | **Branch-B from-scratch camera-conditioning** (GAIA-2 style) | **Refuted** | 100% | MEASURED | `.../incoming/2026-07-24-branchb-transfer-eval/results_branchb_transfer_e10_UNDERFIT.json` — cross-rig speed R² **−0.667** vs frozen v1 **+0.657**, paired CI excludes 0 on 3/4 arms | closed at power | `RETIRE` — **publishable negative** | 2026-07-24 | Architecture & Inference |
+| **IMP-6** | **INT8 is a viable deployment precision** | **Refuted** | 100% | MEASURED | `Architecture & Inference/Implementation/incoming/2026-07-23-orin-int8-benchmark/orin_int8_benchmark.json` (+ `DEPLOYMENT_READINESS_INT8.md`) — W+A INT8 collapses the readout head to cos **0.566**, **+0.0215 m** over 20 steps, **no latency win** | closed | `RETIRE` — FP16 is the deployment precision | 2026-07-23 | Architecture & Inference |
+| **IMP-7** | **Recovery-augmentation halves closed-loop departures + generalizes** | **Refuted** | 100% | MEASURED | `Architecture & Inference/Implementation/incoming/2026-07-24-refccl/powered_departure.json` (+ `POWERED_DEPARTURE_RESULTS.md`, `tolerance_rescore.json`) — n=12 **+0.0089** *reverses* to n=40 cross-fit **−0.0302 [−0.0595, −0.0088]** (departs **3.3× more**) | closed at power | `RETIRE` — keep the machinery + the two measurement lessons | 2026-07-24 | Architecture & Inference |
+| **IMP-8** | **Kinematic dataset-balancing (v2 50 h) lifts driving** | **Open** | 20% | MEASURED (corpus) / **untested on driving** | corpus built: `Data Engineering/.../incoming/2026-07-24-v2-corpus-50h-balanced/` (key `physicalai-v2bal-4b7eeeac222d`, turns 14 → 28 %); QA `.../incoming/2026-07-25-v2-corpus-qa/`. **Driving effect `untested`** | gate at 30 k on the pod1 arm; falsifier = balanced corpus gives no CI-separated driving lift. Known limit: *kinematic selection cannot buy semantic scenarios* | `MEASURE` | 2026-07-25 *(corpus only)* | Data Engineering |
+
+---
+
+## 2. Live summary — the portfolio's true active surface
+
+| Action | Rows | IDs |
+|---|---:|---|
+| **PROVE** (build the decisive test — the HPP) | 3 | **H1b**, H18, H26 · *supporting inputs: H19, IMP-2* |
+| **MEASURE** (instrument exists — just run it) | 8 | H3, H7, H9, H11, H15, H27 *(= H1c)*, IMP-4, IMP-8 |
+| **FIX** (broken instrument/impl before retesting) | 4 | H6, H9, H25, H26 |
+| **SPLIT** (applied by this merge) | 3 parents → 7 rows | H1→H1a/H1b/H1c · H4→H4a/H4b · H14→H14a/H14b |
+| **PARK** (explicit, with revisit-trigger — §3) | **10** | H2, H8, H10, H12, H16, H17, H20, H21, H23, H24 |
+| **UN-PARK** (targets a MEASURED failure) | 1 | **H22** |
+| **RETIRE** (settled — stop spending attention) | **11** | H0, **H4a**, H5, H13, H19, H28, IMP-1, IMP-3, IMP-5, IMP-6, IMP-7 *(the audit lists 10; **H4a** is the 11th, created by the H4 split. H19 is also a PROVE supporting input — see §6 N1)* |
+
+**~11 hypotheses genuinely need work.** Ten are retire-able today and ten are parked but were
+presented as "open" — which is what made the program feel spread thin.
+
+**The five highest-value open questions** (R3 §3.2, best next GPU-day, in order):
+1. **H7 — the C2 data-efficiency slope.** The single headline claim never measured. PRIO goal.
+2. **IMP-4 — closed-loop competence via failure-gated CL-SFT (E1b).** Cheapest high-impact item on
+   the board; renderer-free, pre-registered.
+3. **H27 — planner–WM co-evolution to 30 k + a *formal* gate.** Converts the central claim from
+   "in-flight" to "measured".
+4. **H1b — hierarchy net-driving advantage (D5/D6 + H26).** The constitutional core claim,
+   **untested**, and the one available datapoint argues against it.
+5. **Longitudinal control** (cross-cutting; underlies H1/H3/C1). The most-triangulated weakness.
+
+---
+
+## 3. PARKED register — `PARKED {reason, revisit-trigger}`
+
+**PARKED is a first-class state, not a synonym for "open".** A parked hypothesis consumes no
+attention, has no owner obligation, and **may not be quoted as an active research direction**. It
+returns to the ledger only when its revisit-trigger fires.
+
+| ID | Reason parked | Revisit-trigger | Parked since |
+|---|---|---|:--:|
+| **H2** | Nothing measured on our stack; Phase-0 exit demo unbuilt | **After HPP-4**; Phase-1 modality-steering window | 2026-07-25 |
+| **H8** | Prio-2 by design; interface ready, untested | **Phase 1** | 2026-07-25 |
+| **H10** | Toy-only with a known −24 % interference mode; **D7 never run** | **Post-HPP**, when D7 is schedulable | 2026-07-25 |
+| **H12** | Command-conditioning only; not integrated-measured | **Phase 1** | 2026-07-25 |
+| **H16** | F1–F3 pre-registered but the window is legitimately later | **Phase 1 (~Sep)** — the dossier's own window | 2026-07-25 |
+| **H17** | **No owner for 13 days**; dossier only, no experiment | **Post-HPP** — or the moment an owner + date is assigned | 2026-07-25 |
+| **H20** | Proposed 07-17, ranked #3 do-next, never run; no owner | **After E1b** — plan-stability becomes measurable once T3-11 (`taniteval/rollout.py:94`) lands | 2026-07-25 |
+| **H21** | Hard-blocked: needs CARLA / a reactive renderer | **When the renderer gets an owner + a pod (T4-15)** | 2026-07-25 |
+| **H23** | Hard-blocked: needs BEV pseudo-labels (Cosmos-DD / PandaSet) | **When BEV pseudo-labels exist** (PandaSet geometry D-016 R1 is a prerequisite) | 2026-07-25 |
+| **H24** | Ranked **#1 do-next on 07-17** and never run; no owner. ⚠️ **The audit asks for an explicit decision (PARK *or* run) — parked here as the reversible default; see §6 N4** | **After HPP-0**, or immediately on a PI decision to run it | 2026-07-25 |
+
+**Un-parked 2026-07-25:** **H22** (shortcut-trained imagination) — it targets a **MEASURED** failure
+(σ-dissipation to chance by k=4) that caps **both H15 and H11**, which is what distinguishes it from
+the other four orphans. It needs an owner (§5).
+
+---
+
+## 4. Gate definitions (Phase 0)
+
+`Project Steering/Phase 0 Plan.md` §4 carries the full D1–D9 table with thresholds, instrument rows
+and ablations. Restart/continue decisions follow `Project Steering/GATE_PROTOCOL.md` via
+`stack/scripts/run_gate.py`.
+
+**Gate status relevant to this ledger (MEASURED, 2026-07-25):**
+
+- **D1–D3** (decode gates) — instrument gates, **necessary-not-sufficient**; D4–D6 arbitrate driving.
+- **D5 / D6** (topology) — **NEVER RUN.** This is the whole of H1b.
+- **D7** (continual learning) — never run (H10).
+- **D8** (self-monitoring AUROC > 0.85) — **preview only, p ≈ 0.047**, not reached (H11).
+- **D9** (hidden-sector driving gain) — **NEVER ABLATED** (H15).
+- **Gate machinery:** `taniteval/results/v1_g1_dryrun_gate.json` found 3 gate bugs (the 30 k gate
+  would have produced **NO VERDICT**); `v1_g1_dryrun_gate_FIXED.json` shows all three closed —
+  `kill_adjudicated: 8`, 5 report-only falsifiers emitted, verdict renderable. ⚠️ **This post-dates
+  the R3 audit** and supersedes its "3 of 8 kill-secondaries still have no emitter" (§6 N5).
+
+---
+
+## 5. Open escalations (integration, not documentation)
+
+*Per the Agent Operating Standard: escalate integration; do not write "please merge" into a doc and
+hope. Each item below needs a decision or an assignment, not a re-read.*
+
+1. **H22 has no owner.** It is UN-PARKED and it caps two constitutional hypotheses (H15, H11).
+   Un-parking without an owner recreates the orphan state this merge exists to remove.
+2. **H14b needs a PI scoping decision.** "Physical-law / ethics / culture injection" has no design,
+   no instrument and no gate. It is either real work with an owner or it is PARKED — it cannot stay
+   an unqualified constitutional claim.
+3. **H24 needs the explicit PARK-or-run decision** the audit demands (parked here as the reversible
+   default).
+4. **`MODEL_REGISTRY.md:1737` data-integrity correction is owed** — it states
+   `physicalai-val-f1b378f295ae` is "episode-disjoint" from the parity train set; a byte-level check
+   measures **78.5 % overlap** (`.../2026-07-25-closedloop-horizon-and-shift/E1a_E2a_RESULTS.md` §1.1,
+   MEASURED). The split is already refused in code, but any historical number computed on it
+   inherits the leak. *(Registry is orchestrator-owned this session — flagged, not edited.)*
+5. **Any doc still carrying "closed-loop improvement is BOUND" is stale** and should be swept
+   (overturned 2026-07-25 as horizon-confounded).
+
+---
+
+## 6. Merge notes — where this ledger extends or questions the audit
+
+*The audit's verdicts are carried unchanged. These are clearly-marked notes, not edits.*
+
+- **N1 — the audit's own action counts are internally inconsistent.** `01_EXECUTION_PLAN` §C.6
+  states `PARK = 9` but lists **10** IDs, and `RETIRE = 9` but lists **10** IDs. Several
+  hypotheses carry two actions (H1 SPLIT+PROVE, H9 FIX+MEASURE, H15 MEASURE+FIX, H26 FIX+PROVE) and
+  are single-counted inconsistently; H19 appears under **both** RETIRE and the PROVE row's
+  supporting inputs. **This ledger counts by listed IDs** (PARK 10, RETIRE 10/11 rows) and counts a
+  hypothesis under *every* action assigned to it. The discrepancy is arithmetic, not substantive.
+- **N2 — split sub-row DoA is this merge's ESTIMATE.** The audit assigned DoA to the parent only
+  (H1 40 %, H4 85 %, H14 35 %). Sub-row values are flagged `≈` and are **ESTIMATED**, not audited.
+- **N3 — H1c is an alias, not a second status.** H1-planner-coupling *is* H27; it carries a pointer
+  so the split reads completely without duplicating a status (the divergence this file exists to
+  kill).
+- **N4 — H24's action is genuinely ambiguous in the audit**: `01_EXECUTION_PLAN` §C.3 says
+  "`PARK` **or run** — … Decide explicitly", while §C.6 counts it under PARK. Parked here as the
+  reversible default, with the decision escalated (§5.3).
+- **N5 — one audit statement is superseded by a same-day artifact.** R3 §3.2 and `01_EXECUTION_PLAN`
+  §C.4/B.3 state "3 of 8 kill-secondaries still have no emitter, so the gate cannot render a
+  verdict". `taniteval/results/v1_g1_dryrun_gate_FIXED.json` (MEASURED, 2026-07-25) reports
+  `kill_adjudicated: 8` with the 5 report-only falsifiers emitted — the blocker is **closed**.
+  H27's status is unchanged (the *formal* gate is still deferred behind the 30 k finish), but the
+  reason "no emitter" no longer applies.
+- **N6 — even the LIVE doc carried an UNSAFE verdict.** `PROGRAM_OVERVIEW` §3 read
+  "H4 ✅ **CLOSED NEGATIVE** — and re-localized". The audit calls the flat label unsafe; the split
+  (H4a refuted / H4b open-and-positive) is applied here and the overview now points at this file.
+- **N7 — the audit's "H14 broad vision" has no falsifier anywhere in the program.** Recorded as
+  `untested` with an explicit note that a gate must be written before it is quotable. This is the
+  one row where the mandatory-artifact rule bites hardest, and it should stay visible.
+
+---
+
+## 7. Historical record
+
+### 7.1 What the superseded 2026-07-05 status table carried
+
+The frozen table (H0–H18, status column literally headed *"Status (2026-07-05)"*) is **removed, not
+archived as a status source** — reproducing it is exactly the failure mode this merge exists to end.
+Its two genuinely useful columns have been carried into the rows above:
+
+- **Phase-0 gate bindings** per hypothesis (D1–D9) → now the `Gate / falsifier` column, plus §4.
+- **Owner agent** per hypothesis → now the `Owner` column. One correction: it owned **H4** to *Data
+  Engineering*, but every deciding artifact came from the **Architecture & Inference** REF-A lineage.
+
+Its status vocabulary (`confirmed | validated-toy | supported | open | at-risk | refuted`) is
+retired in favour of R3's, because "validated-toy" and "supported" were being read as evidence of
+capability when they meant *toy-scale* and *someone else's paper*.
+
+The full divergence inventory between the two ledgers is in
+`TanitAD Research Hub/Implementation/incoming/2026-07-25-wave1-hypothesis-ledger/WAVE1_E_REPORT.md`.
+
+### 7.2 Change log — **ARCHIVE, 2026-07-05 → 2026-07-19. NOT a status source.**
+
+> ⚠️ **Read this as a research diary, never as status.** Three cautions, all MEASURED against the file:
+> (1) **It is not chronologically ordered** — entries run 07-18, 07-31, 07-17, 07-15 … 07-05, then
+> seven more 07-18s and a 07-19. Do not infer a timeline from position.
+> (2) **It contains a future-dated entry** — one is stamped `2026-07-31` with the parenthetical
+> "real wall-clock 2026-07-17". That is the narrative-clock artifact, not a real date.
+> (3) **It contains two contradictory 07-18 entries on H4** ("H4 CLOSES NEGATIVE" and "H4 REFRAMED —
+> NOT negative"), and **neither ever reached the status table**. That contradiction is now resolved
+> by the H4a/H4b split above; both entries are kept because the reasoning in each is still useful.
+>
+> The diary is preserved verbatim below. **Nothing in it may be quoted as a current status.**
 
 - 2026-07-18: Fleet-review follow-up — external-survey derivation proposes H19 (discrete tactical vocabulary/LAMP), H20 (plan-persistence bridging/BridgeAD), H21 (latent GRPO-RFT/WorldRFT), H22 (shortcut-trained imagination/DreamerAD — pairs with the measured sigma-dissipation), H23 (cost-map decode head/PLAN-S), H24 (oracle-gap curriculum/ACID+our CTRV floor) as PROPOSED (not adopted; falsifiers + gates in Project Steering/Research/2026-07-17-external-survey-derivation.md). All six flagship-v2 levers externally validated (ColaVLA=goal-decode, PLAN-S=ego-to-planners).
 - 2026-07-18: Architecture & Inference (Wed) — **E1+E2 re-run on the OPERATIVE flagship-speed @19k
@@ -388,3 +662,5 @@ See `Project Steering/Phase 0 Plan.md` §4 for the full D1–D8 table with thres
   model. Exactly what v2's vision-reliance + rebalance target; the panel now RE-RUNS on comma/cosmos to measure
   v2's OOD lift (baseline set). Cosmos pixels DOWNLOADABLE (pre-rendered 43GB shards); 24 clear/degraded weather
   PAIRS staged -> a TRUE weather-counterfactual is now a modest panel addition. See [[flagship-longitudinal-lever]].
+</content>
+</invoke>

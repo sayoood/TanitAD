@@ -49,37 +49,53 @@ architecture, comma val, 30 eps).
 | Edge | Core hypotheses | How it's built | Status (2026-07-25) |
 |---|---|---|---|
 | **① Planning / Hierarchy** | H1 (4-brain: strategic/tactical/operative + fallback-MRC), H26 (cross-level alignment) | Three E2E abstraction layers at different clock rates + a fallback that forces a Minimal-Risk Condition on collapse | 🔶 **Built and in its first real training round.** The v3 design shipped as **flagship-v4** (three *planners* over the WM, ≈247.9 M — 30 M smaller than v1). Four **warm-start** arms failed (best 10 k `ade_0_2s` **0.8522 [0.75, 0.98]** vs a 0.60 bar); a ~0-GPU **cosine pre-probe** (seam cos **+0.0043**) refuted gradient surgery and selected **co-evolution from random init**, which is working (canary **15.674 → ~1.4** under full coupling, ADE ~0.48 at 40 % of training, 10 k gate CONTINUE). Standing evidence unchanged: heads are a lossy readout (P2 planner 0.893 vs head 3.150 open-loop; 1.038 vs 1.685 closed-loop) |
-| **② Data efficiency** | H3 (LeJEPA/SigReg world model), H4 (frozen vs trained encoder), H7 (1000× data via IDM) | Latent world model, no perception labels; inverse-dynamics to mine action-free video; focal-length canonicalization | ✅→🔶 **H4 stays closed-negative but is now correctly *localized***: the ceiling is **static decode** off a frozen JEPA latent (3.65 m, the REF-A band), not freezing — a planner reading the *same* frozen WM through its dynamics reaches **0.599 m**. **H7 has its first end-to-end evidence** (pseudo-label pretraining ≈96 % / 109 % of real-label value; YouTube pilot ≈92 % of ceiling). The C2 **slope** is still unmeasured — now the clearest single gap |
+| **② Data efficiency** | H3 (LeJEPA/SigReg world model), H4 (frozen vs trained encoder), H7 (1000× data via IDM) | Latent world model, no perception labels; inverse-dynamics to mine action-free video; focal-length canonicalization | ✅→🔶 **H4 is now SPLIT** (the flat "closed-negative" was unsafe — see the ledger): the ceiling is **static decode** off a frozen JEPA latent (3.65 m, the REF-A band), not freezing — a planner reading the *same* frozen WM through its dynamics reaches **0.599 m**. ⇒ **H4a** (frozen + supervised regression) refuted; **H4b** (frozen + feature-prediction + planning) **OPEN and positive**. **H7 has its first end-to-end evidence** (pseudo-label pretraining ≈96 % / 109 % of real-label value; YouTube pilot ≈92 % of ceiling). The C2 **slope** is still unmeasured — now the clearest single gap |
 | **③ Inference efficiency** | H5 (efficient decode/inference transfer), H2 (modality steering), H8 (MoE) | 263 M vs 15–120× larger; imagine-and-select instead of generative rollout | ✅ **Closed for the deployed arm.** ⚠️ the old "deploy tick 11.16 ms" was a *different tick* (retracted). Real **planning tick** 100.29 ms eager → **18.75 ms p50 composed (5.35×)**, 10 Hz at **p99** with 5.3× headroom; levers are **sequenced, not additive**. **FP16 is the deployment precision, INT8 REJECTED** (no latency win; W+A INT8 collapses the readout head to cos 0.566 and costs +0.0215 m over 20 steps). CEM is **not** latency-blocked (K=8 fan 20.82 ms, ~0.3 ms/candidate). H2/MoE are Phase-1 |
 | **④ Safety / self-knowledge** | H11 (self-monitoring), H9 (rule compliance), H15 (imagination), H14 (physical grounding) | Per-level monitors + hard rule barriers + ImaginationField (advection + epistemic σ) + kinematic/Kamm grounding | 🔶 Instruments built and **now partly real**: first MEASURED beyond-ADE numbers on the deployed architecture (decision-tick p50 **14.33 ms**, TMS **0.0435** = expert-log band, CNCE **210,551**) + **SC-14/TLC**. **H15 `vision_use` still flat at ~12 %**; D8 separation still preview-only; σ-dissipation stands (0.357 → 0.011 by k=4). The **binding gap is the renderer**: closed-loop TLC/LAL/OKRI/LOPS cannot be computed without one |
 
 ## 3. Hypothesis ledger
-| H | Claim | Status (2026-07-25) |
-|---|---|---|
-| H0 | E2E > rule-based (settled) | ✅ confirmed |
-| H1 | 4-brain hierarchy | 🔶 operative validated; heads-as-decision-makers falsified → planning (D-033). **The planner architecture is now built and training (§5.2a); coupling it is no longer the open question — the level it reaches is** |
-| H2 | Attention-based modality steering | supported (DriveMoE/GEMINUS); Phase-0 exit demo |
-| H3 | Latent world model (LeJEPA/SigReg) | ✅ **strengthened.** The WM is a good *differentiable simulator*: a 3.77 M planner backpropagating ADE **through the frozen WM** reaches 0.599 m, **not separated** from the WM's own oracle-action ceiling 0.4045 (+0.194 [−0.045, +0.448]) |
-| H4 | Frozen vs trained encoder | ✅ **CLOSED NEGATIVE — and re-localized.** The ceiling is **static decode off the frozen latent** (3.65 m), not freezing: through the frozen *dynamics* the same latent supports 0.599 m. The trained encoder remains the data-efficient path; "frozen + regress" is what fails |
-| H5 | Efficient inference transfer (CNCE moat) | ✅ supported + **first real CNCE** (median 210,551) and a defined, met tick budget (18.75 ms p50, p99 < 100 ms) |
-| H6 | Opponent weak-spot corpus | actionable — scenarios shipped (Stop-Arm, Work-Zone Phantom, Stationary-Lead) + **SC-14 traffic light w/ an oracle-tested metric** |
-| H7 | 1000× data via IDM + focal canonicalization | 🟢→✅ **first end-to-end evidence.** Pseudo-label WM pretraining = **~96 %** of real-label value (8 seeds, 2 proxy domains) and **109 % speed / 107 % traj / 71 % yaw** on the parity target (4 seeds); **80-clip CC YouTube pilot ≈92 % of ceiling**, CI excludes 0 every seed. ⚠️ DIRECTIONAL (80 clips / 3 seeds / unknown intrinsics); direct label accuracy is modest (speed R² 0.62–0.66, **yaw ≈ 0**, accel dropped) |
-| H8 | MoE beyond sensors | prio-2, interface ready |
-| H9 | Inherent rule compliance (hard barriers) | ✅→🔶 **now scorable, not just argued**: TLC design oracle **rule_barrier 1.0 vs soft_prior 0.0** on SC-14. Model-side number renderer-gated |
-| H10 | Latent-RAG continual learning | validated-toy w/ known failure mode |
-| H11 | Self-monitoring w/ guarantees | validated-toy; D8 AUROC > 0.85 not yet reached. **New instrument in daily use: the plan-free WM-integrity canary** — it is what made the v4 line attributable |
-| H12 | Text as part, not core | supported (1 B LLM bridge) |
-| H13 | Extraction heads (probes) | settled pattern |
-| H14 | Physical grounding | Track 1 adopted (kinematic + Kamm) |
-| H15 | Imagination of unobserved areas | 🔶 live in training; `vision_use` flat ~12 %; capped at 1-step self-monitor |
-| H16 | Active depth interrogation (σ-triggered) | open — Phase-1 |
-| H17 | Unified-FOV masked-periphery training | open |
-| H18 | Hierarchical action grounding | 🔶 shipped; grounding dominance grew Δ 2.70 m at 30 k |
-| H19 | Maneuver → anchor prior (anchored decoders) | ✅ validated by the REF-C anchor-prior graft; now the flagship's own proposal mechanism in v4 (256 anchors, tactical + operative) |
-| H25 | Vision-decoupling — the encoder redundantly re-encodes ego dynamics | 🔶 open. The v3enc lever family spent 1 of 2 restarts and did **not** recover the speed probe (0.393 vs v1's 0.861); **decorr was measured never-on** during the gate window, so the family is under-tested, not refuted |
-| H26 | Hierarchical cross-alignment = the core-goal proof | 🔶 **1 of 3 seams load-bearing** at 30 k (ctx→tactical +0.044 CI-sep). The v4 line replaces the seam question with a *planning* question — G1 (chosen plan beats non-chosen on realized outcome) is the successor instrument |
-| **H27** *(new, 2026-07-23)* | **Planner–WM coupling failure is a warm-start artifact, not an intrinsic objective conflict** | 🟢 **supported, in-flight.** Seam gradients are near-**orthogonal** (cos +0.0043, 47.9 % negative, PCGrad removes 2.2 %) so the conflict is neither directional nor magnitude-borne; four warm-start arms degrade the WM, the random-init co-evolved arm's canary **descends** under full coupling. ⚠️ in-loop evidence, formal gate deferred, run at ~40 % |
-| **H28** *(new, 2026-07-24)* | **The frozen-WM planner's residual is aleatoric, not a capacity or search deficit** | ✅ **settled negative for the contender question.** 11× planner scaling is flat (0.599 → 0.601 → 0.599, none separated); the deployable learned-value search is **worse** (1.016, separated). Frozen-WM = a ~0.60 m degradation-free **fallback** |
+
+> **⛔ This section no longer carries a status table.** The single quotable source for hypothesis
+> status is **[`TanitAD Research Hub/HYPOTHESIS_LEDGER.md`](../TanitAD%20Research%20Hub/HYPOTHESIS_LEDGER.md)**.
+>
+> **Why:** two ledgers had diverged — that file's table was frozen at **2026-07-05** while this one
+> was live, and H4 / H25–H28 existed only here while H20–H24 and IMP-1…IMP-8 existed in neither.
+> A reader trusting the wrong one got a stale answer (`R3_hypothesis_portfolio.md` §1). They were
+> merged on **2026-07-25** into one living ledger with mandatory columns
+> (`status · DoA % · evidence-class · deciding-artifact-path or "untested" · gate/falsifier ·
+> action · last-retested · owner`) and an explicit **PARKED {reason, revisit-trigger}** state.
+> **A status with neither a MEASURED artifact path nor an explicit "untested" is inadmissible there.**
+>
+> Duplicating any row here would recreate the divergence. Quote the ledger, not this page.
+
+**Live summary (2026-07-25) — the portfolio's true active surface, 41 rows across 37 audited
+hypotheses.** Counts and statuses are the ledger's; see it for every per-row artifact path.
+
+| Action class | Rows | The live surface |
+|---|---:|---|
+| **PROVE** — build the decisive test | 3 | **H1b** (hierarchy edge), H18, H26 → the **Hierarchy Proof Program** (`01_EXECUTION_PLAN` PART A) |
+| **MEASURE** — instrument exists, just run it | 8 | H3, H7 *(the C2 slope)*, H9, H11, H15 *(D9)*, H27, IMP-4 *(E1b)*, IMP-8 |
+| **FIX** — broken instrument before retesting | 4 | H6, H9, H25 *(decorr never-on)*, H26 |
+| **PARK** — explicit, with a revisit-trigger | 10 | H2, H8, H10, H12, H16, H17, H20, H21, H23, H24 |
+| **UN-PARK** — targets a MEASURED failure | 1 | **H22** (σ-dissipation to chance by k=4 caps both H15 and H11) |
+| **RETIRE** — settled, stop spending attention | 11 | H0, H4a, H5, H13, H19, H28, IMP-1, IMP-3, IMP-5, IMP-6, IMP-7 |
+
+**Three splits applied** (a settled negative may not hide an open sub-claim):
+
+- **H4 → H4a** (frozen + supervised regression) **Confirmed-negative, 2.9196, RETIRE** ·
+  **H4b** (frozen + feature-prediction + planning) **OPEN and reads POSITIVE at 0.599 m** — the real
+  v3 question. ⚠️ *The flat "H4 CLOSED NEGATIVE" this section used to carry is UNSAFE and is
+  superseded by the split.*
+- **H1 → H1a-operative** (validated, 0.452 m) · **H1b-hierarchy-edge (UNTESTED — the D5/D6 topology
+  gates have never run)** · **H1c-planner-coupling** (= H27, in-flight).
+- **H14 → H14a-narrow** (kinematic + Kamm, 95.9 % physically-shaped, done) · **H14b-broad**
+  (physical-law / ethics / culture injection — **untouched, no gate written**).
+
+**~11 hypotheses genuinely need work.** Ten are retire-able today and ten were presented as "open"
+while being un-owned — which is what made the program feel spread thin.
+
+<!-- The per-hypothesis status table that stood here 2026-07-05 → 2026-07-25 was merged into
+     HYPOTHESIS_LEDGER.md on 2026-07-25 (Wave-1 workstream E). Do not reintroduce it. -->
 
 ## 4. Phases & timeline
 | Phase | Window | Goal | Where we are |
