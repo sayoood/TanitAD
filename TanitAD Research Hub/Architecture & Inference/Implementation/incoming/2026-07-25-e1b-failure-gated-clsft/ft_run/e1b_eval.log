@@ -1,0 +1,16 @@
+[run_e1b_eval] START 2026-07-25T22:18:42Z
+[e1b-eval] 44 held-out eps | K [20, 185] | dev cuda
+[e1b-eval] BASE: step 29999 | anchors (128, 4, 2)
+[e1b-eval] BASE: open-loop n=967 ADE@2s=0.4747 anchor_acc=0.6815 (77s)
+[e1b-eval] BASE: K=20 n=967 dep=0.0053 junc_dep=0.0395 peakXTE=0.368 OODpeak=1.022 (703s)
+[e1b-eval] BASE: K=185 n=43 dep=0.5877 junc_dep=0.8414 peakXTE=38.944 OODpeak=1.266 (736s)
+[e1b-eval] FT: step 3999 | anchors (128, 4, 2)
+[e1b-eval] FT: open-loop n=967 ADE@2s=0.6693 anchor_acc=0.6163 (49s)
+[e1b-eval] FT: K=20 n=967 dep=0.0068 junc_dep=0.0359 peakXTE=0.518 OODpeak=1.032 (556s)
+[e1b-eval] FT: K=185 n=43 dep=0.1603 junc_dep=0.4144 peakXTE=3.041 OODpeak=1.134 (732s)
+[e1b-eval] PRIMARY paired delta: {'delta': -0.427, 'lo': -0.6838, 'hi': -0.1648, 'ci95': 0.2595, 'p_delta_gt0': 0.0, 'separated': True, 'reducer': 'mean', 'n_windows': 6, 'n_episodes': 6, 'n_boot': 2000, 'estimator': 'paired_episode_cluster_bootstrap'}
+[e1b-eval] GUARDRAILS: {"a_openloop_ade2s_ok": false, "b_anchor_acc_ok": false, "b_anchor_traj_l1_ok": false, "c_ood_in_band": true, "c_ood_ft": 1.1339, "c_ood_base": 1.2664, "c_ood_ratio_ft_over_base": 0.8954, "all_ok": false}
+[e1b-eval] verdict: BOUND: primary separated lower BUT a guardrail regressed ({"a_openloop_ade2s_ok": false, "b_anchor_acc_ok": false, "b_anchor_traj_l1_ok": false, "c_ood_in_band": true, "c_ood_ft": 1.1339, "c_ood_base": 1.2664, "c_ood_ratio_ft_over_base": 0.8954, "all_ok": false}) — per PRE_REGISTRATION §3 this is not a SUCCESS.  (2874.9s) -> /workspace/e1b/e1b_eval_result.json
+E1B_EVAL_DONE
+[run_e1b_eval] rc=0 DONE 2026-07-25T23:06:42Z
+E1B_EVAL_RUN_DONE
