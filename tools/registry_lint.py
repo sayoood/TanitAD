@@ -80,6 +80,22 @@ DEFAULT_REGISTRY = "Project Steering/MODEL_REGISTRY.md"
 DEFAULT_RETRACTIONS = "Project Steering/RETRACTION_LOG.md"
 DEFAULT_SIDECAR = "tools/registry_pointers.jsonl"
 
+# The linter was clean on MODEL_REGISTRY and still missed every live finding, because
+# its LIMITATION IS SCOPE, NOT SENSITIVITY: a 2026-07-25 manual provenance sweep found
+# all three retracted-but-still-standing claims in files it never opened — the PAPER
+# (highest external stakes: a retracted hierarchy seam standing uncaveated), the
+# GATE_PROTOCOL (a *binding* protocol quoting a field the registry declares void), and
+# the HYPOTHESIS_LEDGER (the same seam, twice). Extending this list was named the
+# cheapest structural fix in that report. Scan the whole quotable surface by default.
+DEFAULT_DOCS = [
+    DEFAULT_REGISTRY,
+    "Paper/TANITAD_PAPER.md",
+    "Project Steering/GATE_PROTOCOL.md",
+    "Project Steering/PROGRAM_OVERVIEW.md",
+    "TanitAD Research Hub/HYPOTHESIS_LEDGER.md",
+    "Benchmarks & Eval/LEADERBOARD.md",
+]
+
 # ---------------------------------------------------------------- number extraction
 
 # Numbers as a human writes them in this registry: `0.4271`, `-0.0340`, `1.96`,
@@ -715,7 +731,7 @@ def main(argv: list[str] | None = None) -> int:
                                              "the TanitAD model registry.")
     ap.add_argument("--repo", default=".", help="repo root (default: cwd)")
     ap.add_argument("--file", action="append", default=[], dest="files",
-                    help=f"document to lint (repeatable; default {DEFAULT_REGISTRY})")
+                    help=f"document to lint (repeatable; default: {len(DEFAULT_DOCS)} quotable docs incl. the paper, gate protocol and ledger)")
     ap.add_argument("--retractions", default=DEFAULT_RETRACTIONS)
     ap.add_argument("--sidecar", default=DEFAULT_SIDECAR,
                     help="anchor-keyed pointer sidecar JSONL "
@@ -752,7 +768,14 @@ def main(argv: list[str] | None = None) -> int:
             print(text)
             return rc
 
-    docs = [repo / f for f in (args.files or [DEFAULT_REGISTRY])]
+    # An EXPLICITLY requested file must still hard-fail when absent (exit 2) — a typo'd
+    # --file that silently lints nothing is exactly the false-clean this tool exists to
+    # prevent. Only the DEFAULT set is filtered by existence, so that adding a doc to
+    # DEFAULT_DOCS before it is written does not break every run.
+    if args.files:
+        docs = [repo / f for f in args.files]
+    else:
+        docs = [repo / f for f in DEFAULT_DOCS if (repo / f).exists()]
     missing = [d for d in docs if not d.is_file()]
     if missing:
         for d in missing:

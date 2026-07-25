@@ -93,8 +93,17 @@ Comparative diagnostics at step 5350, for information only:
 
 - matched-step ratio v3enc/v1 = **1.834**, CI [1.759, 1.909], first 0.757 → last 2.224 (**widening**).
   v2's was 1.51 → **4.33**: v3enc is roughly **half as far behind** as v2 was.
-- v1 reached v3enc's current `g_op_fwd_ade_m` (0.422) at step **450** → ~**12×** slower. v2's figure
-  was ~30×.
+- ~~v1 reached v3enc's current `g_op_fwd_ade_m` (0.422) at step **450** → ~**12×** slower. v2's figure
+  was ~30×.~~ 🔴 **RETRACTED / VOID — do not quote (swept 2026-07-25).** `MODEL_REGISTRY.md:424-426`
+  declares this exact field void: the gate JSONs (`Gates/flagship-v3enc-gate-2026-07-20.json`,
+  `…-10k-2026-07-21.json`) *"retain `"reached_at_step": 450` under `"smoothing": "3-point rolling
+  median"` — **that field is void in both**; they were not re-run (no GPU)."* A retracted number
+  survived here for four days **in a BINDING protocol**, i.e. in the document that decides
+  restart/continue — the highest-consequence place for a void figure to sit. The admissible
+  comparative reading is the **matched-step ratio** in the bullet above (1.834, CI [1.759, 1.909]),
+  which is exactly what §"Never quote a learning-curve exponent bare" prescribes when the curve-fit
+  quantity is inadmissible. *(Found by `tools/registry_lint.py` on the first run after its scan set
+  was extended beyond `MODEL_REGISTRY.md` — this file was previously never linted.)*
 - **Budget:** v3enc 10.22 s/step vs v1 10.89 s/step → 352 vs 331 steps/GPU-hour. Equal-step is
   ~equal-cost here (within 6 %); the concern that budget normalization would flatter the new arm does
   **not** bite for this pair. v3enc has spent **15.2 GPU-hours** to step 5350.

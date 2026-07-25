@@ -449,13 +449,32 @@ over overlapping estimates, so it measures **split-selection noise, not model un
 across ten arms it is **1.28–2.06× too narrow** (median 1.51×); a coverage simulation gives **62.3 %**
 against a cluster bootstrap's 93.8 % (target 93–97 %). The **decision-grade interval is the
 episode-cluster bootstrap** over the 40 validation episodes (2000 resamples), and for two arms scored on
-the same windows the **paired** bootstrap — never a combination in quadrature. The point estimates and
-every qualitative verdict in §7.1–§7.5 stand (they were re-verified against the corrected intervals);
-the *widths* quoted there are the deprecated statistic and are retained only because removing them would
-rewrite the record. All numbers from §7.6 onward carry the corrected estimator, named inline. A second
-consequence: the split-*mean* compresses between-arm gaps (a two-arm difference read 0.006 m under the
-split-mean and 0.044 m on the full set), so ranking claims must come from the paired test, not from
-comparing two split-means.
+the same windows the **paired** bootstrap — never a combination in quadrature. All numbers from §7.6
+onward carry the corrected estimator, named inline.
+
+> ⚠️ **CORRECTION (2026-07-25) — this paragraph previously asserted that "the point estimates and every
+> qualitative verdict in §7.1–§7.5 stand; the *widths* quoted there are the deprecated statistic." That
+> assurance is WITHDRAWN: it was wrong, and it was load-bearing.** The deprecated block does not only
+> mis-state widths — **its central value is a mean-of-split-means, so it moves the POINT ESTIMATE too.**
+> Measured 2026-07-25 by recomputing **27 arms** from the raw per-window dumps (`windows_*.pt`, 881
+> windows / 40 episodes; pipeline validated bit-for-bit against `CI_RECOMPUTE_2026-07-20.json`, 10/10
+> arms exact): headline `ade_0_2s` shifts **−6.67 % to +11.69 %**, and the shift is **bidirectional — 11
+> arms inflated, 16 deflated, none unchanged** — so no legacy point estimate may be assumed conservative.
+> On paired deltas the distortion reaches **×−4.15, including a sign flip**, and on hierarchy seams
+> **×3.3**. Widths are **1.107–3.100× too narrow (median 1.499×)** over 27 arms; the "1.28–2.06×" above
+> came from only ten and was under-sampled. **Under the corrected estimator the cross-arm ranking changes
+> in 10 of 27 positions.** Note the internal tension this correction resolves: the sentence immediately
+> following already conceded that the split-*mean* compresses between-arm gaps — that concession was
+> right, and it was incompatible with "the point estimates stand."
+> **Consequently every `± CI95` *and every central value* in §7.1–§7.5 is provisional pending
+> re-derivation** (per-arm corrections: `…/incoming/2026-07-25-jack-blast-radius/`). What survives
+> unchanged, checked explicitly: **no gate verdict flips** — the v3enc RESTART, the v4.1 FAIL and the
+> v4.2 kill all clear the bias by 10–100× — and the AlpaSim n=12, n=40 low-OOD, departure cross-fit and
+> `IMAGINATION_HELPS` panels never used the deprecated path at all.
+
+A second consequence, which the correction above generalises: the split-*mean* compresses between-arm
+gaps (a two-arm difference read 0.006 m under the split-mean and 0.044 m on the full set), so ranking
+claims must come from the paired test, not from comparing two split-means.
 
 **Three failure classes added by measurement, 2026-07-21 → 07-24.** Each is a rule we now run
 *before* a claim, and each was earned by a wrong claim that a cheap check would have caught. They are
@@ -765,11 +784,35 @@ and the gap widened to Δ 2.70 m at 30 k. *Cross-layer consistency holds:* maneu
 agree at 0.872 (κ 0.612). *But top-down conditioning was initially inert or harmful:* at 19 k the
 intent→operative seam was magnitude-swamped (§3.3; ungated `intent_proj` ‖31.4‖ vs action ‖28.3‖ —
 the deployed rollout was intent-free by design), and per-window intent *content* was inert on both a
-trained-encoder (flagship) and a frozen-encoder (REF-A) arm. At 30 k **one seam flipped to
+trained-encoder (flagship) and a frozen-encoder (REF-A) arm. At 30 k ~~**one seam flipped to
 load-bearing** — ctx→tactical now shows `content_matters = true` (vs-mean maneuver Δ +0.044,
-CI-separated); intent→operative remains harmful when ungated (confirming the ReZero fix of §3.3 is
-the right lever), and nav→strategic is still a pure command-echo (route-from-vision skill 0.0, an
-open v3 target). Read plainly: at 30 k the 0.45 m comes from the operative predictor plus grounded
+CI-separated)~~ — **RETRACTED 2026-07-25, see below**; intent→operative remains harmful when ungated
+(confirming the ReZero fix of §3.3 is the right lever), and nav→strategic is still a pure command-echo
+(route-from-vision skill 0.0, an open v3 target).
+
+> ⚠️ **RETRACTION (2026-07-25): the ctx→tactical seam was NOT load-bearing — the estimator manufactured
+> it.** Migrating the hierarchy panel off the deprecated statistic (§5 correction) shows the published
+> **Δ +0.044 is an artifact of the mean-of-split-means; the true full-set paired delta is +0.0148**
+> (×2.97; independently reproduced at ×3.28 on the v4.2b arm and ×1.76 on the v1 artifact). Under the
+> correct estimator the seam **fails all three gates on the point estimate alone** — 0.0148 < 0.02
+> (maneuver-acc), 0.0050 < 0.01 (cosine), 0.0437 < 0.05 (ADE) — so no widening of intervals is required
+> to reject it. **The honest count is therefore 0 of 3 seams load-bearing at 30 k, not 1 of 3:**
+> intent→operative harmful, nav→strategic a command echo, ctx→tactical retracted. *(Reading note for
+> anyone re-deriving this: the deprecated predicate was ONE-SIDED — a naive two-sided port flips the
+> **harmful** intent seam to "load-bearing". Read `separated_positive`, not `separated`.)*
+> **What this does and does not license.** It removes the only measured leg that supported the
+> hierarchy claim as published, and that claim is withdrawn here. It is **not** evidence that hierarchy
+> does not help, because all three seams were measured under conditions that make hierarchical value
+> undetectable: the strategic route *target* is a lookup of the route *input* (`route_target =
+> _NAV_TO_ROUTE[nav_cmd]`, so route CE reaches exactly 0.0 and `route_skill` is 0.0 **by construction**,
+> at 27 % coverage), and the scored 0.45 m path does not traverse the hierarchy at all. A separate
+> hierarchy-supporting result **survives the same correction and strengthens**: grounding dominance
+> corrects **up** to Δ **+2.9568 m** and would need an 8.65× widening to un-separate, against a
+> worst-measured 3.10×. The claim is re-opened as untested, not closed as refuted; the pre-registered
+> conditions and the six discriminating predictions that would settle it are in
+> `Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/01_EXECUTION_PLAN.md` Part A.
+
+Read plainly: at 30 k the 0.45 m comes from the operative predictor plus grounded
 step-readout; the upper brains *cohere* but do not yet *drive* the operative — making the seam-scaling
 levers, not more capacity, the path to the "hierarchy is dominant" claim.
 
