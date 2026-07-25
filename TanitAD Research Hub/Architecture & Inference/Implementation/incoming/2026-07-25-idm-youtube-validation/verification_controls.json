@@ -1,0 +1,30 @@
+{
+  "purpose": "Controls proving the from-video reconstruction pipeline is correct; MEASURED on eval pod 2026-07-25.",
+  "encoder_md5_match": {
+    "expected_card": "b5f07d9e3dd2ca643949bc86832e6585",
+    "eval_pod_ckpt": "/root/models/flagship-30k/ckpt.pt",
+    "match": true, "step": 29999, "state_dim": 2048
+  },
+  "head_md5_match": {
+    "expected_card_weights_md5": "fa4462f0b898b036be729c790278b823",
+    "eval_pod_head": "/root/idmval/idm_head_v1.pt", "match": true
+  },
+  "control_1_matched_substrate_reproduction": {
+    "script": "idmval_vacheck.py",
+    "substrate": "pod3 lat_flagshipv1/va_a_[0:20]+va_b_[0:20] (built from physicalai-val-f1b378f295ae)",
+    "stride": 2,
+    "measured": {"n": 3517, "speed_r2": 0.8853, "yaw_r2": 0.8075, "steer_r2": 0.7821,
+                 "speed_mae": 2.0726, "ade_2s": 2.7032, "de_per_horizon": [1.043, 2.093, 3.215, 4.463]},
+    "card_val_parityval": {"n": 3517, "speed_r2": 0.8853, "yaw_r2": 0.8075, "ade_2s": 2.7032, "speed_mae": 2.0726},
+    "verdict": "reproduces the card to every digit -> head weights + metric code correct"
+  },
+  "control_2_encoder_zero_drift": {
+    "script": "idmval_zcmp.py",
+    "test": "8 clips shared by both val builds (pose-fingerprint dist 0.0): eval-encode z vs pod3-cached z",
+    "mean_z_cosine": 1.0000,
+    "per_clip_ade_eval_vs_pod3": [[1.547,1.547],[5.631,5.631],[3.327,3.327],[2.997,2.997],
+                                  [3.821,3.821],[3.868,3.868],[5.352,5.352],[9.462,9.462]],
+    "verdict": "cosine 1.0000 and byte-identical ADE -> frozen encoder reproduced bit-exact on eval pod; from-video == card pipeline"
+  },
+  "conclusion": "The from-video aggregate (ADE 3.856 on physicalai-val-0c5f7dac3b11) differs from the card (2.703 on f1b378f295ae) ONLY because 0c5f7dac3b11 is a different, higher-speed 40-clip build (8/40 shared); ADE scales with speed. Pipeline verified correct."
+}

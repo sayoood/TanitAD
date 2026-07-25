@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "date_utc": "2026-07-25T13:11:29Z",
+    "encoder_ckpt": "/root/models/flagship-30k/ckpt.pt",
+    "encoder_step": 29999,
+    "state_dim": 2048,
+    "head": "/root/idmval/idm_head_v1.pt",
+    "head_md5_expected": "fa4462f0b898b036be729c790278b823",
+    "val_cache": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "k": 4,
+    "horizons_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ]
+  },
+  "clip": {
+    "idx": 20,
+    "episode_id": 808924517,
+    "T": 199,
+    "stride": 1,
+    "metrics": {
+      "n": 175,
+      "r2": {
+        "speed": 0.8548637734102347,
+        "yaw_rate": 0.9404402950464803,
+        "steer": 0.8300629519631016,
+        "long_accel": -2.409835910312663
+      },
+      "mae": {
+        "speed": 2.0833394527435303,
+        "yaw_rate": 0.026863127946853638,
+        "steer": 0.03104085847735405,
+        "long_accel": 0.9480155110359192
+      },
+      "ade_2s": 2.533146381378174,
+      "de_per_horizon": [
+        1.2008056640625,
+        2.0040011405944824,
+        2.989668607711792,
+        3.9381103515625
+      ],
+      "ade_per_window_mean": 2.533146381378174
+    },
+    "deadreckon_fullroute": {
+      "endpoint_err_m": 38.36087068471401,
+      "path_rmse_m": 19.387930152705447,
+      "path_len_m": 177.63372802734375
+    }
+  },
+  "aggregate_40ep_stride2": {
+    "n": 3521,
+    "r2": {
+      "speed": 0.8249293587666399,
+      "yaw_rate": 0.7841599527196781,
+      "steer": 0.6697709214062089,
+      "long_accel": -0.18469361892178005
+    },
+    "mae": {
+      "speed": 2.966595411300659,
+      "yaw_rate": 0.03713078424334526,
+      "steer": 0.024099577218294144,
+      "long_accel": 0.7117749452590942
+    },
+    "ade_2s": 3.8560140132904053,
+    "de_per_horizon": [
+      1.490631103515625,
+      3.018357276916504,
+      4.610048770904541,
+      6.305013656616211
+    ],
+    "ade_per_window_mean": 3.8560140132904053,
+    "n_clips": 40
+  },
+  "card_val_parityval_expected": {
+    "n": 3517,
+    "speed_r2": 0.8853,
+    "yaw_r2": 0.8075,
+    "ade_2s": 2.7032
+  }
+}
