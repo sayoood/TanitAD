@@ -380,6 +380,22 @@ episode-cluster bootstrap, paired). Because a map/agent-free source **cannot** e
 still needs a lower-OOD renderer), it carries a new low-OOD metric **`corridor_departure_rate`** (on-policy
 |XTE| > 1.75 m lane-half-width).
 
+> 🔴 **MANDATORY QUALIFIER ADDED 2026-07-25 — every number in this block is a *2-SECOND* closed-loop
+> number, and none of them said so.** Source-read (`lowood_closedloop.py:59`): the instrument rolls out
+> **K = max(WP_STEPS) = 20 at DT = 0.1 → a 2.0 s horizon**. The failure mode these numbers are used to
+> reason about — a junction crossing — is a **~20 s** event, and imitation compounding error scales
+> ~**T²ε**, so a 2 s rollout can mechanically under-state on-policy drift by orders of magnitude.
+> **Quote these as "closed-loop @ 2 s", never as "closed-loop" unqualified.** This does NOT overturn the
+> *ordering* (REF-C base > flagship v1 — both arms measured on the identical horizon, and the ordering is
+> triple-confirmed on three independent instruments); it bounds what the ABSOLUTE rates mean.
+> ⚠️ It also puts the **`LOWOOD-CL-TRAIN` "BOUND" verdict under suspicion of being an instrument
+> artifact** — a horizon sweep (K = 20…200) is running now to settle it; if drift grows super-linearly
+> with horizon, that verdict owes a C6-class retraction.
+> ⚠️ **Unreconciled:** the closed-loop research doc reports a junction **window**-departure of **0.368**
+> against the 0.0134 all-strata / 0.064 junction figures below — a metric-definition mismatch
+> (window-level vs episode-level) that must be reconciled BEFORE either is quoted as the junction rate.
+> Source: `…/Research/2026-07-25-closed-loop-diffusion-planner/CLOSED_LOOP_PLANNER_RESEARCH.md`.
+
 | n = 40 / 881 win, paired | flagship v1 | REF-C base | Δ (flag − refc) | separated |
 |---|:--:|:--:|:--:|:--:|
 | closed-loop ADE@2s (m) | 1.488 [1.329, 1.647] | **0.564** [0.452, 0.676] | +0.924 [+0.781, +1.065] | **yes** |
