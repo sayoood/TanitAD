@@ -1,0 +1,202 @@
+{
+  "stack": "/workspace/tmp/qa_stack",
+  "cache": [
+    "/workspace/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d"
+  ],
+  "host": "62255816d4b2",
+  "torch": "2.4.1+cu124",
+  "v2_dataset_from": "/workspace/tmp/qa_stack/tanitad/data/v2_dataset.py",
+  "train_flagship4b_from": "/workspace/tmp/qa_stack/scripts/train_flagship4b.py",
+  "A_builder_vs_loader": {
+    "checked": 1,
+    "frames_identical": 1,
+    "poses_identical": 1,
+    "actions_identical": 1,
+    "mismatch": [],
+    "v2_compressed_from": "/workspace/TanitAD/stack/scripts/v2_compressed.py",
+    "shapes": [],
+    "error": "RuntimeError: bincount only supports 1-d non-negative integral inputs."
+  },
+  "B_providers": {
+    "n_providers": 4953,
+    "build_seconds": 2.3,
+    "rss_after_manifest_gb": 0.824,
+    "frames_shape_0": [
+      199,
+      9,
+      256,
+      256
+    ],
+    "poses_shape_0": [
+      199,
+      4
+    ],
+    "actions_shape_0": [
+      199,
+      2
+    ],
+    "T_out_sum": 985538,
+    "channels": 9,
+    "image_size": 256,
+    "window": 8,
+    "max_horizon": 20,
+    "maneuver_h": 20,
+    "labels_v2": false,
+    "n_windows": 846854
+  },
+  "C_window_contract": {
+    "n_keys": 12,
+    "keys": [
+      "actions",
+      "episode_id",
+      "frames",
+      "future_actions",
+      "future_frames",
+      "future_poses",
+      "maneuver_label",
+      "nav_cmd",
+      "nav_valid",
+      "pose_last",
+      "pose_prev",
+      "route_target"
+    ],
+    "spec": {
+      "actions": [
+        [
+          8,
+          2
+        ],
+        "torch.float32"
+      ],
+      "episode_id": [
+        "int",
+        845439333
+      ],
+      "frames": [
+        [
+          8,
+          9,
+          256,
+          256
+        ],
+        "torch.float32"
+      ],
+      "future_actions": [
+        [
+          20,
+          2
+        ],
+        "torch.float32"
+      ],
+      "future_frames": [
+        [
+          20,
+          9,
+          256,
+          256
+        ],
+        "torch.float32"
+      ],
+      "future_poses": [
+        [
+          20,
+          4
+        ],
+        "torch.float32"
+      ],
+      "maneuver_label": [
+        [],
+        "torch.int64"
+      ],
+      "nav_cmd": [
+        [],
+        "torch.int64"
+      ],
+      "nav_valid": [
+        [],
+        "torch.bool"
+      ],
+      "pose_last": [
+        [
+          4
+        ],
+        "torch.float32"
+      ],
+      "pose_prev": [
+        [
+          4
+        ],
+        "torch.float32"
+      ],
+      "route_target": [
+        [],
+        "torch.int64"
+      ]
+    }
+  },
+  "D_throughput": {
+    "workers": 8,
+    "batch_size": 16,
+    "v2_lru": 64,
+    "batches_timed": 40,
+    "seconds": 16.99,
+    "batches_per_s": 2.354,
+    "windows_per_s": 37.7,
+    "rss_self_peak_gb": 0.97,
+    "rss_process_tree_peak_gb": 18.97,
+    "batch_shapes": {
+      "actions": [
+        16,
+        8,
+        2
+      ],
+      "episode_id": [
+        16
+      ],
+      "frames": [
+        16,
+        8,
+        9,
+        256,
+        256
+      ],
+      "future_actions": [
+        16,
+        20,
+        2
+      ],
+      "future_frames": [
+        16,
+        20,
+        9,
+        256,
+        256
+      ],
+      "future_poses": [
+        16,
+        20,
+        4
+      ],
+      "maneuver_label": [
+        16
+      ],
+      "nav_cmd": [
+        16
+      ],
+      "nav_valid": [
+        16
+      ],
+      "pose_last": [
+        16,
+        4
+      ],
+      "pose_prev": [
+        16,
+        4
+      ],
+      "route_target": [
+        16
+      ]
+    }
+  }
+}

@@ -1,0 +1,594 @@
+{
+  "corpus_key": "physicalai-v2bal-4b7eeeac222d",
+  "generated_utc": "2026-07-24T23:41:46.872282+00:00",
+  "evidence_class": "MEASURED (this scan; artifacts listed in the manifest)",
+  "labeler": {
+    "module": "stack/scripts/refb_labels.py (repo md5 6632348b4c90f6d88ae106d1a1f7a275)",
+    "function": "maneuver_labels (v1 kinematic)",
+    "LABEL_HORIZON": 20,
+    "YAW_TURN_RAD": 0.15,
+    "DV_ACCEL_MS": 1.0,
+    "DV_BRAKE_MS": -1.0,
+    "STOP_V_MS": 0.3,
+    "MOVING_V_MS": 1.0
+  },
+  "P1_integrity": {
+    "clips_scanned": 9000,
+    "clips_loadable_ok": 9000,
+    "clips_bad": 0,
+    "bad_clip_ids": [],
+    "jpeg_frames_decoded": 1808710,
+    "jpeg_frames_failed": 0,
+    "total_raw_frames": 1808710,
+    "total_stacked_frames": 1790710,
+    "total_label_steps": 1610710,
+    "hours_stacked": 49.742,
+    "hours_raw": 50.242,
+    "bytes_total_gb": 22.32,
+    "mb_per_clip_mean": 2.663,
+    "nonfinite_pose_values": 0,
+    "nonfinite_action_values": 0,
+    "near_constant_frames_sampled": 0,
+    "image_sizes": [
+      256
+    ],
+    "n_stacks": [
+      3
+    ],
+    "jpeg_qualities": [
+      90
+    ],
+    "T_out_min": 189,
+    "T_out_max": 205,
+    "T_out_mean": 198.968,
+    "T_out_lt_190": 3,
+    "clips_with_zero_motion": 5,
+    "scan_seconds": {
+      "pod1": 91.7,
+      "pod3": 1285.3
+    },
+    "crossbuild_vs_parity_epcache": {
+      "method": "clips present in BOTH the trusted 13.13 h parity epcache and the v2 cache, keyed on the full clip_id resolved via the stored episode_id's UNIQUE 4-char prefix among the 3,000 discovered parity clips (the ep_NNNNN file index is NOT the discovery index)",
+      "clips_compared": 571,
+      "T_equal": 571,
+      "poses_bit_identical": 571,
+      "maneuver_histogram_identical": 571,
+      "max_abs_dxy_m": 0.0,
+      "max_abs_dyaw_rad": 0.0,
+      "max_abs_dv_ms": 0.0,
+      "note": "pod1 shard only (the parity epcache lives on pod1)"
+    },
+    "outliers": {
+      "low_motion_built_lt20m": [
+        {
+          "clip_id": "25d191da-3ac5-461e-b7bb-b39f68250aa9",
+          "shard": "pod1",
+          "T_out": 199,
+          "dist_m": 19.689,
+          "dist_m_proj": 20.115,
+          "mean_v": 0.989,
+          "mean_v_proj": 1.011,
+          "stop_frac": 0.603,
+          "stop_frac_proj": 0.598,
+          "country": "Italy"
+        },
+        {
+          "clip_id": "2737e5d2-aea5-4413-84fa-5371a25882d5",
+          "shard": "pod1",
+          "T_out": 199,
+          "dist_m": 19.682,
+          "dist_m_proj": 20.001,
+          "mean_v": 0.989,
+          "mean_v_proj": 1.005,
+          "stop_frac": 0.412,
+          "stop_frac_proj": 0.407,
+          "country": "Romania"
+        },
+        {
+          "clip_id": "dbcb8d71-ea79-4052-a22e-1c302e0f41a9",
+          "shard": "pod3",
+          "T_out": 199,
+          "dist_m": 19.142,
+          "dist_m_proj": 21.065,
+          "mean_v": 0.962,
+          "mean_v_proj": 1.059,
+          "stop_frac": 0.809,
+          "stop_frac_proj": 0.799,
+          "country": "Denmark"
+        },
+        {
+          "clip_id": "f1d7e59f-32ab-4251-a5e6-c16e65b650a3",
+          "shard": "pod3",
+          "T_out": 199,
+          "dist_m": 19.552,
+          "dist_m_proj": 20.404,
+          "mean_v": 0.982,
+          "mean_v_proj": 1.025,
+          "stop_frac": 0.734,
+          "stop_frac_proj": 0.734,
+          "country": "United States"
+        },
+        {
+          "clip_id": "f1ef9c55-8167-4ea9-b93f-5d1565278faf",
+          "shard": "pod3",
+          "T_out": 197,
+          "dist_m": 18.938,
+          "dist_m_proj": 21.012,
+          "mean_v": 0.961,
+          "mean_v_proj": 1.056,
+          "stop_frac": 0.756,
+          "stop_frac_proj": 0.749,
+          "country": "United States"
+        }
+      ],
+      "short_T_lt190": [
+        {
+          "clip_id": "1170e000-ed59-4e89-a9a8-dd5df90656e5",
+          "shard": "pod1",
+          "T_out": 189,
+          "n_raw": 191,
+          "dist_m": 414.403,
+          "mean_v": 21.926
+        },
+        {
+          "clip_id": "1d32b8fb-200f-445e-b17a-a19d2da0afc1",
+          "shard": "pod1",
+          "T_out": 189,
+          "n_raw": 191,
+          "dist_m": 314.923,
+          "mean_v": 16.663
+        },
+        {
+          "clip_id": "90425928-da6d-4823-8f0e-f99db3db7700",
+          "shard": "pod3",
+          "T_out": 189,
+          "n_raw": 191,
+          "dist_m": 136.077,
+          "mean_v": 7.2
+        }
+      ],
+      "long_T_gt200": 33,
+      "T_out_value_counts_top": {
+        "199": 8531,
+        "198": 359,
+        "197": 51,
+        "205": 33,
+        "200": 21,
+        "189": 3,
+        "190": 2
+      },
+      "bytes_min_mb": 1.093,
+      "bytes_max_mb": 5.382,
+      "bytes_p01_mb": 1.51,
+      "smallest_files": [
+        {
+          "clip_id": "4c747f1e-07f7-4838-b776-1c6285d85048",
+          "shard": "pod1",
+          "bytes": 1093432,
+          "T_out": 199,
+          "mean_v": 14.384551048278809
+        },
+        {
+          "clip_id": "b589061e-105b-4fc6-9915-dc09b4ca1eb9",
+          "shard": "pod3",
+          "bytes": 1164687,
+          "T_out": 199,
+          "mean_v": 4.13798713684082
+        },
+        {
+          "clip_id": "503aa27e-60fc-43c7-abad-758a4b06aae5",
+          "shard": "pod1",
+          "bytes": 1173496,
+          "T_out": 199,
+          "mean_v": 26.435771942138672
+        },
+        {
+          "clip_id": "dc5e25d7-bdb9-4269-967b-bc29113558a3",
+          "shard": "pod3",
+          "bytes": 1188431,
+          "T_out": 199,
+          "mean_v": 13.95240879058838
+        },
+        {
+          "clip_id": "46e9d4b5-7dec-4fd9-b163-3b95451a94f3",
+          "shard": "pod1",
+          "bytes": 1190776,
+          "T_out": 199,
+          "mean_v": 26.012889862060547
+        }
+      ],
+      "stopped_frac_gt50pct_clips": 328,
+      "clips_with_no_turn_label": 2119,
+      "country_top": {
+        "United States": 496,
+        "Luxembourg": 486,
+        "Austria": 484,
+        "Slovenia": 484,
+        "Croatia": 477,
+        "Germany": 469
+      },
+      "country_max_share": 0.0551
+    }
+  },
+  "P2_distribution": {
+    "achieved_v2_maneuver_v1labeler": {
+      "lane_keep": 0.44928,
+      "turn_left": 0.14012,
+      "turn_right": 0.14029,
+      "accelerate": 0.13032,
+      "brake_stop": 0.14
+    },
+    "achieved_v2_turns_LR": 0.2804,
+    "target_maneuver": {
+      "lane_keep": 0.45,
+      "turn_left": 0.14,
+      "turn_right": 0.14,
+      "accelerate": 0.13,
+      "brake_stop": 0.14
+    },
+    "target_turns_LR": 0.28,
+    "selection_projected_maneuver": {
+      "lane_keep": 0.449998,
+      "turn_left": 0.140001,
+      "turn_right": 0.139981,
+      "accelerate": 0.13,
+      "brake_stop": 0.14002
+    },
+    "parity_measured_maneuver": {
+      "lane_keep": 0.59642,
+      "turn_left": 0.06857,
+      "turn_right": 0.07391,
+      "accelerate": 0.13227,
+      "brake_stop": 0.12883
+    },
+    "parity_turns_LR": 0.14248,
+    "achieved_v2_maneuver_v2labeler": {
+      "lane_keep": 0.50393,
+      "turn_left": 0.09703,
+      "turn_right": 0.09125,
+      "accelerate": 0.15195,
+      "brake_stop": 0.15584
+    },
+    "parity_maneuver_v2labeler": {
+      "lane_keep": 0.61185,
+      "turn_left": 0.05903,
+      "turn_right": 0.0566,
+      "accelerate": 0.1396,
+      "brake_stop": 0.13292
+    },
+    "achieved_v2_speed_stepweighted": {
+      "stopped": 0.09719,
+      "city": 0.52276,
+      "highway": 0.38006
+    },
+    "target_speed": {
+      "stopped": 0.1,
+      "city": 0.52,
+      "highway": 0.38
+    },
+    "selection_projected_speed": {
+      "stopped": 0.097428,
+      "city": 0.522564,
+      "hw": 0.380008
+    },
+    "parity_measured_speed": {
+      "stopped": 0.07756,
+      "city": 0.45925,
+      "highway": 0.4632
+    },
+    "achieved_v2_presence": {
+      "has_turn": 0.76456,
+      "junction": 0.61378,
+      "has_stop": 0.27311,
+      "has_brake": 0.73433,
+      "net_head_gt45": 0.40256,
+      "net_head_gt90": 0.13911
+    },
+    "selection_projected_presence": {
+      "junction": 0.613444,
+      "has_stop": 0.273,
+      "has_brake": 0.733667,
+      "has_turn": 0.764111,
+      "net_head_gt45": 0.403556,
+      "net_head_gt90": 0.138778
+    },
+    "parity_measured_presence": {
+      "junction": 0.37836700336700335,
+      "has_stop": 0.2297979797979798,
+      "has_brake": 0.5749158249158249,
+      "has_turn": 0.42592592592592593,
+      "net_head_gt45": 0.25,
+      "net_head_gt90": 0.10437710437710437
+    },
+    "parity_hours": 13.1285,
+    "parity_episodes": 2376,
+    "per_shard_maneuver": {
+      "pod1": {
+        "lane_keep": 0.4537,
+        "turn_left": 0.13556,
+        "turn_right": 0.13788,
+        "accelerate": 0.13065,
+        "brake_stop": 0.1422
+      },
+      "pod3": {
+        "lane_keep": 0.44387,
+        "turn_left": 0.14569,
+        "turn_right": 0.14323,
+        "accelerate": 0.12992,
+        "brake_stop": 0.13729
+      }
+    },
+    "per_shard_turns_LR": {
+      "pod1": 0.27345,
+      "pod3": 0.28892
+    },
+    "projection_vs_built_perclip": {
+      "clips_matched": 9000,
+      "turnfrac_mean_built": 0.28037,
+      "turnfrac_mean_projected": 0.27998,
+      "turnfrac_mean_abs_diff": 0.00355,
+      "turnfrac_pearson_r": 0.9997,
+      "T_out_equal_projected": 8531,
+      "T_out_mean_built": 198.968,
+      "T_out_mean_projected": 199.0,
+      "meanv_mean_abs_diff": 0.0332,
+      "junction_agreement": 0.99722,
+      "has_turn_agreement": 0.99889
+    }
+  },
+  "P3_consolidation": {
+    "pod1_built": 4953,
+    "pod3_built": 4047,
+    "union_built": 9000,
+    "clip_id_overlap": 0,
+    "selected_missing_from_both": 0,
+    "built_not_in_selection": 0,
+    "corpus_key_recomputed_from_built_union": "4b7eeeac222d",
+    "corpus_key_expected": "4b7eeeac222d",
+    "corpus_key_match": true,
+    "chunks_spanning_both_pods": 177,
+    "double_built_with_differing_bytes": 0,
+    "double_built_note": "zero clip-id overlap between shards, so no clip can be double-built; within a shard the filename IS the clip_id, so duplicates are impossible.",
+    "episode_id_unique_over_corpus": 8391,
+    "episode_id_collisions": 609,
+    "episode_id_max_multiplicity": 4,
+    "parity_episode_id_unique": 2342,
+    "parity_episode_id_collisions": 34
+  },
+  "P4_train_readiness": {
+    "shard_smoked": "pod1 (4,953 clips) -- the two shards are on separate single-attach volumes, so no single node can mount all 9,000 until consolidation",
+    "builder_vs_loader_equivalence": {
+      "clips_checked": 24,
+      "frames_byte_identical": 24,
+      "poses_identical": 24,
+      "actions_identical": 24,
+      "mismatches": []
+    },
+    "providers_built": 4953,
+    "manifest_build_seconds_cold": 2.3,
+    "manifest_build_seconds_warm": 0.44,
+    "manifest_rss_gb": 0.824,
+    "frames_shape": [
+      199,
+      9,
+      256,
+      256
+    ],
+    "window": 8,
+    "max_horizon": 20,
+    "n_windows_pod1_shard": 846854,
+    "n_windows_full_corpus_est": 1547710,
+    "window_contract_keys": [
+      "actions",
+      "episode_id",
+      "frames",
+      "future_actions",
+      "future_frames",
+      "future_poses",
+      "maneuver_label",
+      "nav_cmd",
+      "nav_valid",
+      "pose_last",
+      "pose_prev",
+      "route_target"
+    ],
+    "window_contract_n_keys": 12,
+    "window_contract_spec": {
+      "actions": [
+        [
+          8,
+          2
+        ],
+        "torch.float32"
+      ],
+      "episode_id": [
+        "int",
+        845439333
+      ],
+      "frames": [
+        [
+          8,
+          9,
+          256,
+          256
+        ],
+        "torch.float32"
+      ],
+      "future_actions": [
+        [
+          20,
+          2
+        ],
+        "torch.float32"
+      ],
+      "future_frames": [
+        [
+          20,
+          9,
+          256,
+          256
+        ],
+        "torch.float32"
+      ],
+      "future_poses": [
+        [
+          20,
+          4
+        ],
+        "torch.float32"
+      ],
+      "maneuver_label": [
+        [],
+        "torch.int64"
+      ],
+      "nav_cmd": [
+        [],
+        "torch.int64"
+      ],
+      "nav_valid": [
+        [],
+        "torch.bool"
+      ],
+      "pose_last": [
+        [
+          4
+        ],
+        "torch.float32"
+      ],
+      "pose_prev": [
+        [
+          4
+        ],
+        "torch.float32"
+      ],
+      "route_target": [
+        [],
+        "torch.int64"
+      ]
+    },
+    "batch_shapes": {
+      "actions": [
+        16,
+        8,
+        2
+      ],
+      "episode_id": [
+        16
+      ],
+      "frames": [
+        16,
+        8,
+        9,
+        256,
+        256
+      ],
+      "future_actions": [
+        16,
+        20,
+        2
+      ],
+      "future_frames": [
+        16,
+        20,
+        9,
+        256,
+        256
+      ],
+      "future_poses": [
+        16,
+        20,
+        4
+      ],
+      "maneuver_label": [
+        16
+      ],
+      "nav_cmd": [
+        16
+      ],
+      "nav_valid": [
+        16
+      ],
+      "pose_last": [
+        16,
+        4
+      ],
+      "pose_prev": [
+        16,
+        4
+      ],
+      "route_target": [
+        16
+      ]
+    },
+    "throughput": [
+      {
+        "workers": 4,
+        "batches": 40,
+        "seconds": 32.07,
+        "windows_per_s": 20.0,
+        "mb_per_s_frames": 1319.0,
+        "subtree_rss_peak_gb": 4.4,
+        "rss_self_gb": 0.83
+      },
+      {
+        "workers": 8,
+        "batches": 40,
+        "seconds": 17.0,
+        "windows_per_s": 37.6,
+        "mb_per_s_frames": 2489.0,
+        "subtree_rss_peak_gb": 16.8,
+        "rss_self_gb": 0.83
+      },
+      {
+        "workers": 16,
+        "batches": 40,
+        "seconds": 12.96,
+        "windows_per_s": 49.4,
+        "mb_per_s_frames": 3265.0,
+        "subtree_rss_peak_gb": 30.36,
+        "rss_self_gb": 0.83
+      }
+    ],
+    "float_frames_mb_per_window": 66.1
+  },
+  "pod_code_state": {
+    "evidence": "MEASURED 2026-07-25 by md5sum / grep -c on both pods",
+    "git_head_both_pods": "0f93b98 (dirty)",
+    "train_flagship4b_has_v2_cache_flag": {
+      "tanitad-pod": false,
+      "tanitad-pod3": false
+    },
+    "tanitad_data_v2_dataset_py_present": {
+      "tanitad-pod": false,
+      "tanitad-pod3": false
+    },
+    "refb_labels_lines": {
+      "repo": 1300,
+      "tanitad-pod": 474,
+      "tanitad-pod3": 745
+    },
+    "refb_labels_md5": {
+      "repo": "6632348b4c90f6d88ae106d1a1f7a275",
+      "tanitad-pod": "43197feda8fc5c12474a293d8ae0cc67",
+      "tanitad-pod3": "80b490b0e60f2040d593e87283f262a5"
+    },
+    "drifted_vs_repo_pod1": [
+      "scripts/train_flagship4b.py",
+      "scripts/refb_labels.py",
+      "tanitad/data/mixing.py",
+      "tanitad/data/toy_driving.py"
+    ],
+    "matching_repo_pod1": [
+      "scripts/refb_train.py",
+      "tanitad/data/comma2k19.py"
+    ],
+    "consequence": "a --v2-cache launch on either pod's current checkout fails (unrecognized flag + missing module); the QA used a repo-synced SHADOW stack at /workspace/tmp/qa_stack"
+  },
+  "corpus_write_audit": {
+    "v2ep_pt_files_modified": 0,
+    "probe": "find <cache> -name *.v2ep.pt -newermt 2026-07-24T22:50 -> 0",
+    "files_created_by_this_QA": [
+      "_v2manifest.pt (26.6 MB, pod1) -- the loader's own index sidecar, written by build_v2_providers; additive, auto-rebuilt if the clip set changes"
+    ]
+  }
+}

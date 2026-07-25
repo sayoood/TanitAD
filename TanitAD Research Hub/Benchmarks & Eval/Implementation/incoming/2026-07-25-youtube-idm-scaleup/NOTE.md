@@ -29,10 +29,36 @@ viable host without a multi-hour rebuild. pod2 (flagship) + eval (GeoCalib) unto
 - Deps present: yt-dlp, opencv 4.11 (Haar cascades), torch 2.8 cu128, PyAV. Encoder ckpt + caches + 380
   parity latents present. yt-dlp extracts from pod3's datacenter IP (pilot MEASURED, no bot-block).
 
-## GEOMETRY: GeoCalib status
-- `…/incoming/2026-07-25-geocalib/geocalib_intrinsics.py` **NOT landed** at launch (polled).
-  → running the **fixed-HFOV fallback (100°)**, recorded `geometry_source:"fixed"` + `hfov_used_deg`
-    per pointer. **Re-runnable with GeoCalib later** by re-decoding the SAME pointers (no re-harvest).
+## GEOMETRY: GeoCalib — LANDED mid-task, INTEGRATED (coordinator directive 2026-07-25)
+The GeoCalib deliverable landed while harvesting (`…/incoming/2026-07-25-geocalib/`). Coordinator:
+running the decision-grade lift on fixed-HFOV would bake a systematic error into the headline —
+GeoCalib MEASURED YouTube dashcams at **median HFOV ~66.6° (range 32–77°), only 1/12 near the
+assumed 100°**; fixed-100° over-crops ~1.4× and inflates pseudo-speed on most clips. So I switched
+the harvest (which had 0 clips — nothing lost) to **GeoCalib per-video geometry**:
+- `harvest_scaleup.py` now calls `geocalib_intrinsics.decode_canonical_geocalib(mp4, anon, estimator=est)`
+  in place of the fixed-HFOV `decode_canonical`. Per-video focal from 16 frames (median vFoV + MAD
+  outlier rejection + confidence gate); **falls back to fixed-HFOV internally when low-confidence**
+  → never worse than the pilot. Decodes `thread_type="NONE"` (a threaded PyAV decoder torn down with
+  a live CUDA context DEADLOCKS — MEASURED by the GeoCalib agent). Blur still full-res (privacy intact).
+- Per-pointer records: `geocalib_vfov_deg`, `geocalib_confidence`, `geocalib_fallback_used`,
+  `achieved_f_eff`, `fully_canonical`. Manifest records the confidence distribution.
+- **Honest bound (carry into report):** GeoCalib is NOT a precise oracle — 6.8% median focal error
+  (comma2k19 GT), weak absolute tracking (r=0.41, regresses toward a ~50–55° vFoV prior),
+  resolution-robust ≤480p. Good enough to beat fixed-100°, not to quote per-clip intrinsics as truth.
+- Required `pip install git+https://github.com/cvg/GeoCalib` into pod3's venv (was only on the eval
+  pod). If the install/CUDA path fails, `harvest_scaleup` auto-falls-back to fixed-HFOV (`--no-geocalib`
+  or import-fail) and reports it.
+- ⚠️ **TRAP (MEASURED, fixed): GeoCalib's unpinned `opencv-python` dep pulled cv2 5.0.0, which
+  clobbered the pilot's pinned `opencv-python-headless==4.11.0.86` — and cv2 5.0 DROPPED
+  `CascadeClassifier`, so the privacy Haar blur silently broke (harvest would refuse-to-store).**
+  This is exactly the pilot's pinning rationale. Fix: after installing geocalib,
+  `pip uninstall -y opencv-python opencv-python-headless && pip install opencv-python-headless==4.11.0.86`.
+  Verified after fix: cv2 4.11.0 + `CascadeClassifier` present + geocalib/kornia/torch-cuda all import.
+  (Root-cause class: dependency clobber of a security-critical pin — belongs in RETRACTION_LOG if it
+  ever ships a broken privacy pass.)
+- Fixed-HFOV reference: the **pilot's 80-clip result IS the fixed-HFOV baseline**; this scale-up is the
+  GeoCalib-geometry decision-grade read. (A paired fixed-vs-GeoCalib arm at the SAME scale is a
+  follow-up — clips are deleted post-encode, so it needs a re-harvest, not a re-crop.)
 
 ## P1 — NON-CC PIPELINE EXTENSION  [status: DONE, staged]
 `harvest_scaleup.py` extends the pilot harvest: CC gate → opt-out (`--allow-noncc`, default on; license
@@ -79,8 +105,95 @@ dd-check passed, GeoCalib-absent → **fixed-HFOV fallback** (re-runnable later 
 incrementally to `/workspace/tmp/yt_scaleup/results/` → repo `pod_artifacts/` (harvest_manifest,
 per-worker pseudo_labels, then results_scaleup_downstream.json + DONE) via a bounded dev-box poller.
 
-<!-- YIELD / GEOMETRY-USED / VERDICT banked here as they land -->
-### RESULTS  [pending — the detached run is multi-hour; verdict lands in results_scaleup_downstream.json]
-- Actual yield (clips / videos / license mix): _pending manifest_
-- Geometry used: **fixed-HFOV 100°** (GeoCalib had not landed at launch; re-runnable)
-- Decision-grade verdict vs PRE_REGISTRATION ①/②/③: _pending downstream_
+### GeoCalib smoke (MEASURED, pod3 2026-07-25) — full GeoCalib path validated end-to-end
+2-clip GeoCalib harvest of a real non-CC video ("I-29 North Sioux Falls 4K Highway Drive", is_cc=false):
+- **GeoCalib per-video: vfov 65.76°, hfov 98°, confidence "high", MAD 2.33°, fallback_used false**;
+  crop landed at **achieved_f_eff 266.21, fully_canonical true** (canonical focal reached per-video).
+- **No CUDA/decode deadlock** (clean completion, GPU freed); privacy blur intact (14 faces/58 plates/
+  21 bodies blurred via restored cv2 4.11). Weights (111 MB) downloaded once → torch-hub cache (prewarm,
+  so the 8 workers reuse it, no download race). → the GeoCalib path is MEASURED-working end-to-end.
+
+### Full GeoCalib run (LAUNCHED detached 2026-07-25 ~23:48Z, pod3)
+`run_scaleup_parallel.sh` **W=8 TARGET=500 SEEDS=4**, inline GeoCalib per-video geometry.
+MEASURED healthy at round 1: 8 workers, **GPU 7.8 GB (8 GeoCalib models), loadavg ~16 on 96 cores
+(no thread thrash — the thread-cap + single-thread NONE-decode fix)**. Banks incrementally to
+`results/` → repo `pod_artifacts/` (harvest_manifest, per-worker pseudo_labels, then
+results_scaleup_downstream.json + DONE) via a bounded dev-box poller. Est. ~1–1.5 h to verdict.
+
+### 🔴 RESULTS — HARVEST BLOCKED BY YOUTUBE BOT-DETECTION (verdict NOT produced)
+**Status (honest):** the full pipeline is BUILT + VALIDATED end-to-end, but the **decision-grade harvest
+could not complete — YouTube hard-blocked pod3's datacenter IP** ("Sign in to confirm you're not a bot")
+partway through. Confirmed a HARD block, not burst-throttle: a single isolated `extract_info` request
+also fails (MEASURED 2026-07-25). **The decision-grade verdict is therefore UNANSWERED by this run.**
+
+**What IS validated (MEASURED, real clips before the block):**
+- Non-CC harvest works: real non-CC dashcam videos harvested (e.g. "I-29 North Sioux Falls 4K Highway
+  Drive", "Tasman Highway Hobart") with `is_cc=false`, license recorded per pointer.
+- Privacy intact: full-res face/plate/body Haar blur (14 faces/58 plates/21 bodies on one clip), raw
+  mp4 deleted after decode, only latents+pointers persist.
+- **GeoCalib per-video geometry works**: e.g. vfov 65.76°/hfov 98° high-confidence (I-29), hfov 59° low
+  (Tasman) — the confidence gate + fixed-HFOV fallback behave as designed; crop lands at f_eff≈266,
+  fully_canonical, NO CUDA/decode deadlock (thread_type=NONE).
+- Env fixed: geocalib installed on pod3; opencv restored to 4.11 (CascadeClassifier) after the dep clobber.
+- Reached ~65 clips in the last full run + ~80 in the pilot before the block; several rounds ran clean.
+
+**ROOT CAUSE (own the mistake, RETRACTION-class = operational churn):** I churned too many high-volume
+harvest runs during development — single→parallel(×3 restarts to fix thread-thrash/footprint/geometry)→
+GeoCalib→3 smokes + a 65-clip run — from ONE datacenter IP. The cumulative burst volume tripped YouTube's
+anti-bot. **Lesson: harvest GENTLY and get-it-right-first-time — few workers, rate-limited, validate on a
+2-clip smoke BEFORE any wide run; do NOT iterate architecture against the live source.** The pilot's
+"no bot-block" held only because it ran ONCE at low volume.
+
+**I did NOT bypass the block** (no cookies/sign-in = prohibited credential action; no player-client
+evasion = too close to prohibited bot-detection bypass). Respecting the block is correct.
+
+### HANDOFF — the pipeline is one gentle command from the verdict, once the IP cools down (hours) OR on a different egress
+1. Wait for the pod3 IP cooldown (YouTube blocks typically clear in hours), OR use a different egress
+   (residential proxy / different pod IP / a machine YouTube hasn't flagged).
+2. GENTLE re-run (rate-limited, low concurrency — harvest_scaleup now has `--sleep`):
+   ```bash
+   ssh tanitad-pod3 'PYTHONPATH=/workspace/TanitAD/stack W=2 TARGET=400 SEEDS=4 \
+     setsid nohup bash /workspace/tmp/yt_scaleup/scripts/run_scaleup_parallel.sh \
+     > /workspace/tmp/yt_scaleup/run.log 2>&1 &'
+   # (for extra gentleness add `--sleep 4` to the harvest call in run_scaleup_parallel.sh)
+   ```
+3. It self-completes (GeoCalib geometry, ≥4 seeds) → `results/results_scaleup_downstream.json` + DONE.
+4. Bank it: `bash collect_results.sh` (dev box) → `pod_artifacts/`, then `python summarize_verdict.py`
+   prints the yield + fraction-of-ceiling + the pre-registered ①/②/③ verdict.
+
+Everything needed to finish is staged + on pod3 (`/workspace/tmp/yt_scaleup/scripts/`, encoder ckpt,
+parity latents, geocalib installed). Only YouTube egress is missing.
+
+---
+
+## DELIVERABLE MANIFEST
+| artifact | repo path (staged) | pod3 path |
+|---|---|---|
+| non-CC + GeoCalib harvest (fast window-spread estimate, `--sleep` throttle) | `repo:.../2026-07-25-youtube-idm-scaleup/harvest_scaleup.py` | `/workspace/tmp/yt_scaleup/scripts/harvest_scaleup.py` |
+| parallel driver (W workers, round-based, footprint-bounded, thread caps) | `repo:.../run_scaleup_parallel.sh` | `/workspace/tmp/yt_scaleup/scripts/run_scaleup_parallel.sh` |
+| single-worker driver (reference) | `repo:.../run_scaleup.sh` | `/workspace/tmp/yt_scaleup/scripts/run_scaleup.sh` |
+| discovery inputs | `repo:.../queries_noncc.txt`, `repo:.../channels.txt` | `…/scripts/` |
+| P4 pre-registration (both outcomes ①/②/③) | `repo:.../PRE_REGISTRATION.md` | — |
+| verdict summarizer (vs the bar) | `repo:.../summarize_verdict.py` | (run on dev box after collect) |
+| collection one-liner | `repo:.../collect_results.sh` | — |
+| GeoCalib contract/shim (legacy JSON path) | `repo:.../geocalib_shim.py` | — |
+| README + this NOTE | `repo:.../README.md`, `repo:.../NOTE.md` | — |
+| pilot scripts reused UNMODIFIED (pseudo_label, downstream) | (pilot dir) | `…/scripts/{pseudo_label,run_youtube_pilot_downstream}.py` |
+| GeoCalib module (dependency, from the geocalib agent) | `repo:.../2026-07-25-geocalib/geocalib_intrinsics.py` | `…/scripts/geocalib_intrinsics.py` |
+| **downstream verdict JSON** | — (NOT produced — harvest blocked) | — |
+
+Nothing of value lives ONLY on the pod: all scripts + provenance are staged. `pod_artifacts/` is empty
+(no round completed before the block). Latents/clips were transient and are cleaned.
+
+## ESCALATIONS
+1. 🔴 **YouTube bot-block on pod3's IP is the blocker to the decision-grade verdict.** Needs an IP
+   cooldown (hours) OR a different egress, then the gentle re-run above. **This is the one thing gating
+   the answer to "does the win hold at scale?"** — the pipeline is otherwise complete + validated.
+2. **Own-mistake lesson (log to RETRACTION_LOG, class = operational-churn-against-a-rate-limited-source):**
+   iterating pipeline architecture against the LIVE YouTube source with high-volume parallel bursts
+   tripped the anti-bot. Future harvests: validate on a tiny smoke, then ONE gentle wide run.
+3. **GeoCalib is a QUALIFIED instrument** (6.8% median focal err, r=0.41 absolute tracking, prior-regression)
+   — beats fixed-100° but not a per-clip oracle; the confidence gate + fallback bound the risk. A paired
+   fixed-vs-GeoCalib arm at scale (to isolate the geometry effect on the lift) is the follow-up once the
+   corpus exists.
+4. **Intake:** this `incoming/` folder should be intaken alongside the pilot + the geocalib deliverable.

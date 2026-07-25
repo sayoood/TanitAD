@@ -39,7 +39,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from tanitad.data.toy_driving import ToyEpisode  # noqa: E402
 from tanitad.data.v2_dataset import (  # noqa: E402
-    build_v2_providers, decode_full_episode, load_or_build_manifest)
+    build_v2_providers, decode_full_episode, load_or_build_manifest,
+    stable_episode_id)
 
 WINDOW, MAXH, MANH, NSTACK, S = 4, 6, 3, 3, 32
 
@@ -77,7 +78,9 @@ def test_partial_decode_is_byte_identical(tmp_path):
     p = tmp_path / f"{'a'*8}.v2ep.pt"
     _write_v2ep(p, n_raw=24, eid=0x30313233, seed=1)
     full = decode_full_episode(str(p))               # reference (full decode)
-    (prov,) = build_v2_providers(tmp_path, verbose=False)
+    # stable_ids=False -> the ids stored at build time, i.e. the exact
+    # load_compressed contract this test pins.
+    (prov,) = build_v2_providers(tmp_path, verbose=False, stable_ids=False)
 
     T = prov.frames.shape[0]
     assert tuple(prov.frames.shape) == (24 - (NSTACK - 1), 3 * NSTACK, S, S) == \
@@ -91,6 +94,12 @@ def test_partial_decode_is_byte_identical(tmp_path):
     assert torch.equal(prov.poses, full.poses) and prov.poses.dtype == torch.float32
     assert torch.equal(prov.actions, full.actions) and prov.actions.dtype == torch.float32
     assert prov.episode_id == full.episode_id == 0x30313233
+    # ...and the DEFAULT path swaps in the collision-free id (frames/poses/
+    # actions are untouched by that switch -- only the identity changes).
+    (prov_s,) = build_v2_providers(tmp_path, verbose=False, rebuild=True)
+    assert prov_s.episode_id == stable_episode_id(f"clip{0x30313233:08d}")
+    assert torch.equal(prov_s.poses, full.poses)
+    assert torch.equal(prov_s.frames[0:WINDOW], full.frames[0:WINDOW])
 
 
 @pytest.mark.parametrize("labels_v2", [False, True])
@@ -98,10 +107,11 @@ def test_window_identical_to_materialised_episode(tmp_path, labels_v2):
     p = tmp_path / f"{'b'*8}.v2ep.pt"
     _write_v2ep(p, n_raw=40, eid=7, seed=2)
     full = decode_full_episode(str(p))
-    materialised = ToyEpisode(frames=full.frames, actions=full.actions,
-                              poses=full.poses, episode_id=full.episode_id)
-
     (prov,) = build_v2_providers(tmp_path, verbose=False)
+    # the reference carries the SAME id as the provider, so this stays a test of
+    # window CONTENT and is agnostic to which id scheme is in force.
+    materialised = ToyEpisode(frames=full.frames, actions=full.actions,
+                              poses=full.poses, episode_id=prov.episode_id)
     ds_v2 = _fw_dataset([prov], labels_v2)
     ds_raw = _fw_dataset([materialised], labels_v2)
     assert len(ds_v2) == len(ds_raw) > 0
@@ -166,7 +176,35 @@ def test_manifest_is_cached_and_reused(tmp_path):
     assert (tmp_path / "_v2manifest.pt").exists()
     m2 = load_or_build_manifest(tmp_path, verbose=False)   # from sidecar
     assert m1["files"] == m2["files"] and m1["T_out"] == m2["T_out"]
-    assert m2["version"] == 1 and m2["n_stack"][0] == NSTACK
+    assert m2["version"] == 2 and m2["n_stack"][0] == NSTACK
+    assert m2["clip_id"] == m1["clip_id"] and m2["episode_uid"] == m1["episode_uid"]
+
+
+def test_stable_episode_id_fixes_the_16bit_collision(tmp_path):
+    """The as-built ``episode_id`` is the first 4 CHARS of the clip_id, so clips
+    sharing a 4-char prefix collide (MEASURED: 609 of the 9 000 v2 clips).
+    Reproduce that here and prove the default provider path separates them."""
+    # two DIFFERENT clips whose first 4 characters agree -> identical 16-bit id
+    cid_a, cid_b = "abcd1111-aaaa", "abcd2222-bbbb"
+    raw = int.from_bytes(cid_a.encode()[:4], "big")
+    assert raw == int.from_bytes(cid_b.encode()[:4], "big")   # the defect
+    for cid in (cid_a, cid_b):
+        p = tmp_path / f"{cid}.v2ep.pt"
+        _write_v2ep(p, n_raw=20, eid=raw, seed=hash(cid) % 1000)
+        d = torch.load(str(p), weights_only=False)
+        d["clip_id"] = cid                       # as build_compressed stores it
+        torch.save(d, str(p))
+
+    raw_provs = build_v2_providers(tmp_path, verbose=False, stable_ids=False)
+    assert len({p.episode_id for p in raw_provs}) == 1        # 2 clips, 1 cluster
+
+    provs = build_v2_providers(tmp_path, verbose=False, rebuild=True)
+    assert len({p.episode_id for p in provs}) == len(provs) == 2
+    # int64-collate safe, and deterministic across processes
+    for p in provs:
+        assert 0 <= p.episode_id < 2 ** 63
+    assert stable_episode_id(cid_a) == stable_episode_id(cid_a)
+    assert stable_episode_id(cid_a) != stable_episode_id(cid_b)
 
 
 def test_v2_cache_flag_threads_and_default_untouched(monkeypatch):

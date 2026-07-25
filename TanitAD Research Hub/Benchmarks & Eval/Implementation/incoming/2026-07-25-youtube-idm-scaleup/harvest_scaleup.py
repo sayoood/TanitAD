@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse, json, math, os, sys, time
 from pathlib import Path
 
+import numpy as np
 import torch
 import yt_dlp
 
@@ -46,6 +47,58 @@ sys.path.insert(0, "/workspace/tmp/yt_pilot/scripts")
 sys.path.insert(0, "/workspace/tmp/yt_scaleup/scripts")
 sys.path.insert(0, "/workspace/TanitAD/stack")
 import yt_pilot_common as C                                          # noqa: E402
+
+# GeoCalib per-video intrinsics (drop-in for decode_canonical). The GeoCalib agent
+# (2026-07-25) MEASURED that YouTube dashcams sit at median ~66.6 deg HFOV (range
+# 32-77), so the fixed 100 deg over-crops ~1.4x and inflates pseudo-speed on most
+# clips -> running the decision-grade lift on fixed-HFOV bakes a systematic error
+# into the headline. decode_canonical_geocalib estimates each video's focal (median
+# vFoV over N frames + MAD outlier rejection + confidence gate) and FALLS BACK to
+# fixed-HFOV when GeoCalib is low-confidence -> never worse than the pilot. It
+# decodes thread_type="NONE" (a threaded PyAV decoder torn down with a live CUDA
+# context DEADLOCKS — MEASURED by the GeoCalib agent).
+_GEO_OK = False
+_GEO_ERR = ""
+try:
+    from geocalib_intrinsics import GeoCalibEstimator, decode_canonical_geocalib
+    _GEO_OK = True
+except Exception as _e:                                             # pragma: no cover
+    _GEO_ERR = f"{type(_e).__name__}: {_e}"
+
+
+def geocalib_estimate_frames(mp4_path, anonymizer, n=24, skip_head=15, window=1200):
+    """Decode + anonymize ~n frames SPREAD over the first ``window`` frames
+    (thread_type NONE) for a per-video GeoCalib estimate.
+
+    Camera intrinsics are constant per video, but GeoCalib's per-FRAME estimate
+    quality depends on scene content, so a diverse sample gives a more confident
+    aggregate than n CONSECUTIVE frames (MEASURED: consecutive-24 tripped the
+    low-confidence fallback on a highway clip that a spread sample called high-conf).
+    Spreading over a BOUNDED window (~40 s) keeps the estimate diverse yet AVOIDS
+    `estimate_from_video` decoding the ENTIRE video single-thread just to reach
+    spread indices (the scale-killer: a 25-min video = ~45k frames/estimate).
+    Blur is applied full-res before GeoCalib sees any pixel (privacy)."""
+    import av
+    frames = []
+    stride = max(1, (window - skip_head) // max(1, n))
+    try:
+        with av.open(str(mp4_path)) as c:
+            st = c.streams.video[0]
+            st.thread_type = "NONE"
+            i = 0
+            for fr in c.decode(st):
+                if i >= skip_head and (i - skip_head) % stride == 0:
+                    rgb = fr.to_ndarray(format="rgb24")
+                    frames.append(np.ascontiguousarray(
+                        anonymizer(np.ascontiguousarray(rgb))))
+                    if len(frames) >= n:
+                        break
+                i += 1
+                if i >= window:
+                    break
+    except Exception:
+        return []
+    return frames
 
 # time-manipulation reject list (unchanged from pilot) — we still drop these
 BAD_TITLE = ("5x", "10x", "4x speed", "2x speed", "fast forward", "fast-forward",
@@ -149,7 +202,12 @@ def main():
     ap.add_argument("--channels-file", default="")
     ap.add_argument("--seed-file", default="")
     ap.add_argument("--geocalib-json", default="",
-                    help="optional {video_id: {hfov_deg|focal_px}} from the GeoCalib agent")
+                    help="(legacy) precomputed {video_id: {hfov_deg|focal_px}}; superseded by inline GeoCalib")
+    ap.add_argument("--no-geocalib", action="store_true",
+                    help="force the fixed-HFOV fallback even if geocalib is installed")
+    ap.add_argument("--geocalib-est-frames", type=int, default=24,
+                    help="frames sampled from the video START for the per-video estimate "
+                         "(constant intrinsics -> first-n == spread-n; avoids full-video decode)")
     ap.add_argument("--max-clips", type=int, default=800)       # TOTAL target (resumes via state)
     ap.add_argument("--per-video-clips", type=int, default=30)  # long drives -> many clips
     ap.add_argument("--clip-frames", type=int, default=250)     # 25 s @ 10 Hz (pilot parity)
@@ -162,8 +220,14 @@ def main():
     ap.add_argument("--hfov-deg", type=float, default=C.DEFAULT_HFOV_DEG)
     ap.add_argument("--cut-thresh", type=float, default=9.0)
     ap.add_argument("--min-duration", type=float, default=60)     # >=1 min continuous
-    ap.add_argument("--max-duration", type=float, default=7200)   # up to 2 h drives
-    ap.add_argument("--max-frames-per-video", type=int, default=6000)  # 10 min @10Hz (RAM-bounded)
+    ap.add_argument("--max-duration", type=float, default=1500)   # <=25 min: reject long drives
+    #   at the METADATA gate (zero wasted download bytes; a 480p >25min file can blow the 400MB cap).
+    #   We only decode the first max-frames anyway, and one <=25min video already saturates
+    #   per-video-clips, so capping here costs no clips/video and favors more-videos = more diversity.
+    ap.add_argument("--max-frames-per-video", type=int, default=3000)  # 5 min @10Hz (RAM-bounded; diversity)
+    ap.add_argument("--sleep", type=float, default=0.0,
+                    help="yt-dlp per-request sleep + between-video sleep (seconds). Set >0 for a "
+                         "GENTLE re-run after a YouTube bot-block (high-volume bursts trip it).")
     args = ap.parse_args()
 
     work = Path(args.work)
@@ -172,14 +236,6 @@ def main():
     ptr_path = work / "pointers.jsonl"
     state_path = work / "harvest_state.json"
     manifest_path = work / "manifest.json"
-    geo_map = {}
-    if args.geocalib_json and os.path.exists(args.geocalib_json):
-        geo_map = json.loads(Path(args.geocalib_json).read_text())
-        log(f"GeoCalib intrinsics loaded: {len(geo_map)} videos")
-    else:
-        log(f"GeoCalib intrinsics NOT supplied -> fixed-HFOV fallback ({args.hfov_deg} deg); "
-            f"re-runnable from pointers when GeoCalib lands")
-
     state = json.loads(state_path.read_text()) if state_path.exists() else \
         {"done_videos": [], "n_clips": 0, "geocalib_hits": 0}
     done = set(state["done_videos"])
@@ -188,6 +244,16 @@ def main():
     anon = C.Anonymizer()   # RAISES if privacy cascades fail to load (refuse-to-store)
     log(f"anonymizer ready: face={len(anon.face)} plate={len(anon.plate)} "
         f"body={len(anon.body)} cascades; allow_noncc={args.allow_noncc}")
+
+    # GeoCalib per-video estimator (one CUDA model per worker, reused across clips).
+    use_geo = _GEO_OK and not args.no_geocalib
+    est = None
+    if use_geo:
+        est = GeoCalibEstimator(hfov_fallback_deg=args.hfov_deg)     # distorted, cuda
+        log(f"GEOMETRY = GeoCalib per-video (distorted/cuda; fixed-HFOV {args.hfov_deg} deg fallback)")
+    else:
+        why = "forced --no-geocalib" if args.no_geocalib else f"geocalib import failed [{_GEO_ERR}]"
+        log(f"GEOMETRY = fixed-HFOV {args.hfov_deg} deg  ({why})")
 
     seeds = [as_watch_url(s) for s in read_lines(args.seed_file)]
     queries = read_lines(args.queries_file)
@@ -211,10 +277,16 @@ def main():
                "format": "bv*[height<=480]/b[height<=480]/bv*/b",
                "max_filesize": 400 * 1024 * 1024,
                "outtmpl": str(dl_dir / "%(id)s.%(ext)s")}
+    if args.sleep > 0:                     # gentle re-run: throttle yt-dlp requests
+        for o in (meta_opts, dl_opts):
+            o["sleep_interval"] = args.sleep
+            o["max_sleep_interval"] = args.sleep * 2
+            o["sleep_interval_requests"] = 1
 
     rejects = {"not_cc_kept": 0, "bad_title": 0, "duration": 0, "dl_fail": 0,
                "decode_fail": 0, "no_license_field": 0, "cc": 0}
     lic_counts = {}
+    geo_conf_counts = {}          # GeoCalib confidence distribution (high/medium/low/None)
     accepted_videos = 0
     n_videos_tried = 0
     geocalib_hits = state.get("geocalib_hits", 0)
@@ -264,14 +336,35 @@ def main():
             rejects["dl_fail"] += 1; done.add(vid); continue
         mp4 = str(mp4s[0])
 
-        # ---- decode + anonymize + canonical crop (GeoCalib or fixed HFOV) ----
-        hfov, geosrc = per_video_hfov(vid, info, geo_map, args.hfov_deg)
-        if geosrc == "geocalib":
-            geocalib_hits += 1
+        # ---- decode + anonymize + canonical crop (GeoCalib per-video, or fixed HFOV) ----
+        conf = None; intr = {}
         try:
             anon.reset()
-            vid_u8, meta = C.decode_canonical(
-                mp4, anon, hfov_deg=hfov, max_frames=args.max_frames_per_video)
+            if use_geo:
+                # FAST per-video estimate from the first ~N frames (constant intrinsics),
+                # then thread_type=NONE decode+crop at that focal. estimate_from_frames
+                # keeps the module's robust median-vFoV + MAD reject + confidence gate +
+                # fixed-HFOV fallback; passing `estimated=` skips estimate_from_video's
+                # full-video decode. Blur full-res before GeoCalib/crop (privacy).
+                ef = geocalib_estimate_frames(mp4, anon, n=args.geocalib_est_frames)
+                estimated = est.estimate_from_frames(ef) if ef else None
+                anon.reset()   # clear carry-forward from the estimate pass
+                vid_u8, meta = decode_canonical_geocalib(
+                    mp4, anon, estimator=est, estimated=estimated,
+                    max_frames=args.max_frames_per_video,
+                    hfov_fallback_deg=args.hfov_deg)
+                intr = meta.get("intrinsics", {}) or {}
+                hfov = meta.get("hfov_used_deg", args.hfov_deg)
+                conf = intr.get("confidence")
+                geosrc = "geocalib_fallback" if meta.get("geocalib_fallback_used") else "geocalib"
+                if geosrc == "geocalib":
+                    geocalib_hits += 1
+                geo_conf_counts[str(conf)] = geo_conf_counts.get(str(conf), 0) + 1
+            else:
+                vid_u8, meta = C.decode_canonical(
+                    mp4, anon, hfov_deg=args.hfov_deg,
+                    max_frames=args.max_frames_per_video)
+                hfov = args.hfov_deg; geosrc = "fixed"
         except Exception as e:
             rejects["decode_fail"] += 1
             log(f"  decode fail [{vid}]: {type(e).__name__}: {e}")
@@ -304,7 +397,13 @@ def main():
                                      extra={"shotcut_score": round(cut, 2),
                                             "clip_path": str(clip_path),
                                             "geometry_source": geosrc,
-                                            "hfov_used_deg": round(hfov, 2),
+                                            "hfov_used_deg": round(float(hfov), 2),
+                                            "geocalib_vfov_deg": intr.get("vfov_deg"),
+                                            "geocalib_confidence": conf,
+                                            "geocalib_fallback_used": intr.get("fallback_used"),
+                                            "geocalib_vfov_mad_deg": intr.get("vfov_mad_deg"),
+                                            "achieved_f_eff": meta.get("achieved_f_eff"),
+                                            "fully_canonical": meta.get("fully_canonical"),
                                             "is_cc": is_cc, "license": lic})
                 pf.write(json.dumps(ptr) + "\n")
                 clip_id += 1; made += 1
@@ -313,9 +412,10 @@ def main():
         done.add(vid)
         state.update(done_videos=sorted(done), n_clips=clip_id, geocalib_hits=geocalib_hits)
         state_path.write_text(json.dumps(state))
-        log(f"  [{vid}] {str(info.get('title',''))[:45]!r} dur={dur}s cc={is_cc} "
-            f"geo={geosrc} -> {made} clips (total {clip_id}) "
-            f"anon f/p/b={meta['anon']['faces']}/{meta['anon']['plates']}/{meta['anon']['bodies']}")
+        an = meta.get("anon") or {}
+        log(f"  [{vid}] {str(info.get('title',''))[:40]!r} dur={dur}s cc={is_cc} "
+            f"geo={geosrc}/{conf} hfov={float(hfov):.0f} -> {made} clips (total {clip_id}) "
+            f"anon f/p/b={an.get('faces')}/{an.get('plates')}/{an.get('bodies')}")
 
     manifest = {
         "experiment": "youtube_idm_scaleup_harvest",
@@ -325,8 +425,10 @@ def main():
         "license_distribution": lic_counts,
         "allow_noncc": args.allow_noncc,
         "clip_frames": args.clip_frames,
-        "geometry": ("geocalib_per_video" if geo_map else f"fixed_hfov_{args.hfov_deg:g}"),
-        "geocalib_hits": geocalib_hits,
+        "geometry": ("geocalib_per_video" if use_geo else f"fixed_hfov_{args.hfov_deg:g}"),
+        "geocalib_enabled": bool(use_geo),
+        "geocalib_confident_hits": geocalib_hits,
+        "geocalib_confidence_distribution": geo_conf_counts,
         "hfov_fallback_deg": args.hfov_deg, "cut_thresh": args.cut_thresh,
         "privacy": "faces+plates+bodies Haar-blurred at full-res before 256 downscale; "
                    "no raw video / full-res frames persisted; clip frames are transient "

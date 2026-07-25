@@ -734,6 +734,46 @@ Per the pre-registered rule this **confirms "floor too high"** → v4.2b (floor 
 
 ---
 
+### 1.7 flagship-v2**corpus** — `flagship-v2corpus-30k` — 🟢 **RUNNING** (launched 2026-07-25T02:41Z)
+
+**The corpus experiment: §1.3's recipe, unchanged, on 3.8× the data.** Every lever
+matches `flagship4b-v2-30k`; the **corpus is the only differing variable**.
+
+| Field | Value |
+|---|---|
+| **Status** | 🟢 RUNNING on `tanitad-pod` (pod1, RTX A6000). Trainer PID **699286** (parent `bash -c` wrapper 699284). ETA **≈2026-07-29T01:10Z** (30,000 × MEASURED 11.3 s/step ≈ 94 h). |
+| **Location** | `tanitad-pod:/workspace/experiments/flagship-v2corpus-30k/` · log `tanitad-pod:/tmp/flagship-v2corpus-30k.log` |
+| **Corpus** ⚠️ | **`physicalai-v2bal-4b7eeeac222d`** — 9,000 clips / **49.742 trainable h** / 22.3 GiB JPEG cache. **NOT the parity corpus.** Key **`4b7eeeac222d`** recomputed from the built clip-ids at consolidation. **Record it here because the run's own `config.json` does NOT** — under `--v2-cache` the trainer writes `"cache_dirs": null, "data": "realmix"`. |
+| **Windows** | **1,538,710** (parity arms: ~198 k) |
+| **Params** | operative 96,609,284 · tactical_pred 26,535,424 · tactical_policy 30,098,063 · strategic 8,385,411 · encoder 87,121,280 · h15 22,055,683 · grounding 13,432,338 → **total_model 272,906,913 / trainable 286,339,251** ✅ — **identical to §1.3**, verified from the run's own `[init]` line |
+| **Levers** | `v2_labels true` · `speed_input true` · `rollout_k 12` · `anchor_tactical true` · `gated_intent true` — each read from **both** config.jsons and confirmed equal to §1.3 |
+| **Exact command** | run manifest `/workspace/ops/runs.d/flagship-v2corpus-30k.env` (`TRAIN_CMD` copied verbatim from `/proc/699286/cmdline`):<br>`PYTHONPATH=/workspace/TanitAD/stack PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python3 -u scripts/train_flagship4b.py --v2-cache /workspace/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d --config flagship4b --v2 --sigreg-free-dims 64 --steps 30000 --batch-size 16 --accum 4 --grad-checkpoint --lr 3e-4 --warmup 2000 --workers 8 --v2-lru 64 --guard-limit-gb 45 --ckpt-every 1000 --log-every 50 --out /workspace/experiments/flagship-v2corpus-30k` ✅ |
+| **Code state** | repo `bdb6ba1` synced to pod1 and verified by full trainer import. Requires `tanitad/data/v2_dataset.py` (`--v2-cache` lazy loader) and the `finetune_traj.py` OOM-guard fix (the guard matched **0** files on any v2 cache before it). Both staged, uncommitted at launch. ⚠️ |
+| **Supervision** | `supervise_run.sh` attached **death-only** (`TRAIN_MATCH` prevents double-launch); heartbeat `/workspace/ops/heartbeats/flagship-v2corpus-30k.json` |
+| **HF** | none |
+
+**Pre-registered comparison (committed BEFORE the run):** vs **§1.3
+`flagship4b-v2-30k`**, **corpus only**. Primary = **ADE@2s** at **matched step
+5,000** (the control's cleanly archived `ckpt_step5000.pt`), via **episode-cluster
+bootstrap** over the 40 val episodes, paired where windows match — never
+`overlapping_holdout_se`. Secondary = turn-stratified ADE. 30k-vs-30k does not
+exist: the control's log ends at step **7,700** (registry text elsewhere says 7,800)
+with resume-duplicated rows in its tail.
+
+> ⚠️ **Turn share depends on the labeler, the scenes do not.** This corpus reads
+> **28.04 %** turns under the v1 labeler (its selection target) and **18.83 %**
+> under the v2 labeler now in force — the same 9,000 clips either way. Quote
+> **18.83 %** for this run's labels, **28.04 %** for the corpus design target.
+
+> ⚠️ A first launch at 02:21Z used `--v2 --no-labels-v2` and was killed at ~20 min
+> (no checkpoint had been written); it is preserved at
+> `…/flagship-v2corpus-30k_ABORTED-labelsFALSE-20260725T0221Z/`. `--no-labels-v2`
+> would have made **labels a second differing variable** vs §1.3.
+
+Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-25-v2-launch-readiness/V2_LAUNCH_READINESS.md`.
+
+---
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
@@ -985,7 +1025,7 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 | **Data** | `/workspace/pai_epcache` (pod3 copy of the same 2,376-ep parity set); anchors `/workspace/experiments/refc_anchors_full.pt` built by `stack/scripts/build_refc_anchors.py` |
 | **Exact command** *(live `ps`)* | `cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True nohup python3 scripts/refc_train.py --data-root /workspace/pai_epcache --out /workspace/experiments/refc-diffusion-xl-30k --steps 30000 --mode diffusion --config xl --anchors /workspace/experiments/refc_anchors_full.pt --batch 20 --workers 6` ✅ |
 | **Code state** | `stack/tanitad/refs/refc.py` + `stack/scripts/refc_train.py` are **committed in this repo** (`6025769`, `7e9c402`, 15 refc tests). ⚠️ On pod3 the file shows as **untracked** (`?? stack/tanitad/refs/refc.py`) — the pod predates the commit; verify the pod copy matches HEAD before claiming byte-parity. |
-| **HF** | none |
+| **HF** | ✅ **`Sayood/tanitad-refc-xl`** — public + **gated `manual`** (access by owner approval), pushed 2026-07-25. Files: `ckpt.pt` **3,024,021,445 B** (md5 `966d4eff1ea5ddf86efba01b8344e198`, re-verified against this row immediately before upload), `config.json`, `metrics.json`, model card. Anonymous `resolve/ckpt.pt` returns **401 `GatedRepo`** — weights are NOT world-downloadable (verified, not assumed). Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-xl-30k`), 881 windows** ✅ *(read from the raw eval run 2026-07-20)*
 
@@ -1189,6 +1229,7 @@ at 12 % of the 100 ms budget. Evidence class: **MEASURED** (this run + eval, art
 | **Code** | `stack/scripts/refc_train.py` gained `--labels {v1,v21}` (**default `v1` = XL-reproducible**), `RouteV21Dataset`, a fail-loud masked route CE, and 5 k/15 k/20 k/30 k **milestone archiving** (the gate series XL lacks). 15/15 `tests/test_refc.py` pass. Pod3 drift repaired before launch (`refb_labels.py` still had `use_net_dyaw=True`; `ckpt_io.py` was absent) — backups in `/workspace/ops/backup-20260720-refcmed/`. |
 | **Eval** | canonical `taniteval.refc_eval` path, **identical to XL**: n=881 windows / 40 val eps / `/root/valdata/physicalai-val-0c5f7dac3b11`, window 8 / stride 8, nav=follow, 2 truncated-denoise steps. Parity proven three ways: same 881 `eid`s, bit-identical GT, and **bit-identical CV baseline in every stratum** (0.6468 / 0.9345 / 0.9322 high/med/low, 0.4393 / 1.3566 / 2.3764 straight/gentle/sharp — the same numbers §4.1 prints for XL). Registry entry `refc-base-30k` added to `taniteval/taniteval/registry.py` with `config_preset="base"`. |
 | **Note** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
+| **HF** | ✅ **`Sayood/tanitad-refc-base`** — public + **gated `manual`**, pushed 2026-07-25. Files: `ckpt.pt` **1,250,838,325 B** (md5 `8f10d6f934f4199e11ddc7352e074939`, re-verified immediately before upload), `config.json`, `metrics.json`, model card. Anonymous `resolve/ckpt.pt` returns **401 `GatedRepo`**. Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-base-30k`), 881 windows** ✅ *(raw: `taniteval/results/refc-base-30k.json`)*
 

@@ -37,11 +37,17 @@ UNMODIFIED (copied into the pod scripts dir for self-containment; the privacy/ge
   ("ship pointers, never bytes" / OpenDV model). License recorded per pointer for auditability.
 - if the privacy detector cannot load, harvest **RAISES** (refuse-to-store) → STOP + escalate.
 
-## Geometry
-Fixed-HFOV (100°) fallback unless the GeoCalib agent's `geocalib_intrinsics.json`
-(`{video_id: {hfov_deg|focal_px}}`) is dropped at `/workspace/tmp/yt_scaleup/geocalib_intrinsics.json`;
-the harvest auto-detects it. HFOV used is recorded per pointer, so a fixed-HFOV run is **re-runnable
-with GeoCalib later by re-decoding from the pointers** (no re-harvest of new videos needed).
+## Geometry — GeoCalib per-video (integrated 2026-07-25)
+Harvest uses `geocalib_intrinsics.decode_canonical_geocalib` (from the GeoCalib deliverable
+`…/incoming/2026-07-25-geocalib/geocalib_intrinsics.py`): per-video focal from 16 frames
+(median vFoV + MAD rejection + confidence gate), decoded `thread_type="NONE"` (CUDA-deadlock-safe),
+cropped to canonical f_eff≈266. Low-confidence videos **fall back to fixed-HFOV internally** →
+never worse than the pilot. Requires `pip install git+https://github.com/cvg/GeoCalib` in pod3's venv
+(depends on the tanitad stack for `focal_crop_resize`). If geocalib is unavailable, `harvest_scaleup`
+auto-falls-back to fixed-HFOV (`--no-geocalib`) and records it. Per-pointer geometry provenance:
+`geocalib_vfov_deg`, `geocalib_confidence`, `geocalib_fallback_used`, `achieved_f_eff`.
+GeoCalib is a QUALIFIED instrument (6.8% median focal err, r=0.41 absolute tracking) — beats fixed-100°,
+not a per-clip oracle.
 
 ## Run (pod3, detached)
 ```bash

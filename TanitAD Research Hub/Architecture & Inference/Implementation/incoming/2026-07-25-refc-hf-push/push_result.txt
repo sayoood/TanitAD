@@ -1,0 +1,100 @@
+=== PASS 1: hf_push_refc.py (private) — progress bars stripped ===
+[md5] /root/models/refc-xl-30k/ckpt.pt -> 966d4eff1ea5ddf86efba01b8344e198 expected 966d4eff1ea5ddf86efba01b8344e198 :: MATCH (5s, 3024021445 B)
+[md5] /root/models/refc-base-30k/ckpt.pt -> 8f10d6f934f4199e11ddc7352e074939 expected 8f10d6f934f4199e11ddc7352e074939 :: MATCH (2s, 1250838325 B)
+=== Sayood/tanitad-refc-xl ===
+[repo] created/exists, private=True (mirrors tanitad-refc-small-evalonly)
+[up] README.md 12092 B in 0.9s (0.0 MB/s)
+[up] config.json 2241 B in 0.5s (0.0 MB/s)
+[up] metrics.json 920 B in 0.6s (0.0 MB/s)
+[up] FAILED ckpt.pt: HfHubHTTPError: (Request ID: Root=1-6a642cfb-2ece93c46e59681666157a46;68a1e9db-5ce2-4715-b5e9-5e3b164a3dbf)
+[verify] private=True gated=False
+[verify]   .gitattributes  1519
+[verify]   README.md  12092
+[verify]   config.json  2241
+[verify]   metrics.json  920
+=== Sayood/tanitad-refc-base ===
+[repo] created/exists, private=True (mirrors tanitad-refc-small-evalonly)
+[up] README.md 14490 B in 0.8s (0.0 MB/s)
+[up] config.json 3174 B in 0.6s (0.0 MB/s)
+[up] metrics.json 1015 B in 0.6s (0.0 MB/s)
+[up] FAILED ckpt.pt: HfHubHTTPError: (Request ID: Root=1-6a642d0d-1d54f51c33d7ff055706ce83;d7fa99f8-f2a2-445b-8f4d-400a4f7d4b05)
+[verify] private=True gated=False
+[verify]   .gitattributes  1519
+[verify]   README.md  14490
+[verify]   config.json  3174
+[verify]   metrics.json  1015
+PUSH_DONE
+
+=== PASS 1 diagnosis: hf_diag_retry.py — full 403 detail ===
+=== account / storage ===
+  whoami-v2: {'type': 'user', 'id': '6802973c2a9e7db73123b777', 'name': 'Sayood', 'fullname': 'Sayed Bouzouraa', 'email': 'sayedbouzouraa@googlemail.com', 'emailVerified': True, 'canPay': False, 'billingMode': 'prepaid', 'periodEnd': 1785542400, 'isPro': False, 'avatarUrl': '/avatars/d3f55d1913cb427ea25267aa77e0fddc.svg', 'orgs': []}
+  https://huggingface.co/api/users/Sayood/overview -> 200 {"_id":"6802973c2a9e7db73123b777","avatarUrl":"/avatars/d3f55d1913cb427ea25267aa77e0fddc.svg","isPro":false,"fullname":"Sayed Bouzouraa","numModels":14,"numDatasets":10,"numSpaces":0,"numKernels":0,"numBuckets":0,"numDiscussions":0,"numPapers":0,"numUpvotes":0,"numLikes":0,"numFollowers":0,"numFollowing":0,"numFollowingOrgs":0,"orgs":[],"user":"Sayood","type":"user","isFollowing":false,"createdAt":"2025-04-18T18:17:32.000Z"}
+
+=== retry Sayood/tanitad-refc-xl :: /root/models/refc-xl-30k/ckpt.pt (3024021445 B) ===
+[FAIL] HfHubHTTPError after 12s
+  status_code: 403
+  reason     : None
+  url        : https://huggingface.co/api/models/Sayood/tanitad-refc-xl/commit/main
+  body       : {"error":"Private repository storage limit reached, please upgrade your plan to increase your private storage limit"}
+  headers    : {'content-type': 'application/json; charset=utf-8', 'x-powered-by': 'huggingface-moon', 'x-request-id': 'Root=1-6a642d51-05d3f29141f538cf7930294f;2d6504ae-ccb8-4ba1-a9bf-d579d6528afd', 'x-error-message': 'Private repository storage limit reached, please upgrade your plan to increase your private storage limit', 'x-cache': 'Error from cloudfront', 'x-amz-cf-pop': 'ARN53-P4', 'x-amz-cf-id': '5EVRW_pmvE4fMkRfLtXt80ypLmqxLDudQfGTthHYhxcAjxQyMOF6sA=='}
+  server_message: Private repository storage limit reached, please upgrade your plan to increase your private storage limit
+  str(e)[:1500]: (Request ID: Root=1-6a642d51-05d3f29141f538cf7930294f;2d6504ae-ccb8-4ba1-a9bf-d579d6528afd)
+
+403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.
+Cannot access content at: https://huggingface.co/api/models/Sayood/tanitad-refc-xl/commit/main.
+Make sure your token has the correct permissions.
+
+=== retry Sayood/tanitad-refc-base :: /root/models/refc-base-30k/ckpt.pt (1250838325 B) ===
+[FAIL] HfHubHTTPError after 6s
+  status_code: 403
+  reason     : None
+  url        : https://huggingface.co/api/models/Sayood/tanitad-refc-base/commit/main
+  body       : {"error":"Private repository storage limit reached, please upgrade your plan to increase your private storage limit"}
+  headers    : {'content-type': 'application/json; charset=utf-8', 'x-powered-by': 'huggingface-moon', 'x-request-id': 'Root=1-6a642d56-3dd1c1f27f8cd47b13a2d2c8;80c914c1-adb5-4ffc-bdba-9a339a723cde', 'x-error-message': 'Private repository storage limit reached, please upgrade your plan to increase your private storage limit', 'x-cache': 'Error from cloudfront', 'x-amz-cf-pop': 'ARN53-P4', 'x-amz-cf-id': 'T0-YQpSJX4LBD22mtWldEuINGcyrLAoClkTrehMhEqy378D-6fC5nw=='}
+  server_message: Private repository storage limit reached, please upgrade your plan to increase your private storage limit
+  str(e)[:1500]: (Request ID: Root=1-6a642d56-3dd1c1f27f8cd47b13a2d2c8;80c914c1-adb5-4ffc-bdba-9a339a723cde)
+
+403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.
+Cannot access content at: https://huggingface.co/api/models/Sayood/tanitad-refc-base/commit/main.
+Make sure your token has the correct permissions.
+
+DIAG_DONE
+
+=== PASS 2: hf_gate_publish_push.py — gate -> publish -> verify -> md5 -> upload ===
+
+================ Sayood/tanitad-refc-xl ================
+[0] BEFORE: private=True gated=false
+[1] gated=manual requested (repo still private)
+[1] readback: private=True gated=manual
+[2] private=False requested
+[3] VERIFY: private=False gated=manual -> public=True gated_manual=True
+[4] md5 966d4eff1ea5ddf86efba01b8344e198 vs registry 966d4eff1ea5ddf86efba01b8344e198 :: MATCH
+[5] uploading ckpt.pt (3024021445 B) ...
+[5] uploaded in 12s (246.0 MB/s)
+[6] FINAL: private=False gated=manual
+[6]   .gitattributes  1519 B
+[6]   README.md  12092 B
+[6]   ckpt.pt  3024021445 B
+[6]   config.json  2241 B
+[6]   metrics.json  920 B
+
+================ Sayood/tanitad-refc-base ================
+[0] BEFORE: private=True gated=false
+[1] gated=manual requested (repo still private)
+[1] readback: private=True gated=manual
+[2] private=False requested
+[3] VERIFY: private=False gated=manual -> public=True gated_manual=True
+[4] md5 8f10d6f934f4199e11ddc7352e074939 vs registry 8f10d6f934f4199e11ddc7352e074939 :: MATCH
+[5] uploading ckpt.pt (1250838325 B) ...
+[5] uploaded in 6s (215.3 MB/s)
+[6] FINAL: private=False gated=manual
+[6]   .gitattributes  1519 B
+[6]   README.md  14490 B
+[6]   ckpt.pt  1250838325 B
+[6]   config.json  3174 B
+[6]   metrics.json  1015 B
+
+=== SUMMARY ===
+  Sayood/tanitad-refc-xl: OK
+  Sayood/tanitad-refc-base: OK
+GATE_PUBLISH_PUSH_DONE

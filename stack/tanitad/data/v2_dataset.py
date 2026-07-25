@@ -46,6 +46,7 @@ training + CI import surface stays minimal.
 from __future__ import annotations
 
 import glob
+import hashlib
 import os
 import time
 from collections import OrderedDict
@@ -56,7 +57,40 @@ import torchvision.io as tvio
 from tanitad.data.comma2k19 import stack_frames
 
 MANIFEST_NAME = "_v2manifest.pt"
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2        # v2: manifest also carries clip_id + episode_uid
+
+
+# --------------------------------------------------------------------------- #
+# Collision-free episode identity                                             #
+# --------------------------------------------------------------------------- #
+def stable_episode_id(clip_id: str) -> int:
+    """A collision-free 63-bit episode id derived from the FULL ``clip_id``.
+
+    ``v2_compressed.build_compressed`` stores
+    ``episode_id = int.from_bytes(clip_id.encode()[:4], "big")`` -- the first
+    **4 characters** of the UUID, i.e. 16 bits of entropy. MEASURED
+    (``V2_CORPUS_QA.md`` P3): that collides for **609 of the 9 000** v2 clips
+    (6.8 %, max multiplicity 4); the parity corpus has the same defect at 1.4 %.
+
+    Training is unaffected -- the trainer emits ``episode_id`` in every window
+    but never consumes it. It matters for anything that groups *by episode*:
+    episode-disjoint splitting, and the decision-grade **episode-cluster
+    bootstrap** (``taniteval.ci.episode_cluster_bootstrap``, which clusters on
+    the unique values of its ``eid`` argument). Under the 16-bit id, 609 pairs
+    of genuinely different clips are silently merged into one cluster, which
+    **narrows the interval** -- the exact failure mode CLAUDE.md's "never quote
+    an interval without its estimator" rule exists to prevent.
+
+    63 bits (not 64) keeps the value inside torch's signed-int64 default
+    collate. Collision probability over 9 000 clips is ~9000^2 / 2^64 ~= 4e-12.
+
+    This is derived at **load** time rather than fixed in ``build_compressed``
+    on purpose: it repairs the 9 000 clips already on disk with **no rebuild**,
+    and it leaves every existing ``*.v2ep.pt`` byte-for-byte untouched, so the
+    QA's build/load byte-identity proof still stands.
+    """
+    return int.from_bytes(
+        hashlib.blake2b(clip_id.encode("utf-8"), digest_size=8).digest(), "big") >> 1
 
 
 # --------------------------------------------------------------------------- #
@@ -210,14 +244,20 @@ class V2CompressedCache:
 # --------------------------------------------------------------------------- #
 def _scan_meta(path: str) -> tuple:
     """Metadata-only read of one clip: ``(poses[k:], actions[k:], episode_id,
-    n_stack, image_size)``. ``mmap=True`` pages in ONLY the small pose/action
-    storages -- the multi-MB ``jpeg_buf`` is never touched -- and ``.clone()``
-    copies them off the mmap into owned resident tensors."""
+    n_stack, image_size, clip_id)``. ``mmap=True`` pages in ONLY the small
+    pose/action storages -- the multi-MB ``jpeg_buf`` is never touched -- and
+    ``.clone()`` copies them off the mmap into owned resident tensors.
+
+    ``clip_id`` is the full UUID string ``build_compressed`` stores alongside
+    the 16-bit ``episode_id``; it is what :func:`stable_episode_id` hashes.
+    Falls back to the filename stem for any payload predating that field."""
     d = torch.load(path, map_location="cpu", weights_only=False, mmap=True)
     k = int(d["n_stack"]) - 1
     poses = d["poses"][k:].clone().contiguous().float()
     actions = d["actions"][k:].clone().contiguous().float()
-    return poses, actions, int(d["episode_id"]), int(d["n_stack"]), int(d["image_size"])
+    clip_id = str(d.get("clip_id") or os.path.basename(path).split(".v2ep")[0])
+    return (poses, actions, int(d["episode_id"]), int(d["n_stack"]),
+            int(d["image_size"]), clip_id)
 
 
 def _list_clips(cache_dir: str) -> list[str]:
@@ -249,12 +289,16 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
                 print(f"[v2] manifest {mp} unreadable ({e!r}) -> rebuild",
                       flush=True)
     poses_l, act_l, eid_l, ns_l, sz_l, tout_l = [], [], [], [], [], []
+    cid_l, uid_l = [], []
     t0 = time.time()
     for j, fn in enumerate(files):
-        poses, actions, eid, n_stack, S = _scan_meta(os.path.join(cache_dir, fn))
+        poses, actions, eid, n_stack, S, cid = _scan_meta(
+            os.path.join(cache_dir, fn))
         poses_l.append(poses)
         act_l.append(actions)
         eid_l.append(eid)
+        cid_l.append(cid)
+        uid_l.append(stable_episode_id(cid))
         ns_l.append(n_stack)
         sz_l.append(S)
         tout_l.append(int(poses.shape[0]))
@@ -263,7 +307,8 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
                   f"({time.time() - t0:.0f}s)", flush=True)
     man = {"version": MANIFEST_VERSION, "files": files, "poses": poses_l,
            "actions": act_l, "episode_id": eid_l, "n_stack": ns_l,
-           "image_size": sz_l, "T_out": tout_l}
+           "image_size": sz_l, "T_out": tout_l,
+           "clip_id": cid_l, "episode_uid": uid_l}
     try:
         tmp = mp + ".tmp"
         torch.save(man, tmp)
@@ -279,14 +324,27 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
 
 
 def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
-                       verbose: bool = True) -> list[LazyV2Episode]:
+                       verbose: bool = True,
+                       stable_ids: bool = True) -> list[LazyV2Episode]:
     """Build the lazy provider list for one or more v2 cache dirs.
 
     The returned list is a drop-in replacement for the raw episode list fed to
     ``FlagshipWindowDataset`` (via ``_wrap``): every element quacks like a
     ``ToyEpisode``. Providers from multiple dirs are concatenated (the
     consolidated-cache case -- e.g. pod1 bottom-half + pod3 top-half). Each dir
-    keeps its OWN :class:`V2CompressedCache` (and LRU)."""
+    keeps its OWN :class:`V2CompressedCache` (and LRU).
+
+    ``stable_ids=True`` (default) gives each provider the collision-free
+    :func:`stable_episode_id` of its full ``clip_id`` instead of the 16-bit
+    ``episode_id`` baked into the payload -- see that function for why. This
+    changes nothing about training (``episode_id`` is emitted but never
+    consumed) and makes episode-clustered inference correct. It also matters
+    for the **multi-dir** case specifically: the raw 16-bit ids collide ACROSS
+    dirs too, so concatenating two shards under the old scheme would fuse
+    unrelated clips from opposite shards into one bootstrap cluster.
+
+    Pass ``stable_ids=False`` only to reproduce the exact ids stored at build
+    time (e.g. when diffing against ``load_compressed``)."""
     if isinstance(cache_dirs, (str, os.PathLike)):
         cache_dirs = [cache_dirs]
     providers: list[LazyV2Episode] = []
@@ -295,17 +353,30 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
         man = load_or_build_manifest(cd, rebuild=rebuild, verbose=verbose)
         cache = V2CompressedCache(cd, lru_size=lru_size)
         cache.files = man["files"]
+        key = "episode_uid" if (stable_ids and "episode_uid" in man) else "episode_id"
         for i in range(len(man["files"])):
             n_stack = int(man["n_stack"][i])
             S = int(man["image_size"][i])
             shape = torch.Size((int(man["T_out"][i]), 3 * n_stack, S, S))
             providers.append(LazyV2Episode(
                 cache, i, man["poses"][i], man["actions"][i],
-                int(man["episode_id"][i]), shape))
+                int(man[key][i]), shape))
         if verbose:
-            print(f"[v2] {cd}: {len(man['files'])} providers "
-                  f"(channels {3 * int(man['n_stack'][0])}, "
-                  f"{int(man['image_size'][0])} px)", flush=True)
+            n_raw = len(set(int(x) for x in man["episode_id"]))
+            msg = (f"[v2] {cd}: {len(man['files'])} providers "
+                   f"(channels {3 * int(man['n_stack'][0])}, "
+                   f"{int(man['image_size'][0])} px), episode ids from '{key}'")
+            if key == "episode_uid":
+                msg += (f" [collision-free; the as-built 16-bit ids would give "
+                        f"only {n_raw} distinct for {len(man['files'])} clips]")
+            print(msg, flush=True)
+    if verbose and len(providers):
+        n_uniq = len(set(p.episode_id for p in providers))
+        print(f"[v2] {len(providers)} providers, {n_uniq} distinct episode ids"
+              + ("" if n_uniq == len(providers)
+                 else f"  <-- WARNING: {len(providers) - n_uniq} COLLISIONS; "
+                      "episode-clustered CIs over this set would be too narrow"),
+              flush=True)
     return providers
 
 

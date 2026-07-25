@@ -91,7 +91,17 @@ def start_cache_guard(cache_dirs, limit_gb: float = 60.0, period: float = 20.0
     if usage is None:
         print("[guard] no v1/v2 cgroup usage file — guard is a no-op", flush=True)
         return None
-    patterns = [str(Path(cd) / "*" / "ep_*.pt") for cd in cache_dirs]
+    # Two on-disk layouts must both be sweepable:
+    #   raw epcache : <root>/{train,val}/ep_*.pt   (nested, per-split)
+    #   v2 cache    : <dir>/<clip_id>.v2ep.pt      (FLAT, different suffix)
+    # train_flagship4b passes --v2-cache dirs straight in here, so globbing only
+    # the raw pattern made the guard match ZERO files and silently free nothing
+    # on every v2 run -- the protection would be absent exactly where the OOM
+    # risk is highest. A non-matching pattern is harmless for the other layout.
+    patterns = []
+    for cd in cache_dirs:
+        patterns.append(str(Path(cd) / "*" / "ep_*.pt"))
+        patterns.append(str(Path(cd) / "*.v2ep.pt"))
     limit = int(limit_gb * 1024 ** 3)
 
     def _sweep() -> int:
@@ -125,8 +135,32 @@ def start_cache_guard(cache_dirs, limit_gb: float = 60.0, period: float = 20.0
 
     t = threading.Thread(target=_loop, daemon=True, name="cache_guard")
     t.start()
-    print(f"[guard] pre-armed: sweep >{limit_gb:.0f} GB over {len(patterns)} "
-          f"cache pattern(s), every {period:.0f}s ({usage})", flush=True)
+    # Report MATCHED FILES, not pattern count: a guard watching 0 files is inert,
+    # and the old message ("N cache pattern(s)") looked healthy either way.
+    n_watched = sum(len(glob.glob(p)) for p in patterns)
+    print(f"[guard] pre-armed: sweep >{limit_gb:.0f} GiB over {n_watched} cache "
+          f"file(s) from {len(patterns)} pattern(s), every {period:.0f}s "
+          f"({usage})", flush=True)
+    if n_watched == 0:
+        print("[guard] WARNING: 0 files matched — the guard can free NOTHING. "
+              f"Check the cache layout of {list(cache_dirs)}", flush=True)
+    # A limit at/above the cgroup cap can never trigger — the OOM killer wins.
+    # Check BOTH cgroup generations: the pods run v1 (memory.limit_in_bytes),
+    # and reading only the v2 path silently skipped this check.
+    cap = 0
+    for cap_file in ("/sys/fs/cgroup/memory/memory.limit_in_bytes",
+                     "/sys/fs/cgroup/memory.max"):
+        try:
+            cap = int(open(cap_file).read())
+            break
+        except (OSError, ValueError):
+            continue
+    if cap > (1 << 62):        # v1 reports a sentinel when unlimited
+        cap = 0
+    if cap and limit >= cap:
+        print(f"[guard] WARNING: limit {limit/1024**3:.1f} GiB >= cgroup cap "
+              f"{cap/1024**3:.1f} GiB — the OOM killer fires first. "
+              "Lower --guard-limit-gb.", flush=True)
     return t
 
 

@@ -13,6 +13,16 @@
 #     > /workspace/tmp/yt_scaleup/run.log 2>&1 < /dev/null &'
 set -u
 export PYTHONPATH=/workspace/TanitAD/stack
+# Per-worker thread caps: 8 workers each defaulted to ALL 96 cores (PyAV AUTO +
+# OpenCV + OMP) -> ~1800 threads, 84k ctx-switch/s, CPU 81% IDLE (MEASURED thrash).
+# GeoCalib's decode is single-threaded (thread_type=NONE, avoids the CUDA deadlock),
+# so cap the remaining pools: OpenCV blur (YT_CV_THREADS), torch/OMP (focal crop),
+# and PyAV for the fixed-HFOV fallback path (YT_DECODE_THREADS, via the patched
+# yt_pilot_common). ~5 threads x 8 workers = 40 < 96 cores -> real parallelism.
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
+export MKL_NUM_THREADS=${MKL_NUM_THREADS:-4}
+export YT_CV_THREADS=${YT_CV_THREADS:-4}
+export YT_DECODE_THREADS=${YT_DECODE_THREADS:-6}
 V=/workspace/venv/bin/python
 WORK=/workspace/tmp/yt_scaleup
 S=$WORK/scripts
@@ -39,7 +49,12 @@ merged_count(){ ls "$MERGED" 2>/dev/null | grep -c '^yt_' ; }
 
 log "PARALLEL SCALEUP START W=$W target=$TARGET round_clips=$ROUND_CLIPS seeds=$SEEDS"
 [ -f "$CKPT" ] || { log "FATAL: encoder ckpt $CKPT missing"; exit 2; }
-GEOARG=""; [ -f "$GEO" ] && { GEOARG="--geocalib-json $GEO"; log "GeoCalib FOUND -> per-video geometry"; } || log "GeoCalib absent -> fixed-HFOV fallback (re-runnable later)"
+# GEOMETRY is decided INLINE by harvest_scaleup.py: it uses GeoCalib per-video
+# intrinsics when `import geocalib` succeeds (the normal path), else the fixed-HFOV
+# fallback. The legacy --geocalib-json (a precomputed {vid:hfov} map) is optional and
+# NOT needed for the inline estimator; passed only if the file happens to exist.
+GEOARG=""; [ -f "$GEO" ] && { GEOARG="--geocalib-json $GEO"; log "legacy geocalib-json present -> passing it through"; }
+log "geometry: harvest_scaleup decides inline (GeoCalib per-video if installed, else fixed-HFOV); see w*/harvest.log 'GEOMETRY ='"
 
 # split queries round-robin into W per-worker files
 $V - "$S/queries_noncc.txt" "$W" "$S" <<'PY'

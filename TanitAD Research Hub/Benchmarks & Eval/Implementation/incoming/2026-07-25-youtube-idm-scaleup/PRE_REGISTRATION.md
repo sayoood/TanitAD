@@ -51,10 +51,19 @@ at decision-grade scale (500–1000 clips, ≥4 seeds) — and does the CI tight
    (small-n / favorable CC sub-domain); **the full harvest is NOT justified** on this evidence.
    Escalate with the measured reversal.
 
+## Geometry (updated 2026-07-25 — GeoCalib landed mid-task and was adopted)
+The scale-up harvests with **GeoCalib per-video intrinsics** (median vFoV over 16 frames + MAD
+rejection + confidence gate + fixed-HFOV fallback when low-confidence), NOT the pilot's fixed 100°.
+GeoCalib MEASURED YouTube dashcams at median HFOV ~66.6° (only 1/12 near 100°); fixed-100° over-crops
+~1.4× and inflates pseudo-speed, so this removes a known systematic error from the decision-grade
+headline. The pilot's 80-clip fixed-HFOV result is the geometry BASELINE reference. GeoCalib is a
+QUALIFIED instrument (6.8% median focal error, weak absolute tracking r=0.41, prior-regression) — it
+beats fixed-100° but is not a per-clip oracle; the confidence gate + fallback bound the risk.
+
 ## Standing caveats (carried from the pilot; do not overclaim)
 1. speed + longitudinal-trajectory are the trustworthy channels (MEASURED zero-shot cross-domain R² 0.60–0.66);
    yaw's downstream lift rides on the 15-clip real finetune, not zero-shot yaw quality.
-2. Geometry is fixed-HFOV unless GeoCalib lands; recorded per-pointer, so any BOUND-on-geometry
-   verdict is re-runnable with per-video intrinsics without re-harvesting.
+2. GeoCalib per-video geometry is recorded per-pointer (vfov/confidence/fallback), so results are
+   attributable and a fixed-vs-GeoCalib paired arm at scale is a re-harvest follow-up.
 3. Non-CC broadens the domain (more channels/mounts/resolutions) — this is expected to *help* transfer
    breadth but *could* widen label noise; outcome ② is the pre-committed home for that.
