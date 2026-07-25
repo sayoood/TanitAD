@@ -1734,9 +1734,17 @@ R² ≈ 0.2 *even where its head trained on rig-B*.
 - **Harness validated (MEASURED):** flagship-v1 frozen in-domain (train rig-A held-out, converged head)
   speed R² **+0.862 / +0.910**, reproducing the known frozen-flagship quality (registry frozen in-dist
   ~0.93) — the probe works; Branch B's low numbers are its own.
-- **Leakage controlled:** the decision uses the `*_val` sets (`physicalai-val-f1b378f295ae`, episode-disjoint
-  from Branch B's `…-train-e438721ae894` training); the `*_train` sets are **best-case** (Branch B trained
-  on those rig-B clips) and flagged ⚠.
+- **Leakage — CORRECTED 2026-07-25 (was WRONG here):** this bullet previously called
+  `physicalai-val-f1b378f295ae` *"episode-disjoint from …-train-e438721ae894"*. It is **NOT** — a byte-level
+  episode-id intersection (MEASURED, `incoming/2026-07-25-closedloop-horizon-and-shift/E1a_E2a_RESULTS.md`
+  §1.1) shows **62 of its 79 populated episodes (78.5 %) are IN the parity train `e438721ae894`**. So f1b378
+  is a **leaked** val for any arm trained on the parity corpus, and it is **hard-refused in code** since
+  07-23 (`data.list_val_episodes(..., allow_leaky=False)` raises; canonical CLEAN val is
+  `physicalai-val-0c5f7dac3b11`). **Effect on the Branch-B contrast:** the leak inflates *both* arms' val R²
+  equally (both read features on partly-in-train episodes), so the **WORSE-Branch-B ordering is conservative,
+  not manufactured** — but the "leakage controlled" framing was false and the absolute `*_val` R² are
+  optimistic. The `*_train` sets remain separately flagged ⚠ best-case. *(R8/§ line ~1556 — I-JEPA's leak
+  vs its OWN 320-ep subset — is a DIFFERENT overlap, still unmeasured; do not assume f1b378 is clean there.)*
 - **"Held-out rig" = seen GEOMETRY, disjoint EPISODES:** rig-B's cy ≈ 753 geometry *was* in Branch B's
   multi-rig SSL (the GAIA-2 "conditioning ⊗ multi-rig, both required" regime, by design). It fails the
   **easier** seen-geometry test, so the stricter never-seen-rig (YouTube) question is moot.
