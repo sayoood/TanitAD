@@ -1,0 +1,93 @@
+{
+  "nested_samples": [
+    {
+      "sample": "(a) sweep's own 80 clips (chunks 0036+0170)",
+      "n_clips": 80,
+      "gate_rate": 0.01826,
+      "lift": 2.2157,
+      "lo": 1.2846,
+      "hi": 3.1572,
+      "p_resp_given_pos": 0.5,
+      "p_resp_given_neg": 0.22567,
+      "n_pos": 228,
+      "n_neg": 12257,
+      "n_episodes": 80,
+      "n_boot": 2000,
+      "n_draws_used": 2000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": true,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    {
+      "sample": "(b) ALL 185 clips of the same two chunks",
+      "n_clips": 185,
+      "gate_rate": 0.01953,
+      "lift": 1.4438,
+      "lo": 0.9526,
+      "hi": 1.9629,
+      "p_resp_given_pos": 0.35979,
+      "p_resp_given_neg": 0.24919,
+      "n_pos": 567,
+      "n_neg": 28460,
+      "n_episodes": 185,
+      "n_boot": 2000,
+      "n_draws_used": 2000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": false,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    {
+      "sample": "(b') the 105 UNUSED clips of those two chunks",
+      "n_clips": 105,
+      "gate_rate": 0.02049,
+      "lift": 0.9944,
+      "lo": 0.5264,
+      "hi": 1.5255,
+      "p_resp_given_pos": 0.26549,
+      "p_resp_given_neg": 0.26699,
+      "n_pos": 339,
+      "n_neg": 16203,
+      "n_episodes": 105,
+      "n_boot": 2000,
+      "n_draws_used": 2000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": false,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    {
+      "sample": "(c) 2,159 HELD-OUT clips (22 other chunks + 1860/1864)",
+      "n_clips": 2159,
+      "gate_rate": 0.01832,
+      "lift": 1.1603,
+      "lo": 0.9975,
+      "hi": 1.3272,
+      "p_resp_given_pos": 0.26861,
+      "p_resp_given_neg": 0.2315,
+      "n_pos": 5964,
+      "n_neg": 319650,
+      "n_episodes": 2159,
+      "n_boot": 2000,
+      "n_draws_used": 2000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": false,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    }
+  ],
+  "subsample_80": {
+    "n_draws": 2000,
+    "subsample_clips": 80,
+    "p_lift_ge_2.22": 0.02,
+    "p_lift_ge_1.5": 0.231,
+    "p_lift_le_1.0": 0.3675,
+    "pct": {
+      "p2.5": 0.422,
+      "p50": 1.137,
+      "p97.5": 2.143
+    },
+    "note": "80-clip SUBSAMPLES of the held-out pool, d=3.0 m fixed. Shows how much an 80-episode sample can move the lift even with the threshold held fixed."
+  }
+}

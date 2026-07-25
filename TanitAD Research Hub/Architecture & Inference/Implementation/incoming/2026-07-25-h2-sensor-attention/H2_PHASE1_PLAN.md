@@ -1,5 +1,42 @@
 # H2 — Phase 1 plan (consolidated, decision-ready)
 
+> # 🔴 SUPERSEDED IN PART — READ THIS FIRST (2026-07-26)
+>
+> **E1, the pre-registered stop gate, FAILED. Two claims in §2 and §3 below are now measured FALSE.**
+> Results: `.../incoming/2026-07-25-h2-e0-e1/H2_E0_E1_RESULTS.md`.
+>
+> **1. `L1_gate` has NO decision-relevance. The label is refuted as a capability target.**
+> Held-out lift at 3.0 m = **1.16× [0.9975, 1.3272]** (paired episode-cluster bootstrap, B=2000,
+> **2,159 episode-clusters**, zero clip overlap with the sweep) — the CI **includes 1.0** and sits far
+> below the 1.5× bar. **Both pre-registered PASS criteria fail.**
+> The root cause is MEASURED, not inferred: on the sweep's *own two chunks*, the 105 clips it did **not**
+> draw give **0.99× [0.53, 1.53]** — same geography, same rig, same code, **zero effect**. 80-clip
+> subsamples at a *fixed* 3.0 m span **0.42–2.14**, and **P(lift ≥ 2.22) = 2.0 %**. **The 2.22× was an
+> 80-episode fluctuation read at a sweep's argmax** — the winner's-curse/forking-paths class. The
+> mechanism's *shape* survives (monotone decay crossing 1.0 at ≈3.5–4.0 m, the lane-width prediction),
+> but out of sample the peak sits at **≤1.5 m**, not 3.0 m — and it was correctly **not** re-scoped onto.
+>
+> **2. §2's "widen the crop is the cheaper fix" is measured FALSE — I had the arithmetic backwards.**
+> The split is **63.6 % [60.5, 66.3] recoverable-by-crop / 36.4 % genuine off-front residual** (uniform
+> across strata: junction 63.5 %, lane-change 62.0 %), which *looked* like it favoured widening. But
+> covering the full front field costs **2.30× the native pixels — always on** — versus **1.007
+> cameras/frame** for selective activation. **Selective activation is ~2.2× CHEAPER than widening the
+> crop.** §2's recommendation is withdrawn; the E0 experiment was still worth running, because it is what
+> produced the refutation.
+>
+> **What SURVIVES and is quotable:** the **need-RATE**. The residual rate is **0.67 %** ⇒ **1.007–1.064
+> cameras/frame ⇒ 84.8–85.6 % saved vs always-on-7**, and the gate rate **reproduced out-of-sample to
+> three digits** (1.832 % vs 1.83 %) on **27× the episodes**.
+>
+> ⚠️ **But state C-EFF precisely, or it over-claims.** The rate is robust; what it is a rate *of* is a
+> **geometric-presence** trigger whose **safety-relevance is exactly what E1 just refuted**. So the
+> honest form is: *"an off-front agent is geometrically proximate to the ego's path on 0.67 % of frames"*
+> — **not** *"the ego needed another camera on 0.67 % of frames."* The efficiency arithmetic is sound;
+> the semantics of the trigger are open until a decision-relevant label exists.
+>
+> **Net:** *the label's frequency generalises perfectly; its decision-relevance does not exist.*
+> **C-EFF (rate) stands. C-CAP (capability) needs a new label — §3's E-sequence restarts at the label.**
+
 **Date:** 2026-07-25 · **Status:** all three commissioned inputs delivered; this is the synthesis.
 **Inputs:** `H2_SUBSTRATE_AND_LABELING.md` (substrate/label/counts) · `Research/2026-07-25-h2-sensor-attention/H2_RESEARCH_AND_SOTA.md` (prior art/novelty/architecture) · `Data Engineering/Research/2026-07-25-h2-multicam-data-survey/H2_EXTERNAL_DATA_SURVEY.md` (corpora) · `H2_DESIGN_FRAMING.md` (design + PI constraints D1–D4).
 
