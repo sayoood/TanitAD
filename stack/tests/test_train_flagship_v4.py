@@ -171,6 +171,42 @@ def test_parity_contract_is_pinned():
     assert T.PARITY_SKIP_HASH == "f09e44db"
 
 
+# ------------------------------------ g_op_fwd_ade_m reaches the log (P8) ----
+def test_joint_step_log_carries_g_op_fwd_ade_m():
+    """REGRESSION (2026-07-25 v4-gate dry-run): the joint-loss log MUST carry
+    ``g_op_fwd_ade_m``.
+
+    ``speed_benefit_recovered_frac`` -- a KILL secondary on
+    ``flagship-v4.card.json`` -- reduces exactly this key out of the arm's
+    ``train_log.jsonl`` (``tanitad.eval.speed_benefit.GATE_METRIC``). It was
+    absent from EVERY v4 train log (MEASURED: flagship-v4.1-10k and
+    flagship-v4.2-step4000, 0 occurrences each), so every v4 gate rendered
+    INCOMPLETE.
+
+    Root cause: ``grounding_losses`` emits the key ALREADY g-prefixed
+    (``metric_dynamics.py:389``), but the joint-step log filtered ``wm_log`` for
+    the UNPREFIXED ``op_fwd_ade_m`` and then re-prefixed -- so it matched
+    nothing (and would have produced ``g_g_op_fwd_ade_m`` if it had). The
+    row-writer had already been patched to forward the key, which made the
+    breakage invisible: the fix was inert because this line starved it.
+
+    This test fails on the old code and passes on the fixed line."""
+    out = T.smoke()
+    for step, log in out["logs"]:
+        assert "g_op_fwd_ade_m" in log, (
+            f"step {step}: joint-step log lacks g_op_fwd_ade_m -- "
+            f"speed_benefit_recovered_frac will read NOT SUPPLIED. "
+            f"keys={sorted(log)}")
+        assert log["g_op_fwd_ade_m"] == log["g_op_fwd_ade_m"]      # not NaN
+        # the double-prefix bug's signature must never come back
+        assert "g_g_op_fwd_ade_m" not in log
+
+    # and the key the gate reduces is the one speed_benefit actually asks for
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from tanitad.eval import speed_benefit as SB
+    assert SB.GATE_METRIC == "g_op_fwd_ade_m"
+
+
 # ------------------------------------------- the full training LOOP (P4) ----
 def test_smoke_loop_proves_loop_checkpoint_controller_archive(tmp_path):
     """The P4 acceptance proof: the real _training_loop on toy episodes across

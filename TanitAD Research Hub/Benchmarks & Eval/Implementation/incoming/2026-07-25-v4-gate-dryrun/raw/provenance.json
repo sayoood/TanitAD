@@ -1,0 +1,48 @@
+{
+  "date_utc": "2026-07-25",
+  "agent": "v4-gate-dryrun subagent",
+  "pod": "tanitad-eval (A40)",
+  "pods_untouched": ["tanitad-pod2 (flagship-v4 training)", "tanitad-pod (flagship-v2corpus training)"],
+  "ckpt_under_test": {
+    "hf_repo": "Sayood/flagship-v4.2b",
+    "sha256": "c3e7ddb4ce870b1b132dfdfaa4b77fb9de86739dd9f3338ac4b5dae98a703735",
+    "bytes": 3243109310,
+    "step": 4000,
+    "note": "known FAILED arm; used as a pipeline carrier only. NOT a model-quality claim."
+  },
+  "val_split": "physicalai-val-0c5f7dac3b11 (clean; the leaky f1b378f295ae was never used)",
+  "n_episodes": 40,
+  "n_windows": 881,
+  "harness": "eval_flagship_v4.py (md5 50a114e3ac8372f69ead44a9b564367d, pod == repo)",
+  "gate_tool": "run_gate.py md5 de09a9e8b1ac224d98a4ff350b84c770 (repo; installed to /root/v4eval/stack/scripts/)",
+  "stale_gate_tool_on_pod": "/root/run_gate.py md5 8ff15a358b211f4cbd322a3172251eb7 (621 lines, superseded; DO NOT USE)",
+  "wallclock_s": {"hf_pull": 15.7, "mode_a": 75, "mode_b": 224, "hierarchy_per_arm": 300},
+  "measured": {
+    "mode_a_canary_ade_2s": 0.4214799702167511,
+    "primary_ade_0_2s": 0.8604,
+    "primary_ci95": [0.748, 0.9885],
+    "primary_estimator": "episode_cluster_bootstrap (n_boot 2000, 40 episode clusters)",
+    "wm_canary_ade_2s": 0.6968446969985962,
+    "oracle_in_fan": 0.40164576401504837,
+    "miss_at_2m": 0.3473,
+    "seam_norm_ratio_max": 0.1136,
+    "encoder_touching_levers": 2,
+    "nonav_route_beats_majority": 0,
+    "speed_benefit_recovered_frac": null,
+    "deploy_tick_p99_ms": null
+  },
+  "emitter_validation_on_v1_fixture": {
+    "speed_benefit_recovered_frac": 0.8184,
+    "deploy_tick_p99_ms": 18.7641,
+    "nonav_route_beats_majority": 0
+  },
+  "bug_fixed": {
+    "file": "stack/scripts/train_flagship_v4.py",
+    "line": 143,
+    "class": "silent-filter / key-prefix mismatch; a partial fix that read as complete",
+    "effect": "g_op_fwd_ade_m never written to any v4 train_log -> speed_benefit_recovered_frac NOT SUPPLIED AND run_gate.py SystemExit before any verdict",
+    "test": "stack/tests/test_train_flagship_v4.py::test_joint_step_log_carries_g_op_fwd_ade_m (verified red on old code, green on fixed)",
+    "retro_effect_on_inflight_30k_arm": "NONE - cannot retro-fill the (8000,10000] bucket"
+  },
+  "suite": "837 passed, 3 skipped"
+}

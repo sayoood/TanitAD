@@ -140,8 +140,21 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
            "wm": float(wm_total.detach()), "planner": float(plan_l["loss"].detach()),
            "plan_ade": float(plan_l["ade"].detach()),
            "oracle_ade": float(plan_l["oracle_ade"].detach()),
-           **{f"g_{k}": v for k, v in wm_log.items()
-              if k in ("op_fwd_ade_m",)},
+           # `grounding_losses` already emits this key G-PREFIXED
+           # (metric_dynamics.py:389 -> `log[f"g_{lvl}_fwd_ade_m"]`), and
+           # `flagship_loss` merges that dict verbatim (`**g_log`). So the key
+           # actually present in `wm_log` is `g_op_fwd_ade_m`, NOT
+           # `op_fwd_ade_m`. Filtering on the UNPREFIXED name matched nothing,
+           # the comprehension always evaluated to `{}`, and every v4 arm's
+           # train_log.jsonl was written WITHOUT the one metric that
+           # `speed_benefit_recovered_frac` (the §7.5/P8 KILL secondary)
+           # reduces -- so that secondary read NOT SUPPLIED and every v4 gate
+           # rendered INCOMPLETE. (The row-writer below was already patched to
+           # forward `g_op_fwd_ade_m`, but it was starved by THIS line, so the
+           # earlier fix was silently inert: MEASURED on
+           # flagship-v4.{1-10k,2-step4000} train logs, 0 occurrences each.)
+           # Fix is LOG-ONLY: no loss term, no parity effect.
+           **{k: v for k, v in wm_log.items() if k in ("g_op_fwd_ade_m",)},
            **fac_log, **sm_log, **strat_log, **out.get("telemetry", {})}
     return total, log
 
