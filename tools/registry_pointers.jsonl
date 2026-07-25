@@ -1,0 +1,30 @@
+# registry_pointers.jsonl -- anchor-keyed drift pointers for registry_lint.py
+#
+# WHY A SIDECAR AND NOT INLINE COMMENTS. The preferred long-term form is an
+# inline `<!-- src: path#field -->` comment sitting next to the number it
+# governs (registry_lint supports both, and the inline form survives a row being
+# moved). These live outside the document because MODEL_REGISTRY.md is edited
+# concurrently by several agents, and a seeding patch that races a sibling's
+# edit is exactly the class of accident tools/safe_commit.py exists to prevent.
+# Migrate a row to an inline pointer whenever you are already editing it.
+#
+# ROW SCHEMA (one JSON object per line):
+#   file    optional; restrict the row to one document (repo-relative POSIX)
+#   anchor  REGEX that must match EXACTLY ONE line -- an anchor that goes
+#           ambiguous or matches nothing is itself a finding, because a pointer
+#           that silently relocates is worse than a pointer that is missing.
+#   src     repo-relative path to the raw JSON that OWNS the number
+#   field   dotted path inside it (supports a.b[0].c)
+#   near    optional literal; only numbers AFTER it on the line are candidates
+#   tol     optional absolute tolerance override (default: the coarser of the
+#           two written precisions, so 0.43746 vs a stored 0.4375 is fine)
+#   why     free text, shown in the finding
+#
+# SEEDED 2026-07-25 on the highest-traffic rows: the three-way rank-1 tie in the
+# cross-arm leaderboard (the single most-quoted table in the program) and the
+# two numbers from the 1.4b headline retraction.
+{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*Flagship v1 \\(speed\\+jerk\\) FINAL\\*\\*", "src": "taniteval/results/driving_flagship-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s, the deployed model"}
+{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*REF-C-XL\\*\\*", "src": "taniteval/results/driving_refc-xl-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s"}
+{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*REF-C-base\\*\\*", "src": "taniteval/results/driving_refc-base-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s, cheapest tick in the tie"}
+{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^> point estimate \\(\\*\\*", "src": "taniteval/results/driving_flagship-v16-ab-ft.json", "field": "headline.ade_0_2s.mean", "why": "1.4b headline retraction: v1.6's point estimate (JSON 4 dp vs prose 5 dp -- exercises the coarser-precision tolerance)"}
+{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^at 0\\.523 vs 0\\.439; that", "src": "taniteval/results/driving_refc-xl-30k.json", "field": "headline.ade_0_2s.mean", "near": "Overall full-set", "why": "REF-C-XL section restates the full-set ADE in prose; a second surface for the same number"}
