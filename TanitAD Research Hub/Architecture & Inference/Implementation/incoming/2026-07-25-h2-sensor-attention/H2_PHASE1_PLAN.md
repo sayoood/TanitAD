@@ -83,9 +83,31 @@ That is a defensible, novel, and *falsifiable* contribution. It is smaller than 
 
 ---
 
+## 5b. ✅ CORPUS DECISION — PI, 2026-07-25 (binding)
+
+> *"I think we can use PhysicalAI data set for research, so let's do it with this data as proof of concept."*
+
+**Phase 1 = PhysicalAI-AV, research tier, proof-of-concept. No external acquisition. Execution starts
+now.** The powered strata (intersections **846 eps**, lane changes **1,172 eps**) clear both `N_mech`=40
+and `N_train`=200, so nothing blocks the PoC. Roundabouts stay descoped.
+
+**What this decision explicitly accepts** (recorded so it is not rediscovered as a surprise later):
+PhysicalAI-AV is `gated-confidential`, so **every phase-1 artifact — numbers, figures, videos — is
+research-tier and internal.** It cannot appear in a paper, a demo, or a public USP claim in this form.
+That is a deliberate, sensible PoC trade: *prove the capability first on the corpus that is powered and
+free, decide the publication vehicle afterwards.*
+
+**The deferred option remains open and cheap:** if the PoC works, **Cosmos-Drive-Dreams** (CC-BY-4.0,
+`owned-safe`, commercially usable, already loaded, 7 views incl. cross-left/right 120°, 4D tracking with
+IDs) is the **ship-tier twin** that would make the same result publishable — ~2–3 eng-days, and counting
+its content costs **$0** from cached metadata. Not needed to start; **re-raise at the phase-1 verdict.**
+
+---
+
 ## 6. Open items for the PI
 
-1. **Cosmos-DD as the publishable twin** — approve the $0 metadata count? *(Recommended: yes. It is free and it is the only route to H2 being a public USP.)*
+1. ~~**Cosmos-DD as the publishable twin** — approve the $0 metadata count?~~ **DEFERRED by §5b** — not
+   needed for the PoC; re-raise at the phase-1 verdict as the publication vehicle.
 2. **Novelty framing** — accept "the field's supervision is circular; ours is not" as the contribution, given DriveMoE (CVPR 2026) already published the mechanism? The efficiency lever is also crowded (adaptive perception publishes 70.20 % energy reduction at ~2 % accuracy cost), so **C-CAP, not C-EFF, is where the defensible novelty sits** — while efficiency remains the motivation and a strong measured number.
 3. **If E3 says ~0.65** — accept the re-scope from *anticipate* to *detect-on-arrival*, or invest in a longer-horizon input (the WM predictor's imagination, capped by σ→chance at k=4)?
 
