@@ -1,0 +1,149 @@
+{
+  "config": {
+    "name": "idm_head_v1",
+    "role": "multi-domain inverse-dynamics LABELER: frozen flagship-v1 latents -> per-window ego-motion (speed, yaw_rate, steer, long_accel) + 2 s ego-frame trajectory. NON-CAUSAL (sees past AND future frames) \u2014 offline labeling only.",
+    "head_kwargs": {
+      "state_dim": 2048,
+      "d_model": 256,
+      "depth": 3,
+      "n_heads": 4,
+      "window": 9,
+      "n_scalars": 4,
+      "horizons": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "head_class": "scripts/idm_head.py::IDMHead",
+    "state_dim": 2048,
+    "window_k": 4,
+    "window_frames": 9,
+    "horizons_steps": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "horizons_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "dt_s": 0.1,
+    "scalar_names": [
+      "speed",
+      "yaw_rate",
+      "steer",
+      "long_accel"
+    ],
+    "build_windows_stride": 2,
+    "encoder": {
+      "id": "flagship4b-speedjerk-30k (v1) encoder+readout, FROZEN",
+      "ckpt_path_at_train": "/workspace/tmp/idm/ckpt.pt",
+      "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+      "ckpt_step": 29999,
+      "note": "encoder is purely visual: encode = readout(encoder(x/255)); no action/speed channel enters the latent."
+    },
+    "train": {
+      "corpora": "PhysicalAI parity rig-A + rig-B + comma2k19 (the multi-domain mix)",
+      "tags": {
+        "rig_a": "tr_a_[0:60]",
+        "rig_b": "tr_b_[0:60]",
+        "comma": "cm_[0:40]"
+      },
+      "n_clips": 160,
+      "n_windows": 16063,
+      "epochs": 50,
+      "batch": 256,
+      "lr": 0.0003,
+      "weight_decay": 0.01,
+      "seed": 0,
+      "optimizer": "AdamW + CosineAnnealingLR",
+      "loss": "idm_head.idm_loss = Huber(standardised scalars) + smooth_L1(traj/10 m)",
+      "latents_dir": "/workspace/tmp/branchb_eval/lat_flagshipv1"
+    },
+    "target_normalisation": {
+      "kind": "idm_head.Standardizer (fit on TRAIN scalars only)",
+      "mean": [
+        14.89643669128418,
+        -0.011011586524546146,
+        0.002091496717184782,
+        -0.09161043912172318
+      ],
+      "std": [
+        10.929014205932617,
+        0.7903658151626587,
+        0.05949832871556282,
+        0.7485366463661194
+      ],
+      "note": "used INSIDE the loss only; the head's outputs are already in RAW PHYSICAL UNITS (m/s, rad/s, rad, m/s^2, metres)."
+    },
+    "usage_caveats": [
+      "speed + longitudinal trajectory are the trustworthy channels (MEASURED cross-domain speed R2 0.60-0.66).",
+      "yaw_rate is CAVEATED cross-domain; steer and long_accel are DROPPED as unusable (pilot NOTE 2026-07-24).",
+      "NON-CAUSAL by design \u2014 never use online/closed-loop."
+    ]
+  },
+  "val": {
+    "val_heldout_traindomain": {
+      "n": 9420,
+      "r2": {
+        "speed": 0.7419643444730785,
+        "yaw_rate": 0.010432699359999131,
+        "steer": 0.7675086527824766,
+        "long_accel": -0.3933942276861184
+      },
+      "mae": {
+        "speed": 3.866267779723021,
+        "yaw_rate": 0.11813788576688082,
+        "steer": 0.016159627680642094,
+        "long_accel": 0.5856364809681035
+      },
+      "ade_2s": 4.9246324212296955,
+      "de_per_horizon": [
+        1.9438048881450172,
+        3.9067939360632007,
+        5.879114964331217,
+        7.968815896379349
+      ],
+      "n_clips": 90
+    },
+    "val_parityval": {
+      "n": 3517,
+      "r2": {
+        "speed": 0.8852541572298194,
+        "yaw_rate": 0.8074717565951165,
+        "steer": 0.7820797921916965,
+        "long_accel": 0.08111961781780552
+      },
+      "mae": {
+        "speed": 2.072577063656093,
+        "yaw_rate": 0.03544994242686345,
+        "steer": 0.016768158983089837,
+        "long_accel": 0.6033253349763206
+      },
+      "ade_2s": 2.703220577050111,
+      "de_per_horizon": [
+        1.042917494237195,
+        2.09251786509695,
+        3.2147369824832217,
+        4.462709966383079
+      ],
+      "n_clips": 40
+    }
+  },
+  "provenance": {
+    "created_utc": "2026-07-25T05:19:10Z",
+    "created_by": "idm-youtube-validation agent (2026-07-25)",
+    "script": "idm_head_v1_train.py",
+    "host": "1682186f1e9b",
+    "torch": "2.8.0+cu128",
+    "reason": "first PERSISTED IDM head. Prior runs (pilot pseudo-label, parity validation, downstream ablation, scale-up) trained an identical head in-process and discarded it.",
+    "evidence_class": "MEASURED (this run; val metrics below are held-out)"
+  },
+  "params": 2899724,
+  "weights_md5": "fa4462f0b898b036be729c790278b823"
+}

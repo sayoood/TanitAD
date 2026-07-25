@@ -1,0 +1,77 @@
+{
+  "VERDICT": "SAFE-TO-PUSH",
+  "failures": [],
+  "legs": {
+    "A_license_guard": {
+      "all_records_PASS": true,
+      "forbid_share_alike": true,
+      "guard": "tanitad.lake.license_guard.verify_license_scope",
+      "require_commercial_ok": true,
+      "result": "PASS (no LicenseScopeError raised)",
+      "rows_checked": 90,
+      "scope": [
+        "owned-safe"
+      ]
+    },
+    "B_payload_provenance": {
+      "catalog_payload_id_match": true,
+      "catalog_payload_sha256_match": true,
+      "distinct_license_classes": {
+        "owned-safe": 90
+      },
+      "distinct_license_names": {
+        "MIT": 90
+      },
+      "distinct_source_corpora": {
+        "comma2k19": 90
+      },
+      "duplicate_episode_ids": [],
+      "episodes_in_payload": 90,
+      "episodes_per_shard": {
+        "shards/owned-safe/comma2k19/train/shard-00000.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00001.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00002.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00003.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00004.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00005.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00006.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00007.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00008.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00009.tar": 7,
+        "shards/owned-safe/comma2k19/train/shard-00010.tar": 2,
+        "shards/owned-safe/comma2k19/val/shard-00000.tar": 7,
+        "shards/owned-safe/comma2k19/val/shard-00001.tar": 7,
+        "shards/owned-safe/comma2k19/val/shard-00002.tar": 4
+      },
+      "frame_dtypes": {
+        "uint8": 90
+      },
+      "frame_shapes": {
+        "[T,9,256,256]": 90
+      },
+      "gated_sources_in_registry": [
+        "physicalai_av"
+      ],
+      "method": "opened every staged tar; read every .meta.json; recomputed sha256 over the actual frames.npy bytes",
+      "physicalai_present": false,
+      "refuse_sources_in_registry": [
+        "waymax",
+        "waymo"
+      ],
+      "sha256_failed": 0,
+      "sha256_verified_ok": 90,
+      "shards_found": 14,
+      "split_path_mismatches": [],
+      "splits": {
+        "train": 72,
+        "val": 18
+      },
+      "tar_member_kinds": {
+        "frames.npy": 90,
+        "meta.json": 90,
+        "motion.npz": 90
+      },
+      "train_val_id_overlap": []
+    }
+  }
+}
