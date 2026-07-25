@@ -1,0 +1,124 @@
+{
+  "task": "v1.6 vs deployed v1 -- paired episode-cluster bootstrap on ADE@2s",
+  "generated": "2026-07-25",
+  "evidence_class": "MEASURED (ours; re-derived from persisted per-window artifacts)",
+  "corpus": "physicalai-val-0c5f7dac3b11 (clean held-out split)",
+  "arms": {
+    "a": {
+      "key": "flagship-v16-ab-ft",
+      "registry": "MODEL_REGISTRY.md \u00a71.4b flagship-v16-ab-ft",
+      "step": 5999,
+      "artifact": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\results\\windows_flagship-v16-ab-ft.pt"
+    },
+    "b": {
+      "key": "flagship-30k",
+      "registry": "MODEL_REGISTRY.md \u00a71.2 flagship4b-speedjerk-30k",
+      "step": 29999,
+      "artifact": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\results\\windows_flagship-30k.pt"
+    }
+  },
+  "alignment_proof": {
+    "eid_labels_identical": false,
+    "eid_relabel_is_bijection": true,
+    "EPISODE_PARTITION_IDENTICAL": true,
+    "gt_max_abs_diff": 0.0,
+    "cv_max_abs_diff": 0.0,
+    "speed_max_abs_diff": 0.0,
+    "wp_steps_identical": true,
+    "shape_a": [
+      881,
+      4,
+      2
+    ],
+    "shape_b": [
+      881,
+      4,
+      2
+    ],
+    "n_episodes": 40,
+    "ALIGNED": true
+  },
+  "metric": "ade_0_2s (metric-BEV ego-frame, mean over wps @0.5/1/1.5/2 s, metres)",
+  "point_estimates_full_set": {
+    "v1_6": 0.43746,
+    "v1": 0.42711
+  },
+  "single_arm_episode_cluster_bootstrap": {
+    "v1_6": {
+      "mean": 0.4375,
+      "lo": 0.3423,
+      "hi": 0.5501,
+      "ci95": 0.1039,
+      "se": 0.0543,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "v1": {
+      "mean": 0.4271,
+      "lo": 0.3675,
+      "hi": 0.4871,
+      "ci95": 0.0598,
+      "se": 0.0305,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "PAIRED": {
+    "delta": 0.0104,
+    "lo": -0.0888,
+    "hi": 0.1147,
+    "ci95": 0.1018,
+    "p_delta_gt0": 0.568,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "PAIRED_real_episode_id_family": {
+    "delta": 0.0104,
+    "lo": -0.0889,
+    "hi": 0.1117,
+    "ci95": 0.1003,
+    "p_delta_gt0": 0.5855,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "SECONDARY_v16_vs_refc_xl_G1": {
+    "delta": -0.034,
+    "lo": -0.106,
+    "hi": 0.0511,
+    "ci95": 0.0785,
+    "p_delta_gt0": 0.1855,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "arm_b": "refc-xl-30k",
+    "full_set_refc_xl": 0.47144
+  },
+  "per_window_corr": 0.4532,
+  "deprecated_overlapping_holdout_se_on_same_windows": {
+    "v1_6_halfwidth": 0.0316,
+    "v1_halfwidth": 0.0194,
+    "note": "NOT the published heldout +-; that came from 8 random 20% holdouts inside the eval script. Shown only to make the estimator distinction concrete."
+  },
+  "published_heldout_for_reference": {
+    "v1_6": "0.4886 +- 0.0800 (eval_v16_flagship-v16-ab-ft.json, overlapping_holdout_se)",
+    "v1": "0.4522 +- 0.0312 (MODEL_REGISTRY \u00a71.2, overlapping_holdout_se)",
+    "WARNING": "cross-eid-FAMILY comparison, not admissible -- see \u00a71.4b"
+  }
+}

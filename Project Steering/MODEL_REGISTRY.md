@@ -457,7 +457,23 @@ the gated-intent path.
 
 ---
 
-### 1.4b flagship-v1.6 — `flagship-v16-ab-ft` — ✅ **COMPLETE at 5,999** · ⭐ best ADE in the program
+### 1.4b flagship-v1.6 — `flagship-v16-ab-ft` — ✅ **COMPLETE at 5,999** · ⚖️ **TIED with the deployed v1 (NOT "best in program")**
+
+> 🔴 **HEADLINE CORRECTED 2026-07-25.** This header read *"⭐ best ADE in the program"* for four days
+> **after its own body had retracted that claim** (C1, 07-21) — the retraction edited the prose and left
+> the headline standing. Decision-grade re-derivation (**paired episode-cluster bootstrap**, B=2000,
+> 40 episodes / 881 windows, corr 0.453, reproduced digit-for-digit):
+> **Δ(v1.6 − v1) = +0.0104 m, CI95 [−0.0888, +0.1147] — NOT separated**, and v1.6 is *behind* on the
+> point estimate (**0.43746 vs v1's 0.42711**; lower is better). The tie is **not** a power artifact —
+> the paired half-width (±0.1018) is *tighter* than the invalid quadrature (±0.1199) and still spans 0.
+> ⚠️ The table's `0.4886 ± 0.0800` below is the **deprecated `overlapping_holdout_se`** (verified:
+> 1.96 × 0.1155 / √8 = 0.0800 exactly) — **not quotable**; widths run 1.30×/1.92× narrow vs the paired
+> bootstrap, inside the documented 1.28–2.06× band. **Both G-A gates are TIES → treat as UNRESOLVED,
+> not pass/fail** (v1.6 vs REF-C-XL: Δ −0.0340 [−0.1060, +0.0511], also not separated), which settles
+> the contradiction between the `❌ ❌` and `✅ ✅` gate lines further down this section.
+> Raw: `…/incoming/2026-07-25-v16-paired-interval/v16_vs_v1_paired_bootstrap.json`.
+> ⚠️ **STRANDING: v1.6's ckpt exists on exactly ONE disk (pod2, currently training v4 = off-limits);
+> `Sayood/flagship-v16-ab-ft` holds NO weights and §1.4b has no `Location` row.**
 
 LP-FT completion of the v1.5 ladder: the `ab` head warm-started, then **4 encoder blocks + the
 predictor UNFROZEN** (head-LR 1e-4 / trunk-LR 1e-5, 500-step ramp). pod2, 20:01→01:02 UTC, 18,038 s.
@@ -525,8 +541,12 @@ proven from the data, not assumed: `gt` and `cv` are identical **elementwise, ma
 REF-C-grade fan, and the WM cost makes it actively hostile to a design built on that WM (v3.5).
 
 ⚠️ **Process note (mine).** At step 2500 a transient spike (oracle 2.08, gnorm 161) plus a monotone
-canary trend led me to report a "decisive failure". **It recovered completely** — 5,999 is the best
-ADE in the program. The confirming-eval discipline saved the run; the premature *communication* did
+canary trend led me to report a "decisive failure". **It recovered completely** — 5,999 lands ~~the best
+ADE in the program~~ **STATISTICALLY TIED with the deployed v1** (corrected 2026-07-25; paired bootstrap
+Δ +0.0104 [−0.0888, +0.1147], v1.6 behind on the point estimate — see the header note). *This sentence
+wrapped across a newline and so evaded the line-based grep of the 07-21 retraction sweep — presence-
+detection hitting the same trap as absence-detection; retraction sweeps must be MULTILINE.*
+The confirming-eval discipline saved the run; the premature *communication* did
 not. Second such call this session. **A single post-spike eval is not a verdict.**
 
 ### 1.5 flagship-v4 line — three planners over the v1 world model, **trained JOINTLY, nothing frozen**
