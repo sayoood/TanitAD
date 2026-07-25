@@ -45,12 +45,19 @@ RELATIONSHIP TO THE REST OF THE PACKAGE
 
 THE SURFACE, AND WHAT IT COSTS
 ------------------------------
-``rollout.save_windows`` persists ``pred/gt/cv [N,4,2] · eid · speed ·
-head_deg`` — 4 waypoints 0.5 s apart, because ``rollout.collect`` computes the
-dense ``wp_full [b,20,2]`` and discards 16 of 20 steps at ``rollout.py:94``.
-Everything needing 10 Hz derivatives (jerk, adopted comfort bounds, a real
-curvature *profile*, decel-onset lead time) is therefore **tier 1** and blocked
-on that one line, not on new science (suite §7 E2).
+Tier 0 scores the sparse surface: ``pred/gt/cv [N,4,2] · eid · speed ·
+head_deg`` — 4 waypoints 0.5 s apart.
+
+⚠️ UPDATED 2026-07-25: ``rollout.collect`` used to compute the dense
+``wp_full [b,20,2]`` and discard 16 of 20 steps, which made everything needing
+10 Hz derivatives (jerk, adopted comfort bounds, a real curvature *profile*,
+decel-onset lead time) tier 1 and blocked on that ONE line (suite §7 E2). That
+line is fixed: ``rollout.save_windows`` now also persists ``pred_dense`` /
+``gt_dense [N,20,2]`` (+ ``dense_steps``, ``dt_s``), so the behavioural axis is
+**unblocked and merely unimplemented** — the tier-1 metrics are new code, no
+longer a new eval run. The tier-0 block below is unchanged and still scores the
+sparse surface; dense keys are OPTIONAL (absent from pre-2026-07-25 dumps and
+from ``refb_eval`` / ``refc_eval``), so read them with ``win.get``.
 
 REFUSALS HONOURED (suite §6) — deliberately NOT implemented here
 ----------------------------------------------------------------
@@ -542,10 +549,12 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
         "arm": arm, "n_windows": int(pred.shape[0]),
         "n_episodes": draws.n_episodes,
         "wp_steps": win.get("wp_steps"),
-        "surface": ("4 waypoints 0.5 s apart (tier-0). The dense 20-step path "
-                    "is computed by rollout.collect and discarded at "
-                    "rollout.py:94 -> jerk, comfort bounds, curvature PROFILE "
-                    "and decel-onset lead time are tier-1 (suite E2)."),
+        "surface": ("4 waypoints 0.5 s apart (tier-0). The dense 20-step 10 Hz "
+                    "path IS persisted since 2026-07-25 (rollout.collect -> "
+                    "pred_dense/gt_dense), so jerk, comfort bounds, the "
+                    "curvature PROFILE and decel-onset lead time are tier-1 "
+                    "UNIMPLEMENTED, no longer tier-1 BLOCKED (suite E2)."),
+        "dense_surface_available": bool(win.get("pred_dense") is not None),
         "claim_strength": "open-loop / weak (arXiv:2605.00066)",
         "estimator": {
             "interval": "episode_cluster_bootstrap",

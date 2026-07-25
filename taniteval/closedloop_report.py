@@ -59,7 +59,8 @@ def main():
     if v1 is None:
         W("\n**flagship-30k results missing — run `python3 -m taniteval.closedloop "
           "--arm flagship-30k` first.**\n")
-        (RES / "CLOSEDLOOP_REPORT.md").write_text("\n".join(L))
+        (RES / "CLOSEDLOOP_REPORT.md").write_text("\n".join(L),
+                                                  encoding="utf-8")
         print("[report] v1 missing; wrote stub")
         return
 
@@ -176,7 +177,9 @@ def main():
     W("\n**Re-run:** `python3 -m taniteval.closedloop --arm flagship-30k "
       "[--episodes 40]` (or `--all-flagships`); then `python3 closedloop_report.py`.")
 
-    (RES / "CLOSEDLOOP_REPORT.md").write_text("\n".join(L))
+    # explicit utf-8 — the report contains em/minus dashes and Path.write_text
+    # otherwise encodes with the platform default (cp1252 on the dev box)
+    (RES / "CLOSEDLOOP_REPORT.md").write_text("\n".join(L), encoding="utf-8")
     print(f"[report] wrote {RES/'CLOSEDLOOP_REPORT.md'} "
           f"({len(L)} lines; arms: "
           f"{[a for a in ARMS if data[a] and not data[a].get('skipped')]})")

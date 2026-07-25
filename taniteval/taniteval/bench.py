@@ -268,12 +268,18 @@ def collect_full(model, step_readout, episodes, device, speed_input=False,
     """rollout.collect (verbatim protocol) PLUS the diagnostic aux in ONE aligned
     pass: all 3 kinematic baselines, ego-status features, and the last-frame
     latent state. Returns a dict that is a strict superset of rollout.collect's
-    (pred/gt/cv/eid/speed/head_deg/wp_steps) so bench.run() consumes it as-is.
-    Extra keys: go_straight, constant_yaw_rate, ego_status, states."""
+    (pred/gt/cv/eid/speed/head_deg/wp_steps + the dense 10 Hz pred_dense/
+    gt_dense/dense_steps/dt_s) so bench.run() consumes it as-is.
+    Extra keys: go_straight, constant_yaw_rate, ego_status, states.
+
+    The dense keys are carried here too so the "strict superset" claim stays
+    true after the 2026-07-25 dense-path fix — a diagnostic-panel dump must not
+    be the one dump that cannot compute the behavioural axis."""
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
+    dense_steps = tuple(range(1, fwd_k + 1))
     acc = {k: [] for k in ("pred", "gt", "constant_velocity", "go_straight",
                            "constant_yaw_rate", "ego_status", "states",
-                           "speed", "head_deg")}
+                           "speed", "head_deg", "pred_dense", "gt_dense")}
     eid = []
     for ep in episodes:
         feats = ep.feats
@@ -298,7 +304,10 @@ def collect_full(model, step_readout, episodes, device, speed_input=False,
                                         step_readout, fwd_k)
             acc["pred"].append(
                 wp_full.index_select(1, wp_idx.to(device)).cpu().float())
+            acc["pred_dense"].append(wp_full.cpu().float())
             acc["gt"].append(gt_ego_waypoints(ep.poses, last))
+            acc["gt_dense"].append(gt_ego_waypoints(ep.poses, last,
+                                                    wp_steps=dense_steps))
             bp = baseline_waypoints(ep.poses, last)
             for n in FLOOR_BASELINES:
                 acc[n].append(bp[n])
@@ -312,6 +321,8 @@ def collect_full(model, step_readout, episodes, device, speed_input=False,
     out["cv"] = out["constant_velocity"]              # rollout.collect alias
     out["eid"] = eid
     out["wp_steps"] = list(WP_STEPS)
+    out["dense_steps"] = list(dense_steps)
+    out["dt_s"] = DT
     return out
 
 

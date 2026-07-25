@@ -6,6 +6,41 @@ SE(2) accumulate. Ports the proven gate protocol (eval_refa4b_grounded /
 eval_grounded_rollout_4b) verbatim so numbers are apples-to-apples with every
 gate run to date. Model differences are fully described by (episode view,
 encode_window, step_readout, speed_input) — all supplied by loaders.load().
+
+THE DENSE PATH (added 2026-07-25 — the residual open since 2026-07-09)
+---------------------------------------------------------------------
+``rollout_decode`` computes the FULL ``[b, fwd_k, 2]`` 10 Hz path and this
+module used to keep only the 4 waypoints at ``WP_STEPS`` (5/10/15/20), throwing
+away 16 of 20 steps at what ``driving.py`` called "rollout.py:94". That single
+discard blocked the entire comfort / behavioural axis — jerk, the curvature
+*profile*, decel-onset lead time (the LAL-v2 metric in
+``stack/tanitad/eval/metrics.py``), plan stability — because every one of them
+needs 10 Hz derivatives, not 4 samples 0.5 s apart.
+
+``collect`` now ALSO returns, **additively** (the sparse keys keep their exact
+meaning, so every existing consumer is untouched):
+
+  ``pred_dense`` [N, fwd_k, 2]  the model's full 10 Hz ego-frame path
+  ``gt_dense``   [N, fwd_k, 2]  the matching ground-truth path
+  ``dense_steps`` list(1..fwd_k) · ``dt_s`` 0.1 — the sampling contract
+
+``pred``/``gt`` remain the 4-waypoint sparse view: ``pred == pred_dense[:,
+[4,9,14,19]]`` by construction. A **CV dense floor is deliberately NOT stored**
+— constant velocity is exactly linear in the step index, so
+``cv_dense[:, k-1] == cv[:, 0] * k / 5`` reconstructs it for free; likewise
+hold-v0 from ``speed``. Only ``gt_dense`` is irrecoverable (the val poses are
+not persisted), so only it is paid for.
+
+Cost, MEASURED 2026-07-25 on the committed 881-window / 40-episode
+flagship-30k dump (re-saved both ways through ``save_windows``): two
+``[881, 20, 2]`` float32 tensors, so ``results/windows_<arm>.pt`` grows
+**95 950 B -> 378 359 B = +282 409 B (+275.8 KiB, 3.94x)** — 0.378 MB, inside
+the ~1 MB/arm budget the behavioural axis was costed at. No extra compute: the
+dense tensor was already being produced and thrown away.
+
+**Optional, not guaranteed.** ``refb_eval.collect`` and ``refc_eval.collect``
+build their own window dicts for direct-trajectory arms and do not emit the
+dense keys; anything downstream must treat them as ``win.get("pred_dense")``.
 """
 from __future__ import annotations
 
@@ -65,10 +100,15 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             dyn_input=False):
     """Predict WP_STEPS waypoints for every window of every episode.
 
-    Returns dict of tensors: pred/gt/cv [N, 4, 2] + eid/speed/head_deg [N].
-    speed/yaw/dyn_input append the canonical ego action-channels (v0, yr0) so
-    the fed action matches the checkpoint's action_dim (dyn-in arm = 4)."""
+    Returns dict of tensors: pred/gt/cv [N, 4, 2] + eid/speed/head_deg [N],
+    PLUS the dense 10 Hz path pred_dense/gt_dense [N, fwd_k, 2] (+ dense_steps,
+    dt_s) — see the module docstring for why the dense keys exist and what is
+    deliberately not stored. speed/yaw/dyn_input append the canonical ego
+    action-channels (v0, yr0) so the fed action matches the checkpoint's
+    action_dim (dyn-in arm = 4)."""
     S_wp, GT, CV, EID, SPD, HDG = [], [], [], [], [], []
+    S_dense, GT_dense = [], []
+    dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
     for ep in episodes:
         feats = ep.feats
@@ -92,7 +132,13 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             wp_full, _ = rollout_decode(model.predictor, states, aw, fa,
                                         step_readout, fwd_k)       # [b, k, 2]
             S_wp.append(wp_full.index_select(1, wp_idx.to(device)).cpu().float())
+            # DENSE PATH: keep all fwd_k steps, not just the 4 at WP_STEPS. The
+            # tensor is already computed above — this is a persistence fix, not
+            # extra compute (no second rollout, no extra GPU work).
+            S_dense.append(wp_full.cpu().float())
             GT.append(gt_ego_waypoints(ep.poses, last))
+            GT_dense.append(gt_ego_waypoints(ep.poses, last,
+                                             wp_steps=dense_steps))
             CV.append(baseline_waypoints(ep.poses, last)["constant_velocity"])
             EID.extend([ep.episode_id] * len(ch))
             SPD.append(ep.poses[last, 3])
@@ -101,12 +147,41 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             "cv": torch.cat(CV).float(), "eid": EID,
             "speed": torch.cat(SPD).float(),
             "head_deg": torch.cat(HDG).float(),
-            "wp_steps": list(WP_STEPS)}
+            "wp_steps": list(WP_STEPS),
+            # --- dense 10 Hz path (tier-1 behavioural metrics) -------------- #
+            "pred_dense": torch.cat(S_dense).float(),
+            "gt_dense": torch.cat(GT_dense).float(),
+            "dense_steps": list(dense_steps), "dt_s": DT}
+
+
+def dense_speed_profile(path_dense, dt: float = DT):
+    """Dense ego-frame path ``[N, K, 2]`` -> per-step speed ``[N, K]`` (m/s).
+
+    THE convention, defined once. The dense path starts at step 1 *relative to
+    the ego pose at the window's last frame*, which is the origin (0, 0) — so
+    the first step's displacement is ``p[:, 0]`` itself, not ``p[:,1]-p[:,0]``.
+    Prepending the origin is what makes ``speed[:, 0]`` the realised speed over
+    the first tick rather than silently dropping it; getting this wrong shifts
+    every derived jerk / decel-onset index by one sample.
+
+    This is the input ``tanitad.eval.metrics.decel_onset_index`` /
+    ``compute_lal_v2`` want (their ``ego_v``), and the base for jerk
+    (``diff(speed)/dt`` twice) and the curvature profile.
+    """
+    p = path_dense if isinstance(path_dense, torch.Tensor) \
+        else torch.as_tensor(path_dense)
+    zero = torch.zeros(p.shape[0], 1, 2, dtype=p.dtype, device=p.device)
+    d = torch.cat([zero, p], dim=1).diff(dim=1)        # [N, K, 2] per-tick Δp
+    return torch.linalg.norm(d, dim=-1) / dt
 
 
 def save_windows(data, path):
+    """Persist a collect() window dict (dense keys included when present)."""
     torch.save({k: v for k, v in data.items()}, path)
 
 
 def load_windows(path):
+    """Load a window dump. Dumps written before 2026-07-25, and those from
+    ``refb_eval`` / ``refc_eval``, carry NO dense keys — read them with
+    ``win.get("pred_dense")`` and degrade, never assume."""
     return torch.load(path, map_location="cpu", weights_only=False)

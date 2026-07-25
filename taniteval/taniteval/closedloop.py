@@ -69,7 +69,9 @@ HONEST LIMITATIONS (stated, not hidden)
 Reuses (never reinvents): loaders.load / data.load_frames (arm + episodes),
 metric_dynamics.rollout_decode + accumulate_se2 + StepDisplacementReadout (grounded
 path), driving_diagnostic.gt_ego_waypoints / baseline_waypoints / _ego /
-net_heading_change_deg (geometry + CV floor), gates.split_by_episode (CI protocol).
+net_heading_change_deg (geometry + CV floor), ci.episode_cluster_bootstrap +
+driving._Draws / _interval / _paired (the ONE decision-grade interval estimator,
+see the Aggregation banner below), gates.split_by_episode (legacy block only).
 Run: python3 -m taniteval.closedloop --arm flagship-30k [--episodes 40]
 """
 from __future__ import annotations
@@ -88,6 +90,9 @@ from driving_diagnostic import (WP_STEPS, baseline_waypoints,  # noqa: E402
 from tanitad.eval.gates import split_by_episode  # noqa: E402
 from tanitad.models.metric_dynamics import accumulate_se2, rollout_decode  # noqa: E402
 
+from taniteval import ci as _ci  # noqa: E402
+from taniteval import driving as _drv  # noqa: E402
+
 # --- protocol constants (parity with bench.py / rollout.py) ----------------- #
 SPEED_SCALE = 10.0          # v0 action-channel scale (every trainer)
 DT = 0.1                    # 10 Hz operative tick
@@ -98,6 +103,18 @@ IDX = [k - 1 for k in WP_STEPS]
 HORIZONS_S = {5: "0.5s", 10: "1s", 15: "1.5s", 20: "2s"}
 STRIDE = 8
 BATCH = 32
+
+# --- estimator policy — IMPORTED from driving.py, not restated ------------- #
+# One policy in one place. The failure this guards against is a second copy of
+# the rule drifting from the first, which is how `overlapping_holdout_se`
+# survived in THIS module for five days after driving.py was migrated.
+N_BOOT = _ci.DEFAULT_N_BOOT                        # 2000
+DECISION_ESTIMATORS = _drv.DECISION_ESTIMATORS
+DEPRECATED_ESTIMATOR = _drv.DEPRECATED_ESTIMATOR   # overlapping_holdout_se
+ESTIMATOR_NOTE = _drv.ESTIMATOR_NOTE
+# The ONE key exempt from the deprecated-estimator guard, because it exists
+# precisely to carry the deprecated numbers under their true name.
+LEGACY_BLOCK = "legacy_overlapping_holdout_se"
 
 # --- harness controller (waypoint -> control) constants -------------------- #
 LOOKAHEAD_STEP = 5          # plan the 0.5 s waypoint as the pure-pursuit target
@@ -359,8 +376,31 @@ def collect(model, step_readout, episodes, device, speed_input=False,
 
 
 # --------------------------------------------------------------------------- #
-# Aggregation — bench.py DEPRECATED CI protocol (8 OVERLAPPING random         #
-# holdouts / sqrt(8)). NOT a jackknife; anti-conservative. See taniteval/ci.py #
+# Aggregation — the DECISION-GRADE estimator                                   #
+#                                                                              #
+# ⚠️ MIGRATED 2026-07-25. The headline closed-loop ADE/FDE, the compounding-    #
+# error deltas and the divergence rate were all aggregated by `_agg` / `_jack`: #
+# the mean +- 1.96*std/sqrt(8) of 8 OVERLAPPING random 20 % episode holdouts.   #
+# That statistic is `overlapping_holdout_se` — NOT a jackknife, and MEASURED    #
+# **1.28-2.06x too narrow** across 10 arms (Project Steering/                   #
+# CI_RECOMPUTE_2026-07-20.json). It describes split-selection noise and shrinks #
+# toward zero as n_splits grows, so it answers the wrong question entirely.     #
+#                                                                              #
+# The program deprecated it, `driving.py` was migrated — and THIS module, the   #
+# more decision-relevant axis (closed-loop is where the v4 imagination thesis   #
+# is judged), was left behind, with the correct estimator already imported and  #
+# used for the imagination A/B forty lines below. A too-narrow interval on this #
+# axis manufactures false CI-separations on exactly the comparisons that spend  #
+# GPU-days.                                                                     #
+#                                                                              #
+# Now: every interval is the episode-cluster bootstrap over the 40 val EPISODES #
+# (taniteval/ci.py) — the episode is the independent unit, not the 881          #
+# correlated stride-8 windows — and every delta between two paths scored on the #
+# SAME windows is PAIRED, never a quadrature combination of two single-arm      #
+# intervals. The deprecated numbers are still emitted, QUARANTINED under        #
+# ``LEGACY_BLOCK`` and stamped with their true estimator, so historical         #
+# closed-loop numbers stay reproducible and the narrowing is visible in the     #
+# artifact itself (``ci_width_ratio_new_over_legacy``) rather than on trust.    #
 # --------------------------------------------------------------------------- #
 def _de(pred, gt):
     """[N,4,2] -> [N,4] per-waypoint Euclidean point error."""
@@ -368,7 +408,12 @@ def _de(pred, gt):
 
 
 def _suite(pred, gt):
-    """Per-horizon ade@/de@ + fde@2s for a waypoint set [N,4,2]."""
+    """Per-horizon ade@/de@ + fde@2s for a waypoint set [N,4,2].
+
+    The FULL-SET point estimates. :func:`_suite_components` is its per-window
+    decomposition and reproduces every entry here exactly — pinned by
+    ``tests/test_closedloop_ci.py``, because the bootstrap must supply the
+    interval without ever moving the mean."""
     de = _de(pred, gt)
     out = {}
     for j, (step, name) in enumerate(sorted(HORIZONS_S.items())):
@@ -379,30 +424,106 @@ def _suite(pred, gt):
     return out
 
 
+def _suite_components(pred, gt):
+    """Per-window components of :func:`_suite`, for the episode-cluster bootstrap.
+
+    ``metric -> values[N]`` such that the MEAN over all windows reproduces
+    ``_suite`` exactly (``ade@1.5s`` is the per-window mean over horizons
+    0..1.5 s, so the grand mean is unchanged — the horizon groups are equal
+    size). Mirrors ``bench._suite_components``.
+
+    Kept in torch float32 deliberately: the imagination A/B below builds
+    ``ade_B`` as ``_de(...).mean(dim=1)`` and the two blocks must agree to the
+    last emitted decimal, which they only do if the arithmetic is identical.
+    ``ci`` upcasts to float64 inside the estimator anyway."""
+    de = _de(pred, gt)                                       # [N,4] float32
+    comp = {}
+    for j, (_step, name) in enumerate(sorted(HORIZONS_S.items())):
+        comp[f"de@{name}"] = de[:, j].numpy()
+        comp[f"ade@{name}"] = de[:, :j + 1].mean(dim=1).numpy()
+    comp["ade_0_2s"] = comp["ade@2s"]
+    comp["fde@2s"] = de[:, -1].numpy()
+    return comp
+
+
+def _interval(vals, draws, reduce="mean"):
+    """Episode-cluster-bootstrap CI on a per-window statistic.
+
+    Delegates to ``driving._interval`` on purpose: ONE implementation of the
+    program's decision-grade estimator, so the closed-loop and driving panels
+    cannot silently drift apart. The returned dict carries its own provenance
+    (``estimator``, ``n_episodes``, ``n_boot``), so a closed-loop number can
+    never be quoted without the construction that produced it."""
+    return _drv._interval(vals, draws, reduce)
+
+
+def _paired(a, b, draws, pos, neg, reduce="mean"):
+    """PAIRED episode-cluster bootstrap on ``reduce(a) - reduce(b)``.
+
+    ``a`` and ``b`` are the SAME windows scored two ways (closed vs open), so
+    the shared per-window difficulty cancels inside every draw. This is both
+    more powerful than and *valid where* a quadrature combination of two
+    single-arm intervals is not — the two estimates are not independent.
+
+    ``driving._paired`` labels direction with a ``favours: model|floor``
+    vocabulary that is meaningless for a closed-vs-open contrast, so it is
+    dropped for an explicit ``direction``. ``mean`` is an ALIAS of ``delta``
+    (the delta IS a difference of means) kept so ``closedloop_report.py`` and
+    ``run_and_save``, which print ``d['mean'] +- d['ci95']``, read the migrated
+    block with no change."""
+    d = dict(_drv._paired(a, b, draws, reduce))
+    d.pop("favours", None)
+    d["direction"] = pos if d["lo"] > 0 else neg if d["hi"] < 0 else "tie"
+    d["mean"] = d["delta"]
+    return d
+
+
+# --------------------------------------------------------------------------- #
+# DEPRECATED estimator — reproduction only, quarantined under LEGACY_BLOCK      #
+# --------------------------------------------------------------------------- #
 def _agg(dicts):
-    """List of per-split scalar dicts -> {metric: mean/ci95/std over splits}."""
+    """List of per-split scalar dicts -> {metric: mean/ci95/std over splits}.
+
+    **DEPRECATED — `overlapping_holdout_se`, 1.28-2.06x too narrow.** Retained
+    verbatim (the ci95 arithmetic is now the NAMED function, byte-for-byte the
+    same value) so every closed-loop interval published before 2026-07-25 stays
+    reproducible. Every node is self-labelling: a consumer that copies a number
+    also copies ``estimator`` and ``deprecated``."""
     out = {}
     for kk in dicts[0]:
         v = np.array([d[kk] for d in dicts], dtype=float)
         out[kk] = {"mean": round(float(np.nanmean(v)), 4),
-                   "ci95": round(float(1.96 * np.nanstd(v) / max(1, len(v)) ** .5), 4),
-                   "std": round(float(np.nanstd(v)), 4)}
+                   "ci95": round(_ci.overlapping_holdout_se(v), 4),
+                   "std": round(float(np.nanstd(v)), 4),
+                   "estimator": DEPRECATED_ESTIMATOR, "deprecated": True}
     return out
 
 
 def _jack(vals, eids, splits):
-    """Overlapping-random-holdout aggregate of a per-window scalar array ->
-    mean/ci95/n/separated. DEPRECATED estimator (not a jackknife, see
-    taniteval/ci.py); prefer ci.episode_cluster_bootstrap for new claims.
+    """Overlapping-random-holdout aggregate of a per-window scalar array.
 
-    'separated' = |mean| - ci95 > 0 (the delta / rate is CI-resolved from 0)."""
+    **DEPRECATED — not a jackknife despite the historical name.** Reproduction
+    only; ``_paired`` / ``_interval`` are the decision-grade replacements.
+    'separated' = |mean| - ci95 > 0 (the delta / rate is CI-resolved from 0),
+    a predicate this estimator makes too easy to satisfy."""
     v = np.asarray(vals, dtype=float)
-    sm = [float(np.nanmean(v[va])) for _tr, va in splits if len(va)]
-    sm = np.asarray(sm)
+    sm = np.asarray([float(np.nanmean(v[va])) for _tr, va in splits if len(va)])
     mean = float(np.mean(sm))
-    ci = float(1.96 * np.std(sm) / max(1, len(sm)) ** 0.5)
+    ci = _ci.overlapping_holdout_se(sm)
     return {"mean": round(mean, 4), "ci95": round(ci, 4), "n": int(v.size),
-            "separated": bool(abs(mean) - ci > 0)}
+            "separated": bool(abs(mean) - ci > 0),
+            "estimator": DEPRECATED_ESTIMATOR, "deprecated": True}
+
+
+def _width_ratio(new, old):
+    """new ci95 / old ci95 — how much the honest estimator widened the interval.
+
+    >1 means the deprecated block was too narrow BY THAT FACTOR on this arm.
+    Emitted in every run so the 1.28-2.06x program finding is re-MEASURED per
+    artifact instead of being cited from a doc."""
+    o = float(old.get("ci95", 0.0) or 0.0)
+    n = float(new.get("ci95", 0.0) or 0.0)
+    return round(n / o, 3) if o > 0 else None
 
 
 def _speed_labels(speed):
@@ -443,15 +564,20 @@ def _comfort(win):
     }
 
 
-def analyze(win, n_splits=8, val_frac=0.2, seed=0):
-    """Compose all four honest metric blocks from a collect() window set."""
+def analyze(win, n_splits=8, val_frac=0.2, seed=0, n_boot=N_BOOT):
+    """Compose all four honest metric blocks from a collect() window set.
+
+    Every interval is the episode-cluster bootstrap over the val EPISODES and
+    every closed-vs-open delta is PAIRED on the same windows (see the
+    Aggregation banner for what this replaced and why). ``n_splits`` /
+    ``val_frac`` now feed ONLY the quarantined legacy block; ``seed`` and
+    ``n_boot`` drive the bootstrap, and are threaded into the imagination A/B
+    below so every interval in one artifact comes from ONE set of episode
+    resamples and is therefore mutually consistent."""
     eids = win["eid"]
     gt = win["gt"]
-    splits = [split_by_episode(eids, val_frac, s)
-              for s in range(seed, seed + n_splits)]
-
-    def suite_ci(path):
-        return _agg([_suite(win[path][va], gt[va]) for _tr, va in splits])
+    # ONE set of episode resamples, shared by every interval in this block.
+    draws = _drv._Draws(eids, n_boot=n_boot, seed=seed)
 
     # ---- 1. Closed-loop ADE/FDE (+ open-loop + baselines) ------------------ #
     paths = {"closed_bike": "closed_bike (headline: kinematic exec of the plan)",
@@ -459,11 +585,23 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
              "open_grnd": "open_grnd (TRUE actions, gate grounded rollout)",
              "open_bike": "open_bike (TRUE actions, bicycle fidelity FLOOR)",
              "cv": "cv (constant-velocity trivial baseline)"}
-    heldout = {p: suite_ci(p) for p in paths}
+    # per-window components once, reused by the headline AND (for closed_bike /
+    # open_plan_bike) the imagination A/B — which is what makes the two blocks
+    # report the identical interval for the identical quantity.
+    comp = {p: _suite_components(win[p], gt) for p in paths}
+    comp["open_plan_bike"] = _suite_components(win["open_plan_bike"], gt)
+    comp["plan_direct"] = _suite_components(win["plan_direct"], gt)
+    # NOTE the key name `heldout` is HISTORICAL (consumers + every closed-loop
+    # JSON on disk read it). Its CONTENTS are the episode-cluster bootstrap
+    # since 2026-07-25; each node names its own estimator, so nothing can be
+    # copied out of here without its construction.
+    heldout = {p: {k: _interval(v, draws) for k, v in comp[p].items()}
+               for p in paths}
 
     # ---- 2. Compounding-error delta (closed MINUS open), grounded path ----- #
     #   apples-to-apples: only the action/latent SOURCE differs; same SE(2)
-    #   step-readout path builder. Per-horizon overlapping-holdout mean diff.
+    #   step-readout path builder. PAIRED per horizon — the two paths score the
+    #   SAME windows, so the shared difficulty cancels inside each draw.
     de_cg = _de(win["closed_grnd"], gt)
     de_og = _de(win["open_grnd"], gt)
     de_cb = _de(win["closed_bike"], gt)
@@ -472,18 +610,24 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
                    "point-error per horizon (distribution-shift cost the open-loop "
                    "ADE hides); grounded path both sides so only the action source "
                    "differs",
+                   "_estimator": "paired_episode_cluster_bootstrap; positive delta "
+                   "= the closed loop is WORSE (a compounding cost)",
                    "_caveat": "the step-readout is calibrated on TRUE-action rolled "
                    "latents; under self-generated actions the imagined latents drift "
                    "off that manifold, so this delta bundles genuine trajectory drift "
                    "WITH step-readout off-manifold decode degradation. The bicycle "
                    "delta below is controller-clean (no learned decode)."}
     comp_bike = {"_definition": "closed_bicycle_ADE - open_bicycle_ADE per horizon "
-                 "(policy+imagination cost above the kinematic fidelity floor)"}
+                 "(policy+imagination cost above the kinematic fidelity floor)",
+                 "_estimator": "paired_episode_cluster_bootstrap; positive delta "
+                 "= the closed loop is WORSE"}
     for j, (step, name) in enumerate(sorted(HORIZONS_S.items())):
-        compounding[f"delta@{name}"] = _jack(
-            (de_cg[:, j] - de_og[:, j]).numpy(), eids, splits)
-        comp_bike[f"delta@{name}"] = _jack(
-            (de_cb[:, j] - de_ob[:, j]).numpy(), eids, splits)
+        compounding[f"delta@{name}"] = _paired(
+            de_cg[:, j].numpy(), de_og[:, j].numpy(), draws,
+            "closed_loop_worse", "closed_loop_better")
+        comp_bike[f"delta@{name}"] = _paired(
+            de_cb[:, j].numpy(), de_ob[:, j].numpy(), draws,
+            "closed_loop_worse", "closed_loop_better")
 
     # ---- 3. Stability / comfort / divergence ------------------------------- #
     fde_bike = de_cb[:, -1]                                   # closed_bike @2s
@@ -492,7 +636,7 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
                                   gt[:, j, 1]).abs().mean()), 4)
                for j, (step, name) in enumerate(sorted(HORIZONS_S.items()))}
     stability = {
-        "divergence_rate_gt5m@2s": _jack(diverged.numpy(), eids, splits),
+        "divergence_rate_gt5m@2s": _interval(diverged.numpy(), draws),
         "divergence_threshold_m": DIVERGENCE_M,
         "lateral_deviation_growth_m": lat_dev,
         "comfort": _comfort(win),
@@ -522,18 +666,20 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
     #   B = closed_bike       (re-plan on the model's OWN imagined latent per tick)
     #   A = open_plan_bike    (plan ONCE on the real latent, track it open-loop)
     #   Shared head+controller+bicycle, identical at tick 0 -> the PAIRED delta
-    #   isolates imagination-in-the-loop. Decision-grade estimator: episode-cluster
-    #   bootstrap (taniteval/ci.py, paired) over the val episodes — NOT the
-    #   deprecated overlapping-holdout used by the blocks above.
-    from taniteval import ci as _ci
-    ade_A = _de(win["open_plan_bike"], gt).mean(dim=1).numpy()   # [N] arm A ADE 0-2s
-    ade_B = _de(win["closed_bike"], gt).mean(dim=1).numpy()      # [N] arm B ADE 0-2s
-    ade_pl = _de(win["plan_direct"], gt).mean(dim=1).numpy()     # raw plan, no exec
-    fde_A = _de(win["open_plan_bike"], gt)[:, -1].numpy()
-    fde_B = _de(win["closed_bike"], gt)[:, -1].numpy()
-    div_A = (_de(win["open_plan_bike"], gt)[:, -1] > DIVERGENCE_M).float().numpy()
-    paired_ade = _ci.paired_episode_cluster_bootstrap(ade_B, ade_A, eids)  # B - A
-    paired_fde = _ci.paired_episode_cluster_bootstrap(fde_B, fde_A, eids)
+    #   isolates imagination-in-the-loop. This block was ALREADY decision-grade
+    #   (episode-cluster bootstrap, paired) before the 2026-07-25 migration —
+    #   it is now simply the same estimator as every block above it, over the
+    #   same (n_boot, seed), instead of the only correct block in the file.
+    ade_A = comp["open_plan_bike"]["ade_0_2s"]      # [N] arm A per-window ADE 0-2s
+    ade_B = comp["closed_bike"]["ade_0_2s"]         # [N] arm B per-window ADE 0-2s
+    ade_pl = comp["plan_direct"]["ade_0_2s"]        # raw plan, no executor
+    fde_A = comp["open_plan_bike"]["fde@2s"]
+    fde_B = comp["closed_bike"]["fde@2s"]
+    div_A = (fde_A > DIVERGENCE_M).astype(np.float64)
+    paired_ade = _ci.paired_episode_cluster_bootstrap(
+        ade_B, ade_A, eids, n_boot=n_boot, seed=seed)                 # B - A
+    paired_fde = _ci.paired_episode_cluster_bootstrap(
+        fde_B, fde_A, eids, n_boot=n_boot, seed=seed)
     d = paired_ade["delta"]                                       # mean(B)-mean(A)
     if paired_ade["separated"] and d < 0:
         verdict = ("IMAGINATION_HELPS: imagination-in-the-loop (B) has LOWER "
@@ -565,13 +711,13 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
         "imagined latent but does NOT sample+select candidates by imagined "
         "consequence (no CEM). It is the cheap no-renderer proving ground, not the "
         "AlpaSim imagine-and-select test (closed-loop synthesis section 5).",
-        "A_open_plan_bike_ade@2s": _ci.episode_cluster_bootstrap(ade_A, eids),
-        "B_closed_bike_ade@2s": _ci.episode_cluster_bootstrap(ade_B, eids),
-        "plan_direct_ade@2s_no_executor": _ci.episode_cluster_bootstrap(ade_pl, eids),
+        "A_open_plan_bike_ade@2s": _interval(ade_A, draws),
+        "B_closed_bike_ade@2s": _interval(ade_B, draws),
+        "plan_direct_ade@2s_no_executor": _interval(ade_pl, draws),
         "paired_delta_B_minus_A_ade@2s": paired_ade,
         "paired_delta_B_minus_A_fde@2s": paired_fde,
-        "A_divergence_rate_gt5m@2s": _ci.episode_cluster_bootstrap(div_A, eids),
-        "B_divergence_rate_gt5m@2s": _ci.episode_cluster_bootstrap(diverged.numpy(), eids),
+        "A_divergence_rate_gt5m@2s": _interval(div_A, draws),
+        "B_divergence_rate_gt5m@2s": _interval(diverged.numpy(), draws),
         "verdict": verdict,
     }
 
@@ -596,21 +742,98 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
             by_speed.get("high", {}).get("closed_bike_ade@2s")],
     }
 
-    return {
+    # ---- 6. QUARANTINE: the deprecated estimator, under its true name ------ #
+    #   Emitted so (a) every closed-loop interval published before 2026-07-25
+    #   stays exactly reproducible, and (b) the 1.28-2.06x narrowing is
+    #   RE-MEASURED on this arm, in this artifact, instead of being cited from
+    #   a doc. Never the headline; excluded from `summary`; the only key the
+    #   deprecated-estimator guard exempts.
+    splits = [split_by_episode(eids, val_frac, s)
+              for s in range(seed, seed + n_splits)]
+    legacy_heldout = {p: _agg([_suite(win[p][va], gt[va]) for _tr, va in splits])
+                      for p in paths}
+    legacy_comp = {f"delta@{name}": _jack(
+        (de_cg[:, j] - de_og[:, j]).numpy(), eids, splits)
+        for j, (_s, name) in enumerate(sorted(HORIZONS_S.items()))}
+    legacy_comp_bike = {f"delta@{name}": _jack(
+        (de_cb[:, j] - de_ob[:, j]).numpy(), eids, splits)
+        for j, (_s, name) in enumerate(sorted(HORIZONS_S.items()))}
+    legacy_div = _jack(diverged.numpy(), eids, splits)
+    legacy = {
+        "_what": "the pre-2026-07-25 closed-loop intervals: mean +- 1.96*std/"
+                 "sqrt(8) over 8 OVERLAPPING random 20% episode holdouts.",
+        "_why_kept": "reproduction of published numbers ONLY. NOT admissible "
+                     "for any decision; the block above is.",
+        "_estimator": DEPRECATED_ESTIMATOR,
+        "estimator_note": ESTIMATOR_NOTE,
+        "n_splits": n_splits, "val_frac": val_frac,
+        "heldout": legacy_heldout,
+        "compounding_error_grounded": legacy_comp,
+        "compounding_error_bicycle": legacy_comp_bike,
+        "divergence_rate_gt5m@2s": legacy_div,
+        # MEASURED, per run: how much too narrow the deprecated block was here.
+        "ci_width_ratio_new_over_legacy": {
+            "_read": "new ci95 / legacy ci95. >1 = the deprecated interval was "
+                     "too narrow BY THAT FACTOR on this arm; the program-wide "
+                     "finding across 10 arms was 1.28-2.06x.",
+            "closed_bike_ade@2s": _width_ratio(
+                heldout["closed_bike"]["ade_0_2s"],
+                legacy_heldout["closed_bike"]["ade_0_2s"]),
+            "closed_bike_fde@2s": _width_ratio(
+                heldout["closed_bike"]["fde@2s"],
+                legacy_heldout["closed_bike"]["fde@2s"]),
+            "closed_grnd_ade@2s": _width_ratio(
+                heldout["closed_grnd"]["ade_0_2s"],
+                legacy_heldout["closed_grnd"]["ade_0_2s"]),
+            "open_grnd_ade@2s": _width_ratio(
+                heldout["open_grnd"]["ade_0_2s"],
+                legacy_heldout["open_grnd"]["ade_0_2s"]),
+            "compounding_grnd_delta@2s": _width_ratio(
+                compounding["delta@2s"], legacy_comp["delta@2s"]),
+            "compounding_bike_delta@2s": _width_ratio(
+                comp_bike["delta@2s"], legacy_comp_bike["delta@2s"]),
+            "divergence_rate_gt5m@2s": _width_ratio(
+                stability["divergence_rate_gt5m@2s"], legacy_div),
+        },
+    }
+
+    res = {
         "n_windows": int(gt.shape[0]),
         "n_episodes": len(set(eids)),
         "summary": summary,
         "protocol": {"window": WINDOW, "stride": STRIDE, "hz": 10,
                      "wp_steps": list(WP_STEPS), "K_steps": K_MAX,
                      "n_splits": n_splits, "val_frac": val_frac,
-                     "ci": "overlapping_holdout_se, 8 random 20% holdouts "
-                           "(DEPRECATED, not a jackknife — taniteval/ci.py)",
+                     "ci": "episode_cluster_bootstrap over the val EPISODES "
+                           "(paired for closed-vs-open deltas) — taniteval/ci.py",
                      "nav": "follow (deploy-realistic, no route command)",
                      "operative_step": "intent-free (deployed regime)"},
+        # provenance stamp — mirrors driving.tier0 so both panels are read the
+        # same way and neither can emit an interval without naming its estimator
+        "primary_ci": "episode_cluster_bootstrap",
+        "estimator": {
+            "interval": "episode_cluster_bootstrap",
+            "delta": "paired_episode_cluster_bootstrap",
+            "n_boot": int(n_boot), "seed": int(seed),
+            "resampling_unit": "val episode",
+            "orientation": "every closed-vs-open delta is closed - open; "
+                           "positive = the closed loop is WORSE",
+            "deprecated_and_refused": DEPRECATED_ESTIMATOR,
+            "legacy_block": LEGACY_BLOCK,
+            "estimator_note": ESTIMATOR_NOTE},
+        # gate-readable shape: run_gate._read_eval_metric looks for
+        # cluster_bootstrap["model"], and falls back to the DEPRECATED estimator
+        # when it finds none (the ⭐ v4 gate bug, 2026-07-22). closed_bike is the
+        # headline closed-loop path, so it is the "model" row.
+        "cluster_bootstrap": {"model": dict(heldout["closed_bike"])},
         "closedloop_ade_fde": {
             "_path_legend": paths,
             "_headline": "closed_bike is the headline closed-loop path; "
                          "closed_grnd is the model's own metric decode",
+            "_estimator": "episode_cluster_bootstrap. The key name `heldout` is "
+                          "HISTORICAL (kept so every consumer and every "
+                          "closed-loop JSON on disk still reads); its contents "
+                          "are NOT a holdout statistic since 2026-07-25.",
             "heldout": heldout},
         "imagination_comparison": imagination_comparison,
         "compounding_error_grounded": compounding,
@@ -633,6 +856,21 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0):
             "is the point, not the absolute open-loop number.",
         ],
     }
+    assert_no_deprecated_estimator(res)
+    res[LEGACY_BLOCK] = legacy          # attached AFTER the guard, by design
+    return res
+
+
+def assert_no_deprecated_estimator(res):
+    """Refuse to return a closed-loop block containing a deprecated interval.
+
+    The mechanical form of *"never quote an interval without its estimator"*,
+    reusing ``driving``'s single implementation of the policy. Run on every
+    block before it is returned, so the refusal cannot be forgotten — and run
+    BEFORE ``LEGACY_BLOCK`` is attached, because that block exists precisely to
+    carry the deprecated numbers and is the one documented exemption."""
+    return _drv.assert_no_deprecated_estimator(
+        {k: v for k, v in res.items() if k != LEGACY_BLOCK}, _path="closedloop")
 
 
 # --------------------------------------------------------------------------- #
@@ -680,16 +918,27 @@ def run_and_save(key, device="cuda", episodes=40,
     res["wall_s"] = round(time.time() - t0, 1)
     outp = Path(out_dir) / f"closedloop_{key}.json"
     outp.parent.mkdir(parents=True, exist_ok=True)
-    outp.write_text(json.dumps(res, indent=2, default=str))
+    # explicit utf-8: the block carries em/minus dashes, and Path.write_text
+    # otherwise uses the platform default (cp1252 on the dev box -> crash)
+    outp.write_text(json.dumps(res, indent=2, default=str), encoding="utf-8")
     ho = res["closedloop_ade_fde"]["heldout"]
     cb, og = ho["closed_bike"], ho["open_grnd"]
     d2 = res["compounding_error_grounded"]["delta@2s"]
     dv = res["stability"]["divergence_rate_gt5m@2s"]
-    print(f"[cl] {key} step={L['step']} n={res['n_windows']}: "
+    print(f"[cl] {key} step={L['step']} n={res['n_windows']} "
+          f"n_ep={res['n_episodes']}: "
           f"closed_bike ade@2s={cb['ade_0_2s']['mean']:.3f}±{cb['ade_0_2s']['ci95']:.3f} "
           f"fde@2s={cb['fde@2s']['mean']:.3f} | open_grnd ade@2s={og['ade_0_2s']['mean']:.3f} "
           f"| closed-open Δ@2s={d2['mean']:.3f}±{d2['ci95']:.3f} "
+          f"(paired, {d2['direction']}) "
           f"| diverge={dv['mean']:.1%} ({res['wall_s']}s) -> {outp.name}", flush=True)
+    wr = res[LEGACY_BLOCK]["ci_width_ratio_new_over_legacy"]
+    print(f"[cl] {key} intervals: {res['primary_ci']} B={res['estimator']['n_boot']} "
+          f"over {res['n_episodes']} val episodes. Deprecated "
+          f"{DEPRECATED_ESTIMATOR} was too narrow by "
+          f"ade@2s x{wr['closed_bike_ade@2s']} · Δ@2s x{wr['compounding_grnd_delta@2s']} "
+          f"· diverge x{wr['divergence_rate_gt5m@2s']} (quoted from "
+          f"{LEGACY_BLOCK}, reproduction only)", flush=True)
     ic = res["imagination_comparison"]
     pa = ic["paired_delta_B_minus_A_ade@2s"]
     print(f"[cl] {key} IMAGINATION PROOF (A=single-shot open vs B=imag-in-loop): "
