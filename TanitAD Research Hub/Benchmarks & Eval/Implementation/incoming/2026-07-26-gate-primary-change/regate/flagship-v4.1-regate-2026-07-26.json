@@ -1,0 +1,117 @@
+{
+  "run": "flagship-v4.1-REGATE",
+  "card": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-gate-primary-change/regate/flagship-v4.1-REGATE.card.json",
+  "current_step": 12500,
+  "gate_step": 10000,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 0.8522,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": false,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; cluster_bootstrap) CI [0.7468, 0.98]",
+    "role": "diagnostic",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "PROPOSAL-QUALITY DIAGNOSTIC: read and recorded, but it does not adjudicate on this card. ade_0_2s is measured over K=20 (2.0 s) and is MEASURED blind to corridor departure \u2014 on E1a's 43 paired windows the same trajectories give 0.0035 at K=20 vs 0.5877 at K=185, while the paired ADE@2s delta (0.0109 [-0.0, 0.0312]) is NOT separated."
+  },
+  "co_primary": {
+    "registered": true,
+    "metric": "corridor_departure_rate",
+    "threshold": 0.5877,
+    "direction": "<=",
+    "registered_horizon_K": 185,
+    "registered_horizon_s": 18.5,
+    "registered_corridor_m": 1.75,
+    "stratum": "overall",
+    "junction_threshold": 0.8414,
+    "source": "taniteval.corridor on held-out val windows",
+    "measured": false,
+    "pass": null,
+    "artifact": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/corridor_flagship-v4.1-10k.json",
+    "note": "corridor artifact reports SKIPPED: no dense path in this dump (pred_dense/gt_dense). Pre-2026-07-25 dumps and refb_eval/refc_eval do not persist it; re-run rollout.collect.",
+    "dense_surface_available": false
+  },
+  "horizon": {
+    "horizon_honest": false,
+    "adjudicating_metric": "co_primary.corridor_departure_rate",
+    "registered_horizon_K": 185,
+    "registered_horizon_s": 18.5,
+    "measured_horizon_K": null,
+    "measured_horizon_s": null,
+    "ceiling_K": 190,
+    "frac_of_ceiling": 0.9737,
+    "n_windows": null,
+    "n_episodes": null,
+    "n_junction_windows": null,
+    "surface": null,
+    "rendered": "corridor_departure_rate@1.75m K=185 (18.5 s, 97% of the K=190 corpus ceiling), n=? windows / ? episodes, surface=?",
+    "warning": "the co-primary was not measured"
+  },
+  "secondary": [
+    {
+      "metric": "wm_canary_ade_2s",
+      "value": 0.4599445164203644,
+      "op": "<=",
+      "threshold": 0.55,
+      "pass": true
+    },
+    {
+      "metric": "speed_benefit_recovered_frac",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "oracle_in_fan",
+      "value": 0.4837766247426205,
+      "op": "<=",
+      "threshold": 0.3,
+      "pass": false
+    },
+    {
+      "metric": "miss_at_2m",
+      "value": 0.2486,
+      "op": "<=",
+      "threshold": 0.1,
+      "pass": false
+    },
+    {
+      "metric": "seam_norm_ratio_max",
+      "value": 0.1796,
+      "op": "<=",
+      "threshold": 1.0,
+      "pass": true
+    },
+    {
+      "metric": "encoder_touching_levers",
+      "value": 2.0,
+      "op": "<=",
+      "threshold": 2.0,
+      "pass": true
+    },
+    {
+      "metric": "deploy_tick_p99_ms",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "nonav_route_beats_majority",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    }
+  ],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "co_primary.corridor_departure_rate",
+    "secondary(8)"
+  ],
+  "verdict": "INCOMPLETE",
+  "reason": "the pre-registered CO-PRIMARY (corridor_departure_rate @ K=185, 18.5 s) was not measured: corridor artifact reports SKIPPED: no dense path in this dump (pred_dense/gt_dense). Pre-2026-07-25 dumps and refb_eval/refc_eval do not persist it; re-run rollout.collect.. ade_0_2s alone may not decide this gate \u2014 it is MEASURED blind to corridor departure at the event's own horizon.",
+  "horizon_honest": false
+}

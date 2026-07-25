@@ -1,0 +1,31 @@
+{
+  "run": "flagship-v3enc-REGATE",
+  "gate_step": 10000,
+  "primary_metric": "ade_0_2s",
+  "primary_threshold": 2.5,
+  "primary_direction": "<=",
+  "primary_source": "held-out taniteval eval of the 10k milestone ckpt (flagship-v3enc-10k.json)",
+  "secondary": [
+    "encoder_speed_probe_r2>=0.55",
+    "highspeed_long_overshoot_m<=8.0"
+  ],
+  "reference_run": "flagship-v1-speedjerk-30k",
+  "reference_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+  "compare_metric": "g_op_fwd_ade_m",
+  "tau": 1.5,
+  "lever_family": "encoder-grounding",
+  "restarts_used": 1,
+  "restart_cap": 2,
+  "registered_utc": "2026-07-25T22:18:59.330980+00:00",
+  "note": "POST-HOC RE-GATE CARD, not a pre-registration. Written 2026-07-26 to re-render the 2026-07-21 v3enc verdict under the corrected (horizon-honest) primary. The co-primary thresholds are E1a's MEASURED incumbent levels at K=185 (overall 0.5877, junction 0.8414; e1a_horizon_heldout44_K185.json) used as a no-worse-than bar so the card is well-formed. NO verdict in this deliverable depends on their value: the co-primary is UNMEASURED for this arm, so the verdict is INCOMPLETE at every threshold. Real thresholds must be pre-registered by the PI before the next launch.",
+  "co_primary_metric": "corridor_departure_rate",
+  "co_primary_threshold": 0.5877,
+  "co_primary_direction": "<=",
+  "co_primary_horizon_K": 185,
+  "co_primary_corridor_m": 1.75,
+  "co_primary_stratum": "overall",
+  "co_primary_junction_threshold": 0.8414,
+  "co_primary_source": "taniteval.corridor on held-out val windows",
+  "primary_role": "diagnostic",
+  "no_co_primary_reason": ""
+}

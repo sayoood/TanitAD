@@ -1,0 +1,61 @@
+{
+  "run": "flagship-v3enc",
+  "card": "Project Steering/Gates/flagship-v3enc.card.json",
+  "current_step": 10800,
+  "gate_step": 10000,
+  "gpu_hours": 31.1,
+  "s_per_step": 10.37,
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 1.9654,
+    "threshold": 2.5,
+    "direction": "<=",
+    "pass": true,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; cluster_bootstrap) CI [1.6556, 2.2859]",
+    "role": "kill",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "KILL: this card registers no horizon-honest co-primary, so the demoted metric still adjudicates. The verdict is stamped horizon_honest: false."
+  },
+  "co_primary": {
+    "registered": false,
+    "measured": false,
+    "note": "this card predates the 2026-07-26 horizon correction and registers no co-primary",
+    "no_co_primary_reason": null
+  },
+  "horizon": {
+    "horizon_honest": false,
+    "adjudicating_metric": "ade_0_2s",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "n_windows": null,
+    "n_episodes": null,
+    "rendered": "ade_0_2s @ K=20 (2.0 s), n not recorded",
+    "warning": "this verdict rests on ade_0_2s at K=20 (2.0 s) alone, which is MEASURED blind to the dominant failure mode: on the same 43 held-out windows corridor departure is 0.0035 at K=20 and 0.5877 at K=185 (junction 0.025 -> 0.8414; peak XTE 0.35 m -> 38.94 m). Re-gate on a card carrying a co-primary."
+  },
+  "secondary": [
+    {
+      "metric": "encoder_speed_probe_r2",
+      "value": 0.393,
+      "op": ">=",
+      "threshold": 0.55,
+      "pass": false
+    },
+    {
+      "metric": "highspeed_long_overshoot_m",
+      "value": 2.195,
+      "op": "<=",
+      "threshold": 8.0,
+      "pass": true
+    }
+  ],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "ade_0_2s",
+    "secondary(2)"
+  ],
+  "verdict": "RESTART",
+  "reason": "pre-registered gate failed",
+  "horizon_honest": false
+}

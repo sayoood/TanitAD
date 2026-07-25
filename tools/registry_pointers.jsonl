@@ -23,8 +23,12 @@
 # SEEDED 2026-07-25 on the highest-traffic rows: the three-way rank-1 tie in the
 # cross-arm leaderboard (the single most-quoted table in the program) and the
 # two numbers from the 1.4b headline retraction.
-{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*Flagship v1 \\(speed\\+jerk\\) FINAL\\*\\*", "src": "taniteval/results/driving_flagship-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s, the deployed model"}
-{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*REF-C-XL\\*\\*", "src": "taniteval/results/driving_refc-xl-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s"}
-{"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^\\| \\*\\*1=\\*\\* \\| \\*\\*REF-C-base\\*\\*", "src": "taniteval/results/driving_refc-base-30k.json", "field": "headline.ade_0_2s.mean", "near": "full-set", "why": "leaderboard rank 1= full-set ADE@2s, cheapest tick in the tie"}
+# MIGRATED 2026-07-26 -> INLINE. The three rank-1= rows of the cross-arm leaderboard (§6) carried
+# sidecar pointers with `near: "full-set"`, because the full-set mean lived in a parenthetical beside a
+# split-mean headline. §6 was re-emitted on 2026-07-25/26 with the full-set mean as the PRIMARY column,
+# so that literal no longer exists on those lines and the `near` filter would have found no candidate
+# number -- a pointer that reports DRIFT because the document got MORE correct is worse than no pointer.
+# They are now inline `<!-- src: ... -->` comments on the rows themselves (the form this file's header
+# recommends when you are already editing the row), together with ten more rows and the CV floor.
 {"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^> point estimate \\(\\*\\*", "src": "taniteval/results/driving_flagship-v16-ab-ft.json", "field": "headline.ade_0_2s.mean", "why": "1.4b headline retraction: v1.6's point estimate (JSON 4 dp vs prose 5 dp -- exercises the coarser-precision tolerance)"}
 {"file": "Project Steering/MODEL_REGISTRY.md", "anchor": "^at 0\\.523 vs 0\\.439; that", "src": "taniteval/results/driving_refc-xl-30k.json", "field": "headline.ade_0_2s.mean", "near": "Overall full-set", "why": "REF-C-XL section restates the full-set ADE in prose; a second surface for the same number"}

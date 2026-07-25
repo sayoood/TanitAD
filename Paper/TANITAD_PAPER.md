@@ -17,7 +17,9 @@ End-to-end driving models have won the architecture argument but retain four str
 they are data-hungry, opaque, unaware of their own limits, and expensive at inference time. We
 present TanitAD, a driving stack built around a from-scratch, fully self-supervised hierarchical
 latent world model (the *4B architecture*: operative, tactical, strategic, and fallback brains) that
-attacks all four weaknesses simultaneously. The model (261 M parameters) trains on tens of hours of
+attacks all four weaknesses simultaneously. The model (**263.4 M parameters measured** — `total_model`
+263,442,838, `trainable` 277,404,073, `MODEL_REGISTRY §1.2`; the *design budget* every arm is matched to
+is 261 M, D-008) trains on tens of hours of
 unlabeled front-camera video plus free proprioception — no perception labels, no HD maps, no reward,
 no pretrained foundation encoder — using a single provable anti-collapse mechanism (SIGReg/LeJEPA).
 Maneuver selection is performed by *imagine-and-select*: the operative predictor imagines the latent
@@ -33,7 +35,7 @@ models' sample-efficiency advantage. *Second-round update (v0.3):* after a causa
 fix — feeding the measured ego-speed v₀ as a third action channel — the flagship arm became the
 program's first to beat constant-velocity extrapolation on every held-out open-loop metric
 (ADE@2s 0.628 ± 0.055 vs 0.825), the gain causally attributed by paired A/B (+2.21 m, win-rate
-83.8 %); yet a two-parameter kinematic oracle (CTRV, 0.544) still tops the open-loop table — an
+83.8 %); yet a two-parameter kinematic oracle (CTRV, **0.523** — see §7.2 on the superseded 0.544) still tops the open-loop table — an
 ego-status shortcut we replicate from the literature and adopt as the honest bar, all open-loop
 numbers remaining weak claims under the program's standing rule (arXiv 2605.00066, §7.2).
 *Third-round update (v0.4):* at the completed 30 k checkpoint the flagship is the program's **first
@@ -59,7 +61,10 @@ reached ADE@2s 0.852 [0.75, 0.98] against a 0.60 bar while its WM-integrity cana
 cos(g_wm, g_plan) = **+0.0043** over 512 windows, so gradient surgery would strip ~2 % of the planner
 gradient and is a no-op. That measurement redirected the program to **co-evolution from random
 initialisation** — v1's own recipe — and at full coupling (λ_plan = 1.0) the world-model canary
-*descends* (15.674 at random init → ≈1.4) while held-out ADE@2s falls to ≈0.48 at 40 % of training,
+*descends* (15.674 at random init → ≈1.4) while ~~held-out ADE@2s falls to ≈0.48 at 40 % of training~~
+— **corrected 2026-07-25**: the ≈0.48 was the trainer's dense-20 statistic; the first decision-grade eval
+(step 15 k, episode-cluster bootstrap) reads **0.5839 [0.4962, 0.6821]**, paired **Δ +0.1568
+[+0.0630, +0.2504] CI-separated *behind* v1** while CI-separated *ahead* of both trivial floors —
 its 10 k gate returning CONTINUE. **The scientific point is that planner–world-model interference was a
 warm-start artifact, not an intrinsic conflict between prediction and control** — reported as
 in-progress, on the trainer's in-loop evaluation, with the formal gate deferred. Two additive
@@ -151,8 +156,10 @@ OOD self-monitoring.
 Observations are egocentric camera stacks x_t ∈ ℝ^{9×256×256} (three RGB frames at 100 ms spacing,
 D-015), actions a_t = (steering, acceleration) ∈ ℝ² from CAN/ego-motion, poses p_t = (x, y, ψ, v)
 from odometry. An encoder f_θ maps x_t to a token grid; a spatial grid readout (never global
-pooling; A7) produces the compact state z_t = r(f_θ(x_t)) ∈ ℝ^{2048}. The instantiated budget is
-261 M parameters: encoder 99.5 M (ViT, d = 768, 14 blocks, patch 16, LayerNorm only — batch-free
+pooling; A7) produces the compact state z_t = r(f_θ(x_t)) ∈ ℝ^{2048}. The **design budget** is
+261 M parameters (D-008); the **instantiated** flagship measures **263,442,838** (`MODEL_REGISTRY §1.2`;
+the per-module split below is the design allocation, which differs from the measured per-module counts —
+e.g. encoder 87,121,280 measured vs 99.5 M allocated): encoder 99.5 M (ViT, d = 768, 14 blocks, patch 16, LayerNorm only — batch-free
 norms are a *correctness* requirement, §5), operative predictor 107.7 M (causal transformer,
 window 8, FiLM action conditioning, residual multi-horizon heads k ∈ {1, 2, 4}), tactical predictor
 26.5 M (d = 512, horizons k ∈ {8, 16}), imagination field 22.1 M (§3.5), inverse-dynamics head
@@ -542,7 +549,7 @@ not sufficient (decode quality does not imply planning success); closed-loop D4�
 
 ### 6.3 Training configuration
 
-261 M parameters; bf16 autocast with SIGReg computed in fp32; gradient accumulation (micro 32 × 2,
+263.4 M parameters measured (261 M design budget); bf16 autocast with SIGReg computed in fp32; gradient accumulation (micro 32 × 2,
 effective 64 — keeping SIGReg above its statistical floor); activation checkpointing; ~30 k
 optimizer steps on a single 48 GB GPU; total training cost of the first run ≈ $40 of commodity
 cloud compute. (That figure is itself part of the thesis.)
@@ -655,15 +662,34 @@ arm trained without the speed channel gives **+2.21 m mean improvement [2.04, 2.
 
 **The kinematic oracle tops the table — and that is itself the finding.** A two-parameter physics
 extrapolation, CTRV (constant turn rate and velocity from v₀ + ψ̇₀ alone, zero pixels), scores
-**0.544** on the same protocol — above every learned arm. This replicates on our corpus the
+**0.523** on the same protocol — above every learned arm at this round. This replicates on our corpus the
 ego-status-shortcut result (AD-MLP / BEV-Planner line, arXiv 2312.03031): our validation is ≈74 %
 straight driving (73.9 % measured — coincidentally identical to nuScenes' 73.9 %), so open-loop
 L2-class metrics are dominated by kinematic extrapolation. A second, independently implemented
 instrument line inside the program converged on the same oracle (CTRV 0.545, different corpus and
 stratification) — replication, not coincidence. Consequence, pre-registered: **beat-CTRV is the
-honest open-loop bar.** The flagship stands 0.084 above it at 19 k and closing; whether it crosses
-by 30 k is the pending verdict. *(Resolved in §7.3: at the completed 30 k checkpoint the flagship
-crosses — 0.452 ± 0.031, below both CTRV and the best-of-3 floor.)*
+honest open-loop bar.** The flagship stands **0.092 above it at 19 k** on the full set (0.6152 vs 0.523)
+and closing; whether it crosses by 30 k is the pending verdict. *(Resolved in §7.3: at the completed
+30 k checkpoint the flagship crosses — full-set 0.4271, below both CTRV and the best-of-3 floor.)*
+
+> 🔧 **RECONCILIATION (2026-07-26) — this paragraph and the abstract previously read CTRV = 0.544 while
+> §7.3 and `MODEL_REGISTRY §0.3` read 0.523. One quantity, two published values.** Both are the same
+> oracle on the same 881-window canonical val. **0.523 is the one to quote**: it is what
+> `MODEL_REGISTRY.md:64` — the program's only quotable source for model facts — has carried since
+> 2026-07-18, and it is what §7.3, the OOD table and every downstream document use. **0.544 is a
+> superseded 2026-07-17 reading** (`Project Steering/FLEET_REVIEW_2026-07-17.md:17,50`), kept named here
+> rather than deleted so the earlier round stays traceable. ⚠️ **What changed between the two readings
+> could NOT be determined** — TanitEval did not enter git until 2026-07-20 (`a91bef8`), so no code
+> timeline exists for either measurement. *Settled by:* re-running `kinematic_floor` on the canonical
+> val and persisting the CTRV per-window array (≈ 0 GPU; the emitter is `bench.py:485-511`/`:558`).
+> ⚠️ Do **not** confuse either with the **0.545** cited two sentences above: that is the *comma2k19*
+> CTRV (`…/incoming/2026-07-17-openloop-l2-egostatus-shortcut/results_openloop_l2.json`,
+> `comma_highway.L2_pointwise.ctrv.2s`) — a different corpus, which is exactly what makes it a
+> replication rather than a restatement. **All three trivial bars (best-of-3 0.5005, CTRV 0.523,
+> ego-status ceiling 0.5735) are full-set means by construction** (`bench.py:511`, `:558`), so unlike
+> the arm numbers they are untouched by the §5 estimator correction — but for the same reason, every
+> legacy "beats the floor" verdict compared a *split-mean* arm against a *full-set* bar. Re-checked
+> like-for-like, the flagship's crossing survives (0.4271 vs 0.5005/0.523/0.5735).
 
 **How much of it is vision? (imagination panel).** A 2×2 vision-ablation plus latent-fidelity
 panel separates what each arm's predictions owe to pixels versus integrated dynamics. The
@@ -697,6 +723,19 @@ training and a parallel-horizon (non-autoregressive) decode are the pre-register
 episodes: I-JEPA features beat DINOv2 at every horizon (fwd-ADE 3.194 vs 3.796 at 15 k steps) at
 5.5× the encode cost — and both overfit at this corpus size. In the frozen regime, encoder family
 matters less than data scale; this refines, and does not overturn, §7.1's REF-A finding.
+
+> 🟥 **DISCLOSURE (2026-07-26) — this comparison is INADMISSIBLE as published, and the source of truth
+> says so.** `MODEL_REGISTRY §2.2` marks the I-JEPA arm's canonical-val number **UNUSABLE**: *"320-ep
+> variant … Canonical val **80 % LEAKED** into its train set → guard excludes; clean number lives on the
+> f1b378 val"* (`taniteval/registry.py`, carried as open risk **R8**, `MODEL_REGISTRY:1556`). The
+> paragraph above discloses the **overfitting** but not the **leak**, and the leak is the disqualifying
+> defect: 3.194 is a partly-in-sample number, so **"I-JEPA beats DINOv2" is an overfit-regime ranking
+> with data binding, not a feature-quality verdict.** The DINOv2 control arm
+> (`refa-dino320-4brain-speed-15k`) is matched on episodes but the leak is not symmetric evidence — it
+> inflates whichever arm saw the val. **The claim is withdrawn pending re-evaluation on the clean
+> `f1b378` val (pod3 gates); until then it must not be quoted in either direction.** *(This does not
+> touch §7.1's REF-A finding, which rests on the canonical-corpus `refa-dynin-30k` / `refa-dinov2` arms
+> — 3.0471 and 2.1675 full-set, both clean.)*
 
 **REF-B at 6 k: the E2E baseline is strong and yaw-blind.** Direct waypoint regression reaches
 0.868 (its RMSE already beats CV) — but its rotation-gain in curves is 0.03: the encoder is
@@ -780,7 +819,10 @@ a true weather counterfactual a modest panel addition.
 **Hierarchy panel (H26).** The standing seam instrumentation (§3.3) returns a mixed, honest verdict
 that sharpened with training (ledger 2026-07-18). *Grounding dominance (H18) is confirmed and grew:*
 the grounded operative rollout (0.615 m) beats the ungrounded tactical head (3.43 m) by 5× at 19 k,
-and the gap widened to Δ 2.70 m at 30 k. *Cross-layer consistency holds:* maneuver and trajectory
+and the gap widened to Δ **+2.9568 m** at 30 k — ~~Δ 2.70 m~~ **corrected UPWARD 2026-07-25** by the same
+estimator migration that retracted the ctx→tactical seam below; this leg **survives and strengthens**,
+needing an **8.65× interval widening** to un-separate against a worst-measured 3.10×. *Cross-layer
+consistency holds:* maneuver and trajectory
 agree at 0.872 (κ 0.612). *But top-down conditioning was initially inert or harmful:* at 19 k the
 intent→operative seam was magnitude-swamped (§3.3; ungated `intent_proj` ‖31.4‖ vs action ‖28.3‖ —
 the deployed rollout was intent-free by design), and per-window intent *content* was inert on both a
@@ -857,7 +899,7 @@ from the path. v1's value is 0.452. It is the only quantity that separates "the 
 | v4.2b | floor lowered to 0.15 | not gated | 0.697 at step 4,000, held at floor | floor-tuning exhausted between 0.15 and 0.25 |
 
 v4.1 is the informative one. Its primary fails outright — the interval sits entirely above the bar, at
-roughly twice v1's 0.427 — while its canary passes, and the paired decomposition says exactly where the
+roughly twice v1's 0.427 — while its canary passes, and the paired decomposition says exactly where the <!-- lint-ok: "v1's 0.427" here is v4.1's ratio to the deployed full-set number, NOT the retracted 07-25 C1 claim (which was flagship-v4-fromscratch's trainer-log "~0.48 descending to v1's 0.427"); that one is retracted in the §7.6 block below. -->
 loss lives: speed error is CI-separated *worse* than constant velocity (Δ −0.366 [−0.491, −0.245]) and
 worse than hold-v0 on steady cruise (Δ −0.559 [−0.648, −0.469]), whereas **speed-decoupled path geometry
 CI-separatedly beats CV** (+0.115 [+0.017, +0.240]). The fault is the planner's longitudinal selection,
@@ -893,9 +935,22 @@ kind of detail that silently invalidates a gate: from random init the plan-free 
 **15.674**, not 0.42, so the warm-start arms' ≤ 0.55 bar is unreachable in 10 k steps and meaningless
 here. The pre-registered read is the **descent trajectory**, not the level. At full coupling
 (λ_plan = 1.0) the canary descends 15.674 → 2.59 (step 7,000) → **1.371** (step 9,000), where every
-warm-start arm instead rose; held-out ADE@2s falls 0.531 (9 k) → 0.4825 (10.5 k) → 0.4788 (11.5 k) with
-miss@2 m 0.169 and best-in-fan oracle 0.242, on the clean 881-window split. The 10 k gate returned
+warm-start arm instead rose; ~~held-out ADE@2s falls 0.531 (9 k) → 0.4825 (10.5 k) → 0.4788 (11.5 k)~~
+with miss@2 m 0.169 and best-in-fan oracle 0.242, on the clean 881-window split. The 10 k gate returned
 **CONTINUE**, restarts 0.
+
+> 🔧 **SUPERSEDED 2026-07-25 by the arm's first decision-grade eval** (`RETRACTION_LOG` 07-25, class
+> **C1**). The `0.4788`-style figures above are the **trainer's dense-20 in-loop statistic**; the
+> v1-comparable **4-gate-waypoint** reduction on the *same forward pass* reads differently, and at step
+> 15,000 the harness (episode-cluster bootstrap, B = 2000, pinned by recomputing v1 to **0.4271**
+> exactly) measures **ADE@2s 0.5839 m [0.4962, 0.6821]** — paired against v1, **Δ +0.1568 m
+> [+0.0630, +0.2504], CI-SEPARATED *BEHIND* v1**, not ≈0.05 m short of it. **A metric NAME is not a
+> metric DEFINITION**: both numbers are "val ADE@2s" on the same checkpoint and the same clean split and
+> differ only in the waypoint set averaged over. **What stands on that same eval:** the arm beats both
+> trivial floors CI-separated (CV 0.8377 by +0.2538; hold-v0 0.7876), and the WM canary at 2.0739 against
+> the planner's 0.5839 is the expected from-scratch co-evolution signature — **a descent position at 15 k
+> of 30 k, not a verdict.** The §7.6 architectural conclusion (coupling failure was a warm-start artifact)
+> is unaffected; only the *level* is.
 
 *Honest limits, carried with the result and load-bearing:* **(i)** these from-scratch numbers are the
 **trainer's in-loop evaluation** on the clean held-out split, not the canonical `eval_flagship_v4.py`
@@ -914,8 +969,10 @@ a **warm-start artifact** — the cost of attaching an untrained decision layer 
 trunk — and not an intrinsic conflict between the prediction objective and the control objective. The
 generalizable instrument is the pre-probe itself: **measure the seam's gradient geometry before buying a
 surgery**, because a near-orthogonal seam makes the entire projection family a no-op for the price of a
-few minutes of a free GPU. Whether the co-evolved arm ends *above* v1's 0.427 is open and is the next
-gate; the architectural question — can a planner be coupled at all — is answered yes.
+few minutes of a free GPU. At step 15 k of 30 k the co-evolved arm measures **0.5839 [0.4962, 0.6821]**,
+**CI-separated behind** v1's 0.4271 (paired Δ +0.1568 [+0.0630, +0.2504]) and CI-separated ahead of both
+trivial floors — so whether it *closes* that gap by 30 k is the open question and the next gate; the
+architectural question — can a planner be coupled at all — is answered yes.
 
 ### 7.7 Two additive directions: a frozen world model's ceiling is aleatoric, and a closed-loop lever that closed
 
@@ -1135,14 +1192,35 @@ negative is that **v1's own trained encoder is the stronger cross-rig substrate*
 
 **The metric suite meets real models, partially.** The beyond-ADE suite (LAL anticipation lead, TMS motion
 smoothness, OKRI kinematic-risk, CNCE compute-normalized capability, LOPS latent-planning stability) had
-been validated only on synthetic fixtures. It now has **first real numbers**, measured on the deployed
-262.8 M architecture over 30 comma2k19 validation episodes on a commodity RTX 4060: **decision-tick
-latency p50 14.331 ms** (encode 9.273 + K = 9 select 5.058), **TMS median 0.0435** and **CNCE median
-210,551**. Two disclosures travel with them: the TMS figure scores the **expert log**, establishing a
+been validated only on synthetic fixtures. It now has **first real numbers**, measured over 30 comma2k19
+validation episodes on a commodity RTX 4060: **decision-tick latency p50 14.331 ms** (encode 9.273 +
+K = 9 select 5.058), **TMS median 0.0435** and **CNCE median 210,551**. Two disclosures travel with them:
+the TMS figure scores the **expert log**, establishing a
 reference band, *not our policy*; and CNCE's collision term is zero by log-replay construction while its
 latency and parameter terms are weight-independent — so it is a real *architecture*-efficiency number,
 not a driving number. The remaining suite (LAL/OKRI/LOPS, and TLC below) stays **renderer-gated**: the
 simulator needed for rendered occlusion and signal geometry was confirmed absent at three separate probes.
+
+> 🔧 **CONDITIONS, ADDED 2026-07-26 — and a correction to what was measured.** This paragraph previously
+> attributed these numbers to *"the deployed 262.8 M architecture."* **Neither half was right.** Traced
+> to its artifact,
+> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+> (`exp: sc14-P2-real-tms-cnce-log-replay`; generator `real_telemetry_tms_cnce.py:109`), the measurement
+> is on a **`base250cam` WorldModel, `params_billions` 0.2628 → 262.8 M**, instantiated fresh — **not the
+> deployed flagship v1**, which measures **263,442,838 (263.4 M)**. Latency and the CNCE parameter term
+> are weight-independent, so the number is a valid *architecture* read; it is not a read of the deployed
+> checkpoint, and the coincidence that 262.8 M is also REF-B's count (`MODEL_REGISTRY:1481`) is exactly
+> the kind of collision that makes an unlabelled param count unquotable. **Full conditions, none of which
+> were stated:** RTX 4060 · **fp32 eager** (`WorldModel(...).to(device).eval()` — no autocast, no CUDA
+> graph) · comma2k19 val, **n = 30 episodes** · log-replay · random-init weights.
+> ⚠️ **This is the program's FOURTH live value for the decision tick** and it is the only one that did not
+> appear in `MODEL_REGISTRY` — the others are **11.16 ms** (fp16 + CUDA-graph) and **17.75 ms** (fp32),
+> both step-6,500/comma2k19/RTX 4060 (`MODEL_REGISTRY §1.2`), and the §7.4-era **15.1 / 17.2 ms** p50/p95
+> at line 549. Against its own fp32 sibling the gap is the *architecture config*, not a regression:
+> 14.331 (base250cam) vs 17.75 (step-6,500 model), same tick definition, same GPU, same corpus.
+> The registry has been given the row (`§1.2`, decision-tick table note). **The program already retracted
+> one latency figure for precisely this defect — a bare tick with no hardware, checkpoint, corpus or
+> precision — and then published a second one the same way.**
 
 **A traffic-light scenario and metric, because the corpus has none.** §7.9 measured that signalized
 intersections are 0 %-labeled in our corpus; the evaluation side had the mirror gap — no traffic-light
@@ -1372,12 +1450,14 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
 - v0.3 (2026-07-17): §7.2 second-round results — the 2026-07-14 speed-grounding reset (v₀ as third
   action channel); flagship-speed @19 k is the first CV-beater on every held-out metric
   (0.628 ± 0.055 ADE@2s; causal A/B +2.21 m [2.04, 2.39], win-rate 83.8 %); the CTRV
-  kinematic-oracle bar (0.544, ego-status shortcut replicated on our 73.9 %-straight corpus,
-  independently converged at 0.545); imagination panel (vision_use 12.9 % / imagination 8.7 % /
+  kinematic-oracle bar (**0.523** — the 0.544 quoted in this round was superseded 2026-07-18, §7.2;
+  ego-status shortcut replicated on our 73.9 %-straight corpus, independently converged at 0.545 on
+  *comma2k19*); imagination panel (vision_use 12.9 % / imagination 8.7 % /
   latent-gain +0.054; frozen-encoder arms are dynamics integrators); planning-brain eval (tactical
   3.38 m, speed-starved; goal-latent cos 0.885 — decode, not imagination, is the bottleneck);
   σ-dissipation under recursive rollout (false confidence; freeze-1 holds ≈0.25) with the 1-step
-  self-monitor cap and the §3.5 calibration caveat; matched frozen I-JEPA-vs-DINOv2 comparison;
+  self-monitor cap and the §3.5 calibration caveat; matched frozen I-JEPA-vs-DINOv2 comparison
+  (⚠️ **WITHDRAWN 2026-07-26 — ~80 % val leak, `MODEL_REGISTRY §2.2`/R8; see §7.2**);
   REF-B @6 k yaw-blindness and refbpatch. §7.1 marked superseded-as-diagnosis by the reset;
   abstract updated. All §7.2 numbers open-loop = weak claims (arXiv 2605.00066).
 - v0.4 (2026-07-19): 30 k first-run completion and the honest in-distribution/OOD split.
@@ -1474,7 +1554,9 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   v1's **+0.657**, paired CI excludes 0 on 3/4 arms).
   **§7.10 metrics + deployment.** Traffic-light scenario **SC-14** + **TLC = red_entry_gate ×
   stop_quality × green_flow** (a single red-run zeroes it; design oracle rule_barrier 1.0 vs soft_prior
-  0.0). First **real** beyond-ADE numbers on the deployed architecture: decision-tick **p50 14.331 ms**,
+  0.0). First **real** beyond-ADE numbers on a **`base250cam` 262.8 M WorldModel** (RTX 4060, fp32 eager,
+  comma2k19 n = 30 — **not** the deployed 263.4 M flagship; conditions added 2026-07-26, §7.10):
+  decision-tick **p50 14.331 ms**,
   TMS median **0.0435** (expert-log reference band, not our policy), CNCE median **210,551**;
   TLC/LAL/OKRI/LOPS remain **renderer-gated** (absence confirmed at 3 probes). **FP16 is the deployment
   precision; INT8 rejected** — no latency win (encoder +2.1 %, predictor −2.1 %) and weight+activation

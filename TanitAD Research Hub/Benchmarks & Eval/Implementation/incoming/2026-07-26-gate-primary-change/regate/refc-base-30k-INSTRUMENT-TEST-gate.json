@@ -1,0 +1,124 @@
+{
+  "run": "refc-base-30k-INSTRUMENT-TEST",
+  "card": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-gate-primary-change/regate/refc-base-30k-INSTRUMENT-TEST.card.json",
+  "current_step": 29999,
+  "gate_step": 10000,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 0.4728,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": true,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.3835, 0.5699]",
+    "role": "diagnostic",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "PROPOSAL-QUALITY DIAGNOSTIC: read and recorded, but it does not adjudicate on this card. ade_0_2s is measured over K=20 (2.0 s) and is MEASURED blind to corridor departure \u2014 on E1a's 43 paired windows the same trajectories give 0.0035 at K=20 vs 0.5877 at K=185, while the paired ADE@2s delta (0.0109 [-0.0, 0.0312]) is NOT separated."
+  },
+  "co_primary": {
+    "registered": true,
+    "metric": "corridor_departure_rate",
+    "threshold": 0.35,
+    "direction": "<=",
+    "registered_horizon_K": 185,
+    "registered_horizon_s": 18.5,
+    "registered_corridor_m": 1.75,
+    "stratum": "overall",
+    "junction_threshold": 0.5,
+    "source": "E1a closed-loop rollout, e1a_horizon_heldout44_K185.json",
+    "value": 0.5877,
+    "lo": 0.5107,
+    "hi": 0.6622,
+    "estimator": "episode_cluster_bootstrap",
+    "n_boot": 2000,
+    "horizon_K": 185,
+    "horizon_s": 18.5,
+    "corridor_primary_m": 1.75,
+    "corridor_thresholds_m": [
+      1.0,
+      1.75,
+      2.5
+    ],
+    "n_windows": 43,
+    "n_episodes": 43,
+    "surface": "closed_loop",
+    "block_version": "e1a_horizon.py::block (pre-library one-off)",
+    "found_in": "top-level",
+    "by_threshold_m": {
+      "1": {
+        "mean": 0.6567,
+        "lo": 0.5819,
+        "hi": 0.7277
+      },
+      "1.75": {
+        "mean": 0.5877,
+        "lo": 0.5107,
+        "hi": 0.6622
+      },
+      "2.5": {
+        "mean": 0.5482,
+        "lo": 0.4702,
+        "hi": 0.6225
+      }
+    },
+    "window_departure_rate": 0.9302,
+    "peak_xte_m": 38.9445,
+    "EXTRAPOLATION_frac_steps_lat_over_3m": 0.5281,
+    "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.30258,
+    "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.907,
+    "junction": {
+      "value": 0.8414,
+      "measured": true,
+      "lo": 0.8144,
+      "hi": 0.8667,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows": 6,
+      "n_episodes": 6,
+      "horizon_K": 185,
+      "peak_xte_m": 46.2475,
+      "definition": "|net heading change over the FIRST 2 s| >= 10 deg (E1a's kinematic signature, held FIXED across horizons). NEVER a topology \u2014 there is no map or lane graph in this corpus.",
+      "adjudicated": true,
+      "threshold": 0.5,
+      "pass": false
+    },
+    "n_by_stratum": {
+      "overall": 43,
+      "junction": 6,
+      "longitudinal": 19,
+      "other": 18
+    },
+    "surface_warning": "CLOSED-LOOP corridor departure (control error accumulates). It must never be pooled with an open-loop dense-path corridor number, which is a prediction residual against the expert's own path.",
+    "measured": true,
+    "pass": false,
+    "artifact": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-gate-primary-change/regate/corridor_refc-base-30k_K185_from_E1a.json",
+    "estimator_note": "episode-cluster bootstrap over val EPISODES (taniteval/ci.py). 'overlapping_holdout_se' is refused by this reader, not merely discouraged."
+  },
+  "horizon": {
+    "horizon_honest": true,
+    "adjudicating_metric": "co_primary.corridor_departure_rate",
+    "registered_horizon_K": 185,
+    "registered_horizon_s": 18.5,
+    "measured_horizon_K": 185,
+    "measured_horizon_s": 18.5,
+    "ceiling_K": 190,
+    "frac_of_ceiling": 0.9737,
+    "n_windows": 43,
+    "n_episodes": 43,
+    "n_junction_windows": 6,
+    "surface": "closed_loop",
+    "rendered": "corridor_departure_rate@1.75m K=185 (18.5 s, 97% of the K=190 corpus ceiling), n=43 windows / 43 episodes, surface=closed_loop",
+    "warning": ""
+  },
+  "secondary": [],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "co_primary.corridor_departure_rate",
+    "secondary(0)"
+  ],
+  "verdict": "RESTART",
+  "reason": "pre-registered gate failed",
+  "horizon_honest": true
+}

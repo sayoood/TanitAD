@@ -60,7 +60,7 @@ geometric-center crop will be ~215 px off for rig B. ⚠️
 | Location | `/root/taniteval/` on **`tanitad-eval`** (A40). **NOT in this repo.** ✅ |
 | Val set | `physicalai-val-0c5f7dac3b11` — **40 episodes → 881 windows**, episode-disjoint from train ✅ |
 | Protocol | window 8, stride 8, K = 20 steps @ 10 Hz, waypoints `[5,10,15,20]` = 0.5/1/1.5/2 s, metric-BEV ego frame, `nav=follow`, operative step **intent-free** ✅ |
-| Statistic | **8-split episode-disjoint jackknife**, `val_frac 0.2` → `heldout mean ± CI95`. `full_set` = plain mean over all 881. **Both are published; they differ. Always name which.** ⚠️ |
+| Statistic | 🟥 **`heldout` = `overlapping_holdout_se` — DEPRECATED, and BOTH its mean and its interval are defective.** *(This row read "**8-split episode-disjoint jackknife**" until 2026-07-26 — a **retracted label**, corrected in §6 1,300 lines below but not here, so every reader who stopped at §0.3 inherited it.)* `val_frac 0.2`, 8 **overlapping** random holdouts: the interval is **1.107–3.100× too narrow** and the "mean" is a **mean-of-split-means** that shifts the point estimate **−6.67 % to +11.69 %, bidirectionally** (27 arms). **Decision-grade = `full_set` mean + `taniteval/ci.py` episode-cluster bootstrap; paired for two arms.** Both are published; they differ. **Always name which — and never decide on `heldout`.** |
 | Trivial floor | **CV ADE@2s = 0.8248 heldout / 0.8377 full-set**; CTRV oracle 0.523; best-of-3 kinematic floor 0.5005; learned ego-status (no-vision) ceiling 0.5735 ✅ |
 | Invocation | `python3 -m taniteval.runner run --model <key> --episodes 40` → `results/<key>.json`; also `ab`, `imagination`, `hierarchy`, `report`; `python3 -m taniteval.closedloop --arm <key>`; `python3 -m taniteval.planner_p2 --arm <key>` ✅ |
 | Model registry | `/root/taniteval/taniteval/registry.py` — the mapping from arm key → checkpoint path → arch flags. **This file is the eval-side twin of this document.** ✅ |
@@ -153,7 +153,11 @@ Grounding heads live **outside** the model (separate ckpt keys) so a vanilla `Wo
 | miss@2m | 0.0602 ± 0.0121 | — |
 
 Clears every trivial bar on the same 881 windows: best-of-3 kinematic floor 0.5005 · CTRV oracle 0.523 ·
-no-vision ego-status ceiling 0.5735 · CV 0.8248.
+no-vision ego-status ceiling 0.5735 · CV 0.8248 heldout / **0.8377 full-set**.
+⚠️ **Read this comparison LIKE-FOR-LIKE (noted 2026-07-26).** The three bars are **full-set means by
+construction** (`bench.py:511`, `:558`) while `0.4522` is a split-mean — so the row as originally written
+compared two different estimators. On the full set the verdict **survives unchanged: 0.4271 vs
+0.5005 / 0.523 / 0.5735 / 0.8377.**
 
 **Strata — skill-vs-floor** (model ÷ per-stratum floor; <1 beats floor): straights **1.032** · gentle
 **0.679** · sharp **0.599** · **high-speed top decile 1.785 ← the one open weakness.**
@@ -179,6 +183,20 @@ divergence >5 m 22.2 %. Open-loop 0.452 → closed-loop 1.685: **open-loop does 
 |---|---|---|---|---|---|
 | **decision tick** = `encode(1 frame) + select_K9` | imagine-and-select only — **does NOT include the 20-step rollout** | RTX 4060 (declared Orin proxy, single-stream) | step **6,500** / **comma2k19** | **11.16 ms** fp16+CUDA-graph (17.75 fp32, **1.59×**) | 89.6 |
 | **planning tick** = `encode(8-frame window) + 20 SEQUENTIAL predictor steps → per-step metric Δpose → SE(2) accumulate` | the intent-free operative path that **produces the trajectory ADE@2s scores** | A40, exclusive (contamination-checked) | step **29,999** / **physicalai val** | **103.42** fp32 · **93.76** tf32 · **104.49** amp16 | 9.7 / 10.7 / 9.6 |
+
+**A THIRD instance of the *decision* tick exists and was missing from this registry — added 2026-07-26.**
+`Paper/TANITAD_PAPER.md §7.10` publishes **14.331 ms p50** (encode 9.273 + K = 9 select 5.058) as the
+beyond-ADE suite's headline latency — rounded to **14.33 ms** in `PROGRAM_OVERVIEW.md:54` and
+`LOOP_STATE.md:64` — and that value appeared **nowhere in this document** until now: the exact defect
+corrected below for "11.16 ms", repeated on a second tick. Traced and MEASURED:
+`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+(`latency.decision_tick_p50_ms`), generator `real_telemetry_tms_cnce.py:109`. **Conditions:** RTX 4060 ·
+**fp32 eager** (no autocast, no CUDA graph) · **comma2k19 val, n = 30 episodes** · log-replay ·
+architecture **`base250cam`, `params_billions` 0.2628 = 262.8 M, instantiated fresh (random init)** —
+latency is weight-independent, so this is an *architecture* read and **not** a read of the deployed
+263.44 M flagship. It is the same tick definition as row 1: **14.331 fp32 (base250cam) vs 17.75 fp32
+(step 6,500)** differ by architecture config, not by regression. Do not quote it as "the deployed
+architecture".
 
 ⚠️ **DEFECT CORRECTED 2026-07-20.** This line previously read *"deploy tick 11.16 ms / 89.6 Hz"* with no
 definition, hardware, checkpoint or corpus, and propagated in that bare form to `PROGRAM_OVERVIEW.md`,
@@ -515,16 +533,40 @@ not "best in the program", not "clearly worse". **Unfreezing changed nothing mea
 costing 144 % of the world model** — a cleaner and more damning result than either framing, because
 we paid a large measured price and got back nothing that survives a valid test.
 
-⚠️ **Two eid FAMILIES exist and their `heldout` means are NOT comparable.** `bench.py` clusters on
-**file indices 0–39**; `eval_flagship_v15/v16.py` deliberately cluster on the **real `episode_id`**
-(`real_episode_ids()`, e.g. 808464434) *because the eval pod's estimator does* — see the v15 docstring:
-*"using file indices instead would produce a DIFFERENT episode partition and therefore a different
-heldout mean."* Both partition the same 40 episodes (verified: a consistent 1-to-1 relabel), so
-**episode-cluster bootstrap and full-set are unaffected** — but `split_by_episode` hashes the id
-*values*, so the 8-split `heldout` numbers come from **different random partitions across the two
-families and must never be compared directly**. v1.6's 0.4886 heldout vs v1's 0.4522 is such a
-cross-family comparison; the **paired bootstrap above is the valid one**. Alignment for pairing was
-proven from the data, not assumed: `gt` and `cv` are identical **elementwise, max diff 0.0**.
+⚠️ **`heldout` means are NOT comparable across arms — v1.6's 0.4886 vs v1's 0.4522 is an invalid
+comparison, and the paired bootstrap above is the valid one.** *(Conclusion unchanged. **MECHANISM
+CORRECTED 2026-07-26** — the reason previously given here was wrong, and wrongly reassuring; see below.)*
+
+Two eid FAMILIES do exist: `bench.py` clusters on **file indices 0–39**, while
+`eval_flagship_v15/v16.py` deliberately cluster on the **real `episode_id`** (`real_episode_ids()`,
+e.g. 808464434) *because the eval pod's estimator does* — see the v15 docstring: *"using file indices
+instead would produce a DIFFERENT episode partition and therefore a different heldout mean."*
+
+> 🔧 **CORRECTION (2026-07-26). This block used to say `split_by_episode` "hashes the id *values*", so
+> the two families drew "different random partitions". IT DOES NOT HASH.** MEASURED from the emitter:
+> `stack/tanitad/eval/gates.py:139-152` takes `sorted(set(int(e)))` and hands it to
+> `stack/tanitad/instruments/checks.py:49-58` (`i3_episode_split`), which calls
+> `torch.randperm(len(episode_ids))` — it permutes **positions in the sorted list**, never the values.
+> An **order-preserving** relabelling therefore yields the **identical** partition. MEASURED
+> 2026-07-26 on the two dumps themselves: both `windows_flagship-30k.pt` (0–39) and
+> `windows_flagship-v16-ab-ft.pt` (real ids) are order-preserving w.r.t. file order, and
+> `split_by_episode` returns **byte-identical val index lists for all 8 seeds** (176/881 windows each).
+> The v15 docstring's warning is a **real hazard for an order-CHANGING relabel** — it just is not what
+> happened here.
+>
+> **Why the correction matters rather than being pedantry:** the old wording implied that *same-family*
+> split-means ARE comparable. **They are not.** The defect is the **estimator itself** — the split-mean
+> is biased −6.67 % to +11.69 % per arm, bidirectionally (§6), which is present *within* a family and is
+> larger than most gaps being compared. v1.6 is the extreme case in the whole program: its split-mean
+> 0.4886 overstates its full-set 0.4375 by **+11.69 %**, while v1's 0.4522 overstates 0.4271 by
+> +5.88 % — so the legacy Δ reads `+0.0364` where the true full-set Δ is `+0.0104` (**×3.5**). No part of
+> that distortion needs two eid families to occur. *(Root-cause class: a plausible mechanism was inferred
+> from a correct observation and never read off the code — the same class as the `df`/quota and
+> `step_s` traps in `CLAUDE.md`.)*
+
+Both families partition the same 40 episodes, so **episode-cluster bootstrap and full-set are
+unaffected** either way. Alignment for pairing was proven from the data, not assumed: `gt` and `cv` are
+identical **elementwise, max diff 0.0** (re-verified 2026-07-26).
 ⚠️ **Use `eval_flagship_v16.py` ONLY**: it re-encodes val frames through the unfrozen trunk; cached
 `states_val.pt` would silently score the OLD trunk. The pod copy was stale (248 lines, no
 `windows_*.pt` persistence) and was synced from HEAD before this run.
@@ -1441,10 +1483,17 @@ ADE only **0.647 → 0.669 m (3.4 %)** and beats the head in **all 9** configs. 
 > This block was historically labelled *"8-split episode-disjoint jackknife"*. It is **neither a
 > jackknife nor a valid SE**: `bench.py` draws 8 **independent random 20 % holdouts** from the same 40
 > episodes and takes `1.96·std/√8` over overlapping estimates — Monte-Carlo CV, measuring
-> **split-selection noise**, not model uncertainty. Measured **1.28–2.06× too narrow** across 10 arms
-> (median 1.51×). Coverage simulation: naive **62.3 %** vs cluster-bootstrap **93.8 %** (target 93–97 %).
-> The **mean** is also a split-mean and **compresses between-arm gaps** (rows 1–2: 0.006 m here vs
-> **0.0443 m** on the full set).
+> **split-selection noise**, not model uncertainty. Measured **1.107–3.100× too narrow, median 1.499×**
+> across **27 arms** — MEASURED 2026-07-25,
+> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
+> *(The older **1.28–2.06×, median 1.51×** band was never wrong, only **under-sampled at 10 arms**: all
+> 10 reproduce bit-for-bit against `Project Steering/CI_RECOMPUTE_2026-07-20.json`.)* Coverage
+> simulation: naive **62.3 %** vs cluster-bootstrap **93.8 %** (target 93–97 %).
+> **The `mean` column is ALSO defective, and that is the newer and larger finding.** It is a
+> mean-of-split-means, so besides **compressing between-arm gaps** (rows 1–2: 0.006 m here vs
+> **0.0443 m** on the full set) it **shifts the single-arm point estimate by −6.67 % to +11.69 %,
+> bidirectionally — 11 of 27 arms inflated, 16 deflated, none flat.** No legacy point estimate may be
+> assumed conservative, and no ranking may be read off two split-means.
 >
 > **Decision-grade intervals: `taniteval/ci.py` episode-cluster bootstrap** (2000 resamples over the 40
 > val episodes); for two arms on the same windows use the **paired** form, never a quadrature
@@ -1462,38 +1511,83 @@ ADE only **0.647 → 0.669 m (3.4 %)** and beats the head in **all 9** configs. 
 > (+0.1199, [0.0649, 0.1771]) · v1-30k > v1-19k (+0.1881, [0.1512, 0.2265]). Every `Beats CV` ✅ was
 > re-verified and **holds**.
 
-*Rows below are the legacy heldout split-mean ± `overlapping_holdout_se` (deprecated, retained so
-published figures stay traceable), physicalai val, read from the raw eval JSONs on `tanitad-eval`.*
+**RE-EMITTED 2026-07-26 under the corrected estimator** (from the 2026-07-25 blast-radius recompute).
+The primary ADE column is now the **full-set
+mean over all 881 windows** with its **episode-cluster bootstrap** CI95 (`taniteval/ci.py`, B = 2000,
+resampling unit = the val episode); every ordering claim comes from the **paired** bootstrap on the same
+windows, never from differencing two column values. The final column retains the superseded figure,
+explicitly labelled **`legacy_split_mean ± overlapping_holdout_se` (DEPRECATED)** — kept rather than
+deleted so every previously published number stays traceable. Sources: the per-row inline
+`src:` drift pointers below (machine-checked by `tools/registry_lint.py`), cross-validated against
+`…/incoming/2026-07-25-jack-blast-radius/jack_recompute.json` (27 arms recomputed from the raw
+`windows_*.pt` dumps, dev-box CPU, no GPU). MEASURED.
 
-| Rank | Arm | TanitEval key | Step | Params | ADE@2s | FDE@2s | miss@2m | Beats CV |
-|---:|---|---|---:|---:|---:|---:|---:|:--:|
-| **1=** | **Flagship v1 (speed+jerk) FINAL** | `flagship-30k` | 29 999 | 263.4 M | **0.4522 ± 0.0312** *(full-set 0.4271, boot [0.3675, 0.4871])* | 0.9437 | 0.0602 | ✅ |
-| **1=** | **REF-C-XL** (anchored diffusion) **FINAL** | `refc-xl-30k` | 29 999 | 251.9 M | **0.458 ± 0.057** *(full-set 0.4714, boot [0.3896, 0.5556])* | 0.972 | 0.146 | ✅ |
-| **1=** | **REF-C-base** (anchored diffusion) **FINAL** | `refc-base-30k` | 29 999 | **104.2 M** | **0.4523 ± 0.0497** *(full-set 0.4728, boot [0.3835, 0.5699])* | 0.954 | 0.135 | ✅ |
-| — | **REF-C-small** (anchored diffusion) FINAL — SEPARATED 3rd rung (§4.2) | `refc-small-30k` | 29 999 | **54.7 M** | **0.5007 ± 0.0671** *(full-set 0.5261, boot [0.4295, 0.6262])* | 1.045 | 0.171 | ✅ |
-| — | *best-of-3 kinematic floor* | — | — | — | *0.5005* | — | — | — |
-| — | *CTRV oracle* | — | — | — | *0.523* | — | — | — |
-| — | *no-vision ego-status ceiling* | — | — | — | *0.5735* | — | — | — |
-| 3 | **REF-B v2** (arch-v2) FINAL | `refb-v2-30k` | 29 999 | 271.6 M | **0.5921 ± 0.0685** | 1.2305 | 0.2025 | ✅ |
-| 4 | Flagship v1, 19 k relay | `flagship-speed` | 19 000 | 263.4 M | 0.6277 ± 0.0551 | 1.3173 | 0.1799 | ✅ |
-| 5 | REF-B v2 @20 k milestone | `refb-v2-20k` | 20 000 | 271.6 M | 0.6462 ± 0.0548 | 1.3050 | 0.2132 | ✅ |
-| — | **Constant velocity (the floor)** | — | — | 0 | **0.8248** | 1.7081 | — | — |
-| 6 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8255 ± 0.0992 | 1.6714 | 0.2641 | ✗ |
-| 7 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8682 ± 0.0817 | 1.7341 | 0.3343 | ✗ |
-| 8 | **P2 CEM planner** over frozen v1 | `planner_p2` | (n/a) | 0 trained | 0.893 ± 0.114 | — | — | ✗ |
-| 9 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | — | 2.1322 ± 0.1821 | 3.2619 | 0.6245 | ✗ |
-| 10 | Flagship **no-speed** (ablation) | `flagship-nospeed` | ~22 000 | 263.4 M | 2.9176 ± 0.3558 | 4.9395 | 0.7395 | ✗ |
-| 11 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 2.9196 ± 0.3937 | 4.5832 | 0.7246 | ✗ |
-| 12 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 6.179 ± 1.2845 | 12.7015 | 0.8407 | ✗ |
-| — | Flagship v3enc | — | running | 272.9 M | 🟥 not evaluated | — | — | — |
-| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | 3.38 (3.150 in the P2 pass) | — | — | ✗ |
+> ⚠️ **THE ROW ORDER CHANGED — the rows were NOT shuffled, the ranking moved.** Recomputing all 27
+> in-repo arms moves **10 of 27 positions** in the cross-arm ranking. Three of those order changes land
+> inside *this* table, and each is a finding rather than a re-render:
+> 1. **REF-C-XL and REF-C-base SWAP.** Legacy: base 0.4523 ahead of XL 0.4577. Full-set: **XL 0.4714
+>    ahead of base 0.4728.** The paired delta **flips sign** — legacy `+0.0054` → true **−0.0013,
+>    CI95 [−0.0316, +0.0281]**. Neither is separated, so **the 1= three-way tie stands**; what moved is
+>    the sign of a non-significant gap, which is exactly why it must not be read as an ordering.
+> 2. **`refb-10k` crosses the CV floor.** Legacy 0.8255 vs CV 0.8248 → ✗. Full-set 0.8372 vs CV 0.8377
+>    → ✅. The paired bootstrap does **not** separate them, so the honest verdict is **TIE** — neither
+>    the ✗ this table used to print nor the ✅ `LEADERBOARD.md` prints. The arm sits *between* the two
+>    circulating CV floors (0.8248 split-mean / 0.8377 full-set), which is the whole reason the two
+>    documents have been contradicting each other on this one row.
+> 3. **Flagship v3enc is no longer "🟥 not evaluated"** — `driving_flagship-v3enc-10k.json` is in-repo
+>    and gives 1.9654 [1.6556, 2.2859]. That row contradicted §1.4's own RESTART verdict; it now ranks,
+>    which pushes REF-A/no-speed/v2 down one slot each. Ranks were renumbered accordingly (old 3–12 →
+>    new 5–15); the `Beats CV` column is unchanged for every arm except `refb-10k`.
+>
+> ⚠️ **The three trivial bars are deliberately NOT re-emitted — they were never split-means.** MEASURED
+> from the emitter: `bench.py:485-511` (`kinematic_floor` → `best_of_3_ade_0_2s`) and `bench.py:558`
+> (`ctrv_ade`) both take a plain `.mean()` over all 881 windows. **Consequence, and it is not small:
+> every legacy "clears the floor" verdict in this program compared a *split-mean* model number against a
+> *full-set* floor** — an estimator mismatch, not a like-for-like test. Re-checked like-for-like on the
+> full set: v1 (0.4271), REF-C-XL (0.4714) and REF-C-base (0.4728) still clear all three bars, but
+> **REF-C-small no longer clears the CTRV oracle** (0.5261 vs 0.523; its legacy 0.5007 did). The CV row
+> is the one floor that has both forms, and both are printed.
+
+| Rank | Arm | TanitEval key | Step | Params | **ADE@2s — full-set mean [episode-cluster bootstrap CI95]** | FDE@2s | miss@2m | Beats CV | `legacy_split_mean ± overlapping_holdout_se` (DEPRECATED) |
+|---:|---|---|---:|---:|---|---:|---:|:--:|---|
+| **1=** | **Flagship v1 (speed+jerk) FINAL** | `flagship-30k` | 29 999 | 263.4 M | **0.4271** [0.3675, 0.4871] <!-- src: taniteval/results/driving_flagship-30k.json#headline.ade_0_2s.mean --> | 0.9075 | 0.0454 | ✅ sep | *0.4522 ± 0.0312* |
+| **1=** | **REF-C-XL** (anchored diffusion) **FINAL** | `refc-xl-30k` | 29 999 | 251.9 M | **0.4714** [0.3896, 0.5556] <!-- src: taniteval/results/driving_refc-xl-30k.json#headline.ade_0_2s.mean --> | 1.0061 | 0.1419 | ✅ sep | *0.4577 ± 0.0572* |
+| **1=** | **REF-C-base** (anchored diffusion) **FINAL** | `refc-base-30k` | 29 999 | **104.2 M** | **0.4728** [0.3835, 0.5699] <!-- src: taniteval/results/driving_refc-base-30k.json#headline.ade_0_2s.mean --> | 1.0031 | 0.1419 | ✅ sep | *0.4523 ± 0.0497* |
+| 4 | **REF-C-small** (anchored diffusion) FINAL — SEPARATED 3rd rung of the REF-C ladder (§4.2) | `refc-small-30k` | 29 999 | **54.7 M** | **0.5261** [0.4295, 0.6262] | 1.1115 | 0.1714 | ✅ sep | *0.5007 ± 0.0671* |
+| — | *best-of-3 kinematic floor* — full-set by construction (`bench.py:511`) | — | — | — | *0.5005* | — | — | — | *n/a — never went through the estimator* |
+| — | *CTRV oracle* — full-set by construction (`bench.py:558`) | — | — | — | *0.523* | — | — | — | *n/a* |
+| — | *no-vision ego-status ceiling* — full-set by construction | — | — | — | *0.5735* | — | — | — | *n/a* |
+| 5 | **REF-B v2** (arch-v2) FINAL | `refb-v2-30k` | 29 999 | 271.6 M | **0.5913** [0.4766, 0.7131] <!-- src: taniteval/results/driving_refb-v2-30k.json#headline.ade_0_2s.mean --> | 1.2434 | 0.2066 | ✅ sep | *0.5921 ± 0.0685* |
+| 6 | Flagship v1, 19 k relay | `flagship-speed` | 19 000 | 263.4 M | 0.6152 [0.5422, 0.6951] <!-- src: taniteval/results/driving_flagship-speed.json#headline.ade_0_2s.mean --> | 1.3168 | 0.1669 | ✅ sep | *0.6277 ± 0.0551* |
+| 7 | REF-B v2 @20 k milestone | `refb-v2-20k` | 20 000 | 271.6 M | 0.6435 [0.5410, 0.7516] <!-- src: taniteval/results/driving_refb-v2-20k.json#headline.ade_0_2s.mean --> | 1.3218 | 0.2157 | ✅ sep | *0.6462 ± 0.0548* |
+| 8 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8372 [0.6753, 1.0218] <!-- src: taniteval/results/driving_refb-10k.json#headline.ade_0_2s.mean --> | 1.6964 | 0.2679 | ⚠️ **TIE** (flip) | *0.8255 ± 0.0992* |
+| — | **Constant velocity (the floor)** | — | — | 0 | **0.8377** [0.6234, 1.0716] <!-- src: taniteval/results/driving_flagship-30k.json#floor_values.cv.ade_0_2s.value --> | 1.7406 | 0.3042 | — | *0.8248* |
+| 9 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8629 [0.6928, 1.0385] <!-- src: taniteval/results/driving_refb.json#headline.ade_0_2s.mean --> | 1.7351 | 0.3178 | ✗ | *0.8682 ± 0.0817* |
+| 10 | **P2 CEM planner** over frozen v1 | `planner_p2` | (n/a) | 0 trained | 🟥 **NOT RECOMPUTABLE** — no raw JSON and no `windows_*.pt` in the repo; `planner_p2.py` is the only unmigrated module and emits no `full_set` block | — | — | ✗ | *0.893 ± 0.114* |
+| 11 | Flagship **v3enc** (RESTART, §1.4) | `flagship-v3enc-10k` | 10 000 | 272.9 M | 1.9654 [1.6556, 2.2859] <!-- src: taniteval/results/driving_flagship-v3enc-10k.json#headline.ade_0_2s.mean --> | 3.6084 | 0.6901 | ✗ | *2.1072 ± 0.2020* |
+| 12 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | — | 2.1675 [1.9081, 2.4212] <!-- src: taniteval/results/driving_refa-dinov2.json#headline.ade_0_2s.mean --> | 3.2803 | 0.6129 | ✗ | *2.1322 ± 0.1821* |
+| 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] <!-- src: taniteval/results/driving_flagship-nospeed.json#headline.ade_0_2s.mean --> | 5.0282 | 0.7423 | ✗ | *2.9176 ± 0.3558* |
+| 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 3.0471 [2.4984, 3.6878] <!-- src: taniteval/results/driving_refa-dynin-30k.json#headline.ade_0_2s.mean --> | 4.7642 | 0.7412 | ✗ | *2.9196 ± 0.3937* |
+| 15 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] <!-- src: taniteval/results/driving_flagship-v2-6k.json#headline.ade_0_2s.mean --> | 12.4011 | 0.8524 | ✗ | *6.179 ± 1.2845* |
+| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | 🟥 no windows dump — legacy only | — | — | ✗ | *3.38 (3.150 in the P2 pass)* |
+
+*Arms recomputed but not ranked here (same 881 windows; full table in `jack_recompute.json`):*
+**v1.6** `flagship-v16-ab-ft` 0.4375 [0.3423, 0.5501] (legacy 0.4886 — the largest single-arm bias in the
+program, **+11.69 %**; paired-TIED with v1, §1.4b) · **v4.1-10k** 0.8522 [0.7468, 0.9800] (legacy 0.8707)
+· **v4.2-step4000** 0.9869 [0.8795, 1.1088] (legacy 1.0490) · the REF-C v1.2 family and the REF-A
+milestone ladder. **Every one of these was previously published as a split-mean.**
 
 **Two readings that matter:**
-1. The **trained-encoder** arms occupy every slot above CV. The **frozen-encoder** arms occupy slots 9 and
-   11. That is H4, in one table.
+1. The **trained-encoder** arms occupy every slot above CV. The **frozen-encoder** arms occupy slots **12
+   and 14** (slots 9 and 11 before the 2026-07-25 re-emission renumbered the table). That is H4, in one
+   table — and it **survives the estimator correction**: REF-A's gap to v1 is a paired **+2.6200 m
+   [+2.0945, +3.2570]**, separated by ~40× the largest measured bias.
 2. The flagship's supervised **tactical head** (3.38 m) is *worse than CV*, while the same model's
-   operative rollout is 0.452 m. **The head is a lossy readout of a good world model** — which is exactly
-   what P2 exploits and what v3 is built on.
+   operative rollout is **0.4271 m** (legacy split-mean 0.452). **The head is a lossy readout of a good
+   world model** — which is exactly what P2 exploits and what v3 is built on. ⚠️ Both sides of that
+   comparison are still legacy statistics (`plan_flagship-30k` has no windows dump, and P2 is
+   un-recomputable) — the *ratio* is far too large for the ≤ 11.7 % bias to touch, but neither scalar is
+   decision-grade on its own.
 3. **Ranks 1–2 tie on accuracy, so latency is the tiebreaker — and it is not close.** Measured
    2026-07-20 on one A40, batch 1, identical precision flags (`taniteval/results/eff_*.json`):
    flagship planning tick **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16) vs REF-C **44.28 / 27.84 /

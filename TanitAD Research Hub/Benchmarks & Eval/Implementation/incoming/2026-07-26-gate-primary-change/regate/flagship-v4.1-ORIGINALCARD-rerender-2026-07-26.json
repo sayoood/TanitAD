@@ -1,0 +1,126 @@
+{
+  "run": "flagship-v4",
+  "card": "Project Steering/Gates/flagship-v4.card.json",
+  "current_step": 12500,
+  "gate_step": 10000,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "restart_budget_ok": true,
+  "matched_step_ratio": {
+    "available": false,
+    "metric": "g_op_fwd_ade_m",
+    "reference_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+    "note": "comparative diagnostic UNAVAILABLE: [gate] REFUSING: no matched steps for g_op_fwd_ade_m. This is a diagnostic, so it does not block the verdict \u2014 but no comparative statistic may be quoted for this pair.",
+    "arm_log_metrics": [
+      "canary_ade@2s",
+      "canary_baseline",
+      "canary_vs_base",
+      "controller_action",
+      "elapsed_s",
+      "gnorm_head",
+      "gnorm_trunk",
+      "lam_mult",
+      "lambda_plan",
+      "lr_head",
+      "lr_trunk",
+      "oracle_ade",
+      "plan_ade",
+      "planner",
+      "ref_0.452",
+      "total",
+      "val",
+      "wm"
+    ]
+  },
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 0.8522,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": false,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; cluster_bootstrap) CI [0.7468, 0.98]",
+    "role": "kill",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "KILL: this card registers no horizon-honest co-primary, so the demoted metric still adjudicates. The verdict is stamped horizon_honest: false."
+  },
+  "co_primary": {
+    "registered": false,
+    "measured": false,
+    "note": "this card predates the 2026-07-26 horizon correction and registers no co-primary",
+    "no_co_primary_reason": null
+  },
+  "horizon": {
+    "horizon_honest": false,
+    "adjudicating_metric": "ade_0_2s",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "n_windows": null,
+    "n_episodes": null,
+    "rendered": "ade_0_2s @ K=20 (2.0 s), n not recorded",
+    "warning": "this verdict rests on ade_0_2s at K=20 (2.0 s) alone, which is MEASURED blind to the dominant failure mode: on the same 43 held-out windows corridor departure is 0.0035 at K=20 and 0.5877 at K=185 (junction 0.025 -> 0.8414; peak XTE 0.35 m -> 38.94 m). Re-gate on a card carrying a co-primary."
+  },
+  "secondary": [
+    {
+      "metric": "wm_canary_ade_2s",
+      "value": 0.4599445164203644,
+      "op": "<=",
+      "threshold": 0.55,
+      "pass": true
+    },
+    {
+      "metric": "speed_benefit_recovered_frac",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "oracle_in_fan",
+      "value": 0.4837766247426205,
+      "op": "<=",
+      "threshold": 0.3,
+      "pass": false
+    },
+    {
+      "metric": "miss_at_2m",
+      "value": 0.2486,
+      "op": "<=",
+      "threshold": 0.1,
+      "pass": false
+    },
+    {
+      "metric": "seam_norm_ratio_max",
+      "value": 0.1796,
+      "op": "<=",
+      "threshold": 1.0,
+      "pass": true
+    },
+    {
+      "metric": "encoder_touching_levers",
+      "value": 2.0,
+      "op": "<=",
+      "threshold": 2.0,
+      "pass": true
+    },
+    {
+      "metric": "deploy_tick_p99_ms",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "nonav_route_beats_majority",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    }
+  ],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "ade_0_2s",
+    "secondary(8)"
+  ],
+  "verdict": "INCOMPLETE",
+  "reason": "a pre-registered secondary gate was not measured",
+  "horizon_honest": false
+}

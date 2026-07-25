@@ -46,6 +46,26 @@ the §17.1b dry-run fixture whose every number is known:
                                        the pure command echo -- FAILS, correctly)
 So the honest v1 verdict is COMPLETE/RESTART (nonav_route fails); COMPLETE, not
 INCOMPLETE, is the deliverable -- the machinery now renders a full verdict.
+
+THE CO-PRIMARY EMITTER (added 2026-07-26, Tier-1 #1)
+----------------------------------------------------
+``run_gate.py`` gained a horizon-honest **co-primary**
+(``corridor_departure_rate`` at a pre-registered K) and demoted ``ade_0_2s`` to
+a diagnostic. That co-primary needs an emitter for the same reason the three
+secondaries above did: without one, every gate renders INCOMPLETE.
+
+``corridor`` / ``corridor-arg`` below read a :mod:`taniteval.corridor` result
+JSON -- or compute one from a persisted ``windows_<arm>.pt`` -- and print the
+exact ``--corridor-json`` argument ``run_gate.py check`` consumes.
+
+⚠️ MEASURED 2026-07-26, and this is the current blocker: **0 of the 30 committed
+``windows_*.pt`` dumps carry ``pred_dense``/``gt_dense``**; every one is the
+4-waypoint sparse view with ``wp_steps = [5, 10, 15, 20]``. So
+:func:`corridor_from_windows` returns ``taniteval.corridor``'s self-describing
+``skipped`` node for all of them, and the open-loop dense surface caps at
+**K=20 (2.0 s)** even once the dense keys land -- which is the blind horizon
+itself. **A K>=100 co-primary needs a CLOSED-LOOP rollout (E1a's surface), i.e.
+GPU.** The emitter says so instead of fabricating a number at the wrong horizon.
 """
 from __future__ import annotations
 
@@ -236,6 +256,127 @@ def speed_benefit_emit(arm_log, nospeed_log=None, repo_root=None) -> dict:
 
 
 # ============================================================================ #
+# corridor_departure_rate @ K  --  taniteval.corridor  (THE CO-PRIMARY)         #
+# ============================================================================ #
+CORRIDOR_METRIC = "corridor_departure_rate"
+CORRIDOR_HALFWIDTH_M = 1.75            # taniteval.corridor.CORRIDOR_HALFWIDTH_M
+HORIZON_CEILING_K = 190                # 190-199-frame clips, T - W - K >= 1
+ADE2S_K = 20                           # the blind horizon, named not implied
+
+
+def corridor_from_corridor_json(path, stratum="overall",
+                                metric=CORRIDOR_METRIC) -> dict:
+    """Emit the co-primary from an already-computed ``taniteval.corridor`` JSON.
+
+    Pure JSON, no torch: this is the path that works on a dev box. The value is
+    the panel's own -- nothing is recomputed -- and the horizon travels with it,
+    because a corridor number without its K is exactly the defect the co-primary
+    replaces."""
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    r = corridor_from_corridor_dict(doc, stratum=stratum, metric=metric)
+    r.setdefault("provenance", {})["corridor_panel"] = str(path)
+    if r.get("value") is not None:
+        r["run_gate_arg"] = f"--corridor-json {path}"
+    return r
+
+
+def corridor_from_corridor_dict(doc: dict, stratum="overall",
+                                metric=CORRIDOR_METRIC) -> dict:
+    """Logic core of :func:`corridor_from_corridor_json` (testable without a file)."""
+    out = {"gate_metric": metric, "stratum": stratum, "value": None,
+           "provenance": {"emitter": "taniteval.corridor"}}
+    if not isinstance(doc, dict):
+        out["note"] = "not a corridor result JSON"
+        return out
+    if doc.get("skipped"):
+        out["note"] = f"corridor panel SKIPPED: {doc['skipped']}"
+        out["dense_surface_available"] = doc.get("dense_surface_available")
+        out["evidence_class"] = "NOT MEASURED (no dense/closed-loop surface)"
+        return out
+    node = doc
+    for key in ("corridor", "co_primary", "driving"):
+        if not isinstance(node.get(stratum), dict) and isinstance(node.get(key), dict):
+            node = node[key]
+    blk = node.get(stratum)
+    if not isinstance(blk, dict):
+        out["note"] = (f"no {stratum!r} stratum in this document "
+                       f"(keys: {sorted(node)[:12]})")
+        return out
+    m = blk.get(metric)
+    if not isinstance(m, dict) or "mean" not in m:
+        out["note"] = f"{metric!r} is not an interval node in stratum {stratum!r}"
+        return out
+    K = blk.get("horizon_K")
+    junction = node.get("junction") if isinstance(node.get("junction"), dict) else None
+    out.update({
+        "value": float(m["mean"]), "lo": m.get("lo"), "hi": m.get("hi"),
+        "estimator": m.get("estimator"), "n_boot": m.get("n_boot"),
+        "horizon_K": K,
+        "horizon_s": blk.get("horizon_s",
+                             None if K is None else round(float(K) * 0.1, 2)),
+        "corridor_primary_m": blk.get("corridor_primary_m"),
+        "n_windows": blk.get("n_windows"), "n_episodes": blk.get("n_episodes"),
+        "surface": blk.get("surface"),
+        "evidence_class": (f"MEASURED (ours; taniteval.corridor, "
+                           f"{m.get('estimator')}, n={blk.get('n_windows')} "
+                           f"windows / {blk.get('n_episodes')} episodes)"),
+        # reported SEPARATELY, always -- 0.8414 vs 0.5877 at K=185
+        "junction": None if junction is None else {
+            "value": (junction.get(metric) or {}).get("mean"),
+            "lo": (junction.get(metric) or {}).get("lo"),
+            "hi": (junction.get(metric) or {}).get("hi"),
+            "n_windows": junction.get("n_windows"),
+            "n_episodes": junction.get("n_episodes")},
+        "horizon_note": (
+            "a corridor number is meaningless without its K: on E1a's own 43 "
+            "windows the SAME trajectories give 0.0035 at K=20 and 0.5877 at "
+            f"K=185. The corpus ceiling is K={HORIZON_CEILING_K} "
+            f"({HORIZON_CEILING_K * 0.1:.1f} s)."),
+    })
+    if K is not None and int(K) <= ADE2S_K:
+        out["WARNING_blind_horizon"] = (
+            f"K={K} is at or below ade_0_2s' own horizon ({ADE2S_K} = "
+            f"{ADE2S_K * 0.1:.1f} s). run_gate.py will REFUSE this as a "
+            f"co-primary.")
+    return out
+
+
+def corridor_from_windows(windows_path, halfwidth=CORRIDOR_HALFWIDTH_M,
+                          n_boot=2000, out_json=None) -> dict:
+    """Compute the co-primary from a persisted ``windows_<arm>.pt``.
+
+    Lazily imports :mod:`taniteval.corridor` (torch) so the torch-free emitters
+    above keep working on a box without it. Returns the same shape as
+    :func:`corridor_from_corridor_json`, including the honest ``skipped`` node
+    when the dump carries no dense path -- which, MEASURED 2026-07-26, is all 30
+    of them."""
+    repo = Path(__file__).resolve().parents[2]
+    for p in (repo / "taniteval", repo / "stack", repo / "stack" / "scripts"):
+        sys.path.insert(0, str(p))
+    from taniteval import corridor as C          # noqa: E402  (lazy: needs torch)
+    from taniteval import rollout                # noqa: E402
+    res = C.from_windows(rollout.load_windows(str(windows_path)),
+                         primary=halfwidth, n_boot=n_boot)
+    if out_json:
+        Path(out_json).parent.mkdir(parents=True, exist_ok=True)
+        Path(out_json).write_text(json.dumps(res, indent=2, default=str),
+                                  encoding="utf-8")
+    r = corridor_from_corridor_dict(res)
+    r["provenance"]["windows"] = str(windows_path)
+    if out_json:
+        r["provenance"]["corridor_panel"] = str(out_json)
+        r["run_gate_arg"] = f"--corridor-json {out_json}"
+    if res.get("skipped"):
+        r["blocker"] = (
+            "This dump has no dense path, so no corridor number exists at ANY "
+            "horizon. Note that even with pred_dense/gt_dense the open-loop "
+            f"surface caps at K={ADE2S_K} ({ADE2S_K * 0.1:.1f} s) -- the blind "
+            "horizon. A K>=100 co-primary requires a CLOSED-LOOP rollout "
+            "(E1a's surface, e1a_horizon.py), which needs GPU.")
+    return r
+
+
+# ============================================================================ #
 # gate-values : assemble all three -> the --secondary-value strings run_gate eats#
 # ============================================================================ #
 GATE_NAMES = ("deploy_tick_p99_ms", "speed_benefit_recovered_frac",
@@ -251,11 +392,21 @@ def _fmt_value(name, v):
 
 
 def gate_values(eff_json=None, hierarchy_json=None, arm_log=None,
-                nospeed_log=None, repo_root=None, precision="fp32") -> dict:
-    """Compute all three secondaries and the exact ``--secondary-value`` args."""
+                nospeed_log=None, repo_root=None, precision="fp32",
+                corridor_json=None) -> dict:
+    """Compute all three secondaries and the exact ``--secondary-value`` args.
+
+    ``corridor_json`` additionally emits the CO-PRIMARY into ``co_primary`` and
+    the matching ``--corridor-json`` argument. It is deliberately kept OUT of
+    ``GATE_NAMES``/``secondary_value_args``: the co-primary is not a secondary
+    and must never be passed through the ``--secondary-value`` channel, where
+    an off-card value silently becomes report-only."""
     out: dict = {"emitted_utc": None, "secondaries": {}}
     from datetime import datetime, timezone
     out["emitted_utc"] = datetime.now(timezone.utc).isoformat()
+    if corridor_json:
+        out["co_primary"] = corridor_from_corridor_json(corridor_json)
+        out["co_primary_arg"] = out["co_primary"].get("run_gate_arg")
     if eff_json:
         out["secondaries"]["deploy_tick_p99_ms"] = deploy_tick_from_eff_json(
             eff_json, precision=precision)
@@ -303,12 +454,31 @@ def main(argv=None) -> int:
     s.add_argument("--repo-root", default=None)
     s.add_argument("--out", default=None)
 
+    k = sub.add_parser("corridor",
+                       help="THE CO-PRIMARY: corridor_departure_rate @ K, from a "
+                            "taniteval.corridor JSON or a windows_<arm>.pt dump")
+    k.add_argument("--corridor-json", default=None,
+                   help="an already-computed taniteval.corridor result JSON")
+    k.add_argument("--windows", default=None,
+                   help="a persisted windows_<arm>.pt (needs torch); writes the "
+                        "corridor panel to --out-corridor")
+    k.add_argument("--out-corridor", default=None,
+                   help="where to write the computed corridor panel")
+    k.add_argument("--stratum", default="overall",
+                   choices=["overall", "junction", "longitudinal", "other"])
+    k.add_argument("--halfwidth", type=float, default=CORRIDOR_HALFWIDTH_M)
+    k.add_argument("--n-boot", type=int, default=2000)
+    k.add_argument("--out", default=None)
+
     g = sub.add_parser("gate-values", help="all three + the --secondary-value args")
     g.add_argument("--eff-json", default=None)
     g.add_argument("--hierarchy-json", default=None)
     g.add_argument("--arm-log", default=None)
     g.add_argument("--nospeed-log", default=None)
     g.add_argument("--repo-root", default=None)
+    g.add_argument("--corridor-json", default=None,
+                   help="the CO-PRIMARY panel; emitted as --corridor-json, never "
+                        "as a --secondary-value")
     g.add_argument("--precision", default="fp32", choices=["fp32", "tf32", "amp16"])
     g.add_argument("--out", default=None)
 
@@ -319,9 +489,23 @@ def main(argv=None) -> int:
         res = nonav_route_from_hierarchy_json(a.hierarchy_json)
     elif a.cmd == "speed-benefit":
         res = speed_benefit_emit(a.arm_log, a.nospeed_log, a.repo_root)
+    elif a.cmd == "corridor":
+        if not (a.corridor_json or a.windows):
+            raise SystemExit("[gate_emitters] corridor needs --corridor-json or "
+                             "--windows")
+        res = (corridor_from_corridor_json(a.corridor_json, stratum=a.stratum)
+               if a.corridor_json else
+               corridor_from_windows(a.windows, halfwidth=a.halfwidth,
+                                     n_boot=a.n_boot, out_json=a.out_corridor))
+        if res.get("run_gate_arg"):
+            print("# run_gate.py check ... \\")
+            print("    " + res["run_gate_arg"])
     else:
         res = gate_values(a.eff_json, a.hierarchy_json, a.arm_log, a.nospeed_log,
-                          a.repo_root, a.precision)
+                          a.repo_root, a.precision, corridor_json=a.corridor_json)
+        if res.get("co_primary_arg"):
+            print("# run_gate.py check ... \\")
+            print("    " + res["co_primary_arg"] + " \\")
         if res.get("secondary_value_args"):
             print("# run_gate.py check ... --secondary-value \\")
             print("    " + " ".join(res["secondary_value_args"]))

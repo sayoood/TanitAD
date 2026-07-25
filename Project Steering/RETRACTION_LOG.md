@@ -87,3 +87,18 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
 - **C4** ⇒ mark INHERITED explicitly, and never let INHERITED decide a GPU-day.
 - **C5** ⇒ bucket means, never single rows; no exponent without window + R² + n.
 - **C6** ⇒ name every difference between the arms before reading the contrast.
+- **C9 — HORIZON-BLIND INSTRUMENT** *(new class, added 2026-07-26)* ⇒ **a metric measured at a horizon
+  shorter than the failure it is meant to detect will report success indefinitely.** Not a sampling
+  error, not a confound, not a stale source — the instrument is simply pointed at the wrong timescale,
+  so *more data and tighter intervals make it more confidently wrong.* **MEASURED on the same 43
+  windows:** corridor departure **0.0035 @ K=20 → 0.5877 @ K=185** while the paired **ADE@2s delta is
+  0.0109 [−0.0, 0.0312], not separated** — the 2 s instrument recorded essentially nothing while the
+  arm departed its corridor on 59 % of windows (junction 84 %, peak XTE 38.94 m). **It hid the dominant
+  failure mode by ~168×.** ⇒ *Standing consequence:* **every gate verdict must NAME its metric's horizon
+  and n** (`GATE_PROTOCOL.md` §0, enforced in `run_gate.py`: K≤20 refused as the blind horizon, K>190
+  refused as structurally impossible, `INCOMPLETE` when a registered co-primary is unmeasured). The
+  decisive demonstration, one arm and one checkpoint: **REF-C base-30k passes `ade_0_2s` 0.4728 against
+  a 0.60 bar → old gate CONTINUE; corridor@K185 0.5877 / junction 0.8414 fail → new gate RESTART.**
+  Same weights, opposite decisions. ⚠️ Sibling to C1 (*faster-moving source*) and to the 07-25
+  metric-definition case (*a metric NAME is not a metric DEFINITION*): all three are "the number was
+  computed correctly and answers a different question than the one asked."
