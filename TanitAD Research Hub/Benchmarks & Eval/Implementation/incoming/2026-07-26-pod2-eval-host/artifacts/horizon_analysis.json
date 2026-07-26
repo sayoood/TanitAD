@@ -1,0 +1,169 @@
+{
+ "a_stride": {
+  "K=120": {
+   "stride_8": {
+    "win_40ep": 361,
+    "clusters_40ep": 40,
+    "win_600ep": 5399,
+    "clusters_600ep": 600
+   },
+   "stride_4": {
+    "win_40ep": 722,
+    "clusters_40ep": 40,
+    "win_600ep": 10797,
+    "clusters_600ep": 600
+   },
+   "stride_2": {
+    "win_40ep": 1441,
+    "clusters_40ep": 40,
+    "win_600ep": 21550,
+    "clusters_600ep": 600
+   },
+   "stride_1": {
+    "win_40ep": 2844,
+    "clusters_40ep": 40,
+    "win_600ep": 42532,
+    "clusters_600ep": 600
+   },
+   "verdict": "stride 8->1 multiplies WINDOWS x7.9 on the 600 and changes CLUSTERS by +0."
+  },
+  "K=150": {
+   "stride_8": {
+    "win_40ep": 238,
+    "clusters_40ep": 40,
+    "win_600ep": 3554,
+    "clusters_600ep": 600
+   },
+   "stride_4": {
+    "win_40ep": 439,
+    "clusters_40ep": 40,
+    "win_600ep": 6553,
+    "clusters_600ep": 600
+   },
+   "stride_2": {
+    "win_40ep": 841,
+    "clusters_40ep": 40,
+    "win_600ep": 12550,
+    "clusters_600ep": 600
+   },
+   "stride_1": {
+    "win_40ep": 1644,
+    "clusters_40ep": 40,
+    "win_600ep": 24532,
+    "clusters_600ep": 600
+   },
+   "verdict": "stride 8->1 multiplies WINDOWS x6.9 on the 600 and changes CLUSTERS by +0."
+  },
+  "K=185": {
+   "stride_8": {
+    "win_40ep": 41,
+    "clusters_40ep": 40,
+    "win_600ep": 599,
+    "clusters_600ep": 596
+   },
+   "stride_4": {
+    "win_40ep": 81,
+    "clusters_40ep": 40,
+    "win_600ep": 1184,
+    "clusters_600ep": 596
+   },
+   "stride_2": {
+    "win_40ep": 123,
+    "clusters_40ep": 40,
+    "win_600ep": 1789,
+    "clusters_600ep": 596
+   },
+   "stride_1": {
+    "win_40ep": 244,
+    "clusters_40ep": 40,
+    "win_600ep": 3548,
+    "clusters_600ep": 596
+   },
+   "verdict": "stride 8->1 multiplies WINDOWS x5.9 on the 600 and changes CLUSTERS by +0."
+  },
+  "K=190": {
+   "stride_8": {
+    "win_40ep": 38,
+    "clusters_40ep": 38,
+    "win_600ep": 558,
+    "clusters_600ep": 558
+   },
+   "stride_4": {
+    "win_40ep": 39,
+    "clusters_40ep": 38,
+    "win_600ep": 561,
+    "clusters_600ep": 558
+   },
+   "stride_2": {
+    "win_40ep": 41,
+    "clusters_40ep": 38,
+    "win_600ep": 567,
+    "clusters_600ep": 558
+   },
+   "stride_1": {
+    "win_40ep": 44,
+    "clusters_40ep": 38,
+    "win_600ep": 579,
+    "clusters_600ep": 558
+   },
+   "verdict": "stride 8->1 multiplies WINDOWS x1.0 on the 600 and changes CLUSTERS by +0."
+  }
+ },
+ "b_ci_projection_K185": {
+  "MEASURED_at_40ep": {
+   "point": 0.6388,
+   "ci95": [
+    0.5565,
+    0.7128
+   ],
+   "half_width": 0.0781,
+   "n_windows": 41,
+   "n_clusters": 40,
+   "source": "GATE_30K_RESULTS.md co-primary, episode_cluster_bootstrap B=2000"
+  },
+  "ESTIMATED_at_600ep": {
+   "n_windows": 599,
+   "n_clusters": 596,
+   "sqrt_n_scale_factor": 0.2591,
+   "projected_half_width": 0.0202,
+   "projected_ci95": [
+    0.6186,
+    0.659
+   ],
+   "cross_check_binomial_half_width_40": 0.1489,
+   "cross_check_binomial_half_width_600": 0.0386,
+   "class": "ESTIMATED",
+   "assumptions": "1/sqrt(n_clusters) scaling at an unchanged departure rate and ~1 window per cluster at K=185. It is a projection, NOT a measurement -- the real interval must come from running the block on the 600."
+  }
+ },
+ "c_n200_bar": {
+  "largest_K_with_at_least_200_clusters": 190,
+  "first_K_below_200_clusters": 191,
+  "structural_K_ceiling_ANY_episode": 196,
+  "structural_K_ceiling_EVERY_episode": 179,
+  "clusters_at_K": {
+   "20": 600,
+   "60": 600,
+   "90": 600,
+   "120": 600,
+   "150": 600,
+   "185": 596,
+   "190": 558,
+   "192": 3,
+   "194": 3,
+   "196": 3
+  },
+  "windows_at_K": {
+   "20": 13198,
+   "60": 10198,
+   "90": 7799,
+   "120": 5399,
+   "150": 3554,
+   "185": 599,
+   "190": 558,
+   "192": 3,
+   "194": 3,
+   "196": 3
+  }
+ }
+}
