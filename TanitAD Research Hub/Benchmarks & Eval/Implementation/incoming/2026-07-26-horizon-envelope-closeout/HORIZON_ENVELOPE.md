@@ -23,6 +23,7 @@ agent/doc, **not** re-verified) · `ESTIMATED` · `HYPOTHESIS`.
 | **7** | 🔴 **Two preflights FAILED and are fixed. `stack/scripts/eval_flagship_v4.py:478` uses PEP 701 (Python ≥ 3.12) syntax and pod2 runs 3.11.10** — so **every v4 eval path, including the registered co-primary, was un-runnable on the designated n ≥ 200 eval host.** Introduced today, in the commit whose headline is *"the eval pod was 62 % stale"*. Class **C2** (interpreter-version form). Fixed, behaviour-preserving, 70 tests pass. | `MEASURED` |
 | **8** | 🔴 **`taniteval/clhorizon.py::run_v4` — the entry point written to un-strand the co-primary — raises on its first step** (`RawEp` has no `.frames`). REPRODUCED. **Not patched** (sibling stream owns it); escalated as a one-line fix. Class **C2**. | `MEASURED` |
 | **9** | ✅ **T2 done: `MODEL_REGISTRY.md` §1.2a — v1 @ 600 = `0.4108 [0.3956, 0.4273]`, 13,198 windows / 600 clusters, as a NEW row** with both n's, the estimator, the CV floor of its own deployment (**0.6917 vs 0.8377** — the 600 is EASIER) and a binding no-substitution rule. §5 leaderboard stamped as the 40-episode deployment. `registry_lint` PASS. | `MEASURED` |
+| **11** | ⭐⭐ **T3 done, and the `HYPOTHESIS` is now MEASURED: the S3 bars move with `OMP_NUM_THREADS`.** The fit is **BITWISE deterministic** across separate processes at a fixed thread count and seed (**5/5, every digit**); changing only the thread count on one host moves the bar by up to **0.0137** — the full magnitude of the cross-host discrepancy. ⛔ **But the SEED moves it MORE (spread 0.0202 / 0.0270), so pinning threads is necessary and not sufficient.** ⇒ **The bars are quotable to ONE decimal place: `S3 lat 0.66 · lon 0.54 · S3-W lat 0.26 · lon 0.30`**, honest form `mean ± sd over 10 seeds` = **0.6557 ± 0.0068 · 0.5350 ± 0.0097 · 0.2578 ± 0.0038 · 0.3021 ± 0.0075`. **A 4-dp bar may not sit in a kill conjunction; an arm within `bar ± spread` is a TIE.** All four published pod2 bars reproduced exactly at the reference condition. | `MEASURED` |
 | **10** | ⚠️ **The one branch `GATE_30K_RESULTS` §10.1 leaves open is "re-validate P1", and this run prices it:** covering K = 60 needs the homography validated to **13.55 m / 39.25°** overall and **20.82 m / 60.03°** on the junction stratum — **4.5×–6.9× / 3.3×–5.0×** the current edge, from a `f_eff = 266 px` camera at 1.5 m. ⭐ **And it is already owed at K = 20**, whose p90 yaw is **1.27× outside** while its lateral p90 is comfortably inside — so the extension must be on the **YAW** arm first. It is also the **ONLY** action that can raise the ratio criterion's ceiling. | `MEASURED` |
 
 ---
@@ -371,6 +372,28 @@ straddles the 12° edge. **So: the truncation curves in `ksweep_results.json` ar
 lateral/CDR family and INDICATIVE ONLY for the yaw-driven envelope fraction.** Every envelope number in
 §4.2 is from a real rollout at that K, never a truncation.
 
+### 4.2b Cross-reference: a sibling stream measured the half-width itself, and it is ~26 % too permissive
+
+Landed while this ran (`…/2026-07-26-vectormap-corridor/VECTORMAP_CORRIDOR.md`, `INHERITED` — I did not
+re-verify it): `CORRIDOR_HALFWIDTH_M = 1.75` is *vindicated as half a lane width* (measured
+**1.802 m [1.686, 1.939]**) but is **~26 % too permissive as a DEPARTURE threshold** — the median
+*realised clearance* is **1.391 m**, and **85.7 % of steps have less room than 1.75 m**.
+
+**Consequence for every number above: the CDR column is an UNDER-estimate.** The full grid is emitted,
+so the sensitivity is already measured rather than argued:
+
+| K | overall @1.0 m | @1.75 m *(headline)* | @2.5 m | junction @1.0 m | @1.75 m | @2.5 m |
+|---:|---:|---:|---:|---:|---:|---:|
+| 20 | 0.0530 | **0.0203** | 0.0087 | 0.2071 | **0.0909** | 0.0407 |
+| 60 | 0.3628 | **0.2618** | 0.2046 | 0.6674 | **0.5809** | 0.5028 |
+| 70 | 0.4214 | **0.3195** | 0.2565 | 0.7125 | **0.6330** | 0.5629 |
+| 185 | 0.7048 | **0.6388** | 0.5872 | 0.8811 | **0.8432** | 0.8135 |
+
+**No conclusion in this report is a knife-edge on the half-width** — the horizon effect and the
+envelope verdict hold at all three thresholds, and a tighter (more realistic) corridor makes the
+departure *worse*, not better. ⚠️ **The envelope finding is entirely independent of this**: the P1
+envelope (3.0 m / 12°) is a property of the *renderer*, not of the corridor definition.
+
 ### 4.4b The common-start PAIRED contrast — the horizon effect on IDENTICAL windows
 
 41 windows / 40 episodes shared by all four rollouts (the K = 185 start set is a subset of every
@@ -446,8 +469,8 @@ smaller K:
 > ### ⭐ **The envelope is not a HORIZON problem. It is a RENDERER-VALIDATION problem, and it indicts the standing 2 s instrument as hard as the proposed 6 s one.**
 > `POD2_EVAL_HOST.md` §4.5's reasoning — *"a 6 s rollout accumulates far less lateral drift than an
 > 18.5 s one, so K = 60 is likely to sit inside the envelope"* — is **directionally right and
-> conclusionally wrong**: K = 60 does accumulate far less drift than K = 185 (p90 peak XTE 9.69 m vs
-> 72.24 m), and it is still **3.2× outside** a 3.0 m validated edge. The envelope was never a function
+> conclusionally wrong**: K = 60 does accumulate far less drift than K = 185 (p90 peak XTE 13.55 m vs
+> 72.24 m), and it is still **4.5× outside** a 3.0 m validated edge. The envelope was never a function
 > of K alone; it is a function of **where the closed loop goes**, and at a junction it goes outside
 > within one second at any K.
 
@@ -576,7 +599,66 @@ two data surfaces), so it is done **once** and cached; every condition below re-
 exceeds 0.005, the bar is not quotable to 2 dp either, and the honest form is `mean ± spread` — or, if
 even that is unstable, **the bar cannot sit in a kill conjunction and must be said so.**
 
-<!-- T3_RESULTS -->
+### 7.3 ⭐ RESULT — the mechanism is threading, the fit is bitwise deterministic given it, and the bar is still only quotable to **ONE decimal place**
+
+20 conditions, one host, `artifacts/s3_bar_pinning.json` (+ per-condition `cond_*.json` on pod2).
+Mining reproduced the published counts exactly first — `n_train 136,484 / 99,036`,
+`n_test 34,337 / 24,987`, `n_test_episodes 558 / 520`, `rows = 102,532` — so the features under test are
+the published features.
+
+⭐ **And the reference condition reproduces all four published pod2 bars to every quoted digit:**
+`OMP=8, seed 0` → **S3 lat 0.649310 → 0.6493 · S3 lon 0.542019 → 0.5420 · S3-W lat 0.259102 → 0.2591 ·
+S3-W lon 0.288112 → 0.2881**. (`POD2_EVAL_HOST.md` §3.3.1: 0.6493 / 0.5420 / 0.2591 / 0.2881.)
+
+| family | what varied | S3 lat | S3 lon | S3-W lat | S3-W lon |
+|---|---|---|---|---|---|
+| **E-B** repeatability | 5 separate processes, threads 8, seed 0 | ✅ **0.649310 ×5 — BITWISE identical** | ✅ 0.542019 ×5 | ✅ 0.259102 ×5 | ✅ 0.288112 ×5 |
+| **E-A** threads | `OMP/MKL/OPENBLAS ∈ {1,2,4,8,16}`, seed 0 | ⛔ spread **0.008690** (0.6471 → 0.6558) | ⛔ spread **0.012528** (0.5335 → 0.5460) | 0.004871 | ⛔ 0.013671 |
+| **E-C** seed | seeds 0…9, threads 8 | ⛔ spread **0.020169** (0.6469 → 0.6671) | ⛔ spread **0.027015** (0.5184 → 0.5454) | 0.011630 | ⛔ 0.025699 |
+| — | **mean ± sd over 10 seeds** | **0.6557 ± 0.0068** | **0.5350 ± 0.0097** | **0.2578 ± 0.0038** | **0.3021 ± 0.0075** |
+| — | **decimal places actually quotable** | **1** | **1** | **1** *(2 with threads pinned)* | **1** |
+
+> ### ⭐ THE ANSWER, in three parts
+> **1. The source is the BLAS/threading path, and it is now MEASURED, not hypothesised.** E-B shows the
+> fit is **bitwise deterministic across separate processes** at a fixed thread count and seed — 5/5, to
+> every digit. E-A shows the *same* seed on the *same* host with only `OMP_NUM_THREADS` changed moves
+> the bar by up to **0.0137**. So the ±0.01 across pods was never randomness; it was an **unrecorded
+> configuration variable**. Thread count changes CPU GEMM reduction order, and 400 full-batch Adam steps
+> amplify a 1e-7 difference into a different argmax on borderline rows.
+>
+> **2. Pinning threads is necessary and NOT sufficient.** The **seed** moves the bar *more* than the
+> thread count does — spread **0.0202 / 0.0270** vs **0.0087 / 0.0125**. That is the bar's own estimator
+> variance and no amount of environment pinning removes it. **Freezing seed 0 would pin the bar by fiat,
+> not by measurement**, and would hard-code the value of one arbitrary draw into a kill conjunction.
+>
+> **3. Therefore the bar is quotable to ONE decimal place, not four.**
+> `S3 lat = 0.66` · `S3 lon = 0.54` · `S3-W lat = 0.26` · `S3-W lon = 0.30`. Anything finer is noise
+> from a variable the artifact does not record.
+
+### 7.4 What this changes for anything the bar adjudicates
+
+`skill = QWK(model) − bar`, so **the bar's spread propagates directly into every skill number.**
+
+* ⛔ **A 4-decimal bar may not sit in a kill conjunction.** The published `0.6534` and `0.6493` are two
+  draws from a distribution with sd **0.0068** and range **0.0202**; an arm at 0.6510 clears one and
+  fails the other, and both are *correct* runs of the same code.
+* ✅ **The honest published form is `mean ± sd over n ≥ 5 seeds at a stated thread count`, with the
+  thread count stamped in the artifact** — implemented here, and the `cond_*.json` files carry
+  `omp_num_threads_env`, `torch_num_threads`, `torch_version` and a `pred_sha1` per arm so a future
+  re-fit can be checked bit-for-bit rather than eyeballed.
+* ✅ **The decision rule that follows: an arm whose QWK falls within `bar ± spread` is a TIE, not a
+  pass and not a fail.** With the measured spreads that is a **±0.02** dead band on the lateral axis and
+  **±0.027** on the longitudinal one.
+* ✅ **Every S3 firewall VERDICT survives** — the standup already showed the R1/R2/R3 conclusions are
+  ~10× the noise, and nothing here touches them. The `operative_blind_floor` arm was
+  **`B3_FULL_CONDITIONING` in all 20 conditions**, so the max-over-arms selection contributes no
+  variance of its own. **What is withdrawn is the precision, not the conclusions.**
+
+⚠️ **UNVERIFIED, and stated as such:** I did not reproduce pod3's exact 0.6534, because pod3 has a
+different CPU and BLAS build and I did not run there. What is MEASURED is that a **single** environment
+variable on **one** host reproduces the full magnitude of the cross-host discrepancy — which is
+sufficient to identify the mechanism and to fix the reporting, and is not sufficient to attribute
+pod3's specific value to a specific thread count.
 
 ---
 
@@ -617,6 +699,19 @@ even that is unstable, **the bar cannot sit in a kill conjunction and must be sa
    > `e1c_common.py:34`, and `RATIO_EXTRAPOLATION_X = 1.5` — is decided before the model runs."*
 
    **Owner: `GATE_PROTOCOL.md`'s maintainer.**
+8. ⛔ **`PRE_REGISTRATION_S3.md` §5.3's skill bars must be re-stated to 1 dp with their spread, before
+   they adjudicate anything.** MEASURED (§7): the fit is bitwise deterministic given
+   `(OMP_NUM_THREADS, seed)`, thread count alone moves the bar up to **0.0137**, and the **seed moves it
+   more (up to 0.0270)**. Replace `0.6534` / `0.5323` with **`0.66 ± 0.007`** / **`0.54 ± 0.010`**
+   (mean ± sd over 10 seeds at a stated thread count), and adopt the **tie rule**: an arm inside
+   `bar ± spread` is neither a pass nor a fail. ⚠️ The fix is *not* "freeze seed 0" — that pins one
+   arbitrary draw by fiat. **Owner: S3's author / `PRE_REGISTRATION_S3.md` §5.3.**
+9. ⚠️ **`s3_blind_baseline._fit_mlp` should record its own environment.** It is a *measurement* path and
+   its output is a function of `OMP_NUM_THREADS`, `torch.__version__` and the seed — none of which the
+   result JSON carried. `scripts/s3_bar_pinning.py`'s `fit` phase stamps all three plus a `pred_sha1`
+   per arm; the same three lines belong in `run_s3_characterisation.run_firewall`. **Owner: S3's
+   author.** *(Sibling of `tanitad.instruments.numerics.strict_numerics`, which exists for exactly this
+   reason on the GPU path and has no CPU counterpart.)*
 
 ---
 
@@ -638,14 +733,22 @@ NOT pushed**. Anything that exists in only ONE place is marked ⚠️.
 | `artifacts/preflight_pod2_closeout.json` | repo · `pod2:/root/preflight_pod2_closeout.json` | P0 `sys.path` audit / P1 corridor / P2 lateral / P3 val chokepoint |
 | `artifacts/preflight2_pod2.json` | repo · `pod2:/root/preflight2_pod2.json` | P4 clhorizon+ood present & exercised · P5 saturation demo · P6 guard-can-fire · P7 repo↔pod md5 |
 | `artifacts/RESULT_v1_40ep_ksweep_preflight.json` | repo · `pod2:/root/taniteval/results/` | P3 — v1 = 0.4271 [0.3675, 0.4871] on this host, this session |
-| `artifacts/s3_bar_pinning.json` + `cond_*.json` | repo · `pod2:/root/s3pin/` | T3 conditions and the pinning verdict |
+| `scripts/render_sweep_table.py` | repo (same dir) | renders §4.2 from the JSON so no sweep number is hand-transcribed |
+| `scripts/common_start_paired.py` | repo (same dir) | the paired K contrast on identical windows, offline from the dumps (no GPU) |
+| `artifacts/common_start_paired.json` / `.txt` | repo (same dir) | 41 shared windows, paired Δ per stratum per K |
+| `artifacts/s3_bar_pinning.json` | repo (same dir) · `pod2:/root/s3pin/s3_bar_pinning.json` | T3: 20 conditions + the pinning verdict |
+| `artifacts/s3pin_mine.log`, `artifacts/s3pin_sweep.log` | repo · `pod2:/root/` | T3 run logs (mining reproduces the published S3 counts) |
+| ⚠️ `pod2:/root/s3pin/cond_*.json` (20 files) | **pod2 only** | per-condition detail incl. `pred_sha1` per arm; the summary JSON in the repo carries every number they contain |
+| ⚠️ `pod2:/root/s3pin/s3_features.npz` (14 MB) | **pod2 only** | the cached mined features — **deliberately not staged**: it is a 39-minute derived intermediate, reproducible by `s3_bar_pinning.py mine`, and the repo should not carry mined feature matrices |
 | **registry row** | `repo:Project Steering/MODEL_REGISTRY.md` §1.2a + §5 deployment stamp | T2 |
 | **4 retraction rows** | `repo:Project Steering/RETRACTION_LOG.md` | C13 (analytic) · C4 (headline outruns body) · C2 ×2 (PEP 701, `run_v4`) |
 | **2 code fixes** | `repo:stack/scripts/eval_flagship_v4.py`, `repo:stack/scripts/vlm_kin_crossval.py` | the PEP 701 portability fix (§2.1) |
 | ⚠️ **pod2 harness** | `pod2:/root/taniteval` (221 files) · `pod2:/root/TanitAD/stack` (344 files) | re-synced from the repo this session, **0 md5 mismatch**; the repo is the other copy |
 | ⚠️ `pod2:/root/lanekeep/lowood_flagship_ci.json` | pod2 only *(the repo has the source copy)* | the P1 envelope; **not part of the standard sync — escalation #6** |
 
-Nothing produced by this run exists in only one place.
+**Nothing that took real effort exists in only one place.** The two pod-only rows are a derived
+intermediate and a per-condition expansion of a summary that *is* staged; both are marked and both are
+reproducible from staged code.
 
 ---
 
