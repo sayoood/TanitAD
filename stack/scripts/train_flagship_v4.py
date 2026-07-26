@@ -700,7 +700,36 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                                           # arm's log was not gate-computable; the
                                           # reference arms (flagship4b) log it. Adding
                                           # it is LOG-ONLY (no loss/parity effect).
-                                          "g_op_fwd_ade_m") if k in log}}
+                                          "g_op_fwd_ade_m",
+                                          # ⭐ THE FOUR SELECTION DIAGNOSTICS, added
+                                          # 2026-07-26 (BOOST_PROGRAM M4). They are
+                                          # ALREADY COMPUTED EVERY STEP — `v15_losses`
+                                          # emits sel_gap/rank_acc/
+                                          # frac_sel_2x_worse_than_oracle
+                                          # (flagship_v15.py:617-618) and `select()`
+                                          # emits sel_gate/sel_pen_span (:462-463) —
+                                          # and this row-writer DISCARDED all of them.
+                                          # `train_flagship_v15.py:379,384` already
+                                          # logs two of them, so v4 was strictly
+                                          # behind its own sibling trainer.
+                                          #
+                                          # COST OF THE OMISSION, MEASURED: the 30k
+                                          # run regressed on held-out SELECTION while
+                                          # every training term improved (C11); the
+                                          # onset was ~step 11,000 and ~29.5 GPU-h —
+                                          # HALF THE RUN — went into training past the
+                                          # best checkpoint. The exact diagnostics that
+                                          # would have shown it were computed 601 times
+                                          # and thrown away.
+                                          #
+                                          # LOG-ONLY: no loss term, no parity effect,
+                                          # no change to any optimisation path. `if k
+                                          # in log` keeps it safe when a key is absent
+                                          # (e.g. a non-v15 head).
+                                          "sel_gap", "rank_acc",
+                                          "frac_sel_2x_worse_than_oracle",
+                                          "sel_gate", "sel_pen_span")
+                                       if k in log}}
             print(json.dumps(row), flush=True)
             log_f.write(json.dumps(row) + "\n"); log_f.flush()
 
