@@ -1,0 +1,1579 @@
+{
+  "n_windows": 881,
+  "n_episodes": 40,
+  "summary": {
+    "imagination_B_minus_A_ade@2s": -0.2238,
+    "imagination_B_minus_A_separated": true,
+    "imagination_verdict": "IMAGINATION_HELPS",
+    "A_open_plan_bike_ade@2s": 1.9153,
+    "B_closed_bike_ade@2s_paired": 1.6915,
+    "closed_bike_ade@2s": 1.6915,
+    "closed_bike_ade@2s_ci95": 0.1751,
+    "closed_bike_fde@2s": 3.4982,
+    "closed_grnd_ade@2s": 2.5195,
+    "open_grnd_ade@2s": 0.6152,
+    "open_bike_ade@2s_kinematic_floor": 0.4518,
+    "cv_ade@2s": 0.8377,
+    "closed_minus_open_grnd_de@2s": 3.3887,
+    "closed_minus_open_bike_de@2s": 2.58,
+    "divergence_rate_gt5m@2s": 0.2225,
+    "high_vs_low_speed_closed_bike_ade@2s": [
+      1.6825,
+      1.813
+    ]
+  },
+  "protocol": {
+    "window": 8,
+    "stride": 8,
+    "hz": 10,
+    "wp_steps": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "K_steps": 20,
+    "n_splits": 8,
+    "val_frac": 0.2,
+    "ci": "episode_cluster_bootstrap over the val EPISODES (paired for closed-vs-open deltas) \u2014 taniteval/ci.py",
+    "nav": "follow (deploy-realistic, no route command)",
+    "operative_step": "intent-free (deployed regime)"
+  },
+  "primary_ci": "episode_cluster_bootstrap",
+  "estimator": {
+    "interval": "episode_cluster_bootstrap",
+    "delta": "paired_episode_cluster_bootstrap",
+    "n_boot": 2000,
+    "seed": 0,
+    "resampling_unit": "val episode",
+    "orientation": "every closed-vs-open delta is closed - open; positive = the closed loop is WORSE",
+    "deprecated_and_refused": "overlapping_holdout_se",
+    "legacy_block": "legacy_overlapping_holdout_se",
+    "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged."
+  },
+  "cluster_bootstrap": {
+    "model": {
+      "de@0.5s": {
+        "mean": 0.2345,
+        "lo": 0.2165,
+        "hi": 0.2527,
+        "ci95": 0.0181,
+        "se": 0.0093,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade@0.5s": {
+        "mean": 0.2345,
+        "lo": 0.2165,
+        "hi": 0.2527,
+        "ci95": 0.0181,
+        "se": 0.0093,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de@1s": {
+        "mean": 0.9799,
+        "lo": 0.8908,
+        "hi": 1.0735,
+        "ci95": 0.0914,
+        "se": 0.0481,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade@1s": {
+        "mean": 0.6072,
+        "lo": 0.5532,
+        "hi": 0.6629,
+        "ci95": 0.0548,
+        "se": 0.0285,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de@1.5s": {
+        "mean": 2.0533,
+        "lo": 1.8375,
+        "hi": 2.2853,
+        "ci95": 0.2239,
+        "se": 0.1154,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade@1.5s": {
+        "mean": 1.0892,
+        "lo": 0.9822,
+        "hi": 1.2018,
+        "ci95": 0.1098,
+        "se": 0.057,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de@2s": {
+        "mean": 3.4982,
+        "lo": 3.1022,
+        "hi": 3.9002,
+        "ci95": 0.399,
+        "se": 0.2035,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade@2s": {
+        "mean": 1.6915,
+        "lo": 1.522,
+        "hi": 1.8723,
+        "ci95": 0.1751,
+        "se": 0.0892,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 1.6915,
+        "lo": 1.522,
+        "hi": 1.8723,
+        "ci95": 0.1751,
+        "se": 0.0892,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "fde@2s": {
+        "mean": 3.4982,
+        "lo": 3.1022,
+        "hi": 3.9002,
+        "ci95": 0.399,
+        "se": 0.2035,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    }
+  },
+  "closedloop_ade_fde": {
+    "_path_legend": {
+      "closed_bike": "closed_bike (headline: kinematic exec of the plan)",
+      "closed_grnd": "closed_grnd (grounded step-readout of imagined roll)",
+      "open_grnd": "open_grnd (TRUE actions, gate grounded rollout)",
+      "open_bike": "open_bike (TRUE actions, bicycle fidelity FLOOR)",
+      "cv": "cv (constant-velocity trivial baseline)"
+    },
+    "_headline": "closed_bike is the headline closed-loop path; closed_grnd is the model's own metric decode",
+    "_estimator": "episode_cluster_bootstrap. The key name `heldout` is HISTORICAL (kept so every consumer and every closed-loop JSON on disk still reads); its contents are NOT a holdout statistic since 2026-07-25.",
+    "heldout": {
+      "closed_bike": {
+        "de@0.5s": {
+          "mean": 0.2345,
+          "lo": 0.2165,
+          "hi": 0.2527,
+          "ci95": 0.0181,
+          "se": 0.0093,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@0.5s": {
+          "mean": 0.2345,
+          "lo": 0.2165,
+          "hi": 0.2527,
+          "ci95": 0.0181,
+          "se": 0.0093,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1s": {
+          "mean": 0.9799,
+          "lo": 0.8908,
+          "hi": 1.0735,
+          "ci95": 0.0914,
+          "se": 0.0481,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1s": {
+          "mean": 0.6072,
+          "lo": 0.5532,
+          "hi": 0.6629,
+          "ci95": 0.0548,
+          "se": 0.0285,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1.5s": {
+          "mean": 2.0533,
+          "lo": 1.8375,
+          "hi": 2.2853,
+          "ci95": 0.2239,
+          "se": 0.1154,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1.5s": {
+          "mean": 1.0892,
+          "lo": 0.9822,
+          "hi": 1.2018,
+          "ci95": 0.1098,
+          "se": 0.057,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@2s": {
+          "mean": 3.4982,
+          "lo": 3.1022,
+          "hi": 3.9002,
+          "ci95": 0.399,
+          "se": 0.2035,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@2s": {
+          "mean": 1.6915,
+          "lo": 1.522,
+          "hi": 1.8723,
+          "ci95": 0.1751,
+          "se": 0.0892,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade_0_2s": {
+          "mean": 1.6915,
+          "lo": 1.522,
+          "hi": 1.8723,
+          "ci95": 0.1751,
+          "se": 0.0892,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "fde@2s": {
+          "mean": 3.4982,
+          "lo": 3.1022,
+          "hi": 3.9002,
+          "ci95": 0.399,
+          "se": 0.2035,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "closed_grnd": {
+        "de@0.5s": {
+          "mean": 0.4854,
+          "lo": 0.4364,
+          "hi": 0.5295,
+          "ci95": 0.0466,
+          "se": 0.0237,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@0.5s": {
+          "mean": 0.4854,
+          "lo": 0.4364,
+          "hi": 0.5295,
+          "ci95": 0.0466,
+          "se": 0.0237,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1s": {
+          "mean": 1.6916,
+          "lo": 1.5282,
+          "hi": 1.8465,
+          "ci95": 0.1592,
+          "se": 0.0838,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1s": {
+          "mean": 1.0885,
+          "lo": 0.9874,
+          "hi": 1.1866,
+          "ci95": 0.0996,
+          "se": 0.0527,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1.5s": {
+          "mean": 3.1956,
+          "lo": 2.8539,
+          "hi": 3.5231,
+          "ci95": 0.3346,
+          "se": 0.1771,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1.5s": {
+          "mean": 1.7908,
+          "lo": 1.6115,
+          "hi": 1.9596,
+          "ci95": 0.174,
+          "se": 0.0925,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@2s": {
+          "mean": 4.7055,
+          "lo": 4.2046,
+          "hi": 5.2095,
+          "ci95": 0.5024,
+          "se": 0.26,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@2s": {
+          "mean": 2.5195,
+          "lo": 2.2719,
+          "hi": 2.7596,
+          "ci95": 0.2438,
+          "se": 0.1298,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade_0_2s": {
+          "mean": 2.5195,
+          "lo": 2.2719,
+          "hi": 2.7596,
+          "ci95": 0.2438,
+          "se": 0.1298,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "fde@2s": {
+          "mean": 4.7055,
+          "lo": 4.2046,
+          "hi": 5.2095,
+          "ci95": 0.5024,
+          "se": 0.26,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "open_grnd": {
+        "de@0.5s": {
+          "mean": 0.1051,
+          "lo": 0.0883,
+          "hi": 0.1246,
+          "ci95": 0.0181,
+          "se": 0.0095,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@0.5s": {
+          "mean": 0.1051,
+          "lo": 0.0883,
+          "hi": 0.1246,
+          "ci95": 0.0181,
+          "se": 0.0095,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1s": {
+          "mean": 0.2959,
+          "lo": 0.248,
+          "hi": 0.3464,
+          "ci95": 0.0492,
+          "se": 0.0253,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1s": {
+          "mean": 0.2005,
+          "lo": 0.1709,
+          "hi": 0.2336,
+          "ci95": 0.0313,
+          "se": 0.0161,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1.5s": {
+          "mean": 0.7431,
+          "lo": 0.6466,
+          "hi": 0.8469,
+          "ci95": 0.1001,
+          "se": 0.052,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1.5s": {
+          "mean": 0.3814,
+          "lo": 0.3309,
+          "hi": 0.4333,
+          "ci95": 0.0512,
+          "se": 0.027,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@2s": {
+          "mean": 1.3168,
+          "lo": 1.1681,
+          "hi": 1.4776,
+          "ci95": 0.1547,
+          "se": 0.0809,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@2s": {
+          "mean": 0.6152,
+          "lo": 0.5422,
+          "hi": 0.6951,
+          "ci95": 0.0764,
+          "se": 0.0399,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade_0_2s": {
+          "mean": 0.6152,
+          "lo": 0.5422,
+          "hi": 0.6951,
+          "ci95": 0.0764,
+          "se": 0.0399,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "fde@2s": {
+          "mean": 1.3168,
+          "lo": 1.1681,
+          "hi": 1.4776,
+          "ci95": 0.1547,
+          "se": 0.0809,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "open_bike": {
+        "de@0.5s": {
+          "mean": 0.0835,
+          "lo": 0.0663,
+          "hi": 0.102,
+          "ci95": 0.0178,
+          "se": 0.0091,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@0.5s": {
+          "mean": 0.0835,
+          "lo": 0.0663,
+          "hi": 0.102,
+          "ci95": 0.0178,
+          "se": 0.0091,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1s": {
+          "mean": 0.2635,
+          "lo": 0.1906,
+          "hi": 0.3472,
+          "ci95": 0.0783,
+          "se": 0.0401,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1s": {
+          "mean": 0.1735,
+          "lo": 0.1291,
+          "hi": 0.2248,
+          "ci95": 0.0479,
+          "se": 0.0245,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1.5s": {
+          "mean": 0.5421,
+          "lo": 0.3709,
+          "hi": 0.7405,
+          "ci95": 0.1848,
+          "se": 0.0933,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1.5s": {
+          "mean": 0.2964,
+          "lo": 0.2099,
+          "hi": 0.3958,
+          "ci95": 0.0929,
+          "se": 0.0474,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@2s": {
+          "mean": 0.9182,
+          "lo": 0.6087,
+          "hi": 1.2797,
+          "ci95": 0.3355,
+          "se": 0.1693,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@2s": {
+          "mean": 0.4518,
+          "lo": 0.3097,
+          "hi": 0.6174,
+          "ci95": 0.1538,
+          "se": 0.0778,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade_0_2s": {
+          "mean": 0.4518,
+          "lo": 0.3097,
+          "hi": 0.6174,
+          "ci95": 0.1538,
+          "se": 0.0778,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "fde@2s": {
+          "mean": 0.9182,
+          "lo": 0.6087,
+          "hi": 1.2797,
+          "ci95": 0.3355,
+          "se": 0.1693,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "cv": {
+        "de@0.5s": {
+          "mean": 0.1297,
+          "lo": 0.0962,
+          "hi": 0.1655,
+          "ci95": 0.0347,
+          "se": 0.0178,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@0.5s": {
+          "mean": 0.1297,
+          "lo": 0.0962,
+          "hi": 0.1655,
+          "ci95": 0.0347,
+          "se": 0.0178,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1s": {
+          "mean": 0.4697,
+          "lo": 0.3495,
+          "hi": 0.5991,
+          "ci95": 0.1248,
+          "se": 0.0648,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1s": {
+          "mean": 0.2997,
+          "lo": 0.2229,
+          "hi": 0.3822,
+          "ci95": 0.0797,
+          "se": 0.0413,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@1.5s": {
+          "mean": 1.011,
+          "lo": 0.7525,
+          "hi": 1.2928,
+          "ci95": 0.2701,
+          "se": 0.1396,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@1.5s": {
+          "mean": 0.5368,
+          "lo": 0.3999,
+          "hi": 0.6861,
+          "ci95": 0.1431,
+          "se": 0.0741,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "de@2s": {
+          "mean": 1.7406,
+          "lo": 1.2938,
+          "hi": 2.2288,
+          "ci95": 0.4675,
+          "se": 0.2406,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade@2s": {
+          "mean": 0.8377,
+          "lo": 0.6234,
+          "hi": 1.0716,
+          "ci95": 0.2241,
+          "se": 0.1157,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "ade_0_2s": {
+          "mean": 0.8377,
+          "lo": 0.6234,
+          "hi": 1.0716,
+          "ci95": 0.2241,
+          "se": 0.1157,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "fde@2s": {
+          "mean": 1.7406,
+          "lo": 1.2938,
+          "hi": 2.2288,
+          "ci95": 0.4675,
+          "se": 0.2406,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    }
+  },
+  "imagination_comparison": {
+    "_hypothesis": "imagination-in-the-loop (B, re-plan on the imagined latent) accumulates LESS closed-loop error than single-shot open-loop (A, plan once + track open-loop). Pre-registered both ways.",
+    "_arms": {
+      "A_open_plan_bike": "plan ONCE on the real latent, track the frozen plan open-loop (REF-C-style single-shot; predictor NEVER stepped)",
+      "B_closed_bike": "re-plan every 0.1 s on the model's OWN imagined latent (imagination-in-the-loop; the harness headline closed loop)",
+      "shared": "same strategic->tactical head + pure-pursuit + bicycle; identical at tick 0, so the paired delta isolates imagination"
+    },
+    "_proxy_caveat": "this is the WEAK form of the v4 thesis: B re-plans on the imagined latent but does NOT sample+select candidates by imagined consequence (no CEM). It is the cheap no-renderer proving ground, not the AlpaSim imagine-and-select test (closed-loop synthesis section 5).",
+    "A_open_plan_bike_ade@2s": {
+      "mean": 1.9153,
+      "lo": 1.7374,
+      "hi": 2.0941,
+      "ci95": 0.1783,
+      "se": 0.0952,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "B_closed_bike_ade@2s": {
+      "mean": 1.6915,
+      "lo": 1.522,
+      "hi": 1.8723,
+      "ci95": 0.1751,
+      "se": 0.0892,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "plan_direct_ade@2s_no_executor": {
+      "mean": 3.4321,
+      "lo": 2.8687,
+      "hi": 4.0279,
+      "ci95": 0.5796,
+      "se": 0.3049,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A_ade@2s": {
+      "delta": -0.2238,
+      "lo": -0.3397,
+      "hi": -0.1084,
+      "ci95": 0.1156,
+      "p_delta_gt0": 0.0005,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A_fde@2s": {
+      "delta": -0.4726,
+      "lo": -0.8353,
+      "hi": -0.1158,
+      "ci95": 0.3597,
+      "p_delta_gt0": 0.005,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "A_divergence_rate_gt5m@2s": {
+      "mean": 0.3791,
+      "lo": 0.3019,
+      "hi": 0.4591,
+      "ci95": 0.0786,
+      "se": 0.041,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "B_divergence_rate_gt5m@2s": {
+      "mean": 0.2225,
+      "lo": 0.1578,
+      "hi": 0.2914,
+      "ci95": 0.0668,
+      "se": 0.0342,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "verdict": "IMAGINATION_HELPS: imagination-in-the-loop (B) has LOWER closed-loop ADE@2s than single-shot open-loop (A), CI-separated (paired episode-cluster bootstrap) -> early support for the v4 imagination thesis"
+  },
+  "compounding_error_grounded": {
+    "_definition": "closed_grounded point-error - open_grounded point-error per horizon (distribution-shift cost the open-loop ADE hides); grounded path both sides so only the action source differs",
+    "_estimator": "paired_episode_cluster_bootstrap; positive delta = the closed loop is WORSE (a compounding cost)",
+    "_caveat": "the step-readout is calibrated on TRUE-action rolled latents; under self-generated actions the imagined latents drift off that manifold, so this delta bundles genuine trajectory drift WITH step-readout off-manifold decode degradation. The bicycle delta below is controller-clean (no learned decode).",
+    "delta@0.5s": {
+      "delta": 0.3803,
+      "lo": 0.3292,
+      "hi": 0.4284,
+      "ci95": 0.0496,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 0.3803
+    },
+    "delta@1s": {
+      "delta": 1.3957,
+      "lo": 1.2275,
+      "hi": 1.5508,
+      "ci95": 0.1616,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 1.3957
+    },
+    "delta@1.5s": {
+      "delta": 2.4525,
+      "lo": 2.1079,
+      "hi": 2.7898,
+      "ci95": 0.3409,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 2.4525
+    },
+    "delta@2s": {
+      "delta": 3.3887,
+      "lo": 2.9147,
+      "hi": 3.8484,
+      "ci95": 0.4669,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 3.3887
+    }
+  },
+  "compounding_error_bicycle": {
+    "_definition": "closed_bicycle_ADE - open_bicycle_ADE per horizon (policy+imagination cost above the kinematic fidelity floor)",
+    "_estimator": "paired_episode_cluster_bootstrap; positive delta = the closed loop is WORSE",
+    "delta@0.5s": {
+      "delta": 0.151,
+      "lo": 0.1323,
+      "hi": 0.1691,
+      "ci95": 0.0184,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 0.151
+    },
+    "delta@1s": {
+      "delta": 0.7164,
+      "lo": 0.6354,
+      "hi": 0.7991,
+      "ci95": 0.0819,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 0.7164
+    },
+    "delta@1.5s": {
+      "delta": 1.5113,
+      "lo": 1.3311,
+      "hi": 1.6858,
+      "ci95": 0.1774,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 1.5113
+    },
+    "delta@2s": {
+      "delta": 2.58,
+      "lo": 2.2525,
+      "hi": 2.9109,
+      "ci95": 0.3292,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "direction": "closed_loop_worse",
+      "mean": 2.58
+    }
+  },
+  "stability": {
+    "divergence_rate_gt5m@2s": {
+      "mean": 0.2225,
+      "lo": 0.1578,
+      "hi": 0.2914,
+      "ci95": 0.0668,
+      "se": 0.0342,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "divergence_threshold_m": 5.0,
+    "lateral_deviation_growth_m": {
+      "0.5s": 0.0483,
+      "1s": 0.2374,
+      "1.5s": 0.6178,
+      "2s": 1.5017
+    },
+    "comfort": {
+      "mean_abs_accel_mps2": 2.1921,
+      "mean_abs_lat_accel_mps2": 1.178,
+      "mean_abs_jerk_mps3": 3.3606,
+      "mean_abs_steer_rad": 0.01979,
+      "frac_steps_exceed_lon_comfort": 0.643,
+      "frac_steps_exceed_lat_comfort": 0.0928,
+      "frac_steps_exceed_jerk_comfort": 0.3247,
+      "frac_steps_within_accel_bounds": 0.357,
+      "bounds": {
+        "a_lon": 2.0,
+        "a_lat": 3.0,
+        "jerk": 2.0,
+        "kind": "comfort (not safety)"
+      }
+    }
+  },
+  "speed_stratified": {
+    "thresholds_mps": [
+      7.067,
+      13.325
+    ],
+    "by_speed": {
+      "low": {
+        "n": 294,
+        "closed_bike_ade@2s": 1.6825,
+        "closed_grnd_ade@2s": 2.6942,
+        "open_grnd_ade@2s": 0.4736,
+        "open_bike_ade@2s": 0.4765,
+        "closed_minus_open_grnd_ade@2s": 2.2206,
+        "divergence_rate_gt5m@2s": 0.2041,
+        "mean_speed_mps": 3.867
+      },
+      "med": {
+        "n": 293,
+        "closed_bike_ade@2s": 1.5785,
+        "closed_grnd_ade@2s": 2.4475,
+        "open_grnd_ade@2s": 0.5821,
+        "open_bike_ade@2s": 0.4647,
+        "closed_minus_open_grnd_ade@2s": 1.8654,
+        "divergence_rate_gt5m@2s": 0.1638,
+        "mean_speed_mps": 10.39
+      },
+      "high": {
+        "n": 294,
+        "closed_bike_ade@2s": 1.813,
+        "closed_grnd_ade@2s": 2.4166,
+        "open_grnd_ade@2s": 0.7899,
+        "open_bike_ade@2s": 0.4143,
+        "closed_minus_open_grnd_ade@2s": 1.6267,
+        "divergence_rate_gt5m@2s": 0.2993,
+        "mean_speed_mps": 23.645
+      }
+    },
+    "_read": "is closed-loop drift worse at high speed (the known longitudinal weakness)?"
+  },
+  "limitations": [
+    "NO collision / drivable-area / PDM \u2014 no HD map or agent boxes in our data; this is a drift/stability closed loop, not a safety one.",
+    "SELF-REFERENTIAL: the world model is both state estimator and simulator; failures it cannot imagine are invisible (needs an external photoreal sim to cure).",
+    "waypoint->control + bicycle are a HARNESS controller (not the model); open_bike is its kinematic fidelity floor so drift stays attributable.",
+    "dataset actions correlate ~0.87 with bicycle-consistent controls (CAN signals) \u2014 residual shows up in open_bike.",
+    "open-loop L2 is a weak claim (arXiv:2605.00066); the closed-loop delta is the point, not the absolute open-loop number."
+  ],
+  "legacy_overlapping_holdout_se": {
+    "_what": "the pre-2026-07-25 closed-loop intervals: mean +- 1.96*std/sqrt(8) over 8 OVERLAPPING random 20% episode holdouts.",
+    "_why_kept": "reproduction of published numbers ONLY. NOT admissible for any decision; the block above is.",
+    "_estimator": "overlapping_holdout_se",
+    "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged.",
+    "n_splits": 8,
+    "val_frac": 0.2,
+    "heldout": {
+      "closed_bike": {
+        "de@0.5s": {
+          "mean": 0.2259,
+          "ci95": 0.0105,
+          "std": 0.0152,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@0.5s": {
+          "mean": 0.2259,
+          "ci95": 0.0105,
+          "std": 0.0152,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1s": {
+          "mean": 0.9446,
+          "ci95": 0.0419,
+          "std": 0.0605,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1s": {
+          "mean": 0.5852,
+          "ci95": 0.0258,
+          "std": 0.0373,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1.5s": {
+          "mean": 1.9925,
+          "ci95": 0.1283,
+          "std": 0.1852,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1.5s": {
+          "mean": 1.0543,
+          "ci95": 0.0594,
+          "std": 0.0858,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@2s": {
+          "mean": 3.4625,
+          "ci95": 0.3136,
+          "std": 0.4525,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@2s": {
+          "mean": 1.6564,
+          "ci95": 0.1195,
+          "std": 0.1725,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade_0_2s": {
+          "mean": 1.6564,
+          "ci95": 0.1195,
+          "std": 0.1725,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "fde@2s": {
+          "mean": 3.4625,
+          "ci95": 0.3136,
+          "std": 0.4525,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        }
+      },
+      "closed_grnd": {
+        "de@0.5s": {
+          "mean": 0.4855,
+          "ci95": 0.0206,
+          "std": 0.0297,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@0.5s": {
+          "mean": 0.4855,
+          "ci95": 0.0206,
+          "std": 0.0297,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1s": {
+          "mean": 1.6855,
+          "ci95": 0.0654,
+          "std": 0.0943,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1s": {
+          "mean": 1.0855,
+          "ci95": 0.0421,
+          "std": 0.0607,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1.5s": {
+          "mean": 3.1668,
+          "ci95": 0.1792,
+          "std": 0.2586,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1.5s": {
+          "mean": 1.7793,
+          "ci95": 0.0859,
+          "std": 0.124,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@2s": {
+          "mean": 4.6859,
+          "ci95": 0.2949,
+          "std": 0.4255,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@2s": {
+          "mean": 2.5059,
+          "ci95": 0.1335,
+          "std": 0.1926,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade_0_2s": {
+          "mean": 2.5059,
+          "ci95": 0.1335,
+          "std": 0.1926,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "fde@2s": {
+          "mean": 4.6859,
+          "ci95": 0.2949,
+          "std": 0.4255,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        }
+      },
+      "open_grnd": {
+        "de@0.5s": {
+          "mean": 0.1155,
+          "ci95": 0.0173,
+          "std": 0.0249,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@0.5s": {
+          "mean": 0.1155,
+          "ci95": 0.0173,
+          "std": 0.0249,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1s": {
+          "mean": 0.3172,
+          "ci95": 0.0379,
+          "std": 0.0547,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1s": {
+          "mean": 0.2164,
+          "ci95": 0.0268,
+          "std": 0.0387,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1.5s": {
+          "mean": 0.7607,
+          "ci95": 0.0645,
+          "std": 0.093,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1.5s": {
+          "mean": 0.3978,
+          "ci95": 0.0384,
+          "std": 0.0554,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@2s": {
+          "mean": 1.3173,
+          "ci95": 0.1077,
+          "std": 0.1554,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@2s": {
+          "mean": 0.6277,
+          "ci95": 0.0551,
+          "std": 0.0796,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade_0_2s": {
+          "mean": 0.6277,
+          "ci95": 0.0551,
+          "std": 0.0796,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "fde@2s": {
+          "mean": 1.3173,
+          "ci95": 0.1077,
+          "std": 0.1554,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        }
+      },
+      "open_bike": {
+        "de@0.5s": {
+          "mean": 0.0904,
+          "ci95": 0.0112,
+          "std": 0.0161,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@0.5s": {
+          "mean": 0.0904,
+          "ci95": 0.0112,
+          "std": 0.0161,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1s": {
+          "mean": 0.2945,
+          "ci95": 0.0478,
+          "std": 0.0691,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1s": {
+          "mean": 0.1924,
+          "ci95": 0.0293,
+          "std": 0.0422,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1.5s": {
+          "mean": 0.6145,
+          "ci95": 0.1108,
+          "std": 0.1599,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1.5s": {
+          "mean": 0.3331,
+          "ci95": 0.0563,
+          "std": 0.0813,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@2s": {
+          "mean": 1.0522,
+          "ci95": 0.2006,
+          "std": 0.2895,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@2s": {
+          "mean": 0.5129,
+          "ci95": 0.0923,
+          "std": 0.1332,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade_0_2s": {
+          "mean": 0.5129,
+          "ci95": 0.0923,
+          "std": 0.1332,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "fde@2s": {
+          "mean": 1.0522,
+          "ci95": 0.2006,
+          "std": 0.2895,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        }
+      },
+      "cv": {
+        "de@0.5s": {
+          "mean": 0.1292,
+          "ci95": 0.0164,
+          "std": 0.0236,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@0.5s": {
+          "mean": 0.1292,
+          "ci95": 0.0164,
+          "std": 0.0236,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1s": {
+          "mean": 0.4653,
+          "ci95": 0.0588,
+          "std": 0.0849,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1s": {
+          "mean": 0.2972,
+          "ci95": 0.0376,
+          "std": 0.0543,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@1.5s": {
+          "mean": 0.9966,
+          "ci95": 0.1252,
+          "std": 0.1807,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@1.5s": {
+          "mean": 0.5304,
+          "ci95": 0.0668,
+          "std": 0.0964,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "de@2s": {
+          "mean": 1.7081,
+          "ci95": 0.2137,
+          "std": 0.3084,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade@2s": {
+          "mean": 0.8248,
+          "ci95": 0.1035,
+          "std": 0.1494,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "ade_0_2s": {
+          "mean": 0.8248,
+          "ci95": 0.1035,
+          "std": 0.1494,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        },
+        "fde@2s": {
+          "mean": 1.7081,
+          "ci95": 0.2137,
+          "std": 0.3084,
+          "estimator": "overlapping_holdout_se",
+          "deprecated": true
+        }
+      }
+    },
+    "compounding_error_grounded": {
+      "delta@0.5s": {
+        "mean": 0.37,
+        "ci95": 0.0237,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@1s": {
+        "mean": 1.3683,
+        "ci95": 0.075,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@1.5s": {
+        "mean": 2.406,
+        "ci95": 0.1841,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@2s": {
+        "mean": 3.3686,
+        "ci95": 0.2816,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "compounding_error_bicycle": {
+      "delta@0.5s": {
+        "mean": 0.1355,
+        "ci95": 0.0143,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@1s": {
+        "mean": 0.6501,
+        "ci95": 0.0599,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@1.5s": {
+        "mean": 1.378,
+        "ci95": 0.1448,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta@2s": {
+        "mean": 2.4103,
+        "ci95": 0.3111,
+        "n": 881,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "divergence_rate_gt5m@2s": {
+      "mean": 0.2167,
+      "ci95": 0.0452,
+      "n": 881,
+      "separated": true,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ci_width_ratio_new_over_legacy": {
+      "_read": "new ci95 / legacy ci95. >1 = the deprecated interval was too narrow BY THAT FACTOR on this arm; the program-wide finding across 10 arms was 1.28-2.06x.",
+      "closed_bike_ade@2s": 1.465,
+      "closed_bike_fde@2s": 1.272,
+      "closed_grnd_ade@2s": 1.826,
+      "open_grnd_ade@2s": 1.387,
+      "compounding_grnd_delta@2s": 1.658,
+      "compounding_bike_delta@2s": 1.058,
+      "divergence_rate_gt5m@2s": 1.478
+    }
+  },
+  "model": {
+    "key": "flagship-speed",
+    "name": "Flagship 4B (speed)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)",
+    "speed_input": true
+  },
+  "ckpt_step": 19000,
+  "wall_s": 41.6,
+  "_rerun": {
+    "date": "2026-07-26",
+    "reason": "the 2026-07-19 artifacts were produced by overlapping_holdout_se (mislabelled '8-split episode-disjoint jackknife'); the code was migrated 2026-07-25 but no closed-loop artifact had been re-run",
+    "raw_surface_persisted": "clwin_flagship-speed.pt (per-window closed-loop paths \u2014 NOT persisted by the original run, which is why a GPU re-run was required)"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_what": "Inventory of every committed closed-loop artifact: which statistic produced it, whether the raw per-window data survives, and what was done.",
+  "_date": "2026-07-26",
+  "_evidence_class": "MEASURED (estimator strings read from the artifacts themselves; recomputations run on tanitad-eval)",
+  "_structural_finding": "closedloop.run_and_save never persisted the per-window paths. collect() builds closed_bike/closed_grnd/open_grnd/open_bike/cv/gt as [N,4,2] and analyze() reduces to scalars; only the scalars were written. windows_<arm>.pt exists for the OPEN-loop panel only. So no closed-loop artifact could be corrected by arithmetic - the loop had to be re-driven on GPU. Every re-run here now persists clwin_<arm>.pt / p2win_<arm>.pt.",
+  "tiers": {
+    "A_legacy_required_rerun": [
+      {
+        "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/results/closedloop_flagship-30k.json",
+        "statistic": "overlapping_holdout_se",
+        "self_label": "8-split episode-disjoint jackknife (bench.py)",
+        "raw_per_window_data": false,
+        "action": "RE-RUN",
+        "corrected_artifact": "closedloop_flagship-30k.CORRECTED.json",
+        "loop_reproduced": "18/18 metrics matched the published legacy block",
+        "headline_published": 1.6852,
+        "headline_corrected": 1.7318,
+        "consequence": "HEADLINE + GATE THRESHOLD (MODEL_REGISTRY 1.2; G4 baseline)"
+      },
+      {
+        "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/results/closedloop_flagship-speed.json",
+        "statistic": "overlapping_holdout_se",
+        "raw_per_window_data": false,
+        "action": "RE-RUN",
+        "corrected_artifact": "closedloop_flagship-speed.CORRECTED.json",
+        "loop_reproduced": "18/18",
+        "headline_published": 1.6564,
+        "headline_corrected": 1.6915,
+        "consequence": "NARRATIVE (speed-channel A/B)"
+      },
+      {
+        "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/results/closedloop_flagship-nospeed.json",
+        "statistic": "overlapping_holdout_se",
+        "raw_per_window_data": false,
+        "action": "RE-RUN",
+        "corrected_artifact": "closedloop_flagship-nospeed.CORRECTED.json",
+        "loop_reproduced": "18/18",
+        "headline_published": 1.575,
+        "headline_corrected": 1.5731,
+        "verdict_flip": "compounding_error_grounded.delta@1s separated True -> False",
+        "consequence": "KILL-adjacent (no-speed ablation control)"
+      },
+      {
+        "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-imagination-closedloop-proof/closedloop_flagship-30k_imagination-proof.json",
+        "statistic": "MIXED - paired_episode_cluster_bootstrap for the A/B headline; overlapping_holdout_se for every other scalar (the file states this in protocol.ci)",
+        "raw_per_window_data": false,
+        "surface": "265 windows / 12 episodes (ep_00000..ep_00011)",
+        "action": "RE-RUN",
+        "corrected_artifact": "closedloop_imagination-proof.CORRECTED.json",
+        "ab_block_reproduced": true,
+        "ab_verdict": "IMAGINATION_HELPS - UNCHANGED",
+        "largest_shift": "open_grnd ade@2s 0.3177 -> 0.4045 (-21.46 %), the largest point-estimate error found in this task",
+        "consequence": "HEADLINE (v4 imagination thesis) - but the headline itself was already safe"
+      },
+      {
+        "path": "/root/taniteval/results/planner_p2_flagship-30k.json  (POD-ONLY, absent from the repo)",
+        "statistic": "overlapping_holdout_se, stamped '8-split episode jackknife'",
+        "module": "planner_p2.py - NEVER MIGRATED (_jack_scalar :373, _jack_paired :381)",
+        "raw_per_window_data": false,
+        "reproducibility": "planner side NOT reproducible - CEM at planner_p2.py:249 draws torch.randn UNSEEDED",
+        "action": "RE-DRIVEN (seeded), see planner_p2_G4.CORRECTED.json",
+        "consequence": "GATE - the G4 PASS. Highest-consequence number in the program.",
+        "additional_defect": "the gate compares planner (221 win / 20 ep / stride 16) against the head baseline (881 win / 40 ep / stride 8) - DIFFERENT WINDOW SETS, so it can never be a paired test"
+      }
+    ],
+    "B_bootstrap_primary_legacy_as_labelled_backcompat": {
+      "_status": "no action - primary is episode_cluster_bootstrap; the legacy block is present, named, and quarantined",
+      "paths": [
+        "…/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_clean17.json",
+        "…/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44.json",
+        "…/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44_K185.json",
+        "…/2026-07-25-closedloop-horizon-and-shift/e2a_localize_heldout44.json",
+        "…/2026-07-25-e1b-failure-gated-clsft/e1b_eval_result.json",
+        "…/2026-07-26-e1c-heldout-gated-clsft/e1c_frontier_result.json",
+        "…/2026-07-26-4brain-preconditions/hp3_prefix_flagship-30k.json",
+        "…/2026-07-26-gate-primary-change/regate/*.json",
+        "…/2026-07-26-v4-produced-goal/results/GOAL_MODE_GAP.json"
+      ],
+      "note": "run_gate._deprecated_present keys on the literal block name 'heldout', deliberately retained as a back-compat alias. NOT renamed by this task."
+    },
+    "C_clean_bootstrap_only": {
+      "_status": "no action",
+      "paths": [
+        "…/2026-07-23-freefloor-rung3-wm-mpc/wm_mpc_result.json",
+        "…/2026-07-23-lower-ood-closedloop-source/lowood_closedloop.json",
+        "…/2026-07-23-lower-ood-closedloop-source/lowood_flagship_ci.json",
+        "…/2026-07-23-lowood-lanekeeping-refc/lowood_lanekeep_40ep.json",
+        "…/2026-07-23-refc-planner-closedloop/corridor_*.json",
+        "…/2026-07-24-refccl/corridor_lowood_cl.json",
+        "…/2026-07-24-refccl/tolerance_rescore.json",
+        "…/2026-07-24-refccl/powered_departure.json",
+        "…/2026-07-23-dagger-closedloop-aware/dagger_result*.json"
+      ]
+    },
+    "D_interval_with_no_estimator_named": {
+      "_status": "RESOLVED by measurement - UNSTAMPED, not wrong",
+      "paths": ["TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-23-frozen-wm-learned-planner/artifacts/*.json"],
+      "raw_per_window_data": true,
+      "evidence": "perwin_40ep.pt re-scored through ci.paired_episode_cluster_bootstrap reproduces all three published paired blocks to 4 decimals; the family's refs quote oracle 0.4271 and cv 0.8377 (the CORRECTED full-set values), not the legacy 0.4522 / 0.8248",
+      "fix": "add the estimator provenance stamp. No number changes."
+    },
+    "E_no_interval_and_no_estimator": {
+      "_status": "SUSPECT - a different defect from the legacy estimator; no correction estimated",
+      "paths": [
+        "…/2026-07-22-alpasim-closedloop-evalpod/Flagship_v1_results-summary.json",
+        "…/2026-07-22-alpasim-closedloop-evalpod/M2_results-summary.json",
+        "…/2026-07-22-alpasim-closedloop-evalpod/REFC_{base,small,xl}_results-summary.json",
+        "…/2026-07-22-alpasim-closedloop-evalpod/vs_{flag,refc}*_results-summary.json",
+        "…/2026-07-22-alpasim-closedloop-evalpod/gate1_summary.json",
+        "…/2026-07-23-gate0-freefloor/gate0_freefloor_results.json",
+        "…/2026-07-22-alpasim-closedloop-evalpod/scenario_stratified_*.json"
+      ],
+      "what_would_settle_it": "These carry per_scene blocks, so a SCENE-cluster bootstrap over the per-scene scores would give a first honest interval (the scene is the cluster unit, not the window). Anything needing regeneration requires the NuRec renderer, which is unrunnable on this pod (unprivileged container, seccomp blocks user namespaces - 2026-07-19 AlpaSim INTAKE). Needs a renderer-capable host."
+    }
+  },
+  "suspect_count": 4,
+  "suspect_classes": [
+    "S1 - the published G4 planner value 1.0377 +- 0.2022 itself (unseeded CEM; the draw is gone). Settled by REPLACEMENT, not correction.",
+    "S2 - the AlpaSim scene-scored family (no interval, no estimator). Needs a scene-cluster bootstrap and, for regeneration, a renderer-capable host.",
+    "S3 - frozen-WM-learned-planner (unstamped intervals) - RESOLVED by measurement, downgraded to a labelling fix.",
+    "S4 - taniteval/results/v1-validation.json and stack/experiments/p0-arm-compare-smoke/arm_compare.json (legacy, canary/footnote surfaces, not currently cited for any decision)."
+  ]
+}

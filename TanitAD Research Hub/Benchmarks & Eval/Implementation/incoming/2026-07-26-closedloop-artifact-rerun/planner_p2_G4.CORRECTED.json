@@ -1,0 +1,131 @@
+{
+  "_what": "G4 gate (P2 CEM planner closed-loop) re-driven on the decision-grade estimator",
+  "_published_artifact": "/root/taniteval/results/planner_p2_flagship-30k.json",
+  "_seeded": {
+    "seed": 0,
+    "why": "planner_p2.py:249 draws torch.randn UNSEEDED, so 2026-07-19 is not bit-reproducible. Seeding makes the estimator effect (rerun_corrected vs rerun_legacy) exact on identical windows; the CEM sampling drift is reported separately."
+  },
+  "_estimator": {
+    "corrected": "episode_cluster_bootstrap (B=2000, val episodes)",
+    "deprecated": "overlapping_holdout_se"
+  },
+  "protocol": {
+    "cl_episodes": 20,
+    "stride": 16,
+    "cem": {
+      "N": 48,
+      "iters": 2,
+      "elite": 8,
+      "K": 20,
+      "sig_steer": 0.006,
+      "sig_accel": 0.5,
+      "min_steer": 0.0008,
+      "min_accel": 0.05
+    }
+  },
+  "rows": {
+    "closed_bike_ade2s": {
+      "published_legacy_mean": 1.0377,
+      "published_legacy_ci95": 0.2022,
+      "published_estimator": "overlapping_holdout_se (stamped '8-split episode jackknife')",
+      "rerun_legacy_mean": 1.0375,
+      "rerun_legacy_ci95": 0.2023,
+      "rerun_corrected_mean": 0.9799,
+      "rerun_corrected_ci95": 0.2428,
+      "rerun_corrected_lo": 0.7456,
+      "rerun_corrected_hi": 1.2312,
+      "rerun_corrected_estimator": "episode_cluster_bootstrap",
+      "estimator_effect_pct": 5.878,
+      "cem_sampling_drift_pct": 0.019,
+      "ci_width_ratio_corrected_over_rerun_legacy": 1.2,
+      "n_windows": 221,
+      "n_episodes": 20
+    },
+    "closed_bike_fde2s": {
+      "published_legacy_mean": 2.1942,
+      "published_legacy_ci95": 0.455,
+      "published_estimator": "overlapping_holdout_se (stamped '8-split episode jackknife')",
+      "rerun_legacy_mean": 2.194,
+      "rerun_legacy_ci95": 0.4552,
+      "rerun_corrected_mean": 2.0583,
+      "rerun_corrected_ci95": 0.5335,
+      "rerun_corrected_lo": 1.5463,
+      "rerun_corrected_hi": 2.6134,
+      "rerun_corrected_estimator": "episode_cluster_bootstrap",
+      "estimator_effect_pct": 6.593,
+      "cem_sampling_drift_pct": 0.009,
+      "ci_width_ratio_corrected_over_rerun_legacy": 1.172,
+      "n_windows": 221,
+      "n_episodes": 20
+    },
+    "open_grnd_ade2s": {
+      "published_legacy_mean": 0.4244,
+      "published_legacy_ci95": 0.0573,
+      "published_estimator": "overlapping_holdout_se (stamped '8-split episode jackknife')",
+      "rerun_legacy_mean": 0.4244,
+      "rerun_legacy_ci95": 0.0573,
+      "rerun_corrected_mean": 0.4063,
+      "rerun_corrected_ci95": 0.0807,
+      "rerun_corrected_lo": 0.3293,
+      "rerun_corrected_hi": 0.4907,
+      "rerun_corrected_estimator": "episode_cluster_bootstrap",
+      "estimator_effect_pct": 4.455,
+      "cem_sampling_drift_pct": 0.0,
+      "ci_width_ratio_corrected_over_rerun_legacy": 1.408,
+      "n_windows": 221,
+      "n_episodes": 20
+    },
+    "cv_ade2s": {
+      "published_legacy_mean": 0.7704,
+      "published_legacy_ci95": 0.1704,
+      "published_estimator": "overlapping_holdout_se (stamped '8-split episode jackknife')",
+      "rerun_legacy_mean": 0.7704,
+      "rerun_legacy_ci95": 0.1704,
+      "rerun_corrected_mean": 0.7214,
+      "rerun_corrected_ci95": 0.284,
+      "rerun_corrected_lo": 0.468,
+      "rerun_corrected_hi": 1.036,
+      "rerun_corrected_estimator": "episode_cluster_bootstrap",
+      "estimator_effect_pct": 6.792,
+      "cem_sampling_drift_pct": 0.0,
+      "ci_width_ratio_corrected_over_rerun_legacy": 1.667,
+      "n_windows": 221,
+      "n_episodes": 20
+    },
+    "divergence_rate_gt5m": {
+      "published_legacy_mean": 0.0871,
+      "published_legacy_ci95": 0.046,
+      "published_estimator": "overlapping_holdout_se (stamped '8-split episode jackknife')",
+      "rerun_legacy_mean": 0.0871,
+      "rerun_legacy_ci95": 0.046,
+      "rerun_corrected_mean": 0.0724,
+      "rerun_corrected_ci95": 0.0592,
+      "rerun_corrected_lo": 0.0225,
+      "rerun_corrected_hi": 0.1409,
+      "rerun_corrected_estimator": "episode_cluster_bootstrap",
+      "estimator_effect_pct": 20.304,
+      "cem_sampling_drift_pct": 0.0,
+      "ci_width_ratio_corrected_over_rerun_legacy": 1.287,
+      "n_windows": 221,
+      "n_episodes": 20
+    }
+  },
+  "G4_verdict": {
+    "published": {
+      "planner": 1.0377,
+      "planner_ci95": 0.2022,
+      "head_baseline": 1.6852,
+      "head_baseline_source": "closedloop_flagship-30k.json (legacy) closed_bike ade_0_2s",
+      "pass": true
+    },
+    "corrected": {
+      "planner": 0.9799,
+      "planner_lo": 0.7456,
+      "planner_hi": 1.2312,
+      "head_baseline": 1.7318,
+      "head_baseline_source": "closedloop_flagship-30k.CORRECTED.json closed_bike ade_0_2s (episode_cluster_bootstrap, this task)"
+    },
+    "_unpaired_warning": "planner n=221 / 20 ep / stride 16 vs head baseline n=881 / 40 ep / stride 8 \u2014 DIFFERENT window sets. This comparison cannot be paired and its 'CI-separated' claim rests on two independent intervals, both of which were computed with the deprecated estimator."
+  },
+  "wall_s": 1010.9
+}

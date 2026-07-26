@@ -1,0 +1,59 @@
+{
+  "_what": "re-derive the frozen-WM-planner intervals from the committed per-window dumps using taniteval.ci, to decide whether that family is SUSPECT or merely UNSTAMPED",
+  "_source_read": "run.py:104-134 / run40.py:60-81 vendor an episode-cluster bootstrap (episode resampling, percentile CI, paired form on shared episodes)",
+  "dump_keys": [
+    "W_a",
+    "W_f",
+    "oracle",
+    "cv",
+    "holdv0",
+    "eid"
+  ],
+  "checks": {
+    "W_minus_oracle": {
+      "published_delta": 0.5231,
+      "published_ci": [
+        0.3743,
+        0.6826
+      ],
+      "recomputed_delta": 0.5231,
+      "recomputed_ci": [
+        0.3809,
+        0.6904
+      ],
+      "recomputed_estimator": "paired_episode_cluster_bootstrap",
+      "delta_matches": true,
+      "ci_close": true
+    },
+    "W_minus_cv": {
+      "published_delta": 0.1125,
+      "published_ci": [
+        -0.0555,
+        0.2953
+      ],
+      "recomputed_delta": 0.1125,
+      "recomputed_ci": [
+        -0.0562,
+        0.2973
+      ],
+      "recomputed_estimator": "paired_episode_cluster_bootstrap",
+      "delta_matches": true,
+      "ci_close": true
+    },
+    "W_minus_holdv0": {
+      "published_delta": 0.1681,
+      "published_ci": [
+        0.0141,
+        0.3404
+      ],
+      "recomputed_delta": 0.1681,
+      "recomputed_ci": [
+        0.0132,
+        0.342
+      ],
+      "recomputed_estimator": "paired_episode_cluster_bootstrap",
+      "delta_matches": true,
+      "ci_close": true
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "_what": "harness check \u2014 the eval pod must reproduce the pinned corrected full-set value before any new closed-loop number is quoted",
+  "arm": "flagship-30k (v1 FINAL, speed+jerk)",
+  "surface": "windows_flagship-30k.pt (open-loop g_op_fwd, 881 win / 40 ep)",
+  "decision_grade": {
+    "estimator": "episode_cluster_bootstrap",
+    "mean": 0.4271,
+    "lo": 0.3675,
+    "hi": 0.4871,
+    "ci95": 0.0598,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "pinned": [
+      0.4271,
+      0.3675,
+      0.4871
+    ],
+    "REPRODUCES_0.4271": true
+  },
+  "deprecated_reproduction": {
+    "estimator": "overlapping_holdout_se",
+    "mean": 0.4522,
+    "ci95": 0.0312,
+    "published": [
+      0.4522,
+      0.0312
+    ],
+    "REPRODUCES_PUBLISHED": true
+  },
+  "point_estimate_shift_pct": 5.868,
+  "ci_width_ratio_new_over_legacy": 1.916,
+  "lateral_py": {
+    "md5_matches_fixed_version": true,
+    "horizon_provenance_stamped": true,
+    "self_paired_horizon_s": 2.0,
+    "expected_horizon_s_sparse_4knot": 2.0,
+    "STALE_IF_0.4": false,
+    "OK": true
+  },
+  "omp_num_threads": "8",
+  "torch_threads": 8
+}

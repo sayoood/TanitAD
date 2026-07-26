@@ -1,0 +1,1154 @@
+{
+  "_surface": "sparse_4wp \u2014 4 knots at dense steps [5,10,15,20], knot spacing 0.5 s (NOT 0.1 s)",
+  "_knot_dt_s": 0.5,
+  "_estimator": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, over the val EPISODES",
+  "_lateral_module_fix": "2026-07-26 horizon-labelling fix verified present (horizon_provenance stamped, horizon_s = 2.0 s)",
+  "arms": {
+    "flagship-30k": {
+      "n_windows": 881,
+      "n_episodes": 40,
+      "by_path": {
+        "closed_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.7608,
+            "lateral_share_of_squared_error": 0.2392,
+            "longitudinal_share_by_step": [
+              0.8928,
+              0.8552,
+              0.8187,
+              0.7343
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.2149,
+              0.8784,
+              1.8691,
+              3.0076
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0463,
+              0.2271,
+              0.5735,
+              1.3462
+            ],
+            "along_growth_by_step": [
+              1.0,
+              4.0882,
+              8.6991,
+              13.9974
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.9045,
+              12.3849,
+              29.0699
+            ],
+            "along_growth_final": 13.9974,
+            "cross_growth_final": 29.0699,
+            "cross_grows_faster_by": 2.077,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 76.1% of the squared error (lateral 23.9%) \u00b7 lateral grows x29.0699 vs longitudinal x13.9974 over 0.1->0.4 s (cross faster by x2.077) \u00b7 peak |XTE| mean 1.3512 m, p90 3.7839 m, 25.4% of windows beyond 1.75 m"
+        },
+        "closed_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8977,
+            "lateral_share_of_squared_error": 0.1023,
+            "longitudinal_share_by_step": [
+              0.9607,
+              0.9363,
+              0.9156,
+              0.8861
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.4362,
+              1.608,
+              3.2444,
+              4.9015
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0558,
+              0.2683,
+              0.6531,
+              1.2182
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.6866,
+              7.4384,
+              11.2376
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.8117,
+              11.7119,
+              21.8471
+            ],
+            "along_growth_final": 11.2376,
+            "cross_growth_final": 21.8471,
+            "cross_grows_faster_by": 1.944,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 89.8% of the squared error (lateral 10.2%) \u00b7 lateral grows x21.8471 vs longitudinal x11.2376 over 0.1->0.4 s (cross faster by x1.944) \u00b7 peak |XTE| mean 1.2284 m, p90 3.477 m, 19.9% of windows beyond 1.75 m"
+        },
+        "open_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8733,
+            "lateral_share_of_squared_error": 0.1267,
+            "longitudinal_share_by_step": [
+              0.8735,
+              0.8991,
+              0.9242,
+              0.8543
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0655,
+              0.2049,
+              0.4785,
+              0.8256
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0183,
+              0.0535,
+              0.1146,
+              0.2742
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.128,
+              7.3062,
+              12.6054
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              2.9178,
+              6.2495,
+              14.9529
+            ],
+            "along_growth_final": 12.6054,
+            "cross_growth_final": 14.9529,
+            "cross_grows_faster_by": 1.186,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 87.3% of the squared error (lateral 12.7%) \u00b7 lateral grows x14.9529 vs longitudinal x12.6054 over 0.1->0.4 s (cross faster by x1.186) \u00b7 peak |XTE| mean 0.2857 m, p90 0.7119 m, 0.8% of windows beyond 1.75 m"
+        },
+        "open_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8156,
+            "lateral_share_of_squared_error": 0.1844,
+            "longitudinal_share_by_step": [
+              0.9637,
+              0.9352,
+              0.869,
+              0.7897
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0813,
+              0.2539,
+              0.5085,
+              0.829
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0136,
+              0.0532,
+              0.1464,
+              0.3091
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.1245,
+              6.2568,
+              10.2
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.9131,
+              10.7717,
+              22.7446
+            ],
+            "along_growth_final": 10.2,
+            "cross_growth_final": 22.7446,
+            "cross_grows_faster_by": 2.23,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 81.6% of the squared error (lateral 18.4%) \u00b7 lateral grows x22.7446 vs longitudinal x10.2 over 0.1->0.4 s (cross faster by x2.23) \u00b7 peak |XTE| mean 0.3101 m, p90 0.9605 m, 5.9% of windows beyond 1.75 m"
+        },
+        "cv": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.3012,
+            "lateral_share_of_squared_error": 0.6988,
+            "longitudinal_share_by_step": [
+              0.3139,
+              0.3068,
+              0.3019,
+              0.3005
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0685,
+              0.2468,
+              0.5298,
+              0.9153
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0806,
+              0.2928,
+              0.634,
+              1.0961
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.6046,
+              7.7368,
+              13.3667
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.635,
+              7.8708,
+              13.607
+            ],
+            "along_growth_final": 13.3667,
+            "cross_growth_final": 13.607,
+            "cross_grows_faster_by": 1.018,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 30.1% of the squared error (lateral 69.9%) \u00b7 lateral grows x13.607 vs longitudinal x13.3667 over 0.1->0.4 s (cross faster by x1.018) \u00b7 peak |XTE| mean 1.0988 m, p90 3.7533 m, 18.8% of windows beyond 1.75 m"
+        }
+      },
+      "paired_cross_track": {
+        "closed_bike_vs_open_grnd.mean": {
+          "delta": 1.0719,
+          "lo": 0.7658,
+          "hi": 1.4108,
+          "ci95": 0.3225,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_grnd.p90": {
+          "delta": 3.0721,
+          "lo": 2.201,
+          "hi": 4.2079,
+          "ci95": 1.0035,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.mean": {
+          "delta": 1.0371,
+          "lo": 0.7563,
+          "hi": 1.3354,
+          "ci95": 0.2896,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.p90": {
+          "delta": 2.8234,
+          "lo": 2.1997,
+          "hi": 3.5979,
+          "ci95": 0.6991,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.mean": {
+          "delta": 0.2501,
+          "lo": 0.0293,
+          "hi": 0.5046,
+          "ci95": 0.2376,
+          "p_delta_gt0": 0.9865,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.p90": {
+          "delta": 0.0306,
+          "lo": -1.4526,
+          "hi": 1.2566,
+          "ci95": 1.3546,
+          "p_delta_gt0": 0.527,
+          "separated": false,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        }
+      }
+    },
+    "flagship-speed": {
+      "n_windows": 881,
+      "n_episodes": 40,
+      "by_path": {
+        "closed_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.702,
+            "lateral_share_of_squared_error": 0.298,
+            "longitudinal_share_by_step": [
+              0.8834,
+              0.8432,
+              0.7829,
+              0.6628
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.2161,
+              0.884,
+              1.7758,
+              2.7428
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0483,
+              0.2374,
+              0.6178,
+              1.5017
+            ],
+            "along_growth_by_step": [
+              1.0,
+              4.0904,
+              8.2169,
+              12.6911
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.9138,
+              12.786,
+              31.0777
+            ],
+            "along_growth_final": 12.6911,
+            "cross_growth_final": 31.0777,
+            "cross_grows_faster_by": 2.449,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 70.2% of the squared error (lateral 29.8%) \u00b7 lateral grows x31.0777 vs longitudinal x12.6911 over 0.1->0.4 s (cross faster by x2.449) \u00b7 peak |XTE| mean 1.506 m, p90 4.0917 m, 29.6% of windows beyond 1.75 m"
+        },
+        "closed_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8517,
+            "lateral_share_of_squared_error": 0.1483,
+            "longitudinal_share_by_step": [
+              0.9662,
+              0.9313,
+              0.8859,
+              0.8251
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.4699,
+              1.5969,
+              2.9269,
+              4.1392
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0572,
+              0.298,
+              0.7631,
+              1.4407
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.3981,
+              6.2283,
+              8.8079
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              5.2092,
+              13.3377,
+              25.1811
+            ],
+            "along_growth_final": 8.8079,
+            "cross_growth_final": 25.1811,
+            "cross_grows_faster_by": 2.859,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 85.2% of the squared error (lateral 14.8%) \u00b7 lateral grows x25.1811 vs longitudinal x8.8079 over 0.1->0.4 s (cross faster by x2.859) \u00b7 peak |XTE| mean 1.4482 m, p90 3.7526 m, 24.2% of windows beyond 1.75 m"
+        },
+        "open_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8006,
+            "lateral_share_of_squared_error": 0.1994,
+            "longitudinal_share_by_step": [
+              0.8801,
+              0.7532,
+              0.8103,
+              0.7996
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.096,
+              0.2505,
+              0.6685,
+              1.1766
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0277,
+              0.1157,
+              0.2419,
+              0.4383
+            ],
+            "along_growth_by_step": [
+              1.0,
+              2.6099,
+              6.9662,
+              12.2598
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.1791,
+              8.7368,
+              15.8325
+            ],
+            "along_growth_final": 12.2598,
+            "cross_growth_final": 15.8325,
+            "cross_grows_faster_by": 1.291,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 80.1% of the squared error (lateral 19.9%) \u00b7 lateral grows x15.8325 vs longitudinal x12.2598 over 0.1->0.4 s (cross faster by x1.291) \u00b7 peak |XTE| mean 0.4507 m, p90 1.0545 m, 5.5% of windows beyond 1.75 m"
+        },
+        "open_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8156,
+            "lateral_share_of_squared_error": 0.1844,
+            "longitudinal_share_by_step": [
+              0.9637,
+              0.9352,
+              0.869,
+              0.7897
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0813,
+              0.2539,
+              0.5085,
+              0.829
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0136,
+              0.0532,
+              0.1464,
+              0.3091
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.1245,
+              6.2568,
+              10.2
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.9131,
+              10.7717,
+              22.7446
+            ],
+            "along_growth_final": 10.2,
+            "cross_growth_final": 22.7446,
+            "cross_grows_faster_by": 2.23,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 81.6% of the squared error (lateral 18.4%) \u00b7 lateral grows x22.7446 vs longitudinal x10.2 over 0.1->0.4 s (cross faster by x2.23) \u00b7 peak |XTE| mean 0.3101 m, p90 0.9605 m, 5.9% of windows beyond 1.75 m"
+        },
+        "cv": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.3012,
+            "lateral_share_of_squared_error": 0.6988,
+            "longitudinal_share_by_step": [
+              0.3139,
+              0.3068,
+              0.3019,
+              0.3005
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0685,
+              0.2468,
+              0.5298,
+              0.9153
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0806,
+              0.2928,
+              0.634,
+              1.0961
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.6046,
+              7.7368,
+              13.3667
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.635,
+              7.8708,
+              13.607
+            ],
+            "along_growth_final": 13.3667,
+            "cross_growth_final": 13.607,
+            "cross_grows_faster_by": 1.018,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 30.1% of the squared error (lateral 69.9%) \u00b7 lateral grows x13.607 vs longitudinal x13.3667 over 0.1->0.4 s (cross faster by x1.018) \u00b7 peak |XTE| mean 1.0988 m, p90 3.7533 m, 18.8% of windows beyond 1.75 m"
+        }
+      },
+      "paired_cross_track": {
+        "closed_bike_vs_open_grnd.mean": {
+          "delta": 1.0634,
+          "lo": 0.7567,
+          "hi": 1.4249,
+          "ci95": 0.3341,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_grnd.p90": {
+          "delta": 3.0466,
+          "lo": 1.874,
+          "hi": 4.1818,
+          "ci95": 1.1539,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.mean": {
+          "delta": 1.1926,
+          "lo": 0.8957,
+          "hi": 1.5162,
+          "ci95": 0.3103,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.p90": {
+          "delta": 3.1312,
+          "lo": 2.4019,
+          "hi": 3.9359,
+          "ci95": 0.767,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.mean": {
+          "delta": 0.4056,
+          "lo": 0.1603,
+          "hi": 0.6791,
+          "ci95": 0.2594,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.p90": {
+          "delta": 0.3384,
+          "lo": -0.791,
+          "hi": 1.4924,
+          "ci95": 1.1417,
+          "p_delta_gt0": 0.645,
+          "separated": false,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        }
+      }
+    },
+    "flagship-nospeed": {
+      "n_windows": 881,
+      "n_episodes": 40,
+      "by_path": {
+        "closed_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.7886,
+            "lateral_share_of_squared_error": 0.2114,
+            "longitudinal_share_by_step": [
+              0.8954,
+              0.8515,
+              0.808,
+              0.7768
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.2097,
+              0.8145,
+              1.6761,
+              2.7603
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0457,
+              0.2197,
+              0.5457,
+              1.0203
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.884,
+              7.9922,
+              13.162
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.812,
+              11.9502,
+              22.3442
+            ],
+            "along_growth_final": 13.162,
+            "cross_growth_final": 22.3442,
+            "cross_grows_faster_by": 1.698,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 78.9% of the squared error (lateral 21.1%) \u00b7 lateral grows x22.3442 vs longitudinal x13.162 over 0.1->0.4 s (cross faster by x1.698) \u00b7 peak |XTE| mean 1.0217 m, p90 2.8866 m, 18.2% of windows beyond 1.75 m"
+        },
+        "closed_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.9484,
+            "lateral_share_of_squared_error": 0.0516,
+            "longitudinal_share_by_step": [
+              0.9967,
+              0.9818,
+              0.9601,
+              0.9363
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              1.089,
+              2.3953,
+              4.024,
+              5.9648
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0533,
+              0.277,
+              0.7097,
+              1.3707
+            ],
+            "along_growth_by_step": [
+              1.0,
+              2.1996,
+              3.6953,
+              5.4774
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              5.1925,
+              13.3052,
+              25.6967
+            ],
+            "along_growth_final": 5.4774,
+            "cross_growth_final": 25.6967,
+            "cross_grows_faster_by": 4.691,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 94.8% of the squared error (lateral 5.2%) \u00b7 lateral grows x25.6967 vs longitudinal x5.4774 over 0.1->0.4 s (cross faster by x4.691) \u00b7 peak |XTE| mean 1.3729 m, p90 3.7168 m, 27.7% of windows beyond 1.75 m"
+        },
+        "open_grnd": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.9727,
+            "lateral_share_of_squared_error": 0.0273,
+            "longitudinal_share_by_step": [
+              0.9989,
+              0.9936,
+              0.9816,
+              0.9619
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              1.1353,
+              2.2836,
+              3.5384,
+              4.8672
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0312,
+              0.142,
+              0.3708,
+              0.7503
+            ],
+            "along_growth_by_step": [
+              1.0,
+              2.0115,
+              3.1169,
+              4.2873
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              4.5467,
+              11.8742,
+              24.0248
+            ],
+            "along_growth_final": 4.2873,
+            "cross_growth_final": 24.0248,
+            "cross_grows_faster_by": 5.604,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 97.3% of the squared error (lateral 2.7%) \u00b7 lateral grows x24.0248 vs longitudinal x4.2873 over 0.1->0.4 s (cross faster by x5.604) \u00b7 peak |XTE| mean 0.7543 m, p90 1.9753 m, 11.8% of windows beyond 1.75 m"
+        },
+        "open_bike": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.8156,
+            "lateral_share_of_squared_error": 0.1844,
+            "longitudinal_share_by_step": [
+              0.9637,
+              0.9352,
+              0.869,
+              0.7897
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0813,
+              0.2539,
+              0.5085,
+              0.829
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0136,
+              0.0532,
+              0.1464,
+              0.3091
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.1245,
+              6.2568,
+              10.2
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.9131,
+              10.7717,
+              22.7446
+            ],
+            "along_growth_final": 10.2,
+            "cross_growth_final": 22.7446,
+            "cross_grows_faster_by": 2.23,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 81.6% of the squared error (lateral 18.4%) \u00b7 lateral grows x22.7446 vs longitudinal x10.2 over 0.1->0.4 s (cross faster by x2.23) \u00b7 peak |XTE| mean 0.3101 m, p90 0.9605 m, 5.9% of windows beyond 1.75 m"
+        },
+        "cv": {
+          "surface": "sparse_4wp",
+          "dt_s": 0.5,
+          "horizon_s": 2.0,
+          "energy_share": {
+            "longitudinal_share_of_squared_error": 0.3012,
+            "lateral_share_of_squared_error": 0.6988,
+            "longitudinal_share_by_step": [
+              0.3139,
+              0.3068,
+              0.3019,
+              0.3005
+            ],
+            "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+          },
+          "growth": {
+            "ref_step": 1,
+            "ref_s": 0.1,
+            "mean_abs_along_by_step_m": [
+              0.0685,
+              0.2468,
+              0.5298,
+              0.9153
+            ],
+            "mean_abs_cross_by_step_m": [
+              0.0806,
+              0.2928,
+              0.634,
+              1.0961
+            ],
+            "along_growth_by_step": [
+              1.0,
+              3.6046,
+              7.7368,
+              13.3667
+            ],
+            "cross_growth_by_step": [
+              1.0,
+              3.635,
+              7.8708,
+              13.607
+            ],
+            "along_growth_final": 13.3667,
+            "cross_growth_final": 13.607,
+            "cross_grows_faster_by": 1.018,
+            "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+          },
+          "along": null,
+          "cross": null,
+          "tail_cross": null,
+          "verdict": "longitudinal carries 30.1% of the squared error (lateral 69.9%) \u00b7 lateral grows x13.607 vs longitudinal x13.3667 over 0.1->0.4 s (cross faster by x1.018) \u00b7 peak |XTE| mean 1.0988 m, p90 3.7533 m, 18.8% of windows beyond 1.75 m"
+        }
+      },
+      "paired_cross_track": {
+        "closed_bike_vs_open_grnd.mean": {
+          "delta": 0.27,
+          "lo": 0.0543,
+          "hi": 0.5076,
+          "ci95": 0.2267,
+          "p_delta_gt0": 0.9945,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_grnd.p90": {
+          "delta": 0.9113,
+          "lo": 0.2069,
+          "hi": 1.6816,
+          "ci95": 0.7373,
+          "p_delta_gt0": 0.9955,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.mean": {
+          "delta": 0.7112,
+          "lo": 0.5122,
+          "hi": 0.9413,
+          "ci95": 0.2145,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_open_bike.p90": {
+          "delta": 1.9261,
+          "lo": 1.3533,
+          "hi": 2.792,
+          "ci95": 0.7194,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.mean": {
+          "delta": -0.0758,
+          "lo": -0.296,
+          "hi": 0.1246,
+          "ci95": 0.2103,
+          "p_delta_gt0": 0.2485,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        },
+        "closed_bike_vs_cv.p90": {
+          "delta": -0.8667,
+          "lo": -2.4976,
+          "hi": 0.0829,
+          "ci95": 1.2902,
+          "p_delta_gt0": 0.0475,
+          "separated": false,
+          "reducer": "p90",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+          "mode": "ego",
+          "step": 4,
+          "n_knots": 4,
+          "horizon_s": 2.0,
+          "horizon_provenance": "explicit"
+        }
+      }
+    }
+  }
+}
