@@ -1,0 +1,19 @@
+[rung1] ckpt step=29999 head=True levels=['op', 'str', 'tac'] (21.8s)
+[parity] --val-cache: physicalai-val-0c5f7dac3b11 count OK (600/600) — NO uid digest committed for this split, so this is a COUNT-ONLY check. Upgrade it once on a pod: scripts/make_parity_manifest.py --record --split val --cache-dir <verified cache>
+[parity] --val-cache: physicalai-val-0c5f7dac3b11 val OK — 600 episodes (full build (the epcache split dir on the training pods)), COUNT-ONLY (manifest carries no uid digest).
+[rung1] val dataset (v4): 600 episodes, 102532 windows
+[rung1] GATE op=1.140906 vs 1.140906 -> PASS
+[rung1] failing-input control: {'what': "grounding.step['op'] re-initialised at random", 'wm_canary_ade_2s': 16.113448, 'ratio_vs_trained': 14.123, 'PASS_much_worse': True, 'why': 'if the harness silently ignored the readout argument all levels would agree and the negative would be vacuous'}
+[rung1] level=tac canary=0.544631 (27s)
+[rung1] level=str canary=0.552132 (27s)
+{
+  "best_level": "tac",
+  "wm_canary_ade_2s_op": 1.140906,
+  "wm_canary_ade_2s_best": 0.544631,
+  "fall_x": 2.0948,
+  "required_fall_x_for_bar_B": 2.0744,
+  "MOVES_the_canary": true,
+  "CLEARS_BAR_B": true,
+  "statement": "a canary improvement is NOT a Bar-B clearance unless the swapped value is <= 0.55",
+  "rule_applied": "PRE_REGISTRATION.md \u00a74, fixed before computing"
+}

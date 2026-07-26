@@ -1,0 +1,150 @@
+{
+  "block": "tblind_ladder/rung1_v4_readout_swap",
+  "version": "1.0.0",
+  "utc": "2026-07-26T20:14:08Z",
+  "host": "pod2",
+  "torch": "2.4.1+cu124",
+  "python": "3.11.10",
+  "ckpt": "/workspace/experiments/flagship-v4-fromscratch/ckpt.pt",
+  "val_cache": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+  "episodes": 40,
+  "stride": 8,
+  "dataset_mode": "v4",
+  "wp_steps": [
+    5,
+    10,
+    15,
+    20
+  ],
+  "committed_v4_canary": 1.1409059762954712,
+  "bar_B": 0.55,
+  "gate_tol_m": 0.01,
+  "trained_rollout_lengths_steps": {
+    "op": 4,
+    "tac": 16,
+    "str": 20
+  },
+  "estimator": "episode_cluster_bootstrap / paired (taniteval/ci.py) B=2000 seed 0, resampling unit = val episode",
+  "ckpt_step": 29999,
+  "ckpt_has_head": true,
+  "ckpt_load_s": 21.8,
+  "readout_levels_present": [
+    "op",
+    "str",
+    "tac"
+  ],
+  "n_val_windows_total": 102532,
+  "gate": {
+    "level": "op",
+    "n_windows": 881,
+    "n_episode_clusters": 40,
+    "wm_canary_ade_2s_recomputed": 1.140906,
+    "committed": 1.1409059762954712,
+    "abs_diff": 0.0,
+    "tol": 0.01,
+    "GATE_PASS": true,
+    "seconds": 55.9
+  },
+  "failing_input_control": {
+    "what": "grounding.step['op'] re-initialised at random",
+    "wm_canary_ade_2s": 16.113448,
+    "ratio_vs_trained": 14.123,
+    "PASS_much_worse": true,
+    "why": "if the harness silently ignored the readout argument all levels would agree and the negative would be vacuous"
+  },
+  "levels": {
+    "op": {
+      "wm_canary_ade_2s": 1.140906,
+      "ci95_episode_cluster_bootstrap": {
+        "mean": 1.1409,
+        "lo": 0.9935,
+        "hi": 1.3025,
+        "ci95": 0.1545,
+        "se": 0.08,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "clears_bar_B": false,
+      "fall_vs_op_x": 1.0,
+      "rel_change_vs_op_pct": 0.0
+    },
+    "tac": {
+      "wm_canary_ade_2s": 0.544631,
+      "ci95_episode_cluster_bootstrap": {
+        "mean": 0.5446,
+        "lo": 0.4348,
+        "hi": 0.6744,
+        "ci95": 0.1198,
+        "se": 0.062,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "clears_bar_B": true,
+      "fall_vs_op_x": 2.0948,
+      "rel_change_vs_op_pct": -52.26
+    },
+    "str": {
+      "wm_canary_ade_2s": 0.552132,
+      "ci95_episode_cluster_bootstrap": {
+        "mean": 0.5521,
+        "lo": 0.4466,
+        "hi": 0.6772,
+        "ci95": 0.1153,
+        "se": 0.06,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "clears_bar_B": false,
+      "fall_vs_op_x": 2.0664,
+      "rel_change_vs_op_pct": -51.61
+    }
+  },
+  "paired_vs_op": {
+    "tac": {
+      "delta": 0.5963,
+      "lo": 0.473,
+      "hi": 0.736,
+      "ci95": 0.1315,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "str": {
+      "delta": 0.5888,
+      "lo": 0.4655,
+      "hi": 0.728,
+      "ci95": 0.1312,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    }
+  },
+  "VERDICT": {
+    "best_level": "tac",
+    "wm_canary_ade_2s_op": 1.140906,
+    "wm_canary_ade_2s_best": 0.544631,
+    "fall_x": 2.0948,
+    "required_fall_x_for_bar_B": 2.0744,
+    "MOVES_the_canary": true,
+    "CLEARS_BAR_B": true,
+    "statement": "a canary improvement is NOT a Bar-B clearance unless the swapped value is <= 0.55",
+    "rule_applied": "PRE_REGISTRATION.md \u00a74, fixed before computing"
+  }
+}

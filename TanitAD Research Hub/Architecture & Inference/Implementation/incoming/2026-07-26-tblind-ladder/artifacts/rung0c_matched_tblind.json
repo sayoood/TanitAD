@@ -1,0 +1,931 @@
+{
+  "meta": {
+    "n_windows": 599,
+    "n_episode_clusters": 596,
+    "K_max": 185,
+    "n_boot": 2000,
+    "seed": 0,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "arm_ckpt": "flagship-30k",
+    "ckpt_step": 29999,
+    "new_arms": [
+      "a_imagination__own",
+      "a_imagination__own__roTAC",
+      "b_frozenlast__hold__roSTR",
+      "b_frozenlast__own",
+      "b_frozenlast__own__roSTR",
+      "b_frozenlast__own__roTAC"
+    ]
+  },
+  "window_set_identity_gate": {
+    "eid_identical": true,
+    "t0_identical": true,
+    "n_windows_new": 599,
+    "n_windows_committed": 599,
+    "anchors": {
+      "a_imagination__own": {
+        "present": true,
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001
+      },
+      "b_frozenlast__own": {
+        "present": true,
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001
+      }
+    },
+    "GATE_PASS": true
+  },
+  "T_blind_matched": {
+    "deployable_own__op (committed)": {
+      "arm_a": "a_imagination__own",
+      "arm_b": "b_frozenlast__own",
+      "T_blind_steps": 8,
+      "T_blind_s": 0.8,
+      "T_blind_ci95_steps": [
+        8,
+        10
+      ],
+      "T_blind_ci95_s": [
+        0.8,
+        1.0
+      ],
+      "T_blind_median_boot_steps": 9,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 0.6455,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.008943,
+      "lo_at_step2_m": 0.006629,
+      "first_step_where_a_loses_point": 10,
+      "first_step_where_b_separated_better": 11,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "deployable_own__str NEW": {
+      "arm_a": "a_imagination__own__roSTR",
+      "arm_b": "b_frozenlast__own__roSTR",
+      "T_blind_steps": 25,
+      "T_blind_s": 2.5,
+      "T_blind_ci95_steps": [
+        25,
+        39
+      ],
+      "T_blind_ci95_s": [
+        2.5,
+        3.9
+      ],
+      "T_blind_median_boot_steps": 31,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076438,
+      "lo_at_step2_m": 0.070429,
+      "first_step_where_a_loses_point": 32,
+      "first_step_where_b_separated_better": 40,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "deployable_own__tac NEW": {
+      "arm_a": "a_imagination__own__roTAC",
+      "arm_b": "b_frozenlast__own__roTAC",
+      "T_blind_steps": 21,
+      "T_blind_s": 2.1,
+      "T_blind_ci95_steps": [
+        21,
+        29
+      ],
+      "T_blind_ci95_s": [
+        2.1,
+        2.9
+      ],
+      "T_blind_median_boot_steps": 24,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.058979,
+      "lo_at_step2_m": 0.054043,
+      "first_step_where_a_loses_point": 24,
+      "first_step_where_b_separated_better": 30,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "deployable_hold__op (committed)": {
+      "arm_a": "a_imagination__hold",
+      "arm_b": "b_frozenlast__hold",
+      "T_blind_steps": 32,
+      "T_blind_s": 3.2,
+      "T_blind_ci95_steps": [
+        32,
+        50
+      ],
+      "T_blind_ci95_s": [
+        3.2,
+        5.0
+      ],
+      "T_blind_median_boot_steps": 41,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.01685,
+      "lo_at_step2_m": 0.01425,
+      "first_step_where_a_loses_point": 42,
+      "first_step_where_b_separated_better": 51,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "deployable_hold__str NEW": {
+      "arm_a": "a_imagination__hold__roSTR",
+      "arm_b": "b_frozenlast__hold__roSTR",
+      "T_blind_steps": 115,
+      "T_blind_s": 11.5,
+      "T_blind_ci95_steps": [
+        115,
+        174
+      ],
+      "T_blind_ci95_s": [
+        11.5,
+        17.4
+      ],
+      "T_blind_median_boot_steps": 140,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077732,
+      "lo_at_step2_m": 0.071648,
+      "first_step_where_a_loses_point": 142,
+      "first_step_where_b_separated_better": 175,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "privileged_true__op (committed)": {
+      "arm_a": "a_imagination__true",
+      "arm_b": "b_frozenlast__true",
+      "T_blind_steps": 65,
+      "T_blind_s": 6.5,
+      "T_blind_ci95_steps": [
+        65,
+        89
+      ],
+      "T_blind_ci95_s": [
+        6.5,
+        8.9
+      ],
+      "T_blind_median_boot_steps": 76,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.016851,
+      "lo_at_step2_m": 0.014279,
+      "first_step_where_a_loses_point": 77,
+      "first_step_where_b_separated_better": 90,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "privileged_true__str (committed)": {
+      "arm_a": "a_imagination__true__roSTR",
+      "arm_b": "b_frozenlast__true__roSTR",
+      "T_blind_steps": 185,
+      "T_blind_s": 18.5,
+      "T_blind_ci95_steps": [
+        185,
+        185
+      ],
+      "T_blind_ci95_s": [
+        18.5,
+        18.5
+      ],
+      "T_blind_median_boot_steps": 185,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077731,
+      "lo_at_step2_m": 0.071625,
+      "first_step_where_a_loses_point": null,
+      "first_step_where_b_separated_better": null,
+      "C14_saturated_at_grid_terminus": true,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    }
+  },
+  "paired_de_at_grid": {
+    "deployable_own__op (committed)": {
+      "0.5s": {
+        "delta_b_minus_a": 0.0268,
+        "lo": 0.0176,
+        "hi": 0.0368,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": -0.015,
+        "lo": -0.0408,
+        "hi": 0.0101,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": -0.8133,
+        "lo": -0.9374,
+        "hi": -0.6915,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": -2.113,
+        "lo": -2.3973,
+        "hi": -1.841,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": -4.1075,
+        "lo": -4.711,
+        "hi": -3.5219,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": -6.2625,
+        "lo": -7.2687,
+        "hi": -5.2688,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": -12.4875,
+        "lo": -14.4817,
+        "hi": -10.588,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": -22.342,
+        "lo": -25.6101,
+        "hi": -19.1956,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -54.0996,
+        "lo": -61.4208,
+        "hi": -47.2179,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "deployable_own__str NEW": {
+      "0.5s": {
+        "delta_b_minus_a": 0.2887,
+        "lo": 0.263,
+        "hi": 0.3157,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.5066,
+        "lo": 0.4475,
+        "hi": 0.5701,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 0.413,
+        "lo": 0.2651,
+        "hi": 0.5673,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": 0.0568,
+        "lo": -0.2068,
+        "hi": 0.3278,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": -0.8686,
+        "lo": -1.3491,
+        "hi": -0.3684,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": -2.4559,
+        "lo": -3.2145,
+        "hi": -1.7054,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": -6.9592,
+        "lo": -8.5104,
+        "hi": -5.3831,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": -12.8208,
+        "lo": -15.3461,
+        "hi": -10.2382,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -27.1582,
+        "lo": -32.1451,
+        "hi": -22.3072,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "deployable_own__tac NEW": {
+      "0.5s": {
+        "delta_b_minus_a": 0.2277,
+        "lo": 0.2055,
+        "hi": 0.2509,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.3607,
+        "lo": 0.308,
+        "hi": 0.4149,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 0.1825,
+        "lo": 0.0456,
+        "hi": 0.3245,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": -0.255,
+        "lo": -0.4972,
+        "hi": -0.0015,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": -1.0817,
+        "lo": -1.5208,
+        "hi": -0.6465,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": -2.2917,
+        "lo": -2.9757,
+        "hi": -1.6397,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": -5.404,
+        "lo": -6.7734,
+        "hi": -4.0702,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": -9.3793,
+        "lo": -11.6868,
+        "hi": -7.3055,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -20.6051,
+        "lo": -24.9969,
+        "hi": -16.6278,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "deployable_hold__op (committed)": {
+      "0.5s": {
+        "delta_b_minus_a": 0.0616,
+        "lo": 0.0527,
+        "hi": 0.0718,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.1416,
+        "lo": 0.1185,
+        "hi": 0.1659,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 0.1618,
+        "lo": 0.0846,
+        "hi": 0.247,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": 0.1908,
+        "lo": 0.0303,
+        "hi": 0.3697,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": -0.1266,
+        "lo": -0.4578,
+        "hi": 0.2274,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": -1.2489,
+        "lo": -1.8205,
+        "hi": -0.6811,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": -5.9173,
+        "lo": -7.2476,
+        "hi": -4.6937,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": -13.5318,
+        "lo": -16.0927,
+        "hi": -11.1196,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -38.3756,
+        "lo": -45.0609,
+        "hi": -32.5935,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "deployable_hold__str NEW": {
+      "0.5s": {
+        "delta_b_minus_a": 0.3122,
+        "lo": 0.2871,
+        "hi": 0.3385,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.6861,
+        "lo": 0.6304,
+        "hi": 0.7444,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 1.3785,
+        "lo": 1.2503,
+        "hi": 1.5122,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": 1.9734,
+        "lo": 1.7528,
+        "hi": 2.2003,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": 2.649,
+        "lo": 2.2572,
+        "hi": 3.0391,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": 2.996,
+        "lo": 2.397,
+        "hi": 3.5829,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": 2.7475,
+        "lo": 1.6415,
+        "hi": 3.8629,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": 1.4807,
+        "lo": -0.3166,
+        "hi": 3.2553,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -4.5064,
+        "lo": -7.9866,
+        "hi": -0.9783,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "privileged_true__op (committed)": {
+      "0.5s": {
+        "delta_b_minus_a": 0.0657,
+        "lo": 0.0565,
+        "hi": 0.0758,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.1664,
+        "lo": 0.1436,
+        "hi": 0.1906,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 0.3505,
+        "lo": 0.2728,
+        "hi": 0.4351,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": 0.7054,
+        "lo": 0.5426,
+        "hi": 0.8818,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": 1.1211,
+        "lo": 0.7749,
+        "hi": 1.4622,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": 0.9676,
+        "lo": 0.3546,
+        "hi": 1.5701,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": -1.3719,
+        "lo": -2.7773,
+        "hi": -0.0441,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": -6.431,
+        "lo": -9.038,
+        "hi": -4.035,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": -27.087,
+        "lo": -33.8919,
+        "hi": -21.1666,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "privileged_true__str (committed)": {
+      "0.5s": {
+        "delta_b_minus_a": 0.3141,
+        "lo": 0.2893,
+        "hi": 0.3407,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "1s": {
+        "delta_b_minus_a": 0.7244,
+        "lo": 0.6699,
+        "hi": 0.7818,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "2s": {
+        "delta_b_minus_a": 1.7286,
+        "lo": 1.6064,
+        "hi": 1.8624,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "3s": {
+        "delta_b_minus_a": 2.9159,
+        "lo": 2.6944,
+        "hi": 3.146,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "4.5s": {
+        "delta_b_minus_a": 4.8075,
+        "lo": 4.4086,
+        "hi": 5.2071,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "6s": {
+        "delta_b_minus_a": 6.7374,
+        "lo": 6.1176,
+        "hi": 7.3646,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "9s": {
+        "delta_b_minus_a": 10.4237,
+        "lo": 9.3113,
+        "hi": 11.5841,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "12s": {
+        "delta_b_minus_a": 13.7004,
+        "lo": 11.8808,
+        "hi": 15.5392,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "18.5s": {
+        "delta_b_minus_a": 19.0163,
+        "lo": 15.3505,
+        "hi": 22.58,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  },
+  "VERDICT_MATCHED": {
+    "rule": "PRE_REGISTRATION.md \u00a72 \u2014 CONFIRM >=16 steps, PARTIAL 10..15, REFUTE <=9; baseline 8 steps",
+    "per_readout": {
+      "str": {
+        "T_blind_steps": 25,
+        "T_blind_s": 2.5,
+        "T_blind_ci95_s": [
+          2.5,
+          3.9
+        ],
+        "baseline_steps": 8,
+        "bucket": "CONFIRM",
+        "beats_cv": {
+          "first_s": null,
+          "last_s": null,
+          "n_steps": 0,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "tac": {
+        "T_blind_steps": 21,
+        "T_blind_s": 2.1,
+        "T_blind_ci95_s": [
+          2.1,
+          2.9
+        ],
+        "baseline_steps": 8,
+        "bucket": "CONFIRM",
+        "beats_cv": {
+          "first_s": null,
+          "last_s": null,
+          "n_steps": 0,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    }
+  }
+}

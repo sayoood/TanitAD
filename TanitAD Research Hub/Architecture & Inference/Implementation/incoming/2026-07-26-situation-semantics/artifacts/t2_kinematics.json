@@ -1,0 +1,117 @@
+{
+  "n_chunks": 26,
+  "n_clips": 2482,
+  "n_clips_with_obstacle_offline": 2417,
+  "n_windows_10hz": 399602,
+  "grid_hz": 10.0,
+  "junction_deg_imported_from": "taniteval.corridor.JUNCTION_DEG",
+  "junction_deg": 10.0,
+  "JUNCTION_STRATUM": {
+    "definition": "|net heading change over the FIRST 2 s| >= 10 deg (corridor.junction_mask)",
+    "rate": 0.12311249693444978,
+    "n_positive": 49196,
+    "speed_mean_mps_inside": 7.746699359603549,
+    "speed_mean_mps_outside": 13.289559333081824,
+    "turn_radius_bands_within_the_stratum": {
+      "R_lt_25m (junction-scale turn)": 0.371717212781527,
+      "R_25_100m (ambiguous)": 0.4981502561183836,
+      "R_100_300m (road curve)": 0.1292178225872022,
+      "R_ge_300m (near-straight / noise)": 0.0009147085128872266
+    },
+    "CONFLATION_RATE_road_curve_not_junction": 0.13013253110008943,
+    "R_quantiles_m": {
+      "0.05": 7.128519800512379,
+      "0.25": 17.657802451906225,
+      "0.5": 37.18911723934635,
+      "0.75": 71.59105073213317,
+      "0.95": 135.3186447750878
+    }
+  },
+  "CURVATURE_CROSS_CHECK": {
+    "why": "two independent estimates of the same quantity \u2014 quaternion-heading geometry vs egomotion's OWN `curvature` column \u2014 so a curvature-based claim does not rest on one derivation",
+    "pearson_r": 0.8519466661604593,
+    "n": 376290,
+    "kappa_geom_median": 0.0007894649091493488,
+    "kappa_native_median": 0.0008361756898652382
+  },
+  "LANE_CHANGE_CANDIDATE": {
+    "definition": "|lateral offset from the straight continuation over 4 s| >= 2.5 m AND |net heading change over 4 s| < 10.0 deg AND v >= 5 m/s",
+    "rate": 0.09512214653580313,
+    "n_positive": 38011,
+    "lat4_abs_quantiles_m": {
+      "0.5": 0.6409312429048392,
+      "0.9": 8.01809659900866,
+      "0.99": 20.006199708057796,
+      "0.999": 30.382792252839234
+    },
+    "status": "CANDIDATE RATE, NOT A VALIDATED LABEL \u2014 there is no lane graph to confirm a boundary was crossed; a wide bend and a within-lane swerve both enter this set",
+    "sensitivity_how_much_is_road_curvature": {
+      "|hd4|<10.0deg & |lat4|>=2.5m": {
+        "rate": 0.09512214653580313,
+        "n": 38011
+      },
+      "|hd4|<10.0deg & |lat4|>=3.5m": {
+        "rate": 0.056278497104619095,
+        "n": 22489
+      },
+      "|hd4|<5.0deg & |lat4|>=2.5m": {
+        "rate": 0.03881111706147617,
+        "n": 15509
+      },
+      "|hd4|<5.0deg & |lat4|>=3.5m": {
+        "rate": 0.015893313847278042,
+        "n": 6351
+      },
+      "|hd4|<2.0deg & |lat4|>=2.5m": {
+        "rate": 0.0037111926366734903,
+        "n": 1483
+      },
+      "|hd4|<2.0deg & |lat4|>=3.5m": {
+        "rate": 0.0012537474787413477,
+        "n": 501
+      },
+      "|hd4|<1.0deg & |lat4|>=2.5m": {
+        "rate": 0.00107106571038183,
+        "n": 428
+      },
+      "|hd4|<1.0deg & |lat4|>=3.5m": {
+        "rate": 0.0005480453050785532,
+        "n": 219
+      }
+    }
+  },
+  "CROSS_TRAFFIC_MAP_FREE_INTERSECTION_SIGNAL": {
+    "definition": "at least one VEHICLE-class obstacle.offline box AHEAD (center_x>0), within 40 m, whose heading AXIS is >= 50 deg from the ego's (rig frame)",
+    "n_windows_with_obstacle_offline": 367704,
+    "frac_of_windows_covered": 0.9201755746968233,
+    "rate": 0.3185986554402454,
+    "AGREEMENT_with_kinematic_junction_stratum": {
+      "P(kinematic_junction | cross_traffic)": 0.1634485702091336,
+      "P(kinematic_junction | no_cross_traffic)": 0.10408933802693232,
+      "lift": 1.5702719731663826,
+      "P(cross_traffic | kinematic_junction)": 0.4233660564252233,
+      "P(cross_traffic | not kinematic_junction)": 0.3039047867128096
+    },
+    "status": "SIGNAL, not a label \u2014 a perpendicular parked car, a driveway and a car-park aisle all enter this set. It is INDEPENDENT of the ego's own trajectory, which is what makes the agreement below worth reading."
+  },
+  "ROUNDABOUT_CANDIDATE": {
+    "definition": "max sustained same-sign heading sweep over 6/10/15 s with turn radius < 30 m, per CLIP",
+    "clip_rate_ge_180deg": 0.004431909750201451,
+    "clip_rate_ge_270deg": 0.0,
+    "clip_rate_ge_360deg": 0.0,
+    "sweep_quantiles_deg": {
+      "0.5": 0.0,
+      "0.9": 87.19238465852713,
+      "0.99": 153.92443153674776,
+      "1.0": 252.12678563338085
+    },
+    "status": "CANDIDATE RATE, NOT A VALIDATED LABEL \u2014 a U-turn, a tight corner and a car park loop all enter this set; nothing in the corpus can tell them apart from a roundabout"
+  },
+  "speed_quantiles_mps": {
+    "0.05": 0.062436536134803156,
+    "0.25": 5.839541352838495,
+    "0.5": 10.776442327143009,
+    "0.75": 17.734167744346184,
+    "0.95": 30.6252065221625
+  }
+}

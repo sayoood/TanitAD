@@ -1,0 +1,1166 @@
+{
+  "meta": {
+    "n_windows": 599,
+    "n_episode_clusters": 596,
+    "K_max": 185,
+    "n_boot": 2000,
+    "seed": 0,
+    "arm_ckpt": "flagship-30k",
+    "ckpt_step": 29999,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "why_de_not_T_blind": "T_blind is a functional of a CONTRAST and 4 of the 6 cells have no readout-matched frozen-last comparator in the dump; de_N and ade_0_2s need no comparator, so every cell is exactly matched"
+  },
+  "cells": {
+    "own|op": {
+      "arm": "a_imagination__own",
+      "action_source": "the model's own actions (DEPLOYABLE)",
+      "readout": "step['op'] \u2014 calibrated over 4 steps (0.4 s)",
+      "ade_0_2s": {
+        "mean": 0.9554,
+        "lo": 0.9003,
+        "hi": 1.0129,
+        "ci95": 0.0563,
+        "se": 0.0292,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 2.158,
+        "lo": 2.0248,
+        "hi": 2.2952,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 16.5699,
+        "lo": 15.49,
+        "hi": 17.6877,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 14,
+          "T_s": 1.4,
+          "T_ci95_s": [
+            1.4,
+            1.4
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 16,
+          "T_s": 1.6,
+          "T_ci95_s": [
+            1.6,
+            1.7
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 19,
+          "T_s": 1.9,
+          "T_ci95_s": [
+            1.8,
+            1.9
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "own|str": {
+      "arm": "a_imagination__own__roSTR",
+      "action_source": "the model's own actions (DEPLOYABLE)",
+      "readout": "step['str'] \u2014 calibrated over 20 steps (2.0 s)",
+      "ade_0_2s": {
+        "mean": 0.871,
+        "lo": 0.8179,
+        "hi": 0.9231,
+        "ci95": 0.0526,
+        "se": 0.0267,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.8165,
+        "lo": 1.702,
+        "hi": 1.9328,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 14.0028,
+        "lo": 13.1631,
+        "hi": 14.868,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 14,
+          "T_s": 1.4,
+          "T_ci95_s": [
+            1.4,
+            1.5
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 17,
+          "T_s": 1.7,
+          "T_ci95_s": [
+            1.6,
+            1.8
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 21,
+          "T_s": 2.1,
+          "T_ci95_s": [
+            2.0,
+            2.1
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "hold|op": {
+      "arm": "a_imagination__hold",
+      "action_source": "last observed action held (DEPLOYABLE, no policy)",
+      "readout": "step['op'] \u2014 calibrated over 4 steps (0.4 s)",
+      "ade_0_2s": {
+        "mean": 0.4712,
+        "lo": 0.4413,
+        "hi": 0.5035,
+        "ci95": 0.0311,
+        "se": 0.0158,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.0349,
+        "lo": 0.9693,
+        "hi": 1.1057,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 10.9862,
+        "lo": 10.3319,
+        "hi": 11.6479,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 19,
+          "T_s": 1.9,
+          "T_ci95_s": [
+            1.9,
+            2.0
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 23,
+          "T_s": 2.3,
+          "T_ci95_s": [
+            2.2,
+            2.3
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 27,
+          "T_s": 2.7,
+          "T_ci95_s": [
+            2.6,
+            2.8
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": 0.4,
+        "last_s": 3.8,
+        "n_steps": 35,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "hold|str": {
+      "arm": "a_imagination__hold__roSTR",
+      "action_source": "last observed action held (DEPLOYABLE, no policy)",
+      "readout": "step['str'] \u2014 calibrated over 20 steps (2.0 s)",
+      "ade_0_2s": {
+        "mean": 0.3351,
+        "lo": 0.3084,
+        "hi": 0.3624,
+        "ci95": 0.027,
+        "se": 0.0143,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 0.6718,
+        "lo": 0.6111,
+        "hi": 0.7308,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 8.0898,
+        "lo": 7.4506,
+        "hi": 8.7255,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 23,
+          "T_s": 2.3,
+          "T_ci95_s": [
+            2.3,
+            2.4
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 27,
+          "T_s": 2.7,
+          "T_ci95_s": [
+            2.6,
+            2.8
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 32,
+          "T_s": 3.2,
+          "T_ci95_s": [
+            3.1,
+            3.3
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": 0.6,
+        "last_s": 8.8,
+        "n_steps": 83,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "true|op": {
+      "arm": "a_imagination__true",
+      "action_source": "the expert's true actions (PRIVILEGED)",
+      "readout": "step['op'] \u2014 calibrated over 4 steps (0.4 s)",
+      "ade_0_2s": {
+        "mean": 0.3839,
+        "lo": 0.3598,
+        "hi": 0.4106,
+        "ci95": 0.0254,
+        "se": 0.0129,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 0.8136,
+        "lo": 0.7651,
+        "hi": 0.8677,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 8.2304,
+        "lo": 7.7482,
+        "hi": 8.7221,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 22,
+          "T_s": 2.2,
+          "T_ci95_s": [
+            2.1,
+            2.3
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 26,
+          "T_s": 2.6,
+          "T_ci95_s": [
+            2.5,
+            2.7
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 31,
+          "T_s": 3.1,
+          "T_ci95_s": [
+            3.0,
+            3.2
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": 0.4,
+        "last_s": 7.4,
+        "n_steps": 71,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "true|str": {
+      "arm": "a_imagination__true__roSTR",
+      "action_source": "the expert's true actions (PRIVILEGED)",
+      "readout": "step['str'] \u2014 calibrated over 20 steps (2.0 s)",
+      "ade_0_2s": {
+        "mean": 0.195,
+        "lo": 0.1767,
+        "hi": 0.2139,
+        "ci95": 0.0186,
+        "se": 0.0097,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 0.3112,
+        "lo": 0.2773,
+        "hi": 0.3449,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 4.1272,
+        "lo": 3.838,
+        "hi": 4.4085,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "T_useful": {
+        "lane_half_1m": {
+          "bar_m": 1.0,
+          "T_steps": 34,
+          "T_s": 3.4,
+          "T_ci95_s": [
+            3.3,
+            3.5
+          ]
+        },
+        "corridor_1p391m": {
+          "bar_m": 1.391,
+          "T_steps": 39,
+          "T_s": 3.9,
+          "T_ci95_s": [
+            3.8,
+            4.0
+          ]
+        },
+        "miss_2m": {
+          "bar_m": 2.0,
+          "T_steps": 45,
+          "T_s": 4.5,
+          "T_ci95_s": [
+            4.3,
+            4.6
+          ]
+        }
+      },
+      "beats_cv": {
+        "first_s": 0.6,
+        "last_s": 18.5,
+        "n_steps": 180,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "ref:d_constant_velocity": {
+      "arm": "d_constant_velocity",
+      "ade_0_2s": {
+        "mean": 0.6083,
+        "lo": 0.5574,
+        "hi": 0.6613,
+        "ci95": 0.0519,
+        "se": 0.0265,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.2677,
+        "lo": 1.1626,
+        "hi": 1.3783,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 9.9263,
+        "lo": 9.201,
+        "hi": 10.732,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "ref:d2_hold_v0": {
+      "arm": "d2_hold_v0",
+      "ade_0_2s": {
+        "mean": 0.5933,
+        "lo": 0.5458,
+        "hi": 0.6461,
+        "ci95": 0.0502,
+        "se": 0.0257,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.2442,
+        "lo": 1.145,
+        "hi": 1.3566,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 9.8541,
+        "lo": 9.145,
+        "hi": 10.645,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "ref:b_frozenlast__own": {
+      "arm": "b_frozenlast__own",
+      "ade_0_2s": {
+        "mean": 0.6839,
+        "lo": 0.6388,
+        "hi": 0.7321,
+        "ci95": 0.0467,
+        "se": 0.0241,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.3447,
+        "lo": 1.2533,
+        "hi": 1.4447,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 10.3074,
+        "lo": 9.5615,
+        "hi": 11.0358,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "ref:b_frozenlast__hold": {
+      "arm": "b_frozenlast__hold",
+      "ade_0_2s": {
+        "mean": 0.5997,
+        "lo": 0.5572,
+        "hi": 0.6442,
+        "ci95": 0.0435,
+        "se": 0.0222,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.1967,
+        "lo": 1.1121,
+        "hi": 1.2879,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 9.7373,
+        "lo": 9.0095,
+        "hi": 10.4488,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "ref:b_frozenlast__true": {
+      "arm": "b_frozenlast__true",
+      "ade_0_2s": {
+        "mean": 0.587,
+        "lo": 0.5451,
+        "hi": 0.6314,
+        "ci95": 0.0431,
+        "se": 0.0223,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_2s": {
+        "mean": 1.1641,
+        "lo": 1.0817,
+        "hi": 1.256,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "mean": 9.198,
+        "lo": 8.5424,
+        "hi": 9.8331,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    }
+  },
+  "factorial": {
+    "readout_effect_within_action_source": {
+      "own": {
+        "de_2s": {
+          "delta_b_minus_a": 0.3414,
+          "lo": 0.2083,
+          "hi": 0.4802,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 2.5671,
+          "lo": 1.6622,
+          "hi": 3.4951,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "ade_0_2s_rel_pct": -8.84
+      },
+      "hold": {
+        "de_2s": {
+          "delta_b_minus_a": 0.3631,
+          "lo": 0.3163,
+          "hi": 0.4141,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 2.8964,
+          "lo": 2.4839,
+          "hi": 3.3363,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "ade_0_2s_rel_pct": -28.88
+      },
+      "true": {
+        "de_2s": {
+          "delta_b_minus_a": 0.5024,
+          "lo": 0.4586,
+          "hi": 0.5464,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 4.1032,
+          "lo": 3.7464,
+          "hi": 4.4844,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "ade_0_2s_rel_pct": -49.21
+      }
+    },
+    "action_effect_within_readout": {
+      "op: own->hold": {
+        "de_2s": {
+          "delta_b_minus_a": 1.123,
+          "lo": 1.0079,
+          "hi": 1.2454,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 5.5837,
+          "lo": 4.6457,
+          "hi": 6.558,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "op: own->true": {
+        "de_2s": {
+          "delta_b_minus_a": 1.3444,
+          "lo": 1.2315,
+          "hi": 1.4633,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 8.3395,
+          "lo": 7.3913,
+          "hi": 9.28,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "str: own->hold": {
+        "de_2s": {
+          "delta_b_minus_a": 1.1447,
+          "lo": 1.0485,
+          "hi": 1.2513,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 5.913,
+          "lo": 5.184,
+          "hi": 6.6463,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "str: own->true": {
+        "de_2s": {
+          "delta_b_minus_a": 1.5054,
+          "lo": 1.4053,
+          "hi": 1.6094,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "de_6s": {
+          "delta_b_minus_a": 9.8756,
+          "lo": 9.1782,
+          "hi": 10.6329,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    },
+    "interaction_de_2s": {
+      "hold_minus_own": {
+        "delta_of_deltas_m": 0.0217,
+        "lo": -0.1071,
+        "hi": 0.1419,
+        "separated": false,
+        "reads": "positive = the readout swap buys MORE under this action source than under the model's own actions, i.e. the horizon lever is GATED by policy quality",
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "true_minus_own": {
+        "delta_of_deltas_m": 0.161,
+        "lo": 0.0343,
+        "hi": 0.2794,
+        "separated": true,
+        "reads": "positive = the readout swap buys MORE under this action source than under the model's own actions, i.e. the horizon lever is GATED by policy quality",
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  },
+  "gap_attribution": {
+    "de_2s": {
+      "deployable_as_shipped_m": 2.158,
+      "privileged_as_shipped_m": 0.8136,
+      "gap_m": 1.3444,
+      "fixes": {
+        "(a) fix the READOUT only": {
+          "de_2s_m": 1.8165,
+          "gap_closed_m": 0.3414,
+          "gap_closed_pct": 25.4,
+          "paired_vs_deployable": {
+            "delta_b_minus_a": 0.3414,
+            "lo": 0.2083,
+            "hi": 0.4802,
+            "separated": true,
+            "a_better": true,
+            "n_windows": 599,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "(b) fix the ACTIONS only (held-last)": {
+          "de_2s_m": 1.0349,
+          "gap_closed_m": 1.123,
+          "gap_closed_pct": 83.5,
+          "paired_vs_deployable": {
+            "delta_b_minus_a": 1.123,
+            "lo": 1.0079,
+            "hi": 1.2454,
+            "separated": true,
+            "a_better": true,
+            "n_windows": 599,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "(c) BOTH": {
+          "de_2s_m": 0.6718,
+          "gap_closed_m": 1.4861,
+          "gap_closed_pct": 110.5,
+          "paired_vs_deployable": {
+            "delta_b_minus_a": 1.4861,
+            "lo": 1.3532,
+            "hi": 1.6247,
+            "separated": true,
+            "a_better": true,
+            "n_windows": 599,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "(d) privileged actions + fixed readout": {
+          "de_2s_m": 0.3112,
+          "gap_closed_m": 1.8468,
+          "gap_closed_pct": 137.4,
+          "paired_vs_deployable": {
+            "delta_b_minus_a": 1.8468,
+            "lo": 1.7182,
+            "hi": 1.9852,
+            "separated": true,
+            "a_better": true,
+            "n_windows": 599,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      }
+    },
+    "ade_0_2s": {
+      "deployable_as_shipped": 0.9554,
+      "privileged_as_shipped": 0.3839,
+      "gap": 0.5715,
+      "fixes": {
+        "(a) fix the READOUT only": {
+          "ade_0_2s": 0.871,
+          "gap_closed_pct": 14.8
+        },
+        "(b) fix the ACTIONS only (held-last)": {
+          "ade_0_2s": 0.4712,
+          "gap_closed_pct": 84.7
+        },
+        "(c) BOTH": {
+          "ade_0_2s": 0.3351,
+          "gap_closed_pct": 108.5
+        },
+        "(d) privileged actions + fixed readout": {
+          "ade_0_2s": 0.195,
+          "gap_closed_pct": 133.1
+        }
+      }
+    },
+    "beats_cv_steps": {
+      "own|op": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "own|str": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "hold|op": {
+        "first_s": 0.4,
+        "last_s": 3.8,
+        "n_steps": 35,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "hold|str": {
+        "first_s": 0.6,
+        "last_s": 8.8,
+        "n_steps": 83,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "true|op": {
+        "first_s": 0.4,
+        "last_s": 7.4,
+        "n_steps": 71,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "true|str": {
+        "first_s": 0.6,
+        "last_s": 18.5,
+        "n_steps": 180,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  },
+  "action_source_dominance": {
+    "op": {
+      "own_de_2s": 2.158,
+      "hold_de_2s": 1.0349,
+      "true_de_2s": 0.8136,
+      "policy_penalty_m (own - hold)": 1.123,
+      "residual_privilege_m (hold - true)": 0.2213,
+      "policy_share_of_own_minus_true_pct": 83.5,
+      "paired_own_vs_hold": {
+        "delta_b_minus_a": 1.123,
+        "lo": 1.0079,
+        "hi": 1.2454,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "str": {
+      "own_de_2s": 1.8165,
+      "hold_de_2s": 0.6718,
+      "true_de_2s": 0.3112,
+      "policy_penalty_m (own - hold)": 1.1447,
+      "residual_privilege_m (hold - true)": 0.3607,
+      "policy_share_of_own_minus_true_pct": 76.0,
+      "paired_own_vs_hold": {
+        "delta_b_minus_a": 1.1447,
+        "lo": 1.0485,
+        "hi": 1.2513,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  },
+  "T_blind_where_matched": {
+    "own|op": {
+      "arm_a": "a__own",
+      "arm_b": "b__own",
+      "T_blind_steps": 8,
+      "T_blind_s": 0.8,
+      "T_blind_ci95_steps": [
+        8,
+        10
+      ],
+      "T_blind_ci95_s": [
+        0.8,
+        1.0
+      ],
+      "T_blind_median_boot_steps": 9,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 0.6455,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.008943,
+      "lo_at_step2_m": 0.006629,
+      "first_step_where_a_loses_point": 10,
+      "first_step_where_b_separated_better": 11,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "hold|op": {
+      "arm_a": "a__hold",
+      "arm_b": "b__hold",
+      "T_blind_steps": 32,
+      "T_blind_s": 3.2,
+      "T_blind_ci95_steps": [
+        32,
+        50
+      ],
+      "T_blind_ci95_s": [
+        3.2,
+        5.0
+      ],
+      "T_blind_median_boot_steps": 41,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.01685,
+      "lo_at_step2_m": 0.01425,
+      "first_step_where_a_loses_point": 42,
+      "first_step_where_b_separated_better": 51,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "true|op": {
+      "arm_a": "a__true",
+      "arm_b": "b__true",
+      "T_blind_steps": 65,
+      "T_blind_s": 6.5,
+      "T_blind_ci95_steps": [
+        65,
+        89
+      ],
+      "T_blind_ci95_s": [
+        6.5,
+        8.9
+      ],
+      "T_blind_median_boot_steps": 76,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.016851,
+      "lo_at_step2_m": 0.014279,
+      "first_step_where_a_loses_point": 77,
+      "first_step_where_b_separated_better": 90,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "true|str": {
+      "arm_a": "a__true__roSTR",
+      "arm_b": "b__true__roSTR",
+      "T_blind_steps": 185,
+      "T_blind_s": 18.5,
+      "T_blind_ci95_steps": [
+        185,
+        185
+      ],
+      "T_blind_ci95_s": [
+        18.5,
+        18.5
+      ],
+      "T_blind_median_boot_steps": 185,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077731,
+      "lo_at_step2_m": 0.071625,
+      "first_step_where_a_loses_point": null,
+      "first_step_where_b_separated_better": null,
+      "C14_saturated_at_grid_terminus": true,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step"
+    },
+    "MISSING": [
+      "own|str",
+      "hold|str"
+    ],
+    "why_missing": "b_frozenlast__own__roSTR and b_frozenlast__hold__roSTR were never rolled out; building them is GPU work and is the first item of the Rung-1 pod job"
+  },
+  "headline_contrasts": {
+    "deployable_best_vs_privileged_as_shipped": {
+      "deployable_arm": "a_imagination__hold__roSTR",
+      "privileged_arm": "a_imagination__true",
+      "de_2s": {
+        "delta_b_minus_a": 0.1418,
+        "lo": 0.0743,
+        "hi": 0.2058,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_6s": {
+        "delta_b_minus_a": 0.1405,
+        "lo": -0.5003,
+        "hi": 0.7896,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "delta": 0.0488,
+        "lo": 0.0192,
+        "hi": 0.0774,
+        "ci95": 0.0291,
+        "p_delta_gt0": 0.9995,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "reads": "positive delta = the DEPLOYABLE arm (held-last action + 20-step readout) has the smaller error than the PRIVILEGED as-shipped arm (expert actions + 4-step readout)"
+    },
+    "deployable_best_vs_cv_floor": {
+      "arm": "a_imagination__hold__roSTR",
+      "de_2s": {
+        "delta_b_minus_a": 0.5958,
+        "lo": 0.5031,
+        "hi": 0.694,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.6,
+        "last_s": 8.8,
+        "n_steps": 83,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "deployable_asshipped_vs_cv_floor": {
+      "arm": "a_imagination__own",
+      "de_2s": {
+        "delta_b_minus_a": -0.8903,
+        "lo": -1.0221,
+        "hi": -0.7639,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  }
+}

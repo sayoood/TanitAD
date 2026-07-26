@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "source_dump": "bi_perwindow_compact.pt",
+    "n_windows": 599,
+    "n_episode_clusters": 596,
+    "K_max": 185,
+    "n_boot": 2000,
+    "seed": 0,
+    "dt_s": 0.1,
+    "arm_ckpt": "flagship-30k",
+    "ckpt_step": 29999,
+    "trained_rollout_lengths_steps": {
+      "op": 4,
+      "tac": 16,
+      "str": 20
+    },
+    "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py)",
+    "arms_present_dense": [
+      "a_imagination__gtkin",
+      "a_imagination__hold",
+      "a_imagination__hold__roSTR",
+      "a_imagination__own",
+      "a_imagination__own__roSTR",
+      "a_imagination__own_vupd",
+      "a_imagination__true",
+      "a_imagination__true__roSTR",
+      "a_imagination__true__roTAC",
+      "b_frozenlast__gtkin",
+      "b_frozenlast__hold",
+      "b_frozenlast__own",
+      "b_frozenlast__true",
+      "b_frozenlast__true__roSTR",
+      "c2_observedpair__true",
+      "c2_observedpair__true__roSTR",
+      "c_fullobs__own",
+      "c_fullobs__true",
+      "d2_hold_v0",
+      "d_constant_velocity"
+    ]
+  },
+  "fidelity_gate_direction_1": {
+    "t_blind": [
+      {
+        "pair": "a_imagination__true vs b_frozenlast__true",
+        "committed_steps": 65,
+        "recomputed_steps": 65,
+        "committed_ci95_s": [
+          6.5,
+          8.9
+        ],
+        "recomputed_ci95_s": [
+          6.5,
+          8.9
+        ],
+        "match": true
+      },
+      {
+        "pair": "a_imagination__own vs b_frozenlast__own",
+        "committed_steps": 8,
+        "recomputed_steps": 8,
+        "committed_ci95_s": [
+          0.8,
+          1.0
+        ],
+        "recomputed_ci95_s": [
+          0.8,
+          1.0
+        ],
+        "match": true
+      },
+      {
+        "pair": "a_imagination__hold vs b_frozenlast__hold",
+        "committed_steps": 32,
+        "recomputed_steps": 32,
+        "committed_ci95_s": [
+          3.2,
+          5.0
+        ],
+        "recomputed_ci95_s": [
+          3.2,
+          5.0
+        ],
+        "match": true
+      },
+      {
+        "pair": "a_imagination__gtkin vs b_frozenlast__gtkin",
+        "committed_steps": 54,
+        "recomputed_steps": 54,
+        "committed_ci95_s": [
+          5.4,
+          7.3
+        ],
+        "recomputed_ci95_s": [
+          5.4,
+          7.3
+        ],
+        "match": true
+      },
+      {
+        "pair": "a_imagination__true__roSTR vs b_frozenlast__true__roSTR",
+        "committed_steps": 185,
+        "recomputed_steps": 185,
+        "committed_ci95_s": [
+          18.5,
+          18.5
+        ],
+        "recomputed_ci95_s": [
+          18.5,
+          18.5
+        ],
+        "match": true
+      }
+    ],
+    "ade_0_2s": [
+      {
+        "arm": "a_imagination__true",
+        "committed": 0.3839,
+        "recomputed": 0.3839,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "a_imagination__true__roTAC",
+        "committed": 0.1865,
+        "recomputed": 0.1865,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "a_imagination__true__roSTR",
+        "committed": 0.195,
+        "recomputed": 0.195,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "c2_observedpair__true",
+        "committed": 3.6093,
+        "recomputed": 3.6093,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "a_imagination__own",
+        "committed": 0.9554,
+        "recomputed": 0.9554,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "a_imagination__hold",
+        "committed": 0.4712,
+        "recomputed": 0.4712,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "c_fullobs__true",
+        "committed": 0.5167,
+        "recomputed": 0.5167,
+        "abs_diff": 0.0,
+        "match": true
+      },
+      {
+        "arm": "d_constant_velocity",
+        "committed": 0.6083,
+        "recomputed": 0.6083,
+        "abs_diff": 0.0,
+        "match": true
+      }
+    ],
+    "GATE_PASS": true
+  },
+  "deliberately_failing_inputs_direction_2": {
+    "identical_arms_returns_floor": {
+      "T_blind_steps": 1,
+      "expected": 1,
+      "pass": true
+    },
+    "swapped_arms_returns_floor": {
+      "T_blind_steps": 1,
+      "expected": 1,
+      "pass": true
+    },
+    "isolated_late_win_not_promoted": {
+      "T_blind_steps": 1,
+      "expected": 1,
+      "pass": true
+    },
+    "uniformly_better_saturates": {
+      "T_blind_steps": 185,
+      "expected": 185,
+      "pass": true
+    },
+    "ALL_PASS": true
+  }
+}
