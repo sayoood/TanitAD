@@ -363,3 +363,326 @@ headline feature is *flexible guidance* — provides qualitative case studies an
 analysis over guidance magnitude**. So the brief's question *"what is known about its optimal
 strength for planning?"* has the answer: **essentially nothing is published.** That makes §6.3 a
 contribution rather than a replication.
+
+---
+
+## 5. THE DESIGN — how our hierarchy should bias rather than gate
+
+### 5.1 What v4 already does, read out of the code (not from a doc)
+
+**MEASURED-by-reading**, `stack/tanitad/models/flagship_v4.py:161-195` and
+`stack/tanitad/models/flagship_v15.py:451-466`. The deployed selector is:
+
+```
+g_m   = W_m · log_softmax(logits_m)                m ∈ {lat, lon, dist}      # flagship_v4.py:173-176
+graft = g_lat + g_lon + g_dist
+ratio = ‖graft‖₂ / ‖refined‖₂                      per-sample                # :183
+  if ratio.max() > seam_fail (=1.5):  raise                                  # :185-189
+graft ← graft · min(1, seam_clamp / ratio)         seam_clamp = 1.0          # :191-192
+refined ← refined + graft                                                    # :195
+score  = refined + sel_gate · ( −|v_term − v_goal| ) · vt_keep               # flagship_v15.py:451-461
+pick   = argmax_c score[c]                          FLAT over all 256        # :465
+```
+
+> ⭐ **v4's selector is ALREADY the "bias, don't gate" architecture** — a base score plus a
+> **norm-capped product-of-experts class prior** plus a learned-scale longitudinal preference,
+> resolved by a **flat argmax over the entire candidate set**. It consumes the full `log_softmax`
+> class posterior, not the argmax class.
+>
+> ⇒ **The design work is not to build the soft prior. It is to PARAMETERISE A STRENGTH THAT IS
+> CURRENTLY HARD-WIRED** — implicit gain λ = 1, implicit temperature τ = 1, capped at
+> `seam_clamp = 1.0` — **and to delete the `q` gate from the deployment path permanently.**
+
+### 5.2 ⚠️ AN ATTRIBUTION CONFOUND IN OUR OWN HEADLINE — the +0.0218 m is not the hierarchy alone
+
+`F_base_only` is `refined_pre.argmax` (`code/v5_hierarchical_select.py:293`), where `refined_pre` is
+`dec["refined_logits"]` — the decoder output **before** `_factor_grafts` **and** before `sel_gate`.
+So `F_flat − F_base_only` = **graft + longitudinal term**, and the headline
+*"+0.0218 m useful as a soft prior"* bundles two different priors. The V5 file says so in its own
+arm description (*"grafts + vt penalty off"*); the headline does not.
+
+**The decomposition, from two independently staged artifacts on the same 881 windows** (both
+reproduce `F_flat` = 0.6423 exactly, which is the consistency check that makes the arithmetic
+admissible at all):
+
+| oracle surface | `ade_0_2s` | source |
+|---|---:|---|
+| `F_flat` — graft ON, gate ON | **0.6423** | `…/2026-07-26-v5-imagination-selection/raw/v5_hier_windows.pt` and `…/2026-07-26-v4-restart-lever/raw/v4_selgate_ablation.json` (agree exactly) |
+| `sel_gate := 0` — graft ON, gate OFF | **0.6523** | `…/2026-07-26-v4-restart-lever/`, paired Δ **−0.0100 [−0.0191, −0.0020]**, ✅sep |
+| `F_base_only` — graft OFF, gate OFF | **0.6615** | `…/2026-07-26-v5-imagination-selection/raw/v5_hier_windows.pt → oracle|F_base_only` |
+
+⇒ **longitudinal term ≈ 0.0100 m · class→anchor graft ≈ 0.0092 m · total 0.0192 m** (= 0.6615 −
+0.6423 ✓).
+
+> ⛔ **HEADLINE CORRECTION, and it needs to travel:** on the oracle surface the **hierarchical
+> graft is worth ≈ 0.0092 m — about HALF of the quoted +0.0218 m.** The other half is a
+> **constant-velocity plausibility preference**, not a hierarchy at all: `_goal_inputs` sets
+> `vt_speed = v0` (`train_flagship_v4.py:172`) with a ±5.0 m/s reachable clamp, so `v_goal ≡ v0` in
+> every v4 run and the "target-speed-aware" term is a pure constant-velocity bias
+> (MEASURED, `…/2026-07-26-v4-restart-lever/` §4.2).
+>
+> **Tier: DERIVED, PROVISIONAL.** This is cross-artifact arithmetic, not one paired measurement — no
+> CI is admissible for the graft-alone term, and the **produced-surface split is UNKNOWN** because
+> the `sel_gate` ablation was only ever run on the oracle surface. Making it decision-grade needs one
+> 3-arm paired run (§6.1, E-H0b) that costs one forward pass.
+>
+> ⚠️ **Disclosure:** I computed `oracle|F_base_only` = 0.6615 from the staged tensor *before*
+> pre-registering it, because it is a decomposition of two already-published numbers rather than a
+> new experiment. Recording that here rather than presenting it as pre-registered.
+
+**And note where the other half points.** A constant-velocity plausibility preference being worth as
+much as the entire learned hierarchy is the *same* mechanism that made E-V5-1's only winning arm work
+(A4's weight mass sat on **C1**, an analytic bicycle model, and **C2**, one reference roll — V5 §2.4)
+and the *same* mechanism V5 §7.2 nominated as the cheapest next lever (clip the fan to a
+kinematically admissible longitudinal band). **Three independent measurements now point at
+longitudinal plausibility as the live lever.** That convergence is the strongest signal in this file
+and it is not a hierarchy signal.
+
+### 5.3 D1 — expose (λ, τ). Delete `q`.
+
+```python
+# stack/tanitad/models/flagship_v4.py  ::  _factor_grafts
+tau = self.cfg.graft_tau        # NEW, default 1.0
+lam = self.cfg.graft_lambda     # NEW, default 1.0
+lsm = torch.log_softmax
+g_lat  = self.lat_to_anchor (lsm(lat_logits  / tau, dim=-1))
+g_lon  = self.lon_to_anchor (lsm(lon_logits  / tau, dim=-1))
+g_dist = self.dist_to_anchor(lsm(dist_logits / tau, dim=-1))
+graft  = lam * (g_lat + g_lon + g_dist)
+# ... norm clamp and fail-loud unchanged ...
+```
+
+Two config fields, three divisions, one multiply. **`λ = 1, τ = 1` is forward-bit-identical to the
+shipped path**, which is the same attributability discipline the zero-init grafts were built with
+(`stack/tests/test_flagship_v4.py::test_zero_init_grafts_leave_the_ranked_score_bit_identical`) —
+so the delta is testable by an equality assertion, not by a benchmark.
+
+**Why (λ, τ) and not `q`:**
+
+| knob | what it changes | reaches hard commitment? | costs candidates? |
+|---|---|---|---|
+| **λ** (gain) | how loud the prior is, shape unchanged — the CFG `w` analogue | asymptotically | **no** |
+| **τ** (temperature) | how *peaked* the class posterior is; τ→0 ⇒ one-hot class | **yes, exactly** | **no** |
+| `q` (truncation) | how many candidates survive | yes | **yes — this is the confound** |
+
+> ⭐ **(λ, τ) reach arbitrarily hard commitment WITHOUT truncating the candidate set.** That is the
+> axis our measurement never had, and it is the one that decides whether the 0.21–5.82 m penalty is
+> **commitment** or **coverage** (§1.4, falsifier F2). No published sweep does this either (§1.3).
+
+⚠️ **A trap that would silently flatten the λ axis.** `seam_clamp = 1.0` rescales the graft whenever
+`‖graft‖ > ‖refined‖`, so **beyond that point λ is a no-op**. A λ sweep run with the clamp at its
+default would produce a flat curve above the saturation point and be misread as *"λ does not
+matter."* Every cell must therefore report `seam_norm_ratio_preclamp_max`, and the sweep must be run
+as **two sheets** — clamp at 1.0 (deployable) and clamp effectively off (diagnostic).
+
+### 5.4 D2 — the goal channel becomes a guidance scale, plus GoalFlow's shadow branch
+
+```
+score(λ_g) = score_neutral + λ_g · ( score_produced − score_neutral )
+```
+
+This is **literally classifier-free guidance** with the goal as the condition. Two of its points are
+already MEASURED on the deployable surface: `λ_g = 1` ≡ today (**0.8563**), `λ_g = 0` ≡ goal off
+(**0.7620**, paired **−0.0943 [−0.1302, −0.0589]**, ✅sep, free). **Our two measured points already
+say the optimum is below 1**; the CFG picture (§1.2) says the curve has an interior optimum; the
+sweep locates it.
+
+Plus the **shadow rule** (GoalFlow, §2.2, published + SOTA): compute both picks; if the two
+trajectories disagree by more than `d*`, emit the **neutral** one. This dominates "turn the goal
+off" because it keeps the upside on windows where the goal is right — and `d*` is a 1-D sweep over
+cached data.
+
+⚠️ Negative `λ_g` is admissible **as a measurement** and never as a deployable: a producer that is
+reliably anti-informative is a producer to fix (§3.3), not a sign to flip.
+
+### 5.5 D3 — a TEMPORAL commitment prior, named so it does not get lost
+
+The one commitment the literature does support is **temporal**, not hierarchical (§7, MomAD):
+
+```
+score ← score − λ_t · d_Hausdorff( candidate , previous_pick )
+```
+
+Soft, weighted, never a gate. **It is invisible to our current metric** — open-loop 2 s ADE at
+per-window re-selection cannot see plan-to-plan consistency — so it must not be evaluated on this
+surface. Deferred explicitly to the first closed-loop harness, and named here so the pre-registered
+falsifier F4 has an owner instead of a footnote.
+
+### 5.6 The implementation delta, file by file
+
+| file | change | size | risk |
+|---|---|---|---|
+| `stack/tanitad/models/flagship_v4.py` | `graft_lambda`, `graft_tau` in the config dataclass; use them in `_factor_grafts` | ~6 lines | **none at defaults** — bit-identical, assertable |
+| `stack/tests/test_flagship_v4.py` | one test: `λ=1, τ=1` reproduces the shipped score bit-for-bit; one: `τ→0` gives a one-hot class posterior | ~20 lines | none |
+| `…/2026-07-26-v5-imagination-selection/code/v5_hierarchical_select.py` | dump `prior [W, 256]`, `refined_pre [W, 256]`, `lat/lon/dist logits`, `score_neutral`, `score_produced` into the reduced `.pt` | ~10 lines | none — additive |
+| deployment path | **remove `q` entirely**; `hierarchical_pick` stays as a measurement arm only | — | this is the recommendation |
+
+**Nothing here trains anything.** Every arm is a re-scoring of a frozen fan.
+
+---
+
+## 6. THE PRE-REGISTERED COMMITMENT-STRENGTH SWEEP
+
+Estimator for every arm: **paired episode-cluster bootstrap**, B = 2000, unit = episode cluster,
+40 clusters / 881 windows, on identical windows (`taniteval/ci.py`). **`overlapping_holdout_se` is
+never used.** Every number decomposed into along-track / cross-track.
+⚠️ **A null at n = 40 is UNPOWERED, not refuted** (`MODEL_REGISTRY.md §1.2a`: half-widths shrink
+×2.8–3.9 at n = 600). Any winning cell must be re-run at 600 before it steers GPU-days.
+
+### 6.1 E-H0b — close the attribution confound. ONE forward pass.
+
+Three arms in **one** harness on the **produced** surface, paired: `graft ON/gate ON` (0.8563),
+`graft ON/gate OFF`, `graft OFF/gate OFF` (0.8781). Settles §5.2's PROVISIONAL split with a CI.
+**Bar:** if the graft-alone term is **not separated** from zero on the produced surface, then
+*"hierarchical biasing is confirmed"* is **UNPOWERED, not confirmed**, and must be restated as such
+in `MODEL_REGISTRY.md`. I commit to writing that if it happens.
+
+### 6.2 E-H1 — the COVERAGE CONTROL. CPU only, minutes, staged artifacts only. ⭐ RUN IN THIS STREAM.
+
+**This is falsifier F2 made decidable.** Inputs: `raw/v5_v4_windows_reduced.pt`
+(`fan_err4 [881,256]`, `base_rank [881,256]`, `ep [881]`) — nothing else, no GPU, no pod.
+
+*(Verified before pre-registering, and stated because it is load-bearing: `base_rank[w,:]` is a
+per-window permutation of 0..255, and `fan_err4.gather(1, base_rank[:, :1]).mean()` = **0.8563** =
+`F_flat` exactly, so `base_rank` is the argsort of the **deployed** grafted score, best first.)*
+
+| arm | rule |
+|---|---|
+| `H_graft(q)` | **measured, staged**: 1.0621 / 1.2000 / 2.6510 / 6.6752 for q = 64/32/16/8 |
+| **`R_rand(q)`** | draw a uniform random q-subset `A` per window; pick the member of `A` best-ranked under the **deployed** score: `pick = base_rank[w, min{j : base_rank[w,j] ∈ A}]`. S = 200 seeds, report mean and seed-spread |
+| **`O_rand(q)`** | oracle within the same random subset — the pure coverage bound |
+| `O_graft(q)` | oracle within the graft-admissible subset — **NOT computable from staged artifacts** (needs `prior`); flagged, deferred to E-H2 |
+
+**Outcomes, committed before running:**
+
+| verdict | condition | what I will write |
+|---|---|---|
+| **COVERAGE** | `R_rand(q)` within the paired CI of `H_graft(q)` at every q | **F2 FIRES.** Restate the finding as *"truncating a shared anchor vocabulary is what costs; the graft's choice of subset is no better and no worse than chance."* The design conclusion (never truncate) is unchanged, but **the word "commitment" is retracted in favour of "coverage"** and `RETRACTION_LOG.md` gets a C6-class entry |
+| **COMMITMENT-INFORMATIVE** | `R_rand(q)` separated-**worse** than `H_graft(q)` | the graft picks a better-than-random subset; the harm is coverage, partly offset by an informative prior. F2 **partially** fires; the headline becomes *"restricting the candidate set is what costs — our prior is good, our gate is the problem"* |
+| **COMMITMENT-HARMFUL** | `R_rand(q)` separated-**better** than `H_graft(q)` | F2 does **not** fire. *"Committing to the tactical class is worse than committing at random"* survives exactly as stated, and is a much stronger claim than the one currently in the registry |
+
+⭐ **Stated before running: I expect COMMITMENT-INFORMATIVE**, because the same tensors are worth
+≈ +0.009 m as a bias (§5.2) and an informative prior should choose a better-than-random subset.
+If the result is COMMITMENT-HARMFUL I will flag it as a *surprise* rather than absorbing it.
+
+### 6.3 E-H2 — the (λ, τ) surface. ONE forward pass + seconds of CPU per cell.
+
+λ ∈ {0, 0.25, 0.5, 1, 2, 4, 8} × τ ∈ {0.1, 0.25, 0.5, 1, 2, 4}, **q = 256 always**. 42 cells × 2
+clamp sheets.
+
+**Why this is cheap and not a GPU-week:** `fan`, `refined_pre`, and the three class logit vectors are
+**independent of λ and τ**. One forward pass over the 881 windows caches them; every cell is then a
+CPU argmax over `[881, 256]`. **The whole surface costs one v5-style build (~minutes of GPU) plus
+seconds of CPU per cell.**
+
+| verdict | condition | reading |
+|---|---|---|
+| **CONFIRM-INTERIOR** | some (λ, τ) beats **0.8563** by more than the paired CI half-width | the shipped λ=1/τ=1 is **not** the optimum; free ADE on the table at zero training cost |
+| **CONFIRM-SOFT** | the argmin has **λ ≤ 1 and τ ≥ 1** | softer is better, exactly as CFG/aWTA predict |
+| ⭐ **REFUTE-SHARPNESS** *(the F2 discriminator)* | **τ → 0.1 at λ = 1** (maximally hard commitment, **zero truncation**) is within CI of 0.8563 | the 0.21–5.82 m penalty was **truncation**, not commitment. Our headline is a coverage result |
+| **CONFIRM-SHARPNESS** | τ → 0.1 at λ = 1 degrades toward the `H_graft` numbers | **commitment sharpness itself is the cost**, independent of coverage. This is the outcome that makes the original claim general, and it is the one I would most like to be true — which is exactly why it is written down before the run |
+| **SATURATED** | every λ ≥ some value gives an identical score AND `seam_norm_ratio_preclamp_max` is pinned at 1.0 | the clamp ate the axis; re-run the diagnostic sheet. **Not** a finding about λ |
+
+### 6.4 E-H3 — the goal guidance scale. Same one-pass trick.
+
+λ_g ∈ {−1, −0.5, −0.25, 0, 0.25, 0.5, 0.75, 1, 1.5} over cached `score_neutral` / `score_produced`,
+plus a 1-D sweep of the shadow threshold `d*`.
+**Bar: CONFIRM** if any λ_g or `d*` beats the neutral **0.7620** on the deployable surface, paired
+and separated ⇒ we recover part of the oracle's −0.2140 m without fixing the producer.
+**REFUTE** if the argmin is at λ_g = 0 with no `d*` improving on it ⇒ *turn the goal off and fix the
+producer* is the whole answer, and the shadow-branch idea does not transfer.
+
+### 6.5 Priority order (so a killed agent still yields value)
+
+1. **E-H1** — CPU, minutes, staged artifacts, settles F2. **Run first, run here.**
+2. **E-H0b** — one forward pass, fixes a number already circulating in the program.
+3. **E-H2** — one forward pass, the contribution the literature does not have.
+4. **E-H3** — same pass as E-H2 if the neutral/produced scores are cached together.
+5. **D3 / closed-loop** — deferred, needs a harness that does not exist yet.
+
+---
+
+## 7. CONTRADICTING EVIDENCE — actively sought, reported fairly
+
+A one-sided read is how this program has been burned. Six items that cut against us, strongest first.
+
+**C1 — MomAD (Song et al., CVPR 2025, *Don't Shake the Wheel*), the strongest.**
+**PUBLISHED, CONFIRMED, DEMONSTRATED.** Topological Trajectory Matching computes the Hausdorff
+distance from each candidate to the **previous** plan and selects by **argmin** — a hard selection
+rule biased entirely toward commitment. Results: Bench2Drive **closed-loop** success 16.71 %
+(SparseDrive) → **18.11 %**; comfort 48.63 → **51.20**; and a new consistency metric TPC 0.81 →
+**0.65 m** with one frame of history. **This is falsifier F4's direction, demonstrated.**
+Three caveats that keep it from firing F4 outright: (i) it is **temporal** commitment (to your own
+last plan), not **hierarchical** commitment (to a class); (ii) their own ablation shows the benefit
+**plateaus immediately** — TPC 0.65 at t=2 → 0.66 at t=3, i.e. *more* commitment is not better; and
+(iii) per the fetched text there is **no strength hyperparameter**, so it is not a commitment-strength
+curve. ⇒ It is a strong argument for **D3**, and not an argument for `q`.
+
+**C2 — Harb et al. 2018, the deliberation cost.** **PUBLISHED, CONFIRMED, DEMONSTRATED.** At η = 0,
+options *"terminate at every step"* and performance is much worse (Amidar 512 vs **880**; Asterix
+1950 vs **8700**; Hero 2625 vs **20100**). **Zero commitment is a real failure mode.** Caveat: it is a
+*degenerate-option* failure — an option with no temporal extent is not an option — whereas our
+`F_flat` is a working selector, not a degenerate one. And their curve is non-monotone with an
+**interior optimum**, matching §1.3 rather than contradicting it.
+
+**C3 — DARPA Urban Challenge FSM planners.** **PUBLISHED, PROVISIONAL (search-level only.)**
+Hierarchical finite-state-machine manoeuvre selection with genuinely hard mode switching finished and
+won the 2007 event; the cited benefit is *"resilience to perception noise"*. Caveat, and it is F1's
+condition met by construction: those mode classifiers were **hand-designed and verified**, with a
+full prior map — nothing like a ReZero graft with max|w| ≈ 0.10. Note also that the field replaced
+them with flat-scoring learned planners as soon as those worked.
+
+**C4 — GoalFlow.** **PUBLISHED, CONFIRMED.** A goal point that *"imposes a strong constraint on the
+generation model"* reaches **90.3 PDMS**, SOTA on NAVSIM — hard conditioning that works. Caveats:
+the committed-to vocabulary is **4,096–8,192** elements (not 8), and the system carries an explicit
+**unconditioned fallback** (§2.2). It is evidence for *large-set, override-able* commitment.
+
+**C5 — ez-greedy (Dabney, Ostrovski & Barreto 2020).** **PUBLISHED, PROVISIONAL (abstract-level.)**
+Persisting a *random* action for a random duration beats step-wise dithering — persistence per se has
+value. Caveat: an **exploration**, training-time result; it says nothing about inference-time
+candidate selection.
+
+**C6 — cuts the other way, and belongs here for honesty. Nachum et al., ICLR 2020,
+*Why Does Hierarchy (Sometimes) Work So Well in RL?*** **PUBLISHED, CONFIRMED, DEMONSTRATED.** They
+decouple `c_train` from `c_expl` in HIRO and add a non-hierarchical **"shadow agent"** trained on the
+HRL agent's own collected experience; it is *"competitive with HRL"* on **3 of 4** tasks, and
+non-hierarchical *Explore & Exploit* / *Switching Ensemble* baselines match HRL. Conclusion: *"most of
+the observed benefits of hierarchy can be attributed to improved exploration"*, **not** semantic
+decomposition. ⇒ Supports our refusal of hierarchical selection — **and warns that our hierarchy may
+be buying less than we assume even as a prior**, which is exactly what §5.2's ≈ 0.0092 m says.
+
+---
+
+## 8. THE PRE-REGISTERED FALSIFIER — verdict against §0.3
+
+| # | falsifier | fired? | evidence |
+|---|---|---|---|
+| **F1** classifier-quality threshold | ❌ **NO** | no published result quantifies an accuracy/calibration threshold above which hard mode gating wins. C3 meets the *spirit* (hand-verified classifiers) at PROVISIONAL grade only |
+| **F2** coverage confound | ⏳ **OPEN — and it is OURS, not the literature's** | no published demonstration either way. It is a live, untested confound in our own data. E-H1 (§6.2) settles it on CPU today |
+| **F3** horizon / replanning frequency | ⚠️ **PARTIAL** | C2 DEMONSTRATES that zero commitment is catastrophic for *option duration*. But that is temporal extent, not candidate restriction, and its interior optimum matches ours |
+| **F4** closed-loop inversion | ⚠️ **PARTIAL, and the strongest caution** | C1 DEMONSTRATES a closed-loop gain (16.71 → 18.11 % SR) from committing to the previous plan, on a metric open-loop ADE cannot see. Our numbers are **all** open-loop 2 s ADE, and this program has measured that open-loop does not predict closed-loop (0.45 m open → 1.69 m closed) |
+| **F5** metric inversion | ❌ **NO** | no evidence found that hard commitment loses on displacement and wins on collision / rule-compliance / worst-case |
+
+**§0.3 required two falsifiers at PUBLISHED-DEMONSTRATED grade *for our variable*. Zero clear that
+bar; two clear it for adjacent variables.** So I do **not** write *"hard commitment is right after
+all."* I write the two things F3 and F4 do license, and they are scope limits, not rescues:
+
+> **(a) Our verdict is scoped to OPEN-LOOP, PER-WINDOW RE-SELECTION** — the maximum-replanning,
+> minimum-horizon corner, where interruption is cheapest and commitment has least to offer *by
+> construction*. A closed-loop re-measurement could invert the **temporal** half of it. **D3 exists
+> because of this line.**
+>
+> **(b) The finding is about HIERARCHICAL CLASS commitment, not about commitment in general.**
+> Temporal commitment to one's own previous plan is a different lever, is supported by published
+> closed-loop evidence, and **we have never tested it.**
+
+**And the honest summary of the whole literature read**, which is not the summary the brief's framing
+anticipated:
+
+> Soft-over-hard is **well supported** (interruption theorem; CFG; aWTA; Soft MoE; every SOTA driving
+> planner ranking flat over a mode-decorated set). **Monotone harm in commitment tightness is NOT the
+> field's picture and is not ours either** — the field's picture, in three independent domains, is an
+> **interior optimum in prior strength**, and re-reading our own table shows we measured one too
+> (0.8781 → **0.8563** → 1.06 → 6.68). Our contribution is not the sign; it is that we measured the
+> curve **with the prior's information content held fixed**, which nobody has published — and we
+> measured it with **`q`, a knob that confounds commitment with coverage**, which §6 fixes.

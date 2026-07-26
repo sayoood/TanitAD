@@ -1,0 +1,119 @@
+{
+  "_experiment": "LOCAL_GPU capability probe (dev box)",
+  "_evidence_class": "MEASURED (ours, dev box)",
+  "_tier": "CONFIRMED",
+  "_host": {
+    "node": "FREEDOM2035",
+    "python": "3.13.5",
+    "torch": "2.11.0+cu128",
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "total_vram_gib": 8.0,
+    "sm": "8.9",
+    "sms": 24
+  },
+  "_method": "batch size pushed until torch.cuda.OutOfMemoryError; the largest batch that COMPLETED is reported with its peak allocated bytes. Eager only -- no torch.compile (no Triton on Windows).",
+  "_parity": "no corpus, no checkpoint, no pod. Modules are built from `stack/tanitad` source at their committed default configs.",
+  "S1_raw_fp32_matmul_8192": {
+    "tflops": 7.6,
+    "ms": 144.64,
+    "peak_gib": 1.008
+  },
+  "S2_largest_single_fp32_alloc_gib": 7.5,
+  "S3_v4_head": {
+    "params": 10574403,
+    "state_dim": 2048,
+    "n_anchors": 256,
+    "param_breakdown": {
+      "decoder": 8559785,
+      "measurement": 16768,
+      "state_proj": 131584,
+      "imag_proj": 1066496,
+      "vtarget": 3073,
+      "route": 897,
+      "ego_null": 128,
+      "total": 10574403,
+      "factor_heads": 789783,
+      "factor_grafts": 5888
+    },
+    "train_fwd_bwd": {
+      "label": "v4 head fwd+bwd (head-only training)",
+      "max_batch_that_fit": null,
+      "peak_gib_at_max": null,
+      "ms_at_max": null,
+      "rows": [
+        {
+          "batch": 8,
+          "error": "ValueError: cond_imagination is on but no imagined latents were supplied"
+        }
+      ]
+    }
+  },
+  "S4_world_model": {
+    "total_params": 3540773,
+    "encoder_params": 1206400,
+    "predictor_params": 1272576,
+    "image_size": 64,
+    "window": 6,
+    "encode_no_grad": {
+      "label": "ViT encode, no_grad (windows of 8 frames)",
+      "max_batch_that_fit": null,
+      "peak_gib_at_max": null,
+      "ms_at_max": null,
+      "rows": [
+        {
+          "batch": 1,
+          "error": "RuntimeError: Given groups=1, weight of size [128, 1, 8, 8], expected input[6, 3, 64, 64] to have 1 channels, but got 3 channels instead"
+        }
+      ]
+    },
+    "encoder_fwd_bwd": {
+      "label": "encoder fwd+bwd (full-model training)",
+      "max_batch_that_fit": null,
+      "peak_gib_at_max": null,
+      "ms_at_max": null,
+      "rows": [
+        {
+          "batch": 1,
+          "error": "RuntimeError: Given groups=1, weight of size [128, 1, 8, 8], expected input[6, 3, 64, 64] to have 1 channels, but got 3 channels instead"
+        }
+      ]
+    }
+  },
+  "S5_adamw_param_state_only": {
+    "_read": "weights + grad + 2 Adam moments ONLY -- no activations, so this is a LOWER bound on what training a model of that size costs. The canonical flagship is 286.34 M.",
+    "rows": {
+      "50.00M": {
+        "fits": true,
+        "peak_gib": 0.953
+      },
+      "100.00M": {
+        "fits": true,
+        "peak_gib": 1.887
+      },
+      "200.00M": {
+        "fits": true,
+        "peak_gib": 3.747
+      },
+      "286.34M": {
+        "fits": true,
+        "peak_gib": 5.356
+      }
+    }
+  },
+  "S6_cpu_workloads_measured_this_session": {
+    "taniteval_pytest": {
+      "result": "449 passed",
+      "wall_s": 59.06,
+      "device": "CPU"
+    },
+    "fc_gate.py (all committed v5 + registry bars)": {
+      "wall_s": 0.44,
+      "device": "CPU"
+    },
+    "fc_clip.py (3 REF-C fans x 16 bands + v4 fan x 2 scorers x 16 bands, each with a B=2000 paired episode-cluster bootstrap)": {
+      "wall_s": 26.88,
+      "device": "CPU"
+    }
+  },
+  "_VERDICT": "probe complete"
+}

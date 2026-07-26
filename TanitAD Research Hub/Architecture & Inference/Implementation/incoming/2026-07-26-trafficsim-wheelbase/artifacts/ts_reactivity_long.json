@@ -1,0 +1,72 @@
+{
+ "base": "/workspace/tsreact_long/clipgt-41c06176-96a4-43ff-b5fa-baaa3a8fd8d0",
+ "repeats": 1,
+ "estimator": "paired_episode_cluster_bootstrap, unit=AGENT, B=2000",
+ "ci_source": "taniteval.ci (/root/taniteval)",
+ "n_runs": {
+  "GO": 1,
+  "STOP": 1,
+  "GO2": 1
+ },
+ "control_fidelity": {
+  "ego_GO_vs_STOP_mean_m": 33.177,
+  "ego_GO_vs_STOP_max_m": 80.4937,
+  "ego_GO_vs_GO2_mean_m": 0.0,
+  "n_shared_ts": 99,
+  "intervention_reached_model": true
+ },
+ "control_replay": {
+  "vs_logged_mean_m": 7.9303,
+  "frac_within_0p1m_of_logged": 0.1615,
+  "n_compared": 161,
+  "is_replay": false
+ },
+ "results": {
+  "all": {
+   "n_samples": 43287,
+   "n_agents": 271,
+   "between_GO_STOP_mean_m": 2.604,
+   "floor_GO_GO2_mean_m": 2.3778,
+   "delta_m": 0.2262,
+   "ci": {
+    "delta": 0.2262,
+    "lo": -0.5465,
+    "hi": 1.0253,
+    "ci95": 0.7859,
+    "p_delta_gt0": 0.706,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 43287,
+    "n_episodes": 271,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ci_half_width_m": 0.7859,
+   "separated": false,
+   "reactive": false
+  },
+  "near_ego_50m": {
+   "n_samples": 13321,
+   "n_agents": 228,
+   "between_GO_STOP_mean_m": 1.2609,
+   "floor_GO_GO2_mean_m": 1.3622,
+   "delta_m": -0.1012,
+   "ci": {
+    "delta": -0.1012,
+    "lo": -0.3202,
+    "hi": 0.1109,
+    "ci95": 0.2155,
+    "p_delta_gt0": 0.169,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 13321,
+    "n_episodes": 228,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ci_half_width_m": 0.2155,
+   "separated": false,
+   "reactive": false
+  }
+ }
+}

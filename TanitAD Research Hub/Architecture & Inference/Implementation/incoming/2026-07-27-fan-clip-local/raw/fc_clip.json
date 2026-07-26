@@ -39,6 +39,14 @@
       "n_anchors": 256,
       "unclipped_as_trained_ade": 0.4714,
       "unclipped_oracle_in_fan": 0.164,
+      "absurdity_census": {
+        "_read": "implied mean speed = s / 2 s. The comparison speed is the MAX OBSERVED v0 over this deployment (an INPUT, not held-out error).",
+        "max_observed_v0_ms": 36.5479,
+        "frac_cand_implied_v_over_max_observed_v0": 0.061,
+        "frac_cand_implied_v_over_40ms_144kmh": 0.0331,
+        "frac_cand_reverse_s_negative": 0.0544,
+        "frac_cand_outside_a2.5_band": 0.8535
+      },
       "sweep": [
         {
           "_tag": "a_max=0.5",
@@ -633,6 +641,116 @@
           }
         }
       ],
+      "asymmetric_bands": [
+        {
+          "_tag": "a_acc=2.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7543,
+          "mean_survivors": 62.8933,
+          "median_survivors": 70,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9943,
+          "oracle_in_survivors_ade": 0.1666,
+          "route_as_trained": 0.4734,
+          "ctrl_random_on_survivors": 2.8436,
+          "a_acc": 2.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.002,
+            "lo": -0.0016,
+            "hi": 0.0076,
+            "ci95": 0.0046,
+            "p_delta_gt0": 0.639,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=1.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7859,
+          "mean_survivors": 54.798,
+          "median_survivors": 61,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9637,
+          "oracle_in_survivors_ade": 0.1761,
+          "route_as_trained": 0.4716,
+          "ctrl_random_on_survivors": 2.7925,
+          "a_acc": 1.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0001,
+            "lo": -0.0055,
+            "hi": 0.0071,
+            "ci95": 0.0063,
+            "p_delta_gt0": 0.5135,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.5 a_dec=2.5 rev=True",
+          "frac_candidates_removed": 0.8528,
+          "mean_survivors": 37.6765,
+          "median_survivors": 41,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9921,
+          "oracle_in_survivors_ade": 0.1657,
+          "route_as_trained": 0.4714,
+          "ctrl_random_on_survivors": 1.7612,
+          "a_acc": 2.5,
+          "a_dec": 2.5,
+          "allow_reverse": true,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.0 a_dec=4.0 rev=False",
+          "frac_candidates_removed": 0.8389,
+          "mean_survivors": 41.235,
+          "median_survivors": 46,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9852,
+          "oracle_in_survivors_ade": 0.168,
+          "route_as_trained": 0.4726,
+          "ctrl_random_on_survivors": 1.8907,
+          "a_acc": 2.0,
+          "a_dec": 4.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0011,
+            "lo": -0.0031,
+            "hi": 0.0076,
+            "ci95": 0.0054,
+            "p_delta_gt0": 0.5955,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      ],
       "anti_clip": [
         {
           "_tag": "ANTI a_max=0.5",
@@ -831,6 +949,14 @@
       "n_anchors": 128,
       "unclipped_as_trained_ade": 0.4728,
       "unclipped_oracle_in_fan": 0.1914,
+      "absurdity_census": {
+        "_read": "implied mean speed = s / 2 s. The comparison speed is the MAX OBSERVED v0 over this deployment (an INPUT, not held-out error).",
+        "max_observed_v0_ms": 36.5479,
+        "frac_cand_implied_v_over_max_observed_v0": 0.0907,
+        "frac_cand_implied_v_over_40ms_144kmh": 0.0571,
+        "frac_cand_reverse_s_negative": 0.0397,
+        "frac_cand_outside_a2.5_band": 0.8584
+      },
       "sweep": [
         {
           "_tag": "a_max=0.5",
@@ -1425,6 +1551,116 @@
           }
         }
       ],
+      "asymmetric_bands": [
+        {
+          "_tag": "a_acc=2.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7647,
+          "mean_survivors": 30.1226,
+          "median_survivors": 32,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9943,
+          "oracle_in_survivors_ade": 0.1962,
+          "route_as_trained": 0.4779,
+          "ctrl_random_on_survivors": 2.6385,
+          "a_acc": 2.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0051,
+            "lo": 0.0,
+            "hi": 0.0135,
+            "ci95": 0.0068,
+            "p_delta_gt0": 0.955,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=1.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7905,
+          "mean_survivors": 26.8218,
+          "median_survivors": 27,
+          "n_windows_no_survivor_fallback": 3,
+          "oracle_survival_frac": 0.9637,
+          "oracle_in_survivors_ade": 0.204,
+          "route_as_trained": 0.4703,
+          "ctrl_random_on_survivors": 2.6763,
+          "a_acc": 1.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": -0.0025,
+            "lo": -0.0084,
+            "hi": 0.002,
+            "ci95": 0.0052,
+            "p_delta_gt0": 0.199,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.5 a_dec=2.5 rev=True",
+          "frac_candidates_removed": 0.8578,
+          "mean_survivors": 18.1986,
+          "median_survivors": 20,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9932,
+          "oracle_in_survivors_ade": 0.1944,
+          "route_as_trained": 0.4728,
+          "ctrl_random_on_survivors": 1.3588,
+          "a_acc": 2.5,
+          "a_dec": 2.5,
+          "allow_reverse": true,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.0 a_dec=4.0 rev=False",
+          "frac_candidates_removed": 0.8445,
+          "mean_survivors": 19.8978,
+          "median_survivors": 22,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9898,
+          "oracle_in_survivors_ade": 0.197,
+          "route_as_trained": 0.4758,
+          "ctrl_random_on_survivors": 1.5758,
+          "a_acc": 2.0,
+          "a_dec": 4.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0031,
+            "lo": -0.0036,
+            "hi": 0.0122,
+            "ci95": 0.0079,
+            "p_delta_gt0": 0.7405,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      ],
       "anti_clip": [
         {
           "_tag": "ANTI a_max=0.5",
@@ -1623,6 +1859,14 @@
       "n_anchors": 64,
       "unclipped_as_trained_ade": 0.5261,
       "unclipped_oracle_in_fan": 0.2213,
+      "absurdity_census": {
+        "_read": "implied mean speed = s / 2 s. The comparison speed is the MAX OBSERVED v0 over this deployment (an INPUT, not held-out error).",
+        "max_observed_v0_ms": 36.5479,
+        "frac_cand_implied_v_over_max_observed_v0": 0.0894,
+        "frac_cand_implied_v_over_40ms_144kmh": 0.0497,
+        "frac_cand_reverse_s_negative": 0.0936,
+        "frac_cand_outside_a2.5_band": 0.8329
+      },
       "sweep": [
         {
           "_tag": "a_max=0.5",
@@ -2217,6 +2461,116 @@
           }
         }
       ],
+      "asymmetric_bands": [
+        {
+          "_tag": "a_acc=2.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7638,
+          "mean_survivors": 15.118,
+          "median_survivors": 16,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9932,
+          "oracle_in_survivors_ade": 0.2288,
+          "route_as_trained": 0.5337,
+          "ctrl_random_on_survivors": 2.1722,
+          "a_acc": 2.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0076,
+            "lo": 0.0,
+            "hi": 0.0228,
+            "ci95": 0.0114,
+            "p_delta_gt0": 0.619,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=1.5 a_dec=8.0 rev=False",
+          "frac_candidates_removed": 0.7933,
+          "mean_survivors": 13.2281,
+          "median_survivors": 14,
+          "n_windows_no_survivor_fallback": 4,
+          "oracle_survival_frac": 0.9625,
+          "oracle_in_survivors_ade": 0.2357,
+          "route_as_trained": 0.5236,
+          "ctrl_random_on_survivors": 2.1462,
+          "a_acc": 1.5,
+          "a_dec": 8.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": -0.0025,
+            "lo": -0.0067,
+            "hi": 0.0002,
+            "ci95": 0.0034,
+            "p_delta_gt0": 0.089,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.5 a_dec=2.5 rev=True",
+          "frac_candidates_removed": 0.831,
+          "mean_survivors": 10.8161,
+          "median_survivors": 12,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9921,
+          "oracle_in_survivors_ade": 0.2258,
+          "route_as_trained": 0.5244,
+          "ctrl_random_on_survivors": 1.2703,
+          "a_acc": 2.5,
+          "a_dec": 2.5,
+          "allow_reverse": true,
+          "paired_vs_unclipped_as_trained": {
+            "delta": -0.0017,
+            "lo": -0.005,
+            "hi": 0.0,
+            "ci95": 0.0025,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        {
+          "_tag": "a_acc=2.0 a_dec=4.0 rev=False",
+          "frac_candidates_removed": 0.8261,
+          "mean_survivors": 11.1294,
+          "median_survivors": 12,
+          "n_windows_no_survivor_fallback": 0,
+          "oracle_survival_frac": 0.9852,
+          "oracle_in_survivors_ade": 0.2333,
+          "route_as_trained": 0.5335,
+          "ctrl_random_on_survivors": 1.386,
+          "a_acc": 2.0,
+          "a_dec": 4.0,
+          "allow_reverse": false,
+          "paired_vs_unclipped_as_trained": {
+            "delta": 0.0074,
+            "lo": -0.0006,
+            "hi": 0.0228,
+            "ci95": 0.0117,
+            "p_delta_gt0": 0.619,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      ],
       "anti_clip": [
         {
           "_tag": "ANTI a_max=0.5",
@@ -2437,6 +2791,7 @@
           "oracle_in_survivors_ade": 0.5887,
           "route_as_trained": 0.8439,
           "route_imag_consistency": 5.8898,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 6.2163,
           "a_max_ms2": 0.5,
           "theta_m": 0.3588,
@@ -2489,6 +2844,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2501,6 +2881,7 @@
           "oracle_in_survivors_ade": 0.53,
           "route_as_trained": 0.9218,
           "route_imag_consistency": 2.0052,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 2.7034,
           "a_max_ms2": 1.0,
           "theta_m": 0.7175,
@@ -2553,6 +2934,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2565,6 +2971,7 @@
           "oracle_in_survivors_ade": 0.4301,
           "route_as_trained": 0.988,
           "route_imag_consistency": 1.0752,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 1.3709,
           "a_max_ms2": 1.5,
           "theta_m": 1.0763,
@@ -2617,6 +3024,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2629,6 +3061,7 @@
           "oracle_in_survivors_ade": 0.3412,
           "route_as_trained": 0.9231,
           "route_imag_consistency": 1.0013,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 1.3937,
           "a_max_ms2": 2.0,
           "theta_m": 1.435,
@@ -2681,6 +3114,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2693,6 +3151,7 @@
           "oracle_in_survivors_ade": 0.2946,
           "route_as_trained": 0.908,
           "route_imag_consistency": 0.9589,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 1.4411,
           "a_max_ms2": 2.5,
           "theta_m": 1.7938,
@@ -2745,6 +3204,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2757,6 +3241,7 @@
           "oracle_in_survivors_ade": 0.2641,
           "route_as_trained": 0.8847,
           "route_imag_consistency": 0.9425,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 1.5472,
           "a_max_ms2": 3.0,
           "theta_m": 2.1525,
@@ -2809,6 +3294,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2821,6 +3331,7 @@
           "oracle_in_survivors_ade": 0.2536,
           "route_as_trained": 0.8438,
           "route_imag_consistency": 0.8908,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 1.8568,
           "a_max_ms2": 4.0,
           "theta_m": 2.87,
@@ -2873,6 +3384,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2885,6 +3421,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8385,
           "route_imag_consistency": 0.8981,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 2.1667,
           "a_max_ms2": 5.0,
           "theta_m": 3.5875,
@@ -2937,6 +3474,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -2949,6 +3511,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8468,
           "route_imag_consistency": 0.8964,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 2.5122,
           "a_max_ms2": 6.0,
           "theta_m": 4.305,
@@ -3001,6 +3564,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3013,6 +3601,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 0.9242,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 3.2943,
           "a_max_ms2": 8.0,
           "theta_m": 5.74,
@@ -3065,6 +3654,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3077,6 +3691,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1051,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 3.9605,
           "a_max_ms2": 10.0,
           "theta_m": 7.175,
@@ -3129,6 +3744,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3141,6 +3781,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.6717,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 5.5966,
           "a_max_ms2": 15.0,
           "theta_m": 10.7625,
@@ -3193,6 +3834,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3205,6 +3871,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 3.7434,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 7.2716,
           "a_max_ms2": 20.0,
           "theta_m": 14.35,
@@ -3257,6 +3924,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3269,6 +3961,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 10.1592,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 10.4618,
           "a_max_ms2": 30.0,
           "theta_m": 21.525,
@@ -3321,6 +4014,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3333,6 +4051,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 11.5166,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 13.973,
           "a_max_ms2": 50.0,
           "theta_m": 35.875,
@@ -3385,6 +4104,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3397,6 +4141,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 11.5298,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 14.8751,
           "a_max_ms2": null,
           "theta_m": null,
@@ -3449,6 +4194,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": 0.209,
+            "lo": 0.055,
+            "hi": 0.3642,
+            "ci95": 0.1546,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         }
       ],
@@ -3463,6 +4233,7 @@
           "oracle_in_survivors_ade": 0.2947,
           "route_as_trained": 2.5279,
           "route_imag_consistency": 12.0277,
+          "ref_route_C2_wm_proximity": 1.0969,
           "ctrl_random_on_survivors": 14.9214,
           "a_max_ms2": 0.5
         },
@@ -3476,6 +4247,7 @@
           "oracle_in_survivors_ade": 0.4619,
           "route_as_trained": 6.8609,
           "route_imag_consistency": 14.1404,
+          "ref_route_C2_wm_proximity": 1.2118,
           "ctrl_random_on_survivors": 15.7473,
           "a_max_ms2": 1.0
         },
@@ -3489,6 +4261,7 @@
           "oracle_in_survivors_ade": 0.7598,
           "route_as_trained": 11.5207,
           "route_imag_consistency": 17.6166,
+          "ref_route_C2_wm_proximity": 1.4718,
           "ctrl_random_on_survivors": 16.0673,
           "a_max_ms2": 1.5
         },
@@ -3502,6 +4275,7 @@
           "oracle_in_survivors_ade": 1.1285,
           "route_as_trained": 15.7937,
           "route_imag_consistency": 20.4366,
+          "ref_route_C2_wm_proximity": 1.7973,
           "ctrl_random_on_survivors": 16.4029,
           "a_max_ms2": 2.0
         },
@@ -3515,6 +4289,7 @@
           "oracle_in_survivors_ade": 1.538,
           "route_as_trained": 18.4811,
           "route_imag_consistency": 22.9235,
+          "ref_route_C2_wm_proximity": 2.176,
           "ctrl_random_on_survivors": 16.7444,
           "a_max_ms2": 2.5
         },
@@ -3528,6 +4303,7 @@
           "oracle_in_survivors_ade": 1.975,
           "route_as_trained": 20.6687,
           "route_imag_consistency": 23.8538,
+          "ref_route_C2_wm_proximity": 2.646,
           "ctrl_random_on_survivors": 16.9616,
           "a_max_ms2": 3.0
         },
@@ -3541,6 +4317,7 @@
           "oracle_in_survivors_ade": 2.8568,
           "route_as_trained": 25.5283,
           "route_imag_consistency": 24.626,
+          "ref_route_C2_wm_proximity": 3.5734,
           "ctrl_random_on_survivors": 17.5206,
           "a_max_ms2": 4.0
         },
@@ -3554,6 +4331,7 @@
           "oracle_in_survivors_ade": 3.7292,
           "route_as_trained": 28.2088,
           "route_imag_consistency": 24.8745,
+          "ref_route_C2_wm_proximity": 4.3971,
           "ctrl_random_on_survivors": 18.076,
           "a_max_ms2": 5.0
         },
@@ -3567,6 +4345,7 @@
           "oracle_in_survivors_ade": 4.6153,
           "route_as_trained": 30.2318,
           "route_imag_consistency": 24.8745,
+          "ref_route_C2_wm_proximity": 5.3306,
           "ctrl_random_on_survivors": 18.6353,
           "a_max_ms2": 6.0
         },
@@ -3580,6 +4359,7 @@
           "oracle_in_survivors_ade": 6.3482,
           "route_as_trained": 32.6981,
           "route_imag_consistency": 24.866,
+          "ref_route_C2_wm_proximity": 6.9595,
           "ctrl_random_on_survivors": 19.9931,
           "a_max_ms2": 8.0
         },
@@ -3593,6 +4373,7 @@
           "oracle_in_survivors_ade": 8.0691,
           "route_as_trained": 35.4296,
           "route_imag_consistency": 24.8163,
+          "ref_route_C2_wm_proximity": 8.6351,
           "ctrl_random_on_survivors": 21.1123,
           "a_max_ms2": 10.0
         },
@@ -3606,6 +4387,7 @@
           "oracle_in_survivors_ade": 12.3995,
           "route_as_trained": 40.0012,
           "route_imag_consistency": 24.9361,
+          "ref_route_C2_wm_proximity": 12.8164,
           "ctrl_random_on_survivors": 24.2645,
           "a_max_ms2": 15.0
         },
@@ -3619,6 +4401,7 @@
           "oracle_in_survivors_ade": 16.7997,
           "route_as_trained": 42.5522,
           "route_imag_consistency": 25.2459,
+          "ref_route_C2_wm_proximity": 17.1455,
           "ctrl_random_on_survivors": 27.4357,
           "a_max_ms2": 20.0
         },
@@ -3632,6 +4415,7 @@
           "oracle_in_survivors_ade": 25.7229,
           "route_as_trained": 43.9007,
           "route_imag_consistency": 29.7041,
+          "ref_route_C2_wm_proximity": 25.8697,
           "ctrl_random_on_survivors": 33.4088,
           "a_max_ms2": 30.0
         },
@@ -3645,6 +4429,7 @@
           "oracle_in_survivors_ade": 27.0623,
           "route_as_trained": 31.1,
           "route_imag_consistency": 33.9855,
+          "ref_route_C2_wm_proximity": 27.3972,
           "ctrl_random_on_survivors": 33.4183,
           "a_max_ms2": 50.0
         }
@@ -3660,6 +4445,7 @@
           "oracle_in_survivors_ade": 7.6735,
           "route_as_trained": 18.6351,
           "route_imag_consistency": 10.3076,
+          "ref_route_C2_wm_proximity": 7.8298,
           "ctrl_random_on_survivors": 17.2288,
           "keep_quantile": 0.02
         },
@@ -3673,6 +4459,7 @@
           "oracle_in_survivors_ade": 5.4732,
           "route_as_trained": 19.734,
           "route_imag_consistency": 9.8374,
+          "ref_route_C2_wm_proximity": 5.6813,
           "ctrl_random_on_survivors": 19.8354,
           "keep_quantile": 0.05
         },
@@ -3686,6 +4473,7 @@
           "oracle_in_survivors_ade": 3.7943,
           "route_as_trained": 18.647,
           "route_imag_consistency": 10.1092,
+          "ref_route_C2_wm_proximity": 4.0519,
           "ctrl_random_on_survivors": 21.6101,
           "keep_quantile": 0.1
         },
@@ -3699,6 +4487,7 @@
           "oracle_in_survivors_ade": 1.5426,
           "route_as_trained": 16.8096,
           "route_imag_consistency": 11.0245,
+          "ref_route_C2_wm_proximity": 1.9118,
           "ctrl_random_on_survivors": 19.9448,
           "keep_quantile": 0.25
         },
@@ -3712,6 +4501,7 @@
           "oracle_in_survivors_ade": 0.5966,
           "route_as_trained": 12.394,
           "route_imag_consistency": 11.5667,
+          "ref_route_C2_wm_proximity": 1.1871,
           "ctrl_random_on_survivors": 18.0516,
           "keep_quantile": 0.5
         },
@@ -3725,6 +4515,7 @@
           "oracle_in_survivors_ade": 0.3381,
           "route_as_trained": 5.6616,
           "route_imag_consistency": 11.5419,
+          "ref_route_C2_wm_proximity": 1.0739,
           "ctrl_random_on_survivors": 16.3938,
           "keep_quantile": 0.75
         },
@@ -3738,6 +4529,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 11.5298,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 14.8751,
           "keep_quantile": 1.0
         }
@@ -3753,6 +4545,7 @@
           "oracle_in_survivors_ade": 0.8563,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 0.8563,
+          "ref_route_C2_wm_proximity": 0.8563,
           "ctrl_random_on_survivors": 0.8563,
           "n_kept": 1
         },
@@ -3766,6 +4559,7 @@
           "oracle_in_survivors_ade": 0.8187,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 0.8695,
+          "ref_route_C2_wm_proximity": 0.873,
           "ctrl_random_on_survivors": 7.7362,
           "n_kept": 2
         },
@@ -3779,6 +4573,7 @@
           "oracle_in_survivors_ade": 0.805,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 6.9475,
+          "ref_route_C2_wm_proximity": 0.8896,
           "ctrl_random_on_survivors": 18.8318,
           "n_kept": 4
         },
@@ -3792,6 +4587,7 @@
           "oracle_in_survivors_ade": 0.7551,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 11.1506,
+          "ref_route_C2_wm_proximity": 0.9168,
           "ctrl_random_on_survivors": 18.6805,
           "n_kept": 8
         },
@@ -3805,6 +4601,7 @@
           "oracle_in_survivors_ade": 0.6111,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 12.2862,
+          "ref_route_C2_wm_proximity": 0.9966,
           "ctrl_random_on_survivors": 16.9653,
           "n_kept": 16
         },
@@ -3818,6 +4615,7 @@
           "oracle_in_survivors_ade": 0.4564,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 13.4116,
+          "ref_route_C2_wm_proximity": 1.0326,
           "ctrl_random_on_survivors": 17.4894,
           "n_kept": 32
         },
@@ -3831,6 +4629,7 @@
           "oracle_in_survivors_ade": 0.3663,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 12.7415,
+          "ref_route_C2_wm_proximity": 1.0738,
           "ctrl_random_on_survivors": 16.3791,
           "n_kept": 64
         },
@@ -3844,6 +4643,7 @@
           "oracle_in_survivors_ade": 0.3045,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 12.5409,
+          "ref_route_C2_wm_proximity": 1.0596,
           "ctrl_random_on_survivors": 16.0103,
           "n_kept": 128
         },
@@ -3857,6 +4657,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 11.5298,
+          "ref_route_C2_wm_proximity": 1.0653,
           "ctrl_random_on_survivors": 14.8751,
           "n_kept": 256
         }
@@ -3871,6 +4672,7 @@
         "oracle_in_survivors_ade": 0.2505,
         "route_as_trained": 0.2505,
         "route_imag_consistency": 0.2505,
+        "ref_route_C2_wm_proximity": 0.2505,
         "ctrl_random_on_survivors": 0.2505
       }
     },
@@ -3889,6 +4691,7 @@
           "oracle_in_survivors_ade": 0.4059,
           "route_as_trained": 0.6097,
           "route_imag_consistency": 0.6529,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 2.8001,
           "a_max_ms2": 0.5,
           "theta_m": 0.3588,
@@ -3941,6 +4744,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -3953,6 +4781,7 @@
           "oracle_in_survivors_ade": 0.3059,
           "route_as_trained": 0.6477,
           "route_imag_consistency": 0.6886,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.0508,
           "a_max_ms2": 1.0,
           "theta_m": 0.7175,
@@ -4005,6 +4834,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4017,6 +4871,7 @@
           "oracle_in_survivors_ade": 0.2678,
           "route_as_trained": 0.6982,
           "route_imag_consistency": 0.8107,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.0024,
           "a_max_ms2": 1.5,
           "theta_m": 1.0763,
@@ -4069,6 +4924,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4081,6 +4961,7 @@
           "oracle_in_survivors_ade": 0.2555,
           "route_as_trained": 0.7493,
           "route_imag_consistency": 0.9106,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.0757,
           "a_max_ms2": 2.0,
           "theta_m": 1.435,
@@ -4133,6 +5014,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4145,6 +5051,7 @@
           "oracle_in_survivors_ade": 0.2514,
           "route_as_trained": 0.794,
           "route_imag_consistency": 0.9811,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.2233,
           "a_max_ms2": 2.5,
           "theta_m": 1.7938,
@@ -4197,6 +5104,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4209,6 +5141,7 @@
           "oracle_in_survivors_ade": 0.2511,
           "route_as_trained": 0.8128,
           "route_imag_consistency": 1.0415,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.3841,
           "a_max_ms2": 3.0,
           "theta_m": 2.1525,
@@ -4261,6 +5194,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4273,6 +5231,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.824,
           "route_imag_consistency": 1.119,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 1.7423,
           "a_max_ms2": 4.0,
           "theta_m": 2.87,
@@ -4325,6 +5284,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4337,6 +5321,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8435,
           "route_imag_consistency": 1.1605,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 2.0857,
           "a_max_ms2": 5.0,
           "theta_m": 3.5875,
@@ -4389,6 +5374,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4401,6 +5411,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8496,
           "route_imag_consistency": 1.1797,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 2.5346,
           "a_max_ms2": 6.0,
           "theta_m": 4.305,
@@ -4453,6 +5464,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4465,6 +5501,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1822,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 3.2757,
           "a_max_ms2": 8.0,
           "theta_m": 5.74,
@@ -4517,6 +5554,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4529,6 +5591,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1822,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 3.9978,
           "a_max_ms2": 10.0,
           "theta_m": 7.175,
@@ -4581,6 +5644,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4593,6 +5681,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1822,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 5.6199,
           "a_max_ms2": 15.0,
           "theta_m": 10.7625,
@@ -4645,6 +5734,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4657,6 +5771,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1822,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 7.4529,
           "a_max_ms2": 20.0,
           "theta_m": 14.35,
@@ -4709,6 +5824,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4721,6 +5861,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.1822,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 10.5597,
           "a_max_ms2": 30.0,
           "theta_m": 21.525,
@@ -4773,6 +5914,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4785,6 +5951,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2472,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 14.0187,
           "a_max_ms2": 50.0,
           "theta_m": 35.875,
@@ -4837,6 +6004,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         },
         {
@@ -4849,6 +6041,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2472,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 14.8751,
           "a_max_ms2": null,
           "theta_m": null,
@@ -4901,6 +6094,31 @@
             "n_episodes": 40,
             "n_boot": 2000,
             "estimator": "episode_cluster_bootstrap"
+          },
+          "paired_ref_route_C2_wm_proximity_vs_unclipped_as_trained": {
+            "delta": -0.2918,
+            "lo": -0.4233,
+            "hi": -0.1598,
+            "ci95": 0.1318,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "single_ci_ref_route_C2_wm_proximity": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
           }
         }
       ],
@@ -4915,6 +6133,7 @@
           "oracle_in_survivors_ade": 0.3532,
           "route_as_trained": 4.2123,
           "route_imag_consistency": 1.3858,
+          "ref_route_C2_wm_proximity": 0.6769,
           "ctrl_random_on_survivors": 15.1366,
           "a_max_ms2": 0.5
         },
@@ -4928,6 +6147,7 @@
           "oracle_in_survivors_ade": 0.68,
           "route_as_trained": 11.2955,
           "route_imag_consistency": 1.7122,
+          "ref_route_C2_wm_proximity": 0.9821,
           "ctrl_random_on_survivors": 15.7193,
           "a_max_ms2": 1.0
         },
@@ -4941,6 +6161,7 @@
           "oracle_in_survivors_ade": 1.1068,
           "route_as_trained": 16.0757,
           "route_imag_consistency": 2.1032,
+          "ref_route_C2_wm_proximity": 1.4087,
           "ctrl_random_on_survivors": 16.0603,
           "a_max_ms2": 1.5
         },
@@ -4954,6 +6175,7 @@
           "oracle_in_survivors_ade": 1.5413,
           "route_as_trained": 18.6882,
           "route_imag_consistency": 2.9865,
+          "ref_route_C2_wm_proximity": 1.877,
           "ctrl_random_on_survivors": 16.3484,
           "a_max_ms2": 2.0
         },
@@ -4967,6 +6189,7 @@
           "oracle_in_survivors_ade": 2.0073,
           "route_as_trained": 20.3843,
           "route_imag_consistency": 4.1902,
+          "ref_route_C2_wm_proximity": 2.3448,
           "ctrl_random_on_survivors": 16.7028,
           "a_max_ms2": 2.5
         },
@@ -4980,6 +6203,7 @@
           "oracle_in_survivors_ade": 2.4548,
           "route_as_trained": 22.2828,
           "route_imag_consistency": 6.5079,
+          "ref_route_C2_wm_proximity": 2.765,
           "ctrl_random_on_survivors": 16.9909,
           "a_max_ms2": 3.0
         },
@@ -4993,6 +6217,7 @@
           "oracle_in_survivors_ade": 3.3245,
           "route_as_trained": 26.2259,
           "route_imag_consistency": 13.4001,
+          "ref_route_C2_wm_proximity": 3.6505,
           "ctrl_random_on_survivors": 17.7087,
           "a_max_ms2": 4.0
         },
@@ -5006,6 +6231,7 @@
           "oracle_in_survivors_ade": 4.1802,
           "route_as_trained": 29.1177,
           "route_imag_consistency": 17.2941,
+          "ref_route_C2_wm_proximity": 4.514,
           "ctrl_random_on_survivors": 18.2783,
           "a_max_ms2": 5.0
         },
@@ -5019,6 +6245,7 @@
           "oracle_in_survivors_ade": 5.0507,
           "route_as_trained": 30.1122,
           "route_imag_consistency": 19.5483,
+          "ref_route_C2_wm_proximity": 5.3695,
           "ctrl_random_on_survivors": 18.901,
           "a_max_ms2": 6.0
         },
@@ -5032,6 +6259,7 @@
           "oracle_in_survivors_ade": 6.7682,
           "route_as_trained": 32.5676,
           "route_imag_consistency": 21.0671,
+          "ref_route_C2_wm_proximity": 7.0806,
           "ctrl_random_on_survivors": 19.9993,
           "a_max_ms2": 8.0
         },
@@ -5045,6 +6273,7 @@
           "oracle_in_survivors_ade": 8.4696,
           "route_as_trained": 35.0751,
           "route_imag_consistency": 21.7899,
+          "ref_route_C2_wm_proximity": 8.7778,
           "ctrl_random_on_survivors": 21.1901,
           "a_max_ms2": 10.0
         },
@@ -5058,6 +6287,7 @@
           "oracle_in_survivors_ade": 12.7803,
           "route_as_trained": 38.9808,
           "route_imag_consistency": 23.3025,
+          "ref_route_C2_wm_proximity": 13.0937,
           "ctrl_random_on_survivors": 24.1934,
           "a_max_ms2": 15.0
         },
@@ -5071,6 +6301,7 @@
           "oracle_in_survivors_ade": 17.1604,
           "route_as_trained": 42.4904,
           "route_imag_consistency": 24.899,
+          "ref_route_C2_wm_proximity": 17.4181,
           "ctrl_random_on_survivors": 27.7577,
           "a_max_ms2": 20.0
         },
@@ -5084,6 +6315,7 @@
           "oracle_in_survivors_ade": 26.0463,
           "route_as_trained": 43.917,
           "route_imag_consistency": 30.5032,
+          "ref_route_C2_wm_proximity": 26.1692,
           "ctrl_random_on_survivors": 33.6877,
           "a_max_ms2": 30.0
         },
@@ -5097,6 +6329,7 @@
           "oracle_in_survivors_ade": 26.8788,
           "route_as_trained": 30.7042,
           "route_imag_consistency": 27.6891,
+          "ref_route_C2_wm_proximity": 26.9861,
           "ctrl_random_on_survivors": 33.3843,
           "a_max_ms2": 50.0
         }
@@ -5112,6 +6345,7 @@
           "oracle_in_survivors_ade": 3.603,
           "route_as_trained": 7.8756,
           "route_imag_consistency": 5.0946,
+          "ref_route_C2_wm_proximity": 3.6722,
           "ctrl_random_on_survivors": 7.8353,
           "keep_quantile": 0.02
         },
@@ -5125,6 +6359,7 @@
           "oracle_in_survivors_ade": 2.4263,
           "route_as_trained": 8.8588,
           "route_imag_consistency": 4.6741,
+          "ref_route_C2_wm_proximity": 2.5382,
           "ctrl_random_on_survivors": 8.9469,
           "keep_quantile": 0.05
         },
@@ -5138,6 +6373,7 @@
           "oracle_in_survivors_ade": 1.6712,
           "route_as_trained": 9.8521,
           "route_imag_consistency": 4.1644,
+          "ref_route_C2_wm_proximity": 1.8293,
           "ctrl_random_on_survivors": 10.0747,
           "keep_quantile": 0.1
         },
@@ -5151,6 +6387,7 @@
           "oracle_in_survivors_ade": 0.8222,
           "route_as_trained": 8.7698,
           "route_imag_consistency": 2.9878,
+          "ref_route_C2_wm_proximity": 1.0395,
           "ctrl_random_on_survivors": 12.5443,
           "keep_quantile": 0.25
         },
@@ -5164,6 +6401,7 @@
           "oracle_in_survivors_ade": 0.46,
           "route_as_trained": 5.0988,
           "route_imag_consistency": 1.7698,
+          "ref_route_C2_wm_proximity": 0.7161,
           "ctrl_random_on_survivors": 14.1908,
           "keep_quantile": 0.5
         },
@@ -5177,6 +6415,7 @@
           "oracle_in_survivors_ade": 0.3054,
           "route_as_trained": 2.8201,
           "route_imag_consistency": 1.4467,
+          "ref_route_C2_wm_proximity": 0.5926,
           "ctrl_random_on_survivors": 14.8091,
           "keep_quantile": 0.75
         },
@@ -5190,6 +6429,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2472,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 14.8751,
           "keep_quantile": 1.0
         }
@@ -5205,6 +6445,7 @@
           "oracle_in_survivors_ade": 0.8563,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 0.8563,
+          "ref_route_C2_wm_proximity": 0.8563,
           "ctrl_random_on_survivors": 0.8563,
           "n_kept": 1
         },
@@ -5218,6 +6459,7 @@
           "oracle_in_survivors_ade": 0.8187,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 0.9926,
+          "ref_route_C2_wm_proximity": 0.836,
           "ctrl_random_on_survivors": 7.7362,
           "n_kept": 2
         },
@@ -5231,6 +6473,7 @@
           "oracle_in_survivors_ade": 0.805,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.3097,
+          "ref_route_C2_wm_proximity": 0.8228,
           "ctrl_random_on_survivors": 18.8318,
           "n_kept": 4
         },
@@ -5244,6 +6487,7 @@
           "oracle_in_survivors_ade": 0.7551,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.3572,
+          "ref_route_C2_wm_proximity": 0.7917,
           "ctrl_random_on_survivors": 18.6805,
           "n_kept": 8
         },
@@ -5257,6 +6501,7 @@
           "oracle_in_survivors_ade": 0.6111,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.3525,
+          "ref_route_C2_wm_proximity": 0.7063,
           "ctrl_random_on_survivors": 16.9653,
           "n_kept": 16
         },
@@ -5270,6 +6515,7 @@
           "oracle_in_survivors_ade": 0.4564,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2663,
+          "ref_route_C2_wm_proximity": 0.6312,
           "ctrl_random_on_survivors": 17.4894,
           "n_kept": 32
         },
@@ -5283,6 +6529,7 @@
           "oracle_in_survivors_ade": 0.3663,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2687,
+          "ref_route_C2_wm_proximity": 0.6141,
           "ctrl_random_on_survivors": 16.3791,
           "n_kept": 64
         },
@@ -5296,6 +6543,7 @@
           "oracle_in_survivors_ade": 0.3045,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.242,
+          "ref_route_C2_wm_proximity": 0.587,
           "ctrl_random_on_survivors": 16.0103,
           "n_kept": 128
         },
@@ -5309,6 +6557,7 @@
           "oracle_in_survivors_ade": 0.2505,
           "route_as_trained": 0.8563,
           "route_imag_consistency": 1.2472,
+          "ref_route_C2_wm_proximity": 0.5645,
           "ctrl_random_on_survivors": 14.8751,
           "n_kept": 256
         }
@@ -5323,6 +6572,7 @@
         "oracle_in_survivors_ade": 0.2505,
         "route_as_trained": 0.2505,
         "route_imag_consistency": 0.2505,
+        "ref_route_C2_wm_proximity": 0.2505,
         "ctrl_random_on_survivors": 0.2505
       }
     }
@@ -5458,5 +6708,5 @@
       }
     }
   },
-  "_wall_s": 20.71
+  "_wall_s": 26.88
 }

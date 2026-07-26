@@ -13,6 +13,22 @@
 
 ---
 
+## TL;DR — four results, one of them the opposite of what was asked for
+
+| # | result |
+|---|---|
+| 1 | ⛔ **The brief's premise is FALSE, and circular.** `trafficsim` was **already enabled** when the tactical gate failed — the `[−0.21, +0.14] m` figure came *from* the run that enabled it. The "disabled by default" line cited as evidence is **four days older** than that run. New `RETRACTION_LOG` entry, class **C1**. §1.2 |
+| 2 | ⚖️ **The tactical gate's "agents don't react" verdict SURVIVES and is STRONGER.** Reproduced through the **full runtime** (not the direct-gRPC harness): near-ego **Δ = +0.0044 m [−0.0186, +0.0298]**, not separated, over **197 agent clusters** against a **0.512 m** floor — **8.8× tighter than the 4.5 m floor** and a **7.2× tighter bound** than gate 2's. **No withdrawal is warranted; I am not manufacturing one.** §2–3 |
+| 3 | ⭐ **A long-horizon control closes the only objection to my own result:** at an ego separation of **80.5 m max — LARGER than gate 2's 60.99 m** — the near-ego effect is **−0.10 m**, i.e. *negative*. §2.5 |
+| 4 | ⭐ **A genuinely new finding the probe surfaced:** `trafficsim` disabled ⇒ `skip: true` ⇒ **literal replay**. So **every published TanitAD closed-loop number ran against non-reactive replayed traffic.** §1.3 |
+| 5 | ✅ **Wheelbase option B EXECUTED.** Per-clip `vehicle_dimensions` join, fix-forward-only, **parity preserved by construction** (`e438721ae894` bit-identical, **no episode re-selection**), 14 new tests, registry regime boundary registered, §6 doc corrections done. §5 |
+
+⚠️ **Also logged: a C2 I committed inside this very document and caught before shipping it** — I wrote
+"file not found" for `GEOMETRY_INTEGRITY_AUDIT.md` after one probe from the wrong subtree. It exists,
+with the stale claim at **two** sites. Both corrected. §5.6
+
+---
+
 ## 0. PRE-REGISTRATION — written before any measurement
 
 ### 0.1 Task 1 — what I am actually testing, and why it is NOT what the brief says
@@ -220,8 +236,7 @@ weaker evidence than a null against a larger one, and I will not pretend otherwi
 
 Against that, this test is **better on every other axis** — 3.3× the agents, an 8.8× tighter floor, a
 7.2× tighter bound, a bit-identical floor-arm ego, and the full runtime rather than a hand-built
-session. A longer-horizon control (150 steps, ~66 m separation, matching gate 2's intervention size) was
-launched; its status is in §3.
+session. **And the limitation is now closed by a second run** — see §2.5.
 
 **MDE, stated against the effect this test exists to catch.** T1–T4 need the simulated consequence to be
 *a function of the policy's choice* — an ego-induced displacement large enough to change a collision,
@@ -230,6 +245,38 @@ a merge outcome or a right-of-way resolution. Those are **metre-scale** events. 
 smallest one T1–T4 could use. **It is not underpowered for its purpose** — the guard can fail, and it
 would have: the same harness reports the ego arms differing by 21.5 m and the agents differing from
 their logged tracks by 1.96 m, so it detects real differences of the relevant size when they exist.
+
+### 2.5 ⭐ LONG-HORIZON CONTROL — the intervention limitation, closed
+
+Re-run at **150 steps (15 s sim, ~13.2 s post-handover)**, `artifacts/ts_reactivity_long.json`.
+`MEASURED`, **R = 1 per arm**, so tier **PROVISIONAL** on the interval — but **DECISION-GRADE on the
+fidelity control**, which is the whole point of the run.
+
+| | 40-step run | **150-step control** | gate 2 |
+|---|---:|---:|---:|
+| ego GO-vs-STOP separation, mean | 6.16 m | **33.18 m** | 19.94 m |
+| ego GO-vs-STOP separation, **max** | 21.50 m | ⭐ **80.49 m** | 60.99 m |
+| agents returned | 197 | **271** | 59 |
+| samples | 15,103 | **43,287** | — |
+| traffic queries per run | 40 | **99** | ~18 |
+
+⭐ **The intervention is now LARGER than gate 2's — 80.49 m max vs 60.99 m — and the answer does not change.**
+
+| stratum | agents | between | floor | **Δ** | 95 % CI | separated |
+|---|---:|---:|---:|---:|---|:--:|
+| all | 271 | 2.6040 | 2.3778 | **+0.2262** | [−0.5465, +1.0253] | ❌ no |
+| ⭐ near-ego ≤50 m | 228 | 1.2609 | 1.3622 | **−0.1012** | [−0.3202, +0.1109] | ❌ no |
+
+**In the near-ego stratum the point estimate is NEGATIVE** at the larger intervention — agents near a
+car that has been standing dead in the road for 13 seconds are, if anything, *marginally closer* to
+where they'd have been had it driven on. That is the signature of a null, not of a small positive.
+Controls both pass again: floor-arm ego bit-identical (0.000000 m); `is_replay = False` (returned poses
+7.93 m from the logged tracks, only 16.15 % within 0.1 m).
+
+⚠️ **Stated honestly:** R = 1 makes these intervals wide (the floor rests on a single pair), so the
+*interval* is PROVISIONAL and does not supersede §2.3's R = 3 numbers. What it establishes at
+decision-grade is the **fidelity fact** — the ego arms diverge by up to **80 m** and the agents still do
+not respond — which is precisely the objection §2.4 raised against my own primary result.
 
 ---
 
@@ -268,7 +315,8 @@ objection removed rather than outstanding.
 ⚠️ **What this does NOT say.** It does not say CATK cannot react in principle, and it does not say
 AlpaSim is broken. It says: **as configured and driven by both documented paths, on the highest-traffic
 scene we hold, a hard-braking ego does not measurably move the agents around it.** Remaining routes to
-a different answer, in cost order: (a) a longer intervention (§3.1); (b) a scene set with tighter
+a different answer, in cost order: (a) ~~a longer intervention~~ — **tested and closed, §2.5**;
+(b) a scene set with tighter
 ego-agent conflict geometry than a 197-agent urban scene; (c) CATK on GPU, in case the CPU build's
 `radius_graph` neighbourhood construction differs — **not checked, and stated as UNVERIFIED.**
 
@@ -446,7 +494,9 @@ Green before staging, as `CLAUDE.md` requires.
 | `ts_master.sh` | 3-arm × R-repeat full-runtime driver (GO / STOP / GO2) | same dir · `tanitad-eval:/workspace/ts_master.sh` |
 | `ts_reactivity.py` | ASL parser + paired episode-cluster bootstrap + both controls | same dir · `tanitad-eval:/workspace/ts_reactivity.py` |
 | `artifacts/ts_scene_pick.json` | per-scene agent census (51 scenes) | same dir |
-| `artifacts/ts_reactivity.json` | **the reactivity result** — raw JSON per number | same dir |
+| `artifacts/ts_reactivity.json` | **the primary reactivity result** (R=3, 40 steps) — raw JSON per number | same dir |
+| `artifacts/ts_reactivity_long.json` | **the long-horizon control** (R=1, 150 steps, 80.5 m intervention) | same dir |
+| `artifacts/ts_reactivity_pilot.json` | the R=1 pilot at 40 steps (shows Δ shrinking as repeats are added) | same dir |
 | **code — per-clip wheelbase (option B)** | `label_params`, `wheelbase_for_clip`, `_veh_rows`, `_load_chunk_wheelbase`, `_wheelbase_from_parquet`, `_wheelbase_table`, `signals_at(wheelbase=)`, `build_episode(wheelbase_mode=)` | `repo:stack/tanitad/data/physicalai.py` |
 | code — build wiring | `--wheelbase-mode` + `label_params` splat | `repo:stack/scripts/build_pai_cache.py`, `repo:stack/scripts/rebuild_pai_rolling.py` |
 | code — tests | 14 tests, both directions | `repo:stack/tests/test_wheelbase_regime.py` |
@@ -474,6 +524,18 @@ other agents' edits in those two files and should say so in the message rather t
    it moves every future closed-loop number and breaks comparability with the published n=12 suites.
 3. 🟡 **No published TanitAD closed-loop number has ever run against reactive traffic** (§1.3). If any
    downstream claim depends on agents responding to the ego, it is unsupported by those suites.
+5. 🟢 **Licence, discharged.** The NuRec/gsplat renderer (NGC-DL-CONTAINER-LICENSE, **no derivatives**)
+   was **run and configured only**. Everything that made this experiment possible was an existing
+   config surface: `trafficsim=catk` is a stock wizard config group, `catk.device=cpu` is a config key,
+   the port shift is emitted by the wizard. **No renderer code, and no AlpaSim source of any kind, was
+   modified.** No step required it, so the stop-and-report clause was never triggered.
+
+6. 🟢 **Pod left CLEAN.** `MEASURED` at close: ports 6006/6007/6008/6011/6789 all free, GPU **3 MiB**,
+   no `ts_*` process alive, HF token file removed from `/workspace`. All writes went to `/workspace`
+   (dd-verified 531 MB/s, 500 MiB written and read back at full size) — **nothing was written to the
+   99 %-full `/root`.** pod1 / pod2 / pod3 never contacted. The four 3-day-old orphaned `alpasim`
+   workers noted by the gate-2 session were observed again and **left alone** (not mine).
+
 4. 🟡 **A corrected-regime cache does not exist yet.** Option B is *capability*, not a built artefact:
    the first `--wheelbase-mode per_clip_v1` build must be commissioned deliberately, with its own
    `--expect-key`, and must NOT be paired against any legacy arm.

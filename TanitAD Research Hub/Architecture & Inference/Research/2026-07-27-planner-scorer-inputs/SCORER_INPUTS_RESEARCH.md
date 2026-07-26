@@ -722,3 +722,118 @@ incumbent to be RESIDUALLY corrected"). **It is a one-flag ablation in T3
 (`RescorerConfig.use_q` / `normalize_base`) and costs nothing to include.** ⚠️ Note the source is a
 sidewalk-robot VLM selector, not a driving planner — **class it HYPOTHESIS, worth a flag, not a
 redesign.**
+
+---
+
+## 8. ESCALATIONS — things that must not sit in a file
+
+1. **⭐ WE HAVE A PUBLISHABLE MEASUREMENT AND WE DID NOT KNOW IT.** Across 16 papers with a
+   candidate scorer, **nobody publishes a realisable-ranker ceiling** — only the unrealisable
+   oracle. Bar A's in-sample fit (zero generalization gap) and the ordering
+   **0.4271 regression < 0.4907 best-achievable ranker < 0.8563 actual** has no published
+   counterpart. `MEASURED (ours) + PUBLISHED-ABSENCE (§4.2, 7 papers term-searched).`
+   **This is a paper-shaped result and it belongs in the program's publication plan.**
+2. **⛔ RETIRE the "our fan is 41 % better than v1" phrasing — it is the retired framing wearing a
+   new number.** The brief that commissioned this research contains it. `oracle_in_fan` is a
+   minimum over 256 candidates against **one** sampled future; our registry retired the identical
+   claim on REF-C ("~92 % irreducible") and Bar A §12 R-3 made it a rule. **This is the third
+   independent appearance of the same error class in the program.** I did not edit the brief or any
+   steering file — that is the orchestrator's call.
+3. **⚠️ `ade_0_2s` CANNOT ADJUDICATE A SCORER, and this blocks R1.** PARA-Drive **DEMONSTRATED**
+   that L2 and collision are blind to lane compliance; NAVSIM exists because open-loop L2 is fooled
+   (Ego-Status MLP ties a full perception stack on L2 and loses by 12.7 EPDMS). **A PDM-style
+   composite score for our corpus is a PREREQUISITE for R1, not a follow-up.** NC/TTC/comfort/
+   progress are buildable from `obstacle.offline`; DAC/DDC/LK/TL are not.
+4. **⚠️ INGEST GAP — `obstacle.offline` is the single highest-value unread asset in the program.**
+   Every recommendation in §6 that is rated RECOMMEND depends on it. It exists on **97.44 %** of the
+   corpus with **87,481 cuboids over 10 dynamic-agent classes**, and our ingest reads **4 of 36**
+   features. **This is not a new dataset — it is a field we already have.**
+5. **⚠️ OPEN, ZERO-GPU, AND IT CHANGES THE FIX (§5.2).** Whether our 108.7 m / 181 km/h span lives
+   in the **anchors** or is manufactured by the **unbounded offset head** is decidable in minutes
+   from a 42,550-byte file and the existing cache. **I did not resolve it and did not guess.**
+   It is T0 and it should run first.
+6. **The `_grounded_score` hook already exists and is hard-disabled.** `refc.py:544` is a param-free
+   progress-minus-lateral-excursion proxy wired behind `grounded_selector`, forced `False` at
+   `flagship_v15.py:314`. ⚠️ **Do NOT simply switch it on** — that is precisely the inference-time
+   rule cost that PARA-Drive and our own REF-C v1.0 both measured to *lose*. It is noted so nobody
+   rediscovers it and reaches the wrong conclusion.
+7. **A conflict worth a pre-registered line, not a redesign (§7.1).** "Slow Brain, Fast Planner"
+   found that **hiding the planner's own scores from the selector improved selection**, which
+   contradicts REF-C v1.2's residual-on-`base_logit` design. It is a one-flag ablation in T3.
+
+---
+
+## 9. FOR `Project Steering/RETRACTION_LOG.md` — root-cause classes
+
+**I did not edit the log; appending to an append-only steering file is the orchestrator's call.**
+
+### R-1 — **C3 (mechanism instead of measurement), THIRD recurrence, now inside a brief**
+
+> **The pattern:** an `oracle_in_fan` is restated in prose as *"the proposals are N % better than our
+> shipped model"*. It happened on REF-C (retired: "~92 % irreducible"), it happened on v4 (retired
+> by Bar A §6.1), and **it is present in the brief that commissioned this research**. The literature
+> agrees with the retraction: the gap is 2–9× everywhere it is measured (§4.1) and **nobody closes
+> it**. **Rule this earns: an oracle number may not be restated as a comparison against a deployed
+> model in ANY document, including agent briefs. It is a bound on a clairvoyant, not a capability.**
+
+### R-2 — **C-new: "the objective vs the inputs" was a FALSE DICHOTOMY, and both were the small terms**
+
+> **Nearly claimed:** Bar A's §8.1 result — *"information beats objective 2.4×–8.6×"* — pointed the
+> program at **adding scorer INPUTS**. This research says that would have been a third negative
+> result: VADv2's own ablation removes the **image tokens** for **0.001 m** while removing the
+> **supervision** costs **1.33 m** (§3.2), and PARA-Drive's planner beats UniAD and VAD reading
+> **only** BEV + ego. **The live variable was never "how much does the score read" or "how is it
+> trained" — it was WHAT THE LABEL MEANS.** Both of the program's framings were sub-terms of a
+> third thing neither named. *(Note Bar A itself flagged its 2.4×–8.6× as goal-oracle-surface and
+> 23 % fan — the qualifier was honoured; the direction it implied was still too narrow.)*
+
+### R-3 — **C-new: a NEGATIVE result that the literature would have predicted for free**
+
+> Our REF-C v1.0 spent effort measuring that a hand-written **inference-time** cost re-rank recovers
+> **0.0 %** (pure cost **−171 %**). PARA-Drive had already **DEMONSTRATED** the same thing on UniAD
+> — removing the inference-time rule optimiser improves **both** collision and L2, because
+> *"the test-time optimization is not in the training process."* **Rule this earns: before running a
+> negative-result experiment on a standard architectural pattern, spend one hour on whether the
+> pattern has already been ablated in the literature.** The two measurements agree, which is
+> reassuring about our harness and expensive as a use of time.
+
+---
+
+## 10. DELIVERABLE MANIFEST
+
+Repo root: `G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD`.
+Folder: `TanitAD Research Hub/Architecture & Inference/Research/2026-07-27-planner-scorer-inputs/`.
+**All STAGED (`git add`). Nothing committed. Nothing pushed. No branch switched.**
+
+| artifact | where it lives | also elsewhere? |
+|---|---|---|
+| `SCORER_INPUTS_RESEARCH.md` — this document (§0 pre-registration staged before the literature was read) | `repo:…/SCORER_INPUTS_RESEARCH.md` | **repo only** |
+| `CITATIONS.md` — 36 sources with links, access tier per source, verified absences, could-not-reach list, cross-paper discrepancies | `repo:…/CITATIONS.md` | **repo only** |
+
+**Exists in only ONE place:** both files. They are text and are in the repo, so nothing is stranded.
+**No pod was contacted. No GPU was used. No `stack/` file was modified, so `pytest -q` is
+unaffected. `Keys.txt` was not read.**
+
+**Sources of every number in this report:**
+
+| source | what came from it |
+|---|---|
+| **36 published papers** (`CITATIONS.md`) | all `PUBLISHED` claims, with the access tier stated per source |
+| `…/2026-07-26-bar-a-selector/BAR_A.md` + `raw/bar_a_produced.json` | 0.8563 · 0.2505 · 0.4907 · 0.5224 · −4.20 % · −11.03 % · the 6,844-window cache |
+| `Project Steering/MODEL_REGISTRY.md` (REF-C selection block) | REF-C v1.0 **0.0 %** / −171 % · REF-C v1.2 **+2.9 % ns across 47 arms** · "~92 % irreducible" · hard-argmin is the worst target |
+| `stack/tanitad/models/flagship_v4.py` · `flagship_v15.py` · `refs/refc.py` · `models/refc_rescorer.py` · `scripts/build_refc_anchors.py` | **every claim about what our scorer reads** — read from source, not from prose |
+| `…/2026-07-23-v4-fromscratch-launch/LAUNCH_CONFIRMED.md:29` | that v4 loaded **demonstration-derived** dense anchors (the §5.2 correction) |
+| `CLAUDE.md` | `obstacle.offline` 97.44 % / 87,481 cuboids / 10 classes; no map in PhysicalAI-AV |
+
+**Evidence-class summary.** Everything in §§2.2, 5.2 and the "ours" column is `MEASURED (ours —
+source read)`. Everything in §§2.1, 3, 4.1, 5.1, 5.3, 6 is `PUBLISHED (cited)` with the paper named
+and the DEMONSTRATED/ASSERTED distinction made in place. §4.2's absences are `PUBLISHED-ABSENCE`
+(term-searched, second probe run). §7.1 is `HYPOTHESIS`. **Nothing in this report is `INHERITED`
+without being labelled so.**
+
+⚠️ **The one honest weakness of this report, stated plainly.** Roughly half the numbers reached me
+through **one automated extraction hop** rather than my own eyes on the PDF (the tier is marked per
+source in `CITATIONS.md`). **The load-bearing ones — PDM's term list and Table 4, PLUTO's Tables
+II/VI/VII, LLM-Assist's Table 1, VADv2's Table 3, PARA-Drive's Tables 3/4/6, DriveSuprim's Table 1
+— are all PDF-VERBATIM.** The HTML-SUMM tier carries Hydra-MDP/Hydra-MDP++/WoTE/GoalFlow/CoverNet.
+**Re-verify any HTML-SUMM number before it decides a GPU-day.**
