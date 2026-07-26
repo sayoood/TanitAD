@@ -137,6 +137,48 @@ path — it is **VOID and report-only**. Precedent in this program: `reached_at_
 the registry, yet published in this very protocol for four days, §4b) and the `decorr`-never-on window that
 made the entire v3enc gate un-interpretable.
 
+### 0.8 🔴 PRIVILEGED-INPUT PRIMARIES — a goal-oracle number is not a deployed capability
+
+> **A gate metric computed with inputs derived from the ego's own FUTURE measures a different
+> quantity than the deployed capability. It may be reported — it may NOT be quoted as the model's
+> performance, and it may not alone carry a CONTINUE/KILL verdict.**
+
+**Standing instance, and it is time-critical — the flagship-v4 30 k gate.**
+
+`eval_flagship_v4.py:322` feeds **`route`, `route_graded`, `vt_band`, `vt_speed`** minted from the ego's
+own future poses. **MODE B structurally requires them** — `eval_flagship_v4.py:140-141` states the head's
+`_goal_inputs` reads them off the batch — so **every MODE B number, including the 30 k gate's primary,
+is a goal-oracle number.** This violates `V4_FLAGSHIP_DESIGN.md:558-560`, the design's own rule 3.
+
+**The magnitude is measured, not assumed.** The S3 blind-conditioning firewall found that adding
+`route`/`route_graded` **alone** lifts a **no-image** baseline from QWK **0.1128 → 0.3381**, paired
+**Δ +0.2254 [+0.0631, +0.3674], CI-separated.** A model with no pixels gets a large, separated lift from
+these channels. That is the size of the privilege being handed to the arm under test.
+
+**Adjudication for the 30 k gate:**
+
+1. **Render the gate.** Do not block on this — but **stamp the primary `goal_provenance: ORACLE`**
+   (`stack/scripts/goal_provenance.py` exists for exactly this) and print it in the verdict.
+2. **The verdict may not be worded as a deployed-capability claim.** Admissible: *"MODE B, goal-oracle
+   inputs, ADE@2s = X."* **Inadmissible:** *"the flagship achieves X."*
+3. **Weight the horizon-honest co-primary** (`corridor_departure_rate` @ pre-registered K, §0.7) — it is
+   closed-loop and does not consume the oracle channels.
+4. **Do not compare this number to REF-C's 0.4728/0.4714.** Those were collected with the route input
+   **never exercised** (`follow_constant`). Oracle-vs-withheld is not a comparison; it is two different
+   experiments.
+5. **The un-privileged number is a follow-up, not a blocker** — a produced-goal path (the model's own
+   `route_head`, two-pass, as now implemented for REF-C via `nav_mode`) does not yet exist for v4. Build
+   it, then re-render.
+
+**Also affected and now disclosed in place** (values untouched — the registry owner corrects them):
+**flagship v1.6's headline ADE@2s 0.4375 m** (`eval_flagship_v16.py:135-143`) and **every flagship v1.5
+anchored-fan number** (`eval_flagship_v15.py:92-103`).
+
+⚠️ **The general rule.** This is the same class as the retracted *"CEM search = 0.132, a 4.5× headroom"*
+(C6, 07-24) — a **hindsight-privileged** arm quoted as though it were deployable. **Before quoting any
+number, ask what the model was given that it will not have at deployment, and name it.** A privileged
+input does not invalidate a measurement; it changes what the measurement is *of*.
+
 ---
 
 ## 1. The rule
