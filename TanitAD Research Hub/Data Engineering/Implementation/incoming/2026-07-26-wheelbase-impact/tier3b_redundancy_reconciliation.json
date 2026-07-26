@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "evidence_class": "MEASURED",
+    "n_samples": 596991,
+    "n_episodes": 3000,
+    "reference": "IDM_DIAGNOSIS.md \u00a73.4 r = 0.9865 (PhysicalAI)"
+  },
+  "all_speeds": {
+    "n_samples": 596991,
+    "pooled_corr_steer_vs_omega_over_v": 0.0125,
+    "pooled_r2_single_global_affine": 0.0002,
+    "IDM_style_mean_per_episode_corr": 0.7956,
+    "IDM_style_median_per_episode_corr": 0.9941,
+    "per_episode_corr_p05": -0.0205,
+    "n_episodes_scored": 2997,
+    "oracle_per_clip_affine_r2": 0.7279
+  },
+  "v_gt_2mps_IDM_mask": {
+    "n_samples": 532893,
+    "pooled_corr_steer_vs_omega_over_v": 0.9931,
+    "pooled_r2_single_global_affine": 0.9863,
+    "IDM_style_mean_per_episode_corr": 0.9786,
+    "IDM_style_median_per_episode_corr": 0.9973,
+    "per_episode_corr_p05": 0.9155,
+    "n_episodes_scored": 2971,
+    "oracle_per_clip_affine_r2": 0.9922
+  },
+  "reading": "The IDM figure is a MEAN OF WITHIN-EPISODE correlations at v > 2 m/s. It is the ceiling of a predictor granted a free per-clip affine recalibration. The number a model actually faces is the pooled, out-of-sample one (wb_tier3_redundancy.json Q1). Quoting the per-episode figure as 'steer carries zero information beyond (yaw_rate, speed)' overstates it by the between-clip term."
+}

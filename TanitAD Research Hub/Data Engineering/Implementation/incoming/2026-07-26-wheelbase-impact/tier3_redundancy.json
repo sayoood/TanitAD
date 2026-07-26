@@ -1,0 +1,209 @@
+{
+  "_meta": {
+    "evidence_class": "MEASURED",
+    "corpus": "physicalai-train-e438721ae894 (fit) -> val-0c5f7dac3b11 order (test)",
+    "n_samples": 596991,
+    "protocol": "closed-form ridge; lambda by 5-fold EPISODE-DISJOINT CV on train clips only; R^2 evaluated out-of-sample on val clips; CI = episode-cluster bootstrap over val clips, B=2000",
+    "flagship_v1_action_vector": [
+      "steer_road_rad",
+      "accel_mps2",
+      "v0/10"
+    ],
+    "note_yaw_rate_not_an_input": "yaw_rate reaches the predictor ONLY on --yaw-input/--dyn-input arms (rollout.ego_action_channels). flagship-v1 is --speed-input only.",
+    "frac_samples_v_gt_2mps": 0.8926
+  },
+  "Q1_information_theoretic": {
+    "with_yaw_rate_and_speed": {
+      "features": [
+        "w",
+        "v"
+      ],
+      "name": "omega, v",
+      "lambda": 1.0,
+      "cv_r2_train": 0.6291,
+      "r2_out_of_sample": 0.5689,
+      "ci95_episode_cluster_bootstrap": [
+        0.475,
+        0.6614
+      ],
+      "rmse_rad": 0.052783,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "with_ratio_feature": {
+      "features": [
+        "w_over_v"
+      ],
+      "name": "omega/v",
+      "lambda": 1e-06,
+      "cv_r2_train": 0.8011,
+      "r2_out_of_sample": 0.6308,
+      "ci95_episode_cluster_bootstrap": [
+        0.3946,
+        0.8547
+      ],
+      "rmse_rad": 0.048852,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "with_ratio_plus": {
+      "features": [
+        "w_over_v",
+        "w",
+        "v"
+      ],
+      "name": "omega/v, omega, v",
+      "lambda": 1e-06,
+      "cv_r2_train": 0.8094,
+      "r2_out_of_sample": 0.6541,
+      "ci95_episode_cluster_bootstrap": [
+        0.4392,
+        0.8586
+      ],
+      "rmse_rad": 0.047285,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "with_ratio_v_gt_2mps": {
+      "features": [
+        "w_over_v"
+      ],
+      "name": "omega/v  [v>2 m/s]",
+      "lambda": 1e-06,
+      "cv_r2_train": 0.9851,
+      "r2_out_of_sample": 0.9919,
+      "ci95_episode_cluster_bootstrap": [
+        0.9841,
+        0.9964
+      ],
+      "rmse_rad": 0.005803,
+      "n_train_windows": 426995,
+      "n_val_windows": 105898,
+      "n_val_episodes": 595,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "with_ratio_plus_v_gt_2mps": {
+      "features": [
+        "w_over_v",
+        "w",
+        "v"
+      ],
+      "name": "omega/v, omega, v  [v>2 m/s]",
+      "lambda": 0.01,
+      "cv_r2_train": 0.9857,
+      "r2_out_of_sample": 0.9923,
+      "ci95_episode_cluster_bootstrap": [
+        0.9847,
+        0.9966
+      ],
+      "rmse_rad": 0.005665,
+      "n_train_windows": 426995,
+      "n_val_windows": 105898,
+      "n_val_episodes": 595,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "corr_steer_vs_w_over_v_v_gt_2mps": 0.9931,
+    "corr_steer_vs_w_over_v": 0.8747,
+    "corr_steer_vs_w": 0.7856,
+    "corr_steer_vs_curvature": 0.9985
+  },
+  "Q2_what_flagship_v1_receives": {
+    "from_accel_and_v0": {
+      "features": [
+        "accel",
+        "v0_scaled"
+      ],
+      "name": "accel, v0/10",
+      "lambda": 10000.0,
+      "cv_r2_train": -0.001,
+      "r2_out_of_sample": 0.0002,
+      "ci95_episode_cluster_bootstrap": [
+        -0.0021,
+        0.0006
+      ],
+      "rmse_rad": 0.080385,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "from_accel_only": {
+      "features": [
+        "accel"
+      ],
+      "name": "accel",
+      "lambda": 10000.0,
+      "cv_r2_train": -0.0009,
+      "r2_out_of_sample": -0.0007,
+      "ci95_episode_cluster_bootstrap": [
+        -0.004,
+        0.0
+      ],
+      "rmse_rad": 0.080423,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "from_v0_only": {
+      "features": [
+        "v0_scaled"
+      ],
+      "name": "v0/10",
+      "lambda": 10000.0,
+      "cv_r2_train": -0.001,
+      "r2_out_of_sample": 0.0002,
+      "ci95_episode_cluster_bootstrap": [
+        -0.0021,
+        0.0006
+      ],
+      "rmse_rad": 0.080384,
+      "n_train_windows": 477594,
+      "n_val_windows": 119397,
+      "n_val_episodes": 600,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    },
+    "from_accel_and_v0_v_gt_2mps": {
+      "features": [
+        "accel",
+        "v0_scaled"
+      ],
+      "name": "accel, v0/10  [v>2 m/s]",
+      "lambda": 10000.0,
+      "cv_r2_train": -0.0024,
+      "r2_out_of_sample": 0.0016,
+      "ci95_episode_cluster_bootstrap": [
+        -0.0005,
+        0.0025
+      ],
+      "rmse_rad": 0.064482,
+      "n_train_windows": 426995,
+      "n_val_windows": 105898,
+      "n_val_episodes": 595,
+      "estimator": "episode_cluster_bootstrap",
+      "n_boot": 2000
+    }
+  },
+  "bound": {
+    "steer_std_rad": 0.080736,
+    "delta_std_rad": 0.006004,
+    "delta_std_over_steer_std": 0.0744,
+    "unexplained_var_frac_given_omega_v": 0.4311,
+    "unexplained_var_frac_given_v1_inputs": 0.9998,
+    "delta_var_frac_of_steer_var": 0.00553
+  }
+}

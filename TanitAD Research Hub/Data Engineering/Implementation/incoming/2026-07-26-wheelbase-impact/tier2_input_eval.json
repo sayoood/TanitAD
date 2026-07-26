@@ -1,0 +1,513 @@
+{
+  "_meta": {
+    "evidence_class": "MEASURED",
+    "model": "flagship-30k",
+    "ckpt": "/root/models/flagship-30k/ckpt.pt",
+    "val": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "n_episodes": 40,
+    "shipped_WHEELBASE": 2.9,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_boot": 2000,
+    "limitation": "inference-time input perturbation on a checkpoint TRAINED with the 2.9 labels; bounds the input-side effect only, NOT the training-side effect",
+    "n_windows": 881
+  },
+  "arms": {
+    "shipped": {
+      "full_set": {
+        "de@0.5s": 0.071956,
+        "ade@0.5s": 0.071956,
+        "de@1s": 0.221364,
+        "ade@1s": 0.14666,
+        "de@1.5s": 0.507568,
+        "ade@1.5s": 0.266963,
+        "de@2s": 0.907548,
+        "ade@2s": 0.427109,
+        "ade_0_2s": 0.427109,
+        "fde@2s": 0.907548,
+        "rmse": 0.656289,
+        "miss_rate@2m": 0.045403,
+        "tms_openloop": 0.09779
+      },
+      "n_windows": 881,
+      "elapsed_s": 36.3
+    },
+    "corrected": {
+      "full_set": {
+        "de@0.5s": 0.071641,
+        "ade@0.5s": 0.071641,
+        "de@1s": 0.221546,
+        "ade@1s": 0.146593,
+        "de@1.5s": 0.514255,
+        "ade@1.5s": 0.269147,
+        "de@2s": 0.923383,
+        "ade@2s": 0.432706,
+        "ade_0_2s": 0.432706,
+        "fde@2s": 0.923383,
+        "rmse": 0.665265,
+        "miss_rate@2m": 0.045403,
+        "tms_openloop": 0.098869
+      },
+      "n_windows": 881,
+      "elapsed_s": 35.5
+    },
+    "zeroed": {
+      "full_set": {
+        "de@0.5s": 0.101692,
+        "ade@0.5s": 0.101692,
+        "de@1s": 0.385844,
+        "ade@1s": 0.243768,
+        "de@1.5s": 0.930648,
+        "ade@1.5s": 0.472728,
+        "de@2s": 1.663855,
+        "ade@2s": 0.770509,
+        "ade_0_2s": 0.770509,
+        "fde@2s": 1.663855,
+        "rmse": 1.476495,
+        "miss_rate@2m": 0.212259,
+        "tms_openloop": 0.1055
+      },
+      "n_windows": 881,
+      "elapsed_s": 35.5
+    },
+    "x1.5": {
+      "full_set": {
+        "de@0.5s": 0.07431,
+        "ade@0.5s": 0.07431,
+        "de@1s": 0.248729,
+        "ade@1s": 0.16152,
+        "de@1.5s": 0.636712,
+        "ade@1.5s": 0.319917,
+        "de@2s": 1.181224,
+        "ade@2s": 0.535244,
+        "ade_0_2s": 0.535244,
+        "fde@2s": 1.181225,
+        "rmse": 0.881573,
+        "miss_rate@2m": 0.153235,
+        "tms_openloop": 0.098252
+      },
+      "n_windows": 881,
+      "elapsed_s": 34.6
+    },
+    "global_mean": {
+      "full_set": {
+        "de@0.5s": 0.071797,
+        "ade@0.5s": 0.071797,
+        "de@1s": 0.220765,
+        "ade@1s": 0.146281,
+        "de@1.5s": 0.508428,
+        "ade@1.5s": 0.266997,
+        "de@2s": 0.909875,
+        "ade@2s": 0.427716,
+        "ade_0_2s": 0.427716,
+        "fde@2s": 0.909875,
+        "rmse": 0.657256,
+        "miss_rate@2m": 0.047673,
+        "tms_openloop": 0.097193
+      },
+      "n_windows": 881,
+      "elapsed_s": 35.5
+    },
+    "dispersion": {
+      "full_set": {
+        "de@0.5s": 0.071753,
+        "ade@0.5s": 0.071753,
+        "de@1s": 0.221918,
+        "ade@1s": 0.146836,
+        "de@1.5s": 0.513255,
+        "ade@1.5s": 0.268975,
+        "de@2s": 0.91934,
+        "ade@2s": 0.431566,
+        "ade_0_2s": 0.431566,
+        "fde@2s": 0.91934,
+        "rmse": 0.663147,
+        "miss_rate@2m": 0.044268,
+        "tms_openloop": 0.099012
+      },
+      "n_windows": 881,
+      "elapsed_s": 57.7
+    },
+    "harness_2p7": {
+      "full_set": {
+        "de@0.5s": 0.072667,
+        "ade@0.5s": 0.072667,
+        "de@1s": 0.225304,
+        "ade@1s": 0.148986,
+        "de@1.5s": 0.510672,
+        "ade@1.5s": 0.269548,
+        "de@2s": 0.910172,
+        "ade@2s": 0.429704,
+        "ade_0_2s": 0.429704,
+        "fde@2s": 0.910172,
+        "rmse": 0.659539,
+        "miss_rate@2m": 0.043133,
+        "tms_openloop": 0.099608
+      },
+      "n_windows": 881,
+      "elapsed_s": 40.8
+    }
+  },
+  "paired_vs_shipped": {
+    "corrected": {
+      "delta": 0.0056,
+      "lo": 0.0007,
+      "hi": 0.0113,
+      "ci95": 0.0053,
+      "p_delta_gt0": 0.9895,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.9922877475336345,
+      "max_abs_per_window_delta": 0.21663623675704002,
+      "mean_abs_per_window_delta": 0.01637695567395245,
+      "pred_path_displacement_m": {
+        "mean@2s": 0.08614631742238998,
+        "p95@2s": 0.4188535511493683,
+        "max@2s": 1.044996976852417
+      }
+    },
+    "zeroed": {
+      "delta": 0.3434,
+      "lo": 0.1923,
+      "hi": 0.5184,
+      "ci95": 0.163,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.4581368321308427,
+      "max_abs_per_window_delta": 4.7865770645439625,
+      "mean_abs_per_window_delta": 0.36209412156787246,
+      "pred_path_displacement_m": {
+        "mean@2s": 1.1376264095306396,
+        "p95@2s": 6.08247709274292,
+        "max@2s": 11.307771682739258
+      }
+    },
+    "x1.5": {
+      "delta": 0.1081,
+      "lo": 0.0569,
+      "hi": 0.171,
+      "ci95": 0.057,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.7498457078596968,
+      "max_abs_per_window_delta": 1.6729095373302698,
+      "mean_abs_per_window_delta": 0.1284605959683319,
+      "pred_path_displacement_m": {
+        "mean@2s": 0.5015835165977478,
+        "p95@2s": 2.358408212661743,
+        "max@2s": 5.313791275024414
+      }
+    },
+    "global_mean": {
+      "delta": 0.0006,
+      "lo": -0.0004,
+      "hi": 0.0017,
+      "ci95": 0.0011,
+      "p_delta_gt0": 0.8615,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.9995582767102822,
+      "max_abs_per_window_delta": 0.053565626963973045,
+      "mean_abs_per_window_delta": 0.003927575650636295,
+      "pred_path_displacement_m": {
+        "mean@2s": 0.02073495276272297,
+        "p95@2s": 0.10440503060817719,
+        "max@2s": 0.18753428757190704
+      }
+    },
+    "dispersion": {
+      "delta": 0.0045,
+      "lo": 0.0004,
+      "hi": 0.0089,
+      "ci95": 0.0042,
+      "p_delta_gt0": 0.9865,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.993904932248144,
+      "max_abs_per_window_delta": 0.23394837230443954,
+      "mean_abs_per_window_delta": 0.014714133922135136,
+      "pred_path_displacement_m": {
+        "mean@2s": 0.07887690514326096,
+        "p95@2s": 0.3932415843009949,
+        "max@2s": 0.8399877548217773
+      }
+    },
+    "harness_2p7": {
+      "delta": 0.0026,
+      "lo": -0.0006,
+      "hi": 0.0062,
+      "ci95": 0.0034,
+      "p_delta_gt0": 0.9415,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "per_window_corr": 0.9947100152543845,
+      "max_abs_per_window_delta": 0.20823033899068832,
+      "mean_abs_per_window_delta": 0.013288765338165727,
+      "pred_path_displacement_m": {
+        "mean@2s": 0.0735904723405838,
+        "p95@2s": 0.353427916765213,
+        "max@2s": 0.6566361784934998
+      }
+    }
+  },
+  "lateral": {
+    "shipped": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "corrected": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "zeroed": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "x1.5": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "global_mean": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "dispersion": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "harness_2p7": {
+      "block": "taniteval.lateral/decomposition",
+      "version": "1.0.0",
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "dense_surface_available": false
+    },
+    "paired_cross_track_corrected_vs_shipped": {
+      "delta": -0.0235,
+      "lo": -0.0579,
+      "hi": 0.0049,
+      "ci95": 0.0314,
+      "p_delta_gt0": 0.055,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    },
+    "paired_cross_track_zeroed_vs_shipped": {
+      "delta": -0.7154,
+      "lo": -1.086,
+      "hi": -0.4028,
+      "ci95": 0.3416,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    },
+    "paired_cross_track_x1.5_vs_shipped": {
+      "delta": -0.3035,
+      "lo": -0.4934,
+      "hi": -0.1461,
+      "ci95": 0.1736,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    },
+    "paired_cross_track_global_mean_vs_shipped": {
+      "delta": -0.0065,
+      "lo": -0.0133,
+      "hi": -0.0008,
+      "ci95": 0.0063,
+      "p_delta_gt0": 0.0125,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    },
+    "paired_cross_track_dispersion_vs_shipped": {
+      "delta": -0.0162,
+      "lo": -0.0433,
+      "hi": 0.0081,
+      "ci95": 0.0257,
+      "p_delta_gt0": 0.1045,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    },
+    "paired_cross_track_harness_2p7_vs_shipped": {
+      "delta": 0.0079,
+      "lo": -0.0065,
+      "hi": 0.024,
+      "ci95": 0.0153,
+      "p_delta_gt0": 0.849,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+      "mode": "ego",
+      "step": 4,
+      "horizon_s": 0.4
+    }
+  },
+  "by_wheelbase_population": {
+    "2.730": {
+      "n_windows": 330,
+      "n_episodes": 15,
+      "wheelbase": 2.73,
+      "gain_true_over_shipped": 0.9413793103448276,
+      "ade_shipped": 0.45346391126442925,
+      "ade_corrected": 0.45524376444941894,
+      "ade_zeroed": 0.7967889398794135,
+      "paired_corrected_vs_shipped": {
+        "delta": 0.0018,
+        "lo": -0.0021,
+        "hi": 0.006,
+        "ci95": 0.0041,
+        "p_delta_gt0": 0.787,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 330,
+        "n_episodes": 15,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "3.135": {
+      "n_windows": 110,
+      "n_episodes": 5,
+      "wheelbase": 3.135,
+      "gain_true_over_shipped": 1.0810344827586207,
+      "ade_shipped": 0.40856304222331596,
+      "ade_corrected": 0.4132473726508165,
+      "ade_zeroed": 0.6731615312273127,
+      "paired_corrected_vs_shipped": {
+        "delta": 0.0047,
+        "lo": -0.0036,
+        "hi": 0.0144,
+        "ci95": 0.009,
+        "p_delta_gt0": 0.8415,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 110,
+        "n_episodes": 5,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "3.165": {
+      "n_windows": 309,
+      "n_episodes": 14,
+      "wheelbase": 3.165,
+      "gain_true_over_shipped": 1.0913793103448277,
+      "ade_shipped": 0.42092745363863765,
+      "ade_corrected": 0.4315835082672557,
+      "ade_zeroed": 0.7153466388093034,
+      "paired_corrected_vs_shipped": {
+        "delta": 0.0107,
+        "lo": -0.0015,
+        "hi": 0.0269,
+        "ci95": 0.0142,
+        "p_delta_gt0": 0.95,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 309,
+        "n_episodes": 14,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "3.216": {
+      "n_windows": 132,
+      "n_episodes": 6,
+      "wheelbase": 3.216,
+      "gain_true_over_shipped": 1.1089655172413795,
+      "ade_shipped": 0.39114689237568667,
+      "ade_corrected": 0.39520616194314434,
+      "ade_zeroed": 0.9150657968293121,
+      "paired_corrected_vs_shipped": {
+        "delta": 0.0041,
+        "lo": -0.0007,
+        "hi": 0.0095,
+        "ci95": 0.0051,
+        "p_delta_gt0": 0.929,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 132,
+        "n_episodes": 6,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  }
+}
