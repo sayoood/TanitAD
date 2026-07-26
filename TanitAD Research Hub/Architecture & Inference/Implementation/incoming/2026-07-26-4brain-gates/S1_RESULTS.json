@@ -1,0 +1,133 @@
+{
+ "problem": "S1 branch selection at a multi-option junction",
+ "surface": "open-loop-choice",
+ "target": "map INTERSECT realised path -- the successor lane the ego's realised future path first enters (a map fact intersected with a trajectory; touches no model input)",
+ "estimator_module": "taniteval.ci",
+ "resampling_unit": "AlpaSim scene",
+ "n_decision_points_total": 43,
+ "n_with_resolved_target": 30,
+ "min_heading_sep_deg": 0.0,
+ "coverage": {
+  "n_scenes_with_dp": 20,
+  "n_decision_points": 30,
+  "dp_per_scene": 1.5,
+  "arity_hist": {
+   "2": 27,
+   "3": 3
+  },
+  "median_heading_sep_deg": 45.0,
+  "median_horizon_to_branch_s": 1.7,
+  "median_future_path_len_m": 111.8
+ },
+ "class_balance": {
+  "target_index_counts": {
+   "0": 21,
+   "1": 8,
+   "2": 1
+  },
+  "majority_class_rate": 0.7,
+  "mean_chance_rate": 0.4833
+ },
+ "firewall": {
+  "E": {
+   "name": "EASY  goal = route polyline truncated at 30 m",
+   "n": 26,
+   "n_clusters": 20,
+   "acc_blind": 0.7692,
+   "acc_major": 0.6923,
+   "acc_chance": 0.4872,
+   "acc_ceiling": 1.0,
+   "refuse_threshold": 0.98,
+   "verdict": "ADMITTED",
+   "refused": false,
+   "cv": "leave-one-cluster-out",
+   "variant": "E",
+   "goal_availability": "26/30 decision points",
+   "acc_blind_deterministic_argmin_dist": 0.7692,
+   "acc_blind_learned_mlp": 0.7308,
+   "acc_blind_source": "deterministic argmin distance(goal, option centreline)",
+   "blind_vs_majority_paired": {
+    "delta": 0.0385,
+    "lo": -0.2222,
+    "hi": 0.2692,
+    "ci95": 0.2457,
+    "p_delta_gt0": 0.5575,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 26,
+    "n_episodes": 20,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "H": {
+   "name": "HARD  goal = single point at 150-200 m",
+   "n": 8,
+   "n_clusters": 6,
+   "acc_blind": 0.5,
+   "acc_major": 0.75,
+   "acc_chance": 0.5,
+   "acc_ceiling": 1.0,
+   "refuse_threshold": 0.98,
+   "verdict": "ADMITTED",
+   "refused": false,
+   "cv": "leave-one-cluster-out",
+   "variant": "H",
+   "goal_availability": "8/30 decision points",
+   "acc_blind_deterministic_argmin_dist": 0.5,
+   "acc_blind_learned_mlp": 0.25,
+   "acc_blind_source": "deterministic argmin distance(goal, option centreline)",
+   "blind_vs_majority_paired": {
+    "delta": -0.5,
+    "lo": -1.0,
+    "hi": 0.1111,
+    "ci95": 0.5556,
+    "p_delta_gt0": 0.027,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 8,
+    "n_episodes": 6,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "NOGOAL": {
+   "name": "CONTROL  no goal at all (option geometry + ego state only)",
+   "n": 30,
+   "n_clusters": 20,
+   "acc_blind": 0.6333,
+   "acc_major": 0.7,
+   "acc_chance": 0.4833,
+   "acc_ceiling": 1.0,
+   "refuse_threshold": 0.98,
+   "verdict": "ADMITTED",
+   "refused": false,
+   "cv": "leave-one-cluster-out",
+   "variant": "NOGOAL",
+   "goal_availability": "30/30 decision points",
+   "blind_vs_majority_paired": {
+    "delta": -0.0667,
+    "lo": -0.3429,
+    "hi": 0.2122,
+    "ci95": 0.2775,
+    "p_delta_gt0": 0.27,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 30,
+    "n_episodes": 20,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "power": {
+  "resampling_unit": "AlpaSim scene (episode-cluster)",
+  "n_clusters_available": 20,
+  "bar_single_arm": 40,
+  "bar_two_arm": 200,
+  "meets_single_arm_bar": false,
+  "meets_two_arm_bar": false,
+  "shortfall_single_arm_x": 2.0,
+  "shortfall_two_arm_x": 10.0
+ }
+}
