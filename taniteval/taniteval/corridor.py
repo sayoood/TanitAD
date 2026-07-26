@@ -101,7 +101,34 @@ EPS = 1e-9
 # --------------------------------------------------------------------------- #
 CORRIDOR_HALFWIDTH_M = 1.75   # PROPOSED — e1a_horizon.py --corridor-halfwidth;
 #                               "about half a lane", NOT measured on this corpus
-CORRIDOR_GRID_M = (1.0, 1.75, 2.5)   # PROPOSED — e1a_horizon.py --corridor-grid
+# ⭐ 1.391 ADDED 2026-07-26 (PI-approved). It is the ONLY MEASURED entry in this
+# grid. The VectorMap instrument established that 1.75 is TWO DIFFERENT QUANTITIES
+# and only one of them checks out:
+#   · as HALF THE LANE WIDTH it is vindicated — measured 1.802 m [1.686, 1.939],
+#     scene-cluster bootstrap over 51 AlpaSim scenes, and 1.75 sits INSIDE that CI;
+#   · as a DEPARTURE THRESHOLD it is ~26% TOO PERMISSIVE — the real room to the
+#     NEARER edge is 1.391 m [1.289, 1.500]. 85.7% of ego steps have less room than
+#     1.75 m and 46 of 51 scenes are tighter.
+# The two differ because the ego does NOT drive down the centreline, while taniteval
+# measures XTE FROM THE REFERENCE PATH — so 1.391 is the ORIGIN-MATCHED threshold.
+# ⚠️ 1.75 REMAINS THE ADJUDICATING VALUE and is unchanged: every published
+# corridor_departure_rate (incl. E1a's 0.5877 / 0.8414) is scored at it. This entry
+# is ADDITIVE — a second reported row, repricing nothing, reversible.
+# ⚠️ EVIDENCE CLASS: MEASURED on ALPASIM, applied to PhysicalAI as a TRANSFER —
+# PhysicalAI has no map (settled at five probes), so the CONSTANT transfers, not a
+# per-timestep corridor. Label it as a transfer wherever it is quoted.
+# ⚠️ `CORRIDOR_GRID_M` STAYS EXACTLY AS E1a SCORED IT. `test_corridor.py::
+# test_docstring_headline_numbers_match_the_artifact` pins it to the COMMITTED E1a
+# artifact's `corridor_thresholds_m`, and that guard is correct: widening this tuple
+# would silently claim E1a had been scored on a grid it never saw. (I tried it; the
+# test caught it. Adding alongside is the same principle applied to the void OOD
+# guards — never rewrite what a historical run actually did.)
+CORRIDOR_GRID_M = (1.0, 1.75, 2.5)   # PROPOSED — e1a_horizon.py --corridor-grid;
+#                                      PINNED to the E1a artifact. Do NOT widen.
+CORRIDOR_GRID_FORWARD_M = (1.0, 1.391, 1.75, 2.5)   # for NEW runs only
+CORRIDOR_HALFWIDTH_MEASURED_M = 1.391       # [1.289, 1.500], scene-cluster bootstrap
+CORRIDOR_LANE_HALFWIDTH_MEASURED_M = 1.802  # [1.686, 1.939] — vindicates 1.75 AS
+#                                             HALF-LANE-WIDTH, not as a threshold
 JUNCTION_DEG = 10.0           # PROPOSED — e1a_horizon.py --junction-deg (L434)
 # The P1 low-OOD envelope within which the real-footage closed loop was
 # MEASURED (lowood_flagship_ci.json). Beyond these the E1a mapping CLAMPS, so

@@ -103,7 +103,29 @@ Fix: emit them; add a **held-out probe on the deployable surface** at a fixed st
 run when the held-out primary is separated-worse for two consecutive probes. This converts a 59-hour
 loss into a ~20-hour loss.
 
-### M5 — Three active streams, not ten
+### M5 — ⛔ OVERRULED BY THE PI, 2026-07-26: **at least FIVE streams, not three**
+
+> *"no concentration on only three stream, at least five streams"*
+
+**This is the PI's call and it is implemented as stated.** But it removes the mitigation I had
+proposed for **C-IV** (breadth multiplies the surface on which a false positive can appear), so
+C-IV needs a different answer rather than none. **The replacement: if breadth stays, the per-stream
+verification bar rises to carry the load.** Concretely, and binding:
+
+1. **M1's tiers do the work M5 would have done.** With ten streams, PROVISIONAL results are ten
+   times as likely to reach the PI. So: a stream may run at any breadth, but **nothing leaves it as
+   CONFIRMED without an independent reproduction path**, and DECISION-GRADE additionally needs the
+   pre-registration and the stated falsifier.
+2. **Every stream carries its own falsifier before it starts.** A stream that cannot say what result
+   would end it is not a stream, it is an activity.
+3. **Cross-stream premise contamination is the specific breadth risk** — today's three brief errors
+   (C-II) all came from carrying one stream's number into another stream's brief. **M2 is therefore
+   load-bearing under breadth, not optional.**
+
+~~Original proposal: three active streams, everything else paused with state banked.~~
+**Superseded.**
+
+### M5-bis (retired) — the original concentration proposal
 
 Concentrate. Everything else is paused with its state banked, not abandoned. Proposed streams in §4.
 
