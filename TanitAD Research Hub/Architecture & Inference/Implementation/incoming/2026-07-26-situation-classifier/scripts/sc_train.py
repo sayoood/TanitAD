@@ -84,10 +84,12 @@ def load_substrate(bundle, feats_dir, device):
         p = os.path.join(feats_dir, f"clip_{m['k']:05d}.npy")
         if not os.path.exists(p):
             continue
-        f = np.load(p, mmap_mode="r")
+        # NB: NOT `mmap_mode="r"` — one open handle per clip blows the file-descriptor limit at
+        # this n (OSError 24 at ~1,300 clips) and the arrays are concatenated into RAM anyway.
+        f = np.load(p)
         T = f.shape[0]
         assert T == m["T"], f"C-FID: clip {m['k']} T {T} != {m['T']}"
-        F.append(np.asarray(f))
+        F.append(f)
         E.append(Z[f"c{m['k']}_ego"] / EGO_SCALE)
         P.append(Z[f"c{m['k']}_priv"])
         Y.append(np.stack([Z[f"c{m['k']}_y_{s}"] for s in SITS], 1))
@@ -128,8 +130,11 @@ def arm_features(S, arm, mu, W, shuf_perm=None):
     img = ((np.asarray(S["F"], dtype=np.float32) - mu) @ W)
     img /= max(float(np.abs(img).mean()), 1e-6)
     if arm == "head_img_ego_concat":
+        # in-place standardisation: the naive form allocates three 2048-d float32 copies of the
+        # whole corpus (~12 GB at this n) inside a 50 GB cgroup
         raw = np.asarray(S["F"], dtype=np.float32)
-        raw = (raw - raw.mean(0)) / np.maximum(raw.std(0), 1e-3)
+        raw -= raw.mean(0, keepdims=True)
+        raw /= np.maximum(raw.std(0, keepdims=True), 1e-3)
         return np.concatenate([raw, S["E"]], 1)
     if arm == "head_img":
         return img
@@ -138,24 +143,39 @@ def arm_features(S, arm, mu, W, shuf_perm=None):
     return np.concatenate([img, S["E"]], 1)
 
 
-def run_fold(X, S, tr_idx, te_idx, cfg, epochs, device, seed=0):
+def to_device_bank(X, device, max_gb=8.0):
+    """Keep the whole feature bank on the GPU when it fits and gather windows THERE.
+
+    Gathering `[B, WIN, dim]` windows on the CPU and copying them per batch was the bottleneck
+    (MEASURED in the smoke run: it projected the full grid to ~9 h). The bank is 36 MB at r=16 and
+    3.9 GB for the raw-2048 concat arm, both of which fit on a 46 GB A40."""
+    gb = X.nbytes / 1e9
+    if gb <= max_gb and device != "cpu":
+        return torch.from_numpy(X).to(device), True
+    return torch.from_numpy(X), False
+
+
+def run_fold(X, S, tr_idx, te_idx, cfg, epochs, device, seed=0, bank=None, batch=1024):
     """-> per-epoch held-in-fold scores [epochs, n_te, 3]."""
     torch.manual_seed(seed)
-    model = SitHead(X.shape[1], d=cfg["d"]).to(device)
+    model = SitHead(X.shape[1] if bank is None else bank[0].shape[1], d=cfg["d"]).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
     pw = torch.full((3,), float(cfg["pw"]), device=device)
     lossf = nn.BCEWithLogitsLoss(reduction="none", pos_weight=pw)
-    Xt = torch.from_numpy(X)
-    Y = torch.from_numpy(S["Y"].astype(np.float32))
-    V = torch.from_numpy(S["V"].astype(np.float32))
+    Xt, on_gpu = bank if bank is not None else to_device_bank(X, device)
+    dev = Xt.device
+    Y = torch.from_numpy(S["Y"].astype(np.float32)).to(dev)
+    V = torch.from_numpy(S["V"].astype(np.float32)).to(dev)
+    tri = torch.from_numpy(tr_idx).to(dev)
+    tei = torch.from_numpy(te_idx).to(dev)
+    off = torch.arange(-(WIN - 1), 1, device=dev)
     out = np.empty((epochs, len(te_idx), 3), np.float32)
-    off = torch.arange(-(WIN - 1), 1)
     for ep in range(epochs):
         model.train()
-        perm = torch.randperm(len(tr_idx))
-        for b in range(0, len(perm), 512):
-            j = torch.from_numpy(tr_idx[perm[b:b + 512].numpy()])
-            xb = Xt[(j[:, None] + off[None, :])].to(device)
+        perm = torch.randperm(len(tr_idx), device=dev)
+        for b in range(0, len(perm), batch):
+            j = tri[perm[b:b + batch]]
+            xb = Xt[(j[:, None] + off[None, :])].to(device, torch.float32)
             yb, vb = Y[j].to(device), V[j].to(device)
             if vb.sum() == 0:
                 continue
@@ -167,9 +187,10 @@ def run_fold(X, S, tr_idx, te_idx, cfg, epochs, device, seed=0):
         model.eval()
         with torch.no_grad():
             sc = []
-            for b in range(0, len(te_idx), 4096):
-                j = torch.from_numpy(te_idx[b:b + 4096])
-                sc.append(torch.sigmoid(model(Xt[(j[:, None] + off[None, :])].to(device))).cpu())
+            for b in range(0, len(te_idx), 8192):
+                j = tei[b:b + 8192]
+                sc.append(torch.sigmoid(
+                    model(Xt[(j[:, None] + off[None, :])].to(device, torch.float32))).cpu())
             out[ep] = torch.cat(sc).numpy()
     return out, model
 
@@ -274,16 +295,19 @@ def main():
     scores = {}
     for arm in ARMS:
         best = None
+        seen_cfg = set()
         for cfg in CONFIGS:
-            if arm in ("head_ego", "head_priv") and cfg is not CONFIGS[0]:
-                # these arms have no r; only the pos_weight matters -> run the distinct pw once
-                if cfg["pw"] == CONFIGS[0]["pw"]:
-                    continue
+            # `head_ego` / `head_priv` have no image rank -> only the pos_weight distinguishes them
+            key_cfg = (cfg["pw"], cfg["d"], cfg["r"] if arm not in ("head_ego", "head_priv") else 0)
+            if key_cfg in seen_cfg:
+                continue
+            seen_cfg.add(key_cfg)
             X = arm_features(S, arm, mu[cfg["r"]], Wb[cfg["r"]], shuf)
+            bank = to_device_bank(X, a.device)
             oof = np.full((a.epochs, len(tr_idx), 3), np.nan, np.float32)
             for f in range(a.folds):
                 m = fold_of == f
-                sc, _ = run_fold(X, S, tr_idx[~m], tr_idx[m], cfg, a.epochs, a.device)
+                sc, _ = run_fold(X, S, tr_idx[~m], tr_idx[m], cfg, a.epochs, a.device, bank=bank)
                 oof[:, m] = sc
             cvap = np.array([[ap(S["Y"][tr_idx][S["V"][tr_idx][:, i], i],
                                  oof[e][S["V"][tr_idx][:, i], i]) for i in range(3)]
@@ -296,19 +320,24 @@ def main():
             print(f"[cv] {key}: best mean CV-AP {m_:.5f} @ epoch {e_+1} "
                   f"({time.time()-t0:.0f}s)", flush=True)
             if best is None or m_ > best[0]:
-                best = (m_, cfg, e_, X)
-        _m, cfg, e_, X = best
+                best = (m_, cfg, e_, X, bank, oof[e_])
+            else:
+                del bank
+        _m, cfg, e_, X, bank, oof_sel = best
         summary["selected"][arm] = {"cfg": cfg, "epoch": int(e_ + 1), "cv_ap_mean": round(_m, 6)}
         # ---- final: retrain on ALL of TRAIN for exactly the selected epochs, score HELDOUT ----
-        sc, model = run_fold(X, S, tr_idx, te_idx, cfg, e_ + 1, a.device)
+        sc, model = run_fold(X, S, tr_idx, te_idx, cfg, e_ + 1, a.device, bank=bank)
         scores[arm] = sc[-1]
-        # TRAIN out-of-fold scores are what the operating point may read (never held-out targets)
-        oof_final, _ = run_fold(X, S, tr_idx, tr_idx, cfg, e_ + 1, a.device)
-        scores[arm + "__trainoof"] = oof_final[-1]
+        # theta* reads the GENUINELY out-of-fold TRAIN scores from the selected config/epoch —
+        # which the CV already produced. (Re-training on all of TRAIN and scoring TRAIN would be
+        # in-sample and would set the threshold on a distribution the head has memorised.)
+        scores[arm + "__trainoof"] = oof_sel
         torch.save({"state_dict": model.state_dict(), "cfg": cfg, "arm": arm,
                     "in_dim": int(X.shape[1]), "win": WIN, "sits": SITS,
                     "epoch": int(e_ + 1), "ego_scale": EGO_SCALE.tolist()},
                    os.path.join(a.out, f"{arm}.pt"))
+        del bank
+        torch.cuda.empty_cache()
         print(f"[final] {arm} trained {e_+1} epochs, held-out scored ({time.time()-t0:.0f}s)",
               flush=True)
 

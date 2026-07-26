@@ -43,6 +43,42 @@
 cy ≈ 755 rig B). The phase-0 cache crops around the per-clip principal point. Any rebuild that uses a
 geometric-center crop will be ~215 px off for rig B. ⚠️
 
+#### 0.1.1 ⚠️ NAMED REGIME BOUNDARY — the steer-label wheelbase (option B, PI-approved 2026-07-26)
+
+**Two label regimes exist. They are NEVER comparable, and no paired test may cross this line.**
+
+| regime | steer label | cache-key contribution | who is in it |
+|---|---|---|---|
+| **`const2p9`** (LEGACY) | `atan(2.9 · κ)` for every clip | **none** — `e438721ae894` keeps its exact current meaning | **every arm, cache and published number in this registry** |
+| **`per_clip_v1`** (CORRECTED) | `atan(L_clip · κ)`, `L_clip` joined per clip from the dataset's own `calibration/vehicle_dimensions` | adds `wheelbase_mode`, so a corrected cache **cannot collide** with a legacy one | new arms only, from 2026-07-26 |
+
+**Why the boundary exists.** `WHEELBASE = 2.9` is an approximation, not a platform fact — **no Hyperion
+platform in this corpus has a 2.9 m wheelbase.** MEASURED over the 197 chunks the parity corpus draws
+from: **2.730 (47.0 %, the mode) · 2.850 (1.8 %) · 3.135 (13.9 %) · 3.165 (25.5 %) · 3.216 (11.8 %)**,
+clip-mean **2.9568 m** ⇒ **98.2 % of clips carry a >5 % error**, and the populations are geographically
+coherent (`I(wheelbase; country) = 0.769` of `H = 1.880` bits; the 2.85 m slice is **100 % United States**).
+
+**What it does NOT change — the parity statement.** Option B is **fix-forward only**. It changes **no**
+existing cache, **no** existing arm and **no** published number. **It does not re-select episodes**: the
+cache key hashes the *ordered clip-id list* plus build params, and the clip list is untouched — the fix
+alters label VALUES for future builds only. `e438721ae894` (2,376 episodes, skip-hash `f09e44db`) is
+bit-identical, enforced in code by `physicalai.label_params()` returning `{}` for the legacy regime and
+asserted by `stack/tests/test_wheelbase_regime.py`.
+
+**Measured size of the defect** (input-side bound on flagship-v1, paired episode-cluster bootstrap,
+B = 2000, 881 windows / 40 val episodes): ADE **+0.00560 [+0.00070, +0.01130]** m (**+1.31 %**,
+CI-separated) — but **cross-track@2s 0.2742 → 0.2977 m, +8.6 % relative**, which is the largest honest
+statement of its size. A re-baseline (option A) was rejected at **~53 A40-days** to move numbers by
+**9.3 % of their own CI half-width**. Full measurement:
+`…/incoming/2026-07-26-wheelbase-impact/WHEELBASE_IMPACT.md`; execution:
+`…/incoming/2026-07-26-trafficsim-wheelbase/TRAFFICSIM_WHEELBASE.md`.
+
+⚠️ **Related, and NOT the same constant:** `taniteval/closedloop.py` mints and integrates steer at
+**2.7 m**. The closed-loop *path* is wheelbase-invariant (it cancels), but the action *fed to the model*
+is 2.7-derived while the model trained on 2.9 — a **+7.41 % train/serve skew**, open-loop cost
+**+0.0026 [−0.0006, +0.0062]** (not separated). Documented in code, **not** silently changed, because
+aligning it would move every future closed-loop number. **Open PI decision.**
+
 ### 0.2 REF-A feature cache (frozen-encoder arms only)
 
 | Item | Value |

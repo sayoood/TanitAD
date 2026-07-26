@@ -51,8 +51,9 @@ sys.path.insert(0, REPO + "/scripts")
 from tanitad.config import base250cam_config                     # noqa: E402
 from tanitad.data.epcache import cache_key                       # noqa: E402
 from tanitad.data.mixing import save_episode                     # noqa: E402
-from tanitad.data.physicalai import (build_episode,              # noqa: E402
-                                     discover_r0_clips)
+from tanitad.data.physicalai import (DEFAULT_WHEELBASE_MODE,     # noqa: E402
+                                     WHEELBASE_MODES, build_episode,
+                                     discover_r0_clips, label_params)
 from tanitad.data import physicalai as _pai                      # noqa: E402
 
 HF_REPO = "nvidia/PhysicalAI-Autonomous-Vehicles"
@@ -77,6 +78,10 @@ def main() -> None:
     ap.add_argument("--cache-root", required=True)
     ap.add_argument("--tag", default="physicalai-train")
     ap.add_argument("--expect-key", required=True)
+    ap.add_argument("--wheelbase-mode", choices=list(WHEELBASE_MODES),
+                    default=DEFAULT_WHEELBASE_MODE,
+                    help="steer label regime (default const2p9 = parity-preserving; "
+                         "per_clip_v1 mints a DIFFERENT key by construction)")
     ap.add_argument("--skip-idx", default="",
                     help="comma list of source-pod known-corrupt indices to skip")
     ap.add_argument("--only-idx", default="",
@@ -92,8 +97,12 @@ def main() -> None:
         log(f"keys helper unavailable ({e}); relying on env HF_TOKEN")
 
     cfg = base250cam_config()
+    # option B: `label_params` contributes NOTHING for the legacy regime, so the
+    # determinism oracle below still reproduces e438721ae894 exactly. A corrected
+    # build must be launched with --expect-key set to its OWN (different) key —
+    # the oracle is what makes crossing the regime boundary impossible by accident.
     params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
-              "calib": "ftheta_v2"}
+              "calib": "ftheta_v2", **label_params(args.wheelbase_mode)}
 
     order = []
     with open(args.order) as f:
@@ -181,7 +190,8 @@ def main() -> None:
                 log(f"WARN idx {i} clip {cid}: not found post-extract -> skip")
                 continue
             try:
-                ep = build_episode(clip, size=cfg.encoder.image_size)
+                ep = build_episode(clip, size=cfg.encoder.image_size,
+                                   wheelbase_mode=args.wheelbase_mode)
                 tmp = str(f) + ".tmp"
                 save_episode(ep, tmp)
                 os.replace(tmp, f)                            # atomic publish

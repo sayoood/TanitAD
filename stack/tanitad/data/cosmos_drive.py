@@ -60,7 +60,14 @@ from tanitad.data.calib import (PHYSICALAI_FRONT_WIDE_HFOV_DEG,
 from tanitad.data.comma2k19 import stack_frames
 from tanitad.data.toy_driving import ToyEpisode
 
-WHEELBASE = 2.9          # Hyperion platform class, shared with PhysicalAI-AV
+# APPROXIMATION carried over from physicalai.py for label-convention parity.
+# ⚠️ The old justification ("Hyperion platform class, shared with PhysicalAI-AV")
+# was a cross-reference to a FALSE claim: no Hyperion platform in the PhysicalAI
+# corpus has a 2.9 m wheelbase (MEASURED, 2026-07-26-wheelbase-impact).
+# OPEN ITEM: Cosmos-DD is synthetic and whether it publishes an ego wheelbase at
+# all is UNKNOWN — not probed. Do NOT assume it inherits PhysicalAI's value; this
+# constant is here so the two corpora share one steer CONVENTION, nothing more.
+WHEELBASE = 2.9
 TARGET_HZ = 10.0
 SRC_FPS = 30.0           # RDS-HQ label rate; container fps metadata is unreliable
 CHUNK_FRAMES = 121       # chunk i renders label frames [i*121, i*121+121)

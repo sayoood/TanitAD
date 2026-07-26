@@ -96,6 +96,21 @@ from taniteval import driving as _drv  # noqa: E402
 # --- protocol constants (parity with bench.py / rollout.py) ----------------- #
 SPEED_SCALE = 10.0          # v0 action-channel scale (every trainer)
 DT = 0.1                    # 10 Hz operative tick
+# ⚠️ KNOWN TRAIN/SERVE SKEW — documented, deliberately NOT silently changed.
+# This harness mints and integrates steer at 2.7 m, but every model it drives was
+# TRAINED on labels minted at 2.9 m (physicalai.WHEELBASE). Two consequences,
+# both MEASURED (…/incoming/2026-07-26-wheelbase-impact/ §4.3):
+#   ✅ the closed-loop PATH is wheelbase-invariant — wp_to_control's atan(L·κ) and
+#      bicycle_integrate's v/L·tan(steer) use the SAME L, so it cancels exactly.
+#      No closed-loop trajectory number in the program is wrong because of 2.7.
+#   ⚠️ but the ACTION FED TO THE MODEL is atan(2.7·κ) while the model was trained
+#      on atan(2.9·κ) — a +7.41 % skew, mixed with 2.9-derived actions in the same
+#      observed window. Open-loop cost of that skew: ΔADE +0.0026
+#      [−0.0006, +0.0062] (paired episode-cluster bootstrap) — NOT separated.
+# Aligning this to 2.9 is a one-constant fix with no retrain and no parity impact,
+# BUT it would move every closed-loop number produced from here and break
+# comparability with the published n=12 suites. ESCALATED as a PI decision rather
+# than changed unilaterally.
 WHEELBASE = 2.7             # kinematic bicycle wheelbase (kinematic.py)
 WINDOW = 8                  # predictor window W
 # ⚠️ K_MAX is ``ade_0_2s``' own horizon — the **BLIND** one. It is a DEFAULT, not

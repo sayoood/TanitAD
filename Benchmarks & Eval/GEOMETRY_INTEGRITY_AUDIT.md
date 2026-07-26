@@ -37,7 +37,7 @@ representation collapse) are **EXCLUDED** with measured numbers. Extrinsic camer
 |---|---|---|---|
 | 1a | frame contract (shape/dtype/range) | **EXCLUDED** | both corpora **[T,9,256,256] uint8, range 0–255**, identical (D-015 9-ch stack) |
 | 1b | pose↔frame temporal desync | **EXCLUDED** | comma vis-motion↔speed peaks at **lag 0** (curve flat 0.130–0.133); PhysicalAI flow field **expands forward** (divergence **+0.0037**, radial **+0.115**/m about center) consistent with poses; `accel↔Δspeed` **1.00** (PAI)/0.80 (comma); `steer↔yaw-rate` **0.72/0.68**; duplicate-frame frac **0.0** |
-| 1c | action scale/units | **EXCLUDED** | both **steer[rad] / accel[m·s⁻²]**; the gap is *regime* not units — \|steer\|p99 comma **0.16** vs PAI **0.57** rad; speed p50 **25.1** vs **6.4** m/s (highway vs urban); wheelbase 2.9 vs real **2.85** (1.5 %) |
+| 1c | action scale/units | **EXCLUDED** | both **steer[rad] / accel[m·s⁻²]**; the gap is *regime* not units — \|steer\|p99 comma **0.16** vs PAI **0.57** rad; speed p50 **25.1** vs **6.4** m/s (highway vs urban); wheelbase 2.9 vs real — ⚠️ **CORRECTED 2026-07-26**: not a single 2.85 m value. The corpus carries **FIVE** wheelbases (2.730 47.0 % · 2.850 **1.8 %** · 3.135 13.9 % · 3.165 25.5 % · 3.216 11.8 %), clip-mean 2.9568, so the error is **+6.23 % to −9.83 %, not 1.5 %**, and its SIGN is inverted for 47 % of clips. The old figure came from `vehicle_dimensions.chunk_0000` alone, a chunk that is 100 % United States (RETRACTION_LOG 07-26, class C2). See `…/incoming/2026-07-26-wheelbase-impact/WHEELBASE_IMPACT.md` |
 | 1d | `_ego` convention (handedness) | **EXCLUDED** | forward=+x both (mean ego-x **+22.2 / +6.2**); sign(Δyaw)==sign(ego-y) **0.78 / 0.98**; same CCW-left convention, no flip |
 | **2** | **focal canonicalization (intrinsics)** | **CONFIRMED** | real f-theta focal **925.9 px** vs nominal pinhole **554.3 px** (**1.67×**); PhysicalAI canonical `f_eff` **431 px** vs **266** assumed = **1.62× zoom**; crop retains real **33.1°**, not the believed **51.4°** |
 | 3 | extrinsic pitch / horizon | **PARTIAL** | pitch **−0.49°**, principal-point offset **+3 px** → horizon ≈ image center (comma empirical FOE **row 120**): **pitch EXCLUDED**. But camera **height 1.43 m** (PAI) vs ≈1.2 m (comma) is an unnormalized extrinsic → secondary scale inconsistency |
@@ -74,8 +74,12 @@ the model**, the shared dynamics head must average two inconsistent action→pix
 
 **Extrinsics (same feature):** optical-axis pitch **−0.49°** (≈horizontal, so the
 horizon sits at image center — matches comma's empirical FOE row 120, ruling out a
-large pitch offset), camera **height 1.43 m**, wheelbase **2.85 m** (we hard-code 2.9 —
-0.7–1.5 % off, negligible). Comma's EON sits ≈1.2 m (device mount; not re-measured
+large pitch offset), camera **height 1.43 m**, wheelbase — ⚠️ **CORRECTED 2026-07-26**: the "2.85 m, 0.7–1.5 % off, negligible" reading was
+measured on ONE chunk (100 % US). MEASURED over the 197 chunks the parity corpus draws from: five
+wheelbases, mode **2.730 m (47.0 %)**, 2.850 m is only **1.8 %**, and **98.2 % of clips carry a >5 %
+error** under the 2.9 constant. Not negligible, and not one value. The measured impact on flagship-v1
+is still small (ADE +0.0056 [+0.0007, +0.0113] m) but it lands in the LATERAL channel (+8.6 % relative),
+which is why option B fixes it forward — see `…/2026-07-26-wheelbase-impact/`. Comma's EON sits ≈1.2 m (device mount; not re-measured
 here) — the **height difference is a residual unnormalized extrinsic** that scales
 ground motion on top of the focal error (D-016 explicitly defers height/pitch
 normalization).

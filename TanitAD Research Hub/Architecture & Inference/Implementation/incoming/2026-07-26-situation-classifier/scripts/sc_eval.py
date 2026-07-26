@@ -23,6 +23,9 @@ import argparse
 import json
 import os
 import sys
+import time
+
+
 
 import numpy as np
 
@@ -38,18 +41,44 @@ SITS = ("lane_change", "roundabout", "intersection")
 B_STAR = 0.05
 BUDGETS = (0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
 N_BOOT = 2000
+BLIND_MAX_ROWS = 40_000       # C-BLIND subsamples whole clip clusters; see the call site
 EXTRA_CAMS = ["camera_cross_left_120fov", "camera_cross_right_120fov",
               "camera_front_tele_30fov", "camera_rear_left_70fov",
               "camera_rear_right_70fov", "camera_rear_tele_30fov"]
 
 
 # ------------------------------------------------------------------------------- bootstrap driver
-def paired(fn, eid, arms: dict, n_boot=N_BOOT, seed=0, alpha=0.05):
-    """fn(**arrays)->float on each arm inside the SAME draw. -> {arm: (point, lo, hi)} + deltas."""
+_DRAWS: dict = {}
+
+
+def set_draws(eid, n_boot=N_BOOT, seed=0):
+    """Materialise the episode-cluster draws ONCE per situation; every statistic reuses them.
+
+    ⚠️ This is a performance detail with no statistical content: the draws come from
+    `taniteval.ci._draws` (imported, never re-implemented) with the same `uniq`, `idx_by_ep` and
+    seed a fresh call would use. Reusing one set is also exactly what makes every interval in this
+    document **paired** — across arms, across metrics and across budgets.
+
+    Two costs are avoided here that made the first version unusable: `taniteval.ci.episode_index`
+    is O(n_clips x n_frames) (1,610 x 165 k = 266 M comparisons) so it is called once, not once per
+    statistic; and the draw indices are stored as **int32**, halving 2.6 GB to 1.3 GB.
+    """
+    _DRAWS.clear()
     uniq, idx_by_ep = episode_index(eid)
+    _DRAWS["d"] = [d.astype(np.int32) for d in _draws(uniq, idx_by_ep, n_boot, seed)]
+    _DRAWS["n"] = n_boot
+    return _DRAWS["d"]
+
+
+def draws_for(eid=None, n_boot=None, seed=0):
+    return _DRAWS["d"]
+
+
+def paired(fn, eid, arms: dict, n_boot=N_BOOT, seed=0, alpha=0.05):
+    """fn(**arrays)->float on each arm inside the SAME draw. -> {arm: (point, lo, hi)} + boots."""
     pts = {k: float(fn(**v)) for k, v in arms.items()}
     boots = {k: [] for k in arms}
-    for sel in _draws(uniq, idx_by_ep, n_boot, seed):
+    for sel in draws_for(eid, n_boot, seed):
         for k, v in arms.items():
             boots[k].append(fn(**{kk: a[sel] for kk, a in v.items()}))
     out = {}
@@ -114,6 +143,11 @@ def main():
              "base_rate": base, "n_clusters": int(len(np.unique(eid))),
              "C_POW": "OK" if n_clu >= 40 else "UNDERPOWERED"}
 
+        t_s = time.time()
+        set_draws(eid, N_BOOT, 0)
+        print(f"[eval] {sit}: {N_BOOT} episode-cluster draws built in "
+              f"{time.time()-t_s:.0f}s over {len(np.unique(eid))} clusters", flush=True)
+
         sc = {arm: Z[arm][m][:, si] for arm in arms}
         sc["heur_kin"] = HEUR[SITS[si]][te][m]
         sc["constant"] = np.zeros(m.sum())                 # C-CHANCE
@@ -122,7 +156,10 @@ def main():
             sc[f"heur_{nm}"] = hv[te][m]
 
         pack = {k: dict(y=y, s=v_) for k, v_ in sc.items()}
+        t_s = time.time()
         disc, boots = paired(lambda y, s: _ap(y, s), eid, pack)
+        print(f"[eval] {sit}: discrimination over {len(pack)} arms in {time.time()-t_s:.0f}s",
+              flush=True)
         R["AP"] = {k: dict(**disc[k], ap_over_base=round(disc[k]["point"] / max(base, 1e-12), 4),
                            auroc=round(float(roc_auc(y, sc[k])), 4)) for k in sc}
         R["above_chance"] = {k: delta(boots, k, "constant") for k in sc if k != "constant"}
@@ -139,6 +176,7 @@ def main():
         R["efficiency_curve"] = {}
         R["lead_time"] = {}
         for arm in list(arms) + ["heur_kin"]:
+            t_s = time.time()
             oof = (Z[arm + "__trainoof"][:, si] if arm + "__trainoof" in Z.files
                    else HEUR[SITS[si]][tr])
             mt = V[tr][:, si]
@@ -149,6 +187,8 @@ def main():
             R["efficiency_curve"][arm] = [
                 _op(y, sc[arm] >= float(np.quantile(oof[mt], 1.0 - b / 2.0)), eid,
                     float(np.quantile(oof[mt], 1.0 - b / 2.0)), budget=b) for b in BUDGETS]
+            print(f"[eval]   {sit}/{arm}: operating point + curve in {time.time()-t_s:.0f}s",
+                  flush=True)
 
         # ---------- baselines (a) (b) (c) ----------
         rate = R["operating_point"]["head_img_ego"]["firing_rate"]["point"]
@@ -198,14 +238,50 @@ def main():
         try:
             from taniteval.blind_baseline import blind_conditioning_baseline
             ee = E[te][m]
-            ctx = {"v_bin": np.digitize(ee[:, 0], np.arange(0, 30, 2.0)).astype(np.int64),
-                   "alon_bin": np.digitize(ee[:, 1], np.arange(-4, 4, 0.5)).astype(np.int64),
-                   "omega_bin": np.digitize(ee[:, 2], np.arange(-0.6, 0.6, 0.05)).astype(np.int64)}
+            ctx_all = {"v_bin": np.digitize(ee[:, 0], np.arange(0, 30, 2.0)).astype(np.int64),
+                       "alon_bin": np.digitize(ee[:, 1], np.arange(-4, 4, 0.5)).astype(np.int64),
+                       "omega_bin": np.digitize(ee[:, 2], np.arange(-0.6, 0.6, 0.05)).astype(np.int64)}
+            # The firewall fits 8 MLPs + its own bootstrap on CPU; at 165 k rows that dominates the
+            # whole evaluation. Subsample WHOLE CLIP CLUSTERS (never frames) to keep the episode-
+            # clustered split meaningful, and declare the subsample in the record.
+            keep = np.ones(len(y), bool)
+            cl = np.unique(eid)
+            if len(y) > BLIND_MAX_ROWS:
+                rg = np.random.default_rng(0)
+                take = set(rg.choice(cl, size=max(40, int(len(cl) * BLIND_MAX_ROWS / len(y))),
+                                     replace=False).tolist())
+                keep = np.array([e in take for e in eid])
             fw = blind_conditioning_baseline(
-                ctx, y.astype(np.int64), eid, real_pred=(sc["head_img_ego"] > 0.5).astype(np.int64),
+                {k_: v_[keep] for k_, v_ in ctx_all.items()}, y[keep].astype(np.int64), eid[keep],
+                real_pred=(sc["head_img_ego"][keep] > 0.5).astype(np.int64),
                 problem=f"situation:{sit}", n_boot=400)
             R["C_BLIND"] = {k: (float(v) if isinstance(v, (int, float, np.floating)) else v)
                             for k, v in fw.items() if not isinstance(v, np.ndarray)}
+            R["C_BLIND"]["subsample"] = {"rows": int(keep.sum()), "of": int(len(y)),
+                                         "clusters": int(len(np.unique(eid[keep]))),
+                                         "unit": "whole clip clusters, never frames"}
+            # ⭐ The binding rule: state a control's MDE against the effect it exists to catch, and
+            # prove it CAN fail. The firewall's CIRCULAR branch fires at
+            # blind_accuracy >= 1 - deterministic_eps. On a target whose positive rate is p, the
+            # majority-class predictor already scores 1 - p, so whenever p < deterministic_eps the
+            # branch fires for ANY context, including one with zero information.
+            pr = float(y[keep].mean())
+            eps = float(fw["thresholds"]["deterministic_eps"])
+            R["C_BLIND"]["MDE_AUDIT"] = {
+                "positive_rate": round(pr, 5),
+                "majority_accuracy": round(1 - pr, 5),
+                "deterministic_eps": eps,
+                "max_possible_accuracy_gain_over_majority": round(pr, 5),
+                "branch_fires_for_any_context": bool((1 - pr) >= 1 - eps),
+                "blind_skill_over_majority": fw.get("blind_skill_over_majority"),
+                "reading": ("DEGENERATE — the CIRCULAR branch cannot fail on this target: the "
+                            "majority-class predictor alone clears 1 - deterministic_eps, and the "
+                            "largest accuracy gain any context could add is the positive rate "
+                            "itself. Read `blind_skill_over_majority` and `context_leaks` instead; "
+                            "the informative form of this question on a rare-positive target is "
+                            "the AP-based `vs_head_ego` contrast, which is the pre-registered "
+                            "primary comparison.")
+                if (1 - pr) >= 1 - eps else "the branch can fail on this target; verdict is readable"}
         except Exception as exc:                                   # noqa: BLE001
             R["C_BLIND"] = {"status": f"NOT RUN: {type(exc).__name__}: {exc}"}
 
@@ -217,45 +293,48 @@ def main():
     # ---------- multi-camera need + the turn-vs-curve validation ----------
     if a.cross and os.path.isdir(a.cross):
         res["camera_need"] = _camera_need(a.cross, L, meta, Z)
-        res["turn_is_junction"] = _turn_validation(a.cross, L, meta, Z)
+    # ⚠️ The Sec 6.2 turn-vs-curve validation lives in `sc_validate_labels.py` (V4) and is NOT
+    # recomputed here. It has its own population (turn frames vs curve frames), therefore its own
+    # episode-cluster draws — reusing this evaluator's cached per-situation draws against it was a
+    # real bug (IndexError, caught in the harness smoke) and, silently, would have been a wrong
+    # resampling unit. One measurement, one place.
+    res["turn_is_junction_see"] = "artifacts/label_validation.json :: V4_turn_is_junction"
     res["universe"] = uni["per_situation"]
     res["roundabout_ccw_purity"] = uni["roundabout_ccw_purity"]
     json.dump(res, open(os.path.join(a.out, "sc_results.json"), "w"), indent=2)
 
-    # ---- per-frame dump so EVERY bar in the report is recomputable with no GPU ----
-    # (`*.parquet` is git-ignored in this repo, so the dump is gzipped CSV.)
-    import gzip
-    cols = ["clip", "chunk_side"] + [f"y_{s}" for s in SITS] + [f"valid_{s}" for s in SITS] \
-        + ["v", "alon_pre", "omega_pre"] \
-        + [f"{arm}_{s}" for arm in arms for s in SITS]
-    with gzip.open(os.path.join(a.out, "heldout_frames.csv.gz"), "wt", newline="\n") as f:
-        f.write(",".join(cols) + "\n")
-        Ys, Vs, Es = Y[te], V[te], E[te]
-        A = {arm: Z[arm] for arm in arms}
-        for i in range(len(te)):
-            row = [str(int(eid_te[i])), "HELDOUT"]
-            row += [str(int(Ys[i, j])) for j in range(3)]
-            row += [str(int(Vs[i, j])) for j in range(3)]
-            row += [f"{Es[i, j]:.5f}" for j in range(3)]
-            row += [f"{A[arm][i, j]:.6f}" for arm in arms for j in range(3)]
-            f.write(",".join(row) + "\n")
-    print(f"[eval] -> {os.path.join(a.out, 'sc_results.json')} + heldout_frames.csv.gz")
+    # ---- per-frame dump so EVERY bar in this study is recomputable with NO GPU ----
+    # (`*.parquet` is git-ignored in this repo; `.npz` is not, and is exact rather than rounded.)
+    np.savez_compressed(
+        os.path.join(a.out, "heldout_frames.npz"),
+        clip_cluster=eid_te.astype(np.int32),
+        situations=np.array(SITS), arms=np.array(arms),
+        y=Y[te].astype(np.uint8), valid=V[te].astype(np.uint8),
+        ego=E[te].astype(np.float32),
+        heur_kin=np.stack([HEUR[s][te] for s in SITS], 1).astype(np.float32),
+        **{arm: Z[arm].astype(np.float32) for arm in arms})
+    print(f"[eval] -> {os.path.join(a.out, 'sc_results.json')} + heldout_frames.npz")
 
 
 def _op(y, fire, eid, thr, budget=B_STAR):
-    def rec(y, f):
-        return float((y * f).sum() / max(y.sum(), 1e-9))
-
-    def pre(y, f):
-        return float((y * f).sum() / max(f.sum(), 1e-9))
-
-    def rt(y, f):
-        return float(f.mean())
-    pk = dict(y=y, f=fire.astype(float))
+    """Operating-point metrics. All three are computed in ONE pass over the shared draws — three
+    separate `paired` calls would recompute the same resampling 3x for no statistical gain."""
+    f = fire.astype(float)
+    tot, hit, n = y.sum(), (y * f).sum(), float(len(y))
+    b = {"recall": [], "precision": [], "firing_rate": []}
+    for sel in draws_for():
+        ys, fs = y[sel], f[sel]
+        s = (ys * fs).sum()
+        b["recall"].append(s / max(ys.sum(), 1e-9))
+        b["precision"].append(s / max(fs.sum(), 1e-9))
+        b["firing_rate"].append(fs.mean())
+    pts = {"recall": hit / max(tot, 1e-9), "precision": hit / max(f.sum(), 1e-9),
+           "firing_rate": f.sum() / n}
     o = {}
-    for nm, fn in (("recall", rec), ("precision", pre), ("firing_rate", rt)):
-        d, _ = paired(lambda y, f, _fn=fn: _fn(y, f), eid, {"a": pk}, n_boot=600)
-        o[nm] = d["a"]
+    for k, v in b.items():
+        arr = np.array([x for x in v if np.isfinite(x)], float)
+        o[k] = dict(point=float(pts[k]), lo=float(np.quantile(arr, .025)),
+                    hi=float(np.quantile(arr, .975)), n_boot=int(len(arr)))
     o["theta"] = thr
     o["budget"] = budget
     o["extra_cams_per_frame"] = 2.0 * o["firing_rate"]["point"]
@@ -313,8 +392,7 @@ def _camera_need(cross_dir, L, meta, Z):
     kk, off, T_ = Z["k"], Z["off"], Z["T"]
     out = {}
     for sit in SITS:
-        rows = {c: [[], []] for c in EXTRA_CAMS}
-        rows["any_off_front"] = [[], []]
+        rows = {c: [[], [], [], []] for c in list(EXTRA_CAMS) + ["any_off_front"]}
         n_cl = 0
         for ci in range(len(off)):
             k = int(kk[ci])
@@ -332,64 +410,42 @@ def _camera_need(cross_dir, L, meta, Z):
                 n = min(len(nd), len(ong))
                 rows[c][0].append(nd[:n][ong[:n]])
                 rows[c][1].append(nd[:n][~ong[:n]])
+                rows[c][2].append(np.full(int(ong[:n].sum()), k))
+                rows[c][3].append(np.full(int((~ong[:n]).sum()), k))
         o = {}
-        for c, (a_, b_) in rows.items():
+        for c, (a_, b_, ae, be) in rows.items():
             if not a_:
                 continue
-            A, Bv = np.concatenate(a_), np.concatenate(b_) if b_ else np.zeros(0, bool)
+            A = np.concatenate(a_).astype(float)
+            Bv = np.concatenate(b_).astype(float) if b_ else np.zeros(0)
+            # ⚠️ A bare lift is not admissible in this program. The interval is the same paired
+            # episode-cluster bootstrap used everywhere else, over the clips that carry the
+            # situation — the in- and not-in-situation rates are recomputed inside the SAME draw,
+            # so the clip's own scene difficulty cancels.
+            eid = np.concatenate([np.concatenate(ae), np.concatenate(be)])
+            yv = np.concatenate([A, Bv])
+            gv = np.concatenate([np.ones(len(A)), np.zeros(len(Bv))])
+            set_draws(eid, 400, 0)
+            bl = []
+            for sel in draws_for():
+                ys, gs = yv[sel], gv[sel]
+                den = ys[gs < 1].mean() if (gs < 1).any() else np.nan
+                num = ys[gs > 0].mean() if (gs > 0).any() else np.nan
+                if np.isfinite(den) and den > 0 and np.isfinite(num):
+                    bl.append(num / den)
+            bl = np.array(bl, float)
             o[c] = {"in_situation": round(float(A.mean()), 5), "n_in": int(len(A)),
                     "not_in_situation": round(float(Bv.mean()), 5) if len(Bv) else None,
-                    "lift": round(float(A.mean() / max(Bv.mean(), 1e-9)), 3) if len(Bv) else None}
-        out[sit] = {"n_clips": n_cl, "per_camera": o}
+                    "lift": round(float(A.mean() / max(Bv.mean(), 1e-9)), 3) if len(Bv) else None,
+                    "lift_ci95": ([round(float(np.quantile(bl, .025)), 3),
+                                   round(float(np.quantile(bl, .975)), 3)] if len(bl) else None),
+                    "separated_from_1": (bool(float(np.quantile(bl, .025)) > 1.0) if len(bl)
+                                         else None),
+                    "n_clusters": int(len(np.unique(eid))), "n_boot": int(len(bl))}
+        out[sit] = {"n_clips": n_cl, "per_camera": o,
+                    "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws, B=400)"}
     return out
 
-
-def _turn_validation(cross_dir, L, meta, Z):
-    """⭐ PRE-REG Sec 6.2 — does the TURN half actually mark junctions, or is it a curve detector?
-
-    P(perpendicular cross traffic | tight-radius TURN) vs P(... | matched-heading-change LARGE-radius
-    curve). If the ratio's CI includes 1.0, the turn half is NOT a junction detector."""
-    C = np.load(os.path.join(cross_dir, "sc_cross.npz"))
-    kk, off = Z["k"], Z["off"]
-    a_hit, a_eid, b_hit, b_eid = [], [], [], []
-    poses = None
-    for ci in range(len(off)):
-        k = int(kk[ci])
-        if f"c{k}_cross" not in C.files:
-            continue
-        cr = C[f"c{k}_cross"].astype(bool)
-        tn = np.asarray(L[f"c{k}_turn_ab"]).reshape(-1, 2)
-        ong = np.zeros(len(cr), bool)
-        for a_, b_ in tn:
-            ong[int(a_):int(b_) + 1] = True
-        cu = np.asarray(L.get(f"c{k}_curve_ab", np.zeros((0, 2)))).reshape(-1, 2)
-        cmask = np.zeros(len(cr), bool)
-        for a_, b_ in cu:
-            cmask[int(a_):int(b_) + 1] = True
-        if ong.any():
-            a_hit.append(cr[ong])
-            a_eid.append(np.full(int(ong.sum()), ci))
-        if cmask.any():
-            b_hit.append(cr[cmask])
-            b_eid.append(np.full(int(cmask.sum()), ci))
-    if not a_hit:
-        return {"status": "no turn frames on the cross subset"}
-    A = np.concatenate(a_hit)
-    Ae = np.concatenate(a_eid)
-    out = {"P_cross_given_turn": round(float(A.mean()), 5), "n_turn_frames": int(len(A))}
-    if b_hit:
-        Bv = np.concatenate(b_hit)
-        Be = np.concatenate(b_eid)
-        y = np.concatenate([A, Bv]).astype(float)
-        g = np.concatenate([np.ones(len(A)), np.zeros(len(Bv))])
-        eid = np.concatenate([Ae, Be])
-        d, _ = paired(lambda y, g: float(y[g > 0].mean() / max(y[g < 1].mean(), 1e-9)),
-                      eid, {"ratio": dict(y=y, g=g)})
-        out["P_cross_given_large_radius_curve"] = round(float(Bv.mean()), 5)
-        out["n_curve_frames"] = int(len(Bv))
-        out["ratio"] = d["ratio"]
-        out["separated_from_1"] = bool(d["ratio"]["lo"] > 1.0)
-    return out
 
 
 if __name__ == "__main__":

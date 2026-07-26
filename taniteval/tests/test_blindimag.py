@@ -325,3 +325,150 @@ def test_path_deviation_recovers_a_known_offset():
     shifted[..., 1] += 1.5
     lat, _ = bi.path_deviation(shifted, yaw, pos, yaw)
     assert abs(float(lat[:, 5:].mean()) - 1.5) < 0.25
+
+
+# =========================================================================== #
+# T_BLIND RUNG 1 — the ACTION FILTER. Certified in BOTH directions: the two
+# endpoints must reduce EXACTLY to arms that already exist, and every non-null
+# setting must actually change the fed action. A filter that is silently a no-op
+# would produce a flat, confident, wrong intervention curve.
+# =========================================================================== #
+def _kin_fixture(seed=0, k=12):
+    torch.manual_seed(seed)
+    states = torch.randn(B, WIN, S)
+    actions = torch.randn(B, WIN, A) * 0.1
+    obs = torch.randn(B, k, S)
+    pred = _StubPredictor().eval()
+    ro = StepDisplacementReadout(S).eval()
+    v0 = torch.rand(B) * 8 + 2
+    return states, actions, obs, pred, ro, v0, k
+
+
+def _roll(spec, *, seed=0, k=12, state_source="imagination", **kw):
+    states, actions, obs, pred, ro, v0, k = _kin_fixture(seed, k)
+    return bi.blind_rollout(pred, states, actions, ro, k,
+                            state_source=state_source, action_source=spec,
+                            obs_states=obs, v_last=v0, **kw)
+
+
+@pytest.mark.parametrize("spec,expect", [
+    ("own_kinematic", ("own_kinematic", {})),
+    ("own_kinematic|blend=0.25", ("own_kinematic", {"blend": 0.25})),
+    ("gt_kinematic|ema=0.8|every=3",
+     ("gt_kinematic", {"ema": 0.8, "every": 3})),
+])
+def test_parse_action_source(spec, expect):
+    assert bi.parse_action_source(spec) == expect
+
+
+@pytest.mark.parametrize("bad", [
+    "own_kinematic|nosuchknob=1",      # a dropped knob is how a sweep lies
+    "own_kinematic|blend=1.5",         # out of range
+    "own_kinematic|every=0",           # would divide-by-zero silently
+    "own_kinematic|chan=throttle",     # not a channel
+    "hold_last|blend=0.5",             # nothing to filter
+    "true_future|ema=0.5",
+])
+def test_parse_action_source_rejects(bad):
+    with pytest.raises(ValueError):
+        bi.parse_action_source(bad)
+
+
+def test_blend_zero_is_bit_identical_to_the_unfiltered_arm():
+    a = _roll("own_kinematic")
+    b = _roll("own_kinematic|blend=0.0")
+    assert torch.equal(a["waypoints"], b["waypoints"])
+    assert torch.equal(a["fed_actions"], b["fed_actions"])
+
+
+def test_every_1_is_bit_identical_to_the_unfiltered_arm():
+    """The `every` knob must have a null setting AND a non-null one."""
+    a = _roll("own_kinematic")
+    assert torch.equal(a["waypoints"], _roll("own_kinematic|every=1")["waypoints"])
+    assert not torch.equal(a["waypoints"],
+                           _roll("own_kinematic|every=4")["waypoints"])
+
+
+def test_blend_one_reduces_exactly_to_hold_last():
+    """⭐ The upper endpoint of the intervention axis IS the measured ceiling arm.
+
+    ``a_hold0`` is the constant ``hold_last`` feeds forever, so the blend at
+    alpha = 1 is that hold — algebraically, not approximately. This is what lets
+    the sweep's endpoints be checked against arms that already exist.
+    """
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    hold = bi.blind_rollout(pred, states, actions, ro, k,
+                            action_source="hold_last")
+    blend1 = bi.blind_rollout(pred, states, actions, ro, k,
+                              action_source="own_kinematic|blend=1.0",
+                              obs_states=obs, v_last=v0)
+    assert torch.equal(hold["waypoints"], blend1["waypoints"])
+    assert torch.equal(hold["fed_actions"], blend1["fed_actions"])
+    assert torch.equal(hold["pred_speed"], blend1["pred_speed"])
+
+
+@pytest.mark.parametrize("spec", [
+    "own_kinematic|blend=0.5", "own_kinematic|ema=0.8",
+    "own_kinematic|every=5", "own_kinematic|steer_clip=0.001",
+    "own_kinematic|accel_clip=0.05", "own_kinematic|chan=steer",
+    "own_kinematic|chan=accel", "own_kinematic|own_before=3",
+    "own_kinematic|own_after=3",
+])
+def test_every_filter_actually_changes_the_fed_action(spec):
+    """ANTI-NO-OP. A knob that changes nothing is a knob that was not read."""
+    base = _roll("own_kinematic")
+    got = _roll(spec)
+    assert not torch.equal(base["fed_actions"], got["fed_actions"]), spec
+    assert not torch.equal(base["waypoints"], got["waypoints"]), spec
+
+
+def test_clip_filter_binds_the_band_it_names():
+    out = _roll("own_kinematic|steer_clip=0.004|accel_clip=0.05")
+    fa = out["fed_actions"][:, :-1]        # the last row is the carried window action
+    assert float(fa[..., 0].abs().max()) <= 0.004 + 1e-6
+    assert float(fa[..., 1].abs().max()) <= 0.05 + 1e-6
+
+
+def test_switch_filters_hold_exactly_the_segment_they_name():
+    m = 4
+    hold0 = _kin_fixture()[1][:, -1]
+    before = _roll(f"own_kinematic|own_before={m}")["fed_actions"]
+    after = _roll(f"own_kinematic|own_after={m}")["fed_actions"]
+    # own_before: steps >= m are the held action; own_after: steps < m are
+    assert torch.allclose(before[:, m:-1, :2], hold0[:, None, :2].expand_as(before[:, m:-1, :2]))
+    assert torch.allclose(after[:, :m, :2], hold0[:, None, :2].expand_as(after[:, :m, :2]))
+    assert not torch.allclose(before[:, :m, :2], hold0[:, None, :2].expand_as(before[:, :m, :2]))
+
+
+def test_action_filter_leaves_the_speed_channel_alone():
+    out = _roll("own_kinematic|blend=0.5")
+    v0c = _kin_fixture()[1][:, -1, 2]
+    assert torch.allclose(out["fed_actions"][..., 2],
+                          v0c[:, None].expand_as(out["fed_actions"][..., 2]))
+
+
+def test_reconstruct_kinematic_actions_matches_fed_actions():
+    """⭐ The 599-window action statistics are RECONSTRUCTED from a dump that
+    stores ``psi``/``pred_speed`` but not ``fed_actions``. That reconstruction is
+    proved here, not assumed."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture(seed=1, k=15)
+    out = bi.blind_rollout(pred, states, actions, ro, k,
+                           action_source="own_kinematic",
+                           obs_states=obs, v_last=v0)
+    steer, accel = bi.reconstruct_kinematic_actions(out["psi"],
+                                                    out["pred_speed"], v0)
+    fed = out["fed_actions"]
+    assert torch.allclose(steer[:, :k - 1], fed[:, :k - 1, 0], atol=1e-6)
+    assert torch.allclose(accel[:, :k - 1], fed[:, :k - 1, 1], atol=1e-6)
+
+
+def test_reconstruction_can_fail_on_the_wrong_input():
+    """C13 on the reconstruction: feeding it the WRONG speed must break it."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture(seed=1, k=15)
+    out = bi.blind_rollout(pred, states, actions, ro, k,
+                           action_source="own_kinematic",
+                           obs_states=obs, v_last=v0)
+    steer, accel = bi.reconstruct_kinematic_actions(out["psi"],
+                                                    out["pred_speed"] * 1.5, v0)
+    fed = out["fed_actions"]
+    assert not torch.allclose(accel[:, :k - 1], fed[:, :k - 1, 1], atol=1e-6)

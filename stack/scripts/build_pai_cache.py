@@ -22,8 +22,9 @@ from pathlib import Path
 
 from tanitad.config import base250cam_config
 from tanitad.data.epcache import build_episodes_cached
-from tanitad.data.physicalai import (build_episode, discover_r0_clips,
-                                     split_clips)
+from tanitad.data.physicalai import (DEFAULT_WHEELBASE_MODE, WHEELBASE_MODES,
+                                     build_episode, discover_r0_clips,
+                                     label_params, split_clips)
 
 
 def main():
@@ -38,6 +39,13 @@ def main():
     # disk/RAM-bound pod finish train first and backfill val later.
     ap.add_argument("--only", choices=["train", "val", "both"], default="both",
                     help="build only this split (default both; key unchanged)")
+    # PI-approved option B (2026-07-26): fix the wheelbase FORWARD only. The default
+    # is the legacy 2.9 m constant, which leaves the cache key — and therefore
+    # `physicalai-train-e438721ae894` — byte-identical. `per_clip_v1` joins each
+    # clip's real wheelbase and mints a SEPARATE key that can never collide.
+    ap.add_argument("--wheelbase-mode", choices=list(WHEELBASE_MODES),
+                    default=DEFAULT_WHEELBASE_MODE,
+                    help="steer label regime (default const2p9 = parity-preserving)")
     args = ap.parse_args()
 
     cfg = base250cam_config()
@@ -71,15 +79,20 @@ def main():
     # reload superseded episodes. v1: nominal->f-theta focal fix. v2: per-clip
     # (cx,cy) principal-point-centered crop (two-rig vertical fix) — different
     # pixels for rig-B clips, so it MUST invalidate any v1 (geometric-center) cache.
+    # "wheelbase_mode" (option B) is added by `label_params` ONLY for a non-legacy
+    # regime, so the legacy dict below is bit-identical to the one that minted
+    # e438721ae894 — parity is preserved by construction, not by promise.
     params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
-              "calib": "ftheta_v2"}
+              "calib": "ftheta_v2", **label_params(args.wheelbase_mode)}
+    print(f"[build] wheelbase_mode={args.wheelbase_mode} params={params}", flush=True)
     for cs, split in ((tr, "train"), (va, "val")):
         if args.only != "both" and split != args.only:
             print(f"[build] --only={args.only} -> skipping {split} split",
                   flush=True)
             continue
         eps = build_episodes_cached(
-            cs, lambda c: build_episode(c, size=cfg.encoder.image_size),
+            cs, lambda c: build_episode(c, size=cfg.encoder.image_size,
+                                        wheelbase_mode=args.wheelbase_mode),
             cache, f"physicalai-{split}", params)
         print(f"[build] physicalai-{split}: {len(eps)} episodes cached",
               flush=True)

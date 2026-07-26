@@ -48,8 +48,53 @@ from tanitad.data.calib import (F_REF, PHYSICALAI_FRONT_WIDE_FTHETA,
 from tanitad.data.comma2k19 import stack_frames
 from tanitad.data.toy_driving import ToyEpisode
 
-WHEELBASE = 2.9          # Hyperion platform class, sedan/SUV proxy
+# APPROXIMATION, not a platform fact. NO Hyperion platform in this corpus has a
+# 2.9 m wheelbase. MEASURED over the 197 chunks the parity corpus draws from
+# (…/incoming/2026-07-26-wheelbase-impact/): the true per-clip values ship in the
+# dataset's own calibration/vehicle_dimensions and are
+#   2.730 (47.0 %) · 2.850 (1.8 %) · 3.135 (13.9 %) · 3.165 (25.5 %) · 3.216 (11.8 %),
+# clip-mean 2.9568 — so 98.2 % of clips carry a >5 % error under this constant.
+# KEPT at 2.9 for parity with `physicalai-train-e438721ae894`; PI-approved option B
+# is fix-FORWARD-only (see WHEELBASE_MODE below), so no existing cache or published
+# number moves. Measured input-side impact on flagship-v1: ADE +0.0056
+# [+0.0007, +0.0113] m, cross-track +8.6 % relative.
+WHEELBASE = 2.9
 TARGET_HZ = 10.0
+
+# ---------------------------------------------------------------------------
+# Label-derivation regimes (PI-approved option B, 2026-07-26).
+#
+# ``const2p9``    the LEGACY regime: steer = atan(2.9 * curvature) for every clip.
+#                 Every arm, cache and published number up to 2026-07-26 is this.
+# ``per_clip_v1`` the CORRECTED regime: steer = atan(L_clip * curvature) with
+#                 L_clip joined per clip from calibration/vehicle_dimensions.
+#
+# These two regimes are NEVER comparable and must never share a cache key. That is
+# enforced by construction in `label_params()`: the legacy regime contributes NO
+# key at all (so `e438721ae894` keeps its exact current meaning, byte-for-byte),
+# and any other regime contributes one (so it CANNOT collide with a legacy cache).
+# ---------------------------------------------------------------------------
+WHEELBASE_MODE_LEGACY = "const2p9"
+WHEELBASE_MODE_PER_CLIP = "per_clip_v1"
+WHEELBASE_MODES = (WHEELBASE_MODE_LEGACY, WHEELBASE_MODE_PER_CLIP)
+DEFAULT_WHEELBASE_MODE = WHEELBASE_MODE_LEGACY
+
+
+def label_params(wheelbase_mode: str = DEFAULT_WHEELBASE_MODE) -> dict:
+    """Build-param fragment that separates the two label regimes by cache key.
+
+    ⚠️ PARITY-CRITICAL. The legacy regime returns an EMPTY dict on purpose: the
+    canonical params dict must hash to exactly what it hashes to today, or
+    `physicalai-train-e438721ae894` silently stops meaning what it means. Only a
+    NON-legacy regime adds a key, which is what makes a corrected cache unable to
+    collide with a legacy one. Never make this unconditional.
+    """
+    if wheelbase_mode not in WHEELBASE_MODES:
+        raise ValueError(f"unknown wheelbase_mode {wheelbase_mode!r}; "
+                         f"expected one of {WHEELBASE_MODES}")
+    if wheelbase_mode == WHEELBASE_MODE_LEGACY:
+        return {}
+    return {"wheelbase_mode": wheelbase_mode}
 
 # I7 task-identity fingerprint (D-017) — matches comma2k19's on purpose:
 # D-016 canonicalization makes the corpora compatible; I7 PROVES it per run.
@@ -152,7 +197,13 @@ _HF_REPO = "nvidia/PhysicalAI-Autonomous-Vehicles"
 _FRONT_WIDE_CAM = "camera_front_wide_120fov"
 _CALIB_INTR = "camera_intrinsics"
 _CALIB_EXTR = "sensor_extrinsics"
+_CALIB_VEH = "vehicle_dimensions"
 _warned_calib: set[str] = set()
+# Per-clip wheelbase (option B). Same two-source-then-loud-fallback shape as the
+# intrinsics path above; `vehicle_dimensions` is per-CLIP, not per-sensor.
+_WHEELBASE_ENV = "TANITAD_PAI_WHEELBASE"
+_WHEELBASE_BASENAME = "physicalai_wheelbase.csv"
+_warned_wheelbase: set[str] = set()
 
 
 @dataclass(frozen=True)
@@ -267,6 +318,94 @@ def _intrinsics_from_parquet(clip_id: str, root: str | Path
         return None
     path = _calib_chunk_path(root, _CALIB_INTR, int(chunk))
     return _load_chunk_intrinsics(str(path)).get(str(clip_id)) if path else None
+
+
+def _veh_rows(parquet_path: str) -> pd.DataFrame:
+    """Rows of a per-chunk ``vehicle_dimensions`` parquet, clip_id as a column.
+
+    NOTE the deliberate difference from `_front_wide_rows`: vehicle dimensions are
+    per-CLIP, not per-sensor, so there is no camera/sensor name to filter on and
+    reusing `_front_wide_rows` here would return an empty frame.
+    """
+    df = pd.read_parquet(parquet_path).reset_index()
+    if "clip_id" not in df.columns and "level_0" in df.columns:
+        df = df.rename(columns={"level_0": "clip_id"})
+    return df
+
+
+@lru_cache(maxsize=32)
+def _load_chunk_wheelbase(parquet_path: str) -> dict:
+    out = {}
+    for r in _veh_rows(parquet_path).itertuples(index=False):
+        out[str(r.clip_id)] = float(r.wheelbase)
+    return out
+
+
+@lru_cache(maxsize=8)
+def _load_wheelbase_csv(csv_path: str) -> tuple:
+    df = pd.read_csv(csv_path, dtype={"clip_id": str})
+    return tuple((str(r.clip_id), float(r.wheelbase))
+                 for r in df.itertuples(index=False))
+
+
+def _wheelbase_table(root: str | Path | None = None) -> dict[str, float]:
+    """clip_id -> wheelbase [m] from the LOCAL per-clip table, if present."""
+    path = os.environ.get(_WHEELBASE_ENV)
+    if not path and root is not None:
+        cand = Path(root) / "calibration" / _WHEELBASE_BASENAME
+        path = str(cand) if cand.exists() else None
+    if not path or not Path(path).exists():
+        return {}
+    return dict(_load_wheelbase_csv(str(Path(path).resolve())))
+
+
+def _wheelbase_from_parquet(clip_id: str, root: str | Path) -> float | None:
+    try:
+        chunk = _chunk_of_clip(str(root)).get(str(clip_id))
+    except (FileNotFoundError, OSError):
+        # no r0_selection.parquet under this root -> the chunk (and therefore the
+        # calibration file) is simply not resolvable here. Unresolvable, not fatal:
+        # the caller decides between the loud fallback and the strict refusal.
+        return None
+    if chunk is None:
+        return None
+    path = _calib_chunk_path(root, _CALIB_VEH, int(chunk))
+    return _load_chunk_wheelbase(str(path)).get(str(clip_id)) if path else None
+
+
+def wheelbase_for_clip(clip_id: str, root: str | Path | None = None,
+                       strict: bool = False) -> float:
+    """Real per-clip wheelbase [m] (PREFERRED); the 2.9 approximation as a LOUD
+    fallback (warns once per clip) when the dataset's own value is unavailable.
+
+    Resolution order mirrors `intrinsics_for_clip` exactly: (1) a local CSV table
+    (``$TANITAD_PAI_WHEELBASE`` or ``<root>/calibration/physicalai_wheelbase.csv``);
+    (2) the dataset's own per-chunk ``calibration/vehicle_dimensions`` parquet
+    (downloaded on demand); (3) the `WHEELBASE` approximation.
+
+    ⚠️ The fallback is deliberately NOT silent — a silent constant is exactly the
+    defect option B exists to end. With ``strict=True`` an unresolvable clip raises
+    instead of falling back, which is what a corrected-regime BUILD should use so a
+    half-corrected cache can never be minted.
+    """
+    wb = _wheelbase_table(root).get(str(clip_id))
+    if wb is None and root is not None:
+        wb = _wheelbase_from_parquet(str(clip_id), root)
+    if wb is None:
+        if strict:
+            raise RuntimeError(
+                f"no per-clip wheelbase for {clip_id!r}"
+                f"{' under ' + str(root) if root else ''} and strict=True; refusing "
+                f"to mint per_clip_v1 labels with the {WHEELBASE} m approximation")
+        if clip_id not in _warned_wheelbase:
+            _warned_wheelbase.add(str(clip_id))
+            print(f"[physicalai] no per-clip wheelbase for {clip_id!r}"
+                  f"{' under ' + str(root) if root else ''}; falling back to the "
+                  f"{WHEELBASE} m APPROXIMATION (corpus true values are "
+                  f"2.73/2.85/3.135/3.165/3.216 m — see 2026-07-26-wheelbase-impact)",
+                  flush=True)
+        return float(WHEELBASE)
+    return float(wb)
 
 
 def extrinsics_for_clip(clip_id: str, root: str | Path | None = None
@@ -389,11 +528,16 @@ def quaternion_yaw(qx: np.ndarray, qy: np.ndarray, qz: np.ndarray,
                       1.0 - 2.0 * (qy * qy + qz * qz))
 
 
-def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def signals_at(ego: pd.DataFrame, t_query: np.ndarray,
+               wheelbase: float = WHEELBASE) -> tuple[np.ndarray, np.ndarray]:
     """Interpolate egomotion signals at query timestamps (same clock).
 
+    ``wheelbase`` defaults to the legacy 2.9 m constant so every existing caller
+    keeps producing byte-identical labels; the corrected regime passes the clip's
+    real value from `wheelbase_for_clip`.
+
     Returns (actions [n,2], poses [n,4]) per the contract. Signal sources
-    (D-016 R1 upgrade): steer = atan(WHEELBASE*curvature); accel = the dataset's
+    (D-016 R1 upgrade): steer = atan(wheelbase*curvature); accel = the dataset's
     OWN longitudinal `ax` (NOT a finite difference of v — that differentiates
     interpolation noise and lags); yaw = orientation-quaternion heading
     (standstill-robust). The native quaternion yaw is UNWRAPPED before
@@ -409,7 +553,7 @@ def signals_at(ego: pd.DataFrame, t_query: np.ndarray) -> tuple[np.ndarray, np.n
     vx, vy = col("vx"), col("vy")
     v = np.hypot(vx, vy)
     curv = col("curvature")
-    steer = np.arctan(WHEELBASE * curv)
+    steer = np.arctan(float(wheelbase) * curv)
 
     if "ax" in ego.columns:
         accel = col("ax")                          # measured longitudinal accel
@@ -468,9 +612,18 @@ def maneuvers_for_poses(poses: Tensor) -> Tensor:
 
 
 def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
-                  decode_fn=_decode_mp4) -> ToyEpisode:
+                  decode_fn=_decode_mp4,
+                  wheelbase_mode: str = DEFAULT_WHEELBASE_MODE) -> ToyEpisode:
     """One R0 clip -> contract episode at 10 Hz with D-015 stacking + per-timestep
-    maneuver labels (refs.refb MANEUVER_CLASSES, derived from the poses)."""
+    maneuver labels (refs.refb MANEUVER_CLASSES, derived from the poses).
+
+    ``wheelbase_mode`` defaults to the LEGACY 2.9 m constant, so this function is
+    byte-identical to its pre-2026-07-26 behaviour for every existing caller — that
+    is what keeps `physicalai-train-e438721ae894` meaning exactly what it means.
+    ``per_clip_v1`` joins the clip's real wheelbase from the dataset's own
+    ``calibration/vehicle_dimensions`` and mints ``steer = atan(L_clip * curvature)``.
+    A build in the corrected regime resolves STRICTLY (no silent 2.9 fallback).
+    """
     ts = pd.read_parquet(clip["timestamps"])
     tcol = next(c for c in ts.columns if "time" in c.lower())
     t_frames = ts[tcol].to_numpy(np.float64)
@@ -488,7 +641,16 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     frame_idx = np.searchsorted(t_frames, t_query).clip(0, len(t_frames) - 1)
 
     vid = decode_fn(clip["mp4"], size)[frame_idx]              # [n,3,S,S] u8
-    actions, poses = signals_at(ego, t_query)
+    if wheelbase_mode == WHEELBASE_MODE_LEGACY:
+        wb = WHEELBASE
+    elif wheelbase_mode == WHEELBASE_MODE_PER_CLIP:
+        # root is recovered from the mp4 path exactly as _decode_mp4 does for calib
+        wb = wheelbase_for_clip(clip["clip_id"], _physicalai_root_of(clip["mp4"]),
+                                strict=True)
+    else:
+        raise ValueError(f"unknown wheelbase_mode {wheelbase_mode!r}; "
+                         f"expected one of {WHEELBASE_MODES}")
+    actions, poses = signals_at(ego, t_query, wheelbase=wb)
     n = min(vid.shape[0], actions.shape[0])
     stacked = stack_frames(vid[:n], n_stack)
     k = n_stack - 1

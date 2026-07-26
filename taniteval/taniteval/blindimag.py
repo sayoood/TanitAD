@@ -65,6 +65,37 @@ THE ACTION REGIMES (``action_source``)
 ``hold_last``     zero-order hold of the last observed action — ``rollout_decode``'s
                   own ``future_actions=None`` branch. A no-policy floor.
 
+THE ACTION FILTERS (``action_source`` modifier suffix) — T_BLIND RUNG 1
+-----------------------------------------------------------------------
+``T_blind`` under the model's own actions is **25 steps**; under a zero-order hold
+of the last observed action it is **115** (matched comparators, `str` readout,
+`…/2026-07-26-tblind-ladder/artifacts/rung0c_matched_tblind.json`). The 90-step
+gap is a property of the ACTION FED BACK, not of the weights — so it is
+attackable with **no retraining** by filtering that tensor. A filter is declared
+as a suffix on ``action_source`` so that every driver, dump and meta block
+carries it verbatim with no change to the sweep machinery::
+
+    "own_kinematic"                  the deployed inverse, UNFILTERED (default)
+    "own_kinematic|blend=0.25"       a_fed = (1-a)*a_own + a*a_hold0
+    "own_kinematic|ema=0.8"          a_fed = b*a_fed_prev + (1-b)*a_own
+    "own_kinematic|every=5"          recompute every 5 steps, zero-order hold between
+    "own_kinematic|steer_clip=0.02"  tighter steer band (rad)
+    "own_kinematic|accel_clip=0.3"   tighter accel band (m/s^2)
+    "own_kinematic|chan=steer"       steer from the model, accel held (diagnostic)
+    "own_kinematic|own_before=20"    own actions for 20 steps, then held (diagnostic)
+    "own_kinematic|own_after=20"     held for 20 steps, then own (diagnostic)
+
+``a_hold0`` is the last OBSERVED action — the same constant ``hold_last`` feeds
+forever — so ``blend=1.0`` reduces algebraically to ``action_source="hold_last"``
+and ``blend=0.0`` / ``every=1`` reduce to the unfiltered arm. All three
+identities are asserted in ``test_blindimag.py``; they are what makes the sweep's
+endpoints checkable against arms that already exist instead of by eyeball.
+
+⚠️ A filter rewrites **only the fed action's (steer, accel) channels**. It does
+NOT touch the speed channel, and it does NOT touch ``v_prev`` — the internal
+speed bookkeeping continues to track the model's own DECODED speed, because a
+deployed rate-limiter filters the command, not the odometry.
+
 THE SPEED CHANNEL — a deliberate convention, stated because it is load-bearing
 ------------------------------------------------------------------------------
 v1 (``action_dim = 3``) receives ``v0 = poses[last, 3] / SPEED_SCALE`` as a
@@ -176,6 +207,96 @@ def kinematic_action_from_dpose(dpose: torch.Tensor, v_prev: torch.Tensor):
     return steer, accel, v
 
 
+#: The action-filter knobs (T_blind Rung 1). Every one is a pure function of the
+#: action the deployed inverse would already have produced — no weight changes.
+ACTION_MOD_KEYS = ("blend", "ema", "every", "steer_clip", "accel_clip", "chan",
+                   "own_before", "own_after")
+
+
+def parse_action_source(spec: str):
+    """``"own_kinematic|blend=0.25"`` -> ``("own_kinematic", {"blend": 0.25})``.
+
+    A bare source parses to an EMPTY modifier dict, so every pre-Rung-1 call site
+    is bit-identical by construction. Unknown keys and out-of-range values raise
+    rather than being ignored — a silently-dropped knob is how a sweep produces a
+    flat, confident, wrong curve.
+    """
+    base, _, rest = str(spec).partition("|")
+    base = base.strip()
+    mod: dict = {}
+    for part in (p for p in rest.split("|") if p.strip()):
+        k, _, v = part.partition("=")
+        k = k.strip()
+        if k not in ACTION_MOD_KEYS:
+            raise ValueError(f"unknown action modifier {k!r}; "
+                             f"expected one of {ACTION_MOD_KEYS}")
+        if k == "chan":
+            v = v.strip()
+            if v not in ("steer", "accel"):
+                raise ValueError("chan must be 'steer' or 'accel', got %r" % v)
+            mod[k] = v
+        elif k in ("every", "own_before", "own_after"):
+            iv = int(v)
+            if iv < 1:
+                raise ValueError(f"{k} must be >= 1, got {iv}")
+            mod[k] = iv
+        else:
+            fv = float(v)
+            if k in ("blend", "ema") and not (0.0 <= fv <= 1.0):
+                raise ValueError(f"{k} must be in [0,1], got {fv}")
+            if k in ("steer_clip", "accel_clip") and fv < 0.0:
+                raise ValueError(f"{k} must be >= 0, got {fv}")
+            mod[k] = fv
+    if mod and base not in ("own_kinematic", "gt_kinematic"):
+        raise ValueError(
+            f"action modifiers are only defined for a kinematic action source "
+            f"(they filter the action the inverse produced); got base {base!r}")
+    return base, mod
+
+
+def apply_action_filter(a_next, mod: dict, *, j: int, a_hold0, a_prev_fed):
+    """Rewrite the (steer, accel) channels of one fed action row.
+
+    ``a_next [B,A]``    what the unfiltered kinematic source would feed.
+    ``a_hold0 [B,A]``   the last OBSERVED action (what ``hold_last`` feeds forever).
+    ``a_prev_fed``      the previously FED action, or ``None`` at the first step.
+    ``j``               index of the fed action, 0-based.
+
+    Order of application is fixed and documented because it is load-bearing for
+    any combined config: ``chan`` -> clips -> ``every`` -> ``ema`` -> ``blend`` ->
+    the ``own_before`` / ``own_after`` switches. Every experiment in Rung 1 uses
+    ONE knob at a time, so the order only binds future combinations.
+    """
+    if not mod:
+        return a_next
+    x = a_next.clone()
+    if "chan" in mod:                       # amputate the OTHER channel
+        x[..., 1 if mod["chan"] == "steer" else 0] = \
+            a_hold0[..., 1 if mod["chan"] == "steer" else 0]
+    if "steer_clip" in mod:
+        c = float(mod["steer_clip"])
+        x[..., 0] = x[..., 0].clamp(-c, c)
+    if "accel_clip" in mod:
+        c = float(mod["accel_clip"])
+        x[..., 1] = x[..., 1].clamp(-c, c)
+    if "every" in mod and a_prev_fed is not None and (j % int(mod["every"])):
+        x = a_prev_fed.clone()              # zero-order hold between updates
+    if "ema" in mod:
+        b = float(mod["ema"])
+        base = a_hold0 if a_prev_fed is None else a_prev_fed
+        x[..., 0] = b * base[..., 0] + (1.0 - b) * x[..., 0]
+        x[..., 1] = b * base[..., 1] + (1.0 - b) * x[..., 1]
+    if "blend" in mod:
+        w = float(mod["blend"])
+        x[..., 0] = (1.0 - w) * x[..., 0] + w * a_hold0[..., 0]
+        x[..., 1] = (1.0 - w) * x[..., 1] + w * a_hold0[..., 1]
+    if (("own_before" in mod and j >= int(mod["own_before"]))
+            or ("own_after" in mod and j < int(mod["own_after"]))):
+        x[..., 0] = a_hold0[..., 0]
+        x[..., 1] = a_hold0[..., 1]
+    return x
+
+
 def _pack_action(steer, accel, template):
     """(steer, accel) -> a full action row shaped like ``template [B, A]``.
 
@@ -231,6 +352,10 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
     Returns ``{"waypoints" [B,k,2], "psi" [B,k], "step_dpose" [B,k,3],
     "fed_actions" [B,k,A], "pred_speed" [B,k], "peek_mask" [B,k]}``.
 
+    ``action_source`` may carry an ACTION FILTER suffix (Rung 1), e.g.
+    ``"own_kinematic|blend=0.25"`` — see :func:`parse_action_source`. A bare
+    source is bit-identical to the pre-Rung-1 behaviour.
+
     ⚠️ With ``state_source="imagination"``, ``action_source="true_future"`` and no
     peek policy the loop is byte-for-byte ``metric_dynamics.rollout_decode``
     (test-pinned).
@@ -238,6 +363,7 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
     if state_source not in STATE_SOURCES:
         raise ValueError(f"state_source must be one of {STATE_SOURCES}, "
                          f"got {state_source!r}")
+    action_source, action_mod = parse_action_source(action_source)
     if action_source not in ACTION_SOURCES:
         raise ValueError(f"action_source must be one of {ACTION_SOURCES}, "
                          f"got {action_source!r}")
@@ -261,6 +387,8 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
 
     win_s, win_a = states, actions
     z_frozen = states[:, -1]                       # the last REAL percept
+    a_hold0 = actions[:, -1]                       # what hold_last feeds forever
+    a_prev_fed = None                              # for `ema` / `every`
     v_prev = v_last
     dposes, fed, speeds, peeks = [], [], [], []
     b = states.shape[0]
@@ -292,6 +420,14 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
                 if update_speed_channel and a_next.shape[-1] >= 3:
                     a_next = a_next.clone()
                     a_next[..., 2] = v_now / SPEED_SCALE
+                # the action FILTER (Rung 1) — a no-op when `action_mod` is empty
+                a_next = apply_action_filter(a_next, action_mod, j=j,
+                                             a_hold0=a_hold0,
+                                             a_prev_fed=a_prev_fed)
+                a_prev_fed = a_next
+                # ⚠️ v_prev tracks the model's DECODED speed, not the filtered
+                # command: a deployed rate-limiter filters the command, not the
+                # odometry. Unchanged by any filter.
                 v_prev = v_now
             # ---- the latent appended at step j+1 --------------------------- #
             if state_source == "imagination":
@@ -332,6 +468,37 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
             "fed_actions": torch.stack(fed, dim=1),
             "pred_speed": torch.stack(speeds, dim=1),
             "peek_mask": torch.stack(peeks, dim=1)}
+
+
+# --------------------------------------------------------------------------- #
+# Reconstructing what the loop FED, from what a sweep dump already stores       #
+# --------------------------------------------------------------------------- #
+def reconstruct_kinematic_actions(psi: torch.Tensor, pred_speed: torch.Tensor,
+                                  v_last: torch.Tensor):
+    """``(steer [B,k], accel [B,k])`` — the RAW own-kinematic action per step.
+
+    ``bi_run._run_arms`` stores ``psi`` and ``pred_speed`` per arm but not
+    ``fed_actions``, so the action statistics that separate *drift* from
+    *saturation* from *feedback instability* would otherwise need a second
+    600-episode rollout. They do not: the inverse in
+    :func:`kinematic_action_from_dpose` is a function of the per-step heading
+    increment and the decoded speed alone, and ``psi`` is their cumulative sum.
+
+    ``psi [B,k]`` cumulative heading, ``pred_speed [B,k]`` the decoded speed
+    ``|dxy|/DT`` at each step, ``v_last [B]`` the speed entering the rollout.
+
+    ⚠️ This reconstructs the action the inverse PRODUCED. On a filtered arm the
+    action actually fed differs by exactly that filter. Asserted equal to
+    ``blind_rollout(...)["fed_actions"]`` on the unfiltered arm by
+    ``test_blindimag.py::test_reconstruct_kinematic_actions_matches_fed_actions``.
+    """
+    dyaw = torch.cat([psi[:, :1], psi[:, 1:] - psi[:, :-1]], dim=1)
+    v = pred_speed
+    v_prev = torch.cat([v_last.reshape(-1, 1).to(v.dtype), v[:, :-1]], dim=1)
+    accel = ((v - v_prev) / DT).clamp(-ACCEL_CLAMP, ACCEL_CLAMP)
+    kappa = dyaw / (v.clamp_min(V_EPS) * DT)
+    steer = torch.atan(WHEELBASE * kappa).clamp(-STEER_CLAMP, STEER_CLAMP)
+    return steer, accel
 
 
 # --------------------------------------------------------------------------- #
