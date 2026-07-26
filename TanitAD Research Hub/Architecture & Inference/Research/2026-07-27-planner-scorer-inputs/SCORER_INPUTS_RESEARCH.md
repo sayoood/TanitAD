@@ -508,3 +508,217 @@ feasibility *for free* by sampling from human demonstrations, and then apply **n
 PRIME, TOAD and CoverNet apply an explicit kinematic model. **We are in a fifth position nobody
 publishes: a demonstration-derived vocabulary whose feasibility is then destroyed by an unbounded
 learned refinement, with no filter downstream.**
+
+### 5.3 ⭐⭐ THE MOST IMPORTANT NUMBER IN THIS REPORT — a bigger fan makes the best rule scorer WORSE
+
+`PUBLISHED (cited — LLM-Assist arXiv 2401.00125, Table 1, read VERBATIM from extracted PDF text) —
+DEMONSTRATED.` nuPlan **Val14, closed-loop non-reactive.** The authors hand PDM-Closed — the
+strongest rule scorer in the field — progressively more proposals:
+
+| # proposals | **score** | collisions | **TTC** | drivable | **comfort** | progress |
+|---:|---:|---:|---:|---:|---:|---:|
+| **15** | **92.51** | 98.05 | 93.11 | 99.55 | 95.19 | 91.75 |
+| **8,505** | **77.78** | 91.92 | **62.89** | 98.64 | **78.68** | **95.60** |
+
+Their caption, verbatim: *"PDMClosed fails to select the best proposal when presented with too many
+options, as it relies on a constant velocity simulator."*
+
+> **Read the sub-metrics — this is textbook Goodharting.** Progress goes **UP** (91.75 → 95.60)
+> while TTC **collapses** (93.11 → 62.89) and comfort **collapses** (95.19 → 78.68). A 567× larger
+> fan let the search find candidates that **exploit the scorer's own simulation error**.
+>
+> **⇒ This is almost certainly the mechanism behind our imagination-scoring failure**, stated in
+> published form: *"the world model does not veto an implausible plan — it obediently simulates
+> it, so consistency-scoring ranks the absurd candidates first"* (MEASURED, ours) is the same
+> sentence as *"fails to select the best proposal when presented with too many options, as it
+> relies on a constant velocity simulator"* (PUBLISHED). **A large fan is not a free asset; it is
+> an adversarial search against your scorer's approximation error.**
+
+**Published fan sizes, for scale.** PDM **15** · PLUTO top-K **20** · DiffusionDrive **20** (its
+Table 6: 10 → 84.9, 20 → 88.1, 40 → 88.2 PDMS — **saturated at 20**) · DTPP ≤30 · "Slow Brain,
+Fast Planner" **plateaus at K ≈ 18–24** · DriveSuprim 8,192 → **coarse-filtered to 256, then
+re-scored by a dedicated second-stage decoder** · **ours: 256, single-stage, unfiltered.**
+
+---
+
+## 6. THE RECOMMENDATION — ranked, with the implementation delta against our factorised head
+
+**The diagnosis in one paragraph.** Our scorer is asked an **unanswerable question** (which of 256
+candidates is nearest one sampled future), over a fan **12–17× larger** than any published system's,
+whose feasibility is destroyed by an **unbounded** refinement, trained with a **hard argmin** label,
+and evaluated by a metric that **cannot see** the failures that matter. Every strong published
+system differs on **all five** axes. Bar A changed the objective and refuted; §3.2 says the
+objective was never the biggest term.
+
+### R1 ⭐ — give the scorer a per-candidate RULE VERDICT built from `obstacle.offline` agent tracks
+
+**RECOMMEND** (§0.4 tier: ≥ 2 papers DEMONSTRATE it, and we can build the input).
+
+| | |
+|---|---|
+| **what the score reads** | per candidate: **at-fault collision (NC)**, **time-to-collision (TTC)**, **comfort (accel/jerk/yaw-rate)**, **along-track progress proxy (EP)** — each a deterministic function of *(candidate, scene)* |
+| **published evidence** | Hydra-MDP++ T.3/T.4 **85.0 → 86.5 PDMS, 76.8 → 80.6 EPDMS**, matched vocabulary, target-only change · WoTE T.3 **81.0 → 83.2 → 85.6** · VADv2 `L_conflict` (a rule label over agent futures + boundary) · GoalFlow M₁→M₂ **88.5 → 89.4** from a live DAC term · PDM/PLUTO/Diffusion Planner all score exactly these terms |
+| **why it fixes OUR failure** | the label stops being aleatoric. **In-sample unfittability (0.4907) is the signature of an irreducible target**, and a rule verdict is reducible by construction |
+| **implementation delta** | `conf_head: Linear(512,1)` → **`Linear(512,4)` + 4 sigmoids**, trained with **BCE** against offline-minted labels; combine at inference as Hydra-MDP does: `w₁·log S_im + w₂·log S_NC + w₃·log S_TTC + w₄·log(...)`, **weights by grid search**. Keep `sel_gate`. **~2 k new parameters.** |
+| **cost** | label minting is CPU-only; the fan is already cached |
+
+⭐ **The cheapness argument, published:** PLUTO Table VII measures a **learned** agent-future
+predictor against a **constant-velocity** one *for scoring purposes*: **92.82 → 93.57, i.e. +0.75
+only.** `PUBLISHED (cited) — DEMONSTRATED.` **We do not need a trajectory-prediction model.** A
+constant-velocity projection of `obstacle.offline`'s existing 3D tracks is within 0.75 points of the
+learned ceiling — and for *offline label minting* we do not even need that, because **the tracks
+ARE the future** (log-replay, exactly as NAVSIM's NC/TTC teachers use them).
+
+### R2 ⭐ — SHRINK the fan before scoring it
+
+**RECOMMEND.** `PUBLISHED (cited) — DEMONSTRATED, five independent sources.` LLM-Assist
+**92.51 → 77.78** going 15 → 8,505 · DiffusionDrive saturates at **20** · PDM ships **15** · PLUTO
+top-K **20** · Slow Brain plateaus at **K ≈ 18–24**.
+**Implementation delta:** `V4Config.n_anchors 256 → 16–32`, or keep 256 and hard-filter before
+`select()`. ⚠️ **Honest caveat:** our REF-C v1.2 already swept top-K and found **K = 8–32 a flat
+plateau** (MEASURED) — so this is *not* predicted to be a win on its own. It is recommended because
+it is **a precondition for R1 and R4**: it removes the tail that Goodharts any approximate scorer.
+
+### R3 ⭐ — CLIP the fan kinematically (the pre-registered zero-GPU follow-up, now with published backing)
+
+**RECOMMEND.** `PUBLISHED (cited — CoverNet 1911.10298) — DEMONSTRATED and ABLATED`: dynamic,
+current-state-conditioned set construction moves minADE₅ **2.62 → 2.02** *and* reaches the same
+coverage with **~half** the trajectories. PRIME gives the explicit current-speed-anchored band
+`v ∈ [max(0, ṡ₀ − δ⁻T), min(ṡ_max, ṡ₀ + δ⁺T)]`.
+**Implementation delta: ~5 lines, and the logic already exists in our own head.**
+`FlagshipV15Head.select` already computes a reachable-speed clamp for the *goal*
+(`reach = sel_accel_max * horizons[-1] * 0.1`). **Apply the identical clamp to the CANDIDATES:**
+mask any candidate whose implied terminal speed leaves `[v0 − reach, v0 + reach]`. `MEASURED (ours —
+source read, flagship_v15.py:440-450).`
+
+### R4 — score the CONTROLLER'S OUTCOME, not the intended waypoints (this is where our imagination belongs)
+
+**CONDITIONAL — sequence it after R1 and R3.** The single sharpest sentence in the nuPlan
+literature, verbatim from PDM §4:
+> *"PDM-Hybrid compensates for this by evaluating proposals based on the **expected controller
+> outcome**, causing it to match/outperform log replay in closed-loop evaluation."*
+
+`PUBLISHED (cited — PDM arXiv 2306.07962) — DEMONSTRATED: Val14 CLS-R, PDM-Hybrid 92 vs Log Replay
+(the actual human trajectory) 80.` PLUTO independently adopts the identical trick.
+**This is exactly what our world model is for, and it is what WoTE does** — roll the frozen
+predictor under **each candidate's** implied actions and score the *rolled* state.
+⚠️ **But sequence matters:** we measured that the WM obediently simulates absurd plans. R3 (feasible
+candidates) and R1 (a verdict, not a consistency score) are **preconditions**, not companions.
+**Implementation delta:** `imagine_probes` currently rolls a *shared* probe vocabulary; it must
+become **candidate-conditioned**. That is the one genuinely non-trivial change here.
+
+### R5 — soft distance-weighted labels — **DEMOTED, because we already measured it**
+
+`PUBLISHED (cited — VADv2 L_distribution; DriveSuprim self-distillation, δ_m = 0.15)` says hard
+labels are the anti-pattern. **We agree and we have already implemented it twice, and it did not
+rescue us:** REF-C v1.2's `soft` objective (+2.9 %, not significant) and Bar A's cost-sensitive
+regret loss (**−4.20 %, wrong side of zero**). `MEASURED (ours).`
+> **Report this as a resolved conflict, not an open recommendation.** The literature is right that
+> hard argmin is bad *and* our measurement is right that fixing it is not sufficient. Both hold: the
+> label's **shape** was never the binding constraint — its **semantics** were.
+
+### R6 — map-derived terms (DAC, DDC, LK, TL) — **REJECT for now, CONDITIONAL later**
+
+No map exists in PhysicalAI-AV (settled, five probes). These are the **two most heavily weighted
+multiplier terms** in PDMS, so this is a real ceiling, not a nicety. **CONDITIONAL** on the
+DLR OpenDRIVE / Overture lane-graph work already in the program (commit `12d6b8a`).
+
+### ⛔ What NOT to do — each backed by two independent measurements
+
+| do not | why |
+|---|---|
+| **add an inference-time rule cost over the fan** | PARA-Drive: removing UniAD's rule optimiser improves **both** collision (0.40 → 0.16) **and** L2 (0.83 → 0.74) · **our own REF-C v1.0**: hand-written cost re-rank recovers **0.0 %**, pure cost **−171 %** |
+| **change the ranking objective again** | Bar A **−4.20 %** · REF-C v1.2 across **47 arms**, +2.9 % ns · and §3.2 says inputs/objective are the small terms |
+| **add scorer input tensors and expect a win** | VADv2 T.3: removing **image tokens** costs 0.001 m; removing the **supervision** costs 1.33 m |
+| **grow the fan** | LLM-Assist **92.51 → 77.78** |
+| **adjudicate any of this on `ade_0_2s` alone** | PARA-Drive: L2 and collision are **blind to lane compliance**; GT trajectories themselves "collide" at 0.384 % under a sloppy metric; and §3.4's ego-status critique targets exactly this metric family |
+
+### 6.1 The direct rule-vs-learned head-to-head — the answer is HYBRID, and they fail oppositely
+
+`PUBLISHED (cited — PLUTO arXiv 2404.14327, Table VI) — DEMONSTRATED.` Same generator, only the
+selection rule `π = π_rule + α·π₀` changes:
+
+| selection | CLS-NR | comfort | progress |
+|---|---:|---:|---:|
+| **rule only** (α = 0) | 90.64 | 80.32 | **98.43** |
+| **α = 0.3** (their default) | **93.57** | 93.17 | 93.32 |
+| **learned only** | 91.66 | **96.39** | 91.30 |
+
+> **Learned-only slightly beats rule-only; the MIX beats both by ~2 points, and the two make
+> OPPOSITE errors** — rule-only maximises progress and destroys comfort; learned-only is
+> comfortable and under-progresses. **This is the single most direct answer to the brief's
+> pre-registered question, and it says: hybrid, with the rule weight around 0.3.**
+
+**The scorer-vs-generator attribution the brief asked for**, four controlled experiments, nuPlan
+Val14, same generator with and without a rule scorer:
+
+| generator (fixed) | Δ CLS-NR | Δ CLS-R | source |
+|---|---:|---:|---|
+| PLUTO | +4.17 | **+12.05** | PLUTO T.II |
+| **PlanTF** (third-party generator, PLUTO's scorer) | +4.66 | **+11.01** | PLUTO T.II |
+| Diffusion Planner | +4.39 | **+10.10** | Diffusion Planner T.1 |
+| GameFormer | +66.62 | +71.09 | Diffusion Planner T.1 ⚠️ third-party reproduction |
+
+**⇒ A rule scorer is worth ~+4 CLS-NR / ~+10–12 CLS-R across four different generators.** And PDM's
+own decomposition: IDM (1 trajectory, no scorer) **77** → PDM-Closed (15 proposals + sim + rule
+score) **92** CLS-R.
+
+**The one published counter-example, stated fairly.** DTPP holds generator *and* prediction model
+fixed and swaps hand-crafted → learned cost: **CL-NR 0.7388 → 0.8964 (+0.1576)**. ⚠️ Three
+load-bearing caveats: (a) **not Val14** — 200 scenarios from the nuPlan test subset; (b) **PDM still
+beats DTPP on that same benchmark** (0.9061 NR); (c) DTPP's "learned" cost still contains a
+**hand-crafted collision RBF** and reads **ego-conditioned agent futures** — *it reads more, it does
+not merely learn more.*
+
+**And the sobering one.** PDM Table 4a: letting the **learned** module own the first 2 s costs
+**34 CLS-R points** (58 vs 92). **Our entire planner is the first 2 s.** `PUBLISHED (cited) —
+DEMONSTRATED.` I report it because it is uncomfortable and load-bearing, not because it is
+actionable today.
+
+---
+
+## 7. THE CHEAPEST EXPERIMENT ON OUR CACHED FAN — a 4-step ladder, pre-registered
+
+The caches `/workspace/_bara/cache_{produced,oracle}_stride1.pt` (4.07 GiB each, 6,844 windows)
+already exist and `bar_a_selector.py` has a **`cache_fidelity` self-test that proves any rebuild is
+byte-faithful** (MEASURED, `BAR_A.md` §2). **Every step below reuses Bar A's harness, folds and
+estimator, so results are directly comparable to `raw/bar_a_produced.json`.**
+
+**Estimator, named in advance for all four:** paired episode-cluster bootstrap (`taniteval/ci.py`,
+B = 2000, unit = episode), 5-fold episode-disjoint cross-fit, **never `overlapping_holdout_se`**.
+**Report the lateral/longitudinal split** — Bar A §4 showed an undecomposed delta hides the
+mechanism. Class every arm's `full_set` mean, not `heldout`.
+
+| step | cost | what it decides | **pre-registered kill** |
+|---|---|---|---|
+| **T0 — span audit** | **ZERO GPU, minutes** | is the 181 km/h in the **anchors** or manufactured by the **offset head**? Compare `span(anchors)` (a 42,550-byte file) with `span(x_in + offset)` (cached). | — pure measurement; both answers are informative and they imply *different* fixes |
+| **T1 — kinematic clip (R3)** | **ZERO GPU, ~1 h CPU** | re-run `argmax` over the cached fan with candidates outside `[v0 − reach, v0 + reach]` masked. **No training, no new labels.** | if `ade_0_2s` does not improve **and** `miss_at_2m` does not improve, the fan's tail is not what is hurting the pick — R2/R3 drop to CONDITIONAL |
+| **T2 ⭐ — does the rule verdict even DISCRIMINATE?** | **ZERO GPU**, + one `obstacle.offline` ingest for the 40 val episodes | mint per-candidate NC / TTC / comfort / progress labels over the cached fan. **Then, before training anything, measure the label's variance and its rank correlation with `fan_err`.** | ⛔ **THE HONEST FALSIFIER: if the corpus is ~74 % straight cruise, the collision label may be near-constant (e.g. > 95 % of candidates collision-free), in which case rule distillation has NO SIGNAL here and R1 dies for the price of a CPU job.** Registered kill: **if the NC/TTC labels have < 5 % positive rate AND their Spearman ρ with `fan_err` is < 0.15, R1 is REFUTED on this corpus.** |
+| **T3 — the 4-head BCE rescorer (R1)** | **~13 GPU-min** (capture already paid) | only if T2 survives. `conf_head → Linear(512,4)`, BCE on the T2 labels, Hydra-MDP grid-searched inference weights, Bar A's exact 5-fold protocol + CE_CONTROL arm | pre-register the same three-outcome structure Bar A used, against the **rule score**, not against `ade_0_2s` alone |
+
+> ### ⚠️ T2 IS THE POINT OF THIS LADDER, AND IT MUST RUN BEFORE T3.
+> Bar A's whole lesson is that we spent GPU-hours on a lever whose existence was assumed. **T2 tests
+> whether the lever exists at all, at zero GPU, and it has a real chance of failing** — our corpus
+> is not nuPlan, it has no map, and its collision rate may be too low to supervise anything. **I do
+> not predict the outcome and I refuse to estimate its value** (the §6.2 discipline Bar A set).
+
+**⚠️ A measurement prerequisite that is easy to skip and would invalidate T3.** If we adopt rule
+labels we must also adopt a **rule-based evaluation metric**, or we will optimise something
+`ade_0_2s` structurally cannot see — PARA-Drive **DEMONSTRATED** that L2 and collision are blind to
+lane compliance, and NAVSIM exists precisely because open-loop L2 is fooled (Ego-Status MLP: L2
+**0.5568**, tying a full perception stack, but **64.0 EPDMS**, losing to a 2022 model by 12.7).
+**⇒ ESCALATION: a PDM-style composite score for our corpus is a prerequisite for R1, not a
+follow-up.** NC/TTC/comfort/progress are buildable (§2.3); DAC/DDC/LK/TL are not.
+
+### 7.1 One free idea worth a pre-registered line, because it is counter-intuitive
+
+`PUBLISHED (cited — "Slow Brain, Fast Planner" arXiv 2606.20458) — DEMONSTRATED.` On 64
+kinematically-feasible candidates (selected 1.64 m ADE vs oracle 0.39 m — **4.2×**, our shape
+again), **hiding the planner's own confidence scores from the selector IMPROVED selection**:
+*"when scores are visible, the [selector] tends to defer to the planner's ranking rather than apply
+its own judgement."* ⚠️ **This directly contradicts our REF-C v1.2 design**, which feeds `base_logit`
+in as a feature and residualises on it (MEASURED: v1.2 found the frozen conf head is "a strong
+incumbent to be RESIDUALLY corrected"). **It is a one-flag ablation in T3
+(`RescorerConfig.use_q` / `normalize_base`) and costs nothing to include.** ⚠️ Note the source is a
+sidewalk-robot VLM selector, not a driving planner — **class it HYPOTHESIS, worth a flag, not a
+redesign.**

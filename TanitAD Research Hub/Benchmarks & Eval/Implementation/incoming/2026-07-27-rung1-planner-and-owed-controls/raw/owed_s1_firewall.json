@@ -1,0 +1,531 @@
+{
+  "block": "owed_controls/S1-BLINDvsMAJORITY",
+  "frozen_list_rows": [
+    23,
+    24,
+    25
+  ],
+  "estimator": {
+    "interval": "paired_episode_cluster_bootstrap",
+    "module": "taniteval.ci",
+    "n_boot": 2000,
+    "seed": 0,
+    "resampling_unit": "AlpaSim scene (episode cluster)"
+  },
+  "instruments": {
+    "reproduction": "2026-07-26-4brain-gates/s1_slice.py + blind_conditioning_baseline.run_firewall (IMPORTED, not copied)",
+    "independent_second": "taniteval.blind_baseline.blind_conditioning_baseline (PACKAGED)",
+    "intervals": "taniteval.ci (PACKAGED)"
+  },
+  "selftest": {
+    "ci_identical_not_separated": true,
+    "ci_shifted_separated": true,
+    "packaged_firewall_echo_is_CIRCULAR": true,
+    "packaged_firewall_noise_is_not_CIRCULAR": true,
+    "mde_void_case_can_fire_false": true,
+    "mde_open_case_can_fire_true": true,
+    "ALL_PASS": true,
+    "_read": "every instrument used below is validated in BOTH directions: it reproduces a known value AND it fires on a planted failure"
+  },
+  "n_scenes_available": 20,
+  "power_bar_single_arm_clusters": 40,
+  "variants": {
+    "E": {
+      "name": "EASY  goal = route polyline truncated at 30 m",
+      "n_decision_points": 26,
+      "n_clusters": 20,
+      "acc_blind_headline": 0.7692,
+      "acc_blind_headline_source": "deterministic argmin distance(goal, option centreline)",
+      "acc_blind_learned": 0.7308,
+      "acc_majority": 0.6923,
+      "acc_chance": 0.4872,
+      "committed_blind_vs_majority_paired": {
+        "delta": 0.0385,
+        "lo": -0.2222,
+        "hi": 0.2692,
+        "ci95": 0.2457,
+        "p_delta_gt0": 0.5575,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 26,
+        "n_episodes": 20,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "recomputed": {
+        "blind_LEARNED_minus_majority": {
+          "delta": 0.0385,
+          "lo": -0.2222,
+          "hi": 0.2692,
+          "ci95": 0.2457,
+          "p_delta_gt0": 0.5575,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - majority"
+        },
+        "blind_HEADLINE_minus_majority": {
+          "delta": 0.0769,
+          "lo": -0.0667,
+          "hi": 0.2502,
+          "ci95": 0.15845,
+          "p_delta_gt0": 0.7815,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - majority"
+        },
+        "blind_LEARNED_minus_chance": {
+          "delta": 0.2436,
+          "lo": 0.0714,
+          "hi": 0.3933,
+          "ci95": 0.16095,
+          "p_delta_gt0": 0.9985,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - chance"
+        },
+        "blind_HEADLINE_minus_chance": {
+          "delta": 0.2821,
+          "lo": 0.092,
+          "hi": 0.4683,
+          "ci95": 0.18815,
+          "p_delta_gt0": 0.9985,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - chance"
+        }
+      },
+      "power_ceiling": {
+        "blind_minus_majority": {
+          "mde": 0.15845,
+          "max_possible_effect": 0.307692,
+          "mde_as_pct_of_max_possible": 51.5,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        },
+        "blind_minus_chance": {
+          "mde": 0.18815,
+          "max_possible_effect": 0.512821,
+          "mde_as_pct_of_max_possible": 36.7,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        },
+        "committed_row_as_published": {
+          "mde": 0.2457,
+          "max_possible_effect": 0.307692,
+          "mde_as_pct_of_max_possible": 79.9,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        }
+      },
+      "headline_interval_statistic_mismatch": true,
+      "mismatch_size": 0.0385,
+      "packaged_instrument": {
+        "ran": true,
+        "verdict": "CLEAN",
+        "blind_accuracy": 0.6538,
+        "blind_accuracy_linear_probe": {
+          "mean": 0.6923,
+          "lo": 0.52,
+          "hi": 0.8462,
+          "ci95": 0.1631,
+          "se": 0.082,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "majority_base_rate": {
+          "mean": 0.6923,
+          "lo": 0.5185,
+          "hi": 0.8711,
+          "ci95": 0.1763,
+          "se": 0.0905,
+          "reducer": "mean",
+          "n_windows": 26,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "blind_skill_over_majority": -0.038462,
+        "context_leaks": false,
+        "note": "PADDED fixed-arity encoding -- a WEAKER attack than the variable-arity option scorer, so a LOWER BOUND"
+      },
+      "VERDICT": "CONTROL FAILS",
+      "why": "the blind head is separated-ABOVE chance: the conditioning carries real target information, which is exactly what a circularity firewall exists to surface"
+    },
+    "H": {
+      "name": "HARD  goal = single point at 150-200 m",
+      "n_decision_points": 8,
+      "n_clusters": 6,
+      "acc_blind_headline": 0.5,
+      "acc_blind_headline_source": "deterministic argmin distance(goal, option centreline)",
+      "acc_blind_learned": 0.25,
+      "acc_majority": 0.75,
+      "acc_chance": 0.5,
+      "committed_blind_vs_majority_paired": {
+        "delta": -0.5,
+        "lo": -1.0,
+        "hi": 0.1111,
+        "ci95": 0.5556,
+        "p_delta_gt0": 0.027,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 8,
+        "n_episodes": 6,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "recomputed": {
+        "blind_LEARNED_minus_majority": {
+          "delta": -0.5,
+          "lo": -1.0,
+          "hi": 0.1111,
+          "ci95": 0.55555,
+          "p_delta_gt0": 0.027,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - majority"
+        },
+        "blind_HEADLINE_minus_majority": {
+          "delta": -0.25,
+          "lo": -0.5556,
+          "hi": 0.0,
+          "ci95": 0.2778,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - majority"
+        },
+        "blind_LEARNED_minus_chance": {
+          "delta": -0.25,
+          "lo": -0.5,
+          "hi": 0.0556,
+          "ci95": 0.2778,
+          "p_delta_gt0": 0.027,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - chance"
+        },
+        "blind_HEADLINE_minus_chance": {
+          "delta": 0.0,
+          "lo": -0.375,
+          "hi": 0.3889,
+          "ci95": 0.38195,
+          "p_delta_gt0": 0.4535,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - chance"
+        }
+      },
+      "power_ceiling": {
+        "blind_minus_majority": {
+          "mde": 0.2778,
+          "max_possible_effect": 0.25,
+          "mde_as_pct_of_max_possible": 111.1,
+          "can_fire": false,
+          "_read": "this control CANNOT separate at any observed value -- its verdict is VOID, not a pass"
+        },
+        "blind_minus_chance": {
+          "mde": 0.38195,
+          "max_possible_effect": 0.5,
+          "mde_as_pct_of_max_possible": 76.4,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        },
+        "committed_row_as_published": {
+          "mde": 0.5556,
+          "max_possible_effect": 0.25,
+          "mde_as_pct_of_max_possible": 222.2,
+          "can_fire": false,
+          "_read": "this control CANNOT separate at any observed value -- its verdict is VOID, not a pass"
+        }
+      },
+      "headline_interval_statistic_mismatch": true,
+      "mismatch_size": 0.25,
+      "packaged_instrument": {
+        "ran": true,
+        "verdict": "CLEAN",
+        "blind_accuracy": 0.75,
+        "blind_accuracy_linear_probe": {
+          "mean": 0.875,
+          "lo": 0.5714,
+          "hi": 1.0,
+          "ci95": 0.2143,
+          "se": 0.1306,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "majority_base_rate": {
+          "mean": 0.75,
+          "lo": 0.4444,
+          "hi": 1.0,
+          "ci95": 0.2778,
+          "se": 0.143,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 6,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "blind_skill_over_majority": 0.0,
+        "context_leaks": false,
+        "note": "PADDED fixed-arity encoding -- a WEAKER attack than the variable-arity option scorer, so a LOWER BOUND"
+      },
+      "VERDICT": "VOID",
+      "why": "MDE exceeds the largest effect that can physically exist -- the published verdict is zero evidence at any observed value"
+    },
+    "NOGOAL": {
+      "name": "CONTROL  no goal at all (option geometry + ego state only)",
+      "n_decision_points": 30,
+      "n_clusters": 20,
+      "acc_blind_headline": 0.6333,
+      "acc_blind_headline_source": "learned option scorer",
+      "acc_blind_learned": 0.6333,
+      "acc_majority": 0.7,
+      "acc_chance": 0.4833,
+      "committed_blind_vs_majority_paired": {
+        "delta": -0.0667,
+        "lo": -0.3429,
+        "hi": 0.2122,
+        "ci95": 0.2775,
+        "p_delta_gt0": 0.27,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 30,
+        "n_episodes": 20,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "recomputed": {
+        "blind_LEARNED_minus_majority": {
+          "delta": -0.0667,
+          "lo": -0.3429,
+          "hi": 0.2122,
+          "ci95": 0.27755,
+          "p_delta_gt0": 0.27,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - majority"
+        },
+        "blind_HEADLINE_minus_majority": {
+          "delta": -0.0667,
+          "lo": -0.3429,
+          "hi": 0.2122,
+          "ci95": 0.27755,
+          "p_delta_gt0": 0.27,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - majority"
+        },
+        "blind_LEARNED_minus_chance": {
+          "delta": 0.15,
+          "lo": -0.0269,
+          "hi": 0.3177,
+          "ci95": 0.1723,
+          "p_delta_gt0": 0.9455,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_LEARNED - chance"
+        },
+        "blind_HEADLINE_minus_chance": {
+          "delta": 0.15,
+          "lo": -0.0269,
+          "hi": 0.3177,
+          "ci95": 0.1723,
+          "p_delta_gt0": 0.9455,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "contrast": "blind_HEADLINE - chance"
+        }
+      },
+      "power_ceiling": {
+        "blind_minus_majority": {
+          "mde": 0.27755,
+          "max_possible_effect": 0.3,
+          "mde_as_pct_of_max_possible": 92.5,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        },
+        "blind_minus_chance": {
+          "mde": 0.1723,
+          "max_possible_effect": 0.516667,
+          "mde_as_pct_of_max_possible": 33.3,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        },
+        "committed_row_as_published": {
+          "mde": 0.2775,
+          "max_possible_effect": 0.3,
+          "mde_as_pct_of_max_possible": 92.5,
+          "can_fire": true,
+          "_read": "this control can separate, if the effect exceeds its MDE"
+        }
+      },
+      "headline_interval_statistic_mismatch": false,
+      "mismatch_size": 0.0,
+      "packaged_instrument": {
+        "ran": true,
+        "verdict": "CLEAN",
+        "blind_accuracy": 0.6,
+        "blind_accuracy_linear_probe": {
+          "mean": 0.7333,
+          "lo": 0.5417,
+          "hi": 0.889,
+          "ci95": 0.1736,
+          "se": 0.0873,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "majority_base_rate": {
+          "mean": 0.7,
+          "lo": 0.5333,
+          "hi": 0.8621,
+          "ci95": 0.1644,
+          "se": 0.0852,
+          "reducer": "mean",
+          "n_windows": 30,
+          "n_episodes": 20,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "blind_skill_over_majority": -0.1,
+        "context_leaks": false,
+        "note": "PADDED fixed-arity encoding -- a WEAKER attack than the variable-arity option scorer, so a LOWER BOUND"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "not separated, and the MDE is larger than the leak sizes this firewall exists to catch"
+    }
+  },
+  "fidelity_vs_committed": {
+    "E": {
+      "acc_blind_learned": {
+        "committed": 0.7308,
+        "recomputed": 0.7308
+      },
+      "acc_major": {
+        "committed": 0.6923,
+        "recomputed": 0.6923
+      },
+      "acc_chance": {
+        "committed": 0.4872,
+        "recomputed": 0.4872
+      },
+      "n": {
+        "committed": 26,
+        "recomputed": 26
+      },
+      "n_clusters": {
+        "committed": 20,
+        "recomputed": 20
+      },
+      "acc_blind_deterministic": {
+        "committed": 0.7692,
+        "recomputed": 0.7692
+      }
+    },
+    "H": {
+      "acc_blind_learned": {
+        "committed": 0.25,
+        "recomputed": 0.25
+      },
+      "acc_major": {
+        "committed": 0.75,
+        "recomputed": 0.75
+      },
+      "acc_chance": {
+        "committed": 0.5,
+        "recomputed": 0.5
+      },
+      "n": {
+        "committed": 8,
+        "recomputed": 8
+      },
+      "n_clusters": {
+        "committed": 6,
+        "recomputed": 6
+      },
+      "acc_blind_deterministic": {
+        "committed": 0.5,
+        "recomputed": 0.5
+      }
+    },
+    "NOGOAL": {
+      "acc_blind_learned": {
+        "committed": 0.6333,
+        "recomputed": 0.6333
+      },
+      "acc_major": {
+        "committed": 0.7,
+        "recomputed": 0.7
+      },
+      "acc_chance": {
+        "committed": 0.4833,
+        "recomputed": 0.4833
+      },
+      "n": {
+        "committed": 30,
+        "recomputed": 30
+      },
+      "n_clusters": {
+        "committed": 20,
+        "recomputed": 20
+      }
+    },
+    "REPRODUCES": true
+  }
+}

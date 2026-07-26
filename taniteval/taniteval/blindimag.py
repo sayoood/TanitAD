@@ -91,6 +91,51 @@ and ``blend=0.0`` / ``every=1`` reduce to the unfiltered arm. All three
 identities are asserted in ``test_blindimag.py``; they are what makes the sweep's
 endpoints checkable against arms that already exist instead of by eyeball.
 
+THE PLANNER ACTION SOURCE (``"planner"``) — T_BLIND RUNG 1, THE R1 ROW
+----------------------------------------------------------------------
+Rung 1 swept the FILTER axis and explicitly did not run the ladder's R1 PLANNER
+row; it recorded a prediction for it instead (``TBLIND_RUNG1.md`` §7.2). This is
+that row. ``action_source="planner"`` replaces the kinematic inverse with **v1's
+deployed tactical planner + pure-pursuit controller**::
+
+    w_look = tactical_policy(win_s, strategic_policy(win_s, follow)["ctx"])
+                 ["waypoints"][LOOKAHEAD_STEP]        # the 0.5 s ego-frame target
+    steer, accel = closedloop.wp_to_control(w_look, v)
+
+⭐ ``wp_to_control`` is **IMPORTED from** :mod:`taniteval.closedloop`, never
+copied — it is the same function ``closed_loop_rollout`` deploys, so this arm
+cannot drift from the deployed controller. It differs from
+:func:`kinematic_action_from_dpose` in exactly two gains: a **0.5 s pure-pursuit
+lookahead** instead of a one-tick yaw increment, and ``(v_target − v)/SPEED_TC``
+with ``SPEED_TC = 0.5 s`` instead of ``(v − v_prev)/0.1 s`` — a **5× lower
+longitudinal gain**. Rung 1 measured that the own-action failure is the
+acceleration command's AMPLITUDE (mean 2.058 m/s², at the ±3 clamp 46.4 % of the
+time), so the gain is the mechanism this arm tests.
+
+The planner needs the whole model, not just the predictor, so it is supplied as
+``plan_fn(win_s, v) -> [B,2]`` rather than by importing ``fourbrain`` here. Two
+modifiers, both planner-only:
+
+  ``vsrc=ctrl``     (default) ``v`` is the CONTROLLER's own integrated speed,
+                    ``v <- clamp_min(v + accel*DT, 0)`` — byte-for-byte
+                    ``closed_loop_rollout``'s bookkeeping.
+  ``vsrc=decoded``  ``v`` is the model's DECODED speed ``|dxy|/DT``. Isolates
+                    which speed estimate the controller stands on.
+  ``look=plan``     (default) the target comes from ``plan_fn``.
+  ``look=gt``       ⛔ DIAGNOSTIC, PRIVILEGED — the target is the TRUE pose
+                    ``LOOKAHEAD_STEP`` ahead, transformed into the current
+                    IMAGINED ego frame. The planner's analogue of
+                    ``gt_kinematic``: it holds the controller fixed and replaces
+                    the intent with a perfect one, so a controller fault and a
+                    tactical-head fault can be told apart. It reads the future
+                    and may never be quoted as deployable.
+
+⚠️ As with every other arm the ``v0`` action channel is held CONSTANT by default.
+``closedloop.build_action`` feeds ``v_tracked / SPEED_SCALE`` instead; that
+variant is available as ``update_speed_channel=True`` and is reported separately,
+never mixed into the primary — Rung 1 measured the decoded-speed version of that
+lever to be catastrophic (``de@2s`` 1.8165 → 23.9351).
+
 ⚠️ A filter rewrites **only the fed action's (steer, accel) channels**. It does
 NOT touch the speed channel, and it does NOT touch ``v_prev`` — the internal
 speed bookkeeping continues to track the model's own DECODED speed, because a
@@ -148,7 +193,10 @@ ACCEL_CLAMP = 3.0              # clhorizon/closedloop convention
 V_EPS = 0.5                    # m/s floor when inverting steer (avoids /0)
 
 STATE_SOURCES = ("imagination", "frozen_last", "full_obs", "observed_pair")
-ACTION_SOURCES = ("true_future", "own_kinematic", "gt_kinematic", "hold_last")
+ACTION_SOURCES = ("true_future", "own_kinematic", "gt_kinematic", "hold_last",
+                  "planner")
+#: Sources whose action is produced by the kinematic inverse (the filter axis).
+_KINEMATIC_SOURCES = ("own_kinematic", "gt_kinematic")
 
 
 # --------------------------------------------------------------------------- #
@@ -211,6 +259,10 @@ def kinematic_action_from_dpose(dpose: torch.Tensor, v_prev: torch.Tensor):
 #: action the deployed inverse would already have produced — no weight changes.
 ACTION_MOD_KEYS = ("blend", "ema", "every", "steer_clip", "accel_clip", "chan",
                    "own_before", "own_after")
+#: Planner-only knobs (T_blind Rung 1, the R1 row). They select which speed the
+#: controller stands on and where its lookahead target comes from; they are NOT
+#: filters and are refused on any other base.
+PLANNER_MOD_KEYS = ("vsrc", "look")
 
 
 def parse_action_source(spec: str):
@@ -227,13 +279,23 @@ def parse_action_source(spec: str):
     for part in (p for p in rest.split("|") if p.strip()):
         k, _, v = part.partition("=")
         k = k.strip()
-        if k not in ACTION_MOD_KEYS:
-            raise ValueError(f"unknown action modifier {k!r}; "
-                             f"expected one of {ACTION_MOD_KEYS}")
+        if k not in ACTION_MOD_KEYS + PLANNER_MOD_KEYS:
+            raise ValueError(f"unknown action modifier {k!r}; expected one of "
+                             f"{ACTION_MOD_KEYS + PLANNER_MOD_KEYS}")
         if k == "chan":
             v = v.strip()
             if v not in ("steer", "accel"):
                 raise ValueError("chan must be 'steer' or 'accel', got %r" % v)
+            mod[k] = v
+        elif k == "vsrc":
+            v = v.strip()
+            if v not in ("ctrl", "decoded"):
+                raise ValueError("vsrc must be 'ctrl' or 'decoded', got %r" % v)
+            mod[k] = v
+        elif k == "look":
+            v = v.strip()
+            if v not in ("plan", "gt"):
+                raise ValueError("look must be 'plan' or 'gt', got %r" % v)
             mod[k] = v
         elif k in ("every", "own_before", "own_after"):
             iv = int(v)
@@ -247,10 +309,16 @@ def parse_action_source(spec: str):
             if k in ("steer_clip", "accel_clip") and fv < 0.0:
                 raise ValueError(f"{k} must be >= 0, got {fv}")
             mod[k] = fv
-    if mod and base not in ("own_kinematic", "gt_kinematic"):
+    filt = {k for k in mod if k in ACTION_MOD_KEYS}
+    plan = {k for k in mod if k in PLANNER_MOD_KEYS}
+    if filt and base not in _KINEMATIC_SOURCES:
         raise ValueError(
             f"action modifiers are only defined for a kinematic action source "
             f"(they filter the action the inverse produced); got base {base!r}")
+    if plan and base != "planner":
+        raise ValueError(
+            f"planner modifiers {sorted(plan)} are only defined for "
+            f"action_source='planner'; got base {base!r}")
     return base, mod
 
 
@@ -323,6 +391,8 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
                   gt_step_dpose: torch.Tensor | None = None,
                   v_last: torch.Tensor | None = None,
                   update_speed_channel: bool = False,
+                  plan_fn=None,
+                  gt_pos: torch.Tensor | None = None,
                   peek_period: int | None = None,
                   peek_oracle_bar: float | None = None) -> dict:
     """Roll ``predictor`` forward ``k`` steps and decode a metric path.
@@ -374,8 +444,19 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
         raise ValueError("action_source='true_future' needs future_actions")
     if action_source == "gt_kinematic" and gt_step_dpose is None:
         raise ValueError("action_source='gt_kinematic' needs gt_step_dpose")
-    if action_source in ("own_kinematic", "gt_kinematic") and v_last is None:
+    if action_source in _KINEMATIC_SOURCES + ("planner",) and v_last is None:
         raise ValueError(f"action_source={action_source!r} needs v_last [B]")
+    look = action_mod.get("look", "plan")
+    if action_source == "planner":
+        if look == "plan" and plan_fn is None:
+            raise ValueError(
+                "action_source='planner' needs plan_fn(win_s, v) -> [B,2], the "
+                "0.5 s ego-frame lookahead target from the model's tactical "
+                "brain; blindimag deliberately does not import fourbrain")
+        if look == "gt" and gt_pos is None:
+            raise ValueError(
+                "action_source='planner|look=gt' needs gt_pos [B,k,2] (it is an "
+                "ORACLE target — it reads the true future by design)")
     peeking = peek_period is not None or peek_oracle_bar is not None
     if peeking and obs_states is None:
         raise ValueError("a peek policy needs obs_states [B,k,S] to re-anchor")
@@ -392,6 +473,14 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
     v_prev = v_last
     dposes, fed, speeds, peeks = [], [], [], []
     b = states.shape[0]
+    if action_source == "planner":
+        # the controller's own speed bookkeeping, byte-for-byte
+        # closedloop.closed_loop_rollout's `v = (v + accel*DT).clamp_min(0)`
+        v_ctrl = v_last.clone()
+        # running imagined pose, ONLY for the `look=gt` oracle target. Same op
+        # order as accumulate_se2_pose, pinned equal by test_blindimag.py.
+        cur_pos = torch.zeros(b, 2, device=states.device, dtype=states.dtype)
+        cur_psi = torch.zeros(b, device=states.device, dtype=states.dtype)
 
     for j in range(k):
         z_hat = predictor(win_s, win_a)[1]         # 1-step head -> z_{t+j+1}
@@ -401,7 +490,7 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
             dpose = step_readout(win_s[:, -1], z_hat)
         dposes.append(dpose)
 
-        if action_source in ("own_kinematic", "gt_kinematic"):
+        if action_source in _KINEMATIC_SOURCES:
             src = dpose if action_source == "own_kinematic" else gt_step_dpose[:, j]
             steer, accel, v_now = kinematic_action_from_dpose(src, v_prev)
             speeds.append(v_now)
@@ -409,12 +498,43 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
             v_now = dpose[..., :2].norm(dim=-1) / DT
             speeds.append(v_now)
 
+        if action_source == "planner":
+            # advance the imagined pose by the step just decoded
+            c, s = torch.cos(cur_psi), torch.sin(cur_psi)
+            dx, dy = dpose[:, 0].to(cur_pos.dtype), dpose[:, 1].to(cur_pos.dtype)
+            cur_pos = cur_pos + torch.stack([c * dx - s * dy,
+                                             s * dx + c * dy], dim=-1)
+            cur_psi = cur_psi + dpose[:, 2].to(cur_psi.dtype)
+
         if j < k - 1:
             # ---- the action fed at step j+1 -------------------------------- #
             if action_source == "true_future":
                 a_next = future_actions[:, j]
             elif action_source == "hold_last":
                 a_next = win_a[:, -1]
+            elif action_source == "planner":
+                # ⭐ v1's DEPLOYED planner + controller. `wp_to_control` is the
+                # closedloop function itself, imported, not re-derived.
+                from taniteval.closedloop import (LOOKAHEAD_STEP,
+                                                  wp_to_control)
+                v_ct = v_now if action_mod.get("vsrc") == "decoded" else v_ctrl
+                if look == "gt":
+                    tgt = gt_pos[:, min(j + LOOKAHEAD_STEP, k - 1)]
+                    d = (tgt.to(cur_pos.dtype) - cur_pos)
+                    cc, ss = torch.cos(-cur_psi), torch.sin(-cur_psi)
+                    w_look = torch.stack([d[:, 0] * cc - d[:, 1] * ss,
+                                          d[:, 0] * ss + d[:, 1] * cc], dim=-1)
+                else:
+                    w_look = plan_fn(win_s, v_ct)
+                steer, accel = wp_to_control(w_look.to(v_ct.dtype), v_ct)
+                a_next = _pack_action(steer, accel, win_a[:, -1])
+                if update_speed_channel and a_next.shape[-1] >= 3:
+                    a_next = a_next.clone()
+                    a_next[..., 2] = v_ctrl / SPEED_SCALE
+                # the controller integrates its OWN command — closed_loop_rollout
+                v_ctrl = (v_ctrl + accel * DT).clamp_min(0.0)
+                a_prev_fed = a_next
+                v_prev = v_now
             else:                                   # own_/gt_kinematic
                 a_next = _pack_action(steer, accel, win_a[:, -1])
                 if update_speed_channel and a_next.shape[-1] >= 3:

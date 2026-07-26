@@ -1,0 +1,257 @@
+{
+  "_experiment": "fan-clip LOCAL -- S0 harness gate",
+  "_evidence_class": "MEASURED (ours, dev box)",
+  "_tier": "CONFIRMED",
+  "_host": {
+    "node": "FREEDOM2035",
+    "python": "3.13.5",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "_note": "GPU present but this gate is pure CPU tensor reduction; no kernel is launched."
+  },
+  "_estimator": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, unit = episode cluster. overlapping_holdout_se is NEVER used.",
+  "_parity": "No corpus is read. Every input is a committed artifact. The dev-box episode cache (14231cd29c74) is NOT the canonical parity key (e438721ae894) and is never touched.",
+  "S0.1_v5_bars_scorer_v4": {
+    "_source": "V5_IMAGINATION_SELECTION.md -> raw/v5_v4.json",
+    "arms": {
+      "A0_as_trained": {
+        "committed": 0.8563,
+        "recomputed": 0.8563,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "R_random": {
+        "committed": 15.8738,
+        "recomputed": 15.8738,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "O_oracle_in_fan": {
+        "committed": 0.2505,
+        "recomputed": 0.2505,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A1_imag_consistency": {
+        "committed": 11.5298,
+        "recomputed": 11.5298,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A2_imag_goal_speed": {
+        "committed": 10.3863,
+        "recomputed": 10.3863,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A3_imag_kinematic": {
+        "committed": 13.1805,
+        "recomputed": 13.1805,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "C1_ctrv_consistency": {
+        "committed": 1.7836,
+        "recomputed": 1.7836,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "C2_wm_ref_proximity": {
+        "committed": 1.0653,
+        "recomputed": 1.0653,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A4_imag_combo_oof": {
+        "committed": 0.7706,
+        "recomputed": 0.7706,
+        "abs_diff": 0.0,
+        "pass": true
+      }
+    },
+    "anti_oracle_recomputed": 45.5489,
+    "all_pass": true
+  },
+  "S0.2_depth_axis_n256": {
+    "_source": "V5 S5.2 row n=256",
+    "rows": {
+      "k1": {
+        "committed": 2.906,
+        "recomputed": 2.9057,
+        "abs_diff": 0.0003,
+        "pass": true
+      },
+      "k2": {
+        "committed": 1.423,
+        "recomputed": 1.4228,
+        "abs_diff": 0.0002,
+        "pass": true
+      },
+      "k8": {
+        "committed": 2.818,
+        "recomputed": 2.8185,
+        "abs_diff": 0.0005,
+        "pass": true
+      },
+      "k20": {
+        "committed": 11.53,
+        "recomputed": 11.5298,
+        "abs_diff": 0.0002,
+        "pass": true
+      }
+    }
+  },
+  "S0.5_failing_input": {
+    "_read": "the harness MUST be able to return a failing value.",
+    "uniform_random_pick": 15.8738,
+    "committed_random": 15.8738,
+    "anti_oracle_recomputed": 45.5489,
+    "committed_anti_oracle": 45.5488,
+    "anti_oracle_pass": true,
+    "spread_random_over_as_trained": 18.5377
+  },
+  "S0.1_v5_bars_scorer_v1": {
+    "_source": "V5_IMAGINATION_SELECTION.md -> raw/v5_v1.json",
+    "arms": {
+      "A0_as_trained": {
+        "committed": 0.8563,
+        "recomputed": 0.8563,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A1_imag_consistency": {
+        "committed": 1.2472,
+        "recomputed": 1.2472,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A2_imag_goal_speed": {
+        "committed": 5.0746,
+        "recomputed": 5.0746,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A3_imag_kinematic": {
+        "committed": 6.22,
+        "recomputed": 6.22,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "C1_ctrv_consistency": {
+        "committed": 1.7836,
+        "recomputed": 1.7836,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "C2_wm_ref_proximity": {
+        "committed": 0.5645,
+        "recomputed": 0.5645,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "A4_imag_combo_oof": {
+        "committed": 0.5645,
+        "recomputed": 0.5645,
+        "abs_diff": 0.0,
+        "pass": true
+      },
+      "O_oracle_in_fan": {
+        "committed": 0.2505,
+        "recomputed": 0.2505,
+        "abs_diff": 0.0,
+        "pass": true
+      }
+    },
+    "anti_oracle_recomputed": 45.5489,
+    "all_pass": true
+  },
+  "S0.3_window_alignment": {
+    "_read": "the EXACT longitudinal band is evaluated on REF-C fans; this proves they sit on the SAME 881 windows / 40 episodes / same order / same GT as the v5 dump, so the two halves of this stream are commensurable.",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "gt_refcxl_vs_barA_wp4_max_abs_m": 0.0,
+    "v0_refcxl_vs_v5_max_abs_ms": 0.0,
+    "ep_labels_identical_v4_v1": true,
+    "fan_err4_identical_v4_v1_dumps": true,
+    "C1_identical_across_scorers_(C1_is_WM_free_by_design)": 0.0
+  },
+  "S0.4_registry_refc_fans": {
+    "_source": "Project Steering/MODEL_REGISTRY.md leaderboard (full-set mean column)",
+    "arms": {
+      "refc-xl-30k": {
+        "committed_registry_full_set_ade_0_2s": 0.4714,
+        "recomputed_here": 0.4714,
+        "abs_diff": 0.0,
+        "pass": true,
+        "n_anchors": 256,
+        "oracle_in_fan": 0.164,
+        "sel_equals_argmax_logits_frac": 1.0
+      },
+      "refc-base-30k": {
+        "committed_registry_full_set_ade_0_2s": 0.4728,
+        "recomputed_here": 0.4728,
+        "abs_diff": 0.0,
+        "pass": true,
+        "n_anchors": 128,
+        "oracle_in_fan": 0.1914,
+        "sel_equals_argmax_logits_frac": 1.0
+      },
+      "refc-small-30k": {
+        "committed_registry_full_set_ade_0_2s": 0.5261,
+        "recomputed_here": 0.5261,
+        "abs_diff": 0.0,
+        "pass": true,
+        "n_anchors": 64,
+        "oracle_in_fan": 0.2213,
+        "sel_equals_argmax_logits_frac": 1.0
+      }
+    }
+  },
+  "S0.6_shuffled_cost_control": {
+    "_read": "the SAME two selection routes driven by another window's cost matrix. Both must degrade toward the random pick.",
+    "A1_route_on_shuffled_cost": 20.7319,
+    "as_trained_route_on_shuffled_rank": 40.7304,
+    "reference_random": 15.8738,
+    "reference_as_trained": 0.8563
+  },
+  "S0.7_fan_envelope_refc_replication": {
+    "_read": "v4's own envelope (committed) vs three REF-C anchored fans measured here. If the 108.7 m span replicates, the longitudinal over-dispersion is a property of the anchored fan family, not a v4 accident.",
+    "v4_committed": {
+      "min_term_along_m": -15.47,
+      "max_term_along_m": 100.571,
+      "per_window_span_mean_m": 108.736,
+      "gt_mean_term_along_m": 25.396
+    },
+    "refc_measured_here": {
+      "xl": {
+        "n_anchors": 256,
+        "min_term_along_m": -23.3884,
+        "max_term_along_m": 95.2719,
+        "per_window_span_mean_m": 104.6115,
+        "max_implied_mean_speed_kmh": 171.4894,
+        "frac_candidates_over_50ms_implied": 0.0
+      },
+      "base": {
+        "n_anchors": 128,
+        "min_term_along_m": -28.2096,
+        "max_term_along_m": 96.0837,
+        "per_window_span_mean_m": 108.2265,
+        "max_implied_mean_speed_kmh": 172.9506,
+        "frac_candidates_over_50ms_implied": 0.0
+      },
+      "small": {
+        "n_anchors": 64,
+        "min_term_along_m": -33.071,
+        "max_term_along_m": 92.9499,
+        "per_window_span_mean_m": 107.6759,
+        "max_implied_mean_speed_kmh": 167.3098,
+        "frac_candidates_over_50ms_implied": 0.0
+      }
+    },
+    "gt_mean_term_along_m_measured_here": 25.396
+  },
+  "_wall_s": 0.44,
+  "_VERDICT": "GATE PASS",
+  "_failures": []
+}

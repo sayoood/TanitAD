@@ -115,3 +115,251 @@ MEASURED by this stream — it is a literature read plus a design.
 ---
 
 *(Everything below §0 was written after the corresponding source was read.)*
+
+---
+
+## 1. SOFT vs HARD COMMITMENT — what the literature actually demonstrates
+
+### 1.1 In the options framework, INTERRUPTION is theorem-backed; COMMITMENT is a tuned hyperparameter
+
+**PUBLISHED (cited — Sutton, Precup & Singh 1999, *Between MDPs and semi-MDPs*, Artificial
+Intelligence 112:181–211), tier CONFIRMED, DEMONSTRATED (proved).**
+The **Interruption Theorem** (their Theorem 2) constructs, from any option set `O` and Markov policy
+`μ`, a new set `O′` in which each option `o = ⟨I, π, β⟩` is replaced by `o′ = ⟨I, π, β′⟩` with
+`β′ = β` **except** that at any history ending in a state `s` where `Q^μ(h, o) < V^μ(s)` one may set
+`β′(h) = 1` — terminate early wherever continuing is worse than re-deciding. The guarantee is
+one-directional: `V^{μ′}(s) ≥ V^μ(s)` for all `s`, strict wherever an interrupted history is
+reachable with non-zero probability.
+
+⇒ **The general statement is: letting the lower level override the higher level's commitment can
+never hurt, and generically helps.** That is *precisely* the mechanism our §4.2 identified — *"the
+flat score's ability to OVERRIDE the tactical class is doing essential work"* — so our finding is
+**not** an anomaly needing special pleading. It is the empirical shadow of a 27-year-old theorem.
+
+⚠️ **What the theorem does NOT say.** It is stated for the *true* `Q^μ`/`V^μ`; it says nothing about
+interrupting on a **learned, mis-calibrated** value estimate, and it compares *termination* policies
+over a fixed option set — it is **not** literally a statement about pruning a candidate set. Treat it
+as the correct **prior on the sign** of the effect, not as a proof of our number.
+
+**The option-critic line** (Bacon, Harb & Precup, AAAI 2017) makes `β` learnable via a termination
+gradient. **PUBLISHED, PROVISIONAL — secondary-source level only; full text not read in this
+stream.** Its well-known empirical consequence is the next item.
+
+### 1.2 ⭐ Commitment strength has an INTERIOR OPTIMUM — demonstrated independently in three domains
+
+This is the most important thing the literature says about our result, and it reframes it.
+
+| domain | knob | what was DEMONSTRATED | source |
+|---|---|---|---|
+| **HRL / options** | deliberation cost `η` — a margin an option must be beaten by before being replaced | sweeping `η` ∈ [0, 0.03] in 0.005 steps gives a **non-monotone** curve peaking at intermediate `η` (≈ 0.020–0.025). At `η = 0` options **collapse to one step** (termination prob → 100 %) and score worse: Amidar 512 → **880**, Asterix 1950 → **8700**, Hero 2625 → **20100** | **Harb, Bacon, Klissarov & Precup, AAAI 2018**, *When Waiting is not an Option* |
+| **Diffusion generation** | classifier-free guidance strength `w` | **FID is U-shaped in `w`**, IS monotone increasing ⇒ explicit interior optimum at **low** guidance. ImageNet 64²: `w=0` FID 1.80 → **`w=0.1` 1.55 (best)** → `w=0.3` 3.03 → `w=1.0` 12.6 → `w=4.0` 26.22. ImageNet 128²: 7.27 → 4.53 → **2.43 (best, w=0.3)** → 7.86 → 21.53. Authors: *"best FID … with a small amount of guidance (w=0.1 or w=0.3 …) and the best IS … with strong guidance (w≥4)"* | **Ho & Salimans 2022**, *Classifier-Free Diffusion Guidance* |
+| **Driving mode assignment** | WTA temperature `T(t) = T₀ρᵗ`, annealed soft (all modes weighted) → hard (winner only) | annealing beats going hard: Argoverse 2, MTR, 6 hypotheses — WTA minADE **0.85** → **aWTA 0.77 (−9.41 %)**, MissRate **−36.67 %**. Hard WTA is *"known to be unstable"*, with *"initialization sensitivity"* and *"mode collapse during training"* | **Annealed Winner-Takes-All for Motion Forecasting**, arXiv 2409.11172 |
+
+A fourth, architectural: **Soft MoE** (Puigcerver et al., ICLR 2024) replaces hard token→expert
+routing with a soft weighted combination *specifically because* hard discrete assignment causes
+"training instabilities, dropping of tokens, and difficulties in scaling the number of experts", and
+DEMONSTRATES it outperforms both dense ViTs and the hard-routed MoEs (Tokens Choice, Experts Choice).
+**PUBLISHED, CONFIRMED for its own domain; transfer to planner mode selection is an analogy, not a
+result.**
+
+### 1.3 ⚠️ THE HONEST RESTATEMENT OF OUR OWN FINDING — "monotone" needs a qualifier
+
+The brief asked whether *"harm is MONOTONE in commitment tightness"* is known or novel. The
+literature forced me to re-read our own table, and it does **not** support an unqualified monotone
+claim:
+
+```
+λ = 0  (no prior)      F_base_only   0.8781      ← WORSE than having the prior
+λ = 1  (soft prior)    F_flat        0.8563  ★ best of the measured points
+q = 64 (hard commit)   H_graft       1.0621
+q = 32                               1.2000
+q = 16                               2.6510
+q =  8                               6.6752
+```
+
+**Our curve is ALSO interior-optimal.** It is monotone *only along the hard branch* (q = 64 → 8).
+Going the other way — removing the prior entirely — is separated-worse
+(**+0.0218 [+0.0009, +0.0491]**). The correct statement is therefore:
+
+> **Prior strength has an interior optimum, and ours sits at or near the softest non-zero setting we
+> have measured.** Monotone degradation appears only *beyond* that optimum, on the truncation branch.
+
+This matters three ways: (a) it makes our result **consistent with**, not exceptional to, the
+CFG / deliberation-cost / aWTA picture; (b) it kills the framing *"hierarchy is useless"* — the
+optimum is **not** at zero prior; (c) **we have measured only two points on the soft side (λ = 0,
+λ = 1) and therefore cannot say where the optimum is.** §6 exists for that.
+
+What is plausibly novel is not monotonicity but **steepness with provenance held fixed**: a 5.82 m
+penalty from tightening a prior whose *information content is identical*. I found **no published
+sweep that holds the prior's information fixed while varying only its hardness over a shared
+candidate set.** I claim that as a gap, not as a discovery.
+
+### 1.4 The confound the literature makes me worry about most: COVERAGE, not commitment
+
+`H_graft(q)` does not separate two things:
+
+1. **commitment** — deciding the class first, so a good candidate outside it can no longer win;
+2. **coverage loss** — going from 256 candidates to `q`.
+
+Our fan is a **single shared 256-anchor vocabulary**, not `q` anchors *per mode*. A `q = 8` gate
+leaves 8 trajectories to cover the whole reachable set, and V5 §2.2 measured the fan spanning
+**108.7 m** of 2 s along-track displacement per window — so a small subset will miss the true motion
+almost regardless of *which* subset it is.
+
+This is pre-registered falsifier **F2**, and it is **testable today, on CPU, from staged artifacts**
+(§6.2). I flag it before testing because it is the reading that would most change the design.
+
+---
+
+## 2. DRIVING — do mode-conditioned planners gate, or bias?
+
+### 2.1 The strongest learned planners decode ALL modes and rank flat. None of them gates.
+
+**PLUTO** (Cheng et al., arXiv 2404.14327) — *"surpassing the current top-performed rule-based
+planner [PDM] for the first time"* on nuPlan. **DEMONSTRATED mechanism, quoted from the paper:** it
+builds `N_R` lateral queries (one per reference line) × `N_L` longitudinal queries, combines them into
+`Q₀ ∈ ℝ^{N_R × N_L × D}`, decodes the **full Cartesian product** `T₀ ∈ ℝ^{N_R·N_L × T_F × 6}` with
+scores `π₀ ∈ ℝ^{N_R·N_L}`, and only then *"retains … the top K trajectories, ranked by their
+confidence scores."* **The lateral mode is a query — a bias on what gets generated. It is never a
+gate on what may be chosen.** Tier: **CONFIRMED** (mechanism quoted).
+
+**VADv2 / Hydra-MDP** (Hydra-MDP: arXiv 2406.06978; VADv2 cited within it) — a **fixed planning
+vocabulary** from K-means over trajectories, selecting *"the most optimal trajectory from [the] fixed
+trajectories dictionary based on the cost function score"*, flat over the vocabulary. Hydra-MDP's
+contribution is on the **scoring** side: run the rule-based simulator offline over the whole
+vocabulary for the whole training set, distil those simulation scores into the student.
+**PUBLISHED, PROVISIONAL** (challenge report + secondary source; full text not read).
+⇒ **The published architecture closest to ours — fixed anchor vocabulary + learned score — fixed its
+selector by making the SCORE simulator-grounded, not by gating the vocabulary.**
+
+**PDM-Closed** (nuPlan 2023 winner) generates trajectory proposals, **simulates and scores** them,
+then selects. **PUBLISHED, PROVISIONAL** — search-level only. Same shape: propose broadly, score by
+simulation, select flat.
+
+### 2.2 Where hard staging DOES appear, and what makes it survivable
+
+**TNT / DenseTNT** (Zhao et al. CoRL 2020, arXiv 2008.08294; Gu et al. arXiv 2108.09640) genuinely
+stage: predict target states, complete trajectories **conditioned on** them, then score and select a
+compact set. **PUBLISHED, PROVISIONAL** (abstracts + secondary sources). Two features distinguish
+this from `H_graft(q)`, and both are load-bearing:
+
+- the goal stage keeps a **large** candidate set (dense goal candidates — hundreds to thousands), so
+  stage 1 is a *coarse* restriction, not an 8-of-256 cut;
+- **a final selection stage re-ranks across goals** — the commitment is not terminal.
+
+**GoalFlow** (Xing et al., CVPR 2025, arXiv 2503.05689) is the sharpest case. It calls the goal point
+*"a precise description of the short-term future position, which imposes a strong constraint on the
+generation model"* — a genuinely hard conditioning signal, chosen from a **4,096–8,192**-element
+endpoint vocabulary — and reaches **90.3 PDMS** on NAVSIM. **And it explicitly builds an escape
+hatch:** the **shadow trajectory** is generated with *"the goal point masked during inference"*, and
+*"if the shadow trajectory deviates significantly from the main trajectory, we treat the goal point
+as unreliable and use the shadow as the output."* Tier: **CONFIRMED** (quoted).
+
+⇒ **The pattern across all three: hard commitment appears only where (i) the committed-to set is
+large, and (ii) an unconditioned fallback or a cross-mode re-rank can override it.** Our
+`H_graft(q=8)` has neither.
+
+### 2.3 The "hard assignment" in driving prediction is a TRAINING device, not an inference gate
+
+This is where a careless literature read would produce exactly the wrong recommendation.
+
+**MTR** (Shi et al., NeurIPS 2022, arXiv 2209.13508) is routinely described as using *hard
+assignment*. That hard assignment is **which of the 64 motion query pairs receives the regression
+loss** — the query nearest the GT endpoint — a training-time credit-assignment rule. At inference
+**all** query pairs decode and are ranked. The stated purpose is that each query *"takes charge of …
+a specific motion mode, which stabilizes the training process"* (abstract, quoted). Tier:
+**CONFIRMED** for the abstract claim; **PROVISIONAL** for the inference detail (the fetched abstract
+does not spell inference out; aWTA's framing of MTR as a WTA-trained multi-hypothesis model
+corroborates it).
+
+And even at training time **the field is moving away from hard**: aWTA's annealed soft→hard
+assignment improves MTR by **−9.41 % minADE / −36.67 % MissRate** on Argoverse 2 (§1.2).
+
+> ⇒ **PUBLISHED, CONFIRMED, and directly on the brief's question:** in driving, **mode is a bias on
+> generation and a label for training credit; it is not a gate on what may be executed.** Our
+> `H_graft(q)` arms implemented the one thing the field does not do.
+
+---
+
+## 3. GOAL / ROUTE CONDITIONING — injection, and what happens when it is wrong
+
+### 3.1 How the strong systems inject it
+
+| system | injection mechanism | evidence class |
+|---|---|---|
+| TransFuser++ / CARLA line | **target point** = GNSS waypoints ~30 m apart along the route, as a low-dimensional conditioning vector | PUBLISHED, CONFIRMED (Jaeger et al. ICCV 2023, quoted) |
+| CIL / CILRS | discrete **navigational command** selecting a branch head | PUBLISHED, PROVISIONAL (Codevilla et al. ICCV 2019, abstract-level) |
+| PLUTO | route as **reference-line geometry** → lateral queries (a structured prior on generation) | PUBLISHED, CONFIRMED (quoted) |
+| Diffusion Planner | route via **MLP-Mixer → adaptive layer-norm** on the diffusion timestep condition, across all trajectory tokens | PUBLISHED, CONFIRMED (quoted, arXiv 2501.15564) |
+| GoalFlow | **goal point** sinusoidally encoded, concatenated with scene + trajectory features, guiding flow matching | PUBLISHED, CONFIRMED (quoted) |
+
+⇒ Two families: **a token/condition on generation** (all of the above) and **a cost/guidance term at
+inference** (Diffusion Planner's classifier guidance). **Nobody in this set uses the goal to prune
+the candidate set.** Our `route`/`route_graded`/`vt_band` are family one; our `vt_speed`→`sel_gate`
+term is family two.
+
+### 3.2 A wrong or absent goal: what is measured
+
+**PUBLISHED, CONFIRMED — Jaeger, Chitta & Geiger, ICCV 2023, *Hidden Biases of End-to-End Driving
+Models*.** DEMONSTRATED: target-point conditioning creates a **shortcut** — models steer toward the
+nearest TP, which silently supplies the lateral recovery imitation learning otherwise lacks. Their
+ablation: NC-conditioned (discrete commands) **32 DS / 56 % RC**; TP-conditioned **39 DS / 84 % RC**;
+route deviations **0.00/km** (TP) vs **0.86/km** (NC). **And the failure mode is ours in mirror
+image:** when the TP is far away the shortcut *"produces catastrophic failures — the model steers
+directly toward a TP behind a turn, cutting the turn and driving into opposing lanes."* Their fix is
+representational (transformer cross-attention instead of global average pooling, **+9 RC**) — *make
+the decoder able to use perception, so the goal stops being the only usable signal.*
+
+**PUBLISHED, PROVISIONAL — *Closing the Navigation Compliance Gap in End-to-end Autonomous Driving*
+(arXiv 2512.10660).** Per the fetched text: planners *"frequently ignore route instructions"*,
+*"incorrect navigation commands sometimes receive similar compliance rates as correct ones"*, and
+*"absent navigation leads to unpredictable behavior rather than safe fallback"*; their remedy is a
+**soft** one — loss weighting that *"encourages but doesn't absolutely mandate compliance."*
+⚠️ **I could not extract the paper's own numbers from the PDF. The qualitative claims are
+PROVISIONAL and any quantitative claim from it is UNVERIFIED.**
+
+### 3.3 ⭐ GoalFlow supplies the exact three-way ladder our §4.3 measured — with the OPPOSITE ordering
+
+**PUBLISHED, CONFIRMED** (numbers quoted from the paper's ablation). NAVSIM PDMS ↑ vs our
+`ade_0_2s` ↓ (MEASURED, `raw/v5_hier_windows.pt`, 881 windows):
+
+| conditioning | GoalFlow PDMS ↑ | TanitAD v4 `ade_0_2s` ↓ |
+|---|---:|---:|
+| **no goal** | 85.6 | **0.7620** ← *our best* |
+| **produced / predicted goal** | **90.3** ← *their deployable* | 0.8563 ← *our worst* |
+| **oracle / GT goal** | 92.1 | 0.6423 |
+
+> ⛔ **This is the most decision-relevant single comparison in this document.** GoalFlow's *predicted*
+> goal recovers **73 %** of the oracle headroom (90.3 within the 85.6 → 92.1 span). Our produced goal
+> recovers **−147 %** — it is worse than not having one. Same three-rung ladder, opposite sign.
+>
+> ⇒ **"A produced goal is worse than no goal" is NOT a property of goal conditioning. It is a defect
+> of our goal producer.** The V5 artifact reached *"a producer problem, not a consumer problem"* from
+> our data alone; GoalFlow makes it PUBLISHED-CONFIRMED rather than inferred, and removes the
+> tempting alternative reading (*"goal conditioning is a mirage"*) from the table.
+
+**And GoalFlow supplies the mitigation to copy rather than invent:** the **shadow trajectory** — run
+with the goal masked, compare, fall back to the unconditioned branch on disagreement. That is
+strictly better than our currently-available free win (*"turn the produced goal off"*, −0.0943 m),
+because it keeps the upside on windows where the goal is right. It is **D2** in §5.
+
+---
+
+## 4. SOFT-PRIOR MECHANISMS — the menu, and what each is known to buy
+
+| mechanism | form | what is DEMONSTRATED | fit to us |
+|---|---|---|---|
+| **Additive logit bias / product of experts** | `score = base + λ·log p_prior` | exactly what v4's `_factor_grafts` already computes (`log_softmax` → linear → add); worth a separated **−0.0218 m** *jointly with* the vt term | **already deployed**; only its *strength* is unparameterised |
+| **Classifier-free guidance** | `ŝ = s_uncond + w·(s_cond − s_uncond)` | interior optimum, U-shaped FID, best at **w ≈ 0.1–0.3** (Ho & Salimans) | the natural parameterisation of our **goal** channel (D2) |
+| **Classifier guidance at inference** | `s̃ = s − ∇_x E_φ(x, t)` | Diffusion Planner adds safety/comfort/speed costs **at inference with no retraining**; ⚠️ **no guidance-strength sweep reported** — case studies only | the natural home for a longitudinal-admissibility cost (V5 §7.2) |
+| **Temperature on the prior's posterior** | `log_softmax(logits/τ)` | aWTA: annealing `T` soft→hard beats fixed-hard (**−9.41 % minADE**) | **one-line change** in `_factor_grafts`; decouples *sharpness* from *truncation* |
+| **Soft routing (Soft MoE)** | weighted combination of all experts | beats hard routing; hard routing → instability + dropped tokens | architectural analogue; supports the direction |
+| **Deliberation cost / switching margin** | `A(s,o) + η` | non-monotone in `η`, interior optimum ≈ 0.02 | the **temporal** analogue → D3 |
+| **Hard top-`q` truncation** | mask all but `q` | **no published planner does this at inference**; our own measurement: **+0.21 … +5.82 m** | **refused** |
+
+⚠️ **A gap worth stating plainly:** the guidance-strength curve is carefully characterised **for image
+generation** (Ho & Salimans) and **not for planning**. Diffusion Planner — the ICLR 2025 Oral whose
+headline feature is *flexible guidance* — provides qualitative case studies and **no sensitivity
+analysis over guidance magnitude**. So the brief's question *"what is known about its optimal
+strength for planning?"* has the answer: **essentially nothing is published.** That makes §6.3 a
+contribution rather than a replication.

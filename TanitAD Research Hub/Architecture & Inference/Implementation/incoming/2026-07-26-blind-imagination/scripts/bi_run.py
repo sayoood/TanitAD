@@ -204,6 +204,37 @@ EXTRA_ARMS = [
 ]
 
 
+# --------------------------------------------------------------------------- #
+# T_BLIND RUNG 1, the R1 PLANNER row — additive, inert for every other arm      #
+# --------------------------------------------------------------------------- #
+#: Arms whose dense ``fed_actions`` are kept (the action-amplitude statistics
+#: that separate a gain change from a no-op). Empty => nothing kept => the dump
+#: is byte-identical to the pre-planner one.
+KEEP_FED: tuple = ()
+
+
+def _plan_fn_for(model):
+    """v1's DEPLOYED plan step, and nothing else.
+
+    ⭐ This is ``closedloop.closed_loop_rollout``'s own two lines::
+
+        ctx    = model.strategic_policy(win_s, nav_follow)["ctx"]
+        w_look = model.tactical_policy(win_s, ctx)["waypoints"][LOOKAHEAD_STEP]
+
+    with ``nav_cmd = follow`` (index 0), exactly as that harness does when no
+    ``plan_fn`` is injected. ``blindimag`` deliberately does not import
+    ``fourbrain``; the planner is handed in, so the rollout module stays a pure
+    function of the predictor + readout.
+    """
+    from taniteval.closedloop import LOOKAHEAD_STEP
+
+    def f(win_s, v):
+        nav = torch.zeros(win_s.shape[0], dtype=torch.long, device=win_s.device)
+        ctx = model.strategic_policy(win_s, nav)["ctx"]
+        return model.tactical_policy(win_s, ctx)["waypoints"][LOOKAHEAD_STEP]
+    return f
+
+
 def _run_arms(model, sro, recs, poses_by_ep, k, batch, arms, extra=(),
               peek_cfgs=(), verbose=True, readouts=None):
     """One pass over the window set per arm. Returns {arm: dense pred [N,k,2]}
@@ -214,6 +245,8 @@ def _run_arms(model, sro, recs, poses_by_ep, k, batch, arms, extra=(),
     psis = {name: [] for name in store}
     spds = {name: [] for name in store}
     peekm = {name: [] for name in store}
+    feds = {name: [] for name in store if name in KEEP_FED}
+    _pf = None                       # built lazily, only if a planner arm exists
     shared = {"gt": [], "gt_yaw": [], "cv": [], "hold_v0": [], "eid": [],
               "speed": [], "head_deg": [], "t0": [], "ep_i": []}
     nb = (len(recs) + batch - 1) // batch
@@ -231,16 +264,24 @@ def _run_arms(model, sro, recs, poses_by_ep, k, batch, arms, extra=(),
         vl = b["v_last"].to(b["states"].device)
         for name, ss, asrc, *rest in list(arms) + list(extra):
             lvl = rest[1] if len(rest) > 1 else "op"
+            kw = {}
+            if str(asrc).partition("|")[0].strip() == "planner":
+                if _pf is None:
+                    _pf = _plan_fn_for(model)
+                kw = {"plan_fn": _pf,
+                      "gt_pos": b["gt_pos"].to(b["states"].device)}
             r = bi.blind_rollout(
                 model.predictor, b["states"], b["actions"],
                 sro if lvl == "op" else readouts[lvl], k,
                 state_source=ss, action_source=asrc,
                 future_actions=b["future_actions"],
                 obs_states=b["obs_states"], gt_step_dpose=gtd, v_last=vl,
-                update_speed_channel=bool(rest[0]) if rest else False)
+                update_speed_channel=bool(rest[0]) if rest else False, **kw)
             store[name].append(r["waypoints"].cpu().float())
             psis[name].append(r["psi"].cpu().float())
             spds[name].append(r["pred_speed"].cpu().float())
+            if name in feds:
+                feds[name].append(r["fed_actions"].cpu().float())
         for name, base_action, period, obar in peek_cfgs:
             r = bi.blind_rollout(
                 model.predictor, b["states"], b["actions"], sro, k,
@@ -257,6 +298,7 @@ def _run_arms(model, sro, recs, poses_by_ep, k, batch, arms, extra=(),
     out = {"pred": {k2: torch.cat(v) for k2, v in store.items()},
            "psi": {k2: torch.cat(v) for k2, v in psis.items()},
            "pred_speed": {k2: torch.cat(v) for k2, v in spds.items()},
+           "fed_actions": {k2: torch.cat(v) for k2, v in feds.items() if v},
            "peek_mask": {k2: torch.cat(v) for k2, v in peekm.items() if v}}
     for k2 in ("gt", "gt_yaw", "cv", "hold_v0", "speed", "head_deg"):
         out[k2] = torch.cat(shared[k2])
@@ -294,6 +336,7 @@ def _dump(res, path, meta, names=None):
         return d if names is None else {k: v for k, v in d.items() if k in names}
     torch.save({"pred": sel(res["pred"]), "psi": sel(res["psi"]),
                 "pred_speed": sel(res["pred_speed"]),
+                "fed_actions": sel(res.get("fed_actions", {})),
                 "peek_mask": sel(res.get("peek_mask", {})),
                 "gt": res["gt"], "gt_yaw": res["gt_yaw"], "cv": res["cv"],
                 "hold_v0": res["hold_v0"], "speed": res["speed"],

@@ -472,3 +472,185 @@ def test_reconstruction_can_fail_on_the_wrong_input():
                                                     out["pred_speed"] * 1.5, v0)
     fed = out["fed_actions"]
     assert not torch.allclose(accel[:, :k - 1], fed[:, :k - 1, 1], atol=1e-6)
+
+
+# =========================================================================== #
+# T_BLIND RUNG 1 — the PLANNER action source (`wp_to_control`), the R1 row      #
+# =========================================================================== #
+def _plan_const(w):
+    """A plan_fn returning a FIXED ego-frame lookahead target, so the controller
+    can be exercised without a trained tactical brain on CPU."""
+    def f(win_s, v):
+        return torch.as_tensor(w, dtype=v.dtype).expand(win_s.shape[0], 2).clone()
+    return f
+
+
+@pytest.mark.parametrize("spec,expect", [
+    ("planner", ("planner", {})),
+    ("planner|vsrc=decoded", ("planner", {"vsrc": "decoded"})),
+    ("planner|look=gt", ("planner", {"look": "gt"})),
+    ("planner|vsrc=ctrl|look=plan", ("planner", {"vsrc": "ctrl", "look": "plan"})),
+])
+def test_parse_planner_action_source(spec, expect):
+    assert bi.parse_action_source(spec) == expect
+
+
+@pytest.mark.parametrize("bad", [
+    "own_kinematic|vsrc=ctrl",        # planner knob on a kinematic base
+    "planner|blend=0.5",              # filter knob on the planner base
+    "planner|vsrc=nope",
+    "planner|look=nope",
+])
+def test_parse_planner_rejects(bad):
+    with pytest.raises(ValueError):
+        bi.parse_action_source(bad)
+
+
+def test_planner_requires_its_inputs():
+    """FAIL LOUD: the planner cannot silently fall back to another source."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    with pytest.raises(ValueError):                       # no plan_fn
+        bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                         obs_states=obs, v_last=v0)
+    with pytest.raises(ValueError):                       # look=gt, no gt_pos
+        bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="planner|look=gt",
+                         obs_states=obs, v_last=v0)
+    with pytest.raises(ValueError):                       # no v_last
+        bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                         obs_states=obs, plan_fn=_plan_const([10.0, 0.0]))
+
+
+def test_planner_feeds_exactly_wp_to_control():
+    """THE LOAD-BEARING IDENTITY. The first fed action must equal what
+    `closedloop.wp_to_control` returns for the same target and speed — the arm
+    IS the deployed controller, not a re-derivation of it."""
+    from taniteval.closedloop import wp_to_control
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    w = [12.0, 1.5]
+    out = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                           obs_states=obs, v_last=v0, plan_fn=_plan_const(w))
+    st, ac = wp_to_control(torch.as_tensor([w], dtype=v0.dtype).expand(B, 2), v0)
+    assert torch.equal(out["fed_actions"][:, 0, 0], st)
+    assert torch.equal(out["fed_actions"][:, 0, 1], ac)
+
+
+def test_planner_speed_bookkeeping_is_closed_loop_rollouts():
+    """`v <- clamp_min(v + accel*DT, 0)` — the controller integrates its OWN
+    command. Checked at step 2, where a wrong `v` changes the action."""
+    from taniteval.closedloop import wp_to_control
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    w = [12.0, 1.5]
+    out = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                           obs_states=obs, v_last=v0, plan_fn=_plan_const(w))
+    a0 = out["fed_actions"][:, 0, 1]
+    v1 = (v0 + a0 * bi.DT).clamp_min(0.0)
+    _, a1 = wp_to_control(torch.as_tensor([w], dtype=v0.dtype).expand(B, 2), v1)
+    assert torch.equal(out["fed_actions"][:, 1, 1], a1)
+
+
+def _plan_track(dv, y):
+    """A plan_fn whose implied target speed is `v + dv`, so `wp_to_control`'s
+    accel does NOT sit on the +-3 clamp. ⚠️ With a CONSTANT far-away target the
+    accel saturates for every input speed and the arms become indistinguishable —
+    which is the very saturation mechanism Rung 1 identified, and it would make an
+    anti-no-op test pass vacuously."""
+    from taniteval.closedloop import DT as _dt, LOOKAHEAD_STEP as _L
+
+    def f(win_s, v):
+        return torch.stack([(v + dv) * (_L * _dt),
+                            torch.full_like(v, float(y))], dim=-1)
+    return f
+
+
+def test_planner_vsrc_decoded_is_a_different_arm():
+    """ANTI-NO-OP: the `vsrc` knob must actually move the fed action."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    kw = dict(obs_states=obs, v_last=v0, plan_fn=_plan_track(0.5, 0.2))
+    a = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="planner", **kw)["fed_actions"]
+    b = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="planner|vsrc=decoded", **kw)["fed_actions"]
+    assert not torch.allclose(a, b)
+
+
+def test_planner_is_not_the_kinematic_inverse_nor_hold():
+    """ANTI-NO-OP against BOTH endpoints — a planner arm silently equal to
+    `own_kinematic` or to `hold_last` would produce a flat, confident, wrong
+    curve, which is exactly how Rung 1's plumbing self-test earns its place."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    kw = dict(obs_states=obs, v_last=v0)
+    p = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                         plan_fn=_plan_const([12.0, 1.5]), **kw)["waypoints"]
+    o = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="own_kinematic", **kw)["waypoints"]
+    h = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="hold_last", **kw)["waypoints"]
+    assert (p - o).abs().max() > 1e-3
+    assert (p - h).abs().max() > 1e-3
+
+
+def test_planner_gt_lookahead_tracks_the_true_path():
+    """The `look=gt` ORACLE must actually consume gt_pos: perturbing the true
+    path must move the fed action. (It reads the future — diagnostic only.)"""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    gt = torch.randn(B, k, 2).cumsum(1) + 5.0
+    kw = dict(obs_states=obs, v_last=v0)
+    a = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="planner|look=gt", gt_pos=gt,
+                         **kw)["fed_actions"]
+    b = bi.blind_rollout(pred, states, actions, ro, k,
+                         action_source="planner|look=gt", gt_pos=gt + 3.0,
+                         **kw)["fed_actions"]
+    assert not torch.allclose(a, b)
+
+
+def test_planner_running_pose_matches_accumulate_se2_pose():
+    """The `look=gt` frame transform uses a running pose computed INSIDE the
+    loop. It must be the same pose `accumulate_se2_pose` reports, or the oracle
+    target is expressed in the wrong frame."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    gt = torch.randn(B, k, 2).cumsum(1) + 5.0
+    out = bi.blind_rollout(pred, states, actions, ro, k,
+                           action_source="planner|look=gt", obs_states=obs,
+                           v_last=v0, gt_pos=gt)
+    pos, psi = bi.accumulate_se2_pose(out["step_dpose"])
+    assert torch.equal(pos, out["waypoints"])
+    assert torch.equal(psi, out["psi"])
+
+
+def test_planner_speed_channel_is_constant_by_default():
+    """Every Rung 1 arm holds `v0` constant; the planner primary must too, or it
+    is not comparable to them."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    out = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                           obs_states=obs, v_last=v0,
+                           plan_fn=_plan_const([12.0, 1.5]))
+    v0c = actions[:, -1, 2]
+    assert torch.allclose(out["fed_actions"][:, :-1, 2],
+                          v0c[:, None].expand(B, k - 1))
+
+
+def test_planner_update_speed_channel_uses_the_controller_speed():
+    """`closedloop.build_action` feeds v_tracked/SPEED_SCALE. Reported
+    separately, never mixed into the primary — so it must differ from it."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    kw = dict(obs_states=obs, v_last=v0, plan_fn=_plan_const([12.0, 1.5]))
+    a = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                         **kw)["fed_actions"]
+    b = bi.blind_rollout(pred, states, actions, ro, k, action_source="planner",
+                         update_speed_channel=True, **kw)["fed_actions"]
+    assert not torch.allclose(a[..., 2], b[..., 2])
+
+
+def test_no_planner_leaves_every_pre_existing_path_bit_identical():
+    """The whole extension must be inert on every call site that predates it."""
+    states, actions, obs, pred, ro, v0, k = _kin_fixture()
+    for spec in ("own_kinematic", "hold_last", "own_kinematic|blend=0.25",
+                 "own_kinematic|ema=0.8"):
+        a = bi.blind_rollout(pred, states, actions, ro, k, action_source=spec,
+                             obs_states=obs, v_last=v0)["waypoints"]
+        b = bi.blind_rollout(pred, states, actions, ro, k, action_source=spec,
+                             obs_states=obs, v_last=v0, plan_fn=None,
+                             gt_pos=None)["waypoints"]
+        assert torch.equal(a, b)
