@@ -43,6 +43,21 @@ launched.
    that the two hours of frozen-checkpoint work still worth doing are DIAGNOSTIC — they decide which of
    two mechanisms to fix, and one of them (§6, X1) costs 15 minutes of CPU.** (§5, §6.)
 
+**Two further results from the parallel surveys, each of which changes something:**
+
+4. 🔴 **ONE paper builds it our way — and never measures the cost.** Valdi ([arXiv:2607.00917](https://arxiv.org/abs/2607.00917))
+   trains *"each decoder … on an on-policy dataset collected by rolling out exactly the model whose latents
+   it reconstructs"*, with the rationale asserted verbatim and **no measurement**. ⇒ **our 9.4 × is the
+   number that paper is missing, and a metric SE(2) head trained exclusively on imagination pairs has NO
+   published precedent in driving** — every verifiable driving model with a metric head (OccWorld, Drive-WM,
+   LAW, Epona) reads the **observed** latent (§8).
+5. ⭐⭐ **The horizon fix has a better form than the one we were about to adopt, and it also costs zero.**
+   GraphCast, FuXi and Pangu-Weather independently converged not on *"retrain at the evaluation horizon"*
+   but on **a bank of horizon-specialised readouts selected by lead time** — and **we already own the bank**
+   (`op`/`tac`/`str`, all three trained, in every 4-brain checkpoint). Our own crossover is already measured
+   (`str` is −0.0449 m worse at 0.5 s, better at every horizon ≥ 1 s), so the selection rule can be placed
+   from data we have. **New candidate C8, §5 — zero GPU, and it strictly dominates the flat swap.** (§7)
+
 ---
 
 # 1. PRE-REGISTRATION ADJUDICATED
@@ -316,6 +331,8 @@ compounding error or rollout drift. `NONE` = mechanism-plausible only.
 | **C5** | **KL / distributional tie between imagined and encoded latents (beyond the existing L2)** | Replace/augment `_rollout_loss`'s L2 with a distributional term so `ẑ` is not merely the conditional mean. | PlaNet latent overshooting; DreamerV2 KL balancing | **ADJACENT** | substantial — our predictor is deterministic; this means adding a stochastic latent. **Architecture change** | **a full run + architecture risk.** ⛔ Deliberately last among training fixes |
 | **C6** | **Representation-level distillation from a metric-competent teacher** (e.g. a monocular metric-depth/VO model) | Distil a teacher that *does* recover metric scale into our encoder. | monocular metric scale is recoverable only with a scale prior — camera height / known object size / fixed calibration (`PUBLISHED`, §5.1) | **ADJACENT** | a new teacher, a new loss, and a corpus pass | **weeks.** Listed for completeness; not scheduled |
 | **C7** | ⛔ **Anything that only re-fits `grounding.step` on real pairs, frozen trunk** | — | — | — | — | ⛔ **REFUTED BEFORE PROPOSED — §2.2 is that experiment, run for 30k steps at 2× weight, plateauing 33× short.** |
+| **C8** | ⭐⭐ **HORIZON-BANKED READOUT SELECTION — a lead-time selection rule over the `op`/`tac`/`str` bank we already own** *(added after the §7 survey; see A4)* | Do not pick one readout. Select per horizon: `op` for the first steps, `tac`/`str` beyond the crossover. This is **exactly** the architecture three SOTA forecasting systems converged on independently | ⭐ **the strongest published evidence in this whole report.** **GraphCast** recommends it in prose (*"combining multiple models with varying numbers of AR steps, e.g., for short, medium and long lead times"*); **FuXi** ships a 3-model cascade (skillful lead time Z500 9.25 → 10.5 d); **Pangu-Weather** ships four lead-time models and beat operational NWP; **APEBench** quantifies the crossover cost at **11 %** first-step error | **MATCHED in shape** (a short-trained readout vs a long-trained one on the same rollout), though all four are weather/PDE, not driving | ⭐ **a selection rule in `taniteval/rollout.py::collect` and the two `canary_rollout`s.** The three heads **already exist and are already trained** in every 4-brain checkpoint | ⭐ **ZERO GPU, and the crossover is ALREADY MEASURED**: `str` is worse at 0.5 s by −0.0449 m [−0.0549, −0.0350] and better everywhere ≥ 1 s (`INHERITED`, `…/2026-07-26-tblind-ladder/`). ⇒ the optimal rule is **not** "always `str`", it is a crossover at ~0.5–1 s, and we have the data to place it |
+| **C9** | ⚠️ **The LAW/Epona pattern — move the metric head onto the OBSERVED latent and demote imagination to auxiliary supervision** *(added after the §8 survey)* | Every verifiable driving world model with a metric head reads the **observed** latent for it; predicted latents are supervision targets only (LAW: `L_latent = Σ‖p_{t+1} − v_{t+1}‖₂`) | LAW planning L2 **0.26/0.57/1.01 m, avg 0.61**; Epona's TrajDiT reads the observation-derived latent and **names our pathology explicitly** | **MATCHED in design, NOT in measurement** — neither paper measures the gap, they merely never create it | ⛔ **a different product.** It gives up multi-step blind imagination, which is the capability this program is being asked to build. **Not a drop-in** | ⛔ **Not scheduled.** Recorded because it is the field's actual answer and the program should know it is deviating deliberately, not by oversight |
 
 ## 5.1 ⚠️ The physical constraint that bounds C3 and C6, and it is `PUBLISHED`
 
@@ -381,15 +398,154 @@ Swapping to the 20-step-calibrated readout, same weights: `ade_0_2s` **0.3839 �
 ⚠️ The longer-trained readout is **slightly WORSE at short horizon** (−0.0449 m [−0.0549, −0.0350] at
 0.5 s, separated) — a genuine crossover, not a free win.
 
-<!-- PENDING: horizon-mismatch literature (direct vs iterated multi-step forecasting; training-horizon
-ablations in MBRL). See §11 for what lands. -->
+## 7.1 What the literature knows — and it knows a lot, in four separate fields that do not cite each other
+
+`PUBLISHED (cited)`. ⚠️ **`INHERITED` in provenance:** this subsection is the product of a delegated
+literature search run in parallel by this stream. I re-verified the two most load-bearing identifiers
+myself; the rest carries the delegated agent's verification tags, which are reproduced honestly in
+`CITATIONS.md` §F rather than laundered into a flat citation.
+
+> ### ⭐ **The sign we measured is the sign the field measures, every time: train longer → slightly WORSE at short horizon, much better at long. And the fix three SOTA systems independently converged on is not "retrain at the evaluation horizon" — it is a BANK OF HORIZON-SPECIALISED READOUTS SELECTED BY LEAD TIME. We already own that bank.**
+
+| source | what it DEMONSTRATED | how it matches us |
+|---|---|---|
+| ⭐ **APEBench** ([arXiv:2411.00180](https://arxiv.org/html/2411.00180v1)) | verbatim: *"when unrolling for 20 steps during training, the learned solution still performs better after 30 steps while having an **11 % increased error at the first step**"*; Fig. 2 caption: *"More unrolling improves long-term accuracy for a small sacrifice in short-term performance"* | ⭐ **the closest quantitative match anywhere.** Our 20-step readout is worse at 0.5 s by **−0.0449 m [−0.0549, −0.0350]**, separated (`INHERITED`, `…/2026-07-26-tblind-ladder/`). **Same sign, and now with a published magnitude to compare against: 11 %** |
+| ⭐ **GraphCast** (Science 2023, [arXiv:2212.12794](https://arxiv.org/pdf/2212.12794), suppl. Fig. 30) | *"Models trained with fewer autoregressive steps tended to trade longer for shorter lead time accuracy"*; trained on 12 AR steps, evaluated to 10 days (~3.3× extrapolation vs our 5×). Its own recommendation: *"combining multiple models with varying numbers of AR steps, e.g., for short, medium and long lead times"* | the recommendation **is our `op`/`tac`/`str` bank** |
+| ⭐ **FuXi** ([arXiv:2306.12873](https://ar5iv.labs.arxiv.org/html/2306.12873)) | *"using a single model is insufficient for achieving the best performance for both short and long lead times"* — ships a **3-model cascade**; skillful lead time Z500 **9.25 → 10.5 d**, T2M **10 → 14.5 d** | independent restatement of GraphCast's finding, **plus a deployed cascade** |
+| **Pangu-Weather** (Nature 619:533, [arXiv:2211.02556](https://arxiv.org/pdf/2211.02556)) | four separate models at 1 h / 3 h / 6 h / 24 h lead time, composed greedily to minimise iteration count | horizon-specialised readouts, **deployed, beating operational NWP** |
+| **Benechehab et al.** ([arXiv:2310.05672](https://ar5iv.labs.arxiv.org/html/2310.05672)) | *"models where α<1.0 suffer a worse predictive error for short horizons, but recover and beat the vanilla one-step model down-the-horizon"* — the same crossover inside MBRL dynamics models | our crossover, in our own field |
+| ⚠️ **PlaNet Fig. 7 — the counter-evidence** ([arXiv:1811.04551](https://ar5iv.labs.arxiv.org/html/1811.04551)) | latent overshooting *"can substantially improve the performance of the DRNN and other models... but **slightly reduces performance of our RSSM**"* | ⛔ **multi-horizon training is NOT a free win.** It repairs *capacity-limited or misspecified* predictors and can hurt an adequate one. ⇒ **that our 20-step head wins by 2× is evidence our READOUT is the misspecified part** — which is exactly what §2 says by a different route |
+
+## 7.2 The direct-vs-iterated (DMS/IMS) theory answer, and the genuine disagreement
+
+The classical framing is **direct multi-step (DMS)** — fit a model whose target is *h* steps ahead — versus
+**iterated multi-step (IMS)** — fit one one-step model and iterate. The trade is bias against variance. If
+the one-step model is correctly specified, iterating the true one-step conditional expectation **is** the
+*h*-step conditional expectation, so IMS is efficient and DMS only pays for extra parameters on
+effectively less informative overlapping data. If the one-step model is **misspecified**, the
+misspecification **compounds** under iteration while DMS targets the *h*-step loss directly — Chevillon's
+survey concludes DMS wins in finite samples when the process is **both misspecified and non-stationary**
+(Chevillon 2007, *J. Econ. Surveys* 21(4):746–785). Ing shows the choice **cannot be settled by identifying
+the true model order** — method and order must be selected jointly (Ing 2003/2004).
+
+⚠️ **The literature genuinely disagrees on the empirical winner, and the disagreement must be stated.** The
+largest clean test — 170 US monthly macro series, 1959–2002 — found **iterated typically BEATS direct, and
+the iterated advantage GROWS with horizon** (Marcellino, Stock & Watson 2006, *J. Econometrics*
+135(1–2):499–526). The ML benchmark on 111 NN5 series found multi-output strategies beat both pure forms
+(Taieb et al. 2012, [arXiv:1108.3259](https://arxiv.org/abs/1108.3259)).
+
+> ### **Why MSW does not bind on us, stated so nobody has to re-derive it:** MSW's DMS cost is **re-estimating an entire model per horizon** from ~500 scarce observations — a pure variance penalty. **We re-estimate nothing.** Our rollout is shared and fixed; only a ~0.8 M-parameter head's loss horizon changes, on the same data. We pay essentially none of DMS's variance cost, and §2/§7 give direct evidence the short-horizon readout is misspecified for 20-step accumulation. **In the regime we occupy, "calibrate the readout at the horizon you read it at" is close to unopposed — but if we ever fit SEPARATE FULL PREDICTORS per horizon, MSW starts applying.**
+
+## 7.3 ⛔ What the literature does NOT have, and what that makes our result
+
+* ⛔ **Nobody has run our experiment.** No paper freezes a latent rollout, trains several readout heads at
+  different *k* on that **same** rollout, and swaps them at test time with **no retraining**.
+  GraphCast/FuXi/Pangu/APEBench all retrain or fine-tune the whole model. ⇒ **our readout swap is a
+  confirmation of a known mechanism in a genuinely new place**, and that is the honest framing — not a
+  discovery of the mechanism.
+* ⛔ **There is no scaling law** for the extrapolation penalty as a function of *K/k*. Our data point
+  (**5× extrapolation → 1.97× error ratio**) has **no published comparator**.
+* ⛔ **No AV / trajectory-prediction paper ablates the SUPERVISION horizon of a trajectory head.** The field
+  universally reports ADE@1/2/3 s and universally fails to vary the training horizon. 🔴 **That is a
+  publishable gap in our own field and we are sitting on the experiment.**
+* ⚠️ **A false lead, logged so it is not re-followed** (`RETRACTION_LOG` class: *leading-prompt confirmation
+  on a summarising tool*): *"Closing the Train-Test Gap in World Models for Gradient-Based Planning"*
+  ([arXiv:2512.09929](https://arxiv.org/abs/2512.09929)) looks like a perfect hit from its title and a
+  first fetch appeared to confirm it — **that was the fetch model echoing the leading question back.** The
+  verified abstract shows the gap is *next-state-prediction objective vs. test-time action estimation*,
+  **not** horizon mismatch. **Do not cite it for this question.**
 
 ---
 
-# 8. DRIVING-SPECIFIC WORLD MODELS
+# 8. DRIVING-SPECIFIC WORLD MODELS — does anyone report an observed-vs-imagined decode gap?
 
-<!-- PENDING: GAIA-1/2, Vista, GenAD, DriveDreamer, iVideoGPT, occupancy and Gaussian/NeRF lines —
-does any of them report a decode-from-observed vs decode-from-imagined gap? -->
+`PUBLISHED (cited)`. ⚠️ Same provenance caveat as §7.1: delegated parallel search, tags preserved in
+`CITATIONS.md` §F. I independently re-verified Valdi's identity and authorship.
+
+> ## ⛔ **NO DRIVING WORLD MODEL MEASURES OUR DEFECT — because essentially none of them is built the way we are built. In every driving world model whose wiring could be verified, the decoder is trained on ENCODED (OBSERVED) latents. Decoding an IMAGINED latent is the UNTRAINED direction for them; for us it is the TRAINED one. Our 9.4× is the same axis at the opposite polarity.**
+
+## 8.1 ⭐ The single most important finding: one paper builds it our way, states our rationale, and never measures the cost
+
+**Valdi — "Valdi: Value Diffusion World Models", Lindenberg & Chitta** ([arXiv:2607.00917](https://arxiv.org/abs/2607.00917), 2026-07-01).
+Trains each decoder on **the model's own imagined latents** — *"each decoder is trained on an on-policy
+dataset collected by rolling out exactly the model whose latents it reconstructs"* — with the rationale
+stated verbatim: *"This ensures each decoder is trained on the latent distribution induced by its own
+model, so the decoded futures faithfully reflect that model's predictions rather than an
+out-of-distribution mapping."* (App. G.2.)
+
+**It never measures what that costs.** `PUBLISHED (ASSERTED, prose — not demonstrated)`.
+
+⚠️ **Verification status, stated precisely.** I fetched the paper page myself and **independently confirmed
+title, authors and that the experiments are in CarRacing** — *"In preliminary experiments on the CarRacing
+environment…"*, i.e. **not driving-scale**. The App. G.2 quotes are **`INHERITED`** from the delegated
+search's full-text read and I could not reach them.
+
+> ### ⇒ **We have the number that paper is missing. The design choice Valdi asserts is safe, we measured at 9.4× (eval) / 33× (train). That is a genuine, defensible contribution — and it is the first thing to say if this program publishes.**
+
+## 8.2 The per-family answer
+
+| family | what the decoder is trained on | reports an observed-vs-imagined decode gap? | has a METRIC (metres) head, and what does it read? |
+|---|---|---|---|
+| **GAIA-1** ([2309.17080](https://arxiv.org/abs/2309.17080)) | tokens from the image tokenizer on **real frames**; the video decoder is trained **independently** of the world model — *"During training, our video diffusion model is conditioned on the image tokens obtained by discretizing input images with the pre-trained image tokenizer"*, *"During inference … on the predicted image tokens from the world model"* | ⛔ **no — the paper has no quantitative results table at all** | no; speed + curvature are **inputs** |
+| **GAIA-2** ([2503.20523](https://arxiv.org/abs/2503.20523)) | encoded latents of **real frames** (video tokenizer = autoencoder) | ⛔ no — **no tokenizer-reconstruction / oracle row anywhere**; reconstruction quality is invisible in the results | no; ego action is conditioning only |
+| **Vista** ([2405.17398](https://arxiv.org/abs/2405.17398)) | SVD VAE, pretrained; frozen-vs-finetuned **not stated in the paper** | ⛔ no; 15 s rollouts shown **qualitatively only** | no — trajectory in metres is an **input** condition |
+| **GenAD** ([2403.09630](https://arxiv.org/abs/2403.09630)) | ⛔ **UNVERIFIED — every full-text route failed** (ar5iv conversion error, `/html/` 404, PDF over size limit, CVPR OA 403, Semantic Scholar 404). Title/authors/abstract only | **UNVERIFIED** | **UNVERIFIED** |
+| **DriveDreamer / -2** ([2309.09777](https://arxiv.org/abs/2309.09777), [2403.06845](https://arxiv.org/abs/2403.06845)) | not explicitly stated; SD backbone frozen | ⛔ no | v1 has an action branch (yaw + velocity); v2 pixels only |
+| **Drive-WM** ([2311.17918](https://arxiv.org/abs/2311.17918)) | encoded latents of **real frames** | ⛔ no isolated real-vs-generated perception gap | ⭐ **yes — planning L2 in metres (Tab. 3), and the planner reads REAL observations** |
+| **MUVO** ([2311.11762](https://arxiv.org/abs/2311.11762)) | ⚠️ **not specified** — RSSM-style prior/posterior, but the paper never says which the decoders see in training. **A real ambiguity in the source, not a search failure** | ⛔ no | no |
+| ⭐ **MILE** ([2210.07729](https://arxiv.org/abs/2210.07729)) | decoders take the **POSTERIOR**; prior matched by KL only | ⭐ **indirectly YES** — Fig. 4 *"Driving in imagination"*: at 0 / 30 / 60 % imagining, driving score ≈62 → ≈61 → ≈50, BEV IoU ≈60 → ≈55 → ≈40 ⚠️ (read off a plot) | action head a ∈ ℝ², not metric poses |
+| **OccWorld** ([2311.16038](https://arxiv.org/abs/2311.16038)) | stage 1 on **GT occupancy**; stage 2 freezes tokenizer, decodes **predicted** tokens | ⭐ yes, via I²-World (§8.3) | ⭐ **yes — ego displacement head; planning L2 0.43/1.08/1.99 m** |
+| **Copilot4D** ([2311.01017](https://arxiv.org/abs/2311.01017)) | **encoded (observed)** tokens — *"The tokenizer is trained end-to-end to reconstruct the observation"* | ⛔ no dedicated oracle row | no; ego SE(3) poses are **inputs** |
+| **iVideoGPT** ([2405.15223](https://arxiv.org/abs/2405.15223)) | encoded (observed) tokens; tokenizer **not** retrained on predicted tokens | ⛔ no | ⚠️ **and it is not a driving model** — pre-trained for robotic manipulation |
+| **UniSim / NeuRAD / DrivingGaussian / S-NeRF++ / MARS** | reconstruction of **observed** sensor data; no latent dynamics | ⭐ **NeuRAD and UniSim: YES** (§8.3). DrivingGaussian, S-NeRF++, MARS: ⛔ **no — all test on the RECORDED trajectory**, so off-distribution decode is never measured | no |
+| ⭐ **LAW** ([2406.08481](https://arxiv.org/abs/2406.08481)) | predicts future latents supervised **against the real encoded latent**: `L_latent = Σ‖p_{t+1} − v_{t+1}‖₂` | ⛔ no — never measures predicted-vs-real latent divergence | ⭐⭐ **yes — planning L2 0.26/0.57/1.01 m, avg 0.61. And THE TRAJECTORY HEAD READS THE OBSERVED LATENT (`E = V + H`); predicted latents are auxiliary supervision ONLY** |
+| ⭐ **Epona** ([2506.24113](https://arxiv.org/abs/2506.24113)) | DCAE encoder **frozen** | ⛔ no latent-source table | ⭐ **yes — TrajDiT reads the OBSERVATION-derived historical latent.** And it **names our pathology**: *"during training, the model predicts the next frame using ground-truth historical context, whereas during inference, it relies on its own past predictions. This domain gap… leads to error accumulation"* — fixed by a *chain-of-forward* strategy |
+| **HorizonDrive** ([2605.11596](https://arxiv.org/abs/2605.11596)) | VAE decoder **pretrained and frozen, never retrained** | ⚠️ asserted, not cleanly demonstrated (no GT-vs-generated-conditioning ablation) | no; poses recovered **post-hoc from pixels** via VGGT. Names *"exposure bias"* explicitly — but **corrects the DYNAMICS MODEL, not the decoder** |
+
+## 8.3 The two families that DID measure something, and why neither is comparable to our 9.4×
+
+**(1) Occupancy world models — I²-World Table 1** ([arXiv:2507.09144](https://arxiv.org/abs/2507.09144)):
+tokenizer **reconstruction** vs **forecasting** on the same benchmark — OccWorld-O 66.38 → 17.14 mIoU
+(**3.9×**), OccLLaMA-O 75.20 → 19.93 (**3.8×**), DOME 83.08 → 27.10 (**3.1×**), I²-World-O 81.22 → 39.73
+(**2.0×**). Cross-checked three ways by the delegated search (OccWorld's own Tab. 1; OccSora's Tab. 1;
+DOME's own Tab. 1).
+
+> ⛔ **These are NOT comparable to our number and must not be quoted as if they were.** They are measured
+> **across a time gap** — they confound the decoder being off-distribution with the future being genuinely
+> uncertain. **Ours is measured at a MATCHED TIMESTEP**, which is what makes it a clean decoder-transfer
+> measurement. ⭐ **No paper in that family disentangles the two, and none of I²-World / DOME / OccWorld /
+> OccLLaMA attributes the gap, mentions exposure bias, or ablates it. That is an open lane, and our
+> instrument is the one that opens it.**
+
+⚠️ **Verification:** I could not reach I²-World's table myself (abstract page only). The numbers are
+**`INHERITED`** from the delegated search's three-probe cross-check. Do not let them decide anything.
+
+**(2) Off-distribution rendering — NeuRAD Table 3** ([arXiv:2311.15260](https://arxiv.org/abs/2311.15260)),
+*"FID scores when shifting pose of ego vehicle or actors"*, **with a no-shift baseline column** so the
+degradation is computable: PandaSet FC NeuRAD **25.0 → 72.3 @2 m lane shift (2.9×) → 93.9 @3 m (3.8×)**;
+UniSim* 41.7 → 79.6 (1.9×) → 102.0 (2.4×). UniSim's own paper reports the same protocol and notes *"the
+gap is more significant in extrapolation settings."*
+
+⇒ **This is the closest published analogue IN KIND — a decoder asked to operate off the distribution it
+was fit on — and it lands at 2–4×, the same order as our 9.4×.** ⚠️ FID and ADE are **not commensurable**;
+the agreement is in order of magnitude only, and I say so rather than implying a comparison.
+
+**(3) The one readout-head Enc-vs-WM comparison found anywhere** —
+*"Reconstruction or Semantics?"* ([arXiv:2605.06388](https://arxiv.org/abs/2605.06388)) tabulates an IDM
+readout and a success classifier on **encoder latents vs world-model latents**, which is exactly the right
+experiment. ⛔ **But it is robotics (BridgeV2 manipulation), not driving, and the delegated search's two
+independent transcription probes DISAGREED on the Enc/WM column alignment**, so no per-row number is
+admissible. Only the prose direction is supported: readouts degrade on WM latents, and semantic encoders
+degrade less than reconstruction-aligned ones. **`PROVISIONAL` at best.**
+
+## 8.4 ⭐ The design conclusion the driving field has already converged on, and it is not ours
+
+**Of every driving world model with a metric head whose wiring could be verified — OccWorld, Drive-WM,
+LAW, Epona — EVERY ONE READS THE OBSERVED LATENT for that head.** LAW is explicit that predicted latents
+are *supervision targets only*. Epona is explicit that TrajDiT conditions on the observation-derived
+latent.
+
+> ## 🔴 **A metric SE(2) head trained EXCLUSIVELY on imagination-rollout pairs, as in TanitAD, has no published precedent in driving. We are not doing a known thing slightly wrong; we are doing an unattested thing. That deserves either a defence or a change — and §5's C1 is the cheapest defence available.**
 
 ---
 
@@ -419,6 +575,19 @@ does any of them report a decode-from-observed vs decode-from-imagined gap? -->
    **v4 has not been checked and must be before it inherits any of this** — that is X4, and it is free.
 9. **No experiment was run by this stream**, per `PRE_REGISTRATION.md` §5. Every number here is read from a
    committed artifact or the source code.
+10. ⚠️ **§7 and §8 are DELEGATED and therefore `INHERITED`.** Two parallel search agents produced them under
+    the same evidence discipline; I re-verified Valdi's identity myself and **failed** to reach I²-World's
+    table. Per `CLAUDE.md` rule 1 nothing in those sections may decide a GPU-day. Every delegated
+    verification tag — including the failures — is preserved in `CITATIONS.md` §F.
+11. ⚠️ **Three specific literature claims are UNVERIFIED AT SOURCE and are flagged where they appear:**
+    GraphCast's Fig. 30 **numeric values** (PDF over the fetch size limit; the sentences were confirmed
+    three ways, the magnitudes were not); **Bhansali (1997)**, which is the strongest pro-DMS theory claim
+    encountered and whose PDF would not render; and **GenAD's entire internals** (six independent retrieval
+    routes failed). ⛔ **Do not quote any of the three.**
+12. ⚠️ **The occupancy-family recon-vs-forecast gaps (2.0–3.9×) are NOT comparable to our 9.4×** — they are
+    measured across a **time gap** and confound decoder off-distribution error with genuine future
+    uncertainty. Ours is measured at a **matched timestep**. The report says this three times because the
+    numbers are superficially similar and will otherwise be equated.
 
 ---
 
@@ -429,6 +598,8 @@ does any of them report a decode-from-observed vs decode-from-imagined gap? -->
 | **A1** | The pre-registration framed F4 as *"a zero-GPU probe on our own checkpoint"*. It turned out to need **no probe at all** — the quantity is already logged 620× per run as `g_op_mid_de_m`. | Strictly cheaper and strictly more direct than what was registered. It cannot bias the direction: the statistic was written to disk by the trainer months before this stream existed and was not chosen after seeing a result. |
 | **A2** | The no-speed **attributing ablation** (§2.3) was not in the pre-registration. | It was found while verifying A1 across arms, **before** any fix ranking was written. It is a *mechanism* result, not one of the four falsifiers, and no falsifier's verdict depends on it. ⚠️ It is the one place a comparison was constructed after the fact and the reader should discount it until X2 confirms it surgically. |
 | **A3** | §6 grew from "the cheapest experiment" (singular, as briefed) to five, with one named as the answer if only one runs. | The brief asked for the cheapest confirming experiment; four of the five are free or near-free and pruning them would have hidden cheap information. §6.1 gives the singular answer the brief asked for. |
+| **A4** | **Candidates C8 (horizon-banked readout selection) and C9 (the LAW/Epona pattern) were added to §5 AFTER the §7 and §8 surveys returned**, and C8 was ranked above several pre-existing candidates. | ⚠️ **This is a ranking changed by evidence arriving mid-stream, and the reader should see it as such.** C8 is not a new mechanism — it is the pre-existing horizon lever (C2) given a **better shape** by four independent published systems. It could not have been proposed before the survey because the *bank* framing is the survey's contribution. It cannot bias the report's central finding (§2/F4), which was complete before either survey returned and does not depend on any literature. |
+| **A5** | §7 and §8 were produced by **two delegated parallel search agents**, not by me directly. | ⚠️ Declared rather than laundered. I re-verified the two most load-bearing identifiers myself (Valdi's identity/authors/environment; and I attempted and **failed** to reach I²-World's table). Per `CLAUDE.md` rule 1 the relayed material is **`INHERITED`** and **must not decide a GPU-day**; it is used here to *frame* and *rank*, never to justify. Every delegated verification tag is preserved verbatim in `CITATIONS.md` §F. |
 
 ---
 

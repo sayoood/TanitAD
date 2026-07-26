@@ -117,33 +117,40 @@ a map + reactive agents, i.e. a renderer, and every renderer we have sits at ~3.
 
 ### 5.1 The open-loop bake-off — settled, and the top of the table is a three-way tie
 All numbers: TanitEval, physicalai val (`physicalai-val-0c5f7dac3b11`), **881 windows / 40 episodes**.
-⚠️ The `±` column is the **deprecated** `overlapping_holdout_se` (1.28–2.06× too narrow); the
-`[bootstrap]` figures are the decision-grade episode-cluster bootstrap. Provenance:
-[`MODEL_REGISTRY.md §6`](MODEL_REGISTRY.md).
+⚠️ The `±` column is the **deprecated** `overlapping_holdout_se`. Updated 2026-07-26: it is
+**1.107–3.100× too narrow, median 1.499×** over 27 arms (the old "1.28–2.06×" was under-sampled at 10),
+**and its `mean` is a split-mean that shifts the point estimate −6.67 % to +11.69 %, bidirectionally.**
+Read the `full-set / bootstrap` column; the `±` column is retained only for traceability. Provenance:
+[`MODEL_REGISTRY.md §6`](MODEL_REGISTRY.md) (re-emitted 2026-07-26 — **the ranking moves in 10 of 27
+positions**, and the two REF-C rows below are swapped relative to the legacy order for that reason).
 
-| Arm | Step | Params | ADE@2s (heldout ± legacy SE) | full-set / bootstrap | Beats CV 0.825? |
-|---|---:|---:|---:|---|:--:|
-| **1= Flagship v1 (4-brain WM, trained ViT) — DEPLOYED** | 29 999 | 263.4 M | **0.4522 ± 0.0312** | 0.4271 · [0.3675, 0.4871] | ✅ |
-| **1= REF-C-base** (anchored diffusion) | 29 999 | **104.2 M** | **0.4523 ± 0.0497** | 0.4728 · [0.3835, 0.5699] | ✅ |
-| **1= REF-C-XL** (anchored diffusion) | 29 999 | 251.9 M | **0.458 ± 0.057** | 0.4714 · [0.3896, 0.5556] | ✅ |
-| *best-of-3 kinematic floor 0.5005 · CTRV oracle 0.523 · no-vision ego ceiling 0.5735* | | | | | |
-| REF-C-small (separated 3rd rung) | 29 999 | 54.7 M | 0.5007 ± 0.0671 | 0.5261 | ✅ |
-| **REF-B v2** (BC + time-anchored decoder) | 29 999 | 271.6 M | 0.5921 ± 0.0685 | — | ✅ |
-| Flagship v1, 19 k relay | 19 000 | 263.4 M | 0.6277 ± 0.0551 | 0.6152 | ✅ |
-| **Constant velocity (the floor)** | — | 0 | **0.8248** | 0.8377 | — |
-| P2 CEM planner over frozen v1 | n/a | 0 trained | 0.893 ± 0.114 | — | ✗ |
-| REF-A DINOv2 4B (frozen encoder) | 29 999 | — | 2.1322 ± 0.1821 | 2.1675 | ✗ |
-| Flagship **no-speed** (ablation control) | ~22 000 | 263.4 M | 2.9176 ± 0.3558 | 3.0175 | ✗ |
-| REF-A dyn-in 4B (frozen, every remedy applied) | 29 999 | — | 2.9196 ± 0.3937 | 3.047 | ✗ |
-| Flagship v1 **tactical head** (not the rollout) | 29 999 | — | 3.38 | — | ✗ |
-| Flagship v2 (killed) / v3enc 10 k (RESTART) | 6 k / 10 k | 272.9 M | 6.179 ± 1.28 / 1.9654 [1.656, 2.286] | — | ✗ |
+| Arm | Step | Params | full-set mean · [episode-cluster bootstrap] | `legacy_split_mean ±` (DEPRECATED) | Beats CV (full-set 0.8377)? |
+|---|---:|---:|---|---:|:--:|
+| **1= Flagship v1 (4-brain WM, trained ViT) — DEPLOYED** | 29 999 | 263.4 M | **0.4271** · [0.3675, 0.4871] | *0.4522 ± 0.0312* | ✅ |
+| **1= REF-C-XL** (anchored diffusion) | 29 999 | 251.9 M | **0.4714** · [0.3896, 0.5556] | *0.4577 ± 0.0572* | ✅ |
+| **1= REF-C-base** (anchored diffusion) | 29 999 | **104.2 M** | **0.4728** · [0.3835, 0.5699] | *0.4523 ± 0.0497* | ✅ |
+| *best-of-3 kinematic floor 0.5005 · CTRV oracle 0.523 · no-vision ego ceiling 0.5735 — **all full-set means by construction**, so the legacy column never applied to them* | | | | | |
+| REF-C-small (separated 3rd rung) | 29 999 | 54.7 M | 0.5261 · [0.4295, 0.6262] | *0.5007 ± 0.0671* | ✅ |
+| **REF-B v2** (BC + time-anchored decoder) | 29 999 | 271.6 M | 0.5913 · [0.4766, 0.7131] | *0.5921 ± 0.0685* | ✅ |
+| Flagship v1, 19 k relay | 19 000 | 263.4 M | 0.6152 · [0.5422, 0.6951] | *0.6277 ± 0.0551* | ✅ |
+| REF-B speed | 10 000 | 262.8 M | 0.8372 · [0.6753, 1.0218] | *0.8255 ± 0.0992* | ⚠️ **TIE** (was ✗ — flipped under the correction, paired test not separated) |
+| **Constant velocity (the floor)** | — | 0 | **0.8377** | *0.8248* | — |
+| P2 CEM planner over frozen v1 | n/a | 0 trained | 🟥 not recomputable (no raw JSON, no windows dump) | *0.893 ± 0.114* | ✗ |
+| Flagship **v3enc** 10 k (RESTART) | 10 000 | 272.9 M | 1.9654 · [1.6556, 2.2859] | *2.1072 ± 0.2020* | ✗ |
+| REF-A DINOv2 4B (frozen encoder) | 29 999 | — | 2.1675 · [1.9081, 2.4212] | *2.1322 ± 0.1821* | ✗ |
+| Flagship **no-speed** (ablation control) | ~22 000 | 263.4 M | 3.0175 · [2.5450, 3.5444] | *2.9176 ± 0.3558* | ✗ |
+| REF-A dyn-in 4B (frozen, every remedy applied) | 29 999 | — | 3.0471 · [2.4984, 3.6878] | *2.9196 ± 0.3937* | ✗ |
+| Flagship v1 **tactical head** (not the rollout) | 29 999 | — | 🟥 no windows dump | *3.38* | ✗ |
+| Flagship v2 (killed) | 6 000 | 272.9 M | 5.9396 · [4.3273, 7.6249] | *6.179 ± 1.2845* | ✗ |
 
 **Three readings.** (1) Every **trained-encoder** arm sits above CV; both **frozen-encoder** arms sit far
 below — H4 in one table. (2) **Rank 1 is a genuine three-way tie no paired test can order** (base − XL
 Δ +0.0013 [−0.0281, +0.0316]) — held by a 263 M world model, a 252 M diffusion arm **and a 104 M
 diffusion arm**, so *scale bought nothing above 104 M on this corpus*. (3) The flagship's own supervised
-**tactical head is worse than CV** (3.38 m) while the same model's operative rollout is 0.452 m — the
-head is a lossy readout of a good world model.
+**tactical head is worse than CV** (3.38 m) while the same model's operative rollout is **0.4271 m**
+(legacy split-mean 0.452) — the head is a lossy readout of a good world model. ⚠️ Both sides of that
+comparison are still legacy statistics (no windows dump for the head); the ratio is far too large for the
+≤ 11.7 % bias to touch, but neither scalar is decision-grade on its own.
 
 ### 5.2 What moved the program this round
 

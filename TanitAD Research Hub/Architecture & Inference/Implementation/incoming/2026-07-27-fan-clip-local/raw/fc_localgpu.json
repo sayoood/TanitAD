@@ -14,8 +14,8 @@
   "_method": "batch size pushed until torch.cuda.OutOfMemoryError; the largest batch that COMPLETED is reported with its peak allocated bytes. Eager only -- no torch.compile (no Triton on Windows).",
   "_parity": "no corpus, no checkpoint, no pod. Modules are built from `stack/tanitad` source at their committed default configs.",
   "S1_raw_fp32_matmul_8192": {
-    "tflops": 7.6,
-    "ms": 144.64,
+    "tflops": 7.66,
+    "ms": 143.55,
     "peak_gib": 1.008
   },
   "S2_largest_single_fp32_alloc_gib": 7.5,
@@ -49,34 +49,165 @@
     }
   },
   "S4_world_model": {
-    "total_params": 3540773,
-    "encoder_params": 1206400,
-    "predictor_params": 1272576,
-    "image_size": 64,
-    "window": 6,
-    "encode_no_grad": {
-      "label": "ViT encode, no_grad (windows of 8 frames)",
-      "max_batch_that_fit": null,
-      "peak_gib_at_max": null,
-      "ms_at_max": null,
-      "rows": [
-        {
-          "batch": 1,
-          "error": "RuntimeError: Given groups=1, weight of size [128, 1, 8, 8], expected input[6, 3, 64, 64] to have 1 channels, but got 3 channels instead"
-        }
-      ]
+    "flagship4b (the canonical 286 M stack)": {
+      "total_params": 263440533,
+      "encoder_params": 87022848,
+      "predictor_params": 91360512,
+      "image_size": 256,
+      "in_channels": 9,
+      "window": 8,
+      "weights_only_peak_gib": 0.998,
+      "encode_no_grad": {
+        "label": "ViT encode, no_grad (window of frames)",
+        "max_batch_that_fit": 32,
+        "peak_gib_at_max": 3.81,
+        "ms_at_max": 2050.8,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 1.086,
+            "ms": 132.0
+          },
+          {
+            "batch": 2,
+            "peak_gib": 1.174,
+            "ms": 124.4
+          },
+          {
+            "batch": 4,
+            "peak_gib": 1.35,
+            "ms": 245.3
+          },
+          {
+            "batch": 8,
+            "peak_gib": 1.701,
+            "ms": 493.5
+          },
+          {
+            "batch": 16,
+            "peak_gib": 2.404,
+            "ms": 983.3
+          },
+          {
+            "batch": 32,
+            "peak_gib": 3.81,
+            "ms": 2050.8
+          }
+        ]
+      },
+      "encoder_fwd_bwd": {
+        "label": "encoder fwd+bwd (full-model training)",
+        "max_batch_that_fit": 16,
+        "peak_gib_at_max": 21.358,
+        "ms_at_max": 48509.7,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 2.276,
+            "ms": 212.2
+          },
+          {
+            "batch": 2,
+            "peak_gib": 3.86,
+            "ms": 377.8
+          },
+          {
+            "batch": 4,
+            "peak_gib": 6.359,
+            "ms": 760.1
+          },
+          {
+            "batch": 8,
+            "peak_gib": 11.357,
+            "ms": 15748.9
+          },
+          {
+            "batch": 16,
+            "peak_gib": 21.358,
+            "ms": 48509.7
+          }
+        ]
+      }
     },
-    "encoder_fwd_bwd": {
-      "label": "encoder fwd+bwd (full-model training)",
-      "max_batch_that_fit": null,
-      "peak_gib_at_max": null,
-      "ms_at_max": null,
-      "rows": [
-        {
-          "batch": 1,
-          "error": "RuntimeError: Given groups=1, weight of size [128, 1, 8, 8], expected input[6, 3, 64, 64] to have 1 channels, but got 3 channels instead"
-        }
-      ]
+    "flagship4b_reduced (the ~65 M pre-check rig)": {
+      "total_params": 53016981,
+      "encoder_params": 15179904,
+      "predictor_params": 16611456,
+      "image_size": 256,
+      "in_channels": 9,
+      "window": 8,
+      "weights_only_peak_gib": 0.216,
+      "encode_no_grad": {
+        "label": "ViT encode, no_grad (window of frames)",
+        "max_batch_that_fit": 32,
+        "peak_gib_at_max": 1.904,
+        "ms_at_max": 467.0,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 0.27,
+            "ms": 51.7
+          },
+          {
+            "batch": 2,
+            "peak_gib": 0.322,
+            "ms": 55.1
+          },
+          {
+            "batch": 4,
+            "peak_gib": 0.427,
+            "ms": 93.8
+          },
+          {
+            "batch": 8,
+            "peak_gib": 0.638,
+            "ms": 116.4
+          },
+          {
+            "batch": 16,
+            "peak_gib": 1.06,
+            "ms": 232.0
+          },
+          {
+            "batch": 32,
+            "peak_gib": 1.904,
+            "ms": 467.0
+          }
+        ]
+      },
+      "encoder_fwd_bwd": {
+        "label": "encoder fwd+bwd (full-model training)",
+        "max_batch_that_fit": 16,
+        "peak_gib_at_max": 7.249,
+        "ms_at_max": 3768.8,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 0.661,
+            "ms": 41.6
+          },
+          {
+            "batch": 2,
+            "peak_gib": 1.164,
+            "ms": 85.9
+          },
+          {
+            "batch": 4,
+            "peak_gib": 2.038,
+            "ms": 180.1
+          },
+          {
+            "batch": 8,
+            "peak_gib": 3.775,
+            "ms": 365.2
+          },
+          {
+            "batch": 16,
+            "peak_gib": 7.249,
+            "ms": 3768.8
+          }
+        ]
+      }
     }
   },
   "S5_adamw_param_state_only": {
@@ -84,19 +215,19 @@
     "rows": {
       "50.00M": {
         "fits": true,
-        "peak_gib": 0.953
+        "peak_gib": 0.948
       },
       "100.00M": {
         "fits": true,
-        "peak_gib": 1.887
+        "peak_gib": 1.882
       },
       "200.00M": {
         "fits": true,
-        "peak_gib": 3.747
+        "peak_gib": 3.742
       },
       "286.34M": {
         "fits": true,
-        "peak_gib": 5.356
+        "peak_gib": 5.35
       }
     }
   },
