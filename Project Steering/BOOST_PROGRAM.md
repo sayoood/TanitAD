@@ -418,3 +418,99 @@ cost.** Binding:
 2. **A result is done when it is USED or explicitly SHELVED WITH A REASON**, not when it is measured.
    The "finish before you start" rule, applied to findings rather than artifacts.
 3. **The harvest index is re-run and diffed**, so new stranding surfaces in days, not weeks.
+
+---
+
+## 8. SCORECARD + SIX NEW MEASURES EARNED 2026-07-26
+
+**M1–M7 were written this morning from yesterday's failures. A day of measurement has now tested them
+and earned six more.** Each new measure below is attached to the specific finding that produced it —
+a measure with no failure behind it is a preference, not a rule.
+
+### 8.1 How M1–M7 actually performed — scored, not asserted
+
+| measure | verdict | evidence from today |
+|---|---|---|
+| **M1** tiers | ✅ **working** | The YouTube driver printed `VERDICT WIN`; it was held at **PROVISIONAL** and not relayed, because the floor arm had a **negative R²** and no pretraining control existed. Agents now state tiers unprompted, and one **capped its own capability claim** while its number was DECISION-GRADE. |
+| **M2** no unverified premise in briefs | 🔴 **FAILING — AT MY LAYER** | **Four brief errors today, all mine:** `~0.452` as a v1 reference (it is the **deprecated `heldout` split-mean** — caught independently by **two** agents) · relaying **2.4×–8.6×** without its **oracle surface** · a wrong Python version · a stale pod2 state. M2 binds briefs; **I am the leak.** |
+| **M3** certify instruments | ✅ **working, and it caught me** | A guard test refused my `CORRIDOR_GRID_M` edit because that tuple is **pinned to E1a's committed artifact**. Agents now ship deliberately-failing-input tests as standard. |
+| **M4** mid-run gates | ✅ implemented | The four discarded selection diagnostics now reach the row-writer. |
+| **M5** concentration | ⛔ overruled by the PI → replaced by a raised per-stream bar | breadth retained; M1/M2 carry the load |
+| **M6** closed-loop measurability | ✅ **answered — negatively, and permanently** | No admissible horizon is a measurement; the 12° edge was **never measured** (C14). |
+| **M7** harvest | ✅ **paid immediately** | It produced the control re-adjudication, which found **4 of 12 controls flipping "passed" → "FAILED"**. |
+
+⇒ **The one measure that is failing is failing at me, not at the agents.** That is the most useful
+line in this scorecard.
+
+### 8.2 M8 — every guard states its MDE against the effect it exists to catch, and proves it can fail
+
+*Earned by:* the control re-adjudication. One control had **MDE 0.1985 QWK against a real leak of
++0.0711 — 2.8× too blunt to see what it existed to catch.** Another, `firewall.H`, had **MDE 0.5555
+against a maximum physically possible effect of 0.2500 — 222 %: a blind head at 100 % accuracy would
+still have read "not separated."**
+
+> **A control whose MDE exceeds the effect it screens for did not pass. It was never run.**
+
+**Binding:** no guard, firewall, control or gate may be cited without its MDE *and* a statement of
+what value would make it fail. This is C13 generalised from saturation to **power**.
+
+### 8.3 M9 — a null-sweep cannot find the evidence that overturns a null
+
+*Earned by:* the S3 firewall, whose answer sat **one JSON key away**. The file carries both
+`.non_parity` (n=73, the null) and `.parity` (n=520) — and a sweep for `separated: false` **reaches
+the first and can never reach the second, because it is `separated: true`.**
+
+> **The evidence that overturns a null does not itself look like a null.**
+
+**Binding:** when adjudicating a null, read **the whole artifact**, not the matching node. The harvest
+missed **61 of 75** control rows this way, including the highest-proximity firewall row in the
+program — *inside a file it had already read*.
+
+### 8.4 M10 — the NUMBER's tier and the CAPABILITY claim's tier are separate
+
+*Earned by:* Rung 0. `T_blind` **0.8 s → 2.5 s** was DECISION-GRADE — matched 599-window arms,
+anchors reproducing to **3.05e-05 m**. But `beats-CV` stayed **0/185** and `T_useful@1m` stayed
+**1.4 s**, so the agent **capped its own capability claim at PROVISIONAL** while publishing the
+number at DECISION-GRADE.
+
+**Binding:** a metric improving is not a capability existing. State both tiers, or state neither.
+
+### 8.5 M11 — a promoted candidate carries no verified attributes, only a verified defect
+
+*Earned by:* **ZOD**, which I recommended to the PI and he approved. It had been rejected earlier
+**for access**; I promoted it **for its licence** — and never checked its **contents**. It has **no
+lane graph at all**: 2-D image-space polylines, no topology field, confirmed at four probes.
+
+**Binding:** when promoting a previously-rejected candidate, **re-derive its value from scratch.** The
+earlier rejection means nobody ever checked the properties beyond the one that killed it.
+
+### 8.6 M12 — a number crossing an agent boundary carries its surface, or it does not cross
+
+*Earned by:* **me, twice today.** I relayed *"information beats objective 2.4×–8.6×"* without stating
+it was the **goal-ORACLE surface** (and that **23 % of the move was the fan, not conditioning**), and
+I put **`~0.452`** — a **deprecated `heldout` split-mean** — into agent briefs as a v1 reference.
+
+**Binding:** every number I pass to the PI or into a brief carries **its surface, its estimator, and
+its deployability**. M2 binds brief authorship; **M12 binds relay**, which is where the leak actually is.
+
+### 8.7 M13 — one checkpoint, one canonical value per metric
+
+*Earned by:* Rung 1. A **decoder change on a bit-identical checkpoint** produced a second, equally
+correct `wm_canary_ade_2s` (**0.5446** vs the registry's **1.1409**). Both are right; they answer
+different questions.
+
+**Binding:** when a readout/decoder change yields a new value for a registered metric on unchanged
+weights, the registry records **which readout is canonical** *before* either number is quoted.
+Otherwise two correct values circulate for one checkpoint — and a gate can be passed by choosing.
+
+### 8.8 The pattern across C9 · C13 · C14 — name it once
+
+Three distinct retraction classes this week share one shape: **an instrument structurally incapable
+of reporting the answer it was cited for.**
+- **C9** — pointed at the wrong *horizon* (2 s instrument, 18 s failure);
+- **C13** — pointed at the right quantity but *saturating* below its own threshold;
+- **C14** — reporting *where we stopped looking* as *where the effect stopped*.
+
+**All three produce confident silence, and more data makes each one more confidently wrong.**
+**Standing question, before any instrument is cited: what value would make this FAIL, and can this
+instrument physically produce it?** M8 makes that question mandatory rather than cultural.

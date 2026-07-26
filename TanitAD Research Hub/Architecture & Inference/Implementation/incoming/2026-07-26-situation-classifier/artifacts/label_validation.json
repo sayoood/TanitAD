@@ -1,0 +1,229 @@
+{
+  "V1_lane_change_heading_gate": {
+    "note": "the sibling stream MEASURED a x89 collapse (9.51 % -> 0.107 %) over 10->1 deg on a NAIVE candidate set; the collapse ratio for OUR definition is reported here",
+    "operating_gate_deg": 8.0,
+    "curve": {
+      "with_S_shape": {
+        "1": {
+          "events": 43,
+          "clips": 42,
+          "clip_rate": 0.05483,
+          "median_lateral_m": 3.099
+        },
+        "2": {
+          "events": 58,
+          "clips": 53,
+          "clip_rate": 0.06919,
+          "median_lateral_m": 3.477
+        },
+        "3": {
+          "events": 71,
+          "clips": 66,
+          "clip_rate": 0.08616,
+          "median_lateral_m": 3.526
+        },
+        "4": {
+          "events": 77,
+          "clips": 70,
+          "clip_rate": 0.09138,
+          "median_lateral_m": 3.757
+        },
+        "6": {
+          "events": 85,
+          "clips": 77,
+          "clip_rate": 0.10052,
+          "median_lateral_m": 4.014
+        },
+        "8": {
+          "events": 87,
+          "clips": 78,
+          "clip_rate": 0.10183,
+          "median_lateral_m": 4.581
+        },
+        "10": {
+          "events": 91,
+          "clips": 79,
+          "clip_rate": 0.10313,
+          "median_lateral_m": 4.617
+        },
+        "12": {
+          "events": 92,
+          "clips": 80,
+          "clip_rate": 0.10444,
+          "median_lateral_m": 4.622
+        }
+      },
+      "without_S_shape": {
+        "1": {
+          "events": 51,
+          "clips": 50,
+          "clip_rate": 0.06527,
+          "median_lateral_m": 2.94
+        },
+        "2": {
+          "events": 128,
+          "clips": 111,
+          "clip_rate": 0.14491,
+          "median_lateral_m": 3.288
+        },
+        "3": {
+          "events": 230,
+          "clips": 193,
+          "clip_rate": 0.25196,
+          "median_lateral_m": 4.083
+        },
+        "4": {
+          "events": 294,
+          "clips": 242,
+          "clip_rate": 0.31593,
+          "median_lateral_m": 4.589
+        },
+        "6": {
+          "events": 368,
+          "clips": 298,
+          "clip_rate": 0.38903,
+          "median_lateral_m": 5.417
+        },
+        "8": {
+          "events": 400,
+          "clips": 316,
+          "clip_rate": 0.41253,
+          "median_lateral_m": 5.848
+        },
+        "10": {
+          "events": 425,
+          "clips": 329,
+          "clip_rate": 0.4295,
+          "median_lateral_m": 6.118
+        },
+        "12": {
+          "events": 432,
+          "clips": 340,
+          "clip_rate": 0.44386,
+          "median_lateral_m": 6.357
+        }
+      }
+    },
+    "collapse_ratio_10_to_1_with_S_shape": 1.88,
+    "collapse_ratio_10_to_1_without_S_shape": 6.58,
+    "S_shape_rejection_at_operating_gate": 0.7825,
+    "lateral_offset_at_operating_gate_m": {
+      "median_m": 4.581,
+      "p10_m": 2.707,
+      "p90_m": 5.618
+    }
+  },
+  "V2_roundabout": {
+    "left_hand_traffic_clips": 0,
+    "why": "0 left-hand-traffic clips in the selection -> a TRUE roundabout label must be ~100 % ccw",
+    "ccw_purity": {
+      "TRAIN": {
+        "n": 17,
+        "ccw_frac": 0.8824
+      },
+      "HELDOUT": {
+        "n": 34,
+        "ccw_frac": 0.8235
+      }
+    },
+    "ccw_purity_core": {
+      "TRAIN": {
+        "n": 37,
+        "ccw_frac": 0.6757
+      },
+      "HELDOUT": {
+        "n": 100,
+        "ccw_frac": 0.68
+      }
+    },
+    "max_same_sign_sweep_deg_any_radius": 282.1,
+    "max_same_sign_sweep_deg_radius_le_50m": 282.1,
+    "sibling_claim_INHERITED": "0 of 2482 clips reach a 270 deg sweep; corpus maximum 252 deg"
+  },
+  "V3_turn_direction_balance": {
+    "TRAIN": {
+      "n": 125,
+      "left_frac": 0.544
+    },
+    "HELDOUT": {
+      "n": 312,
+      "left_frac": 0.5385
+    }
+  },
+  "V3_note": "a junction-turn population must be ~50/50; a curve-following artefact would not be",
+  "V4_turn_is_junction": {
+    "P_cross_given_TURN": 0.0803,
+    "P_cross_given_LARGE_RADIUS_CURVE": 0.03326,
+    "n_turn_frames": 2939,
+    "n_curve_frames": 3428,
+    "ratio": 2.415,
+    "ci95": [
+      1.057,
+      7.931
+    ],
+    "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws, B=2000)",
+    "separated_from_1": true
+  },
+  "V5_profiles": {
+    "lane_change": {
+      "n": 272,
+      "p10_dur_s": 4.1,
+      "p50_dur_s": 4.5,
+      "p90_dur_s": 5.49,
+      "p10_dpsi_deg": 0.635,
+      "p50_dpsi_deg": 3.189,
+      "p90_dpsi_deg": 6.184,
+      "p10_speed_ms": 8.542,
+      "p50_speed_ms": 12.009,
+      "p90_speed_ms": 20.288,
+      "p10_radius_m": 109.501,
+      "p50_radius_m": 318.037,
+      "p90_radius_m": 880.492
+    },
+    "roundabout": {
+      "n": 51,
+      "p10_dur_s": 4.5,
+      "p50_dur_s": 6.6,
+      "p90_dur_s": 10.0,
+      "p10_dpsi_deg": 91.594,
+      "p50_dpsi_deg": 115.626,
+      "p90_dpsi_deg": 200.449,
+      "p10_speed_ms": 3.341,
+      "p50_speed_ms": 5.427,
+      "p90_speed_ms": 7.864,
+      "p10_radius_m": 7.99,
+      "p50_radius_m": 14.464,
+      "p90_radius_m": 24.718
+    },
+    "turn": {
+      "n": 420,
+      "p10_dur_s": 3.29,
+      "p50_dur_s": 4.4,
+      "p90_dur_s": 5.5,
+      "p10_dpsi_deg": 54.24,
+      "p50_dpsi_deg": 79.67,
+      "p90_dpsi_deg": 92.996,
+      "p10_speed_ms": 2.72,
+      "p50_speed_ms": 4.537,
+      "p90_speed_ms": 6.656,
+      "p10_radius_m": 8.365,
+      "p50_radius_m": 13.354,
+      "p90_radius_m": 20.971
+    },
+    "curve_control": {
+      "n": 180,
+      "p10_dur_s": 5.79,
+      "p50_dur_s": 8.6,
+      "p90_dur_s": 12.62,
+      "p10_dpsi_deg": 48.236,
+      "p50_dpsi_deg": 68.029,
+      "p90_dpsi_deg": 103.341,
+      "p10_speed_ms": 4.595,
+      "p50_speed_ms": 8.908,
+      "p90_speed_ms": 14.437,
+      "p10_radius_m": 44.24,
+      "p50_radius_m": 65.051,
+      "p90_radius_m": 127.63
+    }
+  }
+}

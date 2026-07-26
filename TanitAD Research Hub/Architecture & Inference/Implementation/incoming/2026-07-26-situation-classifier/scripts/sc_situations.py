@@ -44,7 +44,11 @@ RB_DPSI_MIN = 90.0           # deg   substantial arc
 RB_CV_MAX = 0.5              # -     std(kappa)/mean|kappa|  (the CONSTANCY half)
 RB_V_LO, RB_V_HI = 2.0, 14.0  # m/s  lower speed
 RB_BRACKET_S = 3.0           # s     window before/after in which the entry/exit deflection is sought
-RB_BRACKET_DEG = 8.0         # deg   opposite-sign deflection bracketing the circulating arc
+RB_BRACKET_DEG = 3.0         # deg   opposite-sign deflection on AT LEAST ONE side (entry OR exit)
+# ^ RB_* selected on TRAIN chunks only by the rule "maximise events subject to DEV
+#   counter-clockwise purity >= 0.90" (PRE_REGISTRATION Sec 2.2). The corpus contains ZERO
+#   left-hand-traffic clips (MEASURED), so a true roundabout label must be ~100 % ccw.
+#   Selected point: 22 DEV events at 0.909 ccw. Sweep: artifacts/round_sweep.json.
 
 # --- intersection (turn half)
 IX_DPSI_LO, IX_DPSI_HI = 45.0, 135.0   # deg  a quantised quarter-turn
@@ -102,16 +106,22 @@ def _runs(mask: np.ndarray) -> list[tuple[int, int]]:
     return [(int(a), int(b)) for a, b in zip(starts, ends)]
 
 
-def curvature_runs(K: dict) -> list[tuple[int, int, int]]:
+def curvature_runs(K: dict, kappa_min: float = RB_KAPPA_MIN) -> list[tuple[int, int, int]]:
     """Maximal same-sign, above-deadband curvature runs -> (a, b, sign).
 
     A dropout below the deadband shorter than RB_GAP_S does not break a run (a roundabout has a
-    brief straightening between entry and circulation)."""
+    brief straightening between entry and circulation).
+
+    ⚠️ `kappa_min` is a parameter because the DEFAULT deadband (R <= 50 m) makes a LARGE-RADIUS road
+    curve invisible — with it, `detect_curves` returned **3 events on the whole corpus** and the
+    Sec 6.2 control population was empty by construction. A control that cannot be populated is the
+    C13 failure mode (a guard that cannot fire), so the curve population uses its own, lower
+    deadband; the roundabout and turn detectors are untouched."""
     kap = K["kappa"]
     out = []
     gap = int(round(RB_GAP_S * HZ))
     for s in (+1, -1):
-        m = (np.sign(kap) == s) & (np.abs(kap) >= RB_KAPPA_MIN)
+        m = (np.sign(kap) == s) & (np.abs(kap) >= kappa_min)
         # close short gaps
         segs = _runs(m)
         merged = []
@@ -196,11 +206,12 @@ def detect_roundabout(K: dict, bracket: bool = True) -> list[tuple[int, int]]:
         if not (RB_V_LO <= vm <= RB_V_HI):
             continue
         if bracket:
-            pre = np.degrees(psi[a] - psi[max(0, a - nb)])
-            post = np.degrees(psi[min(len(psi) - 1, b + nb)] - psi[b])
-            if not (np.sign(pre) == -s and abs(pre) >= RB_BRACKET_DEG):
-                continue
-            if not (np.sign(post) == -s and abs(post) >= RB_BRACKET_DEG):
+            # entry/exit deflection: OPPOSITE-sign heading change on AT LEAST ONE side.
+            # (-s * d) is the opposite-sign magnitude, so >= RB_BRACKET_DEG encodes both the
+            # sign test and the magnitude test in one expression.
+            pre = -s * np.degrees(psi[a] - psi[max(0, a - nb)])
+            post = -s * np.degrees(psi[min(len(psi) - 1, b + nb)] - psi[b])
+            if max(pre, post) < RB_BRACKET_DEG:
                 continue
         out.append((a, b))
     return _merge(out)
@@ -223,6 +234,25 @@ def detect_turns(K: dict) -> list[tuple[int, int]]:
         if not len(seg) or (1.0 / np.median(seg)) > IX_R_MAX:
             continue
         if v[a:b + 1].mean() < IX_V_MIN:
+            continue
+        out.append((a, b))
+    return _merge(out)
+
+
+def detect_curves(K: dict, r_min: float = 40.0) -> list[tuple[int, int]]:
+    """⭐ The CONTROL population for PRE_REGISTRATION Sec 6.2: road curves with the SAME heading
+    change as a junction turn but a LARGE radius. If `detect_turns` is really a junction detector
+    and not a curve detector, perpendicular cross traffic must be far more common on turns than
+    here — and that is a measurement, not an argument."""
+    psi, kap = K["psi"], K["kappa"]
+    out = []
+    for a, b, _s in curvature_runs(K, kappa_min=1.0 / 400.0):     # R <= 400 m, so curves exist
+        dpsi = abs(np.degrees(psi[b] - psi[a]))
+        if not (IX_DPSI_LO <= dpsi <= IX_DPSI_HI):
+            continue
+        seg = np.abs(kap[a:b + 1])
+        seg = seg[seg > 0]
+        if not len(seg) or (1.0 / np.median(seg)) <= r_min:
             continue
         out.append((a, b))
     return _merge(out)

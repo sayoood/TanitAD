@@ -1,0 +1,1682 @@
+{
+  "n_clips": 2376,
+  "lead_s": 3.0,
+  "min_useful_lead_s": 1.0,
+  "split_rule": "sorted(chunks)[j] -> TRAIN iff j mod 3 == 0",
+  "n_chunks": 197,
+  "n_chunks_train": 66,
+  "per_side": {
+    "TRAIN": {
+      "clips": 766,
+      "chunks": 66,
+      "frames": 152384,
+      "encoder_seen": 766
+    },
+    "HELDOUT": {
+      "clips": 1610,
+      "chunks": 131,
+      "frames": 320243,
+      "encoder_seen": 1610
+    }
+  },
+  "per_situation": {
+    "lane_change": {
+      "TRAIN": {
+        "events": 87,
+        "event_clips": 78,
+        "pos_frames": 2127,
+        "valid_frames": 125640,
+        "base_rate": 0.016929,
+        "pos_clips": 77
+      },
+      "HELDOUT": {
+        "events": 185,
+        "event_clips": 165,
+        "pos_frames": 4599,
+        "valid_frames": 264023,
+        "base_rate": 0.017419,
+        "pos_clips": 158
+      }
+    },
+    "roundabout": {
+      "TRAIN": {
+        "events": 17,
+        "event_clips": 17,
+        "pos_frames": 440,
+        "valid_frames": 128278,
+        "base_rate": 0.00343,
+        "pos_clips": 15
+      },
+      "HELDOUT": {
+        "events": 34,
+        "event_clips": 33,
+        "pos_frames": 747,
+        "valid_frames": 269755,
+        "base_rate": 0.002769,
+        "pos_clips": 27
+      }
+    },
+    "intersection": {
+      "TRAIN": {
+        "events": 120,
+        "event_clips": 113,
+        "pos_frames": 3032,
+        "valid_frames": 124521,
+        "base_rate": 0.024349,
+        "pos_clips": 105
+      },
+      "HELDOUT": {
+        "events": 300,
+        "event_clips": 288,
+        "pos_frames": 7813,
+        "valid_frames": 260579,
+        "base_rate": 0.029983,
+        "pos_clips": 269
+      }
+    }
+  },
+  "roundabout_ccw_purity": {
+    "TRAIN": {
+      "n": 17,
+      "ccw_frac": 0.8824
+    },
+    "HELDOUT_OUT_OF_SAMPLE": {
+      "n": 33,
+      "ccw_frac": 0.8182
+    },
+    "core_TRAIN": {
+      "n": 37,
+      "ccw_frac": 0.6757
+    },
+    "core_HELDOUT": {
+      "n": 99,
+      "ccw_frac": 0.6768
+    },
+    "note": "corpus has 0 left-hand-traffic clips -> a true roundabout label must be ~100% ccw"
+  },
+  "turn_ccw_balance_HELDOUT": 0.0,
+  "C_POW_min_clusters": 40,
+  "C_POW_verdict": {
+    "lane_change": "OK",
+    "roundabout": "UNDERPOWERED",
+    "intersection": "OK"
+  },
+  "per_chunk": [
+    {
+      "chunk": "0036",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0113",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0139",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0140",
+      "side": "TRAIN",
+      "clips": 14,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0144",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0154",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0160",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 79
+    },
+    {
+      "chunk": "0163",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0164",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0168",
+      "side": "TRAIN",
+      "clips": 17,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0169",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0170",
+      "side": "HELDOUT",
+      "clips": 32,
+      "pos_lane_change": 195,
+      "pos_roundabout": 0,
+      "pos_intersection": 246
+    },
+    {
+      "chunk": "0172",
+      "side": "TRAIN",
+      "clips": 4,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0173",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0174",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 107,
+      "pos_roundabout": 0,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "0175",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0180",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0181",
+      "side": "HELDOUT",
+      "clips": 34,
+      "pos_lane_change": 128,
+      "pos_roundabout": 0,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "0184",
+      "side": "TRAIN",
+      "clips": 22,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 88
+    },
+    {
+      "chunk": "0185",
+      "side": "HELDOUT",
+      "clips": 24,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 112
+    },
+    {
+      "chunk": "0382",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0413",
+      "side": "TRAIN",
+      "clips": 8,
+      "pos_lane_change": 62,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0438",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0533",
+      "side": "HELDOUT",
+      "clips": 4,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0586",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 25
+    },
+    {
+      "chunk": "0590",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0617",
+      "side": "HELDOUT",
+      "clips": 14,
+      "pos_lane_change": 52,
+      "pos_roundabout": 30,
+      "pos_intersection": 56
+    },
+    {
+      "chunk": "0639",
+      "side": "TRAIN",
+      "clips": 8,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0685",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 76
+    },
+    {
+      "chunk": "0692",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0694",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 79,
+      "pos_roundabout": 60,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0695",
+      "side": "HELDOUT",
+      "clips": 8,
+      "pos_lane_change": 67,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0700",
+      "side": "HELDOUT",
+      "clips": 4,
+      "pos_lane_change": 15,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0701",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0711",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0715",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 60,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0726",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 33,
+      "pos_roundabout": 60,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0730",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0733",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0740",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 67,
+      "pos_roundabout": 0,
+      "pos_intersection": 39
+    },
+    {
+      "chunk": "0751",
+      "side": "HELDOUT",
+      "clips": 4,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0758",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0761",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 39,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0764",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0767",
+      "side": "HELDOUT",
+      "clips": 4,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0768",
+      "side": "TRAIN",
+      "clips": 3,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0771",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 90,
+      "pos_roundabout": 0,
+      "pos_intersection": 131
+    },
+    {
+      "chunk": "0772",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 83,
+      "pos_roundabout": 30,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0775",
+      "side": "TRAIN",
+      "clips": 5,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 65
+    },
+    {
+      "chunk": "0779",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 74,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0780",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 96
+    },
+    {
+      "chunk": "0782",
+      "side": "TRAIN",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0783",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0786",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 103,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0789",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0790",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 31,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0792",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 114,
+      "pos_roundabout": 0,
+      "pos_intersection": 97
+    },
+    {
+      "chunk": "0796",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 134
+    },
+    {
+      "chunk": "0800",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 28,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0813",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 58
+    },
+    {
+      "chunk": "0823",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0826",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0830",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 54
+    },
+    {
+      "chunk": "0831",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0832",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0834",
+      "side": "HELDOUT",
+      "clips": 18,
+      "pos_lane_change": 60,
+      "pos_roundabout": 16,
+      "pos_intersection": 98
+    },
+    {
+      "chunk": "0838",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0840",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 60,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0842",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 30,
+      "pos_roundabout": 1,
+      "pos_intersection": 116
+    },
+    {
+      "chunk": "0845",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0846",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 128
+    },
+    {
+      "chunk": "0849",
+      "side": "HELDOUT",
+      "clips": 8,
+      "pos_lane_change": 65,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0850",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0852",
+      "side": "HELDOUT",
+      "clips": 14,
+      "pos_lane_change": 65,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0853",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 57,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0861",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "0868",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 180
+    },
+    {
+      "chunk": "0870",
+      "side": "HELDOUT",
+      "clips": 14,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0873",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 88
+    },
+    {
+      "chunk": "0877",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0878",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0882",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0884",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 150
+    },
+    {
+      "chunk": "0885",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0888",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0899",
+      "side": "HELDOUT",
+      "clips": 8,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0901",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 103
+    },
+    {
+      "chunk": "0902",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 90,
+      "pos_roundabout": 0,
+      "pos_intersection": 53
+    },
+    {
+      "chunk": "0906",
+      "side": "HELDOUT",
+      "clips": 19,
+      "pos_lane_change": 132,
+      "pos_roundabout": 60,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0909",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 101
+    },
+    {
+      "chunk": "0910",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0912",
+      "side": "HELDOUT",
+      "clips": 5,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0917",
+      "side": "HELDOUT",
+      "clips": 28,
+      "pos_lane_change": 120,
+      "pos_roundabout": 0,
+      "pos_intersection": 330
+    },
+    {
+      "chunk": "0919",
+      "side": "TRAIN",
+      "clips": 20,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 150
+    },
+    {
+      "chunk": "0921",
+      "side": "HELDOUT",
+      "clips": 20,
+      "pos_lane_change": 95,
+      "pos_roundabout": 0,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "0923",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 60,
+      "pos_roundabout": 30,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0925",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 171,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0927",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0928",
+      "side": "HELDOUT",
+      "clips": 22,
+      "pos_lane_change": 90,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "0929",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 46,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "0930",
+      "side": "HELDOUT",
+      "clips": 20,
+      "pos_lane_change": 60,
+      "pos_roundabout": 30,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "0931",
+      "side": "HELDOUT",
+      "clips": 20,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "0932",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "1565",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1573",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1780",
+      "side": "TRAIN",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1807",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1811",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 4,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1844",
+      "side": "TRAIN",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1846",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1850",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 150
+    },
+    {
+      "chunk": "1852",
+      "side": "TRAIN",
+      "clips": 21,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 49
+    },
+    {
+      "chunk": "1855",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 27
+    },
+    {
+      "chunk": "1856",
+      "side": "HELDOUT",
+      "clips": 5,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1859",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1860",
+      "side": "HELDOUT",
+      "clips": 24,
+      "pos_lane_change": 36,
+      "pos_roundabout": 0,
+      "pos_intersection": 24
+    },
+    {
+      "chunk": "1864",
+      "side": "HELDOUT",
+      "clips": 38,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "1867",
+      "side": "TRAIN",
+      "clips": 14,
+      "pos_lane_change": 33,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1870",
+      "side": "HELDOUT",
+      "clips": 22,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1879",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1880",
+      "side": "TRAIN",
+      "clips": 18,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 20
+    },
+    {
+      "chunk": "1881",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "1882",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1883",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1886",
+      "side": "HELDOUT",
+      "clips": 8,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "1887",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "1889",
+      "side": "TRAIN",
+      "clips": 17,
+      "pos_lane_change": 53,
+      "pos_roundabout": 0,
+      "pos_intersection": 137
+    },
+    {
+      "chunk": "1893",
+      "side": "HELDOUT",
+      "clips": 32,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 200
+    },
+    {
+      "chunk": "1894",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "1896",
+      "side": "TRAIN",
+      "clips": 17,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1898",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "1899",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "1900",
+      "side": "TRAIN",
+      "clips": 24,
+      "pos_lane_change": 146,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2385",
+      "side": "HELDOUT",
+      "clips": 5,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2433",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 80,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "2438",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2446",
+      "side": "HELDOUT",
+      "clips": 8,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2447",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 47
+    },
+    {
+      "chunk": "2449",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 23,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2453",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 87,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2456",
+      "side": "HELDOUT",
+      "clips": 4,
+      "pos_lane_change": 21,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2463",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 29,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2470",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 85
+    },
+    {
+      "chunk": "2471",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2476",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2482",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 13,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2484",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2485",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "2490",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 131,
+      "pos_roundabout": 30,
+      "pos_intersection": 69
+    },
+    {
+      "chunk": "2491",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 29,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2493",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2497",
+      "side": "HELDOUT",
+      "clips": 18,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2498",
+      "side": "HELDOUT",
+      "clips": 17,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 107
+    },
+    {
+      "chunk": "2500",
+      "side": "TRAIN",
+      "clips": 15,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "2501",
+      "side": "HELDOUT",
+      "clips": 16,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 150
+    },
+    {
+      "chunk": "2503",
+      "side": "HELDOUT",
+      "clips": 17,
+      "pos_lane_change": 42,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "2504",
+      "side": "TRAIN",
+      "clips": 8,
+      "pos_lane_change": 30,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2506",
+      "side": "HELDOUT",
+      "clips": 17,
+      "pos_lane_change": 48,
+      "pos_roundabout": 30,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "2507",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2509",
+      "side": "TRAIN",
+      "clips": 11,
+      "pos_lane_change": 113,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2510",
+      "side": "HELDOUT",
+      "clips": 11,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 32
+    },
+    {
+      "chunk": "2511",
+      "side": "HELDOUT",
+      "clips": 17,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2514",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 80
+    },
+    {
+      "chunk": "2516",
+      "side": "HELDOUT",
+      "clips": 15,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2792",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 12,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2802",
+      "side": "TRAIN",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2813",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2818",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 60,
+      "pos_roundabout": 0,
+      "pos_intersection": 95
+    },
+    {
+      "chunk": "2820",
+      "side": "TRAIN",
+      "clips": 13,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 40
+    },
+    {
+      "chunk": "2821",
+      "side": "HELDOUT",
+      "clips": 10,
+      "pos_lane_change": 120,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2822",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 86,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2824",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2825",
+      "side": "HELDOUT",
+      "clips": 3,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2828",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 77,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2834",
+      "side": "TRAIN",
+      "clips": 10,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2838",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 27,
+      "pos_roundabout": 0,
+      "pos_intersection": 75
+    },
+    {
+      "chunk": "2839",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 90
+    },
+    {
+      "chunk": "2841",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2846",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 43,
+      "pos_roundabout": 0,
+      "pos_intersection": 37
+    },
+    {
+      "chunk": "2848",
+      "side": "HELDOUT",
+      "clips": 12,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2853",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 92,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    },
+    {
+      "chunk": "2854",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2855",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 80,
+      "pos_roundabout": 0,
+      "pos_intersection": 129
+    },
+    {
+      "chunk": "2856",
+      "side": "TRAIN",
+      "clips": 12,
+      "pos_lane_change": 31,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "2860",
+      "side": "HELDOUT",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 60,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2866",
+      "side": "HELDOUT",
+      "clips": 17,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 120
+    },
+    {
+      "chunk": "2871",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 11,
+      "pos_roundabout": 20,
+      "pos_intersection": 72
+    },
+    {
+      "chunk": "2872",
+      "side": "HELDOUT",
+      "clips": 18,
+      "pos_lane_change": 0,
+      "pos_roundabout": 12,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2876",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2877",
+      "side": "TRAIN",
+      "clips": 16,
+      "pos_lane_change": 79,
+      "pos_roundabout": 30,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "2881",
+      "side": "HELDOUT",
+      "clips": 20,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 134
+    },
+    {
+      "chunk": "3084",
+      "side": "HELDOUT",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 30
+    },
+    {
+      "chunk": "3085",
+      "side": "TRAIN",
+      "clips": 7,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "3088",
+      "side": "HELDOUT",
+      "clips": 6,
+      "pos_lane_change": 0,
+      "pos_roundabout": 30,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "3117",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 0
+    },
+    {
+      "chunk": "3119",
+      "side": "TRAIN",
+      "clips": 9,
+      "pos_lane_change": 0,
+      "pos_roundabout": 0,
+      "pos_intersection": 23
+    },
+    {
+      "chunk": "3138",
+      "side": "HELDOUT",
+      "clips": 13,
+      "pos_lane_change": 30,
+      "pos_roundabout": 0,
+      "pos_intersection": 60
+    }
+  ]
+}
