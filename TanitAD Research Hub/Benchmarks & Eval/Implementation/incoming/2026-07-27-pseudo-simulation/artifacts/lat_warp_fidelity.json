@@ -1,0 +1,1476 @@
+{
+  "_what": "C-GEO-LAT -- is the flat-road LATERAL warp faithful enough to carry a pseudo-simulation grid?",
+  "_evidence_class": "MEASURED (ours; CPU-only, deterministic, no model, no corpus, no GPU)",
+  "_warp_source": "taniteval.clhorizon.sampling_homography (PACKAGED -- the same function taniteval.clhorizon.corridor_rollout calls)",
+  "_criterion_pre_registered": {
+    "R_MAX": 0.25,
+    "FRAC_MIN": 0.95,
+    "rule": "L-OK iff relative displacement error < 0.25 on >= 95% of the frame at the grid's max |dlat|; L-BAD otherwise.",
+    "what_would_make_it_PASS": "see a2.implied_L_OK_requirement_m"
+  },
+  "intrinsics": {
+    "f_eff_px": 266.0,
+    "principal_px": 128.0,
+    "frame": [
+      256,
+      256
+    ],
+    "h_cam_m": 1.5,
+    "pitch_deg": 0.0
+  },
+  "scene_heights_above_road_m": {
+    "road_surface": 0.0,
+    "kerb": 0.15,
+    "sedan_wheel_hub": 0.33,
+    "sedan_beltline": 1.05,
+    "sedan_roof": 1.45,
+    "camera_height_h_cam": 1.5,
+    "suv_roof": 1.85,
+    "van_roof": 2.6,
+    "truck_trailer_roof": 4.0,
+    "traffic_light_head": 5.5,
+    "building_second_floor": 7.5
+  },
+  "scene_depths_m": [
+    5.0,
+    10.0,
+    20.0,
+    40.0,
+    80.0
+  ],
+  "A0_parameter_invariance": {
+    "yaw": {
+      "n_conditions": 30,
+      "h_cam_grid": [
+        1.2,
+        1.35,
+        1.5,
+        1.65,
+        1.8
+      ],
+      "pitch_deg_grid": [
+        -4.0,
+        -2.0,
+        0.0,
+        2.0,
+        4.0,
+        6.0
+      ],
+      "per_amount": [
+        {
+          "amount": 1.0,
+          "max_abs_dH": 0.0
+        },
+        {
+          "amount": 3.0,
+          "max_abs_dH": 0.0
+        },
+        {
+          "amount": 6.0,
+          "max_abs_dH": 0.0
+        },
+        {
+          "amount": 12.0,
+          "max_abs_dH": 0.0
+        }
+      ],
+      "max_abs_dH_over_all": 0.0,
+      "depends_on_ground_plane": false
+    },
+    "lat": {
+      "n_conditions": 30,
+      "h_cam_grid": [
+        1.2,
+        1.35,
+        1.5,
+        1.65,
+        1.8
+      ],
+      "pitch_deg_grid": [
+        -4.0,
+        -2.0,
+        0.0,
+        2.0,
+        4.0,
+        6.0
+      ],
+      "per_amount": [
+        {
+          "amount": 0.25,
+          "max_abs_dH": 9.13404592691559
+        },
+        {
+          "amount": 0.5,
+          "max_abs_dH": 18.26809185383118
+        },
+        {
+          "amount": 1.0,
+          "max_abs_dH": 36.53618370766239
+        },
+        {
+          "amount": 1.5,
+          "max_abs_dH": 54.80427556149354
+        },
+        {
+          "amount": 2.0,
+          "max_abs_dH": 73.07236741532478
+        },
+        {
+          "amount": 3.0,
+          "max_abs_dH": 109.60855112298708
+        }
+      ],
+      "max_abs_dH_over_all": 109.60855112298708,
+      "depends_on_ground_plane": true
+    }
+  },
+  "A1_reprojection_lat": [
+    {
+      "arm": "lat",
+      "amount": 0.25,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 4.1815,
+      "err_px_p95_all": 16.625,
+      "err_px_max_all": 24.3833,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.3586,
+          "err_px_max": 1.33,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 0.789,
+          "err_px_max": 2.926,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 2.5104,
+          "err_px_max": 9.31,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 3.4667,
+          "err_px_max": 12.8567,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 3.5862,
+          "err_px_max": 13.3,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 4.423,
+          "err_px_max": 16.4033,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 6.2162,
+          "err_px_max": 23.0533,
+          "motion_px_mean": 3.5862,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 7.1349,
+          "err_px_max": 17.7333,
+          "motion_px_mean": 2.6756,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 9.8105,
+          "err_px_max": 24.3833,
+          "motion_px_mean": 2.6756,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 9.6979,
+          "err_px_max": 16.625,
+          "motion_px_mean": 1.9396,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    },
+    {
+      "arm": "lat",
+      "amount": 0.5,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 8.3631,
+      "err_px_p95_all": 33.25,
+      "err_px_max_all": 48.7667,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.7172,
+          "err_px_max": 2.66,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 1.578,
+          "err_px_max": 5.852,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 5.0207,
+          "err_px_max": 18.62,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 6.9334,
+          "err_px_max": 25.7133,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 7.1725,
+          "err_px_max": 26.6,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 8.8461,
+          "err_px_max": 32.8067,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 12.4323,
+          "err_px_max": 46.1067,
+          "motion_px_mean": 7.1725,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 14.2698,
+          "err_px_max": 35.4667,
+          "motion_px_mean": 5.3512,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 19.621,
+          "err_px_max": 48.7667,
+          "motion_px_mean": 5.3512,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 19.3958,
+          "err_px_max": 33.25,
+          "motion_px_mean": 3.8792,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    },
+    {
+      "arm": "lat",
+      "amount": 1.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 16.7262,
+      "err_px_p95_all": 66.5,
+      "err_px_max_all": 97.5333,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 1.4345,
+          "err_px_max": 5.32,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 3.1559,
+          "err_px_max": 11.704,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 10.0415,
+          "err_px_max": 37.24,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 13.8668,
+          "err_px_max": 51.4267,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 14.345,
+          "err_px_max": 53.2,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 17.6922,
+          "err_px_max": 65.6133,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 24.8647,
+          "err_px_max": 92.2133,
+          "motion_px_mean": 14.345,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 28.5396,
+          "err_px_max": 70.9333,
+          "motion_px_mean": 10.7023,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 39.2419,
+          "err_px_max": 97.5333,
+          "motion_px_mean": 10.7023,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 38.7917,
+          "err_px_max": 66.5,
+          "motion_px_mean": 7.7583,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    },
+    {
+      "arm": "lat",
+      "amount": 1.5,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 25.0892,
+      "err_px_p95_all": 99.75,
+      "err_px_max_all": 146.3,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 2.1517,
+          "err_px_max": 7.98,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 4.7339,
+          "err_px_max": 17.556,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 15.0622,
+          "err_px_max": 55.86,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 20.8002,
+          "err_px_max": 77.14,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 21.5175,
+          "err_px_max": 79.8,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 26.5383,
+          "err_px_max": 98.42,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 37.297,
+          "err_px_max": 138.32,
+          "motion_px_mean": 21.5175,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 42.8094,
+          "err_px_max": 106.4,
+          "motion_px_mean": 16.0535,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 58.8629,
+          "err_px_max": 146.3,
+          "motion_px_mean": 16.0535,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 58.1875,
+          "err_px_max": 99.75,
+          "motion_px_mean": 11.6375,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    },
+    {
+      "arm": "lat",
+      "amount": 2.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 33.4523,
+      "err_px_p95_all": 133.0,
+      "err_px_max_all": 195.0667,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 2.869,
+          "err_px_max": 10.64,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 6.3118,
+          "err_px_max": 23.408,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 20.083,
+          "err_px_max": 74.48,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 27.7337,
+          "err_px_max": 102.8533,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 28.69,
+          "err_px_max": 106.4,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 35.3843,
+          "err_px_max": 131.2267,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 49.7293,
+          "err_px_max": 184.4267,
+          "motion_px_mean": 28.69,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 57.0792,
+          "err_px_max": 141.8667,
+          "motion_px_mean": 21.4047,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 78.4839,
+          "err_px_max": 195.0667,
+          "motion_px_mean": 21.4047,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 77.5833,
+          "err_px_max": 133.0,
+          "motion_px_mean": 15.5167,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    },
+    {
+      "arm": "lat",
+      "amount": 3.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 50.1785,
+      "err_px_p95_all": 199.5,
+      "err_px_max_all": 292.6,
+      "rel_err_mean_all": 1.471788,
+      "rel_err_max_all": 5.0,
+      "frac_points_rel_err_under_R_MAX": 0.283019,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 4.3035,
+          "err_px_max": 15.96,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 0.1,
+          "rel_err_max": 0.1
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 9.4677,
+          "err_px_max": 35.112,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 0.22,
+          "rel_err_max": 0.22
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 30.1245,
+          "err_px_max": 111.72,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 0.7,
+          "rel_err_max": 0.7
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 41.6005,
+          "err_px_max": 154.28,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 0.966667,
+          "rel_err_max": 0.966667
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 43.035,
+          "err_px_max": 159.6,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 1.0,
+          "rel_err_max": 1.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 53.0765,
+          "err_px_max": 196.84,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 1.233333,
+          "rel_err_max": 1.233333
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 74.594,
+          "err_px_max": 276.64,
+          "motion_px_mean": 43.035,
+          "rel_err_mean": 1.733333,
+          "rel_err_max": 1.733333
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 85.6188,
+          "err_px_max": 212.8,
+          "motion_px_mean": 32.107,
+          "rel_err_mean": 2.666667,
+          "rel_err_max": 2.666667
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 117.7258,
+          "err_px_max": 292.6,
+          "motion_px_mean": 32.107,
+          "rel_err_mean": 3.666667,
+          "rel_err_max": 3.666667
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 116.375,
+          "err_px_max": 199.5,
+          "motion_px_mean": 23.275,
+          "rel_err_mean": 5.0,
+          "rel_err_max": 5.0
+        }
+      }
+    }
+  ],
+  "A4_reprojection_yaw_POSITIVE_CONTROL": [
+    {
+      "arm": "yaw",
+      "amount": 1.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 0.0,
+      "err_px_p95_all": 0.0,
+      "err_px_max_all": 0.0,
+      "rel_err_mean_all": 0.0,
+      "rel_err_max_all": 0.0,
+      "frac_points_rel_err_under_R_MAX": 1.0,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8455,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.845,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8446,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8433,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8431,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8431,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8432,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8444,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8177,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.8212,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 4.783,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        }
+      }
+    },
+    {
+      "arm": "yaw",
+      "amount": 3.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 0.0,
+      "err_px_p95_all": 0.0,
+      "err_px_max_all": 0.0,
+      "rel_err_mean_all": 0.0,
+      "rel_err_max_all": 0.0,
+      "frac_points_rel_err_under_R_MAX": 1.0,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.55,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5486,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5472,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5434,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5428,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5428,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5431,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.5466,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.4662,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.4769,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 14.3619,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        }
+      }
+    },
+    {
+      "arm": "yaw",
+      "amount": 6.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 0.0,
+      "err_px_p95_all": 0.0,
+      "err_px_max_all": 0.0,
+      "rel_err_mean_all": 0.0,
+      "rel_err_max_all": 0.0,
+      "frac_points_rel_err_under_R_MAX": 1.0,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1918,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.189,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.186,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1782,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1768,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1768,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1776,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.1849,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.0222,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 29.0444,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 28.8116,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        }
+      }
+    },
+    {
+      "arm": "yaw",
+      "amount": 12.0,
+      "n_points_in_frame": 371,
+      "err_px_mean_all": 0.0,
+      "err_px_p95_all": 0.0,
+      "err_px_max_all": 0.0,
+      "rel_err_mean_all": 0.0,
+      "rel_err_max_all": 0.0,
+      "frac_points_rel_err_under_R_MAX": 1.0,
+      "per_height": {
+        "road_surface": {
+          "height_above_road_m": 0.0,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.1334,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "kerb": {
+          "height_above_road_m": 0.15,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.127,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_wheel_hub": {
+          "height_above_road_m": 0.33,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.1201,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_beltline": {
+          "height_above_road_m": 1.05,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.1023,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "sedan_roof": {
+          "height_above_road_m": 1.45,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.0993,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "camera_height_h_cam": {
+          "height_above_road_m": 1.5,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.0992,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "suv_roof": {
+          "height_above_road_m": 1.85,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.1011,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "van_roof": {
+          "height_above_road_m": 2.6,
+          "n_points": 35,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 59.1177,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "truck_trailer_roof": {
+          "height_above_road_m": 4.0,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 58.7772,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "traffic_light_head": {
+          "height_above_road_m": 5.5,
+          "n_points": 32,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 58.829,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        },
+        "building_second_floor": {
+          "height_above_road_m": 7.5,
+          "n_points": 27,
+          "err_px_mean": 0.0,
+          "err_px_max": 0.0,
+          "motion_px_mean": 58.3397,
+          "rel_err_mean": 0.0,
+          "rel_err_max": 0.0
+        }
+      }
+    }
+  ],
+  "A2_closed_form": {
+    "closed_form": "rel_err(x) = height_above_road(x) / h_cam   (independent of depth, of |dlat| and of focal length)",
+    "max_abs_deviation_over_grid": 0.0,
+    "holds": true,
+    "per_dlat": [
+      {
+        "dlat_m": 0.25,
+        "max_abs_dev_from_closed_form": 0.0
+      },
+      {
+        "dlat_m": 0.5,
+        "max_abs_dev_from_closed_form": 0.0
+      },
+      {
+        "dlat_m": 1.0,
+        "max_abs_dev_from_closed_form": 0.0
+      },
+      {
+        "dlat_m": 1.5,
+        "max_abs_dev_from_closed_form": 0.0
+      },
+      {
+        "dlat_m": 2.0,
+        "max_abs_dev_from_closed_form": 0.0
+      },
+      {
+        "dlat_m": 3.0,
+        "max_abs_dev_from_closed_form": 0.0
+      }
+    ],
+    "implied_L_OK_requirement_m": 0.375,
+    "_reading": "L-OK (rel_err < 0.25) requires EVERY scene point to lie within 0.375 m of the road surface."
+  },
+  "A3_sign_inversion": {
+    "dlat_m": 2.0,
+    "depth_m": 15.0,
+    "predicted_zero_crossing_m": 1.5,
+    "rows": [
+      {
+        "content": "road_surface",
+        "height_above_road_m": 0.0,
+        "du_true_px": -35.4667,
+        "du_applied_px": -35.4667,
+        "ratio_applied_over_true": 1.0,
+        "sign_inverted": false
+      },
+      {
+        "content": "kerb",
+        "height_above_road_m": 0.15,
+        "du_true_px": -35.4667,
+        "du_applied_px": -31.92,
+        "ratio_applied_over_true": 0.9,
+        "sign_inverted": false
+      },
+      {
+        "content": "sedan_wheel_hub",
+        "height_above_road_m": 0.33,
+        "du_true_px": -35.4667,
+        "du_applied_px": -27.664,
+        "ratio_applied_over_true": 0.78,
+        "sign_inverted": false
+      },
+      {
+        "content": "sedan_beltline",
+        "height_above_road_m": 1.05,
+        "du_true_px": -35.4667,
+        "du_applied_px": -10.64,
+        "ratio_applied_over_true": 0.3,
+        "sign_inverted": false
+      },
+      {
+        "content": "sedan_roof",
+        "height_above_road_m": 1.45,
+        "du_true_px": -35.4667,
+        "du_applied_px": -1.1822,
+        "ratio_applied_over_true": 0.033333,
+        "sign_inverted": false
+      },
+      {
+        "content": "camera_height_h_cam",
+        "height_above_road_m": 1.5,
+        "du_true_px": -35.4667,
+        "du_applied_px": 0.0,
+        "ratio_applied_over_true": -0.0,
+        "sign_inverted": false
+      },
+      {
+        "content": "suv_roof",
+        "height_above_road_m": 1.85,
+        "du_true_px": -35.4667,
+        "du_applied_px": 8.2756,
+        "ratio_applied_over_true": -0.233333,
+        "sign_inverted": true
+      },
+      {
+        "content": "van_roof",
+        "height_above_road_m": 2.6,
+        "du_true_px": -35.4667,
+        "du_applied_px": 26.0089,
+        "ratio_applied_over_true": -0.733333,
+        "sign_inverted": true
+      },
+      {
+        "content": "truck_trailer_roof",
+        "height_above_road_m": 4.0,
+        "du_true_px": -35.4667,
+        "du_applied_px": 59.1111,
+        "ratio_applied_over_true": -1.666667,
+        "sign_inverted": true
+      },
+      {
+        "content": "traffic_light_head",
+        "height_above_road_m": 5.5,
+        "du_true_px": -35.4667,
+        "du_applied_px": 94.5778,
+        "ratio_applied_over_true": -2.666667,
+        "sign_inverted": true
+      },
+      {
+        "content": "building_second_floor",
+        "height_above_road_m": 7.5,
+        "du_true_px": -35.4667,
+        "du_applied_px": 141.8667,
+        "ratio_applied_over_true": -4.0,
+        "sign_inverted": true
+      }
+    ],
+    "_reading": "u_applied = u_true * (1 - height_above_road / h_cam). The applied displacement VANISHES at the camera height and is SIGN-INVERTED above it."
+  },
+  "A5_roundtrip_refused": {
+    "yaw": {
+      "per_amount": [
+        {
+          "amount": 1.0,
+          "roundtrip_max_abs_dev_from_identity": 1.4873426533462813e-14,
+          "composition_max_abs_dev_H2a_vs_HaHa": 9.769962616701378e-15
+        },
+        {
+          "amount": 3.0,
+          "roundtrip_max_abs_dev_from_identity": 1.768716598940899e-14,
+          "composition_max_abs_dev_H2a_vs_HaHa": 2.7533531010703882e-14
+        },
+        {
+          "amount": 6.0,
+          "roundtrip_max_abs_dev_from_identity": 2.1376080961231707e-14,
+          "composition_max_abs_dev_H2a_vs_HaHa": 1.4210854715202004e-14
+        },
+        {
+          "amount": 12.0,
+          "roundtrip_max_abs_dev_from_identity": 4.165914789044566e-14,
+          "composition_max_abs_dev_H2a_vs_HaHa": 1.4210854715202004e-13
+        }
+      ],
+      "max_roundtrip_dev": 4.165914789044566e-14
+    },
+    "lat": {
+      "per_amount": [
+        {
+          "amount": 0.25,
+          "roundtrip_max_abs_dev_from_identity": 1.4210854715202004e-14,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        },
+        {
+          "amount": 0.5,
+          "roundtrip_max_abs_dev_from_identity": 0.0,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        },
+        {
+          "amount": 1.0,
+          "roundtrip_max_abs_dev_from_identity": 0.0,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        },
+        {
+          "amount": 1.5,
+          "roundtrip_max_abs_dev_from_identity": 0.0,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        },
+        {
+          "amount": 2.0,
+          "roundtrip_max_abs_dev_from_identity": 0.0,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        },
+        {
+          "amount": 3.0,
+          "roundtrip_max_abs_dev_from_identity": 0.0,
+          "composition_max_abs_dev_H2a_vs_HaHa": 0.0
+        }
+      ],
+      "max_roundtrip_dev": 1.4210854715202004e-14
+    },
+    "_verdict": "C-RT is VACUOUS for the flat-road question: the round-trip residual is identically zero on the LATERAL arm, which is the arm under suspicion. A criterion that returns the same value for an exact warp and a provably wrong one cannot adjudicate between them. REFUSED as a fidelity criterion; C-GEO is used instead."
+  },
+  "A6_above_horizon": {
+    "pitch_-2deg": {
+      "horizon_row_v": 118.711,
+      "rows_with_no_ground_preimage": 118.71,
+      "frac_frame_no_ground_preimage": 0.463715
+    },
+    "pitch_0deg": {
+      "horizon_row_v": 128.0,
+      "rows_with_no_ground_preimage": 128.0,
+      "frac_frame_no_ground_preimage": 0.5
+    },
+    "pitch_2deg": {
+      "horizon_row_v": 137.289,
+      "rows_with_no_ground_preimage": 137.29,
+      "frac_frame_no_ground_preimage": 0.536285
+    },
+    "pitch_4deg": {
+      "horizon_row_v": 146.601,
+      "rows_with_no_ground_preimage": 146.6,
+      "frac_frame_no_ground_preimage": 0.572658
+    },
+    "_reading": "At the shipped pitch of 0 deg and c_y = 128 in a 256-row frame, EXACTLY 50 % of the frame is above the horizon. There the ground plane has no preimage, the flat-road warp's relative error is >= 1.0 by A2, and by A3 the applied displacement is opposite in sign to the true one."
+  },
+  "VERDICT": {
+    "lateral_frac_points_under_R_MAX_at_dlat_2m": 0.283019,
+    "lateral_required_frac": 0.95,
+    "lateral_PASSES": false,
+    "yaw_positive_control_max_err_px_at_12deg": 0.0,
+    "yaw_positive_control_PASSES": true,
+    "outcome": "L-BAD",
+    "grid_dimensionality": "heading-only on the WARPED axis; the lateral axis is REFUSED",
+    "_both_directions_exercised": "The identical code path returns PASS on the yaw arm and FAIL on the lateral arm, so the criterion is not vacuous. A5 additionally shows the round-trip criterion IS vacuous and refuses it."
+  }
+}

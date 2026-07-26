@@ -14,14 +14,17 @@
   "_method": "batch size pushed until torch.cuda.OutOfMemoryError; the largest batch that COMPLETED is reported with its peak allocated bytes. Eager only -- no torch.compile (no Triton on Windows).",
   "_parity": "no corpus, no checkpoint, no pod. Modules are built from `stack/tanitad` source at their committed default configs.",
   "S1_raw_fp32_matmul_8192": {
-    "tflops": 7.66,
-    "ms": 143.55,
+    "tflops": 7.51,
+    "ms": 146.42,
     "peak_gib": 1.008
   },
   "S2_largest_single_fp32_alloc_gib": 7.5,
   "S3_v4_head": {
+    "_read": "the v4 planner head is the piece that EMITS THE FAN (`anchor_traj` [B, 256, 20, 2]). It consumes `states` [B, 8, 2048] -- so with the head checkpoint and the staged per-window states, fan regeneration and any re-scoring become a LOCAL experiment. Neither is currently in the repo (S2 of FAN_CLIP_LOCAL.md).",
     "params": 10574403,
     "state_dim": 2048,
+    "window": 8,
+    "n_imagination_probe_tokens": 32,
     "n_anchors": 256,
     "param_breakdown": {
       "decoder": 8559785,
@@ -37,99 +40,258 @@
     },
     "train_fwd_bwd": {
       "label": "v4 head fwd+bwd (head-only training)",
-      "max_batch_that_fit": null,
-      "peak_gib_at_max": null,
-      "ms_at_max": null,
+      "max_batch_in_vram": 32,
+      "peak_gib_at_max": 2.727,
+      "ms_at_max": 238.8,
       "rows": [
         {
           "batch": 8,
-          "error": "ValueError: cond_imagination is on but no imagined latents were supplied"
+          "peak_gib": 0.741,
+          "ms": 784.1,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 32,
+          "peak_gib": 2.727,
+          "ms": 238.8,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 128,
+          "peak_gib": 10.596,
+          "ms": 7920.0,
+          "spilled_to_host": true
+        },
+        {
+          "batch": 256,
+          "peak_gib": 21.112,
+          "ms": 36783.5,
+          "spilled_to_host": true
+        },
+        {
+          "batch": 512,
+          "oom": true
+        }
+      ]
+    },
+    "infer_no_grad": {
+      "label": "v4 head forward, no_grad (fan generation)",
+      "max_batch_in_vram": 1024,
+      "peak_gib_at_max": 5.616,
+      "ms_at_max": 4587.8,
+      "rows": [
+        {
+          "batch": 8,
+          "peak_gib": 0.101,
+          "ms": 22.5,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 32,
+          "peak_gib": 0.231,
+          "ms": 77.9,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 128,
+          "peak_gib": 0.752,
+          "ms": 291.3,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 512,
+          "peak_gib": 2.836,
+          "ms": 1162.9,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 1024,
+          "peak_gib": 5.616,
+          "ms": 4587.8,
+          "spilled_to_host": false
+        },
+        {
+          "batch": 2048,
+          "peak_gib": 11.174,
+          "ms": 31171.3,
+          "spilled_to_host": true
+        },
+        {
+          "batch": 4096,
+          "oom": true
         }
       ]
     }
   },
   "S4_world_model": {
     "flagship4b (the canonical 286 M stack)": {
+      "predictor_step_no_grad": {
+        "label": "one predictor imagination step, no_grad (the E-V5-3 cost unit; pod A40 = 25.183 ms at batch 256)",
+        "max_batch_in_vram": 2048,
+        "peak_gib_at_max": 1.743,
+        "ms_at_max": 484.8,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 1.009,
+            "ms": 21.9,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 64,
+            "peak_gib": 1.034,
+            "ms": 18.7,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 256,
+            "peak_gib": 1.101,
+            "ms": 68.2,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 1024,
+            "peak_gib": 1.376,
+            "ms": 240.4,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 2048,
+            "peak_gib": 1.743,
+            "ms": 484.8,
+            "spilled_to_host": false
+          }
+        ]
+      },
       "total_params": 263440533,
       "encoder_params": 87022848,
       "predictor_params": 91360512,
       "image_size": 256,
       "in_channels": 9,
       "window": 8,
-      "weights_only_peak_gib": 0.998,
+      "weights_only_peak_gib": 1.009,
       "encode_no_grad": {
         "label": "ViT encode, no_grad (window of frames)",
-        "max_batch_that_fit": 32,
-        "peak_gib_at_max": 3.81,
-        "ms_at_max": 2050.8,
+        "max_batch_in_vram": 32,
+        "peak_gib_at_max": 3.821,
+        "ms_at_max": 2034.6,
         "rows": [
           {
             "batch": 1,
-            "peak_gib": 1.086,
-            "ms": 132.0
+            "peak_gib": 1.097,
+            "ms": 279.3,
+            "spilled_to_host": false
           },
           {
             "batch": 2,
-            "peak_gib": 1.174,
-            "ms": 124.4
+            "peak_gib": 1.185,
+            "ms": 125.5,
+            "spilled_to_host": false
           },
           {
             "batch": 4,
-            "peak_gib": 1.35,
-            "ms": 245.3
+            "peak_gib": 1.36,
+            "ms": 245.4,
+            "spilled_to_host": false
           },
           {
             "batch": 8,
-            "peak_gib": 1.701,
-            "ms": 493.5
+            "peak_gib": 1.712,
+            "ms": 503.0,
+            "spilled_to_host": false
           },
           {
             "batch": 16,
-            "peak_gib": 2.404,
-            "ms": 983.3
+            "peak_gib": 2.415,
+            "ms": 1002.5,
+            "spilled_to_host": false
           },
           {
             "batch": 32,
-            "peak_gib": 3.81,
-            "ms": 2050.8
+            "peak_gib": 3.821,
+            "ms": 2034.6,
+            "spilled_to_host": false
           }
         ]
       },
       "encoder_fwd_bwd": {
         "label": "encoder fwd+bwd (full-model training)",
-        "max_batch_that_fit": 16,
-        "peak_gib_at_max": 21.358,
-        "ms_at_max": 48509.7,
+        "max_batch_in_vram": 4,
+        "peak_gib_at_max": 6.362,
+        "ms_at_max": 770.6,
         "rows": [
           {
             "batch": 1,
-            "peak_gib": 2.276,
-            "ms": 212.2
+            "peak_gib": 2.279,
+            "ms": 236.3,
+            "spilled_to_host": false
           },
           {
             "batch": 2,
-            "peak_gib": 3.86,
-            "ms": 377.8
+            "peak_gib": 3.863,
+            "ms": 386.9,
+            "spilled_to_host": false
           },
           {
             "batch": 4,
-            "peak_gib": 6.359,
-            "ms": 760.1
+            "peak_gib": 6.362,
+            "ms": 770.6,
+            "spilled_to_host": false
           },
           {
             "batch": 8,
-            "peak_gib": 11.357,
-            "ms": 15748.9
+            "peak_gib": 11.36,
+            "ms": 15662.6,
+            "spilled_to_host": true
           },
           {
             "batch": 16,
-            "peak_gib": 21.358,
-            "ms": 48509.7
+            "peak_gib": 21.361,
+            "ms": 48916.5,
+            "spilled_to_host": true
           }
         ]
       }
     },
     "flagship4b_reduced (the ~65 M pre-check rig)": {
+      "predictor_step_no_grad": {
+        "label": "one predictor imagination step, no_grad (the E-V5-3 cost unit; pod A40 = 25.183 ms at batch 256)",
+        "max_batch_in_vram": 2048,
+        "peak_gib_at_max": 0.646,
+        "ms_at_max": 98.9,
+        "rows": [
+          {
+            "batch": 1,
+            "peak_gib": 0.217,
+            "ms": 13.2,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 64,
+            "peak_gib": 0.23,
+            "ms": 15.2,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 256,
+            "peak_gib": 0.271,
+            "ms": 89.3,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 1024,
+            "peak_gib": 0.431,
+            "ms": 151.7,
+            "spilled_to_host": false
+          },
+          {
+            "batch": 2048,
+            "peak_gib": 0.646,
+            "ms": 98.9,
+            "spilled_to_host": false
+          }
+        ]
+      },
       "total_params": 53016981,
       "encoder_params": 15179904,
       "predictor_params": 16611456,
@@ -139,72 +301,83 @@
       "weights_only_peak_gib": 0.216,
       "encode_no_grad": {
         "label": "ViT encode, no_grad (window of frames)",
-        "max_batch_that_fit": 32,
+        "max_batch_in_vram": 32,
         "peak_gib_at_max": 1.904,
-        "ms_at_max": 467.0,
+        "ms_at_max": 462.6,
         "rows": [
           {
             "batch": 1,
             "peak_gib": 0.27,
-            "ms": 51.7
+            "ms": 29.9,
+            "spilled_to_host": false
           },
           {
             "batch": 2,
             "peak_gib": 0.322,
-            "ms": 55.1
+            "ms": 27.6,
+            "spilled_to_host": false
           },
           {
             "batch": 4,
             "peak_gib": 0.427,
-            "ms": 93.8
+            "ms": 56.5,
+            "spilled_to_host": false
           },
           {
             "batch": 8,
             "peak_gib": 0.638,
-            "ms": 116.4
+            "ms": 114.8,
+            "spilled_to_host": false
           },
           {
             "batch": 16,
             "peak_gib": 1.06,
-            "ms": 232.0
+            "ms": 234.0,
+            "spilled_to_host": false
           },
           {
             "batch": 32,
             "peak_gib": 1.904,
-            "ms": 467.0
+            "ms": 462.6,
+            "spilled_to_host": false
           }
         ]
       },
       "encoder_fwd_bwd": {
         "label": "encoder fwd+bwd (full-model training)",
-        "max_batch_that_fit": 16,
+        "max_batch_in_vram": 16,
         "peak_gib_at_max": 7.249,
-        "ms_at_max": 3768.8,
+        "ms_at_max": 3800.9,
         "rows": [
           {
             "batch": 1,
             "peak_gib": 0.661,
-            "ms": 41.6
+            "ms": 41.3,
+            "spilled_to_host": false
           },
           {
             "batch": 2,
             "peak_gib": 1.164,
-            "ms": 85.9
+            "ms": 85.6,
+            "spilled_to_host": false
           },
           {
             "batch": 4,
             "peak_gib": 2.038,
-            "ms": 180.1
+            "ms": 179.4,
+            "spilled_to_host": false
           },
           {
             "batch": 8,
             "peak_gib": 3.775,
-            "ms": 365.2
+            "ms": 363.5,
+            "spilled_to_host": false
           },
           {
             "batch": 16,
             "peak_gib": 7.249,
-            "ms": 3768.8
+            "ms": 3800.9,
+            "spilled_to_host": false
           }
         ]
       }

@@ -212,7 +212,22 @@ def main() -> None:
             z = m.encoder(x.reshape(bsz * Wn, ch, img, img))
             z.float().pow(2).mean().backward()
 
+        # the IMAGINATION step -- the unit E-V5-3 costed on the pod (25.183 ms
+        # at batch 256 on an A40). Measured here for the same shape.
+        S_ = int(getattr(scfg.readout, "state_dim", 0) or 2048)
+        A_ = int(getattr(scfg.predictor, "action_dim", 2))
+
+        def _pred_step(m, bsz, S_=S_, A_=A_, Wn=Wn):
+            st = torch.randn(bsz, Wn, S_, device=DEV)
+            ac = torch.randn(bsz, Wn, A_, device=DEV)
+            with torch.no_grad():
+                m.predictor(st, ac)
+
         R["S4_world_model"][name] = {
+            "predictor_step_no_grad": sweep(
+                lambda: wm, _pred_step, [1, 64, 256, 1024, 2048],
+                "one predictor imagination step, no_grad (the E-V5-3 cost "
+                "unit; pod A40 = 25.183 ms at batch 256)"),
             "total_params": n_wm, "encoder_params": enc_n,
             "predictor_params": pred_n, "image_size": img,
             "in_channels": ch, "window": Wn,
