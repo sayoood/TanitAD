@@ -1,0 +1,299 @@
+{
+  "what": "per-component memory + compute budget of the deployed flagship-v1 planning tick (device-independent quantities only)",
+  "model": "flagship4b architecture, action_dim=3 (deployed v1 `flagship4b-speedjerk-30k` config), RANDOM INIT (params/FLOPs/activations are weight-independent)",
+  "env": {
+    "torch": "2.11.0+cu128",
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 4060",
+    "note": "device is a MEASUREMENT HOST for graph-level quantities only. NO latency is emitted from it."
+  },
+  "shapes": {
+    "window": 8,
+    "k_rollout": 20,
+    "state_dim": 2048,
+    "batch": 1,
+    "frame": [
+      1,
+      9,
+      256,
+      256
+    ],
+    "n_tokens": 256,
+    "d_model_enc": 768,
+    "enc_depth": 12,
+    "d_model_pred": 768,
+    "pred_depth": 10,
+    "horizons": [
+      1,
+      2,
+      4
+    ],
+    "action_dim": 3
+  },
+  "params": {
+    "by_component": {
+      "encoder": 87022848,
+      "readout": 98432,
+      "predictor": 91361280,
+      "tactical_pred": 26535424,
+      "tactical_policy": 22736141,
+      "strategic_policy": 8385027,
+      "imagination": 22055683,
+      "inv_dyn": 5248003
+    },
+    "grounding_detail": {
+      "grounding.op.invdyn": 2370051,
+      "grounding.op.step": 2107395,
+      "grounding.tac.invdyn": 2370051,
+      "grounding.tac.step": 2107395,
+      "grounding.str.invdyn": 2370051,
+      "grounding.str.step": 2107395
+    },
+    "grounding_total": 13432338,
+    "model_total": 263442838,
+    "step_readout_op": 2107395,
+    "registry_total_model": 263442838,
+    "registry_trainable": 277404073,
+    "reproduces_registry_total_model": true,
+    "deployed_path_params": 180589955,
+    "deployed_path_note": "the intent-free operative path that PRODUCES the scored ADE@2s: encoder + readout + operative predictor + grounding.step['op']. tactical/strategic/imagination/inv_dyn/tactical_pred are OFF this path (they are on the hierarchy path, sized separately below)."
+  },
+  "stages": {
+    "encoder_1frame_tokens": {
+      "flops": {
+        "total_flops": 46808432640,
+        "gflops": 46.8084,
+        "by_op_gflops": {
+          "addmm": 43.4865,
+          "_scaled_dot_product_efficient_attention": 2.4159,
+          "convolution": 0.906
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1161.45,
+        "activation_mb": 13.37
+      }
+    },
+    "encode_1frame_to_state": {
+      "flops": {
+        "total_flops": 46811578368,
+        "gflops": 46.8116,
+        "by_op_gflops": {
+          "addmm": 43.4865,
+          "_scaled_dot_product_efficient_attention": 2.4159,
+          "convolution": 0.906,
+          "mm": 0.0031
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1161.45,
+        "activation_mb": 13.37
+      }
+    },
+    "encode_window_8frames": {
+      "flops": {
+        "total_flops": 374492626944,
+        "gflops": 374.4926,
+        "by_op_gflops": {
+          "addmm": 260.9444,
+          "mm": 86.9731,
+          "_scaled_dot_product_efficient_attention": 19.3274,
+          "convolution": 7.2478
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1224.62,
+        "activation_mb": 76.546
+      }
+    },
+    "predictor_1call": {
+      "flops": {
+        "total_flops": 1367248896,
+        "gflops": 1.3672,
+        "by_op_gflops": {
+          "addmm": 1.3653,
+          "_scaled_dot_product_efficient_attention": 0.002
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1148.4,
+        "activation_mb": 0.32
+      }
+    },
+    "step_readout_1call": {
+      "flops": {
+        "total_flops": 4197376,
+        "gflops": 0.0042,
+        "by_op_gflops": {
+          "addmm": 0.0042
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1148.11,
+        "activation_mb": 0.035
+      }
+    },
+    "rollout_decode_k20": {
+      "flops": {
+        "total_flops": 27428925440,
+        "gflops": 27.4289,
+        "by_op_gflops": {
+          "addmm": 27.3896,
+          "_scaled_dot_product_efficient_attention": 0.0393
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1148.48,
+        "activation_mb": 0.404
+      }
+    },
+    "tick_uncached_k20": {
+      "flops": {
+        "total_flops": 401921552384,
+        "gflops": 401.9216,
+        "by_op_gflops": {
+          "addmm": 288.334,
+          "mm": 86.9731,
+          "_scaled_dot_product_efficient_attention": 19.3667,
+          "convolution": 7.2478
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1224.62,
+        "activation_mb": 76.546
+      }
+    },
+    "tactical_pred_1call": {
+      "flops": {
+        "total_flops": 378298368,
+        "gflops": 0.3783,
+        "by_op_gflops": {
+          "addmm": 0.3775,
+          "_scaled_dot_product_efficient_attention": 0.0008
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1148.29,
+        "activation_mb": 0.214
+      }
+    },
+    "hierarchy_str_plus_tac": {
+      "flops": {
+        "total_flops": 1847446784,
+        "gflops": 1.8474,
+        "by_op_gflops": {
+          "addmm": 1.8128,
+          "mm": 0.0315,
+          "_scaled_dot_product_efficient_attention": 0.0031
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1148.41,
+        "activation_mb": 0.336
+      }
+    },
+    "imagination_1call": {
+      "flops": {
+        "total_flops": 58687488000,
+        "gflops": 58.6875,
+        "by_op_gflops": {
+          "addmm": 54.7616,
+          "_scaled_dot_product_efficient_attention": 3.0199,
+          "convolution": 0.906
+        },
+        "mha_fastpath_disabled_for_count": true
+      },
+      "memory": {
+        "resident_mb": 1148.08,
+        "peak_alloc_mb": 1161.45,
+        "activation_mb": 13.37
+      }
+    }
+  },
+  "tick_budget": {
+    "definition": "DEPLOYED (L4-composed) planning tick = encode ONE new 9-ch frame (7 window states cached) -> 20 sequential predictor steps -> 20 step-readout decodes -> SE(2) accumulate. This is the tick that produces ADE@2s.",
+    "gflops": {
+      "encoder_1frame": 46.8116,
+      "predictor_x20": 27.344,
+      "step_readout_x20": 0.084,
+      "rollout_decode_k20_measured": 27.4289,
+      "deployed_tick_total": 74.2405,
+      "uncached_tick_total": 401.9215,
+      "registry_measured_uncached_tick": 401.922,
+      "hierarchy_str_plus_tac_if_on": 1.8474
+    },
+    "share_of_deployed_tick_flops": {
+      "encoder_pct": 63.1,
+      "rollout_pct": 36.9
+    },
+    "share_of_uncached_tick_flops": {
+      "encoder_pct": 93.2,
+      "rollout_pct": 6.8
+    },
+    "weight_traffic_mb_per_tick": {
+      "fp32": {
+        "encoder_once_mb": 348.49,
+        "predictor_x20_mb": 7308.9,
+        "step_readout_x20_mb": 168.59,
+        "total_tick_mb": 7825.98,
+        "of_which_unused_horizon_heads_mb": 251.99
+      },
+      "fp16": {
+        "encoder_once_mb": 174.24,
+        "predictor_x20_mb": 3654.45,
+        "step_readout_x20_mb": 84.3,
+        "total_tick_mb": 3912.99,
+        "of_which_unused_horizon_heads_mb": 125.99
+      },
+      "int8": {
+        "encoder_once_mb": 87.12,
+        "predictor_x20_mb": 1827.23,
+        "step_readout_x20_mb": 42.15,
+        "total_tick_mb": 1956.49,
+        "of_which_unused_horizon_heads_mb": 63.0
+      },
+      "fp8": {
+        "encoder_once_mb": 87.12,
+        "predictor_x20_mb": 1827.23,
+        "step_readout_x20_mb": 42.15,
+        "total_tick_mb": 1956.49,
+        "of_which_unused_horizon_heads_mb": 63.0
+      },
+      "nvfp4": {
+        "encoder_once_mb": 43.56,
+        "predictor_x20_mb": 913.61,
+        "step_readout_x20_mb": 21.07,
+        "total_tick_mb": 978.25,
+        "of_which_unused_horizon_heads_mb": 31.5
+      }
+    },
+    "share_of_deployed_tick_bytes_fp16": {
+      "encoder_pct": 4.5,
+      "rollout_pct": 95.5
+    },
+    "arithmetic_intensity_flop_per_byte_fp16": {
+      "encoder_1frame": 268.7,
+      "predictor_1step": 7.48,
+      "rollout_k20": 7.34,
+      "deployed_tick": 18.97
+    }
+  }
+}

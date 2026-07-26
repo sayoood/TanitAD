@@ -1,0 +1,354 @@
+{
+  "what": "Orin/Thor tick BRACKETS for the deployed flagship-v1 planning tick, from the MEASURED per-component budget. ESTIMATED throughout -- no Orin/Thor silicon in this session.",
+  "measured_inputs": {
+    "encoder_1frame_gflops": 46.8116,
+    "rollout_k20_gflops": 27.4289,
+    "weight_traffic_mb_per_tick": {
+      "fp32": {
+        "encoder_once_mb": 348.49,
+        "predictor_x20_mb": 7308.9,
+        "step_readout_x20_mb": 168.59,
+        "total_tick_mb": 7825.98,
+        "of_which_unused_horizon_heads_mb": 251.99
+      },
+      "fp16": {
+        "encoder_once_mb": 174.24,
+        "predictor_x20_mb": 3654.45,
+        "step_readout_x20_mb": 84.3,
+        "total_tick_mb": 3912.99,
+        "of_which_unused_horizon_heads_mb": 125.99
+      },
+      "int8": {
+        "encoder_once_mb": 87.12,
+        "predictor_x20_mb": 1827.23,
+        "step_readout_x20_mb": 42.15,
+        "total_tick_mb": 1956.49,
+        "of_which_unused_horizon_heads_mb": 63.0
+      },
+      "fp8": {
+        "encoder_once_mb": 87.12,
+        "predictor_x20_mb": 1827.23,
+        "step_readout_x20_mb": 42.15,
+        "total_tick_mb": 1956.49,
+        "of_which_unused_horizon_heads_mb": 63.0
+      },
+      "nvfp4": {
+        "encoder_once_mb": 43.56,
+        "predictor_x20_mb": 913.61,
+        "step_readout_x20_mb": 21.07,
+        "total_tick_mb": 978.25,
+        "of_which_unused_horizon_heads_mb": 31.5
+      }
+    },
+    "a40_composed_tick_ms_MEASURED": 18.7476,
+    "source": "budget_probe.py artifacts + taniteval/results/eff_levers_flagship-30k.json"
+  },
+  "a40_calibration": {
+    "stagewise_fp16_floor_ms": 5.684,
+    "measured_composed_tick_ms": 18.7476,
+    "achieved_fraction_of_roofline": 0.3032,
+    "achieved_dram_gb_s": 208.7,
+    "reading": "the A40's composed tick sits at ~30% of its own stage-wise roofline. Consistent with the registry's 'achieved 3.7-4.3 TFLOPs => launch/serialisation-bound' diagnosis: on a 696 GB/s datacentre part this workload never becomes bandwidth-limited, so the A40 tick is NOT a bandwidth measurement and its 18.75 ms does NOT scale to Jetson by a bandwidth ratio."
+  },
+  "brackets": {
+    "orin_agx64": {
+      "fp16": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 1.101,
+          "compute_ms": 1.101,
+          "bandwidth_ms": 0.851,
+          "binds_on": "compute"
+        },
+        "rollout_stage": {
+          "floor_ms": 18.256,
+          "compute_ms": 0.645,
+          "bandwidth_ms": 18.256,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          19.36,
+          63.84
+        ],
+        "tick_bracket_hz": [
+          15.7,
+          51.7
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          1.57,
+          5.17
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.2191,
+        "dram_watts_at_10hz_ESTIMATED": 2.191,
+        "module_power_envelope_w": "15-60"
+      },
+      "int8": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 0.551,
+          "compute_ms": 0.551,
+          "bandwidth_ms": 0.425,
+          "binds_on": "compute"
+        },
+        "rollout_stage": {
+          "floor_ms": 9.128,
+          "compute_ms": 0.323,
+          "bandwidth_ms": 9.128,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          9.68,
+          31.92
+        ],
+        "tick_bracket_hz": [
+          31.3,
+          103.3
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          3.13,
+          10.33
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.1096,
+        "dram_watts_at_10hz_ESTIMATED": 1.096,
+        "module_power_envelope_w": "15-60"
+      },
+      "fp8": {
+        "supported": false,
+        "why": "no tensor-core datapath on this arch"
+      },
+      "nvfp4": {
+        "supported": false,
+        "why": "no tensor-core datapath on this arch"
+      }
+    },
+    "thor_t5000": {
+      "fp16": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 0.638,
+          "compute_ms": 0.181,
+          "bandwidth_ms": 0.638,
+          "binds_on": "bandwidth"
+        },
+        "rollout_stage": {
+          "floor_ms": 13.695,
+          "compute_ms": 0.106,
+          "bandwidth_ms": 13.695,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          14.33,
+          47.27
+        ],
+        "tick_bracket_hz": [
+          21.2,
+          69.8
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          2.12,
+          6.98
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.2191,
+        "dram_watts_at_10hz_ESTIMATED": 2.191,
+        "module_power_envelope_w": "40-130"
+      },
+      "int8": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 0.319,
+          "compute_ms": 0.09,
+          "bandwidth_ms": 0.319,
+          "binds_on": "bandwidth"
+        },
+        "rollout_stage": {
+          "floor_ms": 6.848,
+          "compute_ms": 0.053,
+          "bandwidth_ms": 6.848,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          7.17,
+          23.64
+        ],
+        "tick_bracket_hz": [
+          42.3,
+          139.5
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          4.23,
+          13.95
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.1096,
+        "dram_watts_at_10hz_ESTIMATED": 1.096,
+        "module_power_envelope_w": "40-130"
+      },
+      "fp8": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 0.319,
+          "compute_ms": 0.09,
+          "bandwidth_ms": 0.319,
+          "binds_on": "bandwidth"
+        },
+        "rollout_stage": {
+          "floor_ms": 6.848,
+          "compute_ms": 0.053,
+          "bandwidth_ms": 6.848,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          7.17,
+          23.64
+        ],
+        "tick_bracket_hz": [
+          42.3,
+          139.5
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          4.23,
+          13.95
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.1096,
+        "dram_watts_at_10hz_ESTIMATED": 1.096,
+        "module_power_envelope_w": "40-130"
+      },
+      "nvfp4": {
+        "supported": true,
+        "encoder_stage": {
+          "floor_ms": 0.16,
+          "compute_ms": 0.045,
+          "bandwidth_ms": 0.16,
+          "binds_on": "bandwidth"
+        },
+        "rollout_stage": {
+          "floor_ms": 3.424,
+          "compute_ms": 0.027,
+          "bandwidth_ms": 3.424,
+          "binds_on": "bandwidth"
+        },
+        "tick_bracket_ms": [
+          3.58,
+          11.82
+        ],
+        "tick_bracket_hz": [
+          84.6,
+          279.1
+        ],
+        "meets_10hz_across_whole_bracket": true,
+        "headroom_vs_10hz": [
+          8.46,
+          27.91
+        ],
+        "dram_energy_j_per_tick_ESTIMATED": 0.0548,
+        "dram_watts_at_10hz_ESTIMATED": 0.548,
+        "module_power_envelope_w": "40-130"
+      }
+    }
+  },
+  "orin_fp16_lever_deltas": {
+    "note": "each lever applied ALONE to the Orin fp16 stage-wise floor. ESTIMATED. The floor is the right yardstick here because it isolates the physics (bytes and FLOPs) from the runtime; lever ORDERING on real silicon must be re-measured.",
+    "baseline_tick_floor_ms": 19.357,
+    "levers": {
+      "strided_head_k4_5calls": {
+        "tick_floor_ms": 5.665,
+        "delta_pct": -70.73
+      },
+      "predictor_width_d384": {
+        "tick_floor_ms": 6.394,
+        "params": 24991104,
+        "delta_pct": -66.97
+      },
+      "predictor_depth_4": {
+        "tick_floor_ms": 9.667,
+        "params": 41746944,
+        "delta_pct": -50.06
+      },
+      "predictor_width_d512": {
+        "tick_floor_ms": 9.813,
+        "params": 42494208,
+        "delta_pct": -49.31
+      },
+      "strided_head_k2_10calls": {
+        "tick_floor_ms": 10.229,
+        "delta_pct": -47.16
+      },
+      "predictor_depth_6": {
+        "tick_floor_ms": 12.897,
+        "params": 58285056,
+        "delta_pct": -33.37
+      },
+      "predictor_width_d640": {
+        "tick_floor_ms": 14.134,
+        "params": 64617600,
+        "delta_pct": -26.98
+      },
+      "predictor_depth_8": {
+        "tick_floor_ms": 16.127,
+        "params": 74823168,
+        "delta_pct": -16.69
+      },
+      "L7_drop_2_unused_horizon_heads": {
+        "tick_floor_ms": 18.742,
+        "delta_pct": -3.18
+      },
+      "crop::HALVE the crop to 25.7 deg at same angular r": {
+        "tick_floor_ms": 19.106,
+        "encoder_gflops": 22.8,
+        "delta_pct": -1.3
+      },
+      "crop::0.75x linear downscale of the deployed crop ": {
+        "tick_floor_ms": 19.106,
+        "encoder_gflops": 25.735,
+        "delta_pct": -1.3
+      },
+      "baseline_fp16": {
+        "tick_floor_ms": 19.357,
+        "delta_pct": 0.0
+      },
+      "predictor_width_d768": {
+        "tick_floor_ms": 19.357,
+        "params": 91361280,
+        "delta_pct": -0.0
+      },
+      "predictor_depth_10": {
+        "tick_floor_ms": 19.357,
+        "params": 91361280,
+        "delta_pct": -0.0
+      },
+      "kv_cache_perfect_FLOPs_only": {
+        "tick_floor_ms": 19.357,
+        "delta_pct": -0.0
+      },
+      "operator_fusion_perfect_activations_only": {
+        "tick_floor_ms": 19.357,
+        "note": "identical to baseline by construction: the rollout's MEASURED activation footprint is 0.404 MB against 3,739 MB of weight traffic (0.011 %). Fusion cannot move the binding term.",
+        "delta_pct": -0.0
+      },
+      "crop::DEPLOYED 51.4 deg crop, 256 px, 16x16": {
+        "tick_floor_ms": 19.357,
+        "encoder_gflops": 46.808,
+        "delta_pct": -0.0
+      },
+      "crop::WIDEN to full 120.5 deg, TOKEN-BUDGET-MATCHE": {
+        "tick_floor_ms": 19.357,
+        "encoder_gflops": 46.808,
+        "delta_pct": -0.0
+      },
+      "crop::WIDEN to full 120.5 deg at 0.75x angular res": {
+        "tick_floor_ms": 19.724,
+        "encoder_gflops": 62.427,
+        "delta_pct": 1.9
+      },
+      "crop::WIDEN to full 120.5 deg at SAME angular res ": {
+        "tick_floor_ms": 21.016,
+        "encoder_gflops": 117.316,
+        "delta_pct": 8.57
+      }
+    }
+  }
+}

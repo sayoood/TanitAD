@@ -1,0 +1,652 @@
+{
+  "what": "optimization-lever quantification without Orin/Thor silicon (device-independent + format-intrinsic)",
+  "env": {
+    "torch": "2.11.0+cu128",
+    "device": "cuda"
+  },
+  "devices_published": {
+    "jetson_agx_orin_64gb": {
+      "arch": "Ampere GA10B, SM 8.7",
+      "ai_perf_published": "275 TOPS INT8 (sparse), whole module",
+      "gpu_int8_sparse_tops": 170.0,
+      "dla_int8_sparse_tops": 105.0,
+      "gpu_int8_dense_tops": 85.0,
+      "gpu_fp16_dense_tflops": 42.5,
+      "gpu_fp8_dense_tflops": null,
+      "gpu_fp4_dense_tflops": null,
+      "mem_gb": 64,
+      "mem_type": "256-bit LPDDR5",
+      "bw_gb_s": 204.8,
+      "l2_mb": 4.0,
+      "power_w": "15-60",
+      "src": "https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/"
+    },
+    "jetson_agx_thor_t5000": {
+      "arch": "Blackwell + Transformer Engine",
+      "ai_perf_published": "2070 TFLOPS FP4 (sparse)",
+      "gpu_fp4_sparse_tflops": 2070.0,
+      "gpu_fp4_dense_tflops": 1035.0,
+      "gpu_fp8_dense_tflops": 517.5,
+      "gpu_fp16_dense_tflops": 258.75,
+      "gpu_int8_dense_tops": 517.5,
+      "mem_gb": 128,
+      "mem_type": "256-bit LPDDR5X",
+      "bw_gb_s": 273.0,
+      "l2_mb": null,
+      "power_w": "40-130",
+      "src": "https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/"
+    }
+  },
+  "A_encoder_scaling": {
+    "note": "the ViT trunk's PARAMS are token-count INDEPENDENT, so a crop change moves DRAM WEIGHT traffic by EXACTLY ZERO. It is a pure FLOP + activation lever -- and the encoder is the compute-bound half of the tick, so this is the only place where FLOPs are the right currency.",
+    "measured_rows": [
+      {
+        "token_grid": "8x8",
+        "n_tokens": 64,
+        "px": 128,
+        "gflops": 11.249,
+        "params": 86875392,
+        "activation_mb": 10.617,
+        "vs_deployed_x": 0.24
+      },
+      {
+        "token_grid": "12x12",
+        "n_tokens": 144,
+        "px": 192,
+        "gflops": 25.735,
+        "params": 86936832,
+        "activation_mb": 11.65,
+        "vs_deployed_x": 0.55
+      },
+      {
+        "token_grid": "16x16",
+        "n_tokens": 256,
+        "px": 256,
+        "gflops": 46.808,
+        "params": 87022848,
+        "activation_mb": 13.37,
+        "vs_deployed_x": 1.0
+      },
+      {
+        "token_grid": "20x20",
+        "n_tokens": 400,
+        "px": 320,
+        "gflops": 75.262,
+        "params": 87133440,
+        "activation_mb": 18.809,
+        "vs_deployed_x": 1.608
+      },
+      {
+        "token_grid": "24x24",
+        "n_tokens": 576,
+        "px": 384,
+        "gflops": 112.114,
+        "params": 87268608,
+        "activation_mb": 22.544,
+        "vs_deployed_x": 2.395
+      },
+      {
+        "token_grid": "28x28",
+        "n_tokens": 784,
+        "px": 448,
+        "gflops": 158.611,
+        "params": 87428352,
+        "activation_mb": 29.59,
+        "vs_deployed_x": 3.389
+      },
+      {
+        "token_grid": "32x32",
+        "n_tokens": 1024,
+        "px": 512,
+        "gflops": 216.225,
+        "params": 87612672,
+        "activation_mb": 38.683,
+        "vs_deployed_x": 4.619
+      }
+    ],
+    "fit": {
+      "model": "GFLOP(N) = a*N + b*N^2",
+      "a_linear": 0.173408,
+      "b_quadratic": 3.6864e-05,
+      "r2": 1.0,
+      "n_points": 7,
+      "fit_window_tokens": [
+        64,
+        1024
+      ],
+      "quadratic_share_at_N256": 5.2
+    },
+    "crop_scenarios_fitted": [
+      {
+        "scenario": "DEPLOYED 51.4 deg crop, 256 px, 16x16",
+        "n_tokens": 256,
+        "gflops_fitted": 46.808,
+        "vs_deployed_x": 1.0
+      },
+      {
+        "scenario": "HALVE the crop to 25.7 deg at same angular res (8x16 tokens)",
+        "n_tokens": 128,
+        "gflops_fitted": 22.8,
+        "vs_deployed_x": 0.487
+      },
+      {
+        "scenario": "0.75x linear downscale of the deployed crop (12x12)",
+        "n_tokens": 144,
+        "gflops_fitted": 25.735,
+        "vs_deployed_x": 0.55
+      },
+      {
+        "scenario": "WIDEN to full 120.5 deg at SAME angular res (37.5x16 tokens)",
+        "n_tokens": 600,
+        "gflops_fitted": 117.316,
+        "vs_deployed_x": 2.506
+      },
+      {
+        "scenario": "WIDEN to full 120.5 deg, TOKEN-BUDGET-MATCHED (rescale to 256)",
+        "n_tokens": 256,
+        "gflops_fitted": 46.808,
+        "vs_deployed_x": 1.0
+      },
+      {
+        "scenario": "WIDEN to full 120.5 deg at 0.75x angular res (28x12)",
+        "n_tokens": 336,
+        "gflops_fitted": 62.427,
+        "vs_deployed_x": 1.334
+      }
+    ]
+  },
+  "B_rollout_structure": {
+    "predictor_params": 91163904,
+    "gflops_per_step_deployed": 1.3672,
+    "kv_cache_ceiling": {
+      "gflops_per_step_incremental": 0.1789,
+      "flop_saving_x": 7.64,
+      "weight_bytes_saved_fp16_mb": 0.0,
+      "BLOCKER": "OperativePredictor.forward adds an ABSOLUTE window position embedding (`self.pos[:, :w]`, predictor.py:in_proj line) BEFORE the causal blocks. The deploy rollout SLIDES the window every step, so every retained state's positional index shifts by one and its K/V change -- a KV cache is INVALID without a relative/rotary rewrite, i.e. a retrain.",
+      "why_it_would_not_help_anyway": "it removes FLOPs, and the rollout is bandwidth-bound (see E); weight traffic is unchanged, so the binding term does not move."
+    },
+    "depth_scan": [
+      {
+        "depth": 10,
+        "params": 91163904,
+        "gflops_per_step": 1.3672
+      },
+      {
+        "depth": 8,
+        "params": 74625792,
+        "gflops_per_step": 1.1026
+      },
+      {
+        "depth": 6,
+        "params": 58087680,
+        "gflops_per_step": 0.838
+      },
+      {
+        "depth": 4,
+        "params": 41549568,
+        "gflops_per_step": 0.5733
+      }
+    ],
+    "width_scan": [
+      {
+        "d_model": 768,
+        "params": 91163904,
+        "gflops_per_step": 1.3672
+      },
+      {
+        "d_model": 640,
+        "params": 64420224,
+        "gflops_per_step": 0.9546
+      },
+      {
+        "d_model": 512,
+        "params": 42296832,
+        "gflops_per_step": 0.6158
+      },
+      {
+        "d_model": 384,
+        "params": 24793728,
+        "gflops_per_step": 0.351
+      }
+    ],
+    "window_scan": [
+      {
+        "window": 8,
+        "params": 91163904,
+        "gflops_per_step": 1.3672
+      },
+      {
+        "window": 6,
+        "params": 91162368,
+        "gflops_per_step": 1.0274
+      },
+      {
+        "window": 4,
+        "params": 91160832,
+        "gflops_per_step": 0.6879
+      },
+      {
+        "window": 2,
+        "params": 91159296,
+        "gflops_per_step": 0.3485
+      }
+    ],
+    "strided_head_lever": {
+      "note": "the k=2 / k=4 horizon heads are ALREADY TRAINED and in the deployed ckpt; a strided roll reaches 2 s in 10 / 5 predictor calls instead of 20 -- a pure BYTES lever needing no retrain. Latency MEASURED (eff_levers_flagship-30k.json strided_head_latency); accuracy explicitly UNMEASURED there.",
+      "predictor_calls": {
+        "k1": 20,
+        "k2": 10,
+        "k4": 5
+      },
+      "weight_traffic_fp16_mb": {
+        "k1": 3646.6,
+        "k2": 1823.3,
+        "k4": 911.6
+      }
+    }
+  },
+  "C_fan_batching": {
+    "note": "arithmetic intensity rises ~linearly in K because the SAME 182.7 MB of fp16 predictor weights serves every candidate. This is the mechanism behind the already-MEASURED 'marginal candidate ~= 0.3 ms' (eff_levers, K=8 fan 20.82 ms p50): on a bandwidth-bound rollout the fan is nearly FREE capacity we are already paying for.",
+    "rows": [
+      {
+        "K": 1,
+        "gflops": 1.3672,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 7.5,
+        "gflops_per_candidate": 1.3672
+      },
+      {
+        "K": 2,
+        "gflops": 2.7345,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 14.99,
+        "gflops_per_candidate": 1.3672
+      },
+      {
+        "K": 4,
+        "gflops": 5.469,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 29.98,
+        "gflops_per_candidate": 1.3672
+      },
+      {
+        "K": 8,
+        "gflops": 10.938,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 59.93,
+        "gflops_per_candidate": 1.3672
+      },
+      {
+        "K": 16,
+        "gflops": 21.876,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 119.72,
+        "gflops_per_candidate": 1.3672
+      },
+      {
+        "K": 32,
+        "gflops": 43.752,
+        "weight_bytes_fp16_mb": 182.33,
+        "intensity_flop_per_byte": 238.93,
+        "gflops_per_candidate": 1.3672
+      }
+    ]
+  },
+  "D_format_numerics": {
+    "scope": "FORMAT-INTRINSIC round-trip error on synthetic weight distributions. This establishes the ORDERING of the formats, NOT an accuracy claim for our checkpoint -- the trained weight distribution is not measured here (no ckpt on this host). The real-weight run is the pre-registered experiment.",
+    "anchor": "int8_per_channel is the SAME scheme as bench_p1_accuracy.py _fakequant_(bits=8, dim=0), which MEASURED blanket weight-only cos 0.99947 (encoder) / 0.9999997 (predictor) and a downstream +0.0065 m ADE@2s -- a PASS against the 0.02 m falsifier. Any format at or above that cosine on the same distribution is a candidate; any format below it is not.",
+    "results": {
+      "gaussian_d768x768": {
+        "int8_per_channel  (MEASURED-PASS reference)": {
+          "cos_mean": 0.99997044,
+          "cos_min": 0.99994868,
+          "rel_l2_mean": 0.007654,
+          "snr_db": 42.28
+        },
+        "fp8_e4m3_per_channel": {
+          "cos_mean": 0.99965435,
+          "cos_min": 0.99958324,
+          "rel_l2_mean": 0.026325,
+          "snr_db": 31.59
+        },
+        "nvfp4_block16_e4m3scale": {
+          "cos_mean": 0.99547464,
+          "cos_min": 0.99465692,
+          "rel_l2_mean": 0.095219,
+          "snr_db": 20.42
+        },
+        "mxfp4_block32_e8m0scale": {
+          "cos_mean": 0.99334568,
+          "cos_min": 0.99188912,
+          "rel_l2_mean": 0.115359,
+          "snr_db": 18.75
+        },
+        "int4_per_channel  (the DINO-WM collapse format)": {
+          "cos_mean": 0.99043465,
+          "cos_min": 0.98286468,
+          "rel_l2_mean": 0.138807,
+          "snr_db": 17.11
+        }
+      },
+      "gaussian_d3072x768_mlp": {
+        "int8_per_channel  (MEASURED-PASS reference)": {
+          "cos_mean": 0.99997044,
+          "cos_min": 0.99993575,
+          "rel_l2_mean": 0.007657,
+          "snr_db": 42.28
+        },
+        "fp8_e4m3_per_channel": {
+          "cos_mean": 0.99965334,
+          "cos_min": 0.99957097,
+          "rel_l2_mean": 0.026361,
+          "snr_db": 31.58
+        },
+        "nvfp4_block16_e4m3scale": {
+          "cos_mean": 0.99548936,
+          "cos_min": 0.99460787,
+          "rel_l2_mean": 0.095055,
+          "snr_db": 20.44
+        },
+        "mxfp4_block32_e8m0scale": {
+          "cos_mean": 0.99333161,
+          "cos_min": 0.99169779,
+          "rel_l2_mean": 0.115468,
+          "snr_db": 18.75
+        },
+        "int4_per_channel  (the DINO-WM collapse format)": {
+          "cos_mean": 0.99041098,
+          "cos_min": 0.97902012,
+          "rel_l2_mean": 0.138893,
+          "snr_db": 17.1
+        }
+      },
+      "heavytail_t3_d768x768": {
+        "int8_per_channel  (MEASURED-PASS reference)": {
+          "cos_mean": 0.99977332,
+          "cos_min": 0.99823916,
+          "rel_l2_mean": 0.019918,
+          "snr_db": 32.05
+        },
+        "fp8_e4m3_per_channel": {
+          "cos_mean": 0.99969172,
+          "cos_min": 0.99957299,
+          "rel_l2_mean": 0.024872,
+          "snr_db": 32.27
+        },
+        "nvfp4_block16_e4m3scale": {
+          "cos_mean": 0.99584991,
+          "cos_min": 0.9948687,
+          "rel_l2_mean": 0.091311,
+          "snr_db": 20.89
+        },
+        "mxfp4_block32_e8m0scale": {
+          "cos_mean": 0.9890213,
+          "cos_min": 0.98165172,
+          "rel_l2_mean": 0.148859,
+          "snr_db": 16.5
+        },
+        "int4_per_channel  (the DINO-WM collapse format)": {
+          "cos_mean": 0.9427461,
+          "cos_min": 0.82183695,
+          "rel_l2_mean": 0.335598,
+          "snr_db": 8.86
+        }
+      },
+      "outlier_1pct_d768x768": {
+        "int8_per_channel  (MEASURED-PASS reference)": {
+          "cos_mean": 0.99969029,
+          "cos_min": 0.99903053,
+          "rel_l2_mean": 0.024289,
+          "snr_db": 31.85
+        },
+        "fp8_e4m3_per_channel": {
+          "cos_mean": 0.99971229,
+          "cos_min": 0.99955547,
+          "rel_l2_mean": 0.024107,
+          "snr_db": 32.37
+        },
+        "nvfp4_block16_e4m3scale": {
+          "cos_mean": 0.9956606,
+          "cos_min": 0.99387097,
+          "rel_l2_mean": 0.093422,
+          "snr_db": 20.59
+        },
+        "mxfp4_block32_e8m0scale": {
+          "cos_mean": 0.9882226,
+          "cos_min": 0.97999585,
+          "rel_l2_mean": 0.154236,
+          "snr_db": 16.02
+        },
+        "int4_per_channel  (the DINO-WM collapse format)": {
+          "cos_mean": 0.91203386,
+          "cos_min": 0.77443522,
+          "rel_l2_mean": 0.432056,
+          "snr_db": 6.93
+        }
+      }
+    }
+  },
+  "E_roofline": {
+    "inputs_measured": {
+      "tick_gflops": 74.2405,
+      "encoder_gflops": 46.8116,
+      "rollout_gflops": 27.4289,
+      "weight_traffic_mb": {
+        "fp32": {
+          "encoder_once_mb": 348.49,
+          "predictor_x20_mb": 7308.9,
+          "step_readout_x20_mb": 168.59,
+          "total_tick_mb": 7825.98,
+          "of_which_unused_horizon_heads_mb": 251.99
+        },
+        "fp16": {
+          "encoder_once_mb": 174.24,
+          "predictor_x20_mb": 3654.45,
+          "step_readout_x20_mb": 84.3,
+          "total_tick_mb": 3912.99,
+          "of_which_unused_horizon_heads_mb": 125.99
+        },
+        "int8": {
+          "encoder_once_mb": 87.12,
+          "predictor_x20_mb": 1827.23,
+          "step_readout_x20_mb": 42.15,
+          "total_tick_mb": 1956.49,
+          "of_which_unused_horizon_heads_mb": 63.0
+        },
+        "fp8": {
+          "encoder_once_mb": 87.12,
+          "predictor_x20_mb": 1827.23,
+          "step_readout_x20_mb": 42.15,
+          "total_tick_mb": 1956.49,
+          "of_which_unused_horizon_heads_mb": 63.0
+        },
+        "nvfp4": {
+          "encoder_once_mb": 43.56,
+          "predictor_x20_mb": 913.61,
+          "step_readout_x20_mb": 21.07,
+          "total_tick_mb": 978.25,
+          "of_which_unused_horizon_heads_mb": 31.5
+        }
+      }
+    },
+    "method": "floor = max(FLOPs/peak_dense, weight_bytes/peak_bw). Both are UNREACHABLE lower bounds at 100% of peak; the ratio between them (binding term) is the decision-grade output, not the absolute ms. ESTIMATED -- no Orin/Thor silicon.",
+    "by_device": {
+      "jetson_agx_orin_64gb": {
+        "fp32": {
+          "supported": false,
+          "why": "no tensor-core datapath for this precision on this architecture"
+        },
+        "fp16": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 42.5,
+          "bw_gb_s": 204.8,
+          "machine_balance_flop_per_byte": 207.5,
+          "tick_compute_floor_ms": 1.747,
+          "tick_bandwidth_floor_ms": 19.106,
+          "binding_term": "bandwidth",
+          "bound_by_x": 10.9,
+          "tick_floor_ms": 19.106,
+          "max_hz_at_100pct_of_peak": 52.3,
+          "hz_at_60pct_dram_efficiency": 31.4,
+          "component_floors_ms": {
+            "encoder_compute": 1.101,
+            "encoder_bandwidth": 0.851,
+            "rollout_compute": 0.645,
+            "rollout_bandwidth": 18.256
+          }
+        },
+        "int8": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 85.0,
+          "bw_gb_s": 204.8,
+          "machine_balance_flop_per_byte": 415.0,
+          "tick_compute_floor_ms": 0.873,
+          "tick_bandwidth_floor_ms": 9.553,
+          "binding_term": "bandwidth",
+          "bound_by_x": 10.9,
+          "tick_floor_ms": 9.553,
+          "max_hz_at_100pct_of_peak": 104.7,
+          "hz_at_60pct_dram_efficiency": 62.8,
+          "component_floors_ms": {
+            "encoder_compute": 0.551,
+            "encoder_bandwidth": 0.425,
+            "rollout_compute": 0.323,
+            "rollout_bandwidth": 9.128
+          }
+        },
+        "fp8": {
+          "supported": false,
+          "why": "no tensor-core datapath for this precision on this architecture"
+        },
+        "nvfp4": {
+          "supported": false,
+          "why": "no tensor-core datapath for this precision on this architecture"
+        },
+        "capacity": {
+          "device_mem_gb": 64,
+          "deployed_path_params": 180589955,
+          "full_model_params": 263442838,
+          "deployed_path_mb": {
+            "fp32": 722.4,
+            "fp16": 361.2,
+            "int8": 180.6,
+            "fp8": 180.6,
+            "nvfp4": 90.3
+          },
+          "full_model_mb": {
+            "fp32": 1053.8,
+            "fp16": 526.9,
+            "int8": 263.4,
+            "fp8": 263.4,
+            "nvfp4": 131.7
+          },
+          "peak_activation_mb_deployed_tick": 13.37,
+          "verdict": "CAPACITY IS A NON-ISSUE on both devices by 2 orders of magnitude; the constraint is BANDWIDTH, not capacity."
+        }
+      },
+      "jetson_agx_thor_t5000": {
+        "fp32": {
+          "supported": false,
+          "why": "no tensor-core datapath for this precision on this architecture"
+        },
+        "fp16": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 258.75,
+          "bw_gb_s": 273.0,
+          "machine_balance_flop_per_byte": 947.8,
+          "tick_compute_floor_ms": 0.287,
+          "tick_bandwidth_floor_ms": 14.333,
+          "binding_term": "bandwidth",
+          "bound_by_x": 50.0,
+          "tick_floor_ms": 14.333,
+          "max_hz_at_100pct_of_peak": 69.8,
+          "hz_at_60pct_dram_efficiency": 41.9,
+          "component_floors_ms": {
+            "encoder_compute": 0.181,
+            "encoder_bandwidth": 0.638,
+            "rollout_compute": 0.106,
+            "rollout_bandwidth": 13.695
+          }
+        },
+        "int8": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 517.5,
+          "bw_gb_s": 273.0,
+          "machine_balance_flop_per_byte": 1895.6,
+          "tick_compute_floor_ms": 0.143,
+          "tick_bandwidth_floor_ms": 7.167,
+          "binding_term": "bandwidth",
+          "bound_by_x": 50.0,
+          "tick_floor_ms": 7.167,
+          "max_hz_at_100pct_of_peak": 139.5,
+          "hz_at_60pct_dram_efficiency": 83.7,
+          "component_floors_ms": {
+            "encoder_compute": 0.09,
+            "encoder_bandwidth": 0.319,
+            "rollout_compute": 0.053,
+            "rollout_bandwidth": 6.848
+          }
+        },
+        "fp8": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 517.5,
+          "bw_gb_s": 273.0,
+          "machine_balance_flop_per_byte": 1895.6,
+          "tick_compute_floor_ms": 0.143,
+          "tick_bandwidth_floor_ms": 7.167,
+          "binding_term": "bandwidth",
+          "bound_by_x": 50.0,
+          "tick_floor_ms": 7.167,
+          "max_hz_at_100pct_of_peak": 139.5,
+          "hz_at_60pct_dram_efficiency": 83.7,
+          "component_floors_ms": {
+            "encoder_compute": 0.09,
+            "encoder_bandwidth": 0.319,
+            "rollout_compute": 0.053,
+            "rollout_bandwidth": 6.848
+          }
+        },
+        "nvfp4": {
+          "supported": true,
+          "peak_dense_tflops_or_tops": 1035.0,
+          "bw_gb_s": 273.0,
+          "machine_balance_flop_per_byte": 3791.2,
+          "tick_compute_floor_ms": 0.072,
+          "tick_bandwidth_floor_ms": 3.583,
+          "binding_term": "bandwidth",
+          "bound_by_x": 50.0,
+          "tick_floor_ms": 3.583,
+          "max_hz_at_100pct_of_peak": 279.1,
+          "hz_at_60pct_dram_efficiency": 167.4,
+          "component_floors_ms": {
+            "encoder_compute": 0.045,
+            "encoder_bandwidth": 0.16,
+            "rollout_compute": 0.027,
+            "rollout_bandwidth": 3.424
+          }
+        },
+        "capacity": {
+          "device_mem_gb": 128,
+          "deployed_path_params": 180589955,
+          "full_model_params": 263442838,
+          "deployed_path_mb": {
+            "fp32": 722.4,
+            "fp16": 361.2,
+            "int8": 180.6,
+            "fp8": 180.6,
+            "nvfp4": 90.3
+          },
+          "full_model_mb": {
+            "fp32": 1053.8,
+            "fp16": 526.9,
+            "int8": 263.4,
+            "fp8": 263.4,
+            "nvfp4": 131.7
+          },
+          "peak_activation_mb_deployed_tick": 13.37,
+          "verdict": "CAPACITY IS A NON-ISSUE on both devices by 2 orders of magnitude; the constraint is BANDWIDTH, not capacity."
+        }
+      }
+    }
+  }
+}

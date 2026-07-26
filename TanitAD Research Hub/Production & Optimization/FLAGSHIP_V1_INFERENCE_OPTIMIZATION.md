@@ -210,7 +210,41 @@ must not decide this, since open-loop does not predict closed-loop here (0.452 �
 | **Activation quantization** | Weight-only is the replicated-safe half, and weights are 100 % of our binding term anyway — activation quant adds risk for no bandwidth gain | `PUB` |
 | **Expecting a kernel trick to beat the bandwidth floor** | 7.31 GB/tick of weight traffic floors the rollout at 17.9 ms (Orin fp16). Only fewer steps or a smaller predictor go below it | `E` |
 
-### 5.1 The finding that reaches beyond latency — CEM planning is infeasible on this rollout
+### 5.1 ~~The finding that reaches beyond latency — CEM planning is infeasible on this rollout~~
+
+> # 🔴 RETRACTED 2026-07-26 — THE NUMBER *AND* THE MECHANISM ARE BOTH WRONG
+>
+> **Do not quote §5.1.** It was flagged by the 2026-07-22 intake **inside this document** and stood
+> **4 more days** because the flag lived in prose nobody re-read — the companion doc was fixed and this
+> one was not. It is the same propagation class as the "best ADE in the program" headline that survived
+> its own retraction for four days.
+>
+> **The number.** "723 ms/tick, 7× over budget" is derived from a per-step cost that does not describe
+> the **deployed, encoder-cached** tick. MEASURED 2026-07-26 (`…/incoming/2026-07-26-orin-thor-optimization/`,
+> probe self-validated by reproducing the registry's **263,442,838** params exactly and its 401.922 GFLOP
+> to 4 dp on a different host): the deployed tick is **74.24 GFLOP, not 401.9** — the larger figure is the
+> **uncached 8-frame encode**. Every derived "the encoder is ~94 % of tick FLOPs" statement is **5.4× off**
+> for the configuration we actually ship.
+>
+> **The mechanism, which is the more damaging error.** §5.1 assumes a CEM fan multiplies an
+> already-expensive rollout. The opposite holds: **arithmetic intensity rises LINEARLY in the fan width K**
+> (**7.5 → 238.9 FLOP/byte**), because the fan **re-uses the same streamed weights across candidates**.
+> The rollout is **bandwidth-bound, not compute-bound** — it is **37 % of FLOPs but 95.5 % of DRAM bytes**,
+> sitting **28× below Orin's roofline balance and 129× below Thor's**. A fan is therefore **structurally
+> close to free**: it spends idle FLOPs against bytes already being paid for.
+>
+> ⚠️ **This retraction matters beyond latency, in the direction opposite to the original claim.** §5.1 was
+> used as evidence that P2/CEM planning over the v1 world model is out of reach *in general* — a claim that
+> shaped the v3 pivot. **The infeasibility argument is void.** *(Note it does NOT resurrect CEM as a
+> product path: that was closed separately and on different grounds — the 0.132 m "search ceiling" was
+> **hindsight-privileged**, and the deployable learned-value search measured **1.016, separated WORSE** than
+> the feedforward 0.599 (RETRACTION_LOG 07-24, C6). CEM is dead for a reason that has nothing to do with
+> latency — and we should stop citing a latency argument we have now measured to be backwards.)*
+>
+> **Standing lesson:** an intake flag written *inside* the document it criticises is not a retraction. It
+> must reach `RETRACTION_LOG.md` and the quoted headline, or the claim keeps circulating.
+
+*(original section retained below for the record — inadmissible as evidence)*
 
 A rollout-based planner costs `n_candidates × horizon × 4.52 ms`. **8 candidates × 20 steps =
 723 ms/tick — 7× over the 10 Hz budget** (`M-OURS`, derived from the measured per-step cost).
