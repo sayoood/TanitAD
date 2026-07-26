@@ -11,41 +11,39 @@
   "_n_candidates": 256,
   "_n_episode_clusters": 40,
   "_seeds_for_random_arm": 200,
-  "selftest": {
-    "F_flat_from_base_rank": 0.8563,
+  "selftest_S1_committed_numbers": {
+    "F_flat_from_ref_sel_idx": 0.8563,
     "F_flat_committed": 0.8563,
     "F_flat_from_hier_dump": 0.8563,
-    "oracle_in_fan_from_fan_err": 0.2505,
+    "oracle_in_fan_recomputed": 0.2505,
     "oracle_in_fan_committed": 0.2505,
+    "uniform_random_pick_mean": 15.0111,
+    "uniform_random_pick_committed_E-V5-1": 15.8738,
     "S1_pass": true
+  },
+  "selftest_S2_base_rank_semantics": {
+    "claim_tested": "base_rank is the argsort of the DEPLOYED selection score (what the pre-registration assumed)",
+    "rows_matching_[pick]++[anchor_index_order]": 881,
+    "rows_total": 881,
+    "verdict": "REFUTED -- base_rank is NOT a score ranking; it is the as-trained pick followed by anchor index order",
+    "consequence": "the pre-registered R_rand(q) arm is RETRACTED and its numbers are not quoted; O_rand(q) is unaffected because it never touches base_rank",
+    "source_of_truth": "\u2026/2026-07-26-v5-imagination-selection/code/v5_cost_curve.py:109-122"
   },
   "rows": [
     {
       "q": 8,
-      "R_rand_ade": 16.352,
-      "R_rand_seed_mean_min": 15.2866,
-      "R_rand_seed_mean_max": 17.6029,
-      "R_rand_seed_mean_std": 0.471,
-      "O_rand_in_subset": 2.6018,
-      "H_graft_ade": 6.6752,
-      "paired_H_minus_R": {
-        "delta": -9.6767,
-        "lo": -11.6144,
-        "hi": -7.8065,
-        "ci95": 1.9039,
-        "p_delta_gt0": 0.0,
-        "separated": true,
-        "reducer": "mean",
-        "n_windows": 881,
-        "n_episodes": 40,
-        "n_boot": 2000,
-        "estimator": "paired_episode_cluster_bootstrap"
-      },
-      "paired_H_minus_flat": {
-        "delta": 5.819,
-        "lo": 4.5003,
-        "hi": 7.2318,
-        "ci95": 1.3657,
+      "O_rand_coverage_floor": 2.6018,
+      "O_rand_seed_spread": [
+        2.3866,
+        2.9057
+      ],
+      "coverage_binding_at_this_q": true,
+      "coverage_excess_over_flat": 1.7455,
+      "paired_O_rand_minus_flat": {
+        "delta": 1.7455,
+        "lo": 1.3518,
+        "hi": 2.1658,
+        "ci95": 0.407,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -54,11 +52,14 @@
         "n_boot": 2000,
         "estimator": "paired_episode_cluster_bootstrap"
       },
-      "paired_R_minus_flat": {
-        "delta": 15.4957,
-        "lo": 14.5723,
-        "hi": 16.4635,
-        "ci95": 0.9456,
+      "H_graft_ade": 6.6752,
+      "H_graft_minus_flat": 5.8189,
+      "harm_NOT_explained_by_coverage": 4.0734,
+      "paired_H_minus_O_rand": {
+        "delta": 4.0734,
+        "lo": 2.48,
+        "hi": 5.7277,
+        "ci95": 1.6239,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -70,30 +71,18 @@
     },
     {
       "q": 16,
-      "R_rand_ade": 16.6986,
-      "R_rand_seed_mean_min": 15.3381,
-      "R_rand_seed_mean_max": 17.9256,
-      "R_rand_seed_mean_std": 0.4729,
-      "O_rand_in_subset": 1.3642,
-      "H_graft_ade": 2.651,
-      "paired_H_minus_R": {
-        "delta": -14.0475,
-        "lo": -15.0275,
-        "hi": -13.0903,
-        "ci95": 0.9686,
-        "p_delta_gt0": 0.0,
-        "separated": true,
-        "reducer": "mean",
-        "n_windows": 881,
-        "n_episodes": 40,
-        "n_boot": 2000,
-        "estimator": "paired_episode_cluster_bootstrap"
-      },
-      "paired_H_minus_flat": {
-        "delta": 1.7948,
-        "lo": 1.2382,
-        "hi": 2.3803,
-        "ci95": 0.571,
+      "O_rand_coverage_floor": 1.3642,
+      "O_rand_seed_spread": [
+        1.2684,
+        1.5918
+      ],
+      "coverage_binding_at_this_q": true,
+      "coverage_excess_over_flat": 0.5079,
+      "paired_O_rand_minus_flat": {
+        "delta": 0.5079,
+        "lo": 0.2761,
+        "hi": 0.7457,
+        "ci95": 0.2348,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -102,11 +91,14 @@
         "n_boot": 2000,
         "estimator": "paired_episode_cluster_bootstrap"
       },
-      "paired_R_minus_flat": {
-        "delta": 15.8423,
-        "lo": 15.0034,
-        "hi": 16.707,
-        "ci95": 0.8518,
+      "H_graft_ade": 2.651,
+      "H_graft_minus_flat": 1.7947,
+      "harm_NOT_explained_by_coverage": 1.2869,
+      "paired_H_minus_O_rand": {
+        "delta": 1.2869,
+        "lo": 0.6632,
+        "hi": 1.9815,
+        "ci95": 0.6591,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -118,43 +110,34 @@
     },
     {
       "q": 32,
-      "R_rand_ade": 16.7174,
-      "R_rand_seed_mean_min": 15.3195,
-      "R_rand_seed_mean_max": 18.3756,
-      "R_rand_seed_mean_std": 0.4868,
-      "O_rand_in_subset": 0.7645,
+      "O_rand_coverage_floor": 0.7645,
+      "O_rand_seed_spread": [
+        0.7161,
+        0.8278
+      ],
+      "coverage_binding_at_this_q": false,
+      "coverage_excess_over_flat": -0.0918,
+      "paired_O_rand_minus_flat": {
+        "delta": -0.0918,
+        "lo": -0.2499,
+        "hi": 0.0666,
+        "ci95": 0.1582,
+        "p_delta_gt0": 0.1355,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
       "H_graft_ade": 1.2,
-      "paired_H_minus_R": {
-        "delta": -15.5174,
-        "lo": -16.2744,
-        "hi": -14.7991,
-        "ci95": 0.7377,
-        "p_delta_gt0": 0.0,
-        "separated": true,
-        "reducer": "mean",
-        "n_windows": 881,
-        "n_episodes": 40,
-        "n_boot": 2000,
-        "estimator": "paired_episode_cluster_bootstrap"
-      },
-      "paired_H_minus_flat": {
-        "delta": 0.3437,
-        "lo": 0.2293,
-        "hi": 0.4729,
-        "ci95": 0.1218,
-        "p_delta_gt0": 1.0,
-        "separated": true,
-        "reducer": "mean",
-        "n_windows": 881,
-        "n_episodes": 40,
-        "n_boot": 2000,
-        "estimator": "paired_episode_cluster_bootstrap"
-      },
-      "paired_R_minus_flat": {
-        "delta": 15.8612,
-        "lo": 15.1426,
-        "hi": 16.6153,
-        "ci95": 0.7364,
+      "H_graft_minus_flat": 0.3437,
+      "harm_NOT_explained_by_coverage": 0.3437,
+      "paired_H_minus_O_rand": {
+        "delta": 0.4356,
+        "lo": 0.226,
+        "hi": 0.6565,
+        "ci95": 0.2153,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -166,17 +149,18 @@
     },
     {
       "q": 64,
-      "R_rand_ade": 15.7172,
-      "R_rand_seed_mean_min": 14.2589,
-      "R_rand_seed_mean_max": 17.4337,
-      "R_rand_seed_mean_std": 0.5604,
-      "O_rand_in_subset": 0.4813,
-      "H_graft_ade": 1.0621,
-      "paired_H_minus_R": {
-        "delta": -14.655,
-        "lo": -15.214,
-        "hi": -14.1455,
-        "ci95": 0.5343,
+      "O_rand_coverage_floor": 0.4813,
+      "O_rand_seed_spread": [
+        0.4537,
+        0.5067
+      ],
+      "coverage_binding_at_this_q": false,
+      "coverage_excess_over_flat": -0.375,
+      "paired_O_rand_minus_flat": {
+        "delta": -0.375,
+        "lo": -0.5126,
+        "hi": -0.2481,
+        "ci95": 0.1322,
         "p_delta_gt0": 0.0,
         "separated": true,
         "reducer": "mean",
@@ -185,24 +169,14 @@
         "n_boot": 2000,
         "estimator": "paired_episode_cluster_bootstrap"
       },
-      "paired_H_minus_flat": {
-        "delta": 0.2059,
-        "lo": 0.1316,
-        "hi": 0.2897,
-        "ci95": 0.0791,
-        "p_delta_gt0": 1.0,
-        "separated": true,
-        "reducer": "mean",
-        "n_windows": 881,
-        "n_episodes": 40,
-        "n_boot": 2000,
-        "estimator": "paired_episode_cluster_bootstrap"
-      },
-      "paired_R_minus_flat": {
-        "delta": 14.8609,
-        "lo": 14.3582,
-        "hi": 15.4124,
-        "ci95": 0.5271,
+      "H_graft_ade": 1.0621,
+      "H_graft_minus_flat": 0.2058,
+      "harm_NOT_explained_by_coverage": 0.2058,
+      "paired_H_minus_O_rand": {
+        "delta": 0.5809,
+        "lo": 0.4128,
+        "hi": 0.7563,
+        "ci95": 0.1718,
         "p_delta_gt0": 1.0,
         "separated": true,
         "reducer": "mean",
@@ -214,17 +188,19 @@
     },
     {
       "q": 128,
-      "R_rand_ade": 11.168,
-      "R_rand_seed_mean_min": 10.1734,
-      "R_rand_seed_mean_max": 12.7413,
-      "R_rand_seed_mean_std": 0.4638,
-      "O_rand_in_subset": 0.3365,
-      "paired_R_minus_flat": {
-        "delta": 10.3117,
-        "lo": 9.9097,
-        "hi": 10.7324,
-        "ci95": 0.4114,
-        "p_delta_gt0": 1.0,
+      "O_rand_coverage_floor": 0.3365,
+      "O_rand_seed_spread": [
+        0.3233,
+        0.3533
+      ],
+      "coverage_binding_at_this_q": false,
+      "coverage_excess_over_flat": -0.5198,
+      "paired_O_rand_minus_flat": {
+        "delta": -0.5198,
+        "lo": -0.6493,
+        "hi": -0.4048,
+        "ci95": 0.1222,
+        "p_delta_gt0": 0.0,
         "separated": true,
         "reducer": "mean",
         "n_windows": 881,
@@ -235,18 +211,20 @@
     },
     {
       "q": 256,
-      "R_rand_ade": 0.8563,
-      "R_rand_seed_mean_min": 0.8563,
-      "R_rand_seed_mean_max": 0.8563,
-      "R_rand_seed_mean_std": 0.0,
-      "O_rand_in_subset": 0.2505,
-      "paired_R_minus_flat": {
-        "delta": 0.0,
-        "lo": 0.0,
-        "hi": 0.0,
-        "ci95": 0.0,
+      "O_rand_coverage_floor": 0.2505,
+      "O_rand_seed_spread": [
+        0.2505,
+        0.2505
+      ],
+      "coverage_binding_at_this_q": false,
+      "coverage_excess_over_flat": -0.6058,
+      "paired_O_rand_minus_flat": {
+        "delta": -0.6057,
+        "lo": -0.7339,
+        "hi": -0.4893,
+        "ci95": 0.1223,
         "p_delta_gt0": 0.0,
-        "separated": false,
+        "separated": true,
         "reducer": "mean",
         "n_windows": 881,
         "n_episodes": 40,
@@ -255,11 +233,10 @@
       }
     }
   ],
-  "per_q_verdict": {
-    "8": "COMMITMENT-INFORMATIVE",
-    "16": "COMMITMENT-INFORMATIVE",
-    "32": "COMMITMENT-INFORMATIVE",
-    "64": "COMMITMENT-INFORMATIVE"
+  "F2_adjudication": {
+    "q_at_which_coverage_first_binds": 16,
+    "at_q>=32_coverage_floor_is_below_flat": true,
+    "reading": "F2 does NOT fire at q=32/64: a random q-subset still contains a candidate BETTER than what flat selects, so the separated harm at those q cannot be coverage. At q=8/16 the coverage floor exceeds F_flat and part of the harm IS coverage \u2014 see coverage_excess_over_flat."
   },
-  "VERDICT": "COMMITMENT-INFORMATIVE"
+  "VERDICT": "F2 PARTIAL \u2014 coverage explains part of the harm at q<=16 and NONE of it at q>=32; the R_rand arm that would have settled the rest is RETRACTED (S2) and deferred to E-H2"
 }

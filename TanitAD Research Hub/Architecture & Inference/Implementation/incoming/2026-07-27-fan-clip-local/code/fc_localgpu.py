@@ -35,19 +35,34 @@ def _peak_gib() -> float:
     return round(torch.cuda.max_memory_allocated() / GIB, 3)
 
 
+VRAM_GIB = None          # set in main() from the device properties
+
+
 def sweep(build, step, sizes, label):
-    """Push batch size until OOM. Returns the largest that fit + its peak GiB."""
+    """Push batch size until OOM.
+
+    ⚠️ On Windows/WDDM a CUDA allocation that exceeds VRAM does NOT always
+    raise -- the driver silently spills into shared host memory and the run
+    completes ~100x slower. `max_memory_allocated` still counts those bytes, so
+    any row whose peak exceeds the card's VRAM is flagged `spilled_to_host` and
+    is NOT counted as capacity. `max_batch_in_vram` is the honest answer.
+    """
     rows, best, best_mem, best_ms = [], None, None, None
     for b in sizes:
         _reset()
+        m = None
         try:
             m = build()
             t0 = time.time()
             step(m, b)
             torch.cuda.synchronize()
             ms = (time.time() - t0) * 1e3
-            rows.append({"batch": b, "peak_gib": _peak_gib(), "ms": round(ms, 1)})
-            best, best_mem, best_ms = b, _peak_gib(), round(ms, 1)
+            pk = _peak_gib()
+            spill = VRAM_GIB is not None and pk > 0.95 * VRAM_GIB
+            rows.append({"batch": b, "peak_gib": pk, "ms": round(ms, 1),
+                         "spilled_to_host": spill})
+            if not spill:
+                best, best_mem, best_ms = b, pk, round(ms, 1)
         except torch.cuda.OutOfMemoryError:
             rows.append({"batch": b, "oom": True})
             break
@@ -57,13 +72,15 @@ def sweep(build, step, sizes, label):
         finally:
             m = None
             _reset()
-    return {"label": label, "max_batch_that_fit": best,
+    return {"label": label, "max_batch_in_vram": best,
             "peak_gib_at_max": best_mem, "ms_at_max": best_ms, "rows": rows}
 
 
 def main() -> None:
+    global VRAM_GIB
     assert torch.cuda.is_available(), "no CUDA on this box"
     p = torch.cuda.get_device_properties(0)
+    VRAM_GIB = p.total_memory / GIB
     R = {
         "_experiment": "LOCAL_GPU capability probe (dev box)",
         "_evidence_class": "MEASURED (ours, dev box)",
@@ -116,24 +133,49 @@ def main() -> None:
     cfg = f4.v4_config()
     head = f4.FlagshipV4Head(cfg).to(DEV)
     n_head = sum(q.numel() for q in head.parameters())
-    S = getattr(cfg, "state_dim", None) or head.cfg.state_dim
-    W = len(cfg.horizons) if hasattr(cfg, "horizons") else 8
+    S = int(cfg.state_dim)
+    W = int(getattr(cfg, "window", 8))
+
+    P_IMAG = int(head.imag_pos.shape[0])
+
+    def _head_inputs(bsz):
+        return dict(
+            states=torch.randn(bsz, W, S, device=DEV),
+            v0=torch.rand(bsz, device=DEV) * 20,
+            imagined=torch.randn(bsz, P_IMAG, S, device=DEV),
+            vt_band=torch.zeros(bsz, dtype=torch.long, device=DEV),
+            route=torch.zeros(bsz, dtype=torch.long, device=DEV),
+            route_graded=torch.zeros(bsz, device=DEV),
+            vt_speed=torch.rand(bsz, device=DEV) * 10)
 
     def _head_fwd_bwd(m, bsz):
-        st = torch.randn(bsz, 8, S, device=DEV)
-        v0 = torch.rand(bsz, device=DEV) * 20
-        out = m(st, v0)
+        out = m(**_head_inputs(bsz))
         loss = sum(v.float().pow(2).mean() for v in out.values()
                    if torch.is_tensor(v) and v.is_floating_point())
         loss.backward()
+        m.zero_grad(set_to_none=True)
+
+    def _head_fwd(m, bsz):
+        with torch.no_grad():
+            m(**_head_inputs(bsz))
 
     R["S3_v4_head"] = {
-        "params": n_head, "state_dim": int(S), "n_anchors": int(cfg.n_anchors)
-        if hasattr(cfg, "n_anchors") else None,
+        "_read": "the v4 planner head is the piece that EMITS THE FAN "
+                 "(`anchor_traj` [B, 256, 20, 2]). It consumes `states` "
+                 "[B, 8, 2048] -- so with the head checkpoint and the staged "
+                 "per-window states, fan regeneration and any re-scoring become "
+                 "a LOCAL experiment. Neither is currently in the repo (S2 of "
+                 "FAN_CLIP_LOCAL.md).",
+        "params": n_head, "state_dim": int(S), "window": int(W),
+        "n_imagination_probe_tokens": P_IMAG,
+        "n_anchors": int(getattr(cfg, "n_anchors", 0)) or None,
         "param_breakdown": {k: int(v) for k, v in f4.param_breakdown(head).items()},
         "train_fwd_bwd": sweep(lambda: head, _head_fwd_bwd,
-                               [8, 32, 128, 512, 1024, 2048, 4096],
+                               [8, 32, 128, 256, 512, 1024, 2048],
                                "v4 head fwd+bwd (head-only training)"),
+        "infer_no_grad": sweep(lambda: head, _head_fwd,
+                               [8, 32, 128, 512, 1024, 2048, 4096],
+                               "v4 head forward, no_grad (fan generation)"),
     }
     del head
     _reset()
