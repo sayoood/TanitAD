@@ -1,0 +1,322 @@
+{
+  "provenance": {
+    "artifact": "S3 manoeuvre-initiation-timing characterisation",
+    "date": "2026-07-26",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "limit": 0,
+    "tag": "primary",
+    "band_names": [
+      "t_1_2",
+      "t_2_5",
+      "t_5_10",
+      "t_10_H",
+      "t_none"
+    ],
+    "band_edges_s": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "estimator": "episode_cluster_bootstrap (taniteval/ci.py) B=2000; overlapping_holdout_se NEVER used",
+    "caches": [
+      {
+        "role": "train",
+        "dir": "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-train-14231cd29c74",
+        "cache_name": "physicalai-train-14231cd29c74",
+        "n_episode_files": 400,
+        "is_parity_cache": false,
+        "parity_expected": "physicalai-train-e438721ae894"
+      },
+      {
+        "role": "val",
+        "dir": "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-val-bb543bdf7836",
+        "cache_name": "physicalai-val-bb543bdf7836",
+        "n_episode_files": 100,
+        "is_parity_cache": false,
+        "parity_expected": "physicalai-val-0c5f7dac3b11"
+      }
+    ],
+    "mine_seconds": 140.1
+  },
+  "train_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "n_windows_total": 68377,
+    "n_after_M1_observable_horizon": 28777,
+    "n_after_M1_M4_moving": 21929,
+    "n_admissible": 14484,
+    "rejected_by_M2_already_begun": 5722,
+    "rejected_by_M3_window_executing": 1723,
+    "coverage_of_all_windows": 0.2118,
+    "coverage_of_M1M4_windows": 0.6605,
+    "class_counts": {
+      "t_1_2": 1248,
+      "t_2_5": 3729,
+      "t_5_10": 4627,
+      "t_10_H": 409,
+      "t_none": 4471
+    },
+    "class_balance": {
+      "t_1_2": 0.0862,
+      "t_2_5": 0.2575,
+      "t_5_10": 0.3195,
+      "t_10_H": 0.0282,
+      "t_none": 0.3087
+    },
+    "majority_class": "t_5_10",
+    "majority_rate": 0.3195,
+    "event_rate": 0.6913,
+    "ttm_distribution_event_windows": {
+      "n": 10013,
+      "mean": 5.203,
+      "sd": 2.646,
+      "deciles_s": [
+        1.0,
+        1.8,
+        2.6,
+        3.4,
+        4.2,
+        5.0,
+        5.8,
+        6.7,
+        7.8,
+        9.1,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        1248,
+        1235,
+        1252,
+        1242,
+        1161,
+        1083,
+        903,
+        793,
+        687,
+        398,
+        11
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      3.0,
+      5.0,
+      7.2
+    ],
+    "n_episodes_total": 400,
+    "n_episodes_with_decision_point": 327,
+    "n_episodes_with_an_EVENT": 256,
+    "episode_yield_rate": 0.8175
+  },
+  "val_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "n_windows_total": 17100,
+    "n_after_M1_observable_horizon": 7200,
+    "n_after_M1_M4_moving": 5079,
+    "n_admissible": 3459,
+    "rejected_by_M2_already_begun": 1202,
+    "rejected_by_M3_window_executing": 418,
+    "coverage_of_all_windows": 0.2023,
+    "coverage_of_M1M4_windows": 0.681,
+    "class_counts": {
+      "t_1_2": 324,
+      "t_2_5": 912,
+      "t_5_10": 1126,
+      "t_10_H": 121,
+      "t_none": 976
+    },
+    "class_balance": {
+      "t_1_2": 0.0937,
+      "t_2_5": 0.2637,
+      "t_5_10": 0.3255,
+      "t_10_H": 0.035,
+      "t_none": 0.2822
+    },
+    "majority_class": "t_5_10",
+    "majority_rate": 0.3255,
+    "event_rate": 0.7178,
+    "ttm_distribution_event_windows": {
+      "n": 2483,
+      "mean": 5.204,
+      "sd": 2.705,
+      "deciles_s": [
+        1.0,
+        1.7,
+        2.5,
+        3.3,
+        4.1,
+        5.0,
+        5.9,
+        6.8,
+        7.9,
+        9.1,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        324,
+        321,
+        311,
+        280,
+        273,
+        262,
+        231,
+        196,
+        164,
+        116,
+        5
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.9,
+      5.0,
+      7.3
+    ],
+    "n_episodes_total": 100,
+    "n_episodes_with_decision_point": 81,
+    "n_episodes_with_an_EVENT": 64,
+    "episode_yield_rate": 0.81
+  },
+  "train_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "n_windows_total": 68377,
+    "n_after_M1_observable_horizon": 28777,
+    "n_after_M1_M4_moving": 21929,
+    "n_admissible": 8980,
+    "rejected_by_M2_already_begun": 8825,
+    "rejected_by_M3_window_executing": 4124,
+    "coverage_of_all_windows": 0.1313,
+    "coverage_of_M1M4_windows": 0.4095,
+    "class_counts": {
+      "t_1_2": 1683,
+      "t_2_5": 3174,
+      "t_5_10": 2366,
+      "t_10_H": 162,
+      "t_none": 1595
+    },
+    "class_balance": {
+      "t_1_2": 0.1874,
+      "t_2_5": 0.3535,
+      "t_5_10": 0.2635,
+      "t_10_H": 0.018,
+      "t_none": 0.1776
+    },
+    "majority_class": "t_2_5",
+    "majority_rate": 0.3535,
+    "event_rate": 0.8224,
+    "ttm_distribution_event_windows": {
+      "n": 7385,
+      "mean": 4.214,
+      "sd": 2.55,
+      "deciles_s": [
+        1.0,
+        1.4,
+        1.8,
+        2.3,
+        2.9,
+        3.6,
+        4.4,
+        5.4,
+        6.6,
+        8.2,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        1683,
+        1342,
+        1022,
+        810,
+        628,
+        604,
+        477,
+        368,
+        289,
+        157,
+        5
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.1,
+      3.6,
+      6.0
+    ],
+    "n_episodes_total": 400,
+    "n_episodes_with_decision_point": 299,
+    "n_episodes_with_an_EVENT": 276,
+    "episode_yield_rate": 0.7475
+  },
+  "val_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "n_windows_total": 17100,
+    "n_after_M1_observable_horizon": 7200,
+    "n_after_M1_M4_moving": 5079,
+    "n_admissible": 1997,
+    "rejected_by_M2_already_begun": 1925,
+    "rejected_by_M3_window_executing": 1157,
+    "coverage_of_all_windows": 0.1168,
+    "coverage_of_M1M4_windows": 0.3932,
+    "class_counts": {
+      "t_1_2": 376,
+      "t_2_5": 730,
+      "t_5_10": 471,
+      "t_10_H": 26,
+      "t_none": 394
+    },
+    "class_balance": {
+      "t_1_2": 0.1883,
+      "t_2_5": 0.3655,
+      "t_5_10": 0.2359,
+      "t_10_H": 0.013,
+      "t_none": 0.1973
+    },
+    "majority_class": "t_2_5",
+    "majority_rate": 0.3655,
+    "event_rate": 0.8027,
+    "ttm_distribution_event_windows": {
+      "n": 1603,
+      "mean": 4.066,
+      "sd": 2.487,
+      "deciles_s": [
+        1.0,
+        1.4,
+        1.8,
+        2.3,
+        2.8,
+        3.4,
+        4.1,
+        5.1,
+        6.4,
+        8.0,
+        11.0
+      ],
+      "hist_1s_bins": [
+        0,
+        376,
+        309,
+        255,
+        166,
+        125,
+        106,
+        99,
+        83,
+        58,
+        25,
+        1
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.0,
+      3.4,
+      5.7
+    ],
+    "n_episodes_total": 100,
+    "n_episodes_with_decision_point": 73,
+    "n_episodes_with_an_EVENT": 67,
+    "episode_yield_rate": 0.73
+  }
+}
