@@ -19,7 +19,7 @@ number in this document is typed by hand.)*
 
 # 0. VERDICT IN ONE BOX
 
-> ## **The head exists, it is trained, and it is honestly reported as UNDERPOWERED — with one thing settled and one thing corrected.**
+> ## **The head exists and is trained. The pre-registered comparison is UNDERPOWERED — but the run is not empty: it settles the efficiency claim, closes the C12 trap, and returns one WELL-POWERED negative about the frozen representation.**
 >
 > **The pre-registered rule (`PRE_REGISTRATION.md §7`, evaluated in code) returns `UNDERPOWERED`.**
 > At the pre-registered operating point the primary arm beats **neither** baseline with a CI that
@@ -71,15 +71,35 @@ number in this document is typed by hand.)*
 > **12 of 318** frames. **The composite IS its hard conjunct here**, so a null cannot be blamed on
 > the easy half. C12's warning is discharged with a measurement rather than an argument.
 >
-> ### ⚠️ And one instrument of mine was defective — found by reading my own result, not by an audit
+> ### ⭐⭐ 4. THE WELL-POWERED RESULT — and it is the one that should redirect H2
 >
-> The pre-registered `T_seen` diagnostic is **mis-posed**: `T_seen` fires on **96.7 %** of frames,
-> and BCE + `pos_weight` is a rare-positive recipe, so it up-weights the majority class. Its
-> apparent reading (AP 1.01× base) is an artefact of the target's base rate and **is not read**.
-> The same question posed correctly — **`NOT_T_seen`**, "an agent the encoder CAN see requires
-> braking", **~3.3 % of frames, ~5× better powered than the composite** — was run as a corrected
-> diagnostic; §7 reports it. *(C13's lesson applied to my own instrument: ask what value would make
-> the test fail, and whether the estimator can produce it.)*
+> The pre-registered `T_seen` diagnostic was **mis-posed** (96.7 %-positive target trained with a
+> rare-positive recipe) and **is not read**. Re-posed correctly as **`NOT_T_seen`** — *"an agent the
+> encoder CAN see requires braking ≥ τ\*"*, **1,642 held-out positives across 101 clips**, i.e.
+> **5.4× the positives and 2.9× the clusters** of the composite — the answer is unambiguous:
+>
+> | arm | AP | AP / base | ΔAP vs chance | above chance? |
+> |---|---|---|---|---|
+> | **`head_ego`** (NO camera) | **0.1226** | **3.74×** | **+0.0766 [+0.0506, +0.1353]** | ✅ **YES** |
+> | `head_img_ego` | 0.0521 | 1.59× | +0.0060 [−0.0004, +0.0395] | no |
+> | `head_img` | 0.0491 | 1.50× | +0.0031 [−0.0029, +0.0428] | no |
+>
+> **This is a POSITIVE CONTROL that fires, and it changes what "nothing is above chance" means.**
+> The pipeline, the head, the CV and the estimator are all capable of finding a separated signal —
+> they found one here. So the §0-point-2 null is a statement about **what the frozen image features
+> deliver**, not about a broken rig.
+>
+> **Two things follow, and both are actionable:**
+> 1. ⛔ **The frozen v1 state does not expose the most basic visual precondition the H2 gate needs**
+>    — *"is there something ahead I must brake for?"* — even with 836 training positives and 1,642
+>    held-out ones. It does not clear chance. *(Bounded claim: this is one head and one recipe on a
+>    frozen representation. It does not prove the information is absent — a linear probe or a
+>    fine-tuned trunk may still find it. It does prove this head cannot.)*
+> 2. ⚠️ **Adding the image features to a WORKING ego head destroys it** — 3.74× → 1.59×, from
+>    separated to not-separated. That is a capacity/optimisation failure signature (2048 × 8 image
+>    dims swamping 2 ego channels at n = 836 positives), not evidence about information content —
+>    and it says the next experiment must add vision in a **low-dimensional, regularised** way, not
+>    by concatenation.
 >
 > ### The one number that decides what to do next
 >
@@ -425,8 +445,20 @@ the events.
 | conjunct | base rate | AP (CI95) | AP / base | AUROC |
 |---|---|---|---|---|
 | `T_off` | 0.0063 | 0.00846 [0.00404, 0.02125] | **1.33x** | 0.5818 |
-| `T_seen` | 0.9672 | 0.97673 [0.96868, 0.98368] | **1.01x** | 0.5748 |
-| `NOT_T_seen` (the rare, informative side) | 0.0328 | 0.03779 [0.02781, 0.04958] | **1.15x** | 0.4252 |
+| `T_seen` ⛔ **NOT READ — mis-posed instrument, amendment A1** | 0.9672 | 0.97673 [0.96868, 0.98368] | **1.01x** | 0.5748 |
+| `NOT_T_seen` read off the MIS-POSED head ⛔ **NOT READ** | 0.0328 | 0.03779 [0.02781, 0.04958] | **1.15x** | 0.4252 |
+
+> ⛔ The `T_seen` row and its complement are printed for completeness and **are not read**: `T_seen` is a 96.7 %-positive target and the pre-registered BCE + `pos_weight` recipe up-weights its MAJORITY class, so that head carries no information about the rare side. The corrected diagnostic is the next table.
+
+### C12 — the CORRECTED conjunct diagnostic (`NOT_T_seen`), amendment A1
+
+*Target: NOT_T_seen = (a_req_seen >= tau*) — an agent INSIDE the encoder crop requires braking >= 0.5 m/s^2. **1642 positives** in 50119 frames (3.28 %), **101 of 322 clips positive** — 5.4x the composite's positives and far better powered.*
+
+| arm | AP (CI95) | AP / base | ΔAP vs chance | CI95 | above chance? | AUROC |
+|---|---|---|---|---|---|---|
+| `head_img_ego` | 0.05205 [0.03679, 0.07550] | **1.59x** | +0.00601 | [-0.00040, +0.03947] | no | 0.6544 |
+| `head_img` | 0.04914 [0.03452, 0.07926] | **1.50x** | +0.00310 | [-0.00291, +0.04284] | no | 0.6349 |
+| `head_ego` | 0.12263 [0.08052, 0.17431] | **3.74x** | +0.07659 | [+0.05055, +0.13529] | **YES** | 0.7776 |
 
 ### Sensitivities
 
@@ -441,11 +473,17 @@ the events.
 
 ### 7.1 Reading the sensitivities
 
-- **`NOT_T_seen` (amendment A1) is the best-powered probe in this study** — **1,642** held-out
-  positives across **101** positive clips, against the composite's 306 across 35, and **836**
-  training positives against 169. It asks the strictly easier, strictly more visual question:
-  *is there an agent the encoder CAN see that requires braking?* If the frozen v1 state exposed
-  obstacle geometry at all, this is where it would show.
+- **⭐ `NOT_T_seen` (amendment A1) is the best-powered probe in this study, and it is the only place
+  anything separates.** **1,642** held-out positives across **101** positive clips, against the
+  composite's 306 across 35, and **836** training positives against 169. It asks the strictly
+  easier, strictly more visual question: *is there an agent the encoder CAN see that requires
+  braking?* **`head_ego` clears chance by +0.0766 [+0.0506, +0.1353]; neither image arm clears it at
+  all**, and adding image features to the ego head takes it from 3.74× base to 1.59× and from
+  separated to not-separated. Training-side CV agrees (CV-AP `head_ego` **0.0967** vs `head_img`
+  0.0327 vs `head_img_ego` 0.0296, TRAIN base 0.0269).
+  ⚠️ **Read the ego arm's success carefully** — it is the *same reactive channel* as §6.1 d-bis:
+  when an agent ahead requires braking, the ego is usually already braking. An anticipation claim
+  cannot be built on it, but a **positive control** can, and that is what it serves as here.
 - **Junctions:** AP 1.58× base inside vs 3.09× outside — the same direction as the label's own
   junction null (0.45× [0.00, 1.40], INHERITED). H2's headline situation remains the weakest one.
 - **Encoder-unseen clips:** 1.04× base on 34 positives — no signal, but far too few positives to
@@ -476,6 +514,9 @@ which is the strongest evidence that §6's ordering is not a held-out fluke.
 | `head_ego|trigger` | pos_weight 20, d 128 | 14 | **0.0198** | 0.0056, 0.0058, 0.0061, 0.0097, 0.0056, 0.0056 … | 415,107 |
 | `head_img_ego|T_off` | pos_weight 20, d 128 | 2 | **0.0078** | 0.0058, 0.0078, 0.0056, 0.0068, 0.0063, 0.0055 … | 677,122 |
 | `head_img_ego|T_seen` | pos_weight 100, d 128 | 8 | **0.9807** | 0.9777, 0.9731, 0.9723, 0.9737, 0.9754, 0.9736 … | 677,122 |
+| `head_img_ego|NOT_T_seen` | pos_weight 100, d 256 | 1 | **0.0296** | 0.0296, 0.0281, 0.0246, 0.0271, 0.0249, 0.0235 … | 2,173,442 |
+| `head_img|NOT_T_seen` | pos_weight 100, d 128 | 2 | **0.0327** | 0.0280, 0.0327, 0.0308, 0.0251, 0.0244, 0.0224 … | 676,866 |
+| `head_ego|NOT_T_seen` | pos_weight 100, d 256 | 18 | **0.0967** | 0.0548, 0.0523, 0.0604, 0.0629, 0.0623, 0.0570 … | 1,649,154 |
 
 | fold | chunks |
 |---|---|
@@ -569,12 +610,24 @@ pre-registration forbids all three, and `L1`'s death was exactly this error one 
 `NOT_T_seen` diagnostic in §7 is **not** an exception: it repairs a mis-posed *diagnostic*, it is
 labelled as such, and it takes no part in the primary comparison.
 
-**5. The next pre-registration should test the REPRESENTATION, not the head.** The open question
-after this run is whether the frozen v1 state exposes *"an agent ahead requires braking"* at all.
-`NOT_T_seen` (~3.3 %, 5× the composite's power) is the right target, and the honest ladder is:
-frozen-state linear probe → this attention head → a fine-tuned trunk. If the frozen state fails a
-linear probe on a well-powered target, no head can rescue it and the H2 gate needs a different
-feature, not a bigger classifier.
+**5. ⭐ The next pre-registration should test the REPRESENTATION, not the head — and `NOT_T_seen` is
+the target, because it is the only place in this study where anything separated.** MEASURED here:
+an ego-only head clears chance on it (+0.0766 [+0.0506, +0.1353]) while neither image arm does, and
+adding image features to the working ego head **destroys** it (3.74× → 1.59×). Those two facts
+together point at capacity/optimisation, not necessarily at missing information. The honest ladder,
+in cost order, all on `NOT_T_seen` and all cheap:
+   1. **a linear (ridge/logistic) probe on the frozen 2048-d state** — the lowest-variance reader;
+      if *this* fails, no head rescues the representation;
+   2. **ego + a low-rank image projection** (e.g. PCA-64) rather than raw concatenation — tests the
+      swamping hypothesis directly;
+   3. **a fine-tuned trunk** — only if (1) or (2) shows the information is there.
+   Each is ~30 GPU-min on the features already on pod2. **Do (1) before spending anything else on
+   H2.**
+
+**6. Re-run this exact study after the expansion in (1) and change nothing else.** Every script here
+is parameterised by the feature directory; the pre-registration, the split rule, τ\*, the operating-
+point rule and the estimator are all fixed. A re-run is a **re-measurement, not a new design** —
+which is what makes the expansion worth authorising.
 
 ---
 
@@ -605,18 +658,23 @@ Path: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/202
 | `artifacts/align_second_probe.json` | the RMSE second probe on all 62 dropped clips | **repo** |
 | `artifacts/subset_lift.json` | the label's own lift on the exact evaluation subset — the power ceiling | **repo** |
 | `artifacts/train_summary.json` | CV grid, selected config/epoch per arm, fold composition, per-epoch train loss | **repo** |
+| `artifacts/train_summary_c12fix.json` | the same for the corrected `NOT_T_seen` diagnostic | **repo** |
+| `artifacts/c12_fix.json` | ⭐ the corrected C12 diagnostic — the only separated result in the study | **repo** |
+| `artifacts/_tables.md` | the rendered tables, exactly as spliced into §6–§7b | **repo** |
 | `artifacts/cost_model.json` | MEASURED A40 wall-clock + analytic MACs for encoder and head | **repo** |
-| `checkpoints/head_*.pt` | **the trained heads** (5), each with its config, feature normalisation and target names | **repo** |
+| `checkpoints/head_*.pt` | **the 8 trained heads** — `{head_img_ego, head_img, head_ego} × trigger`, `head_img_ego × {T_off, T_seen}`, `{head_img_ego, head_img, head_ego} × NOT_T_seen` — each with its config, feature normalisation and target names | **repo** |
 | `scripts/h2c_prep.py` | join + de-identified label bundle (dev box) | **repo** |
 | `scripts/h2c_features.py` | alignment + frozen-encoder feature extraction (pod2) | **repo** |
 | `scripts/h2c_align2.py` | the alignment second probe (pod2) | **repo** |
 | `scripts/h2c_aligncheck.py` | the guard-trip adjudication (dev box) | **repo** |
-| `scripts/h2c_train.py` | the head, the CV, all arms (pod2) | **repo** |
+| `scripts/h2c_train.py` | the head, the CV, all arms — `--plan primary` / `--plan c12fix` (pod2) | **repo** |
 | `scripts/h2c_cost.py` | the compute measurement (pod2) | **repo** |
 | `scripts/h2c_stats.py` | the estimators — paired episode-cluster bootstrap over an arbitrary reducer | **repo** |
 | `scripts/h2c_eval.py` | the held-out evaluation (dev box, uses the repo's own `taniteval/ci.py`) | **repo** |
+| `scripts/h2c_c12fix.py` | the corrected C12 diagnostic's evaluation (dev box) | **repo** |
 | `scripts/h2c_subset_lift.py` | the power-ceiling check | **repo** |
-| `scripts/h2c_report.py` | renders every table in §6–§7 from the JSON — no number is hand-typed | **repo** |
+| `scripts/h2c_report.py` | renders every table in §6–§7b from the JSON — no number is hand-typed | **repo** |
+| `scripts/h2c_splice.py` | places the rendered tables into this document at its markers | **repo** |
 
 **Not in the repo, and deliberately so:**
 
@@ -636,8 +694,20 @@ python scripts/h2c_prep.py <l2tab> <ep_ids.json> <r0_selection.parquet> <bundle>
 python3 scripts/h2c_features.py --bundle <bundle> --out <feats> \
         --ckpt /workspace/experiments/flagship4b-speedjerk-30k/ckpt.pt
 python3 scripts/h2c_train.py --feats <feats> --bundle <bundle> --out <run> --epochs 30
+python3 scripts/h2c_train.py --feats <feats> --bundle <bundle> --out <run_c12fix> \
+        --epochs 30 --plan c12fix
 python3 scripts/h2c_cost.py  --ckpt <same ckpt> --out <run>
 # dev box
-python scripts/h2c_eval.py --run <run> --out artifacts --cost artifacts/cost_model.json
-python scripts/h2c_report.py artifacts
+python scripts/h2c_subset_lift.py <l2tab> <bundle> artifacts/align_summary.json \
+       artifacts/subset_lift.json
+python scripts/h2c_aligncheck.py artifacts/align_summary.json <l2tab> <bundle> \
+       artifacts/align_admission.json
+python scripts/h2c_eval.py    --run <run>        --out artifacts --cost artifacts/cost_model.json
+python scripts/h2c_c12fix.py  --run <run_c12fix> --out artifacts
+python scripts/h2c_report.py  artifacts artifacts/_tables.md
+python scripts/h2c_splice.py  artifacts H2_CLASSIFIER.md
 ```
+
+**Timings, MEASURED on this run:** feature extraction **578.7 s** (520 clips, 1.11 s/clip, A40) ·
+primary training **2,609 s** (5 models × 4-config × 5-fold CV + final) · corrected diagnostic
+**1,623 s** · compute benchmark ~60 s · held-out evaluation ~10 CPU-min (B = 2000 over 322 clusters).

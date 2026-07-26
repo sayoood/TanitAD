@@ -1,0 +1,86 @@
+{
+  "target": "NOT_T_seen = (a_req_seen >= tau*) \u2014 an agent INSIDE the encoder crop requires braking >= 0.5 m/s^2",
+  "why": "T_seen is a 96.7 %-positive target and the pre-registered BCE+pos_weight recipe up-weights its MAJORITY class; NOT_T_seen poses the same question as a rare-positive target and is ~5x better powered than the composite",
+  "n_frames": 50119,
+  "n_positives": 1642,
+  "base_rate": 0.03276202637722221,
+  "n_positive_clips": 101,
+  "n_clips": 322,
+  "arms": {
+    "head_img_ego": {
+      "AP": {
+        "point": 0.052046,
+        "lo": 0.036791,
+        "hi": 0.075503,
+        "n_episodes": 322,
+        "n_boot": 2000,
+        "n_draws_used": 2000,
+        "estimator": "episode_cluster_bootstrap (taniteval.ci._draws, B=2000)"
+      },
+      "AP_over_base": 1.5886094890046092,
+      "AUROC": 0.654367289514369,
+      "paired_AP_vs_chance": {
+        "AP_a": 0.052046,
+        "AP_b": 0.04604,
+        "delta": 0.006006,
+        "lo": -0.000403,
+        "hi": 0.039468,
+        "separated": false,
+        "favours_a": false,
+        "n_episodes": 322,
+        "n_draws_used": 2000,
+        "estimator": "paired_episode_cluster_bootstrap (reducer form; taniteval.ci._draws, B=2000)"
+      }
+    },
+    "head_img": {
+      "AP": {
+        "point": 0.049144,
+        "lo": 0.034518,
+        "hi": 0.079257,
+        "n_episodes": 322,
+        "n_boot": 2000,
+        "n_draws_used": 2000,
+        "estimator": "episode_cluster_bootstrap (taniteval.ci._draws, B=2000)"
+      },
+      "AP_over_base": 1.5000220662814077,
+      "AUROC": 0.634890858371828,
+      "paired_AP_vs_chance": {
+        "AP_a": 0.049144,
+        "AP_b": 0.04604,
+        "delta": 0.003103,
+        "lo": -0.002906,
+        "hi": 0.042844,
+        "separated": false,
+        "favours_a": false,
+        "n_episodes": 322,
+        "n_draws_used": 2000,
+        "estimator": "paired_episode_cluster_bootstrap (reducer form; taniteval.ci._draws, B=2000)"
+      }
+    },
+    "head_ego": {
+      "AP": {
+        "point": 0.122631,
+        "lo": 0.080518,
+        "hi": 0.174306,
+        "n_episodes": 322,
+        "n_boot": 2000,
+        "n_draws_used": 2000,
+        "estimator": "episode_cluster_bootstrap (taniteval.ci._draws, B=2000)"
+      },
+      "AP_over_base": 3.743072504439743,
+      "AUROC": 0.7775624951365738,
+      "paired_AP_vs_chance": {
+        "AP_a": 0.122631,
+        "AP_b": 0.04604,
+        "delta": 0.07659,
+        "lo": 0.05055,
+        "hi": 0.135293,
+        "separated": true,
+        "favours_a": true,
+        "n_episodes": 322,
+        "n_draws_used": 2000,
+        "estimator": "paired_episode_cluster_bootstrap (reducer form; taniteval.ci._draws, B=2000)"
+      }
+    }
+  }
+}

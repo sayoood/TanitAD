@@ -232,3 +232,82 @@ datasets/AV2, Orin/Thor, AlpaSim consolidation.
 
 M1, M2, M3 are binding from this commit. M4's row-writer fix and instrument certification are being
 implemented now. M5 awaits Sayed's answer on §5.2. M6 is in flight on the eval pod.
+
+---
+
+## 7. HARVEST — the other half of the recovery (added 2026-07-26 on the PI's question)
+
+> *"look on all our program agents how we can leverage their results and incorporate them in the
+> recovery plan."*
+
+**This reframes the plan, and the reframe is correct.** §1–§6 attack the **false-positive rate** — the
+claims we make and retract. But the program has a second, quieter failure: a **low harvest rate.**
+
+**There are 134 agent deliverable directories.** We have been **generating results faster than we
+have been harvesting them.** The retractions got attention precisely because they were loud; the
+*unexploited true positives* are silent, and there are almost certainly more of them. The program's
+stranding history is the same disease in an earlier form — an orthogonality instrument unmerged
+**10 days**, LAL-v2 anticipation **12 days**, TanitEval and REF-B v2's architecture each on a single
+disk.
+
+⇒ **M7 — harvest is a standing obligation, not an occasional audit.**
+
+### 7.1 The highest-leverage item, available now for near-zero compute
+
+`MODEL_REGISTRY.md` §1.2a, MEASURED: **"any verdict resting on a 40-episode 'not separated' is
+UNPOWERED, not refuted."** Going 40 → 600 episodes shrinks CI half-widths **×2.8–3.9 (mean 3.4)**.
+**One verdict has already flipped on power alone** — `along_track_vs_cv`, tie → "model wins", with the
+point estimate moving **0.7 %**.
+
+**We have been treating "not separated" as "no effect" across a program's worth of reports.** Every
+one of those was a **statement about our sample size**, not about the world.
+
+The corpus exists (600 episodes on pod2, parity-verified as an order-preserving superset of the 40).
+The harness works. The checkpoints exist. **Re-scoring is cheap, and some fraction of our nulls are
+real effects we discarded.** Best value-per-GPU-hour available, and it invents nothing — it is pure
+recovery.
+
+⚠️ **The discipline that stops it becoming a fishing expedition:** the list of claims to re-adjudicate
+is **frozen before any re-scoring runs**, ranked by |effect| / half-width. A null that separates is a
+**rediscovery**; a null that stays null is now a **powered** null and is worth more than it was. Both
+outcomes recorded. **No claim is added to the list after seeing a result.**
+
+*(H2 supplied a worked example the same day: its primary read is UNDERPOWERED — and it knew this
+because it measured **the label's own lift on its own held-out subset**, 2.171× [0.645, 4.469], not
+separated, **before** reading the classifier. A power ceiling measured first turns an ambiguous null
+into a known-unanswerable question.)*
+
+### 7.2 The four other harvest inventories
+
+| # | inventory | why it pays |
+|---|---|---|
+| **H2** | **capabilities built but never called** | `ood.py`, `clhorizon.py`, `corridor.py`, `strategic_probes.py`, `blind_baseline.py`, `hierarchy_guard.py`, `argoverse2.py`, `parity.py`, `registry_lint.py` — each cost real effort; several are wired into nothing |
+| **H3** | **stranded integrations** | the 10-day-README failure, still live: AV2 has **no ingest driver**, `clhorizon::run_v4` **raises**, Overture's registry entry is **written but not applied**, three IDM fixes unowned |
+| **H4** | **unresolved cross-agent contradictions** | two agents disagreeing with nobody adjudicating is a false positive waiting to be quoted |
+| **H5** | **levers nobody connected** | *the* pattern to hunt. Demonstrated today: P1 established the closed-loop envelope is **not** a renderer limit (the yaw warp is geometrically exact), so half of it is our own arm's OOD sensitivity ⇒ **training-time off-path augmentation** becomes a candidate lever for v4's `wm_canary` — **a bar that otherwise has none** |
+
+### 7.3 A third failure mode, found today: the unfalsifiable *benefit* claim
+
+C13 said a **guard** that cannot fail is not a guard. H2 found the mirror image on the **benefit** side.
+
+Its efficiency claim — *"selective camera activation saves ~85 % versus always-on-7"* — is true,
+measured, and **information-free**: against always-on-7, **never escalating saves 85.7 %**, a **perfect
+oracle saves 85.6 %**, and the measured operating point sits at **84.8 % [84.5, 85.1]**. **The entire
+span between a useless gate and a perfect one is 0.1 percentage points.**
+
+⇒ **No compute-saving number can distinguish a good gate from a useless one.** The claim could never
+have failed, so it never carried evidence. **Standing rule: state what value of a BENEFIT metric would
+be disappointing before quoting it** — the same question C13 forces for guards. The informative axis
+here was recall at a fixed budget, and it had to be constructed.
+
+### 7.4 What this changes about how streams are run
+
+Under the PI's five-plus-stream directive (§M5), harvest is what stops breadth becoming accumulation.
+**A stream whose result nobody reads has the same value as a stream that produced nothing, at higher
+cost.** Binding:
+
+1. **Every stream's closing report names what OTHER stream its result unblocks** — or states plainly
+   that it unblocks nothing. H5 stops being luck and becomes a required field.
+2. **A result is done when it is USED or explicitly SHELVED WITH A REASON**, not when it is measured.
+   The "finish before you start" rule, applied to findings rather than artifacts.
+3. **The harvest index is re-run and diffed**, so new stranding surfaces in days, not weeks.

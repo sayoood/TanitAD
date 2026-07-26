@@ -219,6 +219,9 @@ def main():
     ts_path = os.path.join(A, "train_summary.json")
     if os.path.exists(ts_path):
         T = json.load(open(ts_path))
+        fx = os.path.join(A, "train_summary_c12fix.json")
+        if os.path.exists(fx):                       # merge the corrected diagnostic's CV rows
+            T["selection"].update(json.load(open(fx))["selection"])
         L.append("### Training-side cross-validation (out-of-fold on TRAIN, grouped by chunk)\n")
         L.append(f"*TRAIN: {T['n_train_windows']:,} windows · CV base rate for reference is the "
                  f"mean of the two per-camera base rates.*\n")

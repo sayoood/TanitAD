@@ -10,6 +10,18 @@
 | `heur_speed` | 0.00199 [0.00108, 0.00320] | **0.65x** | 0.2965 |
 | `heur_decel` | 0.00767 [0.00286, 0.01914] | **2.51x** | 0.5796 |
 
+### Is any arm above CHANCE? (paired ΔAP against a constant score)
+
+*A constant score has AP equal to the base rate **inside every bootstrap draw**, so this — not "does the AP interval clear the full-sample base rate" — is the correct above-chance test.*
+
+| arm | ΔAP vs chance | CI95 | above chance? |
+|---|---|---|---|
+| `head_img_ego` | +0.00268 | [-0.00278, +0.02639] | no |
+| `head_img` | +0.00024 | [-0.00421, +0.00918] | no |
+| `head_ego` | +0.00749 | [-0.00113, +0.03170] | no |
+| `heur_speed` | -0.00328 | [-0.00835, -0.00015] | below chance |
+| `heur_decel` | +0.00241 | [-0.00314, +0.01535] | no |
+
 ### Paired AP deltas vs the primary (`head_img_ego`)
 
 | contrast | ΔAP | CI95 | separated? |
@@ -79,8 +91,20 @@ Budget `B* = 0.05` extra camera activations/frame ⇒ target camera-frame rate 0
 | conjunct | base rate | AP (CI95) | AP / base | AUROC |
 |---|---|---|---|---|
 | `T_off` | 0.0063 | 0.00846 [0.00404, 0.02125] | **1.33x** | 0.5818 |
-| `T_seen` | 0.9672 | 0.97673 [0.96868, 0.98368] | **1.01x** | 0.5748 |
-| `NOT_T_seen` (the rare, informative side) | 0.0328 | 0.03779 [0.02781, 0.04958] | **1.15x** | 0.4252 |
+| `T_seen` ⛔ **NOT READ — mis-posed instrument, amendment A1** | 0.9672 | 0.97673 [0.96868, 0.98368] | **1.01x** | 0.5748 |
+| `NOT_T_seen` read off the MIS-POSED head ⛔ **NOT READ** | 0.0328 | 0.03779 [0.02781, 0.04958] | **1.15x** | 0.4252 |
+
+> ⛔ The `T_seen` row and its complement are printed for completeness and **are not read**: `T_seen` is a 96.7 %-positive target and the pre-registered BCE + `pos_weight` recipe up-weights its MAJORITY class, so that head carries no information about the rare side. The corrected diagnostic is the next table.
+
+### C12 — the CORRECTED conjunct diagnostic (`NOT_T_seen`), amendment A1
+
+*Target: NOT_T_seen = (a_req_seen >= tau*) — an agent INSIDE the encoder crop requires braking >= 0.5 m/s^2. **1642 positives** in 50119 frames (3.28 %), **101 of 322 clips positive** — 5.4x the composite's positives and far better powered.*
+
+| arm | AP (CI95) | AP / base | ΔAP vs chance | CI95 | above chance? | AUROC |
+|---|---|---|---|---|---|---|
+| `head_img_ego` | 0.05205 [0.03679, 0.07550] | **1.59x** | +0.00601 | [-0.00040, +0.03947] | no | 0.6544 |
+| `head_img` | 0.04914 [0.03452, 0.07926] | **1.50x** | +0.00310 | [-0.00291, +0.04284] | no | 0.6349 |
+| `head_ego` | 0.12263 [0.08052, 0.17431] | **3.74x** | +0.07659 | [+0.05055, +0.13529] | **YES** | 0.7776 |
 
 ### Sensitivities
 
@@ -108,6 +132,9 @@ Budget `B* = 0.05` extra camera activations/frame ⇒ target camera-frame rate 0
 | `head_ego|trigger` | pos_weight 20, d 128 | 14 | **0.0198** | 0.0056, 0.0058, 0.0061, 0.0097, 0.0056, 0.0056 … | 415,107 |
 | `head_img_ego|T_off` | pos_weight 20, d 128 | 2 | **0.0078** | 0.0058, 0.0078, 0.0056, 0.0068, 0.0063, 0.0055 … | 677,122 |
 | `head_img_ego|T_seen` | pos_weight 100, d 128 | 8 | **0.9807** | 0.9777, 0.9731, 0.9723, 0.9737, 0.9754, 0.9736 … | 677,122 |
+| `head_img_ego|NOT_T_seen` | pos_weight 100, d 256 | 1 | **0.0296** | 0.0296, 0.0281, 0.0246, 0.0271, 0.0249, 0.0235 … | 2,173,442 |
+| `head_img|NOT_T_seen` | pos_weight 100, d 128 | 2 | **0.0327** | 0.0280, 0.0327, 0.0308, 0.0251, 0.0244, 0.0224 … | 676,866 |
+| `head_ego|NOT_T_seen` | pos_weight 100, d 256 | 18 | **0.0967** | 0.0548, 0.0523, 0.0604, 0.0629, 0.0623, 0.0570 … | 1,649,154 |
 
 | fold | chunks |
 |---|---|
