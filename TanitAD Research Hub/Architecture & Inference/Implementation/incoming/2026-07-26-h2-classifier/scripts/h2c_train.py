@@ -180,6 +180,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--folds", type=int, default=5)
+    ap.add_argument("--plan", default="primary", choices=["primary", "c12fix"])
     ap.add_argument("--device", default="cuda")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -204,10 +205,25 @@ def main():
         "trigger": (Ytr, Yho, ["cam_left", "cam_right"]),
         "T_off": (EXtr[:, :1], EXho[:, :1], ["T_off"]),
         "T_seen": (EXtr[:, 1:2], EXho[:, 1:2], ["T_seen"]),
+        # AMENDMENT (see H2_CLASSIFIER.md): `T_seen` is a ~97 %-POSITIVE target, so training it
+        # with BCE + pos_weight (a rare-positive recipe) up-weights the MAJORITY class and the
+        # resulting head says nothing about the rare, informative side. `NOT_T_seen` — "an agent
+        # the encoder CAN see requires braking" — is the same question posed as a rare-positive
+        # target, and at ~3.3 % it is 5x better powered than the composite. Diagnostic only; it
+        # is NOT an arm in the primary comparison.
+        "NOT_T_seen": (1.0 - EXtr[:, 1:2], 1.0 - EXho[:, 1:2], ["NOT_T_seen"]),
     }
     ARMS = {"head_img_ego": dict(d_img=2048, d_ego=2), "head_img": dict(d_img=2048, d_ego=0),
             "head_ego": dict(d_img=0, d_ego=2)}
-    PLAN = [("trigger", a) for a in ARMS] + [("T_off", "head_img_ego"), ("T_seen", "head_img_ego")]
+    PLANS = {
+        "primary": ([("trigger", a) for a in ARMS]
+                    + [("T_off", "head_img_ego"), ("T_seen", "head_img_ego")]),
+        # the corrected C12 diagnostic, plus its ego-only control so the same
+        # image-vs-ego question is answered on the well-powered target
+        "c12fix": [("NOT_T_seen", "head_img_ego"), ("NOT_T_seen", "head_img"),
+                   ("NOT_T_seen", "head_ego")],
+    }
+    PLAN = PLANS[args.plan]
     # Model selection grid. Only capacity + class weight are searched, and ONLY on TRAIN CV —
     # 169 training positives against a ~2 M-parameter head is an overfitting regime, so the
     # CV is what stops it, not a held-out peek.

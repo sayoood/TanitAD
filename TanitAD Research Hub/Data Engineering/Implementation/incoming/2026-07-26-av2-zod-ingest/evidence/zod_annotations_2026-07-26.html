@@ -1,0 +1,650 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Annotations - Zenseact Open Dataset</title>
+<meta name="description" content="This repository hosts the Zenseact Open Dataset website.">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Zenseact Open Dataset">
+<meta property="og:title" content="Annotations">
+<meta property="og:url" content="zenseact.github.io/annotations/">
+
+
+  <meta property="og:description" content="This repository hosts the Zenseact Open Dataset website.">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="zenseact.github.io/annotations/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "Zenseact",
+      "url": "zenseact.github.io/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
+<link rel="manifest" href="/assets/favicon/site.webmanifest">
+<link rel="mask-icon" href="/assets/favicon/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="theme-color" content="#ffffff">
+  </head>
+
+  <body class="layout--splash">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/images/logo.png" alt="Zenseact Open Dataset"></a>
+        
+        <a class="site-title" href="/">
+          Zenseact Open Dataset
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/frames/">Frames</a>
+            </li><li class="masthead__menu-item">
+              <a href="/sequences/">Sequences</a>
+            </li><li class="masthead__menu-item">
+              <a href="/drives/">Drives</a>
+            </li><li class="masthead__menu-item">
+              <a href="/annotations/">Annotations</a>
+            </li><li class="masthead__menu-item">
+              <a href="/download/">Download</a>
+            </li><li class="masthead__menu-item">
+              <a href="/team/">Team</a>
+            </li><li class="masthead__menu-item">
+              <a href="/license/">License</a>
+            </li></ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+<div id="main" role="main">
+  <article class="splash" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Annotations">
+    
+    
+    
+
+    <section class="page__content" itemprop="text">
+      <p><br /></p>
+
+<h1 id="annotations">Annotations</h1>
+<p>On this page, we provide detailed information about the annotations that are included in our dataset. Our annotations are created by highly skilled human annotators using commercial labeling tools and have undergone a rigorous quality control process to ensure their accuracy and consistency.</p>
+
+<p>We supply annotations for <code class="language-plaintext highlighter-rouge">Objects</code>, <code class="language-plaintext highlighter-rouge">Lanes</code>, <code class="language-plaintext highlighter-rouge">Traffic Signs</code>, <code class="language-plaintext highlighter-rouge">Ego Road</code>, and <code class="language-plaintext highlighter-rouge">Road Surface</code>, all of which are described in detail below. Note that the annotations can be easily read by using the development kit (<code class="language-plaintext highlighter-rouge">pip install zod</code>) found <a href="https://github.com/zenseact/zod">here</a>.</p>
+
+<h2 id="objects">Objects</h2>
+<p>Objects refer to static and dynamic objects <strong>visible in the image</strong>. These objects are annotated with a tightly fitting 2D bounding box indicated by the pixel coordinates of its four outermost points. If the object is also present in the point cloud (range up to <code class="language-plaintext highlighter-rouge">245m</code>), the object is also annotated with a 9-DOF 3D bounding box described by the 3D-center (<code class="language-plaintext highlighter-rouge">x</code>, <code class="language-plaintext highlighter-rouge">y</code>, <code class="language-plaintext highlighter-rouge">z</code>), the 3D dimensions (<code class="language-plaintext highlighter-rouge">l</code>, <code class="language-plaintext highlighter-rouge">w</code>, <code class="language-plaintext highlighter-rouge">h</code>), and the 3D orientation quaternion (<code class="language-plaintext highlighter-rouge">qw</code>, <code class="language-plaintext highlighter-rouge">qx</code>, <code class="language-plaintext highlighter-rouge">qy</code>, <code class="language-plaintext highlighter-rouge">qz</code>).</p>
+
+<p>The dynamic objects are categorized into 4 top-level classes, namely <code class="language-plaintext highlighter-rouge">Vehicle</code>, <code class="language-plaintext highlighter-rouge">VulnereableVehicle</code>, <code class="language-plaintext highlighter-rouge">Pedestrian</code>, and <code class="language-plaintext highlighter-rouge">Animal</code>. These are then further divided into 16 sub-classes, see below for a complete list. Similarly, the static objects are divided into 6 top-level classes, namely <code class="language-plaintext highlighter-rouge">TrafficSign</code>, <code class="language-plaintext highlighter-rouge">TrafficSignal</code>, <code class="language-plaintext highlighter-rouge">TrafficGuide</code>, <code class="language-plaintext highlighter-rouge">PoleObject</code>, <code class="language-plaintext highlighter-rouge">TrafficBeacon</code>, and <code class="language-plaintext highlighter-rouge">DynamicBarrier</code>. These are then further divided into 13 sub-classes, see the below for a complete list. Moreover, the <code class="language-plaintext highlighter-rouge">TrafficSign</code> class is further divided into 156 granular classes (see the <a href="#traffic-sign">Traffic Sign</a> section for more details), making it the largest commercial dataset for traffic sign annotations to date.</p>
+
+<h3 id="object-properties">Object properties</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">unclear</code></td>
+      <td>This property can be set to <code class="language-plaintext highlighter-rouge">True</code> if the annotator is unsure or if we want to discard a certain area of the image. This could be if e.g., It is in some way unclear to the human eye whether or not there is an object, e.g due to the object being too small or the image being too unsharp or blurred; It is unclear whether it is a single object or if there are more than one; Several highly overlapping objects are indistinguishable in the sense that it is practically impossible to individually mark the objects; Groups of overlapping non-pedestrian objects that are <strong>not on Ego Road</strong> (bicycle racks with lots of bikes, distant cars on a parking lot, groups of shopping carts, herds of farm animals, etc.,)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">occlusion_ratio</code></td>
+      <td>Estimate how much of the object that is occluded by something in the active field of view of the camera in the image, excluding any parts of the ego vehicle body and camera housing, according to the following ranges: <code class="language-plaintext highlighter-rouge">None</code>: 0%, <code class="language-plaintext highlighter-rouge">Light</code>: 1% - 20%, <code class="language-plaintext highlighter-rouge">Medium</code>: 21% - 50%, <code class="language-plaintext highlighter-rouge">Heavy</code>: 51% - 80%, <code class="language-plaintext highlighter-rouge">VeryHeavy</code>: 81% - 100%. Being seen through the windows of another vehicle does not constitute occlusion. If an object is fully seen through another vehicle’s windows it should have occlusion level <code class="language-plaintext highlighter-rouge">None</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">relative_position</code></td>
+      <td>Estimate where the object is relative the ego vehicle. Note that left and right is relative to the ego vehicle driving direction. <code class="language-plaintext highlighter-rouge">BeyondLeftLane</code>, <code class="language-plaintext highlighter-rouge">LeftLane</code>, <code class="language-plaintext highlighter-rouge">LeftLane_Parked</code>, <code class="language-plaintext highlighter-rouge">LeftAndEgoLane_MainlyLeft</code>, <code class="language-plaintext highlighter-rouge">LeftAndEgoLane_MainlyEgo</code>, <code class="language-plaintext highlighter-rouge">EgoLane</code>, <code class="language-plaintext highlighter-rouge">RightAndEgoLane_MainlyRight</code>, <code class="language-plaintext highlighter-rouge">RightAndEgoLane_MainlyEgo</code>, <code class="language-plaintext highlighter-rouge">RightLane</code>, <code class="language-plaintext highlighter-rouge">RightLane_Parked</code>, <code class="language-plaintext highlighter-rouge">BeyondRightLane</code>, <code class="language-plaintext highlighter-rouge">LeftLaneOncoming</code>, <code class="language-plaintext highlighter-rouge">RightLaneOncoming</code>, <code class="language-plaintext highlighter-rouge">NotOnEgoRoad</code>, <code class="language-plaintext highlighter-rouge">Inconclusive</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">with_rider</code></td>
+      <td><strong>This property is only for the <code class="language-plaintext highlighter-rouge">VulnereableVehicle</code> class.</strong> Assign <code class="language-plaintext highlighter-rouge">True</code> if can be seen there is a rider on, or a person sitting in, the VulnerableVehicle. Assign <code class="language-plaintext highlighter-rouge">False</code> if it can beseen that there is no rider, e.g. a parked bicycle or motorcycle, or an empty wheelchair. Assign <code class="language-plaintext highlighter-rouge">Inconclusive</code> if it cannot be determined whether or not there is a person on, or in, it, e.g. if there is a baby lying in a baby stroller and therefore not visible</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">traffic_content_visible</code></td>
+      <td><strong>Set for all static objects</strong>. Whether the content presented on a landmark is visible in the image. The “content” of a landmark refers to any symbols, text, reflector, light, etc. that is on the landmark. Follwing values are possbile: <code class="language-plaintext highlighter-rouge">True</code>, <code class="language-plaintext highlighter-rouge">False</code>, <code class="language-plaintext highlighter-rouge">Undefined</code>, <code class="language-plaintext highlighter-rouge">Inconclusive</code>. The combination of <code class="language-plaintext highlighter-rouge">class=TrafficSign</code> and <code class="language-plaintext highlighter-rouge">traffic_content_visible=True</code> therefor refer to a front facing traffic sign.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="dynamic-object-classes">Dynamic object classes</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Top-level class</th>
+      <th>Sub-class</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Car</code></td>
+      <td>Car, SUV, Pickup, Mini-van</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Van</code></td>
+      <td>Van, Minibus, RV/Motorhome</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Truck</code></td>
+      <td>Truck, Truck head, Semi-trailer truck, Truck Trailer</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Trailer</code></td>
+      <td>Includes all kinds of trailers that can be normally attached to a Car , i.e. not truck-trailers. This includes car-trailers, boat trailers, caravans, horse trailers, enclosed trailers, and roadwork trailers. This is not an exhaustive list, in general any object which is supposed to be pulled by a car is considered a trailer</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Bus</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">HeavyEquip</code></td>
+      <td>Tractor, Excavator, Dumper</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">TramTrain</code></td>
+      <td>Tram, Train</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Other</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Vehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Inconclusive</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Bicycle</code></td>
+      <td>Includes all kinds of human-powered or electric bicycles with two or more wheels.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Motorcycle</code></td>
+      <td>Includes all motorized two/three-wheelers, e.g. mopeds, vespas, sport-motorbikes, choppers and three wheeled motorcycles.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Wheelchair</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Stroller</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PersonalTransporter</code></td>
+      <td>Includes any human-powered, electric or motorized wheeled object that is used to transport people, such as a skateboard, segway, kick scooter, or unicycle.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Other</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VulnerableVehicle</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Inconclusive</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Pedestrian</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Pedestrian</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Animal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Animal</code></td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="static-object-classes">Static object classes</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Top-level class</th>
+      <th>Sub-class</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficSign</code></td>
+      <td><a href="#traffic-signs">Traffic signs</a></td>
+      <td>Front and backfacing traffic signs. Include both electronic and classical signs.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficSignal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">TrafficSignal</code></td>
+      <td>Front and backfacing traffic signals. Both horizontal and vertical configurations.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Reflector</code></td>
+      <td>A reflector placed on a pole or on top of a barrier on the side of the road.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Attention</code></td>
+      <td>Highly reflective guides, which uses line segments or arrows to indicate direction or danger. These line segments can be vertical, left-leaning diagonal, right-leaning diagonal, or horizontal. These guides are commonly seen at exits, extreme curves (chevron-like), construction areas, tunnels/overpasses, and more.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">SnowMarker</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Bollard</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Other</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficGuide</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Inconclusive</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PoleObject</code></td>
+      <td><code class="language-plaintext highlighter-rouge">LampPole</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PoleObject</code></td>
+      <td><code class="language-plaintext highlighter-rouge">LandmarkPole</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PoleObject</code></td>
+      <td><code class="language-plaintext highlighter-rouge">LargeLandmarkPole</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PoleObject</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Other</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">PoleObject</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Inconclusive</code></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">TrafficBeacon</code></td>
+      <td><code class="language-plaintext highlighter-rouge">TrafficBeacon</code></td>
+      <td>A single light source with a continuous state: always on, always off, or flashing. These can be seen as restrictions, for example at pedestrian crossings, or as a warning for a certain traffic condition, such as a construction site</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">DynamicBarrier</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DynamicBarrier</code></td>
+      <td>Objects that controls the flow of cars by completely blocking the path. They are usually pole-like objects that can be positioned either horizontally to block the passage of vehicles, or vertically to allow flow of traffic. Only the part that moves and can block the flow of cars should be included in the markings. Dynamic barriers are commonly seen, but not exclusively, at railway crossings, parking lots, and bridges.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="lanes">Lanes</h2>
+<p>This annotation task is made up of two subtasks: lane marking and road painting. This is an image-level annotation, i.e., it only conveys information in 2D. The two subtasks are described in the following sections.</p>
+
+<h3 id="lane-markings">Lane markings</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Class</th>
+      <th>Instance annotation</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">lm_solid</code></td>
+      <td>Yes</td>
+      <td>Defined as a continuous line of paint on the road separating individual lanes from each other or the road edges. They can vary in width and are usually between 10 and 30 cm wide</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">lm_dashed</code></td>
+      <td>Yes</td>
+      <td>Defined as repeating strips of paint on the road separating individual lanes from each other or the road edges. They can vary in width, length and frequency.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">lm_botts_dot</code></td>
+      <td>Yes</td>
+      <td>Raised pavement markers used to mark lanes on highways and arterial roads. They provide tactile and auditory feedback to drivers when moving across designated travel lanes and are analogous to rumble strips. Botts’ dots are most commonly white but can vary depending on local traffic rules.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">lm_shaded</code></td>
+      <td>No</td>
+      <td>The painted markings associated to a lane marking splitting or merging should be marked with the class <code class="language-plaintext highlighter-rouge">shaded_area</code> . This includes the painted area from where the lane marking first splits, to where there are two distinct lane markings. Painted markings between the split-up lane markings that emphasize the split should also be marked <code class="language-plaintext highlighter-rouge">shaded_area</code>. This class is further split into <code class="language-plaintext highlighter-rouge">Split</code>, <code class="language-plaintext highlighter-rouge">Merge</code>, <code class="language-plaintext highlighter-rouge">Undefined</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MultipleLanes</code></td>
+      <td><strong>Not applicable to <code class="language-plaintext highlighter-rouge">lm_shaded</code></strong>. If there are two lane markings that are right next to each other, we say that each individual lane is <code class="language-plaintext highlighter-rouge">Double</code> . If there are three or more lane markings in width, this property should be set to <code class="language-plaintext highlighter-rouge">Triple</code> or <code class="language-plaintext highlighter-rouge">MoreThanThree</code> respectively. Lane markings that are not directly adjacent to any other lane marking should have this property set to <code class="language-plaintext highlighter-rouge">Single</code>.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">InstanceID</code></td>
+      <td>An instance is defined as one or several lane marking polygons that are connected. Typically they form a line in the image but sometimes the connection is only through context. An instance can therefore consist of one or multiple polygons, and is defined by a unique <code class="language-plaintext highlighter-rouge">InstanceID</code>. Dashed lane marking polygons that are connected in the world have the same InstanceID, for example. So the general way of thinking is that lane markings that are connected semantically in the scene belong to the same instance, where each instance have its unique <code class="language-plaintext highlighter-rouge">InstanceID</code>. It should be considered a new instance if any of the following are met</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ShadedAreaType</code></td>
+      <td><strong>Only the <code class="language-plaintext highlighter-rouge">lm_shaded</code> class.</strong> The type of the shaded area. Possible values are: <code class="language-plaintext highlighter-rouge">Split</code>, <code class="language-plaintext highlighter-rouge">Merge</code>, <code class="language-plaintext highlighter-rouge">Undefined</code>, where <code class="language-plaintext highlighter-rouge">Undefined</code> is the default case.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Colour</code></td>
+      <td>The color of the lane marking polygon. Possible values are: <code class="language-plaintext highlighter-rouge">White</code>, <code class="language-plaintext highlighter-rouge">Yellow</code>, <code class="language-plaintext highlighter-rouge">Orange</code>, <code class="language-plaintext highlighter-rouge">Red</code>, <code class="language-plaintext highlighter-rouge">Blue</code>, <code class="language-plaintext highlighter-rouge">Green</code>, or <code class="language-plaintext highlighter-rouge">Other</code>, where <code class="language-plaintext highlighter-rouge">White</code> is the default case.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The <code class="language-plaintext highlighter-rouge">InstanceID</code> property should be different between two instances if any of the following are met:</p>
+<ul>
+  <li>A lane marking is splitting into multiple lane markings. It can be that the lane marking paint creates a split or that it splits by context. A split also occurs when a new lane is formed, even if it does not split the actual lane marking itself</li>
+  <li>Multiple lane markings are merging into fewer lane markings. It can be that the lane marking paint is merging or a merge by context</li>
+  <li>A lane marking changes <code class="language-plaintext highlighter-rouge">Colour</code>. An instance can only consist of one color. Meaning two partly overlapping lane markings of different colors should be two instances</li>
+  <li>A lane marking changes from <code class="language-plaintext highlighter-rouge">Single</code> to multiple ( <code class="language-plaintext highlighter-rouge">Double</code> etc., see the <code class="language-plaintext highlighter-rouge">MultipleLanes</code> property), and there is a gap in the transition. However, if one of the single lane markings is connected to one of the multiple lane markings, the connected lane marking should belong to the same instance.</li>
+  <li>There is a distinct gap between lane markings, for example, if there is a refuge island between two lane markings.</li>
+</ul>
+
+<h3 id="road-paintings">Road paintings</h3>
+<p>Road paintings are roughly defined as all forms of permanent paintings on roads that are not lane markings. Lane
+markings are all paintings on roads with the primary purpose to convey information about the lane extension and whether a vehicle is allowed to pass from one lane to the other. Explicitly included in the category of road paintings are shown in the table below.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Class</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsArrow</code></td>
+      <td>Whether the road painting contains an arrow as it is usually used on lanes to indicate directions. This should not be set to <code class="language-plaintext highlighter-rouge">True</code> for tiny arrows that are part of pictograms but may be set to <code class="language-plaintext highlighter-rouge">True</code> e.g. for a road painting that only contains a lane direction arrow or e.g. for a solid square containing such an arrow. One polygon is expected per arrow.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsPictogram</code></td>
+      <td>Whether the road painting contains a pictogram, e.g. a stylized bicycle or pedestrian. The whole pictogram is expected to be marked by one polygon unless the pictogram clearly consists of multiple classes.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsText</code></td>
+      <td>Whether the road painting contains text and/or numbers. One polygon is expected per word or (multi-digit) number</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsTrafficSign</code></td>
+      <td>Whether the road painting contains a traffic sign, e.g., a speed limit drawn on the road.  One polygon is expected per traffic sign.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsCrossWalk</code></td>
+      <td>Whether the road painting contains a part of a cross-walk. One polygon is expected per distinct fragment of the line(s). E.g. for dashed lines, one polygon per rectangle</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsMarker</code></td>
+      <td>Whether the road painting contains a marker like stop lines, bus or lane delimiters, delimiters for give-away (almost any vertical lane marking). One polygon is expected per marker.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ContainsOther</code></td>
+      <td>Whether the road painting contains a class that is not one of the standard classes but should still be considered a road painting.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="traffic-signs">Traffic signs</h2>
+<p><img src="/assets/images/traffic_signs.jpg" alt="Traffic sign examples" class="align-right" width="25%" />
+The traffic sign annotations refer to the front-facing traffic signs that are visible in the image. Note that only signs related to traffic are labeled i.e., advertisement boards etc., should not be labeled. See a selection of traffic signs in the image to the right. In total, we have annotated 446k traffic sign instances across 156 classes with large variations in viewing angle, distance, lighting condition etc.
+The list of classes is shown in the table below.</p>
+
+<p>Note that <code class="language-plaintext highlighter-rouge">MaximumSpeedLimitXBegin</code>, <code class="language-plaintext highlighter-rouge">MaximumSpeedLimitXEnd</code>, <code class="language-plaintext highlighter-rouge">SpeedLimitZoneXBegin</code>, and <code class="language-plaintext highlighter-rouge">SpeedLimitZoneXEnd</code> are given as a range of values, where <code class="language-plaintext highlighter-rouge">X</code> is the maximum speed limit in km/h. For example, <code class="language-plaintext highlighter-rouge">MaximumSpeedLimit50Begin</code> refers to a traffic sign that indicates the beginning of a zone with a maximum speed limit of 50 km/h. These are given in range from 5 to 130 km/h in steps of 5 km/h.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Top-level</th>
+      <th>Sub-classes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Mandatory</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PassOnThisSideLeft</code>, <code class="language-plaintext highlighter-rouge">PassOnThisSideRight</code>,  <code class="language-plaintext highlighter-rouge">PassOnEitherSide</code>, <code class="language-plaintext highlighter-rouge">ProceedStraightOrTurnLeft</code>, <code class="language-plaintext highlighter-rouge">ProceedStraight</code>, <code class="language-plaintext highlighter-rouge">ProceedStraightOrTurnRight</code>, <code class="language-plaintext highlighter-rouge">TurnLeftAhead</code>, <code class="language-plaintext highlighter-rouge">TurnRightAhead</code>, <code class="language-plaintext highlighter-rouge">TurnAhead</code>, <code class="language-plaintext highlighter-rouge">TurnRight</code>, <code class="language-plaintext highlighter-rouge">TurnLeft</code>, <code class="language-plaintext highlighter-rouge">Roundabout</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Priority</code></td>
+      <td><code class="language-plaintext highlighter-rouge">GiveWay</code>,  <code class="language-plaintext highlighter-rouge">GiveWayOncoming</code>, <code class="language-plaintext highlighter-rouge">PriorityStop</code>, <code class="language-plaintext highlighter-rouge">PrioOverOncoming</code>, <code class="language-plaintext highlighter-rouge">PriorityRoadBegin</code>, <code class="language-plaintext highlighter-rouge">PriorityRoadEnd</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Prohibatory</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NoEntry</code>, <code class="language-plaintext highlighter-rouge">NoParking</code>, <code class="language-plaintext highlighter-rouge">NoStopping</code>, <code class="language-plaintext highlighter-rouge">NoUTurn</code>, <code class="language-plaintext highlighter-rouge">NoTurn</code>, <code class="language-plaintext highlighter-rouge">RoadClosed</code>, <code class="language-plaintext highlighter-rouge">NoOvertakingBegin</code>, <code class="language-plaintext highlighter-rouge">NoOvertakingEnd</code>, <code class="language-plaintext highlighter-rouge">MaximumSpeedLimitXBegin</code>, <code class="language-plaintext highlighter-rouge">MaximumSpeedLimitXEnd</code>, <code class="language-plaintext highlighter-rouge">SpeedLimitZoneXBegin</code>, <code class="language-plaintext highlighter-rouge">SpeedLimitZoneXEnd</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">RoadType</code></td>
+      <td><code class="language-plaintext highlighter-rouge">MotorwayBegin</code>, <code class="language-plaintext highlighter-rouge">MotorwayEnd</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Warning</code></td>
+      <td><code class="language-plaintext highlighter-rouge">VulnurableRoadUserCrossing</code>, <code class="language-plaintext highlighter-rouge">VulnurableRoadUserPathWay</code>, <code class="language-plaintext highlighter-rouge">IndicationCameraSurveillance</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Special</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Children</code>, <code class="language-plaintext highlighter-rouge">Crossing</code>, <code class="language-plaintext highlighter-rouge">Cyclists</code>, <code class="language-plaintext highlighter-rouge">Animal</code>, <code class="language-plaintext highlighter-rouge">Curve</code>, <code class="language-plaintext highlighter-rouge">RoadWorkBegin</code>, <code class="language-plaintext highlighter-rouge">RoadWorkEnd</code>,  <code class="language-plaintext highlighter-rouge">Roundabout</code>, <code class="language-plaintext highlighter-rouge">TrafficSignalAhead</code>,  <code class="language-plaintext highlighter-rouge">RoadNarrows</code>, <code class="language-plaintext highlighter-rouge">RoadBump</code>, <code class="language-plaintext highlighter-rouge">RoughRoad</code>,  <code class="language-plaintext highlighter-rouge">Slippery</code>, <code class="language-plaintext highlighter-rouge">GenericWarning</code>, <code class="language-plaintext highlighter-rouge">CongestionAhead</code>, <code class="language-plaintext highlighter-rouge">TwoWayTraffic</code>, <code class="language-plaintext highlighter-rouge">MergingTraffic</code>, <code class="language-plaintext highlighter-rouge">Crossroads</code>, <code class="language-plaintext highlighter-rouge">DoubleCurve</code>, <code class="language-plaintext highlighter-rouge">TunnelAhead</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Not Listed</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Not Listed</code> refer to all signs that do not fall into any of the categories above.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Unclear</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Unclear</code> refer to a sign for which it is not possible to distinguish between the classes above.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="ego-road">Ego road</h2>
+<p>The ego road annotations refer to polygons in the image that describe the road surface on which the ego vehicle is traveling. It is divided into two classes: <code class="language-plaintext highlighter-rouge">Road</code> and <code class="language-plaintext highlighter-rouge">Debris</code> as shown in the table below.s</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Class</th>
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Road</code></td>
+      <td>The ego road annotations contain polygons that describe the road surface on which the ego vehicle is travelling, including roads that are connected by splits, merges, entrances and exits to this road, entrances/exits on highways and to parking lots, but not the parking lot itself, unless the Ego Car is in the parking lot. Speed bumps and other road infrastructure meant to be driven over should also be annotated as ego road. Roads of oncoming traffic separated by a barrier and other roads not connected to the ego vehicles road should not be annotated.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">Debris</code></td>
+      <td>Debris class covers any rigid body objects larger than 15x15x15 cm located on an ego road, which are foreign to the normal roadway environment and pose danger to vehicles (the ego vehicle and vehicles on other lanes) hence interfere with normal driving. There is no upper limit of the size of a debris. Smaller objects and soft objects (like plastic bags, cups, paper etc.) do not count as debris. Objects which are parts of permanent road infrastructure (e.g. permanent bollards separating lanes or speed bumps are not Debris )</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="road-surface">Road surface</h2>
+<p>The road surface classification label is simply a binary label indicating the condition of the road surface across the entire scene. We provide binary labels for <code class="language-plaintext highlighter-rouge">wetness</code> and <code class="language-plaintext highlighter-rouge">snow_coverage.</code></p>
+
+    </section>
+  </article>
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://zenseact.com" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-building" aria-hidden="true"></i> Zenseact</a></li>
+        
+      
+        
+          <li><a href="https://github.com/zenseact" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+        
+          <li><a href="https://arxiv.org/abs/2305.02008" rel="nofollow noopener noreferrer"><i class="fas fa-fw fa-file" aria-hidden="true"></i> Paper</a></li>
+        
+      
+    
+
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2025 Zenseact. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J92YMVMQGH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-J92YMVMQGH', { 'anonymize_ip': false});
+</script>
+
+
+
+
+
+
+
+
+
+  </body>
+</html>

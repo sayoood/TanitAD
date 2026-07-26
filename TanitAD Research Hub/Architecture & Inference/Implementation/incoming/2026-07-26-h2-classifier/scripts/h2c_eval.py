@@ -131,6 +131,15 @@ def main():
     disc["base_rate"] = float(y.mean())
     out["discrimination"] = disc
 
+    # AP vs CHANCE, done properly. Comparing an AP interval to the FULL-SAMPLE base rate is not a
+    # test: the base rate is itself a random quantity under episode resampling. A constant score
+    # has AP exactly equal to the base rate WITHIN EACH DRAW, so the paired delta against it is
+    # the correct "is this above chance?" statistic.
+    chance = np.zeros_like(y)
+    out["paired_AP_vs_chance"] = {
+        a: _paired_ap(y, s, chance, eid, args.boot)
+        for a, s in [(k, v[0]) for k, v in arms.items()] + list(ego_scores.items())}
+
     # paired AP deltas — the pre-registered secondary
     prim = "head_img_ego"
     out["paired_AP_deltas"] = {}

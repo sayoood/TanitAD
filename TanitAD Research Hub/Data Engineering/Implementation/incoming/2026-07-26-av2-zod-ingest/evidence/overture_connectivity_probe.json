@@ -1,0 +1,118 @@
+{
+  "release": "2026-07-22.0",
+  "bucket": "s3://overturemaps-us-west-2",
+  "access": "anonymous unsigned HTTPS (no account/token/Terms click)",
+  "types": {
+    "segment": {
+      "probe_file": "release/2026-07-22.0/theme=transportation/type=segment/part-00000-ecf02450-3f89-52d5-8ce4-b6fe28eb54bc-c000.zstd.parquet",
+      "probe_file_bytes": 468326135,
+      "n_files_listed_sample": 5,
+      "n_rows_in_file": 2732314,
+      "n_row_groups": 128,
+      "columns": [
+        "id",
+        "names",
+        "subtype",
+        "class",
+        "subclass",
+        "subclass_rules",
+        "connectors",
+        "road_surface",
+        "road_flags",
+        "rail_flags",
+        "width_rules",
+        "level_rules",
+        "access_restrictions",
+        "speed_limits",
+        "prohibited_transitions",
+        "routes",
+        "destinations",
+        "sources",
+        "geometry",
+        "version",
+        "bbox"
+      ],
+      "schema": {
+        "id": "string",
+        "names": "struct<primary: string, common: map<string, string ('common')>, rules: list<element: struct<variant: string, language: string, perspectives: struct<mode: string, countries: list<element: string>>, value: string, between: list<element: double>, side: string>>>",
+        "subtype": "string",
+        "class": "string",
+        "subclass": "string",
+        "subclass_rules": "list<element: struct<value: string, between: list<element: double>>>",
+        "connectors": "list<element: struct<connector_id: string, at: double>>",
+        "road_surface": "list<element: struct<value: string, between: list<element: double>>>",
+        "road_flags": "list<element: struct<values: list<element: string>, between: list<element: double>>>",
+        "rail_flags": "list<element: struct<values: list<element: string>, between: list<element: double>>>",
+        "width_rules": "list<element: struct<value: double, between: list<element: double>>>",
+        "level_rules": "list<element: struct<value: int32, between: list<element: double>>>",
+        "access_restrictions": "list<element: struct<access_type: string, when: struct<during: string, heading: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<element: double>>>",
+        "speed_limits": "list<element: struct<min_speed: struct<value: int32, unit: string>, max_speed: struct<value: int32, unit: string>, is_max_speed_variable: bool, when: struct<during: string, heading: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<e",
+        "prohibited_transitions": "list<element: struct<sequence: list<element: struct<connector_id: string, segment_id: string>>, final_heading: string, when: struct<heading: string, during: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<element: double>>>",
+        "routes": "list<element: struct<name: string, network: string, ref: string, symbol: string, wikidata: string, between: list<element: double>>>",
+        "destinations": "list<element: struct<labels: list<element: struct<value: string, type: string>>, symbols: list<element: string>, from_connector_id: string, to_segment_id: string, to_connector_id: string, when: struct<heading: string>, final_heading: string>>",
+        "sources": "list<element: struct<property: string, dataset: string, license: string, record_id: string, update_time: string, confidence: double, between: list<element: double>>>",
+        "geometry": "binary",
+        "version": "int32",
+        "bbox": "struct<xmin: double, xmax: double, ymin: double, ymax: double>"
+      },
+      "edge_relation": {
+        "field": "connectors",
+        "sampled_rows": 20000,
+        "rows_with_at_least_one_connector": 20000,
+        "rows_with_at_least_two_connectors": 20000,
+        "total_connector_refs": 48913,
+        "max_connectors_on_one_segment": 29,
+        "example_connector_struct": {
+          "connector_id": "08f72075-561f-468d-883e-5c966c1eb8cf",
+          "at": 0.0
+        }
+      },
+      "subtype_counts_sampled": {
+        "road": 19987,
+        "water": 13
+      },
+      "class_counts_sampled": {
+        "residential": 7330,
+        "service": 3793,
+        "track": 3487,
+        "tertiary": 1335,
+        "secondary": 1098,
+        "primary": 973,
+        "unclassified": 967,
+        "path": 539,
+        "footway": 327,
+        "steps": 50,
+        "trunk": 46,
+        "unknown": 28,
+        "null": 13,
+        "living_street": 6,
+        "pedestrian": 5
+      },
+      "bytes_fetched_for_this_probe": 3349625,
+      "http_range_requests": 7
+    },
+    "connector": {
+      "probe_file": "release/2026-07-22.0/theme=transportation/type=connector/part-00000-44c16799-27c9-53b1-89ae-9c3a9ab01753-c000.zstd.parquet",
+      "probe_file_bytes": 772775380,
+      "n_files_listed_sample": 5,
+      "n_rows_in_file": 13044867,
+      "n_row_groups": 256,
+      "columns": [
+        "id",
+        "sources",
+        "geometry",
+        "version",
+        "bbox"
+      ],
+      "schema": {
+        "id": "string",
+        "sources": "list<element: struct<property: string, dataset: string, license: string, record_id: string, update_time: string, confidence: double, between: list<element: double>>>",
+        "geometry": "binary",
+        "version": "int32",
+        "bbox": "struct<xmin: double, xmax: double, ymin: double, ymax: double>"
+      },
+      "bytes_fetched_for_this_probe": 488736,
+      "http_range_requests": 2
+    }
+  }
+}

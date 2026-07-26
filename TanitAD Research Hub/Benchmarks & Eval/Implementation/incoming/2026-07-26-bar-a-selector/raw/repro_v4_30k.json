@@ -1,0 +1,94 @@
+{
+  "_experiment": "BAR-A step 0: reproduction of the committed v4-30k numbers",
+  "_evidence_class": "MEASURED (ours)",
+  "_rule": "no new number is quotable unless these reproduce to <= 0.0010 m",
+  "_host": "1e0bac0df88a",
+  "_python": "3.12.3",
+  "_torch": "2.8.0+cu128",
+  "_gpu": "NVIDIA A40",
+  "_module_provenance": {
+    "eval_flagship_v4": {
+      "path": "/root/v4eval/stack/scripts/eval_flagship_v4.py",
+      "md5": "aafe3975817e27ef7714499643aae6ff"
+    },
+    "driving_diagnostic": {
+      "path": "/root/v4eval/stack/scripts/driving_diagnostic.py",
+      "md5": "7ef43a0f1cfdfc6f0bbc669f0fa76f0c"
+    },
+    "goal_modes": {
+      "path": "/root/v4eval/stack/scripts/goal_modes.py",
+      "md5": "444d2df6b5c34e617e84a734df2226cd"
+    },
+    "train_flagship_v4": {
+      "path": "/root/v4eval/stack/scripts/train_flagship_v4.py",
+      "md5": "d6ba03e4c8fefc79e3e39b5d60544d3e"
+    },
+    "refb_labels": {
+      "path": "/root/v4eval/stack/scripts/refb_labels.py",
+      "md5": "1cdd98f7a1ae24b3969fd195a1132a29"
+    },
+    "flagship_v4_data": {
+      "path": "/root/v4eval/stack/scripts/flagship_v4_data.py",
+      "md5": "954650fa07aca401603861fe739115ec"
+    },
+    "tanitad.models.flagship_v15": {
+      "path": "/root/v4eval/stack/tanitad/models/flagship_v15.py",
+      "md5": "88889b1b0203bf936e6083ccf10c68e4"
+    },
+    "tanitad.models.flagship_v4": {
+      "path": "/root/v4eval/stack/tanitad/models/flagship_v4.py",
+      "md5": "5ca5dde3d8bb84e451dab655150a699d"
+    },
+    "tanitad.refs.refc": {
+      "path": "/root/v4eval/stack/tanitad/refs/refc.py",
+      "md5": "b7887afeec8c41296c8433fe088ecfcf"
+    },
+    "taniteval.ci": {
+      "path": "/root/taniteval/taniteval/ci.py",
+      "md5": "ef925f06febd20a99f5901491fcf75cb"
+    }
+  },
+  "_ckpt": {
+    "path": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+    "bytes": 3243109310,
+    "md5": "8771c1d9d3da696dcde2a745d628f6a8"
+  },
+  "_stack_root": "/root/v4eval/stack",
+  "_ckpt_step": 29999,
+  "_head_params": 9507907,
+  "arms": {
+    "oracle": {
+      "n_windows": 881,
+      "n_episodes": 40,
+      "wallclock_s": 117.2,
+      "ade_0_2s_recomputed": 0.6423,
+      "ade_0_2s_committed": 0.6423,
+      "ade_0_2s_abs_diff": 0.0,
+      "oracle_in_fan_recomputed": 0.233,
+      "oracle_in_fan_committed": 0.233,
+      "oracle_in_fan_abs_diff": 2e-05,
+      "miss_at_2m_recomputed": 0.2123,
+      "selector_waste_recomputed": 0.4093,
+      "wm_seam_norm_ratio_max": 0.1208,
+      "PASS": true
+    },
+    "produced": {
+      "n_windows": 881,
+      "n_episodes": 40,
+      "wallclock_s": 122.6,
+      "ade_0_2s_recomputed": 0.8563,
+      "ade_0_2s_committed": 0.8563,
+      "ade_0_2s_abs_diff": 2e-05,
+      "oracle_in_fan_recomputed": 0.2505,
+      "oracle_in_fan_committed": 0.2505,
+      "oracle_in_fan_abs_diff": 5e-05,
+      "miss_at_2m_recomputed": 0.319,
+      "selector_waste_recomputed": 0.6057,
+      "wm_seam_norm_ratio_max": 0.1204,
+      "PASS": true
+    }
+  },
+  "REPRODUCES": true,
+  "_deployable_waste_recomputed": 0.6057,
+  "_v1_reference_ade_0_2s_full_set": 0.4271
+}

@@ -1,0 +1,206 @@
+{
+  "generated_utc": "2026-07-26T17:09:15Z",
+  "box": "dev box (Windows), curl --ssl-no-revoke, NO credential of any kind",
+  "note": "HTTP=000 on this box means the TLS-revocation trap, NOT an outage. Every probe here uses --ssl-no-revoke.",
+  "hard_constraint": "no third-party mirrors of gated corpora, no scraped copies, no torrents, no account creation, no form submission, no Terms acceptance",
+  "n_probes": 17,
+  "per_corpus_probe_counts": {
+    "zod": 3,
+    "openstreetmap": 2,
+    "pandaset": 2,
+    "argoverse2": 2,
+    "interaction": 2,
+    "overture": 2,
+    "metadrive": 2,
+    "levelxdata": 2
+  },
+  "probes": [
+    {
+      "corpus": "argoverse2",
+      "probe_id": "av2-list-sensor-train",
+      "url": "https://s3.amazonaws.com/argoverse?list-type=2&prefix=datasets%2Fav2%2Fsensor%2Ftrain%2F&delimiter=%2F&max-keys=2",
+      "decides": "anonymous ListBucket on the split we pulled",
+      "http": 200,
+      "bytes": 680,
+      "elapsed_s": 0.41,
+      "stderr": "",
+      "body_head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>argoverse</Name><Prefix>datasets/av2/sensor/train/</Prefix><NextContinuationToken>1hM7N++rZ9pFzL8a9NQ1Ye4ML731r50sXk5Gx4eQLIKqBaFgSJoiTIf09y8x9r2tHfk9uVVVU9l9EQD7w0HpWwZ/L2+dYSHK9+GLFZeRixICxt3ezvlntRg==</NextContinuationToken><KeyCount>2</KeyCount><MaxKeys>2</MaxKeys><Delimiter>/</Delimi"
+    },
+    {
+      "corpus": "argoverse2",
+      "probe_id": "av2-object-get-map",
+      "url": "https://s3.amazonaws.com/argoverse/datasets/av2/sensor/val/02678d04-cc9f-3148-9f95-1ba66347dff9/map/log_map_archive_02678d04-cc9f-3148-9f95-1ba66347dff9____PIT_city_71109.json",
+      "decides": "anonymous object GET of a real lane graph",
+      "http": 200,
+      "bytes": 127571,
+      "elapsed_s": 0.72,
+      "stderr": "",
+      "body_head": "{\"pedestrian_crossings\": {\"3656338\": {\"edge1\": [{\"x\": 6702.92, \"y\": 1706.29, \"z\": 59.89}, {\"x\": 6715.84, \"y\": 1713.87, \"z\": 60.3}], \"edge2\": [{\"x\": 6706.16, \"y\": 1704.25, \"z\": 60.15}, {\"x\": 6717.36, \"y\": 1711.32, \"z\": 60.41}], \"id\": 3656338}, \"3656337\": {\"edge1\": [{\"x\": 6697.46, \"y\": 1724.02, \"z\": 59.88}, {\"x\": 6707.64, \"y\": 1730.16, \"z\": 59.84}], \"edge2\": [{\"x\": 6697.42, \"y\": 1720.15, \"z\": 59.8},"
+    },
+    {
+      "corpus": "overture",
+      "probe_id": "overture-list-global-endpoint",
+      "url": "https://overturemaps-us-west-2.s3.amazonaws.com?list-type=2&prefix=release%2F&delimiter=%2F&max-keys=10",
+      "decides": "anonymous ListBucket, global S3 endpoint",
+      "http": 200,
+      "bytes": 425,
+      "elapsed_s": 0.74,
+      "stderr": "",
+      "body_head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>overturemaps-us-west-2</Name><Prefix>release/</Prefix><KeyCount>2</KeyCount><MaxKeys>10</MaxKeys><Delimiter>/</Delimiter><IsTruncated>false</IsTruncated><CommonPrefixes><Prefix>release/2026-06-17.0/</Prefix></CommonPrefixes><CommonPrefixes><Prefix>release/2026-07-22.0/</Prefix></CommonPre"
+    },
+    {
+      "corpus": "overture",
+      "probe_id": "overture-list-regional-endpoint",
+      "url": "https://s3.us-west-2.amazonaws.com/overturemaps-us-west-2?list-type=2&prefix=release%2F&delimiter=%2F&max-keys=10",
+      "decides": "anonymous ListBucket, regional endpoint (independent path)",
+      "http": 200,
+      "bytes": 425,
+      "elapsed_s": 1.24,
+      "stderr": "",
+      "body_head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>overturemaps-us-west-2</Name><Prefix>release/</Prefix><KeyCount>2</KeyCount><MaxKeys>10</MaxKeys><Delimiter>/</Delimiter><IsTruncated>false</IsTruncated><CommonPrefixes><Prefix>release/2026-06-17.0/</Prefix></CommonPrefixes><CommonPrefixes><Prefix>release/2026-07-22.0/</Prefix></CommonPre"
+    },
+    {
+      "corpus": "zod",
+      "probe_id": "zod-download-page",
+      "url": "https://zod.zenseact.com/download/",
+      "decides": "licensor's own statement of the access procedure",
+      "http": 200,
+      "bytes": 12111,
+      "elapsed_s": 0.31,
+      "stderr": "",
+      "body_head": "<!doctype html> <!-- Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes Free for personal and commercial use under the MIT license https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE --> <html lang=\"en\" class=\"no-js\"> <head> <meta charset=\"utf-8\"> <!-- begin _includes/seo.html --><title>Download - Zenseact Open Datase"
+    },
+    {
+      "corpus": "zod",
+      "probe_id": "zod-readme-raw",
+      "url": "https://raw.githubusercontent.com/zenseact/zod/main/README.md",
+      "decides": "licensor's own README \u2014 independent path to the same claim",
+      "http": 200,
+      "bytes": 5090,
+      "elapsed_s": 0.34,
+      "stderr": "",
+      "body_head": "# Zenseact Open Dataset [![Stable Version](https://img.shields.io/pypi/v/zod?label=stable)](https://pypi.org/project/zod/#history) [![Python Versions](https://img.shields.io/pypi/pyversions/zod)](https://pypi.org/project/zod/) [![Download Stats](https://img.shields.io/pypi/dm/zod)](https://pypistats.org/packages/zod) The Zenseact Open Dataset (ZOD) is a large multi-modal autonomous driving dataset"
+    },
+    {
+      "corpus": "zod",
+      "probe_id": "zod-license-page",
+      "url": "https://zod.zenseact.com/license/",
+      "decides": "licence AS A DOCUMENT (not a short name)",
+      "http": 200,
+      "bytes": 7376,
+      "elapsed_s": 0.27,
+      "stderr": "",
+      "body_head": "<!doctype html> <!-- Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes Free for personal and commercial use under the MIT license https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE --> <html lang=\"en\" class=\"no-js\"> <head> <meta charset=\"utf-8\"> <!-- begin _includes/seo.html --><title>License - Zenseact Open Dataset"
+    },
+    {
+      "corpus": "metadrive",
+      "probe_id": "metadrive-license",
+      "url": "https://raw.githubusercontent.com/metadriverse/metadrive/main/LICENSE.txt",
+      "decides": "licence as a document",
+      "http": 200,
+      "bytes": 11350,
+      "elapsed_s": 0.33,
+      "stderr": "",
+      "body_head": " Apache License Version 2.0, January 2004 http://www.apache.org/licenses/ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION 1. Definitions. \"License\" shall mean the terms and conditions for use, reproduction, and distribution as defined by Sections 1 through 9 of this document. \"Licensor\" shall mean the copyright owner or entity authorized by the copyright owner that is granting the Lic"
+    },
+    {
+      "corpus": "metadrive",
+      "probe_id": "metadrive-pypi",
+      "url": "https://pypi.org/pypi/metadrive-simulator/json",
+      "decides": "distribution channel \u2014 pip, no gate",
+      "http": 200,
+      "bytes": 37642,
+      "elapsed_s": 1.2,
+      "stderr": "",
+      "body_head": "{\"info\":{\"author\":\"MetaDrive Team\",\"author_email\":\"quanyili0057@gmail.com, pzh@cs.ucla.edu\",\"bugtrack_url\":null,\"classifiers\":[],\"description\":\"<br>\\n\\n![](documentation/source/figs/logo-horizon.png)\\n\\n<br>\\n\\n# MetaDrive: an Open-source Driving Simulator for AI and Autonomy Research\\n\\n[![build](https://github.com/metadriverse/metadrive/workflows/test/badge.svg)](http://github.com/metadriverse/m"
+    },
+    {
+      "corpus": "interaction",
+      "probe_id": "interaction-site",
+      "url": "https://interaction-dataset.com/",
+      "decides": "access mechanism",
+      "http": 200,
+      "bytes": 19138,
+      "elapsed_s": 1.9,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\"> <head> <title>Interaction Dataset</title> <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <meta name=\"SKYPE_TOOLBAR\" content=\"SKYPE_TOOLBAR_PARSER_COMPATIBLE\"/"
+    },
+    {
+      "corpus": "interaction",
+      "probe_id": "interaction-download",
+      "url": "https://interaction-dataset.com/details-and-format",
+      "decides": "second path to the access mechanism",
+      "http": 200,
+      "bytes": 19137,
+      "elapsed_s": 0.87,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\"> <head> <title>Details and Format</title> <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <meta name=\"SKYPE_TOOLBAR\" content=\"SKYPE_TOOLBAR_PARSER_COMPATIBLE\"/>"
+    },
+    {
+      "corpus": "levelxdata",
+      "probe_id": "levelx-site",
+      "url": "https://levelxdata.com/highd-dataset/",
+      "decides": "access mechanism (highD/inD/rounD/exiD family, lanelet2 maps)",
+      "http": 200,
+      "bytes": 620496,
+      "elapsed_s": 0.46,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html> <html lang=\"de\" class=\"ut-no-js\"> <!-- ########################################################################################## BROOKLYN WORDPRESS THEME BY UNITED THEMES\u00e2\u201e\u00a2 DESIGNED BY MARCEL MOERKENS DEVELOPED BY UNITED THEMES\u00e2\u201e\u00a2 (A BRAND OF DIGISHARK\u00c2\u00a9 LLC) \u00c2\u00a9 2011-2026 BROOKLYN WORDPRESS THEME POWERED BY UNITED THEMES\u00e2\u201e\u00a2 ALL RIGHTS RESERVED UNITED THEMES\u00e2\u201e\u00a2 WEB DEVELOPMENT FOR"
+    },
+    {
+      "corpus": "levelxdata",
+      "probe_id": "levelx-root",
+      "url": "https://levelxdata.com/",
+      "decides": "second path",
+      "http": 200,
+      "bytes": 647850,
+      "elapsed_s": 1.07,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html> <html lang=\"de\" class=\"ut-no-js\"> <!-- ########################################################################################## BROOKLYN WORDPRESS THEME BY UNITED THEMES\u00e2\u201e\u00a2 DESIGNED BY MARCEL MOERKENS DEVELOPED BY UNITED THEMES\u00e2\u201e\u00a2 (A BRAND OF DIGISHARK\u00c2\u00a9 LLC) \u00c2\u00a9 2011-2026 BROOKLYN WORDPRESS THEME POWERED BY UNITED THEMES\u00e2\u201e\u00a2 ALL RIGHTS RESERVED UNITED THEMES\u00e2\u201e\u00a2 WEB DEVELOPMENT FOR"
+    },
+    {
+      "corpus": "pandaset",
+      "probe_id": "pandaset-hf",
+      "url": "https://huggingface.co/api/datasets/georghess/pandaset",
+      "decides": "is there an ungated host for the CC-BY-4.0 PandaSet",
+      "http": 200,
+      "bytes": 1410,
+      "elapsed_s": 0.24,
+      "stderr": "",
+      "body_head": "{\"_id\":\"662a24c2512ba17415cf5ffb\",\"id\":\"georghess/pandaset\",\"author\":\"georghess\",\"sha\":\"e2e123aea3b3132c67f4b395ec6120f63e190271\",\"lastModified\":\"2024-04-25T11:09:57.000Z\",\"private\":false,\"gated\":false,\"disabled\":false,\"tags\":[\"task_categories:object-detection\",\"license:cc-by-4.0\",\"size_categories:10K<n<100K\",\"region:us\",\"Autonomous Driving\",\"3D Object Detection\",\"Semantic Segmentation\"],\"descript"
+    },
+    {
+      "corpus": "pandaset",
+      "probe_id": "pandaset-scale",
+      "url": "https://scale.com/open-av-dataset/pandaset",
+      "decides": "original publisher channel",
+      "http": 404,
+      "bytes": 69182,
+      "elapsed_s": 0.18,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html><html data-dpl-id=\"dpl_JDEXSaJqAxnS8PHYxpMsd6Snn3nz\" lang=\"en\" data-theme=\"light\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/0lryh60-7o6mn.css?dpl=dpl_JDEXSaJqAxnS8PHYxpMsd6Snn3nz\" data-precedence=\"next\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/09vx5-8njghm7.css?dpl=dpl"
+    },
+    {
+      "corpus": "openstreetmap",
+      "probe_id": "osm-copyright",
+      "url": "https://www.openstreetmap.org/copyright",
+      "decides": "licence as a document (the source Overture transportation inherits)",
+      "http": 200,
+      "bytes": 21272,
+      "elapsed_s": 0.25,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html> <html lang=\"en\" dir=\"ltr\"> <head data-locale=\"en\" data-preferred-editor=\"id\" data-preferred-languages=\"[]\"> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <link rel=\"apple-touch-icon\" type=\"image/png\" href=\"/assets/apple-touch-icon-57x57-0af2b52ac2b1a8cb0aba42f17aa901bfdedb9174bd978f838e3b3e1dd8602f52.png\" "
+    },
+    {
+      "corpus": "openstreetmap",
+      "probe_id": "geofabrik-index",
+      "url": "https://download.geofabrik.de/",
+      "decides": "ungated bulk channel",
+      "http": 200,
+      "bytes": 9609,
+      "elapsed_s": 0.24,
+      "stderr": "",
+      "body_head": "<!DOCTYPE html> <html> <head> <meta charset=\"UTF-8\"> <link rel=\"icon\" href=\"https://www.geofabrik.de/favicon.ico\" /> <meta name=\"description\" content=\"Download OpenStreetMap data for OpenStreetMap Data Extracts for self-hosting or data analysis. OSM PBF and Shapefiles available.\"> <meta name=\"og:description\" content=\"Download OpenStreetMap data for OpenStreetMap Data Extracts for self-hosting or d"
+    }
+  ]
+}

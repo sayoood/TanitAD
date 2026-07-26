@@ -44,6 +44,18 @@ def main():
                  f"{d['AUROC']:.4f} |")
     L.append("")
 
+    if "paired_AP_vs_chance" in R:
+        L.append("### Is any arm above CHANCE? (paired ΔAP against a constant score)\n")
+        L.append("*A constant score has AP equal to the base rate **inside every bootstrap draw**, "
+                 "so this — not \"does the AP interval clear the full-sample base rate\" — is the "
+                 "correct above-chance test.*\n")
+        L.append("| arm | ΔAP vs chance | CI95 | above chance? |")
+        L.append("|---|---|---|---|")
+        for a, d in R["paired_AP_vs_chance"].items():
+            L.append(f"| `{a}` | {d['delta']:+.5f} | [{d['lo']:+.5f}, {d['hi']:+.5f}] | "
+                     f"{'**YES**' if d['favours_a'] else ('below chance' if d['separated'] else 'no')} |")
+        L.append("")
+
     L.append("### Paired AP deltas vs the primary (`head_img_ego`)\n")
     L.append("| contrast | ΔAP | CI95 | separated? |")
     L.append("|---|---|---|---|")
@@ -151,14 +163,38 @@ def main():
     L.append("| conjunct | base rate | AP (CI95) | AP / base | AUROC |")
     L.append("|---|---|---|---|---|")
     for k, d in R["c12_conjuncts"].items():
-        L.append(f"| `{k}` | {d['base_rate']:.4f} | {ci(d['AP'], 5)} | "
+        note = ("" if k != "T_seen" else
+                " ⛔ **NOT READ — mis-posed instrument, amendment A1**")
+        L.append(f"| `{k}`{note} | {d['base_rate']:.4f} | {ci(d['AP'], 5)} | "
                  f"**{d['AP_over_base']:.2f}x** | {d['AUROC']:.4f} |")
         if "complement" in d:
             c_ = d["complement"]
-            L.append(f"| `{c_['name']}` (the rare, informative side) | {c_['base_rate']:.4f} | "
-                     f"{ci(c_['AP'], 5)} | **{c_['AP_over_base']:.2f}x** | "
-                     f"{1-d['AUROC']:.4f} |")
+            L.append(f"| `{c_['name']}` read off the MIS-POSED head ⛔ **NOT READ** | "
+                     f"{c_['base_rate']:.4f} | {ci(c_['AP'], 5)} | "
+                     f"**{c_['AP_over_base']:.2f}x** | {1-d['AUROC']:.4f} |")
     L.append("")
+    L.append("> ⛔ The `T_seen` row and its complement are printed for completeness and **are not "
+             "read**: `T_seen` is a 96.7 %-positive target and the pre-registered BCE + `pos_weight`"
+             " recipe up-weights its MAJORITY class, so that head carries no information about the "
+             "rare side. The corrected diagnostic is the next table.\n")
+
+    fx_path = os.path.join(A, "c12_fix.json")
+    if os.path.exists(fx_path):
+        F = json.load(open(fx_path))
+        L.append("### C12 — the CORRECTED conjunct diagnostic (`NOT_T_seen`), amendment A1\n")
+        L.append(f"*Target: {F['target']}. **{F['n_positives']} positives** in {F['n_frames']} "
+                 f"frames ({F['base_rate']*100:.2f} %), **{F['n_positive_clips']} of "
+                 f"{F['n_clips']} clips positive** — {F['n_positives']/306:.1f}x the composite's "
+                 f"positives and far better powered.*\n")
+        L.append("| arm | AP (CI95) | AP / base | ΔAP vs chance | CI95 | above chance? | AUROC |")
+        L.append("|---|---|---|---|---|---|---|")
+        for a, d in F["arms"].items():
+            p = d["paired_AP_vs_chance"]
+            L.append(f"| `{a}` | {ci(d['AP'], 5)} | **{d['AP_over_base']:.2f}x** | "
+                     f"{p['delta']:+.5f} | [{p['lo']:+.5f}, {p['hi']:+.5f}] | "
+                     f"{'**YES**' if p['favours_a'] else ('below chance' if p['separated'] else 'no')}"
+                     f" | {d['AUROC']:.4f} |")
+        L.append("")
 
     L.append("### Sensitivities\n")
     L.append("| stratum | n positives | base rate | AP (CI95) | AP / base |")

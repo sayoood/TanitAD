@@ -271,6 +271,66 @@ def test_nc_share_alike_routes_to_segregated_copyleft_shard():
     assert not p.startswith(q.rsplit("/", 2)[0] + "/bdd100k")
 
 
+def test_argoverse2_registered_correctly_against_the_licence_DOCUMENT():
+    """RE-VERIFIED 2026-07-26 against argoverse.org/about.html, fetched twice.
+
+    Not against a short name, not against another doc — the licensor's own page,
+    saved at `…/incoming/2026-07-26-av2-zod-ingest/evidence/
+    argoverse_about_2026-07-26.html`, which says verbatim:
+
+      "provided free of charge under the terms of the Creative Commons
+       Attribution-NonCommercial-ShareAlike 4.0 International Public License"
+      "We license Argoverse data and documents to you for non-commercial use only"
+      "Argoverse code and APIs are licensed under the MIT license"
+
+    ⚠️ The entry is a FLOOR. The Terms of Use add obligations no CC short name
+    carries — and Prohibited-Use Examples 3 and 4 name TRAINING A MODEL FOR A
+    PRODUCT explicitly, so an AV2-trained model cannot ship regardless of tier.
+    """
+    from tanitad.lake.schema import SOURCE_REGISTRY
+    lic = SOURCE_REGISTRY["argoverse2"]
+    assert lic.license_class == "nc-research"
+    assert lic.license_name == "CC-BY-NC-SA-4.0"
+    assert lic.share_alike is True, "Argoverse is CC BY-NC-SA — copyleft"
+    assert lic.is_synthetic is False, "real camera + lidar"
+    assert not lic.commercial_ok
+
+
+def test_argoverse2_routes_to_segregated_copyleft_shard():
+    """The SA-shard routing built for nuScenes must cover AV2 unchanged.
+
+    Same license_class + same share_alike flag, so this is routing by
+    construction — but AV2 now has an adapter, so assert it BY NAME rather than
+    inferring it from nuScenes' row.
+    """
+    from tanitad.lake.schema import SOURCE_REGISTRY
+    from tanitad.lake.shards import shard_prefix
+    p = shard_prefix("nc-research", "argoverse2", "train",
+                     SOURCE_REGISTRY["argoverse2"].share_alike)
+    assert p == "shards/nc-research/sharealike/argoverse2/train"
+    assert "sharealike" in p
+
+
+def test_argoverse2_record_refused_from_commercial_tier_C():
+    """A REAL assembled AV2 record is refused by the REAL C-tier guard."""
+    from tanitad.lake.schema import record_to_catalog_row
+    rec = assemble_lake_record(generate_episode(9, steps=20, size=32),
+                               source="argoverse2", split="train",
+                               build_params_hash="x")
+    assert rec.license_class == "nc-research" and rec.share_alike
+    assert not rec.commercial_ok
+    with pytest.raises(LicenseScopeError):
+        verify_license_scope([record_to_catalog_row(rec)], context="tier-C",
+                             **C_TIER_SCOPE)
+
+
+def test_argoverse2_tier_is_nc():
+    from tanitad.lake.filtering import tier_of
+    from tanitad.lake.schema import SOURCE_REGISTRY as R
+    assert tier_of(R["argoverse2"].license_class, R["argoverse2"].share_alike,
+                   R["argoverse2"].commercial_ok) == "nc"
+
+
 def test_nc_research_tier_is_nc_not_ship():
     from tanitad.lake.filtering import tier_of
     from tanitad.lake.schema import SOURCE_REGISTRY
