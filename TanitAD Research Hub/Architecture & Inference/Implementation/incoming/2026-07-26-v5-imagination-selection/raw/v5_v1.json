@@ -1,0 +1,779 @@
+{
+  "_experiment": "E-V5-1 -- IMAGINATION-SCORED SELECTION over the frozen v4 fan (PI v5 synthesis, after Bar A REFUTED the discriminative selector)",
+  "_evidence_class": "MEASURED (ours)",
+  "_scoring_wm": "v1",
+  "_goal_mode": "produced",
+  "_primary_surface": "produced (deployable)",
+  "_estimator": "paired_episode_cluster_bootstrap (B=2000, unit = episode cluster). NEVER overlapping_holdout_se.",
+  "_committed_bars": {
+    "v4_as_trained_ade_0_2s": 0.8563,
+    "v4_oracle_in_fan_4wp": 0.2505,
+    "v4_wm_canary_ade_2s": 1.1409,
+    "bar_a_in_sample_ceiling_ce": 0.4907,
+    "bar_a_in_sample_ceiling_regret": 0.5224,
+    "v1_reference_40ep": 0.4271,
+    "bar_a_random_pick": 15.3622,
+    "wm_canary_bar": 0.55
+  },
+  "_host": "1e0bac0df88a",
+  "_python": "3.12.3",
+  "_torch": "2.8.0+cu128",
+  "_gpu": "NVIDIA A40",
+  "_stack_root": "/root/v4eval/stack",
+  "_preregistration": "V5_IMAGINATION_SELECTION.md sec.0 (staged first)",
+  "_ckpt_v4": {
+    "path": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+    "md5": "8771c1d9d3da696dcde2a745d628f6a8",
+    "step": 29999
+  },
+  "_ckpt_v1": {
+    "path": "/root/models/flagship-30k/ckpt.pt",
+    "md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "step": 29999
+  },
+  "feasibility_v1_scores_v4_fan": {
+    "requested": "v1",
+    "v1_state_dim": 2048,
+    "v4_state_dim": 2048,
+    "v1_pred_window": 8,
+    "v4_pred_window": 8,
+    "v1_action_dim": 3,
+    "v4_action_dim": 3,
+    "v1_step": 29999,
+    "_read": "the fan is METRIC trajectories, so a foreign WM only needs to (a) consume this dataset's frames and (b) emit metres. state_dim need NOT match v4's.",
+    "verdict": "FEASIBLE"
+  },
+  "_module_provenance": {
+    "eval_flagship_v4": {
+      "path": "/root/v4eval/stack/scripts/eval_flagship_v4.py",
+      "md5": "aafe3975817e27ef7714499643aae6ff"
+    },
+    "goal_modes": {
+      "path": "/root/v4eval/stack/scripts/goal_modes.py",
+      "md5": "444d2df6b5c34e617e84a734df2226cd"
+    },
+    "tanitad.models.flagship_v4": {
+      "path": "/root/v4eval/stack/tanitad/models/flagship_v4.py",
+      "md5": "5ca5dde3d8bb84e451dab655150a699d"
+    },
+    "tanitad.models.flagship_v15": {
+      "path": "/root/v4eval/stack/tanitad/models/flagship_v15.py",
+      "md5": "88889b1b0203bf936e6083ccf10c68e4"
+    },
+    "tanitad.models.metric_dynamics": {
+      "path": "/root/v4eval/stack/tanitad/models/metric_dynamics.py",
+      "md5": "fa7e4197bd580d968282a66932e4efe6"
+    },
+    "tanitad.models.fourbrain": {
+      "path": "/root/v4eval/stack/tanitad/models/fourbrain.py",
+      "md5": "28f18bca0922c84d23c63c203d75ab23"
+    },
+    "tanitad.refs.refc": {
+      "path": "/root/v4eval/stack/tanitad/refs/refc.py",
+      "md5": "b7887afeec8c41296c8433fe088ecfcf"
+    },
+    "flagship_v4_data": {
+      "path": "/root/v4eval/stack/scripts/flagship_v4_data.py",
+      "md5": "954650fa07aca401603861fe739115ec"
+    }
+  },
+  "_cache": {
+    "n_windows": 881,
+    "n_candidates": 256,
+    "n_episodes": 40,
+    "state_dim": 2048,
+    "window": 8,
+    "wallclock_s": 106.5,
+    "held": "CPU RAM (/root is 99% full -- silent dd truncation)"
+  },
+  "selftest": {
+    "cache_fidelity": {
+      "ade_0_2s_via_cache": 0.8563,
+      "ade_0_2s_committed": 0.8563,
+      "abs_diff": 2e-05,
+      "oracle_in_fan_4wp_via_cache": 0.2505,
+      "oracle_in_fan_4wp_committed": 0.2505,
+      "oif_abs_diff": 5e-05,
+      "ref_ade4_identity_max_abs": 0.0,
+      "_rule": "the cached path must reproduce the published forward-pass number, or NOTHING computed on it is quotable",
+      "PASS": true
+    },
+    "canary_reproduction": {
+      "wm_canary_ade_2s_here": 0.4271,
+      "wm_canary_ade_2s_committed": null,
+      "scoring_wm": "v1",
+      "n": 881,
+      "_note": "v4's committed 1.1409 was measured at the SAME episodes/stride; for --wm v1 there is no committed value on THIS surface and the number below is the v1 line established HERE, not inherited.",
+      "PASS": true
+    },
+    "inverse_map_fidelity": {
+      "steer_mae": 0.01263,
+      "steer_corr": 0.8434,
+      "accel_mae": 0.51305,
+      "accel_corr": 0.4016,
+      "n_steps_compared": 20,
+      "_read": "the derived actions are not expected to be IDENTICAL (the dataset's steer/accel come from the raw ego signal, ours from 0.1 s finite differences of the pose target). Correlation is the readable quantity; the MAE is the derivation's error budget."
+    },
+    "derivation_error_budget": {
+      "ade_2s_under_TRUE_actions": 0.4271,
+      "ade_2s_under_DERIVED_actions": 0.4296,
+      "gap": 0.0025,
+      "_read": "the gap is what the candidate->action inversion costs. It is reported, not hidden: it bounds how much of any REFUTE could be the inversion rather than the world model."
+    },
+    "failing_input": {
+      "random_pick_ade_0_2s": 15.8738,
+      "bar_a_random_pick": 15.3622,
+      "anti_oracle_ade_0_2s": 45.5488,
+      "as_trained_ade_0_2s": 0.8563,
+      "PASS": true,
+      "_rule": "a random pick over the same frozen fan must score WORSE, and an anti-oracle worse still; if not, the harness cannot detect a bad selector"
+    }
+  },
+  "_imagination": {
+    "wallclock_s": 440.4,
+    "n_rollouts": 225536,
+    "n_predictor_steps": 4510720,
+    "k": 20,
+    "convention": "last window action OVERWRITTEN with a_c[0]; a_c[1:] drives transitions 2..K -- the candidate controls the whole roll"
+  },
+  "_a4_grid": {
+    "terms": [
+      "A1_imag_consistency",
+      "A2_imag_goal_speed",
+      "A3_imag_kinematic",
+      "C1_ctrv_consistency",
+      "C2_wm_ref_proximity",
+      "P_as_trained_prior"
+    ],
+    "weights": [
+      0.0,
+      0.5,
+      1.0,
+      2.0
+    ],
+    "n_combos": 4096
+  },
+  "A4_in_sample": {
+    "weights": {
+      "A1_imag_consistency": 0.0,
+      "A2_imag_goal_speed": 0.0,
+      "A3_imag_kinematic": 0.0,
+      "C1_ctrv_consistency": 0.0,
+      "C2_wm_ref_proximity": 0.5,
+      "P_as_trained_prior": 0.0
+    },
+    "ade_0_2s_in_sample": 0.5645,
+    "_read": "IN-SAMPLE: weights fitted and scored on the same windows. This is the number comparable to Bar A's 0.4907 in-sample ceiling."
+  },
+  "_a4_folds": [
+    {
+      "fold": 0,
+      "test_ep": [
+        27,
+        34,
+        0,
+        35,
+        20,
+        13,
+        12,
+        24
+      ],
+      "n_test_windows": 176,
+      "weights": {
+        "A1_imag_consistency": 0.0,
+        "A2_imag_goal_speed": 0.0,
+        "A3_imag_kinematic": 0.0,
+        "C1_ctrv_consistency": 0.0,
+        "C2_wm_ref_proximity": 0.5,
+        "P_as_trained_prior": 0.0
+      },
+      "fit_ade": 0.5645
+    },
+    {
+      "fold": 1,
+      "test_ep": [
+        10,
+        38,
+        23,
+        18,
+        25,
+        36,
+        1,
+        28
+      ],
+      "n_test_windows": 177,
+      "weights": {
+        "A1_imag_consistency": 0.0,
+        "A2_imag_goal_speed": 0.0,
+        "A3_imag_kinematic": 0.0,
+        "C1_ctrv_consistency": 0.0,
+        "C2_wm_ref_proximity": 0.5,
+        "P_as_trained_prior": 0.0
+      },
+      "fit_ade": 0.5877
+    },
+    {
+      "fold": 2,
+      "test_ep": [
+        22,
+        14,
+        31,
+        15,
+        11,
+        8,
+        9,
+        19
+      ],
+      "n_test_windows": 176,
+      "weights": {
+        "A1_imag_consistency": 0.0,
+        "A2_imag_goal_speed": 0.0,
+        "A3_imag_kinematic": 0.0,
+        "C1_ctrv_consistency": 0.0,
+        "C2_wm_ref_proximity": 0.5,
+        "P_as_trained_prior": 0.0
+      },
+      "fit_ade": 0.5356
+    },
+    {
+      "fold": 3,
+      "test_ep": [
+        26,
+        39,
+        3,
+        4,
+        30,
+        7,
+        5,
+        2
+      ],
+      "n_test_windows": 176,
+      "weights": {
+        "A1_imag_consistency": 0.0,
+        "A2_imag_goal_speed": 0.0,
+        "A3_imag_kinematic": 0.0,
+        "C1_ctrv_consistency": 0.0,
+        "C2_wm_ref_proximity": 0.5,
+        "P_as_trained_prior": 0.0
+      },
+      "fit_ade": 0.5672
+    },
+    {
+      "fold": 4,
+      "test_ep": [
+        37,
+        33,
+        6,
+        16,
+        29,
+        32,
+        17,
+        21
+      ],
+      "n_test_windows": 176,
+      "weights": {
+        "A1_imag_consistency": 0.0,
+        "A2_imag_goal_speed": 0.0,
+        "A3_imag_kinematic": 0.0,
+        "C1_ctrv_consistency": 0.0,
+        "C2_wm_ref_proximity": 0.5,
+        "P_as_trained_prior": 0.0
+      },
+      "fit_ade": 0.5676
+    }
+  ],
+  "arms": {
+    "A0_as_trained": {
+      "ade_0_2s": 0.8563,
+      "miss_at_2m": 0.319,
+      "along_abs_dense_LONGITUDINAL": 0.5847,
+      "cross_abs_dense_LATERAL": 0.1889,
+      "frac_pick_equals_as_trained": 1.0,
+      "n_distinct_picks": 128,
+      "ci": {
+        "mean": 0.8563,
+        "lo": 0.7162,
+        "hi": 1.002,
+        "se": 0.0732,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "R_random": {
+      "ade_0_2s": 15.8738,
+      "miss_at_2m": 0.9489,
+      "along_abs_dense_LONGITUDINAL": 13.0732,
+      "cross_abs_dense_LATERAL": 0.6908,
+      "frac_pick_equals_as_trained": 0.0034,
+      "n_distinct_picks": 249,
+      "ci": {
+        "mean": 15.8738,
+        "lo": 14.6771,
+        "hi": 17.3799,
+        "se": 0.6885,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "O_oracle_in_fan": {
+      "ade_0_2s": 0.2505,
+      "miss_at_2m": 0.0352,
+      "along_abs_dense_LONGITUDINAL": 0.1194,
+      "cross_abs_dense_LATERAL": 0.1366,
+      "frac_pick_equals_as_trained": 0.1589,
+      "n_distinct_picks": 186,
+      "ci": {
+        "mean": 0.2505,
+        "lo": 0.2008,
+        "hi": 0.3122,
+        "se": 0.0282,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "A1_imag_consistency": {
+      "ade_0_2s": 1.2472,
+      "miss_at_2m": 0.4574,
+      "along_abs_dense_LONGITUDINAL": 0.881,
+      "cross_abs_dense_LATERAL": 0.2451,
+      "frac_pick_equals_as_trained": 0.1226,
+      "n_distinct_picks": 188,
+      "ci": {
+        "mean": 1.2472,
+        "lo": 1.0525,
+        "hi": 1.4487,
+        "se": 0.1012,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "A2_imag_goal_speed": {
+      "ade_0_2s": 5.0746,
+      "miss_at_2m": 0.7094,
+      "along_abs_dense_LONGITUDINAL": 4.1362,
+      "cross_abs_dense_LATERAL": 0.3544,
+      "frac_pick_equals_as_trained": 0.0499,
+      "n_distinct_picks": 211,
+      "ci": {
+        "mean": 5.0746,
+        "lo": 3.8898,
+        "hi": 6.5498,
+        "se": 0.6728,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "A3_imag_kinematic": {
+      "ade_0_2s": 6.22,
+      "miss_at_2m": 0.6549,
+      "along_abs_dense_LONGITUDINAL": 5.0595,
+      "cross_abs_dense_LATERAL": 0.4013,
+      "frac_pick_equals_as_trained": 0.0931,
+      "n_distinct_picks": 213,
+      "ci": {
+        "mean": 6.22,
+        "lo": 4.9124,
+        "hi": 7.7644,
+        "se": 0.7334,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "C1_ctrv_consistency": {
+      "ade_0_2s": 1.7836,
+      "miss_at_2m": 0.5165,
+      "along_abs_dense_LONGITUDINAL": 1.3355,
+      "cross_abs_dense_LATERAL": 0.2573,
+      "frac_pick_equals_as_trained": 0.0829,
+      "n_distinct_picks": 227,
+      "ci": {
+        "mean": 1.7836,
+        "lo": 1.3416,
+        "hi": 2.476,
+        "se": 0.3132,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "C2_wm_ref_proximity": {
+      "ade_0_2s": 0.5645,
+      "miss_at_2m": 0.1339,
+      "along_abs_dense_LONGITUDINAL": 0.3578,
+      "cross_abs_dense_LATERAL": 0.1738,
+      "frac_pick_equals_as_trained": 0.1283,
+      "n_distinct_picks": 184,
+      "ci": {
+        "mean": 0.5645,
+        "lo": 0.4855,
+        "hi": 0.6528,
+        "se": 0.0433,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    },
+    "A4_imag_combo_oof": {
+      "ade_0_2s": 0.5645,
+      "miss_at_2m": 0.1339,
+      "along_abs_dense_LONGITUDINAL": 0.3578,
+      "cross_abs_dense_LATERAL": 0.1738,
+      "frac_pick_equals_as_trained": 0.1283,
+      "n_distinct_picks": 184,
+      "ci": {
+        "mean": 0.5645,
+        "lo": 0.4855,
+        "hi": 0.6528,
+        "se": 0.0433,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "reducer": "mean"
+      }
+    }
+  },
+  "paired_vs_as_trained": {
+    "R_random": {
+      "delta": 15.0176,
+      "lo": 13.7568,
+      "hi": 16.579,
+      "ci95": 1.4111,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "O_oracle_in_fan": {
+      "delta": -0.6057,
+      "lo": -0.737,
+      "hi": -0.4905,
+      "ci95": 0.1232,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "A1_imag_consistency": {
+      "delta": 0.391,
+      "lo": 0.2385,
+      "hi": 0.5539,
+      "ci95": 0.1577,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "A2_imag_goal_speed": {
+      "delta": 4.2183,
+      "lo": 3.0352,
+      "hi": 5.7122,
+      "ci95": 1.3385,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "A3_imag_kinematic": {
+      "delta": 5.3638,
+      "lo": 4.062,
+      "hi": 6.9208,
+      "ci95": 1.4294,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "C1_ctrv_consistency": {
+      "delta": 0.9273,
+      "lo": 0.4888,
+      "hi": 1.6253,
+      "ci95": 0.5682,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "C2_wm_ref_proximity": {
+      "delta": -0.2918,
+      "lo": -0.4245,
+      "hi": -0.1662,
+      "ci95": 0.1291,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "A4_imag_combo_oof": {
+      "delta": -0.2918,
+      "lo": -0.4245,
+      "hi": -0.1662,
+      "ci95": 0.1291,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    }
+  },
+  "attribution": {
+    "A1_minus_C1_ctrv": {
+      "delta": -0.5364,
+      "lo": -1.2234,
+      "hi": -0.0842,
+      "ci95": 0.5696,
+      "p_delta_gt0": 0.0045,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "A1_minus_C2_ref": {
+      "delta": 0.6827,
+      "lo": 0.5017,
+      "hi": 0.8799,
+      "ci95": 0.1891,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    },
+    "_read": "NEGATIVE = per-candidate WM imagination beats the control. A win the controls MATCH is a scoring-rule result, NOT an imagination result."
+  },
+  "VERDICT_BLOCK": {
+    "best_parameter_free_imagination_arm": "A1_imag_consistency",
+    "best_in_sample_ade_0_2s": 0.5645,
+    "bar_CONFIRM_lt": 0.4907,
+    "best_oof_ade_0_2s": 0.5645,
+    "bar_STRONG_lt": 0.4271,
+    "VERDICT": "REFUTE"
+  },
+  "stratified_by_canary_quality": {
+    "_canary_quantiles": {
+      "p25": 0.2179,
+      "p50": 0.372,
+      "p75": 0.5569,
+      "mean": 0.4271
+    },
+    "under_canary_bar_0.55": {
+      "n_windows": 656,
+      "n_episodes": 38,
+      "frac_of_all": 0.7446,
+      "A0_as_trained": 0.8298,
+      "R_random": 15.189,
+      "O_oracle_in_fan": 0.2142,
+      "A1_imag_consistency": 1.2359,
+      "A2_imag_goal_speed": 5.1893,
+      "A3_imag_kinematic": 6.1191,
+      "C1_ctrv_consistency": 1.8219,
+      "C2_wm_ref_proximity": 0.4235,
+      "A4_imag_combo_oof": 0.4235,
+      "paired_A1_minus_A0": {
+        "delta": 0.4061,
+        "lo": 0.2369,
+        "hi": 0.579,
+        "ci95": 0.171,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "n_windows": 656,
+        "n_episodes": 38,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    },
+    "over_canary_bar_0.55": {
+      "n_windows": 225,
+      "n_episodes": 31,
+      "frac_of_all": 0.2554,
+      "A0_as_trained": 0.9335,
+      "R_random": 17.8706,
+      "O_oracle_in_fan": 0.3566,
+      "A1_imag_consistency": 1.2804,
+      "A2_imag_goal_speed": 4.7404,
+      "A3_imag_kinematic": 6.5142,
+      "C1_ctrv_consistency": 1.6718,
+      "C2_wm_ref_proximity": 0.9755,
+      "A4_imag_combo_oof": 0.9755,
+      "paired_A1_minus_A0": {
+        "delta": 0.3469,
+        "lo": 0.203,
+        "hi": 0.5215,
+        "ci95": 0.1593,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "n_windows": 225,
+        "n_episodes": 31,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    },
+    "q1_best_canary": {
+      "n_windows": 221,
+      "n_episodes": 27,
+      "frac_of_all": 0.2509,
+      "A0_as_trained": 0.8164,
+      "R_random": 15.6146,
+      "O_oracle_in_fan": 0.1794,
+      "A1_imag_consistency": 1.3589,
+      "A2_imag_goal_speed": 5.9112,
+      "A3_imag_kinematic": 7.0755,
+      "C1_ctrv_consistency": 2.3132,
+      "C2_wm_ref_proximity": 0.2794,
+      "A4_imag_combo_oof": 0.2794,
+      "paired_A1_minus_A0": {
+        "delta": 0.5426,
+        "lo": 0.232,
+        "hi": 0.8788,
+        "ci95": 0.3234,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "n_windows": 221,
+        "n_episodes": 27,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    },
+    "q2": {
+      "n_windows": 220,
+      "n_episodes": 35,
+      "frac_of_all": 0.2497,
+      "A0_as_trained": 0.8595,
+      "R_random": 14.6937,
+      "O_oracle_in_fan": 0.2269,
+      "A1_imag_consistency": 1.0839,
+      "A2_imag_goal_speed": 5.5389,
+      "A3_imag_kinematic": 6.3053,
+      "C1_ctrv_consistency": 1.6719,
+      "C2_wm_ref_proximity": 0.4248,
+      "A4_imag_combo_oof": 0.4248,
+      "paired_A1_minus_A0": {
+        "delta": 0.2245,
+        "lo": 0.0775,
+        "hi": 0.3791,
+        "ci95": 0.1508,
+        "p_delta_gt0": 0.9985,
+        "separated": true,
+        "n_windows": 220,
+        "n_episodes": 35,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    },
+    "q3": {
+      "n_windows": 220,
+      "n_episodes": 35,
+      "frac_of_all": 0.2497,
+      "A0_as_trained": 0.7999,
+      "R_random": 15.1064,
+      "O_oracle_in_fan": 0.2345,
+      "A1_imag_consistency": 1.2685,
+      "A2_imag_goal_speed": 4.0132,
+      "A3_imag_kinematic": 4.9178,
+      "C1_ctrv_consistency": 1.4893,
+      "C2_wm_ref_proximity": 0.5702,
+      "A4_imag_combo_oof": 0.5702,
+      "paired_A1_minus_A0": {
+        "delta": 0.4686,
+        "lo": 0.1999,
+        "hi": 0.8305,
+        "ci95": 0.3153,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "n_windows": 220,
+        "n_episodes": 35,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    },
+    "q4_worst_canary": {
+      "n_windows": 220,
+      "n_episodes": 31,
+      "frac_of_all": 0.2497,
+      "A0_as_trained": 0.9496,
+      "R_random": 18.0818,
+      "O_oracle_in_fan": 0.3617,
+      "A1_imag_consistency": 1.2771,
+      "A2_imag_goal_speed": 4.8314,
+      "A3_imag_kinematic": 6.5777,
+      "C1_ctrv_consistency": 1.6577,
+      "C2_wm_ref_proximity": 0.9849,
+      "A4_imag_combo_oof": 0.9849,
+      "paired_A1_minus_A0": {
+        "delta": 0.3275,
+        "lo": 0.1879,
+        "hi": 0.4962,
+        "ci95": 0.1541,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "n_windows": 220,
+        "n_episodes": 31,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "_orientation": "a - b; NEGATIVE = a is BETTER"
+      }
+    }
+  },
+  "_timing": {
+    "predictor_step_ms_batch256": 25.033,
+    "predictor_step_ms_batch1024": 95.737,
+    "predictor_step_ms_batch2048": 188.329,
+    "encode_window_ms_batch1": 27.858,
+    "_read": "predictor_step is ONE imagination step for the whole batch; imagination cost = ceil(N/batch) * k * step_ms. encode_window is the full camera pass this is measured against."
+  },
+  "_wallclock_total_s": 595.1
+}

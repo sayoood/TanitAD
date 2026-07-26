@@ -1,0 +1,225 @@
+{
+  "_experiment": "E-V5-3 -- cost-vs-quality curve for imagination-scored selection over the frozen v4 fan",
+  "_evidence_class": "MEASURED (ours)",
+  "_disappointing_committed_in_advance": {
+    "D1_flat_quality_axis": "ade(n,k) span < the paired CI half-width of A1-vs-A0 => NO admissible efficiency axis; report that, not a compute saving.",
+    "D2_best_at_n2": "top-2 by base score as good as all 256 => the fan's other 254 candidates are decoration.",
+    "D3_hierarchy_buys_nothing": "tactical-commit top-q == base-score top-q => candidate COUNT is the lever, not hierarchy.",
+    "_source": "BOOST_PROGRAM 7.3 -- H2's 85% saving was information-free because never-escalate saved 85.7% and a perfect oracle 85.6%. State the disappointing value BEFORE quoting."
+  },
+  "_grid": {
+    "W": 881,
+    "N": 256,
+    "K": 20
+  },
+  "_timing_measured": {
+    "predictor_step_ms_batch256": 25.183,
+    "predictor_step_ms_batch1024": 95.567,
+    "predictor_step_ms_batch2048": 188.085,
+    "encode_window_ms_batch1": 27.955,
+    "_read": "predictor_step is ONE imagination step for the whole batch; imagination cost = ceil(N/batch) * k * step_ms. encode_window is the full camera pass this is measured against."
+  },
+  "quality_surface_ade_0_2s": {
+    "k1": {
+      "n1": 0.8563,
+      "n2": 1.4994,
+      "n4": 1.9705,
+      "n8": 2.6292,
+      "n16": 2.7307,
+      "n32": 2.7988,
+      "n64": 2.9258,
+      "n128": 2.8899,
+      "n256": 2.9057
+    },
+    "k2": {
+      "n1": 0.8563,
+      "n2": 1.346,
+      "n4": 1.8457,
+      "n8": 2.1904,
+      "n16": 1.8883,
+      "n32": 1.6385,
+      "n64": 1.5898,
+      "n128": 1.4771,
+      "n256": 1.4228
+    },
+    "k4": {
+      "n1": 0.8563,
+      "n2": 1.1901,
+      "n4": 3.4174,
+      "n8": 3.5569,
+      "n16": 2.7872,
+      "n32": 2.2966,
+      "n64": 1.7778,
+      "n128": 1.4397,
+      "n256": 1.3245
+    },
+    "k6": {
+      "n1": 0.8563,
+      "n2": 1.0569,
+      "n4": 3.9002,
+      "n8": 4.6004,
+      "n16": 4.0835,
+      "n32": 3.3,
+      "n64": 2.6065,
+      "n128": 2.1434,
+      "n256": 1.6915
+    },
+    "k8": {
+      "n1": 0.8563,
+      "n2": 0.976,
+      "n4": 5.4715,
+      "n8": 6.2056,
+      "n16": 6.0586,
+      "n32": 5.1499,
+      "n64": 4.0513,
+      "n128": 3.2417,
+      "n256": 2.8185
+    },
+    "k10": {
+      "n1": 0.8563,
+      "n2": 0.9499,
+      "n4": 5.5166,
+      "n8": 6.6149,
+      "n16": 7.0047,
+      "n32": 6.7241,
+      "n64": 5.5516,
+      "n128": 4.6736,
+      "n256": 3.8195
+    },
+    "k14": {
+      "n1": 0.8563,
+      "n2": 0.9093,
+      "n4": 5.9956,
+      "n8": 8.1509,
+      "n16": 8.8972,
+      "n32": 9.5424,
+      "n64": 8.6997,
+      "n128": 7.6903,
+      "n256": 6.7256
+    },
+    "k20": {
+      "n1": 0.8563,
+      "n2": 0.8695,
+      "n4": 6.9475,
+      "n8": 11.1506,
+      "n16": 12.2862,
+      "n32": 13.4116,
+      "n64": 12.7415,
+      "n128": 12.5409,
+      "n256": 11.5298
+    }
+  },
+  "quality_span": {
+    "min": 0.8563,
+    "max": 13.4116,
+    "span": 12.5553
+  },
+  "D1_flatness_test": {
+    "quality_span_over_grid": 12.5553,
+    "paired_ci95_halfwidth_A1_vs_A0": 2.2184,
+    "axis_has_dynamic_range": true,
+    "paired_A1_minus_A0": {
+      "delta": 10.6735,
+      "lo": 8.5014,
+      "hi": 12.9382,
+      "ci95": 2.2184,
+      "separated": true,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_orientation": "a - b; NEGATIVE = a is BETTER"
+    }
+  },
+  "D2_breadth_test": {
+    "ade_at_n2_k20": 0.8695,
+    "ade_at_n256_k20": 11.5298,
+    "breadth_buys_m": -10.6603,
+    "disappointing_if": "breadth_buys_m ~ 0"
+  },
+  "cost_axis": {
+    "predictor_step_ms_batch256": 25.183,
+    "encode_window_ms_batch1": 27.955,
+    "rows": {
+      "k1": {
+        "predictor_steps_per_decision": 1,
+        "ms_at_batch256": 25.183,
+        "x_full_camera_pass": 0.901
+      },
+      "k2": {
+        "predictor_steps_per_decision": 2,
+        "ms_at_batch256": 50.366,
+        "x_full_camera_pass": 1.802
+      },
+      "k4": {
+        "predictor_steps_per_decision": 4,
+        "ms_at_batch256": 100.732,
+        "x_full_camera_pass": 3.603
+      },
+      "k6": {
+        "predictor_steps_per_decision": 6,
+        "ms_at_batch256": 151.098,
+        "x_full_camera_pass": 5.405
+      },
+      "k8": {
+        "predictor_steps_per_decision": 8,
+        "ms_at_batch256": 201.464,
+        "x_full_camera_pass": 7.207
+      },
+      "k10": {
+        "predictor_steps_per_decision": 10,
+        "ms_at_batch256": 251.83,
+        "x_full_camera_pass": 9.008
+      },
+      "k14": {
+        "predictor_steps_per_decision": 14,
+        "ms_at_batch256": 352.562,
+        "x_full_camera_pass": 12.612
+      },
+      "k20": {
+        "predictor_steps_per_decision": 20,
+        "ms_at_batch256": 503.66,
+        "x_full_camera_pass": 18.017
+      }
+    },
+    "_read": "a 256-candidate fan fits in ONE batched predictor call per imagination step, so the cost of scoring the WHOLE fan k steps deep is k predictor steps -- NOT 256*k."
+  },
+  "quality_at_fixed_budget": {
+    "rows": {
+      "budget_64": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_128": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_256": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_512": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_1024": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_2048": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      },
+      "budget_5120": {
+        "best_ade": 0.8563,
+        "n": 1,
+        "k": 1
+      }
+    },
+    "_read": "budget = n_candidates x k = candidate-steps per decision. THE informative axis: whether the optimum moves with the budget. If the same (n, k) wins at every budget there is no trade-off to design."
+  },
+  "D3_hierarchy_note": "the matched-count comparison (tactical-commit top-q vs base-score top-q) is computed in E-V5-2 (v5_hier.json, arms H_graft_q* / H_imag_q*); this file supplies the base-score top-q leg. hier artifact: /workspace/_v5/v5_hier.json"
+}

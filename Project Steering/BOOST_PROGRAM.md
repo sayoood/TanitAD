@@ -199,6 +199,24 @@ result in the program, and it is CONFIRMED (two independent goal modes, same con
 >
 > > **INFORMATION BEATS OBJECTIVE BY 2.4× – 8.6×.**
 >
+> ### ⚠️ QUALIFIED 2026-07-26 by E-V5-1 — I OVERSTATED THIS WHEN I RELAYED IT
+>
+> The v5 agent traced the **0.4138** to `bar_a_oracle.json`: it is the **goal-ORACLE surface**, not a
+> deployable one, and **23 % of that move is the FAN, not conditioning.** The direction survives —
+> conditioning still beats objective, and E-V5-1 confirmed it independently — but **the 2.4×–8.6×
+> multiplier is an ORACLE-surface figure and must not be quoted bare.** I passed it to Sayed and into
+> a live agent brief without that qualification.
+>
+> ⭐ **And the deployable form of the same finding is sharper, and free:** v4's **PRODUCED goal is
+> WORSE THAN NO GOAL AT ALL** — **−0.0943 m [−0.1302, −0.0589], separated**, 87 % selection-
+> attributable. **Turning it off costs nothing and gains that.** (Oracle is −0.2140, so the goal
+> lever is real — *our producer is worse than not having one*.)
+>
+> ⚠️ **A second error of mine, same family:** my briefs cited the v1 world-model line as **~0.452**.
+> The v5 agent established it as **0.4271** — **0.452 is the DEPRECATED `heldout` split-mean.** The
+> retired estimator is still propagating through agent briefs *via me*, which is exactly what
+> M2 exists to stop.
+>
 > (0.4138 is *below* v1's 0.4271, though in-sample and therefore not deployable.) This is the
 > pre-committed §0.8 privileged-input reading with a number attached, and it is why v5's ladder is
 > **conditioning-first, not loss-first** — see `V5_PLAN.md`.
