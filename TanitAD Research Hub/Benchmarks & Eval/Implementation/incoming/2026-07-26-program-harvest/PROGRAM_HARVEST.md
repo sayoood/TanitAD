@@ -15,10 +15,16 @@ their results and incorporate them in the recovery plan."* · **Feeds:** `Projec
 3. **The clearest proof it is a power problem, not an effect problem:** two artifacts measure the *same*
    0.20 m closed-loop effect on the *same* 12 episodes with the *same* estimator — one is published as
    **"the proof"**, the other as **"TIE — do not promote"**. The second misses zero by **0.0154 m**.
-4. **Three things are live and will cost something today:** a standing directive commissions a ~1-pod-day
-   probe that is **already complete at five locations** (O-1) · the module built to un-strand the v4
-   co-primary **raises on its first step**, one line (H3 S-01) · and **`CLAUDE.md` — loaded into every
-   agent's context — cites a claim its own `RETRACTION_LOG` retracted on 07-21** (O-5).
+4. **Four things are live and cost something today:** a standing directive commissions a ~1-pod-day probe
+   **already complete at five locations** (O-1) · the module built to un-strand the v4 co-primary
+   **raises on its first step**, one line (H3 S-01) · the `h15` value in **every training log we are
+   producing right now**, including the live v2-corpus arm, is the **last micro-batch** and misreports
+   the real value ~46 % of the time, with the fix built and tested and unused (H2 #3) · and **`CLAUDE.md`
+   — loaded into every agent's context — carries three defects including a claim its own
+   `RETRACTION_LOG` retracted on 07-21** (O-5, H2 #1).
+   ⭐ **And the shape of the top-10 is itself the finding: eight of the ten cost hours of CPU or a
+   document edit.** The harvest's dominant result is not that we need more compute — it is that **a
+   large fraction of the program's accumulated value is sitting behind edits nobody has made.**
 5. **The recovery plan's Bar-B pessimism rests on a trainer-log number** (−21.6 %/20k) while the
    eval-grade pair reads −45.0 %/15k from a *different statistic* — and **Bar B's first candidate lever
    now has two independent supports** (off-path/viewpoint augmentation, H5 row 4).
@@ -28,6 +34,13 @@ their results and incorporate them in the recovery plan."* · **Feeds:** `Projec
 ⛔ **Nothing in this document is DECISION-GRADE.** It is a ranked list of places to look, built from
 reports, and reports are `INHERITED` by default. Where I verified something myself with two probes it is
 marked `MEASURED · CONFIRMED`; everywhere else it is `PROVISIONAL` and must not decide a GPU-day.
+
+⚠️ **And this harvest has a half-life of hours, demonstrated on itself.** The corpus grew from **135 to
+137** directories while I read it, and commit `12d6b8a` (20:10) **falsified a claim in my own O-3 before
+I finished writing it** — DLR OpenDRIVE is `CC-BY-4.0`, the program's **first `ship`-tier lane graph**,
+so the scarce asset has flipped from the lane graph to **imagery**. That retraction is left standing in
+**O-3a** rather than silently edited. ⇒ **The answer is not to sweep harder — it is `harvest_index.json`,
+which exists so this can be re-run and *diffed* rather than re-argued.**
 
 
 ## Method, and its limits — read before quoting anything below
@@ -284,6 +297,16 @@ map — settled at five probes) · `Q-HP4` compositional generalisation to unsee
 | **9** | **H18 grounding dominance is the hierarchy's strongest positive AND it is immune to the estimator problem that killed the others.** Paired Δ **+2.9568 m** (corrected **UP** from +2.6979 under the fix) — un-separating it would need an **8.65× interval widening against a worst-ever-measured 2.06×**. | **The hierarchy question**, which currently reads *"0 of 3 seams load-bearing"* after the `ctx→tactical` retraction. **0/3 plus one 8.65×-robust dominance result is a different picture from 0/3.** | The `_jack` retraction (07-25) is dramatic and its headline is the **0/3**. The same entry's closing lines record that H18 **strengthened** — it moved up, not down. **A retraction's good news travels worse than its bad news.** | Zero — it is already measured. It needs to be **stated together with the 0/3**, in the registry and in BOOST, or the program keeps reasoning from half its evidence. | INHERITED (RETRACTION_LOG 07-25 + 4BRAIN §E1/H18) · PROVISIONAL |
 | **10** | **PC3 is unblocked in code and unmeasured on any real arm** — `corridor.from_windows` runs on any archived arm, but **no archived arm has `pred_dense`**, so it has never been evaluated. *(`4BRAIN_DOMINANCE_PROGRAM.md` §§4.3, 5)* | **`Q-CL`** — the closed-loop measurability stream (S-1), the program's #1 blocker. A per-window dense-prediction dump is exactly what horizon-capable corridor scoring needs. | It is a **one-flag emitter change** at eval time, filed inside a 350-line program plan under a small marker. | One flag on the next eval run. **Cheapest row here.** | INHERITED · PROVISIONAL |
 
+⚠️ **Row 1 has been partly overtaken while this was being written — read `O-3a` before acting on it.**
+AV2 remains the recommendation for a **research-tier** lane graph (it is `CC-BY-NC-SA-4.0`), but commit
+`12d6b8a` at **20:10 today** lands **DLR OpenDRIVE — `CC-BY-4.0`, the program's first `ship`-tier lane
+graph**, with 86,200 explicit lane-successor links, **372 positioned traffic lights (AV2 has zero)**, and
+a full PROJ string per map so it can be **map-matched**. ⇒ **The ingest-driver action (top-10 runner-up)
+should now be scoped against BOTH candidates, not AV2 alone** — and if the traffic-light and
+map-matching properties matter for `Q-TOPO`, DLR may be the better first target despite AV2's
+head start in adapter code.
+
+
 ## H5.1 The pattern across these ten
 
 Eight of the ten share one failure shape: *a stream produced a fact, filed it under its own question,
@@ -438,6 +461,30 @@ incident, including the multiline-evasion sub-lesson the 07-25 retraction record
   way. **Class INHERITED · PROVISIONAL** (H2 verified the wiring gap and ran the tests itself — 31/31 —
   but did **not** re-run the HP-3 measurement; treat the 0.56/0.62 as unconfirmed).
 
+## ⚠️ H2's negative findings — recorded so the next sweep does not re-spend the effort
+
+**Three of the modules named as H2 candidates in the brief are FALSE LEADS**, verified by live import
+and grep against HEAD:
+
+| module | actual state |
+|---|---|
+| `taniteval/taniteval/ood.py` | **heavily used in production** — `run_gate.py`, `gate_emitters.py`, `clhorizon.py` |
+| `taniteval/taniteval/corridor.py` | **heavily used in production** — same callers |
+| `taniteval/taniteval/hierarchy_guard.py` | **heavily used** — 4 documented call sites |
+| `stack/tanitad/lake/*.py` (whole directory) | **clean — zero H2 hits** |
+
+⇒ The brief's candidate list (mine, carried from `BOOST_PROGRAM`) was **partly wrong**, and the agent
+**checked rather than assumed**. That is `BOOST_PROGRAM` **M2** working exactly as designed — an
+`INHERITED-UNVERIFIED` premise entering a brief and being caught before anything was built on it.
+**Recording the negative explicitly, because an unrecorded false lead gets re-investigated.**
+
+**Six items H2 could not classify** (full detail in its own §"Capabilities I could not classify"): the
+AlpaSim gRPC driver cluster and the gate-1 DAgger pipeline both fail locally on
+`ModuleNotFoundError: grpc` and **need the eval pod**; `vectormap_corridor.py` needs AlpaSim scene data;
+`tanitad_spectral_sizing.py` may already be superseded by `stack/tanitad/eval/spectral.py` (a ~30 min
+diff would settle it); and several `stack/tanitad/data/*.py` loaders with moderate reference counts were
+not individually re-verified. **These are UNVERIFIED, not "unused" — do not read them as findings.**
+
 ## Two complete safety scenarios sitting outside the registry
 
 `stop_arm_gate.py` (school-bus stop-arm violation) and `stationary_lead.py` are **complete, tested, and
@@ -450,6 +497,75 @@ CONFIRMED` — e.g. `registry_lint --self-test`, the `SCENARIO_REGISTRY` key cou
 `planning.py`'s absent outputs) versus which it inherited from its own sub-probes (`PROVISIONAL`).
 **Read the source table's evidence column before acting; I have not re-verified H2's rows myself**, with
 the exception of the `blind_baseline` ↔ H1.3 cross-link, which is corroborated by my own firewall sweep.
+
+---
+
+# H4 — cross-agent contradictions → **full inventory in `H4_CONTRADICTIONS.md` / `h4_contradictions.json`**
+
+**13 live contradictions** catalogued and typed (TRUE CONTRADICTION / DEFINITION MISMATCH /
+STALE-vs-CURRENT / ESTIMATOR ARTIFACT), each with the stronger side named and the cheapest discriminator.
+Already-resolved ones were excluded rather than re-listed.
+
+## ⭐ H4 row 1, ADJUDICATED HERE — the registry's loudest stranding warning is FALSE
+
+`MODEL_REGISTRY.md` §5 (P2, the CEM planner over the frozen v1 world model) carries a red-flag block:
+
+> 🟥 **RECONSTRUCTION RISK — P2 is uncommitted.** `planner_p2.py` exists only on `tanitad-eval`. It is
+> the single strongest piece of evidence for the v3 direction and it is **one pod-loss away from gone.**
+
+…and a `Location` row pointing only at `tanitad-eval:/root/…`, and a `Status` of *"Nothing trained,
+**nothing committed**."*
+
+**All three are FALSE at HEAD. MEASURED by me, `git ls-files`:**
+
+| claimed | actual |
+|---|---|
+| `planner_p2.py` exists only on the eval pod | **`taniteval/taniteval/planner_p2.py` is tracked in the repo** — I read it at lines 370-395 |
+| the result JSON lives only on the pod | **`…/2026-07-26-closedloop-artifact-rerun/_pod_pulled/planner_p2_flagship-30k.json` is tracked** |
+| nothing committed | **`planner_p2_G4.CORRECTED.json` and `rerun_planner_p2_g4.py` are also tracked** — it has already been re-run *and* corrected once |
+
+⇒ **The strongest stranding warning in the program's only quotable source is a stale claim about work
+git already contains.** This is the **exact mirror of the LAL-v2 error** (`RETRACTION_LOG.md:47`, C4+C2:
+*"a stale escalation demanding work git already contains"*) — **in the registry rather than in a report**,
+and pointed at *"the single strongest piece of evidence for the v3 direction."*
+⚠️ **Two consequences, opposite in sign:** the good one is that **nothing is one pod-loss from gone**;
+the bad one is that **D-033 — described repeatedly as "the largest architecture decision in the program"
+— rests on numbers computed by the deprecated `_jack` estimator** (top-10 action 8), and **that** is the
+real risk to P2's evidence, not disk loss. **The registry is warning about the wrong hazard.**
+✅ It also makes action 8 strictly cheaper: **both the code and the result JSON are local.**
+**Class MEASURED (mine) · CONFIRMED** (raised by H4 from the registry side; settled by me with the tool
+that owns the fact).
+
+## The rest of H4, in one line each — read `H4_CONTRADICTIONS.md` for the evidence columns
+
+| # | quantity | type | stronger side |
+|---|---|---|---|
+| 2 | REF-C-base vs flagship-v1 AlpaSim margin (Δ −0.4296, "triple-confirmed") | scene-composition confound | the n=12 suite is **8/12 straight-or-urban — REF-C's best category**; the margin is not corpus-neutral |
+| 3 | **flagship-v1 wallclock: registry says ~53 h / 6.37 s per step; `RETRACTION_LOG` settled 90.73 h / 10.888** | STALE-vs-CURRENT | **the retraction** — and the registry still carries the retracted figure at `:133` |
+| 4 | S3's skill bars + *"the highway stratum does not exist"* | parity confound | the non-parity dev-box cache is **city-heavy, not a scaled-down parity draw** |
+| 5 | **does `--labels-v2` fix PC1's route-echo confound?** | TRUE CONTRADICTION | *"does not work"* — `pc1_label_verification.json`, n=17,100 windows. ⛔ **This blocks the Hierarchy Proof Program's first pre-condition, and it was filed as a cheap config fix.** |
+| 6 | **the v2-vs-v1 power-law exponent that justified KILLING `flagship-v2` (D-031)** | inadmissible by our own rule | `CLAUDE.md` — the exponent is quoted **bare, no window/R²/n**, and the "9×" extrapolates **≈4.3× beyond its fitted range** |
+| 7 | `LEADERBOARD.md` two stale cells vs the registry's 2026-07-26 re-emission | STALE-vs-CURRENT | the registry |
+| 8 | **planning tick: 103.42 vs 97.32 vs 99.03–100.05 ms** — three non-matching values, same definition | TRUE CONTRADICTION | **neither** — the repeatability run brackets neither of the other two |
+| 9 | *"flagship v1 closed-loop ADE@2s"* = **1.6852** and **1.488** | DEFINITION MISMATCH | two structurally different pipelines (self-referential imagination vs real-footage-fed), **no cross-reference anywhere** |
+| 10 | E2a's *"ρ = √R² = 0.9112"* beside R² = 0.7176 (√0.7176 = **0.847**) | DEFINITION MISMATCH | ρ is √0.8302 — **a different latent** (`feat_full`, not `feat_pooled`) conflated in one paragraph |
+| 11 | ⭐ **`RETRACTION_LOG.md`'s own class legend defines only C1–C6 while its entries use C7–C14** | STALE-vs-CURRENT | the entries. **`CLAUDE.md` makes reading this file binding "before asserting in a known class" — and half the classes are not in the index.** Flagged once already (07-25) and **six more classes have landed since.** |
+| 12 | `gc_on_16x4` peak memory *"reproduced exactly"* — 14.293 vs 14.156 GiB | TRUE CONTRADICTION (small) | the raw per-repeat data, in the **same file** as the claim |
+| 13 | SC-13 stationary-lead collision rate 0.4 vs 0.6 | TRUE CONTRADICTION (duplicate) | **neither — the sibling lives on an unmerged branch** (`agent/opponent-20260715`, `787671a`) and the package's own dedup note says *"Pick one at merge; do not integrate both."* |
+
+## What was already established elsewhere in this harvest (not double-counted by H4)
+
+
+| contradiction | where | adjudication |
+|---|---|---|
+| **`wm_canary` descent rate** — `BOOST_PROGRAM` §3.3's *"−21.6 %/20k"* (trainer log, `canary_8_10k` 1.4900) vs the eval-grade pair *"2.0739@15k → 1.1409@30k = −45.0 %/15k"* | **H5 row 5** | **DEFINITION MISMATCH, not a true contradiction** — the trainer series reads **lower at an earlier step**, so they are not the same statistic. **Eval wins** (`RETRACTION_LOG` C1). **MEASURED · CONFIRMED.** |
+| **`CLAUDE.md:145` "LAL-v2 unmerged 12 days"** vs **`RETRACTION_LOG.md:47` "It merged on 2026-07-09"** | **O-5** | **STALE-vs-CURRENT. The retraction wins.** The residual it named (`rollout.py:94`) is now fixed too. **MEASURED · CONFIRMED**, two agents. |
+| **`CLAUDE.md:57` "orthogonality instrument, 10 days"** vs H2's traced escalation dates (07-10, 07-17, 07-18) | **H2** | **STALE-vs-CURRENT — the real figure is 16 days.** Stale in the *harmless* direction, same defect. |
+| **`LOOP_STATE.md` D-A "the 'no HD map' claim has never been second-probed"** vs `CLAUDE.md` + the completed five-location probe | **O-1** | **STALE-vs-CURRENT, and it is EXECUTABLE** — the drumbeat acts on it without re-asking. ~1 pod-day. |
+| **My own O-3** *"no corpus is credential-free + lane-graph-bearing + commercially usable"* vs commit `12d6b8a` (DLR OpenDRIVE, `CC-BY-4.0`) | **O-3a** | **I RETRACT MINE.** The commit wins — the licence is re-verified against Zenodo's API and recorded DECISION-GRADE. |
+| **`corridor_v4_30k_K185.json`: `all_windows` says "EXTRAPOLATION — NOT a measurement" while `paired_common_start` says "within the measured envelope on average"** — *on identical windows, in the same file* | **H3 S-10**, re-verified by me | **TRUE CONTRADICTION inside one artifact.** `all_windows` wins — out-of-envelope fractions reach **1.0000**. **8 false strings, not 4.** |
+| **H2's own flag:** two independent paths call `CLAUDE.md`'s LAL-v2 line stale via **different mechanisms** (`metrics.py::compute_lal_v2` vs `rollout.py`'s dense path) | H2 §unresolved | ⚠️ **NOT adjudicated.** Both agree the line is stale; they disagree on *which* code closed it. Low stakes, but it is a genuine open item and H2 correctly refused to resolve it. |
+
 
 ---
 
@@ -519,9 +635,47 @@ So the correct pairing, and both halves are needed:
 | **Overture `transportation`** | ✅ (2 endpoints, HTTP 200) | ✅ routable, 20 000/20 000 segments ≥2 connectors — but **road-level, not lane-level** | ⚠️ ODbL-1.0; **whether an ODbL-trained MODEL is a Derivative Database is UNSETTLED and not agent-decidable** |
 
 ⇒ **H5 row 1's claim is scoped to `Q-TOPO` (research-tier topology substrate) and to nothing else.**
-There is still **no corpus that is simultaneously credential-free, lane-graph-bearing and commercially
-usable**, and this harvest does not produce one. **Class:** INHERITED · CONFIRMED (three independent
-documents agree, and the ZOD half is a logged retraction).
+**Class:** INHERITED · CONFIRMED (three independent documents agree, and the ZOD half is a logged
+retraction).
+
+### 🔴 O-3a — I RETRACT the last sentence of O-3, within the hour, and the correction is better news
+
+**What I wrote:** *"There is still no corpus that is simultaneously credential-free, lane-graph-bearing
+and commercially usable, and this harvest does not produce one."*
+**That became FALSE while this document was being written.** Commit **`12d6b8a`** (2026-07-26 **20:10**,
+i.e. **after** my sweep and **during** my write-up) lands exactly that corpus:
+
+> **DLR's ASAM OpenDRIVE HD maps on Zenodo are `CC-BY-4.0` — commercial-OK and NOT share-alike —
+> anonymous, with byte-verified lane-level connectivity.** Five maps pulled with `curl` alone:
+> 2,921 roads · 343 junctions · 139.96 km · 24,536 driving lanes · **86,200 explicit
+> `<lane><link><successor>` elements** · 4,837 junction turn edges · 583 branch points.
+> **The first map asset in the program that routes to tier `ship`** — not `ship-sa`, not `nc-research`.
+> ⭐ **And it closes AV2's one real gap:** 372 positioned traffic lights, 160 YIELD, 23 STOP, 73
+> speed-limit — **AV2 has ZERO of any** — with a full PROJ string per map, so unlike log-local AV2 maps
+> **these can be map-matched.**
+
+**The residual gap moved rather than closed, and the new statement is the one to carry:**
+
+| requirement | status |
+|---|---|
+| lane graph — commercial + credential-free + routable | ✅ **SOLVED** — DLR OpenDRIVE, tier `ship` |
+| road graph at global scale, w/ turn restrictions + goal signal | ✅ solved-with-copyleft — Overture ODbL *(and Overture is now **settled at four probes: road-level is the ceiling, a MODEL limitation not a coverage gap — stop re-asking**)* |
+| **IMAGERY + ego trajectories — commercial + credential-free + lane-connected** | ❌ **NOT SOLVED** |
+
+⇒ **THE SCARCE THING HAS FLIPPED FROM THE LANE GRAPH TO IMAGERY.** Every corpus that passes all four
+criteria is **a map with no sensor stream**. Closest misses named in the commit: **AV2** (everything but
+a shippable licence — the one criterion that cannot be engineered around) and **KITScenes-Multimodal**
+(right shape, but gated **and** NC).
+
+⚠️ **This retraction is left in rather than silently edited, because it is the single best evidence for
+this harvest's own method limit.** My sweep read a corpus that grew by **two directories in the 90
+minutes I was reading it** (135 → 137, §Method), and one of those directories **falsified a claim in my
+own output before I finished writing it.** ⇒ **Any harvest of this program is a snapshot with a
+half-life of hours.** The mitigation is not to sweep harder — it is `harvest_index.json`, which exists
+so the sweep can be **re-run and diffed** rather than re-argued.
+**Class:** MEASURED (primary source: the commit body + its `evidence/` artifacts) · the licence is
+recorded there as **DECISION-GRADE, re-verified against Zenodo's API**; my *use* of it here is
+INHERITED · PROVISIONAL — **I did not re-probe Zenodo.**
 
 ## O-4 (minor, janitorial) Two loose ends in the working tree
 
@@ -570,30 +724,39 @@ sweep and by me; two agents, two paths).
 actually needs. **Falsifier** is required by `BOOST_PROGRAM` M5.2 — an action that cannot say what would
 end it is an activity, not a stream.*
 
-⚠️ **Read the ranking honestly:** actions 1–5 are near-free and near-certain in value; 6–10 are bets
+⚠️ **Read the ranking honestly:** actions 1–6 are near-free and near-certain in value; 7–10 are bets
 whose value estimate is **PROVISIONAL**. Nothing below is DECISION-GRADE, and nothing below should
 decide a GPU-day without the independent reproduction M1 requires.
+⭐ **The shape of the list is the finding.** Eight of the ten cost **hours of CPU or a document edit**.
+The harvest's dominant result is not that we need more compute — it is that **a large fraction of the
+program's accumulated value is behind edits nobody has made.**
 
 | # | action | source | closes / prevents | effort | falsifier — what would make this a waste |
 |---|---|---|---|---|---|
-| **1** | 🔴 **Edit `LOOP_STATE.md` D-A: delete the *"~1-day probe of all 36 PhysicalAI features"* gating clause and replace it with the completed probe's result + path.** | **O-1** | **Prevents an unattended drumbeat from spending ~1 pod-day re-running a probe that is complete at FIVE independent locations** on a fleet where all three pods are busy. The directive is *executable* — nothing has to re-read it for the cost to land. | **one edit, minutes** | If the completed probe is judged not to cover intervention #3's actual need (a *drivable-corridor* channel, not a map). ⇒ then re-scope the clause to that narrower question — but it still must not re-ask "is there a map", which is settled. |
-| **2** | 🔴 **`taniteval/taniteval/clhorizon.py:509` — `_data.load_frames` → `_data.load_raw`.** Then run `test_clhorizon.py` and re-emit the affected JSONs. | **H3 S-01** (MEASURED·CONFIRMED at HEAD, found independently by two agents) | The module written **specifically** to un-strand the v4 gate co-primary **raises on its first step** and has evidently never been executed. Until fixed, every re-run of `corridor_departure_rate`@K=185 — the co-primary several BOOST decisions hinge on — must fall back to a one-off `incoming/` driver. **Stream S-1's instrument does not run.** | **1 line**, CPU to fix and unit-test | If `load_raw` turns out not to be surface-compatible. *(Low risk: the committed gate driver already used it, which is why it went unnoticed.)* |
-| **3** | ⭐ **Re-emit the 21 `_jack` hierarchy nodes through `paired_episode_cluster_bootstrap`, locally.** | **H1.4** + **H3 D-06** | Three committed artifacts publish `"separated": false` on effects **70×, 47× and 35× their own half-width** — because `_jack`'s `separated` was **one-sided**, so a large *negative* effect renders false by construction. **These files state the opposite of the truth to anyone who greps them instead of reading the report.** | **CPU, minutes — the 27 `windows_*.pt` dumps are on this dev box.** No pod, no GPU. | Nothing. This is a strictly-correcting change with a known-good sibling pattern (`hierarchy.py` was already migrated; only the *artifacts* were not re-emitted). |
-| **4** | ⭐ **Re-adjudicate the FIREWALL / negative-control nulls first, before any treatment effect.** 14 identified; 4 at prox > 0.8 (S3 leak probes at n=73, the lead-gate shuffle at n=126, S1's blind-baseline firewall at n=6–20). | **H1.3**, `harvest_index.json → h1.firewall_inversion` | ⚠️ **The inversion nobody stated: for a leak/firewall/shuffle check a null is the DESIRED verdict, so "not separated at n=40" is not a refuted leak — it is a leak we could not see.** The S3 firewall ADMITTED its tasks on nulls projecting to ~2.8× separation. **This is the only action here that can only ever REMOVE results** — and removing a false result is worth more than adding a true one. | **eval-only**, queued behind Bar-A | If the re-scored leaks stay null at higher n ⇒ the firewalls were sound and S3's downstream numbers are clean. **That is a genuinely valuable outcome, not a wasted run** — which is why this ranks above the treatment effects. |
-| **5** | ⭐ **Migrate `taniteval/taniteval/planner_p2.py` off `_jack_scalar`/`_jack_paired`** and re-run `analyze_openloop`/`analyze_closedloop` on the existing window dumps. | **H3 S-03** (MEASURED·CONFIRMED — zero `episode_cluster_bootstrap` hits in the file) | `G1_pass`/`G4_pass` — the **CEM-planner-beats-supervised-head** verdicts, and the whole P2 row of the registry — are computed **directly** off the deprecated estimator. Per the program's own measurement it biases the **point estimate** up to **×−4.15 including sign flips**. ⇒ **these verdicts may be reading the wrong sign.** It is the one sibling that missed the migration its three peers got. | **small–medium, CPU-only** (window dumps exist) | If the migrated numbers reproduce the old verdicts ⇒ P2 stands and one more registry row becomes trustworthy. Also a good outcome. |
-| **6** | ⭐ **Run the ~1 h read-only AlpaSim `VectorMap` connectivity probe on the free eval pod, and enable `trafficsim` for one scene.** | **H5 row 2** (the *"present but off"* half is MEASURED·CONFIRMED by me: `RUN_RECIPE.md:26` — *"trafficsim (disabled by default)"* — and `alpasim-trafficsim` is a workspace package installed by `uv sync --extra core`) | **We own a map and reactive agents and have switched on neither, for weeks.** The 4-brain program's own scoping says this probe *"gates S1, S2, S4 and HP-4 — four of the nine problems"*, and calls it the **highest-leverage $0 probe in the program**. It attacks `Q-TOPO` and `Q-HP4` at once. | **~1 h, eval pod, read-only, ZERO GPU** | **If the VectorMap carries polygons but no `next_lanes`/`prev_lanes` connectivity** — which is genuinely open, because the prior probe (`gate0_prereq_probe.json`) measured **counts only and its trajectory read ERRORED**. That outcome parks the strategic brain on AlpaSim and routes it to AV2 (action 9) instead. **Both outcomes are informative, which is what makes it worth an hour.** |
-| **7** | 🔴 **Correct `CLAUDE.md:145-146` — its example for "finish before you start" is a claim `RETRACTION_LOG.md:47` retracted on 07-21.** | **O-5** (MEASURED·CONFIRMED, both files read at HEAD, raised independently by two agents) | `CLAUDE.md` loads into **every agent's context in this program**. A retracted claim there is not a doc defect — it is **a premise injected into every brief**, i.e. `BOOST_PROGRAM` **C-II/M2** at maximum blast radius. The residual it left (`rollout.py:94`) is now fixed too, so CLAUDE.md is the **only** document still asserting it. | **one sentence** | None. ⚠️ **PI action, not an agent action — I did not edit it.** The honest replacement is *"LAL-v2 was BELIEVED unmerged for 12 days; it had merged on day one, and the belief itself cost the session"* — true, and a better illustration. |
-| **8** | **Re-score the closed-loop n≈12 suites at n=40, then 600** — rows 1, 6, 7, 8, 9, 13 of H1.1 (freefloor rung-3 · REF-C planner G1 · refccl tolerance · the imagination FDE leg · E1a's non-junction stratum · DAgger's BC control). | **H1.1 / H1.5 batch 3** | **466 nulls sit at n≈12–24, and this is where the program keeps declaring closure.** The RETRACTION_LOG records **five** consecutive "closed/bound/resolved" verdicts on this direction, each reopened by a cheap follow-up. **This is the sixth cheap follow-up and it is a power check.** Concretely at stake: a **0.25 m peak-XTE** effect and a **0.20 m** imagination effect both read as "no effect" on 12 episodes. | **eval-only**; v1 and REF-C base/XL each have **3 durable copies** | If the first ~6 re-scores at n=40 move nothing ⇒ the n=12 suites were adequately powered after all, and the H1 backlog's closed-loop half is dropped. **Pre-register that stopping rule before starting.** |
-| **9** | **Write `stack/scripts/ingest_argoverse2.py`** (mirroring `ingest_nuscenes.py`), so the ~147 MiB AV2 pull has somewhere to land. | **H3 S-05** + **H5 row 1** (both MEASURED·CONFIRMED; I verified driver-absence with `test -f` **and** a call-site grep) | **PI decision #5 in BOOST §5.5 is about to be actioned with nowhere for the result to go.** AV2 is the only credential-free, **byte-verified routable lane graph** we have found (100 % of 7 692 segments), and the adapter + 46 tests already exist. Without a driver the strategic-brain ground truth has **no path from disk into a model**. | **high for this list** — a new driver, CPU-only data engineering | ⚠️ **If action 6 shows AlpaSim's VectorMap already carries connectivity**, AV2 becomes redundant for `Q-TOPO` and this drops several places. **Sequence 6 before 9.** |
-| **10** | **Split `BOOST_PROGRAM.md` §3.3's Bar-B sentence into its two clauses and re-source the rate.** | **H5 row 5** (MEASURED·CONFIRMED by me from three raw JSONs) | The *"must fall 2.07×"* gap is **eval-grade**; the *"observed descent −21.6 % per 20k"* is a **TRAINER-LOG** series that reads **1.4900 at step 8–10k while eval reads 2.0739 at 15k** — lower at an earlier step, i.e. **not the same statistic** (C1 + *"a metric NAME is not a metric DEFINITION"*). A rate from one instrument is being applied to a gap from another, inside the recommendation not to restart v4. | **zero** — both eval points already exist | ⛔ **This does NOT claim Bar B is reachable.** Two points fit no rate and the program forbids extrapolation without window + R² + n. If a third eval point shows the eval-grade rate flattening, Bar B is as hard as stated — and we will know it rather than assume it. |
+| **1** | 🔴 **Edit `LOOP_STATE.md` D-A: delete the *"~1-day probe of all 36 PhysicalAI features"* gating clause; replace it with the completed probe's result + path.** | **O-1** | **Prevents an unattended drumbeat from spending ~1 pod-day re-running a probe complete at FIVE independent locations**, on a fleet where all three pods are busy. The directive is *executable* — nothing has to re-read it for the cost to land. | **one edit, minutes** | If the completed probe is judged not to cover intervention #3's actual need (a *drivable-corridor* channel, not a map). ⇒ re-scope the clause to that narrower question — but it must not re-ask "is there a map", which is settled. |
+| **2** | 🔴 **Fix `stack/scripts/train_flagship4b.py:522` to log the accumulated `h15` mean (`H15Meter`), not the last micro-batch.** | **H2 #3** (MEASURED·CONFIRMED — H2 re-read the live call site; module + 6/6 tests already exist) | **The `h15` value in EVERY training log the program is producing right now is the single last micro-batch**, which the meter's own docstring measures as misreporting the accumulated value **~46 % of the time**. That includes the **live v2-corpus arm**. Every h15 curve anyone has ever read is this statistic. | **~3 lines**, CPU to write and smoke-test | If `h15` is never used for any decision. *(Check first — if true, the honest fix is to **stop logging it**, which is equally valuable and equally cheap.)* |
+| **3** | 🔴 **`taniteval/taniteval/clhorizon.py:509` — `_data.load_frames` → `_data.load_raw`**, then run `test_clhorizon.py` and re-emit the affected JSONs. | **H3 S-01** — MEASURED·CONFIRMED by **two agents independently**; I read `data.py:216-222` (`RawEp` sets `.feats`, no `.frames`) and `data.py:131` (`load_raw` exists) myself | The module written **specifically** to un-strand the v4 gate co-primary **raises on its first step** and has evidently never run end-to-end. Until fixed, every re-run of `corridor_departure_rate`@K=185 falls back to a one-off `incoming/` driver. **Stream S-1's instrument does not run.** | **1 line**, CPU | If `load_raw` is not surface-compatible. *(Low risk — the committed gate driver already used it, which is why this went unnoticed.)* |
+| **4** | ⭐ **Wire `blind_conditioning_baseline` into `run_gate.py` (`assert_registered`), then re-adjudicate the firewall / negative-control nulls at higher n.** Delete the two duplicate re-implementations once the production module is confirmed canonical. | **H2 #5 + H1.3** — *the same problem from two directions* | ⚠️ **The inversion nobody stated: for a leak/firewall/shuffle check a null is the DESIRED verdict**, so "not separated at n=40" is **a leak we could not see** — and the S3 firewall ADMITTED its tasks on nulls projecting to ~2.8× separation. **The instrument that would settle this exists, has 14 tests, already scored all three route-target labelers `CIRCULAR`, and nothing calls it** — while two separate streams rebuilt inferior copies of it in one week, and *those* copies produced the under-powered nulls. **The only action here that can only ever REMOVE results.** | wiring **~2–3 h CPU**; the re-scores are **eval-only** | If the re-scored leaks stay null at higher n ⇒ the firewalls were sound and S3's downstream numbers are clean. **A genuinely valuable outcome, not a wasted run** — which is why this outranks the treatment effects. |
+| **5** | ⭐ **Re-emit the 21 `_jack` hierarchy artifacts through `paired_episode_cluster_bootstrap`, locally.** | **H1.4** (+ H3 D-06; I verified `hierarchy.py` at HEAD **is already migrated** — it names `episode_cluster_bootstrap` and emits `separated_positive`, keeping `_jack` only as `LEGACY_BLOCK`) | Three committed artifacts publish `"separated": false` on effects **70×, 47× and 35× their own half-width**, because `_jack`'s `separated` was **one-sided** so a large *negative* effect renders false by construction. **These files state the opposite of the truth to anyone who greps them instead of reading the report.** Since the code is already correct, **this is a re-run, not a fix.** | **CPU, minutes — the 27 `windows_*.pt` dumps are on this dev box.** No pod, no GPU. | Nothing. Strictly correcting, with a known-good migrated sibling. |
+| **6** | ⭐ **Add 3–5 lines to `tools/ci_gate.py` calling `registry_lint.main(["--strict"])`.** | **H2 #2** (MEASURED — H2 ran `--self-test` 5/5 and a live registry sweep today: `PASS (0 errors, 2 warnings)`) | This is **the tool for the failure `CLAUDE.md` opens with** — pointer drift vs raw eval JSON, plus a **multiline** retracted-claim sweep over section headers, i.e. both halves of the *"best ADE in the program"* stale-headline-for-4-days incident including its multiline-evasion sub-lesson. Built, tested, **not in the gate**. | **~1 h, CPU** | If `ci_gate.py` is itself not run in practice. *(Then the finding is bigger, not smaller — and the fix moves to whatever IS run.)* |
+| **7** | 🔴 **One PI editing pass over `CLAUDE.md` — it currently carries three defects, and it loads into EVERY agent's context.** (a) its example for *"finish before you start"* is a claim `RETRACTION_LOG.md:47` **retracted on 07-21** (O-5); (b) it instructs raw `git commit -F` while **`tools/safe_commit.py` exists to mechanize that exact section**, 127/127 tests green, and is **never mentioned** (H2 #1, its one DECISION-GRADE row); (c) the orthogonality instrument is at **16 days**, not the *"10 days"* it states (H2). | **O-5 + H2 #1 + H2** | A wrong claim in `CLAUDE.md` is not a documentation defect — it is **a premise injected into every brief**, i.e. `BOOST_PROGRAM` **C-II / M2 at maximum blast radius.** All three are one-line edits. | **one editing pass** | None. ⚠️ **PI action, not an agent action — I did not edit it.** |
+| **8** | **Migrate `taniteval/taniteval/planner_p2.py` off `_jack_scalar`/`_jack_paired`**; re-run `analyze_openloop`/`analyze_closedloop` on the existing window dumps. | **H3 S-03**, sharpened by my own read | `G1_pass`/`G4_pass` — the **CEM-planner-beats-supervised-head** verdicts and the registry's whole P2 row — are computed **directly** off the deprecated estimator, whose measured bias reaches **×−4.15 including sign flips**. ⇒ **they may be reading the wrong sign.** And `_jack_scalar` returns the **`heldout` mean-of-split-means**, so the *point estimates* are biased too. ⚠️ **The file's own docstring says *"DEPRECATED estimator… Prefer `ci.paired_episode_cluster_bootstrap`"* — the correct instruction is written into the artifact it applies to, where nothing has to read it.** | **small–medium, CPU-only** (window dumps exist) | If the migrated numbers reproduce the old verdicts ⇒ P2 stands and one more registry row becomes trustworthy. Also a good outcome. |
+| **9** | ⭐ **Run the ~1 h read-only AlpaSim `VectorMap` connectivity probe on the free eval pod, and enable `trafficsim` for one scene.** | **H5 row 2** (the *"present but off"* half MEASURED·CONFIRMED by me: `RUN_RECIPE.md:26` — *"trafficsim (disabled by default)"* — and `alpasim-trafficsim` is installed by `uv sync --extra core`) | **We own a map and reactive agents and have switched on neither, for weeks.** The 4-brain program's own scoping calls this the **highest-leverage $0 probe in the program** and says it *"gates S1, S2, S4 and HP-4 — four of the nine problems."* Attacks `Q-TOPO` and `Q-HP4` at once. | **~1 h, eval pod, read-only, ZERO GPU** | **If the VectorMap carries polygons but no `next_lanes`/`prev_lanes`** — genuinely open, since the prior probe measured **counts only and its trajectory read ERRORED**. That outcome parks the strategic brain on AlpaSim and routes it to AV2 instead. **Both outcomes are informative**, which is what makes it worth an hour. |
+| **10** | **Re-score the closed-loop n≈12 suites at n=40, then 600** — H1.1 rows 1, 6, 7, 8, 9, 13. | **H1.1 / H1.5 batch 3** | **466 nulls sit at n≈12–24, and this is exactly where the program keeps declaring closure** — the RETRACTION_LOG records **five** consecutive "closed/bound/resolved" verdicts on this direction, each reopened by a cheap follow-up. **This is the sixth cheap follow-up and it is a power check.** Concretely at stake: a **0.25 m peak-XTE** effect and a **0.20 m** imagination effect both read as "no effect" on 12 episodes — see **H1.1a**, where the *same* 0.20 m separates in one artifact and does not in another. | **eval-only**; v1 and REF-C base/XL each have **3 durable copies** | If the first ~6 re-scores at n=40 move nothing ⇒ the n=12 suites were adequately powered and the H1 backlog's closed-loop half is dropped. **Pre-register that stopping rule before starting.** |
 
-**Runner-up, listed because it is a PI action with broad payoff and it blocks a rescue:**
-**O-2 — the `Sayood/` HF storage 403.** It blocks backing up **v1.6**, the single most at-risk checkpoint
-in the program (registry §1.4b: *one disk, HF repo holds no weights*), **and** it will make Standing
-Authorization 1's ckpt-backup instruction fail when it fires. `LOOP_STATE.md` already calls the cleanup
-*"a cheap unblock with broad payoff"* and it has not moved.
+**Runners-up — each cheap, each blocked on one decision or one owner:**
 
----
+| item | source | why it nearly made the list |
+|---|---|---|
+| **`predictor.py:101`'s bare `assert`** → `validate_operative_inputs` | H2 #10 | **Stripped entirely under `python -O`** ⇒ a silent shape-corruption path in core forward-pass code, against `CLAUDE.md` rule 5. The `ValueError` version exists and is tested. **1–2 h.** |
+| **`encoder_speed_probe_r2` has never had a CI** | H2 #12 | It **justified restarting flagship-v3enc — a GPU-week** — on a single deterministic split with in-sample lambda selection. The split-robust re-estimator exists, tested, unused. **~3 h.** |
+| **8 FALSE `EXTRAPOLATION_VERDICT` strings in a committed gate artifact** | H3 S-10, re-verified by me | `paired_common_start` still reads *"within the measured envelope on average"* at out-of-envelope fractions up to **1.0000**, while the `all_windows` half of the **same file** is correct. Extend one function. |
+| **Split `BOOST_PROGRAM` §3.3's Bar-B sentence** | H5 row 5 | The gap is eval-grade, the *rate* is a trainer log reading **lower at an earlier step** — not the same statistic. **Zero cost**; both eval points exist. |
+| **Register `stop_arm_gate` + `stationary_lead`** | H2 #6, #7 | Two complete, tested **safety** scenarios absent from a `SCENARIO_REGISTRY` with exactly 3 keys. **8 lines each.** |
+| **`Sayood/` HF storage is FULL (403)** | O-2 | Blocks backing up **v1.6** — the single most at-risk checkpoint in the program (registry §1.4b: *one disk, HF repo holds no weights*) — **and** will make Standing Authorization 1's ckpt-backup fail when it fires. `LOOP_STATE.md` already calls the cleanup *"a cheap unblock with broad payoff"*; it has not moved. **PI action.** |
+| ⭐ **`--labels-v2` does NOT fix PC1's route-echo confound** | H4 row 5 | Filed in `HPP0_CONFOUND_AUDIT.md` as a cheap **"S (config)"** fix raising nav coverage 27 %→80.4 %; refuted by `pc1_label_verification.json` (**n = 17,100 windows / 100 eps**) — *"does not work, and is not even the labeler believed."* ⛔ **PC1 is the FIRST pre-condition of the Hierarchy Proof Program**, so the program's opening move is currently mis-specified. **Zero cost to correct the plan; the fix itself is unscoped.** |
+| ⭐ **`RETRACTION_LOG.md`'s class legend stops at C6 while its entries use C7–C14** | H4 row 11 | `CLAUDE.md` makes reading this file **binding** *"before asserting in a known class"* — and **half the classes are not in the index**, so the rule cannot be followed as written. Flagged once on 07-25; **six more classes have landed since.** ⚠️ **The three newest (C13 guard-cannot-fail · C14 grid-end-≠-limit · C9 horizon-blind) are exactly the instrument-blindness family this harvest keeps hitting.** ~20 min to extend the table. |
+| **Write `stack/scripts/ingest_argoverse2.py`** | H3 S-05 + H5 row 1 | PI decision #5 (the ~147 MiB AV2 pull) is about to be actioned **with nowhere for the result to land**. Adapter + 46 tests exist; **no driver, no production importer** (verified two ways). ⚠️ **Sequence after action 9** — if AlpaSim already has connectivity, this drops several places. |
 
 ## What this harvest adds to `BOOST_PROGRAM` §4 — the two missing streams
 
@@ -613,3 +776,61 @@ M5.2 requires.
 simultaneously credential-free, lane-graph-bearing and commercially usable**, and this harvest does not
 produce one. Do not let S-5 be read as replacing the ZOD line — ZOD is commercially usable and has **no
 lane graph at all** (retracted 07-26).
+
+---
+
+# DELIVERABLE MANIFEST
+
+**All paths relative to** `G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/`.
+**STAGED (`git add`), NOT committed, NOT pushed. Branch unchanged: `agent/benchmarks-eval-20260721`.**
+
+| # | artifact | where it lives | only ONE place? | produced by |
+|---|---|---|---|---|
+| 1 | **`PROGRAM_HARVEST.md`** — the five inventories + live findings + top-10 + this manifest | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-program-harvest/` | **no** — derived from repo content that is itself committed | harvest orchestrator |
+| 2 | **`harvest_index.json`** (~1.1 MB) — machine-readable H1 + H5 + checkpoint availability; **re-runnable and diffable** | same dir | no | orchestrator |
+| 3 | `artifacts/h1_sweep.py` · `h1_rank.py` · `h1_project.py` · `build_index.py` — the H1 instrument, staged so the sweep is reproducible | same dir | no | orchestrator |
+| 4 | **`H2_UNUSED_CAPABILITIES.md`** + `h2_unused_capabilities.json` — 38 capabilities ranked by value/effort | same dir | no | H2 subagent |
+| 5 | **`H3_STRANDED_INTEGRATIONS.md`** + `h3_stranded.json` — 23 claims re-verified against HEAD (12 open / 11 stale) | same dir | no | H3 subagent |
+| 6 | **`H4_CONTRADICTIONS.md`** + `h4_contradictions.json` — cross-agent contradictions | same dir | no | H4 subagent |
+
+✅ **All ten files are present and staged** (verified at write-up: `git ls-files` + directory listing). **Nothing lives in only one place.**
+
+**Nothing produced here lives in only one place**, and nothing was left on a pod or in a worktree — this
+was a CPU-only repo-reading task. Scratch working files (`h1_raw.json`, `h1_ranked.json`,
+`h1_projected.json`, ~740 KB of intermediate sweep state) stayed in the session scratchpad **on purpose**:
+they are fully regenerable by re-running `artifacts/h1_sweep.py` → `h1_rank.py` → `h1_project.py`, and
+`harvest_index.json` carries everything downstream needs.
+
+## What was NOT done, stated plainly
+
+- **No pod, no GPU, no HF network access.** Every checkpoint-existence claim is **INHERITED from
+  `MODEL_REGISTRY.md`**, not probed. `S-12` (v1.6 on one disk) and `O-2` (the HF 403) are therefore
+  **UNVERIFIABLE by me** and are marked so.
+- **I did not re-verify H2's or H4's rows myself**, except the `blind_baseline` ↔ H1.3 cross-link. Their
+  own evidence columns are per-row and should be read before acting.
+- **The 222 `.md` files were grepped, not read.** H1.6 spot-checks the `*/Research/` layer and finds no
+  new near-separations *where I looked*; that is not the same as "none exist".
+- **I did not edit `CLAUDE.md`, `LOOP_STATE.md`, `BOOST_PROGRAM.md` or `MODEL_REGISTRY.md`**, although
+  actions 1 and 7 are edits to the first two. Changing the binding instruction documents is a PI action.
+  **They are escalated here, in the report headline — not written into a README.**
+
+## 🔴 ESCALATION — the three that need a decision, not an engineer
+
+1. **`CLAUDE.md` carries three defects and loads into every agent's context** (top-10 action 7): a
+   retracted claim used as its own illustration · raw `git commit -F` guidance where `tools/safe_commit.py`
+   exists to mechanize it · the orthogonality instrument at 16 days, not 10. **One editing pass.**
+2. **`LOOP_STATE.md` D-A commissions a completed probe** (O-1) — the drumbeat acts on it **without
+   re-asking**, so this is a live ~1-pod-day cost, not a documentation issue. **One edit.**
+3. **`Sayood/` HF storage 403** (O-2) blocks the v1.6 rescue and will break Standing Authorization 1's
+   ckpt-backup when it fires. **PI-side action; already named as *"a cheap unblock with broad payoff"*
+   in `LOOP_STATE.md` and it has not moved.**
+
+*(A fourth is decision-shaped but not urgent: **H3 S-06**, Overture's `SOURCE_REGISTRY` entry, is blocked
+on the **ODbL "is a trained model a Derivative Database?"** question, which the 07-26 retraction records
+as **UNSETTLED and not agent-decidable**.)*
+
+## Suggested next agent, if this is continued
+
+**Re-run `artifacts/h1_sweep.py` and confirm `separated_false_nodes == 2051`.** That single command
+upgrades the whole H1 sweep from **PROVISIONAL to CONFIRMED** under `BOOST_PROGRAM` M1, which is the bar
+it must clear before any of it may decide a GPU-day. It costs about a minute.

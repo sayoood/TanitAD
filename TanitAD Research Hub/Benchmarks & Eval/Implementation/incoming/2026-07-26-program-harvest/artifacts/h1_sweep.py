@@ -92,7 +92,26 @@ for base in SEARCH:
             files_scanned += 1
             walk(d, "", fp, {})
 
-print(f"files_scanned={files_scanned}  separated_false_nodes={sep_false_total}  rows={len(rows)}")
+# ⚠️ THE COUNT IS A FUNCTION OF REPO STATE, NOT A CONSTANT — pin it to a SHA.
+# MEASURED 2026-07-26: this sweep reported files_scanned=642, separated_false_nodes=2051
+# when it was written, and 656 / 2061 about two hours later. The delta is NOT instrument
+# error — 33 new .json files were committed in between, INCLUDING THIS HARVEST'S OWN
+# ARTIFACTS, so the instrument now counts itself. A count over a growing corpus that is
+# quoted with only a date is unreproducible by construction; a SHA makes it exact.
+# (The RANKING, which is what actually drives action, reproduced unchanged.)
+try:
+    import subprocess
+    _sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                          capture_output=True, text=True).stdout.strip() or "UNKNOWN"
+    _dirty = bool(subprocess.run(["git", "status", "--porcelain"],
+                                 capture_output=True, text=True).stdout.strip())
+except Exception:                                      # noqa: BLE001
+    _sha, _dirty = "UNKNOWN", True
+print(f"repo_sha={_sha}{'+dirty' if _dirty else ''}  "
+      f"files_scanned={files_scanned}  separated_false_nodes={sep_false_total}  "
+      f"rows={len(rows)}")
+print("^ quote this count WITH the sha; it moves as the corpus grows (measured: "
+      "642/2051 -> 656/2061 in ~2 h, driven by new commits incl. this harvest's own output)")
 
 # only keep rows that have an interpretable effect+halfwidth
 usable = [r for r in rows if r["proximity"] is not None]

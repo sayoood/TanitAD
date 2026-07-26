@@ -1,0 +1,312 @@
+[
+  {
+    "rank": 1,
+    "quantity": "Recoverability of the P2 CEM-planner evidence (planner_p2_flagship-30k.json, G1=0.893+/-0.114 / G4=1.038+/-0.202) -- the entire evidentiary basis for D-033, described repeatedly as the largest architecture decision in the program",
+    "side_a": {
+      "value": "Permanently unrecoverable -- no raw JSON and no windows dump exist anywhere in the repo",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md:1484,1517",
+      "date": "originally written ~2026-07-19; still standing as of 2026-07-26",
+      "evidence_class": "MEASURED",
+      "corroborating_paths": [
+        "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/JACK_BLAST_RADIUS.md",
+        "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-published-number-provenance/PUBLISHED_NUMBER_PROVENANCE.md"
+      ]
+    },
+    "side_b": {
+      "value": "The raw result JSON exists in-repo: G1 n_windows=881/n_episodes=40/mean=0.8929 (matches the known 0.893+/-0.114 figure); G4 n_windows=221/n_episodes=20",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-closedloop-artifact-rerun/_pod_pulled/planner_p2_flagship-30k.json",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "I opened the file myself -- 221 lines, real content, internally consistent with every other citation of the 0.893 figure across the program, not a stub.",
+    "what_would_settle_it": "One git add plus a one-line MODEL_REGISTRY.md section 5/section 7 edit recording the new path; then re-emit the recovered dict under taniteval/ci.py's paired episode-cluster bootstrap instead of the deprecated _jack/_agg block it has carried since 2026-07-19. CPU-only, no GPU.",
+    "blast_radius": "HIGHEST -- D-033 is named the program's single largest architecture decision in >=3 documents; its only supporting evidence was believed permanently at risk one day before it was in fact rescued.",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 2,
+    "quantity": "Magnitude of the REF-C-base-vs-flagship-v1 AlpaSim closed-loop margin (paired delta-score)",
+    "side_a": {
+      "value": "n=12 (skewed 8/12 straight-or-urban scenes): paired delta-score -0.4296 [-0.6457,-0.2147], sign-test 8-0 p=0.0078",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md (section 4.4, section 6 item 5); G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Benchmarks & Eval/LEADERBOARD.md (section 5.5); G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/RETRACTION_LOG.md (07-22/07-23/07-25 entries); G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/R4_measurement_results_rigor.md",
+      "date": "measured 2026-07-22, still the standing citation as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "n=37 BALANCED (all 5 categories ~7-8 each): paired delta-score -0.1228 [-0.2079,-0.0412], sign 13-4 p=0.049 -- ~3.5x smaller, same direction",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-alpasim-consolidation/ALPASIM_STATE.md (sections 4/4.1), consolidating scenario_stratified_scaled_results.json measured 2026-07-23; independently corroborated same-day by .../2026-07-26-4brain-dominance-program/DATA_STRATEGY.md",
+      "date": "measured 2026-07-23, consolidated 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "type": "TRUE_CONTRADICTION_MAGNITUDE",
+    "stronger_side": "B",
+    "why_stronger": "Deliberately stratified across all 5 scenario categories vs A's incidental skew toward REF-C's best category; the consolidation doc itself instructs which number to quote going forward.",
+    "what_would_settle_it": "Swap the standing citation wherever the margin (not the ordering, which survives both ways) is quoted -- text-only edit, both numbers already exist, zero compute.",
+    "blast_radius": "HIGH -- this is the headline closed-loop finding underpinning \"REF-C beats flagship v1 closed-loop,\" repeated across 5+ documents including a program-wide independent review.",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED",
+    "note": "Verified directly: grepped MODEL_REGISTRY.md, LEADERBOARD.md, RETRACTION_LOG.md and LOOP_STATE.md for 'n=37', 'balanced suite', 'scenario_stratified' -- zero hits in all four."
+  },
+  {
+    "rank": 3,
+    "quantity": "Flagship-v1 (deployed) total training wallclock, and the derived training-cost headline",
+    "side_a": {
+      "value": "~53 h (summary.json wallclock_s: 191206.2) = 6.37 s/step over 29999 steps",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md:133",
+      "date": "still standing as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "90.73 h -- sum(step_s) = 326638.2 s over 29999 steps = 10.888 s/step; wallclock_s is not the full run's",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/RETRACTION_LOG.md (07-21 entry); corroborated at MODEL_REGISTRY.md:487 (10.89 s/step used for v1 in the v3enc budget line) and at G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-26-wheelbase-impact/WHEELBASE_IMPACT.md",
+      "date": "settled 2026-07-21",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "Full arithmetic reconstruction from the raw per-step log, matching independently in 3 places; A is a single unreconciled scalar that is arithmetically incompatible with the s/step figure used elsewhere in the same document.",
+    "what_would_settle_it": "Two one-line edits: MODEL_REGISTRY.md:133's Status row, and Paper/TANITAD_PAPER.md:554 -- zero compute, corrected number already exists.",
+    "blast_radius": "HIGH, external-facing -- Paper/TANITAD_PAPER.md:554 (verified directly) still publishes 'total training cost of the first run ~= $40,' a 1.71x undercount, in the program's one document written for an outside reader.",
+    "adjudicated": "PARTIALLY",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 4,
+    "quantity": "S3 route-conditioning instrument's own skill bars and its 'highway stratum does not exist' claim",
+    "side_a": {
+      "value": "Non-parity dev-box cache (400 train/100 val): 'highway stratum does not exist -- 2 val clusters, 7 train clusters'; blind-conditioning QWK lateral 0.3898, longitudinal 0.2334",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-s3/S3_IMPLEMENTATION.md (section 3.3); s3_blind_baseline_primary.json",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "Parity 600-episode val (0/600 byte-verified train overlap): highway carries 229 lateral clusters (largest stratum) and 214 longitudinal, both clearing the 200-cluster two-arm bar; blind QWK nearly doubles to lateral 0.6534, longitudinal 0.5323",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-s3-decision-grade/VAL_CEILING_AND_S3_DECISION_GRADE.md (section 2.2, 2.5.1); s3_power_parity_primary.json; s3_blind_baseline_parity_primary.json",
+      "date": "2026-07-26 (one day after side A)",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "Parity-verified corpus with byte-level disjointness proof; side A's cache composition was never checked against the corpus it was assumed to represent (its own event rate is 3.5x what its own label definition implies -- impossible on the real corpus).",
+    "what_would_settle_it": "Re-point every S3 consumer at the parity 600-ep val (already computed in s3_power_parity_primary.json) and retire the non-parity numbers -- CPU-only, already done in this directory, just not yet propagated upstream.",
+    "blast_radius": "HIGH -- this is the live instrument for the currently active Hierarchy Proof Program / 4-brain dominance initiative; a stale skill-bar read here could wrongly pass or fail a real hierarchy-value gate.",
+    "adjudicated": "PARTIALLY",
+    "tier": "CONFIRMED",
+    "note": "Resolved within its own directory lineage (one day later, same program thread); not yet checked against HYPOTHESIS_LEDGER.md or LOOP_STATE.md."
+  },
+  {
+    "rank": 5,
+    "quantity": "Whether --labels-v2 is a viable fix for PC1 (the route-echo confound blocking the Hierarchy Proof Program)",
+    "side_a": {
+      "value": "--labels-v2 selects route_target_v21/route_from_future_v3 and raises nav coverage 27% to 80.4%, filed as a cheap fix",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md (section 6, HPP-1 item 1)",
+      "date": "2026-07-25",
+      "evidence_class": "INHERITED"
+    },
+    "side_b": {
+      "value": "--labels-v2 actually selects the v2 labeler (not v2.1); measured coverage 0.2307 -- worse than v1's own 0.2456; echo persists (echo_rate_valid_windows=1.0) for v1, v2, AND v2.1 alike -- 'the brief's PC1 fix #1 does not exist'",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-preconditions/PRECONDITIONS_IMPLEMENTED.md (section 0, item 1); pc1_label_verification.json (n=17100 windows/100 eps)",
+      "date": "2026-07-26 (one day after side A)",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "Ran the actual flag and measured its real effect on the real coverage metric; side A asserted a coverage number without running it.",
+    "what_would_settle_it": "Already settled by B's own measurement; remaining step is propagation -- flag the correction in HYPOTHESIS_LEDGER.md or any standing hierarchy-program plan that still cites the 27% to 80.4% figure.",
+    "blast_radius": "MEDIUM_HIGH -- feeds a live, active initiative (the hierarchy proof program's precondition work); picking the wrong fix wastes a training cycle.",
+    "adjudicated": "PARTIALLY",
+    "tier": "CONFIRMED",
+    "note": "PROVISIONAL relative to my own re-verification -- I read both source documents but did not independently re-run pc1_label_verification.json's underlying computation myself."
+  },
+  {
+    "rank": 6,
+    "quantity": "v2-vs-v1 power-law exponent used as 'the decisive read' justifying killing flagship-v2 (decision D-031)",
+    "side_a": {
+      "value": "Bare, no window/R-squared/n: 'the power-law exponent was -0.50 vs v1's -0.84 ... Projection to 30k: 9x worse', extrapolating ~4.3x beyond its own fitted range",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md:370-373 (section 1.3) and :1729 (section 8, decision log D-031)",
+      "date": "originally 2026-07-19; still standing as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "Project rule: exponents require fit-window + R-squared + n; below R-squared 0.80 there is no quotable exponent at all; extrapolation capped at 2x. v1's '-0.84' is the 1500-7500-step window at R-squared 0.541 (below the floor); the same log gives 5 different exponents (-0.387 to -0.738, R-squared 0.09-0.58) depending on window. MODEL_REGISTRY.md section 1.4 (v3enc entry) already shows the correct remediation applied to a structurally identical claim.",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/CLAUDE.md (Source of truth section); G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md section 1.4 (lines ~458-486)",
+      "date": "binding project rule, current",
+      "evidence_class": "PUBLISHED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "CLAUDE.md's rule is binding project policy backed by a 5-window sensitivity sweep; side A is an unelaborated single number.",
+    "what_would_settle_it": "Apply the same run_gate.py::reference_reached_at bucket-mean/matched-step-ratio procedure to v2-vs-v1's log if still accessible; otherwise replace the bare quote with an explicit caveat. CPU-only.",
+    "blast_radius": "MEDIUM -- the kill decision is long executed and not being revisited, but 'the ONLY quotable source' still offers a re-quotable, rule-violating number; the 4th instance of this exact error class in one file.",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 7,
+    "quantity": "LEADERBOARD.md sync with MODEL_REGISTRY.md's 2026-07-26 rank-table re-emission",
+    "side_a": {
+      "value": "refb-10k 'Beats CV' column still shows a checkmark (with an odd adjacent '-0.0005 fail' annotation in the same row); flagship-v3enc row still reads 'not evaluated'",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Benchmarks & Eval/LEADERBOARD.md:86,93",
+      "date": "still standing as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "refb-10k vs CV: TIE (flip) -- paired episode-cluster bootstrap NOT separated (0.8372 vs 0.8377); text explicitly names the LEADERBOARD disagreement. flagship-v3enc now ranked at 1.9654 [1.6556, 2.2859]",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md section 6 (re-emitted 2026-07-26)",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "A_registry",
+    "why_stronger": "Decision-grade paired bootstrap; explicitly names the LEADERBOARD disagreement in its own text.",
+    "what_would_settle_it": "Two cell edits in LEADERBOARD.md -- zero compute, both numbers already exist in the registry.",
+    "blast_radius": "MEDIUM -- LEADERBOARD.md is independently praised by two separate audits as 'the cleanest document in the program' (0 retracted claims standing as of 07-25); here it lags a same-week registry fix on two concrete cells.",
+    "adjudicated": "PARTIALLY",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 8,
+    "quantity": "Flagship-v1's own planning-tick latency (A40, batch 1, same tick definition)",
+    "side_a": {
+      "value": "103.42 / 93.76 / 104.49 ms (fp32/tf32/amp16)",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/MODEL_REGISTRY.md section 1.2/section 6/section 7 row R14",
+      "date": "measured 2026-07-20, still cited as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "eff_flagship-30k.json: 97.32 / 97.70 / 123.83 ms. eff_repeatability.json (5 clean reps, exclusive GPU): 99.03-100.05 ms p50 -- brackets neither of the other two",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/taniteval/results/eff_flagship-30k.json; G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/taniteval/results/eff_repeatability.json",
+      "date": "committed artifacts, undated relative to the registry citation",
+      "evidence_class": "MEASURED"
+    },
+    "type": "TRUE_CONTRADICTION",
+    "stronger_side": "NEITHER_CLEANLY",
+    "why_stronger": "Registry itself calls the sets 'evidently measured in different sessions' (plausible thermal/contention confound on a shared A40); no conclusion changes since REF-C stays 2.2-4.6x faster in every version.",
+    "what_would_settle_it": "One clean re-measurement on an idle, exclusively-locked A40 -- already the fix MODEL_REGISTRY.md section 7 row R14 itself prescribes.",
+    "blast_radius": "MEDIUM -- doesn't flip any ordering, but feeds Orin/Thor deployment-latency planning and the 10Hz-budget-miss claim.",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED",
+    "note": "Explicitly logged as open in the registry's own Reconstruction-gap register since 2026-07-20; still open at time of this sweep."
+  },
+  {
+    "rank": 9,
+    "quantity": "'Flagship v1 closed-loop ADE@2s' -- same nominal name, two structurally different pipelines, no cross-reference",
+    "side_a": {
+      "value": "1.6852 -- self-referential imagination loop (model re-plans on its own previously-imagined latent)",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/results/closedloop_flagship-30k.json (closed_bike.ade_0_2s)",
+      "date": "2026-07-19",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "1.488 [1.329, 1.647] -- real-footage-fed loop (tactical head + pure-pursuit/bicycle controller driven by the actual recorded observation each tick)",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-lowood-lanekeeping-refc/LANEKEEPING_REFC_REPORT.md",
+      "date": "2026-07-23",
+      "evidence_class": "MEASURED"
+    },
+    "type": "DEFINITION_MISMATCH",
+    "stronger_side": "NEITHER",
+    "why_stronger": "Genuinely different experiments (self-imagined dynamics vs observation-grounded), both legitimately named 'closed-loop ADE@2s' with no shared glossary entry distinguishing them.",
+    "what_would_settle_it": "Add one line to LEADERBOARD.md's closed-loop section naming both pipelines and their respective headline numbers side by side.",
+    "blast_radius": "MEDIUM_LOW -- real risk of future conflation (13% gap reads as noise-sized, not method-sized, to a casual reader).",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 10,
+    "quantity": "E2a 'representation ceiling' rho presented beside a different latent's R-squared",
+    "side_a": {
+      "value": "Prose states representability oracle R-squared of dlat (feat_pooled) = 0.7176, then states 'rho = representation ceiling = sqrt(R-squared) = 0.9112' -- but sqrt(0.7176) = 0.847, not 0.9112",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/E1a_E2a_RESULTS.md (section 4)",
+      "date": "2026-07-25",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "rho=0.9112 is actually sqrt(0.8302) -- the R-squared of a different latent, feat_full, not feat_pooled",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e2a_localize_heldout44.json",
+      "date": "2026-07-25",
+      "evidence_class": "MEASURED"
+    },
+    "type": "DEFINITION_MISMATCH",
+    "stronger_side": "B",
+    "why_stronger": "rho is correctly computed, just from the better-performing latent; the prose's adjacent placement implies a false derivation from the weaker one.",
+    "what_would_settle_it": "One clarifying clause in the .md stating rho is computed from feat_full, not the feat_pooled figure quoted above it. CPU-only.",
+    "blast_radius": "LOW_MEDIUM -- feeds the currently-active E1b/E1c closed-loop CL-SFT line; a reader taking the prose formula at face value would underestimate the representability ceiling.",
+    "adjudicated": "NO",
+    "tier": "PROVISIONAL",
+    "note": "Surfaced by one sweep pass; not independently re-derived by me from the raw arrays."
+  },
+  {
+    "rank": 11,
+    "quantity": "RETRACTION_LOG.md's own error-class legend completeness",
+    "side_a": {
+      "value": "Intro table ('The classes, ranked by how often they have bitten us') defines only C1-C6",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/RETRACTION_LOG.md:11-20",
+      "date": "current as of 2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "The file's own entries define and use C7 (ordering label), C8, C9, C10, C11, C12, C13, C14, plus at least one unnumbered 'NEW CLASS', each inline at first use. The independent chief-scientist review (2026-07-25) had already flagged C7/C8 as missing; six more classes have since been added without the legend being extended.",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/RETRACTION_LOG.md (full file, entries dated 07-21 through 07-26); G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/R4_measurement_results_rigor.md (finding F10)",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "type": "STALE_VS_CURRENT",
+    "stronger_side": "B",
+    "why_stronger": "Direct read of the full file confirms every class from C7 through C14 is used and defined inline but never folded back into the summary table.",
+    "what_would_settle_it": "Fold C7-C14 into the intro table -- a five-minute text edit, zero compute.",
+    "blast_radius": "LOW -- doesn't mislead a model decision, but it is the program's own self-learning ledger failing its own completeness bar.",
+    "adjudicated": "NO",
+    "tier": "CONFIRMED"
+  },
+  {
+    "rank": 12,
+    "quantity": "gc_on_16x4 peak reserved GPU memory 'reproduced exactly' claim",
+    "side_a": {
+      "value": "'Peak memory is contention-insensitive and reproduced exactly across runs (gc_on_16x4 = 14.293 GiB reserved on two independent sessions)'",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-07-26-v2-throughput/results_memory.json (trailing note)",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "The same file plus results_interleaved.json, repeats 1 and 2 of the identical config, both read 14.156 GiB",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-07-26-v2-throughput/results_memory.json; G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-07-26-v2-throughput/results_interleaved.json",
+      "date": "2026-07-26",
+      "evidence_class": "MEASURED"
+    },
+    "type": "TRUE_CONTRADICTION",
+    "stronger_side": "B",
+    "why_stronger": "The raw per-repeat data contradicts the note's own 'exactly reproduced' claim in two of its own three samples.",
+    "what_would_settle_it": "Re-read the note as reproduced within ~1%, not exactly -- CPU-only text fix.",
+    "blast_radius": "LOW -- the throughput-bench 'don't restart' recommendation this data feeds rests on three independent reasons, not this reproducibility sub-claim.",
+    "adjudicated": "NO",
+    "tier": "PROVISIONAL",
+    "note": "From one sweep pass; I did not independently re-open the JSONs myself."
+  },
+  {
+    "rank": 13,
+    "quantity": "SC-13 stationary-lead-scenario collision rate, same scenario ID across two branches",
+    "side_a": {
+      "value": "imagination_forward 0.0 / detection_reactive 0.4",
+      "path": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Opponent Analyzer/Implementation/incoming/2026-07-31-stationary-lead-scenario/INTAKE.md",
+      "date": "2026-07-31 scheduled / 2026-07-17 actual (narrative-clock note in source)",
+      "evidence_class": "MEASURED"
+    },
+    "side_b": {
+      "value": "imagination_forward 0.0 / detection_reactive 0.6, from a parallel unmerged branch (agent/opponent-20260715, commit 787671a), cited inside side A's own 'Orchestrator dedup note': 'Pick one at merge; do not integrate both.'",
+      "path": "cited inside G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Hub/Opponent Analyzer/Implementation/incoming/2026-07-31-stationary-lead-scenario/INTAKE.md (Orchestrator dedup note); primary branch not independently opened",
+      "date": "branch dated 2026-07-15",
+      "evidence_class": "INHERITED"
+    },
+    "type": "TRUE_CONTRADICTION",
+    "stronger_side": "NEITHER_YET",
+    "why_stronger": "Both are pre-merge candidates for the same catalog entry; the qualitative story (imagination avoids the collision, reactive doesn't) agrees, only the reactive-arm rate differs.",
+    "what_would_settle_it": "Merge-time reconciliation, as the source itself specifies -- a scheduled action, not an open question about which is true.",
+    "blast_radius": "LOW -- Opponent-Analyzer scenario catalog, not yet merged into the accepted suite.",
+    "adjudicated": "NO",
+    "tier": "PROVISIONAL",
+    "note": "Explicitly deferred to merge time by the source itself."
+  }
+]
