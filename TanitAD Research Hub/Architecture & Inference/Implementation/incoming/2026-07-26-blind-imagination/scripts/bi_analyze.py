@@ -108,14 +108,28 @@ def _paired(de_a, de_b, eid, n, draws, cumulative=False):
             "n_boot": B_BOOT, "estimator": "paired_episode_cluster_bootstrap"}
 
 
-def _t_contiguous(delta_lo):
-    """Largest N (1-based) such that ``delta_lo[:N] > 0`` — the contiguity rule.
-    Returns 0 when the first step already fails."""
-    ok = delta_lo > 0
-    if not ok[0]:
-        return 0
+#: Contiguity is evaluated from step 2, not step 1 — AMENDMENT A4.
+#: Arms (a), (b) and (c) decode a BIT-IDENTICAL first transition by construction
+#: (``test_blindimag.py::test_first_step_is_identical_across_state_sources``),
+#: so the paired delta at step 1 is EXACTLY 0.0 and its bootstrap lower bound is
+#: exactly 0.0 in every draw. The rule as pre-registered ("contiguously from
+#: N = 1") is therefore UNSATISFIABLE BY CONSTRUCTION: it returns 0 for every
+#: arm in every regime regardless of the data. That is a C13-class defect — a
+#: criterion that cannot fire — in my own instrument, found by reading my own
+#: result. The repair is the smallest one that makes the criterion evaluable:
+#: anchor contiguity at the first horizon on which the arms can differ at all.
+T_CONTIGUITY_START_STEP = 2
+
+
+def _t_contiguous(delta_lo, start_idx=T_CONTIGUITY_START_STEP - 1):
+    """Largest N such that ``delta_lo`` is > 0 contiguously from step
+    ``T_CONTIGUITY_START_STEP``. Returns ``start_idx`` (i.e. 1 step) when the
+    first evaluable step already fails — never 0, because step 1 is shared."""
+    ok = delta_lo[start_idx:] > 0
+    if ok.size == 0 or not ok[0]:
+        return int(start_idx)
     bad = np.flatnonzero(~ok)
-    return int(bad[0]) if bad.size else int(ok.size)
+    return int(start_idx) + (int(bad[0]) if bad.size else int(ok.size))
 
 
 def t_blind(de_a, de_b, eid, draws):
@@ -146,13 +160,19 @@ def t_blind(de_a, de_b, eid, draws):
         "frac_draws_T_blind_is_zero": round(float((t_dist == 0).mean()), 4),
         "frac_draws_T_blind_ge_10": round(float((t_dist >= 10).mean()), 4),
         "delta_at_step1_m": round(float(point_delta[0]), 4),
-        "first_step_where_a_loses_point": int(
-            np.flatnonzero(point_delta <= 0)[0] + 1)
-        if (point_delta <= 0).any() else None,
-        "first_step_where_b_separated_better": int(
-            np.flatnonzero(hi < 0)[0] + 1) if (hi < 0).any() else None,
+        "first_step_where_a_loses_point": (
+            int(np.flatnonzero(point_delta[1:] <= 0)[0] + 2)
+            if (point_delta[1:] <= 0).any() else None),
+        "first_step_where_b_separated_better": (
+            int(np.flatnonzero(hi[1:] < 0)[0] + 2)
+            if (hi[1:] < 0).any() else None),
         "rule": ("largest N with paired CI lower bound > 0 contiguously from "
-                 "N=1; positive delta = imagination better"),
+                 f"N={T_CONTIGUITY_START_STEP} (amendment A4: step 1 is "
+                 "bit-identical across arms by construction, so a rule anchored "
+                 "at N=1 CANNOT FIRE — C13); positive delta = imagination "
+                 "better"),
+        "contiguity_start_step": T_CONTIGUITY_START_STEP,
+        "delta_at_step1_is_exactly_zero": bool(point_delta[0] == 0.0),
         # C14 — GRID END != MEASURED LIMIT. If T_blind lands on the sweep's own
         # terminus the instrument could not have reported a larger value, so the
         # number is a LOWER BOUND on our configuration, not a measurement.
@@ -210,11 +230,19 @@ def analyse_sweep(d, out):
                           "de_N": "||pred_N - gt_N|| at step N (PRIMARY)",
                           "ade_N": "mean over steps 1..N of ||pred_j - gt_j||"}},
              "arms": {}}
+    wp4 = [4, 9, 14, 19]
     for name, m in de.items():
-        curve["arms"][name] = {
+        blk = {
             "de": {f"{n * bi.DT:g}s": _ci_at(m, eid, n, draws) for n in grid},
             "ade": {f"{n * bi.DT:g}s": _ci_at(m, eid, n, draws, True)
                     for n in grid}}
+        if m.shape[1] > 19:
+            # the PROGRAM's own ade_0_2s: mean over the 4 sparse waypoints.
+            # Emitted for every arm so any arm can be put beside the committed
+            # v1 values without re-deriving a convention.
+            blk["ade_0_2s_sparse_4wp"] = _ci.episode_cluster_bootstrap(
+                m[:, wp4].mean(axis=1), eid, n_boot=B_BOOT, seed=SEED)
+        curve["arms"][name] = blk
     # ---- ⚠️ is this fixed window set REPRESENTATIVE? ----------------------- #
     # At K=185 the harness's own window rule leaves ~1 window per episode, and
     # it is the FIRST window of the episode. That is a biased subsample by
