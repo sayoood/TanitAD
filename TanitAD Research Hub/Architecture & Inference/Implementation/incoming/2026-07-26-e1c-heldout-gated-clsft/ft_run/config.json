@@ -1,0 +1,156 @@
+{
+  "experiment": "E1c held-out-gated closed-loop SFT (E1b + corrected guard)",
+  "changed_vs_e1b": [
+    "frontier checkpointing (trainable-only deltas)",
+    "forgetting guard moved to HELD-OUT open loop, paired vs base, at every checkpoint"
+  ],
+  "unchanged_vs_e1b": [
+    "base ckpt",
+    "mined buffer (reused, md5-verified)",
+    "seed",
+    "lr/warmup/schedule",
+    "batch sizes",
+    "lam_cl",
+    "lam_replay",
+    "encoder frozen",
+    "replay corpus"
+  ],
+  "base_ckpt": "/workspace/experiments/refc-diffusion-base-v21-30k/ckpt.pt",
+  "base_step": 29999,
+  "objective": "lam_cl*cl_loss + lam_replay*replay_loss",
+  "encoder_frozen": true,
+  "n_trainable": 13732945,
+  "n_frozen": 90458632,
+  "lr": 2e-05,
+  "steps": 4000,
+  "warmup": 100,
+  "cl_batch": 16,
+  "replay_batch": 16,
+  "lam_cl": 1.0,
+  "lam_replay": 1.0,
+  "diffusion_steps": 2,
+  "seed": 0,
+  "checkpoint_steps": [
+    100,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250,
+    2500,
+    2750,
+    3000,
+    3250,
+    3500,
+    3750,
+    4000
+  ],
+  "cl_buffer": "/workspace/e1b/mined_buffer.pt",
+  "cl_buffer_md5": "a32cfe9bfea4b1b5c196d3bb7f71fa5f",
+  "cl_buffer_meta": {
+    "_experiment": "E1b failure-mining (recoverable pre-failure states)",
+    "mining_source": "/workspace/pai_epcache/physicalai-train-e438721ae894",
+    "refc_ckpt": "/workspace/experiments/refc-diffusion-base-v21-30k/ckpt.pt",
+    "refc_step": 29999,
+    "K": 185,
+    "corridor_halfwidth_m": 1.75,
+    "warn_min_m": 0.3,
+    "h_pre_steps": 10,
+    "n_episodes_rolled": 400,
+    "n_windows": 401,
+    "n_departing_windows": 373,
+    "n_mined_states": 3537,
+    "n_distinct_episodes_mined": 362,
+    "lat_k_m": {
+      "min": 0.3028373122215271,
+      "mean": 1.2746500372802398,
+      "max": 1.7499380111694336
+    },
+    "v0_mps": {
+      "min": 0.5123997330665588,
+      "mean": 14.766368343697318,
+      "max": 39.754066467285156
+    },
+    "mine_wall_s": 8288.2,
+    "leak_guard": "mined ONLY from physicalai-train-e438721ae894; episode-id disjoint from held-out eval (intersection 0, probe_substrate.json)"
+  },
+  "parity_dir": "/workspace/pai_epcache/physicalai-train-e438721ae894",
+  "heldout_guard_dir": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+  "heldout_guard_n_episodes": 44,
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py, B=2000)",
+  "cfg": {
+    "encoder": {
+      "in_channels": 9,
+      "image_size": 256,
+      "base_width": 88,
+      "blocks": [
+        3,
+        6,
+        16,
+        6
+      ]
+    },
+    "window": 8,
+    "measurement": {
+      "hidden": 128,
+      "d_out": 128
+    },
+    "trajectory": {
+      "horizons": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "anchors": {
+      "n_anchors": 128,
+      "pool_size": 4096,
+      "seed": 0
+    },
+    "decoder": {
+      "d": 384,
+      "n_heads": 8,
+      "layers": 4,
+      "ff_mult": 4,
+      "aux_hidden": 384,
+      "diffusion_steps": 2,
+      "noise_std": 0.1
+    },
+    "law": {
+      "hidden": 2048
+    },
+    "strategic": {
+      "hidden": 512,
+      "d_ctx": 64
+    },
+    "imagination": {
+      "d": 512,
+      "depth": 6,
+      "n_heads": 8,
+      "ff_mult": 4,
+      "head_hidden": 1024
+    },
+    "speed_hidden": 256,
+    "ego_dropout": 0.5,
+    "hierarchy": true,
+    "graft_maneuver": true,
+    "graft_target_latent": false,
+    "grounded_selector": false,
+    "graft_imagination": false,
+    "tactical_latent_dim": 512,
+    "refc1": false,
+    "path_dists": [
+      2.0,
+      5.0,
+      10.0,
+      20.0
+    ],
+    "speed_bins": 4,
+    "speed_max": 30.0
+  }
+}

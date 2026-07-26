@@ -1,0 +1,255 @@
+{
+  "_what": "E1c evaluator self-test: the shipped verdict path driven by synthetic per-window arrays built to fail each registered guardrail one at a time",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py) B=2000",
+  "estimator_binding": "/workspace/TanitAD/taniteval/taniteval/ci.py",
+  "overlapping_holdout_se_used": false,
+  "n_checks": 43,
+  "n_pass": 43,
+  "ALL_PASS": true,
+  "checks": [
+    {
+      "check": "C0 all-clean: SUCCESS_POINT == True",
+      "pass": true,
+      "detail": "failed=[]"
+    },
+    {
+      "check": "C0 all-clean: verdict == SUCCESS",
+      "pass": true,
+      "detail": "SUCCESS: checkpoint step 1000 satisfies all six pre-registered conditions (corridor-departure@K185 overall Delta -0.4297 and junction Delta -0.4332, both CI-separated LOWER; open-l"
+    },
+    {
+      "check": "C0 all-clean: construction really tripped (nothing)",
+      "pass": true,
+      "detail": "failed=[]"
+    },
+    {
+      "check": "C1 Ga openloop-ADE regressed: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['Ga_openloop_ade2s_ok']"
+    },
+    {
+      "check": "C1 Ga openloop-ADE regressed: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C1 Ga openloop-ADE regressed: construction really tripped ['Ga_openloop_ade2s_ok']",
+      "pass": true,
+      "detail": "failed=['Ga_openloop_ade2s_ok']"
+    },
+    {
+      "check": "C1 Ga openloop-ADE regressed: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['Ga_openloop_ade2s_ok']"
+    },
+    {
+      "check": "C2 Gb1 anchor_acc regressed: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['Gb1_anchor_acc_ok']"
+    },
+    {
+      "check": "C2 Gb1 anchor_acc regressed: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C2 Gb1 anchor_acc regressed: construction really tripped ['Gb1_anchor_acc_ok']",
+      "pass": true,
+      "detail": "failed=['Gb1_anchor_acc_ok']"
+    },
+    {
+      "check": "C2 Gb1 anchor_acc regressed: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['Gb1_anchor_acc_ok']"
+    },
+    {
+      "check": "C3 Gb2 anchor_traj_l1 regressed: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['Gb2_anchor_traj_l1_ok']"
+    },
+    {
+      "check": "C3 Gb2 anchor_traj_l1 regressed: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C3 Gb2 anchor_traj_l1 regressed: construction really tripped ['Gb2_anchor_traj_l1_ok']",
+      "pass": true,
+      "detail": "failed=['Gb2_anchor_traj_l1_ok']"
+    },
+    {
+      "check": "C3 Gb2 anchor_traj_l1 regressed: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['Gb2_anchor_traj_l1_ok']"
+    },
+    {
+      "check": "C4 Gc OOD out of band: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['Gc_ood_in_band']"
+    },
+    {
+      "check": "C4 Gc OOD out of band: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C4 Gc OOD out of band: construction really tripped ['Gc_ood_in_band']",
+      "pass": true,
+      "detail": "failed=['Gc_ood_in_band']"
+    },
+    {
+      "check": "C4 Gc OOD out of band: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['Gc_ood_in_band']"
+    },
+    {
+      "check": "C5 P2 junction not separated: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C5 P2 junction not separated: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C5 P2 junction not separated: construction really tripped ['P2_dep_junction_separated_lower']",
+      "pass": true,
+      "detail": "failed=['P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C5 P2 junction not separated: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C6 P1 overall not separated: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower']"
+    },
+    {
+      "check": "C6 P1 overall not separated: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C6 P1 overall not separated: construction really tripped ['P1_dep_overall_separated_lower']",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower']"
+    },
+    {
+      "check": "C6 P1 overall not separated: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower']"
+    },
+    {
+      "check": "C7 primary separated WORSE: SUCCESS_POINT == False",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower', 'P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C7 primary separated WORSE: verdict == BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fi"
+    },
+    {
+      "check": "C7 primary separated WORSE: construction really tripped ['P1_dep_overall_separated_lower', 'P2_dep_junction_separated_lower']",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower', 'P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C7 primary separated WORSE: no OTHER condition failed",
+      "pass": true,
+      "detail": "failed=['P1_dep_overall_separated_lower', 'P2_dep_junction_separated_lower']"
+    },
+    {
+      "check": "C8: primary DID fire (both strata separated lower)",
+      "pass": true,
+      "detail": "failed=['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok', 'Gb2_anchor_traj_l1_ok']"
+    },
+    {
+      "check": "C8: all three held-out guardrails FAILED",
+      "pass": true,
+      "detail": "failed=['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok', 'Gb2_anchor_traj_l1_ok']"
+    },
+    {
+      "check": "C8: verdict is BOUND despite the primary firing",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fired at 1/1 points; t"
+    },
+    {
+      "check": "C9: exactly one SUCCESS point",
+      "pass": true,
+      "detail": "[(250, False, ['P1_dep_overall_separated_lower', 'P2_dep_junction_separated_lower']), (1000, True, []), (2000, False, ['Ga_openloop_ade2s_ok']), (3000, False, ['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok']), (4000, False, ['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok', 'Gb2_anchor_traj_l1_ok'])]"
+    },
+    {
+      "check": "C9: verdict SUCCESS and winner is step 1000",
+      "pass": true,
+      "detail": "SUCCESS: checkpoint step 1000 satisfies all six pre-registered conditions (corridor-departure@K185 overall Delta -0.2037 and junction Delta -0.2188, both CI-separated LOWER; open-loop ADE@2s Delta -0."
+    },
+    {
+      "check": "C9: the LARGER closed-loop gains were correctly REJECTED for guardrail failure (no goalpost moving)",
+      "pass": true,
+      "detail": "[(2000, ['Ga_openloop_ade2s_ok']), (3000, ['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok']), (4000, ['Ga_openloop_ade2s_ok', 'Gb1_anchor_acc_ok', 'Gb2_anchor_traj_l1_ok'])]"
+    },
+    {
+      "check": "C10: all three qualify",
+      "pass": true,
+      "detail": "[(500, []), (1500, []), (2500, [])]"
+    },
+    {
+      "check": "C10: winner is step 1500 (most negative overall delta)",
+      "pass": true,
+      "detail": "[(500, -0.1017), (1500, -0.3016), (2500, -0.2012)]"
+    },
+    {
+      "check": "C11: no SUCCESS point anywhere -> BOUND",
+      "pass": true,
+      "detail": "BOUND: NO checkpoint on the 4-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fired at 3/4 points; t"
+    },
+    {
+      "check": "C12: multiplicity_robust is emitted and boolean",
+      "pass": true,
+      "detail": "True"
+    },
+    {
+      "check": "C12: noninferior_0p05 emitted; TRUE on the clean case",
+      "pass": true,
+      "detail": "[-0.0002, 0.0004]"
+    },
+    {
+      "check": "C12: descriptors do NOT decide (C1 fails despite primary)",
+      "pass": true,
+      "detail": "verified by C1/C8"
+    }
+  ],
+  "C8_e1b_replay_verdict": {
+    "verdict": "BOUND",
+    "winner_step": null,
+    "text": "BOUND: NO checkpoint on the 1-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fired at 1/1 points; the held-out guardrails (Ga, Gb1, Gb2, Gc) held at 0/1; the intersection is EMPTY \u2014 the held-out guardrails never held. Per PRE_REGISTRATION_E1C \u00a74.2 this means the closed-loop / open-loop trade is REAL and not an artifact of the guard.",
+    "n_points": 1,
+    "n_primary_ok": 1,
+    "n_guardrails_ok": 0,
+    "n_success_points": 0,
+    "primary_ok_steps": [
+      4000
+    ],
+    "guardrails_ok_steps": []
+  },
+  "C9_frontier_verdict": {
+    "verdict": "SUCCESS",
+    "winner_step": 1000,
+    "text": "SUCCESS: checkpoint step 1000 satisfies all six pre-registered conditions (corridor-departure@K185 overall Delta -0.2037 and junction Delta -0.2188, both CI-separated LOWER; open-loop ADE@2s Delta -0.0001 CI [-0.0004, 0.0002] not separated-worse; anchor block not separated-worse; OOD peak 1.1339 <= 1.30). 1 of 5 frontier points qualified; the frozen selection rule (\u00a74.2) picks step 1000. multiplicity_robust=True (Bonferroni p<0.002778).",
+    "n_points": 5,
+    "n_primary_ok": 4,
+    "n_success_points": 1
+  },
+  "C10_selection_verdict": {
+    "verdict": "SUCCESS",
+    "winner_step": 1500,
+    "text": "SUCCESS: checkpoint step 1500 satisfies all six pre-registered conditions (corridor-departure@K185 overall Delta -0.3016 and junction Delta -0.308, both CI-separated LOWER; open-loop ADE@2s Delta 0.0 CI [-0.0003, 0.0004] not separated-worse; anchor block not separated-worse; OOD peak 1.1339 <= 1.30). 3 of 3 frontier points qualified; the frozen selection rule (\u00a74.2) picks step 1500. multiplicity_robust=True (Bonferroni p<0.002778).",
+    "n_points": 3,
+    "n_primary_ok": 3,
+    "n_success_points": 3
+  }
+}
