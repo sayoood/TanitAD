@@ -1,0 +1,148 @@
+{
+ "host": "08f6ce7d8e55",
+ "cwd": "/root/taniteval",
+ "python": "3.11.10",
+ "env": {
+  "PYTHONPATH": null,
+  "OMP_NUM_THREADS": "8",
+  "CUDA_VISIBLE_DEVICES": null
+ },
+ "P5_clhorizon_ood": {
+  "clhorizon_file": "/root/taniteval/taniteval/clhorizon.py",
+  "ood_file": "/root/taniteval/taniteval/ood.py",
+  "clhorizon_md5": "6717555103d01d04b6184583edeee082",
+  "ood_md5": "10912c1b73993cf7fb5fd576e4df03f9",
+  "HORIZON_CEILING_K": 190,
+  "ENV_LAT_MAX": 3.0,
+  "ENV_YAW_MAX": 12.0,
+  "RATIO_EXTRAPOLATION_X": 1.5,
+  "exercise_envelope_fractions": {
+   "frac_steps_lat_over_3m": 0.16667,
+   "frac_steps_yaw_over_12deg": 0.0,
+   "frac_steps_any": 0.16667,
+   "frac_windows_any_step_out_of_envelope": 0.3333,
+   "envelope": {
+    "lat_max_m": 3.0,
+    "yaw_max_deg": 12.0,
+    "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+   }
+  },
+  "oodmap_lat_x": [
+   0.0,
+   0.25,
+   0.5,
+   0.75,
+   1.0,
+   1.5,
+   2.0,
+   3.0
+  ],
+  "oodmap_yaw_x": [
+   0.0,
+   1.0,
+   2.0,
+   3.0,
+   5.0,
+   8.0,
+   12.0
+  ],
+  "oodmap_lat_max_measured": 3.0,
+  "oodmap_yaw_max_measured": 12.0,
+  "exercise_verdict": {
+   "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there",
+   "ratio_is_lower_bound": true,
+   "EXTRAPOLATION_frac_steps_lat_over_3m": 0.16667,
+   "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.3333,
+   "n_windows": 6,
+   "n_episodes": 3,
+   "criterion_1_fires": false,
+   "criterion_1_informative": false,
+   "criterion_2_fires": true
+  },
+  "saturation_demo": {
+   "ratio_at_dlat_3m": 1.16267,
+   "ratio_at_dlat_30m": 1.16267,
+   "ratio_at_dlat_300m": 1.16267,
+   "ratio_is_constant_beyond_envelope": true,
+   "max_attainable_ratio_lat_only": 1.16267,
+   "max_attainable_ratio_both_axes": 1.298888
+  },
+  "exercise_emit_strata": {
+   "overall": 6,
+   "junction": 2,
+   "longitudinal": 4,
+   "other": 0
+  },
+  "exercise_emit_overall_cdr": 0.2333,
+  "exercise_emit_ood_overall_verdict": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there",
+  "exercise_emit_surface": "closed_loop",
+  "horizon_windows_T199_K": {
+   "20": 22,
+   "60": 17,
+   "70": 16,
+   "90": 13,
+   "120": 9,
+   "150": 6,
+   "185": 1
+  },
+  "verdict": "PASS"
+ },
+ "P6_guard_can_fire": {
+  "_why": "C13 \u2014 a guard that cannot fail is not a guard. ood.py exists because the OLD ratio-only criterion could never fire. Its replacement is only worth anything if IT can fire, so make it fire.",
+  "raised_on_the_30k_gate_string": true,
+  "message": "[ood] a MEASUREMENT verdict ('MEASUREMENT \u2014 every step stayed inside the MEASURED envelope') was emitted while 54.63% of steps / 90.24% of windows are OUTSIDE the measured envelope. OODMap.ratio_arr interpolates with np.interp, which CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg. Once steps leave the envelope the ratio SATURATES, so the ratio criterion structurally cannot fire there and the reported ra",
+  "verdict": "PASS",
+  "readjudicate_legacy": {
+   "class_before": "MEASUREMENT",
+   "class_after": "EXTRAPOLATION",
+   "changed": true,
+   "verdict": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+  }
+ },
+ "P7_repo_vs_pod_md5": {
+  "taniteval": {
+   "n_repo": 221,
+   "n_pod": 222,
+   "n_common": 221,
+   "n_mismatch": 0,
+   "mismatch": [],
+   "only_on_repo": [],
+   "n_only_on_repo": 0,
+   "only_on_pod": [
+    "_preflight2.py"
+   ],
+   "n_only_on_pod": 1
+  },
+  "stack": {
+   "n_repo": 362,
+   "n_pod": 344,
+   "n_common": 344,
+   "n_mismatch": 0,
+   "mismatch": [],
+   "only_on_repo": [
+    "experiments/p0-fan-viz/fan_00.png",
+    "experiments/p0-fan-viz/fan_01.png",
+    "experiments/p0-fan-viz/fan_02.png",
+    "experiments/p0-fan-viz/fan_03.png",
+    "experiments/p0-fan-viz/fan_04.png",
+    "experiments/p0-fan-viz/fan_05.png",
+    "experiments/p0-s000-kickoff-smoke/config.json",
+    "experiments/p0-s000-kickoff-smoke/metrics.json",
+    "experiments/p0-s000-kickoff-smoke/model.pt",
+    "experiments/p0-sA01-base250-local-pipecheck/REPORT.md",
+    "experiments/p0-sA01-base250-local-pipecheck/config.json",
+    "experiments/p0-sA01-base250-local-pipecheck/metrics.json",
+    "experiments/p0-sA01-base250-local-pipecheck/model.pt",
+    "experiments/p0-sB00-realcam-pipeproof/REPORT.md",
+    "experiments/p0-sB00-realcam-pipeproof/config.json",
+    "experiments/p0-sB00-realcam-pipeproof/metrics.json",
+    "experiments/p0-sB00-realcam-pipeproof/model.pt",
+    "experiments/p0-scenario-wiring/scenario_suite_dryrun.json"
+   ],
+   "n_only_on_repo": 18,
+   "only_on_pod": [],
+   "n_only_on_pod": 0
+  },
+  "verdict": "PASS"
+ }
+}

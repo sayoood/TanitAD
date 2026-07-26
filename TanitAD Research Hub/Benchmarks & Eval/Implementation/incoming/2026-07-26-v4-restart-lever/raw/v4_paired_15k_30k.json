@@ -1,0 +1,206 @@
+{
+  "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py)",
+  "_never": "overlapping_holdout_se",
+  "_resampling_unit": "episode cluster",
+  "_evidence_class": "MEASURED (ours)",
+  "_goal_provenance": "BOTH arms goal-ORACLE (route/route_graded/vt_band from ego's own future poses). NOT a deployed-capability surface.",
+  "_sources": {
+    "15k": "/root/v4eval/results/windows_flagship-v4-fromscratch-15k.pt",
+    "15k_dense": "/root/v4eval/results_goalmode/windows_v4-15k-oracle-dense.pt",
+    "30k": "/workspace/_v4gate/results/windows_flagship-v4-fromscratch-30k-oracle.pt",
+    "30k_produced": "/workspace/_v4gate/results/windows_flagship-v4-fromscratch-30k-produced.pt",
+    "15k_produced": "/root/v4eval/results_goalmode/windows_v4-15k-goal-produced.pt"
+  },
+  "window_alignment": {
+    "n_15k": 881,
+    "n_30k": 881,
+    "n_15k_dense": 881,
+    "eid_sequence_identical_15k_vs_30k": true,
+    "eid_sequence_identical_15kdense_vs_30k": true,
+    "gt_identical_15k_vs_30k": true,
+    "gt_identical_15kdense_vs_30k": true,
+    "cv_identical_15k_vs_30k": true,
+    "n_episodes": 40,
+    "_why": "a paired bootstrap is only valid on the SAME windows in the SAME order"
+  },
+  "harness_check": {
+    "ade_0_2s_15k_recomputed": 0.5839,
+    "ade_0_2s_15k_published": 0.5839,
+    "ade_0_2s_30k_recomputed": 0.6423,
+    "ade_0_2s_30k_published": 0.6423,
+    "ade_0_2s_15kdense_recomputed": 0.5839,
+    "_rule": "no delta below is quotable unless both reproduce to <=0.001",
+    "PASS": true
+  },
+  "paired_regression_30k_minus_15k": {
+    "ade_0_2s_4wp": {
+      "delta": 0.0584,
+      "lo": 0.0043,
+      "hi": 0.1179,
+      "ci95": 0.0568,
+      "p_delta_gt0": 0.9815,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "miss_at_2m": {
+      "delta": 0.0431,
+      "lo": 0.0045,
+      "hi": 0.0864,
+      "ci95": 0.0409,
+      "p_delta_gt0": 0.986,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_abs_dense_LONGITUDINAL": {
+      "delta": 0.0581,
+      "lo": 0.0157,
+      "hi": 0.1053,
+      "ci95": 0.0448,
+      "p_delta_gt0": 0.999,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "cross_abs_dense_LATERAL": {
+      "delta": -0.0257,
+      "lo": -0.0405,
+      "hi": -0.0088,
+      "ci95": 0.0159,
+      "p_delta_gt0": 0.003,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    }
+  },
+  "singles": {
+    "ade_0_2s_15k": {
+      "mean": 0.5839,
+      "lo": 0.4962,
+      "hi": 0.6821,
+      "ci95": 0.0929,
+      "se": 0.0482,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "ade_0_2s_30k": {
+      "mean": 0.6423,
+      "lo": 0.5348,
+      "hi": 0.7586,
+      "ci95": 0.1119,
+      "se": 0.0567,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "along_abs_dense_15k": {
+      "mean": 0.3496,
+      "lo": 0.2975,
+      "hi": 0.4057,
+      "ci95": 0.0541,
+      "se": 0.0274,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "along_abs_dense_30k": {
+      "mean": 0.4077,
+      "lo": 0.3394,
+      "hi": 0.4805,
+      "ci95": 0.0706,
+      "se": 0.0356,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "cross_abs_dense_15k": {
+      "mean": 0.2065,
+      "lo": 0.1557,
+      "hi": 0.2691,
+      "ci95": 0.0567,
+      "se": 0.0296,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "cross_abs_dense_30k": {
+      "mean": 0.1808,
+      "lo": 0.1258,
+      "hi": 0.253,
+      "ci95": 0.0636,
+      "se": 0.0337,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "regression_axis_split": {
+    "delta_along_m": 0.0581,
+    "delta_cross_m": -0.0257,
+    "energy_share_30k": {
+      "longitudinal": 0.7315,
+      "lateral": 0.2685
+    },
+    "energy_share_15k": {
+      "longitudinal": 0.6434,
+      "lateral": 0.3566
+    }
+  },
+  "goalmode_control_produced": {
+    "eid_aligned": true,
+    "ade_0_2s_15k_produced": 0.7577,
+    "ade_0_2s_30k_produced": 0.8563,
+    "paired_30k_minus_15k_PRODUCED": {
+      "delta": 0.0985,
+      "lo": 0.0374,
+      "hi": 0.1631,
+      "ci95": 0.0629,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_miss_at_2m_PRODUCED": {
+      "delta": 0.0897,
+      "lo": 0.051,
+      "hi": 0.1339,
+      "ci95": 0.0415,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    }
+  }
+}

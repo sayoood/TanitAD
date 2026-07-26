@@ -1,0 +1,161 @@
+{
+  "_evidence_class": "MEASURED (ours; v4 checkpoints on tanitad-eval)",
+  "_why": "sel_gate is the learned scale on the longitudinal selection term; init 0.0. Its trained value is itself the measurement (design note, flagship_v15.py:439-449).",
+  "arms": {
+    "15k": {
+      "ckpt": "/workspace/models/flagship-v4-fromscratch-15k/ckpt_step15000.pt",
+      "step": 15000,
+      "top_keys": [
+        "controller",
+        "goal_head",
+        "grounding",
+        "head",
+        "lam_mult",
+        "model",
+        "opt",
+        "phases",
+        "step"
+      ],
+      "state_dict_key": "head",
+      "matched_params": {
+        "ego_null": {
+          "shape": [
+            128
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.018431616947054863,
+          "l2": 0.2590586245059967
+        },
+        "sel_gate": {
+          "shape": [],
+          "numel": 1,
+          "value": 0.1101440042257309,
+          "abs_mean": 0.1101440042257309,
+          "l2": 0.1101440042257309
+        },
+        "vtarget_emb.weight": {
+          "shape": [
+            24,
+            128
+          ],
+          "numel": 3072,
+          "value": null,
+          "abs_mean": 0.06563253700733185,
+          "l2": 4.486705303192139
+        },
+        "route_emb.weight": {
+          "shape": [
+            5,
+            128
+          ],
+          "numel": 640,
+          "value": null,
+          "abs_mean": 0.025338064879179,
+          "l2": 0.8256130814552307
+        },
+        "route_graded.weight": {
+          "shape": [
+            128,
+            1
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.5174233913421631,
+          "l2": 6.673896312713623
+        },
+        "route_graded.bias": {
+          "shape": [
+            128
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.49710431694984436,
+          "l2": 6.3935160636901855
+        }
+      }
+    },
+    "30k": {
+      "ckpt": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+      "step": 29999,
+      "top_keys": [
+        "controller",
+        "goal_head",
+        "grounding",
+        "head",
+        "lam_mult",
+        "model",
+        "opt",
+        "phases",
+        "step"
+      ],
+      "state_dict_key": "head",
+      "matched_params": {
+        "ego_null": {
+          "shape": [
+            128
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.01864665001630783,
+          "l2": 0.2619282305240631
+        },
+        "sel_gate": {
+          "shape": [],
+          "numel": 1,
+          "value": 0.15804508328437805,
+          "abs_mean": 0.15804508328437805,
+          "l2": 0.15804508328437805
+        },
+        "vtarget_emb.weight": {
+          "shape": [
+            24,
+            128
+          ],
+          "numel": 3072,
+          "value": null,
+          "abs_mean": 0.06615829467773438,
+          "l2": 4.549432277679443
+        },
+        "route_emb.weight": {
+          "shape": [
+            5,
+            128
+          ],
+          "numel": 640,
+          "value": null,
+          "abs_mean": 0.024215705692768097,
+          "l2": 0.7877911329269409
+        },
+        "route_graded.weight": {
+          "shape": [
+            128,
+            1
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.5172502994537354,
+          "l2": 6.672648906707764
+        },
+        "route_graded.bias": {
+          "shape": [
+            128
+          ],
+          "numel": 128,
+          "value": null,
+          "abs_mean": 0.4955185055732727,
+          "l2": 6.373006343841553
+        }
+      }
+    }
+  },
+  "HEADLINE_sel_gate": {
+    "param_15k": "sel_gate",
+    "sel_gate_15k": 0.1101440042257309,
+    "param_30k": "sel_gate",
+    "sel_gate_30k": 0.15804508328437805,
+    "init_value": 0.0,
+    "delta_15k_to_30k": 0.047901,
+    "_read": "At EVAL the harness overwrites vt_speed with the OBSERVED v0 (eval_flagship_v4.py:78), so v_goal == v0 and the penalty becomes -|v_term(i) - v0| -- a CONSTANT-VELOCITY preference. A sel_gate that GREW during training therefore makes the EVAL-time selector progressively more constant-velocity-biased while the TRAINING objective (which sees the real minted vt_speed) keeps improving."
+  }
+}

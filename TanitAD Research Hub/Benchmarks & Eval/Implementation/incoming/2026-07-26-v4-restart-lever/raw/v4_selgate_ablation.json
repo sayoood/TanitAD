@@ -1,0 +1,211 @@
+{
+  "_experiment": "sel_gate counterfactual on flagship-v4-fromscratch @30k",
+  "_evidence_class": "MEASURED (ours)",
+  "_ckpt": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+  "_ckpt_step": 29999,
+  "_goal_provenance": "ORACLE (route/route_graded/vt_band from ego's own future poses). NOT a deployed-capability surface.",
+  "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py); NEVER overlapping_holdout_se; resampling unit = episode",
+  "_sel_gate_trained": 0.15804508328437805,
+  "_ablation": "head.sel_gate := 0.0 (removes ONLY the longitudinal constant-velocity selection term; fan/decoder untouched)",
+  "arms": {
+    "as_trained": {
+      "sel_gate": 0.15804508328437805,
+      "wallclock_s": 117.6,
+      "n_windows": 881,
+      "diag": {
+        "n_windows": 881,
+        "goal_mode": "oracle",
+        "goal_mode_record": {
+          "mode": "oracle",
+          "fallback": null
+        },
+        "goal_agreement_vs_oracle": null,
+        "wallclock_s": 117.5,
+        "dense_headhorizons_ade_2s": 0.5027217172196179,
+        "dense_headhorizons_oracle_ade": 0.1875803411074583,
+        "dense_headhorizons_sel_gap": 0.31514137408248954,
+        "dense_headhorizons_miss_at_2m": 0.2122587968217934,
+        "wp4_oracle_ade_0_2s": 0.23301841780357274,
+        "wp4_ade_0_2s_selfcomputed": 0.6422981828890918,
+        "seam_norm_ratio_max": 0.1208,
+        "n_seam_samples": 56,
+        "horizons_dense": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "wp_steps": [
+          5,
+          10,
+          15,
+          20
+        ]
+      }
+    },
+    "sel_gate_zero": {
+      "sel_gate": 0.0,
+      "wallclock_s": 112.4,
+      "n_windows": 881,
+      "diag": {
+        "n_windows": 881,
+        "goal_mode": "oracle",
+        "goal_mode_record": {
+          "mode": "oracle",
+          "fallback": null
+        },
+        "goal_agreement_vs_oracle": null,
+        "wallclock_s": 112.4,
+        "dense_headhorizons_ade_2s": 0.5111218313353557,
+        "dense_headhorizons_oracle_ade": 0.1875803411074583,
+        "dense_headhorizons_sel_gap": 0.32354148846884995,
+        "dense_headhorizons_miss_at_2m": 0.21906923950056753,
+        "wp4_oracle_ade_0_2s": 0.23301841780357274,
+        "wp4_ade_0_2s_selfcomputed": 0.6523462919588121,
+        "seam_norm_ratio_max": 0.1208,
+        "n_seam_samples": 56,
+        "horizons_dense": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "wp_steps": [
+          5,
+          10,
+          15,
+          20
+        ]
+      }
+    }
+  },
+  "harness_check": {
+    "as_trained_ade_0_2s": 0.6423,
+    "gate_published_30k_oracle": 0.6423,
+    "reproduces_within_0.001": true,
+    "_rule": "if the as-trained arm does not reproduce the gate number, the ablation arm is not quotable either"
+  },
+  "point_estimates": {
+    "ade_0_2s_as_trained": 0.6423,
+    "ade_0_2s_sel_gate_zero": 0.6523,
+    "miss_at_2m_as_trained": 0.2123,
+    "miss_at_2m_sel_gate_zero": 0.2191,
+    "v1_reference_ade_0_2s": 0.4271
+  },
+  "paired_as_trained_minus_zero": {
+    "ade_0_2s": {
+      "delta": -0.01,
+      "lo": -0.0191,
+      "hi": -0.002,
+      "ci95": 0.0086,
+      "p_delta_gt0": 0.009,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "miss_at_2m": {
+      "delta": -0.0068,
+      "lo": -0.0159,
+      "hi": 0.0011,
+      "ci95": 0.0085,
+      "p_delta_gt0": 0.0435,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_abs_dense_LONGITUDINAL": {
+      "delta": -0.0086,
+      "lo": -0.0162,
+      "hi": -0.0019,
+      "ci95": 0.0071,
+      "p_delta_gt0": 0.0085,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "cross_abs_dense_LATERAL": {
+      "delta": -0.0007,
+      "lo": -0.0024,
+      "hi": 0.0008,
+      "ci95": 0.0016,
+      "p_delta_gt0": 0.186,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    }
+  },
+  "singles": {
+    "ade_0_2s_as_trained": {
+      "mean": 0.6423,
+      "lo": 0.5348,
+      "hi": 0.7586,
+      "ci95": 0.1119,
+      "se": 0.0567,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "ade_0_2s_sel_gate_zero": {
+      "mean": 0.6523,
+      "lo": 0.5428,
+      "hi": 0.7698,
+      "ci95": 0.1135,
+      "se": 0.0579,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "selection_change": {
+    "frac_windows_selection_changed": 0.0658,
+    "_read": "if this is ~0 the gate is inert and the ablation proves nothing"
+  }
+}

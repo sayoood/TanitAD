@@ -38,6 +38,11 @@ SEEDS=${SEEDS:-4}
 GEO=${GEO:-$WORK/geocalib_intrinsics.json}
 DISK_MIN_GB=${DISK_MIN_GB:-8}
 PVC=${PVC:-30}                  # per-video-clips (long drives)
+# GENTLE-BY-DEFAULT (2026-07-26): the 2026-07-25 W=8 run tripped YouTube's anti-bot from
+# one datacenter IP. `--sleep` throttles yt-dlp's per-request + between-video pacing.
+# This is COURTESY RATE-LIMITING, not bot-detection evasion: it lowers our request rate,
+# it does not disguise, authenticate, or reroute us. Default is now 4 s (was unset=0).
+SLEEP=${SLEEP:-4}
 log(){ echo "[$(date -u +%H:%M:%S)] $*"; }
 
 ddcheck(){
@@ -47,7 +52,7 @@ ddcheck(){
 
 merged_count(){ ls "$MERGED" 2>/dev/null | grep -c '^yt_' ; }
 
-log "PARALLEL SCALEUP START W=$W target=$TARGET round_clips=$ROUND_CLIPS seeds=$SEEDS"
+log "PARALLEL SCALEUP START W=$W target=$TARGET round_clips=$ROUND_CLIPS seeds=$SEEDS sleep=${SLEEP}s"
 [ -f "$CKPT" ] || { log "FATAL: encoder ckpt $CKPT missing"; exit 2; }
 # GEOMETRY is decided INLINE by harvest_scaleup.py: it uses GeoCalib per-video
 # intrinsics when `import geocalib` succeeds (the normal path), else the fixed-HFOV
@@ -79,7 +84,7 @@ while : ; do
     $V "$S/harvest_scaleup.py" --work "$WORK/w$i" \
        --queries-file "$S/wq$i.txt" --channels-file "$S/channels.txt" \
        --max-clips "$CAP" --per-video-clips "$PVC" --clip-frames 250 \
-       --max-videos 60 --per-query 40 --allow-noncc $GEOARG \
+       --max-videos 60 --per-query 40 --allow-noncc --sleep "$SLEEP" $GEOARG \
        > "$WORK/w$i/harvest.log" 2>&1 &
     pids="$pids $!"
   done
