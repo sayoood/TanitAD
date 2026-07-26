@@ -1,0 +1,129 @@
+{
+  "method": "sha256 over raw poses[T,4] float32 bytes; overlap = set intersection of those digests. episode_id compared separately.",
+  "parity_train": {
+    "name": "PARITY-TRAIN physicalai-train-e438721ae894 (pod3 /workspace/pai_epcache)",
+    "n": 2376,
+    "T_range": [
+      188,
+      205
+    ],
+    "n_unique_hashes": 2376
+  },
+  "val_deployments": {
+    "PARITY-TRAIN physicalai-train-e438721ae894 (pod3 /workspace/pai_epcache)": {
+      "n_episodes": 2376,
+      "n_unique_poses_hashes": 2376,
+      "source_dir": "/workspace/pai_epcache/physicalai-train-e438721ae894",
+      "T_range": [
+        188,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 2376,
+      "overlap_pct": 100.0,
+      "overlap_by_episode_id": 2342,
+      "verdict": "(is the parity train)"
+    },
+    "physicalai-val-0c5f7dac3b11 @600 (pod2 /workspace/data/physicalai_phase0/_epcache)": {
+      "n_episodes": 600,
+      "n_unique_poses_hashes": 600,
+      "source_dir": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+      "T_range": [
+        188,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_pct": 0.0,
+      "overlap_by_episode_id": 20,
+      "verdict": "CLEAN - episode-disjoint from parity train"
+    },
+    "physicalai-val-0c5f7dac3b11 @40 (tanitad-eval /root/valdata) [PUBLISHED]": {
+      "n_episodes": 40,
+      "n_unique_poses_hashes": 40,
+      "source_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+      "T_range": [
+        198,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_pct": 0.0,
+      "overlap_by_episode_id": 0,
+      "verdict": "CLEAN - episode-disjoint from parity train"
+    },
+    "physicalai-val-0c5f7dac3b11 @12 (pod1 /root/valdata)": {
+      "n_episodes": 12,
+      "n_unique_poses_hashes": 12,
+      "source_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+      "T_range": [
+        198,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_pct": 0.0,
+      "overlap_by_episode_id": 0,
+      "verdict": "CLEAN - episode-disjoint from parity train"
+    },
+    "physicalai-val-f1b378f295ae @80 (pod3 /workspace/pai_epcache) [LEAKY]": {
+      "n_episodes": 80,
+      "n_unique_poses_hashes": 80,
+      "source_dir": "/workspace/pai_epcache/physicalai-val-f1b378f295ae",
+      "T_range": [
+        197,
+        199
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 62,
+      "overlap_pct": 77.5,
+      "overlap_by_episode_id": 62,
+      "verdict": "LEAKS 62/80 into parity train"
+    },
+    "physicalai-val-heldout-79d4e3d2d4c6 @44 (pod3 /workspace/v4run/valcache)": {
+      "n_episodes": 44,
+      "n_unique_poses_hashes": 44,
+      "source_dir": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+      "T_range": [
+        190,
+        199
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_pct": 0.0,
+      "overlap_by_episode_id": 0,
+      "verdict": "CLEAN - episode-disjoint from parity train"
+    },
+    "physicalai-train-51f40f5ebc21 @320 (pod3 /workspace/pai_epcache)": {
+      "n_episodes": 320,
+      "n_unique_poses_hashes": 320,
+      "source_dir": "/workspace/pai_epcache/physicalai-train-51f40f5ebc21",
+      "T_range": [
+        190,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 256,
+      "overlap_pct": 80.0,
+      "overlap_by_episode_id": 252,
+      "verdict": "LEAKS 256/320 into parity train"
+    }
+  },
+  "published_subsets_vs_the_600_build": {
+    "physicalai-val-0c5f7dac3b11 @40 (tanitad-eval /root/valdata) [PUBLISHED]": {
+      "n": 40,
+      "overlap_with_600": 40,
+      "is_subset_of_600": true,
+      "is_first_n_prefix_of_600": true
+    },
+    "physicalai-val-0c5f7dac3b11 @12 (pod1 /root/valdata)": {
+      "n": 12,
+      "overlap_with_600": 12,
+      "is_subset_of_600": true,
+      "is_first_n_prefix_of_600": true
+    }
+  },
+  "leaky_split_cross_checks": {
+    "overlap_with_parity_train": 62,
+    "overlap_with_clean_val_600": 18,
+    "n": 80
+  },
+  "heldout_val_cross_checks": {
+    "overlap_with_parity_train": 0,
+    "overlap_with_clean_val_600": 44,
+    "n": 44
+  }
+}

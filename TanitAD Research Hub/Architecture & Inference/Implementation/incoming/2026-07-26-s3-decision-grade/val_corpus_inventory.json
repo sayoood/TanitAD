@@ -1,0 +1,288 @@
+{
+  "artifact": "Per-pod / per-root val corpus inventory, by EPISODE COUNT and BYTE-LEVEL content, not by directory name",
+  "date": "2026-07-26",
+  "why": "A prior finding recorded that the val corpus is deployed at 600 / 40 / 12 episodes under the SAME directory name, so a name-based or count-based assertion is not evidence. Every row below is keyed on sha256 of the raw poses bytes.",
+  "identity_key": {
+    "chosen": "sha256(poses[T,4] float32 raw bytes)",
+    "rejected": "episode_id",
+    "why_rejected": "MEASURED: episode_id COLLIDES. The parity train holds 2376 episodes but only 2342 unique episode_id values (34 collisions); the 600-ep clean val holds 600 episodes with 596 unique ids. Sample values (808464740, 808465461, ...) are a 4-character prefix of the clip_id packed as int32, so the key is lossy by construction and OVER-reports overlap.",
+    "consequence": "Any disjointness figure computed on episode_id is an upper bound, not a measurement. The 600-ep val shows 20/600 = 3.3% episode_id overlap with the parity train and 0/600 = 0.0% byte-level overlap: the 20 are key collisions, not leakage."
+  },
+  "hosts_probed": [
+    {
+      "host": "pod3 (tanitad-pod3)",
+      "roots_enumerated": [
+        "/workspace/pai_epcache",
+        "/workspace/v4run/valcache",
+        "/workspace/data/phase0_epcache",
+        "/workspace/data/physicalai_v2",
+        "/workspace/mixfeats",
+        "/workspace/tmp",
+        "/root"
+      ],
+      "method": "recursive find to depth 5 + ep_*.pt count per directory"
+    },
+    {
+      "host": "pod2 (tanitad-pod2)",
+      "roots_enumerated": [
+        "/workspace/data/physicalai_phase0/_epcache",
+        "/root/valdata",
+        "/workspace/pai_epcache"
+      ],
+      "method": "targeted read-only ls (pod2 is mid-run; no recursion, no load)"
+    },
+    {
+      "host": "pod1 (tanitad-pod)",
+      "roots_enumerated": [
+        "/workspace/data/physicalai_phase0/_epcache",
+        "/root/valdata",
+        "/workspace/data/physicalai_v2",
+        "/workspace/v4run/valcache"
+      ],
+      "method": "targeted read-only ls (pod1 is training)"
+    },
+    {
+      "host": "eval pod (tanitad-eval)",
+      "roots_enumerated": [
+        "/root/valdata"
+      ],
+      "method": "targeted read-only ls (reserved for a sibling agent)"
+    },
+    {
+      "host": "dev box",
+      "roots_enumerated": [
+        "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache"
+      ],
+      "method": "ls"
+    }
+  ],
+  "inventory": [
+    {
+      "cache_name": "physicalai-train-e438721ae894",
+      "host": "pod3",
+      "path": "/workspace/pai_epcache/physicalai-train-e438721ae894",
+      "role": "PARITY TRAIN",
+      "n_episodes": 2376,
+      "n_unique_poses_sha256": 2376,
+      "n_unique_episode_id": 2342,
+      "T_range": [
+        188,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 2376,
+      "overlap_with_parity_train_pct": 100.0,
+      "overlap_with_parity_train_by_episode_id": 2342,
+      "overlap_with_clean_val_600": 0,
+      "clean": null,
+      "verdict": "IS the parity train",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-0c5f7dac3b11",
+      "host": "pod2",
+      "path": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+      "role": "CLEAN VAL - full 600 build",
+      "n_episodes": 600,
+      "n_unique_poses_sha256": 600,
+      "n_unique_episode_id": 596,
+      "T_range": [
+        188,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_with_parity_train_pct": 0.0,
+      "overlap_with_parity_train_by_episode_id": 20,
+      "overlap_with_clean_val_600": 600,
+      "clean": true,
+      "verdict": "CLEAN - byte-level episode-disjoint from the parity train (0 overlap)",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-0c5f7dac3b11",
+      "host": "tanitad-eval",
+      "path": "/root/valdata/physicalai-val-0c5f7dac3b11",
+      "role": "CLEAN VAL - the PUBLISHED 40-ep deployment (881 stride-8 windows)",
+      "n_episodes": 40,
+      "n_unique_poses_sha256": 40,
+      "n_unique_episode_id": 40,
+      "T_range": [
+        198,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_with_parity_train_pct": 0.0,
+      "overlap_with_parity_train_by_episode_id": 0,
+      "overlap_with_clean_val_600": 40,
+      "clean": true,
+      "verdict": "CLEAN - byte-level episode-disjoint from the parity train (0 overlap)",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-0c5f7dac3b11",
+      "host": "tanitad-pod (pod1)",
+      "path": "/root/valdata/physicalai-val-0c5f7dac3b11",
+      "role": "CLEAN VAL - partial 12-ep deployment",
+      "n_episodes": 12,
+      "n_unique_poses_sha256": 12,
+      "n_unique_episode_id": 12,
+      "T_range": [
+        198,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_with_parity_train_pct": 0.0,
+      "overlap_with_parity_train_by_episode_id": 0,
+      "overlap_with_clean_val_600": 12,
+      "clean": true,
+      "verdict": "CLEAN - byte-level episode-disjoint from the parity train (0 overlap)",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-f1b378f295ae",
+      "host": "pod3",
+      "path": "/workspace/pai_epcache/physicalai-val-f1b378f295ae",
+      "role": "LEAKED VAL - REFUSED",
+      "n_episodes": 80,
+      "n_unique_poses_sha256": 80,
+      "n_unique_episode_id": 79,
+      "T_range": [
+        197,
+        199
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 62,
+      "overlap_with_parity_train_pct": 77.5,
+      "overlap_with_parity_train_by_episode_id": 62,
+      "overlap_with_clean_val_600": 18,
+      "clean": false,
+      "verdict": "LEAKY - 62/80 = 77.5% of its episodes are byte-identical to parity-train episodes",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-heldout-79d4e3d2d4c6",
+      "host": "pod3",
+      "path": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+      "role": "clean 44-ep heldout val (v4run)",
+      "n_episodes": 44,
+      "n_unique_poses_sha256": 44,
+      "n_unique_episode_id": 44,
+      "T_range": [
+        190,
+        199
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 0,
+      "overlap_with_parity_train_pct": 0.0,
+      "overlap_with_parity_train_by_episode_id": 0,
+      "overlap_with_clean_val_600": 44,
+      "clean": true,
+      "verdict": "CLEAN - byte-level episode-disjoint from the parity train (0 overlap)",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-train-51f40f5ebc21",
+      "host": "pod3",
+      "path": "/workspace/pai_epcache/physicalai-train-51f40f5ebc21",
+      "role": "older 320-ep train build",
+      "n_episodes": 320,
+      "n_unique_poses_sha256": 320,
+      "n_unique_episode_id": 313,
+      "T_range": [
+        190,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 256,
+      "overlap_with_parity_train_pct": 80.0,
+      "overlap_with_parity_train_by_episode_id": 252,
+      "overlap_with_clean_val_600": 64,
+      "clean": false,
+      "verdict": "LEAKY - 256/320 = 80.0% of its episodes are byte-identical to parity-train episodes",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-train-14231cd29c74",
+      "host": "dev box",
+      "path": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-train-14231cd29c74",
+      "role": "NON-PARITY train - what S3's first pass used",
+      "n_episodes": 400,
+      "n_unique_poses_sha256": 400,
+      "n_unique_episode_id": 397,
+      "T_range": [
+        197,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 58,
+      "overlap_with_parity_train_pct": 14.5,
+      "overlap_with_parity_train_by_episode_id": 70,
+      "overlap_with_clean_val_600": 19,
+      "clean": false,
+      "verdict": "LEAKY - 58/400 = 14.5% of its episodes are byte-identical to parity-train episodes",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    },
+    {
+      "cache_name": "physicalai-val-bb543bdf7836",
+      "host": "dev box",
+      "path": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-val-bb543bdf7836",
+      "role": "NON-PARITY val - what S3's first pass used",
+      "n_episodes": 100,
+      "n_unique_poses_sha256": 100,
+      "n_unique_episode_id": 100,
+      "T_range": [
+        198,
+        205
+      ],
+      "overlap_with_parity_train_BYTE_LEVEL": 14,
+      "overlap_with_parity_train_pct": 14.0,
+      "overlap_with_parity_train_by_episode_id": 17,
+      "overlap_with_clean_val_600": 4,
+      "clean": false,
+      "verdict": "LEAKY - 14/100 = 14.0% of its episodes are byte-identical to parity-train episodes",
+      "evidence_class": "MEASURED (this run, sha256 over raw poses[T,4] float32 bytes)"
+    }
+  ],
+  "published_deployments_vs_the_600_build": {
+    "eval pod @40 (PUBLISHED)": {
+      "n": 40,
+      "is_subset_of_the_600_build": true,
+      "is_the_FIRST_N_PREFIX_of_the_600_build": true,
+      "meaning": "the published deployment is a strict, order-preserving PREFIX of the 600-episode build, so extending to 600 ADDS episodes and re-selects none - parity is preserved, not broken."
+    },
+    "pod1 @12": {
+      "n": 12,
+      "is_subset_of_the_600_build": true,
+      "is_the_FIRST_N_PREFIX_of_the_600_build": true,
+      "meaning": "the published deployment is a strict, order-preserving PREFIX of the 600-episode build, so extending to 600 ADDS episodes and re-selects none - parity is preserved, not broken."
+    }
+  },
+  "corrections_to_inherited_figures": [
+    {
+      "claim": "physicalai-val-f1b378f295ae is 78.5 % leaked into the parity train",
+      "measured_here": "62 of 80 ep_*.pt files are byte-identical to parity-train episodes = 77.5 %. The SAME 62 episodes give 62/79 = 78.48 % if the denominator is the 79 UNIQUE episode_ids rather than the 80 files. The inherited 78.5 % used the 79 denominator.",
+      "verdict": "SUBSTANTIALLY CONFIRMED - the leak is real and the same 62 episodes; only the denominator differs. The split stays REFUSED.",
+      "evidence_class": "MEASURED"
+    },
+    {
+      "claim": "S3's local caches overlap the parity corpus by 17.5 % (train) / 17.0 % (val)",
+      "measured_here": "BYTE-LEVEL overlap is 58/400 = 14.5 % and 14/100 = 14.0 %. The 17.5/17.0 figures were computed on episode_id, which collides.",
+      "verdict": "S3's caveat direction is right and its conclusion is unchanged (the caches are non-parity); the magnitude was over-stated by the colliding key.",
+      "evidence_class": "MEASURED"
+    },
+    {
+      "claim": "the 600-episode physicalai-val-0c5f7dac3b11 lives 'on the training pods'",
+      "measured_here": "It exists on EXACTLY ONE host: pod2, /workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11, 600 ep_*.pt, 66 GB. pod1's _epcache root holds ONLY the parity train and no val dir at all; pod1's val is the 12-ep /root/valdata copy. pod3 has NO clean val at any path.",
+      "verdict": "The build EXISTS (S3's key claim stands) but 'the training pods' plural is wrong, and the pod that has it is the one pod that is off-limits. This is the operational core of the ceiling.",
+      "evidence_class": "MEASURED"
+    }
+  ],
+  "blast_radius_question_closed": {
+    "question": "VAL_PARITY_REPORT.md 4.3 / 7.1 - does any single epcache root list BOTH val split dirs? If so, every number from the sorted(glob('*val*'))[-1] evaluator family against that root must be re-derived, starting with LEADERBOARD.md 8.",
+    "answer": "NO. MEASURED across all four pods, 2026-07-26:",
+    "per_root": {
+      "pod3 /workspace/pai_epcache": "holds the LEAKY val only (f1b378f295ae) + two train builds. No clean val -> [-1] picks the leaky split, but there is no clean alternative on that root to lose.",
+      "pod2 /workspace/data/physicalai_phase0/_epcache": "holds the CLEAN val only (0c5f7dac3b11 @600) + the parity train. [-1] picks the clean split.",
+      "pod1 /workspace/data/physicalai_phase0/_epcache": "holds the parity train ONLY - no val dir.",
+      "eval pod /root/valdata": "holds the CLEAN val @40 + comma + cosmos vals. No leaky split."
+    },
+    "verdict": "No root co-locates the two PhysicalAI val splits, so FINDING 1 is LATENT, never FIRED, on the current disk state. LEADERBOARD.md 8 does not need re-derivation on these grounds.",
+    "caveat": "This is the disk state TODAY (2026-07-26). It is not a statement about disk state at the time of any historical run, which no committed artifact records.",
+    "evidence_class": "MEASURED"
+  }
+}

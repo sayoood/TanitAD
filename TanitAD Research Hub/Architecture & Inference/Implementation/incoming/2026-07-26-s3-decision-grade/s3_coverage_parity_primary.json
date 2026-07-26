@@ -1,0 +1,322 @@
+{
+  "provenance": {
+    "artifact": "S3 manoeuvre-initiation-timing characterisation",
+    "date": "2026-07-26",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "limit": 0,
+    "tag": "parity_primary",
+    "band_names": [
+      "t_1_2",
+      "t_2_5",
+      "t_5_10",
+      "t_10_H",
+      "t_none"
+    ],
+    "band_edges_s": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "estimator": "episode_cluster_bootstrap (taniteval/ci.py) B=2000; overlapping_holdout_se NEVER used",
+    "caches": [
+      {
+        "role": "train",
+        "dir": "/workspace/s3parity/views/physicalai-train-e438721ae894",
+        "cache_name": "physicalai-train-e438721ae894",
+        "n_episode_files": 2376,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-train-e438721ae894"
+      },
+      {
+        "role": "val",
+        "dir": "/workspace/s3parity/views/physicalai-val-0c5f7dac3b11",
+        "cache_name": "physicalai-val-0c5f7dac3b11",
+        "n_episode_files": 600,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-val-0c5f7dac3b11"
+      }
+    ],
+    "mine_seconds": 1326.6
+  },
+  "train_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "n_windows_total": 406099,
+    "n_after_M1_observable_horizon": 170875,
+    "n_after_M1_M4_moving": 154016,
+    "n_admissible": 136484,
+    "rejected_by_M2_already_begun": 12957,
+    "rejected_by_M3_window_executing": 4575,
+    "coverage_of_all_windows": 0.3361,
+    "coverage_of_M1M4_windows": 0.8862,
+    "class_counts": {
+      "t_1_2": 2863,
+      "t_2_5": 8316,
+      "t_5_10": 9754,
+      "t_10_H": 927,
+      "t_none": 114624
+    },
+    "class_balance": {
+      "t_1_2": 0.021,
+      "t_2_5": 0.0609,
+      "t_5_10": 0.0715,
+      "t_10_H": 0.0068,
+      "t_none": 0.8398
+    },
+    "majority_class": "t_none",
+    "majority_rate": 0.8398,
+    "event_rate": 0.1602,
+    "ttm_distribution_event_windows": {
+      "n": 21860,
+      "mean": 5.138,
+      "sd": 2.669,
+      "deciles_s": [
+        1.0,
+        1.7,
+        2.5,
+        3.3,
+        4.0,
+        4.9,
+        5.7,
+        6.7,
+        7.8,
+        9.1,
+        11.3
+      ],
+      "hist_1s_bins": [
+        0,
+        2863,
+        2830,
+        2836,
+        2650,
+        2443,
+        2230,
+        1930,
+        1673,
+        1478,
+        906,
+        21
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.9,
+      4.9,
+      7.2
+    ],
+    "n_episodes_total": 2376,
+    "n_episodes_with_decision_point": 2206,
+    "n_episodes_with_an_EVENT": 570,
+    "episode_yield_rate": 0.9285
+  },
+  "val_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "n_windows_total": 102532,
+    "n_after_M1_observable_horizon": 43132,
+    "n_after_M1_M4_moving": 38481,
+    "n_admissible": 34337,
+    "rejected_by_M2_already_begun": 3001,
+    "rejected_by_M3_window_executing": 1143,
+    "coverage_of_all_windows": 0.3349,
+    "coverage_of_M1M4_windows": 0.8923,
+    "class_counts": {
+      "t_1_2": 575,
+      "t_2_5": 1780,
+      "t_5_10": 2336,
+      "t_10_H": 278,
+      "t_none": 29368
+    },
+    "class_balance": {
+      "t_1_2": 0.0167,
+      "t_2_5": 0.0518,
+      "t_5_10": 0.068,
+      "t_10_H": 0.0081,
+      "t_none": 0.8553
+    },
+    "majority_class": "t_none",
+    "majority_rate": 0.8553,
+    "event_rate": 0.1447,
+    "ttm_distribution_event_windows": {
+      "n": 4969,
+      "mean": 5.406,
+      "sd": 2.726,
+      "deciles_s": [
+        1.0,
+        1.8,
+        2.7,
+        3.5,
+        4.3,
+        5.2,
+        6.1,
+        7.1,
+        8.1,
+        9.32,
+        11.3
+      ],
+      "hist_1s_bins": [
+        0,
+        575,
+        579,
+        613,
+        588,
+        546,
+        486,
+        490,
+        442,
+        372,
+        268,
+        10
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      3.1,
+      5.2,
+      7.6
+    ],
+    "n_episodes_total": 600,
+    "n_episodes_with_decision_point": 558,
+    "n_episodes_with_an_EVENT": 139,
+    "episode_yield_rate": 0.93
+  },
+  "train_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "n_windows_total": 406099,
+    "n_after_M1_observable_horizon": 170875,
+    "n_after_M1_M4_moving": 154016,
+    "n_admissible": 99036,
+    "rejected_by_M2_already_begun": 36482,
+    "rejected_by_M3_window_executing": 18498,
+    "coverage_of_all_windows": 0.2439,
+    "coverage_of_M1M4_windows": 0.643,
+    "class_counts": {
+      "t_1_2": 7702,
+      "t_2_5": 16622,
+      "t_5_10": 14880,
+      "t_10_H": 918,
+      "t_none": 58914
+    },
+    "class_balance": {
+      "t_1_2": 0.0778,
+      "t_2_5": 0.1678,
+      "t_5_10": 0.1502,
+      "t_10_H": 0.0093,
+      "t_none": 0.5949
+    },
+    "majority_class": "t_none",
+    "majority_rate": 0.5949,
+    "event_rate": 0.4051,
+    "ttm_distribution_event_windows": {
+      "n": 40122,
+      "mean": 4.515,
+      "sd": 2.585,
+      "deciles_s": [
+        1.0,
+        1.5,
+        2.0,
+        2.6,
+        3.3,
+        4.0,
+        4.9,
+        5.9,
+        7.0,
+        8.4,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        7702,
+        6554,
+        5510,
+        4558,
+        3951,
+        3528,
+        3088,
+        2384,
+        1929,
+        884,
+        34
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.3,
+      4.0,
+      6.5
+    ],
+    "n_episodes_total": 2376,
+    "n_episodes_with_decision_point": 2056,
+    "n_episodes_with_an_EVENT": 1239,
+    "episode_yield_rate": 0.8653
+  },
+  "val_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "n_windows_total": 102532,
+    "n_after_M1_observable_horizon": 43132,
+    "n_after_M1_M4_moving": 38481,
+    "n_admissible": 24987,
+    "rejected_by_M2_already_begun": 8922,
+    "rejected_by_M3_window_executing": 4572,
+    "coverage_of_all_windows": 0.2437,
+    "coverage_of_M1M4_windows": 0.6493,
+    "class_counts": {
+      "t_1_2": 1780,
+      "t_2_5": 3737,
+      "t_5_10": 3799,
+      "t_10_H": 315,
+      "t_none": 15356
+    },
+    "class_balance": {
+      "t_1_2": 0.0712,
+      "t_2_5": 0.1496,
+      "t_5_10": 0.152,
+      "t_10_H": 0.0126,
+      "t_none": 0.6146
+    },
+    "majority_class": "t_none",
+    "majority_rate": 0.6146,
+    "event_rate": 0.3854,
+    "ttm_distribution_event_windows": {
+      "n": 9631,
+      "mean": 4.712,
+      "sd": 2.681,
+      "deciles_s": [
+        1.0,
+        1.5,
+        2.0,
+        2.7,
+        3.4,
+        4.3,
+        5.2,
+        6.2,
+        7.3,
+        8.8,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        1780,
+        1460,
+        1198,
+        1079,
+        969,
+        910,
+        735,
+        651,
+        534,
+        305,
+        10
+      ]
+    },
+    "equal_mass_quartile_edges_s": [
+      2.4,
+      4.3,
+      6.7
+    ],
+    "n_episodes_total": 600,
+    "n_episodes_with_decision_point": 520,
+    "n_episodes_with_an_EVENT": 312,
+    "episode_yield_rate": 0.8667
+  }
+}

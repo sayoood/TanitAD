@@ -1,0 +1,458 @@
+{
+  "provenance": {
+    "artifact": "S3 manoeuvre-initiation-timing characterisation",
+    "date": "2026-07-26",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "limit": 0,
+    "tag": "parity_primary",
+    "band_names": [
+      "t_1_2",
+      "t_2_5",
+      "t_5_10",
+      "t_10_H",
+      "t_none"
+    ],
+    "band_edges_s": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "estimator": "episode_cluster_bootstrap (taniteval/ci.py) B=2000; overlapping_holdout_se NEVER used",
+    "caches": [
+      {
+        "role": "train",
+        "dir": "/workspace/s3parity/views/physicalai-train-e438721ae894",
+        "cache_name": "physicalai-train-e438721ae894",
+        "n_episode_files": 2376,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-train-e438721ae894"
+      },
+      {
+        "role": "val",
+        "dir": "/workspace/s3parity/views/physicalai-val-0c5f7dac3b11",
+        "cache_name": "physicalai-val-0c5f7dac3b11",
+        "n_episode_files": 600,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-val-0c5f7dac3b11"
+      }
+    ],
+    "mine_seconds": 1326.6
+  },
+  "train_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "PRIMARY_spec_edges": {
+      "edges_s": [
+        2.0,
+        5.0,
+        10.0
+      ],
+      "interval_names": [
+        "[1.0,2.0)",
+        "[2.0,5.0)",
+        "[5.0,10.0)",
+        "[10.0,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        2863,
+        8316,
+        9754,
+        927,
+        114624
+      ],
+      "balance": [
+        0.021,
+        0.0609,
+        0.0715,
+        0.0068,
+        0.8398
+      ],
+      "majority_rate": 0.8398,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 136484
+    },
+    "SECONDARY_equal_mass_quartiles": {
+      "edges_s": [
+        2.9000000000000004,
+        4.9,
+        7.2
+      ],
+      "interval_names": [
+        "[1.0,2.9000000000000004)",
+        "[2.9000000000000004,4.9)",
+        "[4.9,7.2)",
+        "[7.2,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        5400,
+        5516,
+        5354,
+        5590,
+        114624
+      ],
+      "balance": [
+        0.0396,
+        0.0404,
+        0.0392,
+        0.041,
+        0.8398
+      ],
+      "majority_rate": 0.8398,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 136484
+    },
+    "full_distribution_event_windows": {
+      "n": 21860,
+      "mean": 5.138,
+      "sd": 2.669,
+      "deciles_s": [
+        1.0,
+        1.7,
+        2.5,
+        3.3,
+        4.0,
+        4.9,
+        5.7,
+        6.7,
+        7.8,
+        9.1,
+        11.3
+      ],
+      "hist_1s_bins": [
+        0,
+        2863,
+        2830,
+        2836,
+        2650,
+        2443,
+        2230,
+        1930,
+        1673,
+        1478,
+        906,
+        21
+      ]
+    },
+    "mae_median_constant_baseline": {
+      "median_const_s": 4.9,
+      "mae_of_median_constant_s": 2.2632,
+      "note": "the MAE-optimal constant; ttm_MAE_skill_s is measured against THIS, never against 0"
+    }
+  },
+  "val_lat": {
+    "axis": "lat",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "PRIMARY_spec_edges": {
+      "edges_s": [
+        2.0,
+        5.0,
+        10.0
+      ],
+      "interval_names": [
+        "[1.0,2.0)",
+        "[2.0,5.0)",
+        "[5.0,10.0)",
+        "[10.0,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        575,
+        1780,
+        2336,
+        278,
+        29368
+      ],
+      "balance": [
+        0.0167,
+        0.0518,
+        0.068,
+        0.0081,
+        0.8553
+      ],
+      "majority_rate": 0.8553,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 34337
+    },
+    "SECONDARY_equal_mass_quartiles": {
+      "edges_s": [
+        3.1,
+        5.2,
+        7.6000000000000005
+      ],
+      "interval_names": [
+        "[1.0,3.1)",
+        "[3.1,5.2)",
+        "[5.2,7.6000000000000005)",
+        "[7.6000000000000005,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        1214,
+        1255,
+        1213,
+        1287,
+        29368
+      ],
+      "balance": [
+        0.0354,
+        0.0365,
+        0.0353,
+        0.0375,
+        0.8553
+      ],
+      "majority_rate": 0.8553,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 34337
+    },
+    "full_distribution_event_windows": {
+      "n": 4969,
+      "mean": 5.406,
+      "sd": 2.726,
+      "deciles_s": [
+        1.0,
+        1.8,
+        2.7,
+        3.5,
+        4.3,
+        5.2,
+        6.1,
+        7.1,
+        8.1,
+        9.32,
+        11.3
+      ],
+      "hist_1s_bins": [
+        0,
+        575,
+        579,
+        613,
+        588,
+        546,
+        486,
+        490,
+        442,
+        372,
+        268,
+        10
+      ]
+    },
+    "mae_median_constant_baseline": {
+      "median_const_s": 5.2,
+      "mae_of_median_constant_s": 2.3309,
+      "note": "the MAE-optimal constant; ttm_MAE_skill_s is measured against THIS, never against 0"
+    }
+  },
+  "train_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "PRIMARY_spec_edges": {
+      "edges_s": [
+        2.0,
+        5.0,
+        10.0
+      ],
+      "interval_names": [
+        "[1.0,2.0)",
+        "[2.0,5.0)",
+        "[5.0,10.0)",
+        "[10.0,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        7702,
+        16622,
+        14880,
+        918,
+        58914
+      ],
+      "balance": [
+        0.0778,
+        0.1678,
+        0.1502,
+        0.0093,
+        0.5949
+      ],
+      "majority_rate": 0.5949,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 99036
+    },
+    "SECONDARY_equal_mass_quartiles": {
+      "edges_s": [
+        2.3000000000000003,
+        4.0,
+        6.5
+      ],
+      "interval_names": [
+        "[1.0,2.3000000000000003)",
+        "[2.3000000000000003,4.0)",
+        "[4.0,6.5)",
+        "[6.5,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        9810,
+        9956,
+        10300,
+        10056,
+        58914
+      ],
+      "balance": [
+        0.0991,
+        0.1005,
+        0.104,
+        0.1015,
+        0.5949
+      ],
+      "majority_rate": 0.5949,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 99036
+    },
+    "full_distribution_event_windows": {
+      "n": 40122,
+      "mean": 4.515,
+      "sd": 2.585,
+      "deciles_s": [
+        1.0,
+        1.5,
+        2.0,
+        2.6,
+        3.3,
+        4.0,
+        4.9,
+        5.9,
+        7.0,
+        8.4,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        7702,
+        6554,
+        5510,
+        4558,
+        3951,
+        3528,
+        3088,
+        2384,
+        1929,
+        884,
+        34
+      ]
+    },
+    "mae_median_constant_baseline": {
+      "median_const_s": 4.0,
+      "mae_of_median_constant_s": 2.1648,
+      "note": "the MAE-optimal constant; ttm_MAE_skill_s is measured against THIS, never against 0"
+    }
+  },
+  "val_lon": {
+    "axis": "lon",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "PRIMARY_spec_edges": {
+      "edges_s": [
+        2.0,
+        5.0,
+        10.0
+      ],
+      "interval_names": [
+        "[1.0,2.0)",
+        "[2.0,5.0)",
+        "[5.0,10.0)",
+        "[10.0,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        1780,
+        3737,
+        3799,
+        315,
+        15356
+      ],
+      "balance": [
+        0.0712,
+        0.1496,
+        0.152,
+        0.0126,
+        0.6146
+      ],
+      "majority_rate": 0.6146,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 24987
+    },
+    "SECONDARY_equal_mass_quartiles": {
+      "edges_s": [
+        2.4000000000000004,
+        4.3,
+        6.7
+      ],
+      "interval_names": [
+        "[1.0,2.4000000000000004)",
+        "[2.4000000000000004,4.3)",
+        "[4.3,6.7)",
+        "[6.7,12.0)",
+        "t_none"
+      ],
+      "counts": [
+        2405,
+        2368,
+        2361,
+        2497,
+        15356
+      ],
+      "balance": [
+        0.0963,
+        0.0948,
+        0.0945,
+        0.0999,
+        0.6146
+      ],
+      "majority_rate": 0.6146,
+      "qwk_of_majority_baseline": 0.0,
+      "n": 24987
+    },
+    "full_distribution_event_windows": {
+      "n": 9631,
+      "mean": 4.712,
+      "sd": 2.681,
+      "deciles_s": [
+        1.0,
+        1.5,
+        2.0,
+        2.7,
+        3.4,
+        4.3,
+        5.2,
+        6.2,
+        7.3,
+        8.8,
+        11.1
+      ],
+      "hist_1s_bins": [
+        0,
+        1780,
+        1460,
+        1198,
+        1079,
+        969,
+        910,
+        735,
+        651,
+        534,
+        305,
+        10
+      ]
+    },
+    "mae_median_constant_baseline": {
+      "median_const_s": 4.3,
+      "mae_of_median_constant_s": 2.2696,
+      "note": "the MAE-optimal constant; ttm_MAE_skill_s is measured against THIS, never against 0"
+    }
+  }
+}
