@@ -97,6 +97,46 @@ than the paired form — on shared windows it is **invalid**.
   **K = 20 (2.0 s)** — the blind horizon. **A K ≥ 100 co-primary requires a closed-loop rollout**
   (E1a's surface), which requires GPU.
 
+### 0.7 🟥 VOID SECONDARIES — a metric that cannot vary with the model may not kill a run
+
+> **A gate secondary whose value is fixed by a LABEL or HARNESS defect carries zero information about
+> the model. It must be adjudicated INSTRUMENT-FAIL, never MODEL-FAIL.** Refusing to decide on a broken
+> measurement is not moving the bar — deciding on it is.
+
+**Standing instance, effective immediately — `nonav_route_beats_majority >= 1` is VOID.**
+
+`Project Steering/Gates/flagship-v4.card.json` lists it among the **KILL** secondaries. It **cannot pass**,
+for a reason that has nothing to do with the checkpoint: the strategic route **target is a lookup of the
+route input** (`refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]`), so training route-CE reaches
+**exactly 0.0** by ~step 14.5 k and **`route_skill` is 0.0 BY CONSTRUCTION**; the follow-head answers
+`straight` **240/240**. The metric measures **the label bug**, not the model. *(MEASURED —
+`…/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md`.)*
+
+**Adjudication for the flagship-v4 30 k gate (and any gate carrying this secondary):**
+
+1. Record `nonav_route_beats_majority` as **`INSTRUMENT-FAIL (VOID)`** with this section as its citation.
+   **It does NOT contribute to the kill conjunction.**
+2. Render the verdict from the remaining KILL secondaries plus the co-primary. *(The committed dry-run
+   already separates these: `v1_g1_dryrun_gate_FIXED.json` → `split_8_KILL_5_REPORT = {kill_adjudicated: 8,
+   report_only: 5, verdict_from_kill_only: "CONTINUE"}`.)*
+3. **State the void secondary explicitly in the verdict output** — a suppressed criterion that is not
+   printed is indistinguishable from one that passed.
+4. **The metric is re-armed only after the label fix lands** — the two config flags that already exist,
+   `--labels-v2` (⇒ `route_target_v21` / `route_from_future_v3`, coverage 27 % → 80.4 %) and
+   `--v2-route-from-vision --route-vis-weight 0.3`. Once a run trains with real route supervision, this
+   secondary becomes meaningful again and returns to the kill set.
+
+⚠️ **Why this rule exists.** Without it, the 30 k gate would **kill a healthy arm for a label bug** — and
+the fix is two flags we already ship. That is the most expensive possible way to be wrong: a
+correctly-behaving model discarded on a measurement that could never have said anything else.
+
+⚠️ **The general rule, so this is not a one-off exemption.** Before a gate renders, every secondary must
+answer: *could this metric have taken a different value if the model were better?* If not — because a
+label is degenerate, an emitter is missing, a field is declared void, or the harness never exercises the
+path — it is **VOID and report-only**. Precedent in this program: `reached_at_step: 450` (declared void by
+the registry, yet published in this very protocol for four days, §4b) and the `decorr`-never-on window that
+made the entire v3enc gate un-interpretable.
+
 ---
 
 ## 1. The rule
