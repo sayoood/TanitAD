@@ -225,4 +225,131 @@ the ceiling, as it must be.
 > written and needs no new science:** `taniteval.ood.verdict`'s **clause 2**, the out-of-envelope
 > fractions, which are model-dependent, unbounded, and — as §4 shows — fire hard.
 
+---
+
+## 4. T1 — the K-sweep, MEASURED
+
+`flagship-v4-fromscratch` @ 29999 (`ckpt_md5 8771c1d9d3da696dcde2a745d628f6a8`), closed loop,
+40 episodes, stride 8, goal-mode **ORACLE**, `episode_cluster_bootstrap` B = 2000.
+Artifacts: `artifacts/ksweep_results.json`, `artifacts/perwindow_K*.pt`, log `artifacts/ksweep.log`.
+
+### 4.1 Two harness checks first — both reproduce the committed gate artifact EXACTLY
+
+| quantity | this run | committed gate artifact | |
+|---|---|---|:--:|
+| K = 185 overall `corridor_departure_rate` | **0.6388 [0.5565, 0.7128]** | 0.6388 [0.5565, 0.7128] | ✅ |
+| K = 185 **junction** CDR (n = 6/6) | **0.8432 [0.7874, 0.8919]** | 0.8432 [0.7874, 0.8919] | ✅ |
+| K = 185 peak XTE / OOD peak ratio | **33.452 m / 1.2741** | 33.452 / 1.2741 | ✅ |
+| K = 185 `frac_steps_lat_over_3m` / `frac_windows_out` | **0.54634 / 0.9024** | 0.54634 / 0.9024 (= the 54.63 % / 90.24 % in `GATE_PROTOCOL` §0.1) | ✅ |
+| K = 20 overall CDR / peak XTE / ratio | **0.0203 [0.0078, 0.0364] / 0.630 / 1.0504** | 0.0203 [0.0078,0.0364] / 0.630 / 1.050 | ✅ |
+| n at each K | **41 / 40** and **881 / 40** | 41/40 · 881/40 | ✅ |
+
+Together with **P3** (v1 = 0.4271 [0.3675, 0.4871]) that is **three independent reproductions** of
+committed numbers on a freshly-synced host, before any new number was quoted.
+
+### 4.2 ⭐ THE SWEEP TABLE — yield × envelope × departure
+
+`yield` columns are `MEASURED` here on the **40-episode** deployment; the **600-episode** cluster yields
+are `PUBLISHED` (`POD2_EVAL_HOST.md` §3.1) and are what HP-2's 200-cluster bar is read against.
+Envelope columns are the `taniteval.ood` disjunction: **clause 1 (ratio > 1.5) is VOID at every row**
+(§3), so **every verdict below is carried by clause 2 alone.**
+
+<!-- KSWEEP_TABLE -->
+
+### 4.3 How far outside the envelope the loop actually goes
+
+The fraction says *whether*; this says *how far*. Peak deviation per window, K = 185 rollout
+(41 windows / 40 clusters), by elapsed k — against the P1 validated edges **3.0 m / 12°**:
+
+| elapsed | p50 peak &#124;dlat&#124; | p90 | max | p50 peak &#124;dψ&#124; | p90 | max |
+|---:|---:|---:|---:|---:|---:|---:|
+| 2.0 s (K = 20) | 0.25 m | 0.94 m | 4.81 m | 1.67° | 7.66° | 24.25° |
+| **6.0 s (K = 60)** | **2.92 m** | ⛔ **9.69 m (3.2×)** | 20.63 m | 6.56° | ⛔ **24.31° (2.0×)** | 60.15° |
+| **7.0 s (K = 70)** | ⛔ **3.96 m — the MEDIAN window is outside** | ⛔ **13.99 m (4.7×)** | 21.31 m | 7.22° | ⛔ **36.87° (3.1×)** | 66.31° |
+| 12.0 s (K = 120) | 9.12 m | 29.82 m | 35.74 m | 17.86° | 68.41° | 135.19° |
+| 18.5 s (K = 185) | 22.42 m | ⛔ **72.24 m (24×)** | **138.91 m (46×)** | 27.24° | 77.67° | 135.19° |
+
+> ⚠️ **This is the number that decides whether "re-validate P1" is cheap.** Covering K = 60 to the p90
+> means validating the ground-plane homography out to **~10 m lateral / ~24° yaw** — from a
+> `f_eff = 266 px` front-wide camera at `h = 1.5 m`. That is not an extension of the existing sweep;
+> it is a different fidelity regime, and `clhorizon.sampling_homography`'s own docstring says the warp
+> *"degrades gracefully rather than faithfully"* beyond the measured range.
+
+### 4.4 ⚠️ Method note, measured rather than assumed: **truncating a long rollout is NOT a short rollout**
+
+Each K is its own experiment. `corridor_rollout`'s nearest-reference search runs over the **K + 1**
+future poses, so the same window at the same `t0` is fed a different frame at different K and the
+trajectories diverge. MEASURED on the 41 windows the K = 185 and K = 20 runs share:
+
+| | max &#124;Δ&#124; over the first 20 steps | mean &#124;Δ&#124; |
+|---|---:|---:|
+| lateral deviation | **0.149 m** | 0.00085 m |
+| heading deviation | **9.24°** | 0.056° |
+
+Consequence, on those same 41 windows: **`CDR@1.75` is identical** (0.01463 vs 0.01463) — the corridor
+metric is unaffected — but the **envelope fraction moves 0.0732 → 0.0488**, because a 9° yaw excursion
+straddles the 12° edge. **So: the truncation curves in `ksweep_results.json` are quotable for the
+lateral/CDR family and INDICATIVE ONLY for the yaw-driven envelope fraction.** Every envelope number in
+§4.2 is from a real rollout at that K, never a truncation.
+
+---
+
+## 6. T2 (§9.6) — v1 @ 600 registered as a NEW row. ✅ DONE
+
+`Project Steering/MODEL_REGISTRY.md` gains **§1.2a "v1's TWO val DEPLOYMENTS — two rows, never one
+number"**, plus a deployment stamp on the §5 leaderboard table. `tools/registry_lint.py` →
+**PASS (0 errors, 2 pre-existing warnings, neither on the edited lines)**.
+
+| deployment | `ade_0_2s` full-set | episode-cluster bootstrap CI95 (B = 2000) | n windows | **n clusters** | CV floor, same deployment | paired Δ vs CV |
+|---|---|---|---:|---:|---|---|
+| 40 eps — CANONICAL | **0.4271** | [0.3675, 0.4871] hw 0.0299 | 881 | **40** | 0.8377 | +0.4106 [+0.2050, +0.6240] ✅ sep |
+| **600 eps — NEW** | **0.4108** | [0.3956, 0.4273] hw 0.0159 | **13 198** | **600** | ⚠️ **0.6917** | +0.2809 [+0.2457, +0.3142] ✅ sep |
+
+Every element the brief required is in the row: **n as BOTH counts**, the deployment name, the
+estimator, and the non-substitutability note — written as a **rule block**, not a caveat, with three
+binding clauses (never mix deployments · always quote both n · name the estimator) and the *reason*
+stated as a measurement rather than a style preference: **the 600 is an EASIER corpus** (CV floor
+0.8377 → 0.6917), so v1's margin over the floor **falls** 0.4106 → 0.2809 while its absolute ADE
+improves. **A 40-vs-600 delta is a corpus-composition result, not a model result.**
+
+⚠️ **The one thing I added beyond the brief, because it is the sharper consequence:** the row records
+that **`along_track_vs_cv` flips from "tie" to "model wins, separated" between the two deployments with
+the point estimate moving 0.7 %** — so *any verdict in the registry that rests on a 40-episode "not
+separated" is **unpowered**, not refuted.* That is a standing caution about the registry's own contents
+and it belongs in the registry.
+
+⛔ **The 600-episode number is deliberately NOT in the §5 leaderboard table.** That table is now stamped
+as the 40-episode / 881-window deployment on its own line, immediately above the header, because a
+ranked table is exactly where a substitution would happen.
+
+---
+
+## 8. Escalations — raised here, not left in a README
+
+1. ⭐⭐ **The horizon recommendation must be re-issued with its envelope clause corrected before any gate
+   card is written.** `POD2_EVAL_HOST.md` headline #10 stamps `MEASURED` on a compound that includes the
+   envelope clause its own §4.5 labels `HYPOTHESIS`; that clause is now measured and is **false**
+   (§5, §7). The *yield* half is untouched and still binds at K ≤ 70. **Owner: whoever writes the next
+   `GATE_*.md` / the `POD2_EVAL_HOST.md` author.** Retraction row appended.
+2. ⛔ **Two live constants adjudicate on a criterion that is arithmetically incapable of failing** —
+   `e1b_eval.py:403` and `e1c_common.py:34`, both `<= 1.30` against an estimator whose supremum is
+   **1.298888**. They must be re-adjudicated **INSTRUMENT-FAIL (VOID)** per `GATE_PROTOCOL` §0.7 and
+   replaced by `ood.verdict`'s clause 2, which already exists. **This is not a re-run: `readjudicate`
+   works from fields the artifacts already carry.** **Owner: E1b/E1c's author.**
+3. ⛔ **`RATIO_EXTRAPOLATION_X = 1.5` in `taniteval/ood.py` is itself unreachable** (by 0.201112) on this
+   envelope map. The module is correct to report `informative: false`, but a constant that can never
+   fire should say so at its definition, and `criterion_1` should be stamped VOID rather than merely
+   `fires: false` — otherwise the next reader will treat "clause 1 did not fire" as evidence.
+   **Owner: `taniteval/ood.py`'s author.**
+4. ⛔ **`taniteval/clhorizon.py::run_v4` is not runnable** (`RawEp` has no `.frames`, §2.2). One-line fix:
+   `_data.load_raw` instead of `_data.load_frames`. **I did not patch it** — it is pinned by a sibling
+   stream's test and landed hours ago. **Owner: `clhorizon.py`'s author.**
+5. ⚠️ **The repo has no interpreter-portability floor and it has now cost a designated eval host.**
+   `python3 -m compileall` under the oldest supported interpreter (**3.11**, which is what pod2 runs) is
+   a 30-second check that catches the whole PEP 701 class. **Owner: `tools/ci_gate.py`.**
+6. ⚠️ **The `p1_envelope` JSON was not on pod2** and had to be copied from the repo
+   (`…/2026-07-23-lowood-lanekeeping-refc/lowood_flagship_ci.json` → `pod2:/root/lanekeep/`). Any future
+   eval that needs an OOD ratio on pod2 needs it there. **Owner: whoever maintains the pod2 harness
+   bundle** — it belongs in the sync, not in an agent's memory.
+
 

@@ -113,8 +113,18 @@ def _confusion(rows, key, valid_key=None):
 
 
 def _print_conf(m, title, kin_label):
+    # NOTE (2026-07-26): the header literal is built OUTSIDE the f-string. A
+    # backslash inside a replacement field is PEP 701, i.e. Python >= 3.12
+    # ONLY, and pod2 (the n>=200 eval host) runs 3.11.10, where the previous
+    # form raised `SyntaxError: f-string expression part cannot include a
+    # backslash` at import time. Same output, no PEP 701.
+    # `r"kin \\ vlm"` reproduces the ORIGINAL value byte-for-byte (the old
+    # literal was `'kin \\\\ vlm'`, i.e. TWO backslashes in the output). A
+    # single `\` was probably intended, but this is a portability fix, not a
+    # cosmetic one — the printed header is unchanged.
+    _hdr = r"kin \\ vlm"
     print(f"\n=== {title} ===")
-    print(f"  {'kin \\\\ vlm':>12}" + "".join(f"{NAMES[b]:>10}" for b in ORDER)
+    print(f"  {_hdr:>12}" + "".join(f"{NAMES[b]:>10}" for b in ORDER)
           + f"{'row n':>8}")
     for a in ORDER:
         row = m[a]

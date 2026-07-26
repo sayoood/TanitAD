@@ -463,6 +463,16 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
             print(f"  [v4-eval] planner-path {n}/{len(sel)} windows "
                   f"({time.time() - t0:.0f}s)", flush=True)
 
+    # NOTE (2026-07-26): the two suffixes below are built OUTSIDE the f-string.
+    # A multi-line expression inside a replacement field is PEP 701, i.e.
+    # Python >= 3.12 ONLY, and the designated n>=200 eval host (pod2) runs
+    # 3.11.10 — where the previous form raised `SyntaxError: unterminated
+    # string literal` at import time and made EVERY v4 eval path (including
+    # the registered closed-loop co-primary, which imports load_v4_from_ck
+    # from this module) un-runnable on that host. Same string, no PEP 701.
+    _oracle_tag = " [GOAL ORACLE]" if goal_mode == "oracle" else ""
+    _fb = goal_rec.get("fallback")
+    _fb_tag = (" [FALLBACK=" + str(_fb) + "]") if _fb else ""
     data = {
         "pred": torch.cat(P), "gt": torch.cat(G).float(),
         "cv": torch.cat(C).float(), "eid": EID,
@@ -474,9 +484,7 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                   f"lambda_plan=1.0, {head.decoder.anchors.shape[0]} anchors), "
                   f"4wp sub-selected at steps {wp_steps}, "
                   f"goal_mode={goal_mode}"
-                  f"{' [GOAL ORACLE]' if goal_mode == 'oracle' else ''}"
-                  f"{' [FALLBACK=' + str(goal_rec.get('fallback')) + ']'
-                     if goal_rec.get('fallback') else ''}"),
+                  f"{_oracle_tag}{_fb_tag}"),
     }
     if dense_ok:
         # `gt_dense` comes from `refb_labels.waypoint_targets` (the head's own

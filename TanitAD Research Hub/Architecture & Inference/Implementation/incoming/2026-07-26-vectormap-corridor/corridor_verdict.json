@@ -1,0 +1,376 @@
+{
+ "n_scenes": 51,
+ "n_ok": 51,
+ "estimator": {
+  "interval": "episode_cluster_bootstrap",
+  "resampling_unit": "AlpaSim scene",
+  "n_boot": 2000,
+  "deprecated_and_refused": "overlapping_holdout_se"
+ },
+ "P1_geometry": {
+  "lanes_per_scene": {
+   "min": 40,
+   "max": 702,
+   "median": 193.0,
+   "p10": 83.0,
+   "p90": 431.0
+  },
+  "lanes_per_scene_INHERITED_claim": "130-472",
+  "lane_width_m_ci": {
+   "mean": 3.3589,
+   "lo": 3.2429,
+   "hi": 3.4876,
+   "ci95": 0.1223,
+   "se": 0.0613,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "lane_width_m_scene_range": [
+   2.252,
+   4.769
+  ],
+  "n_scenes_width_in_band": 47,
+  "frac_lanes_with_edges": 1.0,
+  "pass": true
+ },
+ "P2_frame_proof": {
+  "containment_rate_ci": {
+   "mean": 0.9837,
+   "lo": 0.9644,
+   "hi": 0.9985,
+   "ci95": 0.0171,
+   "se": 0.0088,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "n_scenes_ge_0.90": 48,
+  "n_scenes_ge_0.95": 48,
+  "n_scenes_eq_1.00": 42,
+  "worst_scenes": [
+   {
+    "scene": "bfb44da0",
+    "containment": 0.6584,
+    "n_lanes": 48,
+    "median_dist_to_centreline_m": 1.186,
+    "lane_width_m": 2.734
+   },
+   {
+    "scene": "0580c069",
+    "containment": 0.7376,
+    "n_lanes": 150,
+    "median_dist_to_centreline_m": 1.049,
+    "lane_width_m": 3.897
+   },
+   {
+    "scene": "001564ce",
+    "containment": 0.8416,
+    "n_lanes": 225,
+    "median_dist_to_centreline_m": 0.707,
+    "lane_width_m": 2.959
+   }
+  ],
+  "gate1_style_match_rate_ci": {
+   "mean": 0.9826,
+   "lo": 0.9635,
+   "hi": 0.9969,
+   "ci95": 0.0167,
+   "se": 0.0086,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "note": "containment = point-in-lane-ring (left edge + reversed right edge). gate1_style = dist_to_nearest_centreline <= max(halfwidth, 1.0) -- an ASSOCIATION test, reproduced here only so the two are comparable. They are different quantities.",
+  "pass": true
+ },
+ "P3_corridor": {
+  "halfwidth_m_ci": {
+   "mean": 1.8065,
+   "lo": 1.6883,
+   "hi": 1.944,
+   "ci95": 0.1279,
+   "se": 0.0659,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "halfwidth_m_scene_p10_p90": [
+   1.4,
+   2.5
+  ],
+  "PROPOSED_constant_in_taniteval_corridor": 1.75,
+  "abs_lat_offset_p90_m_ci": {
+   "mean": 1.3333,
+   "lo": 0.666,
+   "hi": 2.5205,
+   "ci95": 0.9273,
+   "se": 0.5418,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "ring_vs_bounds_agreement_ci": {
+   "mean": 0.9916,
+   "lo": 0.9871,
+   "hi": 0.9953,
+   "ci95": 0.0041,
+   "se": 0.0021,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "n_scenes_agreement_ge_0.90": 51,
+  "worst_agreement": 0.9109,
+  "legacy_reparam_error_p90_m_max": 0.023,
+  "frac_finite_min": 0.6584,
+  "pass": true,
+  "proposed_constant_within_ci": true
+ },
+ "effective_halfwidth": {
+  "what": "min(d_left, d_right): metres of room from the EGO'S OWN position to the nearer lane edge. The matched threshold for a cross-track error measured from the reference path.",
+  "ci": {
+   "mean": 1.3907,
+   "lo": 1.2886,
+   "hi": 1.4998,
+   "ci95": 0.1056,
+   "se": 0.0538,
+   "reducer": "mean",
+   "n_windows": 51,
+   "n_episodes": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "scene_p10_p90": [
+   1.065,
+   1.722
+  ],
+  "pooled_steps": 10275,
+  "pooled_median_m": 1.394,
+  "pooled_p10_m": 0.847,
+  "frac_steps_room_below_proposed_1.75": 0.8567,
+  "n_scenes_tighter_than_proposed": 46,
+  "n_scenes": 51,
+  "verdict": "1.75 m is vindicated as HALF THE LANE WIDTH (1.802 CI [1.686,1.939]) but is TOO PERMISSIVE as a departure threshold, because the ego is not centred in its lane."
+ },
+ "horizon": {
+  "scene_duration_s": {
+   "median": 20.0,
+   "min": 19.9,
+   "max": 20.0
+  },
+  "dt_s_median": 0.1,
+  "n_poses": {
+   "median": 202,
+   "min": 201,
+   "max": 202
+  },
+  "K_ceiling_median_scene": 193,
+  "K60_feasible_scenes": 51,
+  "K70_feasible_scenes": 51,
+  "note": "K ceiling uses taniteval.corridor.horizon_ceiling(T, W=8): a window exists only if T - W - K >= 1."
+ },
+ "HP4": {
+  "n_topology_classes": 23,
+  "resampling_unit": "AlpaSim scene",
+  "bar_single_arm": 40,
+  "bar_two_arm": 200,
+  "classes": [
+   {
+    "class": "S|S",
+    "n_scenes": 38,
+    "n_branch_points": 177,
+    "scene_yield": 0.7451
+   },
+   {
+    "class": "R|S",
+    "n_scenes": 33,
+    "n_branch_points": 195,
+    "scene_yield": 0.6471
+   },
+   {
+    "class": "L|S",
+    "n_scenes": 30,
+    "n_branch_points": 138,
+    "scene_yield": 0.5882
+   },
+   {
+    "class": "L|R",
+    "n_scenes": 21,
+    "n_branch_points": 68,
+    "scene_yield": 0.4118
+   },
+   {
+    "class": "L|L",
+    "n_scenes": 17,
+    "n_branch_points": 31,
+    "scene_yield": 0.3333
+   },
+   {
+    "class": "L|R|S",
+    "n_scenes": 17,
+    "n_branch_points": 81,
+    "scene_yield": 0.3333
+   },
+   {
+    "class": "S|S|S",
+    "n_scenes": 10,
+    "n_branch_points": 13,
+    "scene_yield": 0.1961
+   },
+   {
+    "class": "L|L|L",
+    "n_scenes": 9,
+    "n_branch_points": 15,
+    "scene_yield": 0.1765
+   },
+   {
+    "class": "L|L|S",
+    "n_scenes": 8,
+    "n_branch_points": 14,
+    "scene_yield": 0.1569
+   },
+   {
+    "class": "R|S|S",
+    "n_scenes": 8,
+    "n_branch_points": 12,
+    "scene_yield": 0.1569
+   },
+   {
+    "class": "L|S|S",
+    "n_scenes": 6,
+    "n_branch_points": 13,
+    "scene_yield": 0.1176
+   },
+   {
+    "class": "R|R",
+    "n_scenes": 5,
+    "n_branch_points": 6,
+    "scene_yield": 0.098
+   },
+   {
+    "class": "R|R|S",
+    "n_scenes": 4,
+    "n_branch_points": 4,
+    "scene_yield": 0.0784
+   },
+   {
+    "class": "L|L|L|L",
+    "n_scenes": 4,
+    "n_branch_points": 6,
+    "scene_yield": 0.0784
+   },
+   {
+    "class": "L|L|R",
+    "n_scenes": 3,
+    "n_branch_points": 4,
+    "scene_yield": 0.0588
+   },
+   {
+    "class": "L|L|R|S",
+    "n_scenes": 2,
+    "n_branch_points": 3,
+    "scene_yield": 0.0392
+   },
+   {
+    "class": "L|L|L|S",
+    "n_scenes": 2,
+    "n_branch_points": 3,
+    "scene_yield": 0.0392
+   },
+   {
+    "class": "L|R|S|S",
+    "n_scenes": 1,
+    "n_branch_points": 1,
+    "scene_yield": 0.0196
+   },
+   {
+    "class": "R|R|R",
+    "n_scenes": 1,
+    "n_branch_points": 1,
+    "scene_yield": 0.0196
+   },
+   {
+    "class": "L|L|S|S",
+    "n_scenes": 1,
+    "n_branch_points": 1,
+    "scene_yield": 0.0196
+   },
+   {
+    "class": "L|L|L|R",
+    "n_scenes": 1,
+    "n_branch_points": 1,
+    "scene_yield": 0.0196
+   },
+   {
+    "class": "L|R|R",
+    "n_scenes": 1,
+    "n_branch_points": 2,
+    "scene_yield": 0.0196
+   },
+   {
+    "class": "L|L|R|R",
+    "n_scenes": 1,
+    "n_branch_points": 1,
+    "scene_yield": 0.0196
+   }
+  ],
+  "n_classes_ge_40_scenes": 0,
+  "n_classes_ge_200_scenes": 0,
+  "scenes_required": [
+   {
+    "class": "S|S",
+    "scene_yield": 0.7451,
+    "scenes_for_40": 54,
+    "scenes_for_200": 269
+   },
+   {
+    "class": "R|S",
+    "scene_yield": 0.6471,
+    "scenes_for_40": 62,
+    "scenes_for_200": 310
+   },
+   {
+    "class": "L|S",
+    "scene_yield": 0.5882,
+    "scenes_for_40": 68,
+    "scenes_for_200": 340
+   },
+   {
+    "class": "L|R",
+    "scene_yield": 0.4118,
+    "scenes_for_40": 98,
+    "scenes_for_200": 486
+   },
+   {
+    "class": "L|L",
+    "scene_yield": 0.3333,
+    "scenes_for_40": 120,
+    "scenes_for_200": 600
+   },
+   {
+    "class": "L|R|S",
+    "scene_yield": 0.3333,
+    "scenes_for_40": 120,
+    "scenes_for_200": 600
+   }
+  ],
+  "scenes_for_top3_all_ge40": 68,
+  "scenes_for_top3_all_ge200": 340,
+  "held_today": 51,
+  "verdict": "INSTRUMENT EXISTS, CORPUS SHORT"
+ },
+ "OUTCOME": "A"
+}

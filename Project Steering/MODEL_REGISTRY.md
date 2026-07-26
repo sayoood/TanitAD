@@ -159,6 +159,48 @@ construction** (`bench.py:511`, `:558`) while `0.4522` is a split-mean — so th
 compared two different estimators. On the full set the verdict **survives unchanged: 0.4271 vs
 0.5005 / 0.523 / 0.5735 / 0.8377.**
 
+#### 1.2a ⭐ v1's TWO val DEPLOYMENTS — added 2026-07-26. **Two rows, never one number.**
+
+`flagship-30k` now has a reference on the **600-episode** clean val as well as the canonical 40. The
+600 build is a strict **order-preserving superset** of the 40 (`published40[i] == val600[i]` for every
+`i ∈ [0,39]`, MEASURED — `…/2026-07-26-pod2-eval-host/artifacts/prefix_disjointness_result.json`), so
+parity is not violated. **The two numbers are still not interchangeable**, and both are recorded here so
+nobody has to choose which one "the" v1 number is.
+
+| deployment | `ade_0_2s` **full-set mean** | **episode-cluster bootstrap** CI95 (B = 2000, unit = val episode) | n windows | **n episode clusters** | CV floor on the SAME deployment | paired Δ vs CV | artifact |
+|---|---|---|---:|---:|---|---|---|
+| **40 eps — CANONICAL** (`--episodes 40`) | **0.4271** | **[0.3675, 0.4871]** hw 0.0299 | 881 | **40** | **0.8377** | +0.4106 [+0.2050, +0.6240] ✅ sep | `taniteval/results/driving_flagship-30k.json` · re-run `…/2026-07-26-pod2-eval-host/artifacts/RESULT_v1_40ep_preflight.json` |
+| ⭐ **600 eps — NEW, NOT a correction** (`--episodes 600`) | **0.4108** | **[0.3956, 0.4273]** hw 0.0159 | **13 198** | **600** | ⚠️ **0.6917** | +0.2809 [+0.2457, +0.3142] ✅ sep | `…/2026-07-26-pod2-eval-host/artifacts/RESULT_v1_600ep.json` |
+
+> ⛔ **THE 600-EPISODE NUMBER IS NOT A CORRECTION TO 0.4271 AND MUST NEVER BE SUBSTITUTED FOR IT.**
+> It is a **different deployment**, and the reason is measurable rather than stylistic: **the 600 is an
+> EASIER corpus.** The trivial CV floor moves **0.8377 → 0.6917**, i.e. the 560 added episodes are on
+> average *more predictable* than the published 40. v1's margin over the floor therefore **falls**
+> (paired Δ **+0.4106 → +0.2809**) even though its absolute ADE improves. **A 40-vs-600 delta is
+> confounded by corpus composition and is not a model result.**
+>
+> **Rules, binding:**
+> 1. **Never mix.** Every arm in a comparison must be on the *same* deployment. The §5 leaderboard is the
+>    **40-episode / 881-window** table; `0.4108` may not appear in it, and no arm's 40-episode number may
+>    be compared to another arm's 600-episode number.
+> 2. **Always quote n as BOTH counts** — windows *and* episode clusters. The episode cluster is the
+>    resampling unit; stride changes windows by up to **×5.9** and clusters by **exactly 0**
+>    (MEASURED, `…/2026-07-26-pod2-eval-host/artifacts/horizon_analysis.json`).
+> 3. **Estimator named on every interval:** `episode_cluster_bootstrap` (`taniteval/ci.py`) B = 2000,
+>    paired form for any two arms on shared windows. The `legacy_overlapping_holdout_se` block in both
+>    JSONs is **not quoted here and must not be**.
+>
+> ⭐ **What the 600 buys, MEASURED not projected:** the CI half-width shrinks **×2.8–3.9 (mean ≈ 3.4)**
+> across eight open-loop metrics, against the **×3.87** that `√15` predicts. One driving-panel verdict
+> flips on power alone — `along_track_vs_cv` goes δ 0.2543 **[−0.0278, +0.5304] "tie"** at 40 to
+> δ 0.2525 **[+0.1926, +0.3104] "model wins, separated"** at 600, with the point estimate moving **0.7 %**.
+> ⚠️ **Consequence for this registry: any verdict here that rests on a 40-episode "not separated" is
+> UNPOWERED, not refuted.** (`…/2026-07-26-pod2-eval-host/artifacts/v1_40_vs_600.json`.)
+>
+> Both rows are `wm_fidelity_ade_2s` under `pc2` — the scored pass does not traverse the hierarchy
+> (`actions_source=expert_future`). Same protocol on both, which is why they are comparable *to each
+> other* in kind, and not in value.
+
 **Strata — skill-vs-floor** (model ÷ per-stratum floor; <1 beats floor): straights **1.032** · gentle
 **0.679** · sharp **0.599** · **high-speed top decile 1.785 ← the one open weakness.**
 
@@ -1547,6 +1589,13 @@ deleted so every previously published number stays traceable. Sources: the per-r
 > full set: v1 (0.4271), REF-C-XL (0.4714) and REF-C-base (0.4728) still clear all three bars, but
 > **REF-C-small no longer clears the CTRV oracle** (0.5261 vs 0.523; its legacy 0.5007 did). The CV row
 > is the one floor that has both forms, and both are printed.
+
+> ⛔ **DEPLOYMENT, stamped 2026-07-26: this table is the 40-EPISODE / 881-WINDOW val deployment, every
+> row.** A second deployment now exists (600 episodes / 13,198 windows, §1.2a) and it is a **different and
+> EASIER corpus** — CV floor 0.8377 → 0.6917. **Do not substitute a 600-episode number into this table**
+> (v1 reads 0.4108 there, which is not an improvement on 0.4271, it is a different measurement), and do
+> not compare any row here against any number measured on 600. n is **881 windows / 40 episode clusters**
+> for every ranked row.
 
 | Rank | Arm | TanitEval key | Step | Params | **ADE@2s — full-set mean [episode-cluster bootstrap CI95]** | FDE@2s | miss@2m | Beats CV | `legacy_split_mean ± overlapping_holdout_se` (DEPRECATED) |
 |---:|---|---|---:|---:|---|---:|---:|:--:|---|
