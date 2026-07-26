@@ -1,0 +1,75 @@
+{
+  "run": "flagship-v4-fromscratch",
+  "gate_step": 30000,
+  "registered_utc": "2026-07-26T08:26:00+00:00",
+  "registered_before_checkpoint_exists": true,
+  "registration_note": "REGISTERED AT step 29,650/30,000 — i.e. BEFORE the 30k checkpoint existed and before any 30k number could be seen. That timing is the point: a threshold chosen after seeing the number is a garden of forking paths (GATE_PROTOCOL 0.3). No threshold below is new: every kill bar is carried forward VERBATIM from the pre-registered flagship-v4.card.json (registered 2026-07-22, before the v4 line launched). The only additions are (a) the co-primary, entered as REPORT-ONLY for the reason in co_primary.report_only_rationale, and (b) provenance stamps required by 0.7/0.8.",
+
+  "primary_metric": "ade_0_2s",
+  "primary_threshold": 0.6,
+  "primary_direction": "<=",
+  "primary_source": "held-out taniteval full-set, planner path",
+  "primary_role": "diagnostic",
+  "primary_role_note": "DEMOTED per GATE_PROTOCOL 0.2. ade_0_2s is proposal-quality: E1a measured that on the SAME 43 windows the paired ADE@2s delta is 0.0109 [-0.0, 0.0312] NOT SEPARATED while corridor departure goes 0.0035 -> 0.5877. It is read and recorded; it does not adjudicate alone.",
+
+  "goal_provenance": "ORACLE",
+  "goal_provenance_note": "GATE_PROTOCOL 0.8. MODE B structurally requires route/route_graded/vt_band minted from the ego's OWN FUTURE poses (eval_flagship_v4.py:140-141), so the primary is goal-oracle-fed. THREE channels, not four: vt_speed is overwritten with the observed v0 (eval_flagship_v4.py:78). MEASURED size of the privilege on this arm at 15k: oracle 0.5839 -> produced 0.7577, paired delta +0.1738 [+0.1247, +0.2356] SEPARATED; oracle beats CV separated (-0.2538) while PRODUCED DOES NOT (-0.0800, CI spans 0). REQUIRED: render oracle (the only surface comparable to the 10k/15k history), then re-render --goal-mode produced on the SAME checkpoint and report the PAIR. Do NOT transplant +0.1738 — the goal head is still training; measure the gap AT 30k. The verdict may NOT be worded as a deployed-capability claim.",
+
+  "co_primary": {
+    "metric": "corridor_departure_rate",
+    "horizon_K": 185,
+    "horizon_s": 18.5,
+    "corridor_half_width_m": 1.75,
+    "junction_stratum_reported_separately": true,
+    "surface": "closed-loop",
+    "estimator": "episode_cluster_bootstrap",
+    "role": "REPORT_ONLY_THIS_GATE",
+    "report_only_rationale": "This is the FIRST gate to carry the co-primary, and NO kill threshold for it has ever been agreed. Inventing one 41 minutes before the number lands would be exactly the forking-paths failure 0.3 forbids — and the two errors it could cause are asymmetric: a bar set too tight kills a healthy arm, a bar set too loose launders a bad one. So at THIS gate the co-primary is MEASURED, REPORTED IN FULL (overall + junction + peak XTE + OOD ratio), and used to SET the bar for the next gate against a real baseline. It does NOT enter the kill conjunction here. Reference points already MEASURED on REF-C base: overall 0.5877 [0.5107, 0.6622], junction 0.8414 [0.8144, 0.8667], peak XTE 38.94 m.",
+    "becomes_kill_criterion_at": "the next v4-line gate, with a threshold registered from this gate's measurement"
+  },
+
+  "secondary": [
+    "wm_canary_ade_2s<=0.55",
+    "speed_benefit_recovered_frac>=0.70",
+    "oracle_in_fan<=0.30",
+    "miss_at_2m<=0.10",
+    "seam_norm_ratio_max<=1.0",
+    "encoder_touching_levers<=2",
+    "deploy_tick_p99_ms<=50"
+  ],
+  "secondary_void": [
+    {
+      "metric": "nonav_route_beats_majority",
+      "original_threshold": ">=1",
+      "status": "VOID_BY_CONSTRUCTION",
+      "adjudication": "INSTRUMENT-FAIL, NEVER MODEL-FAIL",
+      "authority": "GATE_PROTOCOL 0.7",
+      "reason": "The strategic route TARGET is a lookup of the route INPUT (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so training route-CE reaches EXACTLY 0.0 by ~step 14.5k and route_skill is 0.0 BY CONSTRUCTION; the follow-head answers straight 240/240. MEASURED 2026-07-26: route_target == _NAV_TO_ROUTE[nav_cmd] on 100.00% of CE-eligible windows under v1, v2 AND v2.1 — the command is minted from the same route_from_future* call as the target, so NO LABELER SWAP CAN BREAK IT. The metric measures the label bug, not the model. It MUST be printed in the verdict: a suppressed criterion that is not printed is indistinguishable from one that passed.",
+      "re_arms_when": "an arm trains with real route supervision (--labels-v21 --v2-route-from-vision), at which point it becomes meaningful again and returns to the kill set"
+    }
+  ],
+
+  "reference_run": "flagship-v1",
+  "reference_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+  "reference_ade_0_2s": 0.4271,
+  "reference_note": "0.4271 is the CORRECTED FULL-SET value. Do NOT compare against the trainer's in-loop reading: on the same forward pass the trainer's dense-20 statistic reads 0.4596 while the v1-comparable 4-waypoint value reads 0.5839. A metric NAME is not a metric DEFINITION (RETRACTION_LOG, C1, 2026-07-25).",
+  "compare_metric": "g_op_fwd_ade_m",
+  "tau": 1.5,
+  "lever_family": "joint-planner-wm",
+  "restarts_used": 0,
+  "restart_cap": 2,
+
+  "required_reporting": [
+    "lateral/longitudinal decomposition on every trajectory error (taniteval/lateral.py); cross-track is the safety-relevant axis and an undecomposed L2 hides it",
+    "estimator named on every interval; paired episode-cluster bootstrap; NEVER overlapping_holdout_se (it biases intervals AND point estimates, up to x4.29 with sign flips)",
+    "the void secondary printed explicitly with its INSTRUMENT-FAIL adjudication",
+    "both goal modes (oracle and produced) reported as a pair",
+    "horizon and n named in the verdict (GATE_PROTOCOL 7 rule 3)"
+  ],
+
+  "preflight_checks": [
+    "corridor.py present on the executing host — it was MISSING from the eval pod on 2026-07-26 and the co-primary emitter therefore did not exist; re-verify before trusting a corridor block",
+    "lateral.py emits horizon_provenance and horizon_s=2.0 on the sparse surface — a 0.4 s reading means stale code (the pre-fix version mislabelled the horizon 5x)",
+    "v1 reproduces 0.4271 as a harness check before any new number is quoted"
+  ]
+}
