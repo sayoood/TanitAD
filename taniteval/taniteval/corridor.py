@@ -106,8 +106,36 @@ JUNCTION_DEG = 10.0           # PROPOSED — e1a_horizon.py --junction-deg (L434
 # The P1 low-OOD envelope within which the real-footage closed loop was
 # MEASURED (lowood_flagship_ci.json). Beyond these the E1a mapping CLAMPS, so
 # any block reporting steps outside them is EXTRAPOLATION, not measurement.
-ENV_LAT_MAX = 3.0             # MEASURED envelope limit, metres
-ENV_YAW_MAX = 12.0            # MEASURED envelope limit, degrees
+ENV_LAT_MAX = 3.0             # MEASURED envelope limit, metres (P1's FIRST sweep
+                              # point of separated degradation — a real criterion)
+# ⛔ NOT MEASURED — CORRECTED 2026-07-26. `ENV_YAW_MAX = 12.0` is the LAST ENTRY OF A
+# COMMAND-LINE DEFAULT STRING, not a measured edge: `lowood_probe.py:228` and
+# `lowood_ci.py:114` both read `--yaw-grid default="0,1,2,3,5,8,12"`. THE SWEEP
+# STOPPED AT 12 BECAUSE THE STRING STOPPED AT 12. No criterion selecting a yaw edge
+# exists anywhere in P1.
+#
+# ⚠️ AND THE TWO AXES WERE NEVER SET BY A COMMON CRITERION: P1's own report puts the
+# yaw no-degradation edge at <= 2 deg, with the paired delta CI-separated from 3 deg
+# onward — so 12.0 sits FOUR sweep points deep into separated degradation, while
+# ENV_LAT_MAX sits at its FIRST. Evidence class is INHERITED, not MEASURED.
+#
+# MEASURED 2026-07-26 (881 windows / 40 clusters, episode-cluster bootstrap B=2000,
+# on the edge itself): the USABLE yaw edge is 15.47 deg [12.14, 17.88] — the CI lower
+# bound TOUCHES the shipped 12, i.e. 1.29x at the point estimate and NO widening at
+# the lower bound. Information is fully destroyed at 26.41 deg [18.33, 29.63],
+# corroborated MODEL-FREE by the FOV half-angle at 25.70 deg. At the shipped 12 deg
+# the warp has already destroyed 34.7% of usable information and FABRICATED 26.4% of
+# pixels.
+#
+# ⛔ WIDENING IT RESCUES NOTHING: even at yaw = INFINITY the LATERAL clause alone
+# leaves 3.75% of K=20 windows outside (junction 18.13%), and MEASUREMENT requires
+# ZERO. K=60 would need 39.25 deg (junction 60.03 deg) — 1.5x-2.3x past TOTAL
+# destruction. => Closed-loop numbers are EXTRAPOLATIONS AT EVERY ADMISSIBLE HORIZON
+# and must be labelled so permanently. See RETRACTION_LOG class C14.
+ENV_YAW_MAX = 12.0            # ⛔ INHERITED (grid terminus) — see above
+ENV_YAW_MAX_EVIDENCE = "INHERITED: last entry of --yaw-grid default, not a criterion"
+ENV_YAW_USABLE_EDGE_MEASURED = 15.47      # [12.14, 17.88], episode-cluster bootstrap
+ENV_YAW_DESTROYED_MEASURED = 26.41        # [18.33, 29.63]; FOV half-angle 25.70
 
 N_BOOT = _ci.DEFAULT_N_BOOT   # 2000
 DECISION_ESTIMATORS = _drv.DECISION_ESTIMATORS

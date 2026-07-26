@@ -610,8 +610,21 @@ def validate_horizon_K(K, *, context="co-primary") -> dict:
 # an in-distribution certificate — which is what "OOD-envelope ratio stays <=
 # 1.30, so this is genuine in-distribution failure" (this file's own docstring
 # until 2026-07-26) did.
-ENV_LAT_MAX = 3.0               # MEASURED — P1 envelope (lowood_flagship_ci.json)
-ENV_YAW_MAX = 12.0              # MEASURED — P1 envelope
+ENV_LAT_MAX = 3.0               # MEASURED — P1 envelope (lowood_flagship_ci.json);
+                                # P1's FIRST separated-degradation point, a real criterion
+# ⛔ CORRECTED 2026-07-26: this is NOT measured. 12.0 is the LAST ENTRY OF A
+# COMMAND-LINE DEFAULT STRING — `lowood_probe.py:228` / `lowood_ci.py:114` both read
+# `--yaw-grid default="0,1,2,3,5,8,12"`. The sweep stopped at 12 because the string
+# did; no criterion selecting a yaw edge exists in P1. P1's own report puts the
+# no-degradation edge at <= 2 deg (separated from 3 deg onward), so 12 sits FOUR
+# sweep points into separated degradation while ENV_LAT_MAX sits at its FIRST — the
+# two axes were never set by a common criterion. MEASURED edge: usable 15.47 deg
+# [12.14, 17.88] (lower bound TOUCHES 12), destroyed 26.41 deg [18.33, 29.63].
+# ⚠️ AND DO NOT "FIX" THIS BY WIDENING THE GRID: extending the sweep raises
+# sup(ratio_arr) to ~1.52, clearing RATIO_EXTRAPOLATION_X by 0.02 — that would
+# resurrect the dead clause-1 certificate as a fresh C13 in a new costume.
+# See RETRACTION_LOG class C14.
+ENV_YAW_MAX = 12.0              # ⛔ INHERITED — grid terminus, NOT a measured edge
 RATIO_EXTRAPOLATION_X = 1.5     # PROPOSED — E1a's "~1.5x"
 OOD_MAJORITY_FRAC = 0.5         # PROPOSED reporting convention
 V_MEASUREMENT = "MEASUREMENT — every step stayed inside the MEASURED envelope"

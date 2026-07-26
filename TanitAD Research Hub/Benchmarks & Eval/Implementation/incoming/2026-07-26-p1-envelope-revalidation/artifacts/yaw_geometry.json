@@ -1,0 +1,252 @@
+{
+  "_what": "C-GEO: model-free geometry of the P1 yaw warp",
+  "_evidence_class": "MEASURED (ours) -- exact, closed-form; no model, no GPU, no renderer, no scene data",
+  "_intrinsics": {
+    "f_eff_px": 266.0,
+    "principal_px": 128.0,
+    "frame_px": [
+      256,
+      256
+    ],
+    "_source": "taniteval.clhorizon (packaged)"
+  },
+  "_c13_gate": {
+    "criterion": "frac_pixels_fabricated",
+    "fails_when": "grows without bound; >= 0.5 is a HARD ceiling (the FOV half-angle -- a geometric constant, not a chosen threshold)",
+    "estimator_can_reach_it": true,
+    "_why": "f(psi) is monotone 0 -> 1 by construction"
+  },
+  "A0_yaw_is_depth_and_plane_independent": {
+    "max_abs_deviation_over_h_cam_and_pitch": 0.0,
+    "n_conditions": 30,
+    "_claim": "with dlat = 0 the plane term outer(t, n)/d VANISHES (t = 0), so H = K @ Ry @ K^-1 exactly -- no ground plane, no depth. The flat-road assumption that makes the LATERAL envelope an optimistic bound plays NO role on the yaw arm.",
+    "_verdict": "CONFIRMED"
+  },
+  "A1_composition_is_exact": {
+    "pairs": [
+      {
+        "a": 5.0,
+        "b": 7.0,
+        "max_abs_err": 1.9539925233402755e-14
+      },
+      {
+        "a": 10.0,
+        "b": 10.0,
+        "max_abs_err": 2.6645352591003757e-14
+      },
+      {
+        "a": 12.0,
+        "b": 18.0,
+        "max_abs_err": 2.842170943040401e-14
+      },
+      {
+        "a": 15.0,
+        "b": 15.0,
+        "max_abs_err": 5.684341886080802e-14
+      },
+      {
+        "a": 20.0,
+        "b": 25.0,
+        "max_abs_err": 3.4638958368304884e-14
+      },
+      {
+        "a": 30.0,
+        "b": 30.0,
+        "max_abs_err": 5.684341886080802e-14
+      }
+    ],
+    "max_abs_err_overall": 5.684341886080802e-14,
+    "_verdict": "CONFIRMED"
+  },
+  "A3_fov": {
+    "half_fov_deg": 25.697,
+    "full_horizontal_fov_deg": 51.394,
+    "_meaning": "at psi = half_fov the optical axis of the offset view points at the edge of the real frame: HALF the output frame is fabricated. This is the hard ceiling."
+  },
+  "A2_fabrication_curve": [
+    {
+      "psi_deg": 0.0,
+      "frac_pixels_fabricated": 0.0,
+      "frac_columns_fully_fabricated": 0.0,
+      "n_columns_fully_fabricated": 0,
+      "max_source_col": 255.0,
+      "min_source_col": 0.0
+    },
+    {
+      "psi_deg": 1.0,
+      "frac_pixels_fabricated": 0.027359,
+      "frac_columns_fully_fabricated": 0.023438,
+      "n_columns_fully_fabricated": 6,
+      "max_source_col": 260.75,
+      "min_source_col": 5.67
+    },
+    {
+      "psi_deg": 2.0,
+      "frac_pixels_fabricated": 0.052399,
+      "frac_columns_fully_fabricated": 0.046875,
+      "n_columns_fully_fabricated": 12,
+      "max_source_col": 266.6,
+      "min_source_col": 11.25
+    },
+    {
+      "psi_deg": 3.0,
+      "frac_pixels_fabricated": 0.073486,
+      "frac_columns_fully_fabricated": 0.066406,
+      "n_columns_fully_fabricated": 17,
+      "max_source_col": 272.56,
+      "min_source_col": 16.75
+    },
+    {
+      "psi_deg": 5.0,
+      "frac_pixels_fabricated": 0.119019,
+      "frac_columns_fully_fabricated": 0.109375,
+      "n_columns_fully_fabricated": 28,
+      "max_source_col": 284.82,
+      "min_source_col": 27.5
+    },
+    {
+      "psi_deg": 8.0,
+      "frac_pixels_fabricated": 0.184067,
+      "frac_columns_fully_fabricated": 0.171875,
+      "n_columns_fully_fabricated": 44,
+      "max_source_col": 304.21,
+      "min_source_col": 43.12
+    },
+    {
+      "psi_deg": 10.0,
+      "frac_pixels_fabricated": 0.224335,
+      "frac_columns_fully_fabricated": 0.210938,
+      "n_columns_fully_fabricated": 54,
+      "max_source_col": 317.89,
+      "min_source_col": 53.25
+    },
+    {
+      "psi_deg": 12.0,
+      "frac_pixels_fabricated": 0.264053,
+      "frac_columns_fully_fabricated": 0.25,
+      "n_columns_fully_fabricated": 64,
+      "max_source_col": 332.27,
+      "min_source_col": 63.17
+    },
+    {
+      "psi_deg": 14.0,
+      "frac_pixels_fabricated": 0.299957,
+      "frac_columns_fully_fabricated": 0.285156,
+      "n_columns_fully_fabricated": 73,
+      "max_source_col": 347.44,
+      "min_source_col": 72.93
+    },
+    {
+      "psi_deg": 16.0,
+      "frac_pixels_fabricated": 0.338989,
+      "frac_columns_fully_fabricated": 0.324219,
+      "n_columns_fully_fabricated": 83,
+      "max_source_col": 363.52,
+      "min_source_col": 82.55
+    },
+    {
+      "psi_deg": 18.0,
+      "frac_pixels_fabricated": 0.374222,
+      "frac_columns_fully_fabricated": 0.359375,
+      "n_columns_fully_fabricated": 92,
+      "max_source_col": 380.62,
+      "min_source_col": 92.05
+    },
+    {
+      "psi_deg": 20.0,
+      "frac_pixels_fabricated": 0.412659,
+      "frac_columns_fully_fabricated": 0.398438,
+      "n_columns_fully_fabricated": 102,
+      "max_source_col": 398.89,
+      "min_source_col": 101.46
+    },
+    {
+      "psi_deg": 22.0,
+      "frac_pixels_fabricated": 0.447388,
+      "frac_columns_fully_fabricated": 0.433594,
+      "n_columns_fully_fabricated": 111,
+      "max_source_col": 418.51,
+      "min_source_col": 110.81
+    },
+    {
+      "psi_deg": 25.0,
+      "frac_pixels_fabricated": 0.500946,
+      "frac_columns_fully_fabricated": 0.488281,
+      "n_columns_fully_fabricated": 125,
+      "max_source_col": 450.93,
+      "min_source_col": 124.76
+    },
+    {
+      "psi_deg": 25.7,
+      "frac_pixels_fabricated": 0.512421,
+      "frac_columns_fully_fabricated": 0.5,
+      "n_columns_fully_fabricated": 128,
+      "max_source_col": 459.1,
+      "min_source_col": 128.01
+    },
+    {
+      "psi_deg": 28.0,
+      "frac_pixels_fabricated": 0.554153,
+      "frac_columns_fully_fabricated": 0.542969,
+      "n_columns_fully_fabricated": 139,
+      "max_source_col": 487.77,
+      "min_source_col": 138.7
+    },
+    {
+      "psi_deg": 30.0,
+      "frac_pixels_fabricated": 0.588348,
+      "frac_columns_fully_fabricated": 0.578125,
+      "n_columns_fully_fabricated": 148,
+      "max_source_col": 515.35,
+      "min_source_col": 148.01
+    },
+    {
+      "psi_deg": 32.0,
+      "frac_pixels_fabricated": 0.626007,
+      "frac_columns_fully_fabricated": 0.617188,
+      "n_columns_fully_fabricated": 158,
+      "max_source_col": 545.89,
+      "min_source_col": 157.38
+    },
+    {
+      "psi_deg": 35.0,
+      "frac_pixels_fabricated": 0.678986,
+      "frac_columns_fully_fabricated": 0.671875,
+      "n_columns_fully_fabricated": 172,
+      "max_source_col": 598.57,
+      "min_source_col": 171.57
+    },
+    {
+      "psi_deg": 40.0,
+      "frac_pixels_fabricated": 0.769836,
+      "frac_columns_fully_fabricated": 0.765625,
+      "n_columns_fully_fabricated": 196,
+      "max_source_col": 712.27,
+      "min_source_col": 195.82
+    },
+    {
+      "psi_deg": 45.0,
+      "frac_pixels_fabricated": 0.868744,
+      "frac_columns_fully_fabricated": 0.867188,
+      "n_columns_fully_fabricated": 222,
+      "max_source_col": 880.07,
+      "min_source_col": 221.17
+    },
+    {
+      "psi_deg": 50.0,
+      "frac_pixels_fabricated": 0.972748,
+      "frac_columns_fully_fabricated": 0.972656,
+      "n_columns_fully_fabricated": 249,
+      "max_source_col": 1158.17,
+      "min_source_col": 248.12
+    },
+    {
+      "psi_deg": 60.0,
+      "frac_pixels_fabricated": 1.0,
+      "frac_columns_fully_fabricated": 1.0,
+      "n_columns_fully_fabricated": 256,
+      "max_source_col": 3524.41,
+      "min_source_col": 309.47
+    }
+  ]
+}
