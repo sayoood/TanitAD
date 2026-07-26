@@ -105,45 +105,75 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
     dt_s) — see the module docstring for why the dense keys exist and what is
     deliberately not stored. speed/yaw/dyn_input append the canonical ego
     action-channels (v0, yr0) so the fed action matches the checkpoint's
-    action_dim (dyn-in arm = 4)."""
+    action_dim (dyn-in arm = 4).
+
+    ⚠️ **PC2: THIS SURFACE IS NOT A HIERARCHY SURFACE, AND NOW SAYS SO.**
+    ``rollout_decode`` takes no ``intent``/``ctx``/``nav`` and is fed the
+    expert's true future actions, so the number it produces is a **world-model
+    fidelity** decode of a known control sequence. The returned dict therefore
+    carries a ``pc2`` record (:mod:`taniteval.hierarchy_guard`) with the
+    MEASURED seam counts and ``actions_source="expert_future"``, and every
+    consumer that wants to call this a hierarchy result must first fail
+    ``pc2["pc2_pass"]``. Non-strict on purpose: this block stays runnable
+    because WM fidelity is a legitimate diagnostic — it just may not be quoted
+    as driving or as hierarchy."""
+    from taniteval import hierarchy_guard as _hg
+    _trace = _hg.HierarchyTrace(model)
     S_wp, GT, CV, EID, SPD, HDG = [], [], [], [], [], []
     S_dense, GT_dense = [], []
     dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
-    for ep in episodes:
-        feats = ep.feats
-        T = min(feats.shape[0], ep.actions.shape[0], ep.poses.shape[0])
-        starts = list(range(0, T - window - K_MAX, stride))
-        for i in range(0, len(starts), batch):
-            ch = starts[i:i + batch]
-            last = torch.tensor([t + window - 1 for t in ch])
-            fw = torch.stack([torch.as_tensor(feats[t:t + window])
-                              for t in ch]).to(device)
-            if fw.dtype == torch.uint8:                      # raw frames path
-                fw = fw.float().div_(255.0)
-            elif fw.dtype == torch.float16:                  # frozen features
-                fw = fw.float()
-            aw = torch.stack([ep.actions[t:t + window] for t in ch]).to(device)
-            fa = torch.stack([ep.actions[t + window:t + window + fwd_k]
-                              for t in ch]).to(device)
-            aw, fa = append_ego(aw, fa, ep.poses, last, speed_input,
-                                yaw_input, dyn_input, device)
-            states = model.encode_window(fw)                       # [b, W, S]
-            wp_full, _ = rollout_decode(model.predictor, states, aw, fa,
-                                        step_readout, fwd_k)       # [b, k, 2]
-            S_wp.append(wp_full.index_select(1, wp_idx.to(device)).cpu().float())
-            # DENSE PATH: keep all fwd_k steps, not just the 4 at WP_STEPS. The
-            # tensor is already computed above — this is a persistence fix, not
-            # extra compute (no second rollout, no extra GPU work).
-            S_dense.append(wp_full.cpu().float())
-            GT.append(gt_ego_waypoints(ep.poses, last))
-            GT_dense.append(gt_ego_waypoints(ep.poses, last,
-                                             wp_steps=dense_steps))
-            CV.append(baseline_waypoints(ep.poses, last)["constant_velocity"])
-            EID.extend([ep.episode_id] * len(ch))
-            SPD.append(ep.poses[last, 3])
-            HDG.append(net_heading_change_deg(ep.poses, last))
-    return {"pred": torch.cat(S_wp), "gt": torch.cat(GT).float(),
+    with _trace:                      # PC2 seam counters over the SCORED pass
+        for ep in episodes:
+            feats = ep.feats
+            T = min(feats.shape[0], ep.actions.shape[0], ep.poses.shape[0])
+            starts = list(range(0, T - window - K_MAX, stride))
+            for i in range(0, len(starts), batch):
+                ch = starts[i:i + batch]
+                last = torch.tensor([t + window - 1 for t in ch])
+                fw = torch.stack([torch.as_tensor(feats[t:t + window])
+                                  for t in ch]).to(device)
+                if fw.dtype == torch.uint8:                  # raw frames path
+                    fw = fw.float().div_(255.0)
+                elif fw.dtype == torch.float16:              # frozen features
+                    fw = fw.float()
+                aw = torch.stack([ep.actions[t:t + window]
+                                  for t in ch]).to(device)
+                fa = torch.stack([ep.actions[t + window:t + window + fwd_k]
+                                  for t in ch]).to(device)
+                aw, fa = append_ego(aw, fa, ep.poses, last, speed_input,
+                                    yaw_input, dyn_input, device)
+                states = model.encode_window(fw)                   # [b, W, S]
+                wp_full, _ = rollout_decode(model.predictor, states, aw, fa,
+                                            step_readout, fwd_k)   # [b, k, 2]
+                S_wp.append(
+                    wp_full.index_select(1, wp_idx.to(device)).cpu().float())
+                # DENSE PATH: keep all fwd_k steps, not just the 4 at WP_STEPS.
+                # The tensor is already computed above — this is a persistence
+                # fix, not extra compute (no second rollout, no extra GPU work).
+                S_dense.append(wp_full.cpu().float())
+                GT.append(gt_ego_waypoints(ep.poses, last))
+                GT_dense.append(gt_ego_waypoints(ep.poses, last,
+                                                 wp_steps=dense_steps))
+                CV.append(
+                    baseline_waypoints(ep.poses, last)["constant_velocity"])
+                EID.extend([ep.episode_id] * len(ch))
+                SPD.append(ep.poses[last, 3])
+                HDG.append(net_heading_change_deg(ep.poses, last))
+    # PC2 record. NON-strict: this block is a legitimate WM-fidelity diagnostic
+    # and must stay runnable — what it may not do is be quoted as a hierarchy
+    # (or a driving) number. `pc2_pass` will be False here BY CONSTRUCTION.
+    _pc2 = _hg.assert_hierarchy_traversed(
+        _trace, block="taniteval.rollout/collect",
+        claim="grounded operative rollout (WM fidelity)", strict=False)
+    _pc2["decision_surface"] = _hg.assert_actions_are_chosen(
+        block="taniteval.rollout/collect", actions_source="expert_future",
+        strict=False)
+    _pc2["pc2_pass"] = bool(_pc2["pc2_pass"]
+                            and _pc2["decision_surface"]["actions_are_chosen"])
+    _pc2["honest_metric_name"] = "wm_fidelity_ade_2s"
+    return {"pc2": _pc2,
+            "pred": torch.cat(S_wp), "gt": torch.cat(GT).float(),
             "cv": torch.cat(CV).float(), "eid": EID,
             "speed": torch.cat(SPD).float(),
             "head_deg": torch.cat(HDG).float(),

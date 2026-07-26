@@ -135,10 +135,37 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
     route_target_v2): road-following curves stay `follow`, and AMBIGUOUS junction
     windows get nav_valid=False (excluded from the route CE + route-from-vision
     aux). REF-B leaves this off; the flagship trainer flips it via --v2.
+
+    ``labels_v21`` (default False, PC1 2026-07-26) switches the ROUTE half again,
+    to the adaptive-arc v2.1 path (nav_command_v21 / route_target_v21). It
+    OVERRIDES ``labels_v2``'s route derivation and is orthogonal to it on the
+    maneuver side. Two behaviours differ from v1/v2 and both are deliberate:
+
+      * COVERAGE. v1/v2 need 15 s of remaining future (NAV_MIN_STEPS=150) on
+        ~20 s clips, so only the first few seconds of an episode are judgeable.
+        v2.1 gates on ARC LENGTH instead. MEASURED on a 100-episode PhysicalAI
+        val cache (17 100 trainer windows): nav_valid coverage
+        **0.2456 (v1) / 0.2307 (v2) / 0.7546 (v2.1)**, and the share of windows
+        fed `follow` while the road actually turns falls **0.4722 / 0.4286 /
+        0.0000**.
+      * ``route_target`` CARRIES ``refb_labels.ROUTE_UNKNOWN`` (= 3) on invalid
+        windows instead of a silent ROUTE_STRAIGHT. 3 is deliberately OUT of the
+        3-class CE range, so a consumer that forgets to mask by ``nav_valid``
+        raises instead of training a wrong class. Every consumer in this repo
+        masks (``flagship_losses`` gates both the route CE and the LEVER-A aux
+        on ``nav_valid``), and that loss now asserts the mask explicitly.
+
+    ⚠️ ``labels_v21`` does NOT by itself make the route head learn anything from
+    vision: on the CE-eligible subset the target is still ``_NAV_TO_ROUTE`` of
+    the fed command under all three labelers (echo 1.0000, MEASURED), because
+    the command and the target come from the same derivation. Pair it with
+    ``v2_route_from_vision`` (LEVER A), which is the only non-circular route
+    gradient that exists.
     """
 
     def __init__(self, episodes: list, window: int, max_horizon: int,
-                 channels: int | None = None, labels_v2: bool = False):
+                 channels: int | None = None, labels_v2: bool = False,
+                 labels_v21: bool = False):
         for e_i, ep in enumerate(episodes):
             T = ep.frames.shape[0]
             if ep.actions.shape[0] != T or ep.poses.shape[0] != T:
@@ -156,6 +183,7 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
         self.window, self.max_horizon = window, max_horizon
         self.episodes = episodes
         self.labels_v2 = labels_v2
+        self.labels_v21 = labels_v21
         self.index = build_window_index([ep.frames.shape[0]
                                          for ep in episodes],
                                         window, max_horizon)
@@ -165,12 +193,27 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
         e_i, t = self.index[i]
         poses = self.episodes[e_i].poses
         t_last = t + self.window - 1
-        if self.labels_v2:
+        if self.labels_v21:
+            # PC1 (2026-07-26): v2.1 adaptive-arc route. Judges on ROAD
+            # TRAVELLED rather than on 15 s of remaining clip, so coverage goes
+            # 0.25 -> 0.75 on real PhysicalAI windows, and refuses to say
+            # `straight` when it cannot tell -- route_tgt is ROUTE_UNKNOWN (3,
+            # out of CE range) exactly when valid is False.
+            cmd, valid = refb_labels.nav_command_v21(poses, t_last)
+            route_tgt, _tv = refb_labels.route_target_v21(poses, t_last)
+            assert bool(_tv) == bool(valid), (
+                "refb_labels v2.1 contract broken: nav_command_v21 and "
+                f"route_target_v21 disagree on validity ({valid} vs {_tv}) at "
+                f"t_last={t_last}")
+        elif self.labels_v2:
             # v2 curvature-relative derivation: a road-following curve stays
             # `follow`/route_straight, and an AMBIGUOUS junction window gets
             # valid=False (dropped from the route CE + the route-from-vision
             # aux). nav_command_v2 returns the v2 `valid` mask; route_target_v2
-            # is the future-derived (non-circular) route class.
+            # is the future-derived route class -- but NOTE it is still
+            # `_NAV_TO_ROUTE[nav_command_v2(...)]` on every valid window
+            # (MEASURED echo 1.0000), because both come from the same
+            # `route_from_future` call. See the class docstring.
             cmd, valid = refb_labels.nav_command_v2(poses, t_last)
             route_tgt = refb_labels.route_target_v2(poses, t_last)
         else:                                  # v1 path (byte-identical)

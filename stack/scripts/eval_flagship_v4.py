@@ -79,6 +79,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # leaky-split refusal + the registered episode-count deployment before a single
 # episode is read. `train_flagship_v4` already guards its own --val-cache; this
 # is its EVAL-side mirror.
+import goal_provenance  # noqa: E402  (goal ORACLE disclosure)
 from tanitad.data import parity  # noqa: E402
 
 WP_STEPS = (5, 10, 15, 20)           # 0.5/1/1.5/2 s @10 Hz -- the ONLY convention
@@ -585,6 +586,15 @@ def main(argv=None) -> int:
     res["ckpt"] = a.ckpt
     res["ckpt_step"] = step
     res["v4_diagnostics"] = diag
+    # GOAL PROVENANCE (2026-07-26, PC1 item #5). MODE B calls
+    # `head(st, v0, **_goal_inputs(head.cfg, b, v0))`, and `_goal_inputs` reads
+    # route / route_graded / vt_band / vt_speed off a `FlagshipV4Dataset` batch
+    # that mints them PER WINDOW from the episode's full future poses -- a goal
+    # oracle. MODE A does not feed goal inputs at all. Disclosed in place: no
+    # number moves here, because `V4_FLAGSHIP_DESIGN.md:806` records removing
+    # the oracle as an unlanded PRECONDITION, not as a scoring change.
+    # (MODE A returns above, so this line is only ever reached in MODE B.)
+    res["goal_provenance"] = goal_provenance.disclose("eval_flagship_v4")
     res["wm_canary_ade_2s"] = can["canary_ade@2s"]
     res["wm_canary_n"] = can["n"]
     res_json_path.write_text(json.dumps(res, indent=2, default=str),

@@ -42,6 +42,9 @@ from pathlib import Path
 
 import torch
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import goal_provenance  # noqa: E402  (route/goal ORACLE disclosure)
+
 WINDOW = 8
 STRIDE = 8
 N_EPISODES = 40
@@ -213,6 +216,12 @@ def main(argv=None):
     res["ckpt"] = a.ckpt
     res["trunk"] = a.trunk
     res["label_set"] = a.label_set
+    # GOAL PROVENANCE (2026-07-26, PC1 item #5). `collect` above feeds
+    # `route` / `route_graded` / `vt_band` / `vt_speed` straight off the GT
+    # label file -- all minted from the ego's own FUTURE poses. Disclosed in
+    # place: no number and no code path is changed, so the registry owner
+    # corrects the published values from a stable base.
+    res["goal_provenance"] = goal_provenance.disclose("eval_flagship_v15")
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=2), encoding="utf-8")
     # Persist the per-window tensors next to the JSON, exactly as the eval pod's

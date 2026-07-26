@@ -318,6 +318,17 @@ def flagship_loss(model, grounding: HierarchicalGrounding, batch: dict,
     n_route = cfg.strategic_policy.n_route
     if bool(nav_valid.any()):
         tv = route_tgt[nav_valid]
+        # PC1 guard (2026-07-26). Under the v2.1 route labeler `route_target`
+        # carries refb_labels.ROUTE_UNKNOWN (= n_route = 3) on every window it
+        # refuses to judge, precisely so an unmasked consumer cannot silently
+        # train `straight` on an unjudgeable window. Assert the mask here rather
+        # than relying on a bincount/CE shape mismatch further down: this is the
+        # exact hole the v1 labeler's silent straight-fallback fell through.
+        assert int(tv.max()) < n_route, (
+            f"route_target contains class {int(tv.max())} >= n_route="
+            f"{n_route} on a nav_valid window. Under --labels-v21 that is "
+            "ROUTE_UNKNOWN and means nav_valid and route_target disagree; the "
+            "window must be masked out, never coerced to a class.")
         loss_route = _class_weighted_ce(strat["route_logits"][nav_valid], tv,
                                         n_route)
         route_acc = (strat["route_logits"][nav_valid].argmax(-1)

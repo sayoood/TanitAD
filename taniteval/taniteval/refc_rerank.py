@@ -86,6 +86,14 @@ DT = 0.1
 K_MAX = max(WP_STEPS)                    # 20 steps = 2 s
 WINDOW, STRIDE = 8, 8                    # canonical val protocol
 BASE_KEY = "refc-xl-30k"                 # the trained baseline (weights)
+#: Route command fed to REF-C. `follow_constant` == the historical
+#: `nav_cmd=None` (-> zeros -> `follow`) and is REQUIRED here, because this
+#: sweep's lam=0 row is asserted to reproduce the PUBLISHED refc-xl-30k number:
+#: feeding a different command would move the anchor the sweep is measured
+#: against. It is now a NAMED constant instead of a hidden literal, and it is
+#: stamped into the result, so the confound is visible rather than implicit.
+#: Set to "produced" only together with a re-run of the published baseline.
+NAV_MODE = "follow_constant"
 KEY = "refc-v10"                         # THIS experiment
 NAME = "REF-C v1.0 (cost re-rank, training-free)"
 
@@ -259,7 +267,16 @@ def dump(episodes=40, device="cuda", batch=8, out=DUMP):
             fw = torch.stack([torch.as_tensor(fr[t:t + window])
                               for t in ch]).to(device).float().div_(255.0)
             v0 = poses[last, 3].to(device)
-            o = model(fw, nav_cmd=None, v0=v0, steps=steps)
+            # PC1 item #4 (2026-07-26): the route command is RESOLVED, not
+            # hardcoded to None. `follow_constant` is kept as this sweep's
+            # default because the lam=0 row must reproduce the PUBLISHED
+            # refc-xl-30k row byte-for-byte — changing the fed command would
+            # silently move the baseline the whole sweep is anchored to. The
+            # mode is stamped into the result so the anchor is never ambiguous.
+            from taniteval.refc_eval import resolve_nav
+            nav_cmd, _ = resolve_nav(model, fw, v0, steps, NAV_MODE,
+                                     poses=poses, last=last)
+            o = model(fw, nav_cmd=nav_cmd, v0=v0, steps=steps)
             logits = o["anchor_logits"].float().cpu()            # [b,N]
             fan = o["anchor_traj"].float().cpu()                 # [b,N,4,2]
             sel = o["sel_idx"].cpu()
@@ -291,6 +308,13 @@ def dump(episodes=40, device="cuda", batch=8, out=DUMP):
              a_gt=torch.cat(AGT).float(), wp_steps=list(WP_STEPS),
              ckpt=e["ckpt"], ckpt_step=L["step"], steps=steps,
              vtarget_source=vt_src, n_anchors=int(torch.cat(LOG).shape[1]),
+             nav_mode=NAV_MODE,
+             nav_provenance=(
+                 "route command fed to REF-C during the fan dump. "
+                 "`follow_constant` = the historical nav_cmd=None -> zeros -> "
+                 "`follow`; the route input is NOT exercised, which is the "
+                 "07-21 C6 confound and the reason this sweep's lam=0 row "
+                 "reproduces the published refc-xl-30k number."),
              wall_s=round(time.time() - t0, 1))
     RES.mkdir(parents=True, exist_ok=True)
     torch.save(d, out)

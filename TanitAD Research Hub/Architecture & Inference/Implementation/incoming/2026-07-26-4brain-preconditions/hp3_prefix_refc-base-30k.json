@@ -1,0 +1,23 @@
+{
+  "block": "taniteval.strategic_probes/hp3_route_counterfactual",
+  "version": "1.0.0",
+  "spec": "Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/01_EXECUTION_PLAN.md Part A, HP-3",
+  "skipped": "this arm does not expose the flagship 4-brain API (strategic_policy + tactical_policy) that HP-3 drives. A SKIP IS NOT A PASS, and it is NOT a claim that the arm has no strategic level -- see `hierarchy_like_modules_found`.",
+  "has_strategic_policy": false,
+  "has_tactical_policy": false,
+  "model_class": "RefCModel",
+  "hierarchy_like_modules_found": [
+    "strategic",
+    "strategic.gru",
+    "strategic.proj",
+    "decoder.ctx_to_cond",
+    "decoder.maneuver_to_anchor",
+    "maneuver_head",
+    "maneuver_head.0",
+    "maneuver_head.1",
+    "maneuver_head.2",
+    "route_head"
+  ],
+  "strategic_level_absent": false,
+  "_read": "`strategic_level_absent` is the ONLY field that may be read as a structural absence, and it is False whenever any hierarchy-shaped module was found under another name. In that case HP-3 is UNMEASURED on this arm and needs a per-arch adapter; do not record a 0."
+}

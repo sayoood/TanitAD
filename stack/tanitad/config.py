@@ -235,6 +235,33 @@ class StackConfig:
     # overridable with --labels-v2 / --no-labels-v2). REF-B stays v1 unless its
     # own path opts in.
     v2_labels: bool = False
+    # ---- v2.1 ROUTE derivation (PC1, 2026-07-26). Also data-side, also zero
+    # params. Switches ONLY the route half of the strategic labels to
+    # ``refb_labels.nav_command_v21`` / ``route_target_v21`` (adaptive-arc
+    # horizon, ROUTE_UNKNOWN sentinel instead of a silent `straight`); the
+    # maneuver label follows ``v2_labels`` as before.
+    #
+    # WHY IT IS A SEPARATE FLAG, MEASURED (100-ep PhysicalAI val cache
+    # bb543bdf7836, 17 100 trainer windows, `verify_pc1_labels.py`):
+    #   coverage nav_valid            v1 0.2456  v2 0.2307  **v2.1 0.7546**
+    #   fed `follow` while turning    v1 0.4722  v2 0.4286  **v2.1 0.0000**
+    #   share of true turns lost      v1 73.8 %  v2 66.9 %  **v2.1 0 %**
+    # i.e. ``v2_labels`` does NOT buy the coverage the HPP-0 audit attributed to
+    # it -- it selects the FIXED 15 s/25 s v2 labeler and is marginally WORSE
+    # than v1. Only v2.1's adaptive-arc rule reaches ~3x coverage.
+    #
+    # ⚠️ WHAT THIS FLAG DOES **NOT** FIX -- read before quoting it as the PC1
+    # fix. The route TARGET remains a deterministic function of the fed route
+    # COMMAND on every window that enters the CE, under v1, v2 AND v2.1 alike
+    # (echo rate on the valid subset = 1.0000 for all three, MEASURED): the
+    # command is minted from the same ``route_from_future*`` call as the target
+    # and ``_ROUTE_TO_NAV`` is a bijection. No labeler swap can break that.
+    # The ONLY non-circular gradient in the repo is ``v2_route_from_vision``
+    # (LEVER A) -- the second strategic pass with nav forced to follow(0).
+    # PC1 therefore needs BOTH: LEVER A for a route-from-vision gradient at
+    # all, and v2.1 so that gradient sees 3x the windows and is never taught
+    # `straight` on a window it cannot judge.
+    v21_route_labels: bool = False
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), indent=2, default=str)

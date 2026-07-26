@@ -431,6 +431,14 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
     model.eval()
     strat, tac_pol, pred = (model.strategic_policy, model.tactical_policy,
                             model.predictor)
+    # PC2 (2026-07-26): this panel CLAIMS to measure the hierarchy's seams, so
+    # it is exactly the path that must not be allowed to report from a bypass.
+    # Counters are on for the whole collection and asserted STRICTLY before the
+    # block is assembled — see taniteval.hierarchy_guard for why `intent_proj`
+    # rather than the predictor is the third hook.
+    from taniteval import hierarchy_guard as _hg
+    _trace = _hg.HierarchyTrace(model)
+    _trace.__enter__()
 
     rec = defaultdict(list)                 # per-window scalars / discrete
     cache = []                              # per-batch cached tensors (phase 2)
@@ -592,7 +600,17 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             if tag == "none":     # canonical (intent-free) rollout = grounded traj
                 rec["traj_dir"] += _dir_of(dp[..., 2].sum(1)).cpu().tolist()
 
-    return _assemble(rec, n_boot=n_boot, seed=seed)
+    _trace.__exit__()
+    # FAIL LOUD before assembly: a hierarchy panel whose scored pass skipped a
+    # brain must not produce a JSON at all. (The panel's own H18/seam blocks
+    # exercise strategic, tactical AND predictor.intent_proj, so a failure here
+    # means the wiring regressed, not that the assertion is too strict.)
+    pc2 = _hg.assert_hierarchy_traversed(
+        _trace, block="taniteval.hierarchy/run",
+        claim="H26 seam ablations + H18 grounding dominance")
+    out = _assemble(rec, n_boot=n_boot, seed=seed)
+    out["pc2"] = pc2
+    return out
 
 
 def _assemble(rec, n_boot=N_BOOT, seed=0):

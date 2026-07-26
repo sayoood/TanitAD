@@ -112,9 +112,10 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
     the loss from odometry poses (``gt_ego_waypoints``)."""
 
     def __init__(self, episodes, window: int, max_horizon: int, maneuver_h: int,
-                 channels: int | None = None, labels_v2: bool = False):
+                 channels: int | None = None, labels_v2: bool = False,
+                 labels_v21: bool = False):
         super().__init__(episodes, window, max_horizon, channels=channels,
-                         labels_v2=labels_v2)
+                         labels_v2=labels_v2, labels_v21=labels_v21)
         assert maneuver_h <= max_horizon, (maneuver_h, max_horizon)
         self.maneuver_h = maneuver_h
 
@@ -145,7 +146,9 @@ def _wrap(episodes, cfg, plan, channels):
     return FlagshipWindowDataset(episodes, window=cfg.predictor.window,
                                  max_horizon=plan.max_horizon,
                                  maneuver_h=plan.maneuver_h, channels=channels,
-                                 labels_v2=cfg.v2_labels)
+                                 labels_v2=cfg.v2_labels,
+                                 labels_v21=getattr(cfg, "v21_route_labels",
+                                                    False))
 
 
 def _cache_split(cache_dir: Path, split: str, n: int):
@@ -296,6 +299,34 @@ def train(args) -> dict:
     # v1 run. None (neither flag) = follow whatever --v2 set above.
     if args.labels_v2 is not None:
         cfg.v2_labels = args.labels_v2
+    # LEVER A standalone override — applied BEFORE the v2.1 pairing assert below
+    # so `--v2-route-from-vision --labels-v21` works without the whole --v2 pack.
+    if args.route_from_vision is not None:
+        cfg.v2_route_from_vision = args.route_from_vision
+    # ---- PC1 (2026-07-26): --labels-v21 switches ONLY the ROUTE derivation to
+    # the adaptive-arc v2.1 labeler. It is a SEPARATE flag from --labels-v2 and
+    # is NOT implied by --v2, because it changes what `nav_valid` means on 75 %
+    # of windows and therefore is not comparable to any shipped arm.
+    #
+    # MEASURED, 100-ep PhysicalAI val cache, 17 100 trainer windows
+    # (`…/incoming/2026-07-26-4brain-preconditions/verify_pc1_labels.py`):
+    #   nav_valid coverage         v1 0.2456   v2 0.2307   v2.1 0.7546
+    #   fed `follow` while turning v1 0.4722   v2 0.4286   v2.1 0.0000
+    # ⚠️ It does NOT break the input->target echo (1.0000 under all three);
+    # only `--v2-route-from-vision` does. Pass BOTH for the PC1 arm.
+    if args.labels_v21 is not None:
+        cfg.v21_route_labels = args.labels_v21
+    if cfg.v21_route_labels:
+        assert cfg.v2_route_from_vision or args.route_vis_weight == 0.0, (
+            "--labels-v21 without LEVER A is a half-fix and has never been "
+            "run: the route target stays a lookup of the fed command on every "
+            "CE-eligible window (echo 1.0000, MEASURED), so route_skill stays "
+            "0 by construction. Pass --v2 (which sets v2_route_from_vision) "
+            "or --v2-route-from-vision, or set --route-vis-weight 0 to state "
+            "explicitly that you want the labels-only control arm.")
+        print("[labels] v2.1 ADAPTIVE-ARC route labels ON (coverage ~0.75 vs "
+              "~0.25; route_target carries ROUTE_UNKNOWN=3 on invalid windows, "
+              "masked by nav_valid)", flush=True)
 
     # ---- v3enc STAGED encoder-grounding levers (diagnostic 2026-07-19) --------
     # Builds ON the --v2 pack. Two levers become CONSTANTS here (softer than v2);
@@ -347,7 +378,9 @@ def train(args) -> dict:
         ds_val = None                              # this trainer runs no val loop
         print(f"[data] v2-cache {args.v2_cache}: {len(providers)} lazy "
               f"providers, lru {args.v2_lru}, window {cfg.predictor.window}, "
-              f"labels_v2 {cfg.v2_labels}", flush=True)
+              f"labels_v2 {cfg.v2_labels}, "
+              f"v21_route_labels {cfg.v21_route_labels}, "
+              f"route_from_vision {cfg.v2_route_from_vision}", flush=True)
     else:
         ds_train, ds_val = build_datasets(cfg, plan, args.data, args.cache_dirs,
                                           args.episodes, args.sim_frac, args.seed)
@@ -578,6 +611,37 @@ def main(argv=None):
     ap.add_argument("--no-labels-v2", dest="labels_v2", action="store_false",
                     help="force the v2 labels OFF even under --v2 (v1-labels "
                          "control arm)")
+    ap.add_argument("--labels-v21", dest="labels_v21", action="store_true",
+                    default=None,
+                    help="PC1: derive the ROUTE half of the strategic labels "
+                         "with the ADAPTIVE-ARC v2.1 labeler (nav_command_v21 / "
+                         "route_target_v21) instead of v1's or v2's fixed "
+                         "15 s/25 s lookahead. MEASURED on 17 100 real "
+                         "PhysicalAI windows: nav_valid coverage 0.2456 (v1) / "
+                         "0.2307 (v2) / 0.7546 (v2.1), and the share of windows "
+                         "fed `follow` while the road turns 0.4722 / 0.4286 / "
+                         "0.0000. route_target carries ROUTE_UNKNOWN=3 on "
+                         "invalid windows (masked by nav_valid). NOT implied by "
+                         "--v2 and NOT comparable to any shipped arm. Pair with "
+                         "--v2-route-from-vision: alone it does not break the "
+                         "command->target echo")
+    ap.add_argument("--no-labels-v21", dest="labels_v21", action="store_false",
+                    help="force the v2.1 route labels OFF even if a preset "
+                         "turned them on")
+    ap.add_argument("--v2-route-from-vision", dest="route_from_vision",
+                    action="store_true", default=None,
+                    help="LEVER A standalone: the always-on second strategic "
+                         "pass with nav FORCED to follow(0), class-weighted CE "
+                         "vs the true route (flagship_losses.py, weight "
+                         "--route-vis-weight). This is the ONLY non-circular "
+                         "route gradient in the repo -- the main route CE's "
+                         "target is a lookup of its own input under every "
+                         "labeler (echo 1.0000, MEASURED). Implied by --v2; "
+                         "this flag enables it WITHOUT the rest of the v2 pack")
+    ap.add_argument("--no-v2-route-from-vision", dest="route_from_vision",
+                    action="store_false",
+                    help="force LEVER A OFF even under --v2 (the no-lever "
+                         "control arm for the PC1 contrast)")
     ap.add_argument("--rollout-k", type=int, default=None,
                     help="K-step recursive rollout (bake-off lever; default cfg)")
     # per-level grounding rollout horizons (op fine / tac 2 s / str long)

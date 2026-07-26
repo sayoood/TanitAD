@@ -514,13 +514,24 @@ def compose(rec, ctx):
 
 @torch.no_grad()
 def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400,
-                    t_lo=None, t_hi=None, want_cv=False):
+                    t_lo=None, t_hi=None, want_cv=False,
+                    nav_mode="follow_constant"):
     """Stride-1 REF-C decode keeping the FULL proposal set per frame.
 
-    Calls the model exactly as taniteval.refc_eval.collect does (nav=follow, v0
-    through the measurement encoder, ``steps`` truncated-denoise steps) so every
-    number here is the same quantity the leaderboard row reports. Returns
+    Calls the model exactly as taniteval.refc_eval.collect does (v0 through the
+    measurement encoder, ``steps`` truncated-denoise steps) so every number here
+    is the same quantity the leaderboard row reports. Returns
     t -> record; t = window end (the pose the ego frame is anchored to).
+
+    ``nav_mode`` (2026-07-26, PC1 item #4) resolves the route command through
+    ``refc_eval.resolve_nav`` instead of the hardcoded ``nav_cmd=None``. The
+    default is **``"follow_constant"``** here and NOT ``"produced"``, unlike
+    ``refc_eval.collect``: this module renders the *fan* that a human inspects
+    frame by frame, and every fan clip in the record was drawn under the
+    constant command. Silently changing what the pictures mean would be the
+    same class of error as silently changing a published number. Pass
+    ``nav_mode="produced"`` for a route-conditional fan; the mode is returned
+    on every record as ``nav_mode`` so a clip can never be mis-read.
 
     ``t_lo``/``t_hi`` restrict the decode to a frame range (inclusive) so a
     short clip around one scored window costs one short pass instead of a whole
@@ -546,7 +557,10 @@ def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400,
         fw = torch.stack([torch.as_tensor(frames[s:s + window])
                           for s in ch]).to(device).float().div_(255.0)
         v0 = poses[last, 3].to(device)
-        o = model(fw, nav_cmd=None, v0=v0, steps=steps)     # follow-command eval
+        from taniteval.refc_eval import resolve_nav
+        nav_cmd, _nav_note = resolve_nav(model, fw, v0, steps, nav_mode,
+                                         poses=poses, last=last)
+        o = model(fw, nav_cmd=nav_cmd, v0=v0, steps=steps)
         logits = o["anchor_logits"].float().cpu()           # [b, N] POST-H19
         fan = o["anchor_traj"].float().cpu()                # [b, N, S, 2] refined
         sel = o["sel_idx"].cpu()
@@ -579,7 +593,12 @@ def episode_planfan(model, ep, device, window, steps, batch=4, max_frames=400,
                 H=float(-(p * (p.clamp_min(1e-12)).log()).sum()),
                 n_modes=int((p > MODE_THRESH).sum()),
                 v0=float(poses[t, 3]), man=pretty_man(man[j]),
-                route=pretty_route(route[j]), rgb=None)
+                route=pretty_route(route[j]), rgb=None,
+                # ROUTE PROVENANCE on every frame record: a fan clip is read as
+                # "what the model would do here", and that is only true if the
+                # reader knows which command it was given.
+                nav_mode=nav_mode,
+                nav_fed=(None if nav_cmd is None else int(nav_cmd[j])))
     return out
 
 

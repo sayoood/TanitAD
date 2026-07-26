@@ -1,0 +1,113 @@
+{
+  "v1_default": {
+    "n_windows": 17100,
+    "n_valid": 4200,
+    "coverage_nav_valid": 0.2456,
+    "echo_rate_all_windows": 1.0,
+    "echo_rate_valid_windows": 1.0,
+    "route_target_is_a_pure_function_of_nav_cmd": true,
+    "target_hist_on_valid": {
+      "left": 1469,
+      "straight": 1274,
+      "right": 1457
+    },
+    "nav_cmd_hist_all": {
+      "follow": 14174,
+      "left": 1469,
+      "right": 1457
+    },
+    "majority_route_base_rate_on_valid": 0.3498
+  },
+  "v2_labels_v2_flag": {
+    "n_windows": 17100,
+    "n_valid": 3945,
+    "coverage_nav_valid": 0.2307,
+    "echo_rate_all_windows": 1.0,
+    "echo_rate_valid_windows": 1.0,
+    "route_target_is_a_pure_function_of_nav_cmd": true,
+    "target_hist_on_valid": {
+      "left": 1602,
+      "straight": 233,
+      "right": 2110
+    },
+    "nav_cmd_hist_all": {
+      "follow": 13388,
+      "left": 1602,
+      "right": 2110
+    },
+    "majority_route_base_rate_on_valid": 0.5349
+  },
+  "v21_proposed": {
+    "n_windows": 17100,
+    "n_valid": 12904,
+    "coverage_nav_valid": 0.7546,
+    "echo_rate_all_windows": 0.75462,
+    "echo_rate_valid_windows": 1.0,
+    "route_target_is_a_pure_function_of_nav_cmd": false,
+    "target_hist_on_valid": {
+      "left": 4981,
+      "straight": 1956,
+      "right": 5967
+    },
+    "nav_cmd_hist_all": {
+      "follow": 6152,
+      "left": 4981,
+      "right": 5967
+    },
+    "majority_route_base_rate_on_valid": 0.4624
+  },
+  "_fed_command_vs_true_route": {
+    "reference": "route_target_v21 on its own valid subset",
+    "n_reference_turn_windows": 10948,
+    "by_labeler": {
+      "v1_default": {
+        "fed_follow_rate": 0.8289,
+        "fed_follow_while_route_turns_rate": 0.4722,
+        "n_fed_follow_while_route_turns": 8075,
+        "share_of_true_turns_mislabelled_follow": 0.7376,
+        "fed_command_agrees_with_v21_route": 0.363
+      },
+      "v2_labels_v2_flag": {
+        "fed_follow_rate": 0.7829,
+        "fed_follow_while_route_turns_rate": 0.4286,
+        "n_fed_follow_while_route_turns": 7329,
+        "share_of_true_turns_mislabelled_follow": 0.6694,
+        "fed_command_agrees_with_v21_route": 0.4315
+      },
+      "v21_proposed": {
+        "fed_follow_rate": 0.3598,
+        "fed_follow_while_route_turns_rate": 0.0,
+        "n_fed_follow_while_route_turns": 0,
+        "share_of_true_turns_mislabelled_follow": 0.0,
+        "fed_command_agrees_with_v21_route": 1.0
+      }
+    },
+    "_read": "`fed_follow_while_route_turns_rate` is the audit \u00a71.2 defect quantified: the share of ALL windows on which the strategic level is handed the command `follow` while the vehicle is about to take a turn. It is not masked away -- `nav_valid` gates the CE, never the INPUT."
+  },
+  "_meta": {
+    "cache": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-val-bb543bdf7836",
+    "n_episodes": 100,
+    "episode_len_min_max_mean": [
+      198,
+      205,
+      199.0
+    ],
+    "window": 8,
+    "max_horizon": 20,
+    "stride": 1,
+    "seconds": 13.9,
+    "NAV_HORIZON_STEPS": 250,
+    "NAV_MIN_STEPS": 150,
+    "MIN_ARC_ROUTE_M": 20.0,
+    "_NAV_TO_ROUTE": {
+      "follow": "straight",
+      "left": "left",
+      "right": "right"
+    },
+    "_ROUTE_TO_NAV": {
+      "left": "left",
+      "straight": "follow",
+      "right": "right"
+    }
+  }
+}

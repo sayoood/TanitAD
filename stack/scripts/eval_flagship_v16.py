@@ -36,6 +36,9 @@ from pathlib import Path
 
 import torch
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import goal_provenance  # noqa: E402  (route/goal ORACLE disclosure)
+
 WINDOW = 8
 STRIDE = 8
 N_EPISODES = 40
@@ -234,6 +237,11 @@ def main(argv=None):
     res = bench.run(data)
     res.update({"key": a.key, "method": data["method"], "ckpt": a.ckpt,
                 "label_set": a.label_set, "unfreeze": ck.get("unfreeze")})
+    # GOAL PROVENANCE (2026-07-26, PC1 item #5). Same GT-label feed as v1.5 --
+    # and this is the evaluator that produced the PUBLISHED v1.6 headline
+    # 0.4375, which is therefore a GOAL-ORACLE number. Disclosed in place; the
+    # value is unchanged so the registry owner can correct the record.
+    res["goal_provenance"] = goal_provenance.disclose("eval_flagship_v16")
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=2), encoding="utf-8")
     # Per-window tensors alongside the JSON (see eval_flagship_v15.py) — without

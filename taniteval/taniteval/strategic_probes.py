@@ -130,6 +130,57 @@ DEPRECATED_ESTIMATOR = _drv.DEPRECATED_ESTIMATOR
 ESTIMATOR_NOTE = _drv.ESTIMATOR_NOTE
 
 
+# Names other arms use for the same two levels. The probe drives the flagship
+# 4-brain API (``strategic_policy(states, nav) -> {"ctx", "route_logits"}`` /
+# ``tactical_policy(states, ctx) -> {"waypoints", "intent", ...}``) and cannot
+# call these without an adapter — but it MUST NOT report their absence.
+_ALIAS_HINTS = ("strateg", "tactic", "route", "maneuv", "nav", "intent", "ctx",
+                "hier", "graft", "plan")
+
+
+def _skip_report(model):
+    """A SKIP, with the evidence for WHY — never a bare "no strategic level".
+
+    ⚠️ MEASURED 2026-07-26, and it is exactly the CLAUDE.md rule-2 failure
+    (*"absence found at ONE location is not absence"*): ``refc-base-30k``
+    returns None for ``strategic_policy`` **and has a strategic level** —
+    ``RefCModel`` names it ``model.strategic`` (GRU + proj) and carries
+    ``route_head``, ``maneuver_head`` and ``decoder.ctx_to_cond`` /
+    ``decoder.maneuver_to_anchor``. Reporting that arm as "no strategic level"
+    would have manufactured a false structural claim about the very
+    architecture this program is comparing itself to.
+
+    So the skip enumerates what it DID find, and says plainly that the missing
+    thing is an **adapter**, not a brain."""
+    found = []
+    try:
+        names = [n for n, _ in model.named_modules() if n]
+        found = [n for n in names
+                 if any(h in n.lower() for h in _ALIAS_HINTS)][:24]
+    except Exception:                                    # not an nn.Module
+        found = []
+    return {
+        "block": BLOCK, "version": VERSION, "spec": SPEC,
+        "skipped": ("this arm does not expose the flagship 4-brain API "
+                    "(strategic_policy + tactical_policy) that HP-3 drives. "
+                    "A SKIP IS NOT A PASS, and it is NOT a claim that the arm "
+                    "has no strategic level -- see "
+                    "`hierarchy_like_modules_found`."),
+        "has_strategic_policy": getattr(model, "strategic_policy", None)
+        is not None,
+        "has_tactical_policy": getattr(model, "tactical_policy", None)
+        is not None,
+        "model_class": type(model).__name__,
+        "hierarchy_like_modules_found": found,
+        "strategic_level_absent": not found,
+        "_read": ("`strategic_level_absent` is the ONLY field that may be read "
+                  "as a structural absence, and it is False whenever any "
+                  "hierarchy-shaped module was found under another name. In "
+                  "that case HP-3 is UNMEASURED on this arm and needs a "
+                  "per-arch adapter; do not record a 0."),
+    }
+
+
 def _wp_tensor(head_out):
     """``{step: [b,2]}`` -> ``[b, 4, 2]`` at WP_STEPS, in WP_STEPS order."""
     return torch.stack([head_out["waypoints"][k] for k in WP_STEPS], dim=1)
@@ -168,14 +219,20 @@ def run(model, episodes, device, step_readout=None, speed_input=False,
     strat = getattr(model, "strategic_policy", None)
     tac = getattr(model, "tactical_policy", None)
     if strat is None or tac is None:
-        return {"block": BLOCK, "version": VERSION,
-                "skipped": ("no trained strategic_policy + tactical_policy: "
-                            "HP-3 asks whether a STRATEGIC command changes the "
-                            "trajectory, which is undefined for an arm with no "
-                            "strategic level. A SKIP IS NOT A PASS.")}
+        return _skip_report(model)
     if grounded and step_readout is None:
         raise ValueError("grounded=True needs a step_readout")
     model.eval()
+    # PC2 (2026-07-26): HP-3 is a claim about the STRATEGIC command reaching the
+    # trajectory, so the probe must prove its own scored pass traversed the
+    # seams it is reporting on. `operative_intent` is required only in
+    # --grounded mode, which is the only mode that threads an intent into the
+    # operative predictor.
+    from taniteval import hierarchy_guard as _hg
+    _need = (("strategic", "tactical", "operative_intent") if grounded
+             else ("strategic", "tactical"))
+    _trace = _hg.HierarchyTrace(model)
+    _trace.__enter__()
     rec = {k: [] for k in ("eid", "nav_true", "nav_valid")}
 
     for ep in episodes[:max_eps]:
@@ -227,11 +284,17 @@ def run(model, episodes, device, step_readout=None, speed_input=False,
             rec["eid"] += [ep.episode_id] * b
             _accumulate(rec, br, grounded)
 
+    _trace.__exit__()
     if not rec["eid"]:
         return {"block": BLOCK, "version": VERSION,
                 "skipped": "no eligible windows (episodes too short)"}
-    return _assemble(rec, n_boot=n_boot, seed=seed, grounded=grounded,
-                     intent_free_scored_rollout=True)
+    pc2 = _hg.assert_hierarchy_traversed(
+        _trace, block=BLOCK, claim="HP-3 counterfactual route swap",
+        require=_need)
+    out = _assemble(rec, n_boot=n_boot, seed=seed, grounded=grounded,
+                    intent_free_scored_rollout=True)
+    out["pc2"] = pc2
+    return out
 
 
 def _accumulate(rec, br, grounded):

@@ -131,6 +131,27 @@ def run_one(key, episodes=40, device="cuda"):
     # `data.list_val_episodes` now returns an integrity record; stamp it, so the
     # next audit reads it instead of reconstructing it.
     res["val_parity"] = data.last_val_parity()
+    # PC2 PROVENANCE (2026-07-26). `win["pc2"]` is the forward-hook record from
+    # the scored pass (taniteval.hierarchy_guard). Stamp it into the result JSON
+    # so the leaderboard number carries, in its own artifact, whether the three
+    # brains were on the path and whether the actions were CHOSEN. For the
+    # grounded-rollout arms it reads pc2_pass=false BY CONSTRUCTION -- that is
+    # the point: `rollout_decode` has no intent/ctx/nav and is fed the expert's
+    # true future actions, so this is `wm_fidelity_ade_2s`, not a driving or a
+    # hierarchy number. `refb_eval`/`refc_eval` build their own window dicts and
+    # do not emit the key; record that as `unavailable`, never as a pass.
+    res["pc2"] = win.get("pc2") or {
+        "pc2_pass": None,
+        "unavailable": (f"{arch} collect() does not emit a PC2 seam trace; "
+                        "absence of the record is NOT a pass")}
+    if res["pc2"].get("pc2_pass") is False:
+        print(f"[pc2] {key}: ⚠️  the scored pass did NOT traverse the "
+              f"hierarchy (missing: {res['pc2'].get('missing_seams')}) and "
+              f"actions_source="
+              f"{res['pc2'].get('decision_surface', {}).get('actions_source')}"
+              f" -> quote this as "
+              f"`{res['pc2'].get('honest_metric_name', 'wm_fidelity')}`, "
+              f"NOT as a hierarchy or driving result", flush=True)
     res["wall_s"] = round(time.time() - t0, 1)
     RES.mkdir(parents=True, exist_ok=True)
     rollout.save_windows(win, RES / f"windows_{key}.pt")

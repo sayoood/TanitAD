@@ -1,0 +1,236 @@
+{
+  "v1_route_target": {
+    "block": "taniteval.blind_baseline/firewall",
+    "version": "1.0.0",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-preconditions/PRECONDITIONS_IMPLEMENTED.md (T3)",
+    "problem": "v1_route_target",
+    "n_windows": 441,
+    "n_episodes": 40,
+    "n_classes": 3,
+    "context_fields": [
+      "nav_cmd"
+    ],
+    "blind_accuracy": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 441,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_accuracy_linear_probe": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 441,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "majority_base_rate": {
+      "mean": 0.424,
+      "lo": 0.2738,
+      "hi": 0.5986,
+      "ci95": 0.1624,
+      "se": 0.0801,
+      "reducer": "mean",
+      "n_windows": 441,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_skill_over_majority": 0.575964,
+    "split": {
+      "unit": "episode",
+      "n_folds": 4,
+      "why": "a within-episode split makes almost any target look context-learnable, because the context is near-constant inside an episode"
+    },
+    "head": {
+      "hidden": 16,
+      "steps": 400,
+      "lr": 0.05,
+      "note": "categorical context is ONE-HOT encoded, never fed as an integer -- an integer-coded lookup leak is invisible to a linear probe"
+    },
+    "estimator": {
+      "interval": "episode_cluster_bootstrap",
+      "n_boot": 2000,
+      "seed": 0,
+      "resampling_unit": "episode"
+    },
+    "thresholds": {
+      "deterministic_eps": 0.02,
+      "match_eps": 0.02,
+      "skill_eps": 0.03
+    },
+    "verdict": "CIRCULAR",
+    "admissible": false,
+    "target_is_deterministic_in_context": true,
+    "vision_buys_nothing": false,
+    "context_leaks": true,
+    "_read": "the target is recoverable from the conditioning alone. Any score on it measures the lookup, not the model. This is the `route_target = _NAV_TO_ROUTE[nav_cmd]` failure -- the head reached CE 0.0 by copying its own conditioning embedding while route_skill stayed 0.0000. INADMISSIBLE: fix the target or withhold the conditioning during supervision.",
+    "summary": "v1_route_target: blind 1.0000 (linear 1.0000) vs majority 0.4240 -> CIRCULAR  [n=441/40 eps]"
+  },
+  "v2_route_target": {
+    "block": "taniteval.blind_baseline/firewall",
+    "version": "1.0.0",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-preconditions/PRECONDITIONS_IMPLEMENTED.md (T3)",
+    "problem": "v2_route_target",
+    "n_windows": 416,
+    "n_episodes": 38,
+    "n_classes": 3,
+    "context_fields": [
+      "nav_cmd"
+    ],
+    "blind_accuracy": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 416,
+      "n_episodes": 38,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_accuracy_linear_probe": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 416,
+      "n_episodes": 38,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "majority_base_rate": {
+      "mean": 0.4832,
+      "lo": 0.3365,
+      "hi": 0.6453,
+      "ci95": 0.1544,
+      "se": 0.0793,
+      "reducer": "mean",
+      "n_windows": 416,
+      "n_episodes": 38,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_skill_over_majority": 0.516827,
+    "split": {
+      "unit": "episode",
+      "n_folds": 4,
+      "why": "a within-episode split makes almost any target look context-learnable, because the context is near-constant inside an episode"
+    },
+    "head": {
+      "hidden": 16,
+      "steps": 400,
+      "lr": 0.05,
+      "note": "categorical context is ONE-HOT encoded, never fed as an integer -- an integer-coded lookup leak is invisible to a linear probe"
+    },
+    "estimator": {
+      "interval": "episode_cluster_bootstrap",
+      "n_boot": 2000,
+      "seed": 0,
+      "resampling_unit": "episode"
+    },
+    "thresholds": {
+      "deterministic_eps": 0.02,
+      "match_eps": 0.02,
+      "skill_eps": 0.03
+    },
+    "verdict": "CIRCULAR",
+    "admissible": false,
+    "target_is_deterministic_in_context": true,
+    "vision_buys_nothing": false,
+    "context_leaks": true,
+    "_read": "the target is recoverable from the conditioning alone. Any score on it measures the lookup, not the model. This is the `route_target = _NAV_TO_ROUTE[nav_cmd]` failure -- the head reached CE 0.0 by copying its own conditioning embedding while route_skill stayed 0.0000. INADMISSIBLE: fix the target or withhold the conditioning during supervision.",
+    "summary": "v2_route_target: blind 1.0000 (linear 1.0000) vs majority 0.4832 -> CIRCULAR  [n=416/38 eps]"
+  },
+  "v21_route_target": {
+    "block": "taniteval.blind_baseline/firewall",
+    "version": "1.0.0",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-preconditions/PRECONDITIONS_IMPLEMENTED.md (T3)",
+    "problem": "v21_route_target",
+    "n_windows": 1264,
+    "n_episodes": 37,
+    "n_classes": 3,
+    "context_fields": [
+      "nav_cmd"
+    ],
+    "blind_accuracy": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 1264,
+      "n_episodes": 37,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_accuracy_linear_probe": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 1264,
+      "n_episodes": 37,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "majority_base_rate": {
+      "mean": 0.4565,
+      "lo": 0.3079,
+      "hi": 0.6002,
+      "ci95": 0.1461,
+      "se": 0.075,
+      "reducer": "mean",
+      "n_windows": 1264,
+      "n_episodes": 37,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "blind_skill_over_majority": 0.543513,
+    "split": {
+      "unit": "episode",
+      "n_folds": 4,
+      "why": "a within-episode split makes almost any target look context-learnable, because the context is near-constant inside an episode"
+    },
+    "head": {
+      "hidden": 16,
+      "steps": 400,
+      "lr": 0.05,
+      "note": "categorical context is ONE-HOT encoded, never fed as an integer -- an integer-coded lookup leak is invisible to a linear probe"
+    },
+    "estimator": {
+      "interval": "episode_cluster_bootstrap",
+      "n_boot": 2000,
+      "seed": 0,
+      "resampling_unit": "episode"
+    },
+    "thresholds": {
+      "deterministic_eps": 0.02,
+      "match_eps": 0.02,
+      "skill_eps": 0.03
+    },
+    "verdict": "CIRCULAR",
+    "admissible": false,
+    "target_is_deterministic_in_context": true,
+    "vision_buys_nothing": false,
+    "context_leaks": true,
+    "_read": "the target is recoverable from the conditioning alone. Any score on it measures the lookup, not the model. This is the `route_target = _NAV_TO_ROUTE[nav_cmd]` failure -- the head reached CE 0.0 by copying its own conditioning embedding while route_skill stayed 0.0000. INADMISSIBLE: fix the target or withhold the conditioning during supervision.",
+    "summary": "v21_route_target: blind 1.0000 (linear 1.0000) vs majority 0.4565 -> CIRCULAR  [n=1264/37 eps]"
+  }
+}
