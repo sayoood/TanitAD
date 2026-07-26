@@ -1,0 +1,61 @@
+{
+ "_RETRACTED": "FALSIFIED BY DIRECT MEASUREMENT -- see IDM_V2_RESULTS.md section 4.2. This file predicted a derived-accel R2 CEILING of +0.657 (w=9) / +0.898 (w=17) on PhysicalAI. accel_derive.json measures -8.81 / -4.13. Root cause: the budget assumes the post-smoothing residual of the speed error is spectrally WHITE; it is not, and the Savitzky-Golay derivative amplifies exactly the non-white part. Root-cause class C3 (mechanism instead of measurement). Kept unmodified below as the record of a wrong prediction that was caught by measuring it.",
+ "kernels": {
+  "w9": {
+   "k_deriv_per_s": 1.2909944487358054,
+   "smooth_gain": 0.5053822864043174
+  },
+  "w17": {
+   "k_deriv_per_s": 0.4950737714883373,
+   "smooth_gain": 0.36486563963261875
+  }
+ },
+ "per_domain": {
+  "pai": {
+   "n_frames": 2673,
+   "speed_err_rms": 3.3761767880768834,
+   "gt_kinematic_accel_std": 0.7934095358595668,
+   "w9": {
+    "sigma_speed_white": 0.360087340219767,
+    "sigma_speed_smooth": 3.29813190525993,
+    "k_deriv_per_s": 1.2909944487358054,
+    "implied_sigma_derived_accel": 0.46487075728376054,
+    "gt_accel_std": 0.7934095358595668,
+    "implied_R2_ceiling_of_derived_accel": 0.6567033039723371,
+    "sigma_speed_white_REQUIRED_for_R2_0.3": 0.5141881469549986
+   },
+   "w17": {
+    "sigma_speed_white": 0.5128818814813053,
+    "sigma_speed_smooth": 3.2067209353065365,
+    "k_deriv_per_s": 0.4950737714883373,
+    "implied_sigma_derived_accel": 0.25391436739298423,
+    "gt_accel_std": 0.7934095358595668,
+    "implied_R2_ceiling_of_derived_accel": 0.8975811914629447,
+    "sigma_speed_white_REQUIRED_for_R2_0.3": 1.340838641742287
+   }
+  },
+  "cm": {
+   "n_frames": 6424,
+   "speed_err_rms": 4.599626471695874,
+   "gt_kinematic_accel_std": 0.4306765894115364,
+   "w9": {
+    "sigma_speed_white": 0.6880617798202524,
+    "sigma_speed_smooth": 4.491414845496176,
+    "k_deriv_per_s": 1.2909944487358054,
+    "implied_sigma_derived_accel": 0.8882839381352239,
+    "gt_accel_std": 0.4306765894115364,
+    "implied_R2_ceiling_of_derived_accel": -3.2540352896965494,
+    "sigma_speed_white_REQUIRED_for_R2_0.3": 0.2791103300850836
+   },
+   "w17": {
+    "sigma_speed_white": 0.9266185330044883,
+    "sigma_speed_smooth": 4.400807830462095,
+    "k_deriv_per_s": 0.4950737714883373,
+    "implied_sigma_derived_accel": 0.4587445318655224,
+    "gt_accel_std": 0.4306765894115364,
+    "implied_R2_ceiling_of_derived_accel": -0.13459083443213427,
+    "sigma_speed_white_REQUIRED_for_R2_0.3": 0.7278306940830326
+   }
+  }
+ }
+}
