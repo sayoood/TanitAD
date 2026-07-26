@@ -8,6 +8,43 @@
 
 ---
 
+## HEADLINE — six findings, in the order they should change what we do
+
+1. **Soft-over-hard is well supported and theorem-backed.** The **Interruption Theorem** (Sutton,
+   Precup & Singh 1999) says letting the lower level override the higher level's commitment can never
+   hurt. Every SOTA driving planner I could read the mechanism of — **PLUTO, VADv2/Hydra-MDP,
+   PDM** — decodes *all* modes and ranks **flat** over the whole set. **None of them gates.** (§1.1, §2.1)
+2. ⚠️ **"Monotone harm in commitment tightness" is not the field's picture, and re-reading our own
+   table, it is not ours either.** In three independent domains — deliberation cost `η`,
+   classifier-free guidance `w`, annealed WTA temperature — prior strength has an **INTERIOR
+   OPTIMUM**. Our curve does too: 0.8781 (no prior) → **0.8563 (soft)** → 1.06 → 6.68 (hard).
+   Monotone degradation is only the *hard branch*. **We have measured two points on the soft side and
+   cannot say where our optimum is.** (§1.2, §1.3)
+3. ⛔ **HEADLINE CORRECTION: the "+0.0218 m useful as a soft prior" is not the hierarchy alone.**
+   `F_base_only` removes the grafts **and** the longitudinal `sel_gate` term. Decomposing two staged
+   artifacts on the oracle surface: **graft ≈ 0.0092 m, constant-velocity term ≈ 0.0100 m.** The
+   hierarchical prior is worth about **half** the quoted figure. (§5.2)
+4. ⭐ **MEASURED HERE (CPU, staged artifacts, no pod): the coverage confound does NOT carry our
+   result.** At **q = 64** a *random* 64-subset contains a candidate **0.3750 m better than flat**,
+   separated — yet committing to the graft's 64 is 0.2058 m **worse**. Coverage explains **0 %** of
+   the harm at q ≥ 32 and **~30 %** at q ≤ 16. (§9.3)
+5. ⛔ **I retracted one of my own pre-registered arms mid-run**, and in doing so found that
+   **`base_rank` in a staged V5 artifact is not a rank** — it is `[pick] ++ [anchor index order]`,
+   verified 881/881. One V5 §5.2 label is wrong because of it; its conclusions survive. (§9.2, §9.5)
+6. ⭐ **"A produced goal is worse than no goal" is a defect of OUR producer, not a property of goal
+   conditioning.** GoalFlow's identical three-rung ladder runs **85.6 (none) → 90.3 (predicted) →
+   92.1 (oracle) PDMS** — predicted recovers **73 %** of the oracle headroom. Ours recovers **−147 %**.
+   And GoalFlow supplies the fix to copy: the **shadow trajectory**, an unconditioned branch you fall
+   back to when the goal looks unreliable. (§3.3)
+
+**The design (§5):** keep the additive product-of-experts prior v4 *already* has, **expose its two
+strength knobs (`λ` gain, `τ` class-posterior temperature), and delete `q` from the deployment path.**
+`(λ, τ)` reach arbitrarily hard commitment **without truncating the candidate set** — the axis our
+measurement never had and the literature has never published. **The whole 42-cell sweep is ONE
+forward pass plus seconds of CPU per cell** (§6.3).
+
+---
+
 ## 0. PRE-REGISTRATION — written BEFORE any literature was read
 
 > ⛔ Everything in §0 was written and staged **before** the first paper was opened. The only
@@ -409,7 +446,7 @@ admissible at all):
 |---|---:|---|
 | `F_flat` — graft ON, gate ON | **0.6423** | `…/2026-07-26-v5-imagination-selection/raw/v5_hier_windows.pt` and `…/2026-07-26-v4-restart-lever/raw/v4_selgate_ablation.json` (agree exactly) |
 | `sel_gate := 0` — graft ON, gate OFF | **0.6523** | `…/2026-07-26-v4-restart-lever/`, paired Δ **−0.0100 [−0.0191, −0.0020]**, ✅sep |
-| `F_base_only` — graft OFF, gate OFF | **0.6615** | `…/2026-07-26-v5-imagination-selection/raw/v5_hier_windows.pt → oracle|F_base_only` |
+| `F_base_only` — graft OFF, gate OFF | **0.6615** | `…/2026-07-26-v5-imagination-selection/raw/v5_hier_windows.pt` → key `oracle` + `F_base_only` |
 
 ⇒ **longitudinal term ≈ 0.0100 m · class→anchor graft ≈ 0.0092 m · total 0.0192 m** (= 0.6615 −
 0.6423 ✓).
@@ -565,6 +602,12 @@ per-window permutation of 0..255, and `fan_err4.gather(1, base_rank[:, :1]).mean
 ≈ +0.009 m as a bias (§5.2) and an informative prior should choose a better-than-random subset.
 If the result is COMMITMENT-HARMFUL I will flag it as a *surprise* rather than absorbing it.
 
+> ⛔ **WHAT ACTUALLY HAPPENED — read §9.2 before §9.3.** The `R_rand(q)` arm above rests on a premise
+> about `base_rank` that a post-run self-test **refuted on 881/881 rows**: `base_rank` is not a score
+> ranking. **The arm is retracted and its numbers are not quoted.** `O_rand(q)` is unaffected and is
+> what adjudicated F2 (§9.3). The pre-registration is left here **unedited** so the retraction is
+> visible rather than absorbed.
+
 ### 6.3 E-H2 — the (λ, τ) surface. ONE forward pass + seconds of CPU per cell.
 
 λ ∈ {0, 0.25, 0.5, 1, 2, 4, 8} × τ ∈ {0.1, 0.25, 0.5, 1, 2, 4}, **q = 256 always**. 42 cells × 2
@@ -658,14 +701,14 @@ be buying less than we assume even as a prior**, which is exactly what §5.2's �
 | # | falsifier | fired? | evidence |
 |---|---|---|---|
 | **F1** classifier-quality threshold | ❌ **NO** | no published result quantifies an accuracy/calibration threshold above which hard mode gating wins. C3 meets the *spirit* (hand-verified classifiers) at PROVISIONAL grade only |
-| **F2** coverage confound | ⏳ **OPEN — and it is OURS, not the literature's** | no published demonstration either way. It is a live, untested confound in our own data. E-H1 (§6.2) settles it on CPU today |
+| **F2** coverage confound | ⚠️ **PARTIAL — and it was OURS, not the literature's. MEASURED in §9** | no published demonstration either way, so I measured it. **E-H1 result: coverage explains 0 % of the harm at q ≥ 32 and ~30 % at q ≤ 16.** At q = 64 a *random* 64-subset contains a candidate **0.3750 m better than flat**, separated — yet committing to the graft's 64 is 0.2058 m worse. F2 does **not** carry the result, but it does force a quantitative restatement of the q = 8 number |
 | **F3** horizon / replanning frequency | ⚠️ **PARTIAL** | C2 DEMONSTRATES that zero commitment is catastrophic for *option duration*. But that is temporal extent, not candidate restriction, and its interior optimum matches ours |
 | **F4** closed-loop inversion | ⚠️ **PARTIAL, and the strongest caution** | C1 DEMONSTRATES a closed-loop gain (16.71 → 18.11 % SR) from committing to the previous plan, on a metric open-loop ADE cannot see. Our numbers are **all** open-loop 2 s ADE, and this program has measured that open-loop does not predict closed-loop (0.45 m open → 1.69 m closed) |
 | **F5** metric inversion | ❌ **NO** | no evidence found that hard commitment loses on displacement and wins on collision / rule-compliance / worst-case |
 
 **§0.3 required two falsifiers at PUBLISHED-DEMONSTRATED grade *for our variable*. Zero clear that
-bar; two clear it for adjacent variables.** So I do **not** write *"hard commitment is right after
-all."* I write the two things F3 and F4 do license, and they are scope limits, not rescues:
+bar; two clear it for adjacent variables; and F2 — the one I could test myself — was tested and does
+not carry the result (§9).** So I do **not** write *"hard commitment is right after all."* I write the two things F3 and F4 do license, and they are scope limits, not rescues:
 
 > **(a) Our verdict is scoped to OPEN-LOOP, PER-WINDOW RE-SELECTION** — the maximum-replanning,
 > minimum-horizon corner, where interruption is cheapest and commitment has least to offer *by
@@ -686,3 +729,190 @@ anticipated:
 > (0.8781 → **0.8563** → 1.06 → 6.68). Our contribution is not the sign; it is that we measured the
 > curve **with the prior's information content held fixed**, which nobody has published — and we
 > measured it with **`q`, a knob that confounds commitment with coverage**, which §6 fixes.
+
+---
+
+## 9. E-H1 RESULT — the coverage control, run in this stream (CPU, staged artifacts, no pod)
+
+Harness: `eh1_coverage_control.py` · artifact: `eh1_coverage_control.json` · host `SAYED-PC`,
+Python 3.13.5, torch 2.11.0, numpy — **CPU only, no GPU, no pod contacted**.
+Estimator: `taniteval/taniteval/ci.py::paired_episode_cluster_bootstrap`, B = 2000, unit = episode
+cluster, 40 clusters / 881 windows.
+
+### 9.1 S1 — committed numbers reproduced before anything was adjudicated
+
+| check | recomputed | committed | |
+|---|---:|---:|---|
+| `F_flat` from `ref_sel_idx` | **0.8563** | 0.8563 | ✅ |
+| `F_flat` from the hier dump | **0.8563** | 0.8563 | ✅ |
+| `oracle_in_fan` | **0.2505** | 0.2505 | ✅ |
+| paired `H_graft(64) − flat` (reproduced end-to-end) | **+0.2059 [+0.1316, +0.2897]** | +0.2059 [+0.1290, +0.2975] | ✅ |
+
+*(Also recomputed: the **exact expectation** of a uniform random pick is **15.0111**, against E-V5-1's
+**15.8738**, which was a *single* random draw per window. Consistent, not identical, and the
+difference is draw noise on a distribution with a 108.7 m per-window span — not a discrepancy.)*
+
+### 9.2 ⛔ S2 — I RETRACT MY OWN PRE-REGISTERED ARM
+
+§6.2 pre-registered `R_rand(q)` as *"pick the member of the random subset that ranks best under the
+**deployed** score"*, implemented via `v5_v4_windows_reduced.pt::base_rank`. **A self-test written
+after the first run refutes the premise.** `base_rank` is **not** a score ranking. It is
+
+```
+base_rank[w] = [ the as-trained pick ] ++ [ anchor indices 0..255 with the pick removed ]
+```
+
+**verified on 881/881 rows**, and its construction site says so
+(`…/2026-07-26-v5-imagination-selection/code/v5_cost_curve.py:109-122`, comment: *"approximate the
+base RANKING … using the recorded per-window pick plus fan-order for the rest (documented, not
+hidden)"*).
+
+So `R_rand(q)` actually measured *"take the flat pick if it survived the draw, else take the lowest
+**anchor index** in the draw"* — an artefact of anchor numbering. **Its first-run numbers
+(`R_rand(8) = 16.35` etc.) are retracted and are not quoted anywhere in this file.** The reason I
+caught it is that the run produced a number that could not be true — a best-of-8 under an informative
+score coming out *worse* than a single random pick — and I measured the tensor instead of explaining
+the number.
+
+> **For `RETRACTION_LOG.md` — root-cause class C-NEW: *a tensor's semantics taken from its NAME
+> rather than from its construction site.*** `base_rank` is not a rank. Generalises to every reduced
+> dump in the program.
+
+**`O_rand(q)` is unaffected** — it never touches `base_rank` — and it is the arm that answers F2.
+
+### 9.3 THE RESULT — coverage explains ~30 % of the harm at tight `q` and NONE of it at loose `q`
+
+`O_rand(q)` = the **oracle inside a uniformly random `q`-subset**, 200 seeds, per-window mean. It is
+the *coverage floor*: the best any selector could achieve if restricted to `q` candidates of random
+composition.
+
+| q | `O_rand(q)` coverage floor | paired vs `F_flat` 0.8563 | `H_graft(q)` | total harm | **harm NOT explained by coverage** | share |
+|---:|---:|---|---:|---:|---:|---:|
+| 8 | 2.6018 | **+1.7455 [+1.3518, +2.1658]** ✅sep | 6.6752 | +5.8189 | **+4.0734 [+2.4800, +5.7277]** ✅sep | **70 %** |
+| 16 | 1.3642 | **+0.5079 [+0.2761, +0.7457]** ✅sep | 2.6510 | +1.7947 | **+1.2869 [+0.6632, +1.9815]** ✅sep | **72 %** |
+| 32 | 0.7645 | −0.0918 [−0.2499, +0.0666] *not sep* | 1.2000 | +0.3437 | **+0.4356 [+0.2260, +0.6565]** ✅sep | **100 %** |
+| 64 | 0.4813 | **−0.3750 [−0.5126, −0.2481]** ✅sep | 1.0621 | +0.2058 | **+0.5809 [+0.4128, +0.7563]** ✅sep | **100 %** |
+| 128 | 0.3365 | −0.5198 [−0.6493, −0.4048] ✅sep | — | — | — | — |
+| 256 | 0.2505 | −0.6057 [−0.7339, −0.4893] ✅sep | — | — | — | — |
+
+> ⭐ **VERDICT: F2 fires PARTIALLY, and the commitment reading survives.**
+>
+> - **At q = 64 a uniformly random 64-subset contains a candidate that is 0.3750 m BETTER than what
+>   the flat selector picks, separated.** Yet committing to the graft's 64 and searching inside is
+>   0.2058 m **worse** than flat. **Coverage explains none of the harm at q = 64, and none at q = 32.**
+> - At q = 16 and q = 8 coverage *is* binding and costs **+0.51 m** and **+1.75 m** respectively,
+>   separated — but that is only **28–30 %** of the measured harm. **~70 % remains unexplained by
+>   coverage at every q.**
+>
+> ⇒ **"Hierarchical commitment costs" is NOT a coverage curve wearing a commitment costume.** The
+> pre-registered escape hatch was tested and it does not carry the result. The *quantitative* claim
+> does need restating: the +5.82 m at q = 8 is **not** all commitment — about 1.75 m of it is the
+> candidate set simply being too small.
+
+### 9.4 What E-H1 could NOT settle, stated plainly
+
+The two arms that would close it completely need tensors **no staged artifact contains**:
+
+| arm | needs | status |
+|---|---|---|
+| `O_graft(q)` — oracle inside the **graft's** admissible set | `prior [W, 256]` | **not computable here.** Would say whether the graft's subset is better- or worse-*covered* than a random one |
+| `H_rand(q)` — best under the **real deployed score** inside a random subset | `sel_score [W, 256]` | **not computable here.** Would isolate the graft's subset *choice* from the restriction |
+
+Both are one `torch.save` key away (§5.6). **This is the concrete reason E-H2 must dump `prior` and
+`sel_score`, and it is now an evidenced requirement rather than a preference.**
+
+### 9.5 ⚠️ ESCALATION — a staged artifact is misnamed, and one V5 label is wrong because of it
+
+`base_rank` in `raw/v5_v4_windows_reduced.pt` is **not** a base-score ranking (§9.2). Consequences,
+scoped precisely:
+
+- **V5 §5.2's label is wrong.** Its code comment claims *"keep the top-n candidates by the AS-TRAINED
+  base ranking"*; what the columns actually vary is *"the as-trained pick plus anchors 0..n−2 in
+  index order."* The `n = 1` column (0.8563) is exact; **`n = 2 … 256` are not "the top-n by score."**
+- **V5 §5.2/§5.4's CONCLUSIONS survive**, and I say so rather than over-claiming the correction: the
+  finding is that *letting the imagination rule consider more candidates makes it worse*, which holds
+  for **any** nested family of candidate sets — index order is still a nested family. *"Breadth costs
+  −10.66 m"* and *"at every budget, spend none of the imagination budget"* stand.
+- **What must change is the LABEL and the dump's key name**, before some later stream does what I
+  did. Suggested: rename to `nested_order` with a docstring, or dump the real `sel_score` argsort.
+
+---
+
+## 10. CITATION TABLE
+
+| # | work | link | used for | tier | DEMONSTRATED vs ASSERTED |
+|---|---|---|---|---|---|
+| 1 | Sutton, Precup & Singh 1999, *Between MDPs and semi-MDPs*, AIJ 112:181–211 | https://people.cs.umass.edu/~barto/courses/cs687/Sutton-Precup-Singh-AIJ99.pdf · https://www.sciencedirect.com/science/article/pii/S0004370299000521 | the **Interruption Theorem** — interruption cannot hurt | CONFIRMED | **DEMONSTRATED** (proved). ⚠️ for true `Q^μ`, not a learned one |
+| 2 | Sutton, Precup & Singh, NIPS 1999, *Improved Switching among Temporally Abstract Actions* | https://wsai.iitm.ac.in/~ravi/papers/sutton_spr_NIPS99.pdf | the empirical companion to (1) | PROVISIONAL | ⚠️ **PDF unreadable via fetch — not read in this stream.** Listed for the reader, not relied on |
+| 3 | Harb, Bacon, Klissarov & Precup, AAAI 2018, *When Waiting is not an Option* | https://arxiv.org/abs/1709.04571 | deliberation cost `η`; **non-monotone, interior optimum**; η=0 ⇒ 1-step collapse | CONFIRMED | **DEMONSTRATED** (η swept 0→0.03; ALE scores) |
+| 4 | Bacon, Harb & Precup, AAAI 2017, *The Option-Critic Architecture* | https://arxiv.org/abs/1609.05140 | learnable termination | PROVISIONAL | secondary-source level only; **full text not read** |
+| 5 | Nachum et al., ICLR 2020, *Why Does Hierarchy (Sometimes) Work So Well in RL?* | https://arxiv.org/abs/1909.10618 | hierarchy's benefit is mostly **exploration**; shadow-agent control | CONFIRMED | **DEMONSTRATED** (c_train/c_expl decoupling; shadow agent competitive on 3 of 4 tasks) |
+| 6 | Zhang et al., NeurIPS 2020, *Generating Adjacency-Constrained Subgoals in HRL* | https://arxiv.org/abs/2006.11485 | unreachable subgoals mislead; constrain the high level's action space | PROVISIONAL | search/abstract level only |
+| 7 | Dabney, Ostrovski & Barreto 2020, *Temporally-Extended ε-Greedy Exploration* | https://arxiv.org/abs/2006.01782 | persistence has value (contradicting evidence C5) | PROVISIONAL | abstract level only |
+| 8 | Ho & Salimans 2022, *Classifier-Free Diffusion Guidance* | https://arxiv.org/abs/2207.12598 | **guidance strength `w` has an interior optimum**; U-shaped FID | CONFIRMED | **DEMONSTRATED** (Tables 1–2, numbers quoted in §1.2) |
+| 9 | Puigcerver, Riquelme, Mustafa & Houlsby, ICLR 2024, *From Sparse to Soft MoE* | https://arxiv.org/abs/2308.00951 | soft routing beats hard token assignment | CONFIRMED (own domain) | **DEMONSTRATED**; transfer to planners is analogy |
+| 10 | Shi, Jiang, Dai & Schiele, NeurIPS 2022, *MTR* | https://arxiv.org/abs/2209.13508 | intention queries = per-mode generation, ranked at inference; hard assignment is a **training** rule | CONFIRMED (abstract) / PROVISIONAL (inference detail) | abstract **ASSERTS** stabilisation; the leaderboard result is DEMONSTRATED |
+| 11 | *Annealed Winner-Takes-All for Motion Forecasting* | https://arxiv.org/abs/2409.11172 · https://arxiv.org/html/2409.11172v2 | **soft→hard annealing beats hard WTA**: −9.41 % minADE, −36.67 % MissRate on MTR/Argoverse 2 | CONFIRMED | **DEMONSTRATED** (numbers quoted) |
+| 12 | Cheng, Chen & Chen 2024, *PLUTO* | https://arxiv.org/abs/2404.14327 · https://arxiv.org/html/2404.14327 | SOTA imitation planner decodes the **full lateral×longitudinal product** and ranks **flat** | CONFIRMED | **DEMONSTRATED** (mechanism + equations quoted) |
+| 13 | Dauner et al. 2023, *PDM* (nuPlan 2023 winner) | https://arxiv.org/abs/2306.07962 | propose → **simulate & score** → select flat | PROVISIONAL | search level only |
+| 14 | Jaeger, Chitta & Geiger, ICCV 2023, *Hidden Biases of End-to-End Driving Models* | https://arxiv.org/abs/2306.07957 · https://openaccess.thecvf.com/content/ICCV2023/html/Jaeger_Hidden_Biases_of_End-to-End_Driving_Models_ICCV_2023_paper.html | **target-point shortcut**; catastrophic failure on distant TPs; 32→39 DS, 56→84 % RC | CONFIRMED | **DEMONSTRATED** (ablations quoted) |
+| 15 | Codevilla, Santana, López & Gaidon, ICCV 2019, *Exploring the Limitations of Behavior Cloning* | https://arxiv.org/abs/1904.08980 | command-conditioned branching; causal confusion; training instability | PROVISIONAL | abstract level only |
+| 16 | Zheng et al., ICLR 2025 Oral, *Diffusion-Based Planning for Autonomous Driving with Flexible Guidance* | https://arxiv.org/abs/2501.15564 · https://arxiv.org/html/2501.15564v2 | inference-time classifier guidance for planning; route via MLP-Mixer→adaLN | CONFIRMED (mechanism) | ⚠️ **NO guidance-strength sweep** — case studies only. The gap in §4 |
+| 17 | Xing et al., CVPR 2025, *GoalFlow* | https://arxiv.org/abs/2503.05689 · https://arxiv.org/html/2503.05689v3 | **the none/predicted/oracle goal ladder 85.6 / 90.3 / 92.1 PDMS**; the **shadow trajectory** fallback | CONFIRMED | **DEMONSTRATED** (ablation numbers quoted) |
+| 18 | Song et al., CVPR 2025, *Don't Shake the Wheel* (MomAD) | https://arxiv.org/abs/2503.03125 · https://arxiv.org/html/2503.03125v2 | **contradicting evidence C1** — closed-loop gain from committing to the previous plan | CONFIRMED | **DEMONSTRATED** (Bench2Drive 16.71→18.11 % SR; TPC 0.81→0.65) |
+| 19 | Li et al. 2024, *Hydra-MDP* | https://arxiv.org/abs/2406.06978 | fixed trajectory vocabulary + **simulator-distilled scores**, flat selection | PROVISIONAL | challenge report / secondary source |
+| 20 | Zhao et al., CoRL 2020, *TNT* · Gu et al. 2021, *DenseTNT* | https://arxiv.org/abs/2008.08294 · https://arxiv.org/abs/2108.09640 | goal-then-trajectory staging with a **large** goal set + final re-rank | PROVISIONAL | abstracts + secondary sources |
+| 21 | *Closing the Navigation Compliance Gap in End-to-end Autonomous Driving* | https://arxiv.org/abs/2512.10660 | planners ignore/misuse route commands; remedy is a **soft** loss weighting | PROVISIONAL | ⚠️ qualitative only — **numbers UNVERIFIED**, PDF not parseable |
+| 22 | DARPA Urban Challenge FSM planners (Boss, Junior, AnnieWAY, Odin) | https://www.romela.org/wp-content/uploads/2015/05/Odin-Team-VictorTango%E2%80%99s-Entry-in-the-DARPA-Urban-Challenge.pdf | **contradicting evidence C3** — hard hierarchical mode switching that won | PROVISIONAL | search level only |
+
+**Our own primary artifacts cited (MEASURED):**
+
+| artifact | used for |
+|---|---|
+| `…/Implementation/incoming/2026-07-26-v5-imagination-selection/V5_IMAGINATION_SELECTION.md` + `raw/v5_hier.json`, `raw/v5_hier_windows.pt`, `raw/v5_v4_windows_reduced.pt` | the whole §0.1 table; §3.3's goal ladder; §9's inputs |
+| `…/Implementation/incoming/2026-07-26-v4-restart-lever/V4_RESTART_LEVER.md` + `raw/v4_selgate_ablation.json`, `raw/v4_sel_gate.json` | §5.2's decomposition; `sel_gate` 0.1101→0.1580; `v_goal ≡ v0` |
+| `…/Benchmarks & Eval/Implementation/incoming/2026-07-26-bar-a-selector/BAR_A.md` | the 0.4907 feature-only ceiling |
+| `stack/tanitad/models/flagship_v4.py:161-195`, `stack/tanitad/models/flagship_v15.py:451-466` | §5.1's read of the deployed selector |
+| `Project Steering/MODEL_REGISTRY.md §1.2a` | the n=40 → n=600 power factor (×2.8–3.9) |
+
+---
+
+## 11. DELIVERABLE MANIFEST
+
+**STAGED, NEVER COMMITTED, NEVER PUSHED.** All paths relative to the repo root
+`G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/`.
+
+| artifact | location | exists elsewhere? | note |
+|---|---|---|---|
+| `HIERARCHY_PRIOR_RESEARCH.md` (this file) | `repo:TanitAD Research Hub/Architecture & Inference/Research/2026-07-27-hierarchy-prior-vs-constraint/` | **repo only** | §0 pre-registration staged **before** any paper was read; §6.2 staged **before** E-H1 ran |
+| `eh1_coverage_control.py` | same directory | **repo only** | CPU-only harness; reruns in ~90 s with `C:/Users/Admin/venvs/tanitad/Scripts/python.exe` |
+| `eh1_coverage_control.json` | same directory | **repo only** | E-H1 raw output incl. both self-tests and the S2 retraction record |
+
+⚠️ **Everything this stream produced exists in exactly ONE place — the repo working tree — and is
+staged.** Nothing lives on a pod: **no pod was contacted.** No GPU was used. No credential was read.
+
+**Reproducing E-H1 from scratch:** the only inputs are two already-staged tensors
+(`…/2026-07-26-v5-imagination-selection/raw/v5_v4_windows_reduced.pt`, `raw/v5_hier_windows.pt`) and
+`taniteval/taniteval/ci.py`. No GPU, no pod, no network.
+
+### 11.1 ESCALATIONS — these must not sit in a file
+
+1. ⛔ **`base_rank` is misnamed in a staged artifact and one V5 label is wrong because of it** (§9.5).
+   It is `[pick] ++ [anchor index order]`, verified 881/881. V5 §5.2's *"top-n by the as-trained base
+   ranking"* is not what the columns are. **The E-V5-3 conclusions survive; the label does not.**
+   Owner needed: rename the key or dump the real `sel_score` argsort. **I nearly published a false
+   mechanism off this name, and the next stream will too.**
+2. ⛔ **The headline "+0.0218 m useful as a soft prior" is not the hierarchy alone** (§5.2). Splitting
+   two independently staged artifacts on the oracle surface gives **graft ≈ 0.0092 m** and
+   **constant-velocity term ≈ 0.0100 m**. `MODEL_REGISTRY.md` and any brief quoting +0.0218 as *"the
+   hierarchical prior"* needs the qualifier. **DERIVED/PROVISIONAL** — E-H0b makes it decision-grade
+   in one forward pass.
+3. ⛔ **F2 is settled enough to act on, and it changes the wording, not the decision** (§9.3):
+   coverage explains **0 %** of the harm at q ≥ 32 and **~30 %** at q ≤ 16. *"Never truncate the
+   candidate set"* stands; *"the whole 5.82 m at q = 8 is commitment"* does not.
+4. ⭐ **The cheap experiment to run next is E-H2, and it is ONE forward pass** (§6.3) — the (λ, τ)
+   surface is 42 CPU argmaxes over cached tensors. It is the measurement the published literature
+   does **not** have (§4), and it is the only thing that can tell us whether commitment *sharpness*
+   or set *truncation* is the cost. It requires the ~10-line dump delta in §5.6.
+5. ⚠️ **Our verdict is open-loop-only** (§8). MomAD demonstrates a closed-loop gain from temporal
+   commitment; D3 (§5.5) is the design element that anticipates it and currently has **no owner**.
