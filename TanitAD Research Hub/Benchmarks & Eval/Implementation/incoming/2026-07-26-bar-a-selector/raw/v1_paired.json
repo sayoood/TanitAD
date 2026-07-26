@@ -1,0 +1,105 @@
+{
+  "_experiment": "paired v4 (as-trained / CE-control / regret) vs deployed v1 on the identical 881 windows",
+  "_evidence_class": "MEASURED (ours)",
+  "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, unit = episode. NEVER overlapping_holdout_se.",
+  "_v1_dump": "/root/taniteval/results/windows_flagship-30k.pt",
+  "_bar_a_tag": "produced",
+  "v1_identification": {
+    "ade_0_2s_recomputed": 0.42711,
+    "registry_full_set": 0.4271,
+    "abs_diff": 1e-05,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "_rule": "identified BY THE NUMBER, not by the filename",
+    "PASS": true
+  },
+  "_alternatives_printed_not_used": {
+    "flagship-nospeed (the ABLATION CONTROL, must NOT be used as v1)": 3.01753,
+    "flagship-speed (the isolated speed-fix proof)": 0.61522
+  },
+  "window_alignment": {
+    "n_v1": 881,
+    "n_v4": 881,
+    "eid_LABELS_identical": false,
+    "_label_note": "labels DIFFER by construction (episode index vs raw id) and that is not evidence of misalignment",
+    "gt_identical": true,
+    "cv_identical": true,
+    "speed_identical": true,
+    "head_deg_identical": true,
+    "episode_boundaries_identical": true,
+    "gt_max_abs_diff": 0.0,
+    "ALIGNED": true,
+    "_why": "a paired bootstrap is only valid on the SAME windows in the SAME order"
+  },
+  "point_estimates": {
+    "v1": 0.4271,
+    "as_trained": 0.8563,
+    "ce_control": 0.9231,
+    "regret": 0.8817
+  },
+  "paired_vs_v1": {
+    "as_trained": {
+      "ade_0_2s": {
+        "delta": 0.4292,
+        "lo": 0.2865,
+        "hi": 0.582,
+        "ci95": 0.1477,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "arm - v1; NEGATIVE = the v4 arm BEATS deployed v1; a CI containing 0 = statistically TIED"
+    },
+    "ce_control": {
+      "ade_0_2s": {
+        "delta": 0.496,
+        "lo": 0.3161,
+        "hi": 0.6832,
+        "ci95": 0.1836,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "arm - v1; NEGATIVE = the v4 arm BEATS deployed v1; a CI containing 0 = statistically TIED"
+    },
+    "regret": {
+      "ade_0_2s": {
+        "delta": 0.4546,
+        "lo": 0.3102,
+        "hi": 0.6007,
+        "ci95": 0.1452,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "_orientation": "arm - v1; NEGATIVE = the v4 arm BEATS deployed v1; a CI containing 0 = statistically TIED"
+    }
+  },
+  "singles": {
+    "v1": {
+      "mean": 0.4271,
+      "lo": 0.3675,
+      "hi": 0.4871,
+      "ci95": 0.0598,
+      "se": 0.0305,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "v1_miss_at_2m": 0.0454
+}

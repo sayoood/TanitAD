@@ -28,6 +28,7 @@ from taniteval.ci import (episode_cluster_bootstrap,  # noqa: E402
                           paired_episode_cluster_bootstrap)
 
 V1 = "/root/taniteval/results/windows_flagship-30k.pt"
+REPRO = "/root/bara/repro_windows_30k_produced.pt"   # the alignment witness
 ALTS = {
     "flagship-nospeed (the ABLATION CONTROL, must NOT be used as v1)":
         "/root/taniteval/results/windows_flagship-nospeed.pt",
@@ -76,16 +77,40 @@ def main(tag="produced"):
         except Exception as e:
             R.setdefault("_alternatives_printed_not_used", {})[name] = repr(e)
 
+    # ALIGNMENT BY TENSOR IDENTITY, NOT BY LABEL.
+    # The two dumps label episodes differently -- `taniteval.rollout.collect`
+    # writes the episode INDEX (0..39) while `collect_planner` writes
+    # `int(episode_id)` (a large integer: the raw id reinterpreted). Comparing
+    # the label strings therefore says "not aligned" for windows that are in fact
+    # bit-identical. What actually proves alignment is the ground truth itself:
+    # `gt`, `cv`, `speed` and `head_deg` are properties of the WINDOW, not of the
+    # model, so if all four match position-wise the two dumps hold the same
+    # windows in the same order. Verified here rather than assumed.
+    rep = L(REPRO)
     e1 = [str(x) for x in d1["eid"]]
-    e4 = [str(x) for x in W["eid"]]
+    gt_ok = torch.allclose(d1["gt"].float(), rep["gt"].float(), atol=1e-6)
+    cv_ok = torch.allclose(d1["cv"].float(), rep["cv"].float(), atol=1e-6)
+    sp_ok = torch.allclose(d1["speed"].float(), rep["speed"].float(), atol=1e-5)
+    hd_ok = torch.allclose(d1["head_deg"].float(), rep["head_deg"].float(),
+                           atol=1e-4)
+    bnd = lambda e: [i for i, (a, b) in enumerate(zip(e[:-1], e[1:])) if a != b]
+    bnd_ok = bnd(e1) == bnd([str(x) for x in rep["eid"]])
     R["window_alignment"] = {
-        "n_v1": len(e1), "n_v4": len(e4),
-        "eid_sequence_identical": e1 == e4,
+        "n_v1": len(e1), "n_v4": int(np.asarray(W["ade_regret"]).shape[0]),
+        "eid_LABELS_identical": e1 == [str(x) for x in W["eid"]],
+        "_label_note": "labels DIFFER by construction (episode index vs raw id) "
+                       "and that is not evidence of misalignment",
+        "gt_identical": bool(gt_ok), "cv_identical": bool(cv_ok),
+        "speed_identical": bool(sp_ok), "head_deg_identical": bool(hd_ok),
+        "episode_boundaries_identical": bool(bnd_ok),
+        "gt_max_abs_diff": float((d1["gt"].float()
+                                  - rep["gt"].float()).abs().max()),
+        "ALIGNED": bool(gt_ok and cv_ok and sp_ok and hd_ok and bnd_ok),
         "_why": "a paired bootstrap is only valid on the SAME windows in the "
                 "SAME order",
     }
-    if not (R["v1_identification"]["PASS"] and R["window_alignment"]
-            ["eid_sequence_identical"]):
+    if not (R["v1_identification"]["PASS"]
+            and R["window_alignment"]["ALIGNED"]):
         R["ABORTED"] = ("v1 dump did not identify by number, or the windows are "
                         "not aligned -- no paired delta is quotable")
         OUT.write_text(json.dumps(R, indent=2, default=str))
