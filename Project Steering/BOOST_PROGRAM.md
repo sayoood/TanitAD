@@ -176,6 +176,49 @@ oracle privilege is consumed by the *selector*, not by the world model.
 our deployed best model.** The world model is not the problem. This is the strongest positive
 result in the program, and it is CONFIRMED (two independent goal modes, same conclusion).
 
+> ## ⛔ CORRECTION, 2026-07-26 — the "selector waste" above is an ORACLE BOUND, not a recoverable budget
+>
+> **Bar A ran and returned `REFUTE` on both goal surfaces.** The framing in this section — that the
+> selector "throws away 0.4093 m / 0.6058 m", with the implication that the headroom was
+> *recoverable* — is **retired**. It is retained above only so the reasoning that led to Bar A stays
+> legible.
+>
+> **The diagnosis's own falsifier fired.** `V4_RESTART_LEVER.md` §6 had committed, in advance: *"if a
+> re-scored frozen fan cannot get below ~0.43 m, the fan's v1-beating content is true only in an
+> oracle sense."* Fitting a re-scorer **in-sample** — same 6,844 windows it is then scored on, 796k
+> params, **zero generalization gap** — bottoms out at **0.4907**, still separated-worse than v1's
+> **0.4271** and **1.96×** the fan's own best. Out-of-fold both arms were on the **wrong side of
+> zero**: CE_CONTROL **−11.03 %**, REGRET **−4.20 %**, against a ≥ 70.8 % bar.
+>
+> ⇒ **`oracle_in_fan` = 0.2505 remains MEASURED and true — but it is an ORACLE quantity. It is not a
+> budget any scorer over these features can draw on.**
+>
+> ⭐ **AND THE SAME RUN GAVE THE NUMBER THAT REDIRECTS THE PROGRAM.** The in-sample ceiling moves
+> **0.4907 → 0.4138** when the score is given goal **INFORMATION**, while changing the **OBJECTIVE**
+> moved it by only **0.0317 / 0.0089 — and in the wrong direction**:
+>
+> > **INFORMATION BEATS OBJECTIVE BY 2.4× – 8.6×.**
+>
+> (0.4138 is *below* v1's 0.4271, though in-sample and therefore not deployable.) This is the
+> pre-committed §0.8 privileged-input reading with a number attached, and it is why v5's ladder is
+> **conditioning-first, not loss-first** — see `V5_PLAN.md`.
+>
+> **Decomposition, and it is damning for the objective route:** the regret arm left the
+> **longitudinal** axis flat (+0.0038, p = 0.63) — *the axis carrying 100 % of v4's regression* — and
+> made **lateral separated-WORSE** (+0.0222 [+0.0043, +0.0522]). **It did not act on the failing axis
+> at all.**
+>
+> **Two mechanism findings worth keeping:** fine-tuning drove the factorised grafts past the head's
+> **own** `seam_fail = 1.5` guard (**1.652** observed vs 0.1204 as-trained) — *the architecture
+> actively refuses the direction a ranking objective pushes it*. And **fp16 caching is unsafe on this
+> selector**: 256 candidates are separated by less than fp16's ULP, and a self-test caught a
+> **0.0028 m** bias and aborted **before** training.
+>
+> **Tier: CONFIRMED, and DECISION-GRADE for the negative decision** — pre-registered, estimator
+> named, falsifier stated, **five independent reproduction paths** (the committed 30k numbers
+> reproduced to max abs diff 5e-5). **Not** decision-grade for any positive claim. Cost: **1.88
+> GPU-h** of the 1–2 h authorised.
+
 ### 3.3 The two bars a restart must clear — both, not either
 
 **Bar A — the selector must recover ≥ 70.8 % of its waste merely to TIE v1.**

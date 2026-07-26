@@ -248,6 +248,10 @@ Six findings, each MEASURED and with its artifact:
    `seam_fail = 1.5×` the base-score norm (**1.652** at in-sample step 1732; **1.506** in an earlier
    fold). The architecture *refuses* the states the ranking objective drives it toward — an
    independent, structural sign that the score has no headroom in this direction.
+7. **The goal-ORACLE secondary surface REFUTES independently** (−1.00 %), and the two surfaces
+   together yield the sharpest number in this report: **adding information to the score moves the
+   achievable ceiling 2.4×–8.6× more than changing the objective does — and changing the objective
+   moves it the wrong way on both surfaces** (§8.1).
 
 **Tier: CONFIRMED, and DECISION-GRADE for the negative decision** — see §6.3 for why that phrasing is
 exact and where it stops.
@@ -339,7 +343,7 @@ It upper-bounds what re-scoring this **frozen fan** with this conditioning can a
 | | `ade_0_2s` **IN-SAMPLE** | waste recovered in-sample | vs v1 (0.4271) | vs the fan's best (0.2505) |
 |---|---:|---:|---|---|
 | CE, in-sample | **0.4907** | 60.35 % | **still worse** | **1.96×** |
-| REGRET, in-sample | **0.5224** | 55.11 % | **still worse** | 2.09× |
+| REGRET, in-sample | **0.5224** | 55.12 % | **still worse** | 2.09× |
 
 > **Even with no generalization gap, no held-out episodes, 6,844 fitting windows and 796 k free
 > parameters, a re-scorer of this fan cannot reach the model we already deploy.**
@@ -521,9 +525,57 @@ is the only way to separate the two.
 
 ---
 
-## 8. SECONDARY SURFACE — goal-ORACLE
+## 8. SECONDARY SURFACE — goal-ORACLE. **Same verdict, by an independent goal-provenance path.**
 
-*(placeholder — filled from `raw/bar_a_oracle.json` when the run lands.)*
+⚠️ **The goal-oracle surface is NOT deployed capability** — `route`, `route_graded` and `vt_band` are
+minted from the ego's own future poses. It is reported as a **secondary** and its numbers are never
+worded as capability. Its value here is that it is an **independent path**: a different goal
+provenance, a separately captured 6,844-window feature cache, and separately fitted arms.
+
+Same 881 windows / 40 episodes, same protocol, full registered LR grid.
+Self-tests pass identically (`ade_0_2s` 0.6423, `oracle_in_fan` 0.2330, **pick mismatch 0.00000**,
+random-pick control 15.3619). Artifact: `raw/bar_a_oracle.json`.
+
+| arm | `ade_0_2s` | paired Δ vs as-trained | 95 % CI | separated? | **waste recovered** |
+|---|---:|---:|---|---|---:|
+| **AS_TRAINED** | **0.6423** | — | — | — | — |
+| **CE_CONTROL** | **0.6661** | +0.0238 | [−0.0101, +0.0685] | no | **−5.81 %** |
+| **REGRET** | **0.6464** | **+0.0041** | [−0.0002, +0.0103] | no | **−1.00 %** |
+
+| isolating the loss | Δ | 95 % CI | p(Δ>0) | |
+|---|---:|---|---:|---|
+| REGRET − CE_CONTROL | −0.0197 | [−0.0651, +0.0158] | 0.163 | not separated |
+
+**Axis split:** along-track 0.4077 → **0.4108** (Δ +0.0031, ns) · cross-track 0.1808 → **0.1814**
+(Δ +0.0007, ns). **Nothing separated on either axis** — on this surface the lever does not move the
+trajectory at all. `miss_at_2m` 0.2123 → 0.2191 (worse).
+
+> ### VERDICT on the secondary surface: **REFUTE** (−1.00 % against a < 30 % bar).
+> **Both goal surfaces, independently captured and independently fitted, refute.**
+
+### 8.1 The two surfaces together give the sharpest result in this report
+
+The in-sample ceiling is available on **both** surfaces, and the pair separates the two candidate
+explanations cleanly — because the surfaces differ in exactly one thing: **how much information the
+score is given** (the goal oracle).
+
+| in-sample ceiling (fit = scored windows) | CE | REGRET | **effect of changing the LOSS** |
+|---|---:|---:|---:|
+| **produced** (no goal oracle) | **0.4907** | 0.5224 | −0.0317 *(regret is WORSE)* |
+| **oracle** (+ 3 future-derived goal channels) | **0.4138** | 0.4227 | −0.0089 *(regret is WORSE)* |
+| **effect of changing the INFORMATION** | **+0.0769** | +0.0997 | |
+
+> **Adding information to the score moves the ceiling 2.4×–8.6× more than changing the objective
+> does — and changing the objective moves it the WRONG WAY on both surfaces.**
+>
+> This is the pre-committed §0.8 reading, now with a number attached: the binding constraint on this
+> selector is **what `refined_logits` is conditioned on**, not how it is trained.
+
+And the honest note about the one figure that looks like good news: the oracle-surface in-sample
+ceiling **0.4138 does dip below v1's 0.4271**. It is disqualified twice over — it is **in-sample**
+(no generalization) *and* on the **goal-oracle** surface (no deployability). It rescues nothing. It is
+reported because leaving it out would be selective, and because it is precisely the measurement that
+makes the information-vs-objective contrast above quantitative.
 
 ---
 
@@ -536,15 +588,62 @@ is the only way to separate the two.
 | Bar A **produced** — attempt 1 | 30 | killed by an unhandled seam-guard raise; no result quoted from it |
 | Bar A **produced** — attempt 2 (the reported run) | 31 | 1072.5 s capture + ~13 min fitting |
 | Bar B probe | 3 | 881 windows |
-| Bar A **oracle** (secondary) | ~31 | |
-| **total** | **~111 min ≈ 1.85 GPU-h** | **inside the 1–2 GPU-hour authorisation** |
+| Bar A **oracle** (secondary) | 33 | 1113.5 s capture + fitting |
+| **total** | **~113 min ≈ 1.88 GPU-h** | **inside the 1–2 GPU-hour authorisation** |
 
-The 6,844-window feature cache (4.07 GiB) is persisted to `/workspace/_bara/`, so **any re-analysis of
-this experiment costs ~13 GPU-min instead of ~31** — the capture never has to be paid again.
+Both 6,844-window feature caches (4.07 GiB each) are persisted to `/workspace/_bara/`, so **any
+re-analysis of this experiment costs ~13 GPU-min instead of ~32** — the capture never has to be paid
+again. They are on `/workspace` and **not** `/root`, for the reason in §11.4.
+
+**Pod discipline.** All work ran on `tanitad-eval` (A40, 0 MiB used before and after). **pod1, pod2
+and pod3 were never contacted** — not even read-only. No `stack/` file in the repo was modified, so
+`pytest -q` is unaffected. No process was killed. The five stale processes documented in
+`V4_RESTART_LEVER.md` §10 were left untouched.
 
 ---
 
-## 10. ESCALATIONS — things that must not sit in a file
+## 10. DELIVERABLE MANIFEST
+
+Repo root: `G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD`.
+Folder: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-bar-a-selector/`.
+**All STAGED (`git add`). Nothing committed. Nothing pushed. No branch switched.**
+
+| artifact | where it lives | also elsewhere? |
+|---|---|---|
+| `BAR_A.md` — this document (pre-registration staged before the fine-tune ran) | `repo:…/BAR_A.md` | **repo only** |
+| `code/repro_v4_30k.py` — the reproduction check + tree/md5 provenance stamp | `repo:…/code/` | also `tanitad-eval:/root/bara/` |
+| `code/bar_a_selector.py` — capture, frozen-fan proof, both losses, cross-fit, self-tests, bootstrap | `repo:…/code/` | also `tanitad-eval:/root/bara/` |
+| `code/v1_paired.py` — paired test vs deployed v1, with the tensor-identity alignment proof | `repo:…/code/` | also `tanitad-eval:/root/bara/` |
+| `code/bar_b_probe.py` — the Bar-B falsifying probe | `repo:…/code/` | also `tanitad-eval:/root/bara/` |
+| `raw/repro_v4_30k.json` — reproduction, module md5s, ckpt md5 | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `raw/bar_a_produced.json` — **the primary result**: point estimates, paired intervals, axis split, folds, LR sweeps, in-sample ceiling, self-tests | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `raw/bar_a_oracle.json` — the secondary surface, same structure | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `raw/v1_paired.json` — paired vs deployed v1 (produced surface) | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `raw/bar_b_probe.json` — canary distribution + 5 covariates + decile intervals | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `raw/bar_a_produced_windows.pt` · `raw/bar_a_oracle_windows.pt` — per-window ADE for all three arms, both surfaces (every interval recomputable) | `repo:…/raw/` | also `tanitad-eval:/root/bara/` |
+| `ckpt/bar_a_{produced,oracle}_{ce,regret}_fold{0..4}.pt` — the 20 cross-fit selector checkpoints | `repo:…/ckpt/` | also `tanitad-eval:/root/bara/` |
+| `ckpt/bar_a_{produced,oracle}_{ce,regret}_insample.pt` — the 4 in-sample-ceiling checkpoints | `repo:…/ckpt/` | also `tanitad-eval:/root/bara/` |
+
+**Exists in only ONE place — flagged per the operating standard:**
+
+| artifact | sole location | worth rescuing? |
+|---|---|---|
+| `/workspace/_bara/cache_{produced,oracle}_stride1.pt` (4.07 GiB each) — the frozen-fan feature caches | `tanitad-eval:/workspace/_bara/` | **No — deliberately not staged** (8.1 GiB, and fully regenerable in ~18 GPU-min each from the staged `bar_a_selector.py`, whose self-test proves any rebuild is byte-faithful). Keeping them makes follow-up analysis ~2.4× cheaper. |
+| `/root/bara/repro_windows_30k_{oracle,produced}.pt` — the reproduction's own window dumps | `tanitad-eval:/root/bara/` | low priority; regenerable in ~4 GPU-min, and `v1_paired.py` uses the produced one as its alignment witness |
+
+**⚠️ The index contains a sibling agent's work** (`…/2026-07-26-v5-imagination-selection/V5_IMAGINATION_SELECTION.md`).
+Per CLAUDE.md's git-hygiene rule this is recorded here so that whoever commits knows the index is
+shared: **I staged only the 36 files listed above and did not commit, amend, push or switch branch.**
+
+**Code provenance, exactly.** The primary (produced) run executed
+`bar_a_selector.py` md5 `edb55620a6e98ed23c986d436cdc1366`; the staged file is
+`3dbd8fcabc10b0974e9a501ce10a09e3`, which is that file **plus the unused `--lr-grid` CLI option**
+(`default=None`). The diff was taken and is 3 hunks, all in argument parsing; **no numeric path
+differs**, and the oracle run used the staged version. Stated rather than glossed.
+
+---
+
+## 11. ESCALATIONS — things that must not sit in a file
 
 1. **⛔ Bar A is REFUTED. The selector-only v4 restart has now failed BOTH of its bars.** Bar B was
    already unowned; Bar A's lever is now measured not to exist. Per BOOST_PROGRAM §3.4, *"if we cannot
@@ -555,7 +654,14 @@ this experiment costs ~13 GPU-min instead of ~31** — the capture never has to 
    it. This phrasing is currently live in `BOOST_PROGRAM.md` §3.2 and `V4_RESTART_LEVER.md` §4.1 —
    **both need the qualifier, and I did not edit either** (steering files are the orchestrator's).
 3. **The next selector probe is CONDITIONING, not loss** (§0.8, committed in advance). Whatever is
-   spent on the selector next should change **what the score sees**, not how it is trained.
+   spent on the selector next should change **what the score sees**, not how it is trained. §8.1 now
+   puts a number on this: information moved the achievable ceiling **2.4×–8.6×** more than the
+   objective did.
+   ✅ **Already in flight — no action needed, recorded so it is not commissioned twice.** A sibling
+   agent has staged `…/Architecture & Inference/Implementation/incoming/2026-07-26-v5-imagination-selection/V5_IMAGINATION_SELECTION.md`,
+   which cites this experiment's `raw/bar_a_produced.json` and tests **simulative / hierarchical**
+   selection over the same frozen fan — i.e. exactly the conditioning axis. I did **not** read past
+   its pre-registration and none of my numbers depend on it.
 4. **⚠️ `/root` on `tanitad-eval` is at 99 % (2.9 GiB free) and silently truncates.** A 6 GiB `dd`
    reported success after writing 3.0 GiB. The next agent that `scp`s a checkpoint there **will get a
    corrupt file and no error.** Use `/workspace` (verified: full 6 291 456 000 B at 534 MB/s).
@@ -569,7 +675,7 @@ this experiment costs ~13 GPU-min instead of ~31** — the capture never has to 
 
 ---
 
-## 11. FOR `Project Steering/RETRACTION_LOG.md` — root-cause classes
+## 12. FOR `Project Steering/RETRACTION_LOG.md` — root-cause classes
 
 **I did not edit the log; appending to an append-only steering file is the orchestrator's call.**
 
