@@ -1,0 +1,542 @@
+{
+  "split": "CONFIRM",
+  "chunks": [
+    "0181",
+    "0617",
+    "0840",
+    "0852",
+    "0906",
+    "0919",
+    "0931",
+    "1573",
+    "1860",
+    "1864",
+    "1880",
+    "1900",
+    "2498",
+    "2500",
+    "2820",
+    "2838"
+  ],
+  "n_clips": 1415,
+  "n_frames": 214778,
+  "dev_chunks_present": 0,
+  "tau_star": 0.5,
+  "tau_star_source": "l2_dev.json (power rule, never reads the lift)",
+  "exclude_unresolvable": true,
+  "pass_bar_lift": 1.5,
+  "response_base_rate": 0.05361,
+  "VERDICT": {
+    "verdict": "GO",
+    "lift": {
+      "lift": 2.4129,
+      "lo": 1.3998,
+      "hi": 3.7041,
+      "p_resp_given_pos": 0.12836,
+      "p_resp_given_neg": 0.0532,
+      "n_pos": 1192,
+      "n_neg": 213586,
+      "n_episodes": 1415,
+      "n_boot": 2000,
+      "n_draws_used": 2000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": true,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    "difference_form": {
+      "delta": 0.07516,
+      "lo": 0.02109,
+      "hi": 0.14414,
+      "separated": true,
+      "n_episodes": 1415,
+      "n_boot": 2000,
+      "n_draws_skipped": 0,
+      "estimator": "paired_episode_cluster_bootstrap (difference form; taniteval.ci._draws)"
+    },
+    "trigger_rate": 0.00555,
+    "n_trigger_frames": 1192,
+    "n_trigger_clusters": 138,
+    "powered": true
+  },
+  "CONFIRM_response_curve": [
+    {
+      "tau": 0.5,
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 2.4129,
+      "lo": 1.3999,
+      "hi": 3.6905,
+      "p_pos": 0.12836,
+      "p_neg": 0.0532
+    },
+    {
+      "tau": 1.0,
+      "rate": 0.00338,
+      "n_pos": 726,
+      "n_pos_clusters": 96,
+      "lift": 2.7654,
+      "lo": 1.3893,
+      "hi": 4.6771,
+      "p_pos": 0.14738,
+      "p_neg": 0.0533
+    },
+    {
+      "tau": 1.5,
+      "rate": 0.001983,
+      "n_pos": 426,
+      "n_pos_clusters": 63,
+      "lift": 2.0181,
+      "lo": 0.6674,
+      "hi": 3.9329,
+      "p_pos": 0.10798,
+      "p_neg": 0.05351
+    },
+    {
+      "tau": 2.0,
+      "rate": 0.001089,
+      "n_pos": 234,
+      "n_pos_clusters": 41,
+      "lift": 1.9149,
+      "lo": 0.2447,
+      "hi": 4.8058,
+      "p_pos": 0.10256,
+      "p_neg": 0.05356
+    },
+    {
+      "tau": 2.5,
+      "rate": 0.00081,
+      "n_pos": 174,
+      "n_pos_clusters": 31,
+      "lift": 2.2534,
+      "lo": 0.1444,
+      "hi": 5.9334,
+      "p_pos": 0.12069,
+      "p_neg": 0.05356
+    },
+    {
+      "tau": 3.0,
+      "rate": 0.000605,
+      "n_pos": 130,
+      "n_pos_clusters": 21,
+      "lift": 2.4412,
+      "lo": 0.0,
+      "hi": 7.3965,
+      "p_pos": 0.13077,
+      "p_neg": 0.05357
+    }
+  ],
+  "coverage": {
+    "trigger_rate": 0.00555,
+    "label_rate": 0.000712,
+    "n_trigger_frames": 1192,
+    "n_label_frames": 153,
+    "n_clips_total": 1415,
+    "n_clips_trigger_positive": 138,
+    "n_clips_label_positive": 31,
+    "left_rate": 0.003157,
+    "right_rate": 0.002393,
+    "both_cameras_rate": 0.0,
+    "mean_cameras_per_frame_instantaneous": 1.00555,
+    "triggering_agent_class": {
+      "automobile": 821,
+      "person": 122,
+      "rider": 98,
+      "bus": 87,
+      "heavy_truck": 43,
+      "trailer": 14,
+      "stroller": 4,
+      "other_vehicle": 3
+    },
+    "response_base_rate": 0.05361,
+    "L1_response_base_rate_for_contrast": 0.22454
+  },
+  "strata": {
+    "junction_in": {
+      "n_frames": 16568,
+      "n_pos": 212,
+      "trigger_rate": 0.012796,
+      "lift": 0.4499,
+      "lo": 0.0,
+      "hi": 1.4038
+    },
+    "junction_out": {
+      "n_frames": 198210,
+      "n_pos": 980,
+      "trigger_rate": 0.004944,
+      "lift": 2.8631,
+      "lo": 1.6451,
+      "hi": 4.4483
+    },
+    "lane_change_in": {
+      "n_frames": 7178,
+      "n_pos": 26,
+      "trigger_rate": 0.003622,
+      "lift": 1.7192,
+      "lo": 0.0,
+      "hi": 6.9459
+    },
+    "lane_change_out": {
+      "n_frames": 207600,
+      "n_pos": 1166,
+      "trigger_rate": 0.005617,
+      "lift": 2.4808,
+      "lo": 1.408,
+      "hi": 3.8467
+    }
+  },
+  "speed_matched_MH": {
+    "lift": 2.0907,
+    "lo": 1.1977,
+    "hi": 3.3326,
+    "bins_m_s": [
+      0,
+      3,
+      6,
+      9,
+      12,
+      15,
+      "inf"
+    ],
+    "mean_v_trigger_pos": 7.153,
+    "mean_v_trigger_neg": 12.297,
+    "estimator": "Mantel-Haenszel pooled RR, episode-cluster bootstrap B=1000"
+  },
+  "stratified_by_already_braking": {
+    "free_flow_at_t": {
+      "n_frames": 184312,
+      "n_pos": 768,
+      "lift": 1.1553,
+      "lo": 0.3257,
+      "hi": 2.323,
+      "p_pos": 0.02995,
+      "p_neg": 0.02592
+    },
+    "already_braking_at_t": {
+      "n_frames": 30466,
+      "n_pos": 424,
+      "lift": 1.3948,
+      "lo": 0.8347,
+      "hi": 2.1209,
+      "p_pos": 0.3066,
+      "p_neg": 0.21983
+    }
+  },
+  "sensitivities": {
+    "PRIMARY (ego path-speed, agent CV, resolvable, crop scope)": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 2.4129,
+      "lo": 1.3999,
+      "hi": 3.6905,
+      "p_pos": 0.12836,
+      "p_neg": 0.0532
+    },
+    "S1 ego pure-CV straight (isolates M2 = the route fix)": {
+      "rate": 0.005825,
+      "n_pos": 1251,
+      "n_pos_clusters": 133,
+      "lift": 1.7823,
+      "lo": 1.0731,
+      "hi": 2.6965,
+      "p_pos": 0.09512,
+      "p_neg": 0.05337
+    },
+    "S2 agent REALISED future (isolates M1 = the agent-reaction fix)": {
+      "rate": 0.002156,
+      "n_pos": 463,
+      "n_pos_clusters": 36,
+      "lift": 3.9324,
+      "lo": 1.7948,
+      "hi": 6.7784,
+      "p_pos": 0.2095,
+      "p_neg": 0.05328
+    },
+    "S3 unresolvable INCLUDED (undoes amendment A2)": {
+      "rate": 0.007077,
+      "n_pos": 1520,
+      "n_pos_clusters": 151,
+      "lift": 1.8893,
+      "lo": 1.107,
+      "hi": 2.9004,
+      "p_pos": 0.10066,
+      "p_neg": 0.05328
+    },
+    "S4 residual scope: outside the FULL 120.5 deg front field": {
+      "rate": 0.002351,
+      "n_pos": 505,
+      "n_pos_clusters": 57,
+      "lift": 1.6647,
+      "lo": 0.7834,
+      "hi": 3.0588,
+      "p_pos": 0.08911,
+      "p_neg": 0.05353
+    },
+    "S5 response brake threshold -1.5 m/s^2": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 2.3064,
+      "lo": 1.5493,
+      "hi": 3.0471,
+      "p_pos": 0.25252,
+      "p_neg": 0.10949
+    },
+    "S5 response brake threshold -2.5 m/s^2": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 3.9368,
+      "lo": 1.9627,
+      "hi": 6.5955,
+      "p_pos": 0.08809,
+      "p_neg": 0.02238
+    },
+    "S5 response brake threshold -3.0 m/s^2": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 6.2682,
+      "lo": 2.2846,
+      "hi": 12.1787,
+      "p_pos": 0.04866,
+      "p_neg": 0.00776
+    },
+    "S6 response WITH the pre-registered free-flow clause (undoes A1)": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 0.8662,
+      "lo": 0.2318,
+      "hi": 1.6196,
+      "p_pos": 0.0193,
+      "p_neg": 0.02228
+    },
+    "S7 response = the REFUTED L1 one (dv4 <= -1 m/s)": {
+      "rate": 0.00555,
+      "n_pos": 1192,
+      "n_pos_clusters": 138,
+      "lift": 1.8544,
+      "lo": 1.3842,
+      "hi": 2.2846,
+      "p_pos": 0.41443,
+      "p_neg": 0.22348
+    }
+  },
+  "L1_head_to_head_same_frames": {
+    "L1_gate_rate": 0.017325,
+    "L1_gate x L1_response (the refuted pair)": {
+      "lift": 1.0958,
+      "lo": 0.8932,
+      "hi": 1.3179,
+      "p_resp_given_pos": 0.24563,
+      "p_resp_given_neg": 0.22417,
+      "n_pos": 3721,
+      "n_neg": 211057,
+      "n_episodes": 1415,
+      "n_boot": 1000,
+      "n_draws_used": 1000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": false,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    "L1_gate x R2_response (new response, old trigger)": {
+      "lift": 1.2948,
+      "lo": 0.8481,
+      "hi": 1.8205,
+      "p_resp_given_pos": 0.06907,
+      "p_resp_given_neg": 0.05334,
+      "n_pos": 3721,
+      "n_neg": 211057,
+      "n_episodes": 1415,
+      "n_boot": 1000,
+      "n_draws_used": 1000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": false,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    "L2_trigger x L1_response (new trigger, old response)": {
+      "lift": 1.8544,
+      "lo": 1.3842,
+      "hi": 2.2846,
+      "p_resp_given_pos": 0.41443,
+      "p_resp_given_neg": 0.22348,
+      "n_pos": 1192,
+      "n_neg": 213586,
+      "n_episodes": 1415,
+      "n_boot": 1000,
+      "n_draws_used": 1000,
+      "n_draws_skipped": 0,
+      "excludes_1_above": true,
+      "excludes_1_below": false,
+      "estimator": "paired_episode_cluster_bootstrap (ratio form; taniteval.ci._draws, B=2000)"
+    },
+    "L2_trigger x R2_response (both new) = THE VERDICT": {
+      "lift": 2.4129,
+      "lo": 1.3998,
+      "hi": 3.7041
+    }
+  },
+  "per_chunk": [
+    {
+      "chunk": "0181",
+      "n_clips": 94,
+      "n_pos": 119,
+      "lift": 1.11,
+      "lo": 0.0,
+      "hi": 4.6232
+    },
+    {
+      "chunk": "0617",
+      "n_clips": 86,
+      "n_pos": 75,
+      "lift": 3.1028,
+      "lo": 0.0,
+      "hi": 7.724
+    },
+    {
+      "chunk": "0840",
+      "n_clips": 84,
+      "n_pos": 21,
+      "lift": 3.6102,
+      "lo": 0.0,
+      "hi": 11.2168
+    },
+    {
+      "chunk": "0852",
+      "n_clips": 89,
+      "n_pos": 76,
+      "lift": 4.7293,
+      "lo": 0.749,
+      "hi": 10.793
+    },
+    {
+      "chunk": "0906",
+      "n_clips": 85,
+      "n_pos": 59,
+      "lift": 6.3319,
+      "lo": 0.7369,
+      "hi": 13.3876
+    },
+    {
+      "chunk": "0919",
+      "n_clips": 77,
+      "n_pos": 43,
+      "lift": 2.2343,
+      "lo": 0.0,
+      "hi": 10.8312
+    },
+    {
+      "chunk": "0931",
+      "n_clips": 93,
+      "n_pos": 47,
+      "lift": 4.3718,
+      "lo": 0.0,
+      "hi": 15.0067
+    },
+    {
+      "chunk": "1573",
+      "n_clips": 97,
+      "n_pos": 45,
+      "lift": 0.4462,
+      "lo": 0.0,
+      "hi": 4.5214
+    },
+    {
+      "chunk": "1860",
+      "n_clips": 90,
+      "n_pos": 9,
+      "lift": 0.0,
+      "lo": 0.0,
+      "hi": 0.0
+    },
+    {
+      "chunk": "1864",
+      "n_clips": 81,
+      "n_pos": 39,
+      "lift": 3.1078,
+      "lo": 0.0,
+      "hi": 15.82
+    },
+    {
+      "chunk": "1880",
+      "n_clips": 91,
+      "n_pos": 131,
+      "lift": 1.2025,
+      "lo": 0.0,
+      "hi": 4.7479
+    },
+    {
+      "chunk": "1900",
+      "n_clips": 88,
+      "n_pos": 103,
+      "lift": 0.2934,
+      "lo": 0.0,
+      "hi": 1.3943
+    },
+    {
+      "chunk": "2498",
+      "n_clips": 89,
+      "n_pos": 122,
+      "lift": 5.2907,
+      "lo": 0.0,
+      "hi": 16.6012
+    },
+    {
+      "chunk": "2500",
+      "n_clips": 84,
+      "n_pos": 160,
+      "lift": 0.0,
+      "lo": 0.0,
+      "hi": 0.0
+    },
+    {
+      "chunk": "2820",
+      "n_clips": 92,
+      "n_pos": 87,
+      "lift": 3.3982,
+      "lo": 0.8257,
+      "hi": 8.4096
+    },
+    {
+      "chunk": "2838",
+      "n_clips": 95,
+      "n_pos": 56,
+      "lift": 2.5009,
+      "lo": 0.0,
+      "hi": 8.2902
+    }
+  ],
+  "per_chunk_summary": {
+    "n_scored": 16,
+    "n_above_1": 12,
+    "median": 2.802
+  },
+  "C_EFF_on_L2": {
+    "instantaneous": {
+      "left": 0.003157,
+      "right": 0.002393,
+      "either": 0.00555,
+      "cams_per_frame": 1.00555,
+      "saved_vs_7": 0.8564
+    },
+    "hyst_1s": {
+      "left": 0.010816,
+      "right": 0.008413,
+      "either": 0.019201,
+      "cams_per_frame": 1.01923,
+      "saved_vs_7": 0.8544
+    },
+    "hyst_2s": {
+      "left": 0.017027,
+      "right": 0.013768,
+      "either": 0.030674,
+      "cams_per_frame": 1.03079,
+      "saved_vs_7": 0.8527
+    }
+  }
+}

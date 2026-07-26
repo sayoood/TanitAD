@@ -1,0 +1,199 @@
+{
+  "tau": 0.5,
+  "note": "descriptive robustness, run AFTER the verdict; cannot move it",
+  "MH_speed_only": {
+    "lift": 2.0907,
+    "lo": 1.1861,
+    "hi": 3.3802,
+    "n_strata": 6,
+    "n_draws": 2000,
+    "estimator": "Mantel-Haenszel pooled risk ratio, episode-cluster bootstrap B=2000"
+  },
+  "MH_brakingstate_only": {
+    "lift": 1.3523,
+    "lo": 0.8214,
+    "hi": 2.0491,
+    "n_strata": 2,
+    "n_draws": 2000,
+    "estimator": "Mantel-Haenszel pooled risk ratio, episode-cluster bootstrap B=2000"
+  },
+  "MH_speed_x_brakingstate": {
+    "lift": 1.4696,
+    "lo": 0.8894,
+    "hi": 2.2016,
+    "n_strata": 12,
+    "n_draws": 2000,
+    "estimator": "Mantel-Haenszel pooled risk ratio, episode-cluster bootstrap B=2000"
+  },
+  "unadjusted_for_reference": {
+    "lift": 2.4128,
+    "lo": 1.3998,
+    "hi": 3.7041
+  },
+  "confound_balance": {
+    "P(already_braking | trigger+)": 0.3557,
+    "P(already_braking | trigger-)": 0.1407,
+    "mean_v_trigger+": 7.153,
+    "mean_v_trigger-": 12.297,
+    "P(R2 | already_braking)": 0.221,
+    "P(R2 | free_flow)": 0.0259
+  },
+  "Q2_chunk_diagnostics": {
+    "2500": {
+      "n_frames": 12646,
+      "n_trigger": 160,
+      "response_base_rate": 0.04666,
+      "n_response_frames": 590,
+      "p05_alon_fut_min": -1.984,
+      "mean_ego_v": 14.06,
+      "trigger_rate": 0.01265
+    },
+    "1860": {
+      "n_frames": 14037,
+      "n_trigger": 9,
+      "response_base_rate": 0.04752,
+      "n_response_frames": 667,
+      "p05_alon_fut_min": -1.986,
+      "mean_ego_v": 11.4,
+      "trigger_rate": 0.00064
+    },
+    "1900": {
+      "n_frames": 13507,
+      "n_trigger": 103,
+      "response_base_rate": 0.06582,
+      "n_response_frames": 889,
+      "p05_alon_fut_min": -2.137,
+      "mean_ego_v": 13.59,
+      "trigger_rate": 0.00763
+    },
+    "0906": {
+      "n_frames": 12732,
+      "n_trigger": 59,
+      "response_base_rate": 0.07132,
+      "n_response_frames": 908,
+      "p05_alon_fut_min": -2.307,
+      "mean_ego_v": 13.79,
+      "trigger_rate": 0.00463
+    }
+  },
+  "leave_one_chunk_out": [
+    {
+      "dropped": "0181",
+      "lift": 2.5395,
+      "lo": 1.452,
+      "hi": 3.9386,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0617",
+      "lift": 2.3683,
+      "lo": 1.327,
+      "hi": 3.664,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0840",
+      "lift": 2.4106,
+      "lo": 1.3647,
+      "hi": 3.7885,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0852",
+      "lift": 2.2008,
+      "lo": 1.1361,
+      "hi": 3.598,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0906",
+      "lift": 2.1489,
+      "lo": 1.168,
+      "hi": 3.433,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0919",
+      "lift": 2.4269,
+      "lo": 1.4306,
+      "hi": 3.7134,
+      "excludes_1": true
+    },
+    {
+      "dropped": "0931",
+      "lift": 2.3353,
+      "lo": 1.3745,
+      "hi": 3.6322,
+      "excludes_1": true
+    },
+    {
+      "dropped": "1573",
+      "lift": 2.4789,
+      "lo": 1.4271,
+      "hi": 3.8033,
+      "excludes_1": true
+    },
+    {
+      "dropped": "1860",
+      "lift": 2.4132,
+      "lo": 1.3726,
+      "hi": 3.7469,
+      "excludes_1": true
+    },
+    {
+      "dropped": "1864",
+      "lift": 2.3725,
+      "lo": 1.3917,
+      "hi": 3.7214,
+      "excludes_1": true
+    },
+    {
+      "dropped": "1880",
+      "lift": 2.5522,
+      "lo": 1.4195,
+      "hi": 3.9397,
+      "excludes_1": true
+    },
+    {
+      "dropped": "1900",
+      "lift": 2.6498,
+      "lo": 1.4653,
+      "hi": 4.1281,
+      "excludes_1": true
+    },
+    {
+      "dropped": "2498",
+      "lift": 2.2334,
+      "lo": 1.3407,
+      "hi": 3.4148,
+      "excludes_1": true
+    },
+    {
+      "dropped": "2500",
+      "lift": 2.7678,
+      "lo": 1.6743,
+      "hi": 4.1815,
+      "excludes_1": true
+    },
+    {
+      "dropped": "2820",
+      "lift": 2.3116,
+      "lo": 1.281,
+      "hi": 3.7811,
+      "excludes_1": true
+    },
+    {
+      "dropped": "2838",
+      "lift": 2.4351,
+      "lo": 1.3879,
+      "hi": 3.9146,
+      "excludes_1": true
+    }
+  ],
+  "leave_one_chunk_out_summary": {
+    "n_chunks": 16,
+    "n_still_excluding_1": 16,
+    "min_lift": 2.1489,
+    "max_lift": 2.7678
+  }
+}

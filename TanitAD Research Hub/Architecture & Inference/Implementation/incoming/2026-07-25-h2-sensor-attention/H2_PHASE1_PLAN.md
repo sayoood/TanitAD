@@ -36,6 +36,43 @@
 >
 > **Net:** *the label's frequency generalises perfectly; its decision-relevance does not exist.*
 > **C-EFF (rate) stands. C-CAP (capability) needs a new label — §3's E-sequence restarts at the label.**
+>
+> ---
+>
+> ## ✅ RESOLVED 2026-07-26 — a replacement label PASSED. H2 is GO.
+> `…/incoming/2026-07-26-h2-label-v2/` — **`L2` replaced BOTH halves of the refuted label**, not just the
+> trigger. Trigger = the minimum braking effort `a_req` the ego would need, along its **own realised path**,
+> to stay clear of an off-front agent — **AND** no agent inside the crop already requires it (that second
+> clause **is** the agent-removal counterfactual: delete the off-front agents and nothing the encoder sees
+> demands the brake, so that agent is the *binding* constraint). Response = an actual brake application.
+>
+> **Held-out lift 2.41× [1.3998, 3.7041]**, paired episode-cluster bootstrap B=2000, **1,415 clusters**,
+> zero chunk overlap with DEV. **τ\* was set by a power rule that never reads the lift, and 0.5 m/s² is NOT
+> the curve's maximum (1.0 gives 2.77×) — there is no argmax anywhere in the construction.**
+> **Leave-one-chunk-out: 16/16 exclude 1.0** (2.15–2.77×) — precisely the test `L1_gate` failed.
+> Coverage: trigger 0.555 % of frames, label 0.0712 %; left 0.316 % / right 0.239 %, never both.
+>
+> ### ⚠️ Three qualifications that travel WITH the GO — do not drop them
+> 1. **Quote 2.09× [1.19, 3.38] (speed-adjusted), not 2.41×.** Braking-state adjustment removes separation
+>    (1.35× [0.82, 2.05]); a lead-time test favours mediation (trigger precedes the brake in 65.6 % of
+>    cases, median 0.55 s) but does **not** settle it.
+> 2. **Junctions are NULL — 0.45× [0.00, 1.40].** That is H2's *headline* situation. All the signal is
+>    **off-junction (2.86×)**. The capability we can currently evidence is not the intersection story.
+> 3. **The genuine off-front residual is NOT separated — 1.66× [0.78, 3.06].** ⭐ **So today's demonstrable
+>    capability is FRONT-PERIPHERY attention, not cross-camera switching.** This converges with two
+>    independent results: E0's **63.6 % recoverable-by-crop**, and the Orin measurement that **widening the
+>    front field costs only ~+8.6 % of the tick** because the encoder is 4.5 % of DRAM bytes. **The
+>    defensible H2 v1 is adaptive front-periphery attention — cheaper, measurable now, and honestly
+>    scoped.** Cross-camera switching stays a hypothesis, not a claim.
+>
+> **C-EFF's condition is now satisfied for the primary scope**, and **the E-sequence resumes at E3**
+> (encoder-feature decidability, ~30 GPU-min) — **run E3 BEFORE building the head**, per the original plan.
+>
+> *Discipline note worth preserving:* the L2 agent refuted **two of its own hypotheses** and reported them
+> as measured — the path-preserved ego route buys nothing (1.78 vs 1.89), and agent-constant-velocity is
+> **backwards** (realised-future agents give **3.93× [1.79, 6.78]**). It deliberately did **not** adopt the
+> better-looking variant, flagging it for a fresh pre-registration instead. That is the correct handling of
+> a post-hoc improvement.
 
 **Date:** 2026-07-25 · **Status:** all three commissioned inputs delivered; this is the synthesis.
 **Inputs:** `H2_SUBSTRATE_AND_LABELING.md` (substrate/label/counts) · `Research/2026-07-25-h2-sensor-attention/H2_RESEARCH_AND_SOTA.md` (prior art/novelty/architecture) · `Data Engineering/Research/2026-07-25-h2-multicam-data-survey/H2_EXTERNAL_DATA_SURVEY.md` (corpora) · `H2_DESIGN_FRAMING.md` (design + PI constraints D1–D4).
