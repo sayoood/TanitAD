@@ -154,6 +154,126 @@ and was not previously written down anywhere.
 
 ---
 
+## 2. THE FULL-RUNTIME REACTIVITY MEASUREMENT — trafficsim ON, through `alpasim_runtime.simulate`
+
+This is the experiment `GATE_RESULTS.md` §2.4 names as the only thing that could still overturn its
+verdict: gate 2 drove the trafficsim service **directly over its own gRPC contract** with a hand-built
+session; this drives it through the **complete runtime**, so AlpaSim itself builds the
+`TrafficSessionRequest` and issues the per-step `TrafficRequest` carrying the ego's real pose.
+
+### 2.1 Setup — `MEASURED`, tier **DECISION-GRADE**
+
+| | |
+|---|---|
+| enabling | `trafficsim=catk` — a **stock wizard config group**. Confirmed in the emitted config: `runtime.endpoints.trafficsim.skip: false`. **Configuration only; no AlpaSim source edited.** |
+| scene | `clipgt-41c06176-96a4-43ff-b5fa-baaa3a8fd8d0` — chosen by a census of all 51 held scenes (`artifacts/ts_scene_pick.json`) as the **highest-traffic** one: 467 tracked objects, **196 dynamic agents present ≥3 s** (the runtime's `min_traffic_duration_us`). The runtime returned **197 agents on every step of every run.** |
+| topology | renderer :6011 (GPU, native NuRec) · physics :6006 · **trafficsim :6007 (CATK)** · controller :6008 · driver :6789. ⚠️ the wizard **shifts ports** when trafficsim is enabled — trafficsim takes 6007, controller moves to 6008. |
+| CATK device | **CPU** — `tanitad-eval` has no `nvcc`, so its PyG extensions are a CPU-only source build. A throughput limit, not a fidelity one (same weights, same code path). Set by config (`catk.device=cpu`), not by patching. |
+| arms | **GO** (5 m/s forward) · **STOP** (0 m/s, halts at handover) · **GO2** (identical to GO — the stochastic floor) |
+| repeats | **3 per arm, 9 rollouts**, 40 steps each, run strictly sequentially |
+| estimator | **paired episode-cluster bootstrap**, `taniteval.ci`, **B = 2000**, **unit = AGENT**. Never `overlapping_holdout_se`. |
+| samples | **15,103 (agent, timestep) pairs over 197 agent clusters** |
+
+### 2.2 The two controls — both pass, and one is unusually clean
+
+| control | result | reading |
+|---|---|---|
+| **FIDELITY** — did the intervention reach the model? | ego GO-vs-STOP **mean 6.16 m, max 21.50 m**; ego GO-vs-GO2 **exactly 0.000000 m** | ✅ The arms genuinely differ at the ego, and ⭐ **the floor arm's ego is bit-identical** — the driver+controller are deterministic, so the *only* thing separating GO from GO2 is CATK's own sampling. That is a cleaner floor than gate 2 could construct. |
+| **REPLAY** — is trafficsim just replaying logged tracks? | returned poses differ from the agents' own logged tracks by **mean 1.956 m**; only **17.68 %** of poses lie within 0.1 m of the logged pose | ✅ **NOT replay** (`is_replay=False`). CATK genuinely simulates — independently reproducing gate 2's clause (a). |
+
+### 2.3 Result — ❌ **no reaction, and the bound is far tighter than gate 2's**
+
+`MEASURED`, `artifacts/ts_reactivity.json`, tier **DECISION-GRADE**.
+
+| stratum | agents | samples | between GO↔STOP | **floor** GO↔GO2 | **Δ** | 95 % CI | separated |
+|---|---:|---:|---:|---:|---:|---|:--:|
+| all | **197** | 15,103 | 0.5349 m | **0.5120 m** | **+0.0229** | **[−0.0117, +0.0625]** | ❌ no |
+| ⭐ near-ego ≤50 m | **155** | 5,233 | 0.3096 m | **0.3052 m** | **+0.0044** | **[−0.0186, +0.0298]** | ❌ no |
+
+**Against the 4.5 m noise floor the brief asked for — the comparison is not close.**
+
+| | gate 2 (direct gRPC) | **this test (full runtime)** | ratio |
+|---|---|---|---|
+| stochastic noise floor | **4.5 m** | **0.512 m** | **8.8× tighter** |
+| agent clusters (best stratum) | 59 | **197** | 3.3× more |
+| CI half-width, best stratum | ±0.173 m | **±0.0242 m** | **7.2× tighter** |
+| effect | −0.026 [−0.207, +0.139] | **+0.0044 [−0.0186, +0.0298]** | — |
+
+**The near-ego stratum bounds any ego-induced displacement at ±0.03 m.** If agents responded to the ego,
+the effect must concentrate in the agents nearest it — and there the point estimate is **+0.0044 m**,
+i.e. **0.9 % of the sampling floor**, with `p(Δ>0) = 0.64`, indistinguishable from a coin flip.
+**A car braking to a dead stop in front of 155 nearby agents moved them by 4 millimetres.**
+
+⚠️ **The one nominal positive is in the far field and it is not separated:** the all-agents Δ is +0.0229
+[−0.0117, +0.0625], `p(Δ>0) = 0.88`. It *shrinks by 5×* when restricted to the agents near the ego —
+the opposite of the gradient a real reaction must have.
+
+**Pilot corroboration.** The R=1 pilot (`artifacts/ts_reactivity_pilot.json`) gave Δ = +0.075
+[−0.029, +0.178] (all) and +0.047 [−0.012, +0.108] (near-ego) — also unseparated, and both **shrank
+toward zero as repeats were added**, which is what a sampling artefact does and a real effect does not.
+
+### 2.4 ⚠️ The honest limitation, and what I did about it
+
+**My intervention is smaller than gate 2's.** 40 steps = 4 s of sim, ~2.2 s post-handover, giving a max
+ego separation of **21.50 m** against gate 2's **60.99 m**. A null against a smaller intervention is
+weaker evidence than a null against a larger one, and I will not pretend otherwise.
+
+Against that, this test is **better on every other axis** — 3.3× the agents, an 8.8× tighter floor, a
+7.2× tighter bound, a bit-identical floor-arm ego, and the full runtime rather than a hand-built
+session. A longer-horizon control (150 steps, ~66 m separation, matching gate 2's intervention size) was
+launched; its status is in §3.
+
+**MDE, stated against the effect this test exists to catch.** T1–T4 need the simulated consequence to be
+*a function of the policy's choice* — an ego-induced displacement large enough to change a collision,
+a merge outcome or a right-of-way resolution. Those are **metre-scale** events. This test resolves
+**±0.024 m** in the near-ego stratum, i.e. it is powered to detect an effect **~40× smaller** than the
+smallest one T1–T4 could use. **It is not underpowered for its purpose** — the guard can fail, and it
+would have: the same harness reports the ego arms differing by 21.5 m and the agents differing from
+their logged tracks by 1.96 m, so it detects real differences of the relevant size when they exist.
+
+---
+
+## 3. ⚖️ THE VERDICT ON THE TACTICAL GATE
+
+> ### The tactical gate's "agents don't react" verdict **SURVIVES — and is now STRONGER than when it was written.**
+> It is **not** void. It is **not** weakened.
+
+Stated against the three pre-registered outcomes in §0.2, none of which were adjusted after seeing data:
+
+| pre-registered outcome | which occurred |
+|---|---|
+| Δ positive & separated, concentrated near-ego ⇒ **VOID** | ❌ did not occur |
+| Δ not separated, near-ego null ⇒ **SURVIVES, stronger** | ✅ **this one** |
+| Δ separated far-field only ⇒ **weakened** | ❌ did not occur (the far-field Δ is *not* separated either) |
+
+**And the brief's proposed mechanism for voiding it is independently dead** (§1.2): trafficsim was
+already enabled when the gate failed. There were two ways the negative result could have fallen — a
+configuration artefact, or a harness artefact — and **both are now closed**:
+
+1. **Configuration** — refuted by the gate's own artifact record, re-verified byte-for-byte (§1.1).
+2. **Harness** — refuted here. The verdict reproduces through a **second, independent integration
+   path**, with a tighter floor and a tighter bound.
+
+**⚠️ This is not the withdrawal the brief anticipated, and I am saying so plainly rather than
+manufacturing one.** The brief instructed me to report a withdrawal directly if one was warranted. It is
+not. The correct statement is the reverse: *`GATE_RESULTS.md`'s "FAILS as measured through the service's
+documented contract" can now be upgraded — it fails through the full runtime too.*
+
+**Consequence for T1–T4** (the four problems this gates, verified in §4): their shared admissibility
+argument — *`Y_outcome` is a simulated consequence, therefore non-circular by construction* — requires
+the consequence to be a function of the policy's choice. **On two independent measurements it is not
+measurably one.** T1–T4 remain blocked, and this remains a **PI-level decision**, now with the harness
+objection removed rather than outstanding.
+
+⚠️ **What this does NOT say.** It does not say CATK cannot react in principle, and it does not say
+AlpaSim is broken. It says: **as configured and driven by both documented paths, on the highest-traffic
+scene we hold, a hard-braking ego does not measurably move the agents around it.** Remaining routes to
+a different answer, in cost order: (a) a longer intervention (§3.1); (b) a scene set with tighter
+ego-agent conflict geometry than a 197-agent urban scene; (c) CATK on GPU, in case the CPU build's
+`radius_graph` neighbourhood construction differs — **not checked, and stated as UNVERIFIED.**
+
+---
+
 ## 4. WHICH of the nine 4-brain problems `trafficsim` gates — **"four of nine" VERIFIED, not inherited**
 
 Checked against the **primary source**, `…/2026-07-26-4brain-dominance-program/STRATEGIC_TACTICAL_PROBLEM_SPEC.md`

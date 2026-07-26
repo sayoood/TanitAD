@@ -41,6 +41,7 @@ SITS = ("lane_change", "roundabout", "intersection")
 B_STAR = 0.05
 BUDGETS = (0.005, 0.01, 0.02, 0.05, 0.10, 0.20)
 N_BOOT = 2000
+N_BOOT_CURVE = 400            # descriptive budget-sweep rows only (amendment A5)
 BLIND_MAX_ROWS = 40_000       # C-BLIND subsamples whole clip clusters; see the call site
 EXTRA_CAMS = ["camera_cross_left_120fov", "camera_cross_right_120fov",
               "camera_front_tele_30fov", "camera_rear_left_70fov",
@@ -70,8 +71,11 @@ def set_draws(eid, n_boot=N_BOOT, seed=0):
     return _DRAWS["d"]
 
 
-def draws_for(eid=None, n_boot=None, seed=0):
-    return _DRAWS["d"]
+def draws_for(eid=None, n_boot=None, seed=0, short=False):
+    """`short=True` returns the first `N_BOOT_CURVE` draws — used ONLY for the descriptive
+    budget-sweep rows. Every PRIMARY interval (AP, above-chance, vs-ego, the B* operating point)
+    uses the full pre-registered B = 2000 set. Declared as amendment A5."""
+    return _DRAWS["d"][:N_BOOT_CURVE] if short else _DRAWS["d"]
 
 
 def paired(fn, eid, arms: dict, n_boot=N_BOOT, seed=0, alpha=0.05):
@@ -121,6 +125,12 @@ def main():
     off, T_, kk = Z["off"], Z["T"], Z["k"]
     eid_te = clip[te]
     arms = [k for k in Z.files if k.startswith(("head_", "ridge_")) and "__trainoof" not in k]
+    # ⚡ `sc_labels.npz` is COMPRESSED: every `L[...]` access re-opens and re-inflates a zip member.
+    # Reading the onsets inside the per-clip loop cost 58 k inflations and pinned the evaluator at
+    # ~20 % CPU. They are pulled once here instead.
+    ONSETS = {(int(k_), s_): np.asarray(L[f"c{int(k_)}_onset_{s_}"]).ravel()
+              for k_ in Z["k"] for s_ in SITS}
+    SIDE0 = {int(i): str(Z["side"][int(o)]) for i, o in enumerate(Z["off"])}
     print(f"[eval] {len(te):,} held-out windows, {len(np.unique(eid_te))} clip clusters, "
           f"arms: {arms}")
 
@@ -183,10 +193,11 @@ def main():
             thr = float(np.quantile(oof[mt], 1.0 - B_STAR / 2.0))   # 2 cams per firing frame
             fire = sc[arm] >= thr
             R["operating_point"][arm] = _op(y, fire, eid, thr)
-            R["lead_time"][arm] = _lead(Z, L, meta, sc[arm], thr, te, m, si, sit)
+            R["lead_time"][arm] = _lead(Z, ONSETS, SIDE0, sc[arm], thr, te, m, si, sit)
             R["efficiency_curve"][arm] = [
                 _op(y, sc[arm] >= float(np.quantile(oof[mt], 1.0 - b / 2.0)), eid,
-                    float(np.quantile(oof[mt], 1.0 - b / 2.0)), budget=b) for b in BUDGETS]
+                    float(np.quantile(oof[mt], 1.0 - b / 2.0)), budget=b, short=True)
+                for b in BUDGETS]
             print(f"[eval]   {sit}/{arm}: operating point + curve in {time.time()-t_s:.0f}s",
                   flush=True)
 
@@ -290,6 +301,13 @@ def main():
               f"{R['C_POW']} | C-BLIND {R['C_BLIND'].get('verdict', R['C_BLIND'].get('status'))}",
               flush=True)
 
+    # ⭐ Write the PRIMARY results before the secondary sections. A NameError in the camera-need
+    # block destroyed a completed 42-minute bootstrap once; it cannot do so again.
+    res["universe"] = uni["per_situation"]
+    res["roundabout_ccw_purity"] = uni["roundabout_ccw_purity"]
+    json.dump(res, open(os.path.join(a.out, "sc_results.json"), "w"), indent=2)
+    print("[eval] primary results written (pre-camera-need checkpoint)", flush=True)
+
     # ---------- multi-camera need + the turn-vs-curve validation ----------
     if a.cross and os.path.isdir(a.cross):
         res["camera_need"] = _camera_need(a.cross, L, meta, Z)
@@ -316,13 +334,13 @@ def main():
     print(f"[eval] -> {os.path.join(a.out, 'sc_results.json')} + heldout_frames.npz")
 
 
-def _op(y, fire, eid, thr, budget=B_STAR):
+def _op(y, fire, eid, thr, budget=B_STAR, short=False):
     """Operating-point metrics. All three are computed in ONE pass over the shared draws — three
     separate `paired` calls would recompute the same resampling 3x for no statistical gain."""
     f = fire.astype(float)
     tot, hit, n = y.sum(), (y * f).sum(), float(len(y))
     b = {"recall": [], "precision": [], "firing_rate": []}
-    for sel in draws_for():
+    for sel in draws_for(short=short):
         ys, fs = y[sel], f[sel]
         s = (ys * fs).sum()
         b["recall"].append(s / max(ys.sum(), 1e-9))
@@ -344,7 +362,7 @@ def _op(y, fire, eid, thr, budget=B_STAR):
     return o
 
 
-def _lead(Z, L, meta, score, thr, te, m, si, sit):
+def _lead(Z, ONSETS, SIDE0, score, thr, te, m, si, sit):
     """⭐ LEAD TIME. For every held-out event onset, the EARLIEST frame inside the label's
     positive window (o-LEAD, o] at which the score clears theta*. Events with no firing frame in
     that window are misses and contribute no lead time (they are counted, not imputed)."""
@@ -354,11 +372,10 @@ def _lead(Z, L, meta, score, thr, te, m, si, sit):
     Lw = int(round(S.LEAD_S * S.HZ))
     leads, n_ev, n_hit = [], 0, 0
     off, kk = Z["off"], Z["k"]
-    side = Z["side"]
     for ci in range(len(off)):
-        if side[off[ci]] != "HELDOUT":
+        if SIDE0[ci] != "HELDOUT":
             continue
-        ons = L[f"c{int(kk[ci])}_onset_{sit}"]
+        ons = ONSETS[(int(kk[ci]), sit)]
         for o in np.asarray(ons).ravel():
             o = int(o)
             lo = max(0, o - Lw)

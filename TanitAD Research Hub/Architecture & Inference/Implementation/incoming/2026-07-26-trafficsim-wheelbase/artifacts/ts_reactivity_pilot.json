@@ -1,0 +1,72 @@
+{
+ "base": "/workspace/tsreact/clipgt-41c06176-96a4-43ff-b5fa-baaa3a8fd8d0",
+ "repeats": 1,
+ "estimator": "paired_episode_cluster_bootstrap, unit=AGENT, B=2000",
+ "ci_source": "taniteval.ci (/root/taniteval)",
+ "n_runs": {
+  "GO": 1,
+  "STOP": 1,
+  "GO2": 1
+ },
+ "control_fidelity": {
+  "ego_GO_vs_STOP_mean_m": 6.1588,
+  "ego_GO_vs_STOP_max_m": 21.4956,
+  "ego_GO_vs_GO2_mean_m": 0.0,
+  "n_shared_ts": 40,
+  "intervention_reached_model": true
+ },
+ "control_replay": {
+  "vs_logged_mean_m": 1.9562,
+  "frac_within_0p1m_of_logged": 0.1768,
+  "n_compared": 164,
+  "is_replay": false
+ },
+ "results": {
+  "all": {
+   "n_samples": 15103,
+   "n_agents": 197,
+   "between_GO_STOP_mean_m": 0.5514,
+   "floor_GO_GO2_mean_m": 0.4764,
+   "delta_m": 0.075,
+   "ci": {
+    "delta": 0.075,
+    "lo": -0.0287,
+    "hi": 0.1778,
+    "ci95": 0.1033,
+    "p_delta_gt0": 0.921,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 15103,
+    "n_episodes": 197,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ci_half_width_m": 0.1033,
+   "separated": false,
+   "reactive": false
+  },
+  "near_ego_50m": {
+   "n_samples": 5233,
+   "n_agents": 155,
+   "between_GO_STOP_mean_m": 0.3398,
+   "floor_GO_GO2_mean_m": 0.2926,
+   "delta_m": 0.0472,
+   "ci": {
+    "delta": 0.0472,
+    "lo": -0.0115,
+    "hi": 0.1081,
+    "ci95": 0.0598,
+    "p_delta_gt0": 0.9445,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 5233,
+    "n_episodes": 155,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ci_half_width_m": 0.0598,
+   "separated": false,
+   "reactive": false
+  }
+ }
+}
