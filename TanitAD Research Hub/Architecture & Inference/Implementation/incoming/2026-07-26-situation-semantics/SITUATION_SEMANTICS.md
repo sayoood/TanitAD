@@ -525,15 +525,21 @@ Path: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/202
 | `scripts/t1_tables.py` | renders §2.2 from the JSON — no T1 number is hand-typed | **repo** | no |
 | `scripts/t1_splice.py` | places the rendered tables into this document at its markers | **repo** | no |
 | `scripts/t2_kinematic_labelability.py` | the T2 measurement, incl. the clock-trap fix and the coverage mask | **repo** | no |
-| `artifacts/score_*.npy` | per-arm held-out scores (24 files) | **eval pod only** — see below | ⚠️ **yes** |
+| `artifacts/t1_heldout_scores.npz` | ⭐ **the whole T1 statistical result, re-derivable from the repo alone** — the de-identified held-out label vector (50,119 rows, 1,642 positives), the integer clip-cluster ids, and all **24** per-arm score vectors. 4.05 MB | **repo** | no |
+
+⭐ **Nothing in this run lives in only one place.** The score bundle was added specifically to
+close that gap: with it, every interval in §2.2 can be recomputed **without a GPU, without the
+gated features and without either pod**. Verified — the primary AP re-derives to **0.061963**
+against the JSON's **0.06196** using 7 lines of independent code over the staged bytes alone. That
+is a *third* check on the headline, after the 7/7 fidelity match and the two-reader agreement.
 
 **Deliberately NOT staged, and why:**
 
 | | where | why |
 |---|---|---|
 | the frozen per-clip features (`~377 MB`, 520 `.npz`) | `pod2:/workspace/h2clf/feats` **and** `tanitad-eval:/workspace/h2probe/feats` **and** dev-box scratch | derived from a gated corpus; rebuilt by H2's committed `h2c_features.py` in 9.6 GPU-min. **Now in three places rather than one — an improvement on the pre-existing state.** |
-| per-arm held-out score vectors (24 × ~200 kB) | `tanitad-eval:/workspace/h2probe/artifacts` | regenerable by rerunning `t1_probe.py`; every statistic derived from them is in `t1_probe.json` |
-| the de-identified label bundle | `pod2` + `tanitad-eval` + dev-box scratch | 🔒 gated-corpus derivative |
+| the raw per-arm `.npy` score files | `tanitad-eval:/workspace/h2probe/artifacts` | superseded — they are all inside the staged `t1_heldout_scores.npz` |
+| the de-identified label bundle | `pod2` + `tanitad-eval` + dev-box scratch | 🔒 gated-corpus derivative; rebuilt by H2's `h2c_prep.py` in ~1 CPU-min |
 
 ### 9.1 ⚠️ The one deviation from the brief, declared in advance and reported here
 
