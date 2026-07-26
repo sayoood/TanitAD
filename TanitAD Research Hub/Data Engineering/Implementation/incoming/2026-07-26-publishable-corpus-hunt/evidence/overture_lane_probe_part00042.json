@@ -1,0 +1,235 @@
+{
+  "probe": "overture-lane-level-independent",
+  "date": "2026-07-26",
+  "url": "https://overturemaps-us-west-2.s3.amazonaws.com/release/2026-07-22.0/theme=transportation/type=segment/part-00042-144840db-e97d-5f55-b175-bf973dede107-c000.zstd.parquet",
+  "file_bytes": 684022435,
+  "bytes_fetched": 3281031,
+  "n_http_requests": 69,
+  "num_rows_in_file": 2818326,
+  "num_row_groups": 128,
+  "n_columns": 21,
+  "columns": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "names",
+      "type": "struct<primary: string, common: map<string, string ('common')>, rules: list<element: struct<variant: string, language: string, perspectives: struct<mode: string, countries: list<element: string>>, value: string, between: list<element: double>, side: string>>>"
+    },
+    {
+      "name": "subtype",
+      "type": "string"
+    },
+    {
+      "name": "class",
+      "type": "string"
+    },
+    {
+      "name": "subclass",
+      "type": "string"
+    },
+    {
+      "name": "subclass_rules",
+      "type": "list<element: struct<value: string, between: list<element: double>>>"
+    },
+    {
+      "name": "connectors",
+      "type": "list<element: struct<connector_id: string, at: double>>"
+    },
+    {
+      "name": "road_surface",
+      "type": "list<element: struct<value: string, between: list<element: double>>>"
+    },
+    {
+      "name": "road_flags",
+      "type": "list<element: struct<values: list<element: string>, between: list<element: double>>>"
+    },
+    {
+      "name": "rail_flags",
+      "type": "list<element: struct<values: list<element: string>, between: list<element: double>>>"
+    },
+    {
+      "name": "width_rules",
+      "type": "list<element: struct<value: double, between: list<element: double>>>"
+    },
+    {
+      "name": "level_rules",
+      "type": "list<element: struct<value: int32, between: list<element: double>>>"
+    },
+    {
+      "name": "access_restrictions",
+      "type": "list<element: struct<access_type: string, when: struct<during: string, heading: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<element: double>>>"
+    },
+    {
+      "name": "speed_limits",
+      "type": "list<element: struct<min_speed: struct<value: int32, unit: string>, max_speed: struct<value: int32, unit: string>, is_max_speed_variable: bool, when: struct<during: string, heading: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<element: double>>>"
+    },
+    {
+      "name": "prohibited_transitions",
+      "type": "list<element: struct<sequence: list<element: struct<connector_id: string, segment_id: string>>, final_heading: string, when: struct<heading: string, during: string, using: list<element: string>, recognized: list<element: string>, mode: list<element: string>, vehicle: list<element: struct<dimension: string, comparison: string, value: double, unit: string>>>, between: list<element: double>>>"
+    },
+    {
+      "name": "routes",
+      "type": "list<element: struct<name: string, network: string, ref: string, symbol: string, wikidata: string, between: list<element: double>>>"
+    },
+    {
+      "name": "destinations",
+      "type": "list<element: struct<labels: list<element: struct<value: string, type: string>>, symbols: list<element: string>, from_connector_id: string, to_segment_id: string, to_connector_id: string, when: struct<heading: string>, final_heading: string>>"
+    },
+    {
+      "name": "sources",
+      "type": "list<element: struct<property: string, dataset: string, license: string, record_id: string, update_time: string, confidence: double, between: list<element: double>>>"
+    },
+    {
+      "name": "geometry",
+      "type": "binary"
+    },
+    {
+      "name": "version",
+      "type": "int32"
+    },
+    {
+      "name": "bbox",
+      "type": "struct<xmin: double, xmax: double, ymin: double, ymax: double>"
+    }
+  ],
+  "columns_whose_NAME_contains_lane": [],
+  "nested_types_anywhere_containing_lane": [],
+  "parquet_created_by": "parquet-cpp-arrow version 17.0.0",
+  "sample_rows_first5": [
+    {
+      "id": "b44a077e-b036-41c1-9a4b-9445d28692bb",
+      "subtype": "road",
+      "class": "unclassified",
+      "connectors": [
+        {
+          "connector_id": "812ad877-130f-4256-98db-3ad979646300",
+          "at": 0.0
+        },
+        {
+          "connector_id": "778e8e01-a783-4e50-8905-a68e48c1f76e",
+          "at": 1.0
+        }
+      ],
+      "road_flags": null,
+      "access_restrictions": null,
+      "destinations": null,
+      "prohibited_transitions": null,
+      "speed_limits": null,
+      "width_rules": null,
+      "routes": null,
+      "subclass": null,
+      "subclass_rules": null,
+      "level_rules": null
+    },
+    {
+      "id": "f8982319-4be4-4333-993e-5ae2a37dbc2a",
+      "subtype": "road",
+      "class": "unclassified",
+      "connectors": [
+        {
+          "connector_id": "4d264271-a8ba-454d-b3c3-69c4fff8ef1c",
+          "at": 0.0
+        },
+        {
+          "connector_id": "9c1d411e-6a4d-4a19-a43f-090bd0eb23a1",
+          "at": 0.024919989
+        },
+        {
+          "connector_id": "915cad46-12b7-4d99-a2e5-1988de2e323d",
+          "at": 1.0
+        }
+      ],
+      "road_flags": null,
+      "access_restrictions": null,
+      "destinations": null,
+      "prohibited_transitions": null,
+      "speed_limits": null,
+      "width_rules": null,
+      "routes": null,
+      "subclass": null,
+      "subclass_rules": null,
+      "level_rules": null
+    },
+    {
+      "id": "8ba99396-30af-4e17-a951-1017883d6dd2",
+      "subtype": "road",
+      "class": "track",
+      "connectors": [
+        {
+          "connector_id": "7ec474e1-8184-4c80-9474-2dca3efc3f74",
+          "at": 0.0
+        },
+        {
+          "connector_id": "b6687075-6bf2-4275-9098-fce7d36ad55b",
+          "at": 0.836428615
+        },
+        {
+          "connector_id": "125c730b-15fb-491b-ba31-afcc17312600",
+          "at": 1.0
+        }
+      ],
+      "road_flags": null,
+      "access_restrictions": null,
+      "destinations": null,
+      "prohibited_transitions": null,
+      "speed_limits": null,
+      "width_rules": null,
+      "routes": null,
+      "subclass": null,
+      "subclass_rules": null,
+      "level_rules": null
+    },
+    {
+      "id": "0836fa71-1b89-4798-aeb8-b1ac7700c337",
+      "subtype": "road",
+      "class": "unclassified",
+      "connectors": [
+        {
+          "connector_id": "812ad877-130f-4256-98db-3ad979646300",
+          "at": 0.0
+        },
+        {
+          "connector_id": "a74e53de-299b-4209-aa32-fd19207848ec",
+          "at": 1.0
+        }
+      ],
+      "road_flags": null,
+      "access_restrictions": null,
+      "destinations": null,
+      "prohibited_transitions": null,
+      "speed_limits": null,
+      "width_rules": null,
+      "routes": null,
+      "subclass": null,
+      "subclass_rules": null,
+      "level_rules": null
+    },
+    {
+      "id": "d2421205-f3dd-4e33-b70d-fdab7eccbd48",
+      "subtype": "road",
+      "class": "unclassified",
+      "connectors": [
+        {
+          "connector_id": "8cd515b3-cc6d-40f6-a63f-3b9fe65f414c",
+          "at": 0.0
+        },
+        {
+          "connector_id": "8bea2c47-1eaa-4b3f-a0c0-8567ba5e6704",
+          "at": 1.0
+        }
+      ],
+      "road_flags": null,
+      "access_restrictions": null,
+      "destinations": null,
+      "prohibited_transitions": null,
+      "speed_limits": null,
+      "width_rules": null,
+      "routes": null,
+      "subclass": null,
+      "subclass_rules": null,
+      "level_rules": null
+    }
+  ]
+}

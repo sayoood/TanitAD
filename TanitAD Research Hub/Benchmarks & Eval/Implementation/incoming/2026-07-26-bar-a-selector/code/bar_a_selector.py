@@ -366,16 +366,27 @@ def fit_fold(head, C, base_sd, fit_idx, ival_idx, kind, lr, horizons,
     g = torch.Generator().manual_seed(SEED)
 
     def inner_val():
+        """-> mean inner-val ade_0_2s, or None if the head's OWN fail-loud seam
+        guard refuses this parameter state (a state the architecture rejects is
+        not a candidate; it is recorded, never silently skipped)."""
         with torch.no_grad():
             ades = []
-            for s in range(0, len(ival_idx), 256):
-                sl = ival_idx[s:s + 256]
-                o = score_from_cache(head, C, sl)
-                a, _, _, _ = metrics_from_traj(o["traj"], o["tgt"], horizons)
-                ades.append(a)
+            try:
+                for s in range(0, len(ival_idx), 256):
+                    sl = ival_idx[s:s + 256]
+                    o = score_from_cache(head, C, sl)
+                    a, _, _, _ = metrics_from_traj(o["traj"], o["tgt"], horizons)
+                    ades.append(a)
+            except RuntimeError as e:
+                return None if "seam norm ratio" in str(e) else (_ for _ in ()
+                                                                 ).throw(e)
         return float(np.concatenate(ades).mean())
 
-    best = (inner_val(), 0, {k: v.detach().clone() for k, v in sel.items()})
+    v0_ = inner_val()
+    if v0_ is None:
+        raise RuntimeError("as-trained state already violates the seam guard -- "
+                           "impossible; the harness is wrong")
+    best = (v0_, 0, {k: v.detach().clone() for k, v in sel.items()})
     hist = [{"step": 0, "inner_val_ade": best[0]}]
     seam_max, raised = 0.0, None
     for step in range(1, MAX_STEPS + 1):
@@ -383,7 +394,7 @@ def fit_fold(head, C, base_sd, fit_idx, ival_idx, kind, lr, horizons,
         try:
             o = score_from_cache(head, C, pick, need_anchor_logits=True)
         except RuntimeError as e:            # the seam fail-loud guard
-            raised = f"step {step}: {e}"
+            raised = f"train step {step}: {e}"
             break
         seam_max = max(seam_max, float(o["seam"].get(
             "seam_norm_ratio_preclamp_max", 0.0)))
@@ -399,6 +410,13 @@ def fit_fold(head, C, base_sd, fit_idx, ival_idx, kind, lr, horizons,
                          "loss": float(loss.detach()),
                          "rank": float(l_rank.detach()),
                          "cls": float(l_cls.detach())})
+            if v is None:
+                # the head's own guard now refuses this state: the grafts have
+                # grown past seam_fail. Stop here and keep the best state that
+                # the architecture still accepts.
+                raised = (f"inner-val step {step}: seam guard refused the state "
+                          f"(graft norm > seam_fail=1.5 x base score norm)")
+                break
             if v < best[0]:
                 best = (v, step, {k: p.detach().clone()
                                   for k, p in sel.items()})
@@ -420,14 +438,21 @@ def main():
                     choices=["produced", "oracle"])
     ap.add_argument("--stride", type=int, default=1)
     ap.add_argument("--tag", default=None)
+    ap.add_argument("--lr-grid", default=None,
+                    help="comma-separated LR grid override. Used ONLY to keep "
+                         "the SECONDARY (oracle) surface inside the GPU budget; "
+                         "the PRIMARY surface always runs the full registered "
+                         "grid. Any override is stamped into the output JSON.")
     ap.add_argument("--smoke", action="store_true",
                     help="tiny budget -- validates the harness end to end "
                          "(incl. the cache-fidelity self-test) WITHOUT "
                          "producing a quotable result")
     a = ap.parse_args()
+    global MAX_STEPS, EVAL_EVERY, LR_GRID
     if a.smoke:
-        global MAX_STEPS, EVAL_EVERY, LR_GRID
         MAX_STEPS, EVAL_EVERY, LR_GRID = 60, 30, (1e-4,)
+    if a.lr_grid:
+        LR_GRID = tuple(float(x) for x in a.lr_grid.split(","))
     gm = a.goal_mode
     tag = a.tag or gm
     OUTDIR.mkdir(exist_ok=True)
@@ -455,6 +480,8 @@ def main():
             "cross_fit": f"{N_FOLDS}-fold EPISODE-DISJOINT; "
                          f"{N_INNER_VAL_EP} inner-val episodes per fold",
             "max_steps": MAX_STEPS, "batch": BATCH, "lr_grid": list(LR_GRID),
+            "lr_grid_registered": [3e-5, 1e-4, 3e-4],
+            "lr_grid_overridden": bool(a.lr_grid),
             "optimizer": "AdamW wd=0 (update magnitude ~ lr independent of loss "
                          "SCALE, so one grid is fair to both arms)",
             "deployable_waste_m": 0.6058,
@@ -506,10 +533,29 @@ def main():
           f"{R['_trainable']['head_total_params']} head params", flush=True)
 
     # ---- cache ------------------------------------------------------------
-    C = build_cache(world, grounding, head, goal_head, ds_val, gm,
-                    stride=a.stride)
+    # The 6,844-window capture costs ~18 GPU-min, so it is persisted -- to
+    # /workspace, NOT /root (MEASURED: /root has 2.9 GiB free and silently
+    # truncated a 6 GiB dd; /workspace took the full 6 291 456 000 B at
+    # 534 MB/s). Reloading is safe because the cache-fidelity self-test below
+    # gates EVERY run: a stale or truncated cache cannot reproduce 0.8563 with
+    # zero pick mismatch.
+    cpath = Path(f"/workspace/_bara/cache_{gm}_stride{a.stride}.pt")
+    if cpath.exists():
+        C = torch.load(cpath, map_location="cpu", weights_only=False)
+        print(f"[cache] reloaded {cpath} ({C['q0'].shape[0]} windows) -- "
+              f"self-tests still gate it", flush=True)
+    else:
+        C = build_cache(world, grounding, head, goal_head, ds_val, gm,
+                        stride=a.stride)
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cpath.with_suffix(".tmp")
+        torch.save(C, tmp)
+        tmp.rename(cpath)                    # atomic: no half-written cache
+        print(f"[cache] persisted {cpath} "
+              f"({cpath.stat().st_size / 2**30:.2f} GiB)", flush=True)
     R["_cache"] = {"n_windows": int(C["q0"].shape[0]),
                    "stride": a.stride,
+                   "path": str(cpath),
                    "wallclock_s": C["_wallclock_s"],
                    "n_episodes": int(len(set(C["ep"].tolist()))),
                    "bytes_on_gpu": int(sum(
@@ -606,11 +652,16 @@ def main():
             # inner-val is scored on the canonical stride-8 grid only (cheap,
             # and the same statistic the outer test uses)
             ival_idx = torch.nonzero(ival_mask & is_eval).squeeze(-1)
-            best = None
+            best, lr_sweep = None, []
             for lr in LR_GRID:
                 r = fit_fold(head, C, base_sd, fit_idx, ival_idx, kind, lr,
                              horizons, log=f"{kind}/f{k}/lr{lr:g}")
                 r["lr"] = lr
+                lr_sweep.append({"lr": lr,
+                                 "inner_val_ade": round(r["inner_val_ade"], 4),
+                                 "best_step": r["best_step"],
+                                 "seam_preclamp_max": r["seam_preclamp_max"],
+                                 "seam_guard_raised": r["seam_guard_raised"]})
                 if best is None or r["inner_val_ade"] < best["inner_val_ade"]:
                     best = r
             # score this fold's UNSEEN test episodes
@@ -620,10 +671,21 @@ def main():
                     if n_ in best["state"]:
                         p_.copy_(best["state"][n_])
                 sub = torch.nonzero(test_mask[eval_idx]).squeeze(-1)
-                oo = score_from_cache(head, C, eval_idx[sub])
+                try:
+                    oo = score_from_cache(head, C, eval_idx[sub])
+                    scored_ok = True
+                except RuntimeError as e:
+                    # a state the inner-val accepted but the TEST windows refuse:
+                    # fall back to as-trained for this fold and SAY SO.
+                    if "seam norm ratio" not in str(e):
+                        raise
+                    head.load_state_dict(base_sd, strict=True)
+                    oo = score_from_cache(head, C, eval_idx[sub])
+                    scored_ok = False
+                    best["seam_guard_raised"] = (
+                        f"TEST-TIME seam refusal -> fold fell back to as-trained: "
+                        f"{e}")
                 oof_traj[sub] = oo["traj"].detach().cpu()
-                # FROZEN-FAN PROOF: the fan for these windows is byte-identical
-                fan_ok = True
             fold_info.append({
                 "fold": k, "test_ep": test_ep,
                 "n_test_windows": int(sub.numel()),
@@ -631,6 +693,9 @@ def main():
                 "inner_val_ade": round(best["inner_val_ade"], 4),
                 "seam_preclamp_max": best["seam_preclamp_max"],
                 "seam_guard_raised": best["seam_guard_raised"],
+                "scored_with_finetuned_state": scored_ok,
+                "finetune_helped_inner_val": bool(best["best_step"] > 0),
+                "lr_sweep": lr_sweep,
                 "history": best["history"],
             })
             torch.save(best["state"],
@@ -671,7 +736,14 @@ def main():
             for n_, p_ in head.named_parameters():
                 if n_ in r["state"]:
                     p_.copy_(r["state"][n_])
-            oo = score_from_cache(head, C, eval_idx)
+            try:
+                oo = score_from_cache(head, C, eval_idx)
+            except RuntimeError as e:
+                if "seam norm ratio" not in str(e):
+                    raise
+                head.load_state_dict(base_sd, strict=True)
+                oo = score_from_cache(head, C, eval_idx)
+                r["seam_guard_raised"] = f"TEST-TIME seam refusal: {e}"
             a_is, _, _, _ = metrics_from_traj(oo["traj"], oo["tgt"], horizons)
         R["in_sample_ceiling"][kind] = {
             "ade_0_2s_in_sample": round(float(a_is.mean()), 4),

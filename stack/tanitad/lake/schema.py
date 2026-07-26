@@ -80,6 +80,30 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
                              is_synthetic=False),
     "worldmodel_synth": SourceLicense("owned-safe", "OpenMDW-1.1",
                                       share_alike=False, is_synthetic=True),
+    # DLR ASAM OpenDRIVE HD maps (Zenodo) — added 2026-07-26. The FIRST map asset
+    # in the program that is neither `nc-research` nor `ship-sa`: CC-BY-4.0,
+    # commercial-OK, NOT share-alike, anonymous download, and byte-verified
+    # lane-level connectivity (86,200 explicit <lane><link><successor> elements,
+    # 4,837 junction <laneLink from->to> turn edges, 583 branch points across 5
+    # maps). It also carries what Argoverse 2 has ZERO of: 372 positioned traffic
+    # lights, 160 YIELD, 23 STOP, 73 speed-limit signs — and a full PROJ string,
+    # so unlike log-local AV2 maps it can be map-matched.
+    #
+    # ⚠️⚠️ THE LICENCE IS PER RECORD DOI, NOT PER PUBLISHER — and this is not
+    # hypothetical: the SAME AUTHORS' SAME TEST BED ships under two different
+    # licences. `zenodo.7056722` (sample) is CC-BY-4.0 while `zenodo.18507692`
+    # (the full Test Bed Lower Saxony map) is CC-BY-NC-**SA**-4.0. A single
+    # `dlr_opendrive` key would therefore route an NC-SA map into a COMMERCIAL
+    # shard — a licence VIOLATION, not a risk tolerance. Hence TWO keys, and an
+    # explicit DOI allowlist rather than a publisher-level rule.
+    #
+    # ⚠️ Also MEASURED: two versions of the same map are BOTH 26,807,654 bytes and
+    # have DIFFERENT first-1 MiB md5s. Same size is not same bytes — cite the
+    # VERSION DOI, never the concept DOI.
+    "dlr_opendrive": SourceLicense("owned-safe", "CC-BY-4.0", share_alike=False,
+                                   is_synthetic=False),
+    "dlr_opendrive_nc": SourceLicense("nc-research", "CC-BY-NC-SA-4.0",
+                                      share_alike=True, is_synthetic=False),
     # tier `ship-sa`: owned-safe AND share-alike -> segregated copyleft shard.
     "zod": SourceLicense("owned-safe", "CC-BY-SA-4.0", share_alike=True,
                          is_synthetic=False),
@@ -122,6 +146,51 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
     "physicalai_av": SourceLicense("gated-confidential", "NVIDIA-AV-internal",
                                    share_alike=False, is_synthetic=False),
 }
+
+# --------------------------------------------------------------------------- #
+# DLR OpenDRIVE — DOI allowlist. The licence is PER RECORD, not per publisher.  #
+# --------------------------------------------------------------------------- #
+# MEASURED 2026-07-26 via the anonymous Zenodo REST API (evidence:
+# …/2026-07-26-publishable-corpus-hunt/evidence/zenodo_records_dlr_opendrive.json).
+# Six records are CC-BY-4.0; ONE — the same authors' same test bed — is
+# CC-BY-NC-SA-4.0. Resolving by publisher would silently promote it.
+_DLR_OPENDRIVE_CC_BY_DOIS = frozenset({
+    "10.5281/zenodo.17434825",   # Schwarzer Berg, Brunswick, v1.1.0
+    "10.5281/zenodo.15395840",   # Schwarzer Berg, Brunswick, v1.0.0
+    "10.5281/zenodo.4043193",    # inner ring road, Brunswick
+    "10.5281/zenodo.7071846",    # ViVre research track, Brunswick
+    "10.5281/zenodo.7072631",    # 5G Living Lab research track, Wolfsburg
+    "10.5281/zenodo.7056722",    # Test Bed Lower Saxony — SAMPLE only
+})
+_DLR_OPENDRIVE_NC_DOIS = frozenset({
+    "10.5281/zenodo.18507692",   # Test Bed Lower Saxony — FULL. NC-SA, NOT CC-BY.
+})
+
+
+def dlr_opendrive_source_key(doi: str) -> str:
+    """Resolve a DLR OpenDRIVE record DOI to its registry key.
+
+    Refuses unknown DOIs rather than defaulting. A default would have to pick a
+    side, and picking the permissive side turns an unrecognised record into a
+    licence violation while picking the restrictive side silently degrades a
+    shippable asset. Neither is acceptable, so an unknown DOI is an error.
+
+    ⚠️ Pass the **version** DOI, never the concept DOI: two versions of the same
+    map are both 26,807,654 bytes with DIFFERENT first-1 MiB md5s, so size does
+    not identify content.
+    """
+    d = (doi or "").strip().lower().removeprefix("https://doi.org/")
+    if d in _DLR_OPENDRIVE_CC_BY_DOIS:
+        return "dlr_opendrive"
+    if d in _DLR_OPENDRIVE_NC_DOIS:
+        return "dlr_opendrive_nc"
+    raise KeyError(
+        f"unknown DLR OpenDRIVE record DOI {doi!r}. The licence is PER RECORD "
+        f"(the same authors' same test bed ships CC-BY-4.0 sample and "
+        f"CC-BY-NC-SA-4.0 full), so this cannot be defaulted — verify the "
+        f"record's licence on Zenodo and add it to the allowlist explicitly."
+    )
+
 
 # Sources that may physically enter the Phase-A lake (permissive only).
 # Excludes BOTH hard-fail classes: gated-confidential (firewalled, recipe-only)

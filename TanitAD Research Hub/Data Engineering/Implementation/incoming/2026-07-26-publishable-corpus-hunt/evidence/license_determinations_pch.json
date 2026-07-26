@@ -1,0 +1,114 @@
+{
+  "determination_set": "publishable-corpus-hunt / licences read as DOCUMENTS",
+  "date": "2026-07-26",
+  "rule": "A licence is established only by fetching the licensor's own licence text or licence statement and quoting it. A short name from a README badge, an API metadata tag, a papers-with-code badge or recall is NOT a determination. DATA licence and CODE/devkit licence are recorded separately, always -- that separation is exactly how the nuScenes and OpenLane-V2 errors propagated.",
+  "determinations": [
+    {
+      "subject": "DLR OpenDRIVE HD maps -- Schwarzer Berg, ViVre, 5G Living Lab, Test Bed Lower Saxony SAMPLE, Brunswick inner ring road",
+      "data_license": "CC-BY-4.0",
+      "code_license": "n/a -- these records are pure data, no devkit ships with them",
+      "evidence_class": "PUBLISHED",
+      "tier": "CONFIRMED",
+      "how_established": [
+        "The full CC BY 4.0 legal text is SHIPPED INSIDE every record as LICENSE.txt (18657 B in the Schwarzer Berg record; 18655 B inside each of the four zips). First line verbatim: 'Attribution 4.0 International'.",
+        "Machine check of each shipped LICENSE.txt: the string 'NonCommercial' is ABSENT and the string 'ShareAlike' is ABSENT in all four. It is the plain BY licence, not BY-NC and not BY-SA.",
+        "The publisher's own README states it in prose: 'This HD road network dataset is licenced under the terms of Creative Commons Attribution 4.0 International (LICENSE.txt).'",
+        "Zenodo record metadata independently reports license.id = 'cc-by-4.0'."
+      ],
+      "required_attribution_verbatim": "OpenDRIVE dataset Schwarzer Berg (c) DLR and iMAR Navigation GmbH, CC BY 4.0, 2024",
+      "derived_flags": {
+        "commercial_ok": true,
+        "share_alike": false,
+        "non_commercial": false,
+        "proposed_license_class": "owned-safe",
+        "proposed_tier": "ship"
+      },
+      "obligations_beyond_the_short_name": [
+        "Attribution string must be reproduced (standard CC BY 4.0 Sec. 3(a)).",
+        "The publisher disclaims completeness and correctness: 'The OpenDRIVE dataset is a prototypic and simplified modelling of road elements and is intended to be used in research and development only. Neither the completeness nor the correctness of the data can be guaranteed in any way. The dataset author does not take legal responsibility for the use of this dataset.' -- this is a WARRANTY disclaimer, not a field-of-use restriction, and does not narrow the CC BY grant. Recorded so nobody later mistakes it for an NC term."
+      ],
+      "CRITICAL_PER_RECORD_WARNING": "The licence is NOT uniform across this publisher. Record 18507692 -- 'OpenDRIVE dataset of Test Bed Lower Saxony' (the full A2/A391/A39/L295 motorway map, 81 MB) -- is CC-BY-NC-SA-4.0. Its 412 KB SAMPLE (record 7056722) is CC-BY-4.0. Same author, same test bed, different licence. Any ingest MUST read the licence per record DOI, never per publisher."
+    },
+    {
+      "subject": "Overture Maps -- transportation theme",
+      "data_license": "ODbL-1.0",
+      "code_license": "n/a for the data; the schema repo itself is separate",
+      "evidence_class": "INHERITED",
+      "tier": "PROVISIONAL",
+      "how_established": "NOT re-derived in this cycle. Carried from the 2026-07-26 av2-zod-ingest determination, which read it via docs.overturemaps.org and explicitly flagged that the ODbL legal text was not separately fetched. The trap that agent caught still stands and is repeated here so it is not lost: Overture is widely advertised as CDLA-Permissive-2.0, which is true of the FOUNDATION DEFAULT and FALSE of the transportation theme, which is OSM-derived and therefore ODbL and therefore COPYLEFT.",
+      "derived_flags": {
+        "commercial_ok": true,
+        "share_alike": true,
+        "proposed_tier": "ship-sa"
+      },
+      "open_legal_question": "Whether a model trained on an ODbL database is a 'Derivative Database' (copyleft attaches) or a 'Produced Work' (it does not) is a real legal question and is not for an agent to settle. Flagged for the PI, unchanged from the previous cycle."
+    },
+    {
+      "subject": "CARLA",
+      "data_license": "CC-BY (assets) -- NO VERSION STATED BY THE LICENSOR",
+      "code_license": "MIT, (c) 2024 Computer Vision Center (CVC) at the Universitat Autonoma de Barcelona (UAB)",
+      "evidence_class": "PUBLISHED",
+      "tier": "CONFIRMED for the statement, PROVISIONAL for which one covers TownBig.xodr",
+      "how_established": "Fetched the repo README section 'Licenses'. Verbatim: 'CARLA specific code is distributed under the MIT License.' / 'CARLA specific assets are distributed under the CC-BY License.' Fetched the root LICENSE: MIT.",
+      "unresolved": "TownBig.xodr lives inside the MIT-licensed code repository but is arguably an 'asset'. The licensor does not disambiguate, and does not give the CC-BY version. BOTH candidate readings are commercial-OK and non-copyleft, so the tier is unaffected -- but the version gap is the same defect class as ZOD's unversioned 'CC BY-SA' prose and is recorded rather than papered over.",
+      "derived_flags": {
+        "commercial_ok": true,
+        "share_alike": false,
+        "proposed_tier": "ship"
+      }
+    },
+    {
+      "subject": "CommonRoad scenarios (TUM tum-cps/commonroad-scenarios)",
+      "data_license": "BSD-3-Clause is the repository's ONLY licence file -- see caveats",
+      "code_license": "same file (the repo contains no code)",
+      "evidence_class": "PUBLISHED",
+      "tier": "PROVISIONAL",
+      "how_established": "Fetched LICENSE.txt from the repo root over the anonymous GitLab API: verbatim BSD 3-Clause text, 'Copyright 2019 Technical University of Munich, Professorship of Cyber-Physical Systems.'",
+      "caveats_that_stop_this_being_CONFIRMED": [
+        "The BSD text says 'SOFTWARE' throughout and is applied to a DATA-only repository. It is a code licence covering data -- exactly the code-vs-data conflation this program has been burned by twice.",
+        "UPSTREAM INHERITANCE IS UNRESOLVED AND IS THE REAL RISK. The repo README states scenarios are 'either obtained from real traffic data (NGSIM dataset) or hand-crafted (mostly based on real road networks)'. NGSIM is US-DOT public domain, which is fine. But the scenario-factory collection -- which is the ONLY sampled collection that actually carries a dense lane graph -- contains maps like ARG_Carcarana, i.e. real towns worldwide, and CommonRoad's scenario factory is documented as generating maps from OpenStreetMap. If those maps are OSM-derived they inherit ODbL and the repo's BSD file is the WRONG licence for them. This is the OpenLane-V2 pattern exactly (Apache-2.0 repo badge != licence of the derived data). NOT RESOLVED HERE.",
+        "GitLab's own project license field is null, so there is no second machine-readable confirmation."
+      ],
+      "derived_flags_IF_BSD_HOLDS": {
+        "commercial_ok": true,
+        "share_alike": false,
+        "proposed_tier": "ship"
+      }
+    },
+    {
+      "subject": "KITScenes-Multimodal (KIT-MRT)",
+      "data_license": "CC-BY-NC-4.0",
+      "code_license": "not established",
+      "evidence_class": "PUBLISHED (metadata tag only)",
+      "tier": "PROVISIONAL",
+      "how_established": "HuggingFace datasets API tag 'license:cc-by-nc-4.0' and cardData.license='cc-by-nc-4.0'. The dataset CARD ITSELF COULD NOT BE READ -- anonymous GET of README.md returns HTTP 401 because the repo is gated. So the licence was NOT read as a document, and this determination is deliberately left PROVISIONAL.",
+      "derived_flags": {
+        "commercial_ok": false,
+        "non_commercial": true
+      },
+      "verdict": "Fails the commercial criterion AND the credential-free criterion. Double reject."
+    },
+    {
+      "subject": "esmini",
+      "data_license": "MPL-2.0 (the .xodr resources ship inside the MPL-2.0 repository; no separate data licence is declared)",
+      "code_license": "MPL-2.0",
+      "evidence_class": "PUBLISHED",
+      "tier": "CONFIRMED for the repo licence, PROVISIONAL for the maps specifically",
+      "how_established": "Fetched https://raw.githubusercontent.com/esmini/esmini/master/LICENSE -- 'Mozilla Public License Version 2.0', 16726 B.",
+      "derived_flags": {
+        "commercial_ok": true,
+        "share_alike": "file-level weak copyleft only",
+        "proposed_tier": "ship-sa (conservative) "
+      }
+    },
+    {
+      "subject": "Argoverse 2 (incumbent, for the ranking only)",
+      "data_license": "CC-BY-NC-SA-4.0 + non-CC Terms of Use",
+      "code_license": "MIT",
+      "evidence_class": "PUBLISHED",
+      "tier": "CONFIRMED",
+      "how_established": "NOT re-derived in this cycle -- established twice already (2026-07-26 credential-free-lanegraph and av2-zod-ingest, both of which fetched argoverse.org/about.html). Reproduced here only because it is the incumbent the ranking is against.",
+      "derived_flags": {"commercial_ok": false, "share_alike": true}
+    }
+  ]
+}

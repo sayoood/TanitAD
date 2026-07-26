@@ -1,0 +1,213 @@
+{
+  "probe_set": "publishable-corpus-hunt / access probes",
+  "date": "2026-07-26",
+  "operator": "data-engineering / publishable-corpus-hunt",
+  "method": "curl --ssl-no-revoke (dev-box TLS proxy returns CRYPT_E_NO_REVOCATION_CHECK -> HTTP=000 without it, which is indistinguishable from an outage) and python urllib + truststore.inject_into_ssl() for the parquet range reads. NO credential of any kind was used anywhere in this set; that is the point of the survey.",
+  "hard_constraints_honoured": [
+    "No third-party mirror of any gated corpus was fetched, listed or used.",
+    "No account created, no form submitted, no Terms checkbox accepted, no email sent.",
+    "No torrent touched.",
+    "ZOD was NOT probed at all -- parked by explicit PI instruction.",
+    "No pod was touched (pod1 training, pod2 H2 classifier, eval pod Bar-A)."
+  ],
+  "probes": [
+    {
+      "candidate": "DLR OpenDRIVE HD maps (Zenodo)",
+      "n": 1,
+      "url": "https://zenodo.org/api/records/15395840",
+      "method": "anonymous GET (Zenodo REST API)",
+      "http": 200,
+      "bytes": 7465,
+      "finding": "record metadata: license {'id':'cc-by-4.0'}, access_right 'open', 7 files listed with direct content URLs"
+    },
+    {
+      "candidate": "DLR OpenDRIVE HD maps (Zenodo)",
+      "n": 2,
+      "url": "https://zenodo.org/api/records/15395840/files/bs-schwarzer-berg.xodr/content",
+      "method": "anonymous GET, full object",
+      "http": 200,
+      "bytes": 26807654,
+      "finding": "real 26.8 MB ASAM OpenDRIVE 1.6 file served with no credential"
+    },
+    {
+      "candidate": "DLR OpenDRIVE HD maps (Zenodo)",
+      "n": 3,
+      "url": "https://zenodo.org/api/records/17434825/files/bs-schwarzer-berg.xodr/content",
+      "method": "anonymous GET, HTTP Range then full",
+      "http": "206 then 200",
+      "bytes": 26807654,
+      "finding": "v1.1.0 of the same concept DOI. Same byte size as v1.0.0 but the first 1 MiB md5 DIFFERS (v1.0.0 600138fc18dc208af94a5064c26e7ebe vs v1.1.0 cda7f278280c168df0e754d75be4ef6e) -- the CHANGELOG attributes this to a precisified CRS definition. Version matters; cite the version DOI."
+    },
+    {
+      "candidate": "DLR OpenDRIVE HD maps (Zenodo)",
+      "n": 4,
+      "url": "https://zenodo.org/api/records/{7071846,7072631,7056722,4043193}/files/*",
+      "method": "anonymous GET",
+      "http": 200,
+      "bytes": 3667360,
+      "bytes_all": [3667360, 3893972, 412133, 5240081],
+      "finding": "ViVre / 5G Living Lab / Test Bed Lower Saxony SAMPLE / Brunswick inner ring road -- all CC-BY-4.0, all anonymous"
+    },
+    {
+      "candidate": "DLR OpenDRIVE HD maps (Zenodo)",
+      "n": 5,
+      "url": "https://zenodo.org/api/records?q=opendrive&size=25",
+      "method": "anonymous Zenodo search API",
+      "http": 200,
+      "finding": "total=18 records for q=OpenDRIVE. Complete family enumerated. IMPORTANT NEGATIVE: record 18507692 'OpenDRIVE dataset of Test Bed Lower Saxony' (the FULL A2/A391/A39/L295, 81 MB) is cc-by-nc-sa-4.0, NOT cc-by-4.0 -- the licence differs PER RECORD within the same publisher and even the same test bed. Its 412 KB SAMPLE (7056722) is cc-by-4.0."
+    },
+    {
+      "candidate": "Overture Maps transportation",
+      "n": 1,
+      "url": "https://raw.githubusercontent.com/OvertureMaps/schema/main/schema/transportation/segment.yaml",
+      "method": "anonymous GET of the authoritative JSON-Schema",
+      "http": 200,
+      "bytes": 29908,
+      "finding": "NO lane property anywhere. Road-segment properties are exactly: class, destinations, prohibited_transitions, road_surface, road_flags, speed_limits, width_rules, subclass (+ common subclass_rules, access_restrictions, level, level_rules, connectors, routes, names). The single 'lane' substring in the file is 'Inclined plane / cliff railway'."
+    },
+    {
+      "candidate": "Overture Maps transportation",
+      "n": 2,
+      "url": "https://api.github.com/repos/OvertureMaps/schema/git/trees/main?recursive=1",
+      "method": "anonymous GET, 1167 paths",
+      "http": 200,
+      "bytes": 378276,
+      "finding": "Only 6 themes exist: addresses, base, buildings, divisions, places, transportation. transportation contains exactly segment.yaml and connector.yaml -- there is no lane entity, no lane theme, no lane extension. The only repo paths containing 'lane' are examples/.../road-oneway-no-lanes.yaml (a one-way ACCESS example, not a lane model)."
+    },
+    {
+      "candidate": "Overture Maps transportation",
+      "n": 3,
+      "url": "https://overturemaps-us-west-2.s3.amazonaws.com/release/2026-07-22.0/theme=transportation/type=segment/part-00042-144840db-e97d-5f55-b175-bf973dede107-c000.zstd.parquet",
+      "method": "anonymous unsigned HTTP Range reads (pyarrow over a custom range file); 3.28 MB in 69 requests against a 0.684 GB object",
+      "http": "200/206",
+      "finding": "21 columns: id, names, subtype, class, subclass, subclass_rules, connectors, road_surface, road_flags, rail_flags, width_rules, level_rules, access_restrictions, speed_limits, prohibited_transitions, routes, destinations, sources, geometry, version, bbox. Columns whose NAME contains 'lane': 0. Nested arrow types anywhere containing 'lane': 0. This is a DIFFERENT release part from the one the 2026-07-26 av2-zod-ingest agent read, and it reproduces that agent's finding independently."
+    },
+    {
+      "candidate": "Overture Maps transportation",
+      "n": 4,
+      "url": "https://overturemaps-us-west-2.s3.amazonaws.com?list-type=2&prefix=release/&delimiter=/",
+      "method": "anonymous unsigned ListObjectsV2",
+      "http": 200,
+      "finding": "releases 2026-06-17.0 and 2026-07-22.0. Access remains ungated. Newest transportation theme is 68 segment parts (~38 GB) + 32 connector parts (~25 GB)."
+    },
+    {
+      "candidate": "KITScenes-Multimodal (KIT-MRT)",
+      "n": 1,
+      "url": "https://huggingface.co/api/datasets/KIT-MRT/KITScenes-Multimodal",
+      "method": "anonymous HF datasets API",
+      "http": 200,
+      "bytes": 71671,
+      "finding": "gated='auto', private=false, 1010 files, tags include 'license:cc-by-nc-4.0', 'hd-maps', 'lanelet2'. NON-COMMERCIAL."
+    },
+    {
+      "candidate": "KITScenes-Multimodal (KIT-MRT)",
+      "n": 2,
+      "url": "https://huggingface.co/datasets/KIT-MRT/KITScenes-Multimodal/resolve/main/data/sequence_archives.csv",
+      "method": "anonymous byte fetch of a real data object",
+      "http": 401,
+      "finding": "GATE CONFIRMED at the bytes, not just in metadata"
+    },
+    {
+      "candidate": "KITScenes-Multimodal (KIT-MRT)",
+      "n": 3,
+      "url": "https://huggingface.co/datasets/KIT-MRT/KITScenes-Multimodal/raw/main/README.md",
+      "method": "anonymous GET of the dataset card",
+      "http": 401,
+      "body": "Access to dataset KIT-MRT/KITScenes-Multimodal is restricted. You must have access to it and be authenticated to access it. Please log in.",
+      "finding": "Even the CARD is gated -> the licence could NOT be read as a document. Licence recorded as PROVISIONAL from the API tag only."
+    },
+    {
+      "candidate": "CARLA (simulator maps)",
+      "n": 1,
+      "url": "https://raw.githubusercontent.com/carla-simulator/carla/ue5-dev/PythonAPI/util/opendrive/TownBig.xodr",
+      "method": "anonymous GET",
+      "http": 200,
+      "bytes": 15536627,
+      "finding": "a real 15.5 MB OpenDRIVE map is IN the public repo: 1923 <road>, 192 <junction>, 2416 <laneLink> lane-to-lane turn edges"
+    },
+    {
+      "candidate": "CARLA (simulator maps)",
+      "n": 2,
+      "url": "https://raw.githubusercontent.com/carla-simulator/carla/ue5-dev/README.md",
+      "method": "anonymous GET, section 'Licenses'",
+      "http": 200,
+      "bytes": 10334,
+      "finding": "VERBATIM: 'CARLA specific code is distributed under the MIT License.' and 'CARLA specific assets are distributed under the CC-BY License.' NOTE: 'the CC-BY License' carries NO VERSION NUMBER -- the same version-ambiguity trap ZOD's licence prose had."
+    },
+    {
+      "candidate": "CARLA (simulator maps)",
+      "n": 3,
+      "url": "https://raw.githubusercontent.com/carla-simulator/carla/ue5-dev/LICENSE",
+      "method": "anonymous GET",
+      "http": 200,
+      "bytes": 1133,
+      "finding": "root LICENSE is MIT, (c) 2024 Computer Vision Center (CVC) at the Universitat Autonoma de Barcelona. Since TownBig.xodr sits INSIDE this MIT-licensed repo but is arguably an 'asset', code-vs-asset attribution for that specific file is AMBIGUOUS. Both candidate licences (MIT, CC-BY) are commercial-OK and non-copyleft, so the ambiguity does not change the tier."
+    },
+    {
+      "candidate": "esmini",
+      "n": 1,
+      "url": "https://api.github.com/repos/esmini/esmini/git/trees/master?recursive=1",
+      "method": "anonymous GET",
+      "http": 200,
+      "finding": "~82 .xodr files under resources/xodr/ and EnvironmentSimulator/Unittest/xodr/ (fabriksgatan, e6mini, soderleden, multi_intersections, highway_split/merge, ...)"
+    },
+    {
+      "candidate": "esmini",
+      "n": 2,
+      "url": "https://raw.githubusercontent.com/esmini/esmini/master/LICENSE",
+      "method": "anonymous GET",
+      "http": 200,
+      "bytes": 16726,
+      "finding": "Mozilla Public License Version 2.0 -- commercial-OK, file-level weak copyleft"
+    },
+    {
+      "candidate": "CommonRoad scenarios (TUM)",
+      "n": 1,
+      "url": "https://gitlab.lrz.de/api/v4/projects/tum-cps%2Fcommonroad-scenarios",
+      "method": "anonymous GitLab API",
+      "http": 200,
+      "finding": "visibility=public, default_branch=2020a_scenarios, GitLab's own license field is null"
+    },
+    {
+      "candidate": "CommonRoad scenarios (TUM)",
+      "n": 2,
+      "url": "https://gitlab.lrz.de/api/v4/projects/34387/repository/files/LICENSE.txt/raw?ref=2020a_scenarios",
+      "method": "anonymous GET of the licence DOCUMENT",
+      "http": 200,
+      "bytes": 1517,
+      "finding": "verbatim BSD 3-Clause text, 'Copyright 2019 Technical University of Munich, Professorship of Cyber-Physical Systems.' -> commercial-OK, NOT share-alike. CAVEAT: the text says 'SOFTWARE' throughout and is applied to a data-only repository -- a code licence covering data. Recorded as the repo's only licence, with that mismatch flagged."
+    },
+    {
+      "candidate": "CommonRoad scenarios (TUM)",
+      "n": 3,
+      "url": "https://gitlab.lrz.de/api/v4/projects/34387/repository/files/<scenario>.xml/raw?ref=2020a_scenarios",
+      "method": "anonymous GET of 12 real scenario XMLs across 2 sub-collections",
+      "http": 200,
+      "finding": "see commonroad_lanelet_probe.json -- connectivity is REAL but UNEVEN: recorded/hand-crafted has 0 successors in 5 of 6 sampled files; scenario-factory has 116 successors + 116 predecessors + 94 adjacentLeft + 8 <intersection> per file"
+    },
+    {
+      "candidate": "Baidu Apollo HD maps",
+      "n": 1,
+      "url": "https://api.github.com/repos/ApolloAuto/apollo/git/trees/master?recursive=1",
+      "method": "anonymous GET, 14855 paths",
+      "http": 200,
+      "finding": "modules/map/data contains only TWO maps: borregas_ave (base_map.bin / routing_map.bin / sim_map.bin -- binary protobuf) and demo (base_map.txt). The Sunnyvale loop maps are no longer in the repo."
+    },
+    {
+      "candidate": "Baidu Apollo HD maps",
+      "n": 2,
+      "url": "https://raw.githubusercontent.com/ApolloAuto/apollo/master/modules/map/data/demo/base_map.txt",
+      "method": "anonymous GET",
+      "http": 200,
+      "bytes": 343487,
+      "finding": "0 occurrences of successor_id and 0 of predecessor_id -- the demo map carries NO lane connectivity. Apollo's HD-map PROTO defines successor_id/predecessor_id, but the only text-format map shipped in the repo does not populate them. Corpus value is nil regardless (2 tiny maps, no imagery)."
+    }
+  ],
+  "not_probed_and_why": {
+    "ZOD / Zenseact": "PARKED BY EXPLICIT PI INSTRUCTION ('look for alternatives and skip Zod until im at home'). No email, no application, no torrent, no probe of any kind was performed in this cycle. Independently it is also parked on the merits: 4 prior probes established its lane annotation is 2-D image-space marking polylines with no successor/neighbour/topology field and no map module.",
+    "third-party mirrors of nuScenes / Waymo / any gated corpus": "excluded BY CONSTRUCTION, not by ranking",
+    "Academic Torrents": "the brief forbids torrents; not touched",
+    "levelXdata (highD/inD/rounD/exiD)": "already rejected at >=2 probes by the prior cycle -- manual human review form AND explicitly non-commercial. Not re-probed; nothing here would change it.",
+    "Waymo / Lyft L5 / KITTI-360 / nuPlan / OpenLane-V2": "already rejected at >=2 probes each by the two prior cycles"
+  }
+}
