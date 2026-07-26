@@ -10,6 +10,23 @@ agent/doc, **not** re-verified) · `ESTIMATED` · `HYPOTHESIS`.
 
 ---
 
+## 0. Headline
+
+| # | Result | Class |
+|:--:|---|---|
+| **1** | ⭐⭐ **The OOD ratio criterion has an EXACT arithmetic ceiling — `sup(ratio_arr) = 1.298888` — computable from the envelope JSON with no model, no rollout and no GPU. `1.298888 < 1.30`, so the two live guardrails (`e1b_eval.py:403`, `e1c_common.py:34`) are TAUTOLOGIES by a margin of 0.001112**, and `RATIO_EXTRAPOLATION_X = 1.5` is unreachable by 0.201112. **Clause 1 of E1a's disjunction is dead; only clause 2 can ever fire.** | `MEASURED` |
+| **2** | ⛔ **Corroborated repo-wide: 181 OOD nodes re-adjudicated, 139 carry a ratio, the old `≤ 1.30` test passes on 139/139 and fails on 0.** `Gc` was evaluated 20 times across E1b/E1c — 20 passes. **In E1b it is the ONLY guardrail that "held"** (the other three failed). **14 verdict classes FLIP**, all `MEASUREMENT → EXTRAPOLATION`, in the gate's own co-primary artifact and REF-C's. | `MEASURED` |
+| **3** | ⭐⭐ **OUTCOME B, and worse than pre-registered. The envelope does not break "below K = 70" — it breaks at 0.5 s.** Last pure-MEASUREMENT horizon: **k = 4 (0.4 s)**, on 881 windows / 40 clusters. `GATE_PROTOCOL` §0.3 refuses K ≤ 20, so **NO admissible gate horizon is a measurement rather than an extrapolation — including the K = 20 the program already uses.** | `MEASURED` |
+| **4** | ⭐⭐ **The envelope failure and HP-2's stratum of interest are THE SAME WINDOWS.** At K = 20: `other` **0.0000** outside, `longitudinal` 0.0027, **`junction` 0.5879** — and it leaves via the **heading** axis (0.5824 vs 0.1813 lateral), with the *median* junction window peaking at **14.95°** against a 12° validated edge. The co-primary is a clean measurement exactly where it is uninformative and an extrapolation exactly where it carries the signal. | `MEASURED` |
+| **5** | ⭐ **Therefore the envelope is NOT a horizon problem — it is a RENDERER-VALIDATION problem.** `K = 60` stays the register (stratum yield is untouched and still binds at K ≤ 70), **but on ONE ground, not two**, and the co-primary must be stamped `EXTRAPOLATION` with its fractions printed. **`POD2_EVAL_HOST.md` headline #10 stamped `MEASURED` on a compound whose envelope half its own §4.5 labels `HYPOTHESIS`** — retraction appended, class **C4**. | `MEASURED` |
+| **6** | ⭐ **Nine independent reproductions of committed numbers before any new number was quoted** — v1 = 0.4271 [0.3675, 0.4871], and **all 8 strata × 2 horizons** of the registered gate co-primary, bit-identical, on a freshly re-synced host and through the **packaged** `taniteval.clhorizon` rather than the `incoming/` driver. | `MEASURED` |
+| **7** | 🔴 **Two preflights FAILED and are fixed. `stack/scripts/eval_flagship_v4.py:478` uses PEP 701 (Python ≥ 3.12) syntax and pod2 runs 3.11.10** — so **every v4 eval path, including the registered co-primary, was un-runnable on the designated n ≥ 200 eval host.** Introduced today, in the commit whose headline is *"the eval pod was 62 % stale"*. Class **C2** (interpreter-version form). Fixed, behaviour-preserving, 70 tests pass. | `MEASURED` |
+| **8** | 🔴 **`taniteval/clhorizon.py::run_v4` — the entry point written to un-strand the co-primary — raises on its first step** (`RawEp` has no `.frames`). REPRODUCED. **Not patched** (sibling stream owns it); escalated as a one-line fix. Class **C2**. | `MEASURED` |
+| **9** | ✅ **T2 done: `MODEL_REGISTRY.md` §1.2a — v1 @ 600 = `0.4108 [0.3956, 0.4273]`, 13,198 windows / 600 clusters, as a NEW row** with both n's, the estimator, the CV floor of its own deployment (**0.6917 vs 0.8377** — the 600 is EASIER) and a binding no-substitution rule. §5 leaderboard stamped as the 40-episode deployment. `registry_lint` PASS. | `MEASURED` |
+| **10** | ⚠️ **The one branch `GATE_30K_RESULTS` §10.1 leaves open is "re-validate P1", and this run prices it:** covering K = 60 needs the homography validated to **~9.7 m / ~24°** (3.2× / 2.0× the current edge) from a `f_eff = 266 px` camera at 1.5 m. **Likely to establish where fidelity stops rather than to extend it — and it is the ONLY action that can raise the ratio criterion's ceiling.** | `MEASURED` + `ESTIMATED` |
+
+---
+
 ## 1. PRE-REGISTRATION — written and staged BEFORE the K-sweep produced a number
 
 *This section was written while the sweep was still executing its first horizon. Both outcomes are
@@ -235,17 +252,30 @@ Artifacts: `artifacts/ksweep_results.json`, `artifacts/perwindow_K*.pt`, log `ar
 
 ### 4.1 Two harness checks first — both reproduce the committed gate artifact EXACTLY
 
-| quantity | this run | committed gate artifact | |
-|---|---|---|:--:|
-| K = 185 overall `corridor_departure_rate` | **0.6388 [0.5565, 0.7128]** | 0.6388 [0.5565, 0.7128] | ✅ |
-| K = 185 **junction** CDR (n = 6/6) | **0.8432 [0.7874, 0.8919]** | 0.8432 [0.7874, 0.8919] | ✅ |
-| K = 185 peak XTE / OOD peak ratio | **33.452 m / 1.2741** | 33.452 / 1.2741 | ✅ |
-| K = 185 `frac_steps_lat_over_3m` / `frac_windows_out` | **0.54634 / 0.9024** | 0.54634 / 0.9024 (= the 54.63 % / 90.24 % in `GATE_PROTOCOL` §0.1) | ✅ |
-| K = 20 overall CDR / peak XTE / ratio | **0.0203 [0.0078, 0.0364] / 0.630 / 1.0504** | 0.0203 [0.0078,0.0364] / 0.630 / 1.050 | ✅ |
-| n at each K | **41 / 40** and **881 / 40** | 41/40 · 881/40 | ✅ |
+⭐ **All 8 strata × 2 horizons reproduce bit-identically** against
+`…/2026-07-26-v4-30k-gate/coprimary/corridor_v4_30k_K185.json` — same checkpoint md5, different host,
+freshly re-synced tree, and via the **packaged** `taniteval.clhorizon`/`taniteval.corridor` rather than
+the `incoming/` driver that produced the original:
 
-Together with **P3** (v1 = 0.4271 [0.3675, 0.4871]) that is **three independent reproductions** of
-committed numbers on a freshly-synced host, before any new number was quoted.
+| K | stratum | n win / n ep | this run, CDR@1.75 | committed gate artifact |
+|---:|---|---:|---|---|
+| 185 | overall | 41 / 40 | **0.6388 [0.5565, 0.7128]** | 0.6388 [0.5565, 0.7128] ✅ |
+| 185 | **junction** | **6 / 6** | **0.8432 [0.7874, 0.8919]** | 0.8432 [0.7874, 0.8919] ✅ |
+| 185 | longitudinal | 18 / 18 | **0.6871 [0.6138, 0.7496]** | 0.6871 [0.6138, 0.7496] ✅ |
+| 185 | other | 17 / 16 | **0.5154 [0.3807, 0.6520]** | 0.5154 [0.3807, 0.652] ✅ |
+| 20 | overall | 881 / 40 | **0.0203 [0.0078, 0.0364]** | 0.0203 [0.0078, 0.0364] ✅ |
+| 20 | **junction** | **182 / 22** | **0.0909 [0.0421, 0.1413]** | 0.0909 [0.0421, 0.1413] ✅ |
+| 20 | longitudinal | 374 / 24 | **0.0035 [0.0010, 0.0068]** | 0.0035 [0.001, 0.0068] ✅ |
+| 20 | other | 325 / 24 | **0.0000 [0.0, 0.0]** | 0.0 [0.0, 0.0] ✅ |
+
+Also identical: peak XTE (33.452 m / 0.630 m), OOD peak ratio (1.2741 / 1.0504), and
+`frac_steps_lat_over_3m` / `frac_windows_out` = **0.54634 / 0.9024** — i.e. the *54.63 % / 90.24 %*
+quoted in `GATE_PROTOCOL.md` §0.1. Together with **P3** (v1 = 0.4271 [0.3675, 0.4871]) that is
+**nine independent reproductions** of committed numbers before any new number was quoted.
+
+⚠️ **And it confirms the standup's escalation #3 in passing:** the gate report's headline quotes the
+junction co-primary `0.8432 [0.7874, 0.8919]` beside the *overall* n (`41 win / 40 ep`). It rests on
+**6 windows / 6 episodes.** The fix is one column: `41/40 overall · 6/6 junction`.
 
 ### 4.2 ⭐ THE SWEEP TABLE — yield × envelope × departure
 
@@ -292,6 +322,125 @@ straddles the 12° edge. **So: the truncation curves in `ksweep_results.json` ar
 lateral/CDR family and INDICATIVE ONLY for the yaw-driven envelope fraction.** Every envelope number in
 §4.2 is from a real rollout at that K, never a truncation.
 
+### 4.5 ⭐ Where the envelope actually breaks — 0.5 s, and the whole failure is the junction stratum
+
+On the **881-window / 40-cluster** K = 20 rollout — the largest window set in this run, and the one at
+the program's *standing* horizon:
+
+| elapsed | 0.4 s | **0.5 s** | 1.0 s | 1.5 s | **2.0 s** |
+|---|---:|---:|---:|---:|---:|
+| windows outside the P1 envelope | **0.0000** | ⛔ **0.0034** | 0.0443 | 0.0965 | **0.1226** |
+
+> ### ⛔ **The last horizon at which the closed loop is a pure MEASUREMENT is k = 4 — 0.4 s.**
+> The first window leaves the renderer's validated envelope at **0.5 s**, which is the controller's own
+> lookahead (`LOOKAHEAD_STEP = 5`). **`GATE_PROTOCOL` §0.3 refuses any K ≤ 20, so there is no admissible
+> gate horizon at which this surface is a measurement rather than an extrapolation** — not K = 60, not
+> K = 70, and **not the K = 20 the program has been using all along.**
+
+And it is one stratum, on one axis. At K = 20, by stratum (`junction = |Δheading| ≥ 10° / 2 s`):
+
+| stratum | n win / n ep | out of envelope | via &#124;dlat&#124; > 3 m | via &#124;dψ&#124; > 12° | p50 peak &#124;dψ&#124; | verdict |
+|---|---:|---:|---:|---:|---:|---|
+| **junction** | 182 / **22** | ⛔ **0.5879** | 0.1813 | ⛔ **0.5824** | ⛔ **14.95°** | **EXTRAPOLATION** |
+| longitudinal | 374 / 24 | 0.0027 | 0.0000 | 0.0014 | 1.21° | PARTIAL |
+| other | 325 / 24 | ✅ **0.0000** | 0.0000 | 0.0000 | — | ✅ **MEASUREMENT** |
+| overall | 881 / 40 | 0.1226 | 0.0375 | 0.1215 | 1.73° | PARTIAL |
+
+> ### ⭐⭐ **The envelope failure and HP-2's stratum of interest are THE SAME WINDOWS.**
+> Straight cruising is a clean measurement — `other` is **0.0000** outside at 2 s. Everything outside the
+> envelope is a **turn**, and it leaves via the **heading** axis: the *median* junction window's peak
+> heading deviation is **14.95°** against a 12° validated edge. So the corridor co-primary is a genuine
+> measurement exactly where it is uninformative (straight driving, CDR = 0.0000) and an extrapolation
+> exactly where it carries the signal (junction, CDR = 0.0909 → 0.8432 at K = 185).
+>
+> ⚠️ **One honest confound, named because it partly softens this.** `dψ = wrap(ego_yaw − yaw_ref[m*])`
+> is measured against the **nearest** logged pose. In a turn, heading changes fast along the path, so an
+> *along-track* lead/lag converts into apparent heading deviation. Part of the junction's 14.95° is
+> therefore longitudinal error wearing a heading costume. It does **not** rescue the conclusion — the
+> lateral clause fires on **18.13 %** of junction windows on its own, and the renderer is warped by the
+> *reported* `(dlat, dψ)` whatever their provenance, so the fidelity claim is void either way — but the
+> number should not be read as pure heading control error.
+
+---
+
+## 5. ⭐⭐ THE VERDICT: **OUTCOME B**, and it is worse than the pre-registration anticipated
+
+**Pre-registered outcome B was: "the envelope breaks *below* K = 70 → the horizon recommendation is too
+optimistic and the primary K must drop to where the envelope actually holds. Say so plainly; do not
+rescue the recommendation."**
+
+**It breaks below K = 70. It breaks below K = 60. It breaks below K = 20. It breaks at 0.5 s.**
+
+So the second half of outcome B — *"drop the primary K to where the envelope holds"* — **cannot be
+executed**, and saying otherwise would be a rescue of a different kind. The horizon that satisfies the
+envelope is **0.4 s**, which `GATE_PROTOCOL` §0.3 refuses (rightly: it is *shorter* than the blind
+instrument being replaced) and which would measure nothing. The correct conclusion is therefore not a
+smaller K:
+
+> ### ⭐ **The envelope is not a HORIZON problem. It is a RENDERER-VALIDATION problem, and it indicts the standing 2 s instrument as hard as the proposed 6 s one.**
+> `POD2_EVAL_HOST.md` §4.5's reasoning — *"a 6 s rollout accumulates far less lateral drift than an
+> 18.5 s one, so K = 60 is likely to sit inside the envelope"* — is **directionally right and
+> conclusionally wrong**: K = 60 does accumulate far less drift than K = 185 (p90 peak XTE 9.69 m vs
+> 72.24 m), and it is still **3.2× outside** a 3.0 m validated edge. The envelope was never a function
+> of K alone; it is a function of **where the closed loop goes**, and at a junction it goes outside
+> within one second at any K.
+
+### 5.1 The registerable recommendation
+
+**Register `K = 60` (6.0 s) as the primary closed-loop co-primary horizon, `K = 70` (7.0 s) as the
+documented hard maximum, and `K = 185` as report-only-pooled — and stamp the co-primary
+`envelope_verdict: EXTRAPOLATION` with its measured fractions PRINTED in the verdict.**
+
+The K itself is **unchanged from the standup's recommendation**, but the *grounds* are now one, not two,
+and the co-primary carries a disclosure it did not have before:
+
+| ground | status | evidence |
+|---|---|---|
+| **stratum yield** — K ≤ 70 is the ceiling for any stratified verdict | ✅ **CONFIRMED, unchanged.** Junction clusters on the 600 build: 232 (K=20) → **207 (K=60)** → **204 (K=70)** → 196 (K=75) → 58 (K=185); 600 is the corpus maximum, so above K = 70 HP-2 is unmeasurable **permanently** | `PUBLISHED`, `POD2_EVAL_HOST.md` §3.1 |
+| **envelope** — "register where the envelope holds" | 🔴 **REFUTED, and not satisfiable at any admissible K.** 0.4 s is the last measurement horizon | `MEASURED`, this run, §4.5 |
+| **within-cluster averaging** — K = 60 keeps ~17 windows/episode, K = 185 has 1.00 | ✅ unchanged | `PUBLISHED` + `MEASURED` here |
+
+**Why K = 60 is still the right register even though it is extrapolation.** The three things that make
+a horizon useful are unaffected by the envelope finding: it is **3× longer than the blind instrument**,
+it keeps **every E1a stratum above the 200-cluster bar on the 600 build**, and the failure it detects is
+enormous and CI-separated (`CDR 0.0203 → 0.6388` from K = 20 to K = 185, paired Δ separated). **A failure
+observed under a partly-extrapolated renderer is still a failure** — what is withdrawn is the claim that
+it is an *in-distribution* failure. That distinction changes what may be *said*, not whether the arm
+departed its corridor.
+
+⚠️ **What may NOT be said, and this is the load-bearing part:** no corridor number on this surface may be
+described as "in-distribution", "low-OOD", or "a measurement of the model's dynamics". The admissible
+wording is *"closed-loop corridor departure under a re-rendered real-footage surface whose fidelity is
+validated only to |dlat| ≤ 3.0 m / |dψ| ≤ 12°; **51 %** of windows at K = 60 exceed that."*
+
+### 5.2 The experiment that would actually fix it — and its price, MEASURED
+
+`GATE_30K_RESULTS.md` §10.1 offered two branches: *"register at a horizon where the envelope holds"*
+**or** *"re-validate P1 out to 18.5 s"*. **Branch one is now closed.** Branch two is the only one left,
+and this run prices it:
+
+| to make this horizon a MEASUREMENT | P1 must cover (p90 of peak deviation) | multiple of the current edge |
+|---|---|---|
+| K = 20 (2.0 s), **junction only** | ~3.5 m / ~28° | 1.2× / 2.3× |
+| **K = 60 (6.0 s)** | **~9.7 m / ~24°** | **3.2× / 2.0×** |
+| K = 70 (7.0 s) | ~14.0 m / ~37° | 4.7× / 3.1× |
+| K = 185 (18.5 s) | ~72 m / ~78° | 24× / 6.5× |
+
+⚠️ **A ground-plane homography from a `f_eff = 266 px` front-wide camera at `h = 1.5 m` will not be
+faithful at 10 m lateral displacement** — `clhorizon.sampling_homography`'s own docstring says it
+*"degrades gracefully rather than faithfully"* beyond the measured range. So the honest reading is that
+**re-validating P1 will not extend to K = 60; it will establish where it stops.** ⭐ **The cheap version
+is worth doing first and is a CPU-day, not a GPU-week:** extend the P1 sweep from
+`{0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0} m` and `{0, 1, 2, 3, 5, 8, 12}°` to, say, **6 m / 24°** and see
+whether the ADE-vs-offset curve stays smooth or breaks. That single experiment does three things at
+once: it un-voids the ratio criterion (by raising its ceiling), it tells us how much of the junction
+stratum is recoverable, and it puts a number on the only branch §10.1 has left.
+
+⭐ **And there is a second, independent reason to run it: the ratio criterion cannot be repaired any
+other way.** Its ceiling (§3) is `1 + (max lat ADE − base)/base + (max yaw ADE − base)/base`, i.e. it is
+set **entirely by how far the P1 sweep went.** Extending the sweep is the *only* action that raises the
+ceiling. Until then, clause 1 is void and clause 2 is the whole rule.
+
 ---
 
 ## 6. T2 (§9.6) — v1 @ 600 registered as a NEW row. ✅ DONE
@@ -324,6 +473,43 @@ ranked table is exactly where a substitution would happen.
 
 ---
 
+## 7. T3 (§9.9) — pinning the S3 skill bars
+
+### 7.1 What the bar is, and why "it should be deterministic" is not an answer
+
+`S3 bar = max(QWK(B1), QWK(B2), QWK(B3))` (`run_s3_characterisation.operative_blind_floor`) ·
+`S3-W bar = QWK(B1_sensor_only)` · `skill = QWK(model) − bar`, quoted to **4 dp**.
+Each arm's QWK comes from `s3_blind_baseline._fit_mlp`: a 2-layer MLP (hidden 64), **full-batch** Adam,
+400 epochs, class-weighted CE, `torch.manual_seed(seed)`, **no dropout, no shuffling, no augmentation.**
+Nothing in that path is *deliberately* stochastic once the seed is fixed — which is exactly why the
+observed ±0.01 across hosts is a finding rather than noise, and why "just fix the seed" does not close it.
+
+MEASURED across hosts on md5-identical code and an identical corpus (`PUBLISHED`,
+`POD2_EVAL_HOST.md` §3.3.1): lat **0.6534 → 0.6493**, lon **0.5323 → 0.5420**, S3-W lat
+**0.2566 → 0.2591**, S3-W lon **0.2881 → 0.2881**.
+
+### 7.2 The design — three separable causes, one host, one variable at a time
+
+The label mining is provably deterministic (12/12 strata reproduce digit-for-digit across two hosts on
+two data surfaces), so it is done **once** and cached; every condition below re-runs only the **fit**.
+`band_metrics` **rounds QWK to 4 dp** — the precision under test — so the unrounded
+`quadratic_weighted_kappa` is taken instead.
+
+| family | what varies | what it separates |
+|---|---|---|
+| **E-A threads** | `OMP/MKL/OPENBLAS_NUM_THREADS ∈ {1, 2, 4, 8, 16}`, seed 0 | CPU GEMM **reduction order** depends on thread count; 400 Adam steps amplify a 1e-7 difference into a different argmax on borderline rows. If the bar moves here, **pinning threads pins the bar.** |
+| **E-B repeatability** | 5 repeats, threads 8, seed 0, **separate processes** | is the fit deterministic *given* the thread count? |
+| **E-C seed** | seeds 0…9, threads 8 | the bar's own **estimator variance** — the honest precision it may be quoted at even in a perfectly reproducible pipeline. *A bar pinned by freezing seed 0 is pinned by fiat, not measured.* |
+
+**Pre-committed read-out:** a value is quotable to `d` decimals iff the observed spread is
+`< 0.5 × 10⁻ᵈ`. That number is **computed from the runs, not chosen**. If the spread across seeds
+exceeds 0.005, the bar is not quotable to 2 dp either, and the honest form is `mean ± spread` — or, if
+even that is unstable, **the bar cannot sit in a kill conjunction and must be said so.**
+
+<!-- T3_RESULTS -->
+
+---
+
 ## 8. Escalations — raised here, not left in a README
 
 1. ⭐⭐ **The horizon recommendation must be re-issued with its envelope clause corrected before any gate
@@ -351,5 +537,75 @@ ranked table is exactly where a substitution would happen.
    (`…/2026-07-23-lowood-lanekeeping-refc/lowood_flagship_ci.json` → `pod2:/root/lanekeep/`). Any future
    eval that needs an OOD ratio on pod2 needs it there. **Owner: whoever maintains the pod2 harness
    bundle** — it belongs in the sync, not in an agent's memory.
+7. ⚠️ **`GATE_PROTOCOL.md` §0.1's retraction block is imprecise in a binding document.** It says the
+   ratio is *"structurally incapable of exceeding its own **1.5** threshold"* — true, but it leaves open
+   whether the **1.30** constants the two live scripts use could fire. **They cannot: `sup = 1.298888`.**
+   Proposed one-line amendment, offered rather than applied because that file was amended hours ago by a
+   sibling stream and editing a mid-flight binding doc is the hazard this program keeps paying for:
+   > *"The ceiling is exact and computable from `lowood_flagship_ci.json` alone: `sup(ratio_arr) =
+   > 1.298888`. Every threshold above it — including the `<= 1.30` used at `e1b_eval.py:403` and
+   > `e1c_common.py:34`, and `RATIO_EXTRAPOLATION_X = 1.5` — is decided before the model runs."*
+
+   **Owner: `GATE_PROTOCOL.md`'s maintainer.**
+
+---
+
+## 9. Deliverable manifest
+
+All repo paths are relative to the working tree on the dev box and are **`git add`-ed, NOT committed and
+NOT pushed**. Anything that exists in only ONE place is marked ⚠️.
+
+| artifact | where it lives | what it is |
+|---|---|---|
+| `HORIZON_ENVELOPE.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-horizon-envelope-closeout/` | this report |
+| `scripts/k_sweep_envelope.py` | repo (same dir) · `pod2:/root/taniteval/_ksweep.py` | the K-sweep driver (uses `taniteval.clhorizon` + `taniteval.ood`, the packaged modules — §9.8's integration) |
+| `scripts/ood_blast_radius.py` | repo (same dir) | the supremum proof + repo-wide re-adjudication; runs on the dev box, no GPU |
+| `scripts/s3_bar_pinning.py` | repo (same dir) · `pod2:/root/s3pin/_s3pin.py` | T3: mine-once / fit-many, `mine` · `fit` · `sweep` phases |
+| `artifacts/ksweep_results.json` | repo (same dir) · `pod2:/root/ksweep/ksweep_results.json` | every K: stratified corridor block + full OOD disjunction + truncation curve |
+| `artifacts/ksweep.log` | repo · `pod2:/root/ksweep.log` | the run log, one line per K |
+| `artifacts/perwindow_K*.pt` | repo · `pod2:/root/ksweep/perwindow_K*.pt` | per-window `lat`/`yaw`/`ade2s`/`hd2s`/`hdK`/`speed`/`eid`/`t0`/`epi`/`de_fixed` — **the arithmetic-only path: any half-width, stratification or OOD rule can be recomputed from these with no GPU** |
+| `artifacts/ood_blast_radius.json` | repo (same dir) | supremum 1.298888 · 3 live constants adjudicated · 181 nodes re-adjudicated · 14 class flips |
+| `artifacts/preflight_pod2_closeout.json` | repo · `pod2:/root/preflight_pod2_closeout.json` | P0 `sys.path` audit / P1 corridor / P2 lateral / P3 val chokepoint |
+| `artifacts/preflight2_pod2.json` | repo · `pod2:/root/preflight2_pod2.json` | P4 clhorizon+ood present & exercised · P5 saturation demo · P6 guard-can-fire · P7 repo↔pod md5 |
+| `artifacts/RESULT_v1_40ep_ksweep_preflight.json` | repo · `pod2:/root/taniteval/results/` | P3 — v1 = 0.4271 [0.3675, 0.4871] on this host, this session |
+| `artifacts/s3_bar_pinning.json` + `cond_*.json` | repo · `pod2:/root/s3pin/` | T3 conditions and the pinning verdict |
+| **registry row** | `repo:Project Steering/MODEL_REGISTRY.md` §1.2a + §5 deployment stamp | T2 |
+| **4 retraction rows** | `repo:Project Steering/RETRACTION_LOG.md` | C13 (analytic) · C4 (headline outruns body) · C2 ×2 (PEP 701, `run_v4`) |
+| **2 code fixes** | `repo:stack/scripts/eval_flagship_v4.py`, `repo:stack/scripts/vlm_kin_crossval.py` | the PEP 701 portability fix (§2.1) |
+| ⚠️ **pod2 harness** | `pod2:/root/taniteval` (221 files) · `pod2:/root/TanitAD/stack` (344 files) | re-synced from the repo this session, **0 md5 mismatch**; the repo is the other copy |
+| ⚠️ `pod2:/root/lanekeep/lowood_flagship_ci.json` | pod2 only *(the repo has the source copy)* | the P1 envelope; **not part of the standard sync — escalation #6** |
+
+Nothing produced by this run exists in only one place.
+
+---
+
+## 10. What was deliberately NOT done, and the honest limits
+
+* ⛔ **pod1 was never contacted.** It is training v2corpus.
+* ⛔ **Exactly one job ran on pod2 at a time.** The K-sweep and the T3 refits were serialised, and T3
+  specifically must not share a box with a GPU job — **thread contention is one of the candidate
+  mechanisms T3 is testing**, so running it under contention would confound the measurement it exists
+  to make.
+* ⛔ **The 600-episode cache was read-only.** Only `list_val_episodes` + `torch.load(..., mmap=True)`
+  touched it.
+* ⛔ **No interval anywhere in this report comes from `overlapping_holdout_se`.** Where a result JSON
+  carries one it is named `legacy_overlapping_holdout_se` and is ignored.
+* ⛔ **`taniteval/clhorizon.py` was NOT patched** despite a reproduced defect (§2.2) — a sibling stream
+  owns it and it landed hours ago. Escalated instead.
+* ⛔ **`GATE_PROTOCOL.md` was NOT edited** — proposed amendment text is in escalation #7.
+* ⚠️ **The sweep ran on the 40-episode deployment, not the 600.** That is the deployment the co-primary
+  is registered on and it makes K = 185 and K = 20 *reproductions* of committed numbers, but it means
+  the **junction** stratum carries 22 clusters at K = 20 and 6 at K = 185. On the 600 build those become
+  232 and 58 (`PUBLISHED`, `POD2_EVAL_HOST.md` §3.1). The full sweep at 600 is ≈ 15× the compute
+  (≈ 37 GPU-h) and was not affordable in one session. **The envelope FRACTIONS are proportions over
+  tens of thousands of steps and are precise at this n; the stratified CDR INTERVALS are not, and are
+  quoted with their n every time.**
+* ⚠️ **Goal provenance is ORACLE on every closed-loop number here** (matching the registered
+  co-primary). Per `GATE_PROTOCOL` §0.8 **none of these is a deployed-capability claim.** The
+  envelope conclusion is, if anything, *conservative* under this caveat: an arm without the oracle would
+  drift further, not less.
+* ⚠️ **The P1 envelope constants are from the flagship v1 arm**, not v4 (`ood.py` stamps this on every
+  node). They describe the **renderer's validated range**, which is arm-independent — but the *ratio*
+  they map to is a v1 ADE ratio, which is one more reason the ratio clause is the weak half.
 
 

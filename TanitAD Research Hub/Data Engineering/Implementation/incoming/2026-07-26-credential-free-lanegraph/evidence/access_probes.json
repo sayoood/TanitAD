@@ -1,0 +1,138 @@
+{
+  "_meta": {
+    "date": "2026-07-26",
+    "agent": "data-engineering / credential-free-lanegraph",
+    "host": "TanitAD dev box (Windows 11), CPU/network only, NO pod touched",
+    "tool": "curl 8.14.1 (Schannel)",
+    "credentials_sent": "NONE on every probe below. No AWS keys, no HF token, no cookie, no login.",
+    "devbox_gotcha": "bare curl fails behind the local TLS proxy with 'schannel: CRYPT_E_NO_REVOCATION_CHECK' and reports HTTP=000, which is indistinguishable from a network outage. '--ssl-no-revoke' is REQUIRED. This is the curl sibling of the known Python truststore.inject_into_ssl() workaround.",
+    "hard_constraint": "No third-party mirror of any gated corpus was probed, listed or downloaded. The ~12 HF/GitHub nuScenes mirrors were excluded by construction, not by ranking.",
+    "total_bytes_downloaded_all_probes_approx": 7700000,
+    "bulk_download_performed": false
+  },
+
+  "argoverse2": {
+    "verdict": "PASS - credential-free",
+    "evidence_class": "MEASURED",
+    "probes": [
+      {"n": 1, "what": "anonymous ListBucket, bucket root",
+       "url": "https://s3.amazonaws.com/argoverse?list-type=2&delimiter=/&max-keys=100",
+       "http": 200, "bytes": 435,
+       "result": "CommonPrefixes = assets/, datasets/, tasks/"},
+      {"n": 2, "what": "anonymous ListBucket, datasets/",
+       "url": "https://s3.amazonaws.com/argoverse?list-type=2&prefix=datasets/&delimiter=/",
+       "http": 200,
+       "result": "datasets/av1/, datasets/av1.1/, datasets/av2/ -- Argoverse 1 is on the SAME open bucket (second confirmation the bucket is open)"},
+      {"n": 3, "what": "anonymous ListBucket, datasets/av2/",
+       "url": "https://s3.amazonaws.com/argoverse?list-type=2&prefix=datasets/av2/&delimiter=/",
+       "http": 200,
+       "result": ".cache/ archive/ demo/ lidar/ motion-forecasting/ sensor/ tars/ tbv/"},
+      {"n": 4, "what": "anonymous object GET -- motion-forecasting scenario static map",
+       "url": "https://s3.amazonaws.com/argoverse/datasets/av2/motion-forecasting/val/00010486-9a07-48ae-b493-cf4545855937/log_map_archive_00010486-9a07-48ae-b493-cf4545855937.json",
+       "http": 200, "bytes": 62993,
+       "result": "top-level keys = drivable_areas, lane_segments, pedestrian_crossings"},
+      {"n": 5, "what": "anonymous object GET -- sensor per-log map archive",
+       "url": "https://s3.amazonaws.com/argoverse/datasets/av2/sensor/val/02678d04-cc9f-3148-9f95-1ba66347dff9/map/log_map_archive_02678d04-cc9f-3148-9f95-1ba66347dff9____PIT_city_71109.json",
+       "http": 200, "bytes": 127571,
+       "result": "same three layers; lane_segments carry successors/predecessors"},
+      {"n": 6, "what": "bulk anonymous GET of 85 map JSONs (60 motion-forecasting val + 25 sensor val)",
+       "http": 200, "bytes": 10335294,
+       "result": "100% success rate, zero 403s -- see av2_lanegraph_stats.json / av2_sensor_lanegraph_stats.json"}
+    ],
+    "publisher_stated_mechanism": {
+      "evidence_class": "PUBLISHED",
+      "source": "https://argoverse.github.io/user-guide/getting_started.html",
+      "command": "s5cmd --no-sign-request cp \"s3://argoverse/datasets/av2/$DATASET_NAME/*\" $TARGET_DIR",
+      "quote": "an AWS account is not required to download the datasets"
+    },
+    "gate_analysis": {
+      "access_control_gate": "NONE - no account, no checkbox, no credential, no email link",
+      "terms_of_use": "PRESENT and BINDING - browse-wrap: 'By using or downloading Argoverse, you ... are agreeing to comply with the terms of use'",
+      "conclusion": "Downloading accepts the ToU in the ordinary way. NOTHING is circumvented. Categorically different from nuScenes, where a human must register and click before any byte is served."
+    }
+  },
+
+  "waymo_open": {
+    "verdict": "FAIL P1 - gated (and already license_class='refuse' in SOURCE_REGISTRY)",
+    "evidence_class": "MEASURED",
+    "probes": [
+      {"n": 1, "url": "https://storage.googleapis.com/storage/v1/b/waymo_open_dataset_v_1_4_3/o?maxResults=3",
+       "http": 401, "result": "Anonymous caller does not have storage.objects.list access"},
+      {"n": 2, "url": "https://storage.googleapis.com/storage/v1/b/waymo_open_dataset_motion_v_1_2_0/o?maxResults=3",
+       "http": 401, "result": "same - second bucket name, absence confirmed at 2 locations"},
+      {"n": 3, "url": "https://storage.googleapis.com/waymo_open_dataset_v_1_4_3/", "http": 403,
+       "result": "XML endpoint also denies anonymous"}
+    ],
+    "note": "Even if it were open it is UNUSABLE: SOURCE_REGISTRY classes it 'refuse' because its terms follow the trained WEIGHTS, so no tier can contain it. Do not revisit."
+  },
+
+  "lyft_level5_woven": {
+    "verdict": "FAIL P1 - dead and/or gated",
+    "evidence_class": "MEASURED",
+    "probes": [
+      {"n": 1, "url": "https://level-5.global/data/", "http": null,
+       "result": "curl (6) Could not resolve host -- DNS NXDOMAIN, the site is gone"},
+      {"n": 2, "url": "https://s3.amazonaws.com/level5-avdata?list-type=2", "http": 404,
+       "result": "NoSuchBucket"},
+      {"n": 3, "url": "https://s3.amazonaws.com/lyft-l5-datasets-public?list-type=2", "http": 301,
+       "result": "PermanentRedirect -- the bucket EXISTS. Followed at probe 4 (this is why one probe is not enough)."},
+      {"n": 4, "url": "https://lyft-l5-datasets-public.s3.amazonaws.com/?list-type=2&max-keys=20", "http": 403,
+       "result": "AccessDenied -- bucket exists but anonymous listing is denied"},
+      {"n": 5, "url": "https://woven.toyota/en/prediction-dataset/", "http": 404,
+       "result": "successor site has removed the page"}
+    ]
+  },
+
+  "zenseact_zod": {
+    "verdict": "FAIL P1 - gated by human access application",
+    "evidence_class": "MEASURED (the gate statement is the publisher's own README)",
+    "probes": [
+      {"n": 1, "url": "https://zod.zenseact.com/", "http": 200, "result": "landing page reachable - NOT proof of open data"},
+      {"n": 2, "url": "https://zod.zenseact.com/download/", "http": 200, "result": "docs page reachable"},
+      {"n": 3, "url": "https://raw.githubusercontent.com/zenseact/zod/main/README.md", "http": 200,
+       "result": "THE GATE: 'Prerequisites are that you have applied for access and received a download link.' The CLI is `zod download -y --url=\"<download-link>\"` -- the URL IS the credential."}
+    ],
+    "why_it_matters": "ZOD is the ONLY commercially usable candidate found (CC-BY-SA-4.0: share-alike but NOT non-commercial). It is blocked by ONE human action - an access application, smaller than the nuScenes Terms flow. ESCALATED to the PI as its own decision."
+  },
+
+  "kitti360": {
+    "verdict": "FAIL P1 (login) and FAIL P2 (no lane graph)",
+    "evidence_class": "MEASURED",
+    "probes": [
+      {"n": 1, "url": "https://www.cvlibs.net/datasets/kitti-360/download.php", "http": 200,
+       "result": "page body executes location.href = 'user_login.php' -- redirects to login"},
+      {"n": 2, "url": "https://www.cvlibs.net/datasets/kitti-360/documentation.php", "http": 200,
+       "result": "page chrome shows 'Logout | Edit Account' -- account-scoped site"}
+    ]
+  },
+
+  "openlane_v2": {
+    "verdict": "REJECT as a corpus (mirror case); annotations are a possible add-on - UNVERIFIED",
+    "evidence_class": "MEASURED",
+    "probes": [
+      {"n": 1, "url": "https://huggingface.co/api/datasets/OpenDriveLab/OpenLane-V2", "http": 401},
+      {"n": 2, "url": "https://huggingface.co/api/models/OpenDriveLab/OpenLane-V2", "http": 401,
+       "result": "401 on HF is ambiguous (gated OR nonexistent) - disambiguated by probes 3-4"},
+      {"n": 3, "url": "https://huggingface.co/api/datasets?author=OpenDriveLab&limit=50", "http": 200,
+       "result": "n=11 datasets, OpenLane-V2 IS NOT AMONG THEM -> there is no official HF repo. The 11: OpenScene, FreeTacMan, WorldEngine, SparseVideoNav, DriveLM(gated=auto), LightwheelOcc, OpenDV-YouTube-Language, MTGS, SimScale, EgoHumanoid, AlpasimChallenge2026_nuplan_track"},
+      {"n": 4, "url": "https://huggingface.co/api/datasets?search=OpenLane&limit=20", "http": 200,
+       "result": "only third-party copies (AlayaNeW/OpenDriveLab___OpenLane-V2, Vishwa-307/OpenLaneV2, ...) - NOT the data owner, EXCLUDED"},
+      {"n": 5, "url": "https://raw.githubusercontent.com/OpenDriveLab/OpenLane-V2/master/data/README.md", "http": 200,
+       "result": "official bytes are Google Drive / Baidu Yun / OpenDataLab links. subset_A images are nuScenes-derived (~14 GB x 9); subset_B images are Argoverse-2-derived (~3.4 GB x 9)."}
+    ],
+    "rejection_reason": "subset_A redistributes nuScenes imagery outside the Terms gate = exactly the forbidden mirror case.",
+    "open_option": "subset_B annotations (lane-lane topology_lsls + traffic elements) paired with imagery WE pull from the public AV2 bucket is a composition, not a mirror. Needs its own licence determination - the repo's Apache-2.0 badge is the CODE licence."
+  },
+
+  "nuplan": {
+    "verdict": "FAIL P1 - same Motional account gate as nuScenes, no gain",
+    "evidence_class": "MEASURED (reachability) + INHERITED (the gate itself, from PI_DECISION_nuscenes.md)",
+    "probes": [
+      {"n": 1, "url": "https://www.nuscenes.org/nuplan", "http": 200,
+       "result": "JS single-page app, returns no static text on 2 fetches -- cannot confirm gate wording by fetch"},
+      {"n": 2, "url": "https://www.nuscenes.org/nuscenes#download", "http": 200,
+       "result": "same JS app, no static text"}
+    ],
+    "note": "The gate is INHERITED from the sibling agent's PI_DECISION_nuscenes.md and stack/tanitad/data/nuscenes.py, both of which state it as MEASURED. I could not independently re-verify it by fetch because the site is client-rendered. It does not decide a GPU-day here -- nuPlan is rejected on 'same blocker, no gain' regardless."
+  }
+}

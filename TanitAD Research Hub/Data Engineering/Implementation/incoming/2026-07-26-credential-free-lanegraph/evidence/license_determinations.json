@@ -1,0 +1,112 @@
+{
+  "_meta": {
+    "date": "2026-07-26",
+    "rule": "A LICENCE IS A DOCUMENT, NOT A STRING. Every determination below quotes the licensor's own fetched page. Where the authoritative page could not be retrieved, the CONSERVATIVE branch is recorded and explicitly MARKED AS A FLOOR.",
+    "prior_failures_this_rule_exists_for": [
+      "2026-07-13 ZOD: recorded 'research/NC', actually CC-BY-SA-4.0",
+      "2026-07-26 nuScenes: recorded 'CC-BY-NC-4.0, share_alike=False', actually CC-BY-NC-SA-4.0 = COPYLEFT"
+    ],
+    "always_separated": "DATA licence vs CODE/DEVKIT licence. That conflation is exactly how the nuScenes error propagated (devkit Apache-2.0; data is not)."
+  },
+
+  "argoverse2": {
+    "evidence_class": "PUBLISHED (licensor's own page, fetched and saved 2026-07-26)",
+    "source_document": "https://www.argoverse.org/about.html",
+    "fetch": {"http": 200, "bytes": 57615, "saved_as": "scratchpad/argoverse_about.html + argoverse_about.txt"},
+    "corroborating_document": "https://www.argoverse.org/av2.html (http 200, 42396 B) - same licence stated for AV2 specifically",
+
+    "DATA_licence": {
+      "name": "CC-BY-NC-SA-4.0",
+      "verbatim": "Argoverse and any associated data or documentation are provided free of charge under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License (“CC BY-NC-SA 4.0”). The full text of the license is accessible at https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode",
+      "non_commercial_definition_verbatim": "We license Argoverse data and documents to you for non-commercial use only. Under the terms of the CC BY-NC-SA 4.0 “non-commercial” means “not primarily intended for or directed towards commercial advantage or monetary compensation.”",
+      "share_alike_verbatim": "If you submit your changes, you may be required to confirm that your changes are subject to CC BY-NC-SA 4.0.",
+      "attribution_required_verbatim": "Please follow the attribution guidelines provided in section 3.A. of CC-BY-NC-SA 4.0 license with the copyright notice being “© 2018-2019 Argo AI, LLC” for Argoverse 1.0 and 1.1, and “© 2021 Argo AI, LLC” for Argoverse 2.0."
+    },
+
+    "CODE_licence": {
+      "name": "MIT",
+      "verbatim": "Argoverse code and APIs are licensed under the MIT license, the full text of which can be found at https://opensource.org/licenses/MIT",
+      "corroboration": "https://raw.githubusercontent.com/argoverse/av2-api/main/LICENSE -> http 200, 1064 B, 'MIT License / Copyright (c) 2022 Argo AI'"
+    },
+
+    "terms_of_use_beyond_the_CC_grant": {
+      "why_recorded": "These do NOT fit any CC short name. This is why the registry entry is a FLOOR, not a ceiling.",
+      "acceptance_mechanism_verbatim": "By using or downloading Argoverse, you (“you” or “Licensee”) are agreeing to comply with the terms of use and the applicable licensing terms below and linked herein (collectively, the “Terms of Use”).",
+      "prohibited_use_example_3_verbatim": "You are an engineer at an autonomous vehicle company. You use the Argoverse dataset to train a prototype detection model for use on your company’s AV at a test track. You use this prototype detection model as a placeholder until you build a large enough internal dataset to train your model.",
+      "acceptable_use_example_2_verbatim": "You are a researcher at an autonomous vehicle company. You are submitting your image-based pose estimation algorithm to a major conference for public review. You use the Argoverse dataset to train and evaluate your method. You publish the results of the comparison publicly.",
+      "re_identification_ban_verbatim": "Using Argoverse to identify an individual, or combining Argoverse with another dataset to re-identify any individual is prohibited.",
+      "marketing_verbatim": "You may not use Argo’s trademark, logo, or name without Argo’s express written permission.",
+      "unilateral_termination_verbatim": "Argo may decline to grant a license, and/or elect to terminate a license with respect to any Licensee, in the event that such Licensee’s actual or proposed use of Argoverse (i) is not permitted under applicable laws or regulations, (ii) fails to comply with these Terms of Use, or (iii) has the potential to negatively impact Argo’s reputation."
+    },
+
+    "SOURCE_REGISTRY_verdict": {
+      "entry_already_exists": true,
+      "location": "stack/tanitad/lake/schema.py:104-105",
+      "current": "\"argoverse2\": SourceLicense(\"nc-research\", \"CC-BY-NC-SA-4.0\", share_alike=True, is_synthetic=False)",
+      "change_proposed": "NONE - verified correct on every field against the licensor's document",
+      "license_class": {"value": "nc-research", "basis": "'non-commercial use only' verbatim"},
+      "license_name": {"value": "CC-BY-NC-SA-4.0", "basis": "verbatim licence name"},
+      "share_alike": {"value": true, "basis": "the SA in the licence name + the ToU share-alike clause"},
+      "is_synthetic": {"value": false, "basis": "real camera + lidar capture"},
+      "commercial_ok": {"value": false, "derived": "commercial_ok = (license_class == 'owned-safe') AND NOT share_alike -> False on BOTH counts"},
+      "tier": "nc  (TanitDataSet-R research-only)",
+      "shard_routing": "shards/nc-research/sharealike/argoverse2/...  - same segregated copyleft shard class as nuScenes",
+      "regression_tests": "the 8 SA-shard / C-tier-refusal tests written for nuScenes cover argoverse2 UNCHANGED (same license_class, same two flags)",
+      "FLOOR_RIDER": "This entry is the FLOOR of the restriction, never a ceiling. The Argoverse Terms of Use add obligations no CC short name expresses: trademark/marketing restriction, re-identification ban, and unilateral termination including on reputational grounds. Same rider the corrected nuScenes entry carries."
+    }
+  },
+
+  "zenseact_zod": {
+    "evidence_class": "PUBLISHED (publisher's own README, fetched 2026-07-26)",
+    "source_document": "https://raw.githubusercontent.com/zenseact/zod/main/README.md (http 200, 5090 B)",
+    "DATA_licence": {
+      "name": "CC-BY-SA-4.0",
+      "verbatim": "This dataset is the property of Zenseact AB (© 2023 Zenseact AB) and is licensed under CC BY-SA 4.0.",
+      "note": "SHARE-ALIKE but NOT non-commercial -> commercially usable. This is the ONLY commercially usable candidate in the survey."
+    },
+    "CODE_licence": {
+      "name": "MIT",
+      "verbatim": "This development kit is the property of Zenseact AB (© 2023 Zenseact AB) and is licensed under MIT.",
+      "corroboration": "https://raw.githubusercontent.com/zenseact/zod/main/LICENSE -> http 200, 1073 B, 'MIT License / Copyright (c) 2021-2022 Zenseact AB'"
+    },
+    "SOURCE_REGISTRY_verdict": {
+      "entry_already_exists": true,
+      "current": "\"zod\": SourceLicense(\"owned-safe\", \"CC-BY-SA-4.0\", share_alike=True, is_synthetic=False)",
+      "change_proposed": "NONE - re-verified correct against the licensor's README. The 2026-07-13 correction held."
+    },
+    "ACCESS_verdict": "GATED - blocked at P1, not at licence. Publisher's README: 'Prerequisites are that you have applied for access and received a download link.'"
+  },
+
+  "openlane_v2": {
+    "evidence_class": "MEASURED (repo files fetched) + UNVERIFIED (annotation licence)",
+    "CODE_licence": {"name": "Apache-2.0", "source": "https://raw.githubusercontent.com/OpenDriveLab/OpenLane-V2/master/LICENSE (http 200, 11357 B)"},
+    "DATA_licence": {
+      "name": "UNVERIFIED",
+      "conservative_floor": "The annotations are derived from nuScenes (subset_A) and Argoverse 2 (subset_B) and therefore INHERIT those licences - i.e. CC-BY-NC-SA-4.0 at best. The repo's Apache-2.0 badge is the CODE licence and must NOT be read as the data licence. This is precisely the conflation that caused the nuScenes error.",
+      "marked_as": "FLOOR"
+    }
+  },
+
+  "lyft_level5_woven": {
+    "evidence_class": "UNRETRIEVABLE",
+    "attempts": ["level-5.global (DNS NXDOMAIN)", "woven.toyota/en/prediction-dataset/ (404)"],
+    "DATA_licence": {
+      "name": "UNVERIFIED",
+      "conservative_floor": "No live licensor page exists. Record as non-commercial + no-redistribution and DO NOT INGEST.",
+      "marked_as": "FLOOR"
+    }
+  },
+
+  "kitti360": {
+    "evidence_class": "INHERITED (SOURCE_REGISTRY) - NOT re-fetched",
+    "reason_not_fetched": "blocked at P1 (login gate) and P2 (no lane graph), so the licence does not decide anything here",
+    "registry_value": "CC-BY-NC-SA-3.0, share_alike=True",
+    "marked_as": "INHERITED - do not quote as MEASURED"
+  },
+
+  "waymo": {
+    "evidence_class": "INHERITED (SOURCE_REGISTRY)",
+    "registry_value": "license_class='refuse', 'Waymo-Dataset-License'",
+    "why_refuse": "terms follow the trained WEIGHTS into the model/product, so contamination survives training and NO tier can contain it. Blocked at P1 anyway (401/403 anonymous)."
+  }
+}
