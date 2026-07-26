@@ -16,7 +16,12 @@ PAIRED episode-cluster bootstrap (taniteval/ci.py, B=2000) on identical windows.
             anchor. This is refc_train.compute_losses' anchor block (lines 268-276)
             with the GT target, i.e. exactly the block the CL-SFT re-purposed.
             PRE_REGISTRATION §3 names it the REF-C stand-in for a WM canary.
-  GUARDRAIL(c): OOD-envelope ratio must stay in band (<= ~1.30, E1a's measured
+  GUARDRAIL(c): [⛔ VOID BY CONSTRUCTION — REMOVED FROM THE CONJUNCTION 2026-07-26.
+            sup(ratio_arr) = 1.298888 < 1.30, so this could never fail; it passed
+            139/139 repo-wide and was the ONLY guardrail that 'held' in this run.
+            Kept here as a record of what was pre-registered, NOT as a live test.
+            Real instrument: taniteval.ood.verdict(). RETRACTION_LOG class C13.]
+            OOD-envelope ratio must stay in band (<= ~1.30, E1a's measured
             base value) — a departure improvement bought by moving the loop out of
             the measured perturbation envelope would be confounded.
   Also reported: overall + longitudinal @ K=185, peak XTE, and K=20 (the standing
@@ -400,12 +405,32 @@ def main():
         "b_anchor_traj_l1_ok": bool(not (gb["anchor_traj_l1"]["paired_delta_ft_minus_base"]
                                          .get("separated")
                                          and gb["anchor_traj_l1"]["paired_delta_ft_minus_base"]["lo"] > 0)),
-        "c_ood_in_band": bool(ood_ft <= 1.30 + 1e-9),
+        # ⛔ VOID BY CONSTRUCTION — kept as a RECORD of what was adjudicated, and
+        # renamed so it can never again be read as a passing guardrail.
+        # MEASURED 2026-07-26: sup(OODMap.ratio_arr) = 1.298888 (np.interp CLAMPS at
+        # 3.0 m / 12°), so `ood_ft <= 1.30` is a TAUTOLOGY BY 0.001112 — it cannot
+        # fail. Repo-wide it passed 139/139 and failed 0. ⚠️ IN THIS VERY FILE'S RUN
+        # IT WAS THE ONLY GUARDRAIL THAT "HELD" WHILE THE OTHER THREE FAILED, so the
+        # E1b guardrail story rests on it and must be re-read.
+        # E1a's rule was a DISJUNCTION (ratio OR out-of-envelope fraction) and only
+        # the dead half was evaluated. Real instrument: taniteval.ood.verdict().
+        # See RETRACTION_LOG.md, class C13.
+        "c_ood_in_band_VOID_DO_NOT_USE": bool(ood_ft <= 1.30 + 1e-9),
+        "c_ood_void_reason": ("tautology by 0.001112: sup(ratio_arr)=1.298888 < 1.30; "
+                              "use taniteval.ood.verdict() for E1a's real disjunction"),
         "c_ood_ft": ood_ft, "c_ood_base": ood_b,
         "c_ood_ratio_ft_over_base": round(float(ood_ft / max(ood_b, 1e-9)), 4),
     }
+    # ⛔ `c_ood_in_band` is NO LONGER a conjunct: a criterion that cannot fail
+    # contributes nothing to a conjunction except the appearance of a fourth check.
+    # The three real guardrails now stand alone, and the OOD question is answered
+    # separately by taniteval.ood.verdict() (E1a's actual disjunction).
     guard["all_ok"] = bool(guard["a_openloop_ade2s_ok"] and guard["b_anchor_acc_ok"]
-                           and guard["b_anchor_traj_l1_ok"] and guard["c_ood_in_band"])
+                           and guard["b_anchor_traj_l1_ok"])
+    guard["all_ok_note"] = ("3 guardrails, NOT 4 — Gc (OOD ratio <= 1.30) was VOID BY "
+                            "CONSTRUCTION and has been removed from the conjunction. "
+                            "Any historical all_ok that depended on it is not comparable "
+                            "to this one. See RETRACTION_LOG.md, class C13.")
     res["GUARDRAIL_SUMMARY"] = guard
 
     if not isinstance(p, dict) or "separated" not in p:

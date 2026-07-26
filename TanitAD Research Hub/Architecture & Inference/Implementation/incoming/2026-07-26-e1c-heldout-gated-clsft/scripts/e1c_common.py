@@ -31,7 +31,42 @@ CHECKPOINT_STEPS = [100, 250, 500, 750, 1000, 1250, 1500, 1750, 2000,
                     2250, 2500, 2750, 3000, 3250, 3500, 3750, 4000]
 N_FRONTIER_POINTS = len(CHECKPOINT_STEPS) + 1          # + base (step 0) = 18
 BONFERRONI_ALPHA = 0.05 / N_FRONTIER_POINTS            # 0.002778 (§4.4)
-OOD_BAND = 1.30                                        # Gc (E1a measured band)
+# ⛔ VOID BY CONSTRUCTION — DO NOT RE-USE. Retained ONLY so the original
+# pre-registration stays legible; silently swapping the criterion would rewrite a
+# pre-registration after the fact, which is the forking-paths failure §0.3 forbids.
+#
+# MEASURED 2026-07-26, analytically and with no model needed:
+#     sup(OODMap.ratio_arr) = 1.298888
+# because `ratio_arr` uses np.interp, which CLAMPS at |dlat| = 3.0 m and |dψ| = 12°.
+# So `ratio <= 1.30` is a TAUTOLOGY BY 0.001112 — it passed 139/139 ratio-bearing
+# nodes repo-wide and failed 0, and RATIO_EXTRAPOLATION_X = 1.5 is unreachable by
+# 0.201112. Gc was evaluated 20x across E1b/E1c and passed 20/20; in E1b it was the
+# ONLY guardrail that "held" while the other three failed.
+#
+# E1a's rule was always a DISJUNCTION — high ratio OR steps leaving the measured
+# envelope — and only the (dead) ratio half was ever evaluated. Use the real one:
+#     taniteval.ood.verdict(...)   +   assert_envelope_verdict_consistent(...)
+# See RETRACTION_LOG.md class C13 ("a guard that cannot fail is not a guard").
+OOD_BAND = 1.30                                        # ⛔ VOID — see above
+OOD_BAND_IS_VOID = True
+OOD_BAND_SUP = 1.298888        # MEASURED analytic supremum; the bar is above it
+
+
+def ood_in_band(*_args, **_kwargs):
+    """Refuse to adjudicate on the void ratio criterion.
+
+    Deliberately raises instead of returning False: a silent False would flip
+    historical verdicts, and a silent True is the tautology this replaces. The
+    caller must move to ``taniteval.ood.verdict``, which implements E1a's actual
+    disjunction and reports WHICH clause fired and why the other could not.
+    """
+    raise RuntimeError(
+        "Gc (OOD ratio <= 1.30) is VOID BY CONSTRUCTION: sup(ratio_arr) = "
+        "1.298888 < 1.30, so this test is a tautology by 0.001112 and cannot "
+        "fail. It must not adjudicate anything. Use taniteval.ood.verdict() — "
+        "E1a's real disjunction (ratio OR out-of-envelope fraction). "
+        "See RETRACTION_LOG.md, class C13."
+    )
 NONINF_TOL_M = 0.05                                    # descriptor only (§4.4)
 TIE_TOL = 0.005                                        # selection-rule tie band
 
@@ -201,7 +236,10 @@ def evaluate_point(st):
     Ga  open-loop ADE@2s        NOT separated-worse (higher)       (must hold)
     Gb1 open-loop anchor_acc    NOT separated-worse (lower)        (must hold)
     Gb2 open-loop anchor_traj_l1 NOT separated-worse (higher)      (must hold)
-    Gc  closed-loop OOD peak ratio (ft, overall) <= 1.30           (must hold)
+    Gc  closed-loop OOD peak ratio (ft, overall) <= 1.30           ⛔ VOID
+        ^ TAUTOLOGY: sup(ratio_arr) = 1.298888 < 1.30, so Gc CANNOT FAIL and its
+          20/20 passes across E1b/E1c are not evidence. Pre-registered in good
+          faith, void on measurement. Use taniteval.ood.verdict(). See C13.
     """
     cl = st["closed_loop_K185"]
     ol = st["open_loop"]
