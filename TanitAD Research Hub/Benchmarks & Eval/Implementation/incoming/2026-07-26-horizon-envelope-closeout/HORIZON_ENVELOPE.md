@@ -23,7 +23,7 @@ agent/doc, **not** re-verified) · `ESTIMATED` · `HYPOTHESIS`.
 | **7** | 🔴 **Two preflights FAILED and are fixed. `stack/scripts/eval_flagship_v4.py:478` uses PEP 701 (Python ≥ 3.12) syntax and pod2 runs 3.11.10** — so **every v4 eval path, including the registered co-primary, was un-runnable on the designated n ≥ 200 eval host.** Introduced today, in the commit whose headline is *"the eval pod was 62 % stale"*. Class **C2** (interpreter-version form). Fixed, behaviour-preserving, 70 tests pass. | `MEASURED` |
 | **8** | 🔴 **`taniteval/clhorizon.py::run_v4` — the entry point written to un-strand the co-primary — raises on its first step** (`RawEp` has no `.frames`). REPRODUCED. **Not patched** (sibling stream owns it); escalated as a one-line fix. Class **C2**. | `MEASURED` |
 | **9** | ✅ **T2 done: `MODEL_REGISTRY.md` §1.2a — v1 @ 600 = `0.4108 [0.3956, 0.4273]`, 13,198 windows / 600 clusters, as a NEW row** with both n's, the estimator, the CV floor of its own deployment (**0.6917 vs 0.8377** — the 600 is EASIER) and a binding no-substitution rule. §5 leaderboard stamped as the 40-episode deployment. `registry_lint` PASS. | `MEASURED` |
-| **10** | ⚠️ **The one branch `GATE_30K_RESULTS` §10.1 leaves open is "re-validate P1", and this run prices it:** covering K = 60 needs the homography validated to **~9.7 m / ~24°** (3.2× / 2.0× the current edge) from a `f_eff = 266 px` camera at 1.5 m. **Likely to establish where fidelity stops rather than to extend it — and it is the ONLY action that can raise the ratio criterion's ceiling.** | `MEASURED` + `ESTIMATED` |
+| **10** | ⚠️ **The one branch `GATE_30K_RESULTS` §10.1 leaves open is "re-validate P1", and this run prices it:** covering K = 60 needs the homography validated to **13.55 m / 39.25°** overall and **20.82 m / 60.03°** on the junction stratum — **4.5×–6.9× / 3.3×–5.0×** the current edge, from a `f_eff = 266 px` camera at 1.5 m. ⭐ **And it is already owed at K = 20**, whose p90 yaw is **1.27× outside** while its lateral p90 is comfortably inside — so the extension must be on the **YAW** arm first. It is also the **ONLY** action that can raise the ratio criterion's ceiling. | `MEASURED` |
 
 ---
 
@@ -250,6 +250,16 @@ the ceiling, as it must be.
 40 episodes, stride 8, goal-mode **ORACLE**, `episode_cluster_bootstrap` B = 2000.
 Artifacts: `artifacts/ksweep_results.json`, `artifacts/perwindow_K*.pt`, log `artifacts/ksweep.log`.
 
+> ⚠️ **SCOPE NARROWED, stated plainly rather than quietly.** The brief asked for
+> **K ∈ {20, 60, 70, 90, 120, 150, 185}**. I ran **{185, 20, 60, 70}** — the priority order the brief
+> itself set — and **stopped the sweep by explicit PID after K = 70**, because pod2 runs one job at a
+> time and T3 is a deliverable. **K = 90 / 120 / 150 are NOT measured here.** What is lost is bounded
+> and I am not pretending otherwise: those three K sit **above the HP-2 ceiling of K = 70**, so no gate
+> can register there; the envelope verdict is already `EXTRAPOLATION` at K = 60 and monotone in K; and
+> the K = 185 **truncation curve** covers 9.0 / 12.0 / 15.0 s indicatively (`ksweep_results.json` →
+> `results.185.truncation_curve`, and §4.4 measures how far a truncation may be trusted). The rollouts
+> would cost ≈ 82 GPU-min and can be resumed with the same command and `--horizons 90,120,150`.
+
 ### 4.1 Two harness checks first — both reproduce the committed gate artifact EXACTLY
 
 ⭐ **All 8 strata × 2 horizons reproduce bit-identically** against
@@ -284,26 +294,65 @@ are `PUBLISHED` (`POD2_EVAL_HOST.md` §3.1) and are what HP-2's 200-cluster bar 
 Envelope columns are the `taniteval.ood` disjunction: **clause 1 (ratio > 1.5) is VOID at every row**
 (§3), so **every verdict below is carried by clause 2 alone.**
 
-<!-- KSWEEP_TABLE -->
+**Overall stratum** — the co-primary as a gate would read it:
+
+| K | s | win / **clusters** (40 eps) | **clusters @600** *(PUBLISHED)* | `CDR@1.75` [cluster-bootstrap CI95] | peak XTE m | **steps out of envelope** | **windows out of envelope** | OOD ratio *(ceiling 1.298888)* | c1 | c2 | **verdict** |
+|---:|---:|---:|---:|---|---:|---:|---:|---:|:--:|:--:|---|
+| **20** | 2.0 | 881 / **40** | 600 | **0.0203** [0.0078, 0.0364] | 0.630 | 0.0531 | **0.1226** | 1.0504 | ⛔ VOID | 🔥 | PARTIAL |
+| **60** | 6.0 | 681 / **40** | 600 | **0.2618** [0.2025, 0.3243] | 5.351 | 0.2291 | **0.5066** | 1.1693 | ⛔ VOID | 🔥 | ⛔ **EXTRAP** |
+| **70** | 7.0 | 638 / **40** | 600 | **0.3195** [0.2549, 0.3839] | 6.961 | 0.2759 | **0.5987** | 1.1898 | ⛔ VOID | 🔥 | ⛔ **EXTRAP** |
+| **185** | 18.5 | 41 / **40** | 596 | **0.6388** [0.5565, 0.7128] | 33.452 | 0.5900 | **0.9024** | 1.2741 | ⛔ VOID | 🔥 | ⛔ **EXTRAP** |
+
+**Junction stratum** — reported separately, always (`GATE_PROTOCOL` §0.4). ⚠️ n is the binding number here, not the value:
+
+| K | win / **clusters** (40 eps) | **clusters @600** *(PUBLISHED, HP-2 bar = 200)* | `CDR@1.75` [CI95] | **windows out of envelope** | **verdict** |
+|---:|---:|---:|---|---:|---|
+| **20** | 182 / **22** | **232** ✅ | **0.0909** [0.0421, 0.1413] | **0.5879** | ⛔ **EXTRAP** |
+| **60** | 136 / **19** | **207** ✅ | **0.5809** [0.5289, 0.6268] | **0.9485** | ⛔ **EXTRAP** |
+| **70** | 125 / **19** | **204** ✅ | **0.6330** [0.5838, 0.6743] | **0.9600** | ⛔ **EXTRAP** |
+| **185** | 6 / **6** | ⛔ **58** | **0.8432** [0.7874, 0.8919] | **1.0000** | ⛔ **EXTRAP** |
+
+**longitudinal / other** — the non-junction strata, for contrast:
+
+| K | longitudinal: CDR · winOUT · verdict | other: CDR · winOUT · verdict |
+|---:|---|---|
+| **20** | 0.0035 · 0.0027 · PARTIAL *(n 374/24)* | 0.0000 · 0.0000 · ✅ MEASURE *(n 325/24)* |
+| **60** | 0.2437 · 0.4897 · PARTIAL *(n 290/23)* | 0.1122 · 0.2902 · PARTIAL *(n 255/22)* |
+| **70** | 0.3121 · 0.5956 · ⛔ **EXTRAP** *(n 272/23)* | 0.1653 · 0.4149 · PARTIAL *(n 241/22)* |
+| **185** | 0.6871 · 0.9444 · ⛔ **EXTRAP** *(n 18/18)* | 0.5154 · 0.8235 · ⛔ **EXTRAP** *(n 17/16)* |
+
+*Rendered from `artifacts/ksweep_results.json` by `scripts/render_sweep_table.py` — no number in this table was transcribed by hand. `sup(ood_peak_ratio) = 1.298888`, so column `c1` is VOID at every row.*
 
 ### 4.3 How far outside the envelope the loop actually goes
 
-The fraction says *whether*; this says *how far*. Peak deviation per window, K = 185 rollout
-(41 windows / 40 clusters), by elapsed k — against the P1 validated edges **3.0 m / 12°**:
+The fraction says *whether*; this says *how far*. Peak deviation per window, **each from its own real
+rollout** (not truncated), against the P1 validated edges **3.0 m / 12°**:
 
-| elapsed | p50 peak &#124;dlat&#124; | p90 | max | p50 peak &#124;dψ&#124; | p90 | max |
-|---:|---:|---:|---:|---:|---:|---:|
-| 2.0 s (K = 20) | 0.25 m | 0.94 m | 4.81 m | 1.67° | 7.66° | 24.25° |
-| **6.0 s (K = 60)** | **2.92 m** | ⛔ **9.69 m (3.2×)** | 20.63 m | 6.56° | ⛔ **24.31° (2.0×)** | 60.15° |
-| **7.0 s (K = 70)** | ⛔ **3.96 m — the MEDIAN window is outside** | ⛔ **13.99 m (4.7×)** | 21.31 m | 7.22° | ⛔ **36.87° (3.1×)** | 66.31° |
-| 12.0 s (K = 120) | 9.12 m | 29.82 m | 35.74 m | 17.86° | 68.41° | 135.19° |
-| 18.5 s (K = 185) | 22.42 m | ⛔ **72.24 m (24×)** | **138.91 m (46×)** | 27.24° | 77.67° | 135.19° |
+| K | s | n win | p50 peak &#124;dlat&#124; | **p90** | max | p50 peak &#124;dψ&#124; | **p90** | max | p90 as a multiple of the edge |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 20 | 2.0 | 881 | 0.28 m | 1.74 m | 5.19 m | 1.73° | **15.19°** | 43.57° | lat 0.58× · ⛔ **yaw 1.27×** |
+| **60** | **6.0** | 681 | **2.79 m** | ⛔ **13.55 m** | 50.92 m | 6.63° | ⛔ **39.25°** | 80.95° | ⛔ **lat 4.52× · yaw 3.27×** |
+| **70** | **7.0** | 638 | ⛔ **3.94 m — the MEDIAN window is outside** | ⛔ **17.16 m** | 68.72 m | 8.08° | ⛔ **43.32°** | 88.67° | ⛔ **lat 5.72× · yaw 3.61×** |
+| 185 | 18.5 | 41 | 22.42 m | ⛔ **72.24 m** | **138.91 m** | 27.24° | 77.67° | 135.19° | ⛔ **lat 24.08× · yaw 6.47×** |
 
-> ⚠️ **This is the number that decides whether "re-validate P1" is cheap.** Covering K = 60 to the p90
-> means validating the ground-plane homography out to **~10 m lateral / ~24° yaw** — from a
-> `f_eff = 266 px` front-wide camera at `h = 1.5 m`. That is not an extension of the existing sweep;
-> it is a different fidelity regime, and `clhorizon.sampling_homography`'s own docstring says the warp
-> *"degrades gracefully rather than faithfully"* beyond the measured range.
+**Junction stratum alone**, p90 peak deviation (this is the population a re-validated P1 would have to
+cover for HP-2 to be measurable):
+
+| K | n junction win | p90 &#124;dlat&#124; | × edge | p90 &#124;dψ&#124; | × edge |
+|---:|---:|---:|---|---:|---|
+| 20 | 182 | 3.51 m | ⛔ 1.17× | 28.14° | ⛔ **2.35×** |
+| **60** | 136 | **20.82 m** | ⛔ **6.94×** | **60.03°** | ⛔ **5.00×** |
+| 70 | 125 | 25.79 m | ⛔ 8.60× | 61.52° | ⛔ 5.13× |
+| 185 | 6 | 58.80 m | ⛔ 19.60× | 71.99° | ⛔ 6.00× |
+
+> ⚠️ **This is the number that decides whether "re-validate P1" is cheap. It is not.** Covering K = 60
+> to the p90 means validating the ground-plane homography to **13.6 m lateral / 39° yaw** overall, and
+> to **20.8 m / 60°** on the junction stratum — from a `f_eff = 266 px` front-wide camera at
+> `h = 1.5 m`. `clhorizon.sampling_homography`'s own docstring says the warp *"degrades gracefully
+> rather than faithfully"* beyond the measured range. ⭐ **Note also the axis switch:** at K = 20 the
+> lateral p90 is comfortably INSIDE (0.58×) and only the **yaw** axis is out (1.27×); by K = 60 lateral
+> is the worse of the two (4.52× vs 3.27×). *A validation that extended only the lateral arm of the P1
+> sweep would not fix the 2 s instrument.*
 
 ### 4.4 ⚠️ Method note, measured rather than assumed: **truncating a long rollout is NOT a short rollout**
 
@@ -321,6 +370,23 @@ metric is unaffected — but the **envelope fraction moves 0.0732 → 0.0488**, 
 straddles the 12° edge. **So: the truncation curves in `ksweep_results.json` are quotable for the
 lateral/CDR family and INDICATIVE ONLY for the yaw-driven envelope fraction.** Every envelope number in
 §4.2 is from a real rollout at that K, never a truncation.
+
+### 4.4b The common-start PAIRED contrast — the horizon effect on IDENTICAL windows
+
+41 windows / 40 episodes shared by all four rollouts (the K = 185 start set is a subset of every
+smaller K's), `paired_episode_cluster_bootstrap` B = 2000, oriented `CDR(K) − CDR(K=20)`.
+Artifact: `artifacts/common_start_paired.json`. Computed offline from the per-window dumps — no GPU.
+
+| K | overall Δ | **junction** Δ | longitudinal Δ | other Δ |
+|---:|---|---|---|---|
+| 60 | **+0.2309** [+0.1603, +0.3025] ✅ sep | **+0.4750** [+0.3361, +0.5861] ✅ sep | +0.2556 [+0.1519, +0.3602] ✅ sep | +0.1186 [+0.0386, +0.2177] ✅ sep |
+| 70 | **+0.2920** [+0.2151, +0.3689] ✅ sep | **+0.5357** [+0.4107, +0.6393] ✅ sep | +0.3238 [+0.2127, +0.4310] ✅ sep | +0.1723 [+0.0786, +0.2839] ✅ sep |
+| 185 | **+0.6241** [+0.5455, +0.6952] ✅ sep | **+0.7432** [+0.6259, +0.8270] ✅ sep | +0.6871 [+0.6138, +0.7496] ✅ sep | +0.5154 [+0.3807, +0.6520] ✅ sep |
+
+⭐ **The K = 185 row is a tenth reproduction**: `0.0146 → 0.6388, Δ +0.6241 separated` is exactly the
+figure `RETRACTION_LOG`'s C13 entry records as the v4 replication of the horizon finding.
+✅ **The horizon finding is untouched by everything in §3 and §5** — the effect is monotone in K and
+**CI-separated at every K and in every stratum**, on windows that are identical by construction.
 
 ### 4.5 ⭐ Where the envelope actually breaks — 0.5 s, and the whole failure is the junction stratum
 
@@ -411,7 +477,7 @@ departed its corridor.
 ⚠️ **What may NOT be said, and this is the load-bearing part:** no corridor number on this surface may be
 described as "in-distribution", "low-OOD", or "a measurement of the model's dynamics". The admissible
 wording is *"closed-loop corridor departure under a re-rendered real-footage surface whose fidelity is
-validated only to |dlat| ≤ 3.0 m / |dψ| ≤ 12°; **51 %** of windows at K = 60 exceed that."*
+validated only to |dlat| ≤ 3.0 m / |dψ| ≤ 12°; **50.66 %** of windows at K = 60 exceed that."*
 
 ### 5.2 The experiment that would actually fix it — and its price, MEASURED
 
@@ -419,22 +485,26 @@ validated only to |dlat| ≤ 3.0 m / |dψ| ≤ 12°; **51 %** of windows at K = 
 **or** *"re-validate P1 out to 18.5 s"*. **Branch one is now closed.** Branch two is the only one left,
 and this run prices it:
 
-| to make this horizon a MEASUREMENT | P1 must cover (p90 of peak deviation) | multiple of the current edge |
+| to make this horizon a MEASUREMENT | P1 must cover (p90 of peak deviation) | multiple of the current 3.0 m / 12° edge |
 |---|---|---|
-| K = 20 (2.0 s), **junction only** | ~3.5 m / ~28° | 1.2× / 2.3× |
-| **K = 60 (6.0 s)** | **~9.7 m / ~24°** | **3.2× / 2.0×** |
-| K = 70 (7.0 s) | ~14.0 m / ~37° | 4.7× / 3.1× |
-| K = 185 (18.5 s) | ~72 m / ~78° | 24× / 6.5× |
+| K = 20 (2.0 s), overall | 1.74 m / **15.19°** | lat 0.58× (already covered) · ⛔ **yaw 1.27×** |
+| K = 20 (2.0 s), **junction only** | 3.51 m / **28.14°** | ⛔ 1.17× / **2.35×** |
+| **K = 60 (6.0 s), overall** | **13.55 m / 39.25°** | ⛔ **4.52× / 3.27×** |
+| **K = 60 (6.0 s), junction** | **20.82 m / 60.03°** | ⛔ **6.94× / 5.00×** |
+| K = 70 (7.0 s), overall | 17.16 m / 43.32° | ⛔ 5.72× / 3.61× |
+| K = 185 (18.5 s), overall | 72.24 m / 77.67° | ⛔ 24.08× / 6.47× |
 
 ⚠️ **A ground-plane homography from a `f_eff = 266 px` front-wide camera at `h = 1.5 m` will not be
-faithful at 10 m lateral displacement** — `clhorizon.sampling_homography`'s own docstring says it
-*"degrades gracefully rather than faithfully"* beyond the measured range. So the honest reading is that
-**re-validating P1 will not extend to K = 60; it will establish where it stops.** ⭐ **The cheap version
-is worth doing first and is a CPU-day, not a GPU-week:** extend the P1 sweep from
-`{0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0} m` and `{0, 1, 2, 3, 5, 8, 12}°` to, say, **6 m / 24°** and see
-whether the ADE-vs-offset curve stays smooth or breaks. That single experiment does three things at
-once: it un-voids the ratio criterion (by raising its ceiling), it tells us how much of the junction
-stratum is recoverable, and it puts a number on the only branch §10.1 has left.
+faithful at 13 m lateral displacement.** So the honest reading is that **re-validating P1 will not
+extend the envelope to K = 60; it will establish where the renderer stops.** ⭐ **But the cheap version
+is worth doing first and it is CPU-hours, not a GPU-week** — and it is *already decision-relevant at
+K = 20*, because the **2 s instrument's own p90 yaw is 1.27× outside**: extend the P1 sweep from
+`{0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0} m` × `{0, 1, 2, 3, 5, 8, 12}°` to, say, **6 m × 30°** and see
+whether the ADE-vs-offset curve stays smooth or breaks. That single experiment does **three** things at
+once: it un-voids the ratio criterion (its ceiling is set *entirely* by how far the sweep went, §3.1),
+it tells us how much of the junction stratum is recoverable **at the horizon we already use**, and it
+puts a number on the only branch `GATE_30K_RESULTS` §10.1 has left. ⚠️ **And it must extend the YAW
+arm, not just the lateral one** — at K = 20 lateral is already covered and yaw is not.
 
 ⭐ **And there is a second, independent reason to run it: the ratio criterion cannot be repaired any
 other way.** Its ceiling (§3) is `1 + (max lat ADE − base)/base + (max yaw ADE − base)/base`, i.e. it is

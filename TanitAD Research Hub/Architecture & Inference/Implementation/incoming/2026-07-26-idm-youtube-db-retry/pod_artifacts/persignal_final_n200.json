@@ -1,0 +1,2658 @@
+{
+  "experiment": "db_retry_persignal_idm_on_youtube",
+  "date": "2026-07-26T14:34:42Z",
+  "labeler": "v1 frozen encoder + IDMHead{parity rigA[:60]+rigB[:60]+comma[:40]}",
+  "scalar_names": [
+    "speed",
+    "yaw_rate",
+    "steer",
+    "long_accel"
+  ],
+  "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = clip. NOT overlapping_holdout_se.",
+  "no_ground_truth_warning": "YouTube has NO ground truth. NOTHING here is an accuracy number. These are DISTRIBUTIONS and PHYSICAL-PLAUSIBILITY rates. Per-signal ACCURACY is only measurable on GT-bearing corpora (PhysicalAI val / comma2k19).",
+  "known_defects_carried": [
+    "physically impossible yaw labels are still present in the TRAIN label set (IDM-v2: 9/4195 val windows move pooled yaw R2 0.105 -> 0.497)",
+    "comma2k19 heading derivation is arctan2 of ENU velocity, undefined at standstill \u2014 the labeler's yaw channel inherits this",
+    "long_accel is still in SCALAR_NAMES despite IDM-v2's pre-committed recommendation to remove it (a perfect kinematic estimator caps at R2 0.188 against the CAN label)"
+  ],
+  "n_youtube_clips": 200,
+  "n_excluded_contaminated": 41,
+  "excluded_video_ids": [
+    "3iBpLlQlW-8",
+    "7hvoPyb-mlY",
+    "Kocl0ZOUejc",
+    "T4ppy6MlL4w",
+    "g8lL-_IwomM",
+    "gDLib8egfR0",
+    "lAFzDVzsk24",
+    "ss2xteImDfg",
+    "u8k5NjSk1cE",
+    "zVg48PoeClk"
+  ],
+  "youtube_all_clips": {
+    "speed": {
+      "channel": "speed",
+      "units": "m/s",
+      "physical_limits": [
+        0.0,
+        60.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": 8.49545,
+      "mean_ci95": [
+        7.98839,
+        9.05807
+      ],
+      "n_clips": 200,
+      "n_windows": 22400,
+      "median": 7.63621,
+      "median_ci95": [
+        7.01754,
+        8.32778
+      ],
+      "p05": 1.18781,
+      "p05_ci95": [
+        0.67608,
+        1.61866
+      ],
+      "p95": 18.45274,
+      "p95_ci95": [
+        17.54501,
+        19.28479
+      ],
+      "spread_p05_p95": 17.26493,
+      "spread_p05_p95_ci95": [
+        16.32477,
+        18.13145
+      ],
+      "std": 5.33705,
+      "std_ci95": [
+        5.07385,
+        5.59326
+      ],
+      "frac_outside_physical_limits": 0.02013,
+      "frac_outside_physical_limits_ci95": [
+        0.00915,
+        0.03491
+      ],
+      "min": -2.07123,
+      "max": 29.7274
+    },
+    "yaw_rate": {
+      "channel": "yaw_rate",
+      "units": "rad/s",
+      "physical_limits": [
+        -1.5,
+        1.5
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.00042,
+      "mean_ci95": [
+        -0.00599,
+        0.00481
+      ],
+      "n_clips": 200,
+      "n_windows": 22400,
+      "median": -0.00022,
+      "median_ci95": [
+        -0.00443,
+        0.00344
+      ],
+      "p05": -0.13135,
+      "p05_ci95": [
+        -0.15654,
+        -0.11026
+      ],
+      "p95": 0.12257,
+      "p95_ci95": [
+        0.11041,
+        0.14039
+      ],
+      "spread_p05_p95": 0.25393,
+      "spread_p05_p95_ci95": [
+        0.22624,
+        0.28777
+      ],
+      "std": 0.09382,
+      "std_ci95": [
+        0.08279,
+        0.10451
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.80565,
+      "max": 0.63495
+    },
+    "steer": {
+      "channel": "steer",
+      "units": "rad (normalised)",
+      "physical_limits": [
+        -1.0,
+        1.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.00674,
+      "mean_ci95": [
+        -0.01008,
+        -0.00366
+      ],
+      "n_clips": 200,
+      "n_windows": 22400,
+      "median": -0.00219,
+      "median_ci95": [
+        -0.00392,
+        -0.00043
+      ],
+      "p05": -0.09513,
+      "p05_ci95": [
+        -0.11252,
+        -0.07796
+      ],
+      "p95": 0.06299,
+      "p95_ci95": [
+        0.05146,
+        0.07521
+      ],
+      "spread_p05_p95": 0.15812,
+      "spread_p05_p95_ci95": [
+        0.13378,
+        0.18395
+      ],
+      "std": 0.06012,
+      "std_ci95": [
+        0.05201,
+        0.06805
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.65858,
+      "max": 0.55016
+    },
+    "long_accel": {
+      "channel": "long_accel",
+      "units": "m/s^2",
+      "physical_limits": [
+        -12.0,
+        12.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.01427,
+      "mean_ci95": [
+        -0.07334,
+        0.04289
+      ],
+      "n_clips": 200,
+      "n_windows": 22400,
+      "median": 0.02661,
+      "median_ci95": [
+        -0.03957,
+        0.08501
+      ],
+      "p05": -1.39176,
+      "p05_ci95": [
+        -1.4901,
+        -1.28621
+      ],
+      "p95": 1.21635,
+      "p95_ci95": [
+        1.12647,
+        1.31505
+      ],
+      "spread_p05_p95": 2.60812,
+      "spread_p05_p95_ci95": [
+        2.46789,
+        2.74581
+      ],
+      "std": 0.81392,
+      "std_ci95": [
+        0.77226,
+        0.85258
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -4.33708,
+      "max": 4.18721
+    }
+  },
+  "youtube_contamination_excluded": {
+    "speed": {
+      "channel": "speed",
+      "units": "m/s",
+      "physical_limits": [
+        0.0,
+        60.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": 8.38392,
+      "mean_ci95": [
+        7.78054,
+        9.0171
+      ],
+      "n_clips": 159,
+      "n_windows": 17808,
+      "median": 7.47539,
+      "median_ci95": [
+        6.7411,
+        8.33674
+      ],
+      "p05": 1.20746,
+      "p05_ci95": [
+        0.64169,
+        1.68621
+      ],
+      "p95": 18.01995,
+      "p95_ci95": [
+        17.048,
+        18.98667
+      ],
+      "spread_p05_p95": 16.81249,
+      "spread_p05_p95_ci95": [
+        15.75364,
+        17.84849
+      ],
+      "std": 5.22963,
+      "std_ci95": [
+        4.92031,
+        5.52719
+      ],
+      "frac_outside_physical_limits": 0.02066,
+      "frac_outside_physical_limits_ci95": [
+        0.00791,
+        0.03734
+      ],
+      "min": -2.07123,
+      "max": 29.7274
+    },
+    "yaw_rate": {
+      "channel": "yaw_rate",
+      "units": "rad/s",
+      "physical_limits": [
+        -1.5,
+        1.5
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": 0.00111,
+      "mean_ci95": [
+        -0.00428,
+        0.00672
+      ],
+      "n_clips": 159,
+      "n_windows": 17808,
+      "median": 0.00076,
+      "median_ci95": [
+        -0.00424,
+        0.00526
+      ],
+      "p05": -0.12215,
+      "p05_ci95": [
+        -0.14204,
+        -0.10173
+      ],
+      "p95": 0.12046,
+      "p95_ci95": [
+        0.10574,
+        0.14005
+      ],
+      "spread_p05_p95": 0.24261,
+      "spread_p05_p95_ci95": [
+        0.21292,
+        0.27234
+      ],
+      "std": 0.08931,
+      "std_ci95": [
+        0.0783,
+        0.09978
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.80565,
+      "max": 0.63495
+    },
+    "steer": {
+      "channel": "steer",
+      "units": "rad (normalised)",
+      "physical_limits": [
+        -1.0,
+        1.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.00571,
+      "mean_ci95": [
+        -0.00848,
+        -0.00266
+      ],
+      "n_clips": 159,
+      "n_windows": 17808,
+      "median": -0.0013,
+      "median_ci95": [
+        -0.00325,
+        0.00049
+      ],
+      "p05": -0.08916,
+      "p05_ci95": [
+        -0.1047,
+        -0.07102
+      ],
+      "p95": 0.05653,
+      "p95_ci95": [
+        0.04496,
+        0.07091
+      ],
+      "spread_p05_p95": 0.14569,
+      "spread_p05_p95_ci95": [
+        0.11859,
+        0.1735
+      ],
+      "std": 0.05721,
+      "std_ci95": [
+        0.0478,
+        0.06615
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.5048,
+      "max": 0.50192
+    },
+    "long_accel": {
+      "channel": "long_accel",
+      "units": "m/s^2",
+      "physical_limits": [
+        -12.0,
+        12.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": 0.02705,
+      "mean_ci95": [
+        -0.03994,
+        0.0918
+      ],
+      "n_clips": 159,
+      "n_windows": 17808,
+      "median": 0.05982,
+      "median_ci95": [
+        -0.01337,
+        0.12477
+      ],
+      "p05": -1.28895,
+      "p05_ci95": [
+        -1.39283,
+        -1.18599
+      ],
+      "p95": 1.23627,
+      "p95_ci95": [
+        1.12772,
+        1.34781
+      ],
+      "spread_p05_p95": 2.52522,
+      "spread_p05_p95_ci95": [
+        2.37672,
+        2.67575
+      ],
+      "std": 0.78399,
+      "std_ci95": [
+        0.73985,
+        0.82454
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -4.10296,
+      "max": 4.18721
+    }
+  },
+  "physicalai_reference_SEPARATE_never_pooled": {
+    "speed": {
+      "channel": "speed",
+      "units": "m/s",
+      "physical_limits": [
+        0.0,
+        60.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": 10.98118,
+      "mean_ci95": [
+        9.13031,
+        13.06908
+      ],
+      "n_clips": 40,
+      "n_windows": 3517,
+      "median": 9.56586,
+      "median_ci95": [
+        7.95168,
+        11.66477
+      ],
+      "p05": 1.61261,
+      "p05_ci95": [
+        0.34483,
+        4.02274
+      ],
+      "p95": 26.33203,
+      "p95_ci95": [
+        19.37208,
+        29.42861
+      ],
+      "spread_p05_p95": 24.71941,
+      "spread_p05_p95_ci95": [
+        17.45908,
+        28.19958
+      ],
+      "std": 6.97266,
+      "std_ci95": [
+        5.29664,
+        8.35099
+      ],
+      "frac_outside_physical_limits": 0.01877,
+      "frac_outside_physical_limits_ci95": [
+        0.00171,
+        0.04012
+      ],
+      "min": -1.16529,
+      "max": 31.29131
+    },
+    "yaw_rate": {
+      "channel": "yaw_rate",
+      "units": "rad/s",
+      "physical_limits": [
+        -1.5,
+        1.5
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.00296,
+      "mean_ci95": [
+        -0.02316,
+        0.01814
+      ],
+      "n_clips": 40,
+      "n_windows": 3517,
+      "median": -0.00176,
+      "median_ci95": [
+        -0.00939,
+        0.0051
+      ],
+      "p05": -0.23734,
+      "p05_ci95": [
+        -0.31038,
+        -0.14732
+      ],
+      "p95": 0.27033,
+      "p95_ci95": [
+        0.09543,
+        0.37803
+      ],
+      "spread_p05_p95": 0.50766,
+      "spread_p05_p95_ci95": [
+        0.30288,
+        0.63076
+      ],
+      "std": 0.13715,
+      "std_ci95": [
+        0.11004,
+        0.16117
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.70763,
+      "max": 0.49192
+    },
+    "steer": {
+      "channel": "steer",
+      "units": "rad (normalised)",
+      "physical_limits": [
+        -1.0,
+        1.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.00375,
+      "mean_ci95": [
+        -0.01511,
+        0.00757
+      ],
+      "n_clips": 40,
+      "n_windows": 3517,
+      "median": -0.00103,
+      "median_ci95": [
+        -0.00256,
+        0.00046
+      ],
+      "p05": -0.13248,
+      "p05_ci95": [
+        -0.19428,
+        -0.07937
+      ],
+      "p95": 0.14619,
+      "p95_ci95": [
+        0.04718,
+        0.19782
+      ],
+      "spread_p05_p95": 0.27868,
+      "spread_p05_p95_ci95": [
+        0.15152,
+        0.36042
+      ],
+      "std": 0.0802,
+      "std_ci95": [
+        0.06282,
+        0.09484
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -0.45791,
+      "max": 0.36169
+    },
+    "long_accel": {
+      "channel": "long_accel",
+      "units": "m/s^2",
+      "physical_limits": [
+        -12.0,
+        12.0
+      ],
+      "estimator": "clip-cluster bootstrap, n_boot=2000, seed=0; resampling unit = harvested clip (NOT window, NOT overlapping_holdout_se)",
+      "mean": -0.08914,
+      "mean_ci95": [
+        -0.21012,
+        0.03483
+      ],
+      "n_clips": 40,
+      "n_windows": 3517,
+      "median": -0.04732,
+      "median_ci95": [
+        -0.1375,
+        0.05157
+      ],
+      "p05": -1.40823,
+      "p05_ci95": [
+        -1.70179,
+        -1.13042
+      ],
+      "p95": 1.03288,
+      "p95_ci95": [
+        0.85874,
+        1.18686
+      ],
+      "spread_p05_p95": 2.44111,
+      "spread_p05_p95_ci95": [
+        2.09544,
+        2.76824
+      ],
+      "std": 0.73928,
+      "std_ci95": [
+        0.63411,
+        0.82937
+      ],
+      "frac_outside_physical_limits": 0.0,
+      "frac_outside_physical_limits_ci95": [
+        0.0,
+        0.0
+      ],
+      "min": -2.88067,
+      "max": 2.65962
+    },
+    "_n_ref_clips": 40,
+    "_source": "/workspace/tmp/branchb_eval/lat_flagshipv1 tags=va_*"
+  },
+  "HEADLINE_spread_ratio_out_of_corpus": {
+    "speed": {
+      "spread_ratio_yt_over_physicalai": 0.6984,
+      "ci95": [
+        0.6035,
+        0.9984
+      ],
+      "excludes_1": true,
+      "estimator": "independent clip-cluster bootstrap of BOTH corpora, n_boot=2000, seed=0; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+    },
+    "yaw_rate": {
+      "spread_ratio_yt_over_physicalai": 0.5002,
+      "ci95": [
+        0.3922,
+        0.8352
+      ],
+      "excludes_1": true,
+      "estimator": "independent clip-cluster bootstrap of BOTH corpora, n_boot=2000, seed=0; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+    },
+    "steer": {
+      "spread_ratio_yt_over_physicalai": 0.5674,
+      "ci95": [
+        0.4139,
+        1.0788
+      ],
+      "excludes_1": false,
+      "estimator": "independent clip-cluster bootstrap of BOTH corpora, n_boot=2000, seed=0; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+    },
+    "long_accel": {
+      "spread_ratio_yt_over_physicalai": 1.0684,
+      "ci95": [
+        0.937,
+        1.2389
+      ],
+      "excludes_1": false,
+      "estimator": "independent clip-cluster bootstrap of BOTH corpora, n_boot=2000, seed=0; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+    }
+  },
+  "spread_ratio_reading": "ratio << 1 with a CI excluding 1 = the channel's predicted RANGE collapses off-domain (regression to the training prior) even where the MEANS are indistinguishable. A mean-only or aggregate score cannot see this.",
+  "per_clip": [
+    {
+      "file": "yt_0000000.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 13.3349,
+      "yaw_rate_mean": 0.0133,
+      "steer_mean": 0.0032,
+      "long_accel_mean": 0.2097,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000001.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 6.9683,
+      "yaw_rate_mean": 0.0661,
+      "steer_mean": -0.0296,
+      "long_accel_mean": 0.5078,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000002.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 11.7313,
+      "yaw_rate_mean": 0.008,
+      "steer_mean": -0.0077,
+      "long_accel_mean": 0.0888,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000003.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 11.3517,
+      "yaw_rate_mean": 0.0455,
+      "steer_mean": -0.0006,
+      "long_accel_mean": 0.0127,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000004.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 11.895,
+      "yaw_rate_mean": 0.0112,
+      "steer_mean": 0.0003,
+      "long_accel_mean": 0.2014,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000005.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 9.0217,
+      "yaw_rate_mean": 0.0247,
+      "steer_mean": -0.007,
+      "long_accel_mean": 0.4679,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000006.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 4.8414,
+      "yaw_rate_mean": 0.0457,
+      "steer_mean": -0.0046,
+      "long_accel_mean": 0.3106,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000007.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 7.8049,
+      "yaw_rate_mean": 0.0467,
+      "steer_mean": -0.0096,
+      "long_accel_mean": 0.4434,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000008.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 11.3997,
+      "yaw_rate_mean": 0.0598,
+      "steer_mean": 0.0073,
+      "long_accel_mean": 0.4439,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000009.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 9.4088,
+      "yaw_rate_mean": 0.048,
+      "steer_mean": 0.0075,
+      "long_accel_mean": 0.0684,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000010.pt",
+      "video_id": "grh1R84Ziyc",
+      "n_windows": 112,
+      "speed_mean": 9.6577,
+      "yaw_rate_mean": 0.0166,
+      "steer_mean": -0.0057,
+      "long_accel_mean": -0.0338,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000011.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 7.5511,
+      "yaw_rate_mean": 0.0122,
+      "steer_mean": -0.0155,
+      "long_accel_mean": 0.5406,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000012.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 14.3765,
+      "yaw_rate_mean": 0.0039,
+      "steer_mean": -0.01,
+      "long_accel_mean": 0.0725,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000013.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 13.8005,
+      "yaw_rate_mean": -0.0087,
+      "steer_mean": 0.0004,
+      "long_accel_mean": 0.427,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000014.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 13.5302,
+      "yaw_rate_mean": 0.0068,
+      "steer_mean": -0.0032,
+      "long_accel_mean": 0.2739,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000015.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 16.2146,
+      "yaw_rate_mean": 0.0099,
+      "steer_mean": -0.0007,
+      "long_accel_mean": 0.3736,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000016.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 13.6147,
+      "yaw_rate_mean": 0.0278,
+      "steer_mean": 0.0015,
+      "long_accel_mean": 0.4602,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000017.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 13.9864,
+      "yaw_rate_mean": 0.0098,
+      "steer_mean": -0.0045,
+      "long_accel_mean": 0.5278,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000018.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 12.2692,
+      "yaw_rate_mean": 0.0067,
+      "steer_mean": -0.0044,
+      "long_accel_mean": -0.3943,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000019.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 9.9518,
+      "yaw_rate_mean": 0.0055,
+      "steer_mean": -0.0052,
+      "long_accel_mean": -0.2433,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000020.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 15.4478,
+      "yaw_rate_mean": 0.0374,
+      "steer_mean": 0.0107,
+      "long_accel_mean": 0.1007,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000021.pt",
+      "video_id": "CxfTe3gB3WI",
+      "n_windows": 112,
+      "speed_mean": 8.1521,
+      "yaw_rate_mean": 0.0505,
+      "steer_mean": -0.0028,
+      "long_accel_mean": 0.5941,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000022.pt",
+      "video_id": "kj5wb0-9mqE",
+      "n_windows": 112,
+      "speed_mean": 12.2096,
+      "yaw_rate_mean": -0.0052,
+      "steer_mean": -0.0014,
+      "long_accel_mean": 0.2148,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000023.pt",
+      "video_id": "kj5wb0-9mqE",
+      "n_windows": 112,
+      "speed_mean": 14.5611,
+      "yaw_rate_mean": -0.0131,
+      "steer_mean": -0.0041,
+      "long_accel_mean": -0.0845,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000024.pt",
+      "video_id": "kj5wb0-9mqE",
+      "n_windows": 112,
+      "speed_mean": 9.6304,
+      "yaw_rate_mean": 0.15,
+      "steer_mean": 0.0243,
+      "long_accel_mean": -0.0639,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000025.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 13.2746,
+      "yaw_rate_mean": 0.0008,
+      "steer_mean": -0.0181,
+      "long_accel_mean": 0.1341,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000026.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 16.172,
+      "yaw_rate_mean": 0.0121,
+      "steer_mean": -0.0014,
+      "long_accel_mean": 0.1008,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000027.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 16.2781,
+      "yaw_rate_mean": 0.0307,
+      "steer_mean": 0.0126,
+      "long_accel_mean": -0.1657,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000028.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 16.9352,
+      "yaw_rate_mean": -0.0095,
+      "steer_mean": -0.0039,
+      "long_accel_mean": 0.5403,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000029.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 10.6959,
+      "yaw_rate_mean": 0.0021,
+      "steer_mean": -0.012,
+      "long_accel_mean": 0.2191,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000030.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 9.7749,
+      "yaw_rate_mean": -0.0103,
+      "steer_mean": -0.0191,
+      "long_accel_mean": -0.0806,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000031.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 10.2972,
+      "yaw_rate_mean": -0.005,
+      "steer_mean": -0.0059,
+      "long_accel_mean": -0.2303,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000032.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 9.5903,
+      "yaw_rate_mean": 0.0139,
+      "steer_mean": -0.0054,
+      "long_accel_mean": 0.0452,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000033.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 10.8131,
+      "yaw_rate_mean": -0.0029,
+      "steer_mean": -0.0162,
+      "long_accel_mean": -0.0559,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000034.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 10.4663,
+      "yaw_rate_mean": 0.0123,
+      "steer_mean": -0.0296,
+      "long_accel_mean": 0.4218,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000035.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 8.0562,
+      "yaw_rate_mean": -0.0163,
+      "steer_mean": -0.028,
+      "long_accel_mean": 0.0939,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000036.pt",
+      "video_id": "Kocl0ZOUejc",
+      "n_windows": 112,
+      "speed_mean": 10.316,
+      "yaw_rate_mean": -0.0137,
+      "steer_mean": -0.0286,
+      "long_accel_mean": 0.4034,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000037.pt",
+      "video_id": "g8lL-_IwomM",
+      "n_windows": 112,
+      "speed_mean": 9.2378,
+      "yaw_rate_mean": 0.0174,
+      "steer_mean": -0.0113,
+      "long_accel_mean": 0.2319,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000038.pt",
+      "video_id": "g8lL-_IwomM",
+      "n_windows": 112,
+      "speed_mean": 5.9235,
+      "yaw_rate_mean": -0.0168,
+      "steer_mean": -0.0104,
+      "long_accel_mean": -0.1946,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000039.pt",
+      "video_id": "g8lL-_IwomM",
+      "n_windows": 112,
+      "speed_mean": 6.2643,
+      "yaw_rate_mean": -0.0198,
+      "steer_mean": -0.0115,
+      "long_accel_mean": -1.245,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000040.pt",
+      "video_id": "g8lL-_IwomM",
+      "n_windows": 112,
+      "speed_mean": 7.8954,
+      "yaw_rate_mean": 0.0211,
+      "steer_mean": -0.0069,
+      "long_accel_mean": -0.7249,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000041.pt",
+      "video_id": "g8lL-_IwomM",
+      "n_windows": 112,
+      "speed_mean": 10.9849,
+      "yaw_rate_mean": 0.0028,
+      "steer_mean": 0.0001,
+      "long_accel_mean": -0.0957,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000042.pt",
+      "video_id": "gDLib8egfR0",
+      "n_windows": 112,
+      "speed_mean": 10.5787,
+      "yaw_rate_mean": 0.0157,
+      "steer_mean": 0.0143,
+      "long_accel_mean": -0.4107,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000043.pt",
+      "video_id": "gDLib8egfR0",
+      "n_windows": 112,
+      "speed_mean": 7.6385,
+      "yaw_rate_mean": -0.0143,
+      "steer_mean": -0.0201,
+      "long_accel_mean": 0.035,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000044.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 2.5138,
+      "yaw_rate_mean": -0.03,
+      "steer_mean": 0.0255,
+      "long_accel_mean": -0.0962,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000045.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 3.1177,
+      "yaw_rate_mean": -0.0212,
+      "steer_mean": -0.0289,
+      "long_accel_mean": -0.3616,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000046.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 3.8226,
+      "yaw_rate_mean": -0.0191,
+      "steer_mean": -0.0399,
+      "long_accel_mean": -0.5232,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000047.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 7.5079,
+      "yaw_rate_mean": 0.0317,
+      "steer_mean": 0.0041,
+      "long_accel_mean": 0.1189,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000048.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 8.3638,
+      "yaw_rate_mean": 0.0151,
+      "steer_mean": -0.0019,
+      "long_accel_mean": 0.275,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000049.pt",
+      "video_id": "cbASQ3ymmu0",
+      "n_windows": 112,
+      "speed_mean": 11.0989,
+      "yaw_rate_mean": -0.0224,
+      "steer_mean": -0.0103,
+      "long_accel_mean": -0.0481,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000050.pt",
+      "video_id": "T4ppy6MlL4w",
+      "n_windows": 112,
+      "speed_mean": 4.6364,
+      "yaw_rate_mean": -0.0037,
+      "steer_mean": -0.0213,
+      "long_accel_mean": -0.7093,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000051.pt",
+      "video_id": "3iBpLlQlW-8",
+      "n_windows": 112,
+      "speed_mean": 12.446,
+      "yaw_rate_mean": 0.0204,
+      "steer_mean": -0.0021,
+      "long_accel_mean": -0.2951,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000052.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 2.6935,
+      "yaw_rate_mean": -0.0031,
+      "steer_mean": 0.0124,
+      "long_accel_mean": -0.5501,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000053.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 6.4177,
+      "yaw_rate_mean": 0.0137,
+      "steer_mean": 0.0037,
+      "long_accel_mean": -0.53,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000054.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 5.4655,
+      "yaw_rate_mean": 0.0089,
+      "steer_mean": 0.0011,
+      "long_accel_mean": -0.7311,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000055.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 5.1397,
+      "yaw_rate_mean": 0.0179,
+      "steer_mean": 0.0036,
+      "long_accel_mean": -0.3768,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000056.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 4.3247,
+      "yaw_rate_mean": 0.0336,
+      "steer_mean": 0.0163,
+      "long_accel_mean": -0.4182,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000057.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 4.9851,
+      "yaw_rate_mean": 0.0414,
+      "steer_mean": 0.0179,
+      "long_accel_mean": -0.4546,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000058.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 4.7482,
+      "yaw_rate_mean": 0.0207,
+      "steer_mean": 0.0128,
+      "long_accel_mean": -0.5721,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000059.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 4.5117,
+      "yaw_rate_mean": 0.0246,
+      "steer_mean": 0.0079,
+      "long_accel_mean": -0.5844,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000060.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 5.5564,
+      "yaw_rate_mean": 0.0335,
+      "steer_mean": 0.0172,
+      "long_accel_mean": -0.3123,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000061.pt",
+      "video_id": "OookGOTyYKc",
+      "n_windows": 112,
+      "speed_mean": 6.3113,
+      "yaw_rate_mean": 0.0292,
+      "steer_mean": 0.0115,
+      "long_accel_mean": -0.4161,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000062.pt",
+      "video_id": "YpqkYgBdaNQ",
+      "n_windows": 112,
+      "speed_mean": 6.4763,
+      "yaw_rate_mean": -0.0033,
+      "steer_mean": -0.0202,
+      "long_accel_mean": -0.2765,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000063.pt",
+      "video_id": "YpqkYgBdaNQ",
+      "n_windows": 112,
+      "speed_mean": 7.9666,
+      "yaw_rate_mean": -0.0027,
+      "steer_mean": -0.0281,
+      "long_accel_mean": -0.5047,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000064.pt",
+      "video_id": "YpqkYgBdaNQ",
+      "n_windows": 112,
+      "speed_mean": 7.4184,
+      "yaw_rate_mean": 0.0351,
+      "steer_mean": 0.0432,
+      "long_accel_mean": 0.2851,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000065.pt",
+      "video_id": "YpqkYgBdaNQ",
+      "n_windows": 112,
+      "speed_mean": 11.3207,
+      "yaw_rate_mean": -0.0053,
+      "steer_mean": -0.0065,
+      "long_accel_mean": -0.3395,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000066.pt",
+      "video_id": "YpqkYgBdaNQ",
+      "n_windows": 112,
+      "speed_mean": 6.1833,
+      "yaw_rate_mean": 0.0164,
+      "steer_mean": -0.0113,
+      "long_accel_mean": 0.0093,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000067.pt",
+      "video_id": "ss2xteImDfg",
+      "n_windows": 112,
+      "speed_mean": 5.6065,
+      "yaw_rate_mean": -0.2616,
+      "steer_mean": -0.1442,
+      "long_accel_mean": -0.2489,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000068.pt",
+      "video_id": "RzDdggzoxgg",
+      "n_windows": 112,
+      "speed_mean": 5.8697,
+      "yaw_rate_mean": 0.0162,
+      "steer_mean": -0.0323,
+      "long_accel_mean": -0.4148,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000069.pt",
+      "video_id": "RzDdggzoxgg",
+      "n_windows": 112,
+      "speed_mean": 4.5092,
+      "yaw_rate_mean": -0.027,
+      "steer_mean": -0.0253,
+      "long_accel_mean": -0.2539,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000070.pt",
+      "video_id": "RzDdggzoxgg",
+      "n_windows": 112,
+      "speed_mean": 5.1839,
+      "yaw_rate_mean": 0.0203,
+      "steer_mean": -0.0071,
+      "long_accel_mean": -0.1069,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000071.pt",
+      "video_id": "zVg48PoeClk",
+      "n_windows": 112,
+      "speed_mean": 14.0143,
+      "yaw_rate_mean": 0.0064,
+      "steer_mean": 0.0132,
+      "long_accel_mean": -0.7626,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000072.pt",
+      "video_id": "tIRhahj2a2U",
+      "n_windows": 112,
+      "speed_mean": 5.2309,
+      "yaw_rate_mean": 0.0177,
+      "steer_mean": 0.0043,
+      "long_accel_mean": 0.0353,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000073.pt",
+      "video_id": "tIRhahj2a2U",
+      "n_windows": 112,
+      "speed_mean": 4.2051,
+      "yaw_rate_mean": -0.002,
+      "steer_mean": 0.0033,
+      "long_accel_mean": -0.4608,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000074.pt",
+      "video_id": "tIRhahj2a2U",
+      "n_windows": 112,
+      "speed_mean": 3.5225,
+      "yaw_rate_mean": -0.0525,
+      "steer_mean": -0.0198,
+      "long_accel_mean": -0.0834,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000075.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 3.7972,
+      "yaw_rate_mean": 0.002,
+      "steer_mean": -0.0116,
+      "long_accel_mean": 0.1559,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000076.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 5.0889,
+      "yaw_rate_mean": -0.046,
+      "steer_mean": -0.0158,
+      "long_accel_mean": -0.795,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000077.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 3.3579,
+      "yaw_rate_mean": -0.0374,
+      "steer_mean": -0.0224,
+      "long_accel_mean": -0.6466,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000078.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 3.2546,
+      "yaw_rate_mean": -0.0331,
+      "steer_mean": -0.0288,
+      "long_accel_mean": -0.386,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000079.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 3.8551,
+      "yaw_rate_mean": -0.0161,
+      "steer_mean": 0.0086,
+      "long_accel_mean": -0.3466,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000080.pt",
+      "video_id": "xeHFcOSEQ5o",
+      "n_windows": 112,
+      "speed_mean": 4.7884,
+      "yaw_rate_mean": -0.0136,
+      "steer_mean": 0.0157,
+      "long_accel_mean": 0.0218,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000081.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 10.6252,
+      "yaw_rate_mean": -0.0076,
+      "steer_mean": -0.0055,
+      "long_accel_mean": 0.7216,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000082.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 10.5864,
+      "yaw_rate_mean": -0.0206,
+      "steer_mean": -0.013,
+      "long_accel_mean": 0.9168,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000083.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 7.7742,
+      "yaw_rate_mean": -0.0257,
+      "steer_mean": -0.0092,
+      "long_accel_mean": 0.4586,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000084.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 7.5455,
+      "yaw_rate_mean": -0.0384,
+      "steer_mean": -0.0141,
+      "long_accel_mean": -0.0579,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000085.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 7.4832,
+      "yaw_rate_mean": -0.0175,
+      "steer_mean": -0.0096,
+      "long_accel_mean": 0.143,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000086.pt",
+      "video_id": "zawP1WNv2TQ",
+      "n_windows": 112,
+      "speed_mean": 3.374,
+      "yaw_rate_mean": -0.0232,
+      "steer_mean": -0.0483,
+      "long_accel_mean": -0.0913,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000087.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 6.7322,
+      "yaw_rate_mean": 0.0076,
+      "steer_mean": -0.0193,
+      "long_accel_mean": -0.3117,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000088.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 7.4851,
+      "yaw_rate_mean": -0.0136,
+      "steer_mean": -0.0231,
+      "long_accel_mean": 0.492,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000089.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 4.5952,
+      "yaw_rate_mean": -0.0071,
+      "steer_mean": -0.0222,
+      "long_accel_mean": 0.4553,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000090.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 4.4719,
+      "yaw_rate_mean": 0.0011,
+      "steer_mean": -0.0294,
+      "long_accel_mean": 0.2012,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000091.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 6.8346,
+      "yaw_rate_mean": -0.0355,
+      "steer_mean": -0.0405,
+      "long_accel_mean": -0.0437,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000092.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 7.9448,
+      "yaw_rate_mean": 0.02,
+      "steer_mean": 0.0076,
+      "long_accel_mean": -0.1364,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000093.pt",
+      "video_id": "ORJxH8OIW7U",
+      "n_windows": 112,
+      "speed_mean": 4.8069,
+      "yaw_rate_mean": -0.0413,
+      "steer_mean": -0.037,
+      "long_accel_mean": -0.3081,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0000094.pt",
+      "video_id": "u8k5NjSk1cE",
+      "n_windows": 112,
+      "speed_mean": 3.4453,
+      "yaw_rate_mean": -0.1266,
+      "steer_mean": -0.0995,
+      "long_accel_mean": -0.0508,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000095.pt",
+      "video_id": "u8k5NjSk1cE",
+      "n_windows": 112,
+      "speed_mean": 11.6435,
+      "yaw_rate_mean": -0.0142,
+      "steer_mean": -0.0061,
+      "long_accel_mean": -0.0446,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000096.pt",
+      "video_id": "u8k5NjSk1cE",
+      "n_windows": 112,
+      "speed_mean": 5.5096,
+      "yaw_rate_mean": 0.0022,
+      "steer_mean": -0.0101,
+      "long_accel_mean": 0.138,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000097.pt",
+      "video_id": "u8k5NjSk1cE",
+      "n_windows": 112,
+      "speed_mean": 3.8887,
+      "yaw_rate_mean": 0.0026,
+      "steer_mean": 0.0028,
+      "long_accel_mean": 0.425,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000098.pt",
+      "video_id": "u8k5NjSk1cE",
+      "n_windows": 112,
+      "speed_mean": 2.0441,
+      "yaw_rate_mean": -0.0128,
+      "steer_mean": 0.0181,
+      "long_accel_mean": 0.1925,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0000099.pt",
+      "video_id": "P_hoDSrk9qs",
+      "n_windows": 112,
+      "speed_mean": -0.4383,
+      "yaw_rate_mean": -0.0139,
+      "steer_mean": 0.0292,
+      "long_accel_mean": -0.0031,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100000.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 14.1863,
+      "yaw_rate_mean": 0.0921,
+      "steer_mean": 0.0204,
+      "long_accel_mean": -0.1334,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100001.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 14.2606,
+      "yaw_rate_mean": 0.1006,
+      "steer_mean": 0.022,
+      "long_accel_mean": -0.2767,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100002.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 14.0811,
+      "yaw_rate_mean": 0.0073,
+      "steer_mean": -0.0046,
+      "long_accel_mean": 0.3215,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100003.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 13.7089,
+      "yaw_rate_mean": 0.1137,
+      "steer_mean": 0.0199,
+      "long_accel_mean": -0.0044,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100004.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 12.9314,
+      "yaw_rate_mean": 0.0857,
+      "steer_mean": 0.0184,
+      "long_accel_mean": 0.7243,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100005.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 10.3585,
+      "yaw_rate_mean": 0.0421,
+      "steer_mean": 0.0022,
+      "long_accel_mean": 0.0446,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100006.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 11.7828,
+      "yaw_rate_mean": 0.0374,
+      "steer_mean": 0.0076,
+      "long_accel_mean": -0.2571,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100007.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 13.0134,
+      "yaw_rate_mean": 0.034,
+      "steer_mean": 0.0058,
+      "long_accel_mean": -0.1691,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100008.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 11.6755,
+      "yaw_rate_mean": 0.0278,
+      "steer_mean": 0.0027,
+      "long_accel_mean": 0.1227,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100009.pt",
+      "video_id": "IAgqxHozRCk",
+      "n_windows": 112,
+      "speed_mean": 13.2775,
+      "yaw_rate_mean": 0.0434,
+      "steer_mean": 0.0062,
+      "long_accel_mean": 0.0855,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100010.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 9.586,
+      "yaw_rate_mean": 0.0105,
+      "steer_mean": 0.0038,
+      "long_accel_mean": -0.0739,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100011.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 12.9321,
+      "yaw_rate_mean": 0.0203,
+      "steer_mean": 0.0068,
+      "long_accel_mean": -0.5013,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100012.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 11.1463,
+      "yaw_rate_mean": -0.0082,
+      "steer_mean": -0.0044,
+      "long_accel_mean": -0.0193,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100013.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 11.5502,
+      "yaw_rate_mean": -0.0122,
+      "steer_mean": -0.0115,
+      "long_accel_mean": -0.4712,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100014.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 11.5774,
+      "yaw_rate_mean": 0.0115,
+      "steer_mean": 0.0007,
+      "long_accel_mean": -0.1674,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100015.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 15.4954,
+      "yaw_rate_mean": -0.0063,
+      "steer_mean": 0.0006,
+      "long_accel_mean": -0.1956,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100016.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 9.1494,
+      "yaw_rate_mean": 0.0023,
+      "steer_mean": -0.0063,
+      "long_accel_mean": 0.269,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100017.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 11.6596,
+      "yaw_rate_mean": 0.0202,
+      "steer_mean": 0.0157,
+      "long_accel_mean": -0.0589,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100018.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 12.7811,
+      "yaw_rate_mean": -0.0271,
+      "steer_mean": -0.0094,
+      "long_accel_mean": -0.3188,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100019.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 12.6817,
+      "yaw_rate_mean": -0.0127,
+      "steer_mean": -0.0021,
+      "long_accel_mean": -0.3459,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100020.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 13.5365,
+      "yaw_rate_mean": -0.0396,
+      "steer_mean": -0.0154,
+      "long_accel_mean": -0.2736,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100021.pt",
+      "video_id": "lPQ0f6uev6A",
+      "n_windows": 112,
+      "speed_mean": 6.7439,
+      "yaw_rate_mean": 0.0035,
+      "steer_mean": 0.0122,
+      "long_accel_mean": 0.1602,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100022.pt",
+      "video_id": "7hvoPyb-mlY",
+      "n_windows": 112,
+      "speed_mean": 5.6232,
+      "yaw_rate_mean": 0.0056,
+      "steer_mean": -0.0304,
+      "long_accel_mean": -0.2297,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100023.pt",
+      "video_id": "7hvoPyb-mlY",
+      "n_windows": 112,
+      "speed_mean": 5.6162,
+      "yaw_rate_mean": 0.0077,
+      "steer_mean": -0.0016,
+      "long_accel_mean": -0.4886,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100024.pt",
+      "video_id": "7hvoPyb-mlY",
+      "n_windows": 112,
+      "speed_mean": 9.7348,
+      "yaw_rate_mean": 0.0028,
+      "steer_mean": -0.0082,
+      "long_accel_mean": -0.5258,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100025.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 8.8138,
+      "yaw_rate_mean": 0.0039,
+      "steer_mean": 0.0009,
+      "long_accel_mean": 0.5969,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100026.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 5.6901,
+      "yaw_rate_mean": 0.011,
+      "steer_mean": -0.0041,
+      "long_accel_mean": 0.3911,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100027.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 1.4804,
+      "yaw_rate_mean": -0.0015,
+      "steer_mean": -0.002,
+      "long_accel_mean": 0.1474,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100028.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 2.7418,
+      "yaw_rate_mean": -0.0227,
+      "steer_mean": 0.0054,
+      "long_accel_mean": 0.3226,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100029.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 2.1133,
+      "yaw_rate_mean": -0.0092,
+      "steer_mean": -0.0011,
+      "long_accel_mean": 0.8489,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100030.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 2.0519,
+      "yaw_rate_mean": -0.0118,
+      "steer_mean": 0.0052,
+      "long_accel_mean": 0.4918,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100031.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 1.8465,
+      "yaw_rate_mean": -0.0377,
+      "steer_mean": 0.0045,
+      "long_accel_mean": 0.1524,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100032.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 5.5598,
+      "yaw_rate_mean": 0.0033,
+      "steer_mean": 0.005,
+      "long_accel_mean": 0.7977,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100033.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 5.0664,
+      "yaw_rate_mean": 0.0182,
+      "steer_mean": -0.0002,
+      "long_accel_mean": 0.3338,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100034.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 3.0622,
+      "yaw_rate_mean": 0.0033,
+      "steer_mean": 0.0011,
+      "long_accel_mean": 0.4419,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100035.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 0.9468,
+      "yaw_rate_mean": 0.0084,
+      "steer_mean": 0.0078,
+      "long_accel_mean": 0.1275,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100036.pt",
+      "video_id": "JAu1--psnFg",
+      "n_windows": 112,
+      "speed_mean": 3.4215,
+      "yaw_rate_mean": 0.02,
+      "steer_mean": 0.008,
+      "long_accel_mean": 0.7763,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100037.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 9.4536,
+      "yaw_rate_mean": -0.0297,
+      "steer_mean": -0.0008,
+      "long_accel_mean": -0.8075,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100038.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 6.9155,
+      "yaw_rate_mean": -0.0275,
+      "steer_mean": -0.0063,
+      "long_accel_mean": -0.6533,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100039.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 5.5587,
+      "yaw_rate_mean": -0.0517,
+      "steer_mean": -0.0359,
+      "long_accel_mean": -0.6432,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100040.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 4.1328,
+      "yaw_rate_mean": -0.0228,
+      "steer_mean": -0.0205,
+      "long_accel_mean": -0.6638,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100041.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 6.4148,
+      "yaw_rate_mean": -0.0049,
+      "steer_mean": -0.0135,
+      "long_accel_mean": -0.7407,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100042.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 7.2826,
+      "yaw_rate_mean": -0.0052,
+      "steer_mean": -0.004,
+      "long_accel_mean": -0.1409,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100043.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 7.4522,
+      "yaw_rate_mean": -0.0356,
+      "steer_mean": -0.0099,
+      "long_accel_mean": -0.4288,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100044.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 7.8793,
+      "yaw_rate_mean": -0.0235,
+      "steer_mean": -0.0294,
+      "long_accel_mean": -0.627,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100045.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 7.2516,
+      "yaw_rate_mean": -0.0108,
+      "steer_mean": -0.0158,
+      "long_accel_mean": -0.9578,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100046.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 6.8018,
+      "yaw_rate_mean": -0.0044,
+      "steer_mean": -0.0183,
+      "long_accel_mean": -0.6608,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100047.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 6.8919,
+      "yaw_rate_mean": 0.0063,
+      "steer_mean": -0.0114,
+      "long_accel_mean": -0.5018,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100048.pt",
+      "video_id": "jfyIf4woruc",
+      "n_windows": 112,
+      "speed_mean": 5.8489,
+      "yaw_rate_mean": 0.0025,
+      "steer_mean": -0.0206,
+      "long_accel_mean": -0.9085,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100049.pt",
+      "video_id": "Pq7tn4B0kCw",
+      "n_windows": 112,
+      "speed_mean": 5.4034,
+      "yaw_rate_mean": -0.0478,
+      "steer_mean": -0.03,
+      "long_accel_mean": -0.4087,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100050.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 18.6033,
+      "yaw_rate_mean": -0.0076,
+      "steer_mean": 0.0124,
+      "long_accel_mean": 0.0066,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100051.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 17.4435,
+      "yaw_rate_mean": -0.0215,
+      "steer_mean": 0.0054,
+      "long_accel_mean": 0.0049,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100052.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 15.3937,
+      "yaw_rate_mean": -0.0092,
+      "steer_mean": 0.0063,
+      "long_accel_mean": 0.3215,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100053.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 14.3498,
+      "yaw_rate_mean": 0.0299,
+      "steer_mean": 0.0026,
+      "long_accel_mean": 0.1269,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100054.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 12.7611,
+      "yaw_rate_mean": 0.0344,
+      "steer_mean": 0.0,
+      "long_accel_mean": 0.4206,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100055.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 13.6118,
+      "yaw_rate_mean": 0.0012,
+      "steer_mean": -0.0021,
+      "long_accel_mean": 0.2207,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100056.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 12.5694,
+      "yaw_rate_mean": -0.0045,
+      "steer_mean": -0.011,
+      "long_accel_mean": 0.2372,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100057.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 10.1412,
+      "yaw_rate_mean": 0.0144,
+      "steer_mean": -0.0223,
+      "long_accel_mean": 0.664,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100058.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 16.3395,
+      "yaw_rate_mean": 0.006,
+      "steer_mean": -0.0188,
+      "long_accel_mean": 0.4471,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100059.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 18.1443,
+      "yaw_rate_mean": -0.0235,
+      "steer_mean": -0.0041,
+      "long_accel_mean": 0.4295,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100060.pt",
+      "video_id": "DjZ55qWXv1Y",
+      "n_windows": 112,
+      "speed_mean": 17.1845,
+      "yaw_rate_mean": -0.0416,
+      "steer_mean": -0.0098,
+      "long_accel_mean": 0.3208,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100061.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 4.2004,
+      "yaw_rate_mean": 0.063,
+      "steer_mean": 0.0412,
+      "long_accel_mean": 0.6678,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100062.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 9.806,
+      "yaw_rate_mean": -0.0205,
+      "steer_mean": -0.008,
+      "long_accel_mean": -0.1095,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100063.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 7.6418,
+      "yaw_rate_mean": -0.0398,
+      "steer_mean": 0.0157,
+      "long_accel_mean": -0.4778,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100064.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 9.7555,
+      "yaw_rate_mean": -0.001,
+      "steer_mean": -0.0441,
+      "long_accel_mean": -0.6247,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100065.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 8.4723,
+      "yaw_rate_mean": 0.0427,
+      "steer_mean": 0.0125,
+      "long_accel_mean": -1.0755,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100066.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 8.0575,
+      "yaw_rate_mean": -0.0032,
+      "steer_mean": 0.043,
+      "long_accel_mean": -0.3201,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100067.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 9.691,
+      "yaw_rate_mean": 0.0101,
+      "steer_mean": -0.009,
+      "long_accel_mean": -0.6811,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100068.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 8.3583,
+      "yaw_rate_mean": -0.0019,
+      "steer_mean": -0.0102,
+      "long_accel_mean": 0.1835,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100069.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 8.5526,
+      "yaw_rate_mean": 0.0255,
+      "steer_mean": -0.0017,
+      "long_accel_mean": -0.5079,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100070.pt",
+      "video_id": "lAFzDVzsk24",
+      "n_windows": 112,
+      "speed_mean": 6.1106,
+      "yaw_rate_mean": 0.0164,
+      "steer_mean": 0.0114,
+      "long_accel_mean": -0.631,
+      "excluded_as_contaminated": true
+    },
+    {
+      "file": "yt_0100071.pt",
+      "video_id": "-z_SvMblSBA",
+      "n_windows": 112,
+      "speed_mean": 6.3847,
+      "yaw_rate_mean": -0.0094,
+      "steer_mean": -0.0376,
+      "long_accel_mean": 0.5264,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100072.pt",
+      "video_id": "-z_SvMblSBA",
+      "n_windows": 112,
+      "speed_mean": 5.8537,
+      "yaw_rate_mean": 0.014,
+      "steer_mean": 0.0002,
+      "long_accel_mean": 0.7793,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100073.pt",
+      "video_id": "-z_SvMblSBA",
+      "n_windows": 112,
+      "speed_mean": 5.4578,
+      "yaw_rate_mean": -0.0287,
+      "steer_mean": -0.0103,
+      "long_accel_mean": 1.272,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100074.pt",
+      "video_id": "-z_SvMblSBA",
+      "n_windows": 112,
+      "speed_mean": 8.6077,
+      "yaw_rate_mean": 0.0159,
+      "steer_mean": 0.0143,
+      "long_accel_mean": 0.5955,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100075.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 6.6524,
+      "yaw_rate_mean": 0.0036,
+      "steer_mean": 0.0018,
+      "long_accel_mean": 0.2361,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100076.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 5.2021,
+      "yaw_rate_mean": -0.0811,
+      "steer_mean": -0.0784,
+      "long_accel_mean": -0.1903,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100077.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 7.2552,
+      "yaw_rate_mean": 0.066,
+      "steer_mean": 0.046,
+      "long_accel_mean": 0.139,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100078.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 5.232,
+      "yaw_rate_mean": 0.0185,
+      "steer_mean": 0.0141,
+      "long_accel_mean": 0.2111,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100079.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 4.4,
+      "yaw_rate_mean": -0.0982,
+      "steer_mean": -0.0971,
+      "long_accel_mean": 0.3022,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100080.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 6.0466,
+      "yaw_rate_mean": -0.0103,
+      "steer_mean": -0.0196,
+      "long_accel_mean": -0.0607,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100081.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 4.678,
+      "yaw_rate_mean": -0.0349,
+      "steer_mean": -0.0307,
+      "long_accel_mean": -0.0404,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100082.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 4.9489,
+      "yaw_rate_mean": -0.091,
+      "steer_mean": -0.0566,
+      "long_accel_mean": 0.0936,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100083.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 4.7261,
+      "yaw_rate_mean": 0.0126,
+      "steer_mean": 0.0042,
+      "long_accel_mean": -0.2927,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100084.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 6.0453,
+      "yaw_rate_mean": -0.0182,
+      "steer_mean": -0.0152,
+      "long_accel_mean": -0.2753,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100085.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 4.3137,
+      "yaw_rate_mean": 0.0153,
+      "steer_mean": 0.0105,
+      "long_accel_mean": 0.2198,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100086.pt",
+      "video_id": "jjPQ7NJ361k",
+      "n_windows": 112,
+      "speed_mean": 5.4028,
+      "yaw_rate_mean": 0.0324,
+      "steer_mean": 0.0338,
+      "long_accel_mean": 0.3167,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100087.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 9.1169,
+      "yaw_rate_mean": -0.0608,
+      "steer_mean": -0.025,
+      "long_accel_mean": 0.2127,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100088.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 10.7861,
+      "yaw_rate_mean": -0.0325,
+      "steer_mean": -0.0052,
+      "long_accel_mean": 0.1582,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100089.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 7.4023,
+      "yaw_rate_mean": -0.1177,
+      "steer_mean": -0.0612,
+      "long_accel_mean": 0.2935,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100090.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 8.5322,
+      "yaw_rate_mean": -0.0434,
+      "steer_mean": -0.0164,
+      "long_accel_mean": 0.3543,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100091.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 10.4669,
+      "yaw_rate_mean": -0.0012,
+      "steer_mean": -0.0088,
+      "long_accel_mean": 0.3019,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100092.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 8.7791,
+      "yaw_rate_mean": 0.0052,
+      "steer_mean": -0.0008,
+      "long_accel_mean": 0.2058,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100093.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 11.2772,
+      "yaw_rate_mean": -0.0132,
+      "steer_mean": -0.0064,
+      "long_accel_mean": -0.2009,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100094.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 11.726,
+      "yaw_rate_mean": -0.0284,
+      "steer_mean": -0.0071,
+      "long_accel_mean": 0.4805,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100095.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 8.4076,
+      "yaw_rate_mean": -0.0474,
+      "steer_mean": -0.0122,
+      "long_accel_mean": 0.4102,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100096.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 11.5577,
+      "yaw_rate_mean": -0.0173,
+      "steer_mean": -0.002,
+      "long_accel_mean": 0.4547,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100097.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 10.3049,
+      "yaw_rate_mean": -0.0168,
+      "steer_mean": -0.0045,
+      "long_accel_mean": 0.4446,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100098.pt",
+      "video_id": "BkuehddzOj0",
+      "n_windows": 112,
+      "speed_mean": 11.7338,
+      "yaw_rate_mean": -0.0064,
+      "steer_mean": -0.0068,
+      "long_accel_mean": 0.495,
+      "excluded_as_contaminated": false
+    },
+    {
+      "file": "yt_0100099.pt",
+      "video_id": "-snaX_f6LHY",
+      "n_windows": 112,
+      "speed_mean": 5.8671,
+      "yaw_rate_mean": -0.0119,
+      "steer_mean": 0.0018,
+      "long_accel_mean": -0.3565,
+      "excluded_as_contaminated": false
+    }
+  ],
+  "elapsed_s": 123.4
+}

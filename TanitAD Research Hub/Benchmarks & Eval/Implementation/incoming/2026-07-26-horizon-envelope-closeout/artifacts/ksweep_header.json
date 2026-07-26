@@ -1,0 +1,184 @@
+{
+  "_experiment": "K-SWEEP with the ENVELOPE GUARD \u2014 closed-loop corridor_departure_rate + E1a's FULL OOD disjunction, K in [185, 20, 60, 70, 90, 120, 150]",
+  "_evidence_class": "MEASURED (ours; artifacts = this dir)",
+  "_instruments": {
+    "rollout": "taniteval.clhorizon.corridor_rollout (K free; pinned bit-identical to the incoming/ driver that produced the committed 30k gate co-primary)",
+    "emitter": "taniteval.corridor.stratified via clhorizon.emit",
+    "ood": "taniteval.ood.verdict \u2014 E1a's FULL disjunction (ratio > 1.5x OR steps leave the MEASURED envelope), with assert_envelope_verdict_consistent armed"
+  },
+  "_estimator": "episode_cluster_bootstrap (taniteval/ci.py) B=2000, unit = val EPISODE; PAIRED form for K-vs-K deltas. overlapping_holdout_se is used NOWHERE.",
+  "_surface": "closed_loop (real-footage-in-the-loop). NEVER pooled with the open-loop dense surface.",
+  "ckpt": "/workspace/experiments/flagship-v4-fromscratch/ckpt.pt",
+  "ckpt_md5": "8771c1d9d3da696dcde2a745d628f6a8",
+  "ckpt_step": 29999,
+  "anchors_dense": "/workspace/experiments/flagship_v4_anchors_dense.pt",
+  "anchors_md5": "322358fac5bbf0f22692c0f251746a66",
+  "head_cfg": {
+    "n_anchors": 256,
+    "horizons": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "factorised": true,
+    "cond_vtarget": true,
+    "cond_route": true,
+    "cond_imagination": false
+  },
+  "goal_provenance": {
+    "goal_source": "oracle_gt_future",
+    "goal_fields": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "is_oracle": true,
+    "deployable": false,
+    "rule": "V4_FLAGSHIP_DESIGN.md:558-560 \u2014 no leaderboard number may come from a GT-derived plan or a GT-derived goal",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md \u00a71.4, PC1 item #5",
+    "_read": "the listed fields are minted from the EGO'S OWN FUTURE POSES. The model is told where it ends up, so this is an UPPER BOUND on a deployed number, not the deployed number. It is NOT comparable to an arm evaluated with a constant command (REF-C's historical `nav_cmd=None`) nor to one evaluated with a produced goal.",
+    "affected_published_numbers": [
+      {
+        "arm": "flagship v1.6",
+        "value_m": 0.4375,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v16.py:135-143",
+        "note": "the headline v1.6 number"
+      },
+      {
+        "arm": "flagship v1.5",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v15.py:92-103",
+        "note": "every v1.5 anchored-fan number"
+      },
+      {
+        "arm": "flagship v4 MODE B",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v4.py:322 (_goal_inputs)",
+        "note": "every v4 MODE-B number, including the 30k gate's primary"
+      }
+    ],
+    "disclosure_only": "this record changes NO number and NO code path. Removing the oracle requires a produced-goal head (PC1) and a re-run; the registry owner corrects the published values, not this script.",
+    "goal_mode": "oracle",
+    "goal_mode_fallback": null,
+    "oracle_fields_fed": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "vt_speed_note": "vt_speed is NOT in the oracle field list: `_goal_inputs` overwrites it with v0 = pose_last[:,3], the LAST OBSERVED speed, in training and in eval alike. GATE_PROTOCOL.md 0.8 and goal_provenance.py list it as an oracle field; that is a documentation error, corrected here against the code (train_flagship_v4.py `_goal_inputs`).",
+    "mode_semantics": {
+      "oracle": "route/route_graded/vt_band minted from the ego's own FUTURE poses. Historical path; upper bound, not deployable.",
+      "produced": "route/route_graded/vt_band derived from the model's own goal_head run on the encoded observation window. No future, no label. THE DEPLOYABLE PATH.",
+      "neutral": "the head's learned no-goal-given rows. The control that makes the oracle-vs-produced gap readable."
+    }
+  },
+  "goal_index_policy": "FOLLOW \u2014 the oracle goal is re-minted at EVERY rollout step at the reference index the model observes (t0 + mstar + W - 1).",
+  "goal_labeler_refusals": 0,
+  "val_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "val_parity": {
+    "corpus_key": "physicalai-val-0c5f7dac3b11",
+    "split": "val",
+    "cache_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "mode": "subset",
+    "episodes_expected": 600,
+    "episodes_loaded": 600,
+    "uid_source": "count-only-unrecorded",
+    "skip_hash": "f09e44db",
+    "episode_uid_sha256": "75a4d429be8cef8ea47a319e2033d792ee9eecbff033fad27dbb624b5634df20",
+    "episode_uid_sha256_expected": null,
+    "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+    "parity": true,
+    "checked": true,
+    "episodes_present": 600,
+    "registered_deployments": [
+      40,
+      600
+    ],
+    "deployment": {
+      "n_episodes": 600,
+      "role": "full build (the epcache split dir on the training pods)",
+      "where": "<epcache root>/physicalai-val-0c5f7dac3b11 \u2014 pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+      "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+      "evidence_class": "MEASURED"
+    },
+    "label": "val physicalai-val-0c5f7dac3b11",
+    "requested_episodes": 40,
+    "decision_grade": true,
+    "episodes_listed": 40
+  },
+  "n_episodes": 40,
+  "episode_T_min": 198,
+  "episode_T_max": 205,
+  "windows_at_each_horizon": {
+    "185": 41,
+    "20": 881,
+    "60": 681,
+    "70": 638,
+    "90": 521,
+    "120": 361,
+    "150": 238
+  },
+  "episodes_surviving_each_horizon": {
+    "185": 40,
+    "20": 40,
+    "60": 40,
+    "70": 40,
+    "90": 40,
+    "120": 40,
+    "150": 40
+  },
+  "stride": 8,
+  "batch": 16,
+  "n_boot": 2000,
+  "corridor_thresholds_m": [
+    1.0,
+    1.75,
+    2.5
+  ],
+  "corridor_primary_m": 1.75,
+  "junction_deg": 10.0,
+  "p1_envelope": "/root/lanekeep/lowood_flagship_ci.json",
+  "p1_baseline_ade2s": 0.4045,
+  "envelope_constants": {
+    "lat_max_m": 3.0,
+    "yaw_max_deg": 12.0,
+    "provenance": "P1 MEASURED (lowood_flagship_ci.json) on the flagship v1 arm \u2014 NOT on v4"
+  },
+  "ratio_supremum_analysis": {
+    "_what": "the EXACT supremum of OODMap.ratio_arr over ALL possible inputs, computed from the envelope JSON alone",
+    "sup_ratio": 1.298888,
+    "lat_max_excess": 0.16267,
+    "yaw_max_excess": 0.136218,
+    "can_ever_exceed_1p30": false,
+    "can_ever_exceed_1p50": false,
+    "_read": "OODMap.ratio_arr is 1 + clip((interp(lat)-base)/base,0,inf) + clip((interp(yaw)-base)/base,0,inf) and np.interp CLAMPS, so the ratio has a HARD CEILING. Any test of the form `ratio <= 1.30` or `ratio > 1.5` against this map is decided before the model runs."
+  },
+  "harness_checks_expected": {
+    "K185_overall_cdr": 0.6388,
+    "K185_n_win": 41,
+    "K20_overall_cdr": 0.0203,
+    "K20_n_win": 881,
+    "_source": "committed gate artifact coprimary/corridor_v4_30k_K185.json, same ckpt md5"
+  },
+  "results": {}
+}

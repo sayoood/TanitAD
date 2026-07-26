@@ -90,9 +90,13 @@ def summarise_channel(name, per_clip_values, seed=0):
            "estimator": (f"clip-cluster bootstrap, n_boot={N_BOOT}, seed={seed}; "
                          "resampling unit = harvested clip (NOT window, NOT "
                          "overlapping_holdout_se)")}
+    # `spread_p05_p95` is the load-bearing statistic for the out-of-corpus question:
+    # a head that stops trusting its input REGRESSES TO THE MEAN, which shows up as a
+    # collapsed spread long before it shows up in the mean. Bootstrapped like the rest.
     for label, fn in (("mean", np.mean), ("median", np.median),
                       ("p05", lambda a: np.percentile(a, 5)),
                       ("p95", lambda a: np.percentile(a, 95)),
+                      ("spread_p05_p95", lambda a: np.percentile(a, 95) - np.percentile(a, 5)),
                       ("std", np.std),
                       ("frac_outside_physical_limits", frac_impossible)):
         pt, lo, hi, nc, nw = clip_cluster_bootstrap(per_clip_values, fn, seed=seed)
@@ -105,6 +109,40 @@ def summarise_channel(name, per_clip_values, seed=0):
         out["min"] = round(float(pooled.min()), 5)
         out["max"] = round(float(pooled.max()), 5)
     return out
+
+
+def spread_ratio_ci(yt_vals, ref_vals, n_boot=N_BOOT, seed=0):
+    """95% CI of  spread(YouTube) / spread(PhysicalAI)  where spread = p95 - p05.
+
+    The two corpora are INDEPENDENT samples, so both are resampled at the CLIP level
+    independently and the ratio is recomputed on each pair of draws. This is the
+    headline out-of-corpus statistic: a ratio well below 1 with a CI excluding 1 means
+    the channel's predicted range COLLAPSES off-domain (regression to the training
+    prior) even when the two means are indistinguishable.
+    """
+    if not yt_vals or not ref_vals:
+        return None
+    rng = np.random.default_rng(seed)
+
+    def sp(a):
+        return float(np.percentile(a, 95) - np.percentile(a, 5))
+
+    point = sp(np.concatenate(yt_vals)) / sp(np.concatenate(ref_vals))
+    ny, nr = len(yt_vals), len(ref_vals)
+    draws = np.empty(n_boot, dtype=float)
+    for b in range(n_boot):
+        y = np.concatenate([yt_vals[i] for i in rng.integers(0, ny, ny)])
+        r = np.concatenate([ref_vals[i] for i in rng.integers(0, nr, nr)])
+        d = sp(r)
+        draws[b] = sp(y) / d if d else np.nan
+    draws = draws[np.isfinite(draws)]
+    lo, hi = np.percentile(draws, [2.5, 97.5])
+    return {"spread_ratio_yt_over_physicalai": round(point, 4),
+            "ci95": [round(float(lo), 4), round(float(hi), 4)],
+            "excludes_1": bool(hi < 1.0 or lo > 1.0),
+            "estimator": (f"independent clip-cluster bootstrap of BOTH corpora, "
+                          f"n_boot={n_boot}, seed={seed}; statistic = "
+                          f"(p95-p05)_youtube / (p95-p05)_physicalai")}
 
 
 def load_latent_dir(latdir, pattern="yt_*.pt"):
@@ -177,7 +215,7 @@ def main():
                 for c, v in chans_clean.items()} if n_excluded else None
 
     # ---------------- PhysicalAI in-corpus reference (SEPARATE, never pooled) ----
-    ref = {}
+    ref, ratios = {}, {}
     refdir = Path(args.ref_latents)
     if refdir.is_dir():
         rfiles = sorted(refdir.glob(f"{args.ref_tags}*.pt"))[:args.ref_max]
@@ -193,6 +231,9 @@ def main():
             ref = {c: summarise_channel(c, v, seed=args.seed) for c, v in rch.items()}
             ref["_n_ref_clips"] = len(rfiles)
             ref["_source"] = str(refdir) + f" tags={args.ref_tags}*"
+            # the headline out-of-corpus statistic, with its own interval
+            for c in ih.SCALAR_NAMES:
+                ratios[c] = spread_ratio_ci(chans_all[c], rch[c], seed=args.seed)
     else:
         ref = {"_skipped": f"reference latent dir not found: {refdir}"}
 
@@ -222,6 +263,11 @@ def main():
         "youtube_all_clips": yt_all,
         "youtube_contamination_excluded": yt_clean,
         "physicalai_reference_SEPARATE_never_pooled": ref,
+        "HEADLINE_spread_ratio_out_of_corpus": ratios,
+        "spread_ratio_reading": (
+            "ratio << 1 with a CI excluding 1 = the channel's predicted RANGE collapses "
+            "off-domain (regression to the training prior) even where the MEANS are "
+            "indistinguishable. A mean-only or aggregate score cannot see this."),
         "per_clip": per_clip_rows,
         "elapsed_s": round(time.time() - t0, 1),
     }
@@ -231,8 +277,15 @@ def main():
     for c in ih.SCALAR_NAMES:
         a = yt_all[c]
         print(f"  {c:11s} mean {a['mean']} CI {a['mean_ci95']}  "
+              f"spread {a['spread_p05_p95']} CI {a['spread_p05_p95_ci95']}  "
               f"outside-limits {a['frac_outside_physical_limits']} "
               f"CI {a['frac_outside_physical_limits_ci95']}")
+    if ratios:
+        print("  --- HEADLINE spread ratio YT/PhysicalAI ---")
+        for c, r in ratios.items():
+            if r:
+                print(f"    {c:11s} {r['spread_ratio_yt_over_physicalai']} "
+                      f"CI {r['ci95']}  excludes_1={r['excludes_1']}")
 
 
 if __name__ == "__main__":

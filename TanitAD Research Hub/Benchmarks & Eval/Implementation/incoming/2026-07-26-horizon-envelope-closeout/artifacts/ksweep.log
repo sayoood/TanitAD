@@ -1,0 +1,21 @@
+[parity] val physicalai-val-0c5f7dac3b11: physicalai-val-0c5f7dac3b11 count OK (600/600) — NO uid digest committed for this split, so this is a COUNT-ONLY check. Upgrade it once on a pod: scripts/make_parity_manifest.py --record --split val --cache-dir <verified cache>
+[parity] val physicalai-val-0c5f7dac3b11: physicalai-val-0c5f7dac3b11 val OK — 600 episodes (full build (the epcache split dir on the training pods)), COUNT-ONLY (manifest carries no uid digest).
+[ksweep] 40 eps | T in [198,205] | K order [185, 20, 60, 70, 90, 120, 150] | dev cuda
+[ksweep] windows at stride 8: {185: 41, 20: 881, 60: 681, 70: 638, 90: 521, 120: 361, 150: 238}
+[v4-eval] loaded TRAINED dense anchors from /workspace/experiments/flagship_v4_anchors_dense.pt
+[v4-eval] loaded goal_head (GoalScalarHead in_dim=2048 hidden=128 n_out=4) -- --goal-mode produced is AVAILABLE on this checkpoint
+[v4-eval] MODE B: loaded v4 head cfg from sibling config.json (/workspace/experiments/flagship-v4-fromscratch/config.json)
+  n_anchors=256 horizons=1..20 (n=20) cond(states/imag/vtarget/route)=True/False/True/True factorised=True step=29999
+[ksweep] goal oracle minted for 7964 indices in 14s; refusals 0
+==============================================================================
+[goal-oracle] eval_flagship_v4: THIS EVALUATION FEEDS A GOAL ORACLE.
+[goal-oracle]   fields from the ego's own future: vt_band, route, route_graded
+[goal-oracle]   -> the resulting ADE is an UPPER BOUND, not a deployable number,
+[goal-oracle]      and violates V4_FLAGSHIP_DESIGN.md:558-560 as a leaderboard value.
+[goal-oracle]   -> known affected published numbers: v1.5, v1.6 (0.4375), v4 MODE B.
+==============================================================================
+[ksweep] ratio_arr SUPREMUM = 1.298888  (can exceed 1.30? False; 1.50? False)
+[ksweep] K= 185 ( 18.5s) n_win=   41 n_ep= 40 CDR@1.75=0.6388 [0.5565,0.7128] peakXTE=33.452 | OOD: steps_out=0.5900 win_out=0.9024 ratio=1.2741 c1=False c2=True -> EXTRAPOLATION — NOT a me (339s)
+[ksweep] K=  20 (  2.0s) n_win=  881 n_ep= 40 CDR@1.75=0.0203 [0.0078,0.0364] peakXTE=0.630 | OOD: steps_out=0.0531 win_out=0.1226 ratio=1.0504 c1=False c2=True -> PARTIAL EXTRAPOLATION —  (608s)
+[ksweep] K=  60 (  6.0s) n_win=  681 n_ep= 40 CDR@1.75=0.2618 [0.2025,0.3243] peakXTE=5.351 | OOD: steps_out=0.2291 win_out=0.5066 ratio=1.1693 c1=False c2=True -> EXTRAPOLATION — NOT a me (1369s)
+[ksweep] K=  70 (  7.0s) n_win=  638 n_ep= 40 CDR@1.75=0.3195 [0.2549,0.3839] peakXTE=6.961 | OOD: steps_out=0.2759 win_out=0.5987 ratio=1.1898 c1=False c2=True -> EXTRAPOLATION — NOT a me (1470s)

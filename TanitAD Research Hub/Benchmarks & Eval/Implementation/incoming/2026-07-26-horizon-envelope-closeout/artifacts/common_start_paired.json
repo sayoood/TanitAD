@@ -1,0 +1,703 @@
+{
+ "_experiment": "common-start PAIRED K contrast, closed loop",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py) B=2000, unit = val EPISODE. overlapping_holdout_se used NOWHERE.",
+ "_caveat": "paired on window IDENTITY, not on trajectory \u2014 each K is its own rollout and the nearest-reference search range is K+1, so the same window is fed a different frame at different K. Removes the window-composition confound, not the reference-range one.",
+ "reference_K": 20,
+ "n_common_windows": 41,
+ "n_common_episodes": 40,
+ "n_by_stratum": {
+  "overall": 41,
+  "junction": 6,
+  "longitudinal": 18,
+  "other": 17
+ },
+ "horizons": [
+  20,
+  60,
+  70,
+  185
+ ],
+ "per_K": {
+  "20": {
+   "overall": {
+    "n_windows": 41,
+    "n_episodes": 40,
+    "corridor_departure_rate": {
+     "mean": 0.0146,
+     "lo": 0.0,
+     "hi": 0.0412,
+     "ci95": 0.0206,
+     "se": 0.0115,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 0.4991,
+     "lo": 0.2904,
+     "hi": 0.7815,
+     "ci95": 0.2455,
+     "se": 0.1278,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.02805,
+    "frac_windows_any_step_out_of_envelope": 0.0488,
+    "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there"
+   },
+   "junction": {
+    "n_windows": 6,
+    "n_episodes": 6,
+    "corridor_departure_rate": {
+     "mean": 0.1,
+     "lo": 0.0,
+     "hi": 0.25,
+     "ci95": 0.125,
+     "se": 0.0681,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 1.7285,
+     "lo": 0.7364,
+     "hi": 3.1164,
+     "ci95": 1.19,
+     "se": 0.6258,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.19167,
+    "frac_windows_any_step_out_of_envelope": 0.3333,
+    "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there"
+   },
+   "longitudinal": {
+    "n_windows": 18,
+    "n_episodes": 18,
+    "corridor_departure_rate": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "se": 0.0,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 0.413,
+     "lo": 0.2894,
+     "hi": 0.5418,
+     "ci95": 0.1262,
+     "se": 0.064,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.0,
+    "frac_windows_any_step_out_of_envelope": 0.0,
+    "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope"
+   },
+   "other": {
+    "n_windows": 17,
+    "n_episodes": 16,
+    "corridor_departure_rate": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "se": 0.0,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 0.1563,
+     "lo": 0.0806,
+     "hi": 0.2449,
+     "ci95": 0.0821,
+     "se": 0.0431,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.0,
+    "frac_windows_any_step_out_of_envelope": 0.0,
+    "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope"
+   }
+  },
+  "60": {
+   "overall": {
+    "n_windows": 41,
+    "n_episodes": 40,
+    "corridor_departure_rate": {
+     "mean": 0.2455,
+     "lo": 0.1687,
+     "hi": 0.3236,
+     "ci95": 0.0775,
+     "se": 0.0403,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 4.3414,
+     "lo": 2.9978,
+     "hi": 5.8353,
+     "ci95": 1.4188,
+     "se": 0.712,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.19268,
+    "frac_windows_any_step_out_of_envelope": 0.5122,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "junction": {
+    "n_windows": 6,
+    "n_episodes": 6,
+    "corridor_departure_rate": {
+     "mean": 0.575,
+     "lo": 0.3917,
+     "hi": 0.7139,
+     "ci95": 0.1611,
+     "se": 0.0839,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 10.7259,
+     "lo": 6.6189,
+     "hi": 15.2978,
+     "ci95": 4.3395,
+     "se": 2.2268,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.61389,
+    "frac_windows_any_step_out_of_envelope": 1.0,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "longitudinal": {
+    "n_windows": 18,
+    "n_episodes": 18,
+    "corridor_departure_rate": {
+     "mean": 0.2556,
+     "lo": 0.1519,
+     "hi": 0.3602,
+     "ci95": 0.1042,
+     "se": 0.0515,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 4.5024,
+     "lo": 2.9722,
+     "hi": 6.0869,
+     "ci95": 1.5573,
+     "se": 0.7724,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.16389,
+    "frac_windows_any_step_out_of_envelope": 0.5556,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "other": {
+    "n_windows": 17,
+    "n_episodes": 16,
+    "corridor_departure_rate": {
+     "mean": 0.1186,
+     "lo": 0.0386,
+     "hi": 0.2177,
+     "ci95": 0.0896,
+     "se": 0.0457,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 1.9175,
+     "lo": 0.9486,
+     "hi": 3.1189,
+     "ci95": 1.0851,
+     "se": 0.5685,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.07451,
+    "frac_windows_any_step_out_of_envelope": 0.2941,
+    "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there"
+   }
+  },
+  "70": {
+   "overall": {
+    "n_windows": 41,
+    "n_episodes": 40,
+    "corridor_departure_rate": {
+     "mean": 0.3066,
+     "lo": 0.223,
+     "hi": 0.3893,
+     "ci95": 0.0831,
+     "se": 0.0427,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 5.8245,
+     "lo": 4.1023,
+     "hi": 7.5653,
+     "ci95": 1.7315,
+     "se": 0.8786,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.24669,
+    "frac_windows_any_step_out_of_envelope": 0.5854,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "junction": {
+    "n_windows": 6,
+    "n_episodes": 6,
+    "corridor_departure_rate": {
+     "mean": 0.6357,
+     "lo": 0.4786,
+     "hi": 0.7548,
+     "ci95": 0.1381,
+     "se": 0.0719,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 12.7959,
+     "lo": 8.2238,
+     "hi": 17.3552,
+     "ci95": 4.5657,
+     "se": 2.3796,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.66905,
+    "frac_windows_any_step_out_of_envelope": 1.0,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "longitudinal": {
+    "n_windows": 18,
+    "n_episodes": 18,
+    "corridor_departure_rate": {
+     "mean": 0.3238,
+     "lo": 0.2127,
+     "hi": 0.431,
+     "ci95": 0.1091,
+     "se": 0.0546,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 6.4203,
+     "lo": 4.2636,
+     "hi": 8.6872,
+     "ci95": 2.2118,
+     "se": 1.1366,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.23095,
+    "frac_windows_any_step_out_of_envelope": 0.6667,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "other": {
+    "n_windows": 17,
+    "n_episodes": 16,
+    "corridor_departure_rate": {
+     "mean": 0.1723,
+     "lo": 0.0786,
+     "hi": 0.2839,
+     "ci95": 0.1027,
+     "se": 0.0531,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 2.7332,
+     "lo": 1.5157,
+     "hi": 4.184,
+     "ci95": 1.3342,
+     "se": 0.6897,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.11429,
+    "frac_windows_any_step_out_of_envelope": 0.3529,
+    "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there"
+   }
+  },
+  "185": {
+   "overall": {
+    "n_windows": 41,
+    "n_episodes": 40,
+    "corridor_departure_rate": {
+     "mean": 0.6388,
+     "lo": 0.5565,
+     "hi": 0.7128,
+     "ci95": 0.0782,
+     "se": 0.0398,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 33.4522,
+     "lo": 24.1521,
+     "hi": 43.8093,
+     "ci95": 9.8286,
+     "se": 5.1023,
+     "reducer": "mean",
+     "n_windows": 41,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.58998,
+    "frac_windows_any_step_out_of_envelope": 0.9024,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "junction": {
+    "n_windows": 6,
+    "n_episodes": 6,
+    "corridor_departure_rate": {
+     "mean": 0.8432,
+     "lo": 0.7874,
+     "hi": 0.8919,
+     "ci95": 0.0523,
+     "se": 0.0272,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 33.5723,
+     "lo": 19.6865,
+     "hi": 49.2589,
+     "ci95": 14.7862,
+     "se": 7.528,
+     "reducer": "mean",
+     "n_windows": 6,
+     "n_episodes": 6,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.87477,
+    "frac_windows_any_step_out_of_envelope": 1.0,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "longitudinal": {
+    "n_windows": 18,
+    "n_episodes": 18,
+    "corridor_departure_rate": {
+     "mean": 0.6871,
+     "lo": 0.6138,
+     "hi": 0.7496,
+     "ci95": 0.0679,
+     "se": 0.0352,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 46.9618,
+     "lo": 31.1582,
+     "hi": 64.5348,
+     "ci95": 16.6883,
+     "se": 8.6724,
+     "reducer": "mean",
+     "n_windows": 18,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.63033,
+    "frac_windows_any_step_out_of_envelope": 0.9444,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   },
+   "other": {
+    "n_windows": 17,
+    "n_episodes": 16,
+    "corridor_departure_rate": {
+     "mean": 0.5154,
+     "lo": 0.3807,
+     "hi": 0.652,
+     "ci95": 0.1357,
+     "se": 0.0688,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "peak_xte_m": {
+     "mean": 19.1055,
+     "lo": 10.3383,
+     "hi": 31.2917,
+     "ci95": 10.4767,
+     "se": 5.5055,
+     "reducer": "mean",
+     "n_windows": 17,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_steps_any_out_of_envelope": 0.44674,
+    "frac_windows_any_step_out_of_envelope": 0.8235,
+    "EXTRAPOLATION_VERDICT": "EXTRAPOLATION \u2014 NOT a measurement at this horizon"
+   }
+  }
+ },
+ "paired_delta_vs_K20": {
+  "60": {
+   "overall": {
+    "delta": 0.2309,
+    "lo": 0.1603,
+    "hi": 0.3025,
+    "ci95": 0.0711,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 41,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=60) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "junction": {
+    "delta": 0.475,
+    "lo": 0.3361,
+    "hi": 0.5861,
+    "ci95": 0.125,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 6,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=60) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "longitudinal": {
+    "delta": 0.2556,
+    "lo": 0.1519,
+    "hi": 0.3602,
+    "ci95": 0.1042,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 18,
+    "n_episodes": 18,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=60) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "other": {
+    "delta": 0.1186,
+    "lo": 0.0386,
+    "hi": 0.2177,
+    "ci95": 0.0896,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 17,
+    "n_episodes": 16,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=60) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   }
+  },
+  "70": {
+   "overall": {
+    "delta": 0.292,
+    "lo": 0.2151,
+    "hi": 0.3689,
+    "ci95": 0.0769,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 41,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=70) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "junction": {
+    "delta": 0.5357,
+    "lo": 0.4107,
+    "hi": 0.6393,
+    "ci95": 0.1143,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 6,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=70) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "longitudinal": {
+    "delta": 0.3238,
+    "lo": 0.2127,
+    "hi": 0.431,
+    "ci95": 0.1091,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 18,
+    "n_episodes": 18,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=70) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "other": {
+    "delta": 0.1723,
+    "lo": 0.0786,
+    "hi": 0.2839,
+    "ci95": 0.1027,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 17,
+    "n_episodes": 16,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=70) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   }
+  },
+  "185": {
+   "overall": {
+    "delta": 0.6241,
+    "lo": 0.5455,
+    "hi": 0.6952,
+    "ci95": 0.0749,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 41,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=185) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "junction": {
+    "delta": 0.7432,
+    "lo": 0.6259,
+    "hi": 0.827,
+    "ci95": 0.1006,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 6,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=185) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "longitudinal": {
+    "delta": 0.6871,
+    "lo": 0.6138,
+    "hi": 0.7496,
+    "ci95": 0.0679,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 18,
+    "n_episodes": 18,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=185) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   },
+   "other": {
+    "delta": 0.5154,
+    "lo": 0.3807,
+    "hi": 0.652,
+    "ci95": 0.1357,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 17,
+    "n_episodes": 16,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "CDR(K=185) - CDR(K=20) on the SAME windows; POSITIVE = longer horizon departs more"
+   }
+  }
+ }
+}
