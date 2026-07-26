@@ -1,0 +1,904 @@
+{
+  "repo": "nvidia/PhysicalAI-Autonomous-Vehicles",
+  "files": {
+    "features.csv": {
+      "n_rows": 36,
+      "columns": [
+        "feature",
+        "directory",
+        "chunk_path",
+        "clip_files_in_zip"
+      ],
+      "records": [
+        {
+          "feature": "egomotion",
+          "directory": "labels",
+          "chunk_path": "labels/egomotion/egomotion.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"egomotion\": \"{clip_id}.egomotion.parquet\"}"
+        },
+        {
+          "feature": "egomotion.offline",
+          "directory": "labels",
+          "chunk_path": "labels/egomotion.offline/egomotion.offline.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"egomotion.offline\": \"{clip_id}.egomotion.offline.parquet\"}"
+        },
+        {
+          "feature": "obstacle.offline",
+          "directory": "labels",
+          "chunk_path": "labels/obstacle.offline/obstacle.offline.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"obstacle.offline\": \"{clip_id}.obstacle.offline.parquet\"}"
+        },
+        {
+          "feature": "camera_intrinsics",
+          "directory": "calibration",
+          "chunk_path": "calibration/camera_intrinsics/camera_intrinsics.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "camera_intrinsics.offline",
+          "directory": "calibration",
+          "chunk_path": "calibration/camera_intrinsics.offline/camera_intrinsics.offline.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "lidar_intrinsics.offline",
+          "directory": "calibration",
+          "chunk_path": "calibration/lidar_intrinsics.offline/lidar_intrinsics.offline.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "sensor_extrinsics",
+          "directory": "calibration",
+          "chunk_path": "calibration/sensor_extrinsics/sensor_extrinsics.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "sensor_extrinsics.offline",
+          "directory": "calibration",
+          "chunk_path": "calibration/sensor_extrinsics.offline/sensor_extrinsics.offline.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "vehicle_dimensions",
+          "directory": "calibration",
+          "chunk_path": "calibration/vehicle_dimensions/vehicle_dimensions.chunk_{chunk_id:04d}.parquet",
+          "clip_files_in_zip": null
+        },
+        {
+          "feature": "camera_cross_left_120fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_cross_left_120fov/camera_cross_left_120fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_cross_left_120fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_cross_left_120fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_cross_left_120fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_cross_right_120fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_cross_right_120fov/camera_cross_right_120fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_cross_right_120fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_cross_right_120fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_cross_right_120fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_front_tele_30fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_front_tele_30fov/camera_front_tele_30fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_front_tele_30fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_front_tele_30fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_front_tele_30fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_front_wide_120fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_front_wide_120fov/camera_front_wide_120fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_front_wide_120fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_front_wide_120fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_front_wide_120fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_rear_left_70fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_rear_left_70fov/camera_rear_left_70fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_rear_left_70fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_rear_left_70fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_rear_left_70fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_rear_right_70fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_rear_right_70fov/camera_rear_right_70fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_rear_right_70fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_rear_right_70fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_rear_right_70fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "camera_rear_tele_30fov",
+          "directory": "camera",
+          "chunk_path": "camera/camera_rear_tele_30fov/camera_rear_tele_30fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"video\": \"{clip_id}.camera_rear_tele_30fov.mp4\", \"frame_timestamps\": \"{clip_id}.camera_rear_tele_30fov.timestamps.parquet\", \"blurred_boxes\": \"{clip_id}.camera_rear_tele_30fov.blurred_boxes.parquet\"}"
+        },
+        {
+          "feature": "lidar_top_360fov",
+          "directory": "lidar",
+          "chunk_path": "lidar/lidar_top_360fov/lidar_top_360fov.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"pointclouds\": \"{clip_id}.lidar_top_360fov.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_front_left_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_front_left_srr_0/radar_corner_front_left_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_front_left_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_front_left_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_front_left_srr_3/radar_corner_front_left_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_front_left_srr_3.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_front_right_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_front_right_srr_0/radar_corner_front_right_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_front_right_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_front_right_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_front_right_srr_3/radar_corner_front_right_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_front_right_srr_3.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_rear_left_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_rear_left_srr_0/radar_corner_rear_left_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_rear_left_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_rear_left_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_rear_left_srr_3/radar_corner_rear_left_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_rear_left_srr_3.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_rear_right_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_rear_right_srr_0/radar_corner_rear_right_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_rear_right_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_corner_rear_right_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_corner_rear_right_srr_3/radar_corner_rear_right_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_corner_rear_right_srr_3.parquet\"}"
+        },
+        {
+          "feature": "radar_front_center_imaging_lrr_1",
+          "directory": "radar",
+          "chunk_path": "radar/radar_front_center_imaging_lrr_1/radar_front_center_imaging_lrr_1.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_front_center_imaging_lrr_1.parquet\"}"
+        },
+        {
+          "feature": "radar_front_center_mrr_2",
+          "directory": "radar",
+          "chunk_path": "radar/radar_front_center_mrr_2/radar_front_center_mrr_2.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_front_center_mrr_2.parquet\"}"
+        },
+        {
+          "feature": "radar_front_center_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_front_center_srr_0/radar_front_center_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_front_center_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_rear_left_mrr_2",
+          "directory": "radar",
+          "chunk_path": "radar/radar_rear_left_mrr_2/radar_rear_left_mrr_2.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_rear_left_mrr_2.parquet\"}"
+        },
+        {
+          "feature": "radar_rear_left_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_rear_left_srr_0/radar_rear_left_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_rear_left_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_rear_right_mrr_2",
+          "directory": "radar",
+          "chunk_path": "radar/radar_rear_right_mrr_2/radar_rear_right_mrr_2.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_rear_right_mrr_2.parquet\"}"
+        },
+        {
+          "feature": "radar_rear_right_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_rear_right_srr_0/radar_rear_right_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_rear_right_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_side_left_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_side_left_srr_0/radar_side_left_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_side_left_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_side_left_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_side_left_srr_3/radar_side_left_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_side_left_srr_3.parquet\"}"
+        },
+        {
+          "feature": "radar_side_right_srr_0",
+          "directory": "radar",
+          "chunk_path": "radar/radar_side_right_srr_0/radar_side_right_srr_0.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_side_right_srr_0.parquet\"}"
+        },
+        {
+          "feature": "radar_side_right_srr_3",
+          "directory": "radar",
+          "chunk_path": "radar/radar_side_right_srr_3/radar_side_right_srr_3.chunk_{chunk_id:04d}.zip",
+          "clip_files_in_zip": "{\"scans\": \"{clip_id}.radar_side_right_srr_3.parquet\"}"
+        }
+      ]
+    },
+    "clip_index.parquet": {
+      "name": "clip_index.parquet",
+      "n_rows": 306152,
+      "columns": [
+        {
+          "col": "clip_id",
+          "dtype": "str",
+          "n_unique": 306152,
+          "n_null": 0,
+          "sample": [
+            "clip:085661e6",
+            "clip:893a24f1",
+            "clip:ecb37d87",
+            "clip:ff995cdf",
+            "clip:9471c62e",
+            "clip:38a982b9",
+            "clip:3f310d4c",
+            "clip:52ffe29c"
+          ]
+        },
+        {
+          "col": "clip_is_valid",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "chunk",
+          "dtype": "int64",
+          "n_unique": 3146,
+          "n_null": 0,
+          "true_frac": null,
+          "sample": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "col": "split",
+          "dtype": "str",
+          "n_unique": 3,
+          "n_null": 0,
+          "values": {
+            "train": 153625,
+            "val": 90928,
+            "test": 61599
+          }
+        }
+      ]
+    },
+    "metadata/data_collection.parquet": {
+      "name": "metadata/data_collection.parquet",
+      "n_rows": 306152,
+      "columns": [
+        {
+          "col": "clip_id",
+          "dtype": "str",
+          "n_unique": 306152,
+          "n_null": 0,
+          "sample": [
+            "clip:085661e6",
+            "clip:893a24f1",
+            "clip:ecb37d87",
+            "clip:ff995cdf",
+            "clip:9471c62e",
+            "clip:38a982b9",
+            "clip:3f310d4c",
+            "clip:52ffe29c"
+          ]
+        },
+        {
+          "col": "country",
+          "dtype": "str",
+          "n_unique": 25,
+          "n_null": 0,
+          "values": {
+            "United States": 155360,
+            "Germany": 43900,
+            "France": 10364,
+            "Italy": 8658,
+            "Sweden": 7330,
+            "Spain": 6459,
+            "Portugal": 6101,
+            "Greece": 5885,
+            "Austria": 5451,
+            "Finland": 5176,
+            "Croatia": 4961,
+            "Netherlands": 4932,
+            "Denmark": 4581,
+            "Slovenia": 4301,
+            "Estonia": 4128,
+            "Slovakia": 4122,
+            "Belgium": 3753,
+            "Czechia": 3662,
+            "Lithuania": 3392,
+            "Poland": 3232,
+            "Romania": 2719,
+            "Luxembourg": 2620,
+            "Latvia": 2173,
+            "Hungary": 1960,
+            "Bulgaria": 932
+          }
+        },
+        {
+          "col": "month",
+          "dtype": "int64",
+          "n_unique": 12,
+          "n_null": 0,
+          "true_frac": null,
+          "values": {
+            "1": 40310,
+            "12": 37134,
+            "11": 33399,
+            "8": 32917,
+            "9": 28220,
+            "2": 26586,
+            "10": 22662,
+            "5": 19407,
+            "7": 19236,
+            "3": 17836,
+            "4": 15068,
+            "6": 13377
+          }
+        },
+        {
+          "col": "hour_of_day",
+          "dtype": "int64",
+          "n_unique": 24,
+          "n_null": 0,
+          "true_frac": null,
+          "values": {
+            "18": 19436,
+            "19": 19230,
+            "10": 18840,
+            "17": 18450,
+            "20": 18313,
+            "12": 17951,
+            "9": 17235,
+            "8": 16884,
+            "11": 16736,
+            "21": 15239,
+            "14": 15188,
+            "13": 15081,
+            "16": 14956,
+            "15": 14552,
+            "7": 12692,
+            "22": 11049,
+            "23": 8259,
+            "6": 8194,
+            "0": 6984,
+            "5": 4941,
+            "4": 4806,
+            "3": 4777,
+            "2": 3491,
+            "1": 2868
+          }
+        },
+        {
+          "col": "platform_class",
+          "dtype": "str",
+          "n_unique": 2,
+          "n_null": 0,
+          "values": {
+            "hyperion_8.1": 218588,
+            "hyperion_8": 87564
+          }
+        },
+        {
+          "col": "radar_config",
+          "dtype": "str",
+          "n_unique": 3,
+          "n_null": 145391,
+          "values": {
+            "nan": 145391,
+            "low": 87197,
+            "med": 50747,
+            "high": 22817
+          }
+        }
+      ]
+    },
+    "metadata/feature_presence.parquet": {
+      "name": "metadata/feature_presence.parquet",
+      "n_rows": 306152,
+      "columns": [
+        {
+          "col": "clip_id",
+          "dtype": "str",
+          "n_unique": 306152,
+          "n_null": 0,
+          "sample": [
+            "clip:085661e6",
+            "clip:893a24f1",
+            "clip:ecb37d87",
+            "clip:ff995cdf",
+            "clip:9471c62e",
+            "clip:38a982b9",
+            "clip:3f310d4c",
+            "clip:52ffe29c"
+          ]
+        },
+        {
+          "col": "egomotion",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "egomotion.offline",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "obstacle.offline",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "camera_intrinsics",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_intrinsics.offline",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "lidar_intrinsics.offline",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "sensor_extrinsics",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "sensor_extrinsics.offline",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "vehicle_dimensions",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_cross_left_120fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_cross_right_120fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_front_tele_30fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_front_wide_120fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_rear_left_70fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_rear_right_70fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "camera_rear_tele_30fov",
+          "dtype": "bool",
+          "n_unique": 1,
+          "n_null": 0,
+          "true_frac": 1.0,
+          "values": {
+            "True": 306152
+          }
+        },
+        {
+          "col": "lidar_top_360fov",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.974438,
+          "values": {
+            "True": 298326,
+            "False": 7826
+          }
+        },
+        {
+          "col": "radar_corner_front_left_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_corner_front_left_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_corner_front_right_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_corner_front_right_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_corner_rear_left_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_corner_rear_left_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_corner_rear_right_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_corner_rear_right_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_front_center_imaging_lrr_1",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_front_center_mrr_2",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_front_center_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_rear_left_mrr_2",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_rear_left_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_rear_right_mrr_2",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.240286,
+          "values": {
+            "False": 232588,
+            "True": 73564
+          }
+        },
+        {
+          "col": "radar_rear_right_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_side_left_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_side_left_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.074528,
+          "values": {
+            "False": 283335,
+            "True": 22817
+          }
+        },
+        {
+          "col": "radar_side_right_srr_0",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.284816,
+          "values": {
+            "False": 218955,
+            "True": 87197
+          }
+        },
+        {
+          "col": "radar_side_right_srr_3",
+          "dtype": "bool",
+          "n_unique": 2,
+          "n_null": 0,
+          "true_frac": 0.074528,
+          "values": {
+            "False": 283335,
+            "True": 22817
+          }
+        }
+      ]
+    },
+    "reasoning/ood_reasoning.parquet": {
+      "name": "reasoning/ood_reasoning.parquet",
+      "n_rows": 1740,
+      "columns": [
+        {
+          "col": "clip_id",
+          "dtype": "str",
+          "n_unique": 1740,
+          "n_null": 0,
+          "sample": [
+            "clip:f60d70c8",
+            "clip:7ef3361d",
+            "clip:e25362b6",
+            "clip:7b0a1d42",
+            "clip:9f7310a6",
+            "clip:4f1361b8",
+            "clip:84088df8",
+            "clip:7b9153ac"
+          ]
+        },
+        {
+          "col": "feature",
+          "dtype": "string",
+          "n_unique": 1,
+          "n_null": 0,
+          "values": {
+            "camera_front_wide_120fov": 1740
+          }
+        },
+        {
+          "col": "event_cluster",
+          "dtype": "string",
+          "n_unique": 9,
+          "n_null": 0,
+          "values": {
+            "WORK_ZONES_TEMP_TRAFFIC_CONTROL": 856,
+            "PEDESTRIAN_DENSITY_OR_CLOSE_PROXIMITY": 380,
+            "SPECIAL_OR_UNCOMMON_VEHICLE_BEHAVIOR": 260,
+            "CYCLISTS_AND_MICROMOBILITY_COMPLEX": 79,
+            "COMPLEX_INTERSECTION_INTERACTION": 50,
+            "OTHER_LONGTAIL": 39,
+            "EMERGENCY_INCIDENT_SCENE": 30,
+            "ROAD_DEBRIS_OR_SAFETY_TRACES": 23,
+            "ANIMALS_BIRDS_ROADKILL": 23
+          }
+        },
+        {
+          "col": "events",
+          "dtype": "string",
+          "n_unique": 1731,
+          "n_null": 9,
+          "sample": [
+            "[{\"event_start_frame\": 16, \"event_start_timestamp\": 1448872, \"coc\": \"Slow down for the one-way traffic control while navigating through the construction zone.\"}, {\"event_start_frame\": 36, \"event_start_timestamp\": 3448872...<truncated 55>",
+            "[{\"event_start_frame\": 122, \"event_start_timestamp\": 12187080, \"coc\": \"Stop at the stop sign while waiting for pedestrians to cross the street.\"}]",
+            "[{\"event_start_frame\": 123, \"event_start_timestamp\": 12186920, \"coc\": \"Gentle deceleration to yield the right-of-way to traffic on the through road when nearing the main road.\"}]",
+            "[{\"event_start_frame\": 113, \"event_start_timestamp\": 11166819, \"coc\": \"Gentle deceleration to maintain a safe distance from the lead truck ahead.\"}]",
+            "[{\"event_start_frame\": 131, \"event_start_timestamp\": 13069032, \"coc\": \"Lane change to the left while maintaining a safe distance from the lead vehicle ahead.\"}]",
+            "[{\"event_start_frame\": 30, \"event_start_timestamp\": 2914476, \"coc\": \"Decelerate when approaching the intersection.\"}]",
+            "[{\"event_start_frame\": 72, \"event_start_timestamp\": 7198027, \"coc\": \"Strong deceleration to maintain a safe distance from the pedestrian crossing the road.\"}]",
+            "[{\"event_start_frame\": 80, \"event_start_timestamp\": 7869386, \"coc\": \"Go straight and navigate through the construction zone with traffic cones.\"}]"
+          ]
+        },
+        {
+          "col": "split",
+          "dtype": "string",
+          "n_unique": 2,
+          "n_null": 0,
+          "values": {
+            "train": 1450,
+            "val": 290
+          }
+        }
+      ]
+    }
+  }
+}

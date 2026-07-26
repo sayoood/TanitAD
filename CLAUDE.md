@@ -129,7 +129,17 @@ path, a second name, and the tool that owns the fact. *(Cost this session: the V
 `/etc/vulkan/icd.d/`, not `/usr/share/` → "our pods cannot render" stood for **12 days** and blocked
 AlpaSim + CARLA. `ps -C python3` returns EMPTY for a healthy job because pods run
 `/workspace/venv/bin/python` → a near-miss "the VLM job is dead". `obstacle.offline` — 3D agent tracks
-on **96.90 %** of our corpus — was declared non-existent for days; our ingest reads 2 of 36 features.)*
+on **97.44 %** of the corpus — was declared non-existent for days; our ingest reads **4** of 36 features.)*
+⚠️ **The "2 of 36" in this very sentence was ITSELF stale — corrected 2026-07-26 to 4.** True of
+`physicalai_r0.py` alone, but the episode build also reads `camera_intrinsics` and `sensor_extrinsics`
+(`physicalai.py:153-154`) since D-016 R1. It had propagated into **≥7 documents including this one** —
+a stale absence-claim living inside the rule that warns about stale absence-claims.
+**And the answer to what is in the other 32 is now settled, at five independent probes:** there is
+**no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal**
+in PhysicalAI-AV — the card says verbatim *"we do not include open maps data"*, and `obstacle.offline`'s
+enum over **87,481 cuboids is 10 classes, all dynamic agents**. Stop re-asking; the strategic-brain
+topology must come from AlpaSim or an external corpus. *(Also settled: `egomotion` carries **no
+lat/lon/GNSS** — coordinates are clip-local metres, so **OSM map-matching on our traces is impossible**.)*
 
 **3. Finish before you start. An artifact on one disk or in one agent's context is NOT done.**
 Definition of done = **in the repo, staged, with its provenance**. *(LAL-v2 anticipation: implemented,
