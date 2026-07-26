@@ -108,11 +108,14 @@ def main():
         n = out[nm]
         if "d_corridor_departure_rate" in n:
             d = n["d_corridor_departure_rate"]
+            # `paired_episode_cluster_bootstrap` names its point estimate
+            # `delta`, not `mean` (the single-arm bootstrap's key).
+            pt = d.get("delta", d.get("mean"))
             print(f"{nm:14s} n={n['n_windows']:4d} "
                   f"{args.label_a}={n[f'cdr_{args.label_a}']:.4f} "
                   f"{args.label_b}={n[f'cdr_{args.label_b}']:.4f} "
-                  f"delta={d['mean']:+.4f} [{d['lo']:+.4f},{d['hi']:+.4f}]",
-                  flush=True)
+                  f"delta={pt:+.4f} [{d['lo']:+.4f},{d['hi']:+.4f}] "
+                  f"separated={d.get('separated')}", flush=True)
     print(f"PAIR_DONE -> {args.out}", flush=True)
 
 
