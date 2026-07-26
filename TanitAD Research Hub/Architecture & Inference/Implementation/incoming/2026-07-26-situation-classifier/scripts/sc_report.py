@@ -288,6 +288,80 @@ def main():
               ""]
     blocks["CAMERA"] = "\n".join(L)
 
+    # ---------------------------------------------------------------- VERDICT (computed, not typed)
+    L = ["| situation | C-POW | image arm above chance? | vision over ego? | median lead | "
+         "**PRE-REGISTERED VERDICT** |", "|---|---|---|---|---|---|"]
+    verdicts = {}
+    for s in SITS:
+        r = R["situations"][s]
+        pos = r["controls"]["C_POS_head_priv"]
+        neg_ok = not any(r["above_chance"].get(k, {}).get("separated") and
+                         r["above_chance"][k]["delta"] > 0
+                         for k in ("head_img_shuf", "ridge_img_shuf") if k in r["above_chance"])
+        img_arms = [k for k in ("head_img_ego", "ridge_img_ego", "head_img", "ridge_img")
+                    if k in r["above_chance"]]
+        above = [k for k in img_arms
+                 if r["above_chance"][k]["separated"] and r["above_chance"][k]["delta"] > 0]
+        over_ego = [k for k in img_arms
+                    if r["vs_head_ego"].get(k, {}).get("separated")
+                    and r["vs_head_ego"][k]["delta"] > 0]
+        lead = r["lead_time"].get("head_img_ego", {}).get("median_lead_s")
+        lead_ok = bool(lead is not None and lead >= R["min_useful_lead_s"])
+        pos_ok = bool(pos and pos.get("separated") and pos["delta"] > 0)
+        if r["C_POW"] != "OK" or not pos_ok:
+            v = "**UNPOWERED**"
+        elif above and over_ego and lead_ok and neg_ok:
+            v = "**A — the classifier works AND vision contributes**"
+        elif above and lead_ok and neg_ok:
+            v = "**A− — predictable, but not *from the camera* beyond ego state**"
+        elif not above and pos_ok:
+            v = "**B — the frozen v1 front-camera state does not expose it**"
+        else:
+            v = "**A− (lead-time or control condition unmet — see the row)**"
+        verdicts[s] = v
+        L.append(f"| **{PRETTY[s]}** | {r['C_POW']} ({r['n_pos_clusters']} clusters) | "
+                 f"{', '.join('`'+k+'`' for k in above) if above else '**none**'} | "
+                 f"{', '.join('`'+k+'`' for k in over_ego) if over_ego else '**none**'} | "
+                 f"{lead} s {'✅' if lead_ok else '❌'} | {v} |")
+    L += ["", f"*Evaluated in code by the rule fixed in `PRE_REGISTRATION.md` §7 — "
+              f"C-POS must separate, C-NEG must not, the median lead time must reach "
+              f"{R['min_useful_lead_s']} s, and a situation with fewer than 40 held-out positive "
+              f"clusters is `UNPOWERED` and gets no verdict at all.*"]
+    blocks["VERDICT"] = "\n".join(L)
+
+    # ------------------------------------------------- CV / the rank ladder (training side only)
+    T = json.load(open(os.path.join(art, "train_summary.json")))
+    L = ["### ⭐ The rank ladder, replicated on THESE targets (training-side CV, out-of-fold)\n",
+         "*A sibling stream MEASURED a monotone swamping dose-response on this same frozen v1 state "
+         "(ego 3.659× → +k16 3.685× → +k64 3.000× → +k256 2.116× → +k2048 1.59×; INHERITED). "
+         "This is the independent replication on the PI's three situations — **CV-AP is out-of-fold "
+         "on TRAIN, grouped by chunk, and is NOT a result** (only held-out output is quotable); it "
+         "is shown because it is where the ordering first appears, before the held-out side was "
+         "touched.*\n",
+         "| arm \\| config | mean CV-AP | selected? |", "|---|---|---|"]
+    sel = T["selected"]
+    for key in sorted(T["cv"]):
+        arm = key.split("|")[0]
+        vals = T["cv"][key]
+        if isinstance(next(iter(vals.values())), list):
+            m = sum(max(v) for v in vals.values()) / len(vals)
+        else:
+            m = sum(vals.values()) / len(vals)
+        s = sel.get(arm, {})
+        chosen = (f"pw{s.get('cfg',{}).get('pw')}|d{s.get('cfg',{}).get('d')}|"
+                  f"r{s.get('cfg',{}).get('r')}" if "cfg" in s else f"lam{s.get('lam')}")
+        mark = "⭐" if key.split("|", 1)[1].startswith(chosen) or (
+            "lam" in chosen and f"lam{s.get('lam'):g}" in key) else ""
+        L.append(f"| `{key}` | {m:.5f} | {mark} |")
+    L += ["", "**Every one of the ten arms selected rank 16 over rank 64.** The raw-2048 "
+              "concatenation arm (`head_img_ego_concat`) is the far end of the same ladder and it "
+              "is where the degradation is largest — see the held-out tables in §5.", ""]
+    L += ["| fold | chunks |", "|---|---|"]
+    for f, ch in sorted(T["folds"].items()):
+        L.append(f"| {f} | {len(ch)} chunks |")
+    L.append("")
+    blocks["CV"] = "\n".join(L)
+
     open(out, "w", encoding="utf-8", newline="\n").write(
         "\n\n".join(f"<!-- TABLES:{k} -->\n{v}\n<!-- /TABLES:{k} -->" for k, v in blocks.items()))
     for doc in sys.argv[3:]:

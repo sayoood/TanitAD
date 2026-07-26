@@ -1,0 +1,35 @@
+[parity] val physicalai-val-0c5f7dac3b11: physicalai-val-0c5f7dac3b11 count OK (600/600) — NO uid digest committed for this split, so this is a COUNT-ONLY check. Upgrade it once on a pod: scripts/make_parity_manifest.py --record --split val --cache-dir <verified cache>
+[parity] val physicalai-val-0c5f7dac3b11: physicalai-val-0c5f7dac3b11 val OK — 600 episodes (full build (the epcache split dir on the training pods)), COUNT-ONLY (manifest carries no uid digest).
+[prep] 40 episodes; encoding all frames once (this is what makes the full-obs arm free)
+  [encode] episode 0/40 (1s)
+[prep] encoding done in 46s
+[blindimag] windows: episode 0/40 (1 so far)
+[prep] 41 windows at K=185
+RECONSTRUCTION GATE: {
+ "own": {
+  "max_abs_diff_steer": 3.762543201446533e-07,
+  "max_abs_diff_accel": 2.384185791015625e-07,
+  "reproduces": true
+ },
+ "own_op": {
+  "max_abs_diff_steer": 3.8370490074157715e-07,
+  "max_abs_diff_accel": 2.384185791015625e-07,
+  "reproduces": true
+ },
+ "gtkin": {
+  "max_abs_diff_steer": 0.08245734125375748,
+  "max_abs_diff_accel": 2.384185791015625e-07,
+  "reproduces": false
+ },
+ "own_frozen": {
+  "max_abs_diff_steer": 3.501772880554199e-07,
+  "max_abs_diff_accel": 2.384185791015625e-07,
+  "reproduces": true
+ },
+ "deliberate_failure_wrong_speed": {
+  "max_abs_diff_accel": 6.0,
+  "must_be_large": true
+ },
+ "GATE_PASS": true
+}
+GATE_PASS = True  n_windows=41

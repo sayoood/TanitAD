@@ -1,0 +1,431 @@
+{
+  "block": "taniteval.blindimag/blind_horizon",
+  "version": "1.0.0",
+  "stage": "sweep+peek",
+  "arm_ckpt": "flagship-30k",
+  "ckpt_step": 29999,
+  "kmax": 185,
+  "stride": 8,
+  "episodes_requested": 600,
+  "n_windows": 599,
+  "n_episode_clusters": 596,
+  "val_parity": {
+    "corpus_key": "physicalai-val-0c5f7dac3b11",
+    "split": "val",
+    "cache_dir": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+    "mode": "subset",
+    "episodes_expected": 600,
+    "episodes_loaded": 600,
+    "uid_source": "count-only-unrecorded",
+    "skip_hash": "f09e44db",
+    "episode_uid_sha256": "75a4d429be8cef8ea47a319e2033d792ee9eecbff033fad27dbb624b5634df20",
+    "episode_uid_sha256_expected": null,
+    "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+    "parity": true,
+    "checked": true,
+    "episodes_present": 600,
+    "registered_deployments": [
+      40,
+      600
+    ],
+    "deployment": {
+      "n_episodes": 600,
+      "role": "full build (the epcache split dir on the training pods)",
+      "where": "<epcache root>/physicalai-val-0c5f7dac3b11 \u2014 pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+      "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+      "evidence_class": "MEASURED"
+    },
+    "label": "val physicalai-val-0c5f7dac3b11",
+    "requested_episodes": 600,
+    "decision_grade": true,
+    "episodes_listed": 600
+  },
+  "wheelbase_used": 2.9,
+  "speed_scale": 10.0,
+  "dt_s": 0.1,
+  "arms": {},
+  "extra_arms": {
+    "a_imagination__own__roSTR": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_frozenlast__own__roSTR": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_imagination__hold__roSTR": {
+      "state_source": "imagination",
+      "action_source": "hold_last",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_frozenlast__hold__roSTR": {
+      "state_source": "frozen_last",
+      "action_source": "hold_last",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_selftest__blend0": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_selftest__blend1": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=1.0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_selftest__every1": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|every=1",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.125": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.125",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.125": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.125",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.25": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.25",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.25": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.25",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.375": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.375",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.375": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.375",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.5": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.5": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.625": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.625",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.625": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.625",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.75": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.75",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.75": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.75",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_blend0.875": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|blend=0.875",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_blend0.875": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|blend=0.875",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_chansteer": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|chan=steer",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_chansteer": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|chan=steer",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_chanaccel": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|chan=accel",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_chanaccel": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|chan=accel",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_steerclip0.02": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|steer_clip=0.02",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_steerclip0.02": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|steer_clip=0.02",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_steerclip0.005": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|steer_clip=0.005",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_steerclip0.005": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|steer_clip=0.005",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_steerclip0": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|steer_clip=0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_steerclip0": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|steer_clip=0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_accelclip1": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|accel_clip=1",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_accelclip1": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|accel_clip=1",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_accelclip0.3": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|accel_clip=0.3",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_accelclip0.3": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|accel_clip=0.3",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_accelclip0": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|accel_clip=0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_accelclip0": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|accel_clip=0",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ema0.5": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|ema=0.5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_ema0.5": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|ema=0.5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ema0.8": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|ema=0.8",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_ema0.8": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|ema=0.8",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ema0.95": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|ema=0.95",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_ema0.95": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|ema=0.95",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_every2": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|every=2",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_every2": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|every=2",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_every5": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|every=5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_every5": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|every=5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_every20": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|every=20",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_every20": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic|every=20",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownbefore5": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_before=5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownafter5": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_after=5",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownbefore10": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_before=10",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownafter10": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_after=10",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownbefore20": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_before=20",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownafter20": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_after=20",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownbefore40": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_before=40",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_ownafter40": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic|own_after=40",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_gtkin": {
+      "state_source": "imagination",
+      "action_source": "gt_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_gtkin": {
+      "state_source": "frozen_last",
+      "action_source": "gt_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_own_vupd": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic",
+      "update_speed_channel": true,
+      "readout_level": "str"
+    },
+    "b_own_vupd": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic",
+      "update_speed_channel": true,
+      "readout_level": "str"
+    }
+  },
+  "trained_rollout_lengths_steps": {
+    "op": 4,
+    "tac": 16,
+    "str": 20
+  },
+  "peek": {},
+  "uniform_periods": [
+    2
+  ],
+  "oracle_bars": [
+    0.5
+  ],
+  "peek_bases": [],
+  "utc": "2026-07-26T21:49:25Z",
+  "seconds_encode": 793.9,
+  "seconds_rollout": 1034.9
+}

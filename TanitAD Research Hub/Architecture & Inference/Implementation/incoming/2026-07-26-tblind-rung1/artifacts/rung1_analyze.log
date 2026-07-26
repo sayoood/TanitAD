@@ -1,0 +1,149 @@
+GATES: PASS
+{
+ "n_windows_new": 599,
+ "n_windows_committed": 599,
+ "n_episode_clusters": 596,
+ "K_max": 185,
+ "eid_identical_vs_bi": true,
+ "t0_identical_vs_bi": true,
+ "eid_identical_vs_matched": true,
+ "GATE_PASS": true
+}
+ anchors: {'a_imagination__own__roSTR': 0.0, 'a_imagination__hold__roSTR': 0.0, 'b_frozenlast__own__roSTR': 3.052e-05, 'b_frozenlast__hold__roSTR': 3.052e-05}
+ fidelity: {
+ "T_blind_own_str": {
+  "committed": 25,
+  "recomputed": 25,
+  "committed_ci_s": [
+   2.5,
+   3.9
+  ],
+  "recomputed_ci_s": [
+   2.5,
+   3.9
+  ]
+ },
+ "T_blind_hold_str": {
+  "committed": 115,
+  "recomputed": 115,
+  "committed_ci_s": [
+   11.5,
+   17.4
+  ],
+  "recomputed_ci_s": [
+   11.5,
+   17.4
+  ]
+ },
+ "de2s_own_str": {
+  "committed": 1.8165,
+  "recomputed": 1.8165
+ },
+ "de2s_hold_str": {
+  "committed": 0.6718,
+  "recomputed": 0.6718
+ },
+ "ade_0_2s_own_str": {
+  "committed": 0.871,
+  "recomputed": 0.871
+ },
+ "ade_0_2s_hold_str": {
+  "committed": 0.3351,
+  "recomputed": 0.3351
+ },
+ "T_useful_1m_own_str_s": {
+  "committed": 1.4,
+  "recomputed": 1.4
+ },
+ "T_useful_1m_hold_str_s": {
+  "committed": 2.3,
+  "recomputed": 2.3
+ },
+ "LEVEL_FIDELITY_PASS": true,
+ "T_BLIND_EXACT_REPRODUCTION": true,
+ "T_useful_reproduces": true,
+ "FIDELITY_PASS": true
+}
+
+[2/5] the blend curve
+  alpha=0      T_blind= 25 steps ( 2.5 s) CI [2.5, 3.9]  de@2s=1.8165 beats_cv=0
+  alpha=0.125  T_blind= 55 steps ( 5.5 s) CI [5.5, 8.4]  de@2s=1.3755 beats_cv=0
+  alpha=0.25   T_blind= 85 steps ( 8.5 s) CI [8.5, 13.1]  de@2s=1.0736 beats_cv=43
+  alpha=0.375  T_blind=101 steps (10.1 s) CI [10.1, 15.9]  de@2s=0.9103 beats_cv=62
+  alpha=0.5    T_blind=111 steps (11.1 s) CI [11.1, 16.9]  de@2s=0.7924 beats_cv=72
+  alpha=0.625  T_blind=115 steps (11.5 s) CI [11.5, 17.2]  de@2s=0.7184 beats_cv=78
+  alpha=0.75   T_blind=116 steps (11.6 s) CI [11.6, 17.2]  de@2s=0.6842 beats_cv=81
+  alpha=0.875  T_blind=116 steps (11.6 s) CI [11.6, 17.3]  de@2s=0.6724 beats_cv=82
+  alpha=1      T_blind=115 steps (11.5 s) CI [11.5, 17.4]  de@2s=0.6718 beats_cv=83
+
+[3/5] mechanism separation
+
+[4/5] the other intervention families
+  steerclip0.02    T_blind= 24 ( 2.4 s) CI [2.4, 3.8] de@2s=1.8497 elig=True
+  steerclip0.005   T_blind= 25 ( 2.5 s) CI [2.5, 4.4] de@2s=1.8289 elig=True
+  steerclip0       T_blind= 27 ( 2.7 s) CI [2.7, 5.5] de@2s=1.8143 elig=False
+  accelclip1       T_blind= 47 ( 4.7 s) CI [4.7, 7.3] de@2s=1.3513 elig=True
+  accelclip0.3     T_blind= 62 ( 6.2 s) CI [6.2, 10.1] de@2s=1.2053 elig=True
+  accelclip0       T_blind= 78 ( 7.8 s) CI [7.8, 12.7] de@2s=1.1684 elig=False
+  ema0.5           T_blind= 38 ( 3.8 s) CI [3.8, 5.5] de@2s=1.3862 elig=True
+  ema0.8           T_blind= 64 ( 6.4 s) CI [6.4, 8.9] de@2s=0.9864 elig=True
+  ema0.95          T_blind=111 (11.1 s) CI [11.1, 16.1] de@2s=0.6966 elig=True
+  every2           T_blind=  9 ( 0.9 s) CI [0.9, 1.1] de@2s=2.8106 elig=True
+  every5           T_blind=  9 ( 0.9 s) CI [0.9, 1.0] de@2s=3.9867 elig=True
+  every20          T_blind=  9 ( 0.9 s) CI [0.9, 1.0] de@2s=4.6320 elig=True
+  chansteer        T_blind= 90 ( 9.0 s) CI [9.0, 13.8] de@2s=0.8797 elig=False
+  chanaccel        T_blind= 49 ( 4.9 s) CI [4.9, 7.8] de@2s=1.5493 elig=False
+  gtkin            T_blind=185 (18.5 s) CI [18.5, 18.5] de@2s=0.4361 elig=False
+  own_vupd         T_blind=  9 ( 0.9 s) CI [0.9, 1.0] de@2s=23.9351 elig=True
+
+[5/5] verdict
+
+VERDICT: {
+ "rule": "PRE_REGISTRATION.md \u00a75 \u2014 CONFIRM: best ELIGIBLE T_blind >= 50 steps AND paired gain separated; PARTIAL: 31..49 separated, or >=50 not separated; REFUTE: <= 30 steps. Baseline 25 steps, ceiling 115 steps.",
+ "n_eligible_arms": 18,
+ "baseline_T_blind_steps_prereg": 25,
+ "ceiling_T_blind_steps_prereg": 115,
+ "baseline_T_blind_steps_this_run": 25,
+ "ceiling_T_blind_steps_this_run": 115,
+ "best_eligible": "blend0.75",
+ "best_T_blind_steps": 116,
+ "best_T_blind_s": 11.6,
+ "best_T_blind_ci95_s": [
+  11.6,
+  17.2
+ ],
+ "paired_gain_vs_own": {
+  "median_gain_steps": 109.0,
+  "ci95_steps": [
+   85.0,
+   140.02499999999986
+  ],
+  "separated_better": true,
+  "frac_draws_gain_gt_0": 1.0,
+  "n_boot": 2000,
+  "estimator": "paired_episode_cluster_bootstrap"
+ },
+ "bonferroni_required_frac": 0.9972,
+ "bonferroni_met": true,
+ "frac_of_ceiling_recovered": 1.0111,
+ "VERDICT": "CONFIRM",
+ "CAPABILITY_CAP": {
+  "beats_cv_steps": 81,
+  "beats_cv_interval_s": [
+   0.7,
+   8.7
+  ],
+  "T_useful_s": {
+   "1m": 2.3,
+   "1.391m": 2.7,
+   "2m": 3.2
+  },
+  "baseline_T_useful_1m_s": 1.4,
+  "capability_verdict": "CONFIRM"
+ },
+ "dose_response": {
+  "monotone_nondecreasing": false,
+  "spearman_alpha_vs_T_blind": 0.95,
+  "why_it_matters": "a best-of-N selection effect cannot manufacture a monotone dose-response between two independently MEASURED endpoints"
+ }
+}

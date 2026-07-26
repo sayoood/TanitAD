@@ -35,9 +35,16 @@ import zipfile
 import numpy as np
 import pandas as pd
 
-SCRATCH = (r"C:\Users\Admin\AppData\Local\Temp\claude"
-           r"\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD"
-           r"\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad")
+# `crux.py` — the validated E0/E1 projection machinery (per-clip (cx,cy) + per-clip 6-DoF
+# extrinsics, mandatory on this two-rig corpus). It lives in the session scratchpad rather than the
+# repo; point SC_CRUX_DIR at whatever directory holds it.
+SCRATCH = os.environ.get("SC_CRUX_DIR") or os.path.join(
+    os.environ.get("LOCALAPPDATA", ""), "Temp", "claude",
+    "G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD")
+if not os.path.isfile(os.path.join(SCRATCH, "crux.py")):
+    hits = [os.path.join(dp, "crux.py") for dp, _, fn in os.walk(SCRATCH) if "crux.py" in fn]
+    if hits:
+        SCRATCH = os.path.dirname(hits[0])
 sys.path.insert(0, SCRATCH)
 from crux import (CAMS, calib_clips, clip_rig, in_frame,  # noqa: E402
                   in_model_crop, project)

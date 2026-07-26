@@ -1,0 +1,141 @@
+{
+  "rule": "PRE_REGISTRATION.md \u00a75 \u2014 CONFIRM: best ELIGIBLE T_blind >= 50 steps AND paired gain separated; PARTIAL: 31..49 separated, or >=50 not separated; REFUTE: <= 30 steps. Baseline 25 steps, ceiling 115 steps.",
+  "n_eligible_arms": 18,
+  "baseline_T_blind_steps_prereg": 25,
+  "ceiling_T_blind_steps_prereg": 115,
+  "baseline_T_blind_steps_this_run": 25,
+  "ceiling_T_blind_steps_this_run": 115,
+  "best_eligible": "blend0.75",
+  "best_T_blind_steps": 116,
+  "best_T_blind_s": 11.6,
+  "best_T_blind_ci95_s": [
+    11.6,
+    17.2
+  ],
+  "paired_gain_vs_own": {
+    "median_gain_steps": 109.0,
+    "ci95_steps": [
+      85.0,
+      140.02499999999986
+    ],
+    "separated_better": true,
+    "frac_draws_gain_gt_0": 1.0,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "bonferroni_required_frac": 0.9972,
+  "bonferroni_met": true,
+  "frac_of_ceiling_recovered": 1.0111,
+  "VERDICT": "CONFIRM",
+  "ranking": [
+    [
+      "blend0.75",
+      116,
+      11.6
+    ],
+    [
+      "blend0.875",
+      116,
+      11.6
+    ],
+    [
+      "blend0.625",
+      115,
+      11.5
+    ],
+    [
+      "blend0.5",
+      111,
+      11.1
+    ],
+    [
+      "ema0.95",
+      111,
+      11.1
+    ],
+    [
+      "blend0.375",
+      101,
+      10.1
+    ],
+    [
+      "blend0.25",
+      85,
+      8.5
+    ],
+    [
+      "ema0.8",
+      64,
+      6.4
+    ],
+    [
+      "accelclip0.3",
+      62,
+      6.2
+    ],
+    [
+      "blend0.125",
+      55,
+      5.5
+    ],
+    [
+      "accelclip1",
+      47,
+      4.7
+    ],
+    [
+      "ema0.5",
+      38,
+      3.8
+    ],
+    [
+      "steerclip0.005",
+      25,
+      2.5
+    ],
+    [
+      "steerclip0.02",
+      24,
+      2.4
+    ],
+    [
+      "every2",
+      9,
+      0.9
+    ],
+    [
+      "every5",
+      9,
+      0.9
+    ],
+    [
+      "every20",
+      9,
+      0.9
+    ],
+    [
+      "own_vupd",
+      9,
+      0.9
+    ]
+  ],
+  "CAPABILITY_CAP": {
+    "beats_cv_steps": 81,
+    "beats_cv_interval_s": [
+      0.7,
+      8.7
+    ],
+    "T_useful_s": {
+      "1m": 2.3,
+      "1.391m": 2.7,
+      "2m": 3.2
+    },
+    "baseline_T_useful_1m_s": 1.4,
+    "capability_verdict": "CONFIRM"
+  },
+  "dose_response": {
+    "monotone_nondecreasing": false,
+    "spearman_alpha_vs_T_blind": 0.95,
+    "why_it_matters": "a best-of-N selection effect cannot manufacture a monotone dose-response between two independently MEASURED endpoints"
+  }
+}

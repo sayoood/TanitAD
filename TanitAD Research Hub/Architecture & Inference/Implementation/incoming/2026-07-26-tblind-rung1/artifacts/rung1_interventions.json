@@ -1,0 +1,1662 @@
+{
+  "clip_steer": {
+    "steerclip0.02": {
+      "arm_a": "a_steerclip0.02",
+      "arm_b": "b_steerclip0.02",
+      "T_blind_steps": 24,
+      "T_blind_s": 2.4,
+      "T_blind_ci95_steps": [
+        24,
+        38
+      ],
+      "T_blind_ci95_s": [
+        2.4,
+        3.8
+      ],
+      "T_blind_median_boot_steps": 30,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076932,
+      "lo_at_step2_m": 0.070927,
+      "first_step_where_a_loses_point": 31,
+      "first_step_where_b_separated_better": 39,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.8497,
+        "lo": 1.7332,
+        "hi": 1.973,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 13.9368,
+        "lo": 13.1043,
+        "hi": 14.7745,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.8833,
+        "lo": 0.8281,
+        "hi": 0.9381,
+        "ci95": 0.055,
+        "se": 0.0274,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.3853,
+        "lo": 0.2347,
+        "hi": 0.5399,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.4,
+        "1.391m": 1.7,
+        "2m": 2.0
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": -1.0,
+        "ci95_steps": [
+          -3.0,
+          0.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.024,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -0.0332,
+        "lo": -0.0603,
+        "hi": -0.0064,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "steerclip0.005": {
+      "arm_a": "a_steerclip0.005",
+      "arm_b": "b_steerclip0.005",
+      "T_blind_steps": 25,
+      "T_blind_s": 2.5,
+      "T_blind_ci95_steps": [
+        25,
+        44
+      ],
+      "T_blind_ci95_s": [
+        2.5,
+        4.4
+      ],
+      "T_blind_median_boot_steps": 33,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077474,
+      "lo_at_step2_m": 0.071431,
+      "first_step_where_a_loses_point": 34,
+      "first_step_where_b_separated_better": 45,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.8289,
+        "lo": 1.7143,
+        "hi": 1.949,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 13.1592,
+        "lo": 12.3395,
+        "hi": 13.9985,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.8757,
+        "lo": 0.8219,
+        "hi": 0.9294,
+        "ci95": 0.0538,
+        "se": 0.0274,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.4087,
+        "lo": 0.2526,
+        "hi": 0.5644,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.4,
+        "1.391m": 1.7,
+        "2m": 2.0
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 2.0,
+        "ci95_steps": [
+          -1.0,
+          8.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.8135,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -0.0123,
+        "lo": -0.0483,
+        "hi": 0.0242,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "steerclip0": {
+      "arm_a": "a_steerclip0",
+      "arm_b": "b_steerclip0",
+      "T_blind_steps": 27,
+      "T_blind_s": 2.7,
+      "T_blind_ci95_steps": [
+        27,
+        55
+      ],
+      "T_blind_ci95_s": [
+        2.7,
+        5.5
+      ],
+      "T_blind_median_boot_steps": 39,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077765,
+      "lo_at_step2_m": 0.071707,
+      "first_step_where_a_loses_point": 40,
+      "first_step_where_b_separated_better": 56,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.8143,
+        "lo": 1.6995,
+        "hi": 1.9371,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 12.3738,
+        "lo": 11.5463,
+        "hi": 13.2357,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.8718,
+        "lo": 0.8183,
+        "hi": 0.9255,
+        "ci95": 0.0536,
+        "se": 0.0275,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.4245,
+        "lo": 0.2649,
+        "hi": 0.5852,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.4,
+        "1.391m": 1.7,
+        "2m": 2.1
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 8.0,
+        "ci95_steps": [
+          0.0,
+          20.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.974,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.0022,
+        "lo": -0.045,
+        "hi": 0.0465,
+        "separated": false,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": false
+    }
+  },
+  "clip_accel": {
+    "accelclip1": {
+      "arm_a": "a_accelclip1",
+      "arm_b": "b_accelclip1",
+      "T_blind_steps": 47,
+      "T_blind_s": 4.7,
+      "T_blind_ci95_steps": [
+        47,
+        73
+      ],
+      "T_blind_ci95_s": [
+        4.7,
+        7.3
+      ],
+      "T_blind_median_boot_steps": 58,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076866,
+      "lo_at_step2_m": 0.070923,
+      "first_step_where_a_loses_point": 59,
+      "first_step_where_b_separated_better": 74,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.3513,
+        "lo": 1.2577,
+        "hi": 1.4569,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 11.4415,
+        "lo": 10.7131,
+        "hi": 12.2145,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.6477,
+        "lo": 0.6049,
+        "hi": 0.6954,
+        "ci95": 0.0453,
+        "se": 0.0227,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.7909,
+        "lo": 0.6611,
+        "hi": 0.9229,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.7,
+        "1.391m": 2.0,
+        "2m": 2.4
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 27.0,
+        "ci95_steps": [
+          18.0,
+          40.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.4652,
+        "lo": 0.3809,
+        "hi": 0.5507,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "accelclip0.3": {
+      "arm_a": "a_accelclip0.3",
+      "arm_b": "b_accelclip0.3",
+      "T_blind_steps": 62,
+      "T_blind_s": 6.2,
+      "T_blind_ci95_steps": [
+        62,
+        101
+      ],
+      "T_blind_ci95_s": [
+        6.2,
+        10.1
+      ],
+      "T_blind_median_boot_steps": 77,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077641,
+      "lo_at_step2_m": 0.071616,
+      "first_step_where_a_loses_point": 79,
+      "first_step_where_b_separated_better": 102,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.2053,
+        "lo": 1.1145,
+        "hi": 1.3078,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 10.7189,
+        "lo": 10.033,
+        "hi": 11.4535,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.5774,
+        "lo": 0.5352,
+        "hi": 0.6237,
+        "ci95": 0.0443,
+        "se": 0.0225,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.9252,
+        "lo": 0.8106,
+        "hi": 1.0449,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.9,
+        "last_s": 2.2,
+        "n_steps": 14,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.8,
+        "1.391m": 2.1,
+        "2m": 2.5
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 46.0,
+        "ci95_steps": [
+          33.0,
+          68.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.6112,
+        "lo": 0.5195,
+        "hi": 0.7035,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "accelclip0": {
+      "arm_a": "a_accelclip0",
+      "arm_b": "b_accelclip0",
+      "T_blind_steps": 78,
+      "T_blind_s": 7.8,
+      "T_blind_ci95_steps": [
+        78,
+        127
+      ],
+      "T_blind_ci95_s": [
+        7.8,
+        12.7
+      ],
+      "T_blind_median_boot_steps": 98,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.078205,
+      "lo_at_step2_m": 0.072169,
+      "first_step_where_a_loses_point": 100,
+      "first_step_where_b_separated_better": 128,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.1684,
+        "lo": 1.0787,
+        "hi": 1.2705,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 10.2749,
+        "lo": 9.6005,
+        "hi": 11.018,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.5608,
+        "lo": 0.5184,
+        "hi": 0.6074,
+        "ci95": 0.0445,
+        "se": 0.0225,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.9597,
+        "lo": 0.8458,
+        "hi": 1.0732,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.8,
+        "last_s": 3.0,
+        "n_steps": 23,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.8,
+        "1.391m": 2.1,
+        "2m": 2.6
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 67.0,
+        "ci95_steps": [
+          48.0,
+          96.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.6481,
+        "lo": 0.5534,
+        "hi": 0.7427,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": false
+    }
+  },
+  "smooth_ema": {
+    "ema0.5": {
+      "arm_a": "a_ema0.5",
+      "arm_b": "b_ema0.5",
+      "T_blind_steps": 38,
+      "T_blind_s": 3.8,
+      "T_blind_ci95_steps": [
+        38,
+        55
+      ],
+      "T_blind_ci95_s": [
+        3.8,
+        5.5
+      ],
+      "T_blind_median_boot_steps": 46,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.075768,
+      "lo_at_step2_m": 0.069952,
+      "first_step_where_a_loses_point": 47,
+      "first_step_where_b_separated_better": 56,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.3862,
+        "lo": 1.2916,
+        "hi": 1.4821,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 12.3652,
+        "lo": 11.5932,
+        "hi": 13.2045,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.655,
+        "lo": 0.6131,
+        "hi": 0.6966,
+        "ci95": 0.0417,
+        "se": 0.0213,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.7619,
+        "lo": 0.62,
+        "hi": 0.9093,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.7,
+        "1.391m": 2.0,
+        "2m": 2.3
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 15.0,
+        "ci95_steps": [
+          9.0,
+          22.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.4304,
+        "lo": 0.3496,
+        "hi": 0.51,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "ema0.8": {
+      "arm_a": "a_ema0.8",
+      "arm_b": "b_ema0.8",
+      "T_blind_steps": 64,
+      "T_blind_s": 6.4,
+      "T_blind_ci95_steps": [
+        64,
+        89
+      ],
+      "T_blind_ci95_s": [
+        6.4,
+        8.9
+      ],
+      "T_blind_median_boot_steps": 75,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076606,
+      "lo_at_step2_m": 0.070651,
+      "first_step_where_a_loses_point": 76,
+      "first_step_where_b_separated_better": 90,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 0.9864,
+        "lo": 0.9174,
+        "hi": 1.0547,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 10.4055,
+        "lo": 9.7299,
+        "hi": 11.096,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.4667,
+        "lo": 0.4365,
+        "hi": 0.4978,
+        "ci95": 0.0307,
+        "se": 0.016,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 1.1383,
+        "lo": 1.0117,
+        "hi": 1.2734,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.7,
+        "last_s": 4.0,
+        "n_steps": 34,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 2.0,
+        "1.391m": 2.3,
+        "2m": 2.7
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 44.0,
+        "ci95_steps": [
+          34.0,
+          57.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.8301,
+        "lo": 0.7416,
+        "hi": 0.9247,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "ema0.95": {
+      "arm_a": "a_ema0.95",
+      "arm_b": "b_ema0.95",
+      "T_blind_steps": 111,
+      "T_blind_s": 11.1,
+      "T_blind_ci95_steps": [
+        111,
+        161
+      ],
+      "T_blind_ci95_s": [
+        11.1,
+        16.1
+      ],
+      "T_blind_median_boot_steps": 133,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.077398,
+      "lo_at_step2_m": 0.071323,
+      "first_step_where_a_loses_point": 134,
+      "first_step_where_b_separated_better": 162,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 0.6966,
+        "lo": 0.6388,
+        "hi": 0.7552,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 8.3894,
+        "lo": 7.8062,
+        "hi": 8.9936,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.3464,
+        "lo": 0.3194,
+        "hi": 0.3738,
+        "ci95": 0.0272,
+        "se": 0.014,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 1.384,
+        "lo": 1.2597,
+        "hi": 1.5191,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.7,
+        "last_s": 8.2,
+        "n_steps": 76,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 2.3,
+        "1.391m": 2.7,
+        "2m": 3.1
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 101.0,
+        "ci95_steps": [
+          80.0,
+          129.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 1.12,
+        "lo": 1.0233,
+        "hi": 1.2236,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    }
+  },
+  "update_every": {
+    "every2": {
+      "arm_a": "a_every2",
+      "arm_b": "b_every2",
+      "T_blind_steps": 9,
+      "T_blind_s": 0.9,
+      "T_blind_ci95_steps": [
+        9,
+        11
+      ],
+      "T_blind_ci95_s": [
+        0.9,
+        1.1
+      ],
+      "T_blind_median_boot_steps": 10,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076438,
+      "lo_at_step2_m": 0.070429,
+      "first_step_where_a_loses_point": 11,
+      "first_step_where_b_separated_better": 12,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 2.8106,
+        "lo": 2.6534,
+        "hi": 2.9744,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 14.2273,
+        "lo": 13.3323,
+        "hi": 15.1491,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 1.4625,
+        "lo": 1.3934,
+        "hi": 1.5367,
+        "ci95": 0.0717,
+        "se": 0.0365,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": -0.6307,
+        "lo": -0.808,
+        "hi": -0.4611,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.0,
+        "1.391m": 1.2,
+        "2m": 1.5
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": -21.0,
+        "ci95_steps": [
+          -28.0,
+          -15.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -0.994,
+        "lo": -1.1713,
+        "hi": -0.8218,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "every5": {
+      "arm_a": "a_every5",
+      "arm_b": "b_every5",
+      "T_blind_steps": 9,
+      "T_blind_s": 0.9,
+      "T_blind_ci95_steps": [
+        9,
+        10
+      ],
+      "T_blind_ci95_s": [
+        0.9,
+        1.0
+      ],
+      "T_blind_median_boot_steps": 9,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 0.995,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076438,
+      "lo_at_step2_m": 0.070429,
+      "first_step_where_a_loses_point": 10,
+      "first_step_where_b_separated_better": 11,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 3.9867,
+        "lo": 3.8269,
+        "hi": 4.1479,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 17.4521,
+        "lo": 16.4701,
+        "hi": 18.4322,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 1.9242,
+        "lo": 1.8502,
+        "hi": 1.9983,
+        "ci95": 0.0741,
+        "se": 0.0378,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": -1.7297,
+        "lo": -1.8837,
+        "hi": -1.5768,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 0.9,
+        "1.391m": 1.1,
+        "2m": 1.3
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": -22.0,
+        "ci95_steps": [
+          -29.0,
+          -16.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -2.1702,
+        "lo": -2.355,
+        "hi": -1.988,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    },
+    "every20": {
+      "arm_a": "a_every20",
+      "arm_b": "b_every20",
+      "T_blind_steps": 9,
+      "T_blind_s": 0.9,
+      "T_blind_ci95_steps": [
+        9,
+        10
+      ],
+      "T_blind_ci95_s": [
+        0.9,
+        1.0
+      ],
+      "T_blind_median_boot_steps": 9,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 0.9925,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.076438,
+      "lo_at_step2_m": 0.070429,
+      "first_step_where_a_loses_point": 10,
+      "first_step_where_b_separated_better": 11,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 4.632,
+        "lo": 4.4795,
+        "hi": 4.7876,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 23.8846,
+        "lo": 22.7664,
+        "hi": 24.9318,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 2.1458,
+        "lo": 2.0736,
+        "hi": 2.2202,
+        "ci95": 0.0733,
+        "se": 0.0382,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": -2.1278,
+        "lo": -2.2588,
+        "hi": -2.0019,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 0.9,
+        "1.391m": 1.1,
+        "2m": 1.3
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": -22.0,
+        "ci95_steps": [
+          -29.025,
+          -16.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -2.8154,
+        "lo": -2.9994,
+        "hi": -2.6299,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    }
+  },
+  "channel_decomposition": {
+    "chansteer": {
+      "arm_a": "a_chansteer",
+      "arm_b": "b_chansteer",
+      "T_blind_steps": 90,
+      "T_blind_s": 9.0,
+      "T_blind_ci95_steps": [
+        90,
+        138
+      ],
+      "T_blind_ci95_s": [
+        9.0,
+        13.8
+      ],
+      "T_blind_median_boot_steps": 108,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.078587,
+      "lo_at_step2_m": 0.072498,
+      "first_step_where_a_loses_point": 110,
+      "first_step_where_b_separated_better": 139,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 0.8797,
+        "lo": 0.8049,
+        "hi": 0.9609,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 9.092,
+        "lo": 8.4818,
+        "hi": 9.754,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.4306,
+        "lo": 0.3957,
+        "hi": 0.4683,
+        "ci95": 0.0363,
+        "se": 0.0185,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 1.2056,
+        "lo": 1.083,
+        "hi": 1.3388,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.7,
+        "last_s": 6.6,
+        "n_steps": 60,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 2.1,
+        "1.391m": 2.4,
+        "2m": 2.9
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 77.0,
+        "ci95_steps": [
+          59.0,
+          105.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.9368,
+        "lo": 0.846,
+        "hi": 1.0309,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": false
+    },
+    "chanaccel": {
+      "arm_a": "a_chanaccel",
+      "arm_b": "b_chanaccel",
+      "T_blind_steps": 49,
+      "T_blind_s": 4.9,
+      "T_blind_ci95_steps": [
+        49,
+        78
+      ],
+      "T_blind_ci95_s": [
+        4.9,
+        7.8
+      ],
+      "T_blind_median_boot_steps": 63,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.075617,
+      "lo_at_step2_m": 0.069805,
+      "first_step_where_a_loses_point": 64,
+      "first_step_where_b_separated_better": 79,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 1.5493,
+        "lo": 1.4444,
+        "hi": 1.6522,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 11.3011,
+        "lo": 10.5134,
+        "hi": 12.0988,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.758,
+        "lo": 0.7112,
+        "hi": 0.8058,
+        "ci95": 0.0473,
+        "se": 0.024,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 0.6545,
+        "lo": 0.5057,
+        "hi": 0.8071,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 1.5,
+        "1.391m": 1.8,
+        "2m": 2.2
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 31.0,
+        "ci95_steps": [
+          21.0,
+          44.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 0.2672,
+        "lo": 0.1976,
+        "hi": 0.3415,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": false
+    }
+  },
+  "convention_and_speed": {
+    "gtkin": {
+      "arm_a": "a_gtkin",
+      "arm_b": "b_gtkin",
+      "T_blind_steps": 185,
+      "T_blind_s": 18.5,
+      "T_blind_ci95_steps": [
+        185,
+        185
+      ],
+      "T_blind_ci95_s": [
+        18.5,
+        18.5
+      ],
+      "T_blind_median_boot_steps": 185,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 1.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.078397,
+      "lo_at_step2_m": 0.072285,
+      "first_step_where_a_loses_point": null,
+      "first_step_where_b_separated_better": null,
+      "C14_saturated_at_grid_terminus": true,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 0.4361,
+        "lo": 0.3763,
+        "hi": 0.4992,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 5.0665,
+        "lo": 4.6334,
+        "hi": 5.5388,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 0.2552,
+        "lo": 0.2257,
+        "hi": 0.2862,
+        "ci95": 0.0303,
+        "se": 0.0157,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": 1.6267,
+        "lo": 1.5016,
+        "hi": 1.7599,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": 0.7,
+        "last_s": 18.5,
+        "n_steps": 179,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 3.0,
+        "1.391m": 3.5,
+        "2m": 4.0
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": 154.0,
+        "ci95_steps": [
+          146.0,
+          160.0
+        ],
+        "separated_better": true,
+        "frac_draws_gain_gt_0": 1.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": 1.3805,
+        "lo": 1.2914,
+        "hi": 1.4741,
+        "separated": true,
+        "a_better": true,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": false
+    },
+    "own_vupd": {
+      "arm_a": "a_own_vupd",
+      "arm_b": "b_own_vupd",
+      "T_blind_steps": 9,
+      "T_blind_s": 0.9,
+      "T_blind_ci95_steps": [
+        9,
+        10
+      ],
+      "T_blind_ci95_s": [
+        0.9,
+        1.0
+      ],
+      "T_blind_median_boot_steps": 10,
+      "frac_draws_T_blind_at_floor_1step": 0.0,
+      "frac_draws_T_blind_ge_16": 0.0,
+      "frac_draws_T_blind_gt_8": 1.0,
+      "delta_at_step1_m": 0.0,
+      "delta_at_step2_m": 0.081776,
+      "lo_at_step2_m": 0.075413,
+      "first_step_where_a_loses_point": 11,
+      "first_step_where_b_separated_better": 11,
+      "C14_saturated_at_grid_terminus": false,
+      "contiguity_start_step": 2,
+      "K_max_swept": 185,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "rule": "largest N with paired CI lower bound > 0 contiguously from N=2 (A4); positive delta = the FIRST arm is better; the FAILING return is 1 step",
+      "de_at_2s": {
+        "mean": 23.9351,
+        "lo": 22.6454,
+        "hi": 25.158,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "de_at_6s": {
+        "mean": 177.4557,
+        "lo": 168.3754,
+        "hi": 186.4724,
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "ade_0_2s": {
+        "mean": 9.602,
+        "lo": 9.0862,
+        "hi": 10.079,
+        "ci95": 0.4964,
+        "se": 0.2548,
+        "reducer": "mean",
+        "n_windows": 599,
+        "n_episodes": 596,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "paired_delta_2s_vs_comparator": {
+        "delta_b_minus_a": -16.2281,
+        "lo": -17.5431,
+        "hi": -14.8664,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "beats_cv": {
+        "first_s": null,
+        "last_s": null,
+        "n_steps": 0,
+        "K": 185,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "T_useful_s": {
+        "1m": 0.6,
+        "1.391m": 0.7,
+        "2m": 0.8
+      },
+      "gain_vs_own_baseline": {
+        "median_gain_steps": -21.0,
+        "ci95_steps": [
+          -29.0,
+          -16.0
+        ],
+        "separated_better": false,
+        "frac_draws_gain_gt_0": 0.0,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "de_2s_delta_vs_own_baseline": {
+        "delta_b_minus_a": -22.1185,
+        "lo": -23.3326,
+        "hi": -20.8324,
+        "separated": true,
+        "a_better": false,
+        "n_windows": 599,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "eligible": true
+    }
+  }
+}

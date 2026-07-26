@@ -151,3 +151,209 @@ was produced against **replayed, non-reactive traffic**, because they all used t
 replayed traffic, so the *paired* comparisons stand) but it does bound what they can mean: **no
 published TanitAD closed-loop number has ever involved a reactive agent.** That belongs in the record
 and was not previously written down anywhere.
+
+---
+
+## 4. WHICH of the nine 4-brain problems `trafficsim` gates — **"four of nine" VERIFIED, not inherited**
+
+Checked against the **primary source**, `…/2026-07-26-4brain-dominance-program/STRATEGIC_TACTICAL_PROBLEM_SPEC.md`
+§8 "Summary table — the nine problems" (not against `GATE_RESULTS.md`, which is a secondary read of it).
+The `Source` column names the corpus each problem requires:
+
+| # | problem | horizon | source column says | needs `trafficsim`? |
+|---|---|---|---|---|
+| S1 | branch selection | 10–30 s | **AlpaSim**; Cosmos-DD/nuScenes w/ adapter | ❌ |
+| S2 | lane for the manoeuvre | 10–25 s | **AlpaSim** | ❌ |
+| S3 | manoeuvre timing | 5–25 s | **PhysicalAI today** (20.5 %/62.9 %) | ❌ |
+| S4 | roundabout exit ordinal | 10–30 s | **AlpaSim (n=8)**, L2D (3,532 eps) | ❌ |
+| **T1** | yield vs proceed | 5–15 s | **AlpaSim + trafficsim ON** | ✅ |
+| **T2** | gap acceptance | 5–12 s | **AlpaSim + trafficsim** | ✅ |
+| **T3** | overtake vs follow | 8–15 s | **AlpaSim + trafficsim** | ✅ |
+| **T4** | right-of-way | 5–15 s | **AlpaSim + trafficsim only** | ✅ |
+| OP | operative (§4 of the spec) | 0–2 s | largely validated | ❌ |
+
+**⇒ `trafficsim` gates exactly FOUR of the nine: T1, T2, T3, T4. The brief's "four of nine" is CORRECT.**
+`MEASURED` from the spec, tier **CONFIRMED**.
+
+Three qualifications the bare figure hides, all worth more than the count:
+
+1. **It is a *different* four from gate 1's four.** Gate 1 (VectorMap) unblocks **S1, S2, S4 + HP-4** —
+   the strategic half. The two gates do **not** overlap, so "four of nine" is not a subset of an
+   already-solved set; between them the two gates cover **seven** of the nine.
+2. **T4 has no alternative source at all** — the spec says *"AlpaSim + trafficsim **only**"*. T1–T3
+   list AlpaSim + trafficsim; T4 has no fallback corpus whatsoever. It is the most exposed of the four.
+3. ⚠️ **The dependency is stronger than "needs traffic present".** All four define `Y_outcome` as a
+   *simulated consequence*, and their whole admissibility argument is *"a consequence cannot be circular
+   with any model input by construction"*. That argument needs the consequence to be **a function of the
+   policy's choice** — not merely for traffic to exist. So the gate is not "is trafficsim installed"
+   (it is, §1.1) but "does the simulated world respond to the ego", which is what §2 measures.
+
+---
+
+## 5. TASK 2 — wheelbase option B, EXECUTED
+
+*(Numbered 5 to keep §2–4 for the trafficsim measurement, which runs longer. Task 2 is complete.)*
+
+**Source followed:** `…/incoming/2026-07-26-wheelbase-impact/WHEELBASE_IMPACT.md` §5 "The concrete B",
+read in full first. Its four numbered steps are implemented below in its order, plus the §6 corrections
+that it marks as owed *regardless* of the decision.
+
+### 5.1 🔴 The parity statement — what changes and what provably does not
+
+| | changed? |
+|---|---|
+| **Episode selection** | ❌ **NO.** `cache_key` hashes the *ordered clip-id list* + build params. Option B alters label VALUES for future builds; it touches no clip list, no split, no skip set. **Nothing re-selects episodes, so nothing had to be refused or escalated.** |
+| `physicalai-train-e438721ae894` (2,376 eps, skip-hash `f09e44db`) | ❌ **NO — byte-identical, enforced in code.** |
+| Any existing cache, arm, checkpoint or published number | ❌ **NO.** Option B is fix-**forward** only. |
+| Default behaviour of `build_episode` / `signals_at` | ❌ **NO.** Both default to the legacy 2.9 m constant. |
+| Future builds launched with `--wheelbase-mode per_clip_v1` | ✅ **YES** — and they mint a **different cache key**, so they can never be compared against a legacy arm by accident. |
+
+**Are previously-published numbers now incomparable?** **No — and that is the point of choosing B over
+A.** Option A (re-mint labels + re-baseline) *would* have made all 27 recomputed arms incomparable, for
+a measured **+0.0056 m** on a number whose own CI half-width is **0.060 m**. B introduces a **regime
+boundary** instead: legacy numbers stay exactly comparable to each other, corrected numbers will be
+comparable to each other, and the two sets are separated by a cache key rather than by a promise in
+prose. **The one thing a future agent must not do is run a paired test across the boundary** — which is
+why it is now registered in `MODEL_REGISTRY.md` §0.1.1 as a named regime boundary.
+
+### 5.2 The mechanism — why parity is preserved *by construction*, not by care
+
+The load-bearing line is `physicalai.label_params()`:
+
+```python
+if wheelbase_mode == WHEELBASE_MODE_LEGACY:
+    return {}                                   # contributes NOTHING to the key
+return {"wheelbase_mode": wheelbase_mode}       # a corrected cache CANNOT collide
+```
+
+Both build scripts splat it: `params = {..., "calib": "ftheta_v2", **label_params(args.wheelbase_mode)}`.
+Under the legacy default the dict is **bit-identical to the one that minted `e438721ae894`**, so
+`rebuild_pai_rolling.py`'s existing determinism oracle (`ABORT: key mismatch`) still passes unchanged —
+and that oracle is now *also* the thing that makes crossing the regime boundary impossible by accident,
+because a corrected build must be launched with its own `--expect-key`.
+
+⚠️ **The trap this avoids, stated because it is the obvious wrong implementation:** adding
+`"wheelbase": ...` to the params dict *unconditionally* — even set to the legacy value — re-keys **every
+cache in the program** and silently voids the parity guarantee. `label_params` returns `{}` rather than
+`{"wheelbase_mode": "const2p9"}` precisely to prevent that, and the test below pins it.
+
+### 5.3 What was implemented
+
+| # | §5 step | where |
+|---|---|---|
+| 1 | do not touch the constant for existing arms | `physicalai.py` — `WHEELBASE = 2.9` **unchanged in value**; only its comment was corrected (§6 row 1) |
+| 2 | per-clip `vehicle_dimensions` join, resolved **exactly like `intrinsics_for_clip`** | `physicalai.wheelbase_for_clip()` — local CSV (`$TANITAD_PAI_WHEELBASE` or `<root>/calibration/physicalai_wheelbase.csv`) → per-chunk `calibration/vehicle_dimensions` parquet (downloaded on demand) → **loud** fallback, never silent. `strict=True` in a corrected build **refuses** rather than falling back. |
+| 3 | extend the cache-key params with the label regime | `physicalai.label_params()`; wired into `build_pai_cache.py` and `rebuild_pai_rolling.py`, both with a new `--wheelbase-mode` |
+| 4 | register the discontinuity | `MODEL_REGISTRY.md` **§0.1.1**, new subsection, citing the measurement |
+
+A deliberate structural note: `signals_at` had **no clip in scope** (it takes only the egomotion frame
+and query times), so the wheelbase is threaded as a defaulted parameter and resolved one level up in
+`build_episode`, which does have `clip["clip_id"]` and can recover the corpus root from the mp4 path the
+same way `_decode_mp4` already does for calibration. `_veh_rows` is a deliberate sibling of
+`_front_wide_rows`, **not** a reuse: `vehicle_dimensions` is per-clip, has no `camera_name` column, and
+filtering it through `_front_wide_rows` would silently return an empty frame.
+
+### 5.4 The guard proves it can fail — both directions
+
+`stack/tests/test_wheelbase_regime.py` — **14 tests, all passing** (`MEASURED`, tier **CONFIRMED**).
+Existing suite unaffected: `test_physicalai`, `test_physicalai_signals`, `test_physicalai_rig`,
+`test_epcache`, `test_epcache_key`, `test_parity_manifest`, `test_cosmos_drive` → **65 passed**.
+
+| direction | test | what it would catch |
+|---|---|---|
+| **fidelity** | `test_legacy_regime_contributes_no_build_param`, `test_legacy_params_dict_is_bit_identical` | the exact failure that would void parity — a key that moves. Asserts `cache_key(srcs, merged) == cache_key(srcs, CANONICAL)`. |
+| **fidelity** | `test_signals_at_default_is_the_legacy_constant` | a defaulted parameter that silently changes existing labels |
+| **fidelity** | `test_steer_uses_the_supplied_wheelbase` (×5 real values), `test_gain_matches_the_measured_range` | that the correction has the **measured magnitude and direction** — gains pinned to 2.730/2.9 = 0.9414 and 3.216/2.9 = 1.1090, the envelope `WHEELBASE_IMPACT.md` §2.1 measured |
+| **deliberately failing** | `test_per_clip_regime_changes_the_key` | two regimes sharing a key |
+| **deliberately failing** | `test_unknown_regime_is_refused` | a typo'd regime silently building |
+| **deliberately failing** | `test_strict_resolution_raises_when_unresolvable` | ⭐ **a half-corrected cache** — clips that fail to resolve silently reverting to 2.9. This is the one that matters most: without it a `per_clip_v1` build could mint a mixture and label it corrected. |
+| **deliberately failing** | `test_nonstrict_resolution_falls_back_loudly` | a silent fallback (asserts the word `APPROXIMATION` is actually printed) |
+
+**MDE, against the effect each guard exists to catch.** These are *exact* guards, not statistical ones —
+the quantity under test is a hash equality and a floating-point identity, so the detectable effect is
+**any** difference at all: one changed key, one changed label, one unresolved clip. There is no MDE gap
+of the kind that killed today's controls, because there is no sampling involved. Stated explicitly
+rather than left implicit, since "the guard can't fail" is the class this section exists to close.
+
+### 5.5 §6 honesty corrections — done, and one deliberately NOT done
+
+| # | correction | status |
+|---|---|---|
+| 1 | `physicalai.py:51` comment claimed a "Hyperion platform class" justification | ✅ **rewritten** as an explicit, dated, cited approximation carrying the five real values, the clip-mean 2.9568, and the measured impact |
+| 2 | `cosmos_drive.py:63` justified 2.9 by cross-reference to that false claim | ✅ **rewritten**; Cosmos-DD's true wheelbase recorded as **UNKNOWN — not probed**, with a do-not-assume warning |
+| 3 | `GEOMETRY_INTEGRITY_AUDIT.md` "real 2.85 (1.5 %)" | ✅ **corrected in place, BOTH sites** (`:40` and `:77–78`), citing the measurement and the C2 entry — see the self-correction below |
+| 4 | `RETRACTION_LOG.md` entry, class **C2** | ✅ **appended** — plus the *reason* one chunk misled: `I(wheelbase; country) = 0.769/1.880` bits, so chunk shards are **systematically**, not noisily, biased for this variable |
+| 5 | `l2d.py` / `nuscenes.py` are correct, do not touch | ✅ **untouched** (2.72 Kia Niro, 2.588 Renault Zoe — published specs for single-vehicle corpora) |
+| 6 | `closedloop.py:99` 2.7 train/serve skew | ⚠️ **DOCUMENTED IN CODE, VALUE DELIBERATELY UNCHANGED — and escalated.** See below. |
+
+### 5.6 ⚠️ A C2 I committed IN THIS DOCUMENT and caught before shipping it
+
+I first wrote row 3 as ***"NOT DONE — file not found in this repo"***, on the strength of a repo-wide
+`find` and a content grep run from the wrong starting directory. **The file exists**, at
+`Benchmarks & Eval/GEOMETRY_INTEGRITY_AUDIT.md`, and carries the stale claim at **two** sites (`:40`
+and `:77–78`), not the one the measurement listed. The second probe — `git ls-files | grep -i` — found
+it immediately.
+
+That is **exactly the C2 class** (*absence from a single probe*) that this same section was appending a
+C2 retraction about, and I nearly published it inside the correction. Logged here rather than quietly
+fixed, because the root-cause class is the reusable part: **`find` from an assumed subtree is one probe;
+`git ls-files` is the tool that owns the fact.** Both sites are now corrected.
+
+⚖️ **Why I did not change `closedloop.py`'s 2.7 to 2.9.** The measurement calls it "the cheapest thing to
+fix in the whole report", and it is — but it is not *free*, and the report itself offers "align **or**
+document". Aligning moves **every closed-loop number produced from here** and breaks comparability with
+the published n=12 REF-C, flagship-vs-REF-C and native-1080 suites. That is a PI call about a published
+series, not an agent's judgement call, so I documented the skew precisely at the constant (path
+invariance ✅, action skew +7.41 %, open-loop cost +0.0026 [−0.0006, +0.0062] not separated) and
+**escalated the value change** rather than making the record inconsistent without a decision.
+
+### 5.7 Test-suite state
+
+`MEASURED` 2026-07-26 after all edits: **`stack` 1119 passed, 7 skipped** · **`taniteval` 449 passed**.
+Green before staging, as `CLAUDE.md` requires.
+
+---
+
+## 6. Deliverable manifest
+
+**STAGED (`git add`), NOT committed, NOT pushed.** Branch `agent/benchmarks-eval-20260721`.
+
+| artifact | what | where |
+|---|---|---|
+| `TRAFFICSIM_WHEELBASE.md` | this report | `repo:TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-trafficsim-wheelbase/` |
+| `ts_scene_pick.py` | USDZ→`obstacle.parquet` dynamic-agent census over all 51 scenes | same dir · `tanitad-eval:/workspace/ts_scene_pick.py` |
+| `ts_wizard_gen.sh` | wizard config gen with **`trafficsim=catk`** (configuration only) | same dir · `tanitad-eval:/workspace/ts_wizard_gen.sh` |
+| `ts_master.sh` | 3-arm × R-repeat full-runtime driver (GO / STOP / GO2) | same dir · `tanitad-eval:/workspace/ts_master.sh` |
+| `ts_reactivity.py` | ASL parser + paired episode-cluster bootstrap + both controls | same dir · `tanitad-eval:/workspace/ts_reactivity.py` |
+| `artifacts/ts_scene_pick.json` | per-scene agent census (51 scenes) | same dir |
+| `artifacts/ts_reactivity.json` | **the reactivity result** — raw JSON per number | same dir |
+| **code — per-clip wheelbase (option B)** | `label_params`, `wheelbase_for_clip`, `_veh_rows`, `_load_chunk_wheelbase`, `_wheelbase_from_parquet`, `_wheelbase_table`, `signals_at(wheelbase=)`, `build_episode(wheelbase_mode=)` | `repo:stack/tanitad/data/physicalai.py` |
+| code — build wiring | `--wheelbase-mode` + `label_params` splat | `repo:stack/scripts/build_pai_cache.py`, `repo:stack/scripts/rebuild_pai_rolling.py` |
+| code — tests | 14 tests, both directions | `repo:stack/tests/test_wheelbase_regime.py` |
+| doc-in-code corrections | the 2.9 comment; the Cosmos cross-reference; the closedloop 2.7 skew | `repo:stack/tanitad/data/physicalai.py`, `repo:stack/tanitad/data/cosmos_drive.py`, `repo:taniteval/taniteval/closedloop.py` |
+| registry | **§0.1.1 named regime boundary** | `repo:Project Steering/MODEL_REGISTRY.md` |
+| retraction log | **two** new rows: the wheelbase **C2**, and the trafficsim **C1** circular-premise | `repo:Project Steering/RETRACTION_LOG.md` |
+| audit correction | both stale wheelbase sites | `repo:Benchmarks & Eval/GEOMETRY_INTEGRITY_AUDIT.md` |
+| **pod only (regenerable)** | `/workspace/tsreact/clipgt-41c06176…/{GO,STOP,GO2}_r{1,2,3}/` rollouts, `rollout.asl`, per-arm service logs, `/workspace/tsreact_{smoke,full}.log` | `tanitad-eval` — **regenerable via `ts_master.sh`**; the extracted numbers are in the repo JSON |
+
+⚠️ **Nothing produced by this session lives in only one place** except the raw ASL rollouts, which are
+regenerable from the staged scripts and whose every extracted number is in `artifacts/ts_reactivity.json`.
+
+⚠️ **Concurrent staging note:** `MODEL_REGISTRY.md` and `RETRACTION_LOG.md` were **already modified by
+sibling agents** when I edited them (`git status` showed them dirty before my first write). My additions
+are confined to a new `§0.1.1` and two appended table rows respectively; whoever commits must expect
+other agents' edits in those two files and should say so in the message rather than splitting them out.
+
+## 7. Escalations — stated here, not left in a README
+
+1. ⛔ **The brief's premise for voiding the tactical gate is FALSE and should stop propagating.** The
+   program harvest's *"trafficsim was never enabled"* came from a doc **older than the run it impeaches**.
+   Anything downstream that treats the tactical gate as "probably a config artefact" needs correcting.
+2. 🔴 **`taniteval/closedloop.py` wheelbase 2.7 vs the 2.9 the models trained on — needs a PI decision.**
+   Documented in code, value unchanged. Aligning it is one constant, no retrain, no parity impact, but
+   it moves every future closed-loop number and breaks comparability with the published n=12 suites.
+3. 🟡 **No published TanitAD closed-loop number has ever run against reactive traffic** (§1.3). If any
+   downstream claim depends on agents responding to the ego, it is unsupported by those suites.
+4. 🟡 **A corrected-regime cache does not exist yet.** Option B is *capability*, not a built artefact:
+   the first `--wheelbase-mode per_clip_v1` build must be commissioned deliberately, with its own
+   `--expect-key`, and must NOT be paired against any legacy arm.

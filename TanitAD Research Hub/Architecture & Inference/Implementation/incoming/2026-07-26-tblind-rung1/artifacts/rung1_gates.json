@@ -1,0 +1,155 @@
+{
+  "window_set_identity_gate": {
+    "n_windows_new": 599,
+    "n_windows_committed": 599,
+    "n_episode_clusters": 596,
+    "K_max": 185,
+    "eid_identical_vs_bi": true,
+    "t0_identical_vs_bi": true,
+    "eid_identical_vs_matched": true,
+    "anchors": {
+      "a_imagination__own__roSTR": {
+        "max_abs_diff_m": 0.0,
+        "within_tol": true,
+        "tol_m": 0.0001,
+        "committed_in": "bi_perwindow_compact"
+      },
+      "a_imagination__hold__roSTR": {
+        "max_abs_diff_m": 0.0,
+        "within_tol": true,
+        "tol_m": 0.0001,
+        "committed_in": "bi_perwindow_compact"
+      },
+      "b_frozenlast__own__roSTR": {
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001,
+        "committed_in": "perwindow_matched_K185"
+      },
+      "b_frozenlast__hold__roSTR": {
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001,
+        "committed_in": "perwindow_matched_K185"
+      }
+    },
+    "GATE_PASS": true
+  },
+  "plumbing_selftest": {
+    "a_selftest__blend0": {
+      "must_equal": "a_imagination__own__roSTR",
+      "max_abs_diff_m": 0.0,
+      "bit_identical": true
+    },
+    "a_selftest__every1": {
+      "must_equal": "a_imagination__own__roSTR",
+      "max_abs_diff_m": 0.0,
+      "bit_identical": true
+    },
+    "a_selftest__blend1": {
+      "must_equal": "a_imagination__hold__roSTR",
+      "max_abs_diff_m": 0.0,
+      "bit_identical": true
+    },
+    "_anti_noop_min_abs_diff_vs_own_m": 226.672363,
+    "_anti_noop_arms_identical_to_own": [],
+    "SELFTEST_PASS": true
+  },
+  "fidelity_vs_ladder": {
+    "T_blind_own_str": {
+      "committed": 25,
+      "recomputed": 25,
+      "committed_ci_s": [
+        2.5,
+        3.9
+      ],
+      "recomputed_ci_s": [
+        2.5,
+        3.9
+      ]
+    },
+    "T_blind_hold_str": {
+      "committed": 115,
+      "recomputed": 115,
+      "committed_ci_s": [
+        11.5,
+        17.4
+      ],
+      "recomputed_ci_s": [
+        11.5,
+        17.4
+      ]
+    },
+    "de2s_own_str": {
+      "committed": 1.8165,
+      "recomputed": 1.8165
+    },
+    "de2s_hold_str": {
+      "committed": 0.6718,
+      "recomputed": 0.6718
+    },
+    "ade_0_2s_own_str": {
+      "committed": 0.871,
+      "recomputed": 0.871
+    },
+    "ade_0_2s_hold_str": {
+      "committed": 0.3351,
+      "recomputed": 0.3351
+    },
+    "T_useful_1m_own_str_s": {
+      "committed": 1.4,
+      "recomputed": 1.4
+    },
+    "T_useful_1m_hold_str_s": {
+      "committed": 2.3,
+      "recomputed": 2.3
+    },
+    "LEVEL_FIDELITY_PASS": true,
+    "T_BLIND_EXACT_REPRODUCTION": true,
+    "T_useful_reproduces": true,
+    "FIDELITY_PASS": true
+  },
+  "diagnostic_vacuity_audit": {
+    "T_blind_rule": {
+      "minimum_return_steps": 1,
+      "maximum_return_steps": 185,
+      "failing_value_reachable": "MEASURED below (see reachability probe)"
+    },
+    "frac_draws_T_blind_at_floor_1step": {
+      "admissible": true,
+      "why": "both 0.000 and 1.000 are attainable; Rung 0 measured both"
+    },
+    "frac_draws_T_blind_is_zero": {
+      "admissible": false,
+      "why": "structurally 0 under A4 (minimum return is 1) \u2014 NOT emitted"
+    },
+    "selftest_blend0_equals_own": {
+      "admissible_alone": false,
+      "why": "satisfied by a no-op implementation; admissible only paired with the anti-no-op requirement, which is also run"
+    },
+    "t_useful": {
+      "admissible": true,
+      "why": "returns 0.0 when step 1 is already above the bar"
+    },
+    "anti_noop": {
+      "admissible": true,
+      "why": "a zero-difference arm is attainable and would fail"
+    },
+    "failing_value_probe": {
+      "identical_arms_steps": 1,
+      "swapped_arms_steps": 1,
+      "both_must_be_1": true
+    }
+  },
+  "ALL_GATES_PASS": true,
+  "meta": {
+    "n_windows": 599,
+    "n_episode_clusters": 596,
+    "n_boot": 2000,
+    "seed": 0,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "arm_ckpt": "flagship-30k",
+    "ckpt_step": 29999,
+    "n_arms": 60
+  }
+}

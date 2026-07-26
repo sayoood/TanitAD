@@ -141,7 +141,7 @@ def main():
              "mean speed |")
     o.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
     for arm, s in act.items():
-        for n in ("5", "20", "60", "185"):
+        for n in ("5", "20", "40", "185"):
             if n not in s["mean_abs_steer_rad"]:
                 continue
             o.append("| `%s` | %s | %.5f | %.4f | %.4f | %.4f | %.5f | %.4f | "
@@ -154,13 +154,13 @@ def main():
                         s["mean_pred_speed_ms"][n]))
     on = m["onset_switch_sweep"]
     o.append("\n### The onset sweep — recovery as a fraction of the own→hold gap\n")
-    o.append("| arm | " + " | ".join(f"@{n}" for n in ("5", "20", "60", "185"))
+    o.append("| arm | " + " | ".join(f"@{n}" for n in ("5", "20", "40", "185"))
              + " |")
     o.append("|---|" + "---:|" * 4)
     for tag, v in on.items():
         o.append("| `%s` | " % tag + " | ".join(
             "%.3f" % v["recovery_frac_of_own_hold_gap"].get(n, float("nan"))
-            for n in ("5", "20", "60", "185")) + " |")
+            for n in ("5", "20", "40", "185")) + " |")
     if "fed_action_stats_audit_subset" in m:
         o.append("\n### Fed actions, dense (audit subset)\n")
         o.append("| arm | mean \\|steer\\| | mean \\|accel\\| | frac steer at "

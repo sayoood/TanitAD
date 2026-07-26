@@ -3,8 +3,12 @@
 **Date:** 2026-07-26 (local, Europe/Berlin). **Author:** research engineer (situation-classifier stream).
 **Pre-registration:** `PRE_REGISTRATION.md`, this folder, **written and staged before any classifier
 weight existed**. Every checkpoint and every JSON in `artifacts/` is later.
-**Host:** pod3 (A40, exclusive). pod1 (training), pod2 (the `tblind-ladder` co-tenant) and the eval
-pod were not used for compute.
+**Host:** pod3 (A40, exclusive) — all GPU work.
+⚠️ **Declared in full:** this stream was originally briefed onto **pod2** and, before the host
+correction arrived, ran **one CPU-only job there** — `sc_dump_poses.py`, 103 s, no GPU, writing
+9 MB to `pod2:/workspace/sitclf/poses`. It overlapped the `tblind-ladder` co-tenant's job but used
+no GPU and ~1 core. From the correction onward **every** feature extraction, training and evaluation
+ran on pod3. **pod1 (training v2corpus) and the eval pod were never touched.**
 
 **Evidence classes:** `MEASURED` (ours + path) · `PUBLISHED` (cited) · `INHERITED` (another
 agent/doc, NOT re-verified) · `ESTIMATED` · `HYPOTHESIS`.
@@ -20,9 +24,21 @@ number in those sections is typed by hand.**)*
 
 # 0. VERDICT IN ONE BOX
 
-<!-- VERDICT -->
+> ## **The model exists, is trained, and has a held-out number with a measured lead time. Two of the PI's three situations are buildable on PhysicalAI-AV; the third is not, and that is a corpus fact, not a modelling failure.**
+>
+> **What was built and validated, end to end:** three situation labels from privileged geometry the
+> model never sees · an anticipation target that masks every in-progress frame so the head can only
+> score by seeing the situation *coming* · **six trained heads plus a four-arm closed-form ridge
+> ladder** on the frozen deployed-v1 front-camera state · all five pre-registered baselines · the
+> lead-time distribution · the per-camera need · the efficiency curve · and seven controls, each
+> reported with the MDE against the effect it exists to catch.
+>
+> **The verdict below is computed in code** by the rule fixed in `PRE_REGISTRATION.md` §7 — it is
+> not a judgement written after looking at the numbers.
+
+<!-- TABLES:VERDICT -->
 *(filled from the held-out run)*
-<!-- /VERDICT -->
+<!-- /TABLES:VERDICT -->
 
 ---
 
@@ -121,6 +137,13 @@ registered minimum useful lead time is **1.0 s** — a classifier below it **fai
 
 ---
 
+# 5b. Training-side cross-validation — where the rank ladder replicates
+
+<!-- TABLES:CV -->
+<!-- /TABLES:CV -->
+
+---
+
 # 6. The multi-camera need
 
 <!-- TABLES:CAMERA -->
@@ -160,6 +183,7 @@ registered minimum useful lead time is **1.0 s** — a classifier below it **fai
 |---|---|---|
 | **A1** | Two arms added to `PRE_REGISTRATION.md` §5.2 — a **closed-form ridge ladder** (`ridge_img_ego`, `ridge_img`, `ridge_ego`, `ridge_img_shuf`) — and **rank 16 promoted to primary** over rank 64 | Made **before any held-out score existed** (feature extraction was still running; the pre-registration had already been staged). A sibling stream MEASURED, on the same frozen v1 state: (i) a monotone swamping dose-response, ego 3.659× → +k16 3.685× → +k64 3.000× → +k256 2.116× → +k2048 1.59×, with 16 PCs carrying 97.0 % of the variance; (ii) a **2,049-parameter linear ridge probe SEPARATING** on `NOT_T_seen` where H2's 2.17 M-parameter head did **not**. Both are INHERITED. The additions are strictly **additive** — no bar, no primary arm, no operating-point rule and no outcome condition was changed. The ridge arms make a null *harder* to obtain, i.e. they bias against Outcome B. |
 | **A2** | `detect_curves` (the §6.2 **control** population) uses its own lower curvature deadband (R ≤ 400 m instead of R ≤ 50 m) | With the roundabout deadband the control returned **3 events on the whole corpus** — a control that cannot be populated is the C13 failure mode (a guard that cannot fire). The lower deadband yields **180** curve events. The roundabout and turn detectors are untouched, so this cannot move any situation's label. |
+| **A4** | Bookkeeping note, no effect on any result: `head_img_ego_concat`, `head_ego` and `head_priv` do not read the PCA rank at all, so their `r16` and `r64` CV rows are **the same run repeated** and report identical CV-AP. The config de-duplication catches this for the ego/privileged arms but not for the concat arm | Costs ~100 s of GPU; changes nothing. Flagged so a reader does not mistake two identical numbers for a reproduced measurement. |
 | **A3** | The universe is the **train parity cache only** (2,376 of 2,976 episodes) | pod3 — the assigned host — holds `physicalai-train-e438721ae894` but **not** the val cache (`s3parity/views/…val…` is a directory of 4 KB stubs, MEASURED). ⚠️ **Consequence, declared: every clip in this study is encoder-seen, so the encoder-unseen sensitivity H2 could run cannot be run here.** The confound is *balanced* across TRAIN and HELD-OUT, so it can inflate absolute AP but cannot manufacture a difference *between arms* — which is what the primary comparison measures. |
 
 ---
