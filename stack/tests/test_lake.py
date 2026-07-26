@@ -186,6 +186,120 @@ def test_scope_cannot_include_gated():
 
 
 # --------------------------------------------------------------------------- #
+# NC-RESEARCH FIREWALL AGAINST THE COMMERCIAL TIER C  (added 2026-07-26)       #
+# --------------------------------------------------------------------------- #
+# These pin the boundary that the nuScenes ingest makes live: `nc-research` data
+# now physically exists in the lake, so "C never contains NC" stops being a
+# property of an empty set and becomes a property of the guard.
+C_TIER_SCOPE = dict(allowed_classes={"owned-safe"}, require_commercial_ok=True,
+                    forbid_share_alike=True)
+
+
+def test_nuscenes_registered_as_copyleft_share_alike():
+    """REGRESSION (2026-07-26): nuScenes is CC BY-NC-**SA** 4.0, not CC-BY-NC-4.0.
+
+    The registry previously said ``share_alike=False``, which would have let
+    nuScenes co-mingle with non-copyleft NC data in a shared tar. Two independent
+    PUBLISHED probes (the authors' paper arXiv 1903.11027; the nuscenes.org-derived
+    secondary corpus) say ShareAlike. Same root-cause class as the ZOD correction.
+    """
+    from tanitad.lake.schema import SOURCE_REGISTRY
+    lic = SOURCE_REGISTRY["nuscenes"]
+    assert lic.license_class == "nc-research"
+    assert lic.share_alike is True, "nuScenes is CC BY-NC-SA — copyleft"
+    assert "SA" in lic.license_name, f"license_name must record SA, got {lic.license_name!r}"
+    assert not lic.commercial_ok
+
+
+def test_nc_research_record_refused_from_commercial_tier_C():
+    """A REAL assembled nuScenes record is refused by the REAL C-tier guard.
+
+    Not hand-written dicts: the record goes through ``assemble_lake_record`` (which
+    stamps the license axis from the registry CONSTANT) and
+    ``record_to_catalog_row`` (the exact shape the exporter hands the guard).
+    """
+    from tanitad.lake.schema import record_to_catalog_row
+    ep = generate_episode(7, steps=20, size=32)
+    rec = assemble_lake_record(ep, source="nuscenes", split="train",
+                               build_params_hash="x")
+    assert rec.license_class == "nc-research" and rec.share_alike
+    assert not rec.commercial_ok
+    row = record_to_catalog_row(rec)
+
+    # the C-tier gate as the push script configures it
+    with pytest.raises(LicenseScopeError):
+        verify_license_scope([row], context="tier-C", **C_TIER_SCOPE)
+
+    # and each of the three gates refuses it INDEPENDENTLY (defence in depth:
+    # weakening any single one must not open the tier)
+    with pytest.raises(LicenseScopeError, match="outside scope"):
+        verify_license_scope([row], allowed_classes={"owned-safe"})
+    with pytest.raises(LicenseScopeError, match="not commercial_ok"):
+        verify_license_scope([row], allowed_classes={"nc-research"},
+                             require_commercial_ok=True)
+    with pytest.raises(LicenseScopeError, match="share_alike"):
+        verify_license_scope([row], allowed_classes={"nc-research"},
+                             forbid_share_alike=True)
+
+
+def test_every_nc_research_source_refused_from_commercial_tier_C():
+    """No `nc-research` source — present or future — can reach tier C."""
+    from tanitad.lake.schema import SOURCE_REGISTRY, record_to_catalog_row
+    nc = [s for s, l in SOURCE_REGISTRY.items() if l.license_class == "nc-research"]
+    assert len(nc) >= 8, f"expected the 8 registered NC sources, got {nc}"
+    for i, src in enumerate(nc):
+        assert not SOURCE_REGISTRY[src].commercial_ok
+        rec = assemble_lake_record(generate_episode(100 + i, steps=20, size=32),
+                                   source=src, split="train",
+                                   build_params_hash="x")
+        with pytest.raises(LicenseScopeError):
+            verify_license_scope([record_to_catalog_row(rec)],
+                                 context=f"tier-C:{src}", **C_TIER_SCOPE)
+
+
+def test_nc_share_alike_routes_to_segregated_copyleft_shard():
+    """Copyleft NC lands under `sharealike/` and never shares a tar with non-SA."""
+    from tanitad.lake.schema import SOURCE_REGISTRY
+    from tanitad.lake.shards import shard_prefix
+    p = shard_prefix("nc-research", "nuscenes", "train",
+                     SOURCE_REGISTRY["nuscenes"].share_alike)
+    assert p == "shards/nc-research/sharealike/nuscenes/train"
+    # a non-SA NC source stays out of that subtree entirely
+    q = shard_prefix("nc-research", "bdd100k", "train",
+                     SOURCE_REGISTRY["bdd100k"].share_alike)
+    assert "sharealike" not in q
+    assert not p.startswith(q.rsplit("/", 2)[0] + "/bdd100k")
+
+
+def test_nc_research_tier_is_nc_not_ship():
+    from tanitad.lake.filtering import tier_of
+    from tanitad.lake.schema import SOURCE_REGISTRY
+    for src, lic in SOURCE_REGISTRY.items():
+        if lic.license_class == "nc-research":
+            assert tier_of(lic.license_class, lic.share_alike,
+                           lic.commercial_ok) == "nc"
+
+
+def test_commercial_view_predicate_excludes_nc_research():
+    """The C view's own PREDICATE (not just the guard) filters NC out.
+
+    Layer 1 (partitioning) must already exclude NC, so the guard is a backstop
+    rather than the only thing standing between NC and a commercial export.
+    """
+    import pyarrow as pa
+    import pyarrow.dataset as pads
+    from tanitad.lake.view import owned_safe_commercial_view
+    expr = owned_safe_commercial_view("/nonexistent").filter_expr
+    tbl = pa.table({
+        "episode_id": pa.array([1, 2, 3], pa.int64()),
+        "license_class": pa.array(["owned-safe", "nc-research", "owned-safe"]),
+        "commercial_ok": pa.array([True, False, False]),
+    })
+    kept = pads.dataset(tbl).to_table(filter=expr).column("episode_id").to_pylist()
+    assert kept == [1], f"C view must keep only commercial owned-safe, got {kept}"
+
+
+# --------------------------------------------------------------------------- #
 # SHARD INTEGRITY + SCHEMA                                                     #
 # --------------------------------------------------------------------------- #
 def test_shard_sha256_roundtrip_and_corruption(tmp_path):

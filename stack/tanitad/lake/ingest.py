@@ -486,3 +486,114 @@ class L2DIngestor(SourceIngestor):
         elif self.frame_source == "bev_map":
             m["camera_model"] = "bev_render"
         return m
+
+
+# --------------------------------------------------------------------------- #
+# nuScenes ingestor — the first `nc-research` source (2026-07-26)              #
+# --------------------------------------------------------------------------- #
+@dataclass
+class NuScenesIngestor(SourceIngestor):
+    """Wraps ``nuscenes.build_episode``. **CC BY-NC-SA 4.0 -> `nc-research` AND
+    `share_alike`** — the license axis comes from the registry CONSTANT, so this
+    ingestor cannot mis-tag it, and ``ShardWriter`` routes every record to the
+    segregated copyleft shard ``shards/nc-research/sharealike/nuscenes/<split>``.
+
+    🔴 The records this produces can NEVER enter TanitDataSet-C. The export guard
+    (``license_guard.verify_license_scope`` with ``require_commercial_ok=True``,
+    ``forbid_share_alike=True``) refuses them on three independent grounds, each
+    covered by a regression test in ``tests/test_lake.py``.
+
+    Geometry: canonicalized with D-016 R1 ``pinhole_rectify`` (CAM_FRONT fx≈1266
+    on 1600×900 is height-bound; the legacy square crop would land f_eff≈360 vs
+    the canonical 266). Intrinsics are read PER SAMPLE from ``calibrated_sensor``.
+
+    Actions are POSE-DERIVED — nuScenes ships no CAN — so ``action_source=
+    'pose_derived'``, ``has_can=False``. Split unit is the **log** (drive-disjoint),
+    never the scene: scenes from one log are consecutive slices of the same drive.
+
+    ``root`` for :func:`ingest_source` is the nuScenes root dir (the one holding
+    ``v1.0-trainval/``). Requires the KEYFRAME BLOBS, not just metadata.
+    """
+
+    source: str = "nuscenes"
+    size: int = 256
+    n_stack: int = 3
+    val_frac: float = 0.2
+    version: str = "v1.0-trainval"
+    channel: str = "CAM_FRONT"
+    decode_fn: Callable | None = None       # injectable for CI (no real images)
+
+    def __post_init__(self):
+        self.build_params = {"size": self.size, "n_stack": self.n_stack,
+                             "version": self.version, "channel": self.channel,
+                             "adapter": "nuscenes.build_episode",
+                             "canon": "pinhole_rectify(D-016 R1)"}
+        self.action_source = "pose_derived"
+        self.has_can = False
+        self._idx = None
+        self._root = None
+        self._eid: dict[str, int] = {}
+        self._geo: dict[str, dict] = {}
+
+    # -- hooks -- #
+    def discover(self, root):
+        from tanitad.data import nuscenes as ns
+        self._root = Path(root)
+        self._idx = ns.NuScenesIndex(ns.load_tables(root, self.version))
+        scenes = ns.discover_scenes(self._idx)
+        # stable, deterministic episode ids from the scene ORDER in the table
+        self._eid = {s["token"]: i for i, s in enumerate(scenes)}
+        return scenes
+
+    def split_units(self, units, seed=0):
+        """Split on the LOG (drive-disjoint), not the scene — I3."""
+        import torch
+        from tanitad.data import nuscenes as ns
+        logs = sorted({ns.split_unit_of(self._idx, u) for u in units})
+        g = torch.Generator().manual_seed(seed)
+        perm = torch.randperm(len(logs), generator=g).tolist()
+        n_val = max(1, int(len(logs) * self.val_frac))
+        val_logs = {logs[i] for i in perm[:n_val]}
+        train = [u for u in units
+                 if ns.split_unit_of(self._idx, u) not in val_logs]
+        val = [u for u in units if ns.split_unit_of(self._idx, u) in val_logs]
+        return {"train": train, "val": val}
+
+    def build_core(self, unit) -> ToyEpisode:
+        from tanitad.data import nuscenes as ns
+        ep, geo = ns.build_episode(
+            self._idx, unit["token"], self._root,
+            episode_id=self._eid[unit["token"]], size=self.size,
+            n_stack=self.n_stack, channel=self.channel, decode_fn=self.decode_fn)
+        self._geo[unit["token"]] = geo
+        return ep
+
+    def split_unit_id(self, unit) -> str:
+        from tanitad.data import nuscenes as ns
+        return ns.split_unit_of(self._idx, unit)
+
+    def unit_meta(self, unit) -> dict:
+        from tanitad.data.calib import F_REF
+        geo = self._geo.get(unit["token"], {})
+        m = {
+            "hz": 2.0,                       # nuScenes KEYFRAME rate
+            "f_eff_px": F_REF,               # exact by construction (rectify)
+            "camera_model": "pinhole",
+            "attribution_id": "nuScenes-CC-BY-NC-SA-4.0",
+            "scene_name": unit.get("name", ""),
+            "scene_description": unit.get("description", ""),
+            "location": self._idx.location_of_scene(unit) if self._idx else "",
+            "camera_channel": self.channel,
+            "geometry": geo,
+        }
+        if geo:
+            m["intrinsics_native"] = {
+                "model": "pinhole",
+                "params": [geo.get("native_fx"), geo.get("native_fy")],
+                "cx": geo.get("native_cx"), "cy": geo.get("native_cy"),
+                "width": geo.get("native_width"), "height": geo.get("native_height"),
+                "observed_frac": geo.get("observed_frac"),
+                "note": "per-sample calibrated_sensor; rectified to f_eff=266 "
+                        "via D-016 R1 pinhole_rectify",
+            }
+        return m

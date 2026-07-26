@@ -84,7 +84,18 @@ SOURCE_REGISTRY: dict[str, SourceLicense] = {
     "zod": SourceLicense("owned-safe", "CC-BY-SA-4.0", share_alike=True,
                          is_synthetic=False),
     # --- rev-3 NC (TanitDataSet-R research-only, tier `nc`, §3) ---
-    "nuscenes": SourceLicense("nc-research", "CC-BY-NC-4.0", share_alike=False,
+    # ⚠️ CORRECTED 2026-07-26 (was "CC-BY-NC-4.0", share_alike=False — WRONG).
+    # nuScenes is CC BY-NC-**SA** 4.0, i.e. COPYLEFT. Two independent PUBLISHED
+    # probes agree: the authors' own paper (arXiv 1903.11027 §"the nuScenes data
+    # is published under CC BY-NC-SA 4.0 license") and the nuscenes.org-derived
+    # secondary corpus. nuscenes.org/terms-of-use itself returned EMPTY on 3
+    # fetch attempts, and it is documented to carry MODIFICATIONS on top of the
+    # CC grant — so this entry is the FLOOR of the restriction, never a ceiling.
+    # Consequence: share_alike=True routes nuScenes into the segregated copyleft
+    # shard (`shards/nc-research/sharealike/nuscenes/…`, shards.shard_prefix) and
+    # it can never co-mingle with non-SA data. Same root-cause class as the
+    # 2026-07-13 ZOD `research/NC → CC-BY-SA-4.0` correction.
+    "nuscenes": SourceLicense("nc-research", "CC-BY-NC-SA-4.0", share_alike=True,
                               is_synthetic=False),
     "bdd100k": SourceLicense("nc-research", "BDD-NC", share_alike=False,
                              is_synthetic=False),

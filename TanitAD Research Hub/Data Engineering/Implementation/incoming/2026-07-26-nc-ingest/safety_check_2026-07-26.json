@@ -1,0 +1,87 @@
+{
+  "run": "2026-07-26-nc-ingest",
+  "utc": "2026-07-26T01:50:03.029729+00:00",
+  "purpose": "Re-verify BOTH tiers after the nuScenes CC-BY-NC-SA registry correction, BEFORE any network write.",
+  "tiers": {
+    "C": {
+      "guard_rows": 90,
+      "shards": 14,
+      "episodes": 90,
+      "sources": {
+        "comma2k19": 90
+      },
+      "classes": {
+        "owned-safe": 90
+      },
+      "licenses": {
+        "MIT": 90
+      },
+      "splits": {
+        "train": 72,
+        "val": 18
+      },
+      "sha256_ok": 90,
+      "sha256_bad": 0,
+      "failures": [],
+      "verdict": "SAFE-TO-PUSH"
+    },
+    "R": {
+      "guard_rows": 90,
+      "shards": 14,
+      "episodes": 90,
+      "sources": {
+        "comma2k19": 90
+      },
+      "classes": {
+        "owned-safe": 90
+      },
+      "licenses": {
+        "MIT": 90
+      },
+      "splits": {
+        "train": 72,
+        "val": 18
+      },
+      "sha256_ok": 90,
+      "sha256_bad": 0,
+      "failures": [],
+      "verdict": "SAFE-TO-PUSH"
+    }
+  },
+  "registry_after_correction": {
+    "nuscenes": {
+      "license_name": "CC-BY-NC-SA-4.0",
+      "license_class": "nc-research",
+      "share_alike": true,
+      "commercial_ok": false
+    },
+    "nc_research_sources": [
+      "a2d2",
+      "argoverse2",
+      "bdd100k",
+      "drama",
+      "kitti360",
+      "nuscenes",
+      "once",
+      "rank2tell"
+    ],
+    "share_alike_sources": [
+      "argoverse2",
+      "kitti360",
+      "nuscenes",
+      "zod"
+    ],
+    "refuse_sources": [
+      "waymax",
+      "waymo"
+    ],
+    "gated_sources": [
+      "physicalai_av"
+    ]
+  },
+  "nc_value_add_this_round": {
+    "records": 0,
+    "gigabytes": 0.0,
+    "reason": "nuScenes bytes not acquired: account creation + human Terms-of-Use acceptance are outside an agent boundary. No third-party mirror used."
+  }
+}
