@@ -1,0 +1,66 @@
+{
+  "_read": "paired_episode_cluster_bootstrap of MODEL - CV on the same 881 windows. NEGATIVE delta = the model beats constant velocity. `separated` = the CI excludes zero.",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, 40 episodes, alpha=0.05",
+  "cv_ade_0_2s": {
+    "mean": 0.8377,
+    "lo": 0.6352,
+    "hi": 1.0899,
+    "ci95": 0.2273,
+    "se": 0.1156,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+  },
+  "oracle_minus_cv": {
+    "delta": -0.2538,
+    "lo": -0.4337,
+    "hi": -0.1124,
+    "ci95": 0.1606,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "beats_cv": true,
+    "beats_cv_SEPARATED": true
+  },
+  "produced_minus_cv": {
+    "delta": -0.08,
+    "lo": -0.2503,
+    "hi": 0.0661,
+    "ci95": 0.1582,
+    "p_delta_gt0": 0.168,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "beats_cv": true,
+    "beats_cv_SEPARATED": false
+  },
+  "neutral_minus_cv": {
+    "delta": -0.1812,
+    "lo": -0.3432,
+    "hi": -0.0515,
+    "ci95": 0.1458,
+    "p_delta_gt0": 0.0025,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "beats_cv": true,
+    "beats_cv_SEPARATED": true
+  },
+  "_v1_reference": {
+    "flagship_v1_ade_0_2s_full_set": 0.4271,
+    "source": "MODEL_REGISTRY.md 1.2 (flagship4b-speedjerk-30k @ 29999), the CORRECTED full-set value -- NOT the trainer's dense-20 reading",
+    "note": "a POINT reference. v1 is a different arm evaluated through the intent-free operative rollout; it is not paired with these windows and no interval on the difference is claimed here."
+  }
+}

@@ -1,0 +1,628 @@
+{
+  "title": "flagship-v4-fromscratch @ 15000 \u2014 goal-oracle vs produced-goal",
+  "evidence_class": "MEASURED (ours; artifacts in results_goalmode/)",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, 40 val episodes, percentile CI, alpha=0.05. overlapping_holdout_se is NOT used anywhere in this file.",
+  "surface_note": "the persisted v4 windows are the 4-WAYPOINT surface (steps 5/10/15/20 = 0.5/1.0/1.5/2.0 s). Knot j is j*0.5 s. taniteval.lateral.paired_cross_track stamps horizon_s = step*0.1 unconditionally, which mislabels this surface (knot 4 -> '0.4 s', truly 2.0 s); the horizons below are RE-STAMPED at 0.5 s spacing.",
+  "bit_identity_oracle_vs_prepublished_baseline": {
+    "pred": {
+      "shape_a": [
+        881,
+        4,
+        2
+      ],
+      "shape_b": [
+        881,
+        4,
+        2
+      ],
+      "bit_identical": true,
+      "md5_new": "08cf2973943c93ffb3a57ba0fd4195dc",
+      "md5_baseline": "08cf2973943c93ffb3a57ba0fd4195dc",
+      "max_abs_diff": 0.0
+    },
+    "gt": {
+      "shape_a": [
+        881,
+        4,
+        2
+      ],
+      "shape_b": [
+        881,
+        4,
+        2
+      ],
+      "bit_identical": true,
+      "md5_new": "ae78378677a9f378bdda286228fd6b89",
+      "md5_baseline": "ae78378677a9f378bdda286228fd6b89",
+      "max_abs_diff": 0.0
+    },
+    "cv": {
+      "shape_a": [
+        881,
+        4,
+        2
+      ],
+      "shape_b": [
+        881,
+        4,
+        2
+      ],
+      "bit_identical": true,
+      "md5_new": "b41f21e17c4923973a284f7176712ef9",
+      "md5_baseline": "b41f21e17c4923973a284f7176712ef9",
+      "max_abs_diff": 0.0
+    },
+    "speed": {
+      "shape_a": [
+        881
+      ],
+      "shape_b": [
+        881
+      ],
+      "bit_identical": true,
+      "md5_new": "b28b13e129f50c538fee0eacde60d631",
+      "md5_baseline": "b28b13e129f50c538fee0eacde60d631",
+      "max_abs_diff": 0.0
+    },
+    "head_deg": {
+      "shape_a": [
+        881
+      ],
+      "shape_b": [
+        881
+      ],
+      "bit_identical": true,
+      "md5_new": "b50e0a4c820265ec199c11f756e7e00c",
+      "md5_baseline": "b50e0a4c820265ec199c11f756e7e00c",
+      "max_abs_diff": 0.0
+    },
+    "eid": {
+      "identical": true,
+      "n": 881
+    },
+    "wp_steps": {
+      "new": [
+        5,
+        10,
+        15,
+        20
+      ],
+      "baseline": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "_baseline": "/root/v4eval/results/windows_flagship-v4-fromscratch-15k.pt",
+    "_baseline_note": "written 2026-07-25 22:07Z by the PRE-SYNC, PRE---goal-mode eval_flagship_v4.py. `pred` bit-identity proves the --goal-mode edit did not move the evaluated forward pass.",
+    "ALL_BIT_IDENTICAL": true
+  },
+  "ade_0_2s_by_goal_mode": {
+    "oracle": {
+      "mean": 0.5839,
+      "lo": 0.4962,
+      "hi": 0.6821,
+      "ci95": 0.0929,
+      "se": 0.0482,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "produced": {
+      "mean": 0.7577,
+      "lo": 0.6621,
+      "hi": 0.8692,
+      "ci95": 0.1035,
+      "se": 0.0534,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "neutral": {
+      "mean": 0.6565,
+      "lo": 0.5553,
+      "hi": 0.7749,
+      "ci95": 0.1098,
+      "se": 0.0562,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "cv_baseline_ade_0_2s": {
+    "mean": 0.8377,
+    "lo": 0.6352,
+    "hi": 1.0899,
+    "ci95": 0.2273,
+    "se": 0.1156,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+  },
+  "paired_gaps_ade_0_2s": {
+    "produced_minus_oracle": {
+      "delta": 0.1738,
+      "lo": 0.1247,
+      "hi": 0.2356,
+      "ci95": 0.0554,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_read": "THE SIZE OF THE GOAL PRIVILEGE on our own arm. Positive = the produced-goal (deployable) arm is WORSE than the goal-oracle arm, i.e. the oracle was worth this many metres."
+    },
+    "neutral_minus_oracle": {
+      "delta": 0.0726,
+      "lo": 0.0387,
+      "hi": 0.1132,
+      "ci95": 0.0372,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_read": "the gap if the goal is withheld entirely \u2014 the ceiling on what any produced goal can cost."
+    },
+    "produced_minus_neutral": {
+      "delta": 0.1012,
+      "lo": 0.06,
+      "hi": 0.146,
+      "ci95": 0.043,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_read": "is the produced goal worth more than NO goal? NEGATIVE = yes, the model's own goal helps."
+    },
+    "produced_minus_oracle_p90": {
+      "delta": 0.3572,
+      "lo": 0.1282,
+      "hi": 0.5217,
+      "ci95": 0.1967,
+      "p_delta_gt0": 0.999,
+      "separated": true,
+      "reducer": "p90",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_read": "the same gap in the tail (p90 of per-window ADE)."
+    }
+  },
+  "lateral_longitudinal_decomposition": {
+    "along": {
+      "paired_produced_minus_oracle_meanhorizon": {
+        "delta": 0.1815,
+        "lo": 0.128,
+        "hi": 0.2452,
+        "ci95": 0.0586,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "oracle_meanhorizon": {
+        "mean": 0.4283,
+        "lo": 0.3575,
+        "hi": 0.5038,
+        "ci95": 0.0732,
+        "se": 0.0372,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "produced_meanhorizon": {
+        "mean": 0.6098,
+        "lo": 0.5253,
+        "hi": 0.7118,
+        "ci95": 0.0933,
+        "se": 0.048,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "by_horizon_paired": {
+        "0.5s": {
+          "delta": 0.0392,
+          "lo": 0.0287,
+          "hi": 0.0519,
+          "ci95": 0.0116,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 0.5
+        },
+        "1s": {
+          "delta": 0.1188,
+          "lo": 0.082,
+          "hi": 0.1626,
+          "ci95": 0.0403,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 1.0
+        },
+        "1.5s": {
+          "delta": 0.2345,
+          "lo": 0.1676,
+          "hi": 0.318,
+          "ci95": 0.0752,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 1.5
+        },
+        "2s": {
+          "delta": 0.3335,
+          "lo": 0.2311,
+          "hi": 0.4546,
+          "ci95": 0.1118,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 2.0
+        }
+      }
+    },
+    "cross": {
+      "paired_produced_minus_oracle_meanhorizon": {
+        "delta": 0.0114,
+        "lo": -0.0012,
+        "hi": 0.0242,
+        "ci95": 0.0127,
+        "p_delta_gt0": 0.9615,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "oracle_meanhorizon": {
+        "mean": 0.2819,
+        "lo": 0.2122,
+        "hi": 0.3638,
+        "ci95": 0.0758,
+        "se": 0.0394,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "produced_meanhorizon": {
+        "mean": 0.2932,
+        "lo": 0.2248,
+        "hi": 0.3745,
+        "ci95": 0.0748,
+        "se": 0.0389,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "by_horizon_paired": {
+        "0.5s": {
+          "delta": 0.0012,
+          "lo": -0.0019,
+          "hi": 0.0041,
+          "ci95": 0.003,
+          "p_delta_gt0": 0.774,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 0.5
+        },
+        "1s": {
+          "delta": 0.0015,
+          "lo": -0.0048,
+          "hi": 0.0075,
+          "ci95": 0.0061,
+          "p_delta_gt0": 0.714,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 1.0
+        },
+        "1.5s": {
+          "delta": 0.0131,
+          "lo": -0.0003,
+          "hi": 0.0268,
+          "ci95": 0.0135,
+          "p_delta_gt0": 0.971,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 1.5
+        },
+        "2s": {
+          "delta": 0.0297,
+          "lo": -0.0018,
+          "hi": 0.0637,
+          "ci95": 0.0327,
+          "p_delta_gt0": 0.965,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "horizon_s": 2.0
+        }
+      }
+    },
+    "energy_share_longitudinal": {
+      "oracle": 0.6191,
+      "produced": 0.7371,
+      "neutral": 0.6385
+    },
+    "_read": "along = longitudinal (forward), cross = lateral. taniteval.lateral.decompose(mode='ego'). The paired deltas are produced - oracle, so POSITIVE = the produced arm is worse on that axis."
+  },
+  "lateral_block": {
+    "oracle": {
+      "surface": "sparse_4wp",
+      "dt_s": 0.5,
+      "horizon_s": 2.0,
+      "energy_share": {
+        "longitudinal_share_of_squared_error": 0.6191,
+        "lateral_share_of_squared_error": 0.3809,
+        "longitudinal_share_by_step": [
+          0.7949,
+          0.7067,
+          0.648,
+          0.6032
+        ],
+        "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+      },
+      "growth": {
+        "ref_step": 1,
+        "ref_s": 0.1,
+        "mean_abs_along_by_step_m": [
+          0.0843,
+          0.2489,
+          0.4997,
+          0.8802
+        ],
+        "mean_abs_cross_by_step_m": [
+          0.0407,
+          0.1405,
+          0.3248,
+          0.6215
+        ],
+        "along_growth_by_step": [
+          1.0,
+          2.9533,
+          5.9306,
+          10.4462
+        ],
+        "cross_growth_by_step": [
+          1.0,
+          3.4473,
+          7.9733,
+          15.255
+        ],
+        "along_growth_final": 10.4462,
+        "cross_growth_final": 15.255,
+        "cross_grows_faster_by": 1.46,
+        "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+      },
+      "cross_peak_mean": 0.6336,
+      "cross_peak_p90": 1.4277,
+      "axis_check": {
+        "mean_abs_along_final_m": 25.396,
+        "mean_abs_cross_final_m": 1.0025,
+        "K": 4,
+        "horizon_s": 2.0,
+        "mean_speed_mps": 12.6364,
+        "expected_along_m": 25.2729,
+        "rel_err": 0.0049,
+        "verified": true
+      },
+      "verdict": "longitudinal carries 61.9% of the squared error (lateral 38.1%) \u00b7 lateral grows x15.255 vs longitudinal x10.4462 over 0.1->0.4 s (cross faster by x1.46) \u00b7 peak |XTE| mean 0.6336 m, p90 1.4277 m, 6.4% of windows beyond 1.75 m"
+    },
+    "produced": {
+      "surface": "sparse_4wp",
+      "dt_s": 0.5,
+      "horizon_s": 2.0,
+      "energy_share": {
+        "longitudinal_share_of_squared_error": 0.7371,
+        "lateral_share_of_squared_error": 0.2629,
+        "longitudinal_share_by_step": [
+          0.8811,
+          0.8334,
+          0.7724,
+          0.717
+        ],
+        "_read": "MEASURED reference 0.986 longitudinal on the IDM reconstruction: the lateral axis receives ~1.4 % of the squared-error signal, so an undecomposed L2 objective is numerically a longitudinal objective"
+      },
+      "growth": {
+        "ref_step": 1,
+        "ref_s": 0.1,
+        "mean_abs_along_by_step_m": [
+          0.1235,
+          0.3676,
+          0.7342,
+          1.2138
+        ],
+        "mean_abs_cross_by_step_m": [
+          0.0419,
+          0.142,
+          0.3379,
+          0.6512
+        ],
+        "along_growth_by_step": [
+          1.0,
+          2.9774,
+          5.9465,
+          9.8305
+        ],
+        "cross_growth_by_step": [
+          1.0,
+          3.3875,
+          8.0639,
+          15.5382
+        ],
+        "along_growth_final": 9.8305,
+        "cross_growth_final": 15.5382,
+        "cross_grows_faster_by": 1.581,
+        "_read": "MEASURED reference: lateral grows 4.4-5.9x faster than longitudinal over 0.5->2 s, replicated on 2 clips. Longitudinal is a BOUNDED scale error; lateral compounds, which is why the 18.5 s failure is a lateral corridor departure and not a speed error."
+      },
+      "cross_peak_mean": 0.6647,
+      "cross_peak_p90": 1.4843,
+      "axis_check": {
+        "mean_abs_along_final_m": 25.396,
+        "mean_abs_cross_final_m": 1.0025,
+        "K": 4,
+        "horizon_s": 2.0,
+        "mean_speed_mps": 12.6364,
+        "expected_along_m": 25.2729,
+        "rel_err": 0.0049,
+        "verified": true
+      },
+      "verdict": "longitudinal carries 73.7% of the squared error (lateral 26.3%) \u00b7 lateral grows x15.5382 vs longitudinal x9.8305 over 0.1->0.4 s (cross faster by x1.581) \u00b7 peak |XTE| mean 0.6647 m, p90 1.4843 m, 6.7% of windows beyond 1.75 m"
+    },
+    "dense_block_on_v4_windows": {
+      "skipped": "no dense path (pred_dense/gt_dense). The 4-knot surface cannot express the compounding law: at 0.5 s spacing the lateral growth curve has 4 points. Re-run rollout.collect.",
+      "ran": false
+    }
+  },
+  "produced_goal_quality": {
+    "_read": "produced-vs-ORACLE agreement. The oracle values are a REFERENCE here and were never fed to the model in produced mode. Low agreement means the produced goal is weak, which is part of what an oracle-vs-produced gap measures \u2014 it does not make the gap wrong.",
+    "route_exact_agreement": 0.4994,
+    "route_n": 881,
+    "route_confusion_oracle_rows_x_produced_cols": [
+      [
+        34,
+        170,
+        8,
+        0,
+        0
+      ],
+      [
+        5,
+        389,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        103,
+        17,
+        0,
+        0
+      ],
+      [
+        9,
+        136,
+        9,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "vt_band_exact_agreement": 0.1317,
+    "vt_band_within_1_agreement": 0.3417,
+    "vt_band_n": 881,
+    "goal_scalar_regression_vs_oracle_label": {
+      "ttm": {
+        "n": 283,
+        "r2": 0.3117,
+        "rmse": 3.3763,
+        "pred_mean": 3.7872,
+        "true_mean": 3.6495
+      },
+      "curv_3s": {
+        "n": 584,
+        "r2": 0.2166,
+        "rmse": 0.008,
+        "pred_mean": -0.0003,
+        "true_mean": 0.0006
+      },
+      "curv_5s": {
+        "n": 625,
+        "r2": 0.0749,
+        "rmse": 0.0143,
+        "pred_mean": -0.0004,
+        "true_mean": 0.0017
+      },
+      "tspeed_5s": {
+        "n": 721,
+        "r2": 0.7145,
+        "rmse": 4.8946,
+        "pred_mean": 14.1864,
+        "true_mean": 12.8224
+      }
+    },
+    "goal_scalar_note": "R2 of the model's OWN goal_head against the kinematic label it was trained on. This is the quality of the produced goal, measured on the same windows the ADE is measured on."
+  },
+  "produced_route_vs_majority": {
+    "_read": "the KILL secondary `nonav_route_beats_majority`, which the harness reports as null/'NOT REACHABLE'. It IS reachable against the produced route. Scored on windows where the ORACLE route is a real judgement (class 0/1/2): the produced head cannot emit ROUTE_UNKNOWN, so oracle-UNKNOWN windows are unscoreable, not wrong.",
+    "n_windows_all": 881,
+    "n_windows_oracle_judgeable": 727,
+    "produced_accuracy_judgeable": 0.6052,
+    "majority_class_accuracy_judgeable": 0.542,
+    "beats_majority_by_pp": 6.33,
+    "produced_predicted_class_share": {
+      "0": 0.0556,
+      "1": 0.9058,
+      "2": 0.0386,
+      "3": 0.0
+    },
+    "oracle_class_share": {
+      "0": 0.2406,
+      "1": 0.4472,
+      "2": 0.1373,
+      "3": 0.1748
+    },
+    "beats_majority": true
+  }
+}

@@ -83,6 +83,13 @@ SPEC = ("TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
         " §M1/§M2 (2026-07-25)")
 
 DT = 0.1                      # MEASURED — 10 Hz dense path
+# The two surfaces this module is handed, and why the distinction is load-bearing:
+# the DENSE path is 20 consecutive 0.1 s steps (2.0 s); the SPARSE path is the 4
+# gate waypoints, which sit at dense steps [5,10,15,20] — so ONE SPARSE KNOT IS
+# 0.5 s, NOT 0.1 s. Treating a knot as a timestep under-reports the horizon by 5x.
+# (`rollout.collect` asserts `pred == pred_dense[:, [4,9,14,19]]`.)
+_DENSE_K = 20                 # knots on the dense surface
+_SPARSE_K = 4                 # knots on the 4-waypoint gate surface
 EPS = 1e-9
 N_BOOT = _ci.DEFAULT_N_BOOT
 
@@ -507,7 +514,7 @@ def _verdict(o):
 
 
 def paired_cross_track(pred_a, pred_b, gt, eid, step=None, mode="ego",
-                       n_boot=N_BOOT, seed=0, reduce="mean"):
+                       n_boot=N_BOOT, seed=0, reduce="mean", knot_dt=None):
     """PAIRED Δ cross-track between two arms on the SAME windows.
 
     **The channel HP-2 and HP-3 are measured in.** Oriented ``b − a``, so a
@@ -524,9 +531,27 @@ def paired_cross_track(pred_a, pred_b, gt, eid, step=None, mode="ego",
     d = _ci.paired_episode_cluster_bootstrap(
         cb[:, j].abs().numpy(), ca[:, j].abs().numpy(), [str(x) for x in eid],
         n_boot=n_boot, seed=seed, reduce=reduce)
+    # HORIZON LABELLING — fixed 2026-07-26. `step` counts KNOTS, and on the
+    # SPARSE surface a knot is NOT one dense timestep: the 4-knot surface sits at
+    # dense steps [5,10,15,20], so the last knot is 2.0 s, not 0.4 s. The old
+    # `step * DT` therefore under-reported the horizon by 5x on every sparse call
+    # — and a mislabelled horizon is exactly the C9 defect (`GATE_PROTOCOL` §0.7):
+    # a verdict that names the wrong timescale is not admissible.
+    # `knot_dt` = seconds PER KNOT. Passed explicitly when known (rollout now
+    # emits `dense_steps`/`dt_s`); otherwise inferred from the knot count against
+    # the 20-step / 2.0 s dense horizon, and the inference is STAMPED so a reader
+    # can see it was inferred rather than measured.
+    if knot_dt is not None:
+        _kdt, _src = float(knot_dt), "explicit"
+    elif K in (_DENSE_K, _SPARSE_K):
+        _kdt, _src = (_DENSE_K * DT) / K, "inferred_from_knot_count"
+    else:
+        _kdt, _src = DT, "unknown_knot_spacing_assumed_dense"
     d.update(_orientation=("b - a on |cross-track|; POSITIVE = arm `a` has the "
                            "smaller lateral error = `a` wins"),
-             mode=mode, step=int(step), horizon_s=round(step * DT, 2))
+             mode=mode, step=int(step), n_knots=int(K),
+             horizon_s=round(step * _kdt, 2),
+             horizon_provenance=_src)
     return d
 
 

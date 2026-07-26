@@ -1,0 +1,147 @@
+{
+  "key": "v4-15k-goal-produced",
+  "ckpt": "/workspace/models/flagship-v4-fromscratch-15k/ckpt_step15000.pt",
+  "ckpt_step": 15000,
+  "evidence_class": "MEASURED (ours; artifacts = v4-15k-goal-produced.json, windows_v4-15k-goal-produced.pt)",
+  "goal_mode": "produced",
+  "goal_provenance_short": "PRODUCED -- no future-derived quantity entered the evaluated forward pass",
+  "primary_is_deployable_capability": true,
+  "gate_primary_ade_0_2s": {
+    "value": 0.7577,
+    "threshold": 0.6,
+    "pass": false
+  },
+  "kill_secondaries": {
+    "wm_canary_ade_2s": {
+      "value": 2.073894500732422,
+      "threshold": 0.55,
+      "pass": false
+    },
+    "oracle_in_fan": {
+      "value": 0.29732452436148377,
+      "threshold": 0.3,
+      "pass": true,
+      "note": "4-waypoint resolution (steps 5/10/15/20), comparable to v1.5-ab's 0.3073 -- NOT the dense-20 'oracle_ade@2s' the in-loop train log prints"
+    },
+    "miss_at_2m": {
+      "value": 0.2293,
+      "threshold": 0.1,
+      "pass": false
+    },
+    "seam_norm_ratio_max": {
+      "value": 0.1251,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "encoder_touching_levers": {
+      "value": 2,
+      "threshold": 2,
+      "pass": true,
+      "evidence_class": "PUBLISHED (V4_FLAGSHIP_DESIGN.md / --print-launch design audit)",
+      "note": "static design fact (lambda_plan + strategic = 2 of 2 encoder-touching levers, door CLOSED per MODEL_REGISTRY.md retraction 07-21); not a GPU measurement, not re-derived here"
+    },
+    "speed_benefit_recovered_frac": {
+      "value": null,
+      "pass": null,
+      "note": "NOT BUILT this session -- new metric (P8), needs its own definition off the two in-repo train logs per V4_FLAGSHIP_DESIGN.md 17.3; no emitter exists yet anywhere in the codebase"
+    },
+    "deploy_tick_p99_ms": {
+      "value": null,
+      "pass": null,
+      "note": "NOT MEASURED this session -- needs the efficiency.py latency-panel harness (CUDA-graph capture, batch-1 profiling under gpu_lock.sh exclusivity); out of scope for a correctness-first harness build, flagged as the first thing to cut per V4_FLAGSHIP_DESIGN.md 8 if it misses"
+    },
+    "nonav_route_beats_majority": {
+      "value": null,
+      "pass": null,
+      "note": "NOT REACHABLE on this checkpoint -- v4.1's goal_head (GoalScalarHead) only regresses CONTINUOUS scalars (ttm/curv_3s/curv_5s/tspeed_5s); no ROUTE classifier exists yet (P6 strategic planner not landed). taniteval.hierarchy.py's vision_route_beats_majority needs a nav-conditioned route head this checkpoint does not have -- this is the produced-goal fallback (V4_FLAGSHIP_DESIGN.md 2.6) territory"
+    }
+  },
+  "diagnostics_dense_headhorizons_train_loop_comparable": {
+    "dense_headhorizons_ade_2s": 0.5985926047356527,
+    "dense_headhorizons_oracle_ade": 0.25301761908306575,
+    "dense_headhorizons_sel_gap": 0.34557498380896995,
+    "dense_headhorizons_miss_at_2m": 0.2292849035187287
+  },
+  "goal_agreement_vs_oracle": {
+    "_read": "produced-vs-ORACLE agreement. The oracle values are a REFERENCE here and were never fed to the model in produced mode. Low agreement means the produced goal is weak, which is part of what an oracle-vs-produced gap measures \u2014 it does not make the gap wrong.",
+    "route_exact_agreement": 0.4994,
+    "route_n": 881,
+    "route_confusion_oracle_rows_x_produced_cols": [
+      [
+        34,
+        170,
+        8,
+        0,
+        0
+      ],
+      [
+        5,
+        389,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        103,
+        17,
+        0,
+        0
+      ],
+      [
+        9,
+        136,
+        9,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "vt_band_exact_agreement": 0.1317,
+    "vt_band_within_1_agreement": 0.3417,
+    "vt_band_n": 881,
+    "goal_scalar_regression_vs_oracle_label": {
+      "ttm": {
+        "n": 283,
+        "r2": 0.3117,
+        "rmse": 3.3763,
+        "pred_mean": 3.7872,
+        "true_mean": 3.6495
+      },
+      "curv_3s": {
+        "n": 584,
+        "r2": 0.2166,
+        "rmse": 0.008,
+        "pred_mean": -0.0003,
+        "true_mean": 0.0006
+      },
+      "curv_5s": {
+        "n": 625,
+        "r2": 0.0749,
+        "rmse": 0.0143,
+        "pred_mean": -0.0004,
+        "true_mean": 0.0017
+      },
+      "tspeed_5s": {
+        "n": 721,
+        "r2": 0.7145,
+        "rmse": 4.8946,
+        "pred_mean": 14.1864,
+        "true_mean": 12.8224
+      }
+    },
+    "goal_scalar_note": "R2 of the model's OWN goal_head against the kinematic label it was trained on. This is the quality of the produced goal, measured on the same windows the ADE is measured on."
+  },
+  "cross_check_ade_0_2s_selfcomputed_vs_driving_py": {
+    "selfcomputed_from_forward_pass": 0.757730602947456,
+    "driving_py_from_persisted_windows": 0.7577,
+    "agree_within_1pct": true,
+    "note": "two independent code paths over the SAME forward-pass output (direct tensor math here vs. persisted-tensor reload + taniteval.driving.tier0 there); disagreement would indicate an ego-frame convention mismatch"
+  }
+}

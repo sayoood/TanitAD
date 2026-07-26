@@ -145,10 +145,18 @@ made the entire v3enc gate un-interpretable.
 
 **Standing instance, and it is time-critical — the flagship-v4 30 k gate.**
 
-`eval_flagship_v4.py:322` feeds **`route`, `route_graded`, `vt_band`, `vt_speed`** minted from the ego's
-own future poses. **MODE B structurally requires them** — `eval_flagship_v4.py:140-141` states the head's
-`_goal_inputs` reads them off the batch — so **every MODE B number, including the 30 k gate's primary,
-is a goal-oracle number.** This violates `V4_FLAGSHIP_DESIGN.md:558-560`, the design's own rule 3.
+`eval_flagship_v4.py:322` feeds **`route`, `route_graded`, `vt_band`** — **three** channels, not four —
+minted from the ego's own future poses. **MODE B structurally requires them** — `eval_flagship_v4.py:140-141`
+states the head's `_goal_inputs` reads them off the batch — so **every MODE B number, including the 30 k
+gate's primary, is a goal-oracle number.** This violates `V4_FLAGSHIP_DESIGN.md:558-560`, the design's own
+rule 3.
+
+> ⚠️ **CORRECTED 2026-07-26 (same day, before the gate rendered): this section originally listed
+> `vt_speed` as a fourth oracle channel. It is not.** `eval_flagship_v4.py:78` states it outright, and
+> `_goal_inputs` **overwrites `vt_speed` with the OBSERVED `v0`**. I inherited the four-channel list from
+> an upstream report and did not check it against the code before writing it into a binding protocol —
+> the same INHERITED-into-the-source-of-truth class this document exists to prevent. The three-channel
+> list is the measured one.
 
 **The magnitude is measured, not assumed.** The S3 blind-conditioning firewall found that adding
 `route`/`route_graded` **alone** lifts a **no-image** baseline from QWK **0.1128 → 0.3381**, paired
