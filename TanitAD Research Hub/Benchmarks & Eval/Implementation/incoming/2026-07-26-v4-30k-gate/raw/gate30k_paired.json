@@ -1,0 +1,96 @@
+{
+  "window_alignment": {
+    "gt_oracle_vs_v1_max_abs_diff": 0.0,
+    "gt_oracle_vs_produced_max_abs_diff": 0.0,
+    "shapes": {
+      "oracle": [
+        881,
+        4,
+        2
+      ],
+      "produced": [
+        881,
+        4,
+        2
+      ],
+      "v1": [
+        881,
+        4,
+        2
+      ]
+    },
+    "eid_encoding_note": "v1 dump encodes eid as 0..39; the v4 dumps use a different encoding. Alignment is therefore proven from the GROUND TRUTH, not from eid equality.",
+    "v4_and_v1_are_the_SAME_windows": true,
+    "n_episodes_from_v1_eid": 40
+  },
+  "point_estimates_ade_0_2s_4waypoint": {
+    "v1": 0.4271090030670166,
+    "v4_oracle": 0.6422982215881348,
+    "v4_produced": 0.8562780618667603,
+    "v1_registry_reference": 0.4271,
+    "v1_reproduced_exactly": true
+  },
+  "paired_v4oracle_vs_v1": {
+    "delta": 0.2152,
+    "lo": 0.0972,
+    "hi": 0.334,
+    "ci95": 0.1184,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "delta = v4oracle - v1; POSITIVE = v4 is BEHIND v1 (worse ADE)"
+  },
+  "paired_v4produced_vs_v1": {
+    "delta": 0.4292,
+    "lo": 0.2865,
+    "hi": 0.582,
+    "ci95": 0.1477,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "delta = v4produced - v1; POSITIVE = v4 is BEHIND v1 (worse ADE)"
+  },
+  "paired_cross_track_v1_vs_v4oracle": {
+    "delta": 0.2509,
+    "lo": 0.1021,
+    "hi": 0.4415,
+    "ci95": 0.1697,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "b - a on |cross-track|; POSITIVE = arm `a` has the smaller lateral error = `a` wins",
+    "mode": "ego",
+    "step": 4,
+    "n_knots": 4,
+    "horizon_s": 2.0,
+    "horizon_provenance": "explicit"
+  },
+  "paired_produced_minus_oracle_AT_30K": {
+    "delta": 0.214,
+    "lo": 0.1602,
+    "hi": 0.2759,
+    "ci95": 0.0579,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "_orientation": "delta = produced - oracle; POSITIVE = the goal ORACLE was helping, i.e. the DEPLOYABLE path is worse by this much",
+    "card_15k_gap_NOT_transplanted": 0.1738,
+    "measured_at_step": 29999
+  }
+}

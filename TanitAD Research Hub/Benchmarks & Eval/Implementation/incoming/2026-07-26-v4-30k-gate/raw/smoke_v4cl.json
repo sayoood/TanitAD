@@ -1,0 +1,901 @@
+{
+  "_experiment": "flagship-v4 CO-PRIMARY corridor_departure_rate, CLOSED LOOP",
+  "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+  "_design": "real-footage-in-the-loop low-OOD closed loop. Loop body, window/stratum bookkeeping, OOD accounting and the common-start PAIRED design reproduced from e1a_horizon.py (which produced the gate card's REF-C reference numbers at the SAME K=185); the ONE change is the per-step plan call, which is eval_flagship_v4.collect_planner's forward pass (world.encode_window -> goal_modes.resolve_goal -> head(st, v0, lambda_plan=1.0, **goal_kw)) with the 0.5 s lookahead waypoint traj[:, 4] fed to the SAME pure-pursuit controller.",
+  "_emitter": "taniteval.corridor.stratified (the registered co-primary emitter; corridor_block is e1a_horizon.block lifted)",
+  "_estimator": "episode_cluster_bootstrap (taniteval/ci.py), B=2000, resampling unit = val EPISODE; PAIRED form for the K-vs-K deltas. NEVER overlapping_holdout_se.",
+  "ckpt": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+  "ckpt_md5": "8771c1d9d3da696dcde2a745d628f6a8",
+  "ckpt_step": 29999,
+  "anchors_dense": "/root/models/flagship-v4-fromscratch-15k/flagship_v4_anchors_dense.pt",
+  "anchors_md5": "322358fac5bbf0f22692c0f251746a66",
+  "head_cfg": {
+    "n_anchors": 256,
+    "horizons": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "factorised": true,
+    "cond_vtarget": true,
+    "cond_route": true,
+    "cond_imagination": false,
+    "goal_dropout": 0.5
+  },
+  "goal_provenance": {
+    "goal_source": "oracle_gt_future",
+    "goal_fields": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "is_oracle": true,
+    "deployable": false,
+    "rule": "V4_FLAGSHIP_DESIGN.md:558-560 \u2014 no leaderboard number may come from a GT-derived plan or a GT-derived goal",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md \u00a71.4, PC1 item #5",
+    "_read": "the listed fields are minted from the EGO'S OWN FUTURE POSES. The model is told where it ends up, so this is an UPPER BOUND on a deployed number, not the deployed number. It is NOT comparable to an arm evaluated with a constant command (REF-C's historical `nav_cmd=None`) nor to one evaluated with a produced goal.",
+    "affected_published_numbers": [
+      {
+        "arm": "flagship v1.6",
+        "value_m": 0.4375,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v16.py:135-143",
+        "note": "the headline v1.6 number"
+      },
+      {
+        "arm": "flagship v1.5",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v15.py:92-103",
+        "note": "every v1.5 anchored-fan number"
+      },
+      {
+        "arm": "flagship v4 MODE B",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v4.py:322 (_goal_inputs)",
+        "note": "every v4 MODE-B number, including the 30k gate's primary"
+      }
+    ],
+    "disclosure_only": "this record changes NO number and NO code path. Removing the oracle requires a produced-goal head (PC1) and a re-run; the registry owner corrects the published values, not this script.",
+    "goal_mode": "oracle",
+    "goal_mode_fallback": null,
+    "oracle_fields_fed": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "vt_speed_note": "vt_speed is NOT in the oracle field list: `_goal_inputs` overwrites it with v0 = pose_last[:,3], the LAST OBSERVED speed, in training and in eval alike. GATE_PROTOCOL.md 0.8 and goal_provenance.py list it as an oracle field; that is a documentation error, corrected here against the code (train_flagship_v4.py `_goal_inputs`).",
+    "mode_semantics": {
+      "oracle": "route/route_graded/vt_band minted from the ego's own FUTURE poses. Historical path; upper bound, not deployable.",
+      "produced": "route/route_graded/vt_band derived from the model's own goal_head run on the encoded observation window. No future, no label. THE DEPLOYABLE PATH.",
+      "neutral": "the head's learned no-goal-given rows. The control that makes the oracle-vs-produced gap readable."
+    }
+  },
+  "goal_index_policy": "FOLLOW \u2014 at every rollout step the oracle goal is re-minted at the REFERENCE index the model is actually observing (t0 + mstar + W - 1, the last frame of the warped window fed in), by the same v4_labels.mint_window call FlagshipV4Dataset.__getitem__ makes. This is the closed-loop analogue of the open-loop oracle; it is NOT a route given once at t=0.",
+  "goal_labeler_refusals": 0,
+  "goal_labeler_indices": 597,
+  "val_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "n_episodes": 3,
+  "episode_T_min": 199,
+  "episode_T_max": 199,
+  "episodes_surviving_each_horizon": {
+    "25": 3
+  },
+  "windows_at_each_horizon": {
+    "25": 18
+  },
+  "_horizon_ceiling_note": "an episode yields a window at K only if T-W-K>=1; T ranges 199-199 frames here, so the ceiling is K = 190 (19.0 s). At K=185 only ~1 window per episode survives \u2014 n is SMALL and is reported in every block.",
+  "stride": 32,
+  "batch": 8,
+  "corridor_thresholds_m": [
+    1.0,
+    1.75,
+    2.5
+  ],
+  "corridor_primary_m": 1.75,
+  "junction_deg": 10.0,
+  "horizons_K": [
+    25
+  ],
+  "horizons_s": [
+    2.5
+  ],
+  "p1_envelope": "/root/lanekeep/lowood_flagship_ci.json",
+  "p1_baseline_ade2s": 0.4045,
+  "reference_refc_base_K185_heldout44": {
+    "_source": "Project Steering/Gates/flagship-v4-30k.card.json co_primary.report_only_rationale + e1a_horizon_heldout44_K185.json",
+    "_evidence_class": "INHERITED (E1a, not re-run here)",
+    "_caveat": "measured on physicalai-val-heldout-79d4e3d2d4c6 (44 eps, 43 windows at K=185), NOT this registered 40-episode val cache \u2014 a scale reference, NOT a window-matched pair",
+    "overall_cdr": [
+      0.5877,
+      0.5107,
+      0.6622
+    ],
+    "junction_cdr": [
+      0.8414,
+      0.8144,
+      0.8667
+    ],
+    "peak_xte_m": 38.94
+  },
+  "openloop_canary_ade_0_2s": {
+    "mean": 0.67,
+    "lo": 0.4322,
+    "hi": 1.1379,
+    "ci95": 0.3528,
+    "se": 0.1904,
+    "reducer": "mean",
+    "n_windows": 18,
+    "n_episodes": 3,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "plain_mean": 0.6700246950818433,
+    "_check": "v4 planner path OPEN LOOP, 4-waypoint convention, SAME window set as eval_flagship_v4. MUST reproduce that harness's wp4_ade_0_2s_selfcomputed for this ckpt/goal-mode, or the plumbing in this file differs from the plumbing that produced the gate primary."
+  },
+  "all_windows": {
+    "25": {
+      "_stratification": "junction = |net heading change over the FIRST 2 s| >= 10 deg (E1a's standing definition, held FIXED across horizons so the strata stay comparable); longitudinal = not junction AND speed >= median. A KINEMATIC SIGNATURE, never a topology.",
+      "junction_deg": 10.0,
+      "n_by_stratum": {
+        "overall": 18,
+        "junction": 1,
+        "longitudinal": 9,
+        "other": 8
+      },
+      "overall": {
+        "block": "taniteval.corridor",
+        "version": "1.0.0",
+        "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon.py::block (lines 302-337) \u2014 lifted, not re-derived",
+        "surface": "closed_loop",
+        "n_windows": 18,
+        "n_episodes": 3,
+        "horizon_K": 25,
+        "horizon_s": 2.5,
+        "corridor_primary_m": 1.75,
+        "corridor_thresholds_m": [
+          1.0,
+          1.75,
+          2.5
+        ],
+        "corridor_departure_rate": {
+          "mean": 0.0044,
+          "lo": 0.0,
+          "hi": 0.0133,
+          "ci95": 0.0067,
+          "se": 0.0036,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.04,
+            "lo": 0.0,
+            "hi": 0.12,
+            "ci95": 0.06,
+            "se": 0.0326,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0044,
+            "lo": 0.0,
+            "hi": 0.0133,
+            "ci95": 0.0067,
+            "se": 0.0036,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0556,
+          "lo": 0.0,
+          "hi": 0.1667,
+          "ci95": 0.0833,
+          "se": 0.0452,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.1667,
+            "lo": 0.0,
+            "hi": 0.5,
+            "ci95": 0.25,
+            "se": 0.1356,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0556,
+            "lo": 0.0,
+            "hi": 0.1667,
+            "ci95": 0.0833,
+            "se": 0.0452,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "peak_xte_m": {
+          "mean": 0.6509,
+          "lo": 0.3787,
+          "hi": 1.1575,
+          "ci95": 0.3894,
+          "se": 0.2064,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_xte_m": {
+          "mean": 0.2172,
+          "lo": 0.1148,
+          "hi": 0.4077,
+          "ci95": 0.1464,
+          "se": 0.0775,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_abs_xte_by_step_m": [
+          0.0,
+          0.0008,
+          0.0044,
+          0.011,
+          0.0196,
+          0.0304,
+          0.0437,
+          0.059,
+          0.0764,
+          0.0955,
+          0.1165,
+          0.1395,
+          0.1643,
+          0.1913,
+          0.2202,
+          0.251,
+          0.2839,
+          0.3185,
+          0.3551,
+          0.3932,
+          0.4335,
+          0.4748,
+          0.5224,
+          0.5822,
+          0.6438
+        ],
+        "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+        "estimator": {
+          "interval": "episode_cluster_bootstrap",
+          "n_boot": 2000,
+          "seed": 0,
+          "resampling_unit": "val episode",
+          "deprecated_and_refused": "overlapping_holdout_se",
+          "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged."
+        },
+        "peak_dpsi_deg": {
+          "mean": 4.1977,
+          "lo": 2.6405,
+          "hi": 5.99,
+          "ci95": 1.6748,
+          "se": 0.7904,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+        "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+        "closed_ade2s_m": {
+          "mean": 0.4595,
+          "lo": 0.2962,
+          "hi": 0.783,
+          "ci95": 0.2434,
+          "se": 0.1317,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "junction": null,
+      "longitudinal": {
+        "block": "taniteval.corridor",
+        "version": "1.0.0",
+        "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon.py::block (lines 302-337) \u2014 lifted, not re-derived",
+        "surface": "closed_loop",
+        "n_windows": 9,
+        "n_episodes": 2,
+        "horizon_K": 25,
+        "horizon_s": 2.5,
+        "corridor_primary_m": 1.75,
+        "corridor_thresholds_m": [
+          1.0,
+          1.75,
+          2.5
+        ],
+        "corridor_departure_rate": {
+          "mean": 0.0089,
+          "lo": 0.0,
+          "hi": 0.016,
+          "ci95": 0.008,
+          "se": 0.0056,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.08,
+            "lo": 0.0,
+            "hi": 0.144,
+            "ci95": 0.072,
+            "se": 0.0503,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0089,
+            "lo": 0.0,
+            "hi": 0.016,
+            "ci95": 0.008,
+            "se": 0.0056,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.1111,
+          "lo": 0.0,
+          "hi": 0.2,
+          "ci95": 0.1,
+          "se": 0.0699,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.3333,
+            "lo": 0.0,
+            "hi": 0.6,
+            "ci95": 0.3,
+            "se": 0.2096,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.1111,
+            "lo": 0.0,
+            "hi": 0.2,
+            "ci95": 0.1,
+            "se": 0.0699,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "peak_xte_m": {
+          "mean": 0.9062,
+          "lo": 0.4011,
+          "hi": 1.3103,
+          "ci95": 0.4546,
+          "se": 0.3177,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_xte_m": {
+          "mean": 0.2983,
+          "lo": 0.1118,
+          "hi": 0.4474,
+          "ci95": 0.1678,
+          "se": 0.1173,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_abs_xte_by_step_m": [
+          0.0,
+          0.0012,
+          0.0061,
+          0.0133,
+          0.0233,
+          0.036,
+          0.0523,
+          0.0718,
+          0.094,
+          0.1193,
+          0.1468,
+          0.1777,
+          0.2122,
+          0.2497,
+          0.2906,
+          0.3352,
+          0.3838,
+          0.4351,
+          0.4902,
+          0.5488,
+          0.6118,
+          0.6784,
+          0.7494,
+          0.8255,
+          0.9047
+        ],
+        "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+        "estimator": {
+          "interval": "episode_cluster_bootstrap",
+          "n_boot": 2000,
+          "seed": 0,
+          "resampling_unit": "val episode",
+          "deprecated_and_refused": "overlapping_holdout_se",
+          "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged."
+        },
+        "peak_dpsi_deg": {
+          "mean": 4.1322,
+          "lo": 2.5237,
+          "hi": 5.419,
+          "ci95": 1.4477,
+          "se": 1.0116,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+        "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+        "closed_ade2s_m": {
+          "mean": 0.5651,
+          "lo": 0.3549,
+          "hi": 0.7332,
+          "ci95": 0.1892,
+          "se": 0.1322,
+          "reducer": "mean",
+          "n_windows": 9,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "other": {
+        "block": "taniteval.corridor",
+        "version": "1.0.0",
+        "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon.py::block (lines 302-337) \u2014 lifted, not re-derived",
+        "surface": "closed_loop",
+        "n_windows": 8,
+        "n_episodes": 2,
+        "horizon_K": 25,
+        "horizon_s": 2.5,
+        "corridor_primary_m": 1.75,
+        "corridor_thresholds_m": [
+          1.0,
+          1.75,
+          2.5
+        ],
+        "corridor_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "corridor_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "window_departure_rate": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "se": 0.0,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "window_departure_rate_by_threshold_m": {
+          "1": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "1.75": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "2.5": {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "peak_xte_m": {
+          "mean": 0.3959,
+          "lo": 0.3787,
+          "hi": 0.4474,
+          "ci95": 0.0343,
+          "se": 0.0255,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_xte_m": {
+          "mean": 0.1271,
+          "lo": 0.1207,
+          "hi": 0.1292,
+          "ci95": 0.0043,
+          "se": 0.0032,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "mean_abs_xte_by_step_m": [
+          0.0,
+          0.0004,
+          0.0011,
+          0.0044,
+          0.0085,
+          0.0142,
+          0.0209,
+          0.0281,
+          0.0375,
+          0.0477,
+          0.0592,
+          0.0718,
+          0.0856,
+          0.1013,
+          0.1194,
+          0.139,
+          0.1604,
+          0.1844,
+          0.2103,
+          0.2373,
+          0.2657,
+          0.2958,
+          0.3279,
+          0.361,
+          0.3959
+        ],
+        "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+        "estimator": {
+          "interval": "episode_cluster_bootstrap",
+          "n_boot": 2000,
+          "seed": 0,
+          "resampling_unit": "val episode",
+          "deprecated_and_refused": "overlapping_holdout_se",
+          "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged."
+        },
+        "peak_dpsi_deg": {
+          "mean": 3.6904,
+          "lo": 2.874,
+          "hi": 3.9626,
+          "ci95": 0.5443,
+          "se": 0.4049,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+        "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+        "closed_ade2s_m": {
+          "mean": 0.2691,
+          "lo": 0.1879,
+          "hi": 0.2962,
+          "ci95": 0.0542,
+          "se": 0.0403,
+          "reducer": "mean",
+          "n_windows": 8,
+          "n_episodes": 2,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "ood": {
+        "_envelope": "P1 MEASURED |dlat|<=3.0 m / |dyaw|<=12 deg (lowood_flagship_ci.json, measured on the FLAGSHIP v1 arm). np.interp CLAMPS beyond it, so the ratio is a LOWER bound there; the EXTRAPOLATION_* fractions need only the envelope CONSTANTS and are model-independent.",
+        "overall": {
+          "horizon_K": 25,
+          "horizon_s": 2.5,
+          "n_windows": 18,
+          "n_episodes": 3,
+          "ood_peak_ratio": {
+            "mean": 1.058,
+            "lo": 1.0264,
+            "hi": 1.0993,
+            "ci95": 0.0365,
+            "se": 0.0176,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "ood_mean_ratio": {
+            "mean": 1.0194,
+            "lo": 1.0068,
+            "hi": 1.0336,
+            "ci95": 0.0134,
+            "se": 0.0063,
+            "reducer": "mean",
+            "n_windows": 18,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_windows_ood_peak_under_1p16": 1.0,
+          "frac_windows_ood_peak_under_1p5": 1.0,
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "EXTRAPOLATION_VERDICT": "within the measured envelope on average"
+        },
+        "junction": null,
+        "longitudinal": {
+          "horizon_K": 25,
+          "horizon_s": 2.5,
+          "n_windows": 9,
+          "n_episodes": 2,
+          "ood_peak_ratio": {
+            "mean": 1.0648,
+            "lo": 1.0231,
+            "hi": 1.0981,
+            "ci95": 0.0375,
+            "se": 0.0262,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "ood_mean_ratio": {
+            "mean": 1.0215,
+            "lo": 1.0067,
+            "hi": 1.0333,
+            "ci95": 0.0133,
+            "se": 0.0093,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_windows_ood_peak_under_1p16": 1.0,
+          "frac_windows_ood_peak_under_1p5": 1.0,
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "EXTRAPOLATION_VERDICT": "within the measured envelope on average"
+        },
+        "other": {
+          "horizon_K": 25,
+          "horizon_s": 2.5,
+          "n_windows": 8,
+          "n_episodes": 2,
+          "ood_peak_ratio": {
+            "mean": 1.0444,
+            "lo": 1.0329,
+            "hi": 1.0483,
+            "ci95": 0.0077,
+            "se": 0.0057,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "ood_mean_ratio": {
+            "mean": 1.015,
+            "lo": 1.0069,
+            "hi": 1.0177,
+            "ci95": 0.0054,
+            "se": 0.004,
+            "reducer": "mean",
+            "n_windows": 8,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_windows_ood_peak_under_1p16": 1.0,
+          "frac_windows_ood_peak_under_1p5": 1.0,
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "EXTRAPOLATION_VERDICT": "within the measured envelope on average"
+        }
+      },
+      "de_at_elapsed_s": {
+        "2": {
+          "mean": 0.9654,
+          "lo": 0.6023,
+          "hi": 1.6077,
+          "ci95": 0.5027,
+          "se": 0.2622,
+          "reducer": "mean",
+          "n_windows": 18,
+          "n_episodes": 3,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "rollout_steps_executed": 75,
+      "rollout_advanced_K_steps": true
+    }
+  },
+  "_git_head": "0f93b98dbca9e1e38d89d25053cf6fb8606dd93f"
+}

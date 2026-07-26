@@ -1,0 +1,26 @@
+{
+  "run": "flagship-v4-fromscratch",
+  "gate_step": 30000,
+  "registered_utc": "2026-07-26T08:26:00+00:00",
+  "primary_metric": "ade_0_2s",
+  "primary_threshold": 0.6,
+  "primary_direction": "<=",
+  "primary_source": "held-out taniteval full-set, planner path",
+  "primary_role": "diagnostic",
+  "secondary": [
+    "wm_canary_ade_2s<=0.55",
+    "speed_benefit_recovered_frac>=0.70",
+    "oracle_in_fan<=0.30",
+    "miss_at_2m<=0.10",
+    "seam_norm_ratio_max<=1.0",
+    "encoder_touching_levers<=2",
+    "deploy_tick_p99_ms<=50"
+  ],
+  "reference_run": "flagship-v1",
+  "reference_log": "taniteval/results/trainlogs/v1-speedjerk_train_log.jsonl",
+  "compare_metric": "g_op_fwd_ade_m",
+  "tau": 1.5,
+  "lever_family": "joint-planner-wm",
+  "restarts_used": 0,
+  "restart_cap": 2
+}

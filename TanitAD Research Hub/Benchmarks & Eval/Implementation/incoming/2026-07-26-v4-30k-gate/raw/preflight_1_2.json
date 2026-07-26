@@ -1,0 +1,84 @@
+{
+  "preflight_1_corridor_present": {
+    "check": "corridor.py present + importable on executing host",
+    "module_file": "/root/taniteval/taniteval/corridor.py",
+    "md5": "9f064714f35be7d172d228cfb26c5976",
+    "repo_md5_expected": "9f064714f35be7d172d228cfb26c5976",
+    "byte_identical_to_repo": true,
+    "CORRIDOR_HALFWIDTH_M": 1.75,
+    "JUNCTION_DEG": 10.0,
+    "has_from_windows": true,
+    "has_stratified": true,
+    "has_paired_stratum_delta": true,
+    "smoke_keys": [
+      "EXTRAPOLATION_frac_steps_lat_over_3m",
+      "block",
+      "corridor_departure_rate",
+      "corridor_departure_rate_by_threshold_m",
+      "corridor_primary_m",
+      "corridor_thresholds_m",
+      "estimator",
+      "horizon_K",
+      "horizon_s",
+      "mean_abs_xte_by_step_m",
+      "mean_xte_m",
+      "n_episodes"
+    ],
+    "smoke_emitted_departure_rate": true,
+    "horizon_seconds_K185": 18.5,
+    "PASS": true
+  },
+  "preflight_2_lateral_horizon": {
+    "check": "lateral.py emits horizon_provenance and horizon_s=2.0 on sparse surface",
+    "module_file": "/root/taniteval/taniteval/lateral.py",
+    "md5": "a3b3d4919e0b0aa966ec11d0515ea814",
+    "repo_md5_expected": "a3b3d4919e0b0aa966ec11d0515ea814",
+    "byte_identical_to_repo": true,
+    "surface": "sparse_4wp",
+    "dt_s": 0.5,
+    "horizon_K": 4,
+    "horizon_s_EMITTED": 2.0,
+    "by_horizon_labels": [
+      "0.5s",
+      "1s",
+      "1.5s",
+      "2s"
+    ],
+    "horizon_s_is_2.0": true,
+    "horizon_s_is_stale_0.4": false,
+    "paired_horizon_provenance": "inferred_from_knot_count",
+    "paired_horizon_s": 2.0,
+    "paired_n_knots": 4,
+    "emits_horizon_provenance": true,
+    "paired_horizon_s_is_2.0": true,
+    "explicit_knot_dt_horizon_s": 2.0,
+    "explicit_knot_dt_provenance": "explicit",
+    "PASS": true
+  },
+  "v1_identity_probe": {
+    "check": "identify which local ckpt is the deployed v1 (speedjerk)",
+    "flagship-30k": {
+      "top_keys": [
+        "aux_accel",
+        "grounding",
+        "model",
+        "opt",
+        "step"
+      ],
+      "args_subset": {},
+      "md5_prefix": null
+    },
+    "flagship-speed": {
+      "top_keys": [
+        "aux_accel",
+        "grounding",
+        "model",
+        "opt",
+        "step"
+      ],
+      "args_subset": {},
+      "md5_prefix": null
+    },
+    "PASS": true
+  }
+}
