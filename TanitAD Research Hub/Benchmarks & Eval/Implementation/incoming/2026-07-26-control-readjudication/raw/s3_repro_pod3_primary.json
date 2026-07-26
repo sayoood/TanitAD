@@ -1,0 +1,749 @@
+{
+  "provenance": {
+    "artifact": "S3 manoeuvre-initiation-timing characterisation",
+    "date": "2026-07-26",
+    "horizon_s": 12.0,
+    "min_ttm_s": 1.0,
+    "limit": 0,
+    "tag": "repro_primary",
+    "band_names": [
+      "t_1_2",
+      "t_2_5",
+      "t_5_10",
+      "t_10_H",
+      "t_none"
+    ],
+    "band_edges_s": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "estimator": "episode_cluster_bootstrap (taniteval/ci.py) B=2000; overlapping_holdout_se NEVER used",
+    "caches": [
+      {
+        "role": "train",
+        "dir": "/workspace/s3parity/views/physicalai-train-e438721ae894",
+        "cache_name": "physicalai-train-e438721ae894",
+        "n_episode_files": 2376,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-train-e438721ae894"
+      },
+      {
+        "role": "val",
+        "dir": "/workspace/s3parity/views/physicalai-val-0c5f7dac3b11",
+        "cache_name": "physicalai-val-0c5f7dac3b11",
+        "n_episode_files": 600,
+        "is_parity_cache": true,
+        "parity_expected": "physicalai-val-0c5f7dac3b11"
+      }
+    ],
+    "mine_seconds": 775.2
+  },
+  "what_X_cond_is": {
+    "source": "MEASURED stack/tanitad/models/flagship_v4.py:198-203 + stack/scripts/eval_flagship_v4.py:333",
+    "channels": {
+      "sensor": [
+        "v0",
+        "win_v_mean",
+        "win_dv",
+        "win_kappa_mean",
+        "win_kappa_abs_mean",
+        "win_a_abs_mean"
+      ],
+      "route": [
+        "route_0",
+        "route_1",
+        "route_2",
+        "route_3",
+        "route_graded"
+      ],
+      "vtarget": [
+        "vt_band_n",
+        "vt_speed",
+        "vt_valid"
+      ],
+      "clock": [
+        "obs_h_steps_n"
+      ]
+    },
+    "note": "route/route_graded/vt_band/vt_speed are THEMSELVES future-derived and are fed at inference"
+  },
+  "lat": {
+    "axis": "lat",
+    "n_train": 136484,
+    "n_test": 34337,
+    "n_test_episodes": 558,
+    "arms": {
+      "B1_sensor_only": {
+        "label": "B1_sensor_only",
+        "n_features": 6,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean"
+        ],
+        "n_train": 136484,
+        "n_test": 34337,
+        "n_test_episodes": 558,
+        "train_final_ce": 1.1563,
+        "blind": {
+          "qwk": 0.2566,
+          "band_acc": 0.4926,
+          "off_by_le1_acc": 0.6538,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.5252,
+            "t_2_5": 0.2764,
+            "t_5_10": 0.3557,
+            "t_10_H": 0.241,
+            "t_none": 0.5183
+          },
+          "mean_signed_band_err": -0.9567,
+          "n": 34337
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.8553,
+          "off_by_le1_acc": 0.8634,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 0.3667,
+          "n": 34337
+        },
+        "blind_qwk_ci": {
+          "mean": 0.2566,
+          "lo": 0.2075,
+          "hi": 0.309,
+          "ci95": 0.0508,
+          "se": 0.0256,
+          "reducer": "qwk",
+          "n_windows": 34337,
+          "n_episodes": 558,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B2_plus_route": {
+        "label": "B2_plus_route",
+        "n_features": 11,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded"
+        ],
+        "n_train": 136484,
+        "n_test": 34337,
+        "n_test_episodes": 558,
+        "train_final_ce": 0.7864,
+        "blind": {
+          "qwk": 0.6292,
+          "band_acc": 0.8102,
+          "off_by_le1_acc": 0.896,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.4191,
+            "t_2_5": 0.2944,
+            "t_5_10": 0.375,
+            "t_10_H": 0.0971,
+            "t_none": 0.8905
+          },
+          "mean_signed_band_err": -0.2427,
+          "n": 34337
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.8553,
+          "off_by_le1_acc": 0.8634,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 0.3667,
+          "n": 34337
+        },
+        "blind_qwk_ci": {
+          "mean": 0.6292,
+          "lo": 0.5619,
+          "hi": 0.6906,
+          "ci95": 0.0644,
+          "se": 0.0336,
+          "reducer": "qwk",
+          "n_windows": 34337,
+          "n_episodes": 558,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B3_FULL_CONDITIONING": {
+        "label": "B3_FULL_CONDITIONING",
+        "n_features": 14,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded",
+          "vt_band_n",
+          "vt_speed",
+          "vt_valid"
+        ],
+        "n_train": 136484,
+        "n_test": 34337,
+        "n_test_episodes": 558,
+        "train_final_ce": 0.7406,
+        "blind": {
+          "qwk": 0.6534,
+          "band_acc": 0.8091,
+          "off_by_le1_acc": 0.9061,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.4435,
+            "t_2_5": 0.2528,
+            "t_5_10": 0.354,
+            "t_10_H": 0.3094,
+            "t_none": 0.8909
+          },
+          "mean_signed_band_err": -0.2168,
+          "n": 34337
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.8553,
+          "off_by_le1_acc": 0.8634,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 0.3667,
+          "n": 34337
+        },
+        "blind_qwk_ci": {
+          "mean": 0.6534,
+          "lo": 0.5896,
+          "hi": 0.7119,
+          "ci95": 0.0612,
+          "se": 0.0315,
+          "reducer": "qwk",
+          "n_windows": 34337,
+          "n_episodes": 558,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B4_plus_clock": {
+        "label": "B4_plus_clock",
+        "n_features": 15,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded",
+          "vt_band_n",
+          "vt_speed",
+          "vt_valid",
+          "obs_h_steps_n"
+        ],
+        "n_train": 136484,
+        "n_test": 34337,
+        "n_test_episodes": 558,
+        "train_final_ce": 0.6789,
+        "blind": {
+          "qwk": 0.6561,
+          "band_acc": 0.8193,
+          "off_by_le1_acc": 0.9051,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.3878,
+            "t_2_5": 0.3382,
+            "t_5_10": 0.4311,
+            "t_10_H": 0.3201,
+            "t_none": 0.8925
+          },
+          "mean_signed_band_err": -0.2129,
+          "n": 34337
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.8553,
+          "off_by_le1_acc": 0.8634,
+          "majority_class": "t_none",
+          "majority_rate": 0.8553,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 0.3667,
+          "n": 34337
+        },
+        "blind_qwk_ci": {
+          "mean": 0.6561,
+          "lo": 0.5905,
+          "hi": 0.716,
+          "ci95": 0.0627,
+          "se": 0.0326,
+          "reducer": "qwk",
+          "n_windows": 34337,
+          "n_episodes": 558,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    },
+    "operative_blind_floor": {
+      "arm": "B3_FULL_CONDITIONING",
+      "qwk": 0.6534,
+      "rule": "max over B1/B2/B3 -- skill = QWK(model) - this. Using B3 alone would let a capacity artefact in one arm lower the bar."
+    },
+    "verdict_R1_circular": {
+      "rule": "spec 0.1 step 5: blind >= 0.98 * ceiling => REFUSE",
+      "ceiling": 1.0,
+      "threshold": 0.98,
+      "blind_primary": 0.6534,
+      "REFUSED": false
+    },
+    "paired_leak_B2_minus_B1": {
+      "delta": 0.3727,
+      "lo": 0.3163,
+      "hi": 0.4292,
+      "ci95": 0.0565,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "qwk",
+      "n_windows": 34337,
+      "n_episodes": 558,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_leak_B3_minus_B1": {
+      "delta": 0.3968,
+      "lo": 0.3426,
+      "hi": 0.4492,
+      "ci95": 0.0533,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "qwk",
+      "n_windows": 34337,
+      "n_episodes": 558,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_clock_B4_minus_B3": {
+      "delta": 0.0027,
+      "lo": -0.0162,
+      "hi": 0.0216,
+      "ci95": 0.0189,
+      "p_delta_gt0": 0.615,
+      "separated": false,
+      "reducer": "qwk",
+      "n_windows": 34337,
+      "n_episodes": 558,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "deltas": {
+      "B2_minus_B1": 0.3726,
+      "B3_minus_B1": 0.3968,
+      "B4_minus_B3": 0.0027
+    },
+    "pre_registered_skill_bars": {
+      "S3_as_specified_route_and_vt_GIVEN": 0.6534,
+      "S3_W_withheld_conditioning_pixels_and_v0_only": 0.2566,
+      "note": "a model must clear these, not 0. PRE_REGISTRATION_S3.md \u00a75.3/\u00a77 R2."
+    }
+  },
+  "lon": {
+    "axis": "lon",
+    "n_train": 99036,
+    "n_test": 24987,
+    "n_test_episodes": 520,
+    "arms": {
+      "B1_sensor_only": {
+        "label": "B1_sensor_only",
+        "n_features": 6,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean"
+        ],
+        "n_train": 99036,
+        "n_test": 24987,
+        "n_test_episodes": 520,
+        "train_final_ce": 1.3916,
+        "blind": {
+          "qwk": 0.2881,
+          "band_acc": 0.3995,
+          "off_by_le1_acc": 0.6519,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.3056,
+            "t_2_5": 0.1215,
+            "t_5_10": 0.1195,
+            "t_10_H": 0.3206,
+            "t_none": 0.5489
+          },
+          "mean_signed_band_err": -0.2618,
+          "n": 24987
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.6146,
+          "off_by_le1_acc": 0.6272,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 1.0503,
+          "n": 24987
+        },
+        "blind_qwk_ci": {
+          "mean": 0.2881,
+          "lo": 0.228,
+          "hi": 0.3475,
+          "ci95": 0.0598,
+          "se": 0.0309,
+          "reducer": "qwk",
+          "n_windows": 24987,
+          "n_episodes": 520,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B2_plus_route": {
+        "label": "B2_plus_route",
+        "n_features": 11,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded"
+        ],
+        "n_train": 99036,
+        "n_test": 24987,
+        "n_test_episodes": 520,
+        "train_final_ce": 1.2282,
+        "blind": {
+          "qwk": 0.3592,
+          "band_acc": 0.4517,
+          "off_by_le1_acc": 0.6814,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.341,
+            "t_2_5": 0.1771,
+            "t_5_10": 0.2011,
+            "t_10_H": 0.1746,
+            "t_none": 0.599
+          },
+          "mean_signed_band_err": -0.2954,
+          "n": 24987
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.6146,
+          "off_by_le1_acc": 0.6272,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 1.0503,
+          "n": 24987
+        },
+        "blind_qwk_ci": {
+          "mean": 0.3592,
+          "lo": 0.2951,
+          "hi": 0.4204,
+          "ci95": 0.0627,
+          "se": 0.0324,
+          "reducer": "qwk",
+          "n_windows": 24987,
+          "n_episodes": 520,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B3_FULL_CONDITIONING": {
+        "label": "B3_FULL_CONDITIONING",
+        "n_features": 14,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded",
+          "vt_band_n",
+          "vt_speed",
+          "vt_valid"
+        ],
+        "n_train": 99036,
+        "n_test": 24987,
+        "n_test_episodes": 520,
+        "train_final_ce": 1.0991,
+        "blind": {
+          "qwk": 0.5323,
+          "band_acc": 0.5051,
+          "off_by_le1_acc": 0.7376,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.5652,
+            "t_2_5": 0.2529,
+            "t_5_10": 0.2203,
+            "t_10_H": 0.1492,
+            "t_none": 0.6373
+          },
+          "mean_signed_band_err": -0.3872,
+          "n": 24987
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.6146,
+          "off_by_le1_acc": 0.6272,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 1.0503,
+          "n": 24987
+        },
+        "blind_qwk_ci": {
+          "mean": 0.5323,
+          "lo": 0.478,
+          "hi": 0.5832,
+          "ci95": 0.0526,
+          "se": 0.0269,
+          "reducer": "qwk",
+          "n_windows": 24987,
+          "n_episodes": 520,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "B4_plus_clock": {
+        "label": "B4_plus_clock",
+        "n_features": 15,
+        "feature_names": [
+          "v0",
+          "win_v_mean",
+          "win_dv",
+          "win_kappa_mean",
+          "win_kappa_abs_mean",
+          "win_a_abs_mean",
+          "route_0",
+          "route_1",
+          "route_2",
+          "route_3",
+          "route_graded",
+          "vt_band_n",
+          "vt_speed",
+          "vt_valid",
+          "obs_h_steps_n"
+        ],
+        "n_train": 99036,
+        "n_test": 24987,
+        "n_test_episodes": 520,
+        "train_final_ce": 0.975,
+        "blind": {
+          "qwk": 0.4964,
+          "band_acc": 0.4964,
+          "off_by_le1_acc": 0.726,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.5,
+            "t_2_5": 0.2529,
+            "t_5_10": 0.2174,
+            "t_10_H": 0.1397,
+            "t_none": 0.6315
+          },
+          "mean_signed_band_err": -0.4511,
+          "n": 24987
+        },
+        "majority": {
+          "qwk": 0.0,
+          "band_acc": 0.6146,
+          "off_by_le1_acc": 0.6272,
+          "majority_class": "t_none",
+          "majority_rate": 0.6146,
+          "qwk_majority_baseline": 0.0,
+          "per_band_recall": {
+            "t_1_2": 0.0,
+            "t_2_5": 0.0,
+            "t_5_10": 0.0,
+            "t_10_H": 0.0,
+            "t_none": 1.0
+          },
+          "mean_signed_band_err": 1.0503,
+          "n": 24987
+        },
+        "blind_qwk_ci": {
+          "mean": 0.4964,
+          "lo": 0.4411,
+          "hi": 0.5472,
+          "ci95": 0.053,
+          "se": 0.0276,
+          "reducer": "qwk",
+          "n_windows": 24987,
+          "n_episodes": 520,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    },
+    "operative_blind_floor": {
+      "arm": "B3_FULL_CONDITIONING",
+      "qwk": 0.5323,
+      "rule": "max over B1/B2/B3 -- skill = QWK(model) - this. Using B3 alone would let a capacity artefact in one arm lower the bar."
+    },
+    "verdict_R1_circular": {
+      "rule": "spec 0.1 step 5: blind >= 0.98 * ceiling => REFUSE",
+      "ceiling": 1.0,
+      "threshold": 0.98,
+      "blind_primary": 0.5323,
+      "REFUSED": false
+    },
+    "paired_leak_B2_minus_B1": {
+      "delta": 0.0711,
+      "lo": 0.0308,
+      "hi": 0.1127,
+      "ci95": 0.0409,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "reducer": "qwk",
+      "n_windows": 24987,
+      "n_episodes": 520,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_leak_B3_minus_B1": {
+      "delta": 0.2442,
+      "lo": 0.1966,
+      "hi": 0.2951,
+      "ci95": 0.0492,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "qwk",
+      "n_windows": 24987,
+      "n_episodes": 520,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_clock_B4_minus_B3": {
+      "delta": -0.0359,
+      "lo": -0.0634,
+      "hi": -0.0108,
+      "ci95": 0.0263,
+      "p_delta_gt0": 0.001,
+      "separated": true,
+      "reducer": "qwk",
+      "n_windows": 24987,
+      "n_episodes": 520,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "deltas": {
+      "B2_minus_B1": 0.0711,
+      "B3_minus_B1": 0.2442,
+      "B4_minus_B3": -0.0359
+    },
+    "pre_registered_skill_bars": {
+      "S3_as_specified_route_and_vt_GIVEN": 0.5323,
+      "S3_W_withheld_conditioning_pixels_and_v0_only": 0.2881,
+      "note": "a model must clear these, not 0. PRE_REGISTRATION_S3.md \u00a75.3/\u00a77 R2."
+    }
+  }
+}

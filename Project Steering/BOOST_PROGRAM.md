@@ -338,6 +338,52 @@ because it measured **the label's own lift on its own held-out subset**, 2.171×
 separated, **before** reading the classifier. A power ceiling measured first turns an ambiguous null
 into a known-unanswerable question.)*
 
+> ### ⛔ CORRECTED 2026-07-26 by the control re-adjudication — "516 would separate" IS A WORK QUEUE, NOT A RESULT SET
+>
+> **I reported the 65.4 % projection to the PI as potential rediscoveries. That framing is withdrawn.**
+>
+> The control re-adjudication produced **12 end-to-end re-powered cases where H1 had exactly 1**, and
+> they calibrate the projection directly:
+> - **half-width shrinkage is CONFIRMED** — ×2.26–7.70, median **3.88**, bracketing the ×3.4 assumed;
+> - **but POINT ESTIMATES MOVE — median 75 %, max 649 %, with 3 of 12 SIGN FLIPS.** The projection
+>   assumed the effect stays put and only the interval tightens. It does not.
+> - ⇒ **`would_flip` scored 4/8 = 50 %. A COIN FLIP.**
+>
+> **So `516 of 789` is a ranked WORK QUEUE — the order is useful, the count is not a forecast.** No
+> number from it may be quoted as a recovered result before it is re-run. *(The named leak is a worked
+> example: real, but **+0.0711**, i.e. **2.33× SMALLER** than its projected 0.166.)*
+>
+> ### ⛔ AND THE INVERTED HALF IS WORSE THAN REPORTED — 75 control rows, not 14
+>
+> A full sweep of **all 1,845 repo JSONs** found **231 control-type nodes, 75 of them nulls**, across
+> 8 families. The harvest's 14 are all contained; **61 are new**, including **`firewall.H` — the
+> highest-proximity firewall row in the program (0.900) — missed *inside a file the harvest had
+> already read*.**
+>
+> ⭐ **Why a null-sweep structurally cannot find these:** the S3 firewall's answer was **one JSON key
+> away**. `s3_parity_vs_nonparity.json` carries both `.non_parity` (n=73, the null) *and* `.parity`
+> (n=520). A sweep for `separated: false` reaches the first and **can never reach the second, because
+> it is `separated: true`.** The evidence that overturns a null does not itself look like a null.
+>
+> **Outcome B fired: 4 of 12 re-adjudicated verdicts changed, EVERY ONE from "control passed" to
+> "control FAILED", 3 with sign flips.**
+>
+> ⛔ **The sentence that matters:** the original control's **MDE was 0.1985 QWK against a real leak of
+> +0.0711 — 2.8× too blunt to see what it existed to catch. IT DID NOT PASS; IT WAS NEVER RUN.**
+>
+> ⛔ **And `firewall.H` cannot fail — proven, not estimated:** MDE **0.5555** against a **maximum
+> physically possible effect of 0.2500 — 222 %. A blind head at 100 % accuracy would still have read
+> "not separated."** Its `ADMITTED` verdict is **zero evidence**. This is **C13 with an analytic
+> proof** rather than a saturation argument, and it is the third distinct form of the class.
+>
+> ✅ **One thing went right, and it is the reason this was worth doing first:** the S3 skill bars are
+> wrong by up to **+128 %** (an arm at QWK 0.45 reads **+0.217 skill** but is truly **−0.082**) — and a
+> grep confirmed **no arm has been scored against them yet**. **A prevented error, not a committed
+> one.**
+>
+> ⚠️ **30 of the 75 rows could not be re-powered at all** (the 600-episode val lives on pod2, which was
+> training) — ranked **owed, not resolved**. The closed-loop controls are among them.
+
 ### 7.2 The four other harvest inventories
 
 | # | inventory | why it pays |
