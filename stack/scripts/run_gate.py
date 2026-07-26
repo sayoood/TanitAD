@@ -41,11 +41,26 @@ junction     0.0250 (n=6)          **0.8414** (n=6)       1.23 m -> **46.25 m**
 ===========  ====================  =====================  ==================
 
 Paired delta overall **+0.5842 [0.5071, 0.6565]**, separated, ``p_delta_gt0``
-1.0, ``paired_episode_cluster_bootstrap``. The OOD-envelope ratio stays <= 1.30,
-so this is genuine IN-DISTRIBUTION failure, not extrapolation. **The 2 s
-instrument hid it by ~168x.** The same 43 windows show
+1.0, ``paired_episode_cluster_bootstrap``. **The 2 s instrument hid it by
+~168x.** The same 43 windows show
 ``d_closed_ade2s_m = 0.0109 [-0.0, 0.0312]``, NOT separated -- i.e. ADE@2s
 records essentially nothing while the corridor metric moves from ~0 to ~0.59.
+
+⚠️ **RETRACTED, 2026-07-26.** This docstring previously read *"The OOD-envelope
+ratio stays <= 1.30, so this is genuine IN-DISTRIBUTION failure, not
+extrapolation."* **That is wrong, and the same sentence stands in
+GATE_PROTOCOL 0.1, RETRACTION_LOG C6 and LOOP_STATE.** E1a's rule is a
+DISJUNCTION -- ratio > ~1.5x **OR steps leave the measured envelope** -- and the
+second clause fires decisively: E1a's own K=185 artifact records
+``EXTRAPOLATION_frac_steps_lat_over_3m`` **0.5281** and
+``EXTRAPOLATION_frac_windows_any_step_out_of_envelope`` **0.9070**. The ratio
+clamps (``np.interp``) at ``|dlat| = 3.0 m`` / ``|dyaw| = 12 deg``, so beyond the
+envelope it is a **LOWER BOUND** and the 1.5x criterion structurally cannot
+fire. The horizon finding itself is UNAFFECTED (the paired K=20 vs K=185 delta is
+measured on identical windows); what is retracted is the *in-distribution*
+certificate attached to it. ``check`` now adjudicates the full rule on every
+corridor block it reads (:func:`_ood_verdict`; canonical implementation
+:mod:`taniteval.ood`).
 
 So from 2026-07-26 the gate has a **co-primary**:
 
@@ -65,6 +80,35 @@ card that registers a co-primary it no longer adjudicates alone
 * **K is pre-registered, never implicit.** ``register`` refuses K <= 20 (that IS
   the blind horizon) and K > 190 (structurally impossible: PhysicalAI clips are
   190-199 frames, so ``T - W - K >= 1`` caps K at 190 = 19.0 s; E1a used 185).
+
+WHAT THE 30 k GATE FOUND IN THIS FILE (2026-07-26 — three defects, all MEASURED)
+--------------------------------------------------------------------------------
+The flagship-v4 30 k gate had to be **hand-adjudicated** because this renderer
+could not process its own registered card. All three are fixed here:
+
+1. **The card was not machine-readable.** ``cmd_check`` did
+   ``GateCard(**json.loads(card))``; 11 registered keys have no dataclass slot,
+   so it died with ``TypeError: ... unexpected keyword argument
+   'registered_before_checkpoint_exists'``, and ``co_primary`` is a NESTED dict
+   where the tool expected FLAT ``co_primary_*`` fields. Fixed by
+   :meth:`GateCard.from_dict`, which preserves unknown keys in ``card_extras``
+   and maps the nested block onto the flat fields, inventing nothing.
+2. **``REPORT_ONLY_THIS_GATE`` and ``secondary_void`` did not exist.** A
+   co-primary may be registered, measured and reported IN FULL while
+   deliberately staying OUT of the kill conjunction (no bar for it has ever been
+   agreed; inventing one after the number lands is 0.3's forking path). A
+   ``secondary_void`` entry is adjudicated INSTRUMENT-FAIL per 0.7: excluded
+   from the conjunction and **required to be printed** — a suppressed criterion
+   that is not printed is indistinguishable from one that passed.
+3. ⭐ **An off-by-one refused every completed gate.** Trainers log ``step``
+   0-indexed, so a finished 30,000-step run ends at ``final_step 29999`` and
+   ``cur < card.gate_step`` rendered ``NOT_YET`` on a complete 59-hour run.
+   :func:`step_reached` now accepts either convention and NAMES the one it used.
+
+A fourth follows from (2): a conjunction containing a hard FAIL is
+**unsatisfiable**, so an unmeasured secondary can no longer downgrade a
+determined NOT-CONTINUE to ``INCOMPLETE``. ``INCOMPLETE`` is now reserved for
+the case where nothing measured has failed.
 
 Back-compatibility is deliberate and bounded: a card written BEFORE this change
 carries no co-primary, so ``check`` still renders its verdict exactly as before
@@ -127,7 +171,7 @@ import argparse
 import json
 import math
 import sys
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -173,6 +217,30 @@ HORIZON_CEILING_K = 190
 # the E1a curve is already at 0.5877 by K=185 and at 0.0035 at K=20, so a short-K
 # co-primary re-imports the defect it exists to remove.
 HORIZON_HONEST_MIN_K = 100
+
+# --- co-primary ROLES (2026-07-26, the 30 k gate found these unimplemented) -- #
+# A co-primary may be registered WITHOUT a kill threshold. `flagship-v4-30k.card
+# .json` is the first such card: the metric had never been measured on the
+# flagship line, so inventing a bar 41 minutes before the number landed would be
+# the garden of forking paths GATE_PROTOCOL 0.3 forbids. The card therefore
+# registers it as REPORT_ONLY_THIS_GATE — measured, printed IN FULL, and
+# deliberately OUTSIDE the kill conjunction, existing to set the next gate's bar
+# against a real baseline.
+CO_PRIMARY_ROLE_KILL = "kill"
+CO_PRIMARY_ROLE_REPORT_ONLY = "REPORT_ONLY_THIS_GATE"
+CO_PRIMARY_ROLES = (CO_PRIMARY_ROLE_KILL, CO_PRIMARY_ROLE_REPORT_ONLY)
+
+# --- step indexing (2026-07-26, ⭐ this alone refused EVERY completed gate) --- #
+# Trainers log `step` 0-INDEXED: a run configured for 30,000 steps ends at
+# `final_step 29999` and `metrics.json` records exactly that. `cur <
+# card.gate_step` compared that 0-indexed counter against a 1-indexed COUNT, so a
+# complete 59-hour run rendered `NOT_YET` (MEASURED: GATE_30K_verdict_B_
+# coprimary_registered.json, "step 29999 < pre-registered gate step 30000").
+# The gate now accepts EITHER convention and NAMES the one it used, because a
+# verdict that silently picks an indexing convention is the same class of defect
+# as a verdict that silently picks a horizon.
+STEP_INDEXING_ONE = "1-indexed (step count: cur >= gate_step)"
+STEP_INDEXING_ZERO = "0-indexed (trainer convention: cur >= gate_step - 1)"
 
 # --- metric-name aliasing — the 3-way miss-name drift ----------------------- #
 # The SAME quantity (final-point miss@2m) is spelled three ways: the gate card
@@ -533,13 +601,114 @@ def validate_horizon_K(K, *, context="co-primary") -> dict:
                      f"but the verdict carries the qualifier.")}
 
 
-def _corridor_strata_node(doc):
+# --- the OOD/EXTRAPOLATION guard, E1a's FULL rule --------------------------- #
+# ⚠️ The canonical implementation is :mod:`taniteval.ood`. It is MIRRORED here
+# (pure arithmetic, no numpy, no taniteval import) because `stack` cannot import
+# `taniteval`, and `taniteval/tests/test_ood_guard.py::test_run_gate_mirror_agrees`
+# pins the two against each other on the committed artifacts so they cannot
+# drift. The failure this guards against is a gate quoting a SATURATED ratio as
+# an in-distribution certificate — which is what "OOD-envelope ratio stays <=
+# 1.30, so this is genuine in-distribution failure" (this file's own docstring
+# until 2026-07-26) did.
+ENV_LAT_MAX = 3.0               # MEASURED — P1 envelope (lowood_flagship_ci.json)
+ENV_YAW_MAX = 12.0              # MEASURED — P1 envelope
+RATIO_EXTRAPOLATION_X = 1.5     # PROPOSED — E1a's "~1.5x"
+OOD_MAJORITY_FRAC = 0.5         # PROPOSED reporting convention
+V_MEASUREMENT = "MEASUREMENT — every step stayed inside the MEASURED envelope"
+V_PARTIAL = ("PARTIAL EXTRAPOLATION — a minority of windows leave the MEASURED "
+             "envelope; the OOD ratio is a LOWER BOUND there")
+V_EXTRAPOLATION = "EXTRAPOLATION — NOT a measurement at this horizon"
+
+
+def _ood_verdict(peak_ratio, frac_steps, frac_windows) -> dict:
+    """E1a's DISJUNCTION: ratio > ~1.5x **OR** steps leave the measured envelope.
+
+    Only the ratio half was ever implemented, and it **structurally cannot fire
+    outside the envelope**: ``np.interp`` clamps, so the ratio SATURATES exactly
+    where the second clause bites. MEASURED at the 30 k gate: ratio 1.2741
+    ("under 1.5") while 54.63 % of steps exceeded 3 m and 90.24 % of windows left
+    the envelope."""
+    fs = float(frac_steps or 0.0)
+    fw = float(frac_windows or 0.0)
+    ratio_fires = bool(peak_ratio is not None
+                       and float(peak_ratio) > RATIO_EXTRAPOLATION_X)
+    saturated = bool(fs > 0.0 or fw > 0.0)
+    if ratio_fires or fs > OOD_MAJORITY_FRAC or fw > OOD_MAJORITY_FRAC:
+        v = V_EXTRAPOLATION
+    elif saturated:
+        v = V_PARTIAL
+    else:
+        v = V_MEASUREMENT
+    return {"EXTRAPOLATION_VERDICT": v,
+            "ratio_is_lower_bound": saturated,
+            "criterion_1_ratio_over_1p5": {
+                "fires": ratio_fires,
+                "peak_ratio_mean": (None if peak_ratio is None
+                                    else round(float(peak_ratio), 4)),
+                "informative": not saturated},
+            "criterion_2_steps_outside_measured_envelope": {
+                "fires": bool(fw > 0.0), "frac_steps_any": fs,
+                "frac_windows_any_step_outside": fw},
+            "is_extrapolation": v == V_EXTRAPOLATION,
+            "_rule": ("E1a's FULL disjunction (e1a_horizon.py:28-30): peak OOD "
+                      f"ratio > ~{RATIO_EXTRAPOLATION_X}x OR steps leave the "
+                      f"MEASURED envelope (|dlat|<={ENV_LAT_MAX} m, "
+                      f"|dyaw|<={ENV_YAW_MAX} deg). The ratio clamps at the "
+                      "envelope edge, so it is a LOWER BOUND beyond it and "
+                      "cannot be quoted as an in-distribution certificate."),
+            "_canonical_implementation": "taniteval.ood.readjudicate"}
+
+
+def _corridor_ood(strata_parent, stratum, blk) -> dict | None:
+    """The OOD adjudication for one stratum of a corridor artifact.
+
+    Reads whichever of the two shapes the artifact carries: the driver's ``ood``
+    node beside the strata (``all_windows[K]["ood"][stratum]``), or the
+    ``EXTRAPOLATION_*`` fields inside the stratum block itself
+    (``taniteval.corridor.stratified`` emits those). Never invents a fraction: a
+    block that records none is reported as UNKNOWN, not as in-envelope."""
+    node = None
+    ood_parent = (strata_parent or {}).get("ood")
+    if isinstance(ood_parent, dict) and isinstance(ood_parent.get(stratum), dict):
+        node = ood_parent[stratum]
+    src = node if node is not None else blk
+    keys = ("EXTRAPOLATION_frac_steps_lat_over_3m",
+            "EXTRAPOLATION_frac_steps_yaw_over_12deg",
+            "EXTRAPOLATION_frac_steps_any",
+            "EXTRAPOLATION_frac_windows_any_step_out_of_envelope")
+    have = {k: src.get(k) for k in keys if isinstance(src, dict) and k in src}
+    if not have:
+        return None
+    fs = max([float(v) for k, v in have.items()
+              if "frac_steps" in k and v is not None] or [0.0])
+    fw = have.get("EXTRAPOLATION_frac_windows_any_step_out_of_envelope")
+    peak = (src.get("ood_peak_ratio") if isinstance(src, dict) else None)
+    peak = peak.get("mean") if isinstance(peak, dict) else peak
+    out = _ood_verdict(peak, fs, fw)
+    out.update(have)
+    out["emitted_verdict"] = (src.get("EXTRAPOLATION_VERDICT")
+                              if isinstance(src, dict) else None)
+    out["superseded_emitted_verdict"] = bool(
+        out["emitted_verdict"] and out["emitted_verdict"]
+        != out["EXTRAPOLATION_VERDICT"])
+    return out
+
+
+def _corridor_strata_node(doc, expect_K=None):
     """The stratified corridor block inside ``doc``, and where it was found.
 
     ``taniteval.corridor.stratified`` / ``from_windows`` emit the strata at the
     TOP level; callers that fold the block into a bigger result JSON commonly
     nest it under ``corridor`` or ``co_primary``. Both are accepted; nothing
-    else is guessed at."""
+    else is guessed at.
+
+    A horizon-SWEEP artifact (``e1a_horizon.py`` and the v4 closed-loop corridor
+    driver both emit one) nests the strata under ``all_windows[<K>]``, one node
+    per horizon. That shape is accepted too, but ONLY at the CARD's registered
+    ``expect_K``: selecting a horizon from a multi-horizon artifact by anything
+    other than the pre-registration would be the garden of forking paths the
+    horizon rule exists to close. When the registered K is missing, the refusal
+    names the horizons the artifact does carry."""
     for path, where in (((), "top-level"),
                         (("corridor",), "corridor"),
                         (("co_primary",), "co_primary"),
@@ -547,6 +716,21 @@ def _corridor_strata_node(doc):
         node = _dig(doc, path) if path else doc
         if isinstance(node, dict) and isinstance(node.get(CO_PRIMARY_STRATUM), dict):
             return node, where
+    sweep = doc.get("all_windows") if isinstance(doc, dict) else None
+    if isinstance(sweep, dict) and sweep:
+        if expect_K is None:
+            raise SystemExit(
+                f"[gate] REFUSING: this is a horizon-SWEEP corridor artifact "
+                f"(horizons {sorted(sweep)}) and no registered K was supplied. "
+                f"A horizon must be pre-registered, never picked at read time.")
+        node = sweep.get(str(int(expect_K)))
+        if isinstance(node, dict) and isinstance(node.get(CO_PRIMARY_STRATUM), dict):
+            return node, f"all_windows[{int(expect_K)}]"
+        raise SystemExit(
+            f"[gate] REFUSING: the corridor sweep carries horizons "
+            f"{sorted(sweep)} but the card pre-registered K={int(expect_K)}. "
+            f"Re-render at the registered horizon; do not adjudicate on a "
+            f"horizon the card did not name.")
     return None, None
 
 
@@ -603,7 +787,7 @@ def read_corridor(doc, expect_K=None, expect_corridor_m=None,
     ``expect_K`` / ``expect_corridor_m`` come from the CARD. A mismatch is a
     REFUSAL, not a warning: a verdict rendered at a horizon other than the
     pre-registered one is a garden of forking paths with extra steps."""
-    strata, where = _corridor_strata_node(doc)
+    strata, where = _corridor_strata_node(doc, expect_K=expect_K)
     if strata is None:
         if isinstance(doc, dict) and doc.get("skipped"):
             raise SystemExit(
@@ -665,6 +849,17 @@ def read_corridor(doc, expect_K=None, expect_corridor_m=None,
            "peak_xte_m": (blk.get("peak_xte_m") or {}).get("mean")}
     out.update({k: blk[k] for k in blk
                 if k.startswith("EXTRAPOLATION_")})
+
+    # --- the OOD guard, E1a's FULL rule, on the ADJUDICATING stratum -------- #
+    # A corridor number produced mostly outside the P1 envelope is not a clean
+    # in-distribution measurement, and the artifact's own summary string cannot
+    # be trusted to say so (it tested only the ratio half, which SATURATES).
+    out["ood"] = _corridor_ood(strata, stratum, blk)
+    if out["ood"] is None:
+        out["ood_note"] = (
+            "the corridor block records no EXTRAPOLATION_* fraction, so the "
+            "envelope clause of E1a's rule CANNOT be evaluated. That is "
+            "UNKNOWN, not in-envelope: the OOD ratio alone is a lower bound.")
 
     # --- the junction stratum, ALWAYS, whether or not it adjudicates -------- #
     j_val, j_node = _corridor_stratum_value(strata, JUNCTION_STRATUM)
@@ -766,11 +961,108 @@ class GateCard:
     # Set to "diagnostic" by `register` whenever a co-primary exists.
     primary_role: str = "kill"
     no_co_primary_reason: str = ""
+    # --- the 30 k gate's three findings (2026-07-26) ---------------------- #
+    # "kill" | "REPORT_ONLY_THIS_GATE" — see CO_PRIMARY_ROLES.
+    co_primary_role: str = CO_PRIMARY_ROLE_KILL
+    co_primary_role_rationale: str = ""
+    co_primary_becomes_kill_at: str = ""
+    # Criteria adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7: excluded from
+    # the conjunction and REQUIRED to be printed. Each entry is a dict with at
+    # least {metric, status, adjudication}; a bare "name>=v" string is accepted
+    # and normalised.
+    secondary_void: list = field(default_factory=list)
+    # Every registered key the dataclass has no slot for, preserved verbatim.
+    # A card is a PRE-REGISTRATION document: dropping its fields silently is how
+    # a card's own text stops binding the tool that renders it.
+    card_extras: dict = field(default_factory=dict)
+
+    # ---- loading a REGISTERED card ------------------------------------- #
+    # `GateCard(**json.loads(...))` is what `cmd_check` used to do, and it is why
+    # `Project Steering/Gates/flagship-v4-30k.card.json` could not be rendered at
+    # all: 11 of its registered keys have no dataclass slot, so it died with
+    # `TypeError: GateCard.__init__() got an unexpected keyword argument
+    # 'registered_before_checkpoint_exists'` — and its `co_primary` is a NESTED
+    # dict where the tool expects FLAT `co_primary_*` fields, so even after the
+    # TypeError is dodged `has_co_primary` reads False and the DEMOTED primary
+    # illegally re-enters the kill conjunction. Both are fixed here, in ONE
+    # place, so no caller can reintroduce either.
+    _CO_PRIMARY_KEYMAP = {
+        "metric": "co_primary_metric",
+        "threshold": "co_primary_threshold",
+        "direction": "co_primary_direction",
+        "horizon_K": "co_primary_horizon_K",
+        "corridor_half_width_m": "co_primary_corridor_m",
+        "corridor_m": "co_primary_corridor_m",
+        "stratum": "co_primary_stratum",
+        "junction_threshold": "co_primary_junction_threshold",
+        "surface": "co_primary_source",
+        "source": "co_primary_source",
+        "role": "co_primary_role",
+        "report_only_rationale": "co_primary_role_rationale",
+        "becomes_kill_criterion_at": "co_primary_becomes_kill_at",
+    }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "GateCard":
+        """Load a registered card WITHOUT dropping or refusing any of its keys.
+
+        Three behaviours, each of which the 30 k gate proved necessary:
+
+        1. **Unknown keys are preserved, never fatal.** They land in
+           ``card_extras`` and are printed by ``check``, so a card's prose
+           (``registration_note``, ``goal_provenance_note``, ``required_reporting``,
+           ``preflight_checks`` …) still travels with its verdict.
+        2. **A nested ``co_primary`` dict is mapped onto the flat fields.**
+           Nothing is invented: an absent ``threshold`` stays ``None``.
+        3. **``secondary_void`` is a first-class list**, not an unknown key —
+           GATE_PROTOCOL 0.7 requires those entries to be PRINTED.
+        """
+        d = dict(d)
+        known = {f.name for f in fields(cls)}
+        kw, extras = {}, {}
+
+        co = d.pop("co_primary", None)
+        if isinstance(co, dict):
+            for k, v in co.items():
+                slot = cls._CO_PRIMARY_KEYMAP.get(k)
+                if slot is not None and v is not None:
+                    kw[slot] = v
+                elif slot is None:
+                    extras.setdefault("co_primary_unmapped", {})[k] = v
+        elif co is not None:
+            extras["co_primary"] = co
+
+        for k, v in d.items():
+            (kw if k in known else extras)[k] = v
+
+        if "co_primary_horizon_K" in kw and kw["co_primary_horizon_K"] is not None:
+            kw["co_primary_horizon_K"] = int(kw["co_primary_horizon_K"])
+        role = kw.get("co_primary_role", CO_PRIMARY_ROLE_KILL)
+        if role not in CO_PRIMARY_ROLES:
+            raise SystemExit(
+                f"[gate] REFUSING an unknown co-primary role {role!r}. Known "
+                f"roles: {CO_PRIMARY_ROLES}. A role the tool does not implement "
+                f"must fail loudly — silently treating it as 'kill' is how the "
+                f"30 k gate mis-adjudicated a REPORT_ONLY_THIS_GATE card.")
+        kw["secondary_void"] = _normalise_void(kw.get("secondary_void") or [])
+        kw["card_extras"] = {**extras, **(kw.get("card_extras") or {})}
+        return cls(**kw)
 
     @property
     def has_co_primary(self) -> bool:
         return (self.co_primary_metric is not None
                 and self.co_primary_horizon_K is not None)
+
+    @property
+    def co_primary_is_report_only(self) -> bool:
+        """Registered and MEASURED, but deliberately outside the kill
+        conjunction at this gate (GATE_PROTOCOL 0.3 — no bar was ever agreed)."""
+        return (self.has_co_primary
+                and self.co_primary_role == CO_PRIMARY_ROLE_REPORT_ONLY)
+
+    @property
+    def co_primary_adjudicates(self) -> bool:
+        return self.has_co_primary and not self.co_primary_is_report_only
 
     def check_restart_budget(self) -> tuple[bool, str]:
         if self.restarts_used >= self.restart_cap:
@@ -780,6 +1072,121 @@ class GateCard:
                            f"lever family; it does not license more tuning.")
         return True, (f"restart budget {self.restarts_used}/{self.restart_cap} "
                       f"for lever family {self.lever_family!r}")
+
+
+def _normalise_void(void) -> list:
+    """Card ``secondary_void`` entries -> a uniform list of dicts.
+
+    Accepts the registered dict form, and a bare ``"name>=1"`` string for the
+    case where a card wants to void a criterion without restating its prose. A
+    void entry that carries no ``adjudication`` gets the protocol default, never
+    an empty string: an unlabelled suppression is exactly the thing 0.7 forbids.
+    """
+    out = []
+    for e in void or []:
+        if isinstance(e, str):
+            name, op, thr = _parse_secondary(e)
+            e = {"metric": name, "original_threshold": f"{op}{thr:g}"}
+        elif not isinstance(e, dict):
+            raise SystemExit(f"[gate] bad secondary_void entry {e!r}")
+        else:
+            e = dict(e)
+        if not e.get("metric"):
+            raise SystemExit(f"[gate] secondary_void entry has no 'metric': {e!r}")
+        e.setdefault("status", "VOID_BY_CONSTRUCTION")
+        e.setdefault("adjudication", "INSTRUMENT-FAIL, NEVER MODEL-FAIL")
+        e.setdefault("authority", "GATE_PROTOCOL 0.7")
+        out.append(e)
+    return out
+
+
+def _void_secondary_block(card, supplied) -> list:
+    """The printed record for every VOID secondary (GATE_PROTOCOL 0.7 step 3).
+
+    **A suppressed criterion that is not printed is indistinguishable from one
+    that passed**, so every entry is emitted with its adjudication string, its
+    authority, and an explicit ``in_kill_set: False``. If a value happens to have
+    been supplied for a void metric it is recorded — and still does not
+    adjudicate; that is the whole point of the void."""
+    rows = []
+    for e in card.secondary_void:
+        v, vkey = _lookup_secondary_value(supplied, e["metric"])
+        rows.append({
+            "metric": e["metric"],
+            "original_threshold": e.get("original_threshold"),
+            "status": e.get("status"),
+            "adjudication": e.get("adjudication"),
+            "authority": e.get("authority"),
+            "reason": e.get("reason"),
+            "re_arms_when": e.get("re_arms_when"),
+            "in_kill_set": False,
+            "adjudicated": False,
+            "value": v,
+            "supplied_as": vkey,
+            "note": ("EXCLUDED from the kill conjunction and PRINTED — a "
+                     "suppressed criterion that is not printed is "
+                     "indistinguishable from one that passed "
+                     "(GATE_PROTOCOL 0.7 step 3). It did NOT count against "
+                     "the model."),
+        })
+    return rows
+
+
+def _print_void_secondaries(rows):
+    for r in rows:
+        print(f"\n[VOID]  {r['metric']}"
+              f"{'':<4}original bar: {r.get('original_threshold') or 'n/a'}")
+        print(f"        STATUS       : {r.get('status')}")
+        print(f"        ADJUDICATION : {r.get('adjudication')}")
+        print(f"        AUTHORITY    : {r.get('authority')}")
+        print(f"        IN KILL SET  : NO — structurally excluded (card "
+              f"`secondary_void`, not `secondary`); it did NOT contribute "
+              f"to the verdict")
+        print(f"        MEASURED     : value "
+              f"{'null on this checkpoint' if r.get('value') is None else r['value']}")
+        if r.get("reason"):
+            print(f"        REASON       : {r['reason']}")
+        if r.get("re_arms_when"):
+            print(f"        RE-ARMS WHEN : {r['re_arms_when']}")
+
+
+def step_reached(cur: int, gate_step: int) -> dict:
+    """Has the run reached its pre-registered gate step, under EITHER indexing?
+
+    ⭐ The 30 k gate's third defect. Trainers log ``step`` 0-indexed, so a run
+    configured for 30,000 steps ends at ``final_step 29999``; ``cur <
+    card.gate_step`` therefore returned ``NOT_YET`` on a COMPLETE 59-hour run,
+    and would have refused **every** completed gate. A gate that cannot tell a
+    finished run from an unfinished one is not a gate.
+
+    The comparison now accepts either convention and **names the one it used**,
+    for the same reason a verdict must name its horizon: an implicit convention
+    is an unauditable one. ``0-indexed`` is only claimed on the exact boundary
+    (``cur == gate_step - 1``); anything at or above ``gate_step`` is the plain
+    1-indexed read and is labelled as such.
+    """
+    cur, gate_step = int(cur), int(gate_step)
+    if cur >= gate_step:
+        return {"reached": True, "convention": STEP_INDEXING_ONE,
+                "current_step": cur, "gate_step": gate_step,
+                "steps_completed": cur + 1,
+                "note": (f"step {cur} >= gate step {gate_step}")}
+    if cur == gate_step - 1:
+        return {"reached": True, "convention": STEP_INDEXING_ZERO,
+                "current_step": cur, "gate_step": gate_step,
+                "steps_completed": cur + 1,
+                "note": (f"step {cur} is the LAST step of a {gate_step}-step run "
+                         f"under the trainer's 0-indexed convention "
+                         f"({gate_step} steps = 0..{gate_step - 1}), so the run "
+                         f"HAS reached its pre-registered gate step. Before "
+                         f"2026-07-26 this rendered NOT_YET and refused a "
+                         f"completed run.")}
+    return {"reached": False, "convention": STEP_INDEXING_ZERO,
+            "current_step": cur, "gate_step": gate_step,
+            "steps_completed": cur + 1,
+            "note": (f"step {cur} < pre-registered gate step {gate_step} under "
+                     f"EITHER indexing convention (0-indexed would need "
+                     f"{gate_step - 1})")}
 
 
 def _parse_secondary(spec: str) -> tuple[str, str, float]:
@@ -818,6 +1225,8 @@ def cmd_register(a):
         _parse_secondary(s)
 
     # --- the co-primary: registered, or explicitly refused in writing ------ #
+    void = _normalise_void([json.loads(v) if v.lstrip().startswith("{") else v
+                            for v in (a.secondary_void or [])])
     horizon = None
     if a.no_co_primary:
         if a.co_primary_horizon_K is not None or a.co_primary_threshold is not None:
@@ -825,6 +1234,26 @@ def cmd_register(a):
                              "mutually exclusive; pick one.")
         print(f"[gate] !! HORIZON-BLIND CARD, by explicit request: "
               f"{a.no_co_primary}")
+    elif (a.co_primary_role == CO_PRIMARY_ROLE_REPORT_ONLY
+            and a.co_primary_horizon_K is not None):
+        # A co-primary registered REPORT_ONLY_THIS_GATE legitimately carries NO
+        # threshold: the metric has no agreed bar yet and this gate exists to
+        # measure one. The horizon is still MANDATORY and still validated.
+        if a.co_primary_threshold is not None:
+            raise SystemExit(
+                f"[gate] a {CO_PRIMARY_ROLE_REPORT_ONLY} co-primary may not "
+                f"carry a --co-primary-threshold: it does not adjudicate, so a "
+                f"bar on it is decoration that will later read as a live "
+                f"criterion. Drop the threshold, or register role 'kill'.")
+        if not a.co_primary_role_rationale:
+            raise SystemExit(
+                f"[gate] REFUSING a {CO_PRIMARY_ROLE_REPORT_ONLY} co-primary "
+                f"with no --co-primary-role-rationale. Removing a criterion "
+                f"from the kill conjunction is a decision and goes on the "
+                f"record in writing (GATE_PROTOCOL 0.3).")
+        horizon = validate_horizon_K(a.co_primary_horizon_K)
+        print(f"[gate] co-primary role {CO_PRIMARY_ROLE_REPORT_ONLY}: measured "
+              f"and reported in full, NOT in the kill conjunction at this gate.")
     else:
         if a.co_primary_horizon_K is None or a.co_primary_threshold is None:
             raise SystemExit(
@@ -863,7 +1292,12 @@ def cmd_register(a):
                     co_primary_stratum=a.co_primary_stratum,
                     co_primary_junction_threshold=a.co_primary_junction_threshold,
                     co_primary_source=a.co_primary_source,
-                    no_co_primary_reason=a.no_co_primary or "")
+                    no_co_primary_reason=a.no_co_primary or "",
+                    co_primary_role=(CO_PRIMARY_ROLE_KILL if a.no_co_primary
+                                     else a.co_primary_role),
+                    co_primary_role_rationale=a.co_primary_role_rationale,
+                    co_primary_becomes_kill_at=a.co_primary_becomes_kill_at,
+                    secondary_void=void)
     # ade_0_2s is DEMOTED wherever a horizon-honest co-primary exists.
     card.primary_role = a.primary_role or (
         "diagnostic" if card.has_co_primary else "kill")
@@ -886,19 +1320,28 @@ def cmd_register(a):
 
 
 def cmd_check(a):
-    card = GateCard(**json.loads(Path(a.card).read_text()))
+    card = GateCard.from_dict(json.loads(
+        Path(a.card).read_text(encoding="utf-8")))
     rows = read_log(a.log)
     cur = rows[-1]["step"]
     gh, sps = gpu_hours(rows), s_per_step(rows)
+    step = step_reached(cur, card.gate_step)
     out = {"run": card.run, "card": str(a.card), "current_step": cur,
            "gate_step": card.gate_step, "gpu_hours": round(gh, 2),
-           "s_per_step": round(sps, 2)}
+           "s_per_step": round(sps, 2), "step_indexing": step}
 
     print(f"\n=== GATE: {card.run} ===")
     print(f"pre-registered {card.registered_utc} — gate step {card.gate_step}, "
           f"primary {card.primary_metric} {card.primary_direction} "
           f"{card.primary_threshold} from {card.primary_source}")
     print(f"current step {cur} | {gh:.1f} GPU-h | {sps:.2f} s/step")
+    print(f"[step indexing] {step['convention']} -> "
+          f"{'REACHED' if step['reached'] else 'NOT reached'}: {step['note']}")
+    if card.card_extras:
+        out["card_extras"] = card.card_extras
+        print(f"[card] {len(card.card_extras)} registered key(s) the dataclass "
+              f"has no slot for, PRESERVED (not dropped, not fatal): "
+              f"{', '.join(sorted(card.card_extras))}")
 
     ok_budget, budget_msg = card.check_restart_budget()
     print(f"[restart budget] {budget_msg}")
@@ -961,10 +1404,9 @@ def cmd_check(a):
         print(f"\n[diagnostic only — NOT a gate] {fit.render()}")
 
     # --- the PRIMARY gate --------------------------------------------------- #
-    if cur < card.gate_step:
+    if not step["reached"]:
         out["verdict"] = "NOT_YET"
-        out["reason"] = (f"step {cur} < pre-registered gate step "
-                         f"{card.gate_step}. No kill/continue call is admissible "
+        out["reason"] = (f"{step['note']}. No kill/continue call is admissible "
                          f"before the registered step — that is the whole point "
                          f"of pre-registration.")
         print(f"\nVERDICT: NOT_YET — {out['reason']}")
@@ -1020,11 +1462,29 @@ def cmd_check(a):
     out["horizon"] = _horizon_block(card, co)
     if card.has_co_primary:
         co_measured = co.get("measured", False)
+        if card.co_primary_adjudicates and card.co_primary_threshold is None:
+            raise SystemExit(
+                f"[gate] REFUSING: the co-primary {card.co_primary_metric!r} is "
+                f"registered with role {CO_PRIMARY_ROLE_KILL!r} but NO "
+                f"threshold. A kill criterion with no bar cannot adjudicate, and "
+                f"picking one now — after the number exists — is the garden of "
+                f"forking paths (GATE_PROTOCOL 0.3). Register it as "
+                f"{CO_PRIMARY_ROLE_REPORT_ONLY!r} instead, on the record.")
         co_ok = bool(co.get("pass")) if co_measured else False
         _print_co_primary(co)
     else:
         print(f"\n[co-primary] !! NOT REGISTERED on this card — "
               f"{out['horizon']['warning']}")
+
+    # --- VOID secondaries (GATE_PROTOCOL 0.7): excluded AND printed --------- #
+    out["secondary_void"] = _void_secondary_block(card, a.secondary_value)
+    if out["secondary_void"]:
+        print(f"\n[secondary_void] {len(out['secondary_void'])} criterion(a) "
+              f"adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded "
+              f"from the kill conjunction, printed in full:")
+        _print_void_secondaries(out["secondary_void"])
+    void_names = {n for r in out["secondary_void"]
+                  for n in _metric_aliases(r["metric"])}
 
     sec_ok = True
     out["secondary"] = []
@@ -1034,6 +1494,21 @@ def cmd_check(a):
         sv, sv_key = _lookup_secondary_value(a.secondary_value, name)
         if sv_key is not None:
             matched_supplied.add(sv_key)
+        # A criterion listed in BOTH `secondary` and `secondary_void` is VOID:
+        # 0.7 is an adjudication, not a suggestion, and `flagship-v4.card.json`
+        # is exactly that shape (it lists nonav_route_beats_majority among the
+        # KILL secondaries). It has already been printed above.
+        if name in void_names:
+            out["secondary"].append(
+                {"metric": name, "value": sv, "op": op, "threshold": thr,
+                 "pass": None, "adjudicated": False, "voided": True,
+                 "note": ("VOID per GATE_PROTOCOL 0.7 (card `secondary_void`) — "
+                          "listed as a KILL secondary but adjudicated "
+                          "INSTRUMENT-FAIL; excluded from the conjunction and "
+                          "printed in the secondary_void block above")})
+            print(f"[secondary] {name}: VOID (INSTRUMENT-FAIL, GATE_PROTOCOL "
+                  f"0.7) -> excluded from the kill conjunction")
+            continue
         if sv is None:
             sec_ok = False
             out["secondary"].append({"metric": name, "value": None,
@@ -1060,7 +1535,7 @@ def cmd_check(a):
     # discarded them silently. They can never move the KILL verdict.
     out["report_only"] = []
     for key, val in (a.secondary_value or {}).items():
-        if key in matched_supplied:
+        if key in matched_supplied or key in void_names:
             continue
         out["report_only"].append(
             {"metric": key, "value": val, "adjudicated": False,
@@ -1072,13 +1547,86 @@ def cmd_check(a):
     # ade_0_2s enters the kill conjunction ONLY when the card registers no
     # horizon-honest co-primary (the pre-2026-07-26 back-compat path). Where a
     # co-primary exists the demoted primary is recorded and never adjudicates.
-    kill_inputs = [co_ok] if card.has_co_primary else [bool(passed)]
+    #
+    # A REPORT_ONLY_THIS_GATE co-primary is registered and measured but NOT in
+    # the conjunction, which leaves the SECONDARIES adjudicating alone. That is a
+    # legal card state the tool had no representation for before 2026-07-26:
+    # whichever way the 30 k card was projected the renderer mis-adjudicated —
+    # unmapped, the DEMOTED ade_0_2s illegally re-entered the conjunction;
+    # mapped, an unmeasured unthresholded co-primary forced INCOMPLETE.
+    if card.co_primary_adjudicates:
+        kill_inputs = [co_ok]
+        adjudicators = ["co_primary." + str(card.co_primary_metric)]
+    elif card.has_co_primary:                       # REPORT_ONLY_THIS_GATE
+        kill_inputs = []
+        adjudicators = []
+    else:
+        kill_inputs = [bool(passed)]
+        adjudicators = [card.primary_metric]
+    n_kill_sec = sum(1 for s in out["secondary"] if not s.get("voided"))
     kill_inputs.append(bool(sec_ok))
-    out["verdict_adjudicated_by"] = (
-        ["co_primary." + CORRIDOR_METRIC] if card.has_co_primary
-        else [card.primary_metric]) + ["secondary(" + str(len(card.secondary)) + ")"]
+    adjudicators.append(f"secondary({n_kill_sec})")
+    out["verdict_adjudicated_by"] = adjudicators
+    out["co_primary_role"] = card.co_primary_role if card.has_co_primary else None
+    if card.co_primary_is_report_only:
+        out["co_primary"]["adjudicated"] = False
+        out["co_primary"]["role"] = CO_PRIMARY_ROLE_REPORT_ONLY
+        out["co_primary"]["role_note"] = (
+            "REPORT_ONLY_THIS_GATE: MEASURED, PRINTED IN FULL, and EXCLUDED "
+            "from the kill conjunction at this gate. No kill threshold for it "
+            "has ever been agreed and inventing one after the number lands is "
+            "the garden of forking paths GATE_PROTOCOL 0.3 forbids. It exists "
+            "here to set the next gate's bar against a real baseline"
+            + (f"; becomes a kill criterion at: {card.co_primary_becomes_kill_at}"
+               if card.co_primary_becomes_kill_at else "") + ".")
+        print(f"\n[co-primary] ROLE = {CO_PRIMARY_ROLE_REPORT_ONLY} -> measured "
+              f"and printed above, EXCLUDED from the kill conjunction. The kill "
+              f"set at this gate is the {n_kill_sec} secondaries alone "
+              f"({card.primary_metric} is a diagnostic, the co-primary is "
+              f"report-only).")
 
-    if card.has_co_primary and not co_measured:
+    # A hard FAIL makes the conjunction UNSATISFIABLE: no future measurement can
+    # turn a FAIL into a PASS, so an outstanding secondary cannot rescue it. The
+    # 30 k gate had to make this call by hand — the tool rendered INCOMPLETE and
+    # stopped, while two MEASURED secondaries were failing by >2x.
+    failed = [s for s in out["secondary"] if s.get("pass") is False]
+    unmeasured = [s["metric"] for s in out["secondary"]
+                  if s.get("pass") is None and not s.get("voided")]
+    co_blocks = card.co_primary_adjudicates and not co_measured
+    out["kill_conjunction"] = {
+        "adjudicated_by": adjudicators,
+        "n_pass": sum(1 for s in out["secondary"] if s.get("pass") is True),
+        "n_fail": len(failed),
+        "n_unmeasured": len(unmeasured),
+        "n_void": len(out["secondary_void"]),
+        "unmeasured": unmeasured,
+        "failed": [s["metric"] for s in failed],
+        "satisfiable": not (failed or (co_blocks is False and not co_ok
+                                       and card.co_primary_adjudicates))}
+
+    hard_fail = bool(failed) or (card.co_primary_adjudicates and co_measured
+                                 and not co_ok)
+    if hard_fail:
+        # NOT-CONTINUE is already determined, whatever is still outstanding.
+        out["verdict"] = "RESTART" if ok_budget else "REFUTE_LEVER_FAMILY"
+        out["not_continue"] = True
+        detail = ", ".join(
+            "{} = {} {} {}".format(s["metric"], s.get("value"), s.get("op"),
+                                   s.get("threshold")) for s in failed)
+        why = ("pre-registered kill criteria FAILED on MEASURED values: "
+               + (detail or f"co_primary.{card.co_primary_metric}"))
+        if unmeasured:
+            why += (f". {len(unmeasured)} pre-registered secondary(ies) were NOT "
+                    f"MEASURED ({', '.join(unmeasured)}) — the gate is formally "
+                    f"INCOMPLETE, but a conjunction containing a hard FAIL "
+                    f"cannot be rescued by measuring anything else, so "
+                    f"NOT-CONTINUE is already determined")
+            out["formally_incomplete"] = True
+        out["reason"] = why + ("" if ok_budget else
+                               ". AND the restart cap for this lever family is "
+                               "exhausted — the lever family is refuted, not "
+                               "the schedule")
+    elif co_blocks:
         out["verdict"] = "INCOMPLETE"
         out["reason"] = (
             f"the pre-registered CO-PRIMARY ({card.co_primary_metric} @ K="
@@ -1087,9 +1635,12 @@ def cmd_check(a):
             f"{co.get('note') or 'no --corridor-json supplied'}. "
             f"ade_0_2s alone may not decide this gate — it is MEASURED blind to "
             f"corridor departure at the event's own horizon.")
-    elif any(s["pass"] is None for s in out["secondary"]):
+    elif unmeasured:
         out["verdict"] = "INCOMPLETE"
-        out["reason"] = "a pre-registered secondary gate was not measured"
+        out["reason"] = (f"a pre-registered secondary gate was not measured "
+                         f"({', '.join(unmeasured)}), and nothing measured has "
+                         f"failed — the conjunction is still satisfiable, so no "
+                         f"verdict is admissible yet")
     elif all(kill_inputs):
         out["verdict"] = "CONTINUE"
         out["reason"] = "all pre-registered gates pass"
@@ -1114,7 +1665,9 @@ def cmd_check(a):
 
     out["horizon_honest"] = bool(card.has_co_primary
                                  and out["horizon"].get("horizon_honest"))
-    print(f"\nVERDICT: {out['verdict']} — {out['reason']}")
+    tag = " (NOT-CONTINUE)" if out.get("not_continue") else ""
+    print(f"\nVERDICT: {out['verdict']}{tag} — {out['reason']}")
+    print(f"  step:    {step['convention']} — {step['note']}")
     print(f"  horizon: {out['horizon']['rendered']}")
     if not out["horizon_honest"]:
         print(f"  !! NOT horizon-honest: {out['horizon']['warning']}")
@@ -1145,7 +1698,11 @@ def _co_primary_block(a, card) -> dict:
             "registered_corridor_m": card.co_primary_corridor_m,
             "stratum": card.co_primary_stratum,
             "junction_threshold": card.co_primary_junction_threshold,
-            "source": card.co_primary_source or None}
+            "source": card.co_primary_source or None,
+            "role": card.co_primary_role,
+            "adjudicates": bool(card.co_primary_adjudicates),
+            "role_rationale": card.co_primary_role_rationale or None,
+            "becomes_kill_criterion_at": card.co_primary_becomes_kill_at or None}
 
     path = getattr(a, "corridor_json", None)
     if not path:
@@ -1175,7 +1732,13 @@ def _co_primary_block(a, card) -> dict:
                          expect_corridor_m=card.co_primary_corridor_m,
                          stratum=card.co_primary_stratum)
     v, thr, op = read["value"], card.co_primary_threshold, card.co_primary_direction
-    ok = (v <= thr) if op in ("<=", "<") else (v >= thr)
+    # A co-primary may be registered with NO threshold — that is the entire
+    # point of REPORT_ONLY_THIS_GATE. `None` is a legal registered state and
+    # must not be turned into a comparison, a pass, or an invented bar.
+    if thr is None:
+        ok = None
+    else:
+        ok = (v <= thr) if op in ("<=", "<") else (v >= thr)
 
     j_thr = card.co_primary_junction_threshold
     j = read["junction"]
@@ -1194,10 +1757,17 @@ def _co_primary_block(a, card) -> dict:
         j["threshold"] = j_thr
         j["pass"] = bool((j["value"] <= j_thr) if op in ("<=", "<")
                          else (j["value"] >= j_thr))
-        ok = ok and j["pass"]
+        ok = None if ok is None else (ok and j["pass"])
 
     base.update(read)
-    base.update({"measured": True, "pass": bool(ok),
+    base.update({"measured": True,
+                 "pass": None if ok is None else bool(ok),
+                 "no_threshold_note": (
+                     None if thr is not None else
+                     "NO kill threshold is registered for this co-primary — "
+                     "legal and deliberate under role "
+                     f"{card.co_primary_role!r}. The value is MEASURED and "
+                     "REPORTED; it is not compared against an invented bar."),
                  "artifact": str(path),
                  "estimator_note": (
                      "episode-cluster bootstrap over val EPISODES "
@@ -1237,6 +1807,43 @@ def _horizon_block(card, co) -> dict:
     h = validate_horizon_K(K)
     n_w, n_e = co.get("n_windows"), co.get("n_episodes")
     got_K = co.get("horizon_K")
+    # A REPORT_ONLY co-primary does not adjudicate, so the verdict does NOT rest
+    # on its horizon — it rests on the K=20 secondaries. Claiming horizon-honesty
+    # from a metric that is outside the kill conjunction would be the same defect
+    # in a new place, so it is refused and the reason travels with the verdict.
+    report_only = card.co_primary_is_report_only
+    if report_only:
+        return {"horizon_honest": False,
+                "adjudicating_metric": "secondary(kill set)",
+                "co_primary_role": CO_PRIMARY_ROLE_REPORT_ONLY,
+                "co_primary_horizon_K": K,
+                "co_primary_horizon_s": h["horizon_s"],
+                "co_primary_n_windows": n_w, "co_primary_n_episodes": n_e,
+                "registered_horizon_K": K, "registered_horizon_s": h["horizon_s"],
+                "measured_horizon_K": got_K,
+                "measured_horizon_s": co.get("horizon_s"),
+                "ceiling_K": HORIZON_CEILING_K,
+                "frac_of_ceiling": h["frac_of_ceiling"],
+                "horizon_K": ADE2S_K, "horizon_s": horizon_seconds(ADE2S_K),
+                "n_windows": None, "n_episodes": None,
+                "surface": co.get("surface"),
+                "rendered": (
+                    f"kill set = secondaries on the held-out eval surface "
+                    f"@ K={ADE2S_K} ({horizon_seconds(ADE2S_K)} s); "
+                    f"co-primary {card.co_primary_metric}"
+                    f"@{card.co_primary_corridor_m:g}m K={K} "
+                    f"({h['horizon_s']} s, n="
+                    f"{n_w if n_w is not None else '?'} windows / "
+                    f"{n_e if n_e is not None else '?'} episodes) is "
+                    f"REPORT-ONLY and does not adjudicate"),
+                "warning": (
+                    f"the only horizon-honest criterion on "
+                    f"this card ({card.co_primary_metric} @ K={K}) is registered "
+                    f"{CO_PRIMARY_ROLE_REPORT_ONLY}, so the verdict is carried "
+                    f"by K={ADE2S_K} ({horizon_seconds(ADE2S_K)} s) secondaries. "
+                    f"That is the card's deliberate choice (no bar for the "
+                    f"co-primary has ever been agreed), and it is the gap the "
+                    f"next v4-line gate closes.")}
     return {"horizon_honest": bool(h["horizon_honest"] and co.get("measured")),
             "adjudicating_metric": f"co_primary.{card.co_primary_metric}",
             "registered_horizon_K": K, "registered_horizon_s": h["horizon_s"],
@@ -1259,17 +1866,42 @@ def _horizon_block(card, co) -> dict:
 
 
 def _print_co_primary(co):
-    print(f"\n[co-primary] {co['metric']} "
-          f"{co['direction']} {co['threshold']} @ K="
+    bar = (f"{co['direction']} {co['threshold']}" if co.get("threshold") is not None
+           else "NO THRESHOLD REGISTERED")
+    role = co.get("role") or CO_PRIMARY_ROLE_KILL
+    print(f"\n[co-primary/{role}] {co['metric']} {bar} @ K="
           f"{co['registered_horizon_K']} "
           f"({co['registered_horizon_s']} s)")
     if not co.get("measured"):
         print(f"  NOT MEASURED -> {co.get('note')}")
         return
+    verdict = ("PASS" if co.get("pass") is True else
+               "FAIL" if co.get("pass") is False else
+               "REPORTED (no threshold registered — does not adjudicate)")
     print(f"  overall  = {co['value']} [{co.get('lo')}, {co.get('hi')}] "
           f"({co.get('estimator')}, n={co.get('n_windows')} windows / "
-          f"{co.get('n_episodes')} episodes) -> "
-          f"{'PASS' if co['pass'] else 'FAIL'}")
+          f"{co.get('n_episodes')} episodes) -> {verdict}")
+    ood = co.get("ood")
+    if ood:
+        print(f"  OOD      = {ood['EXTRAPOLATION_VERDICT']}")
+        print(f"             ratio {ood['criterion_1_ratio_over_1p5']['peak_ratio_mean']} "
+              f"(fires={ood['criterion_1_ratio_over_1p5']['fires']}, "
+              f"informative={ood['criterion_1_ratio_over_1p5']['informative']}) "
+              f"OR steps-outside-envelope "
+              f"(fires={ood['criterion_2_steps_outside_measured_envelope']['fires']}, "
+              f"steps={ood['criterion_2_steps_outside_measured_envelope']['frac_steps_any']}, "
+              f"windows={ood['criterion_2_steps_outside_measured_envelope']['frac_windows_any_step_outside']})")
+        if ood["ratio_is_lower_bound"]:
+            print(f"             !! the OOD ratio is a LOWER BOUND here "
+                  f"(np.interp CLAMPS at |dlat|={ENV_LAT_MAX} m / "
+                  f"|dyaw|={ENV_YAW_MAX} deg) — it may NOT be quoted as an "
+                  f"in-distribution certificate")
+        if ood.get("superseded_emitted_verdict"):
+            print(f"             !! the artifact's own string "
+                  f"({ood['emitted_verdict']!r}) tested only the ratio half and "
+                  f"is SUPERSEDED by the line above")
+    elif co.get("ood_note"):
+        print(f"  OOD      = UNKNOWN — {co['ood_note']}")
     j = co.get("junction") or {}
     if j.get("measured"):
         verdict = ("PASS" if j.get("pass") else
@@ -1471,6 +2103,23 @@ def main(argv=None):
                    help="optional: adjudicate the junction stratum too. It is "
                         "REPORTED separately either way.")
     r.add_argument("--co-primary-source", default="")
+    r.add_argument("--co-primary-role", default=CO_PRIMARY_ROLE_KILL,
+                   choices=list(CO_PRIMARY_ROLES),
+                   help=f"'{CO_PRIMARY_ROLE_KILL}' (adjudicates) or "
+                        f"'{CO_PRIMARY_ROLE_REPORT_ONLY}' (measured, printed in "
+                        f"full, NOT in the kill conjunction — for a metric with "
+                        f"no agreed bar, where this gate exists to set one)")
+    r.add_argument("--co-primary-role-rationale", default="",
+                   help=f"REQUIRED with --co-primary-role "
+                        f"{CO_PRIMARY_ROLE_REPORT_ONLY}")
+    r.add_argument("--co-primary-becomes-kill-at", default="",
+                   help="when the report-only co-primary re-enters the kill set")
+    r.add_argument("--secondary-void", action="append", default=[],
+                   metavar="SPEC",
+                   help="a criterion adjudicated INSTRUMENT-FAIL per "
+                        "GATE_PROTOCOL 0.7: excluded from the conjunction and "
+                        "ALWAYS printed. 'name>=v' or an inline JSON object "
+                        "with metric/status/adjudication/reason/re_arms_when.")
     r.add_argument("--no-co-primary", default=None, metavar="REASON",
                    help="write a HORIZON-BLIND card on the record, with a "
                         "written reason. Without this, a card lacking a "

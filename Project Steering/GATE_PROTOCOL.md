@@ -25,8 +25,25 @@ paired common-start, **43 IDENTICAL windows**, `episode_cluster_bootstrap` B=200
 | junction (n=6) | 0.0250 | **0.8414** [0.8144, 0.8667] | 1.23 m → **46.25 m** |
 
 Paired Δ (K=185 − K=20), overall: **+0.5842 [0.5071, 0.6565]**, `separated: true`,
-`p_delta_gt0 = 1.0`, `paired_episode_cluster_bootstrap`. The OOD-envelope ratio stays **≤ 1.30**, so
-this is genuine **in-distribution** failure, not extrapolation.
+`p_delta_gt0 = 1.0`, `paired_episode_cluster_bootstrap`.
+
+> 🔴 **RETRACTED 2026-07-26 — the in-distribution certificate, NOT the finding.** This paragraph
+> previously read *"the OOD-envelope ratio stays ≤ 1.30, so this is genuine in-distribution failure,
+> not extrapolation."* **That inference is void.** `OODMap.ratio_arr` uses `np.interp`, which **clamps
+> at |dlat| = 3.0 m and |dψ| = 12°** — so the ratio **saturates** and is a **lower bound**, not a
+> measurement. It is *structurally incapable* of exceeding its own threshold, which means it could
+> never have falsified the claim it was cited to support. MEASURED on the v4 30 k co-primary, where the
+> ratio read a reassuring **1.2741**: **54.63 % of steps exceed 3 m and 90.24 % of windows leave the
+> measured envelope.** E1a's rule was always a **disjunction** (high ratio **OR** steps leaving the
+> envelope); only the ratio half was ever evaluated.
+> **What stands:** the horizon finding itself — corridor departure **0.0035 → 0.5877** on the same 43
+> windows, paired Δ **+0.5842 separated** — is untouched, and it now **replicates on the v4 arm**
+> (0.0146 → 0.6388, paired Δ +0.6241 separated). **What is withdrawn:** the certificate that the failure
+> is *in-distribution*. At K = 185 the correct verdict is **EXTRAPOLATION**, for every arm measured.
+> ⚠️ **This does not weaken the case for the horizon change — it strengthens the case for measuring the
+> envelope.** A 2 s instrument cannot see an 18 s failure whether or not that failure is in-distribution;
+> what we no longer get to say is *which* it is. Fixed in code (`taniteval/ood.py`), where a saturating
+> estimator must now **declare its own saturation** and an inconsistent verdict **raises**.
 
 **The 2 s instrument hid the dominant failure mode by ~168×.** On the *same* 43 windows the paired
 ADE@2s delta is `0.0109 [−0.0, 0.0312]`, **not separated** — ADE@2s records essentially nothing while

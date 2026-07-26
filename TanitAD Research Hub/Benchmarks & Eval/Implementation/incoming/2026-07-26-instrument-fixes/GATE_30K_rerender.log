@@ -1,0 +1,45 @@
+
+=== GATE: flagship-v4-fromscratch ===
+pre-registered 2026-07-26T08:26:00+00:00 — gate step 30000, primary ade_0_2s <= 0.6 from held-out taniteval full-set, planner path
+current step 29999 | 0.0 GPU-h | nan s/step
+[step indexing] 0-indexed (trainer convention: cur >= gate_step - 1) -> REACHED: step 29999 is the LAST step of a 30000-step run under the trainer's 0-indexed convention (30000 steps = 0..29999), so the run HAS reached its pre-registered gate step. Before 2026-07-26 this rendered NOT_YET and refused a completed run.
+[card] 10 registered key(s) the dataclass has no slot for, PRESERVED (not dropped, not fatal): co_primary_unmapped, goal_provenance, goal_provenance_note, preflight_checks, primary_role_note, reference_ade_0_2s, reference_note, registered_before_checkpoint_exists, registration_note, required_reporting
+[restart budget] restart budget 0/2 for lever family 'joint-planner-wm'
+
+[comparative] UNAVAILABLE on g_op_fwd_ade_m: [gate] REFUSING: no matched steps for g_op_fwd_ade_m
+  (diagnostic only — the verdict is unaffected)
+
+[primary/diagnostic] ade_0_2s = 0.6423 (from cluster_bootstrap (primary, episode_cluster_bootstrap; cluster_bootstrap) CI [0.5348, 0.7586]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/REPORT_ONLY_THIS_GATE] corridor_departure_rate NO THRESHOLD REGISTERED @ K=185 (18.5 s)
+  overall  = 0.6388 [0.5565, 0.7128] (episode_cluster_bootstrap, n=41 windows / 40 episodes) -> REPORTED (no threshold registered — does not adjudicate)
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio 1.2741 (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.54634, windows=0.9024)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8432 [0.7874, 0.8919] (n=6 windows / 6 episodes) -> reported only
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : The strategic route TARGET is a lookup of the route INPUT (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so training route-CE reaches EXACTLY 0.0 by ~step 14.5k and route_skill is 0.0 BY CONSTRUCTION; the follow-head answers straight 240/240. MEASURED 2026-07-26: route_target == _NAV_TO_ROUTE[nav_cmd] on 100.00% of CE-eligible windows under v1, v2 AND v2.1 — the command is minted from the same route_from_future* call as the target, so NO LABELER SWAP CAN BREAK IT. The metric measures the label bug, not the model. It MUST be printed in the verdict: a suppressed criterion that is not printed is indistinguishable from one that passed.
+        RE-ARMS WHEN : an arm trains with real route supervision (--labels-v21 --v2-route-from-vision), at which point it becomes meaningful again and returns to the kill set
+[secondary] wm_canary_ade_2s = 1.1409059762954712 <= 0.55 -> FAIL
+[secondary] speed_benefit_recovered_frac: NOT SUPPLIED -> gate cannot complete (pass --secondary-value speed_benefit_recovered_frac=<v>)
+[secondary] oracle_in_fan = 0.23301841780357274 <= 0.3 -> PASS
+[secondary] miss_at_2m = 0.2123 <= 0.1 -> FAIL
+[secondary] seam_norm_ratio_max = 0.1208 <= 1.0 -> PASS
+[secondary] encoder_touching_levers = 2.0 <= 2.0 -> PASS
+[secondary] deploy_tick_p99_ms: NOT SUPPLIED -> gate cannot complete (pass --secondary-value deploy_tick_p99_ms=<v>)
+
+[co-primary] ROLE = REPORT_ONLY_THIS_GATE -> measured and printed above, EXCLUDED from the kill conjunction. The kill set at this gate is the 7 secondaries alone (ade_0_2s is a diagnostic, the co-primary is report-only).
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: wm_canary_ade_2s = 1.1409059762954712 <= 0.55, miss_at_2m = 0.2123 <= 0.1. 2 pre-registered secondary(ies) were NOT MEASURED (speed_benefit_recovered_frac, deploy_tick_p99_ms) — the gate is formally INCOMPLETE, but a conjunction containing a hard FAIL cannot be rescued by measuring anything else, so NOT-CONTINUE is already determined
+  step:    0-indexed (trainer convention: cur >= gate_step - 1) — step 29999 is the LAST step of a 30000-step run under the trainer's 0-indexed convention (30000 steps = 0..29999), so the run HAS reached its pre-registered gate step. Before 2026-07-26 this rendered NOT_YET and refused a completed run.
+  horizon: kill set = secondaries on the held-out eval surface @ K=20 (2.0 s); co-primary corridor_departure_rate@1.75m K=185 (18.5 s, n=41 windows / 40 episodes) is REPORT-ONLY and does not adjudicate
+  !! NOT horizon-honest: the only horizon-honest criterion on this card (corridor_departure_rate @ K=185) is registered REPORT_ONLY_THIS_GATE, so the verdict is carried by K=20 (2.0 s) secondaries. That is the card's deliberate choice (no bar for the co-primary has ever been agreed), and it is the gap the next v4-line gate closes.
+-> TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-instrument-fixes/GATE_30K_verdict_FIXEDTOOL.json

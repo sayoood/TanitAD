@@ -98,7 +98,24 @@ SPEED_SCALE = 10.0          # v0 action-channel scale (every trainer)
 DT = 0.1                    # 10 Hz operative tick
 WHEELBASE = 2.7             # kinematic bicycle wheelbase (kinematic.py)
 WINDOW = 8                  # predictor window W
-K_MAX = max(WP_STEPS)       # 20 steps = 2 s
+# ⚠️ K_MAX is ``ade_0_2s``' own horizon — the **BLIND** one. It is a DEFAULT, not
+# a cap: every rollout below takes ``k`` as a parameter. It was treated as a cap
+# until 2026-07-26, which is why the gate co-primary at K=185 (18.5 s) could not
+# be emitted from this module at all and lived only in a one-off driver under
+# ``incoming/``. MEASURED (E1a, 43 identical windows): corridor departure 0.0035
+# at K=20 vs 0.5877 at K=185 — the 2 s instrument hides the dominant failure mode
+# by ~168x.
+#
+# For a LONG-horizon closed loop use :mod:`taniteval.clhorizon`. This module's
+# loop is imagination-in-the-loop (the world model is its own simulator);
+# ``clhorizon`` is the real-footage loop E1a and the v4 gate co-primary use.
+K_MAX = max(WP_STEPS)       # 20 steps = 2 s — the DEFAULT horizon
+K_ADE2S = max(WP_STEPS)     # named, because a horizon must never be implicit
+HORIZON_CEILING_K = 190     # structural: clips are 190-199 frames, T - W - K >= 1
+# Arm (A), the single-shot open-loop plan, is only defined out to the tactical
+# head's last knot: beyond K_ADE2S the frozen plan has no waypoints and
+# `densify_plan` would silently extrapolate a constant. Refused, not degraded.
+OPEN_PLAN_MAX_K = max(WP_STEPS)
 IDX = [k - 1 for k in WP_STEPS]
 HORIZONS_S = {5: "0.5s", 10: "1s", 15: "1.5s", 20: "2s"}
 STRIDE = 8
@@ -185,13 +202,20 @@ def bicycle_integrate(v0: torch.Tensor, steer_seq: torch.Tensor,
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def closed_loop_rollout(model, step_readout, states0, aw, v0, speed_input,
-                        k=K_MAX):
+                        k=K_MAX, plan_fn=None):
     """Roll the imagination-in-the-loop closed loop for a batch of windows.
 
     states0 [b,W,S] encoded latent window; aw [b,W,A] observed action window
     (v0 channel already appended if speed_input); v0 [b] initial speed. Returns a
     dict with the closed bicycle path, the closed grounded path, and per-step
-    executed controls (steer/accel/speed) for the comfort + divergence metrics."""
+    executed controls (steer/accel/speed) for the comfort + divergence metrics.
+
+    ``k`` is a free parameter (``K_MAX`` is only the default). ``plan_fn`` is the
+    injection point for an arm whose planner is NOT the
+    ``strategic_policy``/``tactical_policy`` hierarchy — a v4 ``FlagshipV4Head``
+    checkpoint has neither, and before 2026-07-26 that made this whole harness
+    unusable for the v4 line. It takes ``(model, win_s, v)`` and returns the
+    ``[b, 2]`` 0.5 s lookahead waypoint in the current ego frame."""
     b = states0.shape[0]
     nav_follow = torch.zeros(b, dtype=torch.long, device=states0.device)
     win_s = states0.clone()
@@ -200,9 +224,12 @@ def closed_loop_rollout(model, step_readout, states0, aw, v0, speed_input,
     steer_seq, accel_seq, grnd_dp = [], [], []
     for _ in range(k):
         # (a) PLAN on the current (imagined) latent window — deploy path, state-only
-        ctx = model.strategic_policy(win_s, nav_follow)["ctx"]
-        wp = model.tactical_policy(win_s, ctx)["waypoints"]
-        w_look = wp[LOOKAHEAD_STEP]                          # [b,2] 0.5 s target
+        if plan_fn is not None:
+            w_look = plan_fn(model, win_s, v)                # [b,2] 0.5 s target
+        else:
+            ctx = model.strategic_policy(win_s, nav_follow)["ctx"]
+            wp = model.tactical_policy(win_s, ctx)["waypoints"]
+            w_look = wp[LOOKAHEAD_STEP]                      # [b,2] 0.5 s target
         # (b) CONTROL: waypoint -> (steer, accel)
         steer, accel = wp_to_control(w_look, v)
         a_exec = build_action(steer, accel, v, speed_input)  # [b,A]
@@ -306,13 +333,19 @@ def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX):
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def collect(model, step_readout, episodes, device, speed_input=False,
-            window=WINDOW, stride=STRIDE, batch=BATCH, k=K_MAX):
+            window=WINDOW, stride=STRIDE, batch=BATCH, k=K_MAX, plan_fn=None):
     """Every stride-window of every episode -> all six paths [N,4,2] + meta.
 
     Paths (ego frame at the window's last frame, waypoints at steps 5/10/15/20):
       gt, cv, closed_bike, closed_grnd, open_grnd, open_bike.
     Plus per-window: speed, head_deg, eid, and the closed-loop executed controls
     steer/accel/speed [N,K] for comfort + divergence."""
+    k = int(k)
+    if k > HORIZON_CEILING_K:
+        raise ValueError(
+            f"k={k} exceeds the structural ceiling K={HORIZON_CEILING_K}: "
+            f"PhysicalAI clips are 190-199 frames and a window needs "
+            f"T - window - k >= 1, so no episode can produce one.")
     wp_idx = torch.tensor(IDX, device=device)
     acc = {n: [] for n in ("gt", "cv", "closed_bike", "closed_grnd",
                            "open_grnd", "open_bike", "open_plan_bike",
@@ -351,9 +384,20 @@ def collect(model, step_readout, episodes, device, speed_input=False,
             open_bike, _ = bicycle_integrate(v0, true_steer, true_accel)
             # --- closed loop (imagination in the loop) = ARM (B) -------------
             cl = closed_loop_rollout(model, step_readout, states0, aw, v0,
-                                     speed_input, k)
+                                     speed_input, k, plan_fn=plan_fn)
             # --- single-shot open-loop plan track (no imagination) = ARM (A) -
-            ol = open_loop_plan_rollout(model, states0, v0, speed_input, k)
+            # Arm (A) needs the tactical head's knots; it is skipped rather than
+            # faked when an injected planner replaces that head, or when k runs
+            # past the last knot (the frozen plan has no waypoints there).
+            ol = (open_loop_plan_rollout(model, states0, v0, speed_input, k)
+                  if plan_fn is None and k <= OPEN_PLAN_MAX_K else None)
+            if ol is None:
+                # NaN, never zeros: a zero path is a *plausible* path and would
+                # quietly produce a real-looking imagination A/B. NaN propagates
+                # and `analyze` turns it into an explicit NOT-MEASURED node.
+                nan = torch.full((states0.shape[0], k, 2), float("nan"),
+                                 device=states0.device)
+                ol = {"open_plan_bike": nan, "plan_direct": nan}
 
             acc["gt"].append(gt_ego_waypoints(ep.poses, last).cpu())
             acc["cv"].append(
@@ -720,13 +764,38 @@ def analyze(win, n_splits=8, val_frac=0.2, seed=0, n_boot=N_BOOT):
         "B_divergence_rate_gt5m@2s": _interval(diverged.numpy(), draws),
         "verdict": verdict,
     }
+    # Arm (A) requires the tactical head's own waypoint knots. When an injected
+    # planner replaced that head (a v4 arm has no `tactical_policy`), or k ran
+    # past the last knot, `collect` fills arm A with NaN. That is a NOT-MEASURED
+    # and is stated as one — never a zero path silently producing a real-looking
+    # A/B verdict.
+    if not np.isfinite(np.asarray(ade_A, dtype=float)).any():
+        imagination_comparison = {
+            "measured": False,
+            "_why": ("arm (A) — the single-shot open-loop plan — needs the "
+                     "tactical head's waypoint knots. This run used an INJECTED "
+                     "planner (the arm has no `tactical_policy`) or a horizon "
+                     f"beyond the last knot (K > {OPEN_PLAN_MAX_K}), so arm A "
+                     "does not exist here. The closed-loop arm (B) is measured "
+                     "and reported above; the A/B imagination contrast is NOT."),
+            "_arms": imagination_comparison["_arms"],
+            "B_closed_bike_ade@2s": imagination_comparison["B_closed_bike_ade@2s"],
+            "verdict": "NOT MEASURED: arm (A) unavailable for this arm/horizon",
+        }
 
     cb2 = heldout["closed_bike"]["ade_0_2s"]
     summary = {
-        "imagination_B_minus_A_ade@2s": paired_ade["delta"],
-        "imagination_B_minus_A_separated": paired_ade["separated"],
-        "imagination_verdict": verdict.split(":")[0],
-        "A_open_plan_bike_ade@2s": imagination_comparison["A_open_plan_bike_ade@2s"]["mean"],
+        "imagination_measured": imagination_comparison.get("measured", True),
+        "imagination_B_minus_A_ade@2s": (
+            paired_ade["delta"] if imagination_comparison.get("measured", True)
+            else None),
+        "imagination_B_minus_A_separated": (
+            paired_ade["separated"]
+            if imagination_comparison.get("measured", True) else None),
+        "imagination_verdict": imagination_comparison["verdict"].split(":")[0],
+        "A_open_plan_bike_ade@2s": (
+            imagination_comparison["A_open_plan_bike_ade@2s"]["mean"]
+            if imagination_comparison.get("measured", True) else None),
         "B_closed_bike_ade@2s_paired": imagination_comparison["B_closed_bike_ade@2s"]["mean"],
         "closed_bike_ade@2s": cb2["mean"], "closed_bike_ade@2s_ci95": cb2["ci95"],
         "closed_bike_fde@2s": heldout["closed_bike"]["fde@2s"]["mean"],
@@ -877,27 +946,61 @@ def assert_no_deprecated_estimator(res):
 # Standalone runner                                                            #
 # --------------------------------------------------------------------------- #
 def run_and_save(key, device="cuda", episodes=40,
-                 out_dir="/root/taniteval/results"):
+                 out_dir="/root/taniteval/results", k=K_MAX, plan_fn=None,
+                 save_per_window=True, model=None, step_readout=None,
+                 speed_input=None, tag=None):
     """Load an arm, run the closed loop, write results/closedloop_<key>.json.
 
-    Reuses loaders.load + data (read-only) exactly like bench/planning panels."""
+    Reuses loaders.load + data (read-only) exactly like bench/planning panels.
+
+    THREE CHANGES, 2026-07-26 (each of which had a measured cost):
+
+    * ``plan_fn`` / ``model`` — the refusal below used to be
+      ``if not traj_capable or model.tactical_policy is None: SKIP``, which
+      **rejects every v4 checkpoint** (``FlagshipV4Head`` has no
+      ``tactical_policy``). The registered gate co-primary was therefore
+      reachable only through a one-off driver in ``incoming/``. An arm may now
+      supply its own plan step, and an already-built ``model`` may be passed
+      directly for arms that are not in ``taniteval.registry``.
+    * ``k`` — the horizon is a parameter, not a constant. For a LONG horizon
+      (K >= 100) use :mod:`taniteval.clhorizon`: this loop is
+      imagination-in-the-loop, which answers a different question.
+    * ``save_per_window=True`` **by default** — the per-window paths are
+      persisted beside the JSON. Their absence is why **no closed-loop artifact
+      was correctable by arithmetic and all five had to be re-driven on GPU**
+      when the OOD verdict rule was fixed. A run that keeps its per-window
+      tensors can be re-aggregated at a new threshold, a new stratification or a
+      corrected rule for free.
+    """
     import json
     import time
     from pathlib import Path
     from taniteval import data, loaders
     from taniteval.registry import MODELS
     entry = [m for m in MODELS if m["key"] == key]
-    if not entry:
+    if not entry and model is None:
         print(f"[cl] unknown arm {key}", flush=True)
         return {"key": key, "skipped": "unknown arm"}
-    entry = entry[0]
+    entry = entry[0] if entry else {"key": key}
     t0 = time.time()
-    L = loaders.load(entry, device)
-    model = L["model"]
-    if not L["traj_capable"] or getattr(model, "tactical_policy", None) is None:
-        msg = ("arm has no operative step-readout + tactical policy — the "
-               "imagination-in-the-loop harness needs a WorldModel 4-brain arm "
-               "(flagship / REF-A); REF-B is a direct planner, not applicable")
+    if model is None:
+        L = loaders.load(entry, device)
+        model = L["model"]
+    else:
+        L = {"model": model, "step_readout": step_readout,
+             "traj_capable": True, "feed": entry.get("feed", "frames"),
+             "step": entry.get("step", -1)}
+    if step_readout is not None:
+        L["step_readout"] = step_readout
+    has_native_planner = (L.get("traj_capable")
+                          and getattr(model, "tactical_policy", None) is not None)
+    if not has_native_planner and plan_fn is None:
+        msg = ("arm has no operative step-readout + tactical policy AND no "
+               "`plan_fn` was supplied. The imagination-in-the-loop harness "
+               "needs either a WorldModel 4-brain arm (flagship / REF-A) or an "
+               "injected plan step — a v4 FlagshipV4Head arm must pass "
+               "`plan_fn` (see taniteval.clhorizon.V4Planner for the v4 plan "
+               "step); REF-B is a direct planner, not applicable")
         print(f"[cl] {key}: SKIP ({msg})", flush=True)
         return {"key": key, "skipped": msg}
     files = data.list_val_episodes(
@@ -910,14 +1013,39 @@ def run_and_save(key, device="cuda", episodes=40,
     eps = (data.load_frames(files) if L["feed"] == "frames"
            else data.load_features(files, L["feed"], device))
     win = collect(model, L["step_readout"], eps, device,
-                  speed_input=bool(entry.get("speed_input")))
+                  speed_input=(bool(entry.get("speed_input"))
+                               if speed_input is None else bool(speed_input)),
+                  k=k, plan_fn=plan_fn)
     res = analyze(win)
-    res["model"] = {k: entry.get(k) for k in
+    res["model"] = {kk: entry.get(kk) for kk in
                     ("key", "name", "arch", "encoder", "speed_input")}
     res["ckpt_step"] = L["step"]
+    res["horizon_K"] = int(k)
+    res["horizon_s"] = round(int(k) * DT, 2)
+    res["plan_step"] = ("native strategic->tactical hierarchy" if plan_fn is None
+                        else getattr(plan_fn, "__name__", "injected plan_fn"))
     res["wall_s"] = round(time.time() - t0, 1)
-    outp = Path(out_dir) / f"closedloop_{key}.json"
+    stem = f"closedloop_{tag or key}"
+    outp = Path(out_dir) / f"{stem}.json"
     outp.parent.mkdir(parents=True, exist_ok=True)
+
+    # --- persist the per-window paths BY DEFAULT ---------------------------- #
+    if save_per_window:
+        pwp = Path(out_dir) / f"{stem}_perwindow_K{int(k)}.pt"
+        torch.save({n: (v if n == "eid" else v.cpu())
+                    for n, v in win.items()}, str(pwp))
+        res["per_window_dump"] = str(pwp)
+        res["per_window_note"] = (
+            "every path, per window, as collected. This exists so a corrected "
+            "rule, a new threshold or a new stratification can be re-aggregated "
+            "by ARITHMETIC instead of a GPU re-run — the gap that forced all "
+            "five closed-loop artifacts to be re-driven on 2026-07-26.")
+    else:
+        res["per_window_dump"] = None
+        res["per_window_note"] = (
+            "PER-WINDOW PATHS NOT PERSISTED (save_per_window=False). This "
+            "artifact is NOT correctable by arithmetic; any change of rule or "
+            "threshold needs a GPU re-run.")
     # explicit utf-8: the block carries em/minus dashes, and Path.write_text
     # otherwise uses the platform default (cp1252 on the dev box -> crash)
     outp.write_text(json.dumps(res, indent=2, default=str), encoding="utf-8")
@@ -940,6 +1068,10 @@ def run_and_save(key, device="cuda", episodes=40,
           f"· diverge x{wr['divergence_rate_gt5m@2s']} (quoted from "
           f"{LEGACY_BLOCK}, reproduction only)", flush=True)
     ic = res["imagination_comparison"]
+    if not ic.get("measured", True):
+        print(f"[cl] {key} IMAGINATION A/B: NOT MEASURED — {ic['_why']}",
+              flush=True)
+        return res
     pa = ic["paired_delta_B_minus_A_ade@2s"]
     print(f"[cl] {key} IMAGINATION PROOF (A=single-shot open vs B=imag-in-loop): "
           f"A open_plan_bike ade@2s={ic['A_open_plan_bike_ade@2s']['mean']:.3f} "
@@ -961,12 +1093,23 @@ def main():
                     help="run flagship-30k, flagship-speed, flagship-nospeed")
     ap.add_argument("--episodes", type=int, default=40)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--k", type=int, default=K_MAX,
+                    help=f"rollout horizon in 0.1 s ticks (default {K_MAX} = "
+                         f"2.0 s, ade_0_2s' own BLIND horizon). For K >= 100 "
+                         f"prefer taniteval.clhorizon (the real-footage loop "
+                         f"E1a and the v4 gate co-primary use).")
+    ap.add_argument("--out-dir", default="/root/taniteval/results")
+    ap.add_argument("--no-per-window", action="store_true",
+                    help="do NOT persist the per-window paths. Off by default "
+                         "since 2026-07-26: an artifact without them is not "
+                         "correctable by arithmetic.")
     a = ap.parse_args()
     keys = (["flagship-30k", "flagship-speed", "flagship-nospeed"]
             if a.all_flagships else [a.arm])
     for key in keys:
         try:
-            run_and_save(key, a.device, a.episodes)
+            run_and_save(key, a.device, a.episodes, out_dir=a.out_dir, k=a.k,
+                         save_per_window=not a.no_per_window)
         except Exception as e:
             import traceback
             print(f"[cl] {key} FAILED: {type(e).__name__}: {str(e)[:200]}",
