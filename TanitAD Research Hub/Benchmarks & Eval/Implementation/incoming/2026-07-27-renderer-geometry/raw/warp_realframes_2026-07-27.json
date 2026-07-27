@@ -1,0 +1,318 @@
+{
+  "what": "does taniteval.clhorizon's projection-aware re-render land the CORRECT pixels on the frame v5 actually uses, and does the DEPLOYED path still land the pixels it used to?",
+  "host": "pod2",
+  "cache": "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+  "code_provenance": {
+    "taniteval.clhorizon": "/workspace/v5gate/taniteval/taniteval/clhorizon.py",
+    "tanitad.data.calib": "/workspace/v5gate/stack/tanitad/data/calib.py"
+  },
+  "geometry_provenance": {
+    "cache_frame_from": "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl/_geometry.json",
+    "cache_frame": {
+      "height": 256,
+      "width": 640,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical"
+    },
+    "payload_declared_frame": {
+      "height": 256,
+      "width": 640,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical"
+    },
+    "cache_and_payload_agree": true,
+    "train_frame": {
+      "height": 176,
+      "width": 624,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical"
+    },
+    "train_frame_is_centred_slice_rows": [
+      40,
+      216
+    ],
+    "train_frame_is_centred_slice_cols": [
+      8,
+      632
+    ],
+    "principal_point_px_in_train_frame": [
+      311.5,
+      87.5
+    ],
+    "_note": "centred_subframe/subframe_slice keep the boresight at the CHILD's own geometric centre exactly (calib.py: the (W-1)/2 and (w-1)/2 halves cancel against the integer margin), and the clip's NATIVE per-clip (cx, cy) was already absorbed by cylindrical_rectify at build time."
+  },
+  "shipped_warp": "clhorizon.sampling_homography(f=F_EFF=266.0, c=CXY=128.0) \u2014 the DEPLOYED 256x256 pinhole crop",
+  "n_clips": 8,
+  "window": 8,
+  "frames_decoded": 64,
+  "frame_shape": [
+    176,
+    624
+  ],
+  "A_coordinate_field_v5_frame": [
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 2.0,
+      "err_px_mean": 8.8737,
+      "err_px_median": 3.7552,
+      "err_px_p95": 29.6681,
+      "err_px_max": 34.8474,
+      "err_u_px_max": 33.6706,
+      "err_v_px_max": 8.9795,
+      "frac_px_err_gt_1": 0.848357,
+      "frac_px_err_gt_8": 0.387757,
+      "no_ground_preimage_frac": 0.0,
+      "true_shift_px": 10.6667,
+      "err_exceeds_the_whole_correct_displacement": false
+    },
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 8.0,
+      "err_px_mean": 46.3002,
+      "err_px_median": 19.9393,
+      "err_px_p95": 159.2764,
+      "err_px_max": 189.2039,
+      "err_u_px_max": 183.2642,
+      "err_v_px_max": 47.0354,
+      "frac_px_err_gt_1": 0.990776,
+      "frac_px_err_gt_8": 0.59517,
+      "no_ground_preimage_frac": 0.0,
+      "true_shift_px": 42.6667,
+      "err_exceeds_the_whole_correct_displacement": true
+    },
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 12.0,
+      "err_px_mean": 85.2852,
+      "err_px_median": 36.1298,
+      "err_px_p95": 302.5835,
+      "err_px_max": 364.3706,
+      "err_u_px_max": 353.4614,
+      "err_v_px_max": 88.4926,
+      "frac_px_err_gt_1": 0.997778,
+      "frac_px_err_gt_8": 0.691588,
+      "no_ground_preimage_frac": 0.0,
+      "true_shift_px": 64.0,
+      "err_exceeds_the_whole_correct_displacement": true
+    },
+    {
+      "dlat_m": 0.5,
+      "dyaw_deg": 0.0,
+      "err_px_mean": 13.7053,
+      "err_px_median": 13.5001,
+      "err_px_p95": 20.5338,
+      "err_px_max": 29.3133,
+      "err_u_px_max": 28.5454,
+      "err_v_px_max": 7.6026,
+      "frac_px_err_gt_1": 1.0,
+      "frac_px_err_gt_8": 0.941133,
+      "no_ground_preimage_frac": 0.5
+    },
+    {
+      "dlat_m": 1.0,
+      "dyaw_deg": 0.0,
+      "err_px_mean": 27.4156,
+      "err_px_median": 27.0013,
+      "err_px_p95": 41.0888,
+      "err_px_max": 60.4219,
+      "err_u_px_max": 59.1116,
+      "err_v_px_max": 16.253,
+      "frac_px_err_gt_1": 1.0,
+      "frac_px_err_gt_8": 1.0,
+      "no_ground_preimage_frac": 0.5
+    },
+    {
+      "dlat_m": 2.0,
+      "dyaw_deg": 0.0,
+      "err_px_mean": 54.87,
+      "err_px_median": 54.0122,
+      "err_px_p95": 82.5785,
+      "err_px_max": 126.8501,
+      "err_u_px_max": 124.8903,
+      "err_v_px_max": 36.8222,
+      "frac_px_err_gt_1": 1.0,
+      "frac_px_err_gt_8": 1.0,
+      "no_ground_preimage_frac": 0.5
+    }
+  ],
+  "A_coordinate_field_CONTROL_deployed": [
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 2.0,
+      "err_px_mean": 0.0108,
+      "err_px_median": 0.0104,
+      "err_px_p95": 0.0195,
+      "err_px_max": 0.0249,
+      "err_u_px_max": 0.0178,
+      "err_v_px_max": 0.0174,
+      "frac_px_err_gt_1": 0.0,
+      "frac_px_err_gt_8": 0.0,
+      "no_ground_preimage_frac": 0.0
+    },
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 8.0,
+      "err_px_mean": 0.0448,
+      "err_px_median": 0.0413,
+      "err_px_p95": 0.0893,
+      "err_px_max": 0.1177,
+      "err_u_px_max": 0.086,
+      "err_v_px_max": 0.0803,
+      "frac_px_err_gt_1": 0.0,
+      "frac_px_err_gt_8": 0.0,
+      "no_ground_preimage_frac": 0.0
+    },
+    {
+      "dlat_m": 0.0,
+      "dyaw_deg": 12.0,
+      "err_px_mean": 0.0709,
+      "err_px_median": 0.0615,
+      "err_px_p95": 0.1518,
+      "err_px_max": 0.199,
+      "err_u_px_max": 0.1476,
+      "err_v_px_max": 0.1334,
+      "frac_px_err_gt_1": 0.0,
+      "frac_px_err_gt_8": 0.0,
+      "no_ground_preimage_frac": 0.0
+    }
+  ],
+  "B_real_pixels_vs_independent_oracle": {
+    "n_frames": 64,
+    "interior_pad_px": 64,
+    "cases": [
+      {
+        "case": "EXACT_INTEGER_SHIFT_10px",
+        "dyaw_deg": 1.875,
+        "oracle": "numpy column roll (array slicing; no grid_sample)",
+        "NEW_max_abs_intensity_err": 2.4437904357910156e-05,
+        "NEW_mean_abs_intensity_err": 7.216918919298379e-08,
+        "SHIPPED_max_abs_intensity_err": 0.929412767291069,
+        "SHIPPED_mean_abs_intensity_err": 0.026438283606599517,
+        "SHIPPED_over_NEW_mean_ratio": 366337.54518015037
+      },
+      {
+        "case": "EXACT_INTEGER_SHIFT_40px",
+        "dyaw_deg": 7.5,
+        "oracle": "numpy column roll (array slicing; no grid_sample)",
+        "NEW_max_abs_intensity_err": 2.4437904357910156e-05,
+        "NEW_mean_abs_intensity_err": 6.969053702236172e-08,
+        "SHIPPED_max_abs_intensity_err": 0.9974729418754578,
+        "SHIPPED_mean_abs_intensity_err": 0.055469941650905616,
+        "SHIPPED_over_NEW_mean_ratio": 795946.5376641721
+      },
+      {
+        "case": "PROBE_2deg",
+        "true_shift_px": 10.6667,
+        "oracle": "numpy bilinear column interpolation",
+        "NEW_max_abs_intensity_err": 2.365310984664415e-05,
+        "NEW_mean_abs_intensity_err": 1.549175451101246e-07,
+        "SHIPPED_max_abs_intensity_err": 0.9298374727368354,
+        "SHIPPED_mean_abs_intensity_err": 0.026478420973641382,
+        "SHIPPED_over_NEW_mean_ratio": 170919.44592085388,
+        "frame_dynamic_range": 1.0
+      },
+      {
+        "case": "PROBE_8deg",
+        "true_shift_px": 42.6667,
+        "oracle": "numpy bilinear column interpolation",
+        "NEW_max_abs_intensity_err": 2.365310984664415e-05,
+        "NEW_mean_abs_intensity_err": 1.6472363190263184e-07,
+        "SHIPPED_max_abs_intensity_err": 0.9936823844909668,
+        "SHIPPED_mean_abs_intensity_err": 0.0564085368737084,
+        "SHIPPED_over_NEW_mean_ratio": 342443.4989816852,
+        "frame_dynamic_range": 1.0
+      },
+      {
+        "case": "PROBE_12deg",
+        "true_shift_px": 64.0,
+        "oracle": "numpy bilinear column interpolation",
+        "NEW_max_abs_intensity_err": 2.4437904357910156e-05,
+        "NEW_mean_abs_intensity_err": 6.712116061887038e-08,
+        "SHIPPED_max_abs_intensity_err": 0.9964026641100645,
+        "SHIPPED_mean_abs_intensity_err": 0.06718610231668908,
+        "SHIPPED_over_NEW_mean_ratio": 1000967.529423209,
+        "frame_dynamic_range": 1.0
+      }
+    ]
+  },
+  "C_control_deployed_path_unregressed": {
+    "raster": "256x256 centre crop of REAL v5 camera pixels",
+    "n_frames": 64,
+    "by_condition": [
+      {
+        "dlat_m": 0.0,
+        "dyaw_deg": 8.0,
+        "bit_identical_frame_None": true,
+        "bit_identical_declared_canonical": true,
+        "max_abs_pixel_diff": 0.0,
+        "coord_field_err_px_max": 0.1177,
+        "coord_field_err_px_mean": 0.0448,
+        "within_audit_control_0_118px": true
+      },
+      {
+        "dlat_m": 0.0,
+        "dyaw_deg": -8.0,
+        "bit_identical_frame_None": true,
+        "bit_identical_declared_canonical": true,
+        "max_abs_pixel_diff": 0.0,
+        "coord_field_err_px_max": 0.1182,
+        "coord_field_err_px_mean": 0.0449,
+        "within_audit_control_0_118px": false
+      },
+      {
+        "dlat_m": 1.5,
+        "dyaw_deg": 3.0,
+        "bit_identical_frame_None": true,
+        "bit_identical_declared_canonical": true,
+        "max_abs_pixel_diff": 0.0,
+        "coord_field_err_px_max": 0.5549,
+        "coord_field_err_px_mean": 0.5025,
+        "within_audit_control_0_118px": false
+      },
+      {
+        "dlat_m": 3.0,
+        "dyaw_deg": 12.0,
+        "bit_identical_frame_None": true,
+        "bit_identical_declared_canonical": true,
+        "max_abs_pixel_diff": 0.0,
+        "coord_field_err_px_max": 1.4208,
+        "coord_field_err_px_mean": 1.0543,
+        "within_audit_control_0_118px": false
+      }
+    ]
+  },
+  "D_representation": {
+    "yaw_on_a_cylinder": {
+      "dlat_m": 0.0,
+      "dyaw_deg": 8.0,
+      "n_points": 6000,
+      "best_homography_residual_px_max": 0.0,
+      "best_homography_residual_px_mean": 0.0,
+      "best_homography_residual_px_p95": 0.0,
+      "expressible_as_a_3x3": true
+    },
+    "lateral_on_a_cylinder": {
+      "dlat_m": 2.0,
+      "dyaw_deg": 0.0,
+      "n_points": 6000,
+      "best_homography_residual_px_max": 43.761914,
+      "best_homography_residual_px_mean": 5.354525,
+      "best_homography_residual_px_p95": 16.318315,
+      "expressible_as_a_3x3": false
+    },
+    "lateral_on_a_pinhole": {
+      "dlat_m": 2.0,
+      "dyaw_deg": 0.0,
+      "n_points": 6000,
+      "best_homography_residual_px_max": 0.0,
+      "best_homography_residual_px_mean": 0.0,
+      "best_homography_residual_px_p95": 0.0,
+      "expressible_as_a_3x3": true
+    },
+    "_reading": "a yaw on a cylinder IS a 3x3 (a translation) \u2014 the shipped code simply computes a DIFFERENT 3x3. A LATERAL displacement on a cylinder is NOT a 3x3 at all, so the matrix representation cannot carry it while the grid_sample resampler carries both."
+  },
+  "E_guard_demonstrated_failing_on_real_frames": {
+    "no_frame_on_a_176x624_raster": "REFUSED: [warp_frames] no CanonicalFrame was supplied, so the re-render would use the DEPLOYED 256x256 pinhole intrinsics (f=266.\u2026",
+    "declared_frame_is_not_the_raster": "REFUSED: [warp_frames] declared frame 256x640f305.5775cyl is 256x640 but the frames handed in are 176x624. A sub-frame that is de\u2026"
+  }
+}

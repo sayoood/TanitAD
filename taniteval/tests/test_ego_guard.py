@@ -255,7 +255,7 @@ def test_pseudo_evaluate_REFUSES_an_undeclared_adapter_BEFORE_touching_a_model(
     no model was touched."""
     grid = PS.GridSpec(dyaw_deg=(0.0,), dlon_steps=(0,))
     with pytest.raises(EgoInputDropped):
-        PS.pseudo_evaluate(_EgoBlindAdapter(m_ego), [], grid, stride=8)
+        PS.pseudo_evaluate(_EgoBlindAdapter(m_ego), [], grid, stride=8, frame=PS.LEGACY_WARP)
 
 
 # --------------------------------------------------------------------------- #

@@ -685,6 +685,9 @@ def _gate(**kw):
     kw.setdefault("stride", 8)
     kw.setdefault("batch", 8)
     kw.setdefault("n_boot", 400)
+    # synthetic raster -> the legacy warp, stated (see test_heldout_gate._gate)
+    from taniteval.clhorizon import LEGACY_WARP
+    kw.setdefault("frame", LEGACY_WARP)
     return HG.HeldoutGate(HG.HeldoutGateConfig(**kw))
 
 
@@ -749,7 +752,9 @@ def test_THE_LOOP_READS_THE_GATE_and_stops_early():
         smoke's toy head is not a dense-plan planner."""
 
         def __init__(self):
-            super().__init__(HG.HeldoutGateConfig(every=1, patience=2,
+            from taniteval.clhorizon import LEGACY_WARP
+            super().__init__(HG.HeldoutGateConfig(frame=LEGACY_WARP,
+                                                  every=1, patience=2,
                                                   n_boot=400, episodes=4))
             self._n = 0
 

@@ -247,6 +247,14 @@ class HeldoutGateConfig:
     first_probe_step: int = 0
     grid: object | None = None     # a GridSpec; None -> probe_grid()
     weights: dict | None = None    # composite weights; None -> pseudosim default
+    #: ⭐ THE GEOMETRY THE PROBE RE-RENDERS THROUGH (2026-07-27). A
+    #: :class:`~tanitad.data.calib.CanonicalFrame` (or its ``to_dict()``), read
+    #: from the cache the held-out episodes came from — never re-derived.
+    #: ``None`` == the deployed 256x256 pinhole frame, and
+    #: ``taniteval.clhorizon.assert_warp_frame`` REFUSES that on any other
+    #: raster. ``clhorizon.LEGACY_WARP`` states "the shipped 266/128 constants
+    #: on whatever raster" for tests that pin pre-2026-07-27 behaviour.
+    frame: object | None = None
     #: ⛔ the VERSIONED ego-progress term (see :data:`PROGRESS_TERM`). Pin it to
     #: ``"clamp_v1"`` only to reproduce a pre-2026-07-28 gate; that term cannot
     #: see over-travel and therefore cannot see a longitudinal lever.
@@ -411,22 +419,36 @@ class HeldoutGate:
 
     # ---------------------------------------------------- the probe (GPU) --
     def probe(self, step: int, world, head, episodes, *, device="cpu",
-              goal_kwargs_fn=None, diagnostics=None, verbose=False) -> dict:
+              goal_kwargs_fn=None, diagnostics=None, verbose=False,
+              frame=None) -> dict:
         """Run pseudo-simulation on the deployable surface, then :meth:`observe`.
 
         ``episodes`` are HELD-OUT episode objects (``.poses`` / ``.frames``).
         Determinism matters: the same episodes, stride and grid must be passed
         every probe or :meth:`observe` raises :class:`WindowAlignmentError`.
+
+        ⭐ ``frame`` is the :class:`~tanitad.data.calib.CanonicalFrame` the
+        held-out pixels were BUILT at — the TRAIN frame, i.e. the sub-frame if
+        ``--v2-subframe`` is in force. It reaches
+        ``clhorizon.warp_frames`` and decides the re-render's projection.
+        ``None`` keeps the deployed 256x256 pinhole warp and is REFUSED on any
+        other raster: **the probe grid is ``(-8, 0, +8) deg``, and on v5's
+        176x624 cylindrical frame the deployed warp misplaces source pixels by
+        a mean of 46.3 px against a true shift of 42.7 px** — so an unstated
+        frame here would stop (or fail to stop) a live run on an observation
+        the camera could never have produced.
         """
         ps, _ = _taniteval()
         grid = self.cfg.resolved_grid()
         planner = DeployableSurfacePlanner(
             world, head, device=device, amp=self.cfg.amp,
             goal_kwargs_fn=goal_kwargs_fn)
+        frame = self.cfg.frame if frame is None else frame
         pw = ps.pseudo_evaluate(planner, episodes, grid, device=device,
                                 stride=self.cfg.stride,
                                 horizon=self.cfg.horizon,
-                                batch=self.cfg.batch, verbose=verbose)
+                                batch=self.cfg.batch, verbose=verbose,
+                                frame=frame)
         if pw.get("_empty"):
             raise GateNotUsableError(
                 f"pseudo_evaluate produced no windows at step {step}: the "
@@ -443,6 +465,7 @@ class HeldoutGate:
             "horizon_s": pw.get("horizon_s"),
             "estimator": node.get("_estimator"),
             "surface": planner.provenance,
+            "warp": pw.get("warp"),
             "components_admitted": self._pinned_admitted,
             "components_pinned_at_step": self.history[0]["step"],
         }

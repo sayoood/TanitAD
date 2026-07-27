@@ -48,23 +48,33 @@ def _wire_paths(stack: Path):
 # the degradation — LATERAL ONLY, so it cannot be a NaN artefact               #
 # --------------------------------------------------------------------------- #
 class LateralDegradedPlanner:
-    """Wrap a planner and bend every emitted plan sideways.
+    """⛔ THE DEGRADATION THAT FAILED ITS OWN DIRECTION CHECK — kept as evidence.
 
     ``y_t -> y_t + drift * (t/T)^2`` in the plan's own ego frame: a smooth
-    cross-track excursion that grows with time, leaving ``x`` (along-track)
-    **bit-identical**. That is the point — ``ego_progress`` reads ``x[:, -1]`` and
-    ``xt_hold`` reads ``s_along = x[:, -1]``, so both are UNCHANGED and the whole
-    effect lands on ``recovery``'s numerator ``xt_end``.
+    cross-track excursion leaving ``x`` (along-track) bit-identical. It LOOKS
+    surgical — ``ego_progress`` and ``xt_hold`` both read ``x[:, -1]``, so the
+    whole effect should land on ``recovery``'s numerator ``xt_end``.
 
-    ⇒ the composite must go DOWN. If it goes up, the degradation is measuring a
-    NaN artefact rather than a defect, and ``--degrade-selfcheck`` refuses.
+    ⚠️ MEASURED, 2 episodes, ``flagship-v4-fromscratch-15k``: it made the arm
+    BETTER. ``recovery`` 0.0291 -> 0.2364 and the composite 0.6228 -> 0.6903.
+    The reason is that a CONSTANT-SIGN drift is a CORRECTION for a
+    systematically-biased planner: the model's signed cross-track error is
+    predominantly one-sided, so +3 m re-centres it on roughly half the grid
+    (``dyaw`` is symmetric ``(-8, 0, +8)``, so a fixed sign helps one wing and
+    hurts the other).
+
+    ⇒ this is the SAME class as the sibling stream's +0.1698 slow-plan artefact:
+    a degradation whose direction was assumed rather than checked. It is retained
+    behind ``--degrade-mode lateral_drift`` so the failure stays reproducible, and
+    the DEFAULT is :class:`RandomSelectionDegradedPlanner`.
     """
 
-    def __init__(self, inner, drift_m: float = 3.0):
+    def __init__(self, inner, drift_m: float = 3.0, **_):
         self.inner, self.drift = inner, float(drift_m)
         self.provenance = {**getattr(inner, "provenance", {}),
                            "DEGRADED": f"lateral drift {drift_m} m (quadratic in t), "
-                                       f"along-track bit-identical"}
+                                       f"along-track bit-identical. ⚠️ THIS "
+                                       f"DEGRADATION FAILED ITS DIRECTION CHECK"}
         self.horizons = getattr(inner, "horizons", ())
 
     def traj(self, frames, v0, goal=None):
@@ -73,6 +83,62 @@ class LateralDegradedPlanner:
         w = (torch.arange(1, T + 1, dtype=tj.dtype) / T) ** 2
         tj[..., 1] = tj[..., 1] + self.drift * w[None, :]
         return tj
+
+
+class RandomSelectionDegradedPlanner:
+    """⭐ THE DEGRADATION USED. The head's RANKED pick becomes a UNIFORM RANDOM
+    candidate from the SAME fan.
+
+    Why this one and not a trajectory edit:
+
+    * it is the failure the gate was built for — ``heldout_gate``'s own docstring
+      says *"Selection is the thing that regressed on v4, so a probe that
+      bypasses the selector cannot see the defect it exists to catch"*;
+    * its direction cannot be an artefact of the scoring geometry: the candidate
+      set is unchanged, only the choice within it is, so it cannot slow the plan
+      systematically (the NaN trap) and cannot re-centre a lateral bias (the trap
+      :class:`LateralDegradedPlanner` fell into);
+    * it is option-INDEPENDENT — the same corruption is applied under every
+      option, so "does the stop fire" is attributable to the option's baseline
+      rather than to a differently-sized insult.
+
+    ``--degrade-selfcheck`` still asserts the composite went DOWN. A degradation
+    is not trusted here because it sounds bad; it is trusted because it measured
+    worse.
+    """
+
+    def __init__(self, inner, seed: int = 0, **_):
+        self.inner = inner
+        self.head = inner.head
+        self.gen = torch.Generator(device="cpu").manual_seed(int(seed))
+        self.provenance = {**getattr(inner, "provenance", {}),
+                           "DEGRADED": "SELECTION randomised — uniform pick from "
+                                       "the head's own fan (the v4 regression's "
+                                       "own failure mode)"}
+        self.horizons = getattr(inner, "horizons", ())
+
+    def traj(self, frames, v0, goal=None):
+        head, orig = self.head, self.head.select
+
+        def patched(fan, refined_logits, vt_speed, vt_keep, v0_):
+            traj, idx, score, tele = orig(fan, refined_logits, vt_speed,
+                                          vt_keep, v0_)
+            n = fan.shape[1]
+            ridx = torch.randint(0, n, (fan.shape[0],), generator=self.gen)
+            ridx = ridx.to(fan.device)
+            rtraj = fan[torch.arange(fan.shape[0], device=fan.device), ridx]
+            tele = {**tele, "DEGRADED_random_selection": True}
+            return rtraj, ridx, score, tele
+
+        head.select = patched
+        try:
+            return self.inner.traj(frames, v0, goal)
+        finally:
+            head.select = orig            # restore the bound method
+
+
+DEGRADERS = {"random_select": RandomSelectionDegradedPlanner,
+             "lateral_drift": LateralDegradedPlanner}
 
 
 # --------------------------------------------------------------------------- #
@@ -106,13 +172,58 @@ def build_stack(a):
     hcfg.state_dim = world.state_dim
     hcfg.cond_imagination = False
     hcfg.window = cfg.predictor.window
+
+    # ⚠️ HISTORICAL CHECKPOINTS PREDATE vision_rank=16. The factorised readers
+    # were a raw-2048 Linear before that lever landed, so a v4 checkpoint trained
+    # earlier carries lat/lon/dist heads of shape [128, 2048]. Build the head to
+    # MATCH THE CHECKPOINT rather than forcing the current default and loading
+    # strict=False — that would leave the three factorised heads at random init
+    # and silently randomise the ranking every option is measured through.
+    # ⚠️ vision_rank feeds only the factorised RANKING grafts; the vt_band
+    # decision lives in condition()/vt_keep, so this is orthogonal to the options
+    # — but it is recorded, not assumed.
+    _peek = ({} if a.from_scratch
+             else torch.load(a.ckpt, map_location="cpu", weights_only=False))
+    _lat = _peek.get("head", {}).get("lat_head.0.weight")
+    ckpt_d_vis = None if _lat is None else int(_lat.shape[1])
+    if ckpt_d_vis is not None and ckpt_d_vis != hcfg.vision_rank:
+        if ckpt_d_vis == hcfg.state_dim:
+            hcfg.allow_raw_vision = True
+            hcfg.vision_rank_reason = (
+                "loading a PRE-vision_rank v4 checkpoint whose factorised heads "
+                "are raw-2048; building the head to match it is the only way to "
+                "load its trained weights. Recorded in the artifact.")
+        hcfg.vision_rank = ckpt_d_vis
+        print(f"[build] ⚠️ checkpoint predates vision_rank=16 — building the "
+              f"factorised heads at d_vis={ckpt_d_vis} to match it", flush=True)
+
     head = FlagshipV4Head(hcfg).to(a.device)
     if a.anchors_dense:
         anc = torch.load(a.anchors_dense, weights_only=False)
         head.load_anchors((anc["anchors"] if isinstance(anc, dict) else anc)
                           .to(a.device))
 
-    ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
+    if a.from_scratch:
+        # ⛔ STRUCTURAL LEG ONLY. Random init answers "does the gate RUN on the
+        # real v5 config and the real v5 caches" — nothing else. Every probe
+        # VALUE from this path is arithmetic on random weights and is marked
+        # unquotable in the artifact: with an untrained head all 24 vtarget rows
+        # are i.i.d. N(0, 0.02) and sel_gate is exactly 0, so band0 vs
+        # VT_DROPPED CANNOT differ by anything but initialisation noise. Pricing
+        # the options here would be the C13 shape.
+        print("[build] ⛔ FROM-SCRATCH: structural leg only — probe VALUES from "
+              "this run are NOT quotable (untrained conditioning rows).",
+              flush=True)
+        # ⭐ A goal_head IS built, at random init — because the real v5 run builds
+        # one from step 0 (`--strategic` != off). Omitting it would make the
+        # `produced` option report "cannot run" for a reason that is false on the
+        # actual launch config.
+        gh = GoalScalarHead(GoalScalarConfig(in_dim=world.state_dim))
+        gh = gh.to(a.device).eval()
+        world.eval(); head.eval()
+        return world, head, gh, cfg, {"step": None, "_from_scratch": True}
+
+    ck = _peek
     miss_w = world.load_state_dict(ck["model"], strict=False)
     miss_h = head.load_state_dict(ck["head"], strict=False)
     goal_head = None
@@ -129,12 +240,29 @@ def build_stack(a):
     print(f"[build] ckpt step={ck.get('step')} goal_head={goal_head is not None} "
           f"world(missing,unexpected)={bad[0]} head(missing,unexpected)={bad[1]}",
           flush=True)
-    if miss_h.missing_keys:
+    # ⚠️ Refuse on missing PARAMETERS only. A missing non-persistent BUFFER
+    # (e.g. vision_rank_proj.basis_loaded, a 0-param flag on the raw path) is not
+    # a randomised weight and must not block the run — but a missing Parameter
+    # is exactly the "randomly-initialised head wearing a step number" case.
+    params_h = {n for n, _ in head.named_parameters()}
+    missing_params = [k for k in miss_h.missing_keys if k in params_h]
+    if missing_params:
         raise SystemExit(
-            f"[build] REFUSING: the head is missing {len(miss_h.missing_keys)} "
-            f"tensors from this checkpoint ({miss_h.missing_keys[:6]}). Those "
-            f"would stay at random init and every probe below would price "
+            f"[build] REFUSING: the head is missing {len(missing_params)} trained "
+            f"PARAMETERS from this checkpoint ({missing_params[:6]}). Those would "
+            f"stay at random init and every probe below would price "
             f"initialisation noise instead of a trained conditioning channel.")
+    if miss_h.missing_keys:
+        print(f"[build] missing non-parameter buffers (benign): "
+              f"{miss_h.missing_keys}", flush=True)
+    # the conditioning tensors the whole decision rests on MUST be trained
+    for must in ("vtarget_emb.weight", "route_emb.weight", "vt_gate", "rt_gate",
+                 "sel_gate"):
+        if must not in ck["head"]:
+            raise SystemExit(
+                f"[build] REFUSING: '{must}' is absent from this checkpoint, so "
+                f"the goal-conditioning channel this decision is about was never "
+                f"trained here.")
     print(f"[build] goal_dropout={hcfg.goal_dropout} "
           f"cond_vtarget={hcfg.cond_vtarget} cond_route={hcfg.cond_route} "
           f"horizons={len(hcfg.horizons)} frame={frame} cache_frame={cache_frame}",
@@ -147,7 +275,8 @@ def build_stack(a):
 # one probe                                                                    #
 # --------------------------------------------------------------------------- #
 def probe_once(option, world, head, goal_head, episodes, *, device, gcfg,
-               degrade=None, frames_of=None):
+               degrade=None, degrade_mode="random_select", degrade_seed=0,
+               frames_of=None):
     """-> (per-window composite, eid, extras) under ``option``. Uses the SHIPPED
     ``HeldoutGate._composite_of``, so the primary is the gate's own primary."""
     from tanitad.train import heldout_goal as HGoal
@@ -158,12 +287,20 @@ def probe_once(option, world, head, goal_head, episodes, *, device, gcfg,
     planner = HGoal.StatesAwareSurfacePlanner(
         world, head, device=device, amp=gcfg.amp, goal_kwargs_fn=fn, option=option)
     if degrade is not None:
-        planner = LateralDegradedPlanner(planner, drift_m=degrade)
+        planner = DEGRADERS[degrade_mode](planner, drift_m=degrade,
+                                          seed=degrade_seed)
 
     grid = gcfg.resolved_grid()
+    # ⭐ frame= is the TRAIN frame the held-out pixels were built at. The trainer
+    # passes it (`HeldoutGateConfig(..., frame=frame)`), `probe` forwards it, and
+    # `pseudo_evaluate` REFUSES a non-default frame without it rather than
+    # re-rendering through the deployed 256x256 pinhole intrinsics. Omitting it
+    # here made the v5 leg read as "the gate cannot run" for a reason that is
+    # false on the real launch config — a harness defect, not a v5 one.
     pw = ps.pseudo_evaluate(planner, episodes, grid, device=device,
                             stride=gcfg.stride, horizon=gcfg.horizon,
-                            batch=gcfg.batch, frames_of=frames_of, verbose=False)
+                            batch=gcfg.batch, frames_of=frames_of, verbose=False,
+                            frame=gcfg.frame)
     if pw.get("_empty"):
         raise SystemExit(f"[{option}] pseudo_evaluate produced no windows")
 
@@ -245,7 +382,11 @@ def paired(a_val, b_val, eid, n_boot, seed):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stack", default="/workspace/v5gate/stack")
-    ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--ckpt", default="")
+    ap.add_argument("--from-scratch", action="store_true",
+                    help="build the v5 head at random init — the STRUCTURAL leg "
+                         "('does the gate run on the real config/caches'). Probe "
+                         "VALUES from this path are not quotable.")
     ap.add_argument("--anchors-dense", default="")
     ap.add_argument("--out", required=True)
     ap.add_argument("--device", default="cuda")
@@ -255,13 +396,14 @@ def main(argv=None):
     # data
     ap.add_argument("--val-cache", default="")
     ap.add_argument("--v2-val-cache", default="")
-    ap.add_argument("--v2-subframe", default="")
+    ap.add_argument("--v2-subframe", default=None, metavar="HxW")
     ap.add_argument("--v2-lru", type=int, default=64)
-    ap.add_argument("--frame-h", type=int, default=0)
-    ap.add_argument("--frame-w", type=int, default=0)
-    ap.add_argument("--frame-hfov", type=float, default=0.0)
-    ap.add_argument("--projection", default="")
     ap.add_argument("--require-parity", action="store_true")
+    # ⭐ geometry via the SHARED helper, so the defaults here are byte-identical
+    # to train_flagship_v4's and a frame can never be spelled two ways.
+    _wire_paths(Path(ap.parse_known_args(argv)[0].stack).resolve())
+    from tanitad.geometry import add_geometry_args
+    add_geometry_args(ap)
     # gate
     ap.add_argument("--episodes", type=int, default=8)
     ap.add_argument("--stride", type=int, default=8)
@@ -272,21 +414,21 @@ def main(argv=None):
     ap.add_argument("--amp", action="store_true")
     # degradation
     ap.add_argument("--degrade-m", type=float, default=3.0)
+    ap.add_argument("--degrade-mode", default="random_select",
+                    choices=sorted(DEGRADERS))
+    ap.add_argument("--degrade-seed", type=int, default=0)
     ap.add_argument("--degrade-selfcheck", action="store_true", default=True)
     a = ap.parse_args(argv)
-
-    stack = Path(a.stack).resolve()
-    _wire_paths(stack)
 
     from tanitad.train import heldout_goal as HGoal
     from tanitad.train.heldout_gate import (PRIMARY_NAME, HeldoutGate,
                                             HeldoutGateConfig)
 
+    world, head, goal_head, cfg, ck = build_stack(a)
+    # ⭐ the gate config carries the TRAIN frame, exactly as train() builds it.
     gcfg = HeldoutGateConfig(every=1, episodes=a.episodes, stride=a.stride,
                              horizon=a.horizon, batch=a.batch, n_boot=a.n_boot,
-                             seed=a.seed, amp=a.amp)
-
-    world, head, goal_head, cfg, ck = build_stack(a)
+                             seed=a.seed, amp=a.amp, frame=a._frames[1])
     episodes, frames_of = load_val_episodes(a, cfg)
     episodes = episodes[:a.episodes]
     print(f"[data] {len(episodes)} held-out episodes "
@@ -297,7 +439,8 @@ def main(argv=None):
         "primary": PRIMARY_NAME,
         "estimator": f"paired episode-cluster bootstrap (B={a.n_boot}, "
                      f"unit = held-out episode); NEVER overlapping_holdout_se",
-        "ckpt": a.ckpt, "ckpt_step": ck.get("step"),
+        "ckpt": a.ckpt or "(from-scratch)", "ckpt_step": ck.get("step"),
+        "FROM_SCRATCH_values_not_quotable": bool(a.from_scratch),
         "head_cfg": {"cond_vtarget": head.cfg.cond_vtarget,
                      "cond_route": head.cfg.cond_route,
                      "goal_dropout": head.cfg.goal_dropout,
@@ -308,6 +451,7 @@ def main(argv=None):
         "index_zero_means": HGoal.describe_index_zero(),
         "oracle": HGoal.oracle_availability(),
         "reference_option": a.reference,
+        "train_frame": str(a._frames[1]),
         "options": {}, "degradation": {}, "early_stop": {},
     }
 
@@ -359,7 +503,8 @@ def main(argv=None):
         try:
             dv, deid, dextras, dsc = probe_once(
                 opt, world, head, goal_head, episodes, device=a.device,
-                gcfg=gcfg, degrade=a.degrade_m, frames_of=frames_of)
+                gcfg=gcfg, degrade=a.degrade_m, degrade_mode=a.degrade_mode,
+                degrade_seed=a.degrade_seed, frames_of=frames_of)
         except Exception as exc:                              # noqa: BLE001
             res["degradation"][opt] = {"error": f"{type(exc).__name__}: {exc}"}
             continue
@@ -369,17 +514,21 @@ def main(argv=None):
         pd = paired(dv, vals[opt], eids[opt], a.n_boot, a.seed)
         direction_ok = deg_pt < base_pt
         res["degradation"][opt] = {
-            "drift_m": a.degrade_m,
+            "mode": a.degrade_mode, "drift_m": a.degrade_m,
             "baseline_primary": round(base_pt, 6),
             "degraded_primary": round(deg_pt, 6),
             "paired_delta_degraded_minus_baseline": pd,
             "DIRECTION_OK_composite_went_DOWN": direction_ok,
-            "along_track_unchanged": {
-                "baseline_mean": dextras["longitudinal"]["along_track_end_m_mean"],
-                "degraded_mean": dextras["longitudinal"]["along_track_end_m_mean"],
-                "_read": "the degradation edits y only; x is bit-identical, so "
-                         "this is NOT the slow-plan/NaN artefact",
-            },
+            "along_track_m_mean_baseline":
+                res["options"][opt]["longitudinal"]["along_track_end_m_mean"],
+            "along_track_m_mean_degraded":
+                dextras["longitudinal"]["along_track_end_m_mean"],
+            "ego_progress_baseline":
+                res["options"][opt]["longitudinal"]["ego_progress_mean"],
+            "ego_progress_degraded": dextras["longitudinal"]["ego_progress_mean"],
+            "_slow_plan_artefact_check": (
+                "if along_track collapsed AND recovery_n_finite fell, the "
+                "composite move is the NaN artefact, not a defect"),
             "recovery_mean_baseline": res["options"][opt]["lateral"]["recovery_mean"],
             "recovery_mean_degraded": dextras["lateral"]["recovery_mean"],
             "recovery_n_finite_baseline":
@@ -395,7 +544,8 @@ def main(argv=None):
         # ---- drive the SHIPPED stop rule -------------------------------- #
         g = HeldoutGate(HeldoutGateConfig(
             every=1, episodes=a.episodes, stride=a.stride, horizon=a.horizon,
-            batch=a.batch, n_boot=a.n_boot, seed=a.seed, patience=2, amp=a.amp))
+            batch=a.batch, n_boot=a.n_boot, seed=a.seed, patience=2, amp=a.amp,
+            frame=a._frames[1]))
         hist = []
         try:
             hist.append(g.observe(0, vals[opt], eids[opt]))     # incumbent

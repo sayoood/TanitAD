@@ -95,8 +95,10 @@ import torch
 from taniteval import ci as _ci
 from taniteval import ego_guard as _egg
 from taniteval import ood as _ood
-from taniteval.clhorizon import (DT, LOOKAHEAD_STEP, W as WINDOW,  # noqa: F401
-                                 sampling_homography, warp_batch, wrap_angle)
+from taniteval.clhorizon import (DT, LEGACY_WARP, LOOKAHEAD_STEP,  # noqa: F401
+                                 W as WINDOW, WarpFrameRefused,
+                                 assert_warp_frame, sampling_homography,
+                                 warp_batch, warp_frames, wrap_angle)
 from taniteval.ood import ENV_LAT_MAX, ENV_YAW_MAX
 
 __all__ = [
@@ -109,6 +111,9 @@ __all__ = [
     "COMFORT_LIMITS", "COMPONENT_WEIGHTS", "CEIL_FRAC_MAX", "RANGE_MIN",
     "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
     "progress_from_ratio", "metric_id", "UnknownProgressTerm",
+    # projection-aware re-render, re-exported so a caller of pseudosim never
+    # has to reach into clhorizon to state its geometry.
+    "LEGACY_WARP", "WarpFrameRefused", "assert_warp_frame", "warp_frames",
 ]
 
 # --------------------------------------------------------------------------- #
@@ -444,13 +449,16 @@ def _poses_of(ep):
 @torch.no_grad()
 def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
                     window=WINDOW, horizon=20, frames_of=None, goals=None,
-                    batch=16, verbose=False) -> dict:
+                    batch=16, verbose=False, frame=None) -> dict:
     """Evaluate ``planner`` at every (anchor, grid point). **No rollout.**
 
     For each anchor ``a`` and grid point ``(dlat, dpsi, dlon)``:
 
     1. take the **real** frame window ``[a + dlon, a + dlon + window)``;
-    2. warp it **once** by ``sampling_homography(dlat, dpsi)``;
+    2. warp it **once** by ``clhorizon.warp_frames(dlat, dpsi, frame)`` — on the
+       DEPLOYED 256x256 pinhole frame that is ``sampling_homography`` verbatim;
+       on a cylindrical frame it is the equidistant-azimuth re-render, where a
+       yaw is the EXACT pixel shift ``u -> u + f_ref*psi``, ``v -> v``;
     3. ask the planner for a trajectory (ONE call, in the ego frame of the
        perturbed pose);
     4. record it. Nothing is fed back; step 1 is never re-entered.
@@ -459,12 +467,25 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
     loop never advances, the deviation of every evaluated state is exactly the
     grid value — which is why :func:`assert_grid_in_envelope` can guarantee 0 %.
 
+    ``frame`` is the :class:`CanonicalFrame` (or ``to_dict()``) the episodes'
+    pixels were BUILT at, read from the cache — never re-derived. ``None`` is
+    the deployed 256x256 pinhole frame and is bit-identical to the
+    pre-2026-07-27 path. ⛔ A non-256x256 raster with ``frame=None`` is REFUSED
+    before any model is touched: that is exactly what a v5 mid-run held-out gate
+    would have done silently, and the mid-run gate is what a live run STOPS on.
+
     Returns per-(window, grid point) arrays plus the envelope proof. Scoring is
     :func:`score_windows`; keeping them separate means any metric can be
     re-derived from the dump with **no GPU** — the arithmetic-only path whose
     absence forced five closed-loop artifacts to be re-driven in July.
     """
     proof = assert_grid_in_envelope(grid)          # BEFORE any model touch
+    # ⛔ and the geometry, for the same reason and in the same place.
+    warp_prov = assert_warp_frame(
+        frame,
+        ((frames_of or _default_frames)(episodes[0], 0, window)
+         if len(episodes) else None),
+        where="pseudosim.pseudo_evaluate")
     # ⛔ E1 (2026-07-28): an ego-TRAINED checkpoint scored ego-BLIND is silent.
     # Refused here, BEFORE any model is touched, for the same reason the
     # envelope assertion is: a bad run must cost zero GPU seconds.
@@ -487,14 +508,14 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
         if not anchors:
             continue
         for (dlat, dyaw, dlon) in pts:
-            Hm = sampling_homography(dlat, dyaw)
             for bi in range(0, len(anchors), batch):
                 ch = anchors[bi:bi + batch]
                 s = torch.tensor([a + dlon for a in ch])
                 last = s + window - 1
                 fw = torch.stack([frames_of(ep, int(x), int(x) + window)
                                   for x in s]).to(device)
-                fw = warp_batch(fw, Hm[None].expand(len(ch), 3, 3).clone())
+                fw = warp_frames(fw, dlat, dyaw, frame,
+                                 where="pseudosim.pseudo_evaluate")
                 v0 = poses[last, 3]
                 g = (goals.get(ep_i, last.numpy(), device)
                      if goals is not None else None)
@@ -517,7 +538,7 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
                   f"planner calls so far {n_calls}", flush=True)
     if not rec["eid"]:
         return {"_empty": True, "envelope_proof": proof,
-                "ego_input": ego_prov,
+                "ego_input": ego_prov, "warp": warp_prov,
                 "traffic_mode": TRAFFIC_MODE_LOG_REPLAY}
     out = {k: (v if k == "eid" else torch.cat(v)) for k, v in rec.items()}
     out["traj"] = torch.cat(trajs)                 # [n, horizon, 2] ego frame
@@ -525,6 +546,8 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
     out["ref_yaw"] = torch.cat(ref_yaw)            # [n] world heading at ref
     out["envelope_proof"] = proof
     out["ego_input"] = ego_prov
+    out["warp"] = dict(warp_prov, max_no_ground_preimage_frac=round(
+        float(warp_frames.last_invalid_frac), 6))
     out["grid"] = grid.describe()
     out["horizon_steps"] = int(horizon)
     out["horizon_s"] = round(horizon * DT, 2)

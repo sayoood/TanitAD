@@ -1349,15 +1349,23 @@ def train(a) -> dict:
     # episode-cluster bootstrap valid (and what WindowAlignmentError enforces).
     hgate, hg_eps = None, None
     if getattr(a, "heldout_gate", True):
+        # ⭐ `frame` is THE TRAIN FRAME resolved above (the --v2-subframe slice
+        # when one is in force). The probe re-renders through it, so the
+        # early-stop signal is computed on THIS run's camera model and not on
+        # the deployed 256x256 pinhole crop's. On v5's 176x624 cylindrical frame
+        # the deployed warp misplaces source pixels by a mean of 46.3 px at the
+        # probe grid's own ±8° against a true shift of 42.7 px — and it does not
+        # crash, it produces numbers. `assert_warp_frame` now REFUSES that.
         hgate = _HG.HeldoutGate(_HG.HeldoutGateConfig(
             every=a.heldout_every, episodes=a.heldout_episodes,
             stride=a.heldout_stride, n_boot=a.heldout_nboot,
             patience=a.heldout_patience, amp=amp,
-            first_probe_step=a.heldout_every))
+            first_probe_step=a.heldout_every, frame=frame))
         hg_eps = val_eps[:a.heldout_episodes]
         print(f"[heldout-gate] ON — every {a.heldout_every} steps on "
               f"{len(hg_eps)} held-out episodes; primary={_HG.PRIMARY_NAME}; "
-              f"patience={a.heldout_patience}. NOT gated on ade_0_2s.", flush=True)
+              f"patience={a.heldout_patience}; re-render frame={frame.tag()} "
+              f"({frame.projection}). NOT gated on ade_0_2s.", flush=True)
     else:
         print("[heldout-gate] ⚠️ OFF — this run has NO held-out early-stop "
               "signal, the cause of the last run's ~29.5 wasted GPU-h.",

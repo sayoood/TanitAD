@@ -114,7 +114,7 @@ def test_envelope_assertion_runs_before_any_model_is_touched():
     p = _StubPlanner()
     bad = PS.GridSpec(dyaw_deg=(_ood.ENV_YAW_MAX + 1.0,), dlon_steps=(0,))
     with pytest.raises(PS.EnvelopeViolation):
-        PS.pseudo_evaluate(p, _episodes(), bad, frames_of=_frames_of)
+        PS.pseudo_evaluate(p, _episodes(), bad, frames_of=_frames_of, frame=PS.LEGACY_WARP)
     assert p.calls == 0
 
 
@@ -144,7 +144,7 @@ def test_lateral_axis_needs_an_explicit_reason_not_just_a_flag():
 def test_no_rollout_happens_and_it_is_recorded():
     grid = PS.GridSpec(dyaw_deg=(-12.0, 0.0, 12.0), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     assert pw["rollout_steps_executed"] == 0
     assert pw["traffic_mode"] == PS.TRAFFIC_MODE_LOG_REPLAY
     # every evaluated state's deviation IS its grid point — nothing accumulated
@@ -163,7 +163,7 @@ def test_the_unperturbed_grid_point_applies_an_identity_warp():
 def test_traffic_mode_is_on_every_emitted_node():
     grid = PS.GridSpec(dyaw_deg=(-8.0, 0.0, 8.0), dlon_steps=(-5, 0, 5))
     pw = PS.pseudo_evaluate(_StubPlanner(recover=0.0), _episodes(), grid,
-                            frames_of=_frames_of, stride=6)
+                            frames_of=_frames_of, stride=6, frame=PS.LEGACY_WARP)
     node = PS.emit(pw, arm="stub", n_boot=64)
     assert node["traffic_mode"] == PS.TRAFFIC_MODE_LOG_REPLAY
     assert "non-reactive" in node["traffic_mode_note"]
@@ -205,7 +205,7 @@ def test_composite_REFUSES_to_emit_when_every_component_saturates():
 def test_collision_and_ttc_are_None_not_a_constant():
     grid = PS.GridSpec(dyaw_deg=(0.0, 12.0), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     sc = PS.score_windows(pw)
     assert sc["no_collision"] is None and sc["ttc"] is None
     assert "NOT COMPUTABLE" in sc["_unavailable"]["no_collision"]
@@ -219,7 +219,7 @@ def test_collision_and_ttc_are_None_not_a_constant():
 def test_composite_is_not_called_a_driving_score():
     grid = PS.GridSpec(dyaw_deg=(-12.0, 0.0, 12.0), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     node = PS.emit(pw, arm="stub", n_boot=64)
     comp = node["composite"]
     if "REFUSED_TO_EMIT" not in comp:
@@ -307,7 +307,7 @@ def test_recovery_is_defined_and_low_for_a_drifting_model_planner():
     """The same finding through the full harness, on a stub model planner."""
     grid = PS.GridSpec(dyaw_deg=(-12.0, 12.0), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     rc = PS.score_windows(pw)["recovery"]
     fin = rc[np.isfinite(rc)]
     assert fin.size > 0, "recovery must be defined at perturbed grid points"
@@ -317,7 +317,7 @@ def test_recovery_is_defined_and_low_for_a_drifting_model_planner():
 def test_recovery_is_undefined_at_the_unperturbed_point_by_construction():
     grid = PS.GridSpec(dyaw_deg=(0.0,), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     sc = PS.score_windows(pw)
     assert np.isnan(sc["recovery"]).all()
 
@@ -325,7 +325,7 @@ def test_recovery_is_undefined_at_the_unperturbed_point_by_construction():
 def test_ego_progress_is_1_for_a_planner_that_matches_the_human():
     grid = PS.GridSpec(dyaw_deg=(0.0,), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     sc = PS.score_windows(pw)
     ep = sc["ego_progress"]
     assert np.nanmean(ep) > 0.9
@@ -342,7 +342,7 @@ def test_proximity_weights_sum_to_one_and_peak_at_the_origin():
 def test_emit_names_its_estimator_and_refuses_the_bad_one():
     grid = PS.GridSpec(dyaw_deg=(-12.0, 0.0, 12.0), dlon_steps=(0,))
     pw = PS.pseudo_evaluate(_StubPlanner(), _episodes(), grid,
-                            frames_of=_frames_of, stride=8)
+                            frames_of=_frames_of, stride=8, frame=PS.LEGACY_WARP)
     node = PS.emit(pw, arm="stub", n_boot=64)
     assert "episode_cluster_bootstrap" in node["_estimator"]
     assert "overlapping_holdout_se" in node["_refused_estimator"]

@@ -1,0 +1,31 @@
+[geometry] vtband_probe: DEPLOYED (unchanged) - 256x256px, f_ref 266.00, pinhole, HFOV 51.39deg / VFOV 51.39deg, tokens 256 (16x16 @ patch 16), state_dim 2048, cache fragment {} (parity-preserving)
+[build] ⚠️ checkpoint predates vision_rank=16 — building the factorised heads at d_vis=2048 to match it
+[build] ckpt step=15000 goal_head=True world(missing,unexpected)=(0, 0) head(missing,unexpected)=(1, 0)
+[build] missing non-parameter buffers (benign): ['vision_rank_proj.basis_loaded']
+[build] goal_dropout=0.5 cond_vtarget=True cond_route=True horizons=20 frame=CanonicalFrame(height=256, width=256, f_ref=266.0, projection='pinhole') cache_frame=CanonicalFrame(height=256, width=256, f_ref=266.0, projection='pinhole')
+[data] 8 held-out episodes (the gate's val_eps[:8])
+  [crash_today ] ⛔ DOES NOT RUN: ValueError: cond_vtarget is on but no vt_band supplied
+  [zeros_naive ] RUNS  primary=0.568518  n=528/528
+  [band0       ] RUNS  primary=0.576120  n=528/528
+  [band0_vt_only] RUNS  primary=0.580459  n=528/528
+  [band0_route_only] RUNS  primary=0.638856  n=528/528
+  [dropped     ] RUNS  primary=0.638251  n=528/528
+  [produced    ] RUNS  primary=0.622831  n=528/528
+  [zeros_naive ] vs dropped: delta=-0.0697 [-0.0991, -0.0425] separated=True
+  [band0       ] vs dropped: delta=-0.0621 [-0.0878, -0.0371] separated=True
+  [band0_vt_only] vs dropped: delta=-0.0578 [-0.0836, -0.0333] separated=True
+  [band0_route_only] vs dropped: delta=0.0006 [-0.001, 0.0024] separated=False
+  [produced    ] vs dropped: delta=-0.0154 [-0.0222, -0.0083] separated=True
+  [zeros_naive ] degradation + early-stop ...
+  [zeros_naive ] early-stop fires: True (streak 2)
+  [band0       ] degradation + early-stop ...
+  [band0       ] early-stop fires: True (streak 2)
+  [band0_vt_only] degradation + early-stop ...
+  [band0_vt_only] early-stop fires: True (streak 2)
+  [band0_route_only] degradation + early-stop ...
+  [band0_route_only] early-stop fires: True (streak 2)
+  [dropped     ] degradation + early-stop ...
+  [dropped     ] early-stop fires: True (streak 2)
+  [produced    ] degradation + early-stop ...
+  [produced    ] early-stop fires: True (streak 2)
+[out] /root/vtband/raw/probe_v4fs15k_ep8_full.json

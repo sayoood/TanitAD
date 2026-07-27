@@ -102,7 +102,7 @@ def test_port_is_tensor_identical_to_the_driver():
         return fr.float() if fr.dtype != torch.uint8 else fr.float().div(255.0)
 
     mine = CH.corridor_rollout(_StubPlanner(), eps, None, "cpu", K,
-                               stride=8, batch=4, frames_of=frames_of)
+                               stride=8, batch=4, frames_of=frames_of, frame=CH.LEGACY_WARP)
     # The driver's `_frames` is module-level; point it at the same accessor so
     # only the ROLLOUT differs between the two runs.
     old = V._frames
@@ -128,7 +128,7 @@ def test_port_is_tensor_identical_to_the_driver():
 def test_the_rollout_actually_advances_K_steps():
     eps = [_episode(T=80, seed=s) for s in range(2)]
     pw = CH.corridor_rollout(_StubPlanner(), eps, None, "cpu", 50, stride=8,
-                             batch=4)
+                             batch=4, frame=CH.LEGACY_WARP)
     assert pw["lat"].shape[1] == 50
     # `_rollout_steps_executed` counts loop ticks per BATCH chunk (the driver's
     # own semantics, kept): 2 episodes x 1 chunk x K.
@@ -140,12 +140,12 @@ class TestHorizonIsFree:
         """The whole defect: 20 was a CAP, and the co-primary needs 185."""
         eps = [_episode(T=210, seed=s) for s in range(2)]
         pw = CH.corridor_rollout(_StubPlanner(), eps, None, "cpu", 185,
-                                 stride=32, batch=4)
+                                 stride=32, batch=4, frame=CH.LEGACY_WARP)
         assert pw is not None and pw["lat"].shape[1] == 185
 
     def test_the_structural_ceiling_is_refused(self):
         with pytest.raises(ValueError, match="structural ceiling"):
-            CH.corridor_rollout(_StubPlanner(), [_episode()], None, "cpu", 200)
+            CH.corridor_rollout(_StubPlanner(), [_episode()], None, "cpu", 200, frame=CH.LEGACY_WARP)
 
     def test_n_collapses_with_K_and_that_is_reported(self):
         """`starts = range(0, T - W - K, stride)` — the reason a K=185 block has
@@ -156,7 +156,7 @@ class TestHorizonIsFree:
 
     def test_no_surviving_window_is_a_NOT_MEASURED_not_a_pass(self):
         assert CH.corridor_rollout(_StubPlanner(), [_episode(T=30)], None,
-                                   "cpu", 25) is None
+                                   "cpu", 25, frame=CH.LEGACY_WARP) is None
 
 
 # =========================================================================== #

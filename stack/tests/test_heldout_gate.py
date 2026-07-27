@@ -64,6 +64,13 @@ def _series(level, *, spread=0.02, seed=0):
 
 def _gate(**kw):
     kw.setdefault("n_boot", NB)
+    # ⚠️ These probes run on a SYNTHETIC 32x32 raster, which no CanonicalFrame
+    # describes. `clhorizon.LEGACY_WARP` states outright that they pin the
+    # pre-2026-07-27 warp (the shipped 266/128 constants on whatever raster)
+    # rather than a declared geometry — a real run passes the TRAIN frame
+    # (train_flagship_v4 wires `resolve_v2_frames`' second return value in).
+    from taniteval.clhorizon import LEGACY_WARP
+    kw.setdefault("frame", LEGACY_WARP)
     return HeldoutGate(HeldoutGateConfig(**kw))
 
 

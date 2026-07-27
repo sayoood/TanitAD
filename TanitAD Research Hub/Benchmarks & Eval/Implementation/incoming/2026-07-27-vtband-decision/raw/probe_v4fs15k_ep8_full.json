@@ -1,0 +1,864 @@
+{
+  "_what": "vt_band decision \u2014 the mid-run held-out gate under each option",
+  "primary": "pseudosim_composite_PSS_recovery_progress@twosided_v2",
+  "estimator": "paired episode-cluster bootstrap (B=2000, unit = held-out episode); NEVER overlapping_holdout_se",
+  "ckpt": "/workspace/models/flagship-v4-fromscratch-15k/ckpt_step15000.pt",
+  "ckpt_step": 15000,
+  "FROM_SCRATCH_values_not_quotable": false,
+  "head_cfg": {
+    "cond_vtarget": true,
+    "cond_route": true,
+    "goal_dropout": 0.5,
+    "sel_gate_trained": 0.1101440042257309,
+    "vt_gate_trained": 0.3835747241973877,
+    "rt_gate_trained": 0.1298595368862152,
+    "n_horizons": 20
+  },
+  "index_zero_means": {
+    "vt_band_0": "v_stop",
+    "vt_band_0_is_a_real_band": true,
+    "vt_band_n_real_bands": 23,
+    "vt_band_dropped_index": 23,
+    "route_0": "ROUTE_LEFT",
+    "route_n_classes_incl_unknown": 4,
+    "route_dropped_index": 4,
+    "route_graded_0": "0.0 == straight (tanh(mean_curv/CURV_TURN_PER_M))",
+    "_read": "index 0 is a REAL class on both categorical channels; neither is a null. route=0 (LEFT) beside route_graded=0.0 (STRAIGHT) is additionally self-inconsistent."
+  },
+  "oracle": {
+    "mechanically_reachable": true,
+    "how": "pseudosim.pseudo_evaluate already takes goals=<obj> and calls goals.get(ep_i, last, device); DeployableSurfacePlanner.traj merges that dict into kw. So a per-window oracle needs NO signature change \u2014 unlike 'produced'. HeldoutGate.probe simply never passes goals=.",
+    "blocker_1_labels_not_in_scope": "the gate is handed val EPISODE objects (train_flagship_v4: hg_eps = val_eps[:n]), not FlagshipV4Dataset rows. vt_band/route are minted per WINDOW by v4_labels from full-episode poses, so they are re-derivable \u2014 but that is a new minting pass inside the training loop, on every probe, at the gate's own stride.",
+    "blocker_2_leaks": "route/route_graded/vt_band are minted from the ego's own FUTURE poses (route <= 25 s forward; vt_band = the 85th percentile of future speed over 10-20 s). An early-stop that stops the run on a signal computed from the future is not measuring the deployable surface, and GATE_PROTOCOL 0.8 already demotes oracle-fed MODE-B numbers for exactly this reason.",
+    "blocker_3_FATAL_undefined_at_the_probe_points": "\u26d4 The gate does not probe the logged state. It probes the ego ROTATED by dyaw in (-8, 0, +8) deg (heldout_gate.probe_grid). The oracle label is minted from the UNPERTURBED future poses, so at the two perturbed points \u2014 2 of the 3 grid points, and the only ones on which `recovery` is even defined \u2014 the 'true' goal is the goal of a state the planner is not in. Feeding it makes the probe measure recovery-toward-a-goal-for-a-different-pose. There is no true label for a synthesised state, so this is not a data gap that could be closed by plumbing.",
+    "verdict": "REFUSED. Available in principle, leaking in practice, and ill-defined at 2 of the gate's 3 grid points."
+  },
+  "reference_option": "dropped",
+  "train_frame": "CanonicalFrame(height=256, width=256, f_ref=266.0, projection='pinhole')",
+  "options": {
+    "crash_today": {
+      "meaning": "kw = {} \u2014 no goal channels at all. The head REFUSES (ValueError). This is the shipped default and the RED baseline: the gate cannot run.",
+      "gate_runs": false,
+      "error_type": "ValueError",
+      "error": "cond_vtarget is on but no vt_band supplied"
+    },
+    "zeros_naive": {
+      "meaning": "band0's categoricals AND vt_speed = 0 \u2014 literally 'the zeros the provenance promises'. \u26d4 vt_speed = 0 makes the selector rank up the maximally decelerating candidate (v_goal = (v0-5)+), which brakes the probe and NaNs out `recovery`. Priced as a TRAP, not a candidate.",
+      "gate_runs": true,
+      "probe_value": 0.568518,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 2.731259,
+        "cross_track_end_m_p95": 10.273253,
+        "cross_track_hold_matched_m_mean": 2.304735,
+        "recovery_mean": 0.04506,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 24.672533,
+        "along_track_end_m_p95": 70.508223,
+        "ego_progress_mean": 0.829614,
+        "ego_progress_raw_ratio_mean": 0.835136,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=zeros_naive: band0's categoricals AND vt_speed = 0 \u2014 literally 'the zeros the provenance promises'. \u26d4 vt_speed = 0 makes the selector rank up the maximally decelerating candidate (v_goal = (v0-5)+), which brakes the probe and NaNs out `recovery`. Priced as a TRAP, not a candidate.",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "zeros_naive",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      },
+      "paired_vs_reference": {
+        "delta": -0.0697,
+        "lo": -0.0991,
+        "hi": -0.0425,
+        "ci95": 0.0283,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      }
+    },
+    "band0": {
+      "meaning": "vt_band=0 (v_stop), route=0 (ROUTE_LEFT), route_graded=0.0 (STRAIGHT). The probe measures a planner told it is stopping and turning left, on every held-out window, with a self-contradictory graded channel. The longitudinal selection term stays ON (vt_keep=True).",
+      "gate_runs": true,
+      "probe_value": 0.57612,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 2.750958,
+        "cross_track_end_m_p95": 10.273253,
+        "cross_track_hold_matched_m_mean": 2.319814,
+        "recovery_mean": 0.046036,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 24.829223,
+        "along_track_end_m_p95": 70.508223,
+        "ego_progress_mean": 0.840828,
+        "ego_progress_raw_ratio_mean": 0.846346,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=band0: vt_band=0 (v_stop), route=0 (ROUTE_LEFT), route_graded=0.0 (STRAIGHT). The probe measures a planner told it is stopping and turning left, on every held-out window, with a self-contradictory graded channel. The longitudinal selection term stays ON (vt_keep=True).",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "band0",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      },
+      "paired_vs_reference": {
+        "delta": -0.0621,
+        "lo": -0.0878,
+        "hi": -0.0371,
+        "ci95": 0.0254,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      }
+    },
+    "band0_vt_only": {
+      "meaning": "DIAGNOSTIC, not a candidate: vt_band=0 (v_stop) with route=ROUTE_DROPPED. Isolates the VTARGET half of band0's penalty.",
+      "gate_runs": true,
+      "probe_value": 0.580459,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 2.768639,
+        "cross_track_end_m_p95": 10.270167,
+        "cross_track_hold_matched_m_mean": 2.335784,
+        "recovery_mean": 0.04686,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 24.992215,
+        "along_track_end_m_p95": 70.55284,
+        "ego_progress_mean": 0.846957,
+        "ego_progress_raw_ratio_mean": 0.8535,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=band0_vt_only: DIAGNOSTIC, not a candidate: vt_band=0 (v_stop) with route=ROUTE_DROPPED. Isolates the VTARGET half of band0's penalty.",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "band0_vt_only",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      },
+      "paired_vs_reference": {
+        "delta": -0.0578,
+        "lo": -0.0836,
+        "hi": -0.0333,
+        "ci95": 0.0252,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      }
+    },
+    "band0_route_only": {
+      "meaning": "DIAGNOSTIC, not a candidate: route=0 (ROUTE_LEFT) + route_graded=0.0 with vt_band=VT_DROPPED. Isolates the ROUTE half of band0's penalty.",
+      "gate_runs": true,
+      "probe_value": 0.638856,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 2.94452,
+        "cross_track_end_m_p95": 10.289179,
+        "cross_track_hold_matched_m_mean": 2.527873,
+        "recovery_mean": 0.044502,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 27.080503,
+        "along_track_end_m_p95": 71.132648,
+        "ego_progress_mean": 0.934695,
+        "ego_progress_raw_ratio_mean": 0.980882,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=band0_route_only: DIAGNOSTIC, not a candidate: route=0 (ROUTE_LEFT) + route_graded=0.0 with vt_band=VT_DROPPED. Isolates the ROUTE half of band0's penalty.",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "band0_route_only",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      },
+      "paired_vs_reference": {
+        "delta": 0.0006,
+        "lo": -0.001,
+        "hi": 0.0024,
+        "ci95": 0.0017,
+        "p_delta_gt0": 0.747,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      }
+    },
+    "dropped": {
+      "meaning": "vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4), route_graded=0.0. The probe measures the deployed NO-GOAL surface, on the embedding rows goal_dropout=0.5 trains on ~50 % of every batch. The longitudinal selection term is masked OFF (vt_keep=False).",
+      "gate_runs": true,
+      "probe_value": 0.638251,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 2.971035,
+        "cross_track_end_m_p95": 10.272095,
+        "cross_track_hold_matched_m_mean": 2.548607,
+        "recovery_mean": 0.042706,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 27.302931,
+        "along_track_end_m_p95": 71.185729,
+        "ego_progress_mean": 0.935099,
+        "ego_progress_raw_ratio_mean": 0.991341,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=dropped: vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4), route_graded=0.0. The probe measures the deployed NO-GOAL surface, on the embedding rows goal_dropout=0.5 trains on ~50 % of every batch. The longitudinal selection term is masked OFF (vt_keep=False).",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "dropped",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      }
+    },
+    "produced": {
+      "meaning": "vt_band/route/route_graded derived by the model's own goal_head from the encoded observation window only. No future, no label. The probe measures the DEPLOYABLE surface \u2014 what the car would actually have.",
+      "gate_runs": true,
+      "probe_value": 0.622831,
+      "n_windows_total": 528,
+      "n_windows_finite": 528,
+      "n_episodes": 8,
+      "planner_calls": 528,
+      "components_admitted": {
+        "ego_progress": 5.0,
+        "recovery": 5.0
+      },
+      "grid": {
+        "dlat_m": [
+          0.0
+        ],
+        "dyaw_deg": [
+          -8.0,
+          0.0,
+          8.0
+        ],
+        "dlon_steps": [
+          0
+        ],
+        "n_points": 3,
+        "lateral_axis": "REFUSED",
+        "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+        "warped_axes": [
+          "heading"
+        ],
+        "unwarped_axes": [
+          "longitudinal (real frames at an index offset)"
+        ]
+      },
+      "lateral": {
+        "cross_track_end_m_mean": 3.014082,
+        "cross_track_end_m_p95": 10.233467,
+        "cross_track_hold_matched_m_mean": 2.548981,
+        "recovery_mean": 0.035203,
+        "recovery_n_finite": 352,
+        "_read": "recovery = 1 - xt_end/xt_hold; the LATERAL axis of the composite"
+      },
+      "longitudinal": {
+        "along_track_end_m_mean": 27.365723,
+        "along_track_end_m_p95": 70.955837,
+        "ego_progress_mean": 0.91463,
+        "ego_progress_raw_ratio_mean": 1.006318,
+        "ego_progress_n_finite": 528,
+        "human_along_track_m_mean": 27.472747,
+        "_read": "ego_progress = plan along-track / human along-track; the LONGITUDINAL axis of the composite"
+      },
+      "comfort_mean": 0.0,
+      "surface_provenance": {
+        "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+        "selected_not_oracle": true,
+        "goal_conditioning": "vtband-option=produced: vt_band/route/route_graded derived by the model's own goal_head from the encoded observation window only. No future, no label. The probe measures the DEPLOYABLE surface \u2014 what the car would actually have.",
+        "horizons": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "amp": false,
+        "vtband_option": "produced",
+        "protocol": "goal_kwargs_fn(states, v0)"
+      },
+      "paired_vs_reference": {
+        "delta": -0.0154,
+        "lo": -0.0222,
+        "hi": -0.0083,
+        "ci95": 0.0069,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      }
+    }
+  },
+  "degradation": {
+    "zeros_naive": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.568518,
+      "degraded_primary": 0.220526,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.348,
+        "lo": -0.3684,
+        "hi": -0.3263,
+        "ci95": 0.021,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 24.672533,
+      "along_track_m_mean_degraded": 35.988554,
+      "ego_progress_baseline": 0.829614,
+      "ego_progress_degraded": 0.29644,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.04506,
+      "recovery_mean_degraded": 0.089901,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 340
+    },
+    "band0": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.57612,
+      "degraded_primary": 0.220526,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.3556,
+        "lo": -0.3781,
+        "hi": -0.3315,
+        "ci95": 0.0233,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 24.829223,
+      "along_track_m_mean_degraded": 35.988554,
+      "ego_progress_baseline": 0.840828,
+      "ego_progress_degraded": 0.29644,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.046036,
+      "recovery_mean_degraded": 0.089901,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 340
+    },
+    "band0_vt_only": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.580459,
+      "degraded_primary": 0.220807,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.3597,
+        "lo": -0.3818,
+        "hi": -0.3364,
+        "ci95": 0.0227,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 24.992215,
+      "along_track_m_mean_degraded": 35.978409,
+      "ego_progress_baseline": 0.846957,
+      "ego_progress_degraded": 0.296492,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.04686,
+      "recovery_mean_degraded": 0.090681,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 340
+    },
+    "band0_route_only": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.638856,
+      "degraded_primary": 0.222295,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.4166,
+        "lo": -0.4475,
+        "hi": -0.3822,
+        "ci95": 0.0326,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 27.080503,
+      "along_track_m_mean_degraded": 36.141976,
+      "ego_progress_baseline": 0.934695,
+      "ego_progress_degraded": 0.294529,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.044502,
+      "recovery_mean_degraded": 0.099862,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 339
+    },
+    "dropped": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.638251,
+      "degraded_primary": 0.22258,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.4157,
+        "lo": -0.4461,
+        "hi": -0.3823,
+        "ci95": 0.0319,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 27.302931,
+      "along_track_m_mean_degraded": 36.125605,
+      "ego_progress_baseline": 0.935099,
+      "ego_progress_degraded": 0.294325,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.042706,
+      "recovery_mean_degraded": 0.101147,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 339
+    },
+    "produced": {
+      "mode": "random_select",
+      "drift_m": 3.0,
+      "baseline_primary": 0.622831,
+      "degraded_primary": 0.221787,
+      "paired_delta_degraded_minus_baseline": {
+        "delta": -0.401,
+        "lo": -0.43,
+        "hi": -0.3713,
+        "ci95": 0.0294,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 528,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "n_jointly_finite": 528
+      },
+      "DIRECTION_OK_composite_went_DOWN": true,
+      "along_track_m_mean_baseline": 27.365723,
+      "along_track_m_mean_degraded": 36.976857,
+      "ego_progress_baseline": 0.91463,
+      "ego_progress_degraded": 0.288831,
+      "_slow_plan_artefact_check": "if along_track collapsed AND recovery_n_finite fell, the composite move is the NaN artefact, not a defect",
+      "recovery_mean_baseline": 0.035203,
+      "recovery_mean_degraded": 0.110438,
+      "recovery_n_finite_baseline": 352,
+      "recovery_n_finite_degraded": 339
+    }
+  },
+  "early_stop": {
+    "zeros_naive": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.348 [-0.3684, -0.3263], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    },
+    "band0": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.3556 [-0.3781, -0.3315], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    },
+    "band0_vt_only": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.3597 [-0.3818, -0.3364], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    },
+    "band0_route_only": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.4166 [-0.4475, -0.3822], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    },
+    "dropped": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.4157 [-0.4461, -0.3823], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    },
+    "produced": {
+      "STOPS_the_degraded_arm": true,
+      "worse_streak": 2,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.401 [-0.43, -0.3713], paired_episode_cluster_bootstrap, n_episodes=8. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "separated_worse_per_probe": [
+        false,
+        true,
+        true
+      ],
+      "_rule": "incumbent at probe 0, the degraded arm at probes 1 and 2; patience=2, so a working gate must reach stop=True"
+    }
+  }
+}

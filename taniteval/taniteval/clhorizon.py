@@ -69,7 +69,11 @@ __all__ = ["W", "DT", "WHEELBASE", "LOOKAHEAD_STEP", "WP_STEPS", "WP_IDX",
            "HORIZON_CEILING_K", "sampling_homography", "warp_batch",
            "wp_to_control", "wrap_angle", "V4Planner", "CallablePlanner",
            "corridor_rollout", "emit", "corridor_from_perwindow",
-           "horizon_windows"]
+           "horizon_windows",
+           # projection-aware re-render (2026-07-27)
+           "DEPLOYED_WARP_HW", "DEPLOYED_WARP_FRAME", "LEGACY_WARP",
+           "WarpFrameRefused", "as_warp_frame", "assert_warp_frame",
+           "sampling_source_grid", "warp_batch_grid", "warp_frames"]
 
 # --- loop constants: e1a_horizon.py / lowood_lanekeep.py / closedloop.py ---- #
 W = 8                     # predictor window
@@ -141,6 +145,404 @@ def warp_batch(fw, Hs):
     out = F.grid_sample(fw.reshape(b * Wn, C, Hh, Ww), grid, mode="bilinear",
                         padding_mode="border", align_corners=True)
     return out.reshape(b, Wn, C, Hh, Ww)
+
+
+# =========================================================================== #
+# PROJECTION-AWARE RE-RENDER (2026-07-27)                                     #
+# =========================================================================== #
+# WHY THIS EXISTS, AND WHAT WAS ACTUALLY WRONG.
+#
+# ``sampling_homography`` above is the ONLY re-render in the closed-loop stack:
+# ``corridor_rollout`` (the gate CO-PRIMARY surface at K > 20) and
+# ``pseudosim.pseudo_evaluate`` (the surface of the mid-run held-out early-stop)
+# both call it, with **no f/c override**. Its ``f=F_EFF=266`` / ``c=CXY=128`` are
+# the DEPLOYED 256x256 pinhole crop's intrinsics. v5's canonical frame is
+# **176x624 CYLINDRICAL at f_ref 305.5775** (read from the cache's own
+# ``_geometry.json``), so on v5 the shipped warp is applied with the wrong focal,
+# the wrong principal point, and — the part no constant can fix — **the wrong
+# PROJECTION MODEL**.
+#
+# ⭐ THE PRECISE STATEMENT, because "a cylinder is not a homography" is TOO
+#    COARSE and would have sent this fix in the wrong direction:
+#
+#   * **YAW is a homography on a cylinder — just not THIS one.** On an
+#     equidistant-azimuth raster the ray is ``(sin phi, y_n, cos phi)`` with
+#     ``phi = (u - (W-1)/2)/f_ref``; a camera yaw ``psi`` sends
+#     ``phi -> phi + psi`` and leaves ``y_n`` untouched, so in PIXELS the map is
+#     ``u -> u + f_ref*psi``, ``v -> v``: a pure TRANSLATION, exact at arbitrary
+#     depth, hence trivially a 3x3 matrix. The deployed ``K R K^-1`` is a
+#     DIFFERENT matrix, and that is the whole defect on the yaw axis — which is
+#     the ONLY warped axis pseudo-simulation uses (its lateral axis is refused;
+#     see :mod:`taniteval.pseudosim`).
+#   * ⛔ **LATERAL is NOT a homography on a cylinder.** The ground-plane
+#     displacement lands ``phi_1 = atan2(X, Z)`` with ``X`` depending on ``y_n``
+#     through the plane intersection — transcendental in ``(u, v)``, not a
+#     projective map of the raster. No 3x3 matrix expresses it; a general
+#     sampling field does. MEASURED: the best-fit homography (DLT over the full
+#     176x624 field) still leaves a large residual — reported in the audit JSON.
+#
+# ⇒ **The RESAMPLER (``grid_sample``) can express the correct re-render on both
+#    projections; the 3x3 REPRESENTATION cannot express the lateral axis.** So
+#    the fix is to compute a source-pixel FIELD from the frame's own projection
+#    and feed the same resampler — not to swap 266 for 305.5775.
+#
+# THE MODEL IS UNCHANGED. This is the same physical assumption the homography
+# encodes (a rigid displacement of the camera, with off-plane content
+# approximated by the ground plane at ``h_cam``); only the projection through
+# which it is expressed changes. The flat-road caveat that made pseudosim REFUSE
+# the lateral axis is NOT repaired here and must not be read as repaired.
+#
+# ⛔ THE DEPLOYED PATH IS UNTOUCHED. A canonical 256x256/266/pinhole frame (or
+# ``frame=None``) routes to ``sampling_homography`` + ``warp_batch`` VERBATIM, so
+# every published closed-loop number is reproducible bit-for-bit. That is pinned
+# by ``test_warp_geometry.py::test_deployed_path_is_bit_identical``.
+
+#: The frame the shipped homography was built for — 256x256 pinhole at f 266.
+DEPLOYED_WARP_HW = (256, 256)
+
+
+class WarpFrameRefused(ValueError):
+    """The declared frame and the re-render disagree — refuse, never re-render.
+
+    Raised instead of silently producing a number, because a silent mis-render
+    is the C13 shape: an instrument that cannot report its own failure.
+    """
+
+
+class _WarpFrame:
+    """The geometry a re-render needs, duck-typed off ``CanonicalFrame``.
+
+    ⚠️ Deliberately NOT an import of ``tanitad.data.calib.CanonicalFrame``:
+    :mod:`taniteval.clhorizon` must stay importable without the stack layout
+    (its whole test suite runs on CPU with no stack model). Callers pass the
+    frame object they ALREADY HAVE — read from the cache's ``_geometry.json``,
+    the ``*.v2ep.pt`` payload or the checkpoint's provenance — so nothing here
+    re-derives or re-hard-codes a geometry.
+    """
+
+    __slots__ = ("height", "width", "f_ref", "projection")
+
+    def __init__(self, height, width, f_ref, projection):
+        self.height, self.width = int(height), int(width)
+        self.f_ref, self.projection = float(f_ref), str(projection)
+        if self.projection not in ("pinhole", "cylindrical"):
+            raise WarpFrameRefused(
+                f"unknown projection {self.projection!r}; the re-render is "
+                f"defined for 'pinhole' and 'cylindrical' only. A frame whose "
+                f"projection this module cannot express must be REFUSED, not "
+                f"approximated by the nearest one it can.")
+        if not (self.f_ref > 0) or self.height < 8 or self.width < 8:
+            raise WarpFrameRefused(f"degenerate frame {self!r}")
+
+    # the boresight, in OUTPUT pixels. `calib.cylindrical_rays` /
+    # `pinhole_rectify_grid` both put it at ((W-1)/2, (H-1)/2), and
+    # `calib.centred_subframe` keeps it there EXACTLY under a centred slice
+    # (the (W-1)/2 and (w-1)/2 halves cancel against the integer margin), so a
+    # 176x624 sub-frame of the 256x640 cache has its principal point at its own
+    # geometric centre. The clip's NATIVE per-clip (cx, cy) is already absorbed
+    # by `cylindrical_rectify`, which centres the ray fan on the boresight.
+    @property
+    def cx(self):
+        return (self.width - 1) / 2.0
+
+    @property
+    def cy(self):
+        return (self.height - 1) / 2.0
+
+    @property
+    def hw(self):
+        return (self.height, self.width)
+
+    @property
+    def is_deployed(self):
+        """EXACTLY the frame ``sampling_homography``'s constants describe."""
+        return (self.hw == DEPLOYED_WARP_HW and self.f_ref == F_EFF
+                and self.projection == "pinhole")
+
+    def to_dict(self):
+        return {"height": self.height, "width": self.width,
+                "f_ref": self.f_ref, "projection": self.projection}
+
+    def tag(self):
+        f = f"{self.f_ref:.4f}".rstrip("0").rstrip(".")
+        return f"{self.height}x{self.width}f{f}{self.projection[:3]}"
+
+    def __repr__(self):
+        return f"_WarpFrame({self.tag()})"
+
+
+#: The frame the shipped constants describe. ``frame=None`` resolves to this.
+DEPLOYED_WARP_FRAME = _WarpFrame(256, 256, F_EFF, "pinhole")
+
+
+class _LegacyWarp:
+    """Sentinel: *"apply the shipped 266/128 constants to whatever raster."*
+
+    ⚠️ This is the PRE-2026-07-27 behaviour, and it is NOT a geometry. It exists
+    so the handful of call sites that deliberately pin legacy pixel-for-pixel
+    behaviour — the synthetic-raster plumbing tests, and
+    ``test_port_is_tensor_identical_to_the_driver``, which asserts bit-identity
+    against the ``incoming/`` driver — can SAY SO, instead of getting it by
+    default and by silence. Every block it produces is stamped
+    ``legacy_unvalidated: true``, so a number rendered this way can never be
+    mistaken for one rendered on a declared frame.
+    """
+
+    def __repr__(self):
+        return "LEGACY_WARP"
+
+
+#: See :class:`_LegacyWarp`. Never use for a published geometry.
+LEGACY_WARP = _LegacyWarp()
+
+
+def as_warp_frame(frame):
+    """Normalise ``None`` / ``LEGACY_WARP`` / a ``CanonicalFrame`` / a dict.
+
+    ``None`` and ``LEGACY_WARP`` both resolve to the DEPLOYED 256x256 pinhole
+    frame — the pre-2026-07-27 behaviour of every call site, unchanged. They
+    differ only in what :func:`assert_warp_frame` will let them be applied to.
+    """
+    if frame is None or frame is LEGACY_WARP:
+        return DEPLOYED_WARP_FRAME
+    if isinstance(frame, _WarpFrame):
+        return frame
+    if isinstance(frame, dict):
+        return _WarpFrame(frame["height"], frame["width"], frame["f_ref"],
+                          frame.get("projection", "pinhole"))
+    try:
+        return _WarpFrame(frame.height, frame.width, frame.f_ref,
+                          frame.projection)
+    except AttributeError as ex:                                  # noqa: BLE001
+        raise WarpFrameRefused(
+            f"cannot read a geometry off {frame!r}: a frame must expose "
+            f"height/width/f_ref/projection (a tanitad CanonicalFrame, its "
+            f"to_dict(), or None for the deployed 256x256 pinhole frame). "
+            f"{ex}") from ex
+
+
+def assert_warp_frame(frame, fw=None, *, where="warp"):
+    """⭐ THE GUARD. Refuse a re-render whose frame and pixels disagree.
+
+    Two failures, both of which HAVE happened and neither of which raised
+    anything before:
+
+    1. ``frame=None`` (⇒ the 266/128 pinhole warp) on frames that are not
+       256x256. This is exactly the v5 defect: the shipped warp silently applied
+       to a 176x624 cylindrical raster.
+    2. a declared frame whose ``(H, W)`` is not the shape of the tensor handed
+       in — a sub-frame configured but never applied, or applied twice.
+
+    Returns a provenance dict (recorded in every emitted block); raises
+    :class:`WarpFrameRefused` otherwise. **The falsifier is published in the
+    return value**: any ``fw`` whose trailing shape differs from ``frame.hw``.
+    """
+    fr = as_warp_frame(frame)
+    hw = None if fw is None else (int(fw.shape[-2]), int(fw.shape[-1]))
+    if frame is LEGACY_WARP:
+        return {"frame": fr.to_dict(), "frame_tag": "LEGACY_WARP",
+                "warp_model": "pinhole_ground_plane_homography",
+                "is_deployed_frame": True, "legacy_unvalidated": True,
+                "path": "sampling_homography+warp_batch (VERBATIM)",
+                "principal_point_px": [CXY, CXY],
+                "raster_hw": list(hw) if hw else None,
+                "_note": ("LEGACY_WARP: the shipped 266/128 constants applied "
+                          "to this raster WITHOUT a declared geometry. Pins "
+                          "pre-2026-07-27 behaviour; never a published "
+                          "geometry."),
+                "falsifier": "n/a — this path declares itself unvalidated"}
+    if frame is None and hw is not None and hw != DEPLOYED_WARP_HW:
+        raise WarpFrameRefused(
+            f"[{where}] no CanonicalFrame was supplied, so the re-render would "
+            f"use the DEPLOYED 256x256 pinhole intrinsics (f={F_EFF}, "
+            f"c={CXY}) — but the frames handed in are {hw[0]}x{hw[1]}. That is "
+            f"the v5 defect verbatim: a pinhole homography applied to a raster "
+            f"it does not describe. Pass frame=<the CanonicalFrame the cache "
+            f"was BUILT at> (read it from the cache's _geometry.json / the "
+            f"*.v2ep.pt payload / the checkpoint provenance — do not "
+            f"re-derive it).")
+    if hw is not None and hw != fr.hw:
+        raise WarpFrameRefused(
+            f"[{where}] declared frame {fr.tag()} is {fr.height}x{fr.width} but "
+            f"the frames handed in are {hw[0]}x{hw[1]}. A sub-frame that is "
+            f"declared and not applied (or applied twice) re-renders through a "
+            f"principal point that is not the raster's.")
+    return {"frame": fr.to_dict(), "frame_tag": fr.tag(),
+            "warp_model": ("pinhole_ground_plane_homography"
+                           if fr.projection == "pinhole"
+                           else "cylindrical_ground_plane_field"),
+            "is_deployed_frame": bool(fr.is_deployed),
+            "path": ("sampling_homography+warp_batch (VERBATIM)"
+                     if fr.is_deployed else "sampling_source_grid+warp_batch_grid"),
+            "principal_point_px": [fr.cx, fr.cy],
+            "falsifier": ("any frame tensor whose trailing (H, W) differs from "
+                          "the declared frame, or a non-256x256 raster with no "
+                          "frame declared at all")}
+
+
+def sampling_source_grid(dlat_m, dyaw_deg, frame=None, h_cam=CAM_HEIGHT_M,
+                         pitch_deg=CAM_PITCH_DEG, device="cpu"):
+    """Per-destination-pixel SOURCE coordinates for a displaced virtual camera.
+
+    Returns ``(su, sv, valid)``, each ``[H, W]``: for every pixel of the
+    RE-RENDERED (displaced) frame, where to sample the REAL frame, and whether
+    that sample has a ground-plane preimage in front of the camera.
+
+    THE DERIVATION, in one line, so the model is auditable rather than asserted.
+    With ``X_new = R X_old + t``, ``R = Ry(-psi)``, ``t = -R C``,
+    ``C = (dlat, 0, 0)`` (the displaced camera's centre in the real camera's
+    frame) and the ground plane ``n . X_old = d`` (``n = (0, cos p, sin p)``,
+    ``d = h_cam``) — **exactly the transform ``sampling_homography`` encodes** —
+    a destination ray ``d2`` back-maps to the source direction
+
+        ``X_old  ∝  R^T d2  +  C * (n . R^T d2) / (d - n . C)``
+
+    which is scale-free, needs no explicit depth, and is **branch-free**: at
+    ``C = 0`` (pure yaw) it collapses to ``R^T d2``, i.e. the depth-INDEPENDENT
+    exact rotation, with no ground plane involved at all.
+
+    ⭐ **It reduces to the shipped homography exactly.** Sherman-Morrison gives
+    ``(I - C n^T/d)^-1 = I + C n^T/(d - n^T C)``, so for a PINHOLE frame this
+    field is algebraically ``inv(K (R + t n^T/d) K^-1)`` applied to the pixel
+    grid — the return value of :func:`sampling_homography` — with ``K`` built
+    from the FRAME's own ``f_ref`` and ``((W-1)/2, (H-1)/2)``. Asserted to
+    ``< 1e-9`` px in ``test_warp_geometry.py``.
+
+    ⚠️ ``valid`` is False where the destination ray has NO ground-plane preimage
+    ahead (above the horizon at ``|dlat| > 0``). The shipped homography produced
+    a finite, meaningless coordinate there and ``padding_mode="border"``
+    clamped it; that behaviour is PRESERVED (the coordinates are not modified),
+    but the fraction is now reported instead of being invisible. At ``dlat = 0``
+    — the only axis pseudo-simulation warps — ``valid`` is all True.
+    """
+    fr = as_warp_frame(frame)
+    H, W, f = fr.height, fr.width, fr.f_ref
+    ys, xs = torch.meshgrid(
+        torch.arange(H, dtype=torch.float64, device=device),
+        torch.arange(W, dtype=torch.float64, device=device), indexing="ij")
+    a = (xs - fr.cx) / f
+    bq = (ys - fr.cy) / f
+    if fr.projection == "cylindrical":
+        dx, dy, dz = torch.sin(a), bq, torch.cos(a)
+    else:
+        dx, dy, dz = a, bq, torch.ones_like(a)
+
+    psi = math.radians(float(dyaw_deg))
+    # Ry is `sampling_homography`'s matrix VERBATIM; we need R^T = Ry(+psi).
+    cp, sp = math.cos(-psi), math.sin(-psi)
+    # R^T d2  (R^T = transpose of [[cp,0,sp],[0,1,0],[-sp,0,cp]])
+    rx = cp * dx - sp * dz
+    ry = dy
+    rz = sp * dx + cp * dz
+
+    p = math.radians(float(pitch_deg))
+    n0, n1, n2 = 0.0, math.cos(p), math.sin(p)
+    dpl = float(h_cam)
+    c0, c1, c2 = float(dlat_m), 0.0, 0.0
+    nd = n0 * rx + n1 * ry + n2 * rz                 # n . R^T d2
+    denom = dpl - (n0 * c0 + n1 * c1 + n2 * c2)      # d - n . C
+    if denom == 0.0:
+        raise WarpFrameRefused(
+            f"the displaced camera lies ON the ground plane (d - n.C == 0) at "
+            f"dlat={dlat_m}, h_cam={h_cam}, pitch={pitch_deg} — no re-render "
+            f"is defined there.")
+    s = nd / denom
+    X = rx + c0 * s
+    Y = ry + c1 * s
+    Z = rz + c2 * s
+    # ⚠️ The ground plane enters ONLY through the ``C * s`` term. At ``C == 0``
+    # (pure yaw) it cancels identically, the map is ``R^T d2``, and there is no
+    # plane intersection to be in front of or behind: the re-render is TOTAL and
+    # depth-free. Marking those pixels invalid on the sign of ``lambda`` would
+    # be a bookkeeping artefact, not a geometric fact — and it would flag half
+    # of every yaw probe, i.e. the whole surface pseudo-simulation uses.
+    uses_plane = (c0 != 0.0) or (c1 != 0.0) or (c2 != 0.0)
+    valid = ((nd * denom) > 0 if uses_plane
+             else torch.ones_like(nd, dtype=torch.bool))
+
+    if fr.projection == "cylindrical":
+        rho = torch.sqrt(X * X + Z * Z)
+        su = fr.cx + f * torch.atan2(X, Z)
+        sv = fr.cy + f * (Y / rho.clamp_min(1e-12))
+        valid = valid & (rho > 1e-12)
+    else:
+        su = fr.cx + f * (X / Z)
+        sv = fr.cy + f * (Y / Z)
+    return su, sv, valid
+
+
+def warp_batch_grid(fw, su, sv):
+    """``warp_batch`` with the source field given directly instead of a 3x3.
+
+    ``su``/``sv`` are ``[b, H, W]`` float64 source coordinates. The
+    normalisation, ``mode``, ``padding_mode`` and ``align_corners`` are
+    IDENTICAL to :func:`warp_batch` — this changes what is sampled, never how.
+    """
+    b, Wn, C, Hh, Ww = fw.shape
+    su = su.to(fw.device).to(torch.float64)
+    sv = sv.to(fw.device).to(torch.float64)
+    gx = 2.0 * su / (Ww - 1) - 1.0
+    gy = 2.0 * sv / (Hh - 1) - 1.0
+    grid = torch.stack([gx, gy], dim=-1)
+    grid = grid[:, None].expand(-1, Wn, -1, -1, -1).reshape(b * Wn, Hh, Ww, 2).float()
+    out = F.grid_sample(fw.reshape(b * Wn, C, Hh, Ww), grid, mode="bilinear",
+                        padding_mode="border", align_corners=True)
+    return out.reshape(b, Wn, C, Hh, Ww)
+
+
+def warp_frames(fw, dlat_m, dyaw_deg, frame=None, *, h_cam=CAM_HEIGHT_M,
+                pitch_deg=CAM_PITCH_DEG, where="warp_frames"):
+    """⭐ THE ONE RE-RENDER ENTRY POINT. ``[b, W, C, H, W'] -> same shape``.
+
+    ``dlat_m`` / ``dyaw_deg`` are scalars or per-batch sequences of length ``b``.
+
+    * ``frame=None`` or the DEPLOYED 256x256/266/pinhole frame ⇒
+      :func:`sampling_homography` + :func:`warp_batch`, VERBATIM. Bit-identical
+      to the pre-2026-07-27 path; no published number moves.
+    * any other frame ⇒ :func:`sampling_source_grid` + :func:`warp_batch_grid`,
+      i.e. the same physical displacement expressed in THAT frame's projection.
+
+    The invalid (no-ground-plane-preimage) fraction of the last call is exposed
+    as ``warp_frames.last_invalid_frac`` for the emitted provenance.
+    """
+    b = int(fw.shape[0])
+    fr = as_warp_frame(frame)
+    assert_warp_frame(frame, fw, where=where)
+    dl = [float(dlat_m)] * b if np.isscalar(dlat_m) or isinstance(
+        dlat_m, (int, float)) else [float(x) for x in dlat_m]
+    dy = [float(dyaw_deg)] * b if np.isscalar(dyaw_deg) or isinstance(
+        dyaw_deg, (int, float)) else [float(x) for x in dyaw_deg]
+    if len(dl) != b or len(dy) != b:
+        raise WarpFrameRefused(
+            f"[{where}] got {len(dl)} dlat and {len(dy)} dyaw for a batch of {b}")
+    if fr.is_deployed:
+        Hs = torch.stack([sampling_homography(dl[i], dy[i], h_cam=h_cam,
+                                              pitch_deg=pitch_deg)
+                          for i in range(b)])
+        warp_frames.last_invalid_frac = 0.0
+        warp_frames.last_frame = fr
+        return warp_batch(fw, Hs)
+    if b > 1 and len(set(dl)) == 1 and len(set(dy)) == 1:
+        # pseudo_evaluate warps a whole chunk at ONE grid point, so the field is
+        # the same for every element. Build it once. (Numerically identical —
+        # `expand` is a view of the same tensor, not a re-derivation.)
+        one = sampling_source_grid(dl[0], dy[0], fr, h_cam=h_cam,
+                                   pitch_deg=pitch_deg, device="cpu")
+        fields = [one] * b
+    else:
+        fields = [sampling_source_grid(dl[i], dy[i], fr, h_cam=h_cam,
+                                       pitch_deg=pitch_deg, device="cpu")
+                  for i in range(b)]
+    su = torch.stack([f_[0] for f_ in fields])
+    sv = torch.stack([f_[1] for f_ in fields])
+    vmask = torch.stack([f_[2] for f_ in fields])
+    warp_frames.last_invalid_frac = float((~vmask).double().mean())
+    warp_frames.last_frame = fr
+    return warp_batch_grid(fw, su, sv)
+
+
+warp_frames.last_invalid_frac = 0.0
+warp_frames.last_frame = DEPLOYED_WARP_FRAME
 
 
 def wp_to_control(w_look, v):
@@ -223,7 +625,7 @@ class V4Planner:
 # =========================================================================== #
 @torch.no_grad()
 def corridor_rollout(planner, episodes, goals, device, K, *, stride=8, batch=16,
-                     frames_of=None, verbose=False, progress=None):
+                     frames_of=None, verbose=False, progress=None, frame=None):
     """Real-footage-in-the-loop rollout to an ARBITRARY horizon ``K``.
 
     Ported from ``v4_corridor_cl.rollout`` (= ``e1a_horizon.rollout``), with the
@@ -240,6 +642,14 @@ def corridor_rollout(planner, episodes, goals, device, K, *, stride=8, batch=16,
     ``frames_of(ep, a, b)`` returns the ``[W, C, H, W']`` float window; the
     default handles ``ep.frames`` uint8 or float.
 
+    ``frame`` is the :class:`CanonicalFrame` (or its ``to_dict()``) the episodes'
+    pixels were BUILT at — read from the cache, never re-derived. ``None`` means
+    the deployed 256x256 pinhole frame and reproduces every published number
+    bit-for-bit; anything else re-renders through THAT frame's projection
+    (:func:`warp_frames`). ⛔ A non-256x256 raster with ``frame=None`` is
+    REFUSED before the first plan call, because that combination is the v5
+    defect: a pinhole homography silently applied to a cylindrical raster.
+
     Returns the per-window record (``lat``/``yaw`` ``[n, K]``, ``ade2s``,
     ``hd2s``, ``hdK``, ``speed``, ``eid``, ``t0``, ``epi``, ``de_fixed``) or
     ``None`` when no episode is long enough — which is a NOT-MEASURED, never a
@@ -255,11 +665,18 @@ def corridor_rollout(planner, episodes, goals, device, K, *, stride=8, batch=16,
             f"corpus (clips are 190-199 frames; a window needs T - W - K >= 1). "
             f"No episode can produce a window at that horizon.")
     frames_of = frames_of or _default_frames
+    # ⛔ BEFORE any model is touched: refuse a frame/raster disagreement. A bad
+    # geometry must cost zero GPU seconds, exactly as pseudosim's envelope
+    # assertion does.
+    warp_prov = assert_warp_frame(
+        frame, (frames_of(episodes[0], 0, W) if len(episodes) else None),
+        where="clhorizon.corridor_rollout")
 
     rows = {k: [] for k in ("ade2s", "hd2s", "hdK", "speed", "eid", "t0", "epi")}
     lat_all, yaw_all, de_fixed = [], [], []
     fixed_steps = [s for s in FIXED_STEPS if s <= K]
     n_steps_done = 0
+    invalid_frac = 0.0
     for ep_i, ep in enumerate(episodes):
         poses = torch.as_tensor(ep.poses, dtype=torch.float32)
         T = int(poses.shape[0])
@@ -292,11 +709,11 @@ def corridor_rollout(planner, episodes, goals, device, K, *, stride=8, batch=16,
                 wins = [frames_of(ep, int(t0[i] + mstar[i]),
                                   int(t0[i] + mstar[i]) + W) for i in range(b)]
                 fw = torch.stack(wins).to(device)
-                Hs = torch.stack([
-                    sampling_homography(float(dlat[i]),
-                                        float(math.degrees(dpsi[i])))
-                    for i in range(b)])
-                fw = warp_batch(fw, Hs)
+                fw = warp_frames(fw, [float(dlat[i]) for i in range(b)],
+                                 [float(math.degrees(dpsi[i])) for i in range(b)],
+                                 frame, where="clhorizon.corridor_rollout")
+                invalid_frac = max(invalid_frac,
+                                   float(warp_frames.last_invalid_frac))
                 # ---- the injected plan step (the ONLY arm-specific line) ----
                 g = (goals.get(ep_i, (t0 + mstar + W - 1).numpy(), device)
                      if goals is not None else None)
@@ -340,6 +757,8 @@ def corridor_rollout(planner, episodes, goals, device, K, *, stride=8, batch=16,
     out["de_fixed"] = torch.cat(de_fixed)
     out["fixed_steps"] = fixed_steps
     out["_rollout_steps_executed"] = n_steps_done
+    out["_warp"] = dict(warp_prov,
+                        max_no_ground_preimage_frac=round(invalid_frac, 6))
     return out
 
 
