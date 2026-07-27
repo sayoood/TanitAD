@@ -1,0 +1,127 @@
+--- tanitad-eval:/root/taniteval/taniteval/ci.py  (md5 ef925f06febd20a99f5901491fcf75cb, 273 lines)
++++ HEAD:taniteval/taniteval/ci.py  (md5 c92618a02b36f8191a581fb74a491a8d, 356 lines)
+@@ -48,12 +48,72 @@
+     "bootstrap_metrics",
+     "REDUCERS",
+     "resolve_reducer",
++    "DISPLAY_DP",
++    "MAX_DISPLAY_DP",
+ ]
+ 
+ DEFAULT_N_BOOT = 2000
+ _OLD_ESTIMATOR = "overlapping_holdout_se"
+ _NEW_ESTIMATOR = "episode_cluster_bootstrap"
+ 
++#: The program's publication precision for an interval. Everything readable is
++#: rendered here; only :func:`_render_bounds` may go past it, and only when 4 dp
++#: would make the printed interval CONTRADICT the printed verdict.
++DISPLAY_DP = 4
++#: The hard stop for that escalation. Past ~1e-12 a percentile of 2 000 float64
++#: bootstrap draws is not carrying information, it is carrying arithmetic noise,
++#: so the honest output there is a MARKER rather than more digits.
++MAX_DISPLAY_DP = 12
++
++
++def _render_bounds(lo: float, hi: float, separated: bool) -> tuple[int, bool]:
++    """-> ``(decimals, degenerate)`` — a rendering that cannot contradict ``separated``.
++
++    ⛔ **THE DEFECT THIS FIXES (2026-07-27).** ``separated`` is computed on the
++    UNROUNDED bounds (``lo > 0 or hi < 0``) while ``delta``/``lo``/``hi`` were
++    rounded to 4 dp for publication. When the true bounds are ~1e-9 of one sign —
++    which happens whenever two arms are bit-identical or near-identical, e.g. a
++    from-scratch model where the learned gate is exactly 0.0 — the emitted record
++    reads::
++
++        {"delta": 0.0, "lo": 0.0, "hi": 0.0, "separated": true}
++
++    MEASURED in ``…/incoming/2026-07-27-vtband-decision/raw/legA_v5config_structural.json``.
++    ⚠️ **Every stream in this program reads this output**, and an automated gate
++    keying on ``separated`` sees a verdict beside a null effect.
++
++    ⛔ **The statistics are NOT changed** — the unrounded test is the correct one.
++    A rounded-bounds test would silently redefine ``separated`` as "separated by
++    at least 5e-5", which is a *threshold nobody registered* and would flip real
++    verdicts. **The display is what lies, so the display is what is fixed.**
++
++    THE CHOSEN FIX, and why it beats the alternatives
++    --------------------------------------------------
++    **Adaptive precision**: keep 4 dp — so no existing number changes — unless 4
++    dp would put the printed interval on the wrong side of zero, and in that case
++    show exactly as many digits as it takes to agree with the verdict.
++
++    * *"always more significant figures"* was rejected: it changes **every**
++      published number to fix a degenerate case, and 12-dp intervals invite
++      reading bootstrap noise as signal.
++    * *"scientific notation below a threshold"* was rejected: it needs a
++      threshold, and the value is only ever compared against **zero**, so the
++      question is a SIGN question, not a magnitude one. A threshold would have to
++      be tuned and would itself become quotable.
++    * *"a marker alone"* was rejected as the sole fix: a reader who ignores the
++      marker still sees ``0.0 [0.0, 0.0] separated``. The numbers must be right
++      first; the marker is what remains when they cannot be.
++
++    The marker is therefore the FALLBACK, not the mechanism: when even
++    :data:`MAX_DISPLAY_DP` cannot reproduce the verdict — i.e. a bound is smaller
++    than 1e-12, or is exactly 0.0 — ``degenerate`` goes True and the caller emits
++    an explicit field rather than a number that lies more quietly.
++    """
++    for dp in range(DISPLAY_DP, MAX_DISPLAY_DP + 1):
++        if bool(round(lo, dp) > 0 or round(hi, dp) < 0) == separated:
++            return dp, False
++    return MAX_DISPLAY_DP, True
++
+ 
+ # --------------------------------------------------------------------------- #
+ # The DEPRECATED estimator, under its honest name                              #
+@@ -221,17 +281,40 @@
+     d = np.array([float(red(a[sel]) - red(b[sel]))
+                   for sel in _draws(uniq, idx_by_ep, n_boot, seed)])
+     lo, hi = np.percentile(d, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+-    return {"delta": round(point, 4),
+-            "lo": round(float(lo), 4),
+-            "hi": round(float(hi), 4),
+-            "ci95": round(float((hi - lo) / 2.0), 4),
+-            "p_delta_gt0": round(float((d > 0).mean()), 4),
+-            "separated": bool(lo > 0 or hi < 0),
+-            "reducer": _reducer_name(reduce),
+-            "n_windows": int(a.size),
+-            "n_episodes": int(len(uniq)),
+-            "n_boot": int(n_boot),
+-            "estimator": "paired_" + _NEW_ESTIMATOR}
++    lo, hi = float(lo), float(hi)
++    # ⛔ separated is decided on the UNROUNDED bounds — that is the correct test
++    # and it is NOT touched here. Only the RENDERING adapts, so the printed
++    # interval can never contradict the printed verdict. See _render_bounds.
++    separated = bool(lo > 0 or hi < 0)
++    dp, degenerate = _render_bounds(lo, hi, separated)
++    out = {"delta": round(point, dp),
++           "lo": round(lo, dp),
++           "hi": round(hi, dp),
++           "ci95": round((hi - lo) / 2.0, dp),
++           "p_delta_gt0": round(float((d > 0).mean()), 4),
++           "separated": separated,
++           "reducer": _reducer_name(reduce),
++           "n_windows": int(a.size),
++           "n_episodes": int(len(uniq)),
++           "n_boot": int(n_boot),
++           "estimator": "paired_" + _NEW_ESTIMATOR}
++    if dp != DISPLAY_DP:
++        # the record says WHY it is not at the program's 4 dp, so a reader never
++        # has to wonder whether the extra digits mean extra precision.
++        out["display_dp"] = dp
++        out["display_note"] = (
++            f"rendered at {dp} dp, not the usual {DISPLAY_DP}: at {DISPLAY_DP} dp "
++            f"the printed interval would have contradicted separated="
++            f"{separated}. The extra digits are a RENDERING fix, not extra "
++            f"precision — the estimator and the separation test are unchanged.")
++    if degenerate:
++        out["degenerate"] = True
++        out["degenerate_note"] = (
++            f"⛔ |bound| < 1e-{MAX_DISPLAY_DP}: this interval is at float64 "
++            f"resolution, so separated={separated} is arithmetic, not evidence. "
++            f"The arms are effectively IDENTICAL on these windows. Do not quote "
++            f"this as a result and do not let an automated gate act on it.")
++    return out
+ 
+ 
+ def bootstrap_metrics(components, eid, n_boot=DEFAULT_N_BOOT, seed=0,

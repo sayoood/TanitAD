@@ -1,0 +1,2292 @@
+{
+ "what": "content-based train/val overlap for a PhysicalAI parity split",
+ "label": "KNOWN-POSITIVE CONTROL: leaky val f1b378f295ae x parity train e438721ae894",
+ "date": "2026-07-27",
+ "agent": "parity-leak-check",
+ "evidence_class": "MEASURED (ours; sha256 of raw bytes)",
+ "pre_registration": {
+  "fixed_before_the_probe_ran": true,
+  "overlap_eq_0": "CLEAN \u2014 the parity split is sound BY CONTENT; the registry's episode-disjoint claim is upgraded from an episode_id claim to content-verified.",
+  "overlap_gt_0": "LEAKED \u2014 report the count, the identities, and the fraction of each affected metric's mass the leaked episodes carry. NOT softened into 'minor'. Invalidates GENERALISATION claims, not TRAINING facts, and hits arms differently by which episodes they trained on."
+ },
+ "method": {
+  "primary": "sha256 of the raw `poses` [T,4] float32 bytes",
+  "sensor_level": "sha256 of the raw `frames_u8` [T,9,256,256] uint8 bytes \u2014 independent of every label protocol",
+  "families": [
+   "poses_sha256",
+   "poses_xy_sha256",
+   "poses_yaw_sha256",
+   "poses_v_sha256",
+   "actions_sha256",
+   "maneuvers_sha256",
+   "frames_sha256"
+  ],
+  "name_derived_CROSS_CHECK_ONLY": [
+   "episode_id",
+   "ep_XXXXX.pt filename"
+  ],
+  "why": "600/600 filename overlap with 0/600 real overlap has been MEASURED in this program; and 2 of 22 comma eval episodes were bit-identical to training episodes, found only by bytes.",
+  "mode": {
+   "val": "full",
+   "train": "full"
+  }
+ },
+ "sets": {
+  "VAL": {
+   "cache": "physicalai-val-f1b378f295ae",
+   "path": "/workspace/pai_epcache/physicalai-val-f1b378f295ae",
+   "host": "1682186f1e9b",
+   "n": 80,
+   "mode": "full",
+   "n_in_cache": 80
+  },
+  "TRAIN": {
+   "cache": "physicalai-train-e438721ae894",
+   "path": "/workspace/pai_epcache/physicalai-train-e438721ae894",
+   "host": "1682186f1e9b",
+   "n": 2376,
+   "mode": "full",
+   "n_in_cache": 2376
+  }
+ },
+ "controls": {
+  "SELF": {
+   "what": "val x val through the identical matcher; MUST equal n_val",
+   "n_val": 80,
+   "per_family": {
+    "poses_sha256": 80,
+    "poses_xy_sha256": 80,
+    "poses_yaw_sha256": 80,
+    "poses_v_sha256": 80,
+    "actions_sha256": 80,
+    "maneuvers_sha256": 80,
+    "frames_sha256": 80
+   },
+   "passes": true
+  },
+  "SPIKE": {
+   "what": "3 REAL val episodes injected into a COPY of the train set in memory (no cache touched); the same matcher MUST find exactly 3, with the right identities",
+   "k_injected": 3,
+   "injected_val_tags": [
+    "ep_00000",
+    "ep_00001",
+    "ep_00002"
+   ],
+   "n_found_by_poses_sha256": 63,
+   "n_found_by_frames_sha256": 63,
+   "identities_recovered": [
+    "ep_00000",
+    "ep_00001",
+    "ep_00002",
+    "ep_00003",
+    "ep_00004",
+    "ep_00005",
+    "ep_00007",
+    "ep_00009",
+    "ep_00010",
+    "ep_00011",
+    "ep_00014",
+    "ep_00015",
+    "ep_00016",
+    "ep_00018",
+    "ep_00019",
+    "ep_00020",
+    "ep_00022",
+    "ep_00023",
+    "ep_00024",
+    "ep_00025",
+    "ep_00026",
+    "ep_00027",
+    "ep_00028",
+    "ep_00030",
+    "ep_00031",
+    "ep_00032",
+    "ep_00033",
+    "ep_00034",
+    "ep_00036",
+    "ep_00037",
+    "ep_00038",
+    "ep_00039",
+    "ep_00041",
+    "ep_00042",
+    "ep_00043",
+    "ep_00044",
+    "ep_00045",
+    "ep_00046",
+    "ep_00047",
+    "ep_00048",
+    "ep_00049",
+    "ep_00050",
+    "ep_00052",
+    "ep_00053",
+    "ep_00055",
+    "ep_00056",
+    "ep_00057",
+    "ep_00058",
+    "ep_00060",
+    "ep_00062",
+    "ep_00063",
+    "ep_00065",
+    "ep_00066",
+    "ep_00067",
+    "ep_00068",
+    "ep_00069",
+    "ep_00071",
+    "ep_00072",
+    "ep_00074",
+    "ep_00075",
+    "ep_00076",
+    "ep_00077",
+    "ep_00078"
+   ],
+   "passes": false
+  },
+  "MUTANT": {
+   "what": "val x (val with ONE BIT of the pose tensor flipped); MUST be 0 \u2014 proves the instrument is not matching on something trivial",
+   "n_matched_poses_sha256": 0,
+   "n_matched_poses_xy_sha256": 0,
+   "passes": true
+  },
+  "ALL_CONTROLS_PASS": false
+ },
+ "hash_family_agreement": {
+  "poses_sha256": 62,
+  "poses_xy_sha256": 62,
+  "poses_yaw_sha256": 62,
+  "poses_v_sha256": 62,
+  "actions_sha256": 62,
+  "maneuvers_sha256": 66,
+  "frames_sha256": 62,
+  "all_content_families_agree": false
+ },
+ "name_derived_cross_checks": {
+  "episode_id_overlap": 62,
+  "n_val_episode_ids_distinct": 79,
+  "n_train_episode_ids_distinct": 2342,
+  "filename_overlap": 80,
+  "n_val_files": 80,
+  "n_train_files": 2376,
+  "note": "NOT evidence. Reported so a name/content DISAGREEMENT is visible."
+ },
+ "within_cache_duplicates": {
+  "physicalai-val-f1b378f295ae (val)": {
+   "poses_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_xy_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_yaw_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_v_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "actions_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "maneuvers_sha256": {
+    "n_distinct": 66,
+    "n_episodes": 80,
+    "n_duplicate_groups": 2,
+    "duplicate_groups": [
+     [
+      "ep_00007",
+      "ep_00008",
+      "ep_00011",
+      "ep_00016",
+      "ep_00022",
+      "ep_00040",
+      "ep_00041",
+      "ep_00043",
+      "ep_00044",
+      "ep_00045",
+      "ep_00050",
+      "ep_00054",
+      "ep_00063",
+      "ep_00070"
+     ],
+     [
+      "ep_00025",
+      "ep_00034"
+     ]
+    ]
+   },
+   "frames_sha256": {
+    "n_distinct": 80,
+    "n_episodes": 80,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   }
+  },
+  "physicalai-train-e438721ae894 (train)": {
+   "poses_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_xy_sha256": {
+    "n_distinct": 2375,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_01036",
+      "ep_02371"
+     ]
+    ]
+   },
+   "poses_yaw_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_v_sha256": {
+    "n_distinct": 2375,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_01036",
+      "ep_02371"
+     ]
+    ]
+   },
+   "actions_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "maneuvers_sha256": {
+    "n_distinct": 1883,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 22,
+    "duplicate_groups": [
+     [
+      "ep_00006",
+      "ep_00012",
+      "ep_00013",
+      "ep_00018",
+      "ep_00019",
+      "ep_00022",
+      "ep_00030",
+      "ep_00041",
+      "ep_00054",
+      "ep_00057",
+      "ep_00068",
+      "ep_00078",
+      "ep_00080",
+      "ep_00083",
+      "ep_00094",
+      "ep_00098",
+      "ep_00106",
+      "ep_00115",
+      "ep_00118",
+      "ep_00121",
+      "ep_00123",
+      "ep_00126",
+      "ep_00127",
+      "ep_00129",
+      "ep_00138",
+      "ep_00140",
+      "ep_00144",
+      "ep_00146",
+      "ep_00158",
+      "ep_00169",
+      "ep_00174",
+      "ep_00177",
+      "ep_00178",
+      "ep_00183",
+      "ep_00184",
+      "ep_00185",
+      "ep_00186",
+      "ep_00187",
+      "ep_00190",
+      "ep_00191",
+      "ep_00199",
+      "ep_00202",
+      "ep_00215",
+      "ep_00217",
+      "ep_00221",
+      "ep_00235",
+      "ep_00245",
+      "ep_00263",
+      "ep_00271",
+      "ep_00290",
+      "ep_00294",
+      "ep_00302",
+      "ep_00305",
+      "ep_00306",
+      "ep_00317",
+      "ep_00318",
+      "ep_00320",
+      "ep_00324",
+      "ep_00326",
+      "ep_00329",
+      "ep_00330",
+      "ep_00337",
+      "ep_00344",
+      "ep_00361",
+      "ep_00380",
+      "ep_00383",
+      "ep_00388",
+      "ep_00393",
+      "ep_00394",
+      "ep_00396",
+      "ep_00399",
+      "ep_00401",
+      "ep_00412",
+      "ep_00419",
+      "ep_00431",
+      "ep_00443",
+      "ep_00449",
+      "ep_00457",
+      "ep_00461",
+      "ep_00466",
+      "ep_00470",
+      "ep_00472",
+      "ep_00476",
+      "ep_00478",
+      "ep_00485",
+      "ep_00488",
+      "ep_00492",
+      "ep_00499",
+      "ep_00507",
+      "ep_00508",
+      "ep_00509",
+      "ep_00514",
+      "ep_00519",
+      "ep_00527",
+      "ep_00537",
+      "ep_00543",
+      "ep_00549",
+      "ep_00561",
+      "ep_00562",
+      "ep_00563",
+      "ep_00592",
+      "ep_00609",
+      "ep_00619",
+      "ep_00620",
+      "ep_00622",
+      "ep_00626",
+      "ep_00630",
+      "ep_00632",
+      "ep_00652",
+      "ep_00659",
+      "ep_00661",
+      "ep_00662",
+      "ep_00669",
+      "ep_00673",
+      "ep_00681",
+      "ep_00682",
+      "ep_00684",
+      "ep_00691",
+      "ep_00694",
+      "ep_00696",
+      "ep_00703",
+      "ep_00705",
+      "ep_00706",
+      "ep_00716",
+      "ep_00729",
+      "ep_00736",
+      "ep_00737",
+      "ep_00738",
+      "ep_00740",
+      "ep_00748",
+      "ep_00749",
+      "ep_00753",
+      "ep_00758",
+      "ep_00761",
+      "ep_00771",
+      "ep_00772",
+      "ep_00775",
+      "ep_00781",
+      "ep_00783",
+      "ep_00785",
+      "ep_00789",
+      "ep_00794",
+      "ep_00801",
+      "ep_00804",
+      "ep_00805",
+      "ep_00809",
+      "ep_00819",
+      "ep_00820",
+      "ep_00830",
+      "ep_00832",
+      "ep_00836",
+      "ep_00837",
+      "ep_00838",
+      "ep_00839",
+      "ep_00840",
+      "ep_00844",
+      "ep_00845",
+      "ep_00856",
+      "ep_00857",
+      "ep_00858",
+      "ep_00873",
+      "ep_00875",
+      "ep_00877",
+      "ep_00880",
+      "ep_00884",
+      "ep_00885",
+      "ep_00889",
+      "ep_00897",
+      "ep_00900",
+      "ep_00901",
+      "ep_00903",
+      "ep_00906",
+      "ep_00913",
+      "ep_00914",
+      "ep_00918",
+      "ep_00926",
+      "ep_00927",
+      "ep_00929",
+      "ep_00932",
+      "ep_00934",
+      "ep_00949",
+      "ep_00955",
+      "ep_00960",
+      "ep_00965",
+      "ep_00974",
+      "ep_00984",
+      "ep_00990",
+      "ep_00991",
+      "ep_01000",
+      "ep_01003",
+      "ep_01008",
+      "ep_01009",
+      "ep_01020",
+      "ep_01030",
+      "ep_01032",
+      "ep_01034",
+      "ep_01035",
+      "ep_01036",
+      "ep_01041",
+      "ep_01044",
+      "ep_01053",
+      "ep_01057",
+      "ep_01059",
+      "ep_01067",
+      "ep_01079",
+      "ep_01085",
+      "ep_01101",
+      "ep_01108",
+      "ep_01110",
+      "ep_01114",
+      "ep_01119",
+      "ep_01122",
+      "ep_01123",
+      "ep_01130",
+      "ep_01131",
+      "ep_01137",
+      "ep_01139",
+      "ep_01160",
+      "ep_01162",
+      "ep_01170",
+      "ep_01172",
+      "ep_01174",
+      "ep_01187",
+      "ep_01189",
+      "ep_01192",
+      "ep_01203",
+      "ep_01205",
+      "ep_01208",
+      "ep_01209",
+      "ep_01212",
+      "ep_01216",
+      "ep_01238",
+      "ep_01242",
+      "ep_01244",
+      "ep_01248",
+      "ep_01249",
+      "ep_01257",
+      "ep_01264",
+      "ep_01267",
+      "ep_01272",
+      "ep_01273",
+      "ep_01277",
+      "ep_01278",
+      "ep_01281",
+      "ep_01286",
+      "ep_01287",
+      "ep_01293",
+      "ep_01304",
+      "ep_01305",
+      "ep_01323",
+      "ep_01326",
+      "ep_01329",
+      "ep_01333",
+      "ep_01338",
+      "ep_01349",
+      "ep_01350",
+      "ep_01352",
+      "ep_01357",
+      "ep_01366",
+      "ep_01375",
+      "ep_01377",
+      "ep_01390",
+      "ep_01393",
+      "ep_01394",
+      "ep_01395",
+      "ep_01398",
+      "ep_01399",
+      "ep_01407",
+      "ep_01416",
+      "ep_01422",
+      "ep_01445",
+      "ep_01447",
+      "ep_01453",
+      "ep_01460",
+      "ep_01462",
+      "ep_01463",
+      "ep_01469",
+      "ep_01470",
+      "ep_01472",
+      "ep_01473",
+      "ep_01475",
+      "ep_01478",
+      "ep_01480",
+      "ep_01482",
+      "ep_01484",
+      "ep_01486",
+      "ep_01487",
+      "ep_01493",
+      "ep_01499",
+      "ep_01501",
+      "ep_01517",
+      "ep_01519",
+      "ep_01522",
+      "ep_01523",
+      "ep_01528",
+      "ep_01529",
+      "ep_01532",
+      "ep_01535",
+      "ep_01543",
+      "ep_01547",
+      "ep_01564",
+      "ep_01569",
+      "ep_01570",
+      "ep_01571",
+      "ep_01587",
+      "ep_01590",
+      "ep_01608",
+      "ep_01614",
+      "ep_01618",
+      "ep_01622",
+      "ep_01624",
+      "ep_01631",
+      "ep_01638",
+      "ep_01647",
+      "ep_01653",
+      "ep_01667",
+      "ep_01672",
+      "ep_01688",
+      "ep_01693",
+      "ep_01698",
+      "ep_01700",
+      "ep_01701",
+      "ep_01714",
+      "ep_01726",
+      "ep_01728",
+      "ep_01730",
+      "ep_01732",
+      "ep_01733",
+      "ep_01735",
+      "ep_01751",
+      "ep_01752",
+      "ep_01753",
+      "ep_01756",
+      "ep_01757",
+      "ep_01762",
+      "ep_01765",
+      "ep_01770",
+      "ep_01771",
+      "ep_01781",
+      "ep_01783",
+      "ep_01788",
+      "ep_01792",
+      "ep_01794",
+      "ep_01801",
+      "ep_01805",
+      "ep_01811",
+      "ep_01812",
+      "ep_01815",
+      "ep_01817",
+      "ep_01824",
+      "ep_01825",
+      "ep_01826",
+      "ep_01828",
+      "ep_01832",
+      "ep_01833",
+      "ep_01836",
+      "ep_01855",
+      "ep_01868",
+      "ep_01872",
+      "ep_01881",
+      "ep_01887",
+      "ep_01909",
+      "ep_01914",
+      "ep_01915",
+      "ep_01920",
+      "ep_01922",
+      "ep_01927",
+      "ep_01930",
+      "ep_01932",
+      "ep_01940",
+      "ep_01943",
+      "ep_01944",
+      "ep_01946",
+      "ep_01948",
+      "ep_01954",
+      "ep_01955",
+      "ep_01956",
+      "ep_01958",
+      "ep_01994",
+      "ep_01999",
+      "ep_02005",
+      "ep_02019",
+      "ep_02023",
+      "ep_02027",
+      "ep_02032",
+      "ep_02036",
+      "ep_02052",
+      "ep_02055",
+      "ep_02063",
+      "ep_02066",
+      "ep_02068",
+      "ep_02069",
+      "ep_02080",
+      "ep_02081",
+      "ep_02084",
+      "ep_02089",
+      "ep_02103",
+      "ep_02104",
+      "ep_02105",
+      "ep_02110",
+      "ep_02118",
+      "ep_02120",
+      "ep_02124",
+      "ep_02126",
+      "ep_02127",
+      "ep_02129",
+      "ep_02131",
+      "ep_02150",
+      "ep_02163",
+      "ep_02164",
+      "ep_02165",
+      "ep_02168",
+      "ep_02178",
+      "ep_02183",
+      "ep_02187",
+      "ep_02190",
+      "ep_02193",
+      "ep_02194",
+      "ep_02198",
+      "ep_02199",
+      "ep_02207",
+      "ep_02208",
+      "ep_02211",
+      "ep_02217",
+      "ep_02221",
+      "ep_02225",
+      "ep_02241",
+      "ep_02253",
+      "ep_02254",
+      "ep_02263",
+      "ep_02268",
+      "ep_02270",
+      "ep_02275",
+      "ep_02279",
+      "ep_02294",
+      "ep_02309",
+      "ep_02319",
+      "ep_02327",
+      "ep_02329",
+      "ep_02331",
+      "ep_02341",
+      "ep_02344",
+      "ep_02345",
+      "ep_02351",
+      "ep_02362",
+      "ep_02370",
+      "ep_02371",
+      "ep_02380",
+      "ep_02382",
+      "ep_02394"
+     ],
+     [
+      "ep_00029",
+      "ep_00554",
+      "ep_01069",
+      "ep_01404",
+      "ep_01661",
+      "ep_02220"
+     ],
+     [
+      "ep_00064",
+      "ep_00864",
+      "ep_02159"
+     ],
+     [
+      "ep_00122",
+      "ep_00162",
+      "ep_00490",
+      "ep_00534",
+      "ep_00618",
+      "ep_00865",
+      "ep_01031",
+      "ep_02140"
+     ],
+     [
+      "ep_00151",
+      "ep_00377",
+      "ep_00905"
+     ],
+     [
+      "ep_00209",
+      "ep_00702"
+     ],
+     [
+      "ep_00246",
+      "ep_01668"
+     ],
+     [
+      "ep_00257",
+      "ep_00363",
+      "ep_00541",
+      "ep_00651",
+      "ep_00978",
+      "ep_01353",
+      "ep_01355",
+      "ep_01428",
+      "ep_01456",
+      "ep_01552",
+      "ep_01555",
+      "ep_02179",
+      "ep_02202"
+     ],
+     [
+      "ep_00281",
+      "ep_00454"
+     ],
+     [
+      "ep_00286",
+      "ep_01423"
+     ],
+     [
+      "ep_00304",
+      "ep_00448"
+     ],
+     [
+      "ep_00465",
+      "ep_01754"
+     ],
+     [
+      "ep_00489",
+      "ep_02262"
+     ],
+     [
+      "ep_00636",
+      "ep_00995"
+     ],
+     [
+      "ep_00964",
+      "ep_01969"
+     ],
+     [
+      "ep_01005",
+      "ep_01115"
+     ],
+     [
+      "ep_01250",
+      "ep_01588"
+     ],
+     [
+      "ep_01317",
+      "ep_01513"
+     ],
+     [
+      "ep_01341",
+      "ep_01803"
+     ],
+     [
+      "ep_01369",
+      "ep_01594"
+     ],
+     [
+      "ep_01592",
+      "ep_01821"
+     ],
+     [
+      "ep_01655",
+      "ep_01695"
+     ]
+    ]
+   },
+   "frames_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   }
+  }
+ },
+ "THE_ANSWER": {
+  "question": "how many of physicalai-val-f1b378f295ae's 80 evaluation episodes are, BY CONTENT, also in the parity TRAIN corpus physicalai-train-e438721ae894 (2376 episodes)?",
+  "n_val_episodes": 80,
+  "n_train_episodes": 2376,
+  "n_overlap_by_poses_sha256": 62,
+  "n_overlap_by_frames_sha256": 62,
+  "frac_of_val_episodes": 0.775,
+  "leaked_val_tags": [
+   "ep_00001",
+   "ep_00002",
+   "ep_00003",
+   "ep_00004",
+   "ep_00005",
+   "ep_00007",
+   "ep_00009",
+   "ep_00010",
+   "ep_00011",
+   "ep_00014",
+   "ep_00015",
+   "ep_00016",
+   "ep_00018",
+   "ep_00019",
+   "ep_00020",
+   "ep_00022",
+   "ep_00023",
+   "ep_00024",
+   "ep_00025",
+   "ep_00026",
+   "ep_00027",
+   "ep_00028",
+   "ep_00030",
+   "ep_00031",
+   "ep_00032",
+   "ep_00033",
+   "ep_00034",
+   "ep_00036",
+   "ep_00037",
+   "ep_00038",
+   "ep_00039",
+   "ep_00041",
+   "ep_00042",
+   "ep_00043",
+   "ep_00044",
+   "ep_00045",
+   "ep_00046",
+   "ep_00047",
+   "ep_00048",
+   "ep_00049",
+   "ep_00050",
+   "ep_00052",
+   "ep_00053",
+   "ep_00055",
+   "ep_00056",
+   "ep_00057",
+   "ep_00058",
+   "ep_00060",
+   "ep_00062",
+   "ep_00063",
+   "ep_00065",
+   "ep_00066",
+   "ep_00067",
+   "ep_00068",
+   "ep_00069",
+   "ep_00071",
+   "ep_00072",
+   "ep_00074",
+   "ep_00075",
+   "ep_00076",
+   "ep_00077",
+   "ep_00078"
+  ],
+  "detail": [
+   {
+    "val_tag": "ep_00001",
+    "train_tags": [
+     "ep_00000"
+    ],
+    "poses_sha256": "9d1323970fe80e76f20bfabd5211599ab597bb51278c2ae27d4fe1db098e2fda",
+    "frames_sha256": "53d86eae79dc292e1f51744f5f6ddece962d086651f05307926140aee451c6b4",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808464740,
+    "episode_id_train": [
+     808464740
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 7.199387550354004,
+    "path_len_m": 92.26952222264725
+   },
+   {
+    "val_tag": "ep_00002",
+    "train_tags": [
+     "ep_00002"
+    ],
+    "poses_sha256": "2dceed6d3652a2781f4f02e149f07a2bb6a274d5fd66ccb9d947f842acd3b34d",
+    "frames_sha256": "b1d5c88540d4fd7ac86957fd8c26417b10b02a5c3fc9e0c895582978c82c7ffd",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808465976,
+    "episode_id_train": [
+     808465976
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 14.450970649719238,
+    "path_len_m": 143.41411412091284
+   },
+   {
+    "val_tag": "ep_00003",
+    "train_tags": [
+     "ep_00009"
+    ],
+    "poses_sha256": "171a62a05eceeacb845b118ba3fdc277e34ce41a1c27a470e7985a49e255842d",
+    "frames_sha256": "772f33f29ef8b977fa68fd190b9ef70c280881b23a835e5acb89b8eb43a5218f",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808477753,
+    "episode_id_train": [
+     808477753
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 11.547285079956055,
+    "path_len_m": 100.48177619272744
+   },
+   {
+    "val_tag": "ep_00004",
+    "train_tags": [
+     "ep_00016"
+    ],
+    "poses_sha256": "02a71af10564d83cb08f17938f78575cdba7761b57eb8ef68f3ea45ebf1d7db9",
+    "frames_sha256": "feddb51aa2394d2126097d7256e1bfcfb5a7246efcd885613ebf325309e3ce54",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808542770,
+    "episode_id_train": [
+     808542770
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 8.41168212890625,
+    "path_len_m": 92.42876598560953
+   },
+   {
+    "val_tag": "ep_00005",
+    "train_tags": [
+     "ep_00021"
+    ],
+    "poses_sha256": "27dd35ad0f1719ca302ab994608fcb4b34097bc1a310a85f975d50862bfe1d5c",
+    "frames_sha256": "2b1814dc0df1b1f36bea4f2c7751f60b3b0eabea4272a294fad52f34d179589f",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808595512,
+    "episode_id_train": [
+     808595512
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 13.11829662322998,
+    "path_len_m": 237.3204654902437
+   },
+   {
+    "val_tag": "ep_00007",
+    "train_tags": [
+     "ep_00030"
+    ],
+    "poses_sha256": "01a3f714da81be4f7526daacbc8bb0921580c61af1481bed4e9fcdc6658ad22f",
+    "frames_sha256": "252c8a56e8b92421e7429b995a135a35072fe3a8f82537df9446a40df9fea601",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808609334,
+    "episode_id_train": [
+     808609334
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 28.455307006835938,
+    "path_len_m": 555.580199684167
+   },
+   {
+    "val_tag": "ep_00009",
+    "train_tags": [
+     "ep_00046"
+    ],
+    "poses_sha256": "a421bc08b1d93196b2a90e2cf562882910938895bc2450dd3779e596d3759c7a",
+    "frames_sha256": "daa13e4597cd9a134cd058b80a6e946529f9100217e79e92c121c0c2bcf02a73",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808727859,
+    "episode_id_train": [
+     808727859
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 11.843240737915039,
+    "path_len_m": 108.32660401857142
+   },
+   {
+    "val_tag": "ep_00010",
+    "train_tags": [
+     "ep_00050"
+    ],
+    "poses_sha256": "fe4adc70effe087c8dcaa0348c3560dae7e87b987d67f141b47b405f59513ac6",
+    "frames_sha256": "4f8769d97fdb781f657c121b8fa4bc1e37b8faea134b505fb361a78abb8a4127",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808740193,
+    "episode_id_train": [
+     808740193
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 11.167366981506348,
+    "path_len_m": 123.8256750867731
+   },
+   {
+    "val_tag": "ep_00011",
+    "train_tags": [
+     "ep_00054"
+    ],
+    "poses_sha256": "73b23b264adbd202c9f3526a114b681a2ed0206370f785a74441ab97c0c2822e",
+    "frames_sha256": "26f67848fa3bd3661a3d86122278ccd50fe1a89c9a66cf4846a164e2c15adc25",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808793136,
+    "episode_id_train": [
+     808793136
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 15.022377014160156,
+    "path_len_m": 290.7952935681641
+   },
+   {
+    "val_tag": "ep_00014",
+    "train_tags": [
+     "ep_00076"
+    ],
+    "poses_sha256": "2812d384231a78f9d8fbf94d7cfa56211782a3a8003eb6803ecc9477625e2a2f",
+    "frames_sha256": "b19a7c420b61af14f1a61252e50d0b44978aedf22b6c0a858272bfb51ef03fff",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808924472,
+    "episode_id_train": [
+     808924472
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 12.952972412109375,
+    "path_len_m": 156.56539301079195
+   },
+   {
+    "val_tag": "ep_00015",
+    "train_tags": [
+     "ep_00079"
+    ],
+    "poses_sha256": "5a5d2e6c9102947e35ccbbd8f998ceefe9c7360700126720e994c01de9fb86ec",
+    "frames_sha256": "4e04d485efb43ad599c0984ee5e605edde02017ea27cd1827c85767554ffb5d9",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808925495,
+    "episode_id_train": [
+     808925495
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 9.427192687988281,
+    "path_len_m": 126.69670902924284
+   },
+   {
+    "val_tag": "ep_00016",
+    "train_tags": [
+     "ep_00083"
+    ],
+    "poses_sha256": "bcf3f49b3ac4403b214ab413b013d46e218d3ff436de21d9308098abcf16dee2",
+    "frames_sha256": "4429d6a0c6a9fd79050f352546f3971f21556c1fb99add886308b8eefea7c6b9",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808937009,
+    "episode_id_train": [
+     808937009
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 21.58819580078125,
+    "path_len_m": 418.2495866941066
+   },
+   {
+    "val_tag": "ep_00018",
+    "train_tags": [
+     "ep_00090"
+    ],
+    "poses_sha256": "15e0e1a2345cff8fd55a83d79459028bc9ef44937fe8fd61d4df816254d48b75",
+    "frames_sha256": "e658c773b7766de6eeb68928a87854e6df18db386a98d4e5ab8e8b4b5a41ed51",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 808990517,
+    "episode_id_train": [
+     808990517
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 9.695198059082031,
+    "path_len_m": 150.0350386766245
+   },
+   {
+    "val_tag": "ep_00019",
+    "train_tags": [
+     "ep_00097"
+    ],
+    "poses_sha256": "4d685e126dee7114ca1ee0006a89bc361cd05c383c513dae11a151edaa49fd53",
+    "frames_sha256": "8dc3b2828ec7fff455ffe051415616989f4a992893756179f38101b6f276ff2e",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 809054307,
+    "episode_id_train": [
+     809054307
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 18.09453773498535,
+    "path_len_m": 306.249291162861
+   },
+   {
+    "val_tag": "ep_00020",
+    "train_tags": [
+     "ep_00102"
+    ],
+    "poses_sha256": "7e28e648fab7dbb1ebead9ba2b79167c7a5330e930be7d67abeedaa1155ddda5",
+    "frames_sha256": "ec8611553add7459f1d8591b025641af9800e129911d203ce9a03c707c63f8b7",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 809055589,
+    "episode_id_train": [
+     809055589
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 8.317959785461426,
+    "path_len_m": 106.98908184705945
+   },
+   {
+    "val_tag": "ep_00022",
+    "train_tags": [
+     "ep_00106"
+    ],
+    "poses_sha256": "ea502caab988a702583ff6e600e7149e5efaef9788d25b2d730bacb3197be0ef",
+    "frames_sha256": "b4846831d8c52a4b7430a300e9bf3c78c039168e6f10e7e24ad74d28dfd2eb24",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 809067313,
+    "episode_id_train": [
+     809067313
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 7.89370059967041,
+    "path_len_m": 151.4853753951133
+   },
+   {
+    "val_tag": "ep_00023",
+    "train_tags": [
+     "ep_00107"
+    ],
+    "poses_sha256": "55c0562f73462d0d6c285d33af30de94493a2ee4fc9155bce1fd4f6cdcadfd47",
+    "frames_sha256": "1140e2cc7d802c5c0c950d97e235655d71a10c3d7e2055535ffea4c6247e7621",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 809067572,
+    "episode_id_train": [
+     809067572
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 4.009994029998779,
+    "path_len_m": 60.83677905434712
+   },
+   {
+    "val_tag": "ep_00024",
+    "train_tags": [
+     "ep_00110"
+    ],
+    "poses_sha256": "3abea55d406c21ed001e8b3d8685efa8596617c6b1916ba5d69a48c5598b7df7",
+    "frames_sha256": "aefaa92e42226cf7ce71e967d27cc0f089ac919c98afaa964a0f1b0e4cc90650",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811677282,
+    "episode_id_train": [
+     811677282
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 15.205130577087402,
+    "path_len_m": 222.9947919745648
+   },
+   {
+    "val_tag": "ep_00025",
+    "train_tags": [
+     "ep_00122"
+    ],
+    "poses_sha256": "790c9d3b91af51cf85991513c289439c4b314dd6cd9e5a1eef5522cd90cf5585",
+    "frames_sha256": "aa50be8c1dc4da1b13d2f5f73a1b60b2988d949f905abff11a75bfc7bf8304aa",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811754803,
+    "episode_id_train": [
+     811754803
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 197,
+    "v_max": 37.10862350463867,
+    "path_len_m": 727.6931856511319
+   },
+   {
+    "val_tag": "ep_00026",
+    "train_tags": [
+     "ep_00124"
+    ],
+    "poses_sha256": "2f894f1bff89b361201fb906e3795664962245332dc25beef3c51685b9c35927",
+    "frames_sha256": "e9c84593ee121ca1b5aa18857a05fa63747901115195d3ac314de2c0d7a7f988",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811755060,
+    "episode_id_train": [
+     811755060
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 11.740551948547363,
+    "path_len_m": 189.91378421361594
+   },
+   {
+    "val_tag": "ep_00027",
+    "train_tags": [
+     "ep_00139"
+    ],
+    "poses_sha256": "20289f5e3c5041190fb3ab2049006777213bda194458cc7515c749874527a791",
+    "frames_sha256": "afa99ff62d7fe23ffb63a4c137f026414cb79d2ad657039a82a5b21838e0f926",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811874405,
+    "episode_id_train": [
+     811874405
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 16.8149471282959,
+    "path_len_m": 265.49768953463047
+   },
+   {
+    "val_tag": "ep_00028",
+    "train_tags": [
+     "ep_00148"
+    ],
+    "poses_sha256": "5129e9b3a0643ee92401207bc88bc898a71332a8202271a4bd6bef0a261b1714",
+    "frames_sha256": "c5828b2a2160a1c3fefcb1ce0c5c62220d99c359f96c2f1bb076ebda99807b1d",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811937846,
+    "episode_id_train": [
+     811937846
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 12.36870288848877,
+    "path_len_m": 88.7749335855481
+   },
+   {
+    "val_tag": "ep_00030",
+    "train_tags": [
+     "ep_00150"
+    ],
+    "poses_sha256": "fb4cfa6b2e5ead7c3e766361f237ef1e53f0b7463bc34296f62442f3f7cd88c1",
+    "frames_sha256": "060af1419e851cdade3f136b8c23cf61b179ca986209c4db3a587857f742d948",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811938097,
+    "episode_id_train": [
+     811938097
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 29.709259033203125,
+    "path_len_m": 569.7505638090112
+   },
+   {
+    "val_tag": "ep_00031",
+    "train_tags": [
+     "ep_00152"
+    ],
+    "poses_sha256": "45780b7d4707a2aef537251846675d2232b340b3d766fe784d539b0948e949cb",
+    "frames_sha256": "8de24a7a0f93726ef7bd5ef90f2e0656cb0f6b9d7b60ec7edbc7a4824f65caef",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 811939126,
+    "episode_id_train": [
+     811939126
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 10.652746200561523,
+    "path_len_m": 151.34230633915098
+   },
+   {
+    "val_tag": "ep_00032",
+    "train_tags": [
+     "ep_00155"
+    ],
+    "poses_sha256": "43c4d12a0ed51b3390d189a743cd4229301462870f70433d8bc5aa489f1aeaf3",
+    "frames_sha256": "9f36eb752ca6665589df6ad2cb27839b7eb652dfdb4b31bbc8c920618e545d5d",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812003383,
+    "episode_id_train": [
+     812003383
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 6.854537487030029,
+    "path_len_m": 97.08922587186464
+   },
+   {
+    "val_tag": "ep_00033",
+    "train_tags": [
+     "ep_00160"
+    ],
+    "poses_sha256": "cbece50b169be2cc7d86037c35337dee2f8d7fc4018b23f039caca55cfdbe1ea",
+    "frames_sha256": "8c74bb0ced4e4a5eb4b70eb5c651d52a3cff798d5c7b7daeec295e20fd4f78eb",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812004919,
+    "episode_id_train": [
+     812004919
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 13.05733871459961,
+    "path_len_m": 203.87845893287252
+   },
+   {
+    "val_tag": "ep_00034",
+    "train_tags": [
+     "ep_00162"
+    ],
+    "poses_sha256": "1d6ac02528359b22848e69e5a10c04fc7dee20a51f95c6de4cecc7adc691ce17",
+    "frames_sha256": "2715818cc65a59c47b49343a877e474063ae6b7ddde89a96d0e9b2a86c47d386",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812004963,
+    "episode_id_train": [
+     812004963
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 197,
+    "v_max": 34.03564453125,
+    "path_len_m": 665.4175306533723
+   },
+   {
+    "val_tag": "ep_00036",
+    "train_tags": [
+     "ep_00165"
+    ],
+    "poses_sha256": "aa1520a3e7ee2a07ed8143e8e75d875d4436e2925856d00e1935514d8b71b28a",
+    "frames_sha256": "7a13905506f9aa513637dcefbb3c9150b2867427013e938792093b14ca266a60",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812016997,
+    "episode_id_train": [
+     812016997
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 8.039178848266602,
+    "path_len_m": 126.22771157353753
+   },
+   {
+    "val_tag": "ep_00037",
+    "train_tags": [
+     "ep_00166"
+    ],
+    "poses_sha256": "fee9d018f43643c7bb7096ad03d6b0ff44927a8fb23124e3b78618490bda0b33",
+    "frames_sha256": "20de6f62c934c7b89eae061d35d6fe3bb2f259c61e171e58c43ca0f8ad909fd0",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812017209,
+    "episode_id_train": [
+     812017209
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 7.4070281982421875,
+    "path_len_m": 88.93332456875135
+   },
+   {
+    "val_tag": "ep_00038",
+    "train_tags": [
+     "ep_00167"
+    ],
+    "poses_sha256": "22c0df9c30a387fd2d834cb69708faf43225643199c81d4aee06a9c587e6ec4d",
+    "frames_sha256": "eb8640a4e7b977c46e0ef570246f72f9a628ea9592154e167c9afd4c287e270f",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 812017251,
+    "episode_id_train": [
+     812017251
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 23.060667037963867,
+    "path_len_m": 429.84560507045654
+   },
+   {
+    "val_tag": "ep_00039",
+    "train_tags": [
+     "ep_00173"
+    ],
+    "poses_sha256": "c7961d090b6802e1e92485772ab96ac57630784d2aadc68023e8331c213e5dc4",
+    "frames_sha256": "1677c167509d5e6d4d645fe0efc63f74e631a35e527242601e456b6e3b72bc75",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825242980,
+    "episode_id_train": [
+     825242980
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 12.751448631286621,
+    "path_len_m": 133.87495448146632
+   },
+   {
+    "val_tag": "ep_00041",
+    "train_tags": [
+     "ep_00174"
+    ],
+    "poses_sha256": "e452c9c15249fc54477597419cb85467a5fe83bbf3be2906ef2bf07e2e5b381b",
+    "frames_sha256": "d7d86651505dca293cffaed0fdaf98be99965040bacbc3385b41027d30500f12",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825244002,
+    "episode_id_train": [
+     825244002
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 26.61155128479004,
+    "path_len_m": 507.43652948232375
+   },
+   {
+    "val_tag": "ep_00042",
+    "train_tags": [
+     "ep_00175"
+    ],
+    "poses_sha256": "c2d6392dd53f81160be61d344e785d9694213144cecd38f55221a64797d205c6",
+    "frames_sha256": "e02836a12e744a6e3167682c35374f928d3972ddabc6a3cb4eb4223d82832eff",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825244004,
+    "episode_id_train": [
+     825244004
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 11.018356323242188,
+    "path_len_m": 139.76283791618474
+   },
+   {
+    "val_tag": "ep_00043",
+    "train_tags": [
+     "ep_00183"
+    ],
+    "poses_sha256": "b4f217f3b00ddb6e50668ef608d93f728d8bc844f28393e1b70210ee4f901ba3",
+    "frames_sha256": "51350576f8808039b53ca787840b936527c2cdf1d94be4455a9a96a859eba8ca",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825307961,
+    "episode_id_train": [
+     825307961
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 32.302101135253906,
+    "path_len_m": 628.0402715139655
+   },
+   {
+    "val_tag": "ep_00044",
+    "train_tags": [
+     "ep_00186"
+    ],
+    "poses_sha256": "16e4b7325a96713c5cc92489228424b672bf0baafd80bf1fdca8772c81dd09ef",
+    "frames_sha256": "a29b91ab6096de60d8654f181e8c8457284de8c9ab1f419da9ef01739da33ee6",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825320244,
+    "episode_id_train": [
+     825320244
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 33.149078369140625,
+    "path_len_m": 648.5934975489874
+   },
+   {
+    "val_tag": "ep_00045",
+    "train_tags": [
+     "ep_00190"
+    ],
+    "poses_sha256": "001fa03b2acf0234a315ba75406a18a5ebc87526c94eae9140218ae9b12e5025",
+    "frames_sha256": "33b14576c75b46adc904bd3d3814ca8ae0684cfa6ca04f84f7f7679d593db64b",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825373285,
+    "episode_id_train": [
+     825373285
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 35.26145935058594,
+    "path_len_m": 692.2204386606467
+   },
+   {
+    "val_tag": "ep_00046",
+    "train_tags": [
+     "ep_00192"
+    ],
+    "poses_sha256": "48754443a08cf266ff5f0df83031b7652ea46265bba5f34eef4d159e00684200",
+    "frames_sha256": "b4e1b34bfc99cffd2d6635dec90020580020150b67557e6bed3eade4ca6c5d1c",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825374562,
+    "episode_id_train": [
+     825374562
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 13.631749153137207,
+    "path_len_m": 199.76159670463352
+   },
+   {
+    "val_tag": "ep_00047",
+    "train_tags": [
+     "ep_00193"
+    ],
+    "poses_sha256": "1d5f10190452dd36ad297560af70351e469cf41a60f68d2062301a16ba4c5b26",
+    "frames_sha256": "c21ae869b89528f133570a869ff2fb852f1d77aa5a5dc5c5f3d92f6ca6a66b83",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825385315,
+    "episode_id_train": [
+     825385315
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 14.738923072814941,
+    "path_len_m": 193.93093184915068
+   },
+   {
+    "val_tag": "ep_00048",
+    "train_tags": [
+     "ep_00197"
+    ],
+    "poses_sha256": "9e6312c05d3053db077508322a93fdde237ae0114b4441be6aa3893b93aa14a4",
+    "frames_sha256": "8b4f726aa14f690edb0143a646eaab3a7b225a6d75eaaf22695d65ad03c45b20",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825386295,
+    "episode_id_train": [
+     825386295
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 13.990846633911133,
+    "path_len_m": 247.46554375095627
+   },
+   {
+    "val_tag": "ep_00049",
+    "train_tags": [
+     "ep_00200"
+    ],
+    "poses_sha256": "6653c0e1c4b9657c8a57f189e346a929e3a4148fce23185293beeefaeaccc3e9",
+    "frames_sha256": "3df41f23d8bdfda00854f9e01a1e6fdd45a4c8b5d55150fcd49df3fd84447985",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825438516,
+    "episode_id_train": [
+     825438516
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 9.637724876403809,
+    "path_len_m": 96.58646497158387
+   },
+   {
+    "val_tag": "ep_00050",
+    "train_tags": [
+     "ep_00202"
+    ],
+    "poses_sha256": "f89360ef104b2315323c698c7b1437e66eea1c9cc16273c84b52cc245e9fb674",
+    "frames_sha256": "5697e58db8192435f8a7c499b6db68bf87201490749cc3638cb7579a2dcada20",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825439282,
+    "episode_id_train": [
+     825439282
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 35.89562225341797,
+    "path_len_m": 703.6054089692941
+   },
+   {
+    "val_tag": "ep_00052",
+    "train_tags": [
+     "ep_00203"
+    ],
+    "poses_sha256": "12e7076d06808eeb6faaacbeec78e2d9db95928287ee620d8a5e4b546bb96c6c",
+    "frames_sha256": "9e3ba41a5e962b1c2759252dd028644b6990b018a63cae818677ce17e8388229",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825440305,
+    "episode_id_train": [
+     825440305
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 14.995299339294434,
+    "path_len_m": 252.41755239430393
+   },
+   {
+    "val_tag": "ep_00053",
+    "train_tags": [
+     "ep_00207"
+    ],
+    "poses_sha256": "8c9eaa8d31b293bf5b0871a054bf12990519c475c5ca840231d6ef47504e45a0",
+    "frames_sha256": "d9017d2d09775d84031ee292805677a5467c6c84c42fabc6b2c57297897c5345",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825451832,
+    "episode_id_train": [
+     825451832
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 7.259846210479736,
+    "path_len_m": 117.53563609203178
+   },
+   {
+    "val_tag": "ep_00055",
+    "train_tags": [
+     "ep_00214"
+    ],
+    "poses_sha256": "5fa5d7257f76bcf95dbc97bab2ee4c01330fc44159008412e98ed3608606f9f1",
+    "frames_sha256": "1a6705dbb8b2e10980f7f932dbcd60397431b7614df29b9384f3911bd3ff53ad",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825516643,
+    "episode_id_train": [
+     825516643
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 19.32537078857422,
+    "path_len_m": 228.50050293864047
+   },
+   {
+    "val_tag": "ep_00056",
+    "train_tags": [
+     "ep_00223"
+    ],
+    "poses_sha256": "0e12c4c9425406404a15539891ee3c64fdb298164292db0051e6daf773dfdf0b",
+    "frames_sha256": "893ca985ca652ab4be70a6e9c9c1b7e179028bf87d06ca347dea4f5f0abd98bc",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825634866,
+    "episode_id_train": [
+     825634866
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 2.0834836959838867,
+    "path_len_m": 19.236741518805076
+   },
+   {
+    "val_tag": "ep_00057",
+    "train_tags": [
+     "ep_00225"
+    ],
+    "poses_sha256": "e0268bdb8e8b19871d3a7acecc8b16f5a12d52ed3b56435468b864941104625a",
+    "frames_sha256": "4da822c344400bd9deb7d3d51b51d6639edcfeb364a7b31ea7326b618c7755ff",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825635129,
+    "episode_id_train": [
+     825635129
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 14.849373817443848,
+    "path_len_m": 266.38924337319247
+   },
+   {
+    "val_tag": "ep_00058",
+    "train_tags": [
+     "ep_00227"
+    ],
+    "poses_sha256": "ad8b7c3cbfb2f8c66adec5191726ebaad355a000b46046de8df585f7b0a45fc5",
+    "frames_sha256": "a263da62087adfc5d43bbcf922c5467de88bcdb60fca43beb980c6575266c677",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825635379,
+    "episode_id_train": [
+     825635379
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 20.684675216674805,
+    "path_len_m": 383.1807621004883
+   },
+   {
+    "val_tag": "ep_00060",
+    "train_tags": [
+     "ep_00230"
+    ],
+    "poses_sha256": "291c703d96204c6e68bdde85789a8bfda78e8f7759d4ba389ed7da3a1aea3282",
+    "frames_sha256": "422d35f171a62b5f87ba4428954ecb64605b6bbbad6486d8cfcc91809f3820e4",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825648229,
+    "episode_id_train": [
+     825648229
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 15.16375732421875,
+    "path_len_m": 252.2064262564785
+   },
+   {
+    "val_tag": "ep_00062",
+    "train_tags": [
+     "ep_00242"
+    ],
+    "poses_sha256": "4adbee77fd078a6cc2b246dec4d91985db48e45074d56b15e26c56113c2b52fe",
+    "frames_sha256": "47bde7239dabd7b584d1b25c2f4876b7d212e4b50bcb84ffd8ac79f941b7a43c",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825714275,
+    "episode_id_train": [
+     825714275
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 32.2587776184082,
+    "path_len_m": 608.4290312971161
+   },
+   {
+    "val_tag": "ep_00063",
+    "train_tags": [
+     "ep_00245"
+    ],
+    "poses_sha256": "7c8dc8f37b5b14876e2ac73304c4f1bf60d5c301167bb252ea3e591f768ce5a8",
+    "frames_sha256": "5231c131891db264c66a93f34776a815b6b9a04dde86fcce6d4dca6a06877102",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825778480,
+    "episode_id_train": [
+     825778480
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 10.50345516204834,
+    "path_len_m": 192.05238766434525
+   },
+   {
+    "val_tag": "ep_00065",
+    "train_tags": [
+     "ep_00252"
+    ],
+    "poses_sha256": "5b99373bb2c8d6580b5869276df06518fee12fc0493e0cc01d34f506577993d8",
+    "frames_sha256": "d83f66e88d76c01e9592bce7a91f6697a4775601d6efae092f6dfbffff935926",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825832547,
+    "episode_id_train": [
+     825832547
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 8.003171920776367,
+    "path_len_m": 103.30381607366995
+   },
+   {
+    "val_tag": "ep_00066",
+    "train_tags": [
+     "ep_00253"
+    ],
+    "poses_sha256": "7a27d33af17d4df1ce7014a18ed18314ba76dfa0390ac2d7fdc103d20e348150",
+    "frames_sha256": "669552a96778a61c7ffe702aed36584c12180ad1a60ed4e1cae8ae4a70533ca7",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825832757,
+    "episode_id_train": [
+     825832757
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 10.89377212524414,
+    "path_len_m": 143.39010254071232
+   },
+   {
+    "val_tag": "ep_00067",
+    "train_tags": [
+     "ep_00257"
+    ],
+    "poses_sha256": "ab5c0ce700c8aa194009c7217d51977b877621ffd57b9f29e1481f3b39f0164f",
+    "frames_sha256": "28033262c5bd87cd889ee936f59b65c0d7e740b528cb6783eb9efafb7419a1ed",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825844321,
+    "episode_id_train": [
+     825844321
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 32.464935302734375,
+    "path_len_m": 613.389747549246
+   },
+   {
+    "val_tag": "ep_00068",
+    "train_tags": [
+     "ep_00258"
+    ],
+    "poses_sha256": "c7e8e73361ee6b1cf1c70f5b2ca22b12678ff0a7261c67ab6155d4df1cde603e",
+    "frames_sha256": "6334f3400cb16fdc25bd089a64e959086c17580d09b4fee2135b22a62e6a3051",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 825844528,
+    "episode_id_train": [
+     825844528
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 12.25291633605957,
+    "path_len_m": 104.39310164901684
+   },
+   {
+    "val_tag": "ep_00069",
+    "train_tags": [
+     "ep_00264"
+    ],
+    "poses_sha256": "805fed128390c48172b95d02d257534d1c290449c52209f175f7c161c3a745a5",
+    "frames_sha256": "926c7cd6872603ebe08e9806b5f4d0fb912d0617e96892412b7931f7b8758976",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828454965,
+    "episode_id_train": [
+     828454965
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 34.46142578125,
+    "path_len_m": 663.1318524701809
+   },
+   {
+    "val_tag": "ep_00071",
+    "train_tags": [
+     "ep_00270"
+    ],
+    "poses_sha256": "66d2c99482a3b2d6398f645ed6d4ba8971030fedaf3387fc6d9914c2737fa1eb",
+    "frames_sha256": "3b8633ef6e5ac0763dd4dc6bb5979de9716140725b3931b1825131874476e7cc",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828519225,
+    "episode_id_train": [
+     828519225
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 9.68738079071045,
+    "path_len_m": 127.63803572107648
+   },
+   {
+    "val_tag": "ep_00072",
+    "train_tags": [
+     "ep_00273"
+    ],
+    "poses_sha256": "68d8ef652be939d3f697fe7ef2f6de33d40111b51a30af15652e656f341601c2",
+    "frames_sha256": "84f51ac4651c321f278280e3b071f5dfc0f39f5514a506808a50a29784d43cfb",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828520289,
+    "episode_id_train": [
+     828520289
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 10.701576232910156,
+    "path_len_m": 115.44967717123731
+   },
+   {
+    "val_tag": "ep_00074",
+    "train_tags": [
+     "ep_00281"
+    ],
+    "poses_sha256": "9a2800330c197f7b37910c4c18c00a49c0135701e6fdf4e5e249e0670235401b",
+    "frames_sha256": "aa4373b739fabb038a2ac11d8a5cc38444ff031e5008e1c31a57b885b8115a28",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828584757,
+    "episode_id_train": [
+     828584757
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 21.763586044311523,
+    "path_len_m": 416.3896715006189
+   },
+   {
+    "val_tag": "ep_00075",
+    "train_tags": [
+     "ep_00283"
+    ],
+    "poses_sha256": "dbedb39a4e8a5c93cf13e57cd28ac9f7e199f96779cdacf5ac9e1f7c52065f47",
+    "frames_sha256": "871602924c6d497ca4a4722645877bbeb95d1706feceaf6f09a499a971697e34",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828585270,
+    "episode_id_train": [
+     828585270
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 14.725285530090332,
+    "path_len_m": 256.761523726993
+   },
+   {
+    "val_tag": "ep_00076",
+    "train_tags": [
+     "ep_00288"
+    ],
+    "poses_sha256": "7593d03874cf897079d6f1493869f8c4d5f93d0fa61e6db3f68ed50f5e9476f5",
+    "frames_sha256": "348e60472c751edc84a75e8080732cc3af6dfc7be0918f410c846d1627738a52",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828596790,
+    "episode_id_train": [
+     828596790
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 198,
+    "v_max": 23.887575149536133,
+    "path_len_m": 456.20923481716716
+   },
+   {
+    "val_tag": "ep_00077",
+    "train_tags": [
+     "ep_00293"
+    ],
+    "poses_sha256": "f4b582615a264c33cd3d0edac4263f54098c80595373f36b255cdfb4c68eb4ec",
+    "frames_sha256": "21ddd5b32f22b933aef8bffe481e75fc07e6814bb03803a24044f7af58fa21f4",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828597862,
+    "episode_id_train": [
+     828597862
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 8.709569931030273,
+    "path_len_m": 121.63265729221538
+   },
+   {
+    "val_tag": "ep_00078",
+    "train_tags": [
+     "ep_00295"
+    ],
+    "poses_sha256": "de789062664201b24cf5a67ac0e9a819d677fce877b07c80fadf76a8fec1fcd8",
+    "frames_sha256": "e99b87ebbffa8165b0901aa98f2a8acbcfa37fa2543daa890830f3a5a4860890",
+    "poses_bitwise_equal": true,
+    "episode_id_val": 828650083,
+    "episode_id_train": [
+     828650083
+    ],
+    "episode_id_agrees": [
+     true
+    ],
+    "T": 199,
+    "v_max": 10.334757804870605,
+    "path_len_m": 114.61062668300289
+   }
+  ],
+  "verdict": "LEAKED \u2014 pre-registered outcome 2"
+ },
+ "partial_frame_containment": {
+  "available": true,
+  "n_val_with_any_shared_frame": 62,
+  "max_frac_frames_in_train": 1.0,
+  "top20": [
+   {
+    "val": "ep_00001",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00000",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00002",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00002",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00003",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00009",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00004",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00016",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00005",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00021",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00007",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00030",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00009",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00046",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00010",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00050",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00011",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00054",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00014",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00076",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00015",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00079",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00016",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00083",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00018",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00090",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00019",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00097",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00020",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00102",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00022",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00106",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00023",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00107",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00024",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00110",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00025",
+    "T": 197,
+    "n_frames_present_in_train_anywhere": 197,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00122",
+    "best_shared_frames": 197,
+    "best_frac": 1.0
+   },
+   {
+    "val": "ep_00026",
+    "T": 199,
+    "n_frames_present_in_train_anywhere": 199,
+    "frac_frames_in_train": 1.0,
+    "best_train_episode": "ep_00124",
+    "best_shared_frames": 199,
+    "best_frac": 1.0
+   }
+  ]
+ }
+}

@@ -1,0 +1,683 @@
+{
+  "_experiment": "the LONGITUDINAL / LATERAL CONTROL SUITE on the pseudo-simulation surface",
+  "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+  "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se",
+  "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "missing_gates": {
+    "no_collision": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric.",
+    "no_drivable_area": "IMPOSSIBLE, not merely missing. PhysicalAI-AV has no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal \u2014 the card says verbatim 'we do not include open maps data', and `obstacle.offline`'s enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. Settled at five independent probes. `egomotion` also carries no lat/lon/GNSS, so OSM map-matching on our traces is impossible. \u21d2 DAC / lane-keeping / driving-direction / traffic-light compliance cannot be computed here and are NOT faked.",
+    "_not_a_driving_score": "\u26d4 With no collision gate and no drivable-area term, NOTHING computed on this surface is a Driving Score and none of it may be compared to a PDMS number. It scores PROGRESS, RECOVERY and CONTROL.",
+    "_what_would_unblock_the_collision_gate": "`obstacle.offline` covers 97.4438 % of the corpus with boxes in the rig frame. TWO blockers, both mechanical: (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids \u2014 so episode->clip identity is not resolvable from the cache alone; (b) the matching chunks are not downloaded. Neither is a research problem."
+  },
+  "comfort_status": "INFORMATION-FREE ON THIS SURFACE, AND THE PLANS ARE NOT THE REASON. `comfort` is the AND of four bounds on the finite differences of a 20-waypoint plan. MEASURED: the HUMAN'S OWN LOGGED PATH, differenced identically, fails the same bounds on the overwhelming majority of the SAME windows \u2014 so the term separates 10 Hz differentiation noise from smoothness, not good driving from bad. Between two arms differing ONLY in schedule it moves 720x (0.0004 -> 0.2882), because re-timing at constant speed smooths a per-waypoint regression. It is dropped by the panel-wide gate for every arm under every progress term, so removing its weight is a provable no-op on every published number \u2014 what it removes is the false claim that the composite is three-term. The measurement is still emitted, under `components.comfort`, as the plan-smoothness flag it actually is.",
+  "suite_id": "control_v1@t1s_d1.75m_sref10m_psi0.2rad",
+  "arm_sources": {
+    "cv_holdv0": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_cv_holdv0.npz",
+    "nospeed_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_nospeed_tactical_oracle.npz",
+    "refc_base_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_base_produced.npz",
+    "refc_small_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_small_produced.npz",
+    "refc_xl_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_xl_produced.npz",
+    "stand_still": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_stand_still.npz",
+    "v1_tactical_follow": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_follow.npz",
+    "v1_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_oracle.npz",
+    "v4_blind": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_blind.npz",
+    "v4_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_oracle.npz",
+    "oracle_lon_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_oracle_lon_straight.npz",
+    "v1_ego_double": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_double.npz",
+    "v1_ego_half": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_half.npz",
+    "v1_ego_oracle_lon": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_oracle_lon.npz",
+    "v1_ego_v0": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_v0.npz",
+    "v1_lat_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_lat_straight.npz",
+    "refc_base_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0off.npz",
+    "refc_base_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0on.npz",
+    "refc_xl_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0off.npz",
+    "refc_xl_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0on.npz"
+  },
+  "row_identity": {
+    "cv_holdv0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "nospeed_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_small_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "stand_still": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_blind": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "oracle_lon_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_double": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_half": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_oracle_lon": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_v0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_lat_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "arms_refused_on_row_identity": {},
+  "reference_arm": "cv_holdv0",
+  "probes_excluded": [
+    "stand_still",
+    "v1_ego_half",
+    "v1_ego_double",
+    "oracle_lon_straight"
+  ],
+  "selected_frac_note": "selected_frac = 1.000 for every arm BY CONSTRUCTION: there is no selection step on this surface, every arm is scored on all rows.",
+  "recovery_onesided": {
+    "floor_saturation": {
+      "cv_holdv0": {
+        "mean": 0.077644,
+        "defined_frac": 0.820349,
+        "frac_at_floor_le_0p001": 0.556522,
+        "frac_at_ceiling_ge_0p999": 0.000153,
+        "unclamped_ratio_median": 1.0068,
+        "unclamped_ratio_p90": 2.255,
+        "unclamped_ratio_p99": 7.0361,
+        "unclamped_ratio_max": 20.2049,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.547521
+      },
+      "nospeed_tactical_oracle": {
+        "mean": 0.079962,
+        "defined_frac": 0.845066,
+        "frac_at_floor_le_0p001": 0.698778,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.0906,
+        "unclamped_ratio_p90": 1.7301,
+        "unclamped_ratio_p99": 3.8378,
+        "unclamped_ratio_max": 10.5418,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.697297
+      },
+      "refc_base_produced": {
+        "mean": 0.029315,
+        "defined_frac": 0.82498,
+        "frac_at_floor_le_0p001": 0.916035,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.3729,
+        "unclamped_ratio_p90": 1.6834,
+        "unclamped_ratio_p99": 3.8274,
+        "unclamped_ratio_max": 16.0479,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.915807
+      },
+      "refc_small_produced": {
+        "mean": 0.029593,
+        "defined_frac": 0.825293,
+        "frac_at_floor_le_0p001": 0.91182,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.3665,
+        "unclamped_ratio_p90": 1.7319,
+        "unclamped_ratio_p99": 4.009,
+        "unclamped_ratio_max": 16.1422,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.911441
+      },
+      "refc_xl_produced": {
+        "mean": 0.02585,
+        "defined_frac": 0.825605,
+        "frac_at_floor_le_0p001": 0.921858,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.3671,
+        "unclamped_ratio_p90": 1.6773,
+        "unclamped_ratio_p99": 3.6857,
+        "unclamped_ratio_max": 12.9508,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.921783
+      },
+      "v1_tactical_follow": {
+        "mean": 0.078493,
+        "defined_frac": 0.842313,
+        "frac_at_floor_le_0p001": 0.697274,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.0855,
+        "unclamped_ratio_p90": 1.702,
+        "unclamped_ratio_p99": 3.6724,
+        "unclamped_ratio_max": 9.4602,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.694674
+      },
+      "v1_tactical_oracle": {
+        "mean": 0.081665,
+        "defined_frac": 0.841875,
+        "frac_at_floor_le_0p001": 0.69221,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.0875,
+        "unclamped_ratio_p90": 1.7377,
+        "unclamped_ratio_p99": 3.7309,
+        "unclamped_ratio_max": 9.4602,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.689609
+      },
+      "v4_blind": {
+        "mean": 0.1159,
+        "defined_frac": 0.574808,
+        "frac_at_floor_le_0p001": 0.557914,
+        "frac_at_ceiling_ge_0p999": 0.000109,
+        "unclamped_ratio_median": 1.0425,
+        "unclamped_ratio_p90": 2.5358,
+        "unclamped_ratio_p99": 9.252,
+        "unclamped_ratio_max": 19.8886,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.557479
+      },
+      "v4_oracle": {
+        "mean": 0.062875,
+        "defined_frac": 0.837682,
+        "frac_at_floor_le_0p001": 0.755584,
+        "frac_at_ceiling_ge_0p999": 7.5e-05,
+        "unclamped_ratio_median": 1.1142,
+        "unclamped_ratio_p90": 1.6301,
+        "unclamped_ratio_p99": 3.3117,
+        "unclamped_ratio_max": 8.2868,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.753492
+      },
+      "oracle_lon_straight": {
+        "mean": 0.081595,
+        "defined_frac": 0.824104,
+        "frac_at_floor_le_0p001": 0.550266,
+        "frac_at_ceiling_ge_0p999": 7.6e-05,
+        "unclamped_ratio_median": 1.0064,
+        "unclamped_ratio_p90": 2.1243,
+        "unclamped_ratio_p99": 5.7071,
+        "unclamped_ratio_max": 9.1392,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.543052
+      },
+      "v1_ego_double": {
+        "mean": 0.070582,
+        "defined_frac": 0.823415,
+        "frac_at_floor_le_0p001": 0.742534,
+        "frac_at_ceiling_ge_0p999": 0.000152,
+        "unclamped_ratio_median": 1.1078,
+        "unclamped_ratio_p90": 2.065,
+        "unclamped_ratio_p99": 5.0553,
+        "unclamped_ratio_max": 44.1032,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.740102
+      },
+      "v1_ego_half": {
+        "mean": 0.076073,
+        "defined_frac": 0.811589,
+        "frac_at_floor_le_0p001": 0.689283,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.0817,
+        "unclamped_ratio_p90": 3.3906,
+        "unclamped_ratio_p99": 11.1127,
+        "unclamped_ratio_max": 33.102,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.687047
+      },
+      "v1_ego_oracle_lon": {
+        "mean": 0.074075,
+        "defined_frac": 0.823353,
+        "frac_at_floor_le_0p001": 0.717282,
+        "frac_at_ceiling_ge_0p999": 7.6e-05,
+        "unclamped_ratio_median": 1.0902,
+        "unclamped_ratio_p90": 1.7486,
+        "unclamped_ratio_p99": 3.8176,
+        "unclamped_ratio_max": 28.9461,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.714926
+      },
+      "v1_ego_v0": {
+        "mean": 0.065305,
+        "defined_frac": 0.819598,
+        "frac_at_floor_le_0p001": 0.728661,
+        "frac_at_ceiling_ge_0p999": 7.6e-05,
+        "unclamped_ratio_median": 1.095,
+        "unclamped_ratio_p90": 1.8541,
+        "unclamped_ratio_p99": 5.2281,
+        "unclamped_ratio_max": 28.4145,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.72637
+      },
+      "v1_lat_straight": {
+        "mean": 0.074736,
+        "defined_frac": 0.845942,
+        "frac_at_floor_le_0p001": 0.563503,
+        "frac_at_ceiling_ge_0p999": 7.4e-05,
+        "unclamped_ratio_median": 1.0041,
+        "unclamped_ratio_p90": 1.9464,
+        "unclamped_ratio_p99": 5.9145,
+        "unclamped_ratio_max": 14.2659,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.539241
+      },
+      "refc_base_v0off": {
+        "mean": 0.038338,
+        "defined_frac": 0.818535,
+        "frac_at_floor_le_0p001": 0.89932,
+        "frac_at_ceiling_ge_0p999": 7.6e-05,
+        "unclamped_ratio_median": 1.3641,
+        "unclamped_ratio_p90": 1.6881,
+        "unclamped_ratio_p99": 4.3637,
+        "unclamped_ratio_max": 31.7667,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.898861
+      },
+      "refc_base_v0on": {
+        "mean": 0.029314,
+        "defined_frac": 0.82498,
+        "frac_at_floor_le_0p001": 0.915959,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.3729,
+        "unclamped_ratio_p90": 1.6834,
+        "unclamped_ratio_p99": 3.8275,
+        "unclamped_ratio_max": 16.0479,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.915807
+      },
+      "refc_xl_v0off": {
+        "mean": 0.036591,
+        "defined_frac": 0.82354,
+        "frac_at_floor_le_0p001": 0.900843,
+        "frac_at_ceiling_ge_0p999": 0.000152,
+        "unclamped_ratio_median": 1.3595,
+        "unclamped_ratio_p90": 1.6591,
+        "unclamped_ratio_p99": 4.1561,
+        "unclamped_ratio_max": 34.0688,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.900539
+      },
+      "refc_xl_v0on": {
+        "mean": 0.02585,
+        "defined_frac": 0.825605,
+        "frac_at_floor_le_0p001": 0.921858,
+        "frac_at_ceiling_ge_0p999": 0.0,
+        "unclamped_ratio_median": 1.3671,
+        "unclamped_ratio_p90": 1.6773,
+        "unclamped_ratio_p99": 3.6857,
+        "unclamped_ratio_max": 12.9508,
+        "frac_ratio_gt_1_i_e_WORSE_THAN_DOING_NOTHING": 0.921783
+      }
+    },
+    "direction": {
+      "cv_holdv0": {
+        "lat_shift(+2)": {
+          "recovery": {
+            "delta": 0.1379,
+            "lo": 0.1127,
+            "hi": 0.1637,
+            "ci95": 0.0255,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13081,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.0008,
+            "lo": -0.0018,
+            "hi": 0.0001,
+            "ci95": 0.001,
+            "p_delta_gt0": 0.041,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0581,
+            "lo": 0.0473,
+            "hi": 0.0691,
+            "ci95": 0.0109,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15464,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "lat_shift(-2)": {
+          "recovery": {
+            "delta": 0.1189,
+            "lo": 0.0919,
+            "hi": 0.1472,
+            "ci95": 0.0277,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13081,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.0008,
+            "lo": -0.0018,
+            "hi": 0.0001,
+            "ci95": 0.001,
+            "p_delta_gt0": 0.041,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0501,
+            "lo": 0.0386,
+            "hi": 0.062,
+            "ci95": 0.0117,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15464,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "lat_jitter(+1)": {
+          "recovery": {
+            "delta": 0.0717,
+            "lo": 0.0568,
+            "hi": 0.0871,
+            "ci95": 0.0151,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13100,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.00025,
+            "lo": -0.00048,
+            "hi": -1e-05,
+            "ci95": 0.00023,
+            "p_delta_gt0": 0.02,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "display_dp": 5,
+            "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+          },
+          "PSS_composite": {
+            "delta": 0.0303,
+            "lo": 0.024,
+            "hi": 0.037,
+            "ci95": 0.0065,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15474,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "yaw_bias(+5)": {
+          "recovery": {
+            "delta": 0.1784,
+            "lo": 0.1478,
+            "hi": 0.2076,
+            "ci95": 0.0299,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13110,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.0021,
+            "lo": -0.0026,
+            "hi": -0.0016,
+            "ci95": 0.0005,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0747,
+            "lo": 0.0618,
+            "hi": 0.0872,
+            "ci95": 0.0127,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15478,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      },
+      "v1_tactical_follow": {
+        "lat_shift(+2)": {
+          "recovery": {
+            "delta": 0.119,
+            "lo": 0.0955,
+            "hi": 0.1412,
+            "ci95": 0.0229,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": 0.0004,
+            "lo": -0.0006,
+            "hi": 0.0014,
+            "ci95": 0.001,
+            "p_delta_gt0": 0.788,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0513,
+            "lo": 0.0409,
+            "hi": 0.061,
+            "ci95": 0.0101,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15686,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "lat_shift(-2)": {
+          "recovery": {
+            "delta": 0.1137,
+            "lo": 0.0858,
+            "hi": 0.1425,
+            "ci95": 0.0283,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13455,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.001,
+            "lo": -0.0019,
+            "hi": -0.0001,
+            "ci95": 0.0009,
+            "p_delta_gt0": 0.0185,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0478,
+            "lo": 0.0346,
+            "hi": 0.0607,
+            "ci95": 0.0131,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15698,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "lat_jitter(+1)": {
+          "recovery": {
+            "delta": 0.0475,
+            "lo": 0.037,
+            "hi": 0.058,
+            "ci95": 0.0105,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13456,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": -0.00018,
+            "lo": -0.00036,
+            "hi": -3e-05,
+            "ci95": 0.00017,
+            "p_delta_gt0": 0.0075,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "display_dp": 5,
+            "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+          },
+          "PSS_composite": {
+            "delta": 0.0205,
+            "lo": 0.0154,
+            "hi": 0.0255,
+            "ci95": 0.005,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15697,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "yaw_bias(+5)": {
+          "recovery": {
+            "delta": 0.1614,
+            "lo": 0.135,
+            "hi": 0.1869,
+            "ci95": 0.0259,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 13456,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "ego_progress": {
+            "delta": 0.0016,
+            "lo": 0.0002,
+            "hi": 0.0032,
+            "ci95": 0.0015,
+            "p_delta_gt0": 0.988,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15442,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "PSS_composite": {
+            "delta": 0.0707,
+            "lo": 0.0594,
+            "hi": 0.0818,
+            "ci95": 0.0112,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 15698,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        }
+      }
+    },
+    "_read": "A POSITIVE delta means the DEGRADED plan scores HIGHER. Every entry here is an injected LATERAL error, including a ZERO-MEAN one that cannot re-centre a bias in expectation."
+  }
+}

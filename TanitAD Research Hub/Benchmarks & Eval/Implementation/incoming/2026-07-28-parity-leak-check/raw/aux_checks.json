@@ -1,0 +1,143 @@
+{
+ "what": "auxiliary checks around the PhysicalAI parity leak verdict",
+ "date": "2026-07-28",
+ "evidence_class": "MEASURED (ours; sha256 of raw bytes)",
+ "deployed40_is_subset_of_registered600": {
+  "n_deployed": 40,
+  "n_registered_view": 600,
+  "n_of_40_found_in_600_by_poses_sha256": 40,
+  "is_subset": true,
+  "n_where_the_TAG_also_matches": 40,
+  "deployed_host": "1e0bac0df88a",
+  "deployed_path": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "view_host": "1682186f1e9b",
+  "view_path": "/workspace/s3parity/views/physicalai-val-0c5f7dac3b11",
+  "why": "the eval pod carries 40 of the split's 600 episodes; if the 40 are a content-subset of the 600, then the cheap 600-ep poses check covers the deployed substrate too."
+ },
+ "train_view_is_byte_faithful": {
+  "n_full": 2376,
+  "n_view": 2376,
+  "n_tags_with_identical_poses_sha256": 2376,
+  "faithful": true,
+  "why": "the poses-only VIEW is a DERIVED artefact. If it were not byte-identical to the source poses, every result computed on it would be void. This is the check that licenses using it."
+ },
+ "maneuvers_sha256_is_NOT_an_identifying_hash": {
+  "train": {
+   "n_episodes": 2376,
+   "n_distinct": 1883,
+   "modal_group_size": 450,
+   "frac_in_modal_group": 0.1893939393939394
+  },
+  "val40": {
+   "n_episodes": 40,
+   "n_distinct": 31,
+   "modal_group_size": 10,
+   "frac_in_modal_group": 0.25
+  },
+  "train_poses_for_contrast": {
+   "n_episodes": 2376,
+   "n_distinct": 2376,
+   "modal_group_size": 1,
+   "frac_in_modal_group": 0.00042087542087542086
+  },
+  "train_frames_for_contrast": {
+   "n_episodes": 2376,
+   "n_distinct": 2376,
+   "modal_group_size": 1,
+   "frac_in_modal_group": 0.00042087542087542086
+  },
+  "why": "`maneuvers` is a [T] int64 CATEGORICAL LABEL sequence, not content. Many distinct episodes carry the identical sequence (e.g. all-follow). Its 'matches' are label collisions, NOT shared content \u2014 which is why it is the one family that disagrees with the other six."
+ },
+ "maneuvers_collisions_carry_no_content_match": {
+  "n_val_episodes_colliding": 10,
+  "n_with_ANY_identifying_family_also_matching": 0,
+  "rows": [
+   {
+    "val_tag": "ep_00004",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00006",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00008",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00012",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00013",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00017",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00024",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00029",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00031",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   },
+   {
+    "val_tag": "ep_00035",
+    "n_train_episodes_with_the_same_maneuver_sequence": 450,
+    "any_identifying_family_also_matches": false
+   }
+  ]
+ },
+ "episode_id_is_not_unique_inside_train": {
+  "n_train_episodes": 2376,
+  "n_distinct_episode_ids": 2342,
+  "n_ids_used_more_than_once": 33,
+  "n_episodes_sharing_an_id": 67,
+  "max_multiplicity": 3,
+  "why": "an `episode_id`-based disjointness claim is weaker than it looks when the id is not even a key inside one cache."
+ },
+ "within_train_near_duplicates": {
+  "poses_xy_sha256": {
+   "n_groups": 1,
+   "groups": [
+    [
+     "ep_01036",
+     "ep_02371"
+    ]
+   ]
+  },
+  "poses_v_sha256": {
+   "n_groups": 1,
+   "groups": [
+    [
+     "ep_01036",
+     "ep_02371"
+    ]
+   ]
+  },
+  "poses_sha256": {
+   "n_groups": 0,
+   "groups": []
+  },
+  "frames_sha256": {
+   "n_groups": 0,
+   "groups": []
+  }
+ }
+}

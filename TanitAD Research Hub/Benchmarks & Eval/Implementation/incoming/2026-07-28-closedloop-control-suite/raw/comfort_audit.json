@@ -1,0 +1,334 @@
+{
+  "_experiment": "the LONGITUDINAL / LATERAL CONTROL SUITE on the pseudo-simulation surface",
+  "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+  "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=500, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se",
+  "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "missing_gates": {
+    "no_collision": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric.",
+    "no_drivable_area": "IMPOSSIBLE, not merely missing. PhysicalAI-AV has no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal \u2014 the card says verbatim 'we do not include open maps data', and `obstacle.offline`'s enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. Settled at five independent probes. `egomotion` also carries no lat/lon/GNSS, so OSM map-matching on our traces is impossible. \u21d2 DAC / lane-keeping / driving-direction / traffic-light compliance cannot be computed here and are NOT faked.",
+    "_not_a_driving_score": "\u26d4 With no collision gate and no drivable-area term, NOTHING computed on this surface is a Driving Score and none of it may be compared to a PDMS number. It scores PROGRESS, RECOVERY and CONTROL.",
+    "_what_would_unblock_the_collision_gate": "`obstacle.offline` covers 97.4438 % of the corpus with boxes in the rig frame. TWO blockers, both mechanical: (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids \u2014 so episode->clip identity is not resolvable from the cache alone; (b) the matching chunks are not downloaded. Neither is a research problem."
+  },
+  "comfort_status": "INFORMATION-FREE ON THIS SURFACE, AND THE PLANS ARE NOT THE REASON. `comfort` is the AND of four bounds on the finite differences of a 20-waypoint plan. MEASURED: the HUMAN'S OWN LOGGED PATH, differenced identically, fails the same bounds on the overwhelming majority of the SAME windows \u2014 so the term separates 10 Hz differentiation noise from smoothness, not good driving from bad. Between two arms differing ONLY in schedule it moves 720x (0.0004 -> 0.2882), because re-timing at constant speed smooths a per-waypoint regression. It is dropped by the panel-wide gate for every arm under every progress term, so removing its weight is a provable no-op on every published number \u2014 what it removes is the false claim that the composite is three-term. The measurement is still emitted, under `components.comfort`, as the plan-smoothness flag it actually is.",
+  "suite_id": "control_v1@t1s_d1.75m_sref10m_psi0.2rad",
+  "arm_sources": {
+    "cv_holdv0": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_cv_holdv0.npz",
+    "nospeed_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_nospeed_tactical_oracle.npz",
+    "refc_base_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_base_produced.npz",
+    "refc_small_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_small_produced.npz",
+    "refc_xl_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_xl_produced.npz",
+    "stand_still": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_stand_still.npz",
+    "v1_tactical_follow": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_follow.npz",
+    "v1_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_oracle.npz",
+    "v4_blind": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_blind.npz",
+    "v4_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_oracle.npz",
+    "oracle_lon_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_oracle_lon_straight.npz",
+    "v1_ego_double": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_double.npz",
+    "v1_ego_half": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_half.npz",
+    "v1_ego_oracle_lon": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_oracle_lon.npz",
+    "v1_ego_v0": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_v0.npz",
+    "v1_lat_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_lat_straight.npz",
+    "refc_base_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0off.npz",
+    "refc_base_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0on.npz",
+    "refc_xl_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0off.npz",
+    "refc_xl_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0on.npz"
+  },
+  "row_identity": {
+    "cv_holdv0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "nospeed_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_small_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "stand_still": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_blind": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "oracle_lon_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_double": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_half": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_oracle_lon": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_v0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_lat_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "arms_refused_on_row_identity": {},
+  "reference_arm": "cv_holdv0",
+  "probes_excluded": [
+    "stand_still",
+    "v1_ego_half",
+    "v1_ego_double",
+    "oracle_lon_straight"
+  ],
+  "selected_frac_note": "selected_frac = 1.000 for every arm BY CONSTRUCTION: there is no selection step on this surface, every arm is scored on all rows.",
+  "comfort_audit": {
+    "limits": {
+      "a_lon_max_mps2": 3.0,
+      "a_lat_max_mps2": 3.0,
+      "jerk_max_mps3": 8.0,
+      "yaw_rate_max_radps": 0.95
+    },
+    "limits_class": "PROPOSED (NAVSIM/nuPlan-style; their exact constants are not quotable from verified material)",
+    "arms": {
+      "cv_holdv0": {
+        "comfort_mean_ALL_CLAUSES": 1.0,
+        "pass_frac_per_clause": {
+          "a_lon": 1.0,
+          "a_lat": 1.0,
+          "jerk": 1.0,
+          "yaw_rate": 1.0
+        }
+      },
+      "nospeed_tactical_oracle": {
+        "comfort_mean_ALL_CLAUSES": 0.000688,
+        "pass_frac_per_clause": {
+          "a_lon": 0.415931,
+          "a_lat": 0.600964,
+          "jerk": 0.000688,
+          "yaw_rate": 0.823415
+        }
+      },
+      "refc_base_produced": {
+        "comfort_mean_ALL_CLAUSES": 0.008197,
+        "pass_frac_per_clause": {
+          "a_lon": 0.515737,
+          "a_lat": 0.457543,
+          "jerk": 0.018084,
+          "yaw_rate": 0.794506
+        }
+      },
+      "refc_small_produced": {
+        "comfort_mean_ALL_CLAUSES": 0.002691,
+        "pass_frac_per_clause": {
+          "a_lon": 0.407359,
+          "a_lat": 0.446718,
+          "jerk": 0.003254,
+          "yaw_rate": 0.78562
+        }
+      },
+      "refc_xl_produced": {
+        "comfort_mean_ALL_CLAUSES": 0.005381,
+        "pass_frac_per_clause": {
+          "a_lon": 0.509167,
+          "a_lat": 0.443589,
+          "jerk": 0.016144,
+          "yaw_rate": 0.799011
+        }
+      },
+      "stand_still": {
+        "comfort_mean_ALL_CLAUSES": 1.0,
+        "pass_frac_per_clause": {
+          "a_lon": 1.0,
+          "a_lat": 1.0,
+          "jerk": 1.0,
+          "yaw_rate": 1.0
+        }
+      },
+      "v1_tactical_follow": {
+        "comfort_mean_ALL_CLAUSES": 0.000375,
+        "pass_frac_per_clause": {
+          "a_lon": 0.36218,
+          "a_lat": 0.629122,
+          "jerk": 0.000375,
+          "yaw_rate": 0.820912
+        }
+      },
+      "v1_tactical_oracle": {
+        "comfort_mean_ALL_CLAUSES": 0.000375,
+        "pass_frac_per_clause": {
+          "a_lon": 0.350541,
+          "a_lat": 0.619924,
+          "jerk": 0.000375,
+          "yaw_rate": 0.816845
+        }
+      },
+      "v4_blind": {
+        "comfort_mean_ALL_CLAUSES": 0.0,
+        "pass_frac_per_clause": {
+          "a_lon": 0.0,
+          "a_lat": 0.0,
+          "jerk": 0.0,
+          "yaw_rate": 0.088042
+        }
+      },
+      "v4_oracle": {
+        "comfort_mean_ALL_CLAUSES": 0.0,
+        "pass_frac_per_clause": {
+          "a_lon": 0.0,
+          "a_lat": 0.0,
+          "jerk": 0.0,
+          "yaw_rate": 0.166573
+        }
+      },
+      "oracle_lon_straight": {
+        "comfort_mean_ALL_CLAUSES": 0.936112,
+        "pass_frac_per_clause": {
+          "a_lon": 0.986609,
+          "a_lat": 1.0,
+          "jerk": 0.959264,
+          "yaw_rate": 0.987735
+        }
+      },
+      "v1_ego_double": {
+        "comfort_mean_ALL_CLAUSES": 0.09868,
+        "pass_frac_per_clause": {
+          "a_lon": 0.898692,
+          "a_lat": 0.516926,
+          "jerk": 0.100807,
+          "yaw_rate": 0.882611
+        }
+      },
+      "v1_ego_half": {
+        "comfort_mean_ALL_CLAUSES": 0.637194,
+        "pass_frac_per_clause": {
+          "a_lon": 0.993555,
+          "a_lat": 0.903448,
+          "jerk": 0.639635,
+          "yaw_rate": 0.914085
+        }
+      },
+      "v1_ego_oracle_lon": {
+        "comfort_mean_ALL_CLAUSES": 0.245291,
+        "pass_frac_per_clause": {
+          "a_lon": 0.942306,
+          "a_lat": 0.740692,
+          "jerk": 0.264376,
+          "yaw_rate": 0.872912
+        }
+      },
+      "v1_ego_v0": {
+        "comfort_mean_ALL_CLAUSES": 0.288217,
+        "pass_frac_per_clause": {
+          "a_lon": 0.958513,
+          "a_lat": 0.756961,
+          "jerk": 0.290845,
+          "yaw_rate": 0.888117
+        }
+      },
+      "v1_lat_straight": {
+        "comfort_mean_ALL_CLAUSES": 0.009887,
+        "pass_frac_per_clause": {
+          "a_lon": 0.339278,
+          "a_lat": 1.0,
+          "jerk": 0.009887,
+          "yaw_rate": 1.0
+        }
+      },
+      "refc_base_v0off": {
+        "comfort_mean_ALL_CLAUSES": 0.003567,
+        "pass_frac_per_clause": {
+          "a_lon": 0.525812,
+          "a_lat": 0.45648,
+          "jerk": 0.015456,
+          "yaw_rate": 0.783868
+        }
+      },
+      "refc_base_v0on": {
+        "comfort_mean_ALL_CLAUSES": 0.008197,
+        "pass_frac_per_clause": {
+          "a_lon": 0.5158,
+          "a_lat": 0.457543,
+          "jerk": 0.018021,
+          "yaw_rate": 0.794569
+        }
+      },
+      "refc_xl_v0off": {
+        "comfort_mean_ALL_CLAUSES": 0.005006,
+        "pass_frac_per_clause": {
+          "a_lon": 0.534259,
+          "a_lat": 0.443777,
+          "jerk": 0.017646,
+          "yaw_rate": 0.79557
+        }
+      },
+      "refc_xl_v0on": {
+        "comfort_mean_ALL_CLAUSES": 0.005319,
+        "pass_frac_per_clause": {
+          "a_lon": 0.50923,
+          "a_lat": 0.443589,
+          "jerk": 0.016082,
+          "yaw_rate": 0.799011
+        }
+      }
+    },
+    "human_reference": {
+      "_what": "the LOGGED HUMAN PATH over the identical windows, differenced with the identical arithmetic. This is real driving by definition.",
+      "comfort_mean_ALL_CLAUSES": 0.83399,
+      "pass_frac_per_clause": {
+        "a_lon": 0.982479,
+        "a_lat": 0.915024,
+        "jerk": 0.940429,
+        "yaw_rate": 0.981165
+      },
+      "n_rows": 15981
+    },
+    "_verdict": "If the human's own pass-rate is far below 1.0, the bounds are not a comfort measurement on this surface and the term cannot separate good driving from bad \u2014 it separates smoothness of a 20-point polyline."
+  }
+}

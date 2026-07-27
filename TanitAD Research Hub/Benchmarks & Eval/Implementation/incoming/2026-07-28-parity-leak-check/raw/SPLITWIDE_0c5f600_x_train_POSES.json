@@ -1,0 +1,191 @@
+{
+ "what": "content-based train/val overlap for a PhysicalAI parity split",
+ "label": "SPLIT-WIDE: registered clean val 0c5f7dac3b11 (all 600, poses-only view) x parity train e438721ae894 (2376, poses-only view)",
+ "date": "2026-07-27",
+ "agent": "parity-leak-check",
+ "evidence_class": "MEASURED (ours; sha256 of raw bytes)",
+ "pre_registration": {
+  "fixed_before_the_probe_ran": true,
+  "overlap_eq_0": "CLEAN \u2014 the parity split is sound BY CONTENT; the registry's episode-disjoint claim is upgraded from an episode_id claim to content-verified.",
+  "overlap_gt_0": "LEAKED \u2014 report the count, the identities, and the fraction of each affected metric's mass the leaked episodes carry. NOT softened into 'minor'. Invalidates GENERALISATION claims, not TRAINING facts, and hits arms differently by which episodes they trained on."
+ },
+ "method": {
+  "primary": "sha256 of the raw `poses` [T,4] float32 bytes",
+  "sensor_level": "sha256 of the raw `frames_u8` [T,9,256,256] uint8 bytes \u2014 independent of every label protocol",
+  "families": [
+   "poses_sha256",
+   "poses_xy_sha256",
+   "poses_yaw_sha256",
+   "poses_v_sha256"
+  ],
+  "name_derived_CROSS_CHECK_ONLY": [
+   "episode_id",
+   "ep_XXXXX.pt filename"
+  ],
+  "why": "600/600 filename overlap with 0/600 real overlap has been MEASURED in this program; and 2 of 22 comma eval episodes were bit-identical to training episodes, found only by bytes.",
+  "mode": {
+   "val": "poses",
+   "train": "poses"
+  }
+ },
+ "sets": {
+  "VAL": {
+   "cache": "physicalai-val-0c5f7dac3b11",
+   "path": "/workspace/s3parity/views/physicalai-val-0c5f7dac3b11",
+   "host": "1682186f1e9b",
+   "n": 600,
+   "mode": "poses",
+   "n_in_cache": 600
+  },
+  "TRAIN": {
+   "cache": "physicalai-train-e438721ae894",
+   "path": "/workspace/s3parity/views/physicalai-train-e438721ae894",
+   "host": "1682186f1e9b",
+   "n": 2376,
+   "mode": "poses",
+   "n_in_cache": 2376
+  }
+ },
+ "controls": {
+  "SELF": {
+   "what": "val x val through the identical matcher; MUST equal n_val",
+   "n_val": 600,
+   "per_family": {
+    "poses_sha256": 600,
+    "poses_xy_sha256": 600,
+    "poses_yaw_sha256": 600,
+    "poses_v_sha256": 600
+   },
+   "passes": true
+  },
+  "SPIKE": {
+   "what": "3 REAL val episodes injected into a COPY of the train set in memory (no cache touched); the same matcher MUST find exactly 3, with the right identities",
+   "k_injected": 3,
+   "injected_val_tags": [
+    "ep_00000",
+    "ep_00001",
+    "ep_00002"
+   ],
+   "n_found_by_poses_sha256": 3,
+   "n_found_by_frames_sha256": null,
+   "identities_recovered": [
+    "ep_00000",
+    "ep_00001",
+    "ep_00002"
+   ],
+   "passes": true
+  },
+  "MUTANT": {
+   "what": "val x (val with ONE BIT of the pose tensor flipped); MUST be 0 \u2014 proves the instrument is not matching on something trivial",
+   "n_matched_poses_sha256": 0,
+   "n_matched_poses_xy_sha256": 0,
+   "passes": true
+  },
+  "ALL_CONTROLS_PASS": true
+ },
+ "hash_family_agreement": {
+  "poses_sha256": 0,
+  "poses_xy_sha256": 0,
+  "poses_yaw_sha256": 0,
+  "poses_v_sha256": 0,
+  "all_content_families_agree": true
+ },
+ "name_derived_cross_checks": {
+  "episode_id_overlap": 20,
+  "n_val_episode_ids_distinct": 596,
+  "n_train_episode_ids_distinct": 2342,
+  "filename_overlap": 600,
+  "n_val_files": 600,
+  "n_train_files": 2376,
+  "note": "NOT evidence. Reported so a name/content DISAGREEMENT is visible."
+ },
+ "within_cache_duplicates": {
+  "physicalai-val-0c5f7dac3b11 (val)": {
+   "poses_sha256": {
+    "n_distinct": 600,
+    "n_episodes": 600,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_xy_sha256": {
+    "n_distinct": 599,
+    "n_episodes": 600,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_00247",
+      "ep_00552"
+     ]
+    ]
+   },
+   "poses_yaw_sha256": {
+    "n_distinct": 600,
+    "n_episodes": 600,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_v_sha256": {
+    "n_distinct": 599,
+    "n_episodes": 600,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_00247",
+      "ep_00552"
+     ]
+    ]
+   }
+  },
+  "physicalai-train-e438721ae894 (train)": {
+   "poses_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_xy_sha256": {
+    "n_distinct": 2375,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_01036",
+      "ep_02371"
+     ]
+    ]
+   },
+   "poses_yaw_sha256": {
+    "n_distinct": 2376,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 0,
+    "duplicate_groups": []
+   },
+   "poses_v_sha256": {
+    "n_distinct": 2375,
+    "n_episodes": 2376,
+    "n_duplicate_groups": 1,
+    "duplicate_groups": [
+     [
+      "ep_01036",
+      "ep_02371"
+     ]
+    ]
+   }
+  }
+ },
+ "THE_ANSWER": {
+  "question": "how many of physicalai-val-0c5f7dac3b11's 600 evaluation episodes are, BY CONTENT, also in the parity TRAIN corpus physicalai-train-e438721ae894 (2376 episodes)?",
+  "n_val_episodes": 600,
+  "n_train_episodes": 2376,
+  "n_overlap_by_poses_sha256": 0,
+  "n_overlap_by_frames_sha256": null,
+  "frac_of_val_episodes": 0.0,
+  "leaked_val_tags": [],
+  "detail": [],
+  "verdict": "CLEAN \u2014 pre-registered outcome 1"
+ },
+ "partial_frame_containment": {
+  "available": false,
+  "why": "val fingerprints carry no frame_digests"
+ }
+}
