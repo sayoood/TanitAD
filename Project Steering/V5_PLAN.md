@@ -260,8 +260,38 @@ pushed through the IDENTICAL construction, is separated-WORSE at −33.1 %.**
 ⇒ **THE DIFFERENCE IS SPEED HISTORY. `dv_*` / `v_lag_*` alone are worth +0.1428 m [+0.0686, +0.2516] —
 4.4× the entire lead block. The parent's head had `v0` and NO HISTORY.** The earlier −10.4 % REFUTE was
 a missing-feature result, not a ceiling.
-**Tier: PROVISIONAL** *(the conservative `by_speed` resampler gives the same sign and size, +20.3 %/
-+22.9 %, but is **not separated**; `E1_ego|iid`'s upper bound is −0.0008).*
+✅ **TIER: CONFIRMED — E-GOAL-2 re-ran it at n = 600 (2026-07-28) and the effect SURVIVES.**
+(`…/incoming/2026-07-28-egoal-2-power/`.) Recovery **+25.4 % [−0.0960, −0.0606]** on the conservative
+carrier, and ⭐ **`by_speed` — the resampler that would NOT separate at n = 40 — now separates at
++26.2 % [−0.0987, −0.0631]**, on both resamplers and all three cross-track backgrounds. **The −0.0008
+upper bound was UNPOWERED, NOT REFUTED.** CI half-widths shrank **×3.20–3.89, median ×3.76** over 18
+cells — an independent replication of `MODEL_REGISTRY §1.2a`.
+⇒ **The speed-history feature ENTERS the v5 selector. Size it against +25.4 %, NOT the +40.8 % the
+friendlier backgrounds return.**
+
+⛔ **AND E-GOAL-1's NUMBER IS RE-SCOPED — the registered bridge FAILED, which is the more important
+finding.** E-GOAL-1's cross-track background **cannot be rebuilt at 600** (it needs v4 latents that
+exist only on the 881 windows), and the registered substitute deviated **+5.6 recovery points and
+FLIPPED `by_speed` to separated at n = 40 — using it would have MANUFACTURED a CONFIRM.**
+⭐⭐ **At fixed n and fixed along-track error, recovery spans +13.3 % … +29.2 % PURELY ON THE
+BACKGROUND, and separation flips inside that range — a 15.9-point swing.** ⇒ **E-GOAL-1's +23.6 % was
+conditional on a background it never named, and SO IS EVERY OTHER RECOVERY NUMBER IN THIS PROGRAM.
+From now on a recovery figure without its cross-track background is inadmissible.**
+
+⛔ **A second self-caught defect, in the stream's OWN pre-registered primary: the predicate STOPS
+DISCRIMINATING at n = 600 — a deliberately information-free arm separates too (+9.1 %).** The claim
+survives on a **direct contrast** instead: history vs noise-in-the-same-columns **−0.0504
+[−0.0519, −0.0490]**, while dropped-history vs fake-history is **−0.0001 [−0.0006, +0.0004]**, a tight
+null. **64 % of the recovery is speed history; the lead block is 7.9× smaller — E-GOAL-1's lead
+refutation REPLICATES.** *(New class: **PREDICATE-STOPS-DISCRIMINATING-AT-HIGH-n** — the inverse of
+under-powering, and it would have passed unnoticed as a "stronger" result.)*
+
+⚠️ **Family matters, demonstrated: the family-matched σ₀ at n = 600 is 1.2195 m and the head's
+0.9305 m clears it by 1.31× — while FAILING the inherited `ISO` 0.813 bar by 1.14×.** Same number,
+opposite verdicts, decided by which error family the bar was computed on (class C24).
+
+⛔ **NOT LICENSED: +25.4 % is a RESAMPLED RESIDUAL, not a trained head. E-GOAL-3 — an actually
+trained goal head — remains the decisive test, and no v5 commitment should outrun it.**
 
 ⚠️ **AND THE BARS THIS DOCUMENT PUBLISHED WERE COMPUTED ON THE WRONG FAMILY.** The measured heads are
 **near-unbiased (α ≈ 0.996 — not `SHRINK`)** and **heavy-tailed (RMS/MAE 1.867 — not `ISO`)**. Sweeping

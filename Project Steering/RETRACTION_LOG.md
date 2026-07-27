@@ -348,3 +348,29 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   statistic, not typical accuracy** — a distinction a headline R² erases.
   ⇒ **Bin the residuals by a physical covariate BEFORE blaming the architecture.** The defect here was
   visible in one speed-bin table and had survived every previous investigation of that channel.
+- **C30 — RECOVERY CONDITIONAL ON AN UNREPORTED BACKGROUND** *(new class, added 2026-07-28)* ⇒ **a
+  "% of headroom recovered" is not a property of the treatment alone — it is a property of the
+  treatment AND the background the other axis was held at, and the background can move the answer
+  further than the treatment does.** MEASURED: **at fixed n and fixed along-track error, recovery
+  spans +13.3 % … +29.2 % PURELY on the cross-track background — a 15.9-point swing — and SEPARATION
+  FLIPS inside that range.** ⇒ E-GOAL-1's headline **+23.6 % was conditional on a background it never
+  named**, and so is every other recovery figure this program has published.
+  ⚠️ **How it was caught is the instructive part: the registered bridge FAILED.** E-GOAL-1's
+  background could not be rebuilt at n = 600 (it needs v4 latents that exist only on the 881 windows),
+  and **the registered substitute deviated +5.6 recovery points and flipped `by_speed` to separated at
+  n = 40 — using it would have MANUFACTURED a CONFIRM.** The stream reported the bridge failure
+  instead of quietly substituting, which is the only reason the class exists.
+  ⇒ **A recovery number without its background is INADMISSIBLE.** State the background, and if it
+  cannot be reproduced at the new n, say so rather than substituting.
+- **C31 — A PREDICATE THAT STOPS DISCRIMINATING AT HIGH n** *(new class, added 2026-07-28; the INVERSE
+  of under-powering, and far more dangerous because it looks like a stronger result)* ⇒ **a decision
+  rule tuned at small n can become vacuous at large n: as intervals tighten, an arm carrying NO
+  information starts to "separate" too.** MEASURED in the stream's **own pre-registered primary**: at
+  n = 600 a deliberately information-free arm separates at **+9.1 %**. Every real arm still passed —
+  which is exactly why nobody would have looked.
+  ⇒ **More data does not automatically make a predicate safer; it can dissolve it.** The claim was
+  rescued by replacing "does it separate?" with a **direct contrast**: history vs
+  noise-in-the-same-columns **−0.0504 [−0.0519, −0.0490]**, against a tight null for
+  dropped-vs-fake-history (**−0.0001 [−0.0006, +0.0004]**) — establishing that **64 % of the recovery
+  is speed history** and the lead block is **7.9× smaller**. **Re-run your negative control at the new
+  n whenever n changes materially. A control validated at n = 40 is not validated at n = 600.**

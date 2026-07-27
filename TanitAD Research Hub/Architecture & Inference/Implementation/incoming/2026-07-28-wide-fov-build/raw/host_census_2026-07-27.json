@@ -1,0 +1,101 @@
+{
+ "measured": "2026-07-27, dev box (Europe/Berlin) driving read-only ssh probes; all pod clocks UTC",
+ "question": "which host can reproduce the canonical corpus physicalai-train-e438721ae894?",
+ "method": {
+  "tool": "code/parity_probe.py",
+  "what_it_does": "replicates build_pai_cache.py exactly up to (not including) the decode: discover_r0_clips(root) -> split_clips(val_frac=0.2, seed=0) -> epcache.cache_key(train, canonical_params); compares the 12-hex result to the registered keys",
+  "why_this_and_not_a_clip_count": "the key IS the ordered clip-id list; a count can match while the membership differs. The key is the only sufficient test, and it needs no decode.",
+  "canonical_params": {"size": 256, "n_stack": 3, "hz": 10, "calib": "ftheta_v2"},
+  "source_id_scheme": "epcache._source_id dict branch = 'clip:<clip_id>' — path-independent, so the key is portable across hosts"
+ },
+ "correction_to_brief": {
+  "brief_said": "canonical corpus is 2,376 episodes + 24 skipped = >=2,400 clips; find a host with >=2,400",
+  "measured_truth": "the builder needs 3,000 DISCOVERED clips. split_clips(val_frac=0.2) on 3,000 gives 2,400 train / 600 val; the 24 skips are decode failures INSIDE the 2,400 train, yielding 2,376 episodes. 600 is exactly PARITY_VAL_EPISODES.",
+  "consequence": "a host with 2,400 clips would still produce a DIFFERENT key. The bar is 3,000, not 2,400."
+ },
+ "hosts": [
+  {
+   "host": "tanitad-pod (pod1)",
+   "root": "/workspace/data/physicalai_phase0",
+   "mp4_on_disk": 3000,
+   "rows_in_r0_selection_parquet": 3000,
+   "discovered_clips": 3000,
+   "split_train": 2400,
+   "split_val": 600,
+   "train_key": "e438721ae894",
+   "val_key": "0c5f7dac3b11",
+   "train_key_matches_parity": true,
+   "val_key_matches_parity": true,
+   "verdict": "THE ONLY PARITY-CAPABLE HOST",
+   "state": "TRAINING flagship-v2corpus-30k (9 procs, GPU 100 %, RTX A6000) — probed read-only only, no load added",
+   "epcache_train_dir_bytes": 278786484952,
+   "raw_camera_bytes": 35647678581,
+   "egomotion_zips": 197,
+   "note": "its _epcache/.../DONE reads {episodes:2400, skipped:0} while the filesystem holds 2376 ep_*.pt + 24 skip_* — the DONE marker is stale/informational (epcache.build_episodes_cached documents DONE as not read on resume). pod2's DONE reads {2376,24}. The FILES agree on both hosts; only the marker differs."
+  },
+  {
+   "host": "tanitad-pod2",
+   "root": "/workspace/data/physicalai_phase0",
+   "mp4_on_disk": 760,
+   "rows_in_r0_selection_parquet": 3000,
+   "discovered_clips": 760,
+   "split_train": 608,
+   "split_val": 152,
+   "train_key": "0c5d8f7823bd",
+   "val_key": "6384ddad559d",
+   "train_key_matches_parity": false,
+   "val_key_matches_parity": false,
+   "verdict": "NOT parity-capable from local mp4s (25.3 % coverage of 3,000) — but it holds EVERY other input",
+   "already_present": {
+    "r0_selection_parquet_rows": 3000,
+    "timestamps_parquet_for_clips": 3000,
+    "egomotion_zips": 197,
+    "egomotion_zips_needed": 197,
+    "calibration_camera_intrinsics": true,
+    "calibration_sensor_extrinsics": true,
+    "epcache_train_e438721ae894": "present (2376 ep + 24 skip)",
+    "epcache_val_0c5f7dac3b11": "present"
+   },
+   "missing": {"mp4": 2240, "chunks_needing_download": 197,
+               "chunks_fully_present": 0},
+   "state": "idle, GPU 0 %/0 MiB",
+   "why_it_became_the_build_host": "v2_compressed.py build DOWNLOADS each camera chunk itself, extracts only the selected clips, builds, then deletes the zip and the mp4s — so the missing 2,240 mp4s are not a prerequisite. It builds exactly the clip ids in r0_selection.parquet, which is byte-identical to pod1's."
+  },
+  {
+   "host": "tanitad-pod3",
+   "root": "/workspace/pai_build",
+   "mp4_on_disk": 48,
+   "rows_in_r0_selection_parquet": 3000,
+   "discovered_clips": 48,
+   "train_key": "acb5bfd5051a",
+   "val_key": "267ee7e0835b",
+   "train_key_matches_parity": false,
+   "val_key_matches_parity": false,
+   "verdict": "NOT parity-capable (1.6 % coverage)",
+   "state": "idle",
+   "other_roots_probed": ["/workspace/data/physicalai_v2 (0 mp4, 9000-row selection — the v2bal corpus, a different corpus)"]
+  },
+  {
+   "host": "tanitad-eval",
+   "root": "(none)",
+   "mp4_on_disk": 0,
+   "verdict": "NOT parity-capable — no r0_selection.parquet anywhere under /workspace or /root/.cache",
+   "state": "idle",
+   "note": "404 mp4 files exist but they are rollout//render outputs, not PhysicalAI R0 source clips. Two HF dataset caches present (Cosmos-Drive-Dreams, NuRec) — different datasets."
+  }
+ ],
+ "absence_probed_at_more_than_one_location": [
+  "find /workspace -name '*.mp4' on all four hosts",
+  "find / -maxdepth 6 -type d -name 'datasets--nvidia--PhysicalAI*' (HF hub caches)",
+  "explicit candidate roots: /workspace/physicalai, /workspace/physicalai_phase0, /workspace/data, /workspace/pai, /workspace/raw, /workspace/hf, /root/.cache/huggingface",
+  "find /workspace /root/.cache -name 'r0_selection.parquet' (eval)"
+ ],
+ "go_no_go": {
+  "verdict": "GO — on pod2, via the v2 compressed builder, with no episode re-selection",
+  "reasoning": [
+   "pod1 is the only host that can reproduce the corpus from LOCAL mp4s, and it is training — excluded.",
+   "pod2 holds the identical r0_selection.parquet (3,000 rows), all 3,000 timestamps parquets, all 197 egomotion zips and full per-clip calibration. Only the mp4 bytes are missing, and the builder fetches those itself.",
+   "the clip membership is not re-derived on pod2: the parity train clip-id list was exported FROM pod1 (where both keys verify) and passed to the build as --only-clips, which refuses any id not in --sel."
+  ]
+ }
+}
