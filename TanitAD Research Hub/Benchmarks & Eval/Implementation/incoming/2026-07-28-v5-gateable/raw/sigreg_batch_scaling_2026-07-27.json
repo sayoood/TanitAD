@@ -1,0 +1,64 @@
+{
+  "what": "SigReg (Epps-Pulley) value vs BATCH SIZE \u2014 the term that is NOT a per-example mean",
+  "source_of_latents": "SYNTHETIC standard-normal pool [64, 2048] \u2014 the batch-size scaling of the statistic is a property of the ESTIMATOR, not of the data, but this is stated rather than hidden",
+  "sigreg_weight_in_flagship_loss": 0.1,
+  "n_slices": 512,
+  "beta": 1.0,
+  "repeats_per_size": 16,
+  "by_size": [
+    {
+      "n": 4,
+      "mean": 0.4233937580138445,
+      "stdev": 0.016625123714247132,
+      "min": 0.3887566030025482,
+      "max": 0.4524037837982178,
+      "repeats": 16
+    },
+    {
+      "n": 8,
+      "mean": 0.42547447979450226,
+      "stdev": 0.014909227629100645,
+      "min": 0.4058009088039398,
+      "max": 0.45168083906173706,
+      "repeats": 16
+    },
+    {
+      "n": 12,
+      "mean": 0.42225803807377815,
+      "stdev": 0.018381005748109726,
+      "min": 0.39417073130607605,
+      "max": 0.46501797437667847,
+      "repeats": 16
+    },
+    {
+      "n": 16,
+      "mean": 0.4222935289144516,
+      "stdev": 0.016933880040450888,
+      "min": 0.3927898406982422,
+      "max": 0.4512883126735687,
+      "repeats": 16
+    },
+    {
+      "n": 32,
+      "mean": 0.4165280945599079,
+      "stdev": 0.019277547473970886,
+      "min": 0.39421090483665466,
+      "max": 0.4625866413116455,
+      "repeats": 16
+    },
+    {
+      "n": 64,
+      "mean": 0.4292300119996071,
+      "stdev": 0.018076513553182467,
+      "min": 0.4046629071235657,
+      "max": 0.47814399003982544,
+      "repeats": 16
+    }
+  ],
+  "ratios": {
+    "S(16)/S(8)  = 16x4 launch vs 8x8 launch": 0.992524,
+    "S(64)/S(8)": 1.008827,
+    "S(16)/S(4)": 0.997401
+  },
+  "reading": "With accumulation, the SIGReg contribution to one optimizer step is (1/accum) * sum_j S(micro) = S(micro), because S does not average over j. So the term's EFFECTIVE weight moves with the MICRO-batch, not with batch*accum. Every OTHER term of the flagship loss is a per-example mean and is preserved exactly."
+}

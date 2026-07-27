@@ -1,0 +1,32 @@
+=========== 0. corpus_key_of, both spellings (the ground truth) ===========
+  hardlinked 2400 payloads into /workspace/v5gate/prerename/pai_wide120_v2png_train (no copy: same inodes)
+  corpus_key_of(/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl) = physicalai-train-e438721ae894-w120-256x640cyl
+  corpus_key_of(/workspace/v5gate/prerename/pai_wide120_v2png_train) = None
+
+=========== 1. ⛔ RED — the pre-rename directory (the measured defect) =====
+  --v2-train-cache /workspace/v5gate/prerename/pai_wide120_v2png_train
+[parity] --v2-val-cache: physicalai-val-0c5f7dac3b11-w120-256x640cyl v2 VERIFIED — 600 clips, clip sha256 0b176d2e5cb4… matches the committed manifest (sibling of physicalai-val-0c5f7dac3b11, skip-hash f09e44db).
+PREFLIGHT: BLOCKED
+  - [PARITY-PREFLIGHT] --v2-train-cache: 
+PARITY VIOLATION [--v2-train-cache] — unregistered v2 cache
+    scripts/register_v2_sibling.py --cache <dir> --new-key <key> \
+  DIRECTORY NAME contains <key> (corpus_key_of resolves by path).
+     NON-PARITY on every other host, and --require-parity then refuses
+  EXIT=2
+
+=========== 2. ⭐ GREEN — the renamed, registered directory ===============
+  --v2-train-cache /workspace/data/physicalai-train-e438721ae894-w120-256x640cyl
+[parity] --v2-train-cache: physicalai-train-e438721ae894-w120-256x640cyl v2 VERIFIED — 2400 clips, clip sha256 e61a04553df5… matches the committed manifest (sibling of physicalai-train-e438721ae894, skip-hash f09e44db).
+[parity] --v2-val-cache: physicalai-val-0c5f7dac3b11-w120-256x640cyl v2 VERIFIED — 600 clips, clip sha256 0b176d2e5cb4… matches the committed manifest (sibling of physicalai-val-0c5f7dac3b11, skip-hash f09e44db).
+PREFLIGHT: OK
+  EXIT=0
+
+=========== 3. the THIRD state — a cache not on this host ================
+PREFLIGHT: BLOCKED
+  - [PARITY-PREFLIGHT] --v2-train-cache ['/workspace/data/not-here-at-all'] is not a directory on THIS host (08f6ce7d8e55), so --require-parity COULD NOT BE CHECKED here. Preflight will not print OK for a check it did not run — that is exactly how an unregistered cache reached a launch before. Run --print-launch ON THE POD that holds the cache.
+  - [PARITY-PREFLIGHT] --v2-val-cache ['/workspace/data/nor-this'] is not a directory on THIS host (08f6ce7d8e55), so --require-parity COULD NOT BE CHECKED here. Preflight will not print OK for a check it did not run — that is exactly how an unregistered cache reached a launch before. Run --print-launch ON THE POD that holds the cache.
+  EXIT=2
+
+=========== cleanup: remove ONLY the hardlink directory ==================
+  removed
+  payloads intact in the real cache: 2400

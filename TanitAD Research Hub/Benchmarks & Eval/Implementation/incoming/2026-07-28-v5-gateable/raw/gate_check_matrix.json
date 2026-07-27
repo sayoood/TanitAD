@@ -1,0 +1,27 @@
+{
+  "_what": "run_gate.py check against a corridor artifact PRODUCED ON THE v2 CACHE \u2014 every branch, on pod2, 2026-07-27.",
+  "_checkpoint": "flagship-v5-SMOKE-176x624/ckpt.pt \u2014 a 25-step from-scratch SMOKE at the v5 frame. Its ADE (14.3461 m) is MEANINGLESS and is quoted nowhere as a result. What is under test is the ARTIFACT PLUMBING.",
+  "_cards": "registered at --gate-step 0 so that 'check' gets past NOT_YET and actually reaches the co-primary logic.",
+  "A_card_K60__corridor_K20_supplied": {
+    "result": "REFUSED (SystemExit; NO verdict JSON written)",
+    "stderr": "[gate] REFUSING: corridor block is at K=20 (2.0 s) but the card pre-registered K=60 (6.0 s). Re-render at the registered horizon, or register a new card before the run - not after seeing the number.",
+    "reading": "K=20 is the ONLY horizon an open-loop v2 eval can produce, and it matches no admissible card."
+  },
+  "B_card_K60__no_corridor": {
+    "result": "VERDICT: INCOMPLETE (written: gate_check_K60_no_corridor.json)",
+    "reading": "GATE_PROTOCOL section 1 - INCOMPLETE rather than deciding on ade_0_2s alone. THIS IS WHAT A v5 GATE RENDERS TODAY."
+  },
+  "C_card_K20_HANDWRITTEN__corridor_K20_supplied": {
+    "result": "REFUSED (SystemExit; NO verdict JSON written)",
+    "stderr": "[gate] REFUSING to register a co-primary at K=20: that is at or below ade_0_2s' own horizon (K=20 = 2.0 s), which is the instrument this co-primary exists to replace.",
+    "reading": "THE K<=20 REFUSAL IS AT BOTH ENDS - register AND check. There is no path by which a K=20 corridor number adjudicates a gate, not even via a hand-written card."
+  },
+  "_note_on_missing_files": "A refusal is a SystemExit, so 'check' writes NO verdict JSON for A and C. A caller that only looks for the output file sees nothing at all - the refusal is on stdout. Worth knowing for any automation.",
+  "_what_DID_work_on_v2": {
+    "eval_flagship_v4 MODE B on the v2 val cache": "OK",
+    "windows_<key>.pt carries pred_dense/gt_dense": "OK",
+    "gate_emitters.py corridor from that dump": "OK - corridor_departure_rate 0.3928 [0.3058, 0.4733], episode_cluster_bootstrap, n=265 windows / 12 episodes, surface=open_loop_dense, K=20",
+    "run_gate.py register at K=60": "OK",
+    "run_gate.py check consuming --corridor-json": "reached; refused on the horizon, which is the finding"
+  }
+}

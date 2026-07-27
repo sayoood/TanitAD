@@ -1,0 +1,104 @@
+{
+  "run": "v5smoke-176x624",
+  "card": "/workspace/v5gate/gates/v5smoke-176x624-g0-K60.card.json",
+  "current_step": 0,
+  "gate_step": 0,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "step_indexing": {
+    "reached": true,
+    "convention": "1-indexed (step count: cur >= gate_step)",
+    "current_step": 0,
+    "gate_step": 0,
+    "steps_completed": 1,
+    "note": "step 0 >= gate step 0"
+  },
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 14.3461,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": false,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; driving.cluster_bootstrap) CI [8.4918, 21.5246]",
+    "role": "diagnostic",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "PROPOSAL-QUALITY DIAGNOSTIC: read and recorded, but it does not adjudicate on this card. ade_0_2s is measured over K=20 (2.0 s) and is MEASURED blind to corridor departure \u2014 on E1a's 43 paired windows the same trajectories give 0.0035 at K=20 vs 0.5877 at K=185, while the paired ADE@2s delta (0.0109 [-0.0, 0.0312]) is NOT separated."
+  },
+  "co_primary": {
+    "registered": true,
+    "metric": "corridor_departure_rate",
+    "threshold": 0.35,
+    "direction": "<=",
+    "registered_horizon_K": 60,
+    "registered_horizon_s": 6.0,
+    "registered_corridor_m": 1.75,
+    "stratum": "overall",
+    "junction_threshold": 0.5,
+    "source": null,
+    "role": "kill",
+    "adjudicates": true,
+    "role_rationale": null,
+    "becomes_kill_criterion_at": null,
+    "measured": false,
+    "pass": null,
+    "note": "no --corridor-json supplied. The co-primary is a taniteval.corridor block on held-out windows; the gate refuses to infer it from anything else."
+  },
+  "horizon": {
+    "horizon_honest": false,
+    "adjudicating_metric": "co_primary.corridor_departure_rate",
+    "registered_horizon_K": 60,
+    "registered_horizon_s": 6.0,
+    "measured_horizon_K": null,
+    "measured_horizon_s": null,
+    "ceiling_K": 190,
+    "frac_of_ceiling": 0.3158,
+    "n_windows": null,
+    "n_episodes": null,
+    "n_junction_windows": null,
+    "surface": null,
+    "rendered": "corridor_departure_rate@1.75m K=60 (6.0 s, 32% of the K=190 corpus ceiling), n=? windows / ? episodes, surface=?",
+    "warning": "K=60 (6.0 s) is below the horizon-honest floor K=100 (10.0 s): admissible, but the verdict carries the qualifier."
+  },
+  "secondary_void": [],
+  "secondary": [
+    {
+      "metric": "wm_canary_ade_2s",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    },
+    {
+      "metric": "miss_2m",
+      "value": null,
+      "pass": null,
+      "note": "NOT SUPPLIED"
+    }
+  ],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "co_primary.corridor_departure_rate",
+    "secondary(2)"
+  ],
+  "co_primary_role": "kill",
+  "kill_conjunction": {
+    "adjudicated_by": [
+      "co_primary.corridor_departure_rate",
+      "secondary(2)"
+    ],
+    "n_pass": 0,
+    "n_fail": 0,
+    "n_unmeasured": 2,
+    "n_void": 0,
+    "unmeasured": [
+      "wm_canary_ade_2s",
+      "miss_2m"
+    ],
+    "failed": [],
+    "satisfiable": true
+  },
+  "verdict": "INCOMPLETE",
+  "reason": "the pre-registered CO-PRIMARY (corridor_departure_rate @ K=60, 6.0 s) was not measured: no --corridor-json supplied. The co-primary is a taniteval.corridor block on held-out windows; the gate refuses to infer it from anything else.. ade_0_2s alone may not decide this gate \u2014 it is MEASURED blind to corridor departure at the event's own horizon.",
+  "horizon_honest": false
+}

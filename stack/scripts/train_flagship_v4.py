@@ -27,6 +27,7 @@ import argparse
 import json
 import math
 import os
+import socket
 import sys
 import time
 from dataclasses import dataclass
@@ -1781,6 +1782,64 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+def _v2_dirs_of(a, attr) -> list[str]:
+    v = getattr(a, attr, None)
+    if not v:
+        return []
+    return [str(v)] if isinstance(v, (str, Path)) else [str(x) for x in v]
+
+
+def preflight_parity_problems(a, *, manifest_path=None) -> list[str]:
+    """⭐ RUN THE REAL CACHE GUARD AT PREFLIGHT TIME, under ``--require-parity``.
+
+    THE DEFECT THIS REMOVES (MEASURED 2026-07-27, ``V5_EVALUABLE.md`` §9.2):
+    ``--print-launch`` printed **``PREFLIGHT: OK``** for ``--require-parity``
+    against a directory whose ``corpus_key_of`` resolves to ``None``. Everything
+    in :func:`preflight_asserts` was ARGUMENT-level — it verified the *flag was
+    present*, never that the cache *passes* — while the guard that can actually
+    refuse (:func:`parity.assert_v2_parity_cache`) runs inside :func:`train`,
+    i.e. **after the orchestrator has already launched**. A preflight that cannot
+    fail is not a weak guard, it is cover.
+
+    Three outcomes, all explicit — the third is the one that matters:
+
+    * the dir(s) exist and pass  -> no problem;
+    * the dir(s) exist and fail  -> the guard's own refusal, verbatim;
+    * the dir(s) are **not on this host** -> a problem, because a
+      ``PREFLIGHT: OK`` that could not run its own check is indistinguishable
+      from one that ran it and passed. Stage from the host that holds the cache.
+
+    ⚠️ SCOPE, stated so it is not over-read. This is the MEMBERSHIP guard only —
+    ``corpus_key_of`` + clip-id count + clip-id digest against the committed
+    manifest. It does NOT decode a frame, so it does not prove the raster, the
+    codec or the sub-frame; ``parity.assert_v2_geometry_matches`` does that and
+    needs built providers, which is not preflight-cheap. Nothing here hashes
+    pixels (``V5_TRAINER.md`` §9.3, still open).
+    """
+    problems: list[str] = []
+    for flag, attr in (("--v2-train-cache", "v2_train_cache"),
+                       ("--v2-val-cache", "v2_val_cache")):
+        dirs = _v2_dirs_of(a, attr)
+        if not dirs:
+            continue
+        absent = [d for d in dirs if not Path(d).is_dir()]
+        if absent:
+            problems.append(
+                f"[PARITY-PREFLIGHT] {flag} {absent} is not a directory on THIS "
+                f"host ({socket.gethostname()}), so --require-parity COULD NOT "
+                f"BE CHECKED here. Preflight will not print OK for a check it "
+                f"did not run — that is exactly how an unregistered cache "
+                f"reached a launch before. Run --print-launch ON THE POD that "
+                f"holds the cache.")
+            continue
+        try:
+            parity.assert_v2_parity_cache(dirs, label=flag, require=True,
+                                          manifest_path=manifest_path)
+        except parity.ParityViolation as ex:
+            problems.append(f"[PARITY-PREFLIGHT] {flag}: {ex}")
+    return problems
+
+
 def preflight_asserts(a) -> list[str]:
     """The §17.1 / §9 invariants a launch must satisfy — checked here so a bad
     config fails loudly BEFORE any GPU-day is spent."""
@@ -1831,6 +1890,12 @@ def preflight_asserts(a) -> list[str]:
             "ANYWAY. Every cross-arm number off such a run is void, invisibly. "
             "Pass --require-parity, or record why this arm is deliberately "
             "non-parity.")
+    # ⭐ …and when it IS passed, ACTUALLY RUN THE GUARD. Until 2026-07-27 the
+    # branch above was the whole of the parity preflight: it checked the flag,
+    # never the cache, so `--print-launch --require-parity` printed OK against a
+    # cache whose corpus key was None. See preflight_parity_problems.
+    if getattr(a, "require_parity", False):
+        problems += preflight_parity_problems(a)
     if getattr(a, "v2_train_cache", None) and not getattr(a, "v2_val_cache",
                                                           None):
         problems.append(

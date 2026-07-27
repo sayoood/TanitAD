@@ -1,0 +1,138 @@
+=================== LEG 1: MODE B eval on the v2 val cache ===================
+    },
+    "encoder_touching_levers": {
+      "value": 2,
+      "threshold": 2,
+      "pass": true,
+      "evidence_class": "PUBLISHED (V4_FLAGSHIP_DESIGN.md / --print-launch design audit)",
+      "note": "static design fact (lambda_plan + strategic = 2 of 2 encoder-touching levers, door CLOSED per MODEL_REGISTRY.md retraction 07-21); not a GPU measurement, not re-derived here"
+    },
+    "speed_benefit_recovered_frac": {
+      "value": null,
+      "pass": null,
+      "note": "NOT BUILT this session -- new metric (P8), needs its own definition off the two in-repo train logs per V4_FLAGSHIP_DESIGN.md 17.3; no emitter exists yet anywhere in the codebase"
+    },
+    "deploy_tick_p99_ms": {
+      "value": null,
+      "pass": null,
+      "note": "NOT MEASURED this session -- needs the efficiency.py latency-panel harness (CUDA-graph capture, batch-1 profiling under gpu_lock.sh exclusivity); out of scope for a correctness-first harness build, flagged as the first thing to cut per V4_FLAGSHIP_DESIGN.md 8 if it misses"
+    },
+    "nonav_route_beats_majority": {
+      "value": null,
+      "pass": null,
+      "note": "NOT REACHABLE on this checkpoint -- v4.1's goal_head (GoalScalarHead) only regresses CONTINUOUS scalars (ttm/curv_3s/curv_5s/tspeed_5s); no ROUTE classifier exists yet (P6 strategic planner not landed). taniteval.hierarchy.py's vision_route_beats_majority needs a nav-conditioned route head this checkpoint does not have -- this is the produced-goal fallback (V4_FLAGSHIP_DESIGN.md 2.6) territory"
+    }
+  },
+  "diagnostics_dense_headhorizons_train_loop_comparable": {
+    "dense_headhorizons_ade_2s": 12.5997393518124,
+    "dense_headhorizons_oracle_ade": 3.26350379529989,
+    "dense_headhorizons_sel_gap": 9.336235499831865,
+    "dense_headhorizons_miss_at_2m": 0.9207547169811321
+  },
+  "goal_agreement_vs_oracle": null,
+  "cross_check_ade_0_2s_selfcomputed_vs_driving_py": {
+    "selfcomputed_from_forward_pass": 14.34610427640519,
+    "driving_py_from_persisted_windows": 14.3461,
+    "agree_within_1pct": true,
+    "note": "two independent code paths over the SAME forward-pass output (direct tensor math here vs. persisted-tensor reload + taniteval.driving.tier0 there); disagreement would indicate an ego-frame convention mismatch"
+  }
+}
+
+[v4-eval] -> /workspace/v5gate/results/v5smoke-176x624_v4_diagnostics.json
+LEG1_EXIT=0
+total 4132
+drwxrwxrwx 2 root root 1020408 Jul 27 15:49 .
+drwxrwxrwx 8 root root 3000302 Jul 27 15:46 ..
+-rw-rw-rw- 1 root root   36452 Jul 27 15:49 driving_v5smoke-176x624.json
+-rw-rw-rw- 1 root root   50970 Jul 27 15:49 v5smoke-176x624.json
+-rw-rw-rw- 1 root root    3433 Jul 27 15:49 v5smoke-176x624_v4_diagnostics.json
+-rw-rw-rw- 1 root root  118132 Jul 27 15:49 windows_v5smoke-176x624.pt
+
+=================== LEG 2: the co-primary emitter ===================
+# run_gate.py check ... \
+    --corridor-json /workspace/v5gate/results/corridor_v5smoke-176x624.json
+{
+  "gate_metric": "corridor_departure_rate",
+  "stratum": "overall",
+  "value": 0.3928,
+  "provenance": {
+    "emitter": "taniteval.corridor",
+    "windows": "/workspace/v5gate/results/windows_v5smoke-176x624.pt",
+    "corridor_panel": "/workspace/v5gate/results/corridor_v5smoke-176x624.json"
+  },
+  "lo": 0.3058,
+  "hi": 0.4733,
+  "estimator": "episode_cluster_bootstrap",
+  "n_boot": 2000,
+  "horizon_K": 20,
+  "horizon_s": 2.0,
+  "corridor_primary_m": 1.75,
+  "n_windows": 265,
+  "n_episodes": 12,
+  "surface": "open_loop_dense",
+  "evidence_class": "MEASURED (ours; taniteval.corridor, episode_cluster_bootstrap, n=265 windows / 12 episodes)",
+  "junction": {
+    "value": 0.3776,
+    "lo": 0.2881,
+    "hi": 0.4836,
+    "n_windows": 58,
+    "n_episodes": 7
+  },
+  "horizon_note": "a corridor number is meaningless without its K: on E1a's own 43 windows the SAME trajectories give 0.0035 at K=20 and 0.5877 at K=185. The corpus ceiling is K=190 (19.0 s).",
+  "WARNING_blind_horizon": "K=20 is at or below ade_0_2s' own horizon (20 = 2.0 s). run_gate.py will REFUSE this as a co-primary.",
+  "run_gate_arg": "--corridor-json /workspace/v5gate/results/corridor_v5smoke-176x624.json"
+}
+LEG2_EXIT=0
+
+=================== LEG 3: register a card AT THE BLIND HORIZON ==========
+--- GATE_PROTOCOL 0.3 refuses K<=20; this must FAIL ---
+[gate] REFUSING to register a co-primary at K=20: that is at or below ade_0_2s' own horizon (K=20 = 2.0 s), which is the instrument this co-primary exists to replace. MEASURED (E1a, e1a_horizon_heldout44_K185.json, 43 paired windows): corridor departure 0.0035 at K=20 vs 0.5877 at K=185 — a ~168x difference the 2 s horizon cannot see.
+LEG3_EXIT_EXPECT_NONZERO=0
+
+=================== LEG 4: register the PREP card's horizon K=60 ==========
+  "tau": 1.5,
+  "lever_family": "encoder-geometry",
+  "restarts_used": 0,
+  "restart_cap": 2,
+  "registered_utc": "2026-07-27T15:49:30.748902+00:00",
+  "note": "",
+  "co_primary_metric": "corridor_departure_rate",
+  "co_primary_threshold": 0.35,
+  "co_primary_direction": "<=",
+  "co_primary_horizon_K": 60,
+  "co_primary_corridor_m": 1.75,
+  "co_primary_stratum": "overall",
+  "co_primary_junction_threshold": 0.5,
+  "co_primary_source": "",
+  "primary_role": "diagnostic",
+  "no_co_primary_reason": "",
+  "co_primary_role": "kill",
+  "co_primary_role_rationale": "",
+  "co_primary_becomes_kill_at": "",
+  "secondary_void": [],
+  "card_extras": {}
+}
+[gate] co-primary corridor_departure_rate <= 0.35 @ K=60 (6.0 s, 32% of the K=190 corpus ceiling), corridor half-width 1.75 m
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+LEG4_EXIT=0
+
+=================== LEG 5: check WITH the K=20 corridor artifact ==========
+--- the card is K=60; the only artifact v2 can produce is K=20 ---
+usage: run_gate [-h] {register,check,fit,ratio} ...
+run_gate: error: unrecognized arguments: --out /workspace/v5gate/raw/gate_check_K60_with_K20_corridor.json
+LEG5_EXIT=0
+
+=================== LEG 6: check with NO corridor artifact ===============
+usage: run_gate [-h] {register,check,fit,ratio} ...
+run_gate: error: unrecognized arguments: --out /workspace/v5gate/raw/gate_check_K60_no_corridor.json
+LEG6_EXIT=0
+
+=================== LEG 7: the GREEN twin — a card AT the artifact's K ===
+--- proves check CONSUMES a v2-produced corridor block when the K agrees;
+--- the card is written by hand because register refuses K=20 by design ---
+wrote /workspace/v5gate/gates/v5smoke-176x624-K20-HANDWRITTEN.card.json
+usage: run_gate [-h] {register,check,fit,ratio} ...
+run_gate: error: unrecognized arguments: --out /workspace/v5gate/raw/gate_check_K20_handwritten_GREEN.json
+LEG7_EXIT=0
+=================== DONE ===================
