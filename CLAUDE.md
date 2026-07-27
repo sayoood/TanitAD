@@ -75,6 +75,16 @@ Every subagent brief MUST carry the preamble in
   it looks exactly like a hang.** MEASURED 2026-07-27: 7 concurrent arms sat at GPU `sm` **0–6 %**
   for **50 minutes** with zero progress; `OMP_NUM_THREADS=6` and the same arm finished in **232 s**.
   Set it before any multi-arm panel; do not diagnose the symptom as a deadlock or a dead job.
+- **`git add <exact path>` can SILENTLY NO-OP on a file in a newly created directory** — exit 0,
+  the usual CRLF warning printed, and the file **not staged**. MEASURED 2026-07-27: renaming the
+  parent dir (the previously documented un-poison) **did NOT help**; rewriting the file through a
+  **fresh inode from Bash** did. ⛔ **`git add` exit codes are not evidence. Verify with
+  `git ls-files --cached <path>`** — and note the sibling rule that `git status --short` scoped to a
+  path can also mislead, so `git ls-files --stage` is the check for what is really in the index.
+- **A pod's `stack/` checkout drifts silently and a launch from it resurrects fixed bugs.** MEASURED
+  2026-07-27: pod2 sat at `0f93b98` while the v5 gate fix was at HEAD — **a v5 launch from that pod
+  would have restored the crash the fix removed.** ⇒ **syncing the pod and verifying with a real
+  `import` is a RUNBOOK STEP before any launch**, not a nicety; `git log` on the pod is not proof.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
