@@ -1,0 +1,182 @@
+{
+  "generated": "measure_options.py",
+  "repo": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD",
+  "torchvision_stubbed_on_this_host": true,
+  "option_a": {
+    "option": "A \u2014 teach train_flagship_v4 to read v2",
+    "file_to_edit": "stack/scripts/train_flagship_v4.py",
+    "file_lines": 1672,
+    "raw_path_sites_to_branch": {
+      "load_episode": [
+        312,
+        348,
+        932,
+        1006,
+        1008
+      ],
+      "glob(\"ep_*.pt\")": [
+        345,
+        1007,
+        1009
+      ],
+      "_assert_parity(": [
+        621,
+        945
+      ],
+      "--train-cache": [
+        635,
+        938,
+        1369,
+        1478,
+        1563,
+        1627
+      ],
+      "--val-cache": [
+        640,
+        938,
+        1369,
+        1563
+      ]
+    },
+    "n_raw_path_sites": 20,
+    "geometry_args_present_in_v4": {},
+    "geometry_must_be_added": true,
+    "machinery_reused_not_written": {
+      "build_v2_providers": {
+        "module": "tanitad.data.v2_dataset",
+        "exists": true,
+        "lines": 61,
+        "returns": "list[LazyV2Episode] \u2014 .frames/.poses/.actions/.episode_id"
+      },
+      "assert_v2_parity_cache": {
+        "module": "tanitad.data.parity",
+        "exists": true,
+        "lines": 138
+      },
+      "apply_geometry_args": {
+        "module": "tanitad.geometry",
+        "exists": true,
+        "already_used_by_train_flagship4b": true
+      }
+    },
+    "new_machinery_required": [],
+    "dataset_contract": {
+      "class": "FlagshipV4Dataset(FlagshipWindowDataset)",
+      "episode_attrs_read": [
+        "actions",
+        "episode_id",
+        "frames",
+        "poses"
+      ],
+      "note": "LazyV2Episode exposes exactly these \u2014 see the live check"
+    },
+    "gate_reusable_as_is": true,
+    "gate_reuse_reason": "HeldoutGate.probe(step, world, head, episodes) takes episode OBJECTS with .poses/.frames; LazyV2Episode supplies both. The gate never touches the cache format."
+  },
+  "option_b": {
+    "option": "B \u2014 port the held-out val loop into train_flagship4b",
+    "file_to_edit": "stack/scripts/train_flagship4b.py",
+    "file_lines": 763,
+    "STRUCTURAL_BLOCKER": {
+      "what": "train_flagship4b has no dense-plan head, so the gate's deployable surface does not exist in it",
+      "train_flagship4b_selected_plan_horizons": [
+        5,
+        10,
+        15,
+        20
+      ],
+      "train_flagship4b_plan_dt_s": [
+        0.5,
+        1.0,
+        1.5,
+        2.0
+      ],
+      "train_flagship4b_decoder_output_keys": [
+        "anchor_logits",
+        "anchor_traj",
+        "offset",
+        "sel_idx",
+        "traj",
+        "waypoints"
+      ],
+      "gate_requires_output_key": [
+        "wp_seq"
+      ],
+      "gate_requires_dense_horizons": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "FlagshipV4Head_horizons": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "DeployableSurfacePlanner_accepts_v4_head": true,
+      "DeployableSurfacePlanner_accepts_4b_head": false,
+      "refusal_message": "pseudo-simulation scores accelerations/jerk by finite differences at dt=0.1 s, so it needs a DENSE consecutive plan (horizons == 1..K). This head emits (5, 10, 15, 20). Scoring a coarse plan as if it were dense silently divides every derivative by the wrong dt \u2014 pass expect_dense=False only with a written reason."
+    },
+    "new_machinery_required_lines": {
+      "FlagshipV4Head (dense 1..20 plan + selection)": 135,
+      "FlagshipV15Head (its base class)": 309,
+      "v4_loss_step (trains that head)": 130,
+      "FlagshipV4Dataset (its labels)": 38,
+      "_training_loop val/canary/gate body": 267,
+      "canary_rollout": 38,
+      "evaluate_planner": 36
+    },
+    "new_machinery_required_total": 953,
+    "machinery_reused_not_written": {
+      "build_v2_providers": "already wired in 4b (--v2-cache)"
+    },
+    "also_still_required": [
+      "a v2 VAL cache branch in 4b (the same wiring option A needs)",
+      "an optimizer group + loss for the new head (it is untrained otherwise, and a gate on a random head measures nothing)"
+    ]
+  },
+  "lazy_v2_episode_contract": {
+    "frames": true,
+    "poses": true,
+    "actions": true,
+    "episode_id": true
+  },
+  "verdict": {
+    "option_a_new_machinery_lines": 0,
+    "option_b_new_machinery_lines": 953,
+    "decisive": "Option B is not a port: train_flagship4b's selected plan is [5, 10, 15, 20] (0.5 s spacing), and the gate's pseudo-simulation refuses a non-dense plan by construction because it differentiates at dt=0.1 s. Giving 4b a dense plan means giving it v4's head and the loss that trains it \u2014 i.e. making 4b into v4."
+  }
+}

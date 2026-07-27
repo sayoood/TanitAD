@@ -405,3 +405,37 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   it is cannot be assumed — state the direction as unknown and go and train the thing.** Sibling to
   **C22** (bound quoted as capability) with the sign reversed: there a bound over-stated a capability;
   here a proxy under-stated one, and **declining to license the +25.4 % is what preserved the finding.**
+- **C34 — A LEVER MEASURED AGAINST THE WRONG COUNTERFACTUAL** *(new class, added 2026-07-28)* ⇒ **"how
+  much does X recover" is meaningless until you name what X is being added TO, and the natural
+  comparator — the deployed arm — is usually the wrong one, because it differs from the treatment by
+  MORE than X.** MEASURED: the goal input's recovery was reported as **+46.3 %** against the
+  **as-trained** selector. But **a trained selector with NO goal already recovers +35.62 %** — so most
+  of that headline was *capacity*, not *goal*. **The goal's capacity-matched marginal is +26.31 points,
+  an over-credit of 1.76×.**
+  ⭐ **And the capacity-matched contrast turned out to be the BACKGROUND-INVARIANT quantity**: it is
+  identical on two backgrounds (**−0.0811 [−0.0904, −0.0720]** and **[−0.0888, −0.0732]**) whose totals
+  differ by **15 recovery points**. That is a partial answer to **C30** — *the marginal transports where
+  the total does not.*
+  ⇒ **Match capacity before attributing an effect to information. Report the marginal, not the total.**
+- **C35 — A REQUIREMENT CURVE IS A PROPERTY OF THE CONSUMER, NOT OF THE SIGNAL** *(new class, added
+  2026-07-28)* ⇒ **"the supplier must reach σ₀" is only true for the consumer the curve was measured
+  on; a different consumer can have no such threshold at all.** MEASURED on an identical degradation
+  ladder: the **fixed rule** goes destructive at **1.128 m** and reaches **−111.78 % at 2.256 m**, while
+  the **trained selector** is **+16.73 %, separated-BETTER at that same 2.256 m and never crosses
+  zero.** ⇒ E-GOAL-3's σ₀ and its "gate the goal channel on measured accuracy" recommendation are
+  **re-scoped to the fixed rule** and must not be quoted as properties of the goal.
+  ⇒ **Before writing a spec for a supplier, ask which consumer the threshold was measured against —
+  and whether that is the consumer you will ship.**
+- **C36 — AN INPUT CAN BE WORTH POINTS WHILE CARRYING NO INFORMATION** *(new class, added 2026-07-28;
+  the most counter-intuitive of the set)* ⇒ **a derived feature that is an exact function of columns the
+  model already has adds ZERO information and can still be worth a large, separated gain — as an
+  INDUCTIVE BIAS.** MEASURED: `g_along` = GBM(`v`, `ax_fd`) at **R² = 0.999894**, and the no-goal arm is
+  **fed both `v` and `ax_fd`.** The goal is therefore informationally empty — and worth **+26.3
+  separated recovery points.**
+  ⚠️ **The decision this changes: funding a strategic SUPPLIER (AlpaSim, an external mapped corpus, any
+  goal-signal acquisition) is the wrong lever at this feature list** — a supplier buys the accuracy
+  term, which end-to-end is worth **+2–4 points**, not the +26. Corroborated independently: a naive
+  **`2·v0`** goal delivers **+62.07 %** through the trained selector where the *fixed rule* turns the
+  same goal into **−18.55 %, separated-WORSE** — **a 16.7×–33.6× collapse in the value of accuracy.**
+  ⇒ **Before buying a signal, test whether a crude version of it captures the gain. If it does, you are
+  buying structure, not information, and you can build structure yourself.**

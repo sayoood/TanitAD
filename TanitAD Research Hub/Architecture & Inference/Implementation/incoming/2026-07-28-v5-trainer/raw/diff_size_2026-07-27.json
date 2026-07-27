@@ -1,0 +1,60 @@
+{
+  "metric": "non-blank, non-comment, non-docstring lines",
+  "option_a_new_definitions_by_purpose": {
+    "core_v2_wiring": {
+      "defs": {
+        "scripts/train_flagship_v4.py::_assert_parity_v2": 22,
+        "scripts/train_flagship_v4.py::assert_corpus_args": 37
+      },
+      "total": 59
+    },
+    "strengthening_needed_on_either_path": {
+      "defs": {
+        "scripts/train_flagship_v4.py::_geometry_report": 4,
+        "tanitad/data/parity.py::_missing_entry_lines": 28,
+        "tanitad/data/parity.py::_sibling_candidate_key": 6,
+        "tanitad/data/parity.py::assert_v2_geometry_matches": 79,
+        "tanitad/data/parity.py::assert_v2_splits_disjoint": 26
+      },
+      "total": 143
+    },
+    "note": "the remainder of the diff is in-place branches (the data block, the geometry call, the CLI flags, preflight, the staged command), which no separate definition owns."
+  },
+  "option_a_CHOSEN": {
+    "what": "teach train_flagship_v4 to read v2 + bind the geometry",
+    "product": {
+      "stack/scripts/train_flagship_v4.py": {
+        "added_physical": 231,
+        "added_code_lines": 181
+      },
+      "stack/tanitad/data/parity.py": {
+        "added_physical": 218,
+        "added_code_lines": 194
+      }
+    },
+    "product_code_lines_total": 375,
+    "tests": {
+      "file": "stack/tests/test_v5_trainer_v2_val.py",
+      "physical": 854,
+      "code_lines": 519
+    },
+    "NEW_MACHINERY": 0,
+    "new_machinery_note": "every capability it uses already existed: build_v2_providers (the v2 loader), assert_v2_parity_cache (the membership proof), apply_geometry_args (the frame), HeldoutGate (the mid-run gate). The diff is wiring and refusals."
+  },
+  "option_b_REJECTED": {
+    "what": "port the held-out val loop into train_flagship4b",
+    "machinery_it_must_acquire": {
+      "tanitad/models/flagship_v4.py::FlagshipV4Head": 87,
+      "tanitad/models/flagship_v15.py::FlagshipV15Head": 173,
+      "scripts/train_flagship_v4.py::v4_loss_step": 52,
+      "scripts/flagship_v4_data.py::FlagshipV4Dataset": 32,
+      "scripts/train_flagship_v4.py::_training_loop": 177,
+      "scripts/train_flagship_v4.py::canary_rollout": 34,
+      "scripts/train_flagship_v4.py::evaluate_planner": 31
+    },
+    "code_lines_total": 586,
+    "floor_not_estimate": "counts only existing definitions that would have to move \u2014 not the wiring, the tests, the second optimizer group, or the v2 val-cache branch it ALSO needs (which is option A's work done twice).",
+    "why_it_is_not_a_port": "train_flagship4b's selected plan is 4 points at 0.5 s spacing (tactical waypoint_horizons (5,10,15,20)); the gate's pseudo-simulation differentiates at dt=0.1 s and raises NonDensePlanError on it. A dense plan means FlagshipV4Head and the loss that trains it \u2014 i.e. making 4b into v4."
+  },
+  "ratio_new_machinery": "586 : 0"
+}

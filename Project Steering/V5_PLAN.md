@@ -342,9 +342,61 @@ points**, so +46.3 % vs +25.4 % is **treatment, not code**; F-2 is a per-row exa
 rows with F-3 failing hard as required. Leak **0/600 by pose content against 600/600 by filename**,
 cross-validated against E-GOAL-2's independent script.
 
-⛔ **STILL NOT LICENSED, and this is the next experiment: that a JOINTLY TRAINED v5 selector inherits
-+46 %.** What is measured is a goal injected into a **frozen** fan through a **fixed** rule. **It can
-fail, and no v5 commitment may outrun it.**
+### ✅ E-GOAL-4 (2026-07-28) — JOINT TRAINING CONFIRMS IT, AND RE-SCOPES IT THREE WAYS
+
+`…/incoming/2026-07-28-egoal-4-joint/`. **Coupling named:** a per-candidate learned selector over the
+frozen 256-anchor REF-C-XL fan — **13,198 windows × 256 = 3,378,688 rows**, label = each candidate's
+own realised `ade_0_2s`, pick = `argmin`, **5 episode-disjoint folds, out-of-fold**, goal head fed as
+an input. The fixed rule's own statistic is a fed column, **so the learner CAN express `argmin d_rule`
+exactly** — it is not handicapped.
+
+**The recovery survives and GROWS: `S_goal` +62.09 % (`parent_resampled`) / +64.08 % (`sel`,
+future-blind)** vs the fixed rule's +46.34 % / +61.46 %, **beating the fixed rule with the same goal on
+both** (−0.0479 [−0.0530, −0.0431]; −0.0081 [−0.0112, −0.0051]). **None of the three registered failure
+modes occurred** — co-adaptation is a null on both backgrounds, the in-sample↔OOF gap is 2.4–2.5
+recovery points, and the selector does not ignore the goal.
+
+⛔ **1. THE +46.3 % OVER-CREDITS THE GOAL BY 1.76×, AND THIS IS THE NUMBER TO PLAN WITH.** It was
+measured against the **as-trained** selector. **A trained selector with NO goal already recovers
++35.62 %.** The goal's **capacity-matched marginal is +26.31 recovery points** — and it is *identical*
+on both backgrounds (**−0.0811 [−0.0904, −0.0720]** and **[−0.0888, −0.0732]**) **even though their
+totals differ by 15 points.** ⭐ That invariance is the useful part: **the capacity-matched contrast is
+background-independent where the totals are not** — a partial answer to C30. ⇒ **PLAN v5 WITH +26,
+NOT +46.** *(New class: **C34 — a lever measured against the wrong counterfactual**.)*
+
+⭐⭐⭐ **2. GOAL-HEAD ACCURACY IS NEARLY WORTHLESS END-TO-END, AND THIS RETIRES A WHOLE LINE OF WORK.**
+A naive **`2·v0`** goal — along-track RMS **1.449 m**, which the *fixed rule* turns into **−18.55 %,
+separated-WORSE** — delivers **+62.07 %** through the trained selector. The learned `v + ax_fd` head
+buys only **+2.01 / +3.89** points on top, against **+64.89 / +67.57** through the fixed rule: a
+**16.7×–33.6× collapse.** The mechanism is visible in the picks: `S_goal_cv` targets to **0.806 m** from
+a goal handed to it at **1.449 m**. ⇒ **THE FIXED RULE OBEYS THE GOAL; THE TRAINED SELECTOR TREATS IT
+AS EVIDENCE.** **Do not fund goal-head accuracy.** *(σ₀, the requirement curves, the feature hunt — all
+of it buys 2–4 points once the consumer is trained.)*
+
+⛔ **3. E-GOAL-3's REQUIREMENT CURVE DOES NOT TRANSFER — σ₀ IS A PROPERTY OF THE CONSUMER, NOT THE
+GOAL.** On the identical degradation ladder the fixed rule goes destructive at **1.128 m** and reaches
+**−111.78 % at 2.256 m**, where the trained selector is **+16.73 %, separated-BETTER, and never crosses
+zero.** *(New class: **C35 — a requirement curve is a property of the consumer**.)*
+
+⭐⭐ **AND THE GOAL CARRIES NO NEW INFORMATION AT ALL.** `g_along` = GBM(`v`, `ax_fd`) at
+**R² = 0.999894** (exact, gate G-6) — **and the no-goal arm is fed both columns.** ⇒ **the goal is an
+INDUCTIVE BIAS worth +26.3 separated points, not a channel.** *(New class: **C36 — an input can be
+worth points while carrying no information**.)* ⇒ 🔴 **FUNDING A STRATEGIC *SUPPLIER* IS THE WRONG
+LEVER AT THIS FEATURE LIST** — AlpaSim, an external mapped corpus, or any goal-signal acquisition buys
+the +2–4 accuracy points, not the +26.
+
+**Audit and controls.** Every fed column future-blind at **max |Δ| = 0.0 over all 3.38 M rows**, with
+power shown three ways — ⭐ **the instrument FIRES on `parent_resampled`'s cross (5.2 × 10⁴,
+future-derived by construction) and returns exactly 0.0 on `sel`'s**, which is why every number is
+reported on both. Fold disjointness by **pose sha256: 0 shared across all 10 fold pairs**. **G-1
+reproduces E-GOAL-3 to 0.004 recovery points.** Two self-caught defects reported rather than worked
+around: the registered "MUST BE NULL" control **separates on `sel`** (+0.0066) because a shuffled goal
+still yields a real geometric feature — **which is exactly why the headline uses the capacity-matched
+contrast that subtracts it** — and the registered C23 power control is itself a null, so power rests on
+the oracle arm instead. All four verdict branches were reachable in this run's own data.
+
+⚠️ **Consequent fix owed:** `MODEL_REGISTRY`'s **0.4907** needs a deployment tag (**881-window / 40-ep,
+`a0` 0.4714**) — it is being quoted against 600-episode numbers.
 
 ⚠️ **AND THE BARS THIS DOCUMENT PUBLISHED WERE COMPUTED ON THE WRONG FAMILY.** The measured heads are
 **near-unbiased (α ≈ 0.996 — not `SHRINK`)** and **heavy-tailed (RMS/MAE 1.867 — not `ISO`)**. Sweeping

@@ -1,0 +1,162 @@
+{
+  "host": "dev box (pod1 NOT contacted)",
+  "source_of_argv": "TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-25-v2-launch-readiness/flagship-v2corpus-30k.env",
+  "pod1_argv": [
+    "--v2-cache",
+    "/workspace/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d",
+    "--config",
+    "flagship4b",
+    "--v2",
+    "--sigreg-free-dims",
+    "64",
+    "--steps",
+    "30000",
+    "--batch-size",
+    "16",
+    "--accum",
+    "4",
+    "--grad-checkpoint",
+    "--lr",
+    "3e-4",
+    "--warmup",
+    "2000",
+    "--workers",
+    "8",
+    "--v2-lru",
+    "64",
+    "--guard-limit-gb",
+    "45",
+    "--ckpt-every",
+    "1000",
+    "--log-every",
+    "50",
+    "--out",
+    "/workspace/experiments/flagship-v2corpus-30k"
+  ],
+  "1_trainer_file_unchanged": {
+    "file": "stack/scripts/train_flagship4b.py",
+    "sha256_baseline": "53f3ab5b0dd3e7118d836e75d061ddfc2355e6eb377b12f833a6abdb1b5d8ab8",
+    "sha256_now": "53f3ab5b0dd3e7118d836e75d061ddfc2355e6eb377b12f833a6abdb1b5d8ab8",
+    "PASS": true,
+    "why_this_is_the_strongest_check": "the chosen option edits train_flagship_v4 only, so pod1's trainer is byte-identical \u2014 no argument about behaviour is needed at all"
+  },
+  "2_argv_still_parses": {
+    "PASS": true,
+    "namespace": {
+      "accum": 4,
+      "batch_size": 16,
+      "cache_dirs": null,
+      "ckpt_every": 1000,
+      "config": "flagship4b",
+      "data": "realmix",
+      "decorr_weight": 0.05,
+      "device": "auto",
+      "ego_dropout": null,
+      "episodes": 0,
+      "f_ref": null,
+      "frame_h": null,
+      "frame_hfov": null,
+      "frame_w": null,
+      "fwd_step_weight": 0.5,
+      "fwd_weight": 1.0,
+      "goal_weight": 0.5,
+      "grad_checkpoint": true,
+      "guard_limit_gb": 45.0,
+      "invdyn_gradscale": null,
+      "invdyn_weight": 2.0,
+      "labels_v2": null,
+      "labels_v21": null,
+      "log_every": 50,
+      "lr": 0.0003,
+      "man_weight": 0.5,
+      "no_amp": false,
+      "op_fwd_k": 4,
+      "out": "/workspace/experiments/flagship-v2corpus-30k",
+      "pose_scale": 10.0,
+      "pred_weight": 1.0,
+      "projection": null,
+      "require_parity": false,
+      "roll_weight": 0.5,
+      "rollout_k": null,
+      "route_from_vision": null,
+      "route_vis_weight": 0.3,
+      "route_weight": 0.5,
+      "seed": 0,
+      "sigreg_free_dims": 64,
+      "sim_frac": 0.6,
+      "speed_input": false,
+      "staged_levers": false,
+      "steps": 30000,
+      "str_fwd_k": 20,
+      "tac_fwd_k": 16,
+      "tacpred_weight": 0.5,
+      "v2": true,
+      "v2_cache": [
+        "/workspace/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d"
+      ],
+      "v2_lru": 64,
+      "warmup": 2000,
+      "weight_decay": 0.05,
+      "workers": 8,
+      "wp_weight": 1.0
+    },
+    "require_parity": false,
+    "require_parity_is_off": true,
+    "geometry_defaults": {
+      "frame_h": null,
+      "frame_w": null,
+      "frame_hfov": null,
+      "f_ref": null,
+      "projection": null
+    }
+  },
+  "3_resume_still_works": {
+    "run1_final_step": 3,
+    "run2_final_step": 6,
+    "resume_line": "[resume] resuming at step 4",
+    "resume_branch_fired": true,
+    "resumed_from_step": 4,
+    "continued_not_restarted": true,
+    "first_run_did_not_resume": true,
+    "unregistered_cache_warned_and_proceeded": true,
+    "PASS": true
+  },
+  "4_geometry_is_a_noop_for_pod1s_config": {
+    "smoke": {
+      "before": [
+        64,
+        null
+      ],
+      "after": [
+        256,
+        null
+      ],
+      "unchanged": false
+    },
+    "flagship4b_reduced": {
+      "before": [
+        256,
+        null
+      ],
+      "after": [
+        256,
+        null
+      ],
+      "unchanged": true
+    },
+    "flagship4b": {
+      "before": [
+        256,
+        null
+      ],
+      "after": [
+        256,
+        null
+      ],
+      "unchanged": true
+    },
+    "_pod1_config": "flagship4b",
+    "POD1_UNAFFECTED": true
+  },
+  "ALL_PASS": true
+}

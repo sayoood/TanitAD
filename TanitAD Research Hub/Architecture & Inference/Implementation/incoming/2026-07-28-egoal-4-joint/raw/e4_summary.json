@@ -1,0 +1,1513 @@
+{
+ "_stream": "2026-07-28-egoal-4-joint",
+ "_stage": "S2 summary",
+ "_backgrounds": [
+  "parent_resampled",
+  "sel"
+ ],
+ "deployment": {
+  "n_windows": 13198,
+  "n_candidates": 256,
+  "n_rows": 3378688,
+  "n_episode_clusters": 600,
+  "a0_as_trained": 0.5015,
+  "r_goal2s_true_goal": 0.1933,
+  "oracle_in_fan": 0.1547,
+  "headroom": 0.3082
+ },
+ "_estimator": "paired episode-cluster bootstrap, taniteval/ci.py, B=2000, unit = the val episode. overlapping_holdout_se NEVER called.",
+ "_coupling": "a per-candidate LEARNED SELECTOR over the frozen 256-anchor REF-C-XL fan, trained on each candidate's realised ade_0_2s, with the goal head's prediction as an INPUT FEATURE, evaluated by the pick it makes",
+ "gates": {
+  "parent_resampled": {
+   "G_1_fixed_rule_reproduces_EGOAL_3": {
+    "_source": "e3_place_n600_parent_resampled.json -> arms[T_OOF|*].recovery_of_headroom",
+    "cells": {
+     "FIXED_goal": {
+      "rec_at_16_seeds": 0.4634,
+      "rec_at_1_seed": 0.4656,
+      "EGOAL_3_raw_json": 0.4634,
+      "dev_vs_EGOAL_3_recovery_points": 0.001,
+      "dev_1seed_vs_16seed_points": 0.219
+     },
+     "FIXED_goal_ego": {
+      "rec_at_16_seeds": 0.4626,
+      "rec_at_1_seed": 0.4624,
+      "EGOAL_3_raw_json": 0.4626,
+      "dev_vs_EGOAL_3_recovery_points": 0.002,
+      "dev_1seed_vs_16seed_points": -0.022
+     },
+     "FIXED_cv": {
+      "rec_at_16_seeds": -0.1855,
+      "rec_at_1_seed": -0.1891,
+      "EGOAL_3_raw_json": -0.1855,
+      "dev_vs_EGOAL_3_recovery_points": -0.003,
+      "dev_1seed_vs_16seed_points": -0.357
+     },
+     "FIXED_oracle": {
+      "rec_at_16_seeds": 0.7741,
+      "rec_at_1_seed": 0.776,
+      "EGOAL_3_raw_json": 0.7741,
+      "dev_vs_EGOAL_3_recovery_points": -0.004,
+      "dev_1seed_vs_16seed_points": 0.194
+     }
+    },
+    "max_abs_dev_recovery_points": 0.004,
+    "passes": true
+   },
+   "G_4_one_seed_is_representative": {
+    "max_abs_dev_recovery_points": 0.357,
+    "tolerance": 1.5,
+    "passes": true
+   },
+   "G_6_head_refit_reproduces_EGOAL_3": {
+    "_what": "my per-fold refit of `v + ax_fd` vs e3_head_preds T_OOF|H_v0_ax",
+    "max_abs_delta_m": 0.0,
+    "passes": true
+   }
+  },
+  "sel": {
+   "G_1_fixed_rule_reproduces_EGOAL_3": {
+    "_source": "e3_place_n600_sel.json -> arms[T_OOF|*].recovery_of_headroom",
+    "cells": {
+     "FIXED_goal": {
+      "rec_at_1_seeds": 0.6146,
+      "rec_at_1_seed": 0.6146,
+      "EGOAL_3_raw_json": 0.6146,
+      "dev_vs_EGOAL_3_recovery_points": 0.001,
+      "dev_1seed_vs_16seed_points": -0.001
+     },
+     "FIXED_goal_ego": {
+      "rec_at_1_seeds": 0.6148,
+      "rec_at_1_seed": 0.6148,
+      "EGOAL_3_raw_json": 0.6148,
+      "dev_vs_EGOAL_3_recovery_points": 0.001,
+      "dev_1seed_vs_16seed_points": -0.001
+     },
+     "FIXED_cv": {
+      "rec_at_1_seeds": -0.0611,
+      "rec_at_1_seed": -0.0611,
+      "EGOAL_3_raw_json": -0.0611,
+      "dev_vs_EGOAL_3_recovery_points": -0.004,
+      "dev_1seed_vs_16seed_points": 0.004
+     },
+     "FIXED_oracle": {
+      "rec_at_1_seeds": 0.9484,
+      "rec_at_1_seed": 0.9484,
+      "EGOAL_3_raw_json": 0.9484,
+      "dev_vs_EGOAL_3_recovery_points": 0.004,
+      "dev_1seed_vs_16seed_points": -0.004
+     }
+    },
+    "max_abs_dev_recovery_points": 0.004,
+    "passes": true
+   },
+   "G_4_one_seed_is_representative": {
+    "max_abs_dev_recovery_points": 0.004,
+    "tolerance": 1.5,
+    "passes": true
+   },
+   "G_6_head_refit_reproduces_EGOAL_3": {
+    "_what": "my per-fold refit of `v + ax_fd` vs e3_head_preds T_OOF|H_v0_ax",
+    "max_abs_delta_m": 0.0,
+    "passes": true
+   }
+  }
+ },
+ "arms": {
+  "FIXED_cv": {
+   "parent_resampled": {
+    "realised": 0.5598,
+    "recovery": -0.1891,
+    "paired": [
+     0.0583,
+     0.046,
+     0.0692
+    ],
+    "verdict": "WORSE",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   },
+   "sel": {
+    "realised": 0.5204,
+    "recovery": -0.0611,
+    "paired": [
+     0.0188,
+     0.0064,
+     0.03
+    ],
+    "verdict": "WORSE",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   }
+  },
+  "FIXED_goal": {
+   "parent_resampled": {
+    "realised": 0.358,
+    "recovery": 0.4656,
+    "paired": [
+     -0.1435,
+     -0.1592,
+     -0.1278
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   },
+   "sel": {
+    "realised": 0.3121,
+    "recovery": 0.6146,
+    "paired": [
+     -0.1894,
+     -0.2048,
+     -0.1743
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   }
+  },
+  "FIXED_goal_ego": {
+   "parent_resampled": {
+    "realised": 0.359,
+    "recovery": 0.4624,
+    "paired": [
+     -0.1425,
+     -0.1581,
+     -0.1268
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   },
+   "sel": {
+    "realised": 0.312,
+    "recovery": 0.6148,
+    "paired": [
+     -0.1895,
+     -0.2043,
+     -0.1748
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   }
+  },
+  "FIXED_oracle": {
+   "parent_resampled": {
+    "realised": 0.2624,
+    "recovery": 0.776,
+    "paired": [
+     -0.2392,
+     -0.2561,
+     -0.222
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   },
+   "sel": {
+    "realised": 0.2092,
+    "recovery": 0.9484,
+    "paired": [
+     -0.2923,
+     -0.3084,
+     -0.276
+    ],
+    "verdict": "BETTER",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   }
+  },
+  "FIXED_shuf": {
+   "parent_resampled": {
+    "realised": 12.8286,
+    "recovery": -39.9964,
+    "paired": [
+     12.3271,
+     11.551,
+     13.102
+    ],
+    "verdict": "WORSE",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   },
+   "sel": {
+    "realised": 12.8221,
+    "recovery": -39.9753,
+    "paired": [
+     12.3206,
+     11.5433,
+     13.0922
+    ],
+    "verdict": "WORSE",
+    "ties_mean": null,
+    "pick_eq_a0": null
+   }
+  },
+  "S_nogoal": {
+   "parent_resampled": {
+    "realised": 0.3917,
+    "recovery": 0.3562,
+    "paired": [
+     -0.1098,
+     -0.1239,
+     -0.096
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1463,
+    "pick_eq_a0": 0.4883
+   },
+   "sel": {
+    "realised": 0.3917,
+    "recovery": 0.3562,
+    "paired": [
+     -0.1098,
+     -0.1239,
+     -0.096
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1463,
+    "pick_eq_a0": 0.4883
+   }
+  },
+  "S_nogoal_z": {
+   "parent_resampled": {
+    "realised": 0.4272,
+    "recovery": 0.2413,
+    "paired": [
+     -0.0744,
+     -0.0885,
+     -0.059
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0805,
+    "pick_eq_a0": 0.3964
+   },
+   "sel": {
+    "realised": 0.4272,
+    "recovery": 0.2413,
+    "paired": [
+     -0.0744,
+     -0.0885,
+     -0.059
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0805,
+    "pick_eq_a0": 0.3964
+   }
+  },
+  "S_goal_shuf": {
+   "parent_resampled": {
+    "realised": 0.3912,
+    "recovery": 0.3579,
+    "paired": [
+     -0.1103,
+     -0.1247,
+     -0.0963
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1357,
+    "pick_eq_a0": 0.4873
+   },
+   "sel": {
+    "realised": 0.3851,
+    "recovery": 0.3776,
+    "paired": [
+     -0.1164,
+     -0.1302,
+     -0.1027
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1391,
+    "pick_eq_a0": 0.4905
+   }
+  },
+  "S_goal_cv": {
+   "parent_resampled": {
+    "realised": 0.3221,
+    "recovery": 0.5822,
+    "paired": [
+     -0.1794,
+     -0.1935,
+     -0.1657
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0049,
+    "pick_eq_a0": 0.4775
+   },
+   "sel": {
+    "realised": 0.3102,
+    "recovery": 0.6207,
+    "paired": [
+     -0.1913,
+     -0.2048,
+     -0.1781
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0146,
+    "pick_eq_a0": 0.4247
+   }
+  },
+  "S_goal_crossonly": {
+   "parent_resampled": {
+    "realised": 0.3727,
+    "recovery": 0.418,
+    "paired": [
+     -0.1288,
+     -0.1422,
+     -0.1159
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1212,
+    "pick_eq_a0": 0.4941
+   },
+   "sel": {
+    "realised": 0.3789,
+    "recovery": 0.3977,
+    "paired": [
+     -0.1226,
+     -0.1353,
+     -0.1102
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1474,
+    "pick_eq_a0": 0.4883
+   }
+  },
+  "S_goal_alongonly": {
+   "parent_resampled": {
+    "realised": 0.3175,
+    "recovery": 0.5972,
+    "paired": [
+     -0.184,
+     -0.199,
+     -0.1688
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0164,
+    "pick_eq_a0": 0.4792
+   },
+   "sel": {
+    "realised": 0.3189,
+    "recovery": 0.5924,
+    "paired": [
+     -0.1826,
+     -0.1974,
+     -0.1674
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.013,
+    "pick_eq_a0": 0.4583
+   }
+  },
+  "S_goalonly": {
+   "parent_resampled": {
+    "realised": 0.3357,
+    "recovery": 0.5381,
+    "paired": [
+     -0.1659,
+     -0.1814,
+     -0.1501
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.5068,
+    "pick_eq_a0": 0.1937
+   },
+   "sel": {
+    "realised": 0.3101,
+    "recovery": 0.621,
+    "paired": [
+     -0.1914,
+     -0.2067,
+     -0.1761
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1204,
+    "pick_eq_a0": 0.3411
+   }
+  },
+  "S_goal": {
+   "parent_resampled": {
+    "realised": 0.3102,
+    "recovery": 0.6209,
+    "paired": [
+     -0.1914,
+     -0.2064,
+     -0.1762
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0094,
+    "pick_eq_a0": 0.4426
+   },
+   "sel": {
+    "realised": 0.304,
+    "recovery": 0.6408,
+    "paired": [
+     -0.1975,
+     -0.2125,
+     -0.1825
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0114,
+    "pick_eq_a0": 0.4046
+   }
+  },
+  "S_goal_z": {
+   "parent_resampled": {
+    "realised": 0.3227,
+    "recovery": 0.5801,
+    "paired": [
+     -0.1788,
+     -0.1939,
+     -0.1636
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0088,
+    "pick_eq_a0": 0.4228
+   },
+   "sel": {
+    "realised": 0.3083,
+    "recovery": 0.6271,
+    "paired": [
+     -0.1933,
+     -0.2081,
+     -0.1782
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0133,
+    "pick_eq_a0": 0.4082
+   }
+  },
+  "S_goal_ego": {
+   "parent_resampled": {
+    "realised": 0.3089,
+    "recovery": 0.6251,
+    "paired": [
+     -0.1927,
+     -0.2078,
+     -0.1777
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0126,
+    "pick_eq_a0": 0.4361
+   },
+   "sel": {
+    "realised": 0.3048,
+    "recovery": 0.6384,
+    "paired": [
+     -0.1967,
+     -0.2117,
+     -0.182
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0116,
+    "pick_eq_a0": 0.4016
+   }
+  },
+  "S_goal_coadapt": {
+   "parent_resampled": {
+    "realised": 0.3078,
+    "recovery": 0.6285,
+    "paired": [
+     -0.1937,
+     -0.2083,
+     -0.1789
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0073,
+    "pick_eq_a0": 0.4276
+   },
+   "sel": {
+    "realised": 0.3029,
+    "recovery": 0.6445,
+    "paired": [
+     -0.1986,
+     -0.214,
+     -0.1837
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0104,
+    "pick_eq_a0": 0.3863
+   }
+  },
+  "S_LEAK": {
+   "parent_resampled": {
+    "realised": 0.3084,
+    "recovery": 0.6266,
+    "paired": [
+     -0.1931,
+     -0.2084,
+     -0.178
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0112,
+    "pick_eq_a0": 0.438
+   },
+   "sel": {
+    "realised": 0.3036,
+    "recovery": 0.6422,
+    "paired": [
+     -0.1979,
+     -0.213,
+     -0.183
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0165,
+    "pick_eq_a0": 0.3989
+   }
+  },
+  "S_goal_oracle": {
+   "parent_resampled": {
+    "realised": 0.1962,
+    "recovery": 0.9906,
+    "paired": [
+     -0.3053,
+     -0.3237,
+     -0.2871
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0046,
+    "pick_eq_a0": 0.3793
+   },
+   "sel": {
+    "realised": 0.1923,
+    "recovery": 1.0033,
+    "paired": [
+     -0.3092,
+     -0.3274,
+     -0.2913
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0279,
+    "pick_eq_a0": 0.3466
+   }
+  },
+  "S_goal_oracle2d": {
+   "parent_resampled": {
+    "realised": 0.1758,
+    "recovery": 1.0568,
+    "paired": [
+     -0.3257,
+     -0.3444,
+     -0.3075
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0243,
+    "pick_eq_a0": 0.3389
+   },
+   "sel": {
+    "realised": 0.1758,
+    "recovery": 1.0568,
+    "paired": [
+     -0.3257,
+     -0.3444,
+     -0.3075
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0243,
+    "pick_eq_a0": 0.3389
+   }
+  },
+  "S_nogoal_INSAMPLE": {
+   "parent_resampled": {
+    "realised": 0.38,
+    "recovery": 0.3942,
+    "paired": [
+     -0.1215,
+     -0.1359,
+     -0.1066
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1632,
+    "pick_eq_a0": 0.5087
+   },
+   "sel": {
+    "realised": 0.38,
+    "recovery": 0.3942,
+    "paired": [
+     -0.1215,
+     -0.1359,
+     -0.1066
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.1632,
+    "pick_eq_a0": 0.5087
+   }
+  },
+  "S_goal_INSAMPLE": {
+   "parent_resampled": {
+    "realised": 0.3028,
+    "recovery": 0.6447,
+    "paired": [
+     -0.1987,
+     -0.2138,
+     -0.1835
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.013,
+    "pick_eq_a0": 0.4417
+   },
+   "sel": {
+    "realised": 0.2964,
+    "recovery": 0.6657,
+    "paired": [
+     -0.2052,
+     -0.2204,
+     -0.1902
+    ],
+    "verdict": "BETTER",
+    "ties_mean": 1.0093,
+    "pick_eq_a0": 0.4107
+   }
+  }
+ },
+ "contrasts": {
+  "FIXED_goal__vs__FIXED_oracle": {
+   "parent_resampled": {
+    "delta": 0.0957,
+    "lo": 0.0885,
+    "hi": 0.1035,
+    "separated": true,
+    "recovery_points": 31.04,
+    "_what": "the same distance, fixed rule",
+    "recovery_points_from_delta": -31.05,
+    "recovery_points_ci": [
+     -33.58,
+     -28.72
+    ]
+   },
+   "sel": {
+    "delta": 0.1029,
+    "lo": 0.0958,
+    "hi": 0.1108,
+    "separated": true,
+    "recovery_points": 33.38,
+    "_what": "the same distance, fixed rule",
+    "recovery_points_from_delta": -33.39,
+    "recovery_points_ci": [
+     -35.95,
+     -31.08
+    ]
+   }
+  },
+  "S_LEAK__vs__S_goal": {
+   "parent_resampled": {
+    "delta": -0.0017,
+    "lo": -0.0037,
+    "hi": 0.0002,
+    "separated": false,
+    "recovery_points": -0.57,
+    "_what": "\u26d4 C23 POWER: a real FUTURE field, fed deliberately",
+    "recovery_points_from_delta": 0.55,
+    "recovery_points_ci": [
+     -0.06,
+     1.2
+    ]
+   },
+   "sel": {
+    "delta": -0.0004,
+    "lo": -0.0019,
+    "hi": 0.0011,
+    "separated": false,
+    "recovery_points": -0.14,
+    "_what": "\u26d4 C23 POWER: a real FUTURE field, fed deliberately",
+    "recovery_points_from_delta": 0.13,
+    "recovery_points_ci": [
+     -0.36,
+     0.62
+    ]
+   }
+  },
+  "S_goal_INSAMPLE__vs__S_goal": {
+   "parent_resampled": {
+    "delta": -0.0073,
+    "lo": -0.0094,
+    "hi": -0.0053,
+    "separated": true,
+    "recovery_points": -2.38,
+    "_what": "\u2b50 in-sample vs out-of-fold (co-adaptation)",
+    "recovery_points_from_delta": 2.37,
+    "recovery_points_ci": [
+     1.72,
+     3.05
+    ]
+   },
+   "sel": {
+    "delta": -0.0077,
+    "lo": -0.0109,
+    "hi": -0.0051,
+    "separated": true,
+    "recovery_points": -2.49,
+    "_what": "\u2b50 in-sample vs out-of-fold (co-adaptation)",
+    "recovery_points_from_delta": 2.5,
+    "recovery_points_ci": [
+     1.65,
+     3.54
+    ]
+   }
+  },
+  "S_goal__vs__FIXED_goal": {
+   "parent_resampled": {
+    "delta": -0.0479,
+    "lo": -0.053,
+    "hi": -0.0431,
+    "separated": true,
+    "recovery_points": -15.53,
+    "_what": "\u2b50 trained selector vs the FIXED rule, SAME goal",
+    "recovery_points_from_delta": 15.54,
+    "recovery_points_ci": [
+     13.98,
+     17.2
+    ]
+   },
+   "sel": {
+    "delta": -0.0081,
+    "lo": -0.0112,
+    "hi": -0.0051,
+    "separated": true,
+    "recovery_points": -2.62,
+    "_what": "\u2b50 trained selector vs the FIXED rule, SAME goal",
+    "recovery_points_from_delta": 2.63,
+    "recovery_points_ci": [
+     1.65,
+     3.63
+    ]
+   }
+  },
+  "S_goal__vs__S_goal_alongonly": {
+   "parent_resampled": {
+    "delta": -0.0073,
+    "lo": -0.0123,
+    "hi": -0.0025,
+    "separated": true,
+    "recovery_points": -2.37,
+    "_what": "\u2b50 A3: what the cross adds on top of along",
+    "recovery_points_from_delta": 2.37,
+    "recovery_points_ci": [
+     0.81,
+     3.99
+    ]
+   },
+   "sel": {
+    "delta": -0.0149,
+    "lo": -0.0187,
+    "hi": -0.0109,
+    "separated": true,
+    "recovery_points": -4.84,
+    "_what": "\u2b50 A3: what the cross adds on top of along",
+    "recovery_points_from_delta": 4.83,
+    "recovery_points_ci": [
+     3.54,
+     6.07
+    ]
+   }
+  },
+  "S_goal__vs__S_goal_crossonly": {
+   "parent_resampled": {
+    "delta": -0.0625,
+    "lo": -0.0692,
+    "hi": -0.0556,
+    "separated": true,
+    "recovery_points": -20.29,
+    "_what": "\u2b50 A3: what the along adds on top of cross",
+    "recovery_points_from_delta": 20.28,
+    "recovery_points_ci": [
+     18.04,
+     22.45
+    ]
+   },
+   "sel": {
+    "delta": -0.0749,
+    "lo": -0.0807,
+    "hi": -0.0688,
+    "separated": true,
+    "recovery_points": -24.31,
+    "_what": "\u2b50 A3: what the along adds on top of cross",
+    "recovery_points_from_delta": 24.3,
+    "recovery_points_ci": [
+     22.32,
+     26.18
+    ]
+   }
+  },
+  "S_goal__vs__S_goal_oracle": {
+   "parent_resampled": {
+    "delta": 0.1139,
+    "lo": 0.1071,
+    "hi": 0.121,
+    "separated": true,
+    "recovery_points": 36.97,
+    "_what": "distance to the trained-with-true-goal bound",
+    "recovery_points_from_delta": -36.96,
+    "recovery_points_ci": [
+     -39.26,
+     -34.75
+    ]
+   },
+   "sel": {
+    "delta": 0.1117,
+    "lo": 0.1048,
+    "hi": 0.1188,
+    "separated": true,
+    "recovery_points": 36.25,
+    "_what": "distance to the trained-with-true-goal bound",
+    "recovery_points_from_delta": -36.24,
+    "recovery_points_ci": [
+     -38.55,
+     -34.0
+    ]
+   }
+  },
+  "S_goal__vs__S_goal_shuf": {
+   "parent_resampled": {
+    "delta": -0.0811,
+    "lo": -0.0904,
+    "hi": -0.072,
+    "separated": true,
+    "recovery_points": -26.3,
+    "_what": "goal vs a REAL goal from the WRONG episode",
+    "recovery_points_from_delta": 26.31,
+    "recovery_points_ci": [
+     23.36,
+     29.33
+    ]
+   },
+   "sel": {
+    "delta": -0.0811,
+    "lo": -0.0888,
+    "hi": -0.0732,
+    "separated": true,
+    "recovery_points": -26.32,
+    "_what": "goal vs a REAL goal from the WRONG episode",
+    "recovery_points_from_delta": 26.31,
+    "recovery_points_ci": [
+     23.75,
+     28.81
+    ]
+   }
+  },
+  "S_goal__vs__S_nogoal": {
+   "parent_resampled": {
+    "delta": -0.0816,
+    "lo": -0.0911,
+    "hi": -0.0721,
+    "separated": true,
+    "recovery_points": -26.47,
+    "_what": "\u2b50\u2b50 THE VERDICT: what the goal buys a TRAINED selector",
+    "recovery_points_from_delta": 26.48,
+    "recovery_points_ci": [
+     23.39,
+     29.56
+    ]
+   },
+   "sel": {
+    "delta": -0.0877,
+    "lo": -0.0957,
+    "hi": -0.0792,
+    "separated": true,
+    "recovery_points": -28.46,
+    "_what": "\u2b50\u2b50 THE VERDICT: what the goal buys a TRAINED selector",
+    "recovery_points_from_delta": 28.46,
+    "recovery_points_ci": [
+     25.7,
+     31.05
+    ]
+   }
+  },
+  "S_goal_alongonly__vs__S_nogoal": {
+   "parent_resampled": {
+    "delta": -0.0743,
+    "lo": -0.082,
+    "hi": -0.0665,
+    "separated": true,
+    "recovery_points": -24.1,
+    "_what": "\u2b50 A3: the ALONG axis alone",
+    "recovery_points_from_delta": 24.11,
+    "recovery_points_ci": [
+     21.58,
+     26.61
+    ]
+   },
+   "sel": {
+    "delta": -0.0728,
+    "lo": -0.0806,
+    "hi": -0.0648,
+    "separated": true,
+    "recovery_points": -23.62,
+    "_what": "\u2b50 A3: the ALONG axis alone",
+    "recovery_points_from_delta": 23.62,
+    "recovery_points_ci": [
+     21.03,
+     26.15
+    ]
+   }
+  },
+  "S_goal_coadapt__vs__S_goal": {
+   "parent_resampled": {
+    "delta": -0.0023,
+    "lo": -0.0047,
+    "hi": 0.0002,
+    "separated": false,
+    "recovery_points": -0.76,
+    "_what": "\u2b50 head/selector co-adaptation",
+    "recovery_points_from_delta": 0.75,
+    "recovery_points_ci": [
+     -0.06,
+     1.52
+    ]
+   },
+   "sel": {
+    "delta": -0.0011,
+    "lo": -0.0028,
+    "hi": 0.0006,
+    "separated": false,
+    "recovery_points": -0.37,
+    "_what": "\u2b50 head/selector co-adaptation",
+    "recovery_points_from_delta": 0.36,
+    "recovery_points_ci": [
+     -0.19,
+     0.91
+    ]
+   }
+  },
+  "S_goal_crossonly__vs__S_nogoal": {
+   "parent_resampled": {
+    "delta": -0.019,
+    "lo": -0.0256,
+    "hi": -0.0132,
+    "separated": true,
+    "recovery_points": -6.18,
+    "_what": "\u2b50 A3: the CROSS axis alone",
+    "recovery_points_from_delta": 6.16,
+    "recovery_points_ci": [
+     4.28,
+     8.31
+    ]
+   },
+   "sel": {
+    "delta": -0.0128,
+    "lo": -0.019,
+    "hi": -0.0069,
+    "separated": true,
+    "recovery_points": -4.15,
+    "_what": "\u2b50 A3: the CROSS axis alone",
+    "recovery_points_from_delta": 4.15,
+    "recovery_points_ci": [
+     2.24,
+     6.16
+    ]
+   }
+  },
+  "S_goal_cv__vs__S_nogoal": {
+   "parent_resampled": {
+    "delta": -0.0696,
+    "lo": -0.078,
+    "hi": -0.0615,
+    "separated": true,
+    "recovery_points": -22.6,
+    "_what": "an information-poor goal, trained",
+    "recovery_points_from_delta": 22.58,
+    "recovery_points_ci": [
+     19.95,
+     25.31
+    ]
+   },
+   "sel": {
+    "delta": -0.0815,
+    "lo": -0.089,
+    "hi": -0.0744,
+    "separated": true,
+    "recovery_points": -26.45,
+    "_what": "an information-poor goal, trained",
+    "recovery_points_from_delta": 26.44,
+    "recovery_points_ci": [
+     24.14,
+     28.88
+    ]
+   }
+  },
+  "S_goal_ego__vs__S_goal": {
+   "parent_resampled": {
+    "delta": -0.0013,
+    "lo": -0.0044,
+    "hi": 0.0018,
+    "separated": false,
+    "recovery_points": -0.42,
+    "_what": "the 10-column head vs `v + ax_fd`",
+    "recovery_points_from_delta": 0.42,
+    "recovery_points_ci": [
+     -0.58,
+     1.43
+    ]
+   },
+   "sel": {
+    "delta": 0.0007,
+    "lo": -0.0022,
+    "hi": 0.0035,
+    "separated": false,
+    "recovery_points": 0.24,
+    "_what": "the 10-column head vs `v + ax_fd`",
+    "recovery_points_from_delta": -0.23,
+    "recovery_points_ci": [
+     -1.14,
+     0.71
+    ]
+   }
+  },
+  "S_goal_z__vs__S_goal": {
+   "parent_resampled": {
+    "delta": 0.0126,
+    "lo": 0.0096,
+    "hi": 0.016,
+    "separated": true,
+    "recovery_points": 4.08,
+    "_what": "the loss (within-window centred target)",
+    "recovery_points_from_delta": -4.09,
+    "recovery_points_ci": [
+     -5.19,
+     -3.11
+    ]
+   },
+   "sel": {
+    "delta": 0.0042,
+    "lo": 0.0017,
+    "hi": 0.0068,
+    "separated": true,
+    "recovery_points": 1.37,
+    "_what": "the loss (within-window centred target)",
+    "recovery_points_from_delta": -1.36,
+    "recovery_points_ci": [
+     -2.21,
+     -0.55
+    ]
+   }
+  },
+  "S_goal_z__vs__S_nogoal_z": {
+   "parent_resampled": {
+    "delta": -0.1044,
+    "lo": -0.1131,
+    "hi": -0.0961,
+    "separated": true,
+    "recovery_points": -33.88,
+    "_what": "the verdict contrast under the z loss",
+    "recovery_points_from_delta": 33.87,
+    "recovery_points_ci": [
+     31.18,
+     36.7
+    ]
+   },
+   "sel": {
+    "delta": -0.1189,
+    "lo": -0.1274,
+    "hi": -0.1106,
+    "separated": true,
+    "recovery_points": -38.58,
+    "_what": "the verdict contrast under the z loss",
+    "recovery_points_from_delta": 38.58,
+    "recovery_points_ci": [
+     35.89,
+     41.34
+    ]
+   }
+  },
+  "S_goalonly__vs__FIXED_goal": {
+   "parent_resampled": {
+    "delta": -0.0224,
+    "lo": -0.0257,
+    "hi": -0.0193,
+    "separated": true,
+    "recovery_points": -7.25,
+    "_what": "can the learner express the rule at all?",
+    "recovery_points_from_delta": 7.27,
+    "recovery_points_ci": [
+     6.26,
+     8.34
+    ]
+   },
+   "sel": {
+    "delta": -0.002,
+    "lo": -0.0038,
+    "hi": -0.0001,
+    "separated": true,
+    "recovery_points": -0.64,
+    "_what": "can the learner express the rule at all?",
+    "recovery_points_from_delta": 0.65,
+    "recovery_points_ci": [
+     0.03,
+     1.23
+    ]
+   }
+  },
+  "S_nogoal__vs__FIXED_cv": {
+   "parent_resampled": {
+    "delta": -0.1681,
+    "lo": -0.1832,
+    "hi": -0.1525,
+    "separated": true,
+    "recovery_points": -54.53,
+    "_what": "the trained selector vs a CV goal through the rule",
+    "recovery_points_from_delta": 54.54,
+    "recovery_points_ci": [
+     49.48,
+     59.44
+    ]
+   },
+   "sel": {
+    "delta": -0.1286,
+    "lo": -0.1442,
+    "hi": -0.113,
+    "separated": true,
+    "recovery_points": -41.73,
+    "_what": "the trained selector vs a CV goal through the rule",
+    "recovery_points_from_delta": 41.73,
+    "recovery_points_ci": [
+     36.66,
+     46.79
+    ]
+   }
+  },
+  "S_nogoal__vs__FIXED_goal": {
+   "parent_resampled": {
+    "delta": 0.0337,
+    "lo": 0.0228,
+    "hi": 0.0439,
+    "separated": true,
+    "recovery_points": 10.94,
+    "_what": "the trained re-scorer vs the goal rule",
+    "recovery_points_from_delta": -10.93,
+    "recovery_points_ci": [
+     -14.24,
+     -7.4
+    ]
+   },
+   "sel": {
+    "delta": 0.0796,
+    "lo": 0.0708,
+    "hi": 0.0881,
+    "separated": true,
+    "recovery_points": 25.84,
+    "_what": "the trained re-scorer vs the goal rule",
+    "recovery_points_from_delta": -25.83,
+    "recovery_points_ci": [
+     -28.59,
+     -22.97
+    ]
+   }
+  },
+  "S_nogoal__vs__S_goal_shuf": {
+   "parent_resampled": {
+    "delta": 0.0005,
+    "lo": -0.0028,
+    "hi": 0.004,
+    "separated": false,
+    "recovery_points": 0.17,
+    "_what": "\u26d4 MUST BE NULL: no goal vs fake goal",
+    "recovery_points_from_delta": -0.16,
+    "recovery_points_ci": [
+     -1.3,
+     0.91
+    ]
+   },
+   "sel": {
+    "delta": 0.0066,
+    "lo": 0.0035,
+    "hi": 0.0097,
+    "separated": true,
+    "recovery_points": 2.14,
+    "_what": "\u26d4 MUST BE NULL: no goal vs fake goal",
+    "recovery_points_from_delta": -2.14,
+    "recovery_points_ci": [
+     -3.15,
+     -1.14
+    ]
+   }
+  }
+ },
+ "verdict": {
+  "parent_resampled": {
+   "_rule": "PRE_REGISTRATION \u00a77",
+   "separated_better_than_A0": true,
+   "separated_better_than_S_nogoal": true,
+   "recovery": 0.6209,
+   "CONFIRM_threshold": 0.37,
+   "verdict": "CONFIRM",
+   "EGOAL_3_fixed_rule_recovery": 0.4634,
+   "share_of_the_fixed_rule": 1.3399,
+   "S_nogoal_recovery": 0.3562,
+   "goal_marginal_recovery_points": 26.47,
+   "goal_marginal_paired": {
+    "delta": -0.0816,
+    "lo": -0.0911,
+    "hi": -0.0721,
+    "ci95": 0.0095,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 13198,
+    "n_episodes": 600,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "goal_marginal_recovery_points_ci": [
+    23.39,
+    29.56
+   ],
+   "_reading": "the fixed rule's +46.3 % vs A0 CONFLATES two effects: replacing the as-trained selector with a better decision rule, and adding goal INFORMATION. `S_nogoal` measures the first; the marginal above measures the second.",
+   "EGOAL_3_fixed_rule_recovery_raw_json": 0.4634,
+   "background_future_blind": false
+  },
+  "sel": {
+   "_rule": "PRE_REGISTRATION \u00a77",
+   "separated_better_than_A0": true,
+   "separated_better_than_S_nogoal": true,
+   "recovery": 0.6408,
+   "CONFIRM_threshold": 0.37,
+   "verdict": "CONFIRM",
+   "EGOAL_3_fixed_rule_recovery": 0.6146,
+   "share_of_the_fixed_rule": 1.0426,
+   "S_nogoal_recovery": 0.3562,
+   "goal_marginal_recovery_points": 28.46,
+   "goal_marginal_paired": {
+    "delta": -0.0877,
+    "lo": -0.0957,
+    "hi": -0.0792,
+    "ci95": 0.0083,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 13198,
+    "n_episodes": 600,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "goal_marginal_recovery_points_ci": [
+    25.7,
+    31.05
+   ],
+   "_reading": "the fixed rule's +46.3 % vs A0 CONFLATES two effects: replacing the as-trained selector with a better decision rule, and adding goal INFORMATION. `S_nogoal` measures the first; the marginal above measures the second.",
+   "EGOAL_3_fixed_rule_recovery_raw_json": 0.6146,
+   "background_future_blind": true
+  }
+ },
+ "extra_contrasts": {
+  "S_goal__vs__S_goal_cv": {
+   "parent_resampled": {
+    "_what": "\u2b50\u2b50 DOES THE GOAL'S ACCURACY MATTER? learned `v+ax_fd` vs a naive 2*v0",
+    "delta": -0.012,
+    "lo": -0.0171,
+    "hi": -0.007,
+    "separated": true,
+    "recovery_points": 3.89,
+    "recovery_points_ci": [
+     2.27,
+     5.55
+    ]
+   },
+   "sel": {
+    "_what": "\u2b50\u2b50 DOES THE GOAL'S ACCURACY MATTER? learned `v+ax_fd` vs a naive 2*v0",
+    "delta": -0.0062,
+    "lo": -0.0107,
+    "hi": -0.0016,
+    "separated": true,
+    "recovery_points": 2.01,
+    "recovery_points_ci": [
+     0.52,
+     3.47
+    ]
+   }
+  },
+  "S_goal_cv__vs__S_goal_shuf": {
+   "parent_resampled": {
+    "_what": "a CV goal vs a REAL goal from the WRONG episode",
+    "delta": -0.0691,
+    "lo": -0.0771,
+    "hi": -0.0614,
+    "separated": true,
+    "recovery_points": 22.42,
+    "recovery_points_ci": [
+     19.92,
+     25.02
+    ]
+   },
+   "sel": {
+    "_what": "a CV goal vs a REAL goal from the WRONG episode",
+    "delta": -0.0749,
+    "lo": -0.0822,
+    "hi": -0.068,
+    "separated": true,
+    "recovery_points": 24.3,
+    "recovery_points_ci": [
+     22.06,
+     26.67
+    ]
+   }
+  },
+  "S_goal_alongonly__vs__S_goal_shuf": {
+   "parent_resampled": {
+    "_what": "the ALONG axis, capacity-matched against the shuffled arm",
+    "delta": -0.0738,
+    "lo": -0.0812,
+    "hi": -0.0662,
+    "separated": true,
+    "recovery_points": 23.95,
+    "recovery_points_ci": [
+     21.48,
+     26.35
+    ]
+   },
+   "sel": {
+    "_what": "the ALONG axis, capacity-matched against the shuffled arm",
+    "delta": -0.0662,
+    "lo": -0.0734,
+    "hi": -0.0587,
+    "separated": true,
+    "recovery_points": 21.48,
+    "recovery_points_ci": [
+     19.05,
+     23.82
+    ]
+   }
+  },
+  "S_nogoal_INSAMPLE__vs__S_nogoal": {
+   "parent_resampled": {
+    "_what": "in-sample vs OOF, no-goal arm",
+    "delta": -0.0117,
+    "lo": -0.0171,
+    "hi": -0.0064,
+    "separated": true,
+    "recovery_points": 3.8,
+    "recovery_points_ci": [
+     2.08,
+     5.55
+    ]
+   },
+   "sel": {
+    "_what": "in-sample vs OOF, no-goal arm",
+    "delta": -0.0117,
+    "lo": -0.0171,
+    "hi": -0.0064,
+    "separated": true,
+    "recovery_points": 3.8,
+    "recovery_points_ci": [
+     2.08,
+     5.55
+    ]
+   }
+  },
+  "S_goal_oracle__vs__FIXED_oracle": {
+   "parent_resampled": {
+    "_what": "the SAME true goal through the trained rule vs the fixed rule",
+    "delta": -0.0662,
+    "lo": -0.0709,
+    "hi": -0.0615,
+    "separated": true,
+    "recovery_points": 21.48,
+    "recovery_points_ci": [
+     19.95,
+     23.0
+    ]
+   },
+   "sel": {
+    "_what": "the SAME true goal through the trained rule vs the fixed rule",
+    "delta": -0.0169,
+    "lo": -0.0195,
+    "hi": -0.0142,
+    "separated": true,
+    "recovery_points": 5.48,
+    "recovery_points_ci": [
+     4.61,
+     6.33
+    ]
+   }
+  },
+  "S_goal_cv__vs__FIXED_cv": {
+   "parent_resampled": {
+    "_what": "\u2b50 the SAME CV goal through the trained rule vs the fixed rule",
+    "delta": -0.2377,
+    "lo": -0.2518,
+    "hi": -0.2234,
+    "separated": true,
+    "recovery_points": 77.13,
+    "recovery_points_ci": [
+     72.49,
+     81.7
+    ]
+   },
+   "sel": {
+    "_what": "\u2b50 the SAME CV goal through the trained rule vs the fixed rule",
+    "delta": -0.2102,
+    "lo": -0.2253,
+    "hi": -0.1952,
+    "separated": true,
+    "recovery_points": 68.2,
+    "recovery_points_ci": [
+     63.34,
+     73.1
+    ]
+   }
+  },
+  "S_nogoal__vs__S_goal_oracle": {
+   "parent_resampled": {
+    "_what": "the whole span the goal slot can buy",
+    "delta": 0.1955,
+    "lo": 0.1843,
+    "hi": 0.207,
+    "separated": true,
+    "recovery_points": -63.43,
+    "recovery_points_ci": [
+     -67.16,
+     -59.8
+    ]
+   },
+   "sel": {
+    "_what": "the whole span the goal slot can buy",
+    "delta": 0.1994,
+    "lo": 0.1893,
+    "hi": 0.21,
+    "separated": true,
+    "recovery_points": -64.7,
+    "recovery_points_ci": [
+     -68.14,
+     -61.42
+    ]
+   }
+  }
+ },
+ "ladder": [
+  {
+   "k": 0.0,
+   "along_rms_m": 0.0,
+   "trained": 0.9906,
+   "trained_sep": true,
+   "fixed": 0.776
+  },
+  {
+   "k": 0.5,
+   "along_rms_m": 0.3759,
+   "trained": 0.9142,
+   "trained_sep": true,
+   "fixed": 0.7268
+  },
+  {
+   "k": 1.5,
+   "along_rms_m": 1.1278,
+   "trained": 0.3585,
+   "trained_sep": true,
+   "fixed": 0.1148
+  },
+  {
+   "k": 2.0,
+   "along_rms_m": 1.5038,
+   "trained": 0.223,
+   "trained_sep": true,
+   "fixed": -0.2854
+  },
+  {
+   "k": 3.0,
+   "along_rms_m": 2.2557,
+   "trained": 0.1673,
+   "trained_sep": true,
+   "fixed": -1.1178
+  }
+ ]
+}

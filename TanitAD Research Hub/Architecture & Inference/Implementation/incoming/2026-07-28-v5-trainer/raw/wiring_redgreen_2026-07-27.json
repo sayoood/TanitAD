@@ -1,0 +1,146 @@
+{
+  "what": "each guard removed in turn; the test that owns it must go RED",
+  "host": "dev box (no pod contacted)",
+  "cases": [
+    {
+      "mutation": "gate probes the TRAIN half instead of the held-out one",
+      "APPLIED": true,
+      "file": "stack/scripts/train_flagship_v4.py",
+      "test": "test_the_gate_probes_the_VAL_providers_not_the_train_ones",
+      "why_it_matters": "a val loop fed the training clips reports health forever \u2014 the exact shape of the defect being fixed, and nothing downstream would notice",
+      "green_before": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 3.18s",
+        "reason": null
+      },
+      "RED_when_removed": {
+        "returncode": 1,
+        "passed": false,
+        "summary": "",
+        "reason": null
+      },
+      "green_after_restore": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 4.62s",
+        "reason": null
+      },
+      "PASS": true
+    },
+    {
+      "mutation": "the v2 parity guard is skipped",
+      "APPLIED": true,
+      "file": "stack/scripts/train_flagship_v4.py",
+      "test": "test_the_parity_guard_runs_BEFORE_the_v2_loader",
+      "why_it_matters": "an unregistered v2 cache would train under --require-parity",
+      "green_before": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.77s",
+        "reason": null
+      },
+      "RED_when_removed": {
+        "returncode": 1,
+        "passed": false,
+        "summary": "1 failed in 2.91s",
+        "reason": "E       AssertionError: build_v2_providers was REACHED despite an unregistered cache under --require-parity"
+      },
+      "green_after_restore": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.81s",
+        "reason": null
+      },
+      "PASS": true
+    },
+    {
+      "mutation": "the geometry binding is removed (BOTH halves)",
+      "APPLIED": true,
+      "file": "stack/scripts/train_flagship_v4.py",
+      "test": "test_a_wide_cache_read_with_DEFAULT_flags_is_refused",
+      "why_it_matters": "a 256x640 cache read with the default 256x256 flags trains happily and voids every number \u2014 membership never sees pixels",
+      "green_before": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 2.76s",
+        "reason": null
+      },
+      "RED_when_removed": {
+        "returncode": 1,
+        "passed": false,
+        "summary": "",
+        "reason": null
+      },
+      "green_after_restore": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 2.87s",
+        "reason": null
+      },
+      "PASS": true
+    },
+    {
+      "mutation": "the train/val leak check is removed",
+      "APPLIED": true,
+      "file": "stack/scripts/train_flagship_v4.py",
+      "test": "test_a_train_val_LEAK_is_refused",
+      "why_it_matters": "a leaked val clip makes the early-stop unable to fire, which is worse than no early-stop because it is believed",
+      "green_before": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.76s",
+        "reason": null
+      },
+      "RED_when_removed": {
+        "returncode": 1,
+        "passed": false,
+        "summary": "",
+        "reason": null
+      },
+      "green_after_restore": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.87s",
+        "reason": null
+      },
+      "PASS": true
+    },
+    {
+      "mutation": "the missing-manifest hint is removed",
+      "APPLIED": true,
+      "file": "stack/tanitad/data/parity.py",
+      "test": "test_an_unregistered_v2_cache_NAMES_the_missing_manifest_entry",
+      "why_it_matters": "runbook step 3 (git add the manifest) is the step that gets forgotten, and the refusal named nothing",
+      "green_before": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.74s",
+        "reason": null
+      },
+      "RED_when_removed": {
+        "returncode": 1,
+        "passed": false,
+        "summary": "",
+        "reason": null
+      },
+      "green_after_restore": {
+        "returncode": 0,
+        "passed": true,
+        "summary": "1 passed in 1.82s",
+        "reason": null
+      },
+      "PASS": true
+    }
+  ],
+  "files_restored_bit_exact": true,
+  "sha256_before": {
+    "stack/scripts/train_flagship_v4.py": "3f48c6bdbbd7ba5c1b9b5382bf3701709f47359e681d734813761225a1ae1015",
+    "stack/tanitad/data/parity.py": "42415d8efcec5956f2e5faf8b9d9d9e852924befcd934289e6f233ec9c3113f7"
+  },
+  "sha256_after": {
+    "stack/scripts/train_flagship_v4.py": "3f48c6bdbbd7ba5c1b9b5382bf3701709f47359e681d734813761225a1ae1015",
+    "stack/tanitad/data/parity.py": "42415d8efcec5956f2e5faf8b9d9d9e852924befcd934289e6f233ec9c3113f7"
+  },
+  "ALL_PASS": true
+}

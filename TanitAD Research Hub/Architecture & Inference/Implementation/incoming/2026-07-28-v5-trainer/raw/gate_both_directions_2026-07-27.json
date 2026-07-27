@@ -1,0 +1,206 @@
+{
+  "primary": "pseudosim_composite_PSS_recovery_progress",
+  "refused_primary": "ade_0_2s (diagnostic only — see PRIMARY_RATIONALE)",
+  "estimator": "paired episode-cluster bootstrap (B=400, unit = held-out episode) — taniteval.ci.paired_episode_cluster_bootstrap",
+  "evidence_class": "MEASURED (ours; synthetic held-out episodes, dev box)",
+  "1_STABLE_arm_is_not_stopped": {
+    "probes": [
+      {
+        "step": 0,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": null,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": null
+      },
+      {
+        "step": 1,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": false,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      {
+        "step": 2,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": false,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      {
+        "step": 3,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": false,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    ],
+    "stopped": false,
+    "stop_reason": null,
+    "admitted_components": {
+      "recovery": 5.0
+    }
+  },
+  "2_DEGRADED_arm_IS_stopped": {
+    "probes": [
+      {
+        "step": 0,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": null,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": null
+      },
+      {
+        "step": 1,
+        "primary_value": 0.0,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": true,
+        "separated_better": false,
+        "worse_streak": 1,
+        "stop": false,
+        "paired": {
+          "delta": -0.0647,
+          "lo": -0.0844,
+          "hi": -0.0517,
+          "ci95": 0.0163,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      {
+        "step": 2,
+        "primary_value": 0.0,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": true,
+        "separated_better": false,
+        "worse_streak": 2,
+        "stop": true,
+        "paired": {
+          "delta": -0.0647,
+          "lo": -0.0844,
+          "hi": -0.0517,
+          "ci95": 0.0163,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    ],
+    "stopped": true,
+    "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress) separated-WORSE than the incumbent (step 0) for 2 consecutive probes (patience=2); last delta -0.0647 [-0.0844, -0.0517], paired_episode_cluster_bootstrap, n_episodes=4. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+    "admitted_components": {
+      "recovery": 5.0
+    }
+  },
+  "3_the_false_direction": {
+    "probes": [
+      {
+        "step": 0,
+        "primary_value": 0.064679,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": null,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": null
+      },
+      {
+        "step": 1,
+        "primary_value": 0.234435,
+        "n_windows": 40,
+        "n_episodes": 4,
+        "separated_worse": false,
+        "separated_better": true,
+        "worse_streak": 0,
+        "stop": false,
+        "paired": {
+          "delta": 0.1698,
+          "lo": 0.1518,
+          "hi": 0.1878,
+          "ci95": 0.018,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 40,
+          "n_episodes": 4,
+          "n_boot": 400,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    ],
+    "stopped": false,
+    "stop_reason": null,
+    "admitted_components": {
+      "recovery": 5.0
+    },
+    "⚠️": "A SLOWDOWN makes the composite go UP. pseudosim gives a barely-moving plan recovery=NaN by construction (the progress-matched denominator, added because 'standing still is not recovery'), so the surviving components favour it. The first draft of the failing test used this and would have PASSED-as-red for the wrong reason if the sign had not been checked."
+  },
+  "ALL_PASS": true
+}

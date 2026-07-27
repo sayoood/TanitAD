@@ -197,3 +197,47 @@ advance: **a REFUTE means the +46 % is a property of the fixed rule, not of the 
 ## 9. AMENDMENTS
 
 *(appended after the fact; nothing above is edited)*
+
+### A1 — added **after the S0 audit, before any arm was fitted**. Three anticipated objections, each given its own arm rather than an excuse later.
+
+1. ⭐ **`S_goal_z` — the loss.** MSE on raw per-candidate ADE spends most of its capacity on
+   *window difficulty*, which is common to all 256 candidates and cancels in the argmin. `S_goal_z`
+   is identical in every respect except that the target is the **within-window centred** ADE
+   (`ade − mean_c ade`), which is purely about within-window discrimination.
+   ⇒ *"you used the wrong loss"* cannot be the explanation of a shortfall.
+2. ⭐ **TIES — the mechanism I expect to matter, registered before it is measured.** A gradient-boosted
+   tree's output is **piecewise constant**, so many candidates receive the **identical** score and the
+   argmin among them is arbitrary. The fixed rule's `d_rule` is continuous and never ties.
+   **Registered:** the pick is `np.argmin` (first index, arbitrary w.r.t. quality — the honest
+   reading of *"the model cannot tell these apart"*), and **the per-window count of candidates tied at
+   the minimum is reported for every arm**. A `tie-broken-by-d_rule` variant is reported as a
+   **diagnostic**, never as the headline.
+3. **`S_goal_coadapt` needs the goal head refitted per fold**, which E-GOAL-3 did not save. New gate
+   **G-6:** the refit's out-of-fold predictions must reproduce `T_OOF|H_v0_ax` from
+   `e3_head_preds.npz` **exactly** (`max |Δ| = 0`), or my head is not E-GOAL-3's head.
+
+### A2 — the S0 audit's finding, recorded here because it changes how §4's two backgrounds are read
+
+`future_blind` fired on `parent_resampled`'s goal columns (max |Δ| = 5.2 × 10⁴) and returned
+**exactly 0.0** on `sel`'s, over all 13 198 × 256 rows, with the label moving on **100 %** of windows.
+⇒ **§4's pre-registered clause stands and is now load-bearing:** the primary background is
+oracle-contaminated on the cross axis **by construction**, `sel` is not, and **where they disagree
+the `sel` cell is the one that survives the audit.**
+
+### A3 — added after a 4-arm smoke run of the CORE set, before the full arm set was fitted. Nothing already measured was re-analysed to choose these; they are added because the audit and the core run each exposed a quantity the registered set could not separate.
+
+1. ⭐⭐ **The goal decomposed into its two axes — `S_goal_alongonly` (real along, goal-cross replaced
+   by the shuffled cross) and `S_goal_crossonly` (shuffled along, real cross).** With A2's finding
+   that `parent_resampled`'s cross is future-derived **by construction**, an oracle-cross
+   contribution would otherwise be indistinguishable from the along-track lever E-GOAL-2/3
+   identified. This 2×2 separates them.
+2. **`S_goal_oracle` is re-defined as `true along + the SAME background cross`**, so it is the
+   *identical goal* as `FIXED_oracle` through a different decision rule. The full true 2-D endpoint
+   becomes `S_goal_oracle2d`, reported as the strongest bound.
+3. ⭐⭐ **The headline must carry the MARGINAL, not only the total.** The smoke run's `S_nogoal`
+   returned a recovery that is **not** near zero. E-GOAL-3's +46.3 % is measured against `A0`, the
+   **as-trained** selector; the counterfactual for *"does v5 need a goal INPUT"* is a **trained
+   selector without one**. **Registered now: the reported headline is
+   `rec(S_goal) − rec(S_nogoal)` with its own paired CI, beside the total.** The §7 verdict rule is
+   **unchanged** — it already required separation against `S_nogoal` — but the *number quoted* must
+   be the marginal, or a CONFIRM would be read as crediting the goal with the decision rule's share.

@@ -982,6 +982,222 @@ def _refuse_v2(label: str, key: str, cache_dirs, lines: list[str]) -> None:
         ]))
 
 
+def _sibling_candidate_key(cache_dirs) -> str | None:
+    """The key a v2 GEOMETRY SIBLING would have been registered under, read off
+    the directory name — or ``None`` when the name looks like nothing.
+
+    ⚠️ WHY THIS EXISTS. The v5 runbook is *rebuild -> register -> COMMIT THE
+    MANIFEST -> train*, and step 3 is the one that gets skipped: the registration
+    runs on a pod, the ``parity_manifest.json`` diff is never staged, and on every
+    OTHER host the cache then reads as an unregistered (or, worse, a
+    parent-keyed) corpus and ``--require-parity`` refuses to start. The refusal
+    was accurate and useless — it said the corpus was not registered, not that a
+    specific entry was MISSING from a specific file.
+
+    The rule is deliberately dumb and cannot mis-resolve anything: the directory
+    BASENAME is the candidate. ``register_v2_geometry_sibling`` already refuses a
+    key that does not appear in the cache path, and ``register_v2_sibling.py``'s
+    published runbook renames the dir TO the key, so basename == key by
+    construction on the intended path. Nothing branches on the result — it only
+    adds lines to a refusal that has already been decided."""
+    for d in _v2_paths(cache_dirs):
+        name = Path(d).resolve().name
+        if name and name not in (".", "/"):
+            return name
+    return None
+
+
+def _missing_entry_lines(cache_dirs, matched_key: str | None,
+                         manifest_path: str | Path | None = None) -> list[str]:
+    """Refusal lines that NAME the manifest entry that is missing, when the
+    directory looks like a geometry sibling whose registration never landed."""
+    cand = _sibling_candidate_key(cache_dirs)
+    mpath = Path(manifest_path or MANIFEST_PATH)
+    if not cand:
+        return []
+    try:
+        known = set(load_manifest(manifest_path).get("corpora", {}))
+    except SystemExit:                                        # firewall direction
+        known = set()
+    if cand in known:                                         # nothing is missing
+        return []
+    parent = (f" (it EXTENDS the registered key {matched_key!r}, which is a RAW "
+              f"epcache corpus)" if matched_key and matched_key in cand
+              and matched_key != cand else "")
+    return [
+        "",
+        f"  🔴 MISSING MANIFEST ENTRY: {cand!r}{parent}",
+        f"     is NOT in {mpath}",
+        "     — so this host cannot verify the cache even though the pod that",
+        "       built it may have registered it perfectly.",
+        "",
+        "     This is RUNBOOK STEP 3, the one that gets forgotten:",
+        "         git add stack/tanitad/data/parity_manifest.json",
+        "     An entry that lives only on the pod makes the cache read",
+        "     NON-PARITY on every other host, and --require-parity then refuses",
+        "     to start — which is what just happened.",
+    ]
+
+
+def assert_v2_splits_disjoint(train_dirs, val_dirs, *,
+                              label: str = "v2 train/val") -> dict:
+    """⭐ REFUSE a v2 train cache and v2 val cache that share a clip.
+
+    A DIFFERENT fact from :func:`assert_v2_parity_cache`, which proves each
+    directory's membership against the manifest and never compares two of them.
+    On the raw path the two splits are separate REGISTERED corpora, so an overlap
+    is caught by the digests; on the v2 path they are just two paths a launch
+    command supplies, and nothing looked at them together.
+
+    ⚠️ This is the guard the HELD-OUT GATE depends on. A leaked val clip does not
+    crash anything — it makes the gate's early-stop read a training episode, so
+    the probe reports health while the deployable surface decays. That is
+    precisely the ~29.5 GPU-h failure the gate exists to prevent, wearing a
+    working gate as a disguise.
+
+    🔒 Counts and digests only — clip ids are gated-confidential."""
+    tr = set(v2_clip_ids(train_dirs))
+    va = set(v2_clip_ids(val_dirs))
+    both = tr & va
+    if both:
+        raise ParityViolation("\n".join([
+            "",
+            "=" * 78,
+            f"PARITY VIOLATION [{label}] — TRAIN/VAL LEAK",
+            "=" * 78,
+            *(f"  train      : {d}" for d in _v2_paths(train_dirs)),
+            *(f"  val        : {d}" for d in _v2_paths(val_dirs)),
+            f"  overlap    : {len(both)} clip(s) appear in BOTH   <-- LEAK",
+            f"               ({len(tr)} train, {len(va)} val)",
+            "",
+            "  The held-out gate probes the val clips to decide when to STOP the",
+            "  run. A clip that is also trained on makes that probe report health",
+            "  while the deployable surface decays — an early-stop that cannot",
+            "  fire is worse than none, because it is believed.",
+            "",
+            "  🔒 clip ids are gated-confidential and are NOT printed.",
+            "=" * 78,
+        ]))
+    return {"disjoint": True, "train_clips": len(tr), "val_clips": len(va),
+            "overlap": 0, "label": label}
+
+
+def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
+                               providers=None) -> dict:
+    """⭐ BIND THE GEOMETRY to what the trainer verified — the gap §9's header
+    names ("nothing hashes PIXELS; a wrong-FOV cache with the right clips
+    PASSES").
+
+    Two bindings, and they are NOT equally strong — stated plainly because the
+    difference is the whole point:
+
+    1. **SHAPE, read off the cache** (strong). ``providers`` are the objects
+       :func:`tanitad.data.v2_dataset.build_v2_providers` returns; their
+       ``.frames.shape`` comes from the per-clip ``image_h``/``image_w`` written
+       into each payload at BUILD time. Comparing it to the trainer's resolved
+       frame catches the exact WIDE_FOV_BUILD.md §7 failure — "omit the flags and
+       the trainer builds a 256x256 encoder and is fed 256x640 frames" — and it
+       is a property of the bytes on disk, not of a declaration.
+    2. **DECLARATION, from the manifest** (weaker, still worth having). The
+       registered entry carries the builder's ``_geometry.json``
+       (``provenance.geometry``). Comparing ``f_ref`` / ``projection`` to the
+       run's frame makes the registration and the run agree on the field of
+       view, which SHAPE alone cannot see: 256x640 at f_ref 305.58 (120 deg) and
+       256x640 at f_ref 407 (90 deg) have identical shape.
+
+    ⛔ WHAT THIS STILL DOES NOT DO: it does not hash pixels. A cache whose
+    ``_geometry.json`` says 120 deg but whose resampler actually produced 90 deg
+    passes both bindings. Only the builder's pre-decode
+    ``_assert_geometry_deliverable`` binds the record to the resampler, it runs
+    in a different stream hours earlier, and if it is wrong nothing here catches
+    it. Said in the code so it cannot be softened in prose."""
+    out = {"label": label, "checked_shape": False, "checked_declaration": False,
+           "frame": {"height": int(frame.height), "width": int(frame.width),
+                     "f_ref": float(frame.f_ref),
+                     "projection": str(frame.projection)},
+           "pixels_are_not_hashed": (
+               "membership proves WHICH CLIPS, shape proves the RASTER SIZE on "
+               "disk, the manifest proves what the BUILDER RECORDED. None of "
+               "the three proves the resampler produced that field.")}
+
+    if providers:
+        shapes = sorted({tuple(int(x) for x in p.frames.shape[-2:])
+                         for p in providers})
+        out["checked_shape"] = True
+        out["cache_frame_shapes"] = [list(s) for s in shapes]
+        want = (int(frame.height), int(frame.width))
+        if len(shapes) > 1 or shapes[0] != want:
+            raise ParityViolation("\n".join([
+                "",
+                "=" * 78,
+                f"GEOMETRY VIOLATION [{label}] — the cache is not the frame the "
+                f"run declares",
+                "=" * 78,
+                f"  run declares : {want[0]}x{want[1]} px, f_ref "
+                f"{frame.f_ref:.4f}, {frame.projection}",
+                f"  cache holds  : {', '.join(f'{h}x{w}' for h, w in shapes)} px"
+                + ("   <-- MIXED GEOMETRIES IN ONE CACHE" if len(shapes) > 1
+                   else "   <-- MISMATCH"),
+                "",
+                "  The encoder's positional embedding is sized for the DECLARED",
+                "  frame. Feeding it a different raster does not crash: it",
+                "  trains, and every number off the run is void.",
+                "",
+                "  Pass the cache's own geometry, e.g.:",
+                f"      --frame-h {shapes[0][0]} --frame-w {shapes[0][1]} "
+                f"--frame-hfov <deg> --projection <pinhole|cylindrical>",
+                "=" * 78,
+            ]))
+
+    # The registered block is whatever `register_v2_sibling.py` read out of the
+    # cache's `_geometry.json`: `{"frame": {...}, "frame_tag": ..., ...}` on the
+    # deployed path, but a FLAT `{"height":…, "width":…}` is equally valid and is
+    # what a hand-passed --geometry-json can produce. Accept both rather than
+    # silently skipping the check on one of them — a binding that quietly does
+    # nothing is the C13 failure this whole function exists to avoid.
+    geo = (rec or {}).get("geometry") or {}
+    fr = None
+    if isinstance(geo, dict):
+        fr = geo.get("frame") if isinstance(geo.get("frame"), dict) else geo
+    if isinstance(fr, dict) and {"height", "width"} <= set(fr):
+        out["checked_declaration"] = True
+        out["registered_geometry"] = dict(fr)
+        bad = []
+        if int(fr["height"]) != int(frame.height) or \
+                int(fr["width"]) != int(frame.width):
+            bad.append(f"size {fr['height']}x{fr['width']} registered vs "
+                       f"{frame.height}x{frame.width} declared")
+        if fr.get("projection") and str(fr["projection"]) != str(frame.projection):
+            bad.append(f"projection {fr['projection']!r} registered vs "
+                       f"{frame.projection!r} declared")
+        if fr.get("f_ref") is not None and \
+                abs(float(fr["f_ref"]) - float(frame.f_ref)) > 1e-3:
+            bad.append(f"f_ref {float(fr['f_ref']):.4f} registered vs "
+                       f"{float(frame.f_ref):.4f} declared  <-- SAME PIXELS, "
+                       f"DIFFERENT FIELD OF VIEW")
+        if bad:
+            raise ParityViolation("\n".join([
+                "",
+                "=" * 78,
+                f"GEOMETRY VIOLATION [{label}] — run vs REGISTERED geometry",
+                "=" * 78,
+                f"  corpus key : {(rec or {}).get('corpus_key')}",
+                *(f"  {b}" for b in bad),
+                "",
+                "  The manifest entry records the geometry the cache was BUILT",
+                "  and REGISTERED at (its _geometry.json). A run that declares a",
+                "  different frame is reading those pixels through the wrong",
+                "  camera model — membership passes, every metric is void.",
+                "=" * 78,
+            ]))
+    else:
+        out["declaration_note"] = (
+            "the registered entry carries no geometry.frame block (an "
+            "unregistered or pre-geometry corpus) — only the SHAPE binding "
+            "applies here")
+    return out
+
+
 def clip_membership_of(corpus_key: str = PARITY_TRAIN_KEY,
                        manifest_path: str | Path | None = None) -> dict | None:
     """The CLIP-ID membership record of a raw-epcache corpus entry, or ``None``.
@@ -1329,6 +1545,7 @@ def assert_v2_parity_cache(cache_dirs, *, label: str, require: bool = False,
                     "the cache",
                     "  DIRECTORY NAME contains <key> (corpus_key_of resolves by "
                     "path).",
+                    *_missing_entry_lines(dirs, None, manifest_path),
                     "=" * 78,
                 ]))
         print(msg, flush=True)
@@ -1352,6 +1569,7 @@ def assert_v2_parity_cache(cache_dirs, *, label: str, require: bool = False,
             "  The two uid spaces are not comparable, so passing this check would",
             "  prove nothing. Register the re-cache as its OWN v2 sibling key",
             "  instead of borrowing the epcache key's name.",
+            *_missing_entry_lines(dirs, key, manifest_path),
         ])
     if not built:
         _refuse_v2(label, key, dirs, [

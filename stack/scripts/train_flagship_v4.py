@@ -638,13 +638,124 @@ def _assert_parity(train_cache: str, val_cache: str) -> dict:
     # count-checks physicalai-val-0c5f7dac3b11 (600). require=False so a
     # deliberate alternative held-out set warns instead of blocking.
     val_rec = parity.assert_parity_corpus(val_cache, label="--val-cache")
-    return {"train_corpus_key": PARITY_KEY, "skip_hash": PARITY_SKIP_HASH,
+    return {"corpus_format": "raw epcache (ep_%05d.pt)",
+            "train_corpus_key": PARITY_KEY, "skip_hash": PARITY_SKIP_HASH,
             "train_cache": tc, "val_cache": str(Path(val_cache).resolve()),
             "episodes_verified": train_rec["episodes_loaded"],
             "episode_uid_sha256": train_rec["episode_uid_sha256"],
             "episode_reselection": "refused (count + uid-digest content check "
                                    "vs tanitad/data/parity_manifest.json)",
             "train_parity": train_rec, "val_parity": val_rec}
+
+
+def _geometry_report(cfg, frame) -> dict:
+    """The run's input geometry, for ``config.json``. Reads the config back
+    through ``tanitad.geometry`` rather than echoing the CLI, so a half-applied
+    change shows up in the artifact instead of the argv's intention."""
+    from tanitad.geometry import geometry_report
+    rep = geometry_report(cfg)
+    return {**rep, "is_deployed_frame": bool(frame.is_canonical)}
+
+
+def assert_corpus_args(a) -> bool:
+    """Resolve WHICH corpus format this run reads. Returns ``True`` for v2.
+
+    Exactly one pair, never a mix:
+
+    * ``--train-cache`` + ``--val-cache``          -> raw epcache (every v4 run
+      that exists today; byte-identical behaviour);
+    * ``--v2-train-cache`` + ``--v2-val-cache``    -> v2 compressed (v5).
+
+    ⛔ **A v2 TRAIN cache without a v2 VAL cache is refused, and the refusal
+    names why**, because that is the shape the v5 wide build is in right now: the
+    120° build on pod2 is the 2 400-clip TRAIN split only, and the val split
+    ("600 clips, ~24 GB, same command, one flag changed" — WIDE_FOV_BUILD.md §8)
+    has not been built. Letting the run start without it would hand v5 a trainer
+    that CAN early-stop and no held-out episodes to early-stop on, which is the
+    previous run's #1 failure with better paperwork."""
+    raw = [bool(a.train_cache), bool(a.val_cache)]
+    v2 = [bool(getattr(a, "v2_train_cache", None)),
+          bool(getattr(a, "v2_val_cache", None))]
+    if any(raw) and any(v2):
+        raise SystemExit(
+            "[v4] --train-cache/--val-cache (raw epcache) and "
+            "--v2-train-cache/--v2-val-cache (v2 compressed) are two CORPUS "
+            "FORMATS, not two sources to mix. Episode identity is a position in "
+            "one and a clip id in the other; concatenating them is a corpus "
+            "nothing has a parity record for. Pass exactly one pair.")
+    if v2[0] and not v2[1]:
+        raise SystemExit(
+            "[v4] --v2-train-cache was given without --v2-val-cache.\n"
+            "     This trainer's reason to exist on the v2 path is the MID-RUN "
+            "HELD-OUT GATE,\n"
+            "     and the gate probes HELD-OUT EPISODES. With no val cache there "
+            "is nothing\n"
+            "     to probe, so the run would have no early-stop signal — the "
+            "MEASURED cause of\n"
+            "     ~29.5 GPU-h (half a run) spent training past the best "
+            "checkpoint.\n"
+            "     Build the val split too (WIDE_FOV_BUILD.md §8: 600 clips, "
+            "~24 GB, the same\n"
+            "     builder command with --only-clips parity_val_clips.txt), or "
+            "state plainly\n"
+            "     that this run has no held-out selection by using the raw "
+            "path.")
+    if v2[1] and not v2[0]:
+        raise SystemExit("[v4] --v2-val-cache without --v2-train-cache")
+    if all(v2):
+        return True
+    for req, name in ((a.train_cache, "--train-cache"),
+                      (a.val_cache, "--val-cache")):
+        if not req:
+            raise SystemExit(f"[v4] real run needs {name}")
+    return False
+
+
+def _assert_parity_v2(train_dirs, val_dirs, *, require: bool) -> dict:
+    """The V2-COMPRESSED twin of :func:`_assert_parity` — v5's corpus format.
+
+    ⚠️ WHY V4 NOW READS V2 AT ALL. v5 trains at 120° / 256×640, where the RAW
+    epcache is 293.4 MB/episode = ~697 GB for the train split and fits on no host
+    in the fleet (MEASURED, WIDE_FOV_BUILD.md §3). Its corpus can therefore only
+    be a v2 compressed cache — and until this change the only trainer that could
+    read one, ``train_flagship4b``, **has no val loop at all**, while the mid-run
+    held-out gate (the fix for the last run's #1 failure, ~29.5 GPU-h spent
+    training past the best checkpoint) lives here. v5 had to give up either
+    parity-capable storage or its early-stop. It no longer does.
+
+    ⛔ NOTHING IS REIMPLEMENTED HERE. The proof is
+    :func:`parity.assert_v2_parity_cache` exactly as it landed (2026-07-27):
+    clip-id MEMBERSHIP against the committed manifest, not a count. This function
+    only DISPATCHES to it and adds the one fact it structurally cannot see — that
+    the two directories a launch command supplies are disjoint
+    (:func:`parity.assert_v2_splits_disjoint`).
+
+    Mirrors the raw path's decisions so the two cannot drift: train is checked at
+    the caller's ``require``; val is checked with ``require=False``, because a
+    deliberate alternative held-out set must warn rather than block (the raw path
+    has always behaved that way). The RETURN SHAPE matches ``_assert_parity``'s so
+    ``config.json``'s ``"parity"`` block stays one schema."""
+    train_rec = parity.assert_v2_parity_cache(
+        train_dirs, label="--v2-train-cache", require=require)
+    val_rec = parity.assert_v2_parity_cache(
+        val_dirs, label="--v2-val-cache", require=False)
+    leak = parity.assert_v2_splits_disjoint(train_dirs, val_dirs,
+                                            label="v2 train/val")
+    return {"corpus_format": "v2 compressed (<clip_id>.v2ep.pt)",
+            "train_corpus_key": train_rec.get("corpus_key"),
+            "skip_hash": PARITY_SKIP_HASH,
+            "train_cache": [str(Path(d).resolve()) for d in train_dirs],
+            "val_cache": [str(Path(d).resolve()) for d in val_dirs],
+            "episodes_verified": train_rec.get("episodes_loaded"),
+            "episode_uid_sha256": train_rec.get("episode_uid_sha256"),
+            "episode_reselection": (
+                "refused (clip-id MEMBERSHIP check vs "
+                "tanitad/data/parity_manifest.json — a swapped clip at identical "
+                "count is refused; parity.assert_v2_parity_cache)"),
+            "uid_kind": parity.V2_UID_KIND,
+            "require_parity": bool(require),
+            "train_parity": train_rec, "val_parity": val_rec,
+            "train_val_disjoint": leak}
 
 
 # --------------------------------------------------------------------------- #
@@ -935,14 +1046,14 @@ def train(a) -> dict:
     from flagship_v4_data import FlagshipV4Dataset
 
     from_scratch = _is_from_scratch(a)
-    for req, name in ((a.train_cache, "--train-cache"), (a.val_cache, "--val-cache")):
-        if not req:
-            raise SystemExit(f"[v4] real run needs {name}")
+    use_v2 = assert_corpus_args(a)                   # raw pair XOR v2 pair
     if not from_scratch and not a.trunk:
         raise SystemExit("[v4] real run needs --trunk (the v1 warm-start ckpt) OR "
                          "--from-scratch (random-init the trunk — the v4 from-scratch "
                          "fallback that trains WM+planner jointly, the v1 regime)")
-    provenance = _assert_parity(a.train_cache, a.val_cache)
+    provenance = (_assert_parity_v2(a.v2_train_cache, a.v2_val_cache,
+                                    require=a.require_parity) if use_v2
+                  else _assert_parity(a.train_cache, a.val_cache))
 
     device = a.device
     amp = device == "cuda"
@@ -951,6 +1062,11 @@ def train(a) -> dict:
 
     # ---- model: v1 trunk (speed_input, action_dim=3), warm-started + trainable --
     cfg = flagship4b_config()
+    # Input geometry — the SAME one call train_flagship4b makes, so a wide run is
+    # spelled identically on both trainers. Every default reproduces the deployed
+    # 256x256 frame exactly, so no existing v4 command moves.
+    from tanitad.geometry import apply_geometry_args
+    frame = apply_geometry_args(a, cfg, label="train_flagship_v4")
     cfg.speed_input = True
     cfg.predictor = dataclasses.replace(cfg.predictor, action_dim=3)
     if getattr(cfg, "tactical_pred", None) is not None:
@@ -1003,13 +1119,38 @@ def train(a) -> dict:
         weight_decay=0.01)
 
     # ---- data: FlagshipV4Dataset over the parity split dirs ----------------------
-    train_eps = [load_episode(str(p), mmap=True)
-                 for p in sorted(Path(a.train_cache).glob("ep_*.pt"))]
-    val_eps = [load_episode(str(p), mmap=True)
-               for p in sorted(Path(a.val_cache).glob("ep_*.pt"))]
-    if not train_eps or not val_eps:
-        raise SystemExit(f"[v4] no ep_*.pt under {a.train_cache} / {a.val_cache} "
-                         "— do the caches point at the SPLIT dirs?")
+    if use_v2:
+        # v2 COMPRESSED path (v5). The import is INSIDE the branch on purpose:
+        # tanitad.data.v2_dataset imports torchvision, which the dev box does not
+        # have, and a module-scope import would make every v4 CPU test unrunnable
+        # there — see train_flagship4b, which does the same.
+        from tanitad.data.v2_dataset import build_v2_providers
+        train_eps = build_v2_providers(a.v2_train_cache, lru_size=a.v2_lru)
+        val_eps = build_v2_providers(a.v2_val_cache, lru_size=a.v2_lru)
+        if not train_eps or not val_eps:
+            raise SystemExit(
+                f"[v4] no *.v2ep.pt under {a.v2_train_cache} / "
+                f"{a.v2_val_cache} — do the caches point at the split dirs?")
+        # ⭐ BIND THE GEOMETRY. Membership proves WHICH CLIPS and never which
+        # pixels, so a cache built at the wrong frame with the right clips passes
+        # every check above. This compares the run's declared frame against (1)
+        # the raster size actually on disk and (2) the geometry the manifest
+        # recorded at registration. Neither hashes pixels — see the function.
+        provenance["geometry_binding"] = parity.assert_v2_geometry_matches(
+            provenance["train_parity"], frame, label="--v2-train-cache",
+            providers=train_eps)
+        provenance["geometry_binding_val"] = parity.assert_v2_geometry_matches(
+            provenance["val_parity"], frame, label="--v2-val-cache",
+            providers=val_eps)
+    else:
+        train_eps = [load_episode(str(p), mmap=True)
+                     for p in sorted(Path(a.train_cache).glob("ep_*.pt"))]
+        val_eps = [load_episode(str(p), mmap=True)
+                   for p in sorted(Path(a.val_cache).glob("ep_*.pt"))]
+        if not train_eps or not val_eps:
+            raise SystemExit(f"[v4] no ep_*.pt under {a.train_cache} / "
+                             f"{a.val_cache} — do the caches point at the "
+                             f"SPLIT dirs?")
     dk = dict(window=cfg.predictor.window, max_horizon=plan.max_horizon,
               maneuver_h=plan.maneuver_h, channels=cfg.encoder.in_channels)
     ds_train = FlagshipV4Dataset(train_eps, **dk)
@@ -1044,6 +1185,12 @@ def train(a) -> dict:
                 + (" — FROM-SCRATCH (random-init trunk, no v1 warm-start)"
                    if from_scratch else ""),
         "parity": provenance,
+        # The run's own artifact carries its geometry AND its corpus format, so a
+        # wide-frame arm is never read as an e438721ae894 row that happens to
+        # differ (MODEL_REGISTRY needs the corpus key per row, not just the
+        # episode set — two rows can share the EPISODES and differ in PIXELS).
+        "corpus_format": "v2 compressed" if use_v2 else "raw epcache",
+        "geometry": _geometry_report(cfg, frame),
         "trunk": ({"init": "from-scratch (random)", "ckpt": None, "step": -1,
                    "rationale": "v4 from-scratch fallback — WM + anchored-diffusion "
                    "planner co-evolve from random init like v1 (canary held 0.42); no "
@@ -1367,6 +1514,33 @@ def build_parser() -> argparse.ArgumentParser:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     # data / trunk / io (mirrors train_flagship_v16)
     ap.add_argument("--train-cache"); ap.add_argument("--val-cache")
+    # --- v5: the V2 COMPRESSED corpus (2026-07-27) ----------------------------
+    # v5 trains at 120°/256×640, where the RAW epcache is ~697 GB for the train
+    # split and fits on no host — so its corpus can only be v2. Until this
+    # landed, the only trainer that could read v2 (train_flagship4b) had NO val
+    # loop at all, so v5 had to give up either parity-capable storage or the
+    # mid-run held-out gate below. Default None == every existing v4 command is
+    # byte-identical.
+    ap.add_argument("--v2-train-cache", nargs="+", default=None,
+                    help="v2 compressed TRAIN cache dir(s) of <clip_id>.v2ep.pt. "
+                         "Mutually exclusive with --train-cache. Pair it with "
+                         "--v2-val-cache (the held-out gate needs held-out "
+                         "episodes) and --require-parity for a parity run.")
+    ap.add_argument("--v2-val-cache", nargs="+", default=None,
+                    help="v2 compressed VAL cache dir(s) — the held-out split "
+                         "the mid-run gate probes and the canary/planner evals "
+                         "read. Refused if it shares a clip with the train "
+                         "cache (parity.assert_v2_splits_disjoint).")
+    ap.add_argument("--v2-lru", type=int, default=64,
+                    help="per-worker LRU of compressed clip payloads "
+                         "(~2-4 MB/clip); mirrors train_flagship4b's default")
+    ap.add_argument("--require-parity", action="store_true",
+                    help="REFUSE to train unless the v2 TRAIN cache is a "
+                         "REGISTERED parity corpus (clip-id membership vs the "
+                         "committed manifest). The raw path has always been "
+                         "require=True; on the v2 path this is opt-in so no "
+                         "existing command changes, and a v5-class run MUST "
+                         "pass it.")
     ap.add_argument("--poses-train"); ap.add_argument("--poses-val")
     ap.add_argument("--labels-train"); ap.add_argument("--labels-val")
     ap.add_argument("--trunk", help="warm-start ckpt: flagship4b-speedjerk-30k (v1); "
@@ -1379,6 +1553,11 @@ def build_parser() -> argparse.ArgumentParser:
                     "sidesteps the warm-start coupling degradation (a prediction-"
                     "converged v1 WM yanked off-manifold by the new planner's gradient). "
                     "--trunk is not required and is ignored; equivalently pass --trunk none.")
+    # Input geometry — the SAME flag set train_flagship4b and the cache builder
+    # use, so a wide run is spelled identically everywhere. All defaults
+    # reproduce the deployed 256x256 / f_ref 266 / pinhole frame exactly.
+    from tanitad.geometry import add_geometry_args
+    add_geometry_args(ap)
     ap.add_argument("--anchors-dense", help="operative 1..20 vocabulary (build_refc_anchors)")
     ap.add_argument("--anchors-coarse", help="tactical 5..50 vocabulary")
     ap.add_argument("--probes"); ap.add_argument("--out")
@@ -1520,6 +1699,24 @@ def preflight_asserts(a) -> list[str]:
                 f"bootstrap's resampling unit; below 4 the interval is not "
                 f"informative and the gate will read 'not separated' forever "
                 f"— an UNPOWERED gate, which is the silent-disable failure.")
+    # ⭐ v5 / v2 CORPUS. --require-parity is opt-in so no existing command moves,
+    # which means a v5-class run can silently omit it and train on an
+    # unregistered cache after one printed line. Preflight is where that becomes
+    # visible, since the guard itself must stay permissive.
+    if getattr(a, "v2_train_cache", None) and not getattr(a, "require_parity",
+                                                          False):
+        problems.append(
+            "[PARITY] --v2-train-cache without --require-parity: an unregistered "
+            "or mismatched v2 cache prints ONE NON-PARITY line and TRAINS "
+            "ANYWAY. Every cross-arm number off such a run is void, invisibly. "
+            "Pass --require-parity, or record why this arm is deliberately "
+            "non-parity.")
+    if getattr(a, "v2_train_cache", None) and not getattr(a, "v2_val_cache",
+                                                          None):
+        problems.append(
+            "[HELDOUT-GATE] --v2-train-cache without --v2-val-cache: the gate "
+            "has no held-out episodes to probe, so the run has no early-stop "
+            "signal at all (the ~29.5 GPU-h cause).")
     # ⭐ from-scratch XOR warm-start: a real --trunk together with --from-scratch is
     # ambiguous (the trunk would be built then discarded by the random init). Fail
     # loudly so the intent is unmistakable BEFORE a GPU-day.
@@ -1560,7 +1757,23 @@ def _staged_command(a) -> str:
     ``ModuleNotFound: tanitad`` (CLAUDE.md traps preflight)."""
     from_scratch = _is_from_scratch(a)
     parts = ["PYTHONPATH=/workspace/TanitAD/stack python3 scripts/train_flagship_v4.py"]
-    pairs = [("--train-cache", a.train_cache), ("--val-cache", a.val_cache)]
+    # The CORPUS pair, whichever format this run reads. A staged command that
+    # dropped the v2 dirs would reconstruct as a raw-epcache launch and die on a
+    # cache that does not exist — or, worse, find a stale one.
+    if getattr(a, "v2_train_cache", None):
+        pairs = [("--v2-train-cache", " ".join(a.v2_train_cache)),
+                 ("--v2-val-cache", " ".join(a.v2_val_cache or [])),
+                 ("--v2-lru", a.v2_lru)]
+    else:
+        pairs = [("--train-cache", a.train_cache), ("--val-cache", a.val_cache)]
+    # geometry: emitted ONLY when non-default, so an existing v4 command
+    # reconstructs byte-identically and a wide run can never lose its frame.
+    pairs += [(f, v) for f, v in (("--frame-h", a.frame_h),
+                                  ("--frame-w", a.frame_w),
+                                  ("--frame-hfov", a.frame_hfov),
+                                  ("--f-ref", a.f_ref),
+                                  ("--projection", a.projection))
+              if v is not None]
     if not from_scratch:                     # from-scratch random-inits: NO --trunk
         pairs.append(("--trunk", a.trunk))
     pairs += [
@@ -1597,6 +1810,11 @@ def _staged_command(a) -> str:
     # "the flag was absent" must never be how a run loses its early-stop.
     parts.append("--heldout-gate" if getattr(a, "heldout_gate", True)
                  else "--no-heldout-gate")
+    # ⛔ --require-parity must survive reconstruction: without it an unregistered
+    # v2 cache prints one NON-PARITY line and trains anyway, so a staged command
+    # that dropped the flag would turn an enforced run into an unenforced one.
+    if getattr(a, "require_parity", False):
+        parts.append("--require-parity")
     return " ".join(parts)
 
 
