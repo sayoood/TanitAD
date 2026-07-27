@@ -15,7 +15,7 @@ checkpoint exists, because a threshold chosen after seeing a number is the forki
 | # | cause | MEASURED | status |
 |---|---|---|---|
 | 1 | **No held-out early-stop signal** | **~29.5 GPU-h — half the run — spent training past the best checkpoint**; held-out selection was separated-*worse* while every training term improved | ✅ M4 row-writer fix landed; **mid-run gate specified in §4** |
-| 2 | **The four diagnostics that would have caught it were discarded** | computed **601×** and thrown away by the row-writer | ✅ fixed |
+| 2 | **The four diagnostics that would have caught it were discarded** | computed **601×** and thrown away by the row-writer | ⚠️ **THE "FIXED" WAS INERT — NOW REALLY FIXED.** `v4_loss_step` never merged them out of `plan_l`, so the row-writer's `if k in log` dropped all three **every step** — the same DOUBLE-FILTER shape as the original bug. Caught by a new written-row test (RED before, GREEN after) |
 | 3 | **No grounding instrument at all** | all three v4 logs carry **no `g_*` key**; the real-vs-imagined gap is *unmeasurable* on v4 | 🔄 being added (~20 GPU-min) |
 | 4 | **The selector's target is nearly noise** | trained against "closest to the single realised future"; an **in-sample** re-scorer with zero generalisation gap bottoms out at **0.4907** vs v1's 0.4271 | ⛔ **T3 REFUTED — the composite gave the same answer; selector change struck** |
 
@@ -64,9 +64,12 @@ consecutive probes.** This converts a 59-hour loss into ~20 hours.
 **Kill secondaries carried forward verbatim** from the pre-registered v4 card — no threshold below is
 new: `wm_canary_ade_2s ≤ 0.55` · `miss_at_2m ≤ 0.10` · `seam_norm_ratio_max ≤ 1.0` ·
 `encoder_touching_levers ≤ 2`.
-⚠️ **`speed_benefit_recovered_frac` and `deploy_tick_p99_ms` have NO EMITTER** — they were recorded
-`null` last time, and the run was called a *"formal 8-metric gate"* when it was a **6-metric gate**.
-**Either build the emitters or strike them from the card. Do not carry an unmeasurable criterion.**
+⛔ **CORRECTED 2026-07-27 — "NO EMITTER" WAS A FALSE ABSENCE, AND IT WAS MINE.** Both emitters exist
+in `gate_emitters.py` and were **RUN**: **`deploy_tick_p99_ms` = 18.7641 (PASS)** and
+**`speed_benefit_recovered_frac` = 0.8184 (PASS)**, at **zero GPU**. The v4 `null` came from
+**`n_arm_rows: 0`** — the starved log filter — not from a missing emitter. **DO NOT STRIKE THEM: the
+gate really is 8 metrics, and last time we simply failed to feed two of them.** *(Absence found at
+one probe, written into a card whose whole purpose is to stop that.)*
 ⚠️ **`nonav_route_beats_majority` remains VOID BY CONSTRUCTION** → INSTRUMENT-FAIL, never MODEL-FAIL,
 and **must be printed** in the verdict.
 

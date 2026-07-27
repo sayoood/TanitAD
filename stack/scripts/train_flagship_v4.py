@@ -1576,6 +1576,15 @@ def _staged_command(a) -> str:
             ("--warmup", a.warmup), ("--workers", a.workers),
             ("--eval-every", a.eval_every), ("--save-every", a.save_every),
             ("--eval-episodes", a.eval_episodes), ("--rollout-k", a.rollout_k),
+            # ⭐ the mid-run held-out gate must appear in the STAGED command, or a
+            # launch reconstructed from this string silently runs without the
+            # early-stop — i.e. reproduces cause #1 by omission. Its cadence and
+            # patience are part of the pre-registration, not incidental tuning.
+            ("--heldout-every", a.heldout_every),
+            ("--heldout-episodes", a.heldout_episodes),
+            ("--heldout-patience", a.heldout_patience),
+            ("--heldout-stride", a.heldout_stride),
+            ("--heldout-nboot", a.heldout_nboot),
             ("--seed", a.seed), ("--device", a.device)]
     for flag, val in pairs:
         if val is not None and val != "":
@@ -1584,6 +1593,10 @@ def _staged_command(a) -> str:
         parts.append("--from-scratch")       # random-init the trunk (the v4 fallback)
     if not a.ego_null_row:
         parts.append("--ego-zero-fill")     # X15 ablation ONLY (preflight blocks it)
+    # the gate's on/off state must be EXPLICIT in the staged string either way —
+    # "the flag was absent" must never be how a run loses its early-stop.
+    parts.append("--heldout-gate" if getattr(a, "heldout_gate", True)
+                 else "--no-heldout-gate")
     return " ".join(parts)
 
 

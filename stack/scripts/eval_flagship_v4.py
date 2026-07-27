@@ -265,6 +265,19 @@ def load_v4_from_ck(ck: dict, device, head_config_path=None,
         for tk in ("horizons", "imag_read"):
             if tk in hc and isinstance(hc[tk], list):
                 hc[tk] = tuple(hc[tk])
+        # ⭐ vision-rank compat. A config.json written BEFORE the rank-16 lever
+        # existed has no `vision_rank` key, and its checkpoint's factorised heads
+        # are 2048-wide with no projection weights. Reconstructing it at the new
+        # default would build a rank-16 head and fail the STRICT load. Absence of
+        # the key is therefore read as "legacy raw arm" and routed through the
+        # explicit override — a REPRODUCTION of an old arm, not a new design
+        # choice, and it says so in the reason string.
+        if "vision_rank" not in hc:
+            from tanitad.models.vision_rank import (LEGACY_RAW_REASON,
+                                                    RAW_STATE_DIM)
+            hc["vision_rank"] = RAW_STATE_DIM
+            hc["allow_raw_vision"] = True
+            hc["vision_rank_reason"] = LEGACY_RAW_REASON
         hcfg = V4Config(**hc)
         src = f"sibling config.json ({head_config_path})"
     if cond_imagination_override is not None:
@@ -272,6 +285,35 @@ def load_v4_from_ck(ck: dict, device, head_config_path=None,
         src += f" [cond_imagination OVERRIDDEN to {cond_imagination_override}]"
     hcfg.state_dim = world.state_dim
     hcfg.window = cfg.predictor.window
+
+    # ⭐ E-F FIX — INFER THE VISION RANK FROM THE CHECKPOINT, NOT FROM A CONFIG KEY.
+    #
+    # The compat branch above only fires when a sibling `config.json` EXISTS and
+    # lacks a `vision_rank` key. With no config.json at all, `v4_config()` supplies
+    # the NEW default (rank 16) and builds a projection the old checkpoint has no
+    # weights for — 2 missing keys and 3 shape mismatches against a STRICT load,
+    # which is every committed v4 number made unreproducible.
+    #
+    # The checkpoint itself answers this unambiguously and works in BOTH branches:
+    # if it carries no `vision_rank_proj.*` tensor it is a pre-lever arm and its
+    # factorised heads are raw-`state_dim` wide. Reading it from the weights also
+    # cannot drift out of sync with a config file the way a key can.
+    _hsd = ck.get("head") or ck.get("head_state") or {}
+    if isinstance(_hsd, dict) and _hsd:
+        _proj_w = next((v for k, v in _hsd.items()
+                        if k.endswith("vision_rank_proj.proj.weight")), None)
+        if _proj_w is None:
+            from tanitad.models.vision_rank import (LEGACY_RAW_REASON,
+                                                    RAW_STATE_DIM)
+            if int(getattr(hcfg, "vision_rank", 0) or 0) < RAW_STATE_DIM:
+                hcfg.vision_rank = RAW_STATE_DIM
+                hcfg.allow_raw_vision = True
+                hcfg.vision_rank_reason = LEGACY_RAW_REASON
+                src += " [vision_rank INFERRED FROM CHECKPOINT: legacy raw arm]"
+        else:
+            # rank-carrying checkpoint: trust the weights over any config value
+            hcfg.vision_rank = int(_proj_w.shape[0])
+            src += f" [vision_rank INFERRED FROM CHECKPOINT: {hcfg.vision_rank}]"
 
     head = FlagshipV4Head(hcfg).to(device)
     if anchors_dense_path and Path(anchors_dense_path).exists():

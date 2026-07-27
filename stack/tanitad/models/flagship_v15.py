@@ -147,10 +147,34 @@ class V15Config:
                                     # Set False to restore the pre-2026-07-27
                                     # unfiltered argmax.
 
+    # --- ⭐ VISION ENTERS AT RANK ~= 16 (v5 prep §1.2) -----------------------
+    # The rank at which the FLAT 2048-d state reaches a flat reader (the v4
+    # factorised LAT/LON/DIST heads). MEASURED monotone swamping dose-response:
+    # ego alone 3.659x -> k16 3.685x -> k64 3.000x -> k256 2.116x -> k2048 1.59x
+    # (the raw arm the ONLY rung not separated from chance); 16 PCs carry 97.0 %
+    # of the variance; replicated by a second independent stream, all ten of its
+    # arms selecting r=16. Degradation begins at k=64.
+    # ⚠️ The claim is "at k=16 vision stops DESTROYING the ego signal", NOT
+    # "vision adds value" — k16 is statistically indistinguishable from ego-only.
+    # ⚠️ DECODE-SIDE ONLY: v4 is at 2 of 2 encoder-touching levers and
+    # `encoder_touching_levers <= 2` is a KILL secondary, so this must never move
+    # to the trunk. See :mod:`tanitad.models.vision_rank`.
+    # Raw 2048 is reachable ONLY via allow_raw_vision + a written reason; a 0, a
+    # None, a missing key or a default all land on the refusal.
+    vision_rank: int = 16
+    allow_raw_vision: bool = False
+    vision_rank_reason: str = ""
+
     def __post_init__(self):
         if not (self.cond_states or self.cond_imagination):
             raise ValueError("v1.5 needs at least one KV source: enable "
                              "cond_states and/or cond_imagination")
+        from tanitad.models.vision_rank import resolve_vision_rank
+        # validate at CONSTRUCTION so a bad rank costs zero GPU seconds and
+        # cannot be discovered halfway into a multi-day run
+        self.vision_rank = resolve_vision_rank(
+            self.vision_rank, self.state_dim,
+            allow_raw=self.allow_raw_vision, reason=self.vision_rank_reason)
         if self.state_dim != self.readout_grid ** 2 * self.d_cell:
             raise ValueError(
                 f"state_dim {self.state_dim} != grid^2*d_cell "

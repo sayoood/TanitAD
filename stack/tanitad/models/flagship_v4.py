@@ -54,6 +54,7 @@ from torch import Tensor, nn
 from tanitad.models.flagship_v15 import (FlagshipV15Head, V15Config,
                                          param_breakdown as _v15_breakdown)
 from tanitad.models.metric_dynamics import grad_scale
+from tanitad.models.vision_rank import VisionRankProjection
 from tanitad.refs.refc import DecoderConfig
 
 # Factorised tactical-mode vocabulary widths (V3_FACTORIZED_TACTICAL_HEAD_SPEC.md
@@ -172,11 +173,21 @@ class FlagshipV4Head(FlagshipV15Head):
         n = cfg.n_anchors
 
         if cfg.factorised:
+            # ⭐ VISION ENTERS AT RANK ~= 16 (v5 prep §1.2). The factorised heads
+            # are THE flat reader in v4: they take `states[:, -1]` — the raw
+            # 2048-d readout state — straight into a Linear, which is exactly the
+            # shape the swamping dose-response was MEASURED on (ego + k=2048 is
+            # the only rung not separated from chance). The projection is
+            # decode-side, so `encoder_touching_levers` is unchanged at 2 of 2.
+            self.vision_rank_proj = VisionRankProjection(cfg.state_dim,
+                                                         cfg.vision_rank)
+            d_vis = self.vision_rank_proj.out_dim
+
             # Factorised tactical-mode heads, read from the current-frame readout
             # state. SEPARATE (not one Linear) so ``lon``/``dist`` are ablatable.
             def _head(n_out: int) -> nn.Sequential:
                 return nn.Sequential(
-                    nn.Linear(cfg.state_dim, cfg.factor_hidden),
+                    nn.Linear(d_vis, cfg.factor_hidden),
                     nn.ReLU(inplace=True), nn.Linear(cfg.factor_hidden, n_out))
 
             self.lat_head = _head(N_LAT)
@@ -266,7 +277,8 @@ class FlagshipV4Head(FlagshipV15Head):
         if self.cfg.factorised:
             # factorised LAT x LON x DIST -> the ranked score (§6.2). Operative ③
             # only; the tactical instance ② has no factorised selection (§3.1).
-            cur = states_p[:, -1]                               # [B, state_dim]
+            # ⭐ the flat state enters the factorised readers at rank ~= 16
+            cur = self.vision_rank_proj(states_p[:, -1])        # [B, d_vis]
             lat_logits = self.lat_head(cur)
             lon_logits = self.lon_head(cur)
             dist_logits = self.dist_head(cur)
@@ -298,6 +310,9 @@ def param_breakdown(head: FlagshipV4Head) -> dict[str, int]:
                                + cnt(head.dist_head))
         out["factor_grafts"] = (cnt(head.lat_to_anchor) + cnt(head.lon_to_anchor)
                                 + cnt(head.dist_to_anchor))
+        # the rank projection is 0 params on the explicitly-allowed raw path
+        out["vision_rank_proj"] = cnt(head.vision_rank_proj)
     else:
         out["factor_heads"] = out["factor_grafts"] = 0
+        out["vision_rank_proj"] = 0
     return out

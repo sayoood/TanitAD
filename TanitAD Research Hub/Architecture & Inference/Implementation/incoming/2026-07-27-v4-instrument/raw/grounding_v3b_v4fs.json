@@ -1,0 +1,105 @@
+{
+ "experiment": "GAP 1 - v4 real-vs-imagined decode bands, eval-side",
+ "arm": "v4fs",
+ "utc": "2026-07-27T01:36:05Z",
+ "host": "pod3 (A40)",
+ "device": "cuda",
+ "torch": "2.8.0+cu128",
+ "ckpt": "/workspace/v4instr/v4fs_ckpt.pt",
+ "ckpt_step": 29999,
+ "state_dim": 2048,
+ "action_dim": 3,
+ "corpus": {
+  "cache_dir": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+  "n_episodes": 44,
+  "PARITY": "parity val split physicalai-val-0c5f7dac3b11",
+  "episode_reselection": "none - first N files, consumed whole"
+ },
+ "n_windows": 967,
+ "n_episode_clusters": 44,
+ "window": 8,
+ "stride": 8,
+ "level_cfg": {
+  "op": [
+   [
+    1,
+    2,
+    4
+   ],
+   4
+  ],
+  "tac": [
+   [
+    8,
+    16
+   ],
+   16
+  ],
+  "str": [
+   [
+    20
+   ],
+   20
+  ]
+ },
+ "means": {
+  "baseline": {
+   "op_mid": 1.557967,
+   "op_fwd": 0.077371,
+   "tac_mid": 6.322033,
+   "tac_fwd": 0.288317,
+   "str_mid": 5.876787,
+   "str_fwd": 0.399187,
+   "op_mid_shuffled": 2.289447,
+   "op_mid_gshuffled": 3.202747
+  }
+ },
+ "ratios_real_over_imagined": {
+  "baseline": {
+   "op": 20.1363,
+   "tac": 21.9274,
+   "str": 14.7219
+  }
+ },
+ "imagined_degradation_x_vs_baseline": {},
+ "ablation_magnitude": {
+  "mean_abs_delta_v0_mps": {
+   "baseline": 0.0
+  },
+  "corpus_mean_speed_mps": 15.072
+ },
+ "prereg_validation": {
+  "V1_fidelity_imagined": {
+   "rule": "op_fwd <= 3.0x 0.0304",
+   "got": 0.0774,
+   "PASS": true,
+   "applies_to": "v1 only (the anchor); reported for every arm"
+  },
+  "V2_fidelity_real_pair": {
+   "rule": "op_mid <= 2.0x 1.0129",
+   "got": 1.558,
+   "PASS": true,
+   "applies_to": "v1 only (the anchor); reported for every arm"
+  },
+  "V3_shuffle_control_must_fail": {
+   "rule": "op_mid_shuffled > 1.5x op_mid",
+   "got": 2.2894,
+   "PASS": false,
+   "x_vs_matched": 1.4695,
+   "caveat": "WITHIN-EPISODE permutation -> a weak mismatch; see V3b"
+  },
+  "V3b_cross_episode_shuffle_must_fail": {
+   "rule": "op_mid_gshuffled > 1.5x op_mid",
+   "got": 3.2027,
+   "PASS": true,
+   "x_vs_matched": 2.0557
+  },
+  "V5_dt_self_check": {
+   "rule": "0.09 <= dt <= 0.11",
+   "got": 0.10063,
+   "PASS": true
+  },
+  "FA_real_side_bit_exact_under_v0_ablation": {}
+ },
+ "elapsed_s": 59.6
+}

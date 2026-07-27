@@ -252,3 +252,51 @@ def test_a_failing_new_emitter_still_completes_as_RESTART_not_INCOMPLETE(tmp_pat
         "nonav_route_beats_majority=0"])
     assert g["verdict"] == "RESTART"
     assert all(r["pass"] is not None for r in g["secondary"])
+
+
+# =========================================================================== #
+# ⭐ THE FALSIFIER for the v5 PREP CARD's open item (added 2026-07-27)         #
+# =========================================================================== #
+# `Project Steering/Gates/flagship-v5-retrain.PREP.md` §4 states:
+#   "⚠️ speed_benefit_recovered_frac and deploy_tick_p99_ms have NO EMITTER"
+# That claim is FALSE on both counts, and this is the test that says so. Both
+# emitters exist (`gate_emitters.py`, 2026-07-23) AND produce a value from
+# GIT-TRACKED artifacts with zero GPU. The two `null`s in the last gate had a
+# different cause in each case:
+#   * speed_benefit — the emitter ran; the ARM'S OWN LOG carried no
+#     `g_op_fwd_ade_m` row (the starved double-filter in train_flagship_v4.py,
+#     fixed 2026-07-27). An INPUT defect, not a missing emitter.
+#   * deploy_tick   — the emitter ran; no `taniteval.efficiency` LEVER PANEL was
+#     ever measured on a v4 checkpoint. A missing MEASUREMENT, not a missing
+#     emitter.
+# Striking them from the card on the "no emitter" premise would have removed two
+# criteria that are measurable today. This is the CLAUDE.md rule-2 class:
+# "absence found at ONE location is not absence".
+def test_BOTH_disputed_emitters_EXIST_and_produce_a_value_off_committed_artifacts():
+    assert hasattr(ge, "deploy_tick_from_eff_json")
+    assert hasattr(ge, "speed_benefit_emit") and hasattr(sb, "emit")
+
+    tick = ge.deploy_tick_from_eff_json(EFF_LEVERS_V1)
+    assert tick["value"] == pytest.approx(18.7641, abs=1e-4)
+    assert tick["pass"] is True and tick["evidence_class"].startswith("MEASURED")
+
+    sbv = ge.speed_benefit_emit(TRAINLOGS / "v1-speedjerk_train_log.jsonl",
+                                repo_root=str(REPO))
+    assert sbv["value"] == pytest.approx(0.8184, abs=1e-4)
+    assert sbv["pass"] is True
+
+
+def test_the_v4_null_was_an_INPUT_defect_not_a_missing_emitter():
+    """The v4.1 arm log reads `null` — and the emitter says exactly why: it found
+    ZERO rows carrying `g_op_fwd_ade_m`. That is the starved log filter, now
+    fixed, so a v5 log will feed this same emitter a number."""
+    v41 = TRAINLOGS / "flagship-v4.1-10k_train_log.jsonl"
+    if not v41.exists():                       # pragma: no cover - artifact pin
+        pytest.skip("v4.1 reference log not present")
+    out = ge.speed_benefit_emit(v41, repo_root=str(REPO))
+    assert out["value"] is None
+    assert out["n_arm_rows"] == 0, (
+        "the v4 null must be attributable to an EMPTY metric bucket in the arm's "
+        "own log, not to an absent emitter")
+    # the control proves the emitter itself is healthy on the same call path
+    assert out["n_nospeed_rows"] > 0

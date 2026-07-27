@@ -261,6 +261,47 @@ def test_the_reachability_clamp_is_OFF_on_v4_until_it_is_measured_there():
     assert tactical_config().sel_reach_clamp is False
 
 
+def test_flipping_the_clamp_ON_V4_cannot_perturb_any_LOSS_TERM(capsys):
+    """⭐ v5 prep §1.1 — the half of the v4 flip that IS measurable today.
+
+    The v4 flip is gated on a sibling's zero-change measurement over v4's OWN
+    emitted fan (paired Δ ADE, the 72.08 %/oracle-100 % property), which needs a
+    fan dump that does not exist. That gate is about whether the clamp is FREE.
+
+    A separate question is whether the flip is CODE-SAFE — whether turning it on
+    can perturb the supervised path, i.e. change training rather than only the
+    emitted pick. That is measurable right now on v4's own head, and it is
+    measured here: with the clamp ON and OFF the head must return a BIT-IDENTICAL
+    ``sel_score`` (the tensor ``v15_losses`` cross-entropies) and bit-identical
+    loss terms, because the mask is applied at the ARGMAX ONLY.
+
+    Δ is proven == 0, not asserted. This de-risks the flip to exactly one
+    remaining question, the sibling's.
+    """
+    cfg = _small()
+    head = FlagshipV4Head(cfg).eval()
+    b = _batch(cfg)
+
+    head.cfg.sel_reach_clamp = True
+    on = _run(head, b)
+    head.cfg.sel_reach_clamp = False
+    off = _run(head, b)
+
+    d = (on["sel_score"] - off["sel_score"]).abs().max().item()
+    assert d == 0.0, f"the clamp perturbed the supervised score by {d}"
+    assert torch.equal(on["sel_score"], off["sel_score"])
+    assert torch.isfinite(on["sel_score"]).all(), "no -inf may reach the CE"
+
+    la = v15_losses(on, head.decoder.anchors, b["traj_tgt"])
+    lb = v15_losses(off, head.decoder.anchors, b["traj_tgt"])
+    for k in ("cls", "cls_refined", "traj", "loss"):
+        assert float((la[k] - lb[k]).abs()) == 0.0, f"{k} moved under the clamp"
+
+    # and the clamp really was live (a guard that did nothing proves nothing)
+    assert "reach_frac_candidates_clipped" in on["telemetry"]
+    assert "reach_frac_candidates_clipped" not in off["telemetry"]
+
+
 def test_the_selector_never_truncates_the_candidate_set():
     """⛔ `q` MUST NOT EXIST in the deployment path. Every candidate stays
     rankable at every (λ, τ): no masking, no -inf, no top-k. This is the guard
