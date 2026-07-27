@@ -61,6 +61,23 @@ with calibration (bias −1.65) — same-class error IS partly scale, so a weak 
 > but **medAE only −1.1 % and nMedAE 8.0 % WORSE**. It fixes **the tail and the summary statistic, not
 > typical accuracy** — so "comma yaw is now usable" is a claim about *aggregate* quality, not about
 > per-window precision. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+>
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43) — HALF THE EVIDENCE ABOVE IS WITHDRAWN.**
+> *(The block above is left exactly as written on 2026-07-27, with its values and its date.)*
+> **`+0.3308` is WITHDRAWN.** A content-based probe — sha256 of raw pose bytes **and** raw
+> `frames_u8` sensor bytes, never filenames — found that **2 of the 22 comma episodes it was
+> evaluated on are bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**
+> (`76b:ep_00018 ≡ 61c:ep_00008`, `76b:ep_00039 ≡ 61c:ep_00020`). Those 2 episodes carry the entire
+> figure: without them the deployed head reads comma yaw **R² −0.746** (CI [−1.574, −0.177]).
+> It was also never separated from zero — its own published CI is **[−1.2982, +0.7047]**.
+> ✅ **`+0.679` is NOT withdrawn** — it is `R0` (= the shipped `V3F`'s rotation head), which trained
+> on a content-disjoint split. But it is composition-fragile: on the same 20 content-clean episodes
+> `R0` reads **+0.3038** (CI [+0.054, +0.479], still separated), **less than half**.
+> ⇒ **The OVERTURN of "comma cannot test yaw pseudo-labels" STANDS** — the mechanism was right and a
+> retrained head does read the channel. **The SIZE does not**: it is `+0.30` from one retrained head,
+> not `+0.33`/`+0.68` from two. And the deployed head does **not** recover comma yaw on
+> content-disjoint clips under any label protocol. **Testable ≠ working.**
+> Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md` §2–§4.
 
 ## 3. The specific gaps (pre-registered "name the gap")
 

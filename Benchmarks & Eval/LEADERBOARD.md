@@ -505,6 +505,9 @@ Gate: cross-domain speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× the in-d
 > by the heading label) and the ADE ratio 2.40 — both fail on their own. What changes is the *reason* the
 > yaw cell reads zero. Inventory: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
 > 2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+>
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43) — `+0.3308` is WITHDRAWN.** *(Nothing above is rewritten; every value keeps its date.)* Settled **BY CONTENT** — sha256 of the raw `poses` float32 bytes **and** of the raw `frames_u8` sensor bytes, never filenames: **2 of the 22 comma val episodes it was measured on are bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**. Without them the same head reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**; its published interval **[−1.2982, +0.7047]** already spanned zero. ✅ **`+0.679` is NOT withdrawn** (it is `R0`, trained on a content-disjoint split) but reads **+0.3038 (CI [+0.054, +0.479])** on the 20 content-clean episodes. ⇒ **comma yaw is TESTABLE; the DEPLOYED head does not do it.** PhysicalAI unaffected — re-measured, not inherited (`n_pai_changed = 0`, +0.903482 bit-identical). Record: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
+> ⚠️ **The FAIL verdict is still not overturned** — it rests on speed (0.657) and the ADE ratio 2.40, neither of which any heading label touches.
 
 **The supervised-IDM paradigm works in-distribution and does NOT transfer.** It fails even the
 *same-corpus, other-rig* split (rig-B speed R² −2.465 — worse than predicting the mean), so the failure is

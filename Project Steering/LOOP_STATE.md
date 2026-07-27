@@ -244,6 +244,12 @@ Streams launched (fan-out CAPPED at ~4 concurrent, banking each):
   condition: comma-only MAE **−42.5 %** but **medAE −1.1 % and nMedAE 8.0 % WORSE** — tail and summary
   statistic, not typical accuracy. **The NO-GO stands**: it rests on speed (0.657) and the ADE ratio,
   neither of which the heading label touches. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/`.
+  🔴 **AMENDED 2026-07-27 (`anchor-settlement`, C43): `+0.3308` is WITHDRAWN** — by content (sha256 of
+  raw pose bytes AND raw sensor bytes), **2 of its 22 comma val episodes are inside that head's own
+  comma TRAINING set**; without them it reads **−0.746** (CI [−1.574, −0.177]), and its published CI
+  **[−1.2982, +0.7047]** already spanned zero. `+0.679` stands (no leak) at **+0.3038 [+0.054,
+  +0.479]** on the 20 content-clean episodes. **The NO-GO still stands** — speed and ADE are
+  untouched. Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
   **Path forward = encoder RETRAIN on undistorted multi-domain data + speed-prior scale head, NOT a frozen
   readout.** YouTube-ingest / A1 = **ON HOLD (decided)**. Feeds the encoder-strategy synthesis.
   Triangulates: frozen (IDM, REF-A) fails, trained (v1) works. ✅ **Encoder-strategy synthesis DONE**

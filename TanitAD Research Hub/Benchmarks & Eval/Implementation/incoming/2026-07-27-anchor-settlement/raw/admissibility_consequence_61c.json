@@ -1,0 +1,303 @@
+{
+ "what": "the ADMISSIBILITY consequence on idm_head_v1's OWN held-out comma clips \u2014 the second corpus, measured through the shipped comma2k19 admissibility API",
+ "date": "2026-07-27",
+ "agent": "anchor-settlement",
+ "evidence_class": "MEASURED (ours; dev box RTX 4060, this script)",
+ "tier": "decision-grade for the comma channel on THIS substrate",
+ "host": "dev box only \u2014 pod1/pod2/pod3 not touched",
+ "estimator": "taniteval.ci.episode_cluster_bootstrap (callable r2 reducer), B=2000, unit = the episode. overlapping_holdout_se NOT used.",
+ "ci_py": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+ "ci_py_md5": "c92618a02b36f8191a581fb74a491a8d",
+ "substrate": {
+  "cache": "comma2k19-val-61c46fca8f7f",
+  "tags": "cm_[40:70]",
+  "n_clips": 30,
+  "n_windows": 4140,
+  "k": 4,
+  "stride": 2,
+  "content_disjoint_from_training": true,
+  "content_disjointness_source": "raw/anchor_overlap.json -> self_overlap_61c = 0 by sha256 of raw pose bytes AND raw frame bytes"
+ },
+ "label_protocols": {
+  "legacy": "cached heading (arctan2 of ENU velocity), all windows",
+  "repaired": "hold_heading_through_standstill, v_min=0.5, all windows \u2014 the anchor's protocol",
+  "strict_admissible": "repaired AND heading_admissible_centers (observable at t-1, t, t+1)"
+ },
+ "api_check": {
+  "swept": "all 30 clips (NOT the first \u2014 cm_00040 is fully observable, so a first-clip check would report 'no NaN' and quietly contradict the claim: class C13)",
+  "default_policy_returns_nan_on_real_data": true,
+  "n_nan_windows_total": 258,
+  "n_clips_with_any_nan": 6,
+  "worst_clip": "cm_00045",
+  "n_nan_in_worst_clip": 138,
+  "mean_abs_yaw_rate_over_worst_clip_is_nan": true,
+  "reading": "the DEFAULT path produces NaN where the label is undefined, so a metric over it is visibly undefined rather than plausible-looking"
+ },
+ "results": {
+  "legacy": {
+   "r2": 4.761344613402052e-05,
+   "rho": 0.19803023869808276,
+   "mae": 0.22880371945401795,
+   "medae": 0.025025397539138794,
+   "nmedae": 2.262279756452395,
+   "gt_std": 1.2270100167453135,
+   "gt_mad": 0.011062026023864746,
+   "n_impossible_gt1p5": 132,
+   "n": 4140,
+   "r2_ci": {
+    "mean": 0.0,
+    "lo": -0.0042,
+    "hi": 0.0032,
+    "ci95": 0.0037,
+    "se": 0.0752,
+    "reducer": "r2",
+    "n_windows": 4140,
+    "n_episodes": 30,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "n_episodes": 30,
+   "n_dropped": 0
+  },
+  "repaired": {
+   "r2": -0.00042090896676483247,
+   "rho": 0.1987444794454888,
+   "mae": 0.1526952691771293,
+   "medae": 0.02437874674797058,
+   "nmedae": 2.490000608790941,
+   "gt_std": 0.9381593843897342,
+   "gt_mad": 0.009790658950805664,
+   "n_impossible_gt1p5": 84,
+   "n": 4140,
+   "r2_ci": {
+    "mean": -0.0004,
+    "lo": -2.2876,
+    "hi": 0.1485,
+    "ci95": 1.218,
+    "se": 0.6323,
+    "reducer": "r2",
+    "n_windows": 4140,
+    "n_episodes": 30,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "n_episodes": 30,
+   "n_dropped": 0
+  },
+  "strict_admissible": {
+   "r2": -0.2883360524335252,
+   "rho": 0.21068892959202068,
+   "mae": 0.03377320767531081,
+   "medae": 0.02289063110947609,
+   "nmedae": 2.3648576772683887,
+   "gt_std": 0.046022127395859355,
+   "gt_mad": 0.00967949628829956,
+   "n_impossible_gt1p5": 0,
+   "n": 3882,
+   "r2_ci": {
+    "mean": -0.2883,
+    "lo": -3.1695,
+    "hi": 0.2859,
+    "ci95": 1.7277,
+    "se": 0.9046,
+    "reducer": "r2",
+    "n_windows": 3882,
+    "n_episodes": 29,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "n_episodes": 29,
+   "n_dropped": 258
+  }
+ },
+ "per_episode": {
+  "cm_00040": {
+   "n_observable_frames": 300,
+   "v_max": 28.96676254272461,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00041": {
+   "n_observable_frames": 300,
+   "v_max": 25.25972557067871,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00042": {
+   "n_observable_frames": 238,
+   "v_max": 26.481904983520508,
+   "n_windows": 138,
+   "n_admissible_windows": 108
+  },
+  "cm_00043": {
+   "n_observable_frames": 300,
+   "v_max": 28.666540145874023,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00044": {
+   "n_observable_frames": 300,
+   "v_max": 33.531490325927734,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00045": {
+   "n_observable_frames": 0,
+   "v_max": 0.03904280439019203,
+   "n_windows": 138,
+   "n_admissible_windows": 0
+  },
+  "cm_00046": {
+   "n_observable_frames": 300,
+   "v_max": 32.98662567138672,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00047": {
+   "n_observable_frames": 298,
+   "v_max": 8.654353141784668,
+   "n_windows": 138,
+   "n_admissible_windows": 136
+  },
+  "cm_00048": {
+   "n_observable_frames": 300,
+   "v_max": 5.140113830566406,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00049": {
+   "n_observable_frames": 300,
+   "v_max": 25.69120979309082,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00050": {
+   "n_observable_frames": 300,
+   "v_max": 34.24843978881836,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00051": {
+   "n_observable_frames": 300,
+   "v_max": 34.191349029541016,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00052": {
+   "n_observable_frames": 300,
+   "v_max": 28.97372817993164,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00053": {
+   "n_observable_frames": 250,
+   "v_max": 19.98997688293457,
+   "n_windows": 138,
+   "n_admissible_windows": 123
+  },
+  "cm_00054": {
+   "n_observable_frames": 300,
+   "v_max": 31.058774948120117,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00055": {
+   "n_observable_frames": 223,
+   "v_max": 7.230309009552002,
+   "n_windows": 138,
+   "n_admissible_windows": 109
+  },
+  "cm_00056": {
+   "n_observable_frames": 300,
+   "v_max": 5.888615608215332,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00057": {
+   "n_observable_frames": 300,
+   "v_max": 28.343891143798828,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00058": {
+   "n_observable_frames": 300,
+   "v_max": 30.071712493896484,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00059": {
+   "n_observable_frames": 300,
+   "v_max": 33.65883255004883,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00060": {
+   "n_observable_frames": 300,
+   "v_max": 46.44478988647461,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00061": {
+   "n_observable_frames": 300,
+   "v_max": 14.570704460144043,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00062": {
+   "n_observable_frames": 300,
+   "v_max": 31.082656860351562,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00063": {
+   "n_observable_frames": 215,
+   "v_max": 12.454495429992676,
+   "n_windows": 138,
+   "n_admissible_windows": 94
+  },
+  "cm_00064": {
+   "n_observable_frames": 300,
+   "v_max": 10.94689655303955,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00065": {
+   "n_observable_frames": 300,
+   "v_max": 24.312849044799805,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00066": {
+   "n_observable_frames": 300,
+   "v_max": 33.41550064086914,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00067": {
+   "n_observable_frames": 300,
+   "v_max": 34.39448547363281,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00068": {
+   "n_observable_frames": 300,
+   "v_max": 20.95378303527832,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  },
+  "cm_00069": {
+   "n_observable_frames": 300,
+   "v_max": 20.211069107055664,
+   "n_windows": 138,
+   "n_admissible_windows": 138
+  }
+ },
+ "wholly_stationary_clips": {
+  "cm_00045": {
+   "n_observable_frames": 0,
+   "v_max": 0.03904280439019203,
+   "n_windows": 138,
+   "n_admissible_windows": 0
+  }
+ }
+}

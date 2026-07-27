@@ -90,6 +90,21 @@ unqualified. **v1 ≫ Branch B on every metric, in-domain and cross-rig.** Build
   > and marked **STALE-PENDING** — no repaired measurement exists on those substrates.
   > ⭐ Honesty condition: comma-only MAE **−42.5 %** but **medAE −1.1 % and nMedAE 8.0 % WORSE** —
   > the repair fixes the tail and the summary statistic, **not** typical accuracy.
+  >
+  > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN.**
+  > *(The 2026-07-27 block above is left exactly as written, with its values and its date.)*
+  > A content-based probe — sha256 of raw pose bytes **and** raw `frames_u8` sensor bytes, never
+  > filenames — found **2 of the 22 comma episodes it was evaluated on are bit-identical to 2 of the
+  > deployed head's own 40 comma TRAINING clips**. Those 2 carry the whole figure: without them the
+  > deployed head reads comma yaw **R² −0.746** (CI [−1.574, −0.177]). Its published CI already
+  > spanned zero (**[−1.2982, +0.7047]**).
+  > ✅ **`+0.679` is NOT withdrawn** (it is `R0`, trained on a content-disjoint split) but reads
+  > **+0.3038** (CI [+0.054, +0.479]) on the 20 content-clean episodes.
+  > ⇒ **C6's DISQUALIFICATION stays LIFTED** — the mechanism was right and a *retrained* head does
+  > read the channel. But the lift now rests on **one** number at **+0.30**, and the **deployed**
+  > head does not recover comma yaw on content-disjoint clips under any protocol (strict-admissible
+  > **−0.288**, ρ 0.211, nMedAE 2.36). **Testable ≠ working** — do not read `+0.33/+0.68` as a v1
+  > rotation capability. Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 - **Bounded residual → the only place the EXPENSIVE pivot might still be needed:** cross-geometry-
   class **YAW** transfer (fisheye→rectilinear / varied YouTube rigs) is **UNVERIFIED** — comma
   cannot test it. Speed transfers cross-class; rotation across class is untested. **Cheapest next

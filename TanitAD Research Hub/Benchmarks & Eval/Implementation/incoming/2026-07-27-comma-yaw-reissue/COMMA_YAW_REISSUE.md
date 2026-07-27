@@ -37,6 +37,57 @@ unaffected and comma2k19 is not.
 
 ---
 
+## 🔴 0.1 AMENDMENT 2026-07-27 — THE ANCHOR IS PARTLY IN-TRAIN AND `+0.3308` IS WITHDRAWN
+
+*(added by the `anchor-settlement` pass. **Nothing below this block is rewritten**: every value in
+this document keeps its text and its date. Record:
+`…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`, raw `raw/anchor_overlap.json`,
+`raw/anchor_resettlement.json`, `raw/arms_resettlement.json`. `MEASURED`, dev box +
+`tanitad-eval`, **nothing retrained**, pod1/pod2 untouched.)*
+
+The open confound this document flagged in §4.1 — *"whether the anchor's val overlaps A0's training
+clips is UNKNOWN (HYPOTHESIS)"* — **is settled, and the answer is the bad one.**
+
+**Settled BY CONTENT** (sha256 of the raw `poses` float32 bytes **and** of the raw
+`frames_u8 [300,9,256,256]` sensor bytes; 6 hash families all agree; `episode_id` corroborates but
+was never the evidence):
+
+| | |
+|---|---|
+| **overlap** | 🔴 **2 of the anchor's 22 comma val episodes** are bit-identical to `idm_head_v1`'s own comma TRAINING clips |
+| the pairs | `tanitad-eval:/root/valdata/comma2k19-val-76b6e94a97a1/ep_00018.pt` ≡ `C:\Users\Admin\tanitad-data\eval\comma2k19-val-61c46fca8f7f\ep_00008.pt`; `…/ep_00039.pt` ≡ `…\ep_00020.pt` |
+| controls | 11 cross-cache content matches in total, **all** inside A0's train set; **0** within-cache duplicates; A0-train × A0-heldout inside `61c` = **0** (so the C42 substrate is genuinely clean) |
+
+**Consequence — the deployed head, same predictions, same protocol, 2 episodes removed:**
+
+| subset | n win / eps | legacy | **repaired (`v_min` 0.5)** | strict-admissible |
+|---|---:|---:|---:|---:|
+| `cm_ALL22` (**the anchor**, reproduced exactly) | 2 992 / 22 | +0.011430 | **+0.330822** | +0.337404 |
+| 🔴 `cm_CLEAN20` (content-verified disjoint) | 2 720 / 20 | −0.001230 | **−0.745999** CI [−1.574, −0.177] | −0.727306 |
+| `cm_INTRAIN2` (the leak, alone) | 272 / 2 | +0.856185 | +0.856185 | +0.856185 |
+
+⛔ **`+0.3308` is WITHDRAWN — not "partially valid".** The two in-train clips read the *same* number
+under all three protocols (the repair does nothing to them); they simply carry **4× the yaw
+variance** of the other 20 (`gt_std` 0.108 vs 0.025), and R² is variance-weighted.
+⚠️ **It was never separated from zero either** — this document's own §2 source records the interval
+as **[−1.2982, +0.7047]**, and the OFF→ON contrast measures **+0.3194, CI [−1.262, +0.6425], NOT
+separated**. The lift was announced on a point estimate whose interval already spanned zero.
+
+✅ **`+0.679` is NOT withdrawn, and must not be lumped in.** It is `R0` — and `R0` **is** the shipped
+`V3F`'s rotation head (`ship_v3.json → composite.rotation_from = "R0"`; the comma yaw values are
+bit-identical). `R0` trained on the v3 TRAIN split, which is content-disjoint from its val split, so
+there is **no leak**. It is **composition-fragile**: on the 20 content-clean episodes `R0` reads
+**+0.3038 (CI [+0.054, +0.479], separated)**, and every one of the 18 persisted v3 arms loses
+0.36–0.58 R² the same way — while Spearman ρ barely moves (0.602 → 0.598).
+
+⇒ **What §3.3's disqualification-lift is now worth:** the **conclusion** stands (comma CAN test yaw
+— the mechanism was right), on **one** retrained-head number at **+0.30**, not two numbers at
++0.33/+0.68. **The deployed head does not recover comma yaw on content-disjoint clips under any
+protocol.** ⛔ Do not quote `+0.3308` anywhere. ⛔ No PhysicalAI number is affected
+(`n_pai_changed = 0`, re-measured, R² +0.903482 bit-identical).
+
+---
+
 ## 1. The defect, and why PhysicalAI is out of scope
 
 comma2k19's heading is `arctan2(enu_v_north, enu_v_east)` — the direction of the **ENU velocity
@@ -155,6 +206,14 @@ UNVERIFIED — comma cannot test it."* That conclusion **gated the YouTube-IDM r
 **The MECHANISM those documents named was right** — they said it was a label artifact, not a transfer
 failure, and C29 confirms it exactly. **The DISQUALIFICATION is overturned:** on repaired labels the
 *deployed* head reads comma yaw **+0.3308** and a retrained head **+0.679**. **comma can test yaw.**
+
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, C43) — see §0.1. The sentence above keeps its text
+> and its date; its evidence does not.** `+0.3308` is **WITHDRAWN** (2 of its 22 val episodes are,
+> by content, in the deployed head's own training set; without them it reads **−0.746**, and its
+> published CI **[−1.2982, +0.7047]** already spanned zero). `+0.679` **stands** (no leak) but reads
+> **+0.3038 [+0.054, +0.479]** on the 20 content-clean episodes. ⇒ **"comma can test yaw" SURVIVES,
+> on one retrained-head number at +0.30.** The deployed head does not recover comma yaw on
+> content-disjoint clips under any protocol. **Testable ≠ working.**
 
 ⚠️ **But it is testable, not answered** — and the honesty condition is why. The repair lifts the
 aggregate, not per-window precision (**medAE −1.1 %**, **nMedAE +8.0 % worse**). "comma yaw is now
@@ -316,6 +375,11 @@ been actioned. It is actioned now. Likewise `Paper/` carried **no** IDM-v3 comma
    disqualified for yaw"* is lifted (§3.3). The owner of that line should decide whether the
    cross-class yaw question is now worth re-opening — **on repaired labels**, and reading the
    honesty condition first.
+   > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, C43): STILL OPEN, AND ON A DIFFERENT NUMBER.**
+   > The lift stands, but its size is **+0.3038 [+0.054, +0.479] from a retrained head**, not
+   > +0.3308/+0.679 (§0.1). A rotation channel justified by +0.68 and one justified by +0.30 with a
+   > 2-of-22-episode fragility caveat are **different decisions**. The `anchor-settlement` pass did
+   > **not** re-take it. **Escalated again, on the corrected size.**
 4. **`IDM_V3.md` §0 says `0.83` where its own §4.2 says `0.8108`.** Its author should reconcile the
    headline; two copies of the propagated `0.83` are already fixed.
 5. **Two roundings of one number are in circulation** (`0.000` vs `0.0005`, §4).

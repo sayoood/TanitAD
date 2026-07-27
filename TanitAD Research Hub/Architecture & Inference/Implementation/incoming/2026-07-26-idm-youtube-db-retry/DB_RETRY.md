@@ -361,6 +361,13 @@ estimator). **Reported per corpus, never pooled.** Not re-verified by me.
    > — tail and summary statistic, **not** typical accuracy. This section's own rule ("do not quote a
    > single aggregate IDM score") still stands. Inventory:
    > `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+   > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, C43): the `+0.3308` and the pooled `0.8108` are
+   > WITHDRAWN; `0.9035` and defect #2's closure are NOT.** BY CONTENT (sha256 of raw pose bytes AND
+   > raw sensor bytes) **2 of those 22 comma val episodes are inside that head's own comma TRAINING
+   > set**; without them comma yaw reads **−0.746** (CI [−1.574, −0.177]). `+0.679` stands (no leak)
+   > at **+0.3038 [+0.054, +0.479]** on the 20 content-clean episodes. **This section's prediction —
+   > that the label was substantially the defect — is still borne out**; what is withdrawn is the
+   > SIZE of the recovery. Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 3. **`long_accel` is still in `SCALAR_NAMES`** — confirmed live on pod3 this run:
    `SCALAR_NAMES = ('speed', 'yaw_rate', 'steer', 'long_accel')`. IDM-v2 pre-committed to
    removing it; it has not been removed. It consumes 25 % of the scalar loss to emit a

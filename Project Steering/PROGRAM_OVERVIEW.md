@@ -230,7 +230,11 @@ collision.** The low-OOD-vs-safety-metric gap is ~fundamental without a lower-OO
 (speed R² 0.62–0.66 cross-domain, longitudinal-traj 0.60, **yaw ≈ 0** ⚠️*STALE-PENDING — that cell is
 comma2k19 with `heading_repair` OFF, a broken label, not a transfer result (C29); on repaired labels the
 same head reads comma yaw **+0.3308**, retrained **+0.679**; see
-`…/incoming/2026-07-27-comma-yaw-reissue/`*, accel dropped) — but what matters
+`…/incoming/2026-07-27-comma-yaw-reissue/`. 🔴 **AMENDED 2026-07-27 (C43): the `+0.3308` is
+WITHDRAWN** — 2 of its 22 comma val episodes are, BY CONTENT, in that head's own comma TRAINING set;
+without them it reads **−0.746**. `+0.679` stands (no leak) at **+0.3038 [+0.054, +0.479]** on the 20
+content-clean episodes. ⇒ comma yaw is **testable, and this head does not do it**; the `yaw ≈ 0` cell
+stays STALE-PENDING either way. See `…/incoming/2026-07-27-anchor-settlement/`*, accel dropped) — but what matters
 downstream is structure, not precision: pseudo-label WM pretraining captures **~96 %** of real-label
 pretraining value (8 seeds, 2 proxy domains) and **109 % speed / 107 % traj / 71 % yaw** on the actual
 parity target (4 seeds, all CI-separated from the floor). The **80-clip Creative-Commons YouTube pilot**

@@ -133,6 +133,18 @@ undefined at standstill) or exclude comma from any yaw claim.
 > ⭐ **Honesty condition:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and nMedAE
 > gets 8.0 % WORSE**, Spearman ρ flat (+0.001). **The repair fixes the tail and the summary statistic,
 > not typical accuracy** — which is also why the `medAE`/`nMedAE` columns above stay broadly readable.
+>
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): the `comma2k19` column of the table
+> above is WITHDRAWN; the `PhysicalAI` column and the repair-beats-deletion ordering are NOT.**
+> *(Nothing above is rewritten.)* BY CONTENT — sha256 of raw pose bytes **and** raw `frames_u8`
+> sensor bytes — **2 of those 22 comma val episodes are bit-identical to 2 of the deployed head's
+> own 40 comma TRAINING clips**; without them the same head reads comma yaw **−0.746**
+> (CI [−1.574, −0.177]). The pooled **+0.8108** inherits it through its comma half. The ordering
+> survives because the 2 leaked clips carry **0 of the 9** impossible legacy labels.
+> `R0LEG`'s **+0.5894** is **not** contaminated (content-disjoint training split) but reads
+> **+0.0639 [−0.374, +0.334] — not separated** on the 20 content-clean episodes, so it should not
+> be read as a `B0` re-qualification. Record:
+> `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 > Source: `…/2026-07-27-idm-v3/results/compare_v3.json`. Inventory:
 > `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 

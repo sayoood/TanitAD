@@ -60,6 +60,20 @@ WHEEL_TO_RAD = math.pi / 180.0
 # retrained — the channel was never a model failure.  Per corpus (never quote
 # the pooled number): comma2k19 **+0.0114 -> +0.3308**; PhysicalAI **+0.9035
 # unchanged, bit-identical** (n_pai_changed = 0).
+#   🔴 *(AMENDED 2026-07-27 by the `anchor-settlement` pass — the comma2k19
+#   figure above is SUPERSEDED, and the line is kept only so the correction has
+#   something to point at.  **+0.3308 is WITHDRAWN**: measured BY CONTENT
+#   (sha256 of the raw pose bytes AND the raw frames_u8 sensor bytes), **2 of
+#   the 22 comma val episodes it was scored on are bit-identical to 2 of that
+#   head's own 40 comma TRAINING clips**.  Remove them and the same head reads
+#   comma yaw **R2 -0.746** (CI [-1.574, -0.177]).  Its published interval
+#   [-1.2982, +0.7047] already spanned zero.  The PhysicalAI figure is
+#   UNAFFECTED and was re-measured, not inherited (n_pai_changed = 0).  What
+#   survives: a RETRAINED head (R0, = the shipped V3F's rotation head, trained
+#   on a content-disjoint split) reads **+0.3038** (CI [+0.054, +0.479]) on the
+#   20 content-clean episodes.  ⇒ comma yaw is TESTABLE; the DEPLOYED head does
+#   not do it.  Record:
+#   `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.)*
 #   *(CORRECTED 2026-07-27 by the comma-yaw-reissue pass: this comment said
 #   "0.83", which is the level a head RETRAINED on repaired labels reaches
 #   (R0, pooled 0.8413), not the deployed head's.  The deployed head's repaired
@@ -150,9 +164,13 @@ def resolve_heading_mode(heading_mode: str | None = None, *,
             f"frames below {HEADING_OBSERVABLE_V_MPS} m/s carry a physically "
             f"impossible |yaw_rate| (up to 15.53 rad/s = 890 deg/s), vs "
             f"0.000 % in every bin above it; PhysicalAI has ZERO in every bin. "
-            f"Cost: the DEPLOYED IDM head read comma yaw R2 +0.0114 against "
-            f"these labels and +0.3308 against the repaired ones with NOTHING "
-            f"retrained. The default is now {DEFAULT_HEADING_MODE!r}. If you "
+            f"Cost: on comma2k19 these labels held 84 physically impossible "
+            f"yaw_rate values up to 15.28 rad/s inside one 4,140-window val "
+            f"split, contributed by a single wholly-stationary clip. (⚠️ The "
+            f"'+0.0114 -> +0.3308' this message used to quote was WITHDRAWN on "
+            f"2026-07-27: 2 of those 22 val episodes were, by content, in the "
+            f"scoring head's own training set — see the module header.) The "
+            f"default is now {DEFAULT_HEADING_MODE!r}. If you "
             f"really are reproducing a pre-2026-07-27 cache, pass "
             f"allow_legacy=True AND a written reason (comma2k19."
             f"LEGACY_HEADING_REASON is provided) — this cannot be reached by a "
@@ -234,6 +252,171 @@ def hold_heading_through_standstill(yaw: np.ndarray, v: np.ndarray,
     np.maximum.accumulate(idx, out=idx)                     # forward-fill
     idx[idx < 0] = int(np.argmax(obs))                      # back-fill the head
     return np.arctan2(np.sin(yaw)[idx], np.cos(yaw)[idx]), obs
+
+
+# --------------------------------------------------------------------------- #
+# ADMISSIBILITY (2026-07-27) — a repair and an admissibility decision are      #
+# DIFFERENT THINGS, and conflating them is what made a parked car govern a     #
+# rotation statistic.                                                          #
+# --------------------------------------------------------------------------- #
+# `hold_heading_through_standstill` returned `observable` for exactly this, and
+# for five days NO CALLER CONSUMED IT. The consequence, MEASURED:
+#
+#   * on `comma2k19-val-61c46fca8f7f` `cm_[40:70]` one WHOLLY-STATIONARY clip
+#     (300 frames, ZERO observable frames, v_max 0.039 m/s) kept **84
+#     physically impossible labels up to 15.28 rad/s** THROUGH the repair, held
+#     the label's own std at **0.938 rad/s**, and pinned the deployed head's
+#     comma yaw R2 at ~0. Requiring admissibility removed every one of them and
+#     collapsed the std to **0.046 rad/s** (RETRACTION_LOG C42).
+#   * on `comma2k19-val-76b6e94a97a1` the SAME rule drops only 50 of 2,992
+#     windows and moves R2 by +0.007. ⚠️ **The consequence is corpus-dependent;
+#     the CORRECTNESS is not.** A number that includes windows with no defined
+#     label is not a small error there — it is an undefined quantity that
+#     happened to land near the right answer.
+#
+# ⛔ Raising `v_min` cannot substitute for this: a stationary clip is stationary
+# at every threshold (84-85 survivors at 1.0 / 2.0 / 4.0 m/s, including
+# comma.ai's own published `calib_challenge` 4 m/s gate).
+#
+# WHY THIS LIVES HERE AND NOT IN THE EPISODE CONTRACT. `ToyEpisode.poses` is
+# `[T,4]` for FOUR corpora; widening it for a defect that exists in ONE would
+# change every corpus's cached bytes. It is also unnecessary: `observable` is a
+# pure function of `poses[:,3]`, which every consumer already holds. What was
+# missing was never storage — it was a sanctioned derivation whose DEFAULT
+# refuses to produce a silent number. That is what follows.
+
+YAW_RATE_ADMISSIBILITY = ("nan", "drop", "keep")
+#: The default. Inadmissible centers come back as NaN: `n` is unchanged (so the
+#: window set stays comparable), and any metric computed over them becomes NaN —
+#: a number that CANNOT be quoted by accident. Silence is no longer an option.
+DEFAULT_YAW_RATE_ADMISSIBILITY = "nan"
+
+#: The one legitimate reason to keep inadmissible labels, shipped so a
+#: reproduction need not invent wording (cf. :data:`LEGACY_HEADING_REASON`).
+KEEP_INADMISSIBLE_YAW_REASON = (
+    "reproducing a comma2k19 yaw_rate number COMMITTED BEFORE 2026-07-27, "
+    "which was scored over windows whose centred heading difference is "
+    "UNDEFINED. This is a REPRODUCTION of a published arm, not a label choice "
+    "for new work.")
+
+
+class InadmissibleYawLabel(ValueError):
+    """A comma2k19 yaw_rate label was requested over windows where the heading
+    is not observable, without an explicit written acknowledgement."""
+
+
+def admissible_from_poses(poses, v_min: float = HEADING_OBSERVABLE_V_MPS
+                          ) -> np.ndarray:
+    """Per-FRAME heading observability, straight from the episode's own poses.
+
+    This exists to make the point executable: nothing has to be stored for a
+    scorer to know admissibility — `poses[:, 3]` is the speed channel and it is
+    already in every cache. Returns `[T] bool`.
+    """
+    p = np.asarray(poses, dtype=np.float64)
+    if p.ndim != 2 or p.shape[1] < 4:
+        raise ValueError(f"poses must be [T,>=4] (x, y, yaw, v), got {p.shape}")
+    return p[:, 3] >= v_min
+
+
+def heading_admissible_centers(observable, centers) -> np.ndarray:
+    """Which window CENTERS have a defined CENTRED yaw-rate -> `[N] bool`.
+
+    The label is `wrap(yaw[t+1] - yaw[t-1]) / (2 dt)`, so it is defined only if
+    the heading is observable at **t-1, t AND t+1**. Defined once, here, because
+    three call sites each re-deriving this rule is how it ends up not applied at
+    all.
+    """
+    obs = np.asarray(observable, dtype=bool)
+    t = np.asarray(centers, dtype=np.int64)
+    if t.size and (t.min() < 1 or t.max() >= obs.size - 1):
+        raise ValueError(
+            f"centers must satisfy 1 <= t <= T-2 for a centred difference; "
+            f"got [{t.min()}, {t.max()}] with T = {obs.size}")
+    return obs[t - 1] & obs[t] & obs[t + 1]
+
+
+def yaw_rate_from_heading(yaw, observable, centers, *, dt: float,
+                          admissibility: str = DEFAULT_YAW_RATE_ADMISSIBILITY,
+                          allow_inadmissible: bool = False, reason: str = ""
+                          ) -> tuple[np.ndarray, np.ndarray]:
+    """The centred yaw-rate label at `centers`, WITH its admissibility.
+
+    Returns `(yaw_rate [N], admissible [N] bool)`.
+
+    `admissibility`:
+      ``"nan"``  (default) inadmissible entries are NaN. `n` is unchanged, and
+                 every downstream statistic over them becomes NaN — **fail
+                 loud**, rather than a plausible-looking number computed over an
+                 undefined label.
+      ``"drop"`` only the admissible entries are returned. Use when `n` may
+                 legitimately change; the returned mask tells the caller which
+                 windows survived, so predictions can be realigned.
+      ``"keep"`` the pre-2026-07-27 behaviour. Requires
+                 ``allow_inadmissible=True`` **and** a non-empty written
+                 ``reason`` — a boolean can be flipped absent-mindedly, a
+                 sentence cannot (the `resolve_heading_mode` /
+                 `resolve_vision_rank` discipline).
+
+    ⚠️ This does NOT repair the heading. Pass the output of
+    :func:`hold_heading_through_standstill` if you want the repair; the two are
+    orthogonal, which is the entire lesson (`RETRACTION_LOG` **C42**).
+    """
+    if admissibility not in YAW_RATE_ADMISSIBILITY:
+        raise ValueError(f"unknown admissibility {admissibility!r}; expected "
+                         f"one of {YAW_RATE_ADMISSIBILITY}")
+    y = np.asarray(yaw, dtype=np.float64)
+    t = np.asarray(centers, dtype=np.int64)
+    adm = heading_admissible_centers(observable, t)
+    rate = _wrap_to_pi(y[t + 1] - y[t - 1]) / (2.0 * dt)
+
+    if admissibility == "keep":
+        assert_yaw_rate_admissible(rate, adm,
+                                   allow_inadmissible=allow_inadmissible,
+                                   reason=reason)
+        return rate, adm
+    if admissibility == "drop":
+        return rate[adm], adm
+    out = rate.copy()
+    out[~adm] = np.nan
+    return out, adm
+
+
+def assert_yaw_rate_admissible(yaw_rate, admissible, *,
+                               allow_inadmissible: bool = False,
+                               reason: str = "") -> None:
+    """Guard for a yaw-rate label that was derived elsewhere. Raises unless
+    every entry is admissible, or the caller acknowledges in writing.
+
+    This is the entry point for the scorers that already hold a label array —
+    they do not need to re-derive anything to stop publishing an undefined
+    number.
+    """
+    adm = np.asarray(admissible, dtype=bool)
+    n_bad = int((~adm).sum())
+    if n_bad == 0:
+        return
+    if allow_inadmissible and reason.strip():
+        return
+    rate = np.asarray(yaw_rate, dtype=np.float64)
+    worst = float(np.abs(rate[~adm]).max()) if rate.size == adm.size else float("nan")
+    raise InadmissibleYawLabel(
+        f"{n_bad} of {adm.size} comma2k19 yaw_rate labels are INADMISSIBLE — the "
+        f"heading is not observable (v < {HEADING_OBSERVABLE_V_MPS} m/s) at "
+        f"t-1, t or t+1, so the centred difference has no defined value. The "
+        f"worst such label here is {worst:.3f} rad/s. ⛔ A REPAIR DOES NOT FIX "
+        f"THIS: `hold_heading_through_standstill` is deliberately a no-op on a "
+        f"wholly-stationary segment, and raising v_min cannot help (84-85 "
+        f"survivors at 1.0 / 2.0 / 4.0 m/s in the MEASURED case). Choose an "
+        f"admissibility policy: 'nan' (default, fail loud), 'drop' (score the "
+        f"defined windows and report n), or — only to reproduce a "
+        f"pre-2026-07-27 number — allow_inadmissible=True AND a written reason "
+        f"(comma2k19.KEEP_INADMISSIBLE_YAW_REASON is provided).")
+
+
+def _wrap_to_pi(a: np.ndarray) -> np.ndarray:
+    return (np.asarray(a, dtype=np.float64) + np.pi) % (2.0 * np.pi) - np.pi
+
 
 # I7 task-identity fingerprint (D-017): probes fit on this corpus may only be
 # consumed by streams with an IDENTICAL fingerprint (i7_task_identity check).

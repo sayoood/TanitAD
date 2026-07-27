@@ -91,6 +91,21 @@ the label against the best degree-2 polynomial fitted over that same window
 > ⚠️ **STALE-PENDING, not corrected:** the ceiling statistic itself has NOT been recomputed on
 > repaired labels. Do not quote **0.3521** as comma's yaw ceiling; there is currently **no measured
 > repaired ceiling**. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+>
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43).** *(Block above keeps its text and date.)*
+> **`+0.3308` is WITHDRAWN** — by content (sha256 of raw pose bytes *and* raw sensor bytes), **2 of
+> the 22 comma val episodes it was scored on are bit-identical to 2 of that head's own comma TRAINING
+> clips**; without them it reads **−0.746**. So the *"the deployed head already reads ≈ the old
+> ceiling"* half of the retraction above **no longer holds**. `+0.679` (= `R0`, no leak) **stands**,
+> and is **+0.3038 [+0.054, +0.479]** on the 20 content-clean episodes — **still above 0.3521? NO,
+> below it.**
+> ⛔ **But that comparison is inadmissible and must not be made:** `0.3521` is a *smooth-fit ceiling
+> on the broken label*, `+0.3038` is a *model R² on the repaired label over a different episode set*.
+> They are not on the same axis. **The RETRACTION of the "no model can score well" inference still
+> stands** — a retrained head reads the channel with ρ ≈ 0.60 and a separated positive R² — but it
+> stands on the *mechanism*, not on a number-vs-number comparison.
+> ⛔ **The repaired ceiling remains NOT recomputed and must stay unknown until measured.** Record:
+> `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 
 **Only one cell is a noise floor: comma2k19 `yaw_rate`, where 65 % of the label's
 variance is not a smooth function of time at all.** Everything else is smooth —

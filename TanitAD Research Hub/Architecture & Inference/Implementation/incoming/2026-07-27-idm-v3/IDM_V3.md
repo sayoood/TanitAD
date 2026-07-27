@@ -206,6 +206,36 @@ the unit vector, so no 2π wrap can be introduced), then re-derive `yaw_rate`.
 > ### ⭐ E1 — **PASS.** The repair beats deletion (0.8108 vs 0.4967) **and
 > discards nothing** (4 195 windows kept vs 4 186).
 
+> 🔴 **AMENDED 2026-07-27 by the `anchor-settlement` pass (class C43) — the comma2k19 column of the
+> table above is WITHDRAWN; the PhysicalAI column and E1's ordering are NOT.**
+> *(Nothing above is rewritten: every value and its date stand. This is a sibling stream's
+> amendment to a number this document produced, added rather than overwritten.)*
+> Settled **BY CONTENT** — sha256 of the raw `poses` float32 bytes **and** of the raw
+> `frames_u8 [300,9,256,256]` sensor bytes, on both hosts, 6 hash families agreeing, `episode_id`
+> and filenames used only as a cross-check: **2 of the 22 comma val episodes in this split are
+> bit-identical to 2 of the DEPLOYED head's own 40 comma TRAINING clips** —
+> `76b:ep_00018 ≡ 61c:ep_00008` and `76b:ep_00039 ≡ 61c:ep_00020`.
+> ⛔ **`+0.3308` is WITHDRAWN.** Remove those 2 episodes and the same head, same predictions, same
+> protocol reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**; the 2 alone read **+0.856** and read
+> it **identically under legacy, repaired and strict-admissible** — the repair does nothing to them.
+> The **pooled** `+0.8108` inherits this through its comma half and should not be quoted either
+> (*per corpus, never pooled*).
+> ⚠️ **It was never separated from zero:** this run's own `compare_v3.json` records the repaired
+> comma interval as **[−1.2982, +0.7047]**, and the OFF→ON contrast measures **+0.3194,
+> CI [−1.262, +0.6425], NOT separated**.
+> ✅ **What SURVIVES, and it is the durable part:** the label defect is real and PhysicalAI is
+> untouched — re-measured, not inherited: `n_pai_changed = 0`, yaw R² **+0.903482 bit-identical**
+> under all three protocols, **0** windows dropped by admissibility. **E1's ordering also survives**
+> (repair ≥ deletion) — it was never carried by the 2 leaked clips, which contain **0 of the 9**
+> impossible legacy labels. And `R0`/`V3F` (§"the v3 rotation expert") have **no leak**: `+0.6791`
+> stands, at **+0.3038 [+0.054, +0.479]** on the 20 content-clean episodes.
+> ⇒ **comma2k19 yaw is TESTABLE; the DEPLOYED head does not do it.** Record:
+> `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
+> 🔴 **And one thing for this document's owner:** `idm2_lib.py:19` / `idm3_a0.py` run an
+> unconditional `sys.path.insert(0, "/root/taniteval")`, which on `tanitad-eval` is a **different
+> `ci.py`** (`ef925f06…`) from HEAD's (`c92618a0…`). **Every interval in this document was produced
+> through it.** Point estimates are unaffected; the CIs deserve one re-run with the estimator pinned.
+
 Two independent confirmations fall out of that table:
 - **PhysicalAI is bit-identical at +0.9035 in every row.** The pre-registered
   falsifier — *"if the repair moves PhysicalAI yaw, it is touching something it

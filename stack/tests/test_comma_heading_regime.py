@@ -13,6 +13,15 @@ val build (``…/2026-07-27-idm-v3/results/labels_v3.json → yaw_audit_by_speed
 PhysicalAI has **zero in every bin**. Repairing the label moved the DEPLOYED
 head's comma yaw R² **+0.0114 → +0.3308 with nothing retrained**.
 
+🔴 **AMENDED 2026-07-27 (`anchor-settlement`): that `+0.3308` is WITHDRAWN** — 2 of the 22 comma val
+episodes it was scored on are, BY CONTENT (sha256 of raw pose bytes *and* raw `frames_u8` bytes),
+bit-identical to 2 of that head's own 40 comma TRAINING clips; without them it reads **−0.746**.
+**The DEFECT and this file's guards are unaffected** — the 26.27 % speed-bin table is a fact about
+the LABEL, measured on all 64 val segments, and nothing here depends on the withdrawn figure.
+Admissibility (the missing half of the fix) now ships in `comma2k19.yaw_rate_from_heading` and is
+tested in `test_yaw_admissibility.py`. Record:
+`…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
+
 ⭐ **THE FAILING DIRECTION IS DEMONSTRATED HERE, not asserted.** A guard that
 cannot fire is worse than none (RETRACTION_LOG class C13). Every refusal below
 is exercised on the input that should trigger it, and

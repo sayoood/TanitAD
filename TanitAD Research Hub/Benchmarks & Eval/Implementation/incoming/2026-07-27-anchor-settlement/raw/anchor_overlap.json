@@ -1,0 +1,262 @@
+{
+ "what": "content-based overlap between the ANCHOR's evaluation set and idm_head_v1's comma TRAINING set",
+ "date": "2026-07-27",
+ "agent": "anchor-settlement",
+ "evidence_class": "MEASURED (ours; sha256 of raw bytes on both hosts)",
+ "tier": "decision-grade \u2014 the comparison is over raw bytes, so it has no dependence on any naming convention or tag index",
+ "pre_registration": {
+  "fixed_before_the_probe_ran": true,
+  "source": "the brief, verbatim",
+  "overlap_eq_0": "the anchor is clean and the +0.3308 stands ON ITS SUBSTRATE",
+  "overlap_gt_0": "the anchor is CONTAMINATED and every claim resting on it \u2014 including the lifted disqualification \u2014 must be withdrawn or re-measured. NOT softened into 'partially valid'."
+ },
+ "method": {
+  "primary": "sha256 of the raw `poses` [T,4] float32 bytes",
+  "corroborating": [
+   "poses_sha256",
+   "poses_xy_sha256",
+   "poses_yaw_sha256",
+   "poses_v_sha256",
+   "actions_sha256",
+   "frames_sha256"
+  ],
+  "sensor_level": "sha256 of the raw `frames_u8` [T,9,256,256] uint8 bytes \u2014 independent of every label protocol",
+  "name_derived_CROSS_CHECK_ONLY": [
+   "episode_id (= sha1 of '<route>/<segment>', a hash OF A PATH)",
+   "the ep_XXXXX.pt filename",
+   "the cm_XXXXX tag index"
+  ],
+  "why": "600/600 filename overlap with 0/600 real overlap has been measured in this program; and 4 of 36 val episodes would have leaked in a cache with no episode_id."
+ },
+ "sets": {
+  "A": {
+   "cache": "comma2k19-val-61c46fca8f7f",
+   "path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f",
+   "host": "FREEDOM2035",
+   "n": 90,
+   "roles": {
+    "A0_TRAIN_cm_0_40": 40,
+    "A0_HELDOUT_cm_40_70": 30,
+    "A0_UNUSED_cm_70_90": 20
+   }
+  },
+  "B": {
+   "cache": "comma2k19-val-76b6e94a97a1",
+   "path": "/root/valdata/comma2k19-val-76b6e94a97a1",
+   "host": "1e0bac0df88a",
+   "n": 64,
+   "roles": {
+    "V3_VAL_the_anchor": 22,
+    "V3_TRAIN": 42
+   }
+  }
+ },
+ "hash_family_agreement": {
+  "poses_sha256": 11,
+  "poses_xy_sha256": 11,
+  "poses_yaw_sha256": 11,
+  "poses_v_sha256": 11,
+  "actions_sha256": 11,
+  "frames_sha256": 11,
+  "episode_id_NAME_DERIVED": 11,
+  "all_families_agree": true
+ },
+ "within_cache_duplicates": {
+  "comma2k19-val-61c46fca8f7f": {
+   "n_distinct": 90,
+   "n_episodes": 90,
+   "duplicate_groups": []
+  },
+  "comma2k19-val-76b6e94a97a1": {
+   "n_distinct": 64,
+   "n_episodes": 64,
+   "duplicate_groups": []
+  }
+ },
+ "cross_tab": {
+  "A0_TRAIN_cm_0_40 x V3_VAL_the_anchor": {
+   "n_by_poses_sha256": 2,
+   "n_by_frames_sha256": 2,
+   "pairs": [
+    {
+     "a": "ep_00008",
+     "b": "ep_00018",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00008.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00018.pt",
+     "poses_sha256": "94aba1c14a2bf1c7f2907f69e6dbdc25d60794b46286678bdff4d01bf8ef29d7",
+     "frames_sha256": "86eca5f5f6668d5c0bcead69fb8b6cf15e457f8afa2a683642cb95bf6ac66783",
+     "episode_id": 2831231267,
+     "poses_bitwise_equal": true,
+     "v_max": 10.629014015197754,
+     "path_len_m": 260.6546864381422
+    },
+    {
+     "a": "ep_00020",
+     "b": "ep_00039",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00020.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00039.pt",
+     "poses_sha256": "8e6a09ae4d37135532085e00f8e74734bf0ba70517649fe86ef28a4633c6e0ae",
+     "frames_sha256": "d738a24373370ba5bc4ca185a995fd369856379e361775a3464bdf8ccdc009d8",
+     "episode_id": 2160020170,
+     "poses_bitwise_equal": true,
+     "v_max": 17.05808448791504,
+     "path_len_m": 314.25461109652326
+    }
+   ]
+  },
+  "A0_TRAIN_cm_0_40 x V3_TRAIN": {
+   "n_by_poses_sha256": 9,
+   "n_by_frames_sha256": 9,
+   "pairs": [
+    {
+     "a": "ep_00002",
+     "b": "ep_00008",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00002.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00008.pt",
+     "poses_sha256": "15046bf4bfa3fd08d68be57d11413393e53ae318ca43e716f58b04306415f84c",
+     "frames_sha256": "2c13cd3f17b5f779512d1ac48442718a0c5c39e57d98cf7564667d0b039b95c5",
+     "episode_id": 2651766402,
+     "poses_bitwise_equal": true,
+     "v_max": 29.13885498046875,
+     "path_len_m": 859.9043520105643
+    },
+    {
+     "a": "ep_00005",
+     "b": "ep_00010",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00005.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00010.pt",
+     "poses_sha256": "f03b2583054e40b6f9e752855fb4df766b9595e61746af72534f39c9b253bcc1",
+     "frames_sha256": "274df188ee102058a0c2d1f12a4503b4eef23073ece4bac6b1adea658fdda6ee",
+     "episode_id": 2305174300,
+     "poses_bitwise_equal": true,
+     "v_max": 29.81819725036621,
+     "path_len_m": 867.1271795452609
+    },
+    {
+     "a": "ep_00007",
+     "b": "ep_00011",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00007.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00011.pt",
+     "poses_sha256": "2241de6f14d52a897f30bb2903e13ee64db106d8e550d348c6b0e2fe279f4f06",
+     "frames_sha256": "8797c26d28d7e53ee095935d7c5b96f0620f6ff55ba5819cbb08e69dfe251533",
+     "episode_id": 4203966195,
+     "poses_bitwise_equal": true,
+     "v_max": 32.615787506103516,
+     "path_len_m": 883.5957869212192
+    },
+    {
+     "a": "ep_00014",
+     "b": "ep_00029",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00014.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00029.pt",
+     "poses_sha256": "96e8bec901a1a203cc8b052895c114659408d24fa20ac83b0f46cabfd963570a",
+     "frames_sha256": "f36327cec35b96c7609c613bc0fa4a6c921126597fa3fbaf338f2b69d84ad65b",
+     "episode_id": 3444288398,
+     "poses_bitwise_equal": true,
+     "v_max": 29.193946838378906,
+     "path_len_m": 865.0006951333294
+    },
+    {
+     "a": "ep_00017",
+     "b": "ep_00031",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00017.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00031.pt",
+     "poses_sha256": "cb8c0f5ff56be1a8965520beb3baf0027c2e9bbe3815f7dddb5d996e6630c048",
+     "frames_sha256": "574b42b7599afb89482aa5b259140735b96ef6e5b8536e75977e94b1f9f6924e",
+     "episode_id": 3302753282,
+     "poses_bitwise_equal": true,
+     "v_max": 29.174100875854492,
+     "path_len_m": 753.2861042402313
+    },
+    {
+     "a": "ep_00019",
+     "b": "ep_00032",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00019.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00032.pt",
+     "poses_sha256": "d5b5032a858d6804043375385ea153f97d9421446a9ea4551ce52a0a39d76f7f",
+     "frames_sha256": "f365bb2df5804686b2128d9f7f6266148331cabf36cbfd8d40da52d28c6b9226",
+     "episode_id": 1398039745,
+     "poses_bitwise_equal": true,
+     "v_max": 35.02634811401367,
+     "path_len_m": 968.4651357899656
+    },
+    {
+     "a": "ep_00025",
+     "b": "ep_00050",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00025.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00050.pt",
+     "poses_sha256": "b1f6dccab5e422da5b3028ff79fa6b6a7b1406e069e6994c3f763903f778b326",
+     "frames_sha256": "c73f517fc43469425b340900021d73f55454db64aebd2acfb11dee963dd21b06",
+     "episode_id": 2413513374,
+     "poses_bitwise_equal": true,
+     "v_max": 27.80977439880371,
+     "path_len_m": 809.9235722394111
+    },
+    {
+     "a": "ep_00028",
+     "b": "ep_00052",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00028.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00052.pt",
+     "poses_sha256": "b44c094c8c9b18219f80166517e48ce537fa71f1b5033fce7931405a30d8778d",
+     "frames_sha256": "aceb34fb8644693f7df246573657d4c8e048b7dbf0c7288a1096dcd49c084008",
+     "episode_id": 1346272467,
+     "poses_bitwise_equal": true,
+     "v_max": 10.00659465789795,
+     "path_len_m": 96.70193464716213
+    },
+    {
+     "a": "ep_00030",
+     "b": "ep_00053",
+     "a_path": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f/ep_00030.pt",
+     "b_path": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00053.pt",
+     "poses_sha256": "cdfb4bc30e0c9bac1ad0a51a6ba440eb0d5c11e240d918a31c6f3ae48db95703",
+     "frames_sha256": "4295ac66a8abb59e1b346e6ccc45de82cc5e800e7a2ceeaccdae539d6c979807",
+     "episode_id": 3902509663,
+     "poses_bitwise_equal": true,
+     "v_max": 33.78289031982422,
+     "path_len_m": 994.3615397357732
+    }
+   ]
+  },
+  "A0_HELDOUT_cm_40_70 x V3_VAL_the_anchor": {
+   "n_by_poses_sha256": 0,
+   "n_by_frames_sha256": 0,
+   "pairs": []
+  },
+  "A0_HELDOUT_cm_40_70 x V3_TRAIN": {
+   "n_by_poses_sha256": 0,
+   "n_by_frames_sha256": 0,
+   "pairs": []
+  },
+  "A0_UNUSED_cm_70_90 x V3_VAL_the_anchor": {
+   "n_by_poses_sha256": 0,
+   "n_by_frames_sha256": 0,
+   "pairs": []
+  },
+  "A0_UNUSED_cm_70_90 x V3_TRAIN": {
+   "n_by_poses_sha256": 0,
+   "n_by_frames_sha256": 0,
+   "pairs": []
+  }
+ },
+ "THE_ANSWER": {
+  "question": "how many of the ANCHOR's 22 comma evaluation episodes are, BY CONTENT, also in idm_head_v1's 40 comma TRAINING episodes?",
+  "n_overlap": 2,
+  "n_anchor_val_episodes": 22,
+  "frac_of_anchor_val_episodes": 0.09090909090909091,
+  "contaminated_anchor_tags": [
+   "ep_00018",
+   "ep_00039"
+  ],
+  "their_training_counterparts": [
+   "ep_00008",
+   "ep_00020"
+  ],
+  "verdict": "CONTAMINATED \u2014 pre-registered outcome 2"
+ },
+ "self_overlap_61c": {
+  "what": "A0_TRAIN x A0_HELDOUT inside the SAME cache, by content \u2014 the C42 re-score asserted `episode_id`-disjointness, which is a NAME-derived claim; this is the content one",
+  "n_by_poses_sha256": 0,
+  "n_by_frames_sha256": 0
+ }
+}

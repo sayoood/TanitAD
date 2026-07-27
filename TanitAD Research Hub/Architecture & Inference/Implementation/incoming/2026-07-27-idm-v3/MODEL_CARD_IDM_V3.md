@@ -77,6 +77,26 @@ episode). Point estimates are the mean over 3 seeds.
    after the repair, because comma's heading is a *derived* quantity throughout.
    The dataset ships its own fused INS/GNSS/Vision orientation, which would be a
    better primary source; that fix is not in this model.
+   > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43) — the caveat is
+   > BIGGER than stated, and it is a COMPOSITION caveat.** *(The `0.679` above is
+   > **not withdrawn**: `V3F`'s rotation head is `R0`, trained on a split that is
+   > content-disjoint from this val set — verified by sha256 of raw pose bytes
+   > **and** raw `frames_u8` bytes; the cache has no duplicate episodes at all.)*
+   > **But `0.679` is carried disproportionately by 2 of its 22 comma val
+   > episodes.** Those 2 hold a **4.29× wider** yaw label than the other 20
+   > (`gt_std` 0.108 vs 0.025 ⇒ **18.4×** the variance) and so carry **61 % of
+   > the split's total sum-of-squares from 9.1 % of its windows**; R² is
+   > variance-weighted. On the other **20** episodes
+   > `V3F`/`R0` reads **+0.3038 (CI [+0.054, +0.479], still separated)** — while
+   > Spearman ρ barely moves (0.602 → 0.598), so the *rank* signal is robust and
+   > the *R²* is not. All 18 persisted v3 arms lose **0.36–0.58** the same way.
+   > ⚠️ **Quote `+0.679` only with `n = 22 episodes` and this fragility beside
+   > it**; `+0.3038` is the leave-2-out figure.
+   > ⛔ Separately: the **deployed head's `+0.3308`** (§"Against the previously
+   > deployed head") **is WITHDRAWN** — 2 of these same 22 episodes are, by
+   > content, inside *that* head's own comma training set; without them it reads
+   > **−0.746**. Record: `…/Benchmarks & Eval/Implementation/incoming/
+   > 2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 5. **Speed carries a residual per-clip scale bias.** An oracle per-clip rescale
    would take PhysicalAI speed MAE from 2.960 to 1.607 m/s. That headroom is
    real and unclaimed — see the geometry section.

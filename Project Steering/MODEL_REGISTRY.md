@@ -1879,6 +1879,30 @@ they were made in the operator loop and never got an ADR.
    > Full inventory + what is still stale-pending: `TanitAD Research Hub/Benchmarks & Eval/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > ⚠️ **PhysicalAI/rig-B numbers in §8.1 #6 and §10 are UNAFFECTED and must not be re-issued.**
+   >
+   > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43) — `+0.3308` IS WITHDRAWN.**
+   > *(The block above keeps every value and its date. The `yaw R² 0.000` cell is unchanged and
+   > remains STALE-PENDING; this amendment changes only what "what IS measured elsewhere" says.)*
+   > Settled **BY CONTENT** — sha256 of the raw `poses` float32 bytes **and** of the raw
+   > `frames_u8 [300,9,256,256]` sensor bytes, on both hosts, 6 hash families agreeing, filenames and
+   > `episode_id` used only as a cross-check: **2 of the 22 comma val episodes the `+0.3308` was
+   > scored on are bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**
+   > (`76b:ep_00018 ≡ 61c:ep_00008`, `76b:ep_00039 ≡ 61c:ep_00020`). Those 2 carry the entire figure:
+   > without them the same head reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**. Its published
+   > interval **[−1.2982, +0.7047]** already spanned zero, and the OFF→ON contrast measures
+   > **+0.3194, CI [−1.262, +0.6425], NOT separated**. ⛔ **Do not quote `+0.3308` anywhere.**
+   > ✅ **`+0.679` is NOT withdrawn** — it is `R0` (= the shipped `V3F`'s rotation head), trained on a
+   > content-disjoint split. But on the 20 content-clean episodes it reads **+0.3038
+   > (CI [+0.054, +0.479], separated)**, and all 18 persisted v3 arms lose 0.36–0.58 R² the same way.
+   > ⇒ **The registry's quotable statement is now:** *comma2k19 yaw is TESTABLE — a retrained head
+   > reads **+0.3038 [+0.054, +0.479]** on content-verified-disjoint comma val clips — and the
+   > DEPLOYED head does not recover it on any content-disjoint comma substrate* (strict-admissible
+   > **−0.288** on its own held-out clips, ρ 0.211, nMedAE 2.36). **Testable ≠ working.**
+   > ⚠️ PhysicalAI remains UNAFFECTED and was **re-measured, not inherited**: `n_pai_changed = 0`,
+   > yaw R² **+0.903482 bit-identical** under legacy, repaired and strict-admissible protocols.
+   > Record: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+   > 2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md` (raw: `anchor_overlap.json`,
+   > `anchor_resettlement.json`, `arms_resettlement.json`).
 
 ---
 

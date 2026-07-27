@@ -309,6 +309,22 @@ route/segment**, therefore cache-independent). Intersect them with the `episode_
 tags recorded in `/root/idm2/manifest.json` (eval pod). **Non-empty ⇒ the anchor is partly in-train.**
 **ESCALATED — see §8.**
 
+> ✅ 🔴 **RESOLVED 2026-07-27 by the `anchor-settlement` pass — NON-EMPTY. THE ANCHOR IS PARTLY
+> IN-TRAIN.** *(This section keeps its text and its date.)* It was settled **by content**, not by
+> `episode_id`: sha256 of the raw `poses` float32 bytes **and** of the raw
+> `frames_u8 [300,9,256,256]` sensor bytes, on both hosts, with 6 hash families agreeing.
+> **Overlap = 2 of 22.** `76b:ep_00018 ≡ 61c:ep_00008` and `76b:ep_00039 ≡ 61c:ep_00020`, both in
+> A0's `cm_[0:40]` TRAINING set. Without them the deployed head's repaired comma yaw R² is
+> **−0.746** (CI [−1.574, −0.177]) instead of **+0.3308** — ⛔ **the anchor is WITHDRAWN.**
+> ⭐ **And this section's own substrate is CLEAN, verified the same way:** A0-train × A0-heldout
+> inside `61c` = **0** by pose bytes *and* frame bytes. The `episode_id`-disjointness asserted in
+> §5.1 was a NAME claim; it now has a content one behind it.
+> ⚠️ §5.6's *"the gap is in the direction §5.5 predicts"* (comma speed R² +0.554 here vs +0.759 for
+> the anchor's set) is consistent with the confirmed leak, but it remains a plausibility band —
+> `UNVERIFIED`, not evidence.
+> Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md` §2, raw
+> `raw/anchor_overlap.json`.
+
 ### 5.6 Fidelity of the re-encode
 
 The latents were re-encoded here rather than read from the pod's `lat_flagshipv1`.
@@ -351,6 +367,18 @@ for any other substrate**, which is the exact rule that produced the 46-entry li
 ---
 
 ## 7. 🔴 Escalations — these need an owner, not a note in a file
+
+> ✅ **#1, #2 and #3 were ACTIONED 2026-07-27 by the `anchor-settlement` pass**
+> (`…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`). In one line each:
+> **#1** admissibility is now expressed in code — `yaw_rate_from_heading` /
+> `heading_admissible_centers` / `assert_yaw_rate_admissible` in `comma2k19.py`, default `"nan"` so
+> a silent number is impossible, `"keep"` needs a flag **and a written reason**, **19 tests**; the
+> episode contract was **not** widened, because `observable` is a pure function of `poses[:,3]` and
+> nothing needed storing.
+> **#2** answered, **NON-EMPTY** — 2 of 22, by content; `+0.3308` **WITHDRAWN** (§5.5 above).
+> **#3** qualified as this section asked, and *quantified*: the lift stands at **+0.3038
+> [+0.054, +0.479]** from a retrained head, not +0.3308/+0.679.
+> **#4 and #5 are left OPEN** — neither was in that pass's scope.
 
 1. **⭐ `hold_heading_through_standstill`'s `observable` mask is returned and NEVER USED.** It is the
    documented admissibility signal, and its absence is why 84 impossible labels survived into a

@@ -1171,6 +1171,18 @@ increasing order of what they license:
    > statistic, not typical accuracy.** The three-measurement argument of this paragraph is unchanged —
    > it never rested on the yaw channel. Inventory: `TanitAD Research Hub/Benchmarks & Eval/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+   > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN.** *(Block
+   > above keeps its text and date.)* Settled BY CONTENT — sha256 of the raw `poses` float32 bytes
+   > **and** of the raw `frames_u8` sensor bytes, never filenames: **2 of the 22 comma val episodes
+   > it was measured on are bit-identical to 2 of that deployed head's own 40 comma TRAINING
+   > clips**. Without them it reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**, and its
+   > published interval **[−1.2982, +0.7047]** already spanned zero. ✅ `+0.679` is **not**
+   > withdrawn (no leak) but reads **+0.3038 (CI [+0.054, +0.479])** on the 20 content-clean
+   > episodes. ⇒ **comma2k19 yaw is TESTABLE and this deployed head does not do it** — on its own
+   > held-out comma clips with a fully admissible label it reads **R² −0.288**, ρ 0.211,
+   > nMedAE 2.36. **The `≈ 0` cell stays STALE-PENDING**, the three-measurement argument is still
+   > unaffected, and PhysicalAI is unaffected (re-measured: `n_pai_changed = 0`, +0.903482
+   > bit-identical). Record: `…/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
 2. **The downstream ablation overturns the proxy.** In the regime that actually matters — abundant
    pseudo-labeled data, scarce real labels — pseudo-label pretraining captures **~96 % of the real-label
    pretraining benefit**: fraction-of-ceiling 0.965 (speed) / 0.984 (trajectory) on a cross-*class*
@@ -1560,7 +1572,11 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   frames bit-identical to the parity decode path; breaks parity **by design**. **H7:** direct
   extracted-vs-GT accuracy is modest (speed R² 0.62–0.66, longitudinal-traj 0.60, **yaw ≈ 0**
   ⚠️*STALE-PENDING: `heading_repair` OFF — comma's heading is undefined at standstill; see the C29
-  note in §H7. On repaired labels the same head reads comma yaw **+0.3308**, retrained **+0.679***, accel
+  note in §H7. On repaired labels the same head reads comma yaw **+0.3308**, retrained **+0.679** —
+  🔴 AMENDED 2026-07-27 (C43): **+0.3308 WITHDRAWN** (2 of its 22 comma val episodes are, BY CONTENT,
+  in that head's own comma training set; without them **−0.746**); **+0.679** stands but is **+0.3038
+  [+0.054, +0.479]** on the 20 content-clean episodes. comma yaw is testable; this head does not do
+  it. See `…/incoming/2026-07-27-anchor-settlement/`*, accel
   dropped) but downstream pseudo-label WM pretraining captures **~96 %** of real-label value (8 seeds,
   two domains) and **109 % speed / 107 % traj / 71 % yaw** on the actual parity target (4 seeds); an
   **80-clip CC YouTube pilot** lifts parity-val speed R² **−0.520 → +0.563** (3 seeds, clip-cluster CI

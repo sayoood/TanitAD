@@ -31,6 +31,16 @@ transfer is untestable on comma (comma yaw unreadable in-domain — C6). Branch 
 > WORSE** — the repair fixes the tail and the summary statistic, not typical accuracy, so the
 > cross-class yaw question is now *testable*, not *answered*.
 > Inventory: `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/`.
+>
+> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN — it was measured
+> partly IN-TRAIN.** *(The block above keeps its values and its date.)* By content — sha256 of raw
+> pose bytes **and** raw sensor bytes, never filenames — **2 of its 22 comma evaluation episodes are
+> bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**; without them it reads
+> **−0.746**. ✅ **retrained `+0.679` is NOT withdrawn** but is **+0.3038** (CI [+0.054, +0.479]) on
+> the 20 content-clean episodes. ⇒ *"untestable on comma"* **stays lifted**, at **+0.30 from a
+> retrained head** rather than +0.33/+0.68 from two. `yaw +0.504` and every PhysicalAI/rig number
+> here remain unaffected (`n_pai_changed = 0`, re-measured).
+> Record: `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/`.
 
 ## Escalation (integration) — read first
 

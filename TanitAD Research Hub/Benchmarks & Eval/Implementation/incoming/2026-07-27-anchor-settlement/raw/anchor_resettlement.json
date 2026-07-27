@@ -1,0 +1,886 @@
+{
+ "what": "the comma heading-repair ANCHOR re-settled after a content-based overlap probe found it partly IN-TRAIN",
+ "date": "2026-07-27",
+ "agent": "anchor-settlement",
+ "evidence_class": "MEASURED (ours; tanitad-eval, this script)",
+ "tier": "decision-grade for the anchor substrate; nothing retrained, nothing re-encoded \u2014 the persisted A0 predictions are re-used",
+ "host": "1e0bac0df88a",
+ "estimator": "taniteval.ci episode_cluster_bootstrap (callable r2 reducer) / paired_episode_cluster_bootstrap, B=2000, unit = the episode. overlapping_holdout_se NOT used.",
+ "ci_py_imported": "/workspace/TanitAD-head/taniteval/taniteval/ci.py",
+ "ci_py_md5": "c92618a02b36f8191a581fb74a491a8d",
+ "pins": {
+  "head_md5": "fa4462f0b898b036be729c790278b823",
+  "val_gt": "9f8d371909fc47119cec48d2cb0ec20e",
+  "a0_preds": "fdb105ad48faa9a12e8a6d79ad551fec",
+  "label_repair_pin": {
+   "repaired_max_abs_delta_vs_val_gt": 2.066320696769708e-06,
+   "legacy_max_abs_delta_vs_val_gt": 2.066320696769708e-06,
+   "reading": "an INDEPENDENT reimplementation of the repair reproduces the labels the anchor was actually scored against; if these are ~0 the admissibility mask below is aligned to the same windows and the same repair"
+  }
+ },
+ "substrate": {
+  "cache": "comma2k19-val-76b6e94a97a1 (64 segs) + physicalai-val-0c5f7dac3b11 (40 eps)",
+  "split": "idm2_lib.split_tags(val_every=3) \u2014 every 3rd episode",
+  "k_build": 8,
+  "stride": 2,
+  "v_min": 0.5,
+  "n_windows_total": 4195,
+  "n_windows_cm": 2992,
+  "n_windows_pai": 1203,
+  "intrain_tags": [
+   "cm_00018",
+   "cm_00039"
+  ],
+  "n_windows_intrain": 272
+ },
+ "label_protocols": {
+  "legacy": "poses[:,2] as cached (arctan2 of ENU velocity) \u2014 the protocol every pre-2026-07-27 comma number used",
+  "repaired": "hold_heading_through_standstill, v_min=0.5; NO window dropped \u2014 this is the ANCHOR's protocol",
+  "strict_admissible": "repaired AND the `observable` mask required at t-1, t, t+1 (v>=0.5); windows whose centred heading difference is UNDEFINED are dropped"
+ },
+ "per_episode": {
+  "cm_00000": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.70248031616211,
+   "v_mean": 29.305668188730877,
+   "n_windows_admissible": 136,
+   "episode_id": 386210243,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00000.pt"
+  },
+  "cm_00003": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 30.19759750366211,
+   "v_mean": 29.648648014068602,
+   "n_windows_admissible": 136,
+   "episode_id": 1710710118,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00003.pt"
+  },
+  "cm_00006": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 29.77485466003418,
+   "v_mean": 29.372423419952394,
+   "n_windows_admissible": 136,
+   "episode_id": 1378521585,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00006.pt"
+  },
+  "cm_00009": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.98666763305664,
+   "v_mean": 30.1262171681722,
+   "n_windows_admissible": 136,
+   "episode_id": 1696861363,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00009.pt"
+  },
+  "cm_00012": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.708642959594727,
+   "v_mean": 31.504780089060464,
+   "n_windows_admissible": 136,
+   "episode_id": 3251727360,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00012.pt"
+  },
+  "cm_00015": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 33.826072692871094,
+   "v_mean": 32.136695620218916,
+   "n_windows_admissible": 136,
+   "episode_id": 87293956,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00015.pt"
+  },
+  "cm_00018": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 10.629014015197754,
+   "v_mean": 8.712954912185669,
+   "n_windows_admissible": 136,
+   "episode_id": 2831231267,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00018.pt"
+  },
+  "cm_00021": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 30.366214752197266,
+   "v_mean": 29.165719979604084,
+   "n_windows_admissible": 136,
+   "episode_id": 996688626,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00021.pt"
+  },
+  "cm_00024": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.675151824951172,
+   "v_mean": 28.8113117090861,
+   "n_windows_admissible": 136,
+   "episode_id": 2405969358,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00024.pt"
+  },
+  "cm_00027": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.585620880126953,
+   "v_mean": 27.464745864868163,
+   "n_windows_admissible": 136,
+   "episode_id": 3038728111,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00027.pt"
+  },
+  "cm_00030": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 33.81889724731445,
+   "v_mean": 33.01655868530273,
+   "n_windows_admissible": 136,
+   "episode_id": 2335876053,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00030.pt"
+  },
+  "cm_00033": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.73687744140625,
+   "v_mean": 31.470026709238688,
+   "n_windows_admissible": 136,
+   "episode_id": 3702982129,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00033.pt"
+  },
+  "cm_00036": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.910511016845703,
+   "v_mean": 30.786290683746337,
+   "n_windows_admissible": 136,
+   "episode_id": 1102806598,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00036.pt"
+  },
+  "cm_00039": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 17.05808448791504,
+   "v_mean": 10.518497807184856,
+   "n_windows_admissible": 136,
+   "episode_id": 2160020170,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00039.pt"
+  },
+  "cm_00042": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 30.452863693237305,
+   "v_mean": 28.39006377538045,
+   "n_windows_admissible": 136,
+   "episode_id": 3747943349,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00042.pt"
+  },
+  "cm_00045": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 30.873878479003906,
+   "v_mean": 27.67705682118734,
+   "n_windows_admissible": 136,
+   "episode_id": 2695171071,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00045.pt"
+  },
+  "cm_00048": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 23.555706024169922,
+   "v_mean": 19.065242773691814,
+   "n_windows_admissible": 136,
+   "episode_id": 846513957,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00048.pt"
+  },
+  "cm_00051": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 36.94213104248047,
+   "v_mean": 35.462151018778485,
+   "n_windows_admissible": 136,
+   "episode_id": 1069693385,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00051.pt"
+  },
+  "cm_00054": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 31.770309448242188,
+   "v_mean": 31.466987953186035,
+   "n_windows_admissible": 136,
+   "episode_id": 3568190316,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00054.pt"
+  },
+  "cm_00057": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 22.302263259887695,
+   "v_mean": 19.80640063603719,
+   "n_windows_admissible": 136,
+   "episode_id": 156622510,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00057.pt"
+  },
+  "cm_00060": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 194,
+   "v_max": 12.957367897033691,
+   "v_mean": 6.066556146094226,
+   "n_windows_admissible": 86,
+   "episode_id": 1262873447,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00060.pt"
+  },
+  "cm_00063": {
+   "T": 300,
+   "n_windows": 136,
+   "n_observable_frames": 300,
+   "v_max": 15.82491397857666,
+   "v_mean": 7.4568195041020715,
+   "n_windows_admissible": 136,
+   "episode_id": 3501789258,
+   "src": "/root/valdata/comma2k19-val-76b6e94a97a1/ep_00063.pt"
+  },
+  "pai_00000": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 6.145773887634277,
+   "v_mean": 4.755154807962964,
+   "n_windows_admissible": 86,
+   "episode_id": 808464434,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00000.pt"
+  },
+  "pai_00003": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 10.5654935836792,
+   "v_mean": 5.978036322186341,
+   "n_windows_admissible": 86,
+   "episode_id": 808478053,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00003.pt"
+  },
+  "pai_00006": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 35.72199630737305,
+   "v_mean": 35.68600607637185,
+   "n_windows_admissible": 86,
+   "episode_id": 808532274,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00006.pt"
+  },
+  "pai_00009": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 17.589574813842773,
+   "v_mean": 12.817481443510582,
+   "n_windows_admissible": 86,
+   "episode_id": 808596784,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00009.pt"
+  },
+  "pai_00012": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 29.806808471679688,
+   "v_mean": 29.75347708697295,
+   "n_windows_admissible": 86,
+   "episode_id": 808608820,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00012.pt"
+  },
+  "pai_00015": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 9.082735061645508,
+   "v_mean": 5.779952972378563,
+   "n_windows_admissible": 86,
+   "episode_id": 808662372,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00015.pt"
+  },
+  "pai_00018": {
+   "T": 198,
+   "n_windows": 85,
+   "n_observable_frames": 198,
+   "v_max": 8.309173583984375,
+   "v_mean": 5.910612170142357,
+   "n_windows_admissible": 85,
+   "episode_id": 808857702,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00018.pt"
+  },
+  "pai_00021": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 6.702459335327148,
+   "v_mean": 4.747868324044961,
+   "n_windows_admissible": 86,
+   "episode_id": 808924771,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00021.pt"
+  },
+  "pai_00024": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 28.2122859954834,
+   "v_mean": 28.127187537188505,
+   "n_windows_admissible": 86,
+   "episode_id": 808989234,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00024.pt"
+  },
+  "pai_00027": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 16.18791389465332,
+   "v_mean": 13.387685284542679,
+   "n_windows_admissible": 86,
+   "episode_id": 809054263,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00027.pt"
+  },
+  "pai_00030": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 10.742987632751465,
+   "v_mean": 3.542357346501632,
+   "n_windows_admissible": 86,
+   "episode_id": 811743586,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00030.pt"
+  },
+  "pai_00033": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 6.560281276702881,
+   "v_mean": 5.220481532302933,
+   "n_windows_admissible": 86,
+   "episode_id": 811809081,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00033.pt"
+  },
+  "pai_00036": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 10.919102668762207,
+   "v_mean": 6.692083635222373,
+   "n_windows_admissible": 86,
+   "episode_id": 811885924,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00036.pt"
+  },
+  "pai_00039": {
+   "T": 199,
+   "n_windows": 86,
+   "n_observable_frames": 199,
+   "v_max": 10.001274108886719,
+   "v_mean": 5.581975178109791,
+   "n_windows_admissible": 86,
+   "episode_id": 811938610,
+   "src": "/root/valdata/physicalai-val-0c5f7dac3b11/ep_00039.pt"
+  }
+ },
+ "results": {
+  "cm_ALL22_the_published_anchor": {
+   "n_windows": 2992,
+   "n_episodes": 22,
+   "legacy": {
+    "r2": 0.011430024144637563,
+    "rho": 0.3438265195897865,
+    "mae": 0.043978445174640675,
+    "medae": 0.02008737623691559,
+    "nmedae": 1.4371439232409382,
+    "rmse": 0.27378171243890265,
+    "gt_std": 0.27535992040784707,
+    "gt_mad": 0.013977289199829102,
+    "n_impossible_gt1p5": 9,
+    "n": 2992,
+    "r2_ci": {
+     "mean": 0.0114,
+     "lo": -0.866,
+     "hi": 0.6719,
+     "ci95": 0.769,
+     "se": 0.3417,
+     "reducer": "r2",
+     "n_windows": 2992,
+     "n_episodes": 22,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 22
+   },
+   "repaired": {
+    "r2": 0.3308220974121391,
+    "rho": 0.34478561109680367,
+    "mae": 0.025300354241109626,
+    "medae": 0.019862525165081024,
+    "nmedae": 1.552470882832518,
+    "rmse": 0.0340632328861415,
+    "gt_std": 0.041640416814150163,
+    "gt_mad": 0.012794137001037598,
+    "n_impossible_gt1p5": 0,
+    "n": 2992,
+    "r2_ci": {
+     "mean": 0.3308,
+     "lo": -1.2982,
+     "hi": 0.7047,
+     "ci95": 1.0014,
+     "se": 0.6293,
+     "reducer": "r2",
+     "n_windows": 2992,
+     "n_episodes": 22,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 22
+   },
+   "strict_admissible": {
+    "r2": 0.33740437357271613,
+    "rho": 0.3496978511016061,
+    "mae": 0.02531972404931533,
+    "medae": 0.019756244495511055,
+    "nmedae": 1.4777626841882343,
+    "rmse": 0.0341751300480429,
+    "gt_std": 0.041984201083592486,
+    "gt_mad": 0.01336902379989624,
+    "n_impossible_gt1p5": 0,
+    "n": 2942,
+    "r2_ci": {
+     "mean": 0.3374,
+     "lo": -1.2754,
+     "hi": 0.7057,
+     "ci95": 0.9905,
+     "se": 0.622,
+     "reducer": "r2",
+     "n_windows": 2942,
+     "n_episodes": 22,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 22
+   },
+   "strict_admissible_kept": 2942,
+   "strict_admissible_dropped": 50
+  },
+  "cm_CLEAN20_content_verified_disjoint": {
+   "n_windows": 2720,
+   "n_episodes": 20,
+   "legacy": {
+    "r2": -0.0012303334099563745,
+    "rho": 0.32009390576974034,
+    "mae": 0.04521251630777603,
+    "medae": 0.01970371976494789,
+    "nmedae": 1.5036323061178076,
+    "rmse": 0.2868517005772072,
+    "gt_std": 0.2866754016249451,
+    "gt_mad": 0.013104081153869629,
+    "n_impossible_gt1p5": 9,
+    "n": 2720,
+    "r2_ci": {
+     "mean": -0.0012,
+     "lo": -1.0689,
+     "hi": 0.002,
+     "ci95": 0.5355,
+     "se": 0.3459,
+     "reducer": "r2",
+     "n_windows": 2720,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 20
+   },
+   "repaired": {
+    "r2": -0.745999264402359,
+    "rho": 0.32109151071261577,
+    "mae": 0.024666616280891878,
+    "medae": 0.01942683756351471,
+    "nmedae": 1.5969438251794508,
+    "rmse": 0.03328909235141511,
+    "gt_std": 0.025193002270007755,
+    "gt_mad": 0.01216500997543335,
+    "n_impossible_gt1p5": 0,
+    "n": 2720,
+    "r2_ci": {
+     "mean": -0.746,
+     "lo": -1.5737,
+     "hi": -0.1773,
+     "ci95": 0.6982,
+     "se": 0.3617,
+     "reducer": "r2",
+     "n_windows": 2720,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 20
+   },
+   "strict_admissible": {
+    "r2": -0.7273063626195371,
+    "rho": 0.3261356293303851,
+    "mae": 0.024676091590903226,
+    "medae": 0.019269973039627075,
+    "nmedae": 1.5227837145632783,
+    "rmse": 0.033400610893809156,
+    "gt_std": 0.025413806781392725,
+    "gt_mad": 0.012654438614845276,
+    "n_impossible_gt1p5": 0,
+    "n": 2670,
+    "r2_ci": {
+     "mean": -0.7273,
+     "lo": -1.5336,
+     "hi": -0.1695,
+     "ci95": 0.6821,
+     "se": 0.352,
+     "reducer": "r2",
+     "n_windows": 2670,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 20
+   },
+   "strict_admissible_kept": 2670,
+   "strict_admissible_dropped": 50
+  },
+  "cm_INTRAIN2_content_verified_in_train": {
+   "n_windows": 272,
+   "n_episodes": 2,
+   "legacy": {
+    "r2": 0.856185382584769,
+    "rho": 0.5435869210017246,
+    "mae": 0.03163773384328712,
+    "medae": 0.025675371289253235,
+    "nmedae": 1.3895300075805228,
+    "rmse": 0.04100860257799806,
+    "gt_std": 0.10813678543950746,
+    "gt_mad": 0.01847773790359497,
+    "n_impossible_gt1p5": 0,
+    "n": 272,
+    "r2_ci": {
+     "mean": 0.8562,
+     "lo": -0.6609,
+     "hi": 0.8889,
+     "ci95": 0.7749,
+     "se": 0.6476,
+     "reducer": "r2",
+     "n_windows": 272,
+     "n_episodes": 2,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 2
+   },
+   "repaired": {
+    "r2": 0.856185382584769,
+    "rho": 0.5435869210017246,
+    "mae": 0.03163773384328712,
+    "medae": 0.025675371289253235,
+    "nmedae": 1.3895300075805228,
+    "rmse": 0.04100860257799806,
+    "gt_std": 0.10813678543950746,
+    "gt_mad": 0.01847773790359497,
+    "n_impossible_gt1p5": 0,
+    "n": 272,
+    "r2_ci": {
+     "mean": 0.8562,
+     "lo": -0.6609,
+     "hi": 0.8889,
+     "ci95": 0.7749,
+     "se": 0.6476,
+     "reducer": "r2",
+     "n_windows": 272,
+     "n_episodes": 2,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 2
+   },
+   "strict_admissible": {
+    "r2": 0.856185382584769,
+    "rho": 0.5435869210017246,
+    "mae": 0.03163773384328712,
+    "medae": 0.025675371289253235,
+    "nmedae": 1.3895300075805228,
+    "rmse": 0.04100860257799806,
+    "gt_std": 0.10813678543950746,
+    "gt_mad": 0.01847773790359497,
+    "n_impossible_gt1p5": 0,
+    "n": 272,
+    "r2_ci": {
+     "mean": 0.8562,
+     "lo": -0.6609,
+     "hi": 0.8889,
+     "ci95": 0.7749,
+     "se": 0.6476,
+     "reducer": "r2",
+     "n_windows": 272,
+     "n_episodes": 2,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 2
+   },
+   "strict_admissible_kept": 272,
+   "strict_admissible_dropped": 0
+  },
+  "pai_ALL14": {
+   "n_windows": 1203,
+   "n_episodes": 14,
+   "legacy": {
+    "r2": 0.903482467084303,
+    "rho": 0.5859956247545105,
+    "mae": 0.03186121208871147,
+    "medae": 0.025488749146461487,
+    "nmedae": 3.1911588913634086,
+    "rmse": 0.044245330497766605,
+    "gt_std": 0.14241782117652835,
+    "gt_mad": 0.007987301796674728,
+    "n_impossible_gt1p5": 0,
+    "n": 1203,
+    "r2_ci": {
+     "mean": 0.9035,
+     "lo": 0.8269,
+     "hi": 0.9362,
+     "ci95": 0.0547,
+     "se": 0.0532,
+     "reducer": "r2",
+     "n_windows": 1203,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 14
+   },
+   "repaired": {
+    "r2": 0.903482467084303,
+    "rho": 0.5859956247545105,
+    "mae": 0.03186121208871147,
+    "medae": 0.025488749146461487,
+    "nmedae": 3.1911588913634086,
+    "rmse": 0.044245330497766605,
+    "gt_std": 0.14241782117652835,
+    "gt_mad": 0.007987301796674728,
+    "n_impossible_gt1p5": 0,
+    "n": 1203,
+    "r2_ci": {
+     "mean": 0.9035,
+     "lo": 0.8269,
+     "hi": 0.9362,
+     "ci95": 0.0547,
+     "se": 0.0532,
+     "reducer": "r2",
+     "n_windows": 1203,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 14
+   },
+   "strict_admissible": {
+    "r2": 0.903482467084303,
+    "rho": 0.5859956247545105,
+    "mae": 0.03186121208871147,
+    "medae": 0.025488749146461487,
+    "nmedae": 3.1911588913634086,
+    "rmse": 0.044245330497766605,
+    "gt_std": 0.14241782117652835,
+    "gt_mad": 0.007987301796674728,
+    "n_impossible_gt1p5": 0,
+    "n": 1203,
+    "r2_ci": {
+     "mean": 0.9035,
+     "lo": 0.8269,
+     "hi": 0.9362,
+     "ci95": 0.0547,
+     "se": 0.0532,
+     "reducer": "r2",
+     "n_windows": 1203,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_episodes": 14
+   },
+   "strict_admissible_kept": 1203,
+   "strict_admissible_dropped": 0
+  }
+ },
+ "contrasts": {
+  "cm_ALL22_the_published_anchor": {
+   "delta_r2_repaired_minus_legacy": {
+    "mean": 0.3194,
+    "lo": -1.262,
+    "hi": 0.6425,
+    "ci95": 0.9522,
+    "se": 0.5188,
+    "reducer": "delta_r2",
+    "n_windows": 2992,
+    "n_episodes": 22,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "separated": false
+   },
+   "delta_mae_repaired_minus_legacy": {
+    "delta": -0.0187,
+    "lo": -0.056,
+    "hi": 0.0,
+    "ci95": 0.028,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 2992,
+    "n_episodes": 22,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "cm_CLEAN20_content_verified_disjoint": {
+   "delta_r2_repaired_minus_legacy": {
+    "mean": -0.7448,
+    "lo": -1.5697,
+    "hi": 0.0,
+    "ci95": 0.7849,
+    "se": 0.5118,
+    "reducer": "delta_r2",
+    "n_windows": 2720,
+    "n_episodes": 20,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "separated": false
+   },
+   "delta_mae_repaired_minus_legacy": {
+    "delta": -0.0205,
+    "lo": -0.0616,
+    "hi": 0.0,
+    "ci95": 0.0308,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 2720,
+    "n_episodes": 20,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "cm_INTRAIN2_content_verified_in_train": {
+   "delta_r2_repaired_minus_legacy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "delta_r2",
+    "n_windows": 272,
+    "n_episodes": 2,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "separated": false
+   },
+   "delta_mae_repaired_minus_legacy": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 272,
+    "n_episodes": 2,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "pai_ALL14": {
+   "delta_r2_repaired_minus_legacy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "delta_r2",
+    "n_windows": 1203,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "separated": false
+   },
+   "delta_mae_repaired_minus_legacy": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 1203,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "physicalai_control": {
+  "n_pai_windows_changed_by_repair": 0,
+  "must_be_zero": true,
+  "r2_bit_identical": true,
+  "strict_admissible_dropped": 0,
+  "note": "PhysicalAI heading comes from an orientation quaternion, which is standstill-robust, so the producer-level admissibility mask is all-True by construction and drops 0 windows.",
+  "DIAGNOSTIC_same_speed_gate": {
+   "what": "if the SAME v>=v_min gate were applied to PhysicalAI as a blunt speed filter, what would it do? Separates 'the mask removes undefined labels' from 'the mask removes slow windows'.",
+   "n_kept": 1171,
+   "n_dropped": 32,
+   "r2": 0.9044485389600185
+  }
+ },
+ "residual_defect": {
+  "cm_ALL22_the_published_anchor": {
+   "n_impossible_legacy": 9,
+   "n_impossible_repaired": 0,
+   "n_impossible_strict_admissible": 0,
+   "gt_std_repaired": 0.041640416814150163,
+   "gt_std_strict_admissible": 0.041984201083592486
+  },
+  "cm_CLEAN20_content_verified_disjoint": {
+   "n_impossible_legacy": 9,
+   "n_impossible_repaired": 0,
+   "n_impossible_strict_admissible": 0,
+   "gt_std_repaired": 0.025193002270007755,
+   "gt_std_strict_admissible": 0.025413806781392725
+  },
+  "cm_INTRAIN2_content_verified_in_train": {
+   "n_impossible_legacy": 0,
+   "n_impossible_repaired": 0,
+   "n_impossible_strict_admissible": 0,
+   "gt_std_repaired": 0.10813678543950746,
+   "gt_std_strict_admissible": 0.10813678543950746
+  },
+  "pai_ALL14": {
+   "n_impossible_legacy": 0,
+   "n_impossible_repaired": 0,
+   "n_impossible_strict_admissible": 0,
+   "gt_std_repaired": 0.14241782117652835,
+   "gt_std_strict_admissible": 0.14241782117652835
+  }
+ }
+}

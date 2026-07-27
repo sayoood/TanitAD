@@ -74,6 +74,14 @@ def test_actions_and_poses_math(tmp_path):
 # pooled yaw R2 0.1046 against these labels and 0.8108 against the repaired      #
 # ones, nothing retrained.  Per corpus: comma2k19 +0.0114 -> +0.3308;            #
 # PhysicalAI +0.9035 unchanged (bit-identical).                                  #
+#   AMENDED 2026-07-27 (anchor-settlement): the comma2k19 +0.3308 is WITHDRAWN. #
+#   Measured BY CONTENT (sha256 of raw pose bytes AND raw frames_u8 bytes), 2   #
+#   of the 22 comma val episodes it was scored on are bit-identical to 2 of     #
+#   that head's own 40 comma TRAINING clips; without them it reads -0.746       #
+#   (CI [-1.574, -0.177]).  PhysicalAI is UNAFFECTED (n_pai_changed = 0,        #
+#   re-measured).  A RETRAINED head reads +0.3038 [+0.054, +0.479] on the 20    #
+#   content-clean episodes -- comma yaw is TESTABLE, the deployed head does not #
+#   do it.  Raw: .../2026-07-27-anchor-settlement/raw/anchor_overlap.json.      #
 #   CORRECTED 2026-07-27 (comma-yaw-reissue): this comment said "0.83", which is #
 #   a RETRAINED arm's level, not the deployed head's.  Raw:                      #
 #   .../2026-07-27-idm-v3/results/compare_v3.json                                #
