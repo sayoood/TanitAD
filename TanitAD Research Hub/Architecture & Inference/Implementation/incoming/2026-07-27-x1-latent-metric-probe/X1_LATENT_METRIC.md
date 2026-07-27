@@ -107,8 +107,9 @@ committed per-window dumps from the parity val split (`0c5f7dac3b11`, 600 eps / 
 | 8 | nospeed `op` @19–21k **1.1333/0.3543** | ibid. §2.3 | ✅ exact | 1e-4 |
 | 9 | `ade_0_2s` of the `op` readout, imagination + true actions = **0.3839** | `BLIND_IMAGINATION.md` | ✅ 0.3839 | 5e-4 |
 | 10 | `ade_0_2s` with the `str` readout = **0.1950** | ibid. | ✅ 0.1950 | 5e-4 |
-| 11 | `de@0.5s` paired `str` − `op` = **0.0449 [0.0350, 0.0549]**, separated | `rung0_own_readout_short_horizon.json` | ✅ exact — **and it is the `own_kinematic` regime, not the true-action one** (see §7.1) | interval |
-| 12 | beats-CV window **0.4 s … 7.4 s = 71 / 185 steps** | `BLIND_IMAGINATION.md` §2.5 | ✅ exact — **and it recovered the CONVENTION** (see §7.1) | steps |
+| 11 | `de@0.5s` paired `str` − `op` = **0.0449 [0.0350, 0.0549]**, separated | `rung0_own_readout_short_horizon.json` | ✅ exact (`c8_selection_rule.json` → `regimes.own_kinematic_DEPLOYABLE.paired_str_minus_op_at_grid["0.5s"]`) — **and it is the `own_kinematic` regime, not the true-action one** (see §7.1) | interval |
+| 12 | beats-CV window **0.4 s … 7.4 s = 71 / 185 steps** | `BLIND_IMAGINATION.md` §2.5 / line 325 | ✅ exact (`reproduction_gate.beats_cv_window_convention` = steps [4, 74], 71) — **and it recovered the CONVENTION** (see §7.1) | steps |
+| 13 | v1 imagined-decode magnitude on a *fresh, held-out* corpus | X1 fidelity, §4.1 | ✅ 0.0437 m vs the 0.0304 m train band — the defect reproduces off-corpus at **13.4×** | 3× |
 
 ⇒ Every number below is quoted on top of a passing gate.
 
@@ -523,9 +524,20 @@ happens, every statement about v4's imagination/perception behaviour is UNVERIFI
 
 # 10. DELIVERABLE MANIFEST
 
-**Everything below is in the repo working tree and STAGED (`git add`). Nothing was committed. Nothing
-was pushed. No branch was switched.** Verified with `git ls-files --stage` (not a scoped
-`git status --short`, which the previous agent found under-reports).
+**Everything below is in the repo working tree and STAGED (`git add`). This agent committed nothing,
+pushed nothing, and switched no branch.** Verified with `git ls-files --stage` — **and the scoped
+`git status --short` again under-reported, showing 4 of 10 staged files while `ls-files --stage` showed
+all 10.** The brief's warning is confirmed a second time; use `ls-files --stage`.
+
+⚠️ **NOTE FOR THE ORCHESTRATOR — the documented whole-index sweep happened again, to this work.**
+While this stream was running, a sibling agent's pathspec-free `git commit` swept the already-staged
+deliverables into **`8a5a998`** (*"THE (λ,τ) CURVE WAS NOT MEASURED …"*) and a partial set into
+`5a5a905`. **Nothing was lost** — the files are in `HEAD` and this is the *benign* direction of the
+hazard — but nine of the ten artifacts below now live under a commit message about an unrelated
+experiment, which is exactly the `CLAUDE.md` git-hygiene failure ("a quick commit of my thing silently
+sweeps in a sibling's work"). Only the final `X1_LATENT_METRIC.md` revision remains staged-not-committed.
+**If the program wants this work findable by message, it needs a follow-up commit or a note in
+`DECISIONS.md`; searching the log for "X1" or "latent metric" will not find it.**
 
 **Deliverable path:**
 `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-27-x1-latent-metric-probe/`
@@ -563,7 +575,7 @@ py="C:/Users/Admin/venvs/tanitad/Scripts/python.exe"; D=".../2026-07-27-x1-laten
 # X4 — 0 GPU, ~20 CPU-seconds, includes its own 8-number gate
 $py "$D/scripts/x4_log_sweep.py"
 
-# C8 — 0 GPU, ~10 CPU-minutes (the bootstrap-heavy beats-CV windows dominate)
+# C8 — 0 GPU, 782 s measured (the bootstrap-heavy beats-CV windows dominate)
 $py "$D/scripts/c8_selection_rule.py"
 
 # X1 — one GPU pass (151 s) then CPU/GPU probe fitting (~70 s)
