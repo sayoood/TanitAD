@@ -85,7 +85,12 @@ while : ; do
        --queries-file "$S/wq$i.txt" --channels-file "$S/channels.txt" \
        --max-clips "$CAP" --per-video-clips "$PVC" --clip-frames 250 \
        --max-videos 60 --per-query 40 --allow-noncc --sleep "$SLEEP" $GEOARG \
-       > "$WORK/w$i/harvest.log" 2>&1 &
+       # APPEND, do not truncate. `>` destroyed rounds 5-8 of the 2026-07-26 run,
+       # so the ONSET of the bot-block could not be determined afterwards — the
+       # round-9 logs were the only surviving proof that 650/650 videos were
+       # refused. A one-character bug erased the evidence of the thing that
+       # actually stopped the harvest.
+       >> "$WORK/w$i/harvest.log" 2>&1 &
     pids="$pids $!"
   done
   log "waiting on workers:$pids"

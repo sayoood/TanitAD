@@ -494,3 +494,20 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   builder must be able to abort on it** (`v2_compressed.py --require-fully-observed`, off by default).
   Sibling to **C2** (absence from a single probe) — same shape, applied to a *property* instead of an
   *existence*.
+- **C40 — A DRIVER THAT MISLABELS ITS OWN FAILURE, AND A LOG THAT ERASES THE PROOF** *(new class, added
+  2026-07-27)* ⇒ **a run can report success while its terminal condition was an external refusal, if the
+  driver's exhaustion message covers both cases — and a `>` redirect can then destroy the only evidence
+  that would have distinguished them.** MEASURED: the 2026-07-26 YouTube harvest ended with **650 of 650
+  videos refused** (`Sign in to confirm you're not a bot`, **0 clips**) beginning **16:11:21 UTC**. The
+  driver logged **`pool exhausted at 343 — proceeding`**. The report was finalised at **14:35 UTC** — before
+  the block — and states *"Was it blocked? — NO."*
+  ⇒ **It REFUTES that report's conclusion that "the binding constraint was not rate-limiting."** It was.
+  ⚠️ **And the evidence nearly did not survive:** `run_scaleup_parallel.sh` opened `w*/harvest.log` with
+  **`>`** each round, destroying rounds 5–8, so the block's onset was unrecoverable; only the archived
+  round-9 logs proved it, and any re-run would have overwritten those too. **A one-character bug erased
+  the record of the thing that actually stopped the harvest.** Fixed to `>>`.
+  ⇒ **Two standing consequences.** (1) **A driver's "done" is not a verdict** — an exhaustion message must
+  distinguish *supply exhausted* from *supply refused*, and a report written before a run ends cannot
+  answer "was it blocked?". (2) **Append, never truncate, any log that is the sole record of an external
+  interaction.** Sibling to C13 (a guard that cannot fail): here the *instrument* could not report the
+  distinction it was being read for.

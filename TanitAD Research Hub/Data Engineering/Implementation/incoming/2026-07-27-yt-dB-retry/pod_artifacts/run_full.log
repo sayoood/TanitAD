@@ -1,0 +1,70 @@
+[12:33:31] PARALLEL SCALEUP START W=2 target=400 round_clips=25 seeds=4 sleep=4s
+[12:33:31] geometry: harvest_scaleup decides inline (GeoCalib per-video if installed, else fixed-HFOV); see w*/harvest.log 'GEOMETRY ='
+split 25 queries into 2 worker files
+[12:33:49] ROUND 1: merged have 0, per-worker cap -> 25; launching 2 harvest workers
+[12:33:49] waiting on workers: 2233990 2233992
+[12:45:06] round 1 harvest done; encoding + merging
+[12:49:42] ROUND 1 complete: merged latents = 50
+manifest merged_latents 50 n_clips_total 50
+[12:49:58] ROUND 2: merged have 50, per-worker cap -> 50; launching 2 harvest workers
+[12:49:58] waiting on workers: 2508291 2508293
+[13:12:54] round 2 harvest done; encoding + merging
+[13:17:52] ROUND 2 complete: merged latents = 100
+manifest merged_latents 100 n_clips_total 100
+[13:18:08] ROUND 3: merged have 100, per-worker cap -> 75; launching 2 harvest workers
+[13:18:08] waiting on workers: 2997028 2997030
+[13:51:42] round 3 harvest done; encoding + merging
+[13:56:31] ROUND 3 complete: merged latents = 150
+manifest merged_latents 150 n_clips_total 150
+[13:56:48] ROUND 4: merged have 150, per-worker cap -> 100; launching 2 harvest workers
+[13:56:48] waiting on workers: 3650555 3650557
+[14:26:07] round 4 harvest done; encoding + merging
+[14:30:55] ROUND 4 complete: merged latents = 200
+manifest merged_latents 200 n_clips_total 200
+[14:31:13] ROUND 5: merged have 200, per-worker cap -> 125; launching 2 harvest workers
+[14:31:13] waiting on workers: 1877 1879
+[15:01:31] round 5 harvest done; encoding + merging
+[15:06:05] ROUND 5 complete: merged latents = 250
+manifest merged_latents 250 n_clips_total 250
+[15:06:22] ROUND 6: merged have 250, per-worker cap -> 150; launching 2 harvest workers
+[15:06:22] waiting on workers: 560659 560661
+[15:19:13] round 6 harvest done; encoding + merging
+[15:23:49] ROUND 6 complete: merged latents = 300
+manifest merged_latents 300 n_clips_total 300
+[15:24:06] ROUND 7: merged have 300, per-worker cap -> 175; launching 2 harvest workers
+[15:24:06] waiting on workers: 834717 834719
+[15:50:58] round 7 harvest done; encoding + merging
+[15:55:17] ROUND 7 complete: merged latents = 343
+manifest merged_latents 343 n_clips_total 343
+[15:55:33] ROUND 8: merged have 343, per-worker cap -> 200; launching 2 harvest workers
+[15:55:33] waiting on workers: 1226868 1226870
+[16:07:37] round 8 harvest done; encoding + merging
+[16:10:42] ROUND 8 complete: merged latents = 343
+manifest merged_latents 343 n_clips_total 343
+[16:10:42] no new clips (stall 1/2)
+[16:11:00] ROUND 9: merged have 343, per-worker cap -> 225; launching 2 harvest workers
+[16:11:00] waiting on workers: 1228191 1228193
+[16:22:50] round 9 harvest done; encoding + merging
+[16:25:55] ROUND 9 complete: merged latents = 343
+manifest merged_latents 343 n_clips_total 343
+[16:25:55] no new clips (stall 2/2)
+[16:25:55] pool exhausted at 343 — proceeding
+[16:25:55] HARVEST+LABEL COMPLETE: 343 merged clip-latents -> downstream (seeds=4)
+[16:26:01] encoder loaded: 87.0M enc + 0.1M readout, state_dim 2048, ckpt step 29999
+[16:26:03] building labeler L {rigA[:60]+rigB[:60]+comma[:40]} ...
+[16:27:20] D_youtube = 343 clips, 38416 windows (pseudo-labeled by L)
+[16:27:20] parity ref latents not fully cached -> skipping same-domain ref arms
+[16:27:30] rig table: 600 clips -> rig_a 170 rig_b 430 unknown 0
+[16:27:32] downstream: finetune 15 clips (1318 win), test 65 clips (5710 win)
+[16:29:03]   seed 0: floor sp -0.754 | pseudo_yt sp +0.740 | gap +1.513 CI95[+1.213,+1.872]
+[16:30:28]   seed 1: floor sp -0.264 | pseudo_yt sp +0.712 | gap +0.984 CI95[+0.732,+1.295]
+[16:31:56]   seed 2: floor sp -0.542 | pseudo_yt sp +0.746 | gap +1.299 CI95[+1.056,+1.574]
+[16:33:19]   seed 3: floor sp -0.194 | pseudo_yt sp +0.708 | gap +0.908 CI95[+0.736,+1.105]
+[16:33:32] ARMS speed_r2: {a: mean_std} -> {"floor": [-0.4387, 0.2238], "pseudo_yt": [0.7264, 0.0167]}
+[16:33:32] BOOTSTRAP [{'seed': 0, 'gap_mean': 1.513, 'gap_ci95': [1.213, 1.8721], 'frac_boot_gt0': 1.0, 'ci_excludes_0': True}, {'seed': 1, 'gap_mean': 0.984, 'gap_ci95': [0.7318, 1.2954], 'frac_boot_gt0': 1.0, 'ci_excludes_0': True}, {'seed': 2, 'gap_mean': 1.2988, 'gap_ci95': [1.056, 1.5736], 'frac_boot_gt0': 1.0, 'ci_excludes_0': True}, {'seed': 3, 'gap_mean': 0.908, 'gap_ci95': [0.7358, 1.105], 'frac_boot_gt0': 1.0, 'ci_excludes_0': True}]
+[16:33:32] FRACTION_OF_CEILING(speed_r2) None
+[16:33:32] VERDICT WIN — YouTube-pilot pseudo-pretraining lifts downstream speed_r2 (all seeds + CI-separated); domain transfers -> full harvest justified (directional)
+[16:33:32] WROTE /workspace/tmp/yt_scaleup/results/results_scaleup_downstream.json (454s)
+[16:33:32] YT_PILOT_DOWNSTREAM_DONE
+[16:33:33] DOWNSTREAM DONE -> /workspace/tmp/yt_scaleup/results/results_scaleup_downstream.json
+[16:33:33] PARALLEL SCALEUP DRIVER EXIT

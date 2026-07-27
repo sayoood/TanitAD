@@ -1,0 +1,932 @@
+{
+  "experiment": "yt_dB_retry_persignal_n343_video_vs_clip_cluster",
+  "date": "2026-07-27T16:36:45Z",
+  "labeler": "v1 frozen encoder + IDMHead{parity rigA[:60]+rigB[:60]+comma[:40]}",
+  "scalar_names": [
+    "speed",
+    "yaw_rate",
+    "steer",
+    "long_accel"
+  ],
+  "n_youtube_clips": 343,
+  "n_youtube_videos": 55,
+  "clips_per_video": {
+    "grh1R84Ziyc": 11,
+    "CxfTe3gB3WI": 11,
+    "kj5wb0-9mqE": 3,
+    "Kocl0ZOUejc": 12,
+    "g8lL-_IwomM": 5,
+    "gDLib8egfR0": 2,
+    "cbASQ3ymmu0": 6,
+    "T4ppy6MlL4w": 1,
+    "3iBpLlQlW-8": 1,
+    "OookGOTyYKc": 10,
+    "YpqkYgBdaNQ": 5,
+    "ss2xteImDfg": 1,
+    "RzDdggzoxgg": 3,
+    "zVg48PoeClk": 1,
+    "tIRhahj2a2U": 3,
+    "xeHFcOSEQ5o": 6,
+    "zawP1WNv2TQ": 6,
+    "ORJxH8OIW7U": 7,
+    "u8k5NjSk1cE": 5,
+    "P_hoDSrk9qs": 1,
+    "8tmI9fRRcXs": 9,
+    "bbpHh3nBWf4": 2,
+    "TqWBCbdPUR8": 1,
+    "xtMpaiHiERg": 1,
+    "unsw7kvRues": 1,
+    "vPqCQaRKkiY": 1,
+    "U3j_341d93I": 4,
+    "JAu1--psnFg": 18,
+    "uTFPwMeU45c": 11,
+    "JFcnMBRZSaI": 6,
+    "ifwzFASJKqc": 8,
+    "jak_9NlZfYs": 1,
+    "1qXWJRkiz54": 12,
+    "9HFYhTs1t9Q": 2,
+    "FDnW4etrqdM": 3,
+    "IAgqxHozRCk": 10,
+    "lPQ0f6uev6A": 12,
+    "7hvoPyb-mlY": 3,
+    "jfyIf4woruc": 12,
+    "Pq7tn4B0kCw": 1,
+    "DjZ55qWXv1Y": 11,
+    "lAFzDVzsk24": 10,
+    "-z_SvMblSBA": 4,
+    "jjPQ7NJ361k": 12,
+    "BkuehddzOj0": 12,
+    "-snaX_f6LHY": 1,
+    "7DXs57rt8Pk": 11,
+    "bF5koMngsuw": 12,
+    "-Pkj1qIcK2Y": 2,
+    "FeAKtH9yKBU": 12,
+    "kD9jzqeEM6M": 12,
+    "OQWp5dUEofw": 1,
+    "QRgjlf6wegM": 12,
+    "8t9_8Nm9o4U": 12,
+    "8SzUFlgCX94": 1
+  },
+  "kish_n_eff_videos": 35.3,
+  "design_effect_clip_vs_video": 9.717,
+  "n_physicalai_ref_clips": 40,
+  "no_ground_truth_warning": "YouTube has NO ground truth. NOTHING here is an accuracy number. These are DISTRIBUTIONS and PHYSICAL-PLAUSIBILITY rates only.",
+  "estimator_note": "Two arms, identical code (yt_persignal.summarise_channel / spread_ratio_ci), differing ONLY in the resampling unit. unit_video is the decision-grade interval. NEVER overlapping_holdout_se.",
+  "excluded_video_ids": [],
+  "unit_clip": {
+    "youtube_out_of_corpus": {
+      "speed": {
+        "channel": "speed",
+        "units": "m/s",
+        "physical_limits": [
+          0.0,
+          60.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": 8.84992,
+        "mean_ci95": [
+          8.36553,
+          9.32215
+        ],
+        "n_clips": 343,
+        "n_windows": 38416,
+        "median": 7.59362,
+        "median_ci95": [
+          7.17759,
+          8.03026
+        ],
+        "p05": 1.51185,
+        "p05_ci95": [
+          1.11727,
+          1.85751
+        ],
+        "p95": 19.99107,
+        "p95_ci95": [
+          18.78876,
+          21.71959
+        ],
+        "spread_p05_p95": 18.47922,
+        "spread_p05_p95_ci95": [
+          17.31639,
+          20.19505
+        ],
+        "std": 5.80153,
+        "std_ci95": [
+          5.41766,
+          6.17913
+        ],
+        "frac_outside_physical_limits": 0.01557,
+        "frac_outside_physical_limits_ci95": [
+          0.00835,
+          0.02483
+        ],
+        "min": -2.07123,
+        "max": 31.54954
+      },
+      "yaw_rate": {
+        "channel": "yaw_rate",
+        "units": "rad/s",
+        "physical_limits": [
+          -1.5,
+          1.5
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": 0.00075,
+        "mean_ci95": [
+          -0.00299,
+          0.00469
+        ],
+        "n_clips": 343,
+        "n_windows": 38416,
+        "median": 0.00073,
+        "median_ci95": [
+          -0.00241,
+          0.00368
+        ],
+        "p05": -0.14003,
+        "p05_ci95": [
+          -0.15437,
+          -0.1252
+        ],
+        "p95": 0.13756,
+        "p95_ci95": [
+          0.12601,
+          0.15021
+        ],
+        "spread_p05_p95": 0.27759,
+        "spread_p05_p95_ci95": [
+          0.25647,
+          0.30038
+        ],
+        "std": 0.09749,
+        "std_ci95": [
+          0.09052,
+          0.10462
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.80565,
+        "max": 0.64724
+      },
+      "steer": {
+        "channel": "steer",
+        "units": "rad (normalised)",
+        "physical_limits": [
+          -1.0,
+          1.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.00629,
+        "mean_ci95": [
+          -0.0085,
+          -0.00409
+        ],
+        "n_clips": 343,
+        "n_windows": 38416,
+        "median": -0.00314,
+        "median_ci95": [
+          -0.00468,
+          -0.00175
+        ],
+        "p05": -0.09592,
+        "p05_ci95": [
+          -0.10703,
+          -0.08589
+        ],
+        "p95": 0.07487,
+        "p95_ci95": [
+          0.06493,
+          0.08605
+        ],
+        "spread_p05_p95": 0.17078,
+        "spread_p05_p95_ci95": [
+          0.15389,
+          0.19025
+        ],
+        "std": 0.06215,
+        "std_ci95": [
+          0.05687,
+          0.06752
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.65858,
+        "max": 0.55016
+      },
+      "long_accel": {
+        "channel": "long_accel",
+        "units": "m/s^2",
+        "physical_limits": [
+          -12.0,
+          12.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.07686,
+        "mean_ci95": [
+          -0.1273,
+          -0.02141
+        ],
+        "n_clips": 343,
+        "n_windows": 38416,
+        "median": -0.00977,
+        "median_ci95": [
+          -0.06549,
+          0.04623
+        ],
+        "p05": -1.61516,
+        "p05_ci95": [
+          -1.70689,
+          -1.49527
+        ],
+        "p95": 1.2278,
+        "p95_ci95": [
+          1.1519,
+          1.30896
+        ],
+        "spread_p05_p95": 2.84296,
+        "spread_p05_p95_ci95": [
+          2.7144,
+          2.95734
+        ],
+        "std": 0.87464,
+        "std_ci95": [
+          0.83924,
+          0.90783
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -4.82284,
+        "max": 4.18721
+      }
+    },
+    "physicalai_reference_SEPARATE_never_pooled": {
+      "speed": {
+        "channel": "speed",
+        "units": "m/s",
+        "physical_limits": [
+          0.0,
+          60.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": 10.98118,
+        "mean_ci95": [
+          9.13031,
+          13.06908
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": 9.56586,
+        "median_ci95": [
+          7.95168,
+          11.66477
+        ],
+        "p05": 1.61261,
+        "p05_ci95": [
+          0.34483,
+          4.02274
+        ],
+        "p95": 26.33203,
+        "p95_ci95": [
+          19.37208,
+          29.42861
+        ],
+        "spread_p05_p95": 24.71941,
+        "spread_p05_p95_ci95": [
+          17.45908,
+          28.19958
+        ],
+        "std": 6.97266,
+        "std_ci95": [
+          5.29664,
+          8.35099
+        ],
+        "frac_outside_physical_limits": 0.01877,
+        "frac_outside_physical_limits_ci95": [
+          0.00171,
+          0.04012
+        ],
+        "min": -1.16529,
+        "max": 31.29131
+      },
+      "yaw_rate": {
+        "channel": "yaw_rate",
+        "units": "rad/s",
+        "physical_limits": [
+          -1.5,
+          1.5
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.00296,
+        "mean_ci95": [
+          -0.02316,
+          0.01814
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.00176,
+        "median_ci95": [
+          -0.00939,
+          0.0051
+        ],
+        "p05": -0.23734,
+        "p05_ci95": [
+          -0.31038,
+          -0.14732
+        ],
+        "p95": 0.27033,
+        "p95_ci95": [
+          0.09543,
+          0.37803
+        ],
+        "spread_p05_p95": 0.50766,
+        "spread_p05_p95_ci95": [
+          0.30288,
+          0.63076
+        ],
+        "std": 0.13715,
+        "std_ci95": [
+          0.11004,
+          0.16117
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.70763,
+        "max": 0.49192
+      },
+      "steer": {
+        "channel": "steer",
+        "units": "rad (normalised)",
+        "physical_limits": [
+          -1.0,
+          1.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.00375,
+        "mean_ci95": [
+          -0.01511,
+          0.00757
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.00103,
+        "median_ci95": [
+          -0.00256,
+          0.00046
+        ],
+        "p05": -0.13248,
+        "p05_ci95": [
+          -0.19428,
+          -0.07937
+        ],
+        "p95": 0.14619,
+        "p95_ci95": [
+          0.04718,
+          0.19782
+        ],
+        "spread_p05_p95": 0.27868,
+        "spread_p05_p95_ci95": [
+          0.15152,
+          0.36042
+        ],
+        "std": 0.0802,
+        "std_ci95": [
+          0.06282,
+          0.09484
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.45791,
+        "max": 0.36169
+      },
+      "long_accel": {
+        "channel": "long_accel",
+        "units": "m/s^2",
+        "physical_limits": [
+          -12.0,
+          12.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.08914,
+        "mean_ci95": [
+          -0.21012,
+          0.03483
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.04732,
+        "median_ci95": [
+          -0.1375,
+          0.05157
+        ],
+        "p05": -1.40823,
+        "p05_ci95": [
+          -1.70179,
+          -1.13042
+        ],
+        "p95": 1.03288,
+        "p95_ci95": [
+          0.85874,
+          1.18686
+        ],
+        "spread_p05_p95": 2.44111,
+        "spread_p05_p95_ci95": [
+          2.09544,
+          2.76824
+        ],
+        "std": 0.73928,
+        "std_ci95": [
+          0.63411,
+          0.82937
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -2.88067,
+        "max": 2.65962
+      }
+    },
+    "spread_ratio_youtube_over_physicalai": {
+      "speed": {
+        "spread_ratio_yt_over_physicalai": 0.7476,
+        "ci95": [
+          0.6416,
+          1.0767
+        ],
+        "excludes_1": false,
+        "estimator": "independent bootstrap; YouTube unit = clip, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "yaw_rate": {
+        "spread_ratio_yt_over_physicalai": 0.5468,
+        "ci95": [
+          0.4363,
+          0.9051
+        ],
+        "excludes_1": true,
+        "estimator": "independent bootstrap; YouTube unit = clip, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "steer": {
+        "spread_ratio_yt_over_physicalai": 0.6128,
+        "ci95": [
+          0.4662,
+          1.1191
+        ],
+        "excludes_1": false,
+        "estimator": "independent bootstrap; YouTube unit = clip, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "long_accel": {
+        "spread_ratio_yt_over_physicalai": 1.1646,
+        "ci95": [
+          1.0179,
+          1.3368
+        ],
+        "excludes_1": true,
+        "estimator": "independent bootstrap; YouTube unit = clip, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      }
+    }
+  },
+  "unit_video": {
+    "youtube_out_of_corpus": {
+      "speed": {
+        "channel": "speed",
+        "units": "m/s",
+        "physical_limits": [
+          0.0,
+          60.0
+        ],
+        "estimator": "video-cluster bootstrap, n_boot=2000; resampling unit = video. NOT overlapping_holdout_se.",
+        "mean": 8.84992,
+        "mean_ci95": [
+          7.62522,
+          10.23168
+        ],
+        "n_clips": 55,
+        "n_windows": 38416,
+        "median": 7.59362,
+        "median_ci95": [
+          6.58652,
+          9.0102
+        ],
+        "p05": 1.51185,
+        "p05_ci95": [
+          0.78445,
+          2.23709
+        ],
+        "p95": 19.99107,
+        "p95_ci95": [
+          17.03797,
+          25.17848
+        ],
+        "spread_p05_p95": 18.47922,
+        "spread_p05_p95_ci95": [
+          15.59322,
+          23.55848
+        ],
+        "std": 5.80153,
+        "std_ci95": [
+          4.80124,
+          6.81679
+        ],
+        "frac_outside_physical_limits": 0.01557,
+        "frac_outside_physical_limits_ci95": [
+          0.00406,
+          0.03158
+        ],
+        "min": -2.07123,
+        "max": 31.54954
+      },
+      "yaw_rate": {
+        "channel": "yaw_rate",
+        "units": "rad/s",
+        "physical_limits": [
+          -1.5,
+          1.5
+        ],
+        "estimator": "video-cluster bootstrap, n_boot=2000; resampling unit = video. NOT overlapping_holdout_se.",
+        "mean": 0.00075,
+        "mean_ci95": [
+          -0.00542,
+          0.00728
+        ],
+        "n_clips": 55,
+        "n_windows": 38416,
+        "median": 0.00073,
+        "median_ci95": [
+          -0.00619,
+          0.00718
+        ],
+        "p05": -0.14003,
+        "p05_ci95": [
+          -0.16784,
+          -0.10839
+        ],
+        "p95": 0.13756,
+        "p95_ci95": [
+          0.11498,
+          0.16038
+        ],
+        "spread_p05_p95": 0.27759,
+        "spread_p05_p95_ci95": [
+          0.2272,
+          0.32597
+        ],
+        "std": 0.09749,
+        "std_ci95": [
+          0.08219,
+          0.11197
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.80565,
+        "max": 0.64724
+      },
+      "steer": {
+        "channel": "steer",
+        "units": "rad (normalised)",
+        "physical_limits": [
+          -1.0,
+          1.0
+        ],
+        "estimator": "video-cluster bootstrap, n_boot=2000; resampling unit = video. NOT overlapping_holdout_se.",
+        "mean": -0.00629,
+        "mean_ci95": [
+          -0.00953,
+          -0.00321
+        ],
+        "n_clips": 55,
+        "n_windows": 38416,
+        "median": -0.00314,
+        "median_ci95": [
+          -0.00635,
+          -0.00044
+        ],
+        "p05": -0.09592,
+        "p05_ci95": [
+          -0.12043,
+          -0.07393
+        ],
+        "p95": 0.07487,
+        "p95_ci95": [
+          0.05163,
+          0.0988
+        ],
+        "spread_p05_p95": 0.17078,
+        "spread_p05_p95_ci95": [
+          0.12745,
+          0.21614
+        ],
+        "std": 0.06215,
+        "std_ci95": [
+          0.04954,
+          0.07448
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.65858,
+        "max": 0.55016
+      },
+      "long_accel": {
+        "channel": "long_accel",
+        "units": "m/s^2",
+        "physical_limits": [
+          -12.0,
+          12.0
+        ],
+        "estimator": "video-cluster bootstrap, n_boot=2000; resampling unit = video. NOT overlapping_holdout_se.",
+        "mean": -0.07686,
+        "mean_ci95": [
+          -0.23519,
+          0.0644
+        ],
+        "n_clips": 55,
+        "n_windows": 38416,
+        "median": -0.00977,
+        "median_ci95": [
+          -0.17635,
+          0.12233
+        ],
+        "p05": -1.61516,
+        "p05_ci95": [
+          -1.85832,
+          -1.32171
+        ],
+        "p95": 1.2278,
+        "p95_ci95": [
+          1.08147,
+          1.39331
+        ],
+        "spread_p05_p95": 2.84296,
+        "spread_p05_p95_ci95": [
+          2.50682,
+          3.11047
+        ],
+        "std": 0.87464,
+        "std_ci95": [
+          0.78331,
+          0.95367
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -4.82284,
+        "max": 4.18721
+      }
+    },
+    "physicalai_reference_SEPARATE_never_pooled": {
+      "speed": {
+        "channel": "speed",
+        "units": "m/s",
+        "physical_limits": [
+          0.0,
+          60.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": 10.98118,
+        "mean_ci95": [
+          9.13031,
+          13.06908
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": 9.56586,
+        "median_ci95": [
+          7.95168,
+          11.66477
+        ],
+        "p05": 1.61261,
+        "p05_ci95": [
+          0.34483,
+          4.02274
+        ],
+        "p95": 26.33203,
+        "p95_ci95": [
+          19.37208,
+          29.42861
+        ],
+        "spread_p05_p95": 24.71941,
+        "spread_p05_p95_ci95": [
+          17.45908,
+          28.19958
+        ],
+        "std": 6.97266,
+        "std_ci95": [
+          5.29664,
+          8.35099
+        ],
+        "frac_outside_physical_limits": 0.01877,
+        "frac_outside_physical_limits_ci95": [
+          0.00171,
+          0.04012
+        ],
+        "min": -1.16529,
+        "max": 31.29131
+      },
+      "yaw_rate": {
+        "channel": "yaw_rate",
+        "units": "rad/s",
+        "physical_limits": [
+          -1.5,
+          1.5
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.00296,
+        "mean_ci95": [
+          -0.02316,
+          0.01814
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.00176,
+        "median_ci95": [
+          -0.00939,
+          0.0051
+        ],
+        "p05": -0.23734,
+        "p05_ci95": [
+          -0.31038,
+          -0.14732
+        ],
+        "p95": 0.27033,
+        "p95_ci95": [
+          0.09543,
+          0.37803
+        ],
+        "spread_p05_p95": 0.50766,
+        "spread_p05_p95_ci95": [
+          0.30288,
+          0.63076
+        ],
+        "std": 0.13715,
+        "std_ci95": [
+          0.11004,
+          0.16117
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.70763,
+        "max": 0.49192
+      },
+      "steer": {
+        "channel": "steer",
+        "units": "rad (normalised)",
+        "physical_limits": [
+          -1.0,
+          1.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.00375,
+        "mean_ci95": [
+          -0.01511,
+          0.00757
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.00103,
+        "median_ci95": [
+          -0.00256,
+          0.00046
+        ],
+        "p05": -0.13248,
+        "p05_ci95": [
+          -0.19428,
+          -0.07937
+        ],
+        "p95": 0.14619,
+        "p95_ci95": [
+          0.04718,
+          0.19782
+        ],
+        "spread_p05_p95": 0.27868,
+        "spread_p05_p95_ci95": [
+          0.15152,
+          0.36042
+        ],
+        "std": 0.0802,
+        "std_ci95": [
+          0.06282,
+          0.09484
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -0.45791,
+        "max": 0.36169
+      },
+      "long_accel": {
+        "channel": "long_accel",
+        "units": "m/s^2",
+        "physical_limits": [
+          -12.0,
+          12.0
+        ],
+        "estimator": "clip-cluster bootstrap, n_boot=2000; resampling unit = clip. NOT overlapping_holdout_se.",
+        "mean": -0.08914,
+        "mean_ci95": [
+          -0.21012,
+          0.03483
+        ],
+        "n_clips": 40,
+        "n_windows": 3517,
+        "median": -0.04732,
+        "median_ci95": [
+          -0.1375,
+          0.05157
+        ],
+        "p05": -1.40823,
+        "p05_ci95": [
+          -1.70179,
+          -1.13042
+        ],
+        "p95": 1.03288,
+        "p95_ci95": [
+          0.85874,
+          1.18686
+        ],
+        "spread_p05_p95": 2.44111,
+        "spread_p05_p95_ci95": [
+          2.09544,
+          2.76824
+        ],
+        "std": 0.73928,
+        "std_ci95": [
+          0.63411,
+          0.82937
+        ],
+        "frac_outside_physical_limits": 0.0,
+        "frac_outside_physical_limits_ci95": [
+          0.0,
+          0.0
+        ],
+        "min": -2.88067,
+        "max": 2.65962
+      }
+    },
+    "spread_ratio_youtube_over_physicalai": {
+      "speed": {
+        "spread_ratio_yt_over_physicalai": 0.7476,
+        "ci95": [
+          0.597,
+          1.1803
+        ],
+        "excludes_1": false,
+        "estimator": "independent bootstrap; YouTube unit = video, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "yaw_rate": {
+        "spread_ratio_yt_over_physicalai": 0.5468,
+        "ci95": [
+          0.4193,
+          0.931
+        ],
+        "excludes_1": true,
+        "estimator": "independent bootstrap; YouTube unit = video, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "steer": {
+        "spread_ratio_yt_over_physicalai": 0.6128,
+        "ci95": [
+          0.4231,
+          1.1511
+        ],
+        "excludes_1": false,
+        "estimator": "independent bootstrap; YouTube unit = video, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      },
+      "long_accel": {
+        "spread_ratio_yt_over_physicalai": 1.1646,
+        "ci95": [
+          0.976,
+          1.3723
+        ],
+        "excludes_1": false,
+        "estimator": "independent bootstrap; YouTube unit = video, PhysicalAI unit = clip; n_boot=2000; statistic = (p95-p05)_youtube / (p95-p05)_physicalai"
+      }
+    }
+  }
+}
