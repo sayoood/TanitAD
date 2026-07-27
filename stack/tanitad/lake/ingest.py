@@ -229,11 +229,26 @@ class Comma2k19Ingestor(SourceIngestor):
     n_stack: int = 3
     val_frac: float = 0.2
     decode_fn: Callable | None = None       # injectable for CI (no real video)
+    #: comma2k19 heading regime. ``None`` -> the REPAIR (the 2026-07-27 default).
+    #: Legacy additionally needs ``legacy_heading_reason``.
+    heading_mode: str | None = None
+    legacy_heading_reason: str = ""
 
     def __post_init__(self):
-        self.build_params = {"size": self.size, "n_stack": self.n_stack,
-                             "stride": self.stride, "max_steps": self.max_steps,
-                             "adapter": "comma2k19.build_episode"}
+        # ⛔ The label regime MUST enter `build_params`, because
+        # `build_params_hash` is written into every lake record and exported to
+        # HF. Without it, a lake built after 2026-07-27 would carry the SAME
+        # hash as one built before while its comma yaw labels differ — a cache
+        # whose meaning changed under an unchanged key. `label_params` is empty
+        # for legacy, so no existing lake hash moves.
+        from tanitad.data.comma2k19 import cache_build_params
+        self.build_params = cache_build_params(
+            {"size": self.size, "n_stack": self.n_stack,
+             "stride": self.stride, "max_steps": self.max_steps,
+             "adapter": "comma2k19.build_episode"},
+            self.heading_mode,
+            allow_legacy=bool(self.legacy_heading_reason.strip()),
+            reason=self.legacy_heading_reason)
         self.action_source = "can"
         self.has_can = True
 
@@ -249,7 +264,10 @@ class Comma2k19Ingestor(SourceIngestor):
     def build_core(self, unit) -> ToyEpisode:
         from tanitad.data.comma2k19 import build_episode
         kw = {"size": self.size, "stride": self.stride,
-              "max_steps": self.max_steps, "n_stack": self.n_stack}
+              "max_steps": self.max_steps, "n_stack": self.n_stack,
+              "heading_mode": self.heading_mode,
+              "allow_legacy_heading": bool(self.legacy_heading_reason.strip()),
+              "legacy_heading_reason": self.legacy_heading_reason}
         if self.decode_fn is not None:
             kw["decode_fn"] = self.decode_fn
         return build_episode(unit, **kw)

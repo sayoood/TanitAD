@@ -102,10 +102,23 @@ def test_hold_heading_repairs_standstill_and_is_wrap_safe():
 
 
 def test_hold_heading_no_observable_frames_is_a_noop():
+    """🔴 …AND THE CALLER MUST ACT ON THAT, which is why `observable` is returned.
+
+    MEASURED 2026-07-27: one wholly-stationary comma clip (300 frames, zero
+    observable, v_max 0.039 m/s) contributed 84 physically impossible yaw labels
+    (up to 15.28 rad/s) into a published-grade score and held the deployed IDM
+    head's comma yaw R2 at ~0 even with the repair ON. A repair and an
+    ADMISSIBILITY decision are different things.
+    """
     yaw = np.array([1.0, -2.0, 3.0])
     fixed, obs = hold_heading_through_standstill(yaw, np.zeros(3))
     assert not obs.any()
     assert np.allclose(fixed, yaw)               # never invent a heading
+    # the returned mask is the ONLY signal that these labels are inadmissible —
+    # the repaired yaw is still garbage, and a scorer that ignores `obs` eats it
+    yr = np.diff(fixed) / 0.1
+    assert np.abs(yr).max() > 1.5                # still physically impossible
+    assert not obs.any(), "the mask is what a caller must gate on"
 
 
 def test_heading_mode_default_is_the_repair(tmp_path):

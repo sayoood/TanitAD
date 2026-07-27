@@ -208,6 +208,22 @@ def hold_heading_through_standstill(yaw: np.ndarray, v: np.ndarray,
 
     A road vehicle at v ~ 0 has yaw_rate ~ 0 — it cannot rotate in place — so
     holding the heading is the physically correct completion, not a convenience.
+
+    🔴 **THE REPAIR IS A NO-OP ON A WHOLLY-STATIONARY SEGMENT**, and that is
+    deliberate — with no observable frame there is no direction to hold, and
+    inventing one would be worse. **The consequence is that such a segment has NO
+    ADMISSIBLE HEADING ANYWHERE and must be handled by the CALLER**, which is why
+    ``observable`` is returned. MEASURED 2026-07-27 (`…/2026-07-27-heading-
+    default/raw/idm_head_v1_comma_rescore.json`): one such clip
+    (300 frames, **zero** observable, v_max **0.039 m/s**) contributed **84
+    physically impossible yaw labels up to 15.28 rad/s** — 2.0 % of a 4,140-window
+    val split — and **held the deployed IDM head's comma yaw R² at ~0 even with
+    the repair ON**. Raising ``v_min`` cannot help: a stationary clip is
+    stationary at every threshold. ⛔ **A repair and an ADMISSIBILITY decision are
+    different things.** Requiring ``observable`` at ``t-1/t/t+1`` removed every
+    impossible label and collapsed the label's own std 0.938 -> 0.046 rad/s.
+    ⚠️ **No caller in this repo consumes the mask yet — see HEADING_DEFAULT.md §7
+    escalation 1.**
     """
     yaw = np.asarray(yaw, dtype=np.float64)
     v = np.asarray(v, dtype=np.float64)

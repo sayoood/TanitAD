@@ -314,7 +314,56 @@
     "gt_std_of_a_clean_yaw_channel_for_scale": {
       "physicalai_A0_v3": 0.14241782117652835,
       "source": "compare_v3.json LABEL_FIX_deployed_head/yaw_rate/legacy/pai/gt_std"
+    },
+    "mechanism": {
+      "refuted_hypothesis": "an observability-BOUNDARY artifact (t-1 and t+1 anchored to different observable runs)",
+      "refuted_by": "0 of 84 survivors cross an anchor boundary",
+      "MEASURED_mechanism": "WHOLLY-STATIONARY CLIPS. `hold_heading_through_standstill` returns the heading UNCHANGED when a segment has NO observable frame at all \u2014 by design, because inventing a heading would be worse. Such a clip therefore keeps its full garbage label after the repair.",
+      "wholly_stationary_clips": {
+        "cm_00045": {
+          "T": 300,
+          "n_observable": 0,
+          "v_max": 0.03904280439019203,
+          "n_windows": 138,
+          "n_impossible_after_repair": 84
+        }
+      },
+      "n_survivors_from_those_clips": 84,
+      "n_survivors_total": 84,
+      "verdict": "CONFIRMED",
+      "consequence": "raising v_min cannot help (a stationary clip is stationary at every threshold \u2014 see the sweep, 84-85 survivors at 1.0 / 2.0 / 4.0 m/s). The correct treatment is ADMISSIBILITY, not repair."
     }
+  },
+  "diagnostic_strict_admissibility": {
+    "protocol": "heading_repair ON (v_min 0.5) AND the repair's own `observable` mask required at t-1, t and t+1 \u2014 i.e. score only windows whose centred heading difference is DEFINED",
+    "n_windows_kept": 3882,
+    "n_windows_dropped": 258,
+    "frac_dropped": 0.0623,
+    "yaw_rate": {
+      "r2": -0.28833600197172804,
+      "rho": 0.21068892959202068,
+      "mae": 0.033773207900511165,
+      "medae": 0.02289063110947609,
+      "nmedae": 2.3648576772683887,
+      "rmse": 0.05223736629598305,
+      "gt_std": 0.04602212853147284,
+      "gt_mad": 0.00967949628829956,
+      "n": 3882,
+      "r2_ci": {
+        "mean": -0.2883,
+        "lo": -3.1695,
+        "hi": 0.2859,
+        "ci95": 1.7277,
+        "se": 0.9046,
+        "reducer": "r2",
+        "n_windows": 3882,
+        "n_episodes": 29,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "n_impossible_gt1p5_remaining": 0,
+    "WARNING": "\u26d4 NOT a re-issued number and NOT a 'repaired ceiling'. It drops 8 % of the split, so it is not comparable to the card's figure and must never be pasted over it. It answers one question only: what does the yaw channel read once the label is DEFINED?"
   },
   "diagnostic_v_min_sweep": {
     "v_min_1.0": {

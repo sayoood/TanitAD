@@ -197,13 +197,48 @@ comparable in either direction.
 
 | substrate | numbers stranded | what a repaired value would require |
 |---|---|---|
-| **`idm_head_v1_card.json` → `val_heldout_traindomain`** (90 clips / **9,420 windows**, POOLED rig-A + rig-B + comma) — ⭐ **highest priority: this is the card a consumer reads** | yaw R² **+0.010433**, MAE **0.11814** | re-score the persisted head (`weights_md5 fa4462f0…`) on that 9,420-window val with `heading_repair` ON. **No GPU training** — a scoring pass |
+| **`idm_head_v1_card.json` → `val_heldout_traindomain`** (90 clips / **9,420 windows**, POOLED rig-A + rig-B + comma) — ⭐ **highest priority: this is the card a consumer reads** | yaw R² **+0.010433**, MAE **0.11814** | ✅ **ACTIONED 2026-07-27** by the `heading-default` pass — see below |
 | **`2026-07-22-idm-proof`** (PhysicalAI-trained head → 90 comma val clips, **12,420 windows**, no `v_min`) — 14 values across `results/regate_comma/multirig_primary/multirig_symm/results_multirig/results_regate` + 3 run logs | comma cross yaw R² **+0.00019 … +0.00051** | rebuild the comma window cache with `HEADING_MODE_HOLD`, re-score the same head |
 | **`2026-07-22-own-dynamics-encoder`** `in_comma_heldout` — the *"comma yaw unreadable in-domain"* control | **−0.0000292 / −0.0000886** | same rebuild, re-score both camcond arms |
 | **`2026-07-24-branchb-transfer-eval/v1-encoder-char`** | `H1 cross_comma` **−0.005529**, `H3 cross_comma` **+0.000216**, and `H2 indom` **+0.835024** (a POOLED rig-A **+ comma** mix ⇒ comma-contaminated) | same rebuild, re-fit the multi-domain heads |
 | **`2026-07-24-idm-pipeline-derisk`** `comma_crossCLASS` | zero-shot **+0.000259**, calib-ceiling **+0.000676**, MAE **0.251737** | same rebuild |
 | **`2026-07-26-idm-v2` arms B1 / V2 / V3 / V3wB** (v3 val split, but legacy-trained *and* legacy-scored) | comma R² **0.1313 / 0.1412 / 0.1422 / 0.1407** | re-score those checkpoints against repaired labels (the machinery exists — `R0LEG` proves it) |
 | **`IDM_DIAGNOSIS.md` comma yaw smooth-fit ceiling** | **0.3521** (w9) / **0.2245** (w17) | recompute the ceiling on repaired labels |
+
+### ✅ 4.1 UPDATE 2026-07-27 — the first row is actioned, and the answer is not the anchor
+
+*(added by the `heading-default` pass; the row's original text is preserved above.
+Full record: `…/incoming/2026-07-27-heading-default/HEADING_DEFAULT.md` §5, raw
+`raw/idm_head_v1_comma_rescore.json`. `MEASURED`, dev box, **no pod touched, nothing retrained**.)*
+
+The persisted head was re-scored on the **comma half** of that exact split — `cm_[40:70]`,
+**30 clips / 4,140 windows**, `episode_id`-disjoint from its own 40 comma training clips.
+⛔ **The POOLED 9,420 number is still NOT re-issued** (the rig half was not recomputed, and
+PhysicalAI is unaffected anyway) — **per corpus, never pooled**, exactly as §1 argues.
+
+| | repair **OFF** (no `v_min` — the card's own protocol) | repair **ON** (`v_min` 0.5) |
+|---|---:|---:|
+| comma yaw **R²** | **+0.000048** | **−0.000421** |
+| MAE | 0.228804 | 0.152695 (**−33.3 %**, paired CI [−0.150, −0.012], separated) |
+| medAE / nMedAE / ρ | 0.02503 / 2.262 / +0.1980 | 0.02438 / **2.490 (worse)** / +0.1987 |
+
+⭐ **The repair does NOT move R² on this substrate.** The honesty condition reproduces **in shape**
+(MAE down hard, medAE barely, nMedAE worse, ρ flat) but the **R² lift does not** — anyone who had
+pasted the anchor's `+0.3308` into the card would have published **+0.33 where the measurement is
+≈ 0**. That is this document's own §2.2 rule ("none of these substitutes for a number measured on a
+different substrate") vindicated by measurement rather than by argument.
+
+**MEASURED cause:** one **wholly-stationary clip** (`cm_00045`, 300 frames, **zero** observable
+frames, v_max 0.039 m/s). `hold_heading_through_standstill` deliberately leaves such a segment
+unchanged, so its 138 windows keep a garbage label — **84 physically impossible, up to 15.28 rad/s** —
+and R² has an unbounded left tail. **Raising `v_min` cannot help** (84–85 survivors at 1.0/2.0/4.0).
+🔴 The repair's own `observable` mask is the fix and **no caller in the repo uses it** — escalated.
+
+⚠️ **And one confound this pass could NOT close:** the anchor's comma val lives on
+`comma2k19-val-**76b6e94a97a1**` (64 segs) while A0 trained on `**61c46fca8f7f**` (90 eps), so the
+`cm_*` indices are **not comparable** and **whether the anchor's val overlaps A0's training clips is
+UNKNOWN** (`HYPOTHESIS`). Both draw from the same 21 routes of `raw_data/Chunk_1`. The probe is one
+command on the eval pod and half of it is staged — see `HEADING_DEFAULT.md` §5.5/§7.
 
 ⚠️ **One rounding discrepancy, worth fixing when someone re-issues these:** `LOOP_STATE.md` quotes
 comma yaw as **0.0005** where `LEADERBOARD.md` and `MODEL_REGISTRY.md` quote **0.000** — the same run
@@ -262,14 +297,21 @@ been actioned. It is actioned now. Likewise `Paper/` carried **no** IDM-v3 comma
 
 ## 8. 🔴 Escalations — these need an owner, not a note in a file
 
-1. **The loader default is still `HEADING_MODE_LEGACY`.** The repair is implemented, tested and
-   opt-in (`stack/tanitad/data/comma2k19.py`), but **every new comma build still gets broken yaw
-   labels unless the caller opts in.** Someone must decide when to flip the default and rebuild the
-   comma corpus. *(Carried from IDM_V3 escalation #1 — it is still open.)*
-2. **Re-score `idm_head_v1` on its own 9,420-window val with the repair on.** This is the
-   highest-value stale-pending item and needs **no GPU training**, only a scoring pass with the
-   persisted head (`weights_md5 fa4462f0b898b036be729c790278b823`). Until then the card's headline
-   yaw number stays marked stale-pending.
+1. ✅ **CLOSED 2026-07-27** by the `heading-default` pass. ~~The loader default is still
+   `HEADING_MODE_LEGACY`.~~ `DEFAULT_HEADING_MODE` is now **`HEADING_MODE_HOLD`**, and legacy raises
+   `LegacyHeadingRefused` unless the caller passes `allow_legacy=True` **and a written reason**. No
+   existing cache changed meaning — legacy contributes no cache-key fragment, so every pre-flip
+   comma cache dir keeps its exact name; the repair contributes one. The trainer **and** the lake
+   ingestor are wired (the lake's `build_params_hash` had carried no label regime at all — it is
+   exported to HF). **23 tests**, every refusal demonstrated firing.
+   → `…/incoming/2026-07-27-heading-default/HEADING_DEFAULT.md` §1–§3.
+   ⚠️ **A corpus rebuild is still NOT done** — the flip changes what a *new* build produces; no
+   existing comma cache was rebuilt, deliberately.
+2. ✅ **ACTIONED 2026-07-27** by the same pass, on the dev box with no GPU training —
+   **and the result is not the anchor: the repair does NOT move R² on that substrate**
+   (comma-only **+0.000048 → −0.000421**; MAE −33.3 %). See §4.1 above for the numbers, the measured
+   cause (one wholly-stationary clip) and the confound that remains open. The **pooled** 9,420
+   number is deliberately still **NOT re-issued** and stays stale-pending.
 3. **The YouTube-IDM rotation channel was gated on a conclusion that no longer holds.** *"comma
    disqualified for yaw"* is lifted (§3.3). The owner of that line should decide whether the
    cross-class yaw question is now worth re-opening — **on repaired labels**, and reading the

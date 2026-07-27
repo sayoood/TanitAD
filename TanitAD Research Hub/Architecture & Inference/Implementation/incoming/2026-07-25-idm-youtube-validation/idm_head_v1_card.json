@@ -154,8 +154,8 @@
     "v_min_used_for_every_number_in_this_card": "none — no speed gate was applied",
     "NOTHING_IN_THIS_CARD_HAS_BEEN_ALTERED": "every val number above is the original measurement and is kept for audit.",
     "per_number_verdict": {
-      "val.val_heldout_traindomain.r2.yaw_rate = 0.010432699359999131": "STALE-PENDING. This split is POOLED over rig-A + rig-B + comma2k19 (90 clips / 9420 windows), so comma's broken labels dominate it (RETRACTION_LOG C5 + C29). NO repaired measurement exists on this 9420-window substrate; the v3 A0 number lives on a different split (4195 windows, v_min 0.5) and MUST NOT be pasted in here.",
-      "val.val_heldout_traindomain.mae.yaw_rate = 0.11813788576688082": "STALE-PENDING, same reason.",
+      "val.val_heldout_traindomain.r2.yaw_rate = 0.010432699359999131": "STALE-PENDING. This split is POOLED over rig-A + rig-B + comma2k19 (90 clips / 9420 windows), so comma's broken labels dominate it (RETRACTION_LOG C5 + C29). NO repaired measurement exists on this 9420-window substrate; the v3 A0 number lives on a different split (4195 windows, v_min 0.5) and MUST NOT be pasted in here. || UPDATE 2026-07-27 (heading-default pass): the POOLED number REMAINS STALE-PENDING and is still NOT re-issued — the rig-A/rig-B half was not recomputed, and pooling across corpora of different label quality is what created C5. Its COMMA COMPONENT is now MEASURED on the identical clips and windows — see heldout_traindomain_comma_component_2026_07_27 below. Headline: comma-only yaw R2 +0.000048 (repair OFF, this card's own protocol) -> -0.000421 (repair ON, v_min 0.5). THE REPAIR DOES NOT MOVE R2 ON THIS SUBSTRATE; pasting the v3 anchor (+0.3308) in here would have published +0.33 where the measurement is ~0.",
+      "val.val_heldout_traindomain.mae.yaw_rate = 0.11813788576688082": "STALE-PENDING, same reason. || UPDATE 2026-07-27 (heading-default pass): POOLED value still NOT re-issued. Comma component on the identical substrate: MAE 0.228804 (repair OFF) -> 0.152695 (ON), -33.3 %, paired episode-cluster bootstrap (B=2000, 30 episodes) on the absolute error [-0.150, -0.012], SEPARATED — but the HONESTY CONDITION travels with it: medAE only -2.6 %, nMedAE 10.1 % WORSE, Spearman rho FLAT.",
       "val.val_parityval.r2.yaw_rate = 0.8074717565951165": "NOT STALE — PhysicalAI-only. Do not re-issue.",
       "all speed / steer / long_accel / traj numbers": "NOT affected by the heading repair (it touches the yaw channel only; 4145 of 4195 windows are bit-identical, max_abs_label_delta = 0.0)."
     },
@@ -167,6 +167,21 @@
       "source": "…/2026-07-27-idm-v3/results/compare_v3.json → LABEL_FIX_deployed_head/yaw_rate"
     },
     "HONESTY_CONDITION": "The repair fixes the TAIL and the mean-square summary statistic, NOT typical accuracy. comma2k19-only: R2 +0.0114 -> +0.3308 and MAE -42.5 %, but medAE moves only -1.1 % and nMedAE gets 8.0 % WORSE, with Spearman rho flat (+0.001). Quoting only the R2 jump overstates what changed.",
-    "inventory": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md"
+    "inventory": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md",
+    "heldout_traindomain_comma_component_2026_07_27": {
+      "closes": "COMMA_YAW_REISSUE.md escalation #2 — re-score this persisted head on its own 9,420-window val with the repair ON. NO GPU TRAINING; a scoring pass on the dev box.",
+      "scope": "COMMA HALF ONLY, reported per corpus. The POOLED 9,420 number is NOT re-issued and stays stale-pending.",
+      "substrate": "cm_[40:70] = ep_00040..ep_00069 of comma2k19-val-61c46fca8f7f — 30 clips / 4140 windows (43.9 % of the 9420), k=4, stride=2, 9-frame windows. episode_id-DISJOINT from this head's 40 comma TRAINING clips (cm_[0:40]).",
+      "nothing_retrained": true,
+      "artifacts_verified_at_run_time": {"head_md5": "fa4462f0b898b036be729c790278b823", "encoder_ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585", "params": 2899724},
+      "yaw_rate_heading_repair_OFF_no_v_min": {"r2": 4.78e-05, "mae": 0.2288038, "medae": 0.0250254, "nmedae": 2.26228, "rho": 0.1980297},
+      "yaw_rate_heading_repair_ON_v_min_0p5": {"r2": -0.00042118, "mae": 0.1526951, "medae": 0.0243787, "nmedae": 2.48999, "rho": 0.1987436},
+      "paired_r2_delta_ON_minus_OFF": {"delta": -0.0005, "lo": -2.2774, "hi": 0.1296, "separated": false, "estimator": "paired_episode_cluster_bootstrap, B=2000, 30 episodes"},
+      "speed_steer_long_accel": "labels BIT-IDENTICAL between the two protocols (asserted in the run) — the repair is yaw-only. 4020 of 4140 windows are bit-identical.",
+      "WHY_R2_DOES_NOT_MOVE": "MEASURED: ONE wholly-stationary clip (cm_00045, 300 frames, ZERO observable frames, v_max 0.039 m/s). hold_heading_through_standstill deliberately returns the heading UNCHANGED for such a segment, so all 138 of its windows keep a garbage label — 84 of them physically impossible, up to 15.28 rad/s — and R2 has an unbounded left tail. Raising v_min cannot help: 84-85 survivors at 1.0 / 2.0 / 4.0 m/s.",
+      "DIAGNOSTIC_NOT_A_REISSUE": {"protocol": "repair ON + the repair's own `observable` mask required at t-1/t/t+1. A THIRD protocol; drops 6.2 % of windows, so it is NOT comparable to this card's figure and must NEVER be pasted over it.", "n_windows": 3882, "yaw_r2": -0.288336, "yaw_r2_ci": [-3.1695, 0.2859], "rho": 0.2106889, "nmedae": 2.36486, "n_impossible_remaining": 0, "label_gt_std": 0.04602, "reading": "with a DEFINED label this head still does not recover comma yaw on its own held-out clips. This is NOT a repaired ceiling — no ceiling was recomputed and none may be derived from it."},
+      "evidence_class": "MEASURED (heading-default pass, 2026-07-27, dev box RTX 4060; pod1/pod2/pod3 untouched)",
+      "source": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-heading-default/HEADING_DEFAULT.md §5 · raw/idm_head_v1_comma_rescore.json"
+    }
   }
 }

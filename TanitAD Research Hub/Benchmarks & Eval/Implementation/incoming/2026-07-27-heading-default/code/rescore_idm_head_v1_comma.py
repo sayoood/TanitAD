@@ -374,12 +374,11 @@ def main():
             "source": "compare_v3.json LABEL_FIX_deployed_head/yaw_rate/legacy/pai/gt_std"},
     }
     # ---- ⭐ the MECHANISM of the residual, tested rather than narrated ------ #
-    # Hypothesis: the survivors are OBSERVABILITY-BOUNDARY windows. The repair
-    # holds one direction through a standstill, so a centred difference whose
-    # t-1 and t+1 are anchored to DIFFERENT observable runs sees the whole
-    # heading change of the stop compressed into one 0.2 s step.
+    # First hypothesis (an observability-BOUNDARY artifact) was REFUTED: 0 of 84
+    # survivors cross an anchor boundary. The measured mechanism is simpler and
+    # worse — see `wholly_stationary_clips` below.
+    per_clip, obs_mask, adm = {}, [], []
     n_bd = n_res = 0
-    bd_dtheta = []
     for tag in tags:
         L3 = torch.load(LAT_DIR / f"{tag}.pt", weights_only=False)
         po, ac = L3["poses"].float(), L3["actions"].float()
@@ -387,7 +386,6 @@ def main():
         yf, ob = hold_heading_through_standstill(po[:, 2].numpy(),
                                                  po[:, 3].numpy(),
                                                  v_min=HEADING_OBSERVABLE_V_MPS)
-        # the anchor frame each repaired sample inherited its heading from
         anc = np.where(ob, np.arange(ob.size), -1)
         np.maximum.accumulate(anc, out=anc)
         anc[anc < 0] = int(np.argmax(ob)) if ob.any() else 0
@@ -397,26 +395,59 @@ def main():
         bad = np.abs(yr) > 1.5
         ti = t3.numpy()[bad]
         n_res += int(bad.sum())
-        cross = anc[ti + 1] != anc[ti - 1]
-        n_bd += int(cross.sum())
-        bd_dtheta.extend(np.abs(np.arctan2(
-            np.sin(yf[ti + 1] - yf[ti - 1]), np.cos(yf[ti + 1] - yf[ti - 1]))).tolist())
+        n_bd += int((anc[ti + 1] != anc[ti - 1]).sum())
+        # ADMISSIBILITY: the repair already returns `observable` for exactly this
+        # purpose ("callers that need a strict admissibility mask should keep the
+        # second return value") — and NO caller in the repo uses it.
+        tt = t3.numpy()
+        adm.append(ob[tt - 1] & ob[tt] & ob[tt + 1])
+        obs_mask.append(ob)
+        per_clip[tag] = {"T": int(po.shape[0]), "n_observable": int(ob.sum()),
+                         "v_max": float(po[:, 3].max()),
+                         "n_windows": int(t3.numel()),
+                         "n_impossible_after_repair": int(bad.sum())}
+    ADM = np.concatenate(adm)
+    stationary = {k: v for k, v in per_clip.items() if v["n_observable"] == 0}
     res["residual_defect"]["mechanism"] = {
-        "hypothesis": "the survivors are OBSERVABILITY-BOUNDARY windows: t-1 and "
-                      "t+1 inherit their heading from DIFFERENT observable runs, "
-                      "so the entire heading change across the stop lands in one "
-                      "0.2 s centred difference",
-        "n_residual_impossible": n_res,
-        "n_of_those_crossing_an_anchor_boundary": n_bd,
-        "frac": round(n_bd / max(n_res, 1), 4),
-        "median_abs_heading_jump_rad": float(np.median(bd_dtheta)) if bd_dtheta else None,
-        "verdict": ("CONFIRMED — the residual is an artifact of the repair's own "
-                    "boundary, not leftover standstill noise, so raising v_min "
-                    "cannot remove it (see the sweep: 84-85 survivors at every "
-                    "threshold tried)") if n_bd == n_res else
-                   ("PARTIAL — some survivors are not boundary windows; the "
-                    "mechanism does not fully explain the residual"),
+        "refuted_hypothesis": "an observability-BOUNDARY artifact (t-1 and t+1 "
+                              "anchored to different observable runs)",
+        "refuted_by": f"{n_bd} of {n_res} survivors cross an anchor boundary",
+        "MEASURED_mechanism": "WHOLLY-STATIONARY CLIPS. `hold_heading_through_"
+                              "standstill` returns the heading UNCHANGED when a "
+                              "segment has NO observable frame at all — by "
+                              "design, because inventing a heading would be "
+                              "worse. Such a clip therefore keeps its full "
+                              "garbage label after the repair.",
+        "wholly_stationary_clips": stationary,
+        "n_survivors_from_those_clips": sum(
+            v["n_impossible_after_repair"] for v in stationary.values()),
+        "n_survivors_total": n_res,
+        "verdict": "CONFIRMED" if sum(
+            v["n_impossible_after_repair"] for v in stationary.values()) == n_res
+        else "PARTIAL",
+        "consequence": "raising v_min cannot help (a stationary clip is "
+                       "stationary at every threshold — see the sweep, 84-85 "
+                       "survivors at 1.0 / 2.0 / 4.0 m/s). The correct treatment "
+                       "is ADMISSIBILITY, not repair.",
     }
+    # ⚠️ DIAGNOSTIC — a THIRD protocol, not a re-issue of anything.
+    res["diagnostic_strict_admissibility"] = {
+        "protocol": "heading_repair ON (v_min 0.5) AND the repair's own "
+                    "`observable` mask required at t-1, t and t+1 — i.e. score "
+                    "only windows whose centred heading difference is DEFINED",
+        "n_windows_kept": int(ADM.sum()),
+        "n_windows_dropped": int((~ADM).sum()),
+        "frac_dropped": round(float((~ADM).mean()), 4),
+        "yaw_rate": chan_metrics(P[ADM, 1], GN[ADM, 1]),
+        "n_impossible_gt1p5_remaining": int((np.abs(GN[ADM, 1]) > 1.5).sum()),
+        "WARNING": "⛔ NOT a re-issued number and NOT a 'repaired ceiling'. It "
+                   "drops 8 % of the split, so it is not comparable to the "
+                   "card's figure and must never be pasted over it. It answers "
+                   "one question only: what does the yaw channel read once the "
+                   "label is DEFINED?",
+    }
+    res["diagnostic_strict_admissibility"]["yaw_rate"]["r2_ci"] = boot_r2(
+        P[ADM, 1], GN[ADM, 1], eid[ADM])
 
     # ⚠️ DIAGNOSTIC ONLY — a different v_min is a DIFFERENT PROTOCOL and this row
     # ⛔ is NOT a re-issued number. It exists to tell the owner of escalation #2
