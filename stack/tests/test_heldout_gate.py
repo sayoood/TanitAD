@@ -445,11 +445,46 @@ def test_the_admitted_component_set_is_PINNED_at_the_first_probe():
     pinned = dict(g._pinned_admitted)
     assert pinned
 
-    # a poisoned range table: if the gate re-derived admissibility it would
+    # A poisoned range table: if the gate re-derived admissibility it would
     # ignore this and admit its own set; pinned means it must honour it.
-    g._pinned_ranges = {k: {"admissible": (k == "comfort")}
+    #
+    # ⚠️ THE POISON MARKS `recovery`, NOT `comfort`, AND THE CHANGE IS
+    # DELIBERATE (2026-07-28, the closed-loop control-suite stream).
+    # `pseudosim.COMPONENT_WEIGHTS["comfort"]` is now **0.0**: the term is
+    # information-free on every surface it has been measured on (a literal
+    # constant at 100.0000 % violation over 1,708,288 fan candidates; on the
+    # PSS panel it saturates at 1.0000 for `cv_holdv0` and `stand_still` — the
+    # two arms that do the LEAST — and floors at ~0 for every learned planner,
+    # driven by a jerk clause that the HUMAN'S OWN LOGGED PATH also fails on
+    # 5.96 % of the same windows). A zero-weight component can never enter a
+    # composite, so a poison naming ONLY `comfort` no longer produces a
+    # composite at all and the test would have been asserting the wrong thing.
+    #
+    # ⭐ WHAT THE PIN GUARANTEES, RESTATED AND STRENGTHENED: the pinned set is
+    # a *subset selector applied to the WEIGHT-BEARING components*, honoured
+    # verbatim on every later probe. The poison is therefore a weight-bearing
+    # component whose admitted set is a STRICT SUBSET of what probe 0 derived —
+    # so honouring the pin is observable in the output, not merely non-fatal.
+    # The original assertion (`some value is finite`) could not tell "honoured
+    # the pin" from "re-derived and happened to admit something"; the added
+    # `weights_admitted` assertion can. This is why the guarantee the pin was
+    # written for still holds: the per-arm `discriminative_range` admitting
+    # `comfort` for some arms and dropping it for others flipped a verdict
+    # (`cv - refc_base` +0.1303 vs +0.0252; `cv - v1` changed sign).
+    g._pinned_ranges = {k: {"admissible": (k == "recovery")}
                         for k in ("ego_progress", "recovery", "comfort",
                                   "no_collision", "ttc")}
     val, eid, _ = g._composite_of(_toy_pw(probe_grid()))
     assert np.isfinite(np.asarray(val, float)).any()
     assert g._pinned_admitted == pinned, "the pinned admitted set was overwritten"
+
+    # ⭐ and the pin was OBSERVABLY honoured: the composite used exactly the
+    # poisoned subset, not a re-derivation from this probe's own data.
+    from tanitad.train import heldout_gate as _hg
+    ps, _ = _hg._taniteval()
+    sc = ps.score_windows(_toy_pw(probe_grid()))
+    comps = {k: sc[k] for k in ("ego_progress", "recovery", "comfort")}
+    comps["no_collision"] = comps["ttc"] = None
+    comp = ps.composite(comps, g._pinned_ranges)
+    assert set(comp["weights_admitted"]) == {"recovery"}
+    assert "comfort" in comp["components_zero_weighted"]

@@ -187,7 +187,7 @@ def job_axes(arms, out, n_boot):
     return out
 
 
-def job_dynamic_range(arms, out, n_boot, ref_arm, second_arm):
+def job_dynamic_range(arms, out, n_boot, ref_arm, second_arm, extra=None):
     """⭐ The demonstration. Run on THREE arms on purpose."""
     res = {"_why_three_arms": (
         "A ladder measures the injected degradation PLUS the arm's own bias, "
@@ -205,10 +205,11 @@ def job_dynamic_range(arms, out, n_boot, ref_arm, second_arm):
         "would have hidden how the ladder behaves on the arms we actually "
         "evaluate."),
         "n_boot": n_boot, "arms": {}}
+    pool = dict(arms, **(extra or {}))
     for arm in ("human_replay", ref_arm, second_arm):
-        if arm not in arms:
+        if arm not in pool:
             continue
-        pw, eid = arms[arm], arms[arm]["eid"]
+        pw, eid = pool[arm], pool[arm]["eid"]
         cells = {}
         for axis, ctl in DEMOS:
             t0 = time.time()
@@ -250,7 +251,7 @@ def job_dynamic_range(arms, out, n_boot, ref_arm, second_arm):
     return out
 
 
-def job_cross_sensitivity(arms, out, ref_arm):
+def job_cross_sensitivity(arms, out, ref_arm, extra=None):
     """Axis purity, MEASURED: response per unit of INDUCED raw error.
 
     Comparing ``lon_retime(0.5)`` with ``lat_shift(0.5)`` is apples to oranges.
@@ -258,7 +259,26 @@ def job_cross_sensitivity(arms, out, ref_arm):
     ``|lon_end_err_m|`` and mean ``lat_xte_peak_m`` — and the axis response is
     divided by it. The resulting number is *score points per metre of induced
     error on that physical axis*, which IS comparable across controls."""
-    pw = arms[ref_arm]
+    pool = dict(arms, **(extra or {}))
+    out.setdefault("cross_sensitivity", {})
+    for _name in ("human_replay", ref_arm):
+        if _name in pool:
+            out["cross_sensitivity"][_name] = _purity(pool[_name])
+    out["cross_sensitivity"]["_why_two_arms"] = (
+        "⛔ A PURITY RATIO IS NOT ARM-INDEPENDENT, and reading it off a biased "
+        "arm alone is wrong in BOTH directions. `lat_heading` on `cv_holdv0` "
+        "reports a ratio of 3.64 — apparently contaminated — but the cause is "
+        "that `cv_holdv0` ALREADY has a large heading error, so its own control "
+        "(a 5 deg rotation) barely moves the bounded score, while the same "
+        "measurement on the zero-bias arm gives 0.025. That is the SAME "
+        "'a bounded score is not monotone in the raw error on a biased arm' "
+        "effect documented for the ladders. The zero-bias arm answers 'is the "
+        "metric pure?'; the real arm answers 'how does it behave where we "
+        "actually evaluate?'. BOTH are published; neither alone is the answer.")
+    return out
+
+
+def _purity(pw):
     base = C.axes(pw)
     raw = {"lon": "lon_abs_end_err_m", "lat": "lat_xte_peak_m"}
     b = {k: float(np.nanmean(base[v])) for k, v in raw.items()}
@@ -319,11 +339,11 @@ def job_cross_sensitivity(arms, out, ref_arm):
             "FAILS this test, which is why it was rejected.")
     except StopIteration:
         purity["_error"] = "a required rung is missing from the ladder"
-    out["cross_sensitivity"] = {"reference_arm": ref_arm,
-                                "baseline_raw": {k: round(v, 6)
-                                                 for k, v in b.items()},
-                                "purity": purity, "rows": rows}
-    return out
+    for k, v in purity.items():
+        if isinstance(v, dict) and "contamination_over_signal" in v:
+            v["own_control_dominates"] = bool(v["contamination_over_signal"] < 1.0)
+    return {"baseline_raw": {k: round(v, 6) for k, v in b.items()},
+            "purity": purity, "rows": rows}
 
 
 def job_recovery_onesided(arms, out, n_boot):
@@ -565,9 +585,16 @@ def main():
         f"human_replay is NOT on the logged path (max |residual| = {_worst}); "
         f"the frame inversion is wrong and every ladder run on it would be "
         f"measuring the inversion error, not the injection")
-    arms["human_replay"] = hr
-    print(f"[suite] human_replay built, max|residual| = {_worst:.3e} m",
-          flush=True)
+    # ⛔ IT IS NOT PUT INTO `arms`, AND THE REPRODUCTION GATE IS WHY.
+    # My first run DID add it, and the gate failed at max|diff| = 0.393900:
+    # `human_replay` scores `ego_progress` ~ 1.0, which is CEILING-SATURATED, so
+    # under the PANEL-WIDE rule it made `ego_progress` inadmissible FOR EVERY
+    # ARM and silently redefined the composite. A synthetic reference must never
+    # vote on a gate. The gate caught it; nothing else would have.
+    reference_arms = {"human_replay": hr}
+    print(f"[suite] human_replay built, max|residual| = {_worst:.3e} m "
+          f"(kept OUT of the panel: it is ceiling-saturated by construction "
+          f"and would drop ego_progress panel-wide)", flush=True)
 
     od = Path(a.out_dir)
     od.mkdir(parents=True, exist_ok=True)
@@ -611,13 +638,14 @@ def main():
         job_repro(arms, acc, a.n_boot)
         bank("repro_gate", acc["repro_gate"])
     if "cross" in jobs:
-        job_cross_sensitivity(arms, acc, ref)
+        job_cross_sensitivity(arms, acc, ref, extra=reference_arms)
         bank("cross_sensitivity", acc["cross_sensitivity"])
     if "recov" in jobs:
         job_recovery_onesided(arms, acc, a.n_boot)
         bank("recovery_onesided", acc["recovery_onesided"])
     if "dyn" in jobs:
-        job_dynamic_range(arms, acc, a.n_boot, ref, a.second_arm)
+        job_dynamic_range(arms, acc, a.n_boot, ref, a.second_arm,
+                          extra=reference_arms)
         bank("dynamic_range", acc["dynamic_range"])
 
     print(f"[suite] done in {time.time() - t0:.1f} s")

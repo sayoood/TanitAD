@@ -657,3 +657,32 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   `idm2_lib.py:19` / `idm3_a0.py` insert that path **unconditionally**. ⇒ **every published v3 interval
   came through it.** ⇒ **Assert the md5 of the `ci.py` actually loaded, not the one you intended to
   load** — and treat "the guard says ok" as a statement about capability only.
+- **C45 — THE SECOND ONE-SIDED CLAMP: THE CLOSED-LOOP PRIMARY REWARDS LATERAL DEGRADATION** *(new
+  class, added 2026-07-28)* ⇒ **a bounded term that FLOORS on most rows cannot be charged for further
+  harm, so an injection that helps a minority RAISES the mean — and the metric pays for the failure it
+  exists to catch.** MEASURED on `cv_holdv0`: a **2 m constant lateral offset** moves
+  `PSS@twosided_v2` **+0.0581 [+0.0473, +0.0691] SEPARATED**; a **5° heading error +0.0747**; and a
+  **ZERO-MEAN jitter (σ = 1 m), which cannot re-centre a bias, +0.0303 SEPARATED**. **8 of 8 injections
+  separated in the WRONG DIRECTION, on both arms tested.**
+  ⚠️ **Scale: the entire published gap between `cv_holdv0` and the best learned arm is −0.0090, so 2 m
+  of injected lateral error is worth 6.4× the headline gap, BACKWARDS.**
+  **Mechanism:** `recovery = clamp(1 − xt_end/xt_hold, 0, 1)` is floored on **55.65 % (`cv_holdv0`) to
+  92.19 % (`refc_xl_produced`)** of defined rows, and the **median unclamped ratio exceeds 1.0 for
+  EVERY arm**.
+  ⇒ ⛔ **This is the over-travel blindness repeated in the OTHER weight-5.0 term — the one that was
+  never audited.** Both halves of the composite were one-sidedly clamped; fixing `ego_progress` last
+  night left the twin live. **Any v5 gate rendered before `recovery` is fixed is gated on a metric that
+  rewards the failure mode it was built to detect.**
+  ⇒ **Standing consequence: for every bounded term, report the FLOOR/CEILING FRACTION beside the
+  score.** `discriminative_range` already **computed** `floor_frac` and **never used it** — a gate
+  testing one end of a two-ended quantity. A term saturating on the majority of rows is not a metric;
+  it is a constant with noise.
+- **C46 — A COMFORT TERM THAT REWARDS NOT DRIVING** *(new class, added 2026-07-28)* ⇒ **a bound
+  calibrated from literature rather than from the corpus can fail the ground truth itself, at which
+  point it scores restraint rather than quality.** MEASURED: **the human's own logged path fails the
+  comfort bounds on 16.60 %** of the same windows, while **`cv_holdv0` and `stand_still` — the two arms
+  that do the LEAST — both score a perfect 1.0000** and **every learned planner floors** on the jerk
+  clause. ⇒ weight set to **0.0**, measurement retained as a diagnostic. ✅ **Provable no-op: 16
+  published `@clamp_v1` composites reproduce at max|diff| = 0.000000.**
+  ⇒ **Validate any threshold against the ground truth before it carries weight.** If the humans fail
+  it, it is not measuring what you named it.

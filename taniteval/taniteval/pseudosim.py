@@ -108,7 +108,9 @@ __all__ = [
     "GridSpec", "default_grid", "assert_grid_in_envelope",
     "proximity_weights", "pseudo_evaluate", "score_windows",
     "discriminative_range", "composite", "emit",
-    "COMFORT_LIMITS", "COMPONENT_WEIGHTS", "CEIL_FRAC_MAX", "RANGE_MIN",
+    "COMFORT_LIMITS", "COMPONENT_WEIGHTS", "COMPONENT_WEIGHTS_PUBLISHED_V1",
+    "WEIGHTS_ID", "COMFORT_STATUS",
+    "CEIL_FRAC_MAX", "FLOOR_FRAC_MAX", "RANGE_MIN",
     "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
     "progress_from_ratio", "metric_id", "UnknownProgressTerm",
     # projection-aware re-render, re-exported so a caller of pseudosim never
@@ -274,6 +276,18 @@ COLLISION_UNAVAILABLE_REASON = (
 # --------------------------------------------------------------------------- #
 # PROPOSED thresholds, stated before any component is scored.
 CEIL_FRAC_MAX = 0.95     # a component pinned at its ceiling this often is dead
+#: ⛔⛔ THE MISSING HALF OF THE GATE, ADDED 2026-07-28.
+#: ``discriminative_range`` has always COMPUTED ``floor_frac_le_0p001`` and has
+#: never USED it, so a component pinned at its FLOOR was admissible while the
+#: identical component pinned at its CEILING was refused. That is the same
+#: "audited on one side of a two-sided object" class as ``clamp_v1`` (blind
+#: above ratio 1.0) and the two-condition ego gate (audited at one condition).
+#: MEASURED on the 2026-07-27 panel: ``recovery`` is at its floor on
+#: **54.75 % (cv_holdv0) … 92.18 % (refc_xl_produced)** of its DEFINED rows —
+#: ``refc_xl`` sits **2.8 points** from being auto-refused by this very gate.
+#: Symmetric with :data:`CEIL_FRAC_MAX` on purpose: a gate that is asymmetric in
+#: a quantity with no preferred direction is a bug, not a policy.
+FLOOR_FRAC_MAX = 0.95
 RANGE_MIN = 0.05         # observed max - min below this is not a range
 # nuPlan/NAVSIM-style comfort bounds. PROPOSED (their exact constants are not
 # quotable from the material we verified); every one is published in the output.
@@ -282,7 +296,42 @@ COMFORT_LIMITS = {"a_lon_max_mps2": 3.0, "a_lat_max_mps2": 3.0,
 # PDM-Score weights: EP w=5, TTC w=5, Comfort w=2 (PUBLISHED, NAVSIM). TTC is
 # unavailable here (no cuboids); RECOVERY is ours and carries the error-recovery
 # signal pseudo-simulation exists to produce.
-COMPONENT_WEIGHTS = {"ego_progress": 5.0, "recovery": 5.0, "comfort": 2.0}
+#: ⛔ FROZEN, for exact reproduction of every number published through
+#: 2026-07-28. Never edit this dict.
+COMPONENT_WEIGHTS_PUBLISHED_V1 = {"ego_progress": 5.0, "recovery": 5.0,
+                                  "comfort": 2.0}
+#: ⭐ THE LIVE WEIGHTS. ``comfort`` carries **0.0**, not 2.0.
+#:
+#: WHY, and why this is a PROVABLE NO-OP on every published number:
+#: ``comfort`` is dropped by the panel-wide discriminative-range gate for
+#: **every arm under every progress term** — it has never contributed to a
+#: published composite. And in :func:`composite` a zero weight adds exactly
+#: ``0.0`` to both numerator and denominator in *both* branches, so the value is
+#: bit-identical whether the term is admitted or dropped. The 16-arm
+#: reproduction gate re-runs at ``max|diff| = 0.000000`` with this change in
+#: place (``…/2026-07-28-closedloop-control-suite/raw/repro_gate.json``).
+#:
+#: What changes is the CLAIM, and the claim was wrong: the composite was
+#: described as three-term while one of its three terms was information-free.
+#: See :data:`COMFORT_STATUS` for the measurement.
+COMPONENT_WEIGHTS = {"ego_progress": 5.0, "recovery": 5.0, "comfort": 0.0}
+#: quotable id for the weight vector, so a future change cannot be silent.
+WEIGHTS_ID = "w_ep5_rec5_comfort0"
+
+#: ⛔ MEASURED 2026-07-28 — the reason ``comfort`` carries no weight.
+COMFORT_STATUS = (
+    "INFORMATION-FREE ON THIS SURFACE, AND THE PLANS ARE NOT THE REASON. "
+    "`comfort` is the AND of four bounds on the finite differences of a "
+    "20-waypoint plan. MEASURED: the HUMAN'S OWN LOGGED PATH, differenced "
+    "identically, fails the same bounds on the overwhelming majority of the "
+    "SAME windows — so the term separates 10 Hz differentiation noise from "
+    "smoothness, not good driving from bad. Between two arms differing ONLY in "
+    "schedule it moves 720x (0.0004 -> 0.2882), because re-timing at constant "
+    "speed smooths a per-waypoint regression. It is dropped by the panel-wide "
+    "gate for every arm under every progress term, so removing its weight is a "
+    "provable no-op on every published number — what it removes is the false "
+    "claim that the composite is three-term. The measurement is still emitted, "
+    "under `components.comfort`, as the plan-smoothness flag it actually is.")
 
 
 class EnvelopeViolation(AssertionError):
@@ -710,7 +759,7 @@ def score_windows(pw, *, comfort_limits=None, dt=DT,
 
 
 def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
-                         range_min=RANGE_MIN) -> dict:
+                         range_min=RANGE_MIN, floor_frac_max=FLOOR_FRAC_MAX) -> dict:
     """⚠️ BOOST M8 / C13 applied to METRICS: state the range before adopting.
 
     *"Comfort saturates at >= 99.9 %, contributing essentially zero
@@ -723,10 +772,20 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
     available and is what ``admissible`` keys on.
     """
     out = {"_gate": {"ceil_frac_max": ceil_frac_max, "range_min": range_min,
+                     "floor_frac_max": floor_frac_max,
                      "rule": "admissible iff ceiling_frac < ceil_frac_max AND "
+                             "floor_frac < floor_frac_max AND "
                              "(max - min) >= range_min. When >= 2 arms are "
                              "supplied, the between-arm spread must also be "
-                             "non-zero."}}
+                             "non-zero.",
+                     "_floor_clause_added": (
+                         "2026-07-28. floor_frac was COMPUTED and never USED, "
+                         "so a component pinned at its FLOOR was admissible "
+                         "while the same component pinned at its CEILING was "
+                         "refused — the 'audited on one side of a two-sided "
+                         "object' class. MEASURED: `recovery` is at its floor "
+                         "on 54.75-92.18 % of its DEFINED rows across the "
+                         "2026-07-27 panel.")}}
     for name, arr in scores.items():
         if arr is None:
             out[name] = {"admissible": False, "reason": "NOT COMPUTABLE",
@@ -753,10 +812,14 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
             "floor_frac_le_0p001": round(floor, 6),
             "observed_range": round(rng, 6),
         }
-        node["admissible"] = bool(ceil < ceil_frac_max and rng >= range_min)
+        node["admissible"] = bool(ceil < ceil_frac_max
+                                  and floor < floor_frac_max
+                                  and rng >= range_min)
         if not node["admissible"]:
-            node["reason"] = ("SATURATED at the ceiling" if ceil >= ceil_frac_max
-                              else "range below range_min")
+            node["reason"] = (
+                "SATURATED at the ceiling" if ceil >= ceil_frac_max else
+                "SATURATED at the floor" if floor >= floor_frac_max else
+                "range below range_min")
         if by_arm and len(by_arm) >= 2:
             means = {k: float(np.nanmean(np.asarray(v[name], float)))
                      for k, v in by_arm.items()
@@ -795,10 +858,15 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",),
     term = (progress_term if progress_term is not None
             else scores.get("_progress_term", PROGRESS_TERM_DEFAULT))
     w = dict(COMPONENT_WEIGHTS if weights is None else weights)
-    admitted, dropped = {}, {}
+    admitted, dropped, zeroed = {}, {}, {}
     for name, wt in w.items():
         r = ranges.get(name, {})
-        if r.get("admissible"):
+        if float(wt) == 0.0:
+            # ⭐ EXPLICIT, not silent. A zero weight adds exactly 0.0 to both
+            # numerator and denominator, so dropping it here is arithmetically
+            # identical to leaving it in — but the emitted node then says so.
+            zeroed[name] = COMFORT_STATUS if name == "comfort" else "weight 0.0"
+        elif r.get("admissible"):
             admitted[name] = wt
         else:
             dropped[name] = r.get("reason", "not admissible")
@@ -833,8 +901,11 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",),
             "RECOVERY and PROGRESS only. Do not report it as a Driving Score "
             "and do not compare it to a PDMS number."),
         "formula": "(empty gate product) x (sum w_x s_x / sum w_x)",
+        "weights_id": (WEIGHTS_ID if weights is None else "custom"),
         "weights_admitted": admitted,
         "components_dropped": dropped,
+        "components_zero_weighted": zeroed,
+        "n_weighted_terms": len(admitted),
         "gates": gate_state,
         "value": val,
     }
