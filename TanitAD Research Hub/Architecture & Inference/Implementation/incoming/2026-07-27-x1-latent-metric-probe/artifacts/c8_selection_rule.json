@@ -1,7 +1,7 @@
 {
  "experiment": "C8 \u2014 horizon-banked readout selection rule (zero GPU)",
  "escalation": "E2 \u2014 the open question is the RULE, not the readout",
- "utc": "2026-07-26T23:54:36Z",
+ "utc": "2026-07-26T23:58:47Z",
  "host": "dev box (CPU only, no GPU, no pod, no model load)",
  "sources": {
   "bi": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-blind-imagination/perwindow/bi_perwindow_compact.pt",
@@ -52,6 +52,20 @@
    "n_boot": 2000,
    "estimator": "paired_episode_cluster_bootstrap"
   },
+  "beats_cv_window_convention": {
+   "arm": "a_imagination__true",
+   "expect_steps": [
+    4,
+    74
+   ],
+   "got_steps": [
+    4,
+    74
+   ],
+   "expect_n_steps": 71,
+   "got_n_steps": 71,
+   "PASS": true
+  },
   "ALL_PASS": true
  },
  "selection_semantics": "selects WHICH HEAD'S TRAJECTORY is read at lead time j (the GraphCast/FuXi/Pangu pattern); NOT a per-step splice inside one SE(2) accumulation. The concatenated path may be DISCONTINUOUS at a switch step \u2014 flagged for the harness owner.",
@@ -85,9 +99,18 @@
       "12s": 58.4382,
       "18.5s": 132.3279
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "always_tac": {
      "ade_0_2s": {
@@ -114,9 +137,18 @@
       "12s": 45.5997,
       "18.5s": 96.1969
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "always_str": {
      "ade_0_2s": {
@@ -143,9 +175,18 @@
       "12s": 49.3505,
       "18.5s": 102.5046
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "rule_argmin_per_step_oof": {
      "ade_0_2s": {
@@ -172,9 +213,18 @@
       "12s": 45.5997,
       "18.5s": 96.1969
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "rule_crossover_op_str_oof": {
      "ade_0_2s": {
@@ -201,9 +251,18 @@
       "12s": 49.3505,
       "18.5s": 102.5046
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "rule_crossover_op_tac_str_oof": {
      "ade_0_2s": {
@@ -230,9 +289,18 @@
       "12s": 45.5997,
       "18.5s": 102.5046
      },
-     "beats_cv_horizon_steps": 0,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 0.0
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
+     "beats_cv_window_s": [
+      0.0,
+      0.0
+     ],
+     "beats_holdv0_window_steps": [
+      0,
+      0
+     ]
     },
     "oracle_per_window_NOT_DEPLOYABLE": {
      "ade_0_2s": {
@@ -259,9 +327,18 @@
       "12s": 35.998,
       "18.5s": 76.618
      },
-     "beats_cv_horizon_steps": 19,
-     "beats_holdv0_horizon_steps": 17,
-     "beats_cv_horizon_s": 1.9
+     "beats_cv_window_steps": [
+      6,
+      10
+     ],
+     "beats_cv_window_s": [
+      0.6,
+      1.0
+     ],
+     "beats_holdv0_window_steps": [
+      8,
+      8
+     ]
     },
     "floor_constant_velocity": {
      "ade_0_2s": {
@@ -287,10 +364,7 @@
       "9s": 20.2808,
       "12s": 33.5467,
       "18.5s": 69.81
-     },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 18.5
+     }
     },
     "floor_hold_v0": {
      "ade_0_2s": {
@@ -316,10 +390,7 @@
       "9s": 20.1386,
       "12s": 33.3386,
       "18.5s": 69.5197
-     },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     }
     }
    },
    "fitted_rules": {
@@ -691,70 +762,100 @@
      "switch_s": 0.0,
      "ade_0_2s": 0.871,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_1": {
      "switch_s": 0.1,
      "ade_0_2s": 0.871,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_2": {
      "switch_s": 0.2,
      "ade_0_2s": 0.871,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_3": {
      "switch_s": 0.3,
      "ade_0_2s": 0.871,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_5": {
      "switch_s": 0.5,
      "ade_0_2s": 0.8597,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_8": {
      "switch_s": 0.8,
      "ade_0_2s": 0.8597,
      "t_blind_steps": 25,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 2.5
     },
     "switch_at_step_10": {
      "switch_s": 1.0,
      "ade_0_2s": 0.8534,
      "t_blind_steps": 8,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 0.8
     },
     "switch_at_step_13": {
      "switch_s": 1.3,
      "ade_0_2s": 0.8534,
      "t_blind_steps": 8,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 0.8
     },
     "switch_at_step_20": {
      "switch_s": 2.0,
      "ade_0_2s": 0.9554,
      "t_blind_steps": 8,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 0.8
     },
     "switch_at_step_30": {
      "switch_s": 3.0,
      "ade_0_2s": 0.9554,
      "t_blind_steps": 8,
-     "beats_cv_horizon_steps": 0,
+     "beats_cv_window_steps": [
+      0,
+      0
+     ],
      "t_blind_s": 0.8
     }
    }
@@ -786,9 +887,18 @@
       "12s": 38.4977,
       "18.5s": 96.6453
      },
-     "beats_cv_horizon_steps": 88,
-     "beats_holdv0_horizon_steps": 86,
-     "beats_cv_horizon_s": 8.8
+     "beats_cv_window_steps": [
+      4,
+      74
+     ],
+     "beats_cv_window_s": [
+      0.4,
+      7.4
+     ],
+     "beats_holdv0_window_steps": [
+      4,
+      72
+     ]
     },
     "always_tac": {
      "ade_0_2s": {
@@ -815,9 +925,18 @@
       "12s": 22.5164,
       "18.5s": 57.0198
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      6,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.6,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      6,
+      185
+     ]
     },
     "always_str": {
      "ade_0_2s": {
@@ -844,9 +963,18 @@
       "12s": 21.1152,
       "18.5s": 53.3413
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      6,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.6,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      6,
+      185
+     ]
     },
     "rule_argmin_per_step_oof": {
      "ade_0_2s": {
@@ -873,9 +1001,18 @@
       "12s": 21.1152,
       "18.5s": 53.3413
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      4,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.4,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      4,
+      185
+     ]
     },
     "rule_crossover_op_str_oof": {
      "ade_0_2s": {
@@ -902,9 +1039,18 @@
       "12s": 21.1152,
       "18.5s": 53.3413
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      4,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.4,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      4,
+      185
+     ]
     },
     "rule_crossover_op_tac_str_oof": {
      "ade_0_2s": {
@@ -931,9 +1077,18 @@
       "12s": 21.1152,
       "18.5s": 53.3413
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      4,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.4,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      4,
+      185
+     ]
     },
     "oracle_per_window_NOT_DEPLOYABLE": {
      "ade_0_2s": {
@@ -960,9 +1115,18 @@
       "12s": 19.7188,
       "18.5s": 49.8647
      },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     "beats_cv_window_steps": [
+      4,
+      185
+     ],
+     "beats_cv_window_s": [
+      0.4,
+      18.5
+     ],
+     "beats_holdv0_window_steps": [
+      4,
+      185
+     ]
     },
     "floor_constant_velocity": {
      "ade_0_2s": {
@@ -988,10 +1152,7 @@
       "9s": 20.2808,
       "12s": 33.5467,
       "18.5s": 69.81
-     },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 0,
-     "beats_cv_horizon_s": 18.5
+     }
     },
     "floor_hold_v0": {
      "ade_0_2s": {
@@ -1017,10 +1178,7 @@
       "9s": 20.1386,
       "12s": 33.3386,
       "18.5s": 69.5197
-     },
-     "beats_cv_horizon_steps": 185,
-     "beats_holdv0_horizon_steps": 185,
-     "beats_cv_horizon_s": 18.5
+     }
     }
    },
    "fitted_rules": {

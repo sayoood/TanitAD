@@ -1,0 +1,52 @@
+{
+ "experiment": "X1 stage 1 \u2014 frozen-encoder latent cache + fidelity check",
+ "utc": "2026-07-27T00:05:52Z",
+ "host": "dev box",
+ "device": "cuda",
+ "torch": "2.11.0+cu128",
+ "ckpt": "C:/Users/Admin/tanitad-data/eval/v1_speedjerk_ckpt.pt",
+ "ckpt_step": 29999,
+ "state_dim": 2048,
+ "corpus": {
+  "cache_dir": "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-val-bb543bdf7836",
+  "n_episodes": 100,
+  "PARITY": "NON-PARITY (key bb543bdf7836, not e438721ae894)",
+  "admissible_for": "within-run contrasts only"
+ },
+ "n_windows": 2201,
+ "window": 8,
+ "stride": 8,
+ "trained_head_on_our_windows": {
+  "op_mid": 0.5842,
+  "tac_mid": 2.5925,
+  "str_mid": 3.1266,
+  "op_fwd": 0.0437,
+  "tac_fwd": 0.1872,
+  "str_fwd": 0.2591,
+  "op_mid_shuffled": 1.3117
+ },
+ "v1_committed_train_band_28_30k": {
+  "op_mid_de_m": 1.0129,
+  "op_fwd_ade_m": 0.0304
+ },
+ "prereg_validation": {
+  "fidelity_imagined_decode": {
+   "rule": "op_fwd <= 3.0x 0.0304",
+   "got": 0.0437,
+   "PASS": true
+  },
+  "fidelity_real_pair_decode": {
+   "rule": "op_mid <= 2.0x 1.0129",
+   "got": 0.5842,
+   "PASS": true
+  },
+  "shuffle_control_must_fail": {
+   "rule": "op_mid_shuffled > 1.5x op_mid",
+   "got": 1.3117,
+   "PASS": true
+  },
+  "ALL_PASS": true
+ },
+ "elapsed_s": 164.8,
+ "latent_cache": "C:/Users/Admin/tanitad-data/eval/x1_latents\\x1_latents.pt"
+}

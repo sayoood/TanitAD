@@ -357,12 +357,57 @@ the **between-arm spread is non-zero**. `composite()` raises `VacuousMetric` if 
 
 ## 7. Deliverable manifest
 
-*(see §9.)*
+All repo paths relative to the working tree on the dev box; everything **`git add`-ed, NOT committed,
+NOT pushed**. Anything living in only ONE place is marked ⚠️.
+Repo dir: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/`
+
+| artifact | where it lives | what it is |
+|---|---|---|
+| **`taniteval/taniteval/pseudosim.py`** | **repo (the PACKAGE, not `incoming/`)** · `tanitad-eval:/workspace/_pseudosim/taniteval/` | the harness: `GridSpec`, `assert_grid_in_envelope`, `pseudo_evaluate`, `score_windows`, `discriminative_range`, `composite`, `emit`. md5-verified both ends. |
+| **`taniteval/tests/test_pseudosim.py`** | **repo** | 21 tests incl. the deliberately-failing envelope input and the standing-still adversary |
+| `PSEUDO_SIMULATION.md` | repo (this dir) | this report |
+| `scripts/lat_warp_fidelity.py` | repo | §2 — C-GEO-LAT. **CPU only, no GPU, no pod, no corpus, no model.** ~2 s. |
+| `artifacts/lat_warp_fidelity.json` | repo | §2 — A0…A6 + the computed verdict |
+| `scripts/run_pseudosim.py` | repo · `tanitad-eval:/workspace/_pseudosim/run_pseudosim.py` | §6 — the 3-arm driver. md5-verified both ends. |
+| `artifacts/pseudosim_v4_30k.json` | repo · `tanitad-eval:/workspace/_pseudosim/out/` | §6 — arm scores, ranges, paired deltas, envelope proof |
+| `artifacts/pseudosim_v4_30k_perwindow_*.npz` | repo · `tanitad-eval:/workspace/_pseudosim/out/` | per-window dumps (3 arms) — **the arithmetic-only path: any metric can be re-derived with no GPU** |
+| `artifacts/run.log` | repo · `tanitad-eval:/workspace/_pseudosim/out/run.log` | §6 — the run log incl. the live envelope proof |
+| ⚠️ `tanitad-eval:/workspace/_pseudosim/out/smoke.json` | **pod only** | the 2-episode smoke that caught the standing-still defect; superseded by the full run, deliberately not staged (its metric is the pre-fix one) |
+
+**Nothing that took real effort exists in only one place.** The one pod-only row is a superseded smoke.
+⚠️ The index also contains sibling streams' staged work; per `CLAUDE.md`'s git-hygiene rule it was left
+**exactly as found** and **nothing was committed**, so nothing could be swept in.
+
+**Pods:** `tanitad-eval` only. pod1 (training), pod2 (owed controls), pod3 (classifier build) **untouched**.
+GPU verified idle (0 MiB / 0 %) before use. All writes to `/workspace` (never `/root`, which is 99 % full
+and silently truncates). No process was killed. Parity untouched — no episode re-selection, no corpus write.
+🔒 No clip UUID or raw PhysicalAI content appears in any artifact.
 
 ---
 
-## 8. Escalations — raised here, not left in a README
+## 8. ⭐ ESCALATIONS — raised here, not left in a README
+
+| # | what needs a decision or a cross-stream change | owner |
+|:--:|---|---|
+| **1** | ⭐ **The collision gate needs an episode→clip join.** Two concrete blockers, both measured: (a) the val cache's `episode_id` is a 4-byte clip-id prefix and **collides 242 → 40**; (b) the matching `obstacle.offline` chunks are not downloaded (11 of 242 present locally). Fixing (a) needs the ingest to store the full `clip_id` — a **one-field change in the episode builder** that unblocks every safety metric this program will ever want. **Without it `PSS` can never become a Driving Score.** | Data Engineering |
+| **2** | ⛔ **A NEW charge against the sequential closed loop, beyond EXTRAPOLATION.** `corridor_rollout` warps on **both** axes, so every sequential closed-loop number also carries the lateral infidelity of §2 — at K=20 the *lateral* p90 is 1.74 m (`INHERITED`, P1 §8), i.e. **the warp was sign-inverting the upper half of the frame on most windows**. `MODEL_REGISTRY.md`'s closed-loop rows need this note **in addition to** the EXTRAPOLATION stamp. | Model-registry agent |
+| **3** | ⚠️ **`RETRACTION_LOG.md`, class C13 ("a guard that cannot fail").** Two entries from this run: (a) **C-RT was offered as a fidelity criterion and is provably vacuous** — it returns *exactly 0.0* for the arm under suspicion; (b) **the first `recovery` metric rewarded standing still** and was caught only by an adversarial input, not by review. Both are the same root cause: *a criterion was proposed without asking what value would make it fail.* | whoever maintains the log |
+| **4** | ⚠️ **`ENV_YAW_MAX = 12.0` is still commented `# MEASURED` in two places** (`taniteval/corridor.py:109-110`, `stack/scripts/run_gate.py:613-614`) and P1's re-validation showed it is a **grid endpoint**, not a measurement (usable edge 15.47°). **This harness inherits that constant** — so if the comment is corrected, the shipped grid may widen to ~15°. Not applied here: both files are live and edited by sibling streams. | `corridor.py` / `run_gate.py` maintainers |
+| **5** | ⭐ **The protocol change needs a home in `GATE_PROTOCOL.md`.** Pseudo-simulation is not a horizon `K`; §0.3's "refuse `K ≤ 20`" does not apply to it and must not be applied by analogy. A gate that wants a closed-loop-class MEASUREMENT should register `PSS_recovery_progress` on the `pseudo_simulation` surface with its grid and its traffic mode. **This will not happen by itself.** | PI / gate-card author |
+| **6** | ⚠️ **The lateral axis is refused, so the 3-D-reconstruction question is now the ONLY route to it.** If lateral perturbation matters (NAVSIM v2 thinks it does), the substrate must be depth-aware. Our own metric depth is available in principle (`obstacle.offline` cuboids, monocular depth), but AlpaSim's NuRec/gsplat packaging carries a derivative-forbidding licence. **A decision about whether lateral is worth a depth-aware warp belongs to the PI.** | **Sayed** |
 
 ---
 
-## 9. What was deliberately NOT done
+## 9. Self-refutations, and what was deliberately NOT done
+
+| # | what | status |
+|:--:|---|---|
+| 1 | **P-1 refuted by my own data**: I predicted the lateral error would shrink with `|dlat|` so a small axis would survive. It does not — the relative error is `|dlat|`-independent. Recorded in §1.4 rather than deleted. | corrected |
+| 2 | I nearly reported the round-trip criterion as a **pass** for the lateral arm (it returns 0.0, which looks like success). It is a vacuity, not a pass. | corrected, §2.6 |
+| 3 | The first `recovery` metric was **backwards** — it ranked blind above sighted. Caught by an adversarial input, not by reading the code. | corrected, §5.2 |
+| 4 | **`SCENE_HEIGHTS_M` are standard vehicle/infrastructure dimensions, not measured from our corpus.** They make the closed form legible; **they do not enter it** — the verdict rests on `rel_err = a / h_cam`, which is exact, and on the 50 % above-horizon fraction, which is geometry. A corpus-grounded height distribution (from `obstacle.offline`) would sharpen §2.3's table but cannot change its sign. | disclosed |
+| 5 | **The `dlon` axis changes observation time as well as position** (§3). Same approximation the existing closed loop makes, but it is an approximation. | disclosed |
+| 6 | **No reactive traffic**, and the harness says so on every node. Deliberate: NAVSIM v2 does not have it either, and our own CAT-K probe measured NOT reactive. | deliberate |
+| 7 | **The arm scores use an ORACLE goal** (route / route_graded / vt_band from the ego's own future). They are an **upper bound**, not deployable. `--goal-mode produced` is available on this checkpoint and was **not** run for time. | not done, flagged |
+| 8 | **The v1 (`flagship4b-speedjerk-30k`) arm was not scored** — its plan step decodes conditioned on the *future action sequence* (`rollout_decode(…, fa, …)`), which does not exist for a perturbed state, so it is not a planner in the pseudo-simulation sense. REF-C **is** and would be the natural fourth arm. | not done, flagged |
+| 9 | **No comparison to a published leaderboard.** This is an internal number on our own corpus, exactly as Option 1 promised. Option 2 (NAVSIM on OpenScene) remains the only route to a comparable figure. | out of scope |

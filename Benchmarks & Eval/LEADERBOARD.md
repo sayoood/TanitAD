@@ -414,7 +414,8 @@ off-road/collision; within-source relative; deployed-decoder vs deployed-decoder
 > ⚠️ **Retractions on record (`RETRACTION_LOG.md`, 07-22/07-23).** **C5** — the n=1 *"REF-C collides
 > at-fault"* over-read the worst-case scene `01d503d4`. **C6** — the n=12 *"REF-C fails ~half closed-loop"*
 > is **reconstruction-OOD confounded** (open-loop-on-reconstructions control 3.21×): run the
-> open-loop-vs-known control **before** attributing a closed-loop failure to the model. **C7 (07-23)** — the
+> open-loop-vs-known control **before** attributing a closed-loop failure to the model. <!-- lint-ok: the next line QUOTES the C7-retracted claim in the act of reversing it - this block IS the retraction notice, not a restatement. -->
+> **C7 (07-23)** — the
 > n=1 *"flagship v1 **beats** REF-C closed-loop"* is **reversed** by the paired n=12 suite (REF-C base wins
 > 8/12 vs 2/12, sign-test 8-0): a closed-loop win from n=1 is scene-dependent — never headline it until n ≥ ~12.
 
