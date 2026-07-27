@@ -1,0 +1,78 @@
+{
+ "what": "T0 span audit \u2014 anchors (demonstration-derived) vs the unbounded offset head",
+ "L1_structural": {
+  "claim": "anchors are VERBATIM real human 2 s trajectories",
+  "evidence": "refc.furthest_point_sample returns pool[chosen] \u2014 it SELECTS pool members, never synthesises a centroid; the pool is refb_labels.waypoint_targets over every window of the cached corpus (build_refc_anchors.episode_traj_pool)",
+  "verified_numerically": {
+   "max_linf_from_anchor_to_its_nearest_pool_member": 0.0,
+   "n_anchors_bitwise_identical_to_a_pool_row": 256,
+   "n_anchors": 256,
+   "exact_membership": true
+  }
+ },
+ "L2_anchor_side": {
+  "corpus": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-train-14231cd29c74",
+  "warning": "NOT the parity key e438721ae894 \u2014 this is the dev-box cache 14231cd29c74. A corpus-property measurement only.",
+  "pool": {
+   "n": 71577,
+   "along_min_m": -7.861,
+   "along_max_m": 37.91,
+   "along_span_m": 45.771,
+   "along_p99_m": 28.292,
+   "disp_max_m": 37.91,
+   "implied_mean_speed_max_ms": 18.955,
+   "implied_mean_speed_max_kmh": 68.24,
+   "implied_mean_speed_p99_kmh": 50.97
+  },
+  "anchors_fps256": {
+   "n": 256,
+   "along_min_m": -7.272,
+   "along_max_m": 37.91,
+   "along_span_m": 45.183,
+   "along_p99_m": 33.872,
+   "disp_max_m": 37.91,
+   "implied_mean_speed_max_ms": 18.955,
+   "implied_mean_speed_max_kmh": 68.24,
+   "implied_mean_speed_p99_kmh": 61.11
+  }
+ },
+ "L3_offset_side": {
+  "source": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\results\\fan_refc-xl-30k.pt",
+  "arm": "refc-xl-30k (same V15Decoder `x = x_in + offset`, same 256 anchors, same unbounded offset_head that v4 inherits)",
+  "windows": 881,
+  "candidates": 256,
+  "emitted_fan": {
+   "n": 225536,
+   "along_min_m": -23.388,
+   "along_max_m": 95.272,
+   "along_span_m": 118.66,
+   "along_p99_m": 88.654,
+   "disp_max_m": 95.275,
+   "implied_mean_speed_max_ms": 47.638,
+   "implied_mean_speed_max_kmh": 171.5,
+   "implied_mean_speed_p99_kmh": 159.62
+  },
+  "realised_future_gt": {
+   "n": 881,
+   "along_min_m": 0.0,
+   "along_max_m": 73.54,
+   "along_span_m": 73.54,
+   "along_p99_m": 73.027,
+   "disp_max_m": 73.551,
+   "implied_mean_speed_max_ms": 36.775,
+   "implied_mean_speed_max_kmh": 132.39,
+   "implied_mean_speed_p99_kmh": 131.47
+  },
+  "mean_per_window_along_span_m": 104.611,
+  "max_per_window_along_span_m": 112.245
+ },
+ "verdict": {
+  "anchor_max_kmh": 68.24,
+  "emitted_fan_max_kmh": 171.5,
+  "ratio_emitted_over_demonstration": 2.513,
+  "val_gt_max_along_m": 73.54,
+  "frac_emitted_candidates_beyond_val_gt_max": 0.05921,
+  "frac_windows_with_any_candidate_beyond_val_gt_max": 1.0,
+  "frac_emitted_candidates_beyond_50ms_180kmh": 0.0
+ }
+}

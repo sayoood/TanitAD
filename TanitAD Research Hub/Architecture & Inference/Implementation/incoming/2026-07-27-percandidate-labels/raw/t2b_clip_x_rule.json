@@ -1,0 +1,58 @@
+{
+ "what": "T1 x T2 \u2014 the kinematic clip applied to the RULE scorer",
+ "fan": "256 FPS demonstration anchors (global vocabulary, no offset head)",
+ "windows": 3360,
+ "candidates": 256,
+ "band": "v_term in [max(0, v0 - 5.0), v0 + 5.0] m/s (the head's own clamp)",
+ "frac_candidates_removed": 0.4761,
+ "oracle_survives_frac": 0.9866,
+ "unclipped": {
+  "rule_pdms_lite": {
+   "ade_0_2s": 9.7073,
+   "mean_pdms_lite": 0.8067,
+   "at_fault_collision_rate": 0.0071,
+   "implied_mean_speed_kmh": 57.2
+  },
+  "rule_nc_ttc_only": {
+   "ade_0_2s": 4.1815,
+   "mean_pdms_lite": 0.6887,
+   "at_fault_collision_rate": 0.0128,
+   "implied_mean_speed_kmh": 27.59
+  },
+  "oracle_in_fan": {
+   "ade_0_2s": 0.5906,
+   "at_fault_collision_rate": 0.0336,
+   "implied_mean_speed_kmh": 31.16
+  },
+  "_frac_windows_empty": 0.0
+ },
+ "clipped": {
+  "rule_pdms_lite": {
+   "ade_0_2s": 3.895,
+   "mean_pdms_lite": 0.848,
+   "at_fault_collision_rate": 0.0077,
+   "implied_mean_speed_kmh": 40.64
+  },
+  "rule_nc_ttc_only": {
+   "ade_0_2s": 2.7869,
+   "mean_pdms_lite": 0.7841,
+   "at_fault_collision_rate": 0.0077,
+   "implied_mean_speed_kmh": 32.73
+  },
+  "oracle_in_fan": {
+   "ade_0_2s": 0.5906,
+   "at_fault_collision_rate": 0.0336,
+   "implied_mean_speed_kmh": 31.16
+  },
+  "_frac_windows_empty": 0.01339
+ },
+ "ego_speed_kmh_mean": 31.72,
+ "verdict": {
+  "rule_pick_ade_before": 9.7073,
+  "rule_pick_ade_after": 3.895,
+  "rule_pick_speed_kmh_before": 57.2,
+  "rule_pick_speed_kmh_after": 40.64,
+  "ade_oracle_pick_ade_before": 0.5906,
+  "ade_oracle_pick_ade_after": 0.5906
+ }
+}

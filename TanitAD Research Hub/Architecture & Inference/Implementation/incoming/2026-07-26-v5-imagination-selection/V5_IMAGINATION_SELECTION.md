@@ -637,6 +637,22 @@ the opposite way to the hypothesis.
 
 `n = 1` is the as-trained pick by construction, so every column starts at 0.8563.
 
+> ⛔ **LABEL CORRECTED 2026-07-27 — the breadth axis is NOT "the top-n by the as-trained
+> base ranking".** The dumped key `base_rank` in `raw/v5_v4_windows_reduced.pt` is
+> **`[the as-trained pick] ++ [anchors 0..255 in INDEX order]`**, verified on **881/881 rows**
+> (E-H1 §9.2; re-verified independently here — `raw/eh2_gate.json::G4`, which also finds
+> **881/881** rows whose tail is *strictly increasing anchor index*, i.e. carrying no score
+> information at all). So the `n` axis varies *"the deployed pick plus the first n−1 anchor
+> indices"*, not *"the n best-scoring candidates"*. The `n = 1` column (0.8563) is exact.
+>
+> **§5.2's and §5.4's CONCLUSIONS SURVIVE** and are not weakened: the finding is that *letting
+> the imagination rule consider more candidates makes it worse*, which holds for **any nested
+> family** of candidate sets — and index order is still a nested family. *"Breadth costs
+> −10.66 m"* and *"at every budget, spend none of the imagination budget"* stand as written.
+> Root-cause class: **a tensor's semantics taken from its NAME rather than from its
+> construction site** (`code/v5_cost_curve.py`, now corrected in place, with a `nested_order`
+> key and a `_base_rank_IS` note added to the dump).
+
 | k \ n | 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 1 | 0.856 | 1.499 | 1.970 | 2.629 | 2.731 | 2.799 | 2.926 | 2.890 | 2.906 |

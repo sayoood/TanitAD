@@ -35,6 +35,45 @@ number in those sections is typed by hand.**)*
 >
 > **The verdict below is computed in code** by the rule fixed in `PRE_REGISTRATION.md` §7 — it is
 > not a judgement written after looking at the numbers.
+>
+> ### The four things this run settles
+>
+> **1. ⭐ A FRONT-CAMERA-ONLY arm is ABOVE CHANCE on both powered situations — which H2 never
+> achieved.** `head_img` sees the 256 px / 51.4° crop and *nothing else* (no speed, no
+> acceleration, no yaw rate): **lane change ΔAP +0.01987 [+0.01141, +0.02901]**, 2.17× base,
+> AUROC 0.703 · **intersection ΔAP +0.04894 [+0.03735, +0.06277]**, 2.60× base, AUROC 0.769. Both
+> separated, paired episode-cluster bootstrap, B = 2000. In H2 **no arm cleared chance at all**.
+> **The frozen v1 visual state does carry these situation semantics.**
+>
+> **2. ⭐ ANTICIPATION IS DEMONSTRATED — the thing H2 explicitly could not claim.** Every frame
+> inside an ongoing manoeuvre is masked out of scoring, so the only way to score is to see the
+> situation coming. Median lead time at the operating point: **intersection 2.0 s · roundabout
+> 1.7 s · lane change 1.4 s** — all above the **1.0 s** minimum registered *before* measurement.
+>
+> **3. ⛔ BUT VISION DOES NOT BEAT EGO STATE, AND THAT IS THE HEADLINE THE PI SHOULD READ.**
+> On AP the ego-only head wins on both situations **and the gap is separated**: lane change
+> −0.04361 [−0.07252, −0.01914], intersection −0.02742 [−0.04895, −0.00620]. The pre-registered
+> Outcome **A−** applies: *the situations are predictable, and the front camera does carry the
+> signal, but not beyond what the ego's own kinematics already give.* ⚠️ One honest caveat that
+> cuts the other way: at the **operating point**, the intersection recall delta vs the ego head is
+> **+0.0297 [−0.0085, +0.0702]** — the point estimate favours the vision head. The two metrics
+> disagree in direction; neither is cherry-picked here.
+>
+> **4. This is NOT an underpower excuse — the controls prove it.** C-POS (`head_priv`) separates
+> massively (6.96× / 16.12× / 32.60× base), C-NEG (shuffled features) sits exactly on the floor
+> (0.99× / 1.08× / 1.18×, none separated, MDE ≈ 0.003–0.008), and the powered situations carry
+> **153** and **264** held-out positive clusters against H2's 35. **The instrument can find effects;
+> it found several; "vision over ego" is not one of them.**
+>
+> ### And the camera question the PI actually asked
+>
+> **MEASURED, with intervals, and it confirms his expectation for intersections:** at an
+> intersection an agent is visible in `cross_right` but not the front crop **1.283× [1.157, 1.448]**
+> more often than outside one, and in `cross_left` **1.100× [1.002, 1.208]** — both separated from
+> 1.0, while `any_off_front` is **not** (1.009 [0.970, 1.045]). ⭐ **The need is camera-specific, not
+> a generic "more is visible" artefact — which is exactly what a selective-activation policy
+> requires.** For lane change the expectation is **NOT** confirmed at this n (`cross_right`
+> 1.208 [0.964, 1.522], not separated).
 
 <!-- TABLES:VERDICT -->
 | situation | C-POW | image arm above chance? | vision over ego? | median lead | **PRE-REGISTERED VERDICT** |
@@ -284,9 +323,9 @@ Maximum same-sign sweep anywhere in this universe: **282.1°** (282.1° at radiu
 | **C-NEG** `ridge_img_shuf` | a pipeline leak (closed form) | 0.00143 [-0.00415, 0.00592] → no | as above |
 | **MDE** (upper 95 % bound of the C-NEG ΔAP) | the smallest effect this run can distinguish from nothing | **0.00592** | — |
 | **C-POW** | reading a small-n null as a refutation | 153 positive clusters vs a 40 bar → **OK** | measured before any score |
-| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**, but `blind_skill_over_majority` = **-7.6e-05** | ⛔ **NO** — positive rate 0.02123 < deterministic_eps 0.02, so the majority-class predictor alone forces `CIRCULAR`. Max possible accuracy gain from ANY context: 0.02123. |
+| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**; `context_leaks` = **0.0**, `blind_skill_over_majority` = **-7.6e-05** | ⛔ **NO** — the *deterministic* clause did **not** fire (positive rate 0.02123 > eps 0.02); the verdict comes from the `vision_buys_nothing` clause, which compares **accuracies**. A gate that fires at ~3 % to buy recall is *designed* to lose accuracy against 'always predict negative', so on this target that clause fires for any useful classifier. |
 
-> ⚠️ **The C-BLIND verdict is degenerate on this target and must not be quoted alone.** Its own companion numbers refute it: the ego context adds **exactly zero** skill over the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
+> ⚠️ **The C-BLIND verdict is DEGENERATE on this target and must not be quoted alone — its own companion numbers refute it.** `context_leaks = 0` and `blind_skill_over_majority` ≈ 0: **the ego context carries no information about the target beyond the base rate.** The `CIRCULAR` label is produced by an *accuracy* comparison on a 2–3 %-positive target, where the majority-class predictor scores 0.9788 and any recall-seeking classifier necessarily scores lower — the head is *supposed* to fire more often than the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
 
 #### LANE CHANGE — the efficiency curve (recall at a fixed camera budget)
 
@@ -390,9 +429,9 @@ Maximum same-sign sweep anywhere in this universe: **282.1°** (282.1° at radiu
 | **C-NEG** `ridge_img_shuf` | a pipeline leak (closed form) | -0.00022 [-0.00375, 0.00349] → no | as above |
 | **MDE** (upper 95 % bound of the C-NEG ΔAP) | the smallest effect this run can distinguish from nothing | **0.00349** | — |
 | **C-POW** | reading a small-n null as a refutation | 26 positive clusters vs a 40 bar → **UNDERPOWERED** | measured before any score |
-| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**, but `blind_skill_over_majority` = **0.0** | ⛔ **NO** — positive rate 0.00301 < deterministic_eps 0.02, so the majority-class predictor alone forces `CIRCULAR`. Max possible accuracy gain from ANY context: 0.00301. |
+| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**; `context_leaks` = **0.0**, `blind_skill_over_majority` = **0.0** | ⛔ **NO** — the *deterministic* clause fired and it could not have failed: the positive rate is **0.00301** < `deterministic_eps` **0.02**, so the majority-class predictor alone clears `1 − eps`, and the largest accuracy gain ANY context could add is 0.00301. |
 
-> ⚠️ **The C-BLIND verdict is degenerate on this target and must not be quoted alone.** Its own companion numbers refute it: the ego context adds **exactly zero** skill over the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
+> ⚠️ **The C-BLIND verdict is DEGENERATE on this target and must not be quoted alone — its own companion numbers refute it.** `context_leaks = 0` and `blind_skill_over_majority` ≈ 0: **the ego context carries no information about the target beyond the base rate.** The `CIRCULAR` label is produced by an *accuracy* comparison on a 2–3 %-positive target, where the majority-class predictor scores 0.997 and any recall-seeking classifier necessarily scores lower — the head is *supposed* to fire more often than the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
 
 #### ROUNDABOUT — the efficiency curve (recall at a fixed camera budget)
 
@@ -496,9 +535,9 @@ Maximum same-sign sweep anywhere in this universe: **282.1°** (282.1° at radiu
 | **C-NEG** `ridge_img_shuf` | a pipeline leak (closed form) | 0.00062 [-0.00446, 0.00599] → no | as above |
 | **MDE** (upper 95 % bound of the C-NEG ΔAP) | the smallest effect this run can distinguish from nothing | **0.00793** | — |
 | **C-POW** | reading a small-n null as a refutation | 264 positive clusters vs a 40 bar → **OK** | measured before any score |
-| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**, but `blind_skill_over_majority` = **0.0** | ⛔ **NO** — positive rate 0.02573 < deterministic_eps 0.02, so the majority-class predictor alone forces `CIRCULAR`. Max possible accuracy gain from ANY context: 0.02573. |
+| **C-BLIND** (packaged firewall, imported) | the target being a function of the conditioning | verdict **CIRCULAR**; `context_leaks` = **0.0**, `blind_skill_over_majority` = **0.0** | ⛔ **NO** — the *deterministic* clause did **not** fire (positive rate 0.02573 > eps 0.02); the verdict comes from the `vision_buys_nothing` clause, which compares **accuracies**. A gate that fires at ~3 % to buy recall is *designed* to lose accuracy against 'always predict negative', so on this target that clause fires for any useful classifier. |
 
-> ⚠️ **The C-BLIND verdict is degenerate on this target and must not be quoted alone.** Its own companion numbers refute it: the ego context adds **exactly zero** skill over the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
+> ⚠️ **The C-BLIND verdict is DEGENERATE on this target and must not be quoted alone — its own companion numbers refute it.** `context_leaks = 0` and `blind_skill_over_majority` ≈ 0: **the ego context carries no information about the target beyond the base rate.** The `CIRCULAR` label is produced by an *accuracy* comparison on a 2–3 %-positive target, where the majority-class predictor scores 0.9743 and any recall-seeking classifier necessarily scores lower — the head is *supposed* to fire more often than the base rate. The informative form of the same question — *does vision buy anything the ego state did not already give?* — is the AP-based `− head_ego` contrast above, which is the pre-registered primary comparison.
 
 #### INTERSECTION — the efficiency curve (recall at a fixed camera budget)
 
@@ -620,6 +659,38 @@ Maximum same-sign sweep anywhere in this universe: **282.1°** (282.1° at radiu
 *Estimator: paired episode-cluster bootstrap over the clips carrying each situation, B = 400. ⚠️ **Read the LIFT, not the raw rate.** The not-in-situation rates are 0.4–0.9, i.e. an agent outside the front crop is visible in some other camera almost all the time — a raw 'need' rate is close to information-free (BOOST_PROGRAM §7.3). Only the lift over the matched baseline carries evidence.*
 
 <!-- /TABLES:CAMERA -->
+
+---
+
+# 6b. 🔴 Scored against the bars that were set BEFORE the numbers existed
+
+`PRE_REGISTRATION.md` §6.4 required stating what value of each benefit metric would be
+**DISAPPOINTING** before quoting it (BOOST_PROGRAM §7.3). Here is that table, filled in:
+
+| axis | registered DISAPPOINTING | registered GOOD | **lane change** | **intersection** |
+|---|---|---|---|---|
+| recall @ B\* vs random-at-matched-rate | ≤ 2× | ≥ 4× **and** separated | **3.32×**, Δ +0.0497 [+0.0217, +0.0825] separated → **ACCEPTABLE** | **4.66×**, Δ +0.1243 [+0.0930, +0.1584] separated → ✅ **GOOD** |
+| median lead time @ B\* | < 1.0 s (**FAILS**) | ≥ 1.5 s | **1.4 s** → **ACCEPTABLE** | **2.0 s** → ✅ **GOOD** |
+| ΔAP vs chance | CI includes 0 | separated **and** ≥ 2× base | +0.02703, 2.52× → ✅ **GOOD** | +0.07702, 3.52× → ✅ **GOOD** |
+| ΔAP vs `head_ego` | CI includes 0 ⇒ *"vision buys nothing; say so plainly"* | separated at every budget | **−0.0436, separated the WRONG WAY** ⇒ ⛔ **DISAPPOINTING** | **−0.0274, separated the WRONG WAY** ⇒ ⛔ **DISAPPOINTING** |
+
+**Three of four axes clear their bar; the fourth fails, and it fails worse than "not separated" —
+the ego head is separately BETTER.** That is stated here because the pre-registration required it
+to be stateable before the number was known.
+
+### The efficiency ledger, with the span that makes it readable
+
+Against always-on-7, *never escalating* saves 85.7 % and a *perfect oracle* saves **84.9 %** on
+intersection — a span of **0.8 pp**. So, exactly as §7.3 warns, **no compute-saving number here
+discriminates a good gate from a useless one.** The informative axis is the one with real dynamic
+range: at intersection the head's recall moves **0.0146 → 0.4369** as the budget goes
+0.005 → 0.20 extra cameras/frame, a **30× span**. That is the curve to read.
+
+### Reproducibility, verified rather than asserted
+
+`scripts/sc_recheck.py` recomputes every base rate, positive count, positive-cluster count and
+per-arm AP **from `artifacts/heldout_frames.npz` alone — no GPU, no pod, no checkpoint** — and diffs
+them against `sc_results.json`. **Result: `RECHECK: ALL AGREE`** (non-zero exit on any mismatch).
 
 ---
 
@@ -745,15 +816,26 @@ of a stream that produced nothing, at higher cost.**
 
 ### 🔴 Escalations — raised here, not buried in a README
 
-1. **🔴 `taniteval.blind_baseline` cannot pass on a rare-positive binary target, and this is not
-   specific to my study.** Its `CIRCULAR` branch fires when `blind_accuracy ≥ 1 − 0.02`. On a
-   target with a positive rate below 2 %, the **majority-class predictor alone** clears that bar, so
-   the verdict is forced regardless of whether the context carries anything. The firewall's own
-   companion numbers prove the difference here — `blind_skill_over_majority = 0.0000` and
-   `context_leaks = 0` — but a reader who quotes only the verdict would record a leak that the same
-   record refutes. **Its MDE against the effect it exists to catch is stated in §5; the check needs
-   a rare-positive mode (skill-over-majority or AP-based) before it is applied to any binary target
-   below ~2 % positives.** This is the C13 pattern inverted: a guard that cannot *pass*.
+1. **🔴 `taniteval.blind_baseline` returns `CIRCULAR` on ALL THREE of my targets while its own
+   companion numbers say there is NO leak — and it does so by two different degenerate routes.
+   This is not specific to my study and it will mislabel any rare-positive binary decision problem
+   in the program.** MEASURED here (§5, per situation):
+   - all three: **`context_leaks = 0`** and **`blind_skill_over_majority` ≈ 0** (−7.6e−05 / 0.0 /
+     0.0) — *the ego context carries no information about the target beyond the base rate*;
+   - **roundabout** (positive rate 0.00301): the **deterministic** clause fires because
+     `blind_accuracy ≥ 1 − 0.02` is cleared by the **majority-class predictor alone**. It could not
+     have failed — the largest accuracy gain any context could add is 0.00301, an MDE **6.6× smaller
+     than the threshold it is tested against**;
+   - **lane change / intersection** (0.02123 / 0.02573): the deterministic clause does *not* fire;
+     the verdict comes from **`vision_buys_nothing`**, which compares **accuracies**. A gate that
+     deliberately fires at ~3 % to buy recall *must* lose accuracy to "always predict negative", so
+     that clause fires for **any useful rare-event classifier**.
+
+   ⇒ **A reader quoting only the verdict would record a leak the same record refutes.** The firewall
+   needs a rare-positive mode (skill-over-majority, or AP/precision-based rather than accuracy-based)
+   before it is applied to any binary target below ~5 % positives. This is the C13 pattern inverted:
+   **a guard that cannot pass.** It belongs in `RETRACTION_LOG.md` under the control-degeneracy class
+   — flagged here rather than written by me into a shared program file mid-session.
 2. **🔴 The roundabout situation is not decidable on PhysicalAI-AV, and the PI should be told
    plainly.** Two of his three situations are buildable here; the third is not. §3 and §4 give the
    numbers (27 held-out positive clusters against a 40-cluster bar; ~18 % of held-out detections

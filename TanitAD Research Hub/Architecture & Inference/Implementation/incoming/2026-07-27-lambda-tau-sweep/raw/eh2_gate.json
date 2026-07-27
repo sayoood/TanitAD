@@ -126,6 +126,28 @@
     "_correction": "`base_rank` is NOT a rank. V5 section 5.2's label 'top-n by the as-trained base ranking' is wrong; the columns are '[the as-trained pick] ++ [anchors in INDEX order]'. Its CONCLUSIONS survive \u2014 index order is still a nested family \u2014 but the label does not.",
     "_root_cause_class": "a tensor's semantics taken from its NAME rather than from its construction site (v5_cost_curve.py:109-122)"
   },
+  "G5_clamp_reachability": {
+    "measured_seam_norm_ratio_max_at_lambda1_tau1": {
+      "produced": {
+        "value": 0.1204,
+        "threshold": 1.0,
+        "pass": true
+      },
+      "oracle": {
+        "value": 0.1208,
+        "threshold": 1.0,
+        "pass": true
+      }
+    },
+    "_it_is_the_PRE_clamp_ratio_because": "the recorded value is 0.1204 < seam_clamp = 1.0, and the head records min(pre_max, seam_clamp) \u2014 below the clamp the two are the same number. Same checkpoint as the sweep (flagship-v4-fromscratch-30k, step 29999, ckpt_md5 8771c1d9\u2026).",
+    "lambda_at_which_the_clamp_first_binds_at_tau1": 8.306,
+    "lambda_at_which_shipped_seam_fail_1_5_would_RAISE_at_tau1": 12.458,
+    "cells_in_the_lambda_grid_at_tau1_that_are_clamp_bound": [],
+    "cells_in_the_lambda_grid_at_tau1_the_shipped_guard_would_REFUSE": [],
+    "PASS": true,
+    "_finding": "\u2b50 ON THE LAMBDA AXIS AT tau = 1 THE NAMED TRAP DOES NOT BITE: r scales exactly linearly in lambda, the measured anchor is 0.1204, so the clamp does not bind until lambda > 8.31 and the shipped seam_fail=1.5 guard does not fire until lambda > 12.46. The whole pre-registered grid tops out at lambda = 8, so the deployable and diagnostic sheets are expected to be IDENTICAL along tau = 1. The trap lives on the TAU axis.",
+    "_tau_axis_is_NOT_settled_here": "||graft(tau)|| grows ~1/tau asymptotically, so at tau = 0.1 the ratio is expected near 1.204 \u2014 above seam_clamp, below seam_fail \u2014 and the sharpening branch is where cells will be clamp-bound. The exact factor needs the class logits (not staged). ESTIMATED, not measured; the sweep emits the true value per cell."
+  },
   "ALL_PASS": true,
   "_wallclock_s": 0.3
 }

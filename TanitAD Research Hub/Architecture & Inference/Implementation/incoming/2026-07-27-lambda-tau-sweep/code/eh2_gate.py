@@ -243,6 +243,70 @@ def gate_base_rank_semantics() -> dict:
                                  "(v5_cost_curve.py:109-122)"}
 
 
+# --------------------------------------------------------------------- G5 ---
+_DIAG = (_REPO / "TanitAD Research Hub" / "Benchmarks & Eval" / "Implementation"
+         / "incoming" / "2026-07-26-v4-30k-gate" / "raw")
+
+
+def gate_clamp_reachability() -> dict:
+    """⚠️ THE NAMED TRAP, answered EXACTLY on the lambda axis before the sweep runs.
+
+    ``seam_norm_ratio_max`` is a KILL SECONDARY the v4 gate already emits, and
+    because its value sits below ``seam_clamp = 1.0`` it IS the pre-clamp ratio
+    (``min(pre_max, seam_clamp)`` with ``pre_max < 1``). The graft scales
+    EXACTLY linearly in lambda, so one measured number fixes both crossings on
+    the whole lambda axis at tau = 1 -- no forward pass needed.
+
+    tau is a different story and is NOT settled here: the graft's magnitude
+    grows asymptotically like 1/tau on the sharpening branch, so the clamp is
+    expected to bind there. The exact crossing depends on the class logit gaps,
+    which no staged artifact holds -- which is precisely why every swept cell
+    must EMIT its pre-clamp ratio rather than assume one.
+    """
+    got = {}
+    for surf in ("produced", "oracle"):
+        p = _DIAG / f"flagship-v4-fromscratch-30k-{surf}_v4_diagnostics.json"
+        if not p.exists():
+            continue
+        d = json.loads(p.read_text(encoding="utf-8"))
+        got[surf] = d["kill_secondaries"]["seam_norm_ratio_max"]
+    if not got:
+        return {"PASS": False, "_why": "no v4 30k diagnostics found"}
+    r1 = float(got["produced"]["value"])
+    lam_clamp, lam_fail = 1.0 / r1, 1.5 / r1
+    grid = (0.0, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0)
+    return {
+        "measured_seam_norm_ratio_max_at_lambda1_tau1": got,
+        "_it_is_the_PRE_clamp_ratio_because": "the recorded value is "
+            f"{r1} < seam_clamp = 1.0, and the head records "
+            "min(pre_max, seam_clamp) — below the clamp the two are the same "
+            "number. Same checkpoint as the sweep (flagship-v4-fromscratch-30k, "
+            "step 29999, ckpt_md5 8771c1d9…).",
+        "lambda_at_which_the_clamp_first_binds_at_tau1": round(lam_clamp, 3),
+        "lambda_at_which_shipped_seam_fail_1_5_would_RAISE_at_tau1":
+            round(lam_fail, 3),
+        "cells_in_the_lambda_grid_at_tau1_that_are_clamp_bound":
+            [l for l in grid if l * r1 > 1.0],
+        "cells_in_the_lambda_grid_at_tau1_the_shipped_guard_would_REFUSE":
+            [l for l in grid if l * r1 > 1.5],
+        "PASS": True,
+        "_finding": "⭐ ON THE LAMBDA AXIS AT tau = 1 THE NAMED TRAP DOES NOT "
+                    "BITE: r scales exactly linearly in lambda, the measured "
+                    f"anchor is {r1}, so the clamp does not bind until "
+                    f"lambda > {lam_clamp:.2f} and the shipped seam_fail=1.5 "
+                    f"guard does not fire until lambda > {lam_fail:.2f}. The "
+                    "whole pre-registered grid tops out at lambda = 8, so the "
+                    "deployable and diagnostic sheets are expected to be "
+                    "IDENTICAL along tau = 1. The trap lives on the TAU axis.",
+        "_tau_axis_is_NOT_settled_here": "||graft(tau)|| grows ~1/tau "
+            "asymptotically, so at tau = 0.1 the ratio is expected near "
+            f"{10 * r1:.3f} — above seam_clamp, below seam_fail — and the "
+            "sharpening branch is where cells will be clamp-bound. The exact "
+            "factor needs the class logits (not staged). ESTIMATED, not "
+            "measured; the sweep emits the true value per cell.",
+    }
+
+
 def main() -> None:
     t0 = time.time()
     R = {"_experiment": "E-H2 gate — bit-identity, committed bars, no-truncation, "
@@ -254,6 +318,7 @@ def main() -> None:
     R["G2_committed_bars"] = gate_committed_bars()
     R["G3_no_truncation"] = gate_no_truncation()
     R["G4_base_rank_semantics"] = gate_base_rank_semantics()
+    R["G5_clamp_reachability"] = gate_clamp_reachability()
     R["ALL_PASS"] = all(R[k]["PASS"] for k in R if k.startswith("G"))
     R["_wallclock_s"] = round(time.time() - t0, 1)
     out = _HERE.parent.parent / "raw" / "eh2_gate.json"

@@ -104,14 +104,21 @@ def main():
     }
 
     # ---- the quality surface: ade(n, k) -----------------------------------
-    # breadth n: keep the top-n candidates by the AS-TRAINED base ranking, so
-    # n=1 is exactly the as-trained pick and the curve starts at 0.8563.
-    base_rank = torch.zeros(W, N, dtype=torch.long)
-    if "costs" in D and "C2_wm_ref_proximity" in D["costs"]:
-        pass
-    # the as-trained pick is known; approximate the base RANKING by the negative
-    # imagination-free ordering that reproduces it at rank 0, using the recorded
-    # per-window pick plus fan-order for the rest (documented, not hidden).
+    # ⛔ LABEL CORRECTED 2026-07-27 (E-H1 section 9.2/9.5, verified 881/881 rows).
+    # This was called `base_rank` and documented as "the top-n candidates by the
+    # AS-TRAINED base ranking". IT IS NOT A RANKING. It is exactly
+    #
+    #     nested_order[w] = [ the as-trained pick ] ++ [ anchors 0..N-1, pick removed ]
+    #
+    # i.e. column 0 is the deployed pick (so n=1 reproduces 0.8563 exactly) and
+    # columns 1.. are ANCHOR INDEX ORDER, which carries no score information.
+    # The E-V5-3 CONCLUSIONS survive -- "letting the imagination rule consider
+    # more candidates makes it worse" holds for ANY nested family of candidate
+    # sets, and index order is still a nested family -- but the LABEL does not,
+    # and a later stream nearly published a false mechanism off the old name.
+    # Root-cause class: A TENSOR'S SEMANTICS TAKEN FROM ITS NAME RATHER THAN
+    # FROM ITS CONSTRUCTION SITE. If you want a real score ranking here, dump
+    # `sel_score.argsort(descending=True)` -- it is one key.
     sel0 = D["ref_sel_idx"]
     order = torch.arange(N).repeat(W, 1)
     order = torch.cat([sel0[:, None], order], dim=1)
@@ -119,7 +126,9 @@ def main():
     keep = torch.ones(W, N + 1, dtype=torch.bool)
     keep.scatter_(1, (sel0 + 1)[:, None], False)
     keep[:, 0] = True
-    base_rank = order[keep].reshape(W, N)
+    nested_order = order[keep].reshape(W, N)
+    base_rank = nested_order      # legacy alias: the dumped key name is kept so
+                                  # already-staged .pt files stay readable
 
     ns = [1, 2, 4, 8, 16, 32, 64, 128, 256]
     ks = [1, 2, 4, 6, 8, 10, 14, 20]
@@ -129,7 +138,7 @@ def main():
         cost_k = (imag[:, :, :k] - fan[:, :, :k]).norm(dim=-1).mean(dim=-1)
         row = {}
         for n in ns:
-            cand = base_rank[:, :n]                        # [W, n]
+            cand = nested_order[:, :n]     # NOT "top-n by score" — see above
             c = cost_k.gather(1, cand)
             pick = cand.gather(1, c.argmin(dim=1, keepdim=True)).squeeze(1)
             ade = err4.gather(1, pick[:, None]).squeeze(1).numpy()
@@ -227,7 +236,14 @@ def main():
         "cost_A1_by_k": {
             f"k{k}": (imag[:, :, :k] - fan[:, :, :k]).norm(dim=-1).mean(dim=-1)
             for k in ks},
-        "base_rank": base_rank,
+        "base_rank": nested_order,          # legacy key name — see _base_rank_IS
+        "nested_order": nested_order,        # the correct name
+        "_base_rank_IS": "[the as-trained pick] ++ [anchors 0..N-1 in INDEX "
+                         "order, pick removed]. NOT a score ranking — verified "
+                         "881/881 rows, E-H1 section 9.2. Column 0 reproduces "
+                         "F_flat = 0.8563 exactly; columns 1.. carry NO score "
+                         "information. Use `sel_score.argsort(descending=True)` "
+                         "if you need a real ranking.",
         "picks": D["picks"], "ade_by_arm": D["ade_by_arm"],
         "_note": "REDUCED dump for the repo. fan_err4 [W,256] is the 4-wp error "
                  "of EVERY candidate, so ANY selection rule's ade_0_2s is "

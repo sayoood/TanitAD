@@ -1,0 +1,165 @@
+{
+ "what": "T2 \u2014 per-candidate rule-label discrimination on PhysicalAI-AV",
+ "thresholds": {
+  "ego_pad_m": 0.0,
+  "ttc_horizon_s": 0.5,
+  "a_lon": [
+   -4.05,
+   4.89
+  ],
+  "a_lat_max": 4.89,
+  "jerk_max": 8.37,
+  "yaw_rate_max": 0.95
+ },
+ "corpus": {
+  "clips": 96,
+  "windows": 3360,
+  "candidates": 256,
+  "fan": "256 FPS anchors over dev-box train waypoint targets (build_refc_anchors real-data recipe); NO offset head",
+  "note": "NOT the parity corpus \u2014 a label property, not a model comparison"
+ },
+ "agents": {
+  "mean_agents_per_window": 53.6,
+  "median": 48,
+  "max": 187,
+  "frac_windows_with_zero_agents": 0.0003
+ },
+ "labels": [
+  {
+   "label": "NC (at-fault collision)",
+   "positive_rate": 0.22651,
+   "frac_windows_with_any_positive": 0.8241,
+   "frac_windows_label_varies": 0.8173,
+   "mean_positives_per_window": 57.99,
+   "rho_vs_fan_err": {
+    "n_nondegenerate_windows": 2746,
+    "frac_nondegenerate": 0.8173,
+    "mean_rho": 0.1665,
+    "median_rho": 0.1467,
+    "pooled_rho": 0.1494
+   }
+  },
+  {
+   "label": "collision (any, incl. rear-end)",
+   "positive_rate": 0.23887,
+   "frac_windows_with_any_positive": 0.8241,
+   "frac_windows_label_varies": 0.8104,
+   "mean_positives_per_window": 61.15,
+   "rho_vs_fan_err": {
+    "n_nondegenerate_windows": 2723,
+    "frac_nondegenerate": 0.8104,
+    "mean_rho": 0.1726,
+    "median_rho": 0.1447,
+    "pooled_rho": 0.1624
+   }
+  },
+  {
+   "label": "TTC infraction (<=1 s const-vel projection)",
+   "positive_rate": 0.28666,
+   "frac_windows_with_any_positive": 0.875,
+   "frac_windows_label_varies": 0.8628,
+   "mean_positives_per_window": 73.39,
+   "rho_vs_fan_err": {
+    "n_nondegenerate_windows": 2899,
+    "frac_nondegenerate": 0.8628,
+    "mean_rho": 0.1678,
+    "median_rho": 0.1477,
+    "pooled_rho": 0.1525
+   }
+  },
+  {
+   "label": "comfort VIOLATION",
+   "positive_rate": 0.99344,
+   "frac_windows_with_any_positive": 1.0,
+   "frac_windows_label_varies": 0.7702,
+   "mean_positives_per_window": 254.32,
+   "rho_vs_fan_err": {
+    "n_nondegenerate_windows": 2588,
+    "frac_nondegenerate": 0.7702,
+    "mean_rho": 0.1051,
+    "median_rho": 0.1055,
+    "pooled_rho": 0.1036
+   }
+  }
+ ],
+ "continuous": {
+  "surface_gap_m": {
+   "p1": -5.066,
+   "p50": 0.084,
+   "mean_within_window_std": 2.0408
+  },
+  "ttc_min_s_finite_frac": 0.28666,
+  "progress_m": {
+   "mean_within_window_std": 8.5592
+  }
+ },
+ "composite_metric": {
+  "definition": "PDMS-lite (no-map) = NC * (5*EP + 5*TTC + 2*C) / 12, PDM's weights; DAC/DDC/LK/TL absent (no map in corpus)",
+  "selection_arms": {
+   "rule_pdms_lite_argmax": {
+    "ade_0_2s": 9.7073,
+    "mean_pdms_lite": 0.8067,
+    "at_fault_collision_rate": 0.0071
+   },
+   "rule_nc_ttc_only": {
+    "ade_0_2s": 4.1815,
+    "mean_pdms_lite": 0.6887,
+    "at_fault_collision_rate": 0.0128
+   },
+   "random": {
+    "ade_0_2s": 7.5251,
+    "mean_pdms_lite": 0.4359,
+    "at_fault_collision_rate": 0.2167
+   },
+   "oracle_in_fan": {
+    "ade_0_2s": 0.5906,
+    "mean_pdms_lite": 0.588,
+    "at_fault_collision_rate": 0.0336
+   }
+  },
+  "oracle_survival_under_rule_veto": {
+   "unfiltered_oracle_ade": 0.5906,
+   "after_NC_veto": {
+    "frac_windows_with_any_survivor": 0.9932,
+    "oracle_ade_among_survivors": 0.6614,
+    "frac_windows_where_the_ade_oracle_is_vetoed": 0.0336
+   },
+   "after_NC_TTC_comfort_veto": {
+    "frac_windows_with_any_survivor": 0.6842,
+    "oracle_ade_among_survivors": 1.6808,
+    "frac_windows_where_the_ade_oracle_is_vetoed": 0.9381
+   }
+  },
+  "ground_truth_self_label_control": {
+   "note": "the SAME labeler applied to the REALISED human future \u2014 an instrument check in the direction that can only embarrass it",
+   "gt_at_fault_collision_rate": 0.02054,
+   "gt_any_collision_rate": 0.02083,
+   "gt_ttc_infraction_rate": 0.02024,
+   "gt_comfort_ok_rate": 0.85923,
+   "published_reference": "PARA-Drive: GT trajectories 'collide' at 0.384 % under axis-aligned boxes (PDF-VERBATIM)"
+  },
+  "selftest_failing_input": {
+   "note": "a uniform-random pick over the same fan must score WORSE on the composite than the rule pick",
+   "passes": true
+  },
+  "note": "\u26a0\ufe0f ade_0_2s CANNOT ADJUDICATE A SCORER \u2014 reported here only to show the two surfaces disagree, which is the point. L2/ADE vs closed-loop Driving Score measured at rho = -0.36, p = 0.43 by the same-day closed-loop research."
+ },
+ "DAC": {
+  "buildable": false,
+  "why": "PhysicalAI-AV ships no map / lane graph / drivable-area polygon (settled at five probes). DAC is one of PDMS's two multiplicative terms \u2014 this is a real ceiling."
+ },
+ "PRE_REGISTERED_KILL": {
+  "rule": "positive rate < 5 % AND |Spearman rho with fan_err| < 0.15 => R1 REFUTED on this corpus",
+  "NC": {
+   "positive_rate": 0.22651,
+   "pooled_rho": 0.1494,
+   "fires": false
+  },
+  "TTC": {
+   "positive_rate": 0.28666,
+   "pooled_rho": 0.1525,
+   "fires": false
+  },
+  "verdict": "SURVIVES"
+ }
+}

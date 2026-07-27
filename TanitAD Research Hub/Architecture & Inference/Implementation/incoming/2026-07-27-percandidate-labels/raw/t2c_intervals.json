@@ -1,0 +1,193 @@
+{
+ "estimator": "episode-cluster bootstrap (taniteval.ci), B=2000, unit = clip; paired form for every contrast; overlapping_holdout_se NEVER used",
+ "rates": [
+  {
+   "name": "NC at-fault rate over all candidates",
+   "mean": 0.2265,
+   "lo": 0.1898,
+   "hi": 0.2641,
+   "ci95": 0.0371,
+   "n_windows": 3360,
+   "n_episodes": 96
+  },
+  {
+   "name": "TTC infraction rate over all candidates",
+   "mean": 0.2867,
+   "lo": 0.2446,
+   "hi": 0.3275,
+   "ci95": 0.0415,
+   "n_windows": 3360,
+   "n_episodes": 96
+  },
+  {
+   "name": "comfort violation rate over all candidates",
+   "mean": 0.9934,
+   "lo": 0.993,
+   "hi": 0.9939,
+   "ci95": 0.0005,
+   "n_windows": 3360,
+   "n_episodes": 96
+  },
+  {
+   "name": "frac windows where the NC label VARIES across the fan",
+   "mean": 0.8173,
+   "lo": 0.7613,
+   "hi": 0.8676,
+   "ci95": 0.0531,
+   "n_windows": 3360,
+   "n_episodes": 96
+  },
+  {
+   "name": "frac windows where the TTC label VARIES across the fan",
+   "mean": 0.8628,
+   "lo": 0.8107,
+   "hi": 0.9072,
+   "ci95": 0.0482,
+   "n_windows": 3360,
+   "n_episodes": 96
+  }
+ ],
+ "arms": {
+  "rule_pdms_lite": {
+   "ade": {
+    "name": "rule_pdms_lite ade_0_2s",
+    "mean": 9.7073,
+    "lo": 8.7373,
+    "hi": 10.7175,
+    "ci95": 0.9901,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "pdms": {
+    "name": "rule_pdms_lite PDMS-lite",
+    "mean": 0.8067,
+    "lo": 0.7925,
+    "hi": 0.8195,
+    "ci95": 0.0135,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "nc": {
+    "name": "rule_pdms_lite at-fault collision rate",
+    "mean": 0.0071,
+    "lo": 0.0012,
+    "hi": 0.017,
+    "ci95": 0.0079,
+    "n_windows": 3360,
+    "n_episodes": 96
+   }
+  },
+  "random": {
+   "ade": {
+    "name": "random ade_0_2s",
+    "mean": 7.5251,
+    "lo": 6.9919,
+    "hi": 8.1415,
+    "ci95": 0.5748,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "pdms": {
+    "name": "random PDMS-lite",
+    "mean": 0.4359,
+    "lo": 0.4104,
+    "hi": 0.4619,
+    "ci95": 0.0258,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "nc": {
+    "name": "random at-fault collision rate",
+    "mean": 0.2167,
+    "lo": 0.1771,
+    "hi": 0.258,
+    "ci95": 0.0405,
+    "n_windows": 3360,
+    "n_episodes": 96
+   }
+  },
+  "oracle_in_fan": {
+   "ade": {
+    "name": "oracle_in_fan ade_0_2s",
+    "mean": 0.5906,
+    "lo": 0.4233,
+    "hi": 0.8214,
+    "ci95": 0.199,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "pdms": {
+    "name": "oracle_in_fan PDMS-lite",
+    "mean": 0.588,
+    "lo": 0.5623,
+    "hi": 0.6122,
+    "ci95": 0.0249,
+    "n_windows": 3360,
+    "n_episodes": 96
+   },
+   "nc": {
+    "name": "oracle_in_fan at-fault collision rate",
+    "mean": 0.0336,
+    "lo": 0.017,
+    "hi": 0.0536,
+    "ci95": 0.0183,
+    "n_windows": 3360,
+    "n_episodes": 96
+   }
+  }
+ },
+ "paired_contrasts": {
+  "collision_rate_rule_minus_random": {
+   "delta": -0.2095,
+   "lo": -0.2491,
+   "hi": -0.1705,
+   "ci95": 0.0393,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 3360,
+   "n_episodes": 96,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "collision_rate_rule_minus_ade_oracle": {
+   "delta": -0.0265,
+   "lo": -0.0432,
+   "hi": -0.0128,
+   "ci95": 0.0152,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 3360,
+   "n_episodes": 96,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "collision_rate_ade_oracle_minus_random": {
+   "delta": -0.183,
+   "lo": -0.2226,
+   "hi": -0.1432,
+   "ci95": 0.0397,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 3360,
+   "n_episodes": 96,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "ade_rule_minus_ade_oracle": {
+   "delta": 9.1167,
+   "lo": 8.0964,
+   "hi": 10.1814,
+   "ci95": 1.0425,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 3360,
+   "n_episodes": 96,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

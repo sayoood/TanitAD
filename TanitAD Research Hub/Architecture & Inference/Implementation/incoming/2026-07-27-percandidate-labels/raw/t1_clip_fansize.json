@@ -1,0 +1,121 @@
+{
+ "what": "T1 \u2014 kinematic clip + fan-size sweep on cached fans (zero GPU)",
+ "surfaceA": {
+  "source": "taniteval/results/fan_refc-xl-30k.pt (refc-xl-30k, 881 canonical val windows, 256 emitted candidates + real logits)",
+  "selftest_pick_is_argmax_of_logits": 1.0,
+  "kinematic_clip": {
+   "band": {
+    "rule": "v_term in [max(0, v0 - reach), v0 + reach], reach = sel_accel_max * horizon = 2.5 * 2.0 = 5.0 m/s",
+    "provenance": "flagship_v15.py:139,455 \u2014 the head's OWN goal clamp, applied to the candidates; NOT tuned"
+   },
+   "frac_candidates_removed": 0.7208,
+   "frac_windows_with_empty_survivor_set": 0.0,
+   "oracle_survives_frac": 1.0,
+   "oracle_ade_unfiltered": 0.164,
+   "oracle_ade_after_clip": 0.164,
+   "as_trained_ade": 0.4714,
+   "clipped_ade": 0.4714,
+   "paired": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "miss_at_2m_as_trained": 0.0159,
+   "miss_at_2m_clipped": 0.0159
+  },
+  "fan_size_sweep": {
+   "K4": {
+    "oracle_ade": 4.5462,
+    "realisable_pick_ade": 5.2866,
+    "realisable_pick_ade_sd_over_seeds": 0.143,
+    "miss_at_2m": 0.725
+   },
+   "K8": {
+    "oracle_ade": 2.5648,
+    "realisable_pick_ade": 3.3678,
+    "realisable_pick_ade_sd_over_seeds": 0.0932,
+    "miss_at_2m": 0.5511
+   },
+   "K16": {
+    "oracle_ade": 1.4438,
+    "realisable_pick_ade": 2.2012,
+    "realisable_pick_ade_sd_over_seeds": 0.0721,
+    "miss_at_2m": 0.3912
+   },
+   "K20": {
+    "oracle_ade": 1.1939,
+    "realisable_pick_ade": 1.8974,
+    "realisable_pick_ade_sd_over_seeds": 0.0846,
+    "miss_at_2m": 0.3234
+   },
+   "K32": {
+    "oracle_ade": 0.8232,
+    "realisable_pick_ade": 1.4086,
+    "realisable_pick_ade_sd_over_seeds": 0.054,
+    "miss_at_2m": 0.224
+   },
+   "K64": {
+    "oracle_ade": 0.4753,
+    "realisable_pick_ade": 0.9365,
+    "realisable_pick_ade_sd_over_seeds": 0.031,
+    "miss_at_2m": 0.1037
+   },
+   "K128": {
+    "oracle_ade": 0.2722,
+    "realisable_pick_ade": 0.6503,
+    "realisable_pick_ade_sd_over_seeds": 0.0097,
+    "miss_at_2m": 0.039
+   },
+   "K256": {
+    "oracle_ade": 0.164,
+    "realisable_pick_ade": 0.4714,
+    "realisable_pick_ade_sd_over_seeds": 0.0,
+    "miss_at_2m": 0.0159
+   }
+  }
+ },
+ "surfaceB": {
+  "source": "v5_v4_windows_reduced.pt (flagship-v4-fromscratch-30k, same 881 windows, real per-candidate fan_err4)",
+  "limitation": "no fan geometry and no usable score ranking on this host, so only the COVERAGE side of the sweep is computable for v4",
+  "as_trained_ade": 0.8563,
+  "oracle_ade_full_fan": 0.2505,
+  "fan_size_sweep_coverage_only": {
+   "K4": {
+    "oracle_ade": 4.9648
+   },
+   "K8": {
+    "oracle_ade": 2.6048
+   },
+   "K16": {
+    "oracle_ade": 1.3568
+   },
+   "K20": {
+    "oracle_ade": 1.1134
+   },
+   "K32": {
+    "oracle_ade": 0.7669
+   },
+   "K64": {
+    "oracle_ade": 0.48
+   },
+   "K128": {
+    "oracle_ade": 0.3339
+   },
+   "K256": {
+    "oracle_ade": 0.2505
+   }
+  }
+ },
+ "reading": {
+  "published_anchor": "LLM-Assist: PDM-Closed 15 proposals 92.51 -> 8,505 proposals 77.78 CLS-NR (PDF-VERBATIM)",
+  "note": "a shrinking oracle is the COST of a smaller fan; the realisable pick is the BENEFIT. Only surface A can show both."
+ }
+}

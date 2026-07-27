@@ -30,6 +30,29 @@ def sep(d):
     return "**YES**" if d.get("separated") else "no"
 
 
+def _blind_can_fail(cb, mde):
+    """State WHICH clause fired and whether it COULD have failed — read from the flags, not asserted.
+
+    The firewall has two routes to CIRCULAR and they degenerate for different reasons on a
+    rare-positive binary target, so the report must name the one that actually fired."""
+    det = cb.get("target_is_deterministic_in_context")
+    vbn = cb.get("vision_buys_nothing")
+    pr = mde.get("positive_rate")
+    eps = mde.get("deterministic_eps")
+    if det:
+        return (f"⛔ **NO** — the *deterministic* clause fired and it could not have failed: the "
+                f"positive rate is **{pr}** < `deterministic_eps` **{eps}**, so the majority-class "
+                f"predictor alone clears `1 − eps`, and the largest accuracy gain ANY context "
+                f"could add is {mde.get('max_possible_accuracy_gain_over_majority')}.")
+    if vbn:
+        return (f"⛔ **NO** — the *deterministic* clause did **not** fire (positive rate {pr} > "
+                f"eps {eps}); the verdict comes from the `vision_buys_nothing` clause, which "
+                f"compares **accuracies**. A gate that fires at ~3 % to buy recall is *designed* "
+                f"to lose accuracy against 'always predict negative', so on this target that "
+                f"clause fires for any useful classifier.")
+    return "the clause could fail on this target; the verdict is readable"
+
+
 def main():
     art, out = sys.argv[1], sys.argv[2]
     R = json.load(open(os.path.join(art, "sc_results.json")))
@@ -212,16 +235,18 @@ def main():
               f"| **C-POW** | reading a small-n null as a refutation | {r['n_pos_clusters']} "
               f"positive clusters vs a 40 bar → **{r['C_POW']}** | measured before any score |",
               f"| **C-BLIND** (packaged firewall, imported) | the target being a function of the "
-              f"conditioning | verdict **{cb.get('verdict','—')}**, but "
-              f"`blind_skill_over_majority` = **{mde.get('blind_skill_over_majority','—')}** | "
-              f"⛔ **NO** — positive rate {mde.get('positive_rate','—')} < deterministic_eps "
-              f"{mde.get('deterministic_eps','—')}, so the majority-class predictor alone forces "
-              f"`CIRCULAR`. Max possible accuracy gain from ANY context: "
-              f"{mde.get('max_possible_accuracy_gain_over_majority','—')}. |", "",
-              "> ⚠️ **The C-BLIND verdict is degenerate on this target and must not be quoted "
-              "alone.** Its own companion numbers refute it: the ego context adds **exactly zero** "
-              "skill over the base rate. The informative form of the same question — *does vision "
-              "buy anything the ego state did not already give?* — is the AP-based "
+              f"conditioning | verdict **{cb.get('verdict','—')}**; `context_leaks` = "
+              f"**{cb.get('context_leaks','—')}**, `blind_skill_over_majority` = "
+              f"**{mde.get('blind_skill_over_majority','—')}** | {_blind_can_fail(cb, mde)} |", "",
+              "> ⚠️ **The C-BLIND verdict is DEGENERATE on this target and must not be quoted "
+              "alone — its own companion numbers refute it.** `context_leaks = 0` and "
+              "`blind_skill_over_majority` ≈ 0: **the ego context carries no information about the "
+              "target beyond the base rate.** The `CIRCULAR` label is produced by an *accuracy* "
+              "comparison on a 2–3 %-positive target, where the majority-class predictor scores "
+              f"{cb.get('majority_base_rate',{}).get('mean','—') if isinstance(cb.get('majority_base_rate'),dict) else '—'} "
+              "and any recall-seeking classifier necessarily scores lower — the head is *supposed* "
+              "to fire more often than the base rate. The informative form of the same question — "
+              "*does vision buy anything the ego state did not already give?* — is the AP-based "
               "`− head_ego` contrast above, which is the pre-registered primary comparison.", ""]
 
         L += [f"#### {PRETTY[s]} — the efficiency curve (recall at a fixed camera budget)\n",
