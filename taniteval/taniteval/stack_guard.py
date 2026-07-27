@@ -559,15 +559,29 @@ def main(argv=None) -> int:
     except StackShadowError as ex:
         rep = report()
         rep["ok"] = False
+        # the refusal path must also say what was DEMANDED, or the reader cannot
+        # tell a capability refusal from a pure identity refusal.
+        rep["required"] = list(V5_CAPABILITIES if req == "v5" else (req or ()))
         rep["problems"] = [str(ex)]
         _eprint(str(ex))
         rc = 2
     if a.json:
         Path(a.json).parent.mkdir(parents=True, exist_ok=True)
         Path(a.json).write_text(json.dumps(rep, indent=2), encoding="utf-8")
+    # ⛔ `required` is PRINTED, not just banked (fixed 2026-07-27, found on the
+    # guard's first field test). Before this, the stdout of
+    #     … stack_check --require v5      (5 capabilities verified)
+    # and of
+    #     … stack_check                   (ZERO capabilities verified)
+    # were BYTE-IDENTICAL: both `"ok": true, "problems": []`. MEASURED on
+    # tanitad-pod3, `raw/guard_field_test_pod3.txt`. The operator pastes one of
+    # these commands in front of an eval and reads the summary — a GREEN must
+    # say what it checked, or a dropped/misspelled flag reads as a pass.
+    # The JSON report already carried it; only the human surface lied.
     print(json.dumps({k: v for k, v in rep.items()
                       if k in ("ok", "pinned_root", "provenance", "mode",
-                               "tanitad_file", "problems")}, indent=2))
+                               "tanitad_file", "required", "problems")},
+                     indent=2))
     return rc
 
 

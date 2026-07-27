@@ -227,7 +227,10 @@ failure mode is off-road, not collision. ⚠️ **Map-free / agent-free ⇒ lane
 collision.** The low-OOD-vs-safety-metric gap is ~fundamental without a lower-OOD reactive renderer.
 
 **(e) ⭐ The data thesis (H7) gets its first evidence.** Direct pseudo-label accuracy is honestly modest
-(speed R² 0.62–0.66 cross-domain, longitudinal-traj 0.60, **yaw ≈ 0**, accel dropped) — but what matters
+(speed R² 0.62–0.66 cross-domain, longitudinal-traj 0.60, **yaw ≈ 0** ⚠️*STALE-PENDING — that cell is
+comma2k19 with `heading_repair` OFF, a broken label, not a transfer result (C29); on repaired labels the
+same head reads comma yaw **+0.3308**, retrained **+0.679**; see
+`…/incoming/2026-07-27-comma-yaw-reissue/`*, accel dropped) — but what matters
 downstream is structure, not precision: pseudo-label WM pretraining captures **~96 %** of real-label
 pretraining value (8 seeds, 2 proxy domains) and **109 % speed / 107 % traj / 71 % yaw** on the actual
 parity target (4 seeds, all CI-separated from the floor). The **80-clip Creative-Commons YouTube pilot**

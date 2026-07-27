@@ -47,6 +47,21 @@ with calibration (bias −1.65) — same-class error IS partly scale, so a weak 
 † comma yaw is **unreadable in-domain too** (MEASURED control: comma-co-trained head → comma yaw R²
 −0.00003) — a comma-label artifact, **not** a transfer failure; comma cannot test yaw pseudo-labels.
 
+> 🔴 **RE-ISSUED 2026-07-27 (C29). The mechanism above was RIGHT; the conclusion drawn from it is
+> OVERTURNED.** The artifact is now located and named: comma's heading is `arctan2` of the ENU
+> velocity and is **undefined at standstill** — MEASURED, **26.27 %** of comma frames below 0.5 m/s
+> are physically impossible, **0.000 %** above (PhysicalAI **zero in every bin**, so the rig-B `+0.504`
+> and rig-A `+0.924` cells are unaffected). ⇒ **"comma cannot test yaw pseudo-labels" no longer
+> holds.** With `heading_repair` ON (`v_min` 0.5), the *deployed* head reads comma yaw **R² +0.3308**
+> and a retrained head **+0.679**. **comma is re-qualified for yaw, on repaired labels only.**
+> ⚠️ The `+0.000 †` cell above is **left in place and marked STALE-PENDING** — it was measured on a
+> different substrate (no `v_min`, cross-CLASS zero-shot) and **no repaired measurement exists there**,
+> so nothing may be substituted into it.
+> ⭐ **Honesty condition:** comma-only, the repair moves R² **+0.0114 → +0.3308** and MAE **−42.5 %**,
+> but **medAE only −1.1 % and nMedAE 8.0 % WORSE**. It fixes **the tail and the summary statistic, not
+> typical accuracy** — so "comma yaw is now usable" is a claim about *aggregate* quality, not about
+> per-window precision. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+
 ## 3. The specific gaps (pre-registered "name the gap")
 
 1. **Cross-CLASS speed plateaus at R² 0.63 and is NOT scale-recoverable** (calib-ceiling ≈ zero-shot).

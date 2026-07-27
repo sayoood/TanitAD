@@ -80,6 +80,18 @@ the label against the best degree-2 polynomial fitted over that same window
 | long_accel | pai | 0.9465 | 0.2543 | 0.790 | 0.9808 | 0.9721 | 0.1327 m/s² |
 | long_accel | cm | 0.5012 | 0.1788 | 0.698 | 0.9394 | 0.9196 | 0.1224 m/s² |
 
+> 🔴 **RE-ISSUED 2026-07-27 (C29) — the `cm yaw_rate` ceiling of 0.3521 is a property of a BROKEN
+> LABEL, not of comma2k19.** It was computed with **`heading_repair` OFF**; comma's heading is
+> `arctan2` of the ENU velocity, undefined at standstill (**26.27 %** of comma frames below 0.5 m/s
+> physically impossible, **0.000 %** above — PhysicalAI zero in every bin, so its `0.9998` row is
+> untouched). The row's own `std 0.4290` vs `MAD 0.0112` is the defect's signature. **The ceiling was
+> the load-bearing premise for "no model can score well against a label that noisy" — that inference
+> is RETRACTED.** With the repair on, the *deployed* head already reads comma yaw **R² +0.3308**
+> (≈ the old "ceiling"), and a retrained head reads **+0.679** — i.e. **above** it.
+> ⚠️ **STALE-PENDING, not corrected:** the ceiling statistic itself has NOT been recomputed on
+> repaired labels. Do not quote **0.3521** as comma's yaw ceiling; there is currently **no measured
+> repaired ceiling**. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+
 **Only one cell is a noise floor: comma2k19 `yaw_rate`, where 65 % of the label's
 variance is not a smooth function of time at all.** Everything else is smooth —
 including `long_accel`, whose problem turns out to be different (§3.3).

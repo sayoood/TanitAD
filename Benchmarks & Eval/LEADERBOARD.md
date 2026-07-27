@@ -485,8 +485,26 @@ Gate: cross-domain speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× the in-d
 
 | split | in-distribution | cross-domain | verdict |
 |---|---|---|---|
-| PhysicalAI → **comma2k19** (primary go/no-go) | held-out speed R² **0.930**, yaw R² 0.924, ADE@2s 2.73 | comma speed R² **0.657**, yaw R² **0.000**, ADE@2s 6.56 | **FAIL** (ADE ratio 2.40) |
+| PhysicalAI → **comma2k19** (primary go/no-go) | held-out speed R² **0.930**, yaw R² 0.924, ADE@2s 2.73 | comma speed R² **0.657**, yaw R² **0.000** ⚠️STALE-PENDING, ADE@2s 6.56 | **FAIL** (ADE ratio 2.40) |
 | rig-A → **rig-B** (same corpus, other camera rig) | held-out speed R² 0.786, ADE@2s 4.36 | rig-B speed R² **−2.465**, yaw R² −0.109, ADE@2s 17.47 | **FAIL** (ADE ratio 4.01) |
+
+> 🔴 **LABEL-PROTOCOL CORRECTION 2026-07-27 (C29) — read before quoting the comma `yaw R² 0.000`.**
+> That cell was scored with **`heading_repair` OFF** and **no `v_min` gate**. comma2k19's heading is
+> `arctan2` of the ENU velocity and is **undefined at standstill**: MEASURED, **26.27 % of comma frames
+> below 0.5 m/s are physically impossible and 0.000 % above it** (PhysicalAI: **zero in every bin**, so
+> the `0.924` / `−0.109` / rig-B cells are UNAFFECTED). **`0.000` measures the label, not the transfer.**
+> The value is left in place for audit and is marked **STALE-PENDING**: no repaired measurement exists on
+> *this* substrate (12,420 comma windows, no `v_min`), so nothing may be substituted into the cell.
+> **What is measured elsewhere** (v3 val split, `heading_repair` ON, `v_min` 0.5, 2,992 comma windows,
+> nothing retrained): deployed head comma `yaw_rate` **R² +0.3308**, up from **+0.0114** on the same
+> windows with the repair off; retrained, **+0.679**.
+> ⭐ **Honesty condition:** comma-only, the repair moves **R² +0.0114 → +0.3308** and **MAE −42.5 %**, but
+> **medAE only −1.1 % and nMedAE 8.0 % WORSE** (Spearman ρ flat, +0.001). It fixes **the tail and the
+> summary statistic, not typical accuracy**.
+> ⚠️ **The verdict is NOT overturned by this.** The gate's primary channel is **speed** (0.657, unaffected
+> by the heading label) and the ADE ratio 2.40 — both fail on their own. What changes is the *reason* the
+> yaw cell reads zero. Inventory: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+> 2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 
 **The supervised-IDM paradigm works in-distribution and does NOT transfer.** It fails even the
 *same-corpus, other-rig* split (rig-B speed R² −2.465 — worse than predicting the mean), so the failure is

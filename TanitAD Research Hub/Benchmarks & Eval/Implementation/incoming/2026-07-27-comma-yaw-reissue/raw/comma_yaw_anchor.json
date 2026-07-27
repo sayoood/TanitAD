@@ -1,0 +1,636 @@
+{
+ "title": "comma2k19 yaw_rate re-issue — the anchor measurement and the honesty condition",
+ "generated_utc": "2026-07-27T20:13:18+00:00",
+ "agent": "comma-yaw-reissue (2026-07-27)",
+ "repo_head_at_start": "37ccfea",
+ "evidence_class": "MEASURED (read from existing raw artifacts; NOTHING recomputed here)",
+ "estimator": "taniteval.ci.(paired_)episode_cluster_bootstrap over the 36 val episodes, B=2000. overlapping_holdout_se is NOT used anywhere in this work.",
+ "protocol_axes": {
+  "heading_repair": {
+   "OFF": "legacy — comma yaw = arctan2(enu_v_north, enu_v_east), undefined at standstill. stack/tanitad/data/comma2k19.py HEADING_MODE_LEGACY, still the DEFAULT in the loader.",
+   "ON": "idm3_labels.heading_repair / comma2k19.hold_heading_through_standstill — hold the last observable heading direction through standstill."
+  },
+  "v_min": "speed below which comma heading is unobservable. The repair and every v3/v4 arm use v_min = 0.5 m/s. Pre-repair work applied NO v_min gate.",
+  "corpus_scope": "comma2k19-only / PhysicalAI-only / POOLED. A pooled number over a mix containing comma is comma-contaminated and therefore IN SCOPE."
+ },
+ "the_defect": {
+  "source_doc": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-27-idm-v3/IDM_V3.md §4",
+  "retraction_class": "C29 — THE MODEL WAS RIGHT AND THE LABEL WAS WRONG",
+  "yaw_audit_by_speed_comma2k19": [
+   {
+    "v_lo": 0.0,
+    "v_hi": 0.5,
+    "n": 217,
+    "frac_of_corpus": 0.011377936241610738,
+    "yaw_std": 4.0008416175842285,
+    "yaw_mad": 0.6267458200454712,
+    "p999_abs": 15.523344039916992,
+    "max_abs": 15.533036231994629,
+    "n_impossible_gt1p5": 57,
+    "frac_impossible": 0.2626728110599078
+   },
+   {
+    "v_lo": 0.5,
+    "v_hi": 1.0,
+    "n": 62,
+    "frac_of_corpus": 0.0032508389261744967,
+    "yaw_std": 0.0423976294696331,
+    "yaw_mad": 0.026993751525878906,
+    "p999_abs": 0.12394389510154724,
+    "max_abs": 0.12493014335632324,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 1.0,
+    "v_hi": 2.0,
+    "n": 184,
+    "frac_of_corpus": 0.00964765100671141,
+    "yaw_std": 0.048061471432447433,
+    "yaw_mad": 0.03182440996170044,
+    "p999_abs": 0.14260759949684143,
+    "max_abs": 0.14455437660217285,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 2.0,
+    "v_hi": 5.0,
+    "n": 575,
+    "frac_of_corpus": 0.030148909395973155,
+    "yaw_std": 0.05620962008833885,
+    "yaw_mad": 0.028313398361206055,
+    "p999_abs": 0.2993621230125427,
+    "max_abs": 0.30043840408325195,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 5.0,
+    "v_hi": 10.0,
+    "n": 1540,
+    "frac_of_corpus": 0.08074664429530201,
+    "yaw_std": 0.11981815844774246,
+    "yaw_mad": 0.022079944610595703,
+    "p999_abs": 0.5070170760154724,
+    "max_abs": 0.5093881487846375,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 10.0,
+    "v_hi": 20.0,
+    "n": 2028,
+    "frac_of_corpus": 0.10633389261744966,
+    "yaw_std": 0.018329806625843048,
+    "yaw_mad": 0.008806586265563965,
+    "p999_abs": 0.10212273895740509,
+    "max_abs": 0.1060265302658081,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 20.0,
+    "v_hi": 100.0,
+    "n": 14466,
+    "frac_of_corpus": 0.7584941275167785,
+    "yaw_std": 0.02636753022670746,
+    "yaw_mad": 0.009238719940185547,
+    "p999_abs": 0.1374560445547104,
+    "max_abs": 0.17828583717346191,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   }
+  ],
+  "yaw_audit_by_speed_physicalai": [
+   {
+    "v_lo": 0.0,
+    "v_hi": 0.5,
+    "n": 369,
+    "frac_of_corpus": 0.04680365296803653,
+    "yaw_std": 0.009982158429920673,
+    "yaw_mad": 6.624031811952591e-07,
+    "p999_abs": 0.06764402985572815,
+    "max_abs": 0.0687544047832489,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 0.5,
+    "v_hi": 1.0,
+    "n": 90,
+    "frac_of_corpus": 0.01141552511415525,
+    "yaw_std": 0.04401083663105965,
+    "yaw_mad": 0.0020957691594958305,
+    "p999_abs": 0.15864026546478271,
+    "max_abs": 0.16091659665107727,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 1.0,
+    "v_hi": 2.0,
+    "n": 172,
+    "frac_of_corpus": 0.021816336884830034,
+    "yaw_std": 0.16222338378429413,
+    "yaw_mad": 0.15403424203395844,
+    "p999_abs": 0.40215522050857544,
+    "max_abs": 0.4023513197898865,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 2.0,
+    "v_hi": 5.0,
+    "n": 847,
+    "frac_of_corpus": 0.10743277524099441,
+    "yaw_std": 0.21407362818717957,
+    "yaw_mad": 0.03689694404602051,
+    "p999_abs": 0.627914309501648,
+    "max_abs": 0.632932186126709,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 5.0,
+    "v_hi": 10.0,
+    "n": 2343,
+    "frac_of_corpus": 0.2971841704718417,
+    "yaw_std": 0.12969861924648285,
+    "yaw_mad": 0.013076607137918472,
+    "p999_abs": 0.6312910914421082,
+    "max_abs": 0.6366366147994995,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 10.0,
+    "v_hi": 20.0,
+    "n": 2497,
+    "frac_of_corpus": 0.3167174023338407,
+    "yaw_std": 0.12292378395795822,
+    "yaw_mad": 0.012309728190302849,
+    "p999_abs": 0.5332568287849426,
+    "max_abs": 0.5453471541404724,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   },
+   {
+    "v_lo": 20.0,
+    "v_hi": 100.0,
+    "n": 1566,
+    "frac_of_corpus": 0.19863013698630136,
+    "yaw_std": 0.01824534684419632,
+    "yaw_mad": 0.003612176515161991,
+    "p999_abs": 0.1205756664276123,
+    "max_abs": 0.13648644089698792,
+    "n_impossible_gt1p5": 0,
+    "frac_impossible": 0.0
+   }
+  ],
+  "label_defect_extent": {
+   "n_windows_changed_by_repair": 50,
+   "frac": 0.011918951132300357,
+   "n_impossible_legacy": 9,
+   "n_impossible_repaired": 0,
+   "n_below_4mps": 271
+  },
+  "repair_audit": {
+   "a_unchanged_windows": {
+    "n": 4145,
+    "max_abs_label_delta": 0.0,
+    "identical": true
+   },
+   "a_physicalai_untouched": {
+    "n_pai_changed": 0,
+    "must_be_zero": true
+   },
+   "b_changed_windows": {
+    "n": 50,
+    "legacy_label_absmax": 9.470596313476562,
+    "legacy_label_absmean": 1.1461541652679443,
+    "repaired_label_absmax": 0.04361152648925781,
+    "repaired_label_absmean": 0.0008722305065020919,
+    "A0_pred_absmean": 0.02328840419650078,
+    "A0_mae_vs_legacy": 1.1418575961887836,
+    "A0_mae_vs_repaired": 0.024160634726285934,
+    "gt_speed_at_these_windows_max": 0.528294026851654,
+    "gt_speed_at_these_windows_mean": 0.04199191927909851,
+    "reading": "a road vehicle at v~0 has yaw_rate ~0; if A0_pred_absmean is small while legacy_label_absmax is huge, the MODEL was right and the LABEL was wrong"
+   },
+   "c_outlier_proof": {
+    "pooled": {
+     "legacy": {
+      "medae": 0.021181229501962662,
+      "nmedae": 1.798401869959121,
+      "rho": 0.41427404846347665,
+      "mae": 0.04050358667586288
+     },
+     "repaired": {
+      "medae": 0.021073117852211,
+      "nmedae": 1.9043805548074333,
+      "rho": 0.41570577367786143,
+      "mae": 0.027181811211470775
+     }
+    },
+    "pai": {
+     "legacy": {
+      "medae": 0.025488749146461487,
+      "nmedae": 3.1911588913634086,
+      "rho": 0.5859956247545105,
+      "mae": 0.03186121208871147
+     },
+     "repaired": {
+      "medae": 0.025488749146461487,
+      "nmedae": 3.1911588913634086,
+      "rho": 0.5859956247545105,
+      "mae": 0.03186121208871147
+     }
+    },
+    "cm": {
+     "legacy": {
+      "medae": 0.02008737623691559,
+      "nmedae": 1.4371439232409382,
+      "rho": 0.3438265195897865,
+      "mae": 0.043978445174640675
+     },
+     "repaired": {
+      "medae": 0.019862525165081024,
+      "nmedae": 1.552470882832518,
+      "rho": 0.34478561109680367,
+      "mae": 0.025300354241109626
+     }
+    }
+   }
+  }
+ },
+ "ANCHOR_the_only_repaired_deployed_head_measurement": {
+  "what": "The DEPLOYED IDM head (idm_head_v1 = 'A0', 2,899,724 params, frozen flagship4b-speedjerk-30k latents), NOTHING RETRAINED, scored twice on the IDENTICAL windows: once vs legacy labels, once vs repaired labels.",
+  "split": "v3 val substrate — 4195 windows / 36 episodes (comma2k19 2992 win / 22 eps; PhysicalAI 1203 win / 14 eps), v_min 0.5",
+  "source_json": "…/2026-07-27-idm-v3/results/compare_v3.json → LABEL_FIX_deployed_head/yaw_rate",
+  "per_corpus": {
+   "cm": {
+    "corpus": "comma2k19",
+    "n_windows": 2992,
+    "r2": {
+     "heading_repair_OFF": 0.011430024144637563,
+     "heading_repair_ON": 0.3308220974121391,
+     "pct_change": 2794.33
+    },
+    "mae": {
+     "heading_repair_OFF": 0.043978445174640675,
+     "heading_repair_ON": 0.025300354241109626,
+     "pct_change": -42.47
+    },
+    "medae": {
+     "heading_repair_OFF": 0.02008737623691559,
+     "heading_repair_ON": 0.019862525165081024,
+     "pct_change": -1.12
+    },
+    "nmedae": {
+     "heading_repair_OFF": 1.4371439232409382,
+     "heading_repair_ON": 1.552470882832518,
+     "pct_change": 8.02
+    },
+    "rho": {
+     "heading_repair_OFF": 0.3438265195897865,
+     "heading_repair_ON": 0.34478561109680367,
+     "pct_change": 0.28
+    },
+    "rmse": {
+     "heading_repair_OFF": 0.27378171243890265,
+     "heading_repair_ON": 0.0340632328861415,
+     "pct_change": -87.56
+    },
+    "gt_std": {
+     "heading_repair_OFF": 0.27535992040784707,
+     "heading_repair_ON": 0.041640416814150163,
+     "pct_change": -84.88
+    },
+    "gt_mad": {
+     "heading_repair_OFF": 0.013977289199829102,
+     "heading_repair_ON": 0.012794137001037598,
+     "pct_change": -8.46
+    },
+    "r2_ci_episode_cluster_bootstrap": {
+     "heading_repair_OFF": {
+      "r2": 0.011430149647448706,
+      "lo": -0.866,
+      "hi": 0.6719
+     },
+     "heading_repair_ON": {
+      "r2": 0.3308220914810539,
+      "lo": -1.2982,
+      "hi": 0.7047
+     }
+    }
+   },
+   "pai": {
+    "corpus": "PhysicalAI",
+    "n_windows": 1203,
+    "r2": {
+     "heading_repair_OFF": 0.903482467084303,
+     "heading_repair_ON": 0.903482467084303,
+     "pct_change": 0.0
+    },
+    "mae": {
+     "heading_repair_OFF": 0.03186121208871147,
+     "heading_repair_ON": 0.03186121208871147,
+     "pct_change": 0.0
+    },
+    "medae": {
+     "heading_repair_OFF": 0.025488749146461487,
+     "heading_repair_ON": 0.025488749146461487,
+     "pct_change": 0.0
+    },
+    "nmedae": {
+     "heading_repair_OFF": 3.1911588913634086,
+     "heading_repair_ON": 3.1911588913634086,
+     "pct_change": 0.0
+    },
+    "rho": {
+     "heading_repair_OFF": 0.5859956247545105,
+     "heading_repair_ON": 0.5859956247545105,
+     "pct_change": 0.0
+    },
+    "rmse": {
+     "heading_repair_OFF": 0.044245330497766605,
+     "heading_repair_ON": 0.044245330497766605,
+     "pct_change": 0.0
+    },
+    "gt_std": {
+     "heading_repair_OFF": 0.14241782117652835,
+     "heading_repair_ON": 0.14241782117652835,
+     "pct_change": 0.0
+    },
+    "gt_mad": {
+     "heading_repair_OFF": 0.007987301796674728,
+     "heading_repair_ON": 0.007987301796674728,
+     "pct_change": 0.0
+    },
+    "r2_ci_episode_cluster_bootstrap": {
+     "heading_repair_OFF": {
+      "r2": 0.9034824743710198,
+      "lo": 0.8269,
+      "hi": 0.9362
+     },
+     "heading_repair_ON": {
+      "r2": 0.9034824743710198,
+      "lo": 0.8269,
+      "hi": 0.9362
+     }
+    }
+   },
+   "pooled": {
+    "corpus": "POOLED (comma-contaminated — do not quote)",
+    "n_windows": 4195,
+    "r2": {
+     "heading_repair_OFF": 0.10459211914902788,
+     "heading_repair_ON": 0.8108255936568357,
+     "pct_change": 675.23
+    },
+    "mae": {
+     "heading_repair_OFF": 0.04050358667586288,
+     "heading_repair_ON": 0.027181811211470775,
+     "pct_change": -32.89
+    },
+    "medae": {
+     "heading_repair_OFF": 0.021181229501962662,
+     "heading_repair_ON": 0.021073117852211,
+     "pct_change": -0.51
+    },
+    "nmedae": {
+     "heading_repair_OFF": 1.798401869959121,
+     "heading_repair_ON": 1.9043805548074333,
+     "pct_change": 5.89
+    },
+    "rho": {
+     "heading_repair_OFF": 0.41427404846347665,
+     "heading_repair_ON": 0.41570577367786143,
+     "pct_change": 0.35
+    },
+    "rmse": {
+     "heading_repair_OFF": 0.23242755743381113,
+     "heading_repair_ON": 0.03726873430751751,
+     "pct_change": -83.97
+    },
+    "gt_std": {
+     "heading_repair_OFF": 0.24562759842815166,
+     "heading_repair_ON": 0.0856867072036405,
+     "pct_change": -65.12
+    },
+    "gt_mad": {
+     "heading_repair_OFF": 0.011777806649213574,
+     "heading_repair_ON": 0.01106560230255127,
+     "pct_change": -6.05
+    },
+    "r2_ci_episode_cluster_bootstrap": {
+     "heading_repair_OFF": {
+      "r2": 0.10459217617450756,
+      "lo": 0.0225,
+      "hi": 0.8716
+     },
+     "heading_repair_ON": {
+      "r2": 0.8108255856647547,
+      "lo": 0.5871,
+      "hi": 0.8764
+     }
+    }
+   }
+  },
+  "legacy_admissible_only_v2_deletion_fix": {
+   "cm": {
+    "r2": 0.07193963963928807,
+    "mae": 0.032339366205958286,
+    "medae": 0.02001997083425522,
+    "nmedae": 1.4493176914778856,
+    "n": 2983
+   },
+   "pai": {
+    "r2": 0.903482467084303,
+    "mae": 0.03186121208871147,
+    "medae": 0.025488749146461487,
+    "nmedae": 3.1911588913634086,
+    "n": 1203
+   },
+   "pooled": {
+    "r2": 0.49667017108396694,
+    "mae": 0.032201951155062934,
+    "medae": 0.021163176745176315,
+    "nmedae": 1.805819937633308,
+    "n": 4186
+   }
+  },
+  "HONESTY_CONDITION": {
+   "statement": "The repair fixes the TAIL and the mean-square summary statistic, NOT typical accuracy. A correction that quotes only the R² jump overstates what changed. This sentence must travel with every corrected number.",
+   "comma2k19_only": {
+    "r2": [
+     0.011430024144637563,
+     0.3308220974121391
+    ],
+    "mae_pct": -42.47,
+    "medae_pct": -1.12,
+    "nmedae_pct": 8.02,
+    "spearman_rho": [
+     0.3438265195897865,
+     0.34478561109680367
+    ],
+    "reading": "comma2k19-only: R² +0.0114 → +0.3308 and MAE −42.5 %, but medAE moves only −1.1 % and nMedAE gets 8.0 % WORSE. Spearman rho is flat (+0.001) — the RANK ordering of the model's yaw predictions did not change at all."
+   },
+   "pooled_as_quoted_in_C29": {
+    "r2": [
+     0.10459211914902788,
+     0.8108255936568357
+    ],
+    "mae_pct": -32.89,
+    "medae_pct": -0.51,
+    "nmedae_pct": 5.89
+   },
+   "physicalai_control": {
+    "n_pai_windows_changed_by_repair": 0,
+    "r2_OFF_vs_ON": [
+     0.903482467084303,
+     0.903482467084303
+    ],
+    "reading": "bit-identical. PhysicalAI yaw numbers are NOT stale and must NOT be re-issued."
+   }
+  }
+ },
+ "POST_REPAIR_comma_yaw_values_that_ALREADY_EXIST": {
+  "note": "NOT stale. These are the only comma yaw numbers a re-issue may quote — and only for the arm and split they belong to. None of them substitutes for a number measured on a DIFFERENT substrate.",
+  "A0_deployed_head_on_repaired_labels": {
+   "comma_r2": 0.3308220974121391,
+   "comma_mae": 0.025300354241109626,
+   "comma_medae": 0.019862525165081024,
+   "comma_nmedae": 1.552470882832518,
+   "pooled_r2": 0.8108255936568357,
+   "pai_r2": 0.903482467084303,
+   "protocol": "heading_repair ON, v_min 0.5, v3 val split 4195 win / 36 eps, nothing retrained"
+  },
+  "arms_scored_against_their_own_label_set": {
+   "R0LEG": {
+    "cfg": {
+     "k": 4,
+     "winsor": false,
+     "ctx": false,
+     "chan_w": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "dmodel": 256,
+     "legacy_labels": true
+    },
+    "scored_against": "legacy labels",
+    "comma_yaw_r2_per_seed": [
+     -0.000862923579579622,
+     0.002288670916142266,
+     0.0017424668676547794
+    ],
+    "pai_yaw_r2_per_seed": [
+     0.8197320820144243,
+     0.8540897215803569,
+     0.8017987182276858
+    ],
+    "comma_yaw_r2_3seed_mean": 0.0010560714014058077,
+    "pai_yaw_r2_3seed_mean": 0.8252068406074891
+   },
+   "R0": {
+    "cfg": {
+     "k": 4,
+     "winsor": false,
+     "ctx": false,
+     "chan_w": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "dmodel": 256
+    },
+    "scored_against": "repaired labels (heading_repair ON, v_min 0.5)",
+    "comma_yaw_r2_per_seed": [
+     0.6331996787310104,
+     0.6666612078511327,
+     0.6661810716977954
+    ],
+    "pai_yaw_r2_per_seed": [
+     0.8599833828274173,
+     0.8524787281021369,
+     0.8606622960736673
+    ],
+    "comma_yaw_r2_3seed_mean": 0.6553473194266461,
+    "pai_yaw_r2_3seed_mean": 0.8577081356677404
+   },
+   "V2R": {
+    "cfg": {
+     "k": 8,
+     "winsor": true,
+     "ctx": true,
+     "chan_w": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "dmodel": 128
+    },
+    "scored_against": "repaired labels (heading_repair ON, v_min 0.5)",
+    "comma_yaw_r2_per_seed": [
+     0.5895409802057777,
+     0.6612385969201475,
+     0.6344073548276752
+    ],
+    "pai_yaw_r2_per_seed": [
+     0.8448629759869546,
+     0.6655988876220968,
+     0.854755986974826
+    ],
+    "comma_yaw_r2_3seed_mean": 0.6283956439845335,
+    "pai_yaw_r2_3seed_mean": 0.7884059501946258
+   }
+  },
+  "R0LEG_legacy_trained_RESCORED_on_repaired_labels_r2": {
+   "pooled": 0.8126831531702688,
+   "pai": 0.8508450085727718,
+   "cm": 0.5894201297822041
+  },
+  "R0_repaired_trained_on_repaired_labels_r2": {
+   "pooled": 0.8412938864506557,
+   "pai": 0.8678917921805075,
+   "cm": 0.6791059738542922
+  },
+  "V3F_shipped_composite_r2": {
+   "pooled": 0.8412938864506557,
+   "pai": 0.8678917921805075,
+   "cm": 0.6791059738542922
+  },
+  "R0_vs_R0LEG_paired_delta_mae_yaw_per_corpus": {
+   "pooled": {
+    "delta_mae": -0.0032,
+    "lo": -0.0052,
+    "hi": -0.0015,
+    "separated": true,
+    "mae_a": 0.021174024416236094,
+    "mae_b": 0.024363315235562
+   },
+   "pai": {
+    "delta_mae": -0.0039,
+    "lo": -0.0087,
+    "hi": 0.0002,
+    "separated": false,
+    "mae_a": 0.03191855797067308,
+    "mae_b": 0.035863749275076864
+   },
+   "cm": {
+    "delta_mae": -0.0029,
+    "lo": -0.005,
+    "hi": -0.0013,
+    "separated": true,
+    "mae_a": 0.016853946252470154,
+    "mae_b": 0.019739310506438883
+   }
+  }
+ }
+}

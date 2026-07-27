@@ -1860,6 +1860,25 @@ they were made in the operator loop and never got an ADR.
    vs the plain frozen flagship-v1 encoder's **+0.657** (paired dR2 CI excludes 0, Branch B worse, on 3/4
    arms). See **§10**. The YouTube-scale IDM thesis resting on this encoder is now **not supported** by
    measurement, not merely gated. 🟥
+   > 🔴 **LABEL-PROTOCOL CORRECTION 2026-07-27 (C29) — the `yaw R² 0.000` above is STALE-PENDING, and
+   > the `speed R²` numbers beside it are NOT.** Every comma2k19 yaw number in this program before
+   > 2026-07-27 was scored with **`heading_repair` OFF**: comma's heading is `arctan2` of the ENU
+   > velocity and is **undefined at standstill**. MEASURED (`…/2026-07-27-idm-v3/results/labels_v3.json`):
+   > **26.27 % of comma frames below 0.5 m/s are physically impossible, 0.000 % above it; PhysicalAI is
+   > zero in every bin.** ⇒ **`0.000` is a fact about the LABEL, not about transfer.** The superseded
+   > value is kept above deliberately. **It is NOT replaced here**, because no repaired measurement
+   > exists on *this* substrate (PhysicalAI-trained head, 12,420 comma windows, **no `v_min` gate**);
+   > the repaired A0 number lives on a different split and is not substitutable.
+   > **What IS measured, on the v3 val split (`heading_repair` ON, `v_min` 0.5, 2,992 comma windows,
+   > nothing retrained):** the deployed head reads comma2k19 `yaw_rate` **R² +0.3308** (was **+0.0114**
+   > with the repair off), and a head *retrained* on repaired labels reads **+0.679**.
+   > ⭐ **Honesty condition, which must travel with this correction:** on comma2k19 alone the repair
+   > moves **R² +0.0114 → +0.3308** and **MAE −42.5 %**, but **medAE moves only −1.1 % and nMedAE gets
+   > 8.0 % WORSE**, with Spearman ρ flat (+0.001). **The repair fixes the tail and the summary
+   > statistic, not typical accuracy** — a correction quoting only the R² jump overstates it.
+   > Full inventory + what is still stale-pending: `TanitAD Research Hub/Benchmarks & Eval/
+   > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+   > ⚠️ **PhysicalAI/rig-B numbers in §8.1 #6 and §10 are UNAFFECTED and must not be re-issued.**
 
 ---
 

@@ -67,8 +67,19 @@ def test_actions_and_poses_math(tmp_path):
 # comma2k19 heading is arctan2 of the ENU VELOCITY, undefined at v ~ 0. MEASURED
 # on the 64-segment val build: 26.27 % of frames below 0.5 m/s carry a           #
 # physically impossible |yaw_rate| (up to 15.53 rad/s at 0.00-0.01 m/s); 0.000 % #
-# above it. Cost: the deployed IDM head read yaw R2 0.105 against these labels   #
-# and 0.83 against the repaired ones.                                           #
+# above it (PhysicalAI: ZERO in every bin).  Cost: the deployed IDM head read    #
+# pooled yaw R2 0.1046 against these labels and 0.8108 against the repaired      #
+# ones, nothing retrained.  Per corpus: comma2k19 +0.0114 -> +0.3308;            #
+# PhysicalAI +0.9035 unchanged (bit-identical).                                  #
+#   CORRECTED 2026-07-27 (comma-yaw-reissue): this comment said "0.83", which is #
+#   a RETRAINED arm's level, not the deployed head's.  Raw:                      #
+#   .../2026-07-27-idm-v3/results/compare_v3.json                                #
+#   -> LABEL_FIX_deployed_head/yaw_rate/repaired/pooled/r2 = 0.8108.             #
+# HONESTY CONDITION: the repair fixes the TAIL and the summary statistic, not    #
+# typical accuracy -- comma-only MAE -42.5 % but medAE only -1.1 % and nMedAE    #
+# 8.0 % WORSE.  Inventory of every affected published number:                    #
+# "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/               #
+#  2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md".                           #
 # --------------------------------------------------------------------------- #
 def test_hold_heading_repairs_standstill_and_is_wrap_safe():
     # stationary for 5 frames with GARBAGE heading, then driving north-east.

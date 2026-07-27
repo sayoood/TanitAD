@@ -114,6 +114,28 @@ there and **no arm improves on it**, because none of them has A0's PhysicalAI da
 (3) fix comma's heading derivation at the loader (`arctan2` of ENU velocity is
 undefined at standstill) or exclude comma from any yaw claim.
 
+> 🔴 **RE-ISSUED 2026-07-27 (C29) — lever (3) was done, and it beats lever (1).**
+> Every `cm R²` cell in the table above, and every `pooled`/`admissible` cell, was scored with
+> **`heading_repair` OFF**. Superseded values are kept above for audit. On the **identical
+> 4,195 windows / 36 episodes, `v_min` 0.5**, with the **deployed head and nothing retrained**:
+>
+> | protocol | pooled | PhysicalAI | comma2k19 | n |
+> |---|---:|---:|---:|---:|
+> | legacy (the `A0` row above) | +0.1046 | +0.9035 | **+0.0114** | 4 195 |
+> | 9 impossible windows **deleted** (the `admissible` column above) | +0.4967 | +0.9035 | **+0.0719** | 4 186 |
+> | **`heading_repair` ON, `v_min` 0.5** | **+0.8108** | +0.9035 | **+0.3308** | **4 195** |
+>
+> **Repair beats deletion and discards nothing.** The 9 impossible rows were the visible tip: the
+> repair touches **50 windows (1.19 %)**, on which GT speed maxes at **0.528 m/s** while the legacy
+> label claimed up to **9.47 rad/s** and the head had predicted **0.023**.
+> ⚠️ **Rows B0 / B1 / V3sB / V3wB are STALE-PENDING, not corrected** — no repaired re-score of those
+> arms exists. (`B0`'s recipe was re-run in v3 as `R0LEG` and re-scored: comma **+0.5894**.)
+> ⭐ **Honesty condition:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and nMedAE
+> gets 8.0 % WORSE**, Spearman ρ flat (+0.001). **The repair fixes the tail and the summary statistic,
+> not typical accuracy** — which is also why the `medAE`/`nMedAE` columns above stay broadly readable.
+> Source: `…/2026-07-27-idm-v3/results/compare_v3.json`. Inventory:
+> `…/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
+
 ### 3.3 long_accel — the channel should be removed
 
 | arm | R² vs the CAN label | R² vs the **kinematic** target dv/dt |

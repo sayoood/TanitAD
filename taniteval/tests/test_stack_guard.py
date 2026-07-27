@@ -290,6 +290,59 @@ def test_the_DOCUMENTED_module_command_is_the_one_that_works(trees, tree, rc):
     assert "runpy" not in r.stderr        # the entry point exists to avoid this
 
 
+def test_a_GREEN_says_what_it_PROBED_and_a_no_require_GREEN_does_not(trees):
+    """⛔ FOUND ON THE GUARD'S FIRST FIELD TEST (tanitad-pod3, 2026-07-27).
+
+    RED, measured before the fix: the stdout of
+
+        … stack_check --require v5       (5 capabilities verified)
+        … stack_check                    (ZERO capabilities verified)
+
+    was **byte-identical** — both printed ``"ok": true, "problems": []``. The
+    operator pastes one of these in front of an eval and reads exactly that
+    summary, so a dropped or misspelled ``--require`` reads as a pass. The JSON
+    report always carried ``required``; only the human surface did not.
+
+    ⚠️ This is the same failure shape the guard exists to close: a GREEN that
+    looks identical whether or not the check happened."""
+    env = dict(os.environ)
+    env["TANITEVAL_STACK_OVERRIDE"] = str(trees["good"])
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(trees["good"]), str(trees["good"] / "scripts"), str(_PKG_PARENT)])
+    env["PYTHONIOENCODING"] = "utf-8"
+    env.pop("TANITEVAL_STACK_GUARD", None)
+
+    def _cli(*args):
+        r = subprocess.run([sys.executable, "-m", "taniteval.stack_check", *args],
+                           capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", env=env, timeout=180)
+        assert r.returncode == 0, r.stdout + r.stderr
+        return json.loads(r.stdout[r.stdout.index("{"):])
+
+    with_req, without = _cli("--require", "v5"), _cli()
+    # both are honest passes …
+    assert with_req["ok"] is True and without["ok"] is True
+    # … and they are now DISTINGUISHABLE on stdout, which is the whole point.
+    assert with_req != without
+    assert len(with_req["required"]) == 5
+    assert any("heldout_gate" in c for c in with_req["required"])
+    assert without["required"] == []
+
+
+def test_a_capability_REFUSAL_also_prints_what_was_demanded(trees):
+    """The refusal path builds its report separately, so it needs its own pin —
+    otherwise a reader cannot tell a capability refusal from an identity one."""
+    r = _run(
+        f"""
+        from taniteval import stack_guard as sg
+        sys.exit(sg.main(["--stack", {str(trees['stale'])!r}, "--require", "v5"]))
+        """)
+    assert r.returncode == 2, r.stdout + r.stderr
+    out = json.loads(r.stdout[r.stdout.index("{"):])
+    assert out["ok"] is False
+    assert len(out["required"]) == 5
+
+
 def test_cli_exits_2_on_a_stale_tree_and_writes_its_json(trees, tmp_path):
     """``python3 -m taniteval.stack_guard`` in front of an eval command turns a
     wrong number into a one-second exit 2."""

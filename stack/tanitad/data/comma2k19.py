@@ -55,10 +55,24 @@ WHEEL_TO_RAD = math.pi / 180.0
 # deg/s, at speeds of 0.00-0.01 m/s); in every bin above 0.5 m/s the figure is
 # **0.000 %**. The defect is razor-sharp and confined to standstill.
 #
-# What it cost: the deployed IDM head's pooled `yaw_rate` R2 read **0.105**
-# against these labels and **0.83** against the repaired ones — the channel was
-# never a model failure. See
-# `…/incoming/2026-07-27-idm-v3/IDM_V3.md` §4.
+# What it cost: the deployed IDM head's pooled `yaw_rate` R2 read **0.1046**
+# against these labels and **0.8108** against the repaired ones, with NOTHING
+# retrained — the channel was never a model failure.  Per corpus (never quote
+# the pooled number): comma2k19 **+0.0114 -> +0.3308**; PhysicalAI **+0.9035
+# unchanged, bit-identical** (n_pai_changed = 0).
+#   *(CORRECTED 2026-07-27 by the comma-yaw-reissue pass: this comment said
+#   "0.83", which is the level a head RETRAINED on repaired labels reaches
+#   (R0, pooled 0.8413), not the deployed head's.  The deployed head's repaired
+#   pooled R2 is 0.8108 — read from
+#   `…/2026-07-27-idm-v3/results/compare_v3.json` ->
+#   LABEL_FIX_deployed_head/yaw_rate/repaired/pooled/r2.)*
+# HONESTY CONDITION, which must travel with those numbers: the repair fixes the
+# TAIL and the mean-square summary statistic, NOT typical accuracy.  On
+# comma2k19 alone MAE falls 42.5 %, but medAE moves only -1.1 % and nMedAE gets
+# 8.0 % WORSE, with Spearman rho flat (+0.001).
+# See `…/incoming/2026-07-27-idm-v3/IDM_V3.md` §4 and the inventory of every
+# affected published number in `TanitAD Research Hub/Benchmarks & Eval/
+# Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 #
 # PUBLISHED precedent: comma.ai's own `calib_challenge` **discards every frame
 # below 4 m/s** for exactly this reason. Our measured threshold is far less

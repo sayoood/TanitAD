@@ -1,0 +1,57 @@
+# stack_check field test — HOST tanitad-eval (the DEPLOYED eval host) — 2026-07-27T20:29:22Z UTC
+# repo tree under test: /workspace/TanitAD-head @ 37ccfea
+
+##### 1. GREEN — the SYNCED tree, --require v5
+[taniteval] tanitad OVERRIDE -> /workspace/TanitAD-head/stack (/workspace/TanitAD-head/stack/tanitad/__init__.py)
+{
+  "pinned_root": "/workspace/TanitAD-head/stack",
+  "provenance": "explicit-argument",
+  "mode": "error",
+  "tanitad_file": "/workspace/TanitAD-head/stack/tanitad/__init__.py",
+  "ok": true,
+  "problems": []
+}
+EXIT=0
+
+##### 2. RED (correct refusal) — the DEPLOYED tree /root/TanitAD/stack (PRE-v5)
+[taniteval] tanitad OVERRIDE -> /root/TanitAD/stack (/root/TanitAD/stack/tanitad/__init__.py)
+⛔ STACK GUARD REFUSED — pinned root /root/TanitAD/stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:
+  tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'
+  tanitad.train.heldout_goal:make_goal_kwargs_fn -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_goal'
+  tanitad.data.parity:register_v2_geometry_sibling -> module resolved from /root/TanitAD/stack/tanitad/data/parity.py has NO attribute 'register_v2_geometry_sibling' (a PRE-v5 tree looks exactly like this)
+  tanitad.geometry:frame_from_args -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.geometry'
+  train_flagship_v4:resolve_v2_frames -> module resolved from /root/TanitAD/stack/scripts/train_flagship_v4.py has NO attribute 'resolve_v2_frames' (a PRE-v5 tree looks exactly like this)
+⇒ export TANITEVAL_STACK_OVERRIDE=/root/TanitAD/stack BEFORE python3 starts, and make sure no stale tree (e.g. /root/TanitAD/stack) precedes it.
+{
+  "pinned_root": "/root/TanitAD/stack",
+  "provenance": "explicit-argument",
+  "mode": "error",
+  "tanitad_file": "/root/TanitAD/stack/tanitad/__init__.py",
+  "ok": false,
+  "problems": [
+    "\u26d4 STACK GUARD REFUSED \u2014 pinned root /root/TanitAD/stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:\n  tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'\n  tanitad.train.heldout_goal:make_goal_kwargs_fn -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_goal'\n  tanitad.data.parity:register_v2_geometry_sibling -> module resolved from /root/TanitAD/stack/tanitad/data/parity.py has NO attribute 'register_v2_geometry_sibling' (a PRE-v5 tree looks exactly like this)\n  tanitad.geometry:frame_from_args -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.geometry'\n  train_flagship_v4:resolve_v2_frames -> module resolved from /root/TanitAD/stack/scripts/train_flagship_v4.py has NO attribute 'resolve_v2_frames' (a PRE-v5 tree looks exactly like this)\n\u21d2 export TANITEVAL_STACK_OVERRIDE=/root/TanitAD/stack BEFORE python3 starts, and make sure no stale tree (e.g. /root/TanitAD/stack) precedes it."
+  ]
+}
+EXIT=2
+
+##### 3. DEFECT — a DIFFERENT tree also satisfies --require v5 (capability != identity)
+cut: '"': No such file or directory
+# /root/vtband/stack heldout_gate.py md5 = 
+cut: '"': No such file or directory
+# HEAD      stack heldout_gate.py md5 = 
+[taniteval] tanitad OVERRIDE -> /root/vtband/stack (/root/vtband/stack/tanitad/__init__.py)
+{
+  "pinned_root": "/root/vtband/stack",
+  "provenance": "explicit-argument",
+  "mode": "error",
+  "tanitad_file": "/root/vtband/stack/tanitad/__init__.py",
+  "ok": true,
+  "problems": []
+}
+EXIT=0
+
+##### 4. DEFECT — a THIRD exit code (1) the contract does not document: the probe never ran
+# /workspace/_egoin/lib carries BOTH a tanitad/ AND a stale taniteval/, and it is first on PYTHONPATH
+[taniteval] tanitad OVERRIDE -> /workspace/_egoin/lib (/workspace/_egoin/lib/tanitad/__init__.py)
+/usr/bin/python3: No module named taniteval.stack_check
+EXIT=1

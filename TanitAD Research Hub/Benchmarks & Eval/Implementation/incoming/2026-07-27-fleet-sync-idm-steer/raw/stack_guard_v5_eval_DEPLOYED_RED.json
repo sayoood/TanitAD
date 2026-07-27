@@ -1,0 +1,24 @@
+{
+  "pinned_root": "/root/TanitAD/stack",
+  "provenance": "explicit-argument",
+  "mode": "error",
+  "sentinel_installed": true,
+  "sentinel_violations": [],
+  "tanitad_file": "/root/TanitAD/stack/tanitad/__init__.py",
+  "legacy_stack": "/root/TanitAD/stack",
+  "legacy_present": true,
+  "legacy_is_pinned": true,
+  "env:TANITEVAL_STACK_OVERRIDE": "/root/TanitAD/stack",
+  "env:TANITEVAL_STACK_GUARD": null,
+  "sys_path_head": [
+    "/root/TanitAD/stack/scripts",
+    "/root/TanitAD/stack",
+    "/root/TanitAD/stack/scripts",
+    "/workspace/TanitAD-head/taniteval",
+    "/usr/lib/python312.zip"
+  ],
+  "ok": false,
+  "problems": [
+    "\u26d4 STACK GUARD REFUSED \u2014 pinned root /root/TanitAD/stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:\n  tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'\n  tanitad.train.heldout_goal:make_goal_kwargs_fn -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_goal'\n  tanitad.data.parity:register_v2_geometry_sibling -> module resolved from /root/TanitAD/stack/tanitad/data/parity.py has NO attribute 'register_v2_geometry_sibling' (a PRE-v5 tree looks exactly like this)\n  tanitad.geometry:frame_from_args -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.geometry'\n  train_flagship_v4:resolve_v2_frames -> module resolved from /root/TanitAD/stack/scripts/train_flagship_v4.py has NO attribute 'resolve_v2_frames' (a PRE-v5 tree looks exactly like this)\n\u21d2 export TANITEVAL_STACK_OVERRIDE=/root/TanitAD/stack BEFORE python3 starts, and make sure no stale tree (e.g. /root/TanitAD/stack) precedes it."
+  ]
+}

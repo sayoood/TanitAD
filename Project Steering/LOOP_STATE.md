@@ -228,12 +228,22 @@ Streams launched (fan-out CAPPED at ~4 concurrent, banking each):
   canon = the missing intrinsics front-end · our WM predictor = the Seer aux · 2 PhysicalAI rigs = a
   built-in intrinsics testbed · parity firewall). 🟥 **proof FAILED (MEASURED, I verified `results.json`) → do NOT scale yet.** In-distribution WORKS
   (PhysicalAI held-out speed R² **0.930** / yaw **0.924**) but cross-domain COLLAPSES: comma speed 0.657 /
-  yaw 0.0005; **rig-A→rig-B speed R² −2.465** (MAE 14 m/s on near-identical speed dists = a genuine
+  yaw 0.0005 ⚠️**STALE-PENDING — `heading_repair` OFF, see C29 note below**; **rig-A→rig-B speed R² −2.465** (MAE 14 m/s on near-identical speed dists = a genuine
   encoder-latent rig shift, C6-controlled, not a confound). Frozen encoder + per-clip crop does NOT survive
   a rig/intrinsics change. **→ RE-GATE DONE (MEASURED, I verified `results_regate.json`): NEITHER FIX REACHES THE GATE → NO-GO on
   YouTube on this recipe.** Fix #1 (f-theta front-end) = **NO-OP** — ALREADY applied in the baseline
   (f_eff rig-A/B/comma all ≈266) → the rig collapse is **NOT intrinsics-driven**. Fix #2 (light-FT) INERT
   on the corpus gap (comma speed R² 0.406→0.411), partial on the rig gap (−3.21→−1.65), both far from 0.9.
+  🔴 **LABEL-PROTOCOL CORRECTION 2026-07-27 (C29):** the comma `yaw 0.0005` above (and every pre-07-27
+  comma yaw number) was scored with **`heading_repair` OFF** — comma's heading is `arctan2` of the ENU
+  velocity, undefined at standstill; MEASURED **26.27 %** of comma frames below 0.5 m/s are physically
+  impossible vs **0.000 %** above (PhysicalAI **zero in every bin**, so the `0.924` and every rig number
+  here are unaffected). Superseded value kept for audit; **STALE-PENDING** — no repaired measurement
+  exists on this substrate. On the v3 val split (`heading_repair` ON, `v_min` 0.5, nothing retrained) the
+  deployed head reads comma yaw **R² +0.3308** (was **+0.0114**); retrained, **+0.679**. ⭐ Honesty
+  condition: comma-only MAE **−42.5 %** but **medAE −1.1 % and nMedAE 8.0 % WORSE** — tail and summary
+  statistic, not typical accuracy. **The NO-GO stands**: it rests on speed (0.657) and the ADE ratio,
+  neither of which the heading label touches. Inventory: `…/incoming/2026-07-27-comma-yaw-reissue/`.
   **Path forward = encoder RETRAIN on undistorted multi-domain data + speed-prior scale head, NOT a frozen
   readout.** YouTube-ingest / A1 = **ON HOLD (decided)**. Feeds the encoder-strategy synthesis.
   Triangulates: frozen (IDM, REF-A) fails, trained (v1) works. ✅ **Encoder-strategy synthesis DONE**

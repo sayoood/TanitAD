@@ -81,6 +81,15 @@ unqualified. **v1 ≫ Branch B on every metric, in-domain and cross-rig.** Build
 - **C6 (comma disqualified for yaw).** The comma yaw≈0 is a comma-label artifact (unreadable
   in-domain), NOT a v1 cross-geometry rotation failure — corrected using the existing MEASURED
   in-domain control. Do not read it as a v1 ceiling.
+  > 🔴 **RE-ISSUED 2026-07-27 (C29): C6's MECHANISM is confirmed and its DISQUALIFICATION is lifted.**
+  > The artifact is comma's heading = `arctan2` of the ENU velocity, **undefined at standstill**
+  > (MEASURED: **26.27 %** of comma frames below 0.5 m/s physically impossible, **0.000 %** above;
+  > PhysicalAI zero in every bin). With `heading_repair` ON (`v_min` 0.5) the deployed head reads
+  > comma yaw **R² +0.3308** and a retrained head **+0.679** ⇒ **comma CAN test yaw, on repaired
+  > labels.** The `−0.00003 / −0.00009` control values and the `n/a†` cells above are left in place
+  > and marked **STALE-PENDING** — no repaired measurement exists on those substrates.
+  > ⭐ Honesty condition: comma-only MAE **−42.5 %** but **medAE −1.1 % and nMedAE 8.0 % WORSE** —
+  > the repair fixes the tail and the summary statistic, **not** typical accuracy.
 - **Bounded residual → the only place the EXPENSIVE pivot might still be needed:** cross-geometry-
   class **YAW** transfer (fisheye→rectilinear / varied YouTube rigs) is **UNVERIFIED** — comma
   cannot test it. Speed transfers cross-class; rotation across class is untested. **Cheapest next

@@ -1156,6 +1156,21 @@ increasing order of what they license:
 1. **Direct label accuracy, stated plainly and unflatteringly.** Extracted-vs-ground-truth speed R²
    **0.62–0.66** cross-domain, longitudinal trajectory R² **0.60**, **yaw ≈ 0 cross-class (weak)**,
    acceleration unusable and dropped. On its own this reads as a "no."
+   > 🔴 **Label-protocol correction, 2026-07-27 (C29) — the "yaw ≈ 0 cross-class" is a fact about the
+   > LABEL, not the transfer.** The cross-class corpus is comma2k19, whose heading is `arctan2` of the
+   > ENU velocity and is **undefined at standstill**: MEASURED, **26.27 %** of comma frames below
+   > 0.5 m/s are physically impossible and **0.000 %** above it (PhysicalAI: **zero in every bin**, so
+   > every PhysicalAI/rig number in this section is unaffected). The `≈ 0` above was scored with
+   > `heading_repair` **OFF** and **no `v_min` gate**; it is **left in place and marked STALE-PENDING**
+   > because no repaired measurement exists on that substrate. On the substrate where the repair *was*
+   > measured (v3 val split, `heading_repair` ON, `v_min` 0.5, 2,992 comma windows, **nothing
+   > retrained**) the same deployed head reads comma `yaw_rate` **R² +0.3308** — up from **+0.0114** on
+   > the identical windows with the repair off — and a *retrained* head reads **+0.679**.
+   > ⭐ **Stated against interest:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and
+   > nMedAE gets 8.0 % WORSE** (Spearman ρ flat, +0.001). **The repair fixes the tail and the summary
+   > statistic, not typical accuracy.** The three-measurement argument of this paragraph is unchanged —
+   > it never rested on the yaw channel. Inventory: `TanitAD Research Hub/Benchmarks & Eval/
+   > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 2. **The downstream ablation overturns the proxy.** In the regime that actually matters — abundant
    pseudo-labeled data, scarce real labels — pseudo-label pretraining captures **~96 % of the real-label
    pretraining benefit**: fraction-of-ceiling 0.965 (speed) / 0.984 (trajectory) on a cross-*class*
@@ -1543,7 +1558,9 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   **50 h v2 corpus** designed+built inside the same source (turns 14.25→28.0 %, junction-clip presence
   37.7→61.3 %, key `physicalai-v2bal-4b7eeeac222d`), stored JPEG-compressed **982 GB → ~25 GB** with
   frames bit-identical to the parity decode path; breaks parity **by design**. **H7:** direct
-  extracted-vs-GT accuracy is modest (speed R² 0.62–0.66, longitudinal-traj 0.60, **yaw ≈ 0**, accel
+  extracted-vs-GT accuracy is modest (speed R² 0.62–0.66, longitudinal-traj 0.60, **yaw ≈ 0**
+  ⚠️*STALE-PENDING: `heading_repair` OFF — comma's heading is undefined at standstill; see the C29
+  note in §H7. On repaired labels the same head reads comma yaw **+0.3308**, retrained **+0.679***, accel
   dropped) but downstream pseudo-label WM pretraining captures **~96 %** of real-label value (8 seeds,
   two domains) and **109 % speed / 107 % traj / 71 % yaw** on the actual parity target (4 seeds); an
   **80-clip CC YouTube pilot** lifts parity-val speed R² **−0.520 → +0.563** (3 seeds, clip-cluster CI

@@ -350,6 +350,17 @@ estimator). **Reported per corpus, never pooled.** Not re-verified by me.
 2. **The comma heading derivation is wrong** — `arctan2` of ENU velocity, undefined at
    standstill, producing |ω| up to 15.5 rad/s at v ≈ 0. comma's yaw R² 0.072 is
    substantially this defect, not the model.
+   > 🔴 **CLOSED + RE-ISSUED 2026-07-27 (C29) — defect #2 was fixed, and this prediction was right.**
+   > MEASURED: **26.27 %** of comma frames below 0.5 m/s carry a physically impossible `|yaw_rate|`,
+   > **0.000 %** above (PhysicalAI **zero in every bin** ⇒ the `R² 0.9035` cell above is UNAFFECTED
+   > and must not be re-issued). On the **identical windows**, deployed head, nothing retrained,
+   > `heading_repair` ON with `v_min` 0.5: **comma2k19 `yaw_rate` R² 0.0719 → +0.3308** (and the
+   > un-deleted legacy baseline was **+0.0114**); pooled **0.105 → 0.8108**. A head *retrained* on
+   > repaired labels reaches comma **+0.679**. Superseded values kept above for audit.
+   > ⭐ **Honesty condition:** comma-only MAE **−42.5 %**, but **medAE −1.1 % and nMedAE 8.0 % WORSE**
+   > — tail and summary statistic, **not** typical accuracy. This section's own rule ("do not quote a
+   > single aggregate IDM score") still stands. Inventory:
+   > `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 3. **`long_accel` is still in `SCALAR_NAMES`** — confirmed live on pod3 this run:
    `SCALAR_NAMES = ('speed', 'yaw_rate', 'steer', 'long_accel')`. IDM-v2 pre-committed to
    removing it; it has not been removed. It consumes 25 % of the scalar loss to emit a

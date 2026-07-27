@@ -23,6 +23,15 @@ the alarming rig-B −1.169 was a head-diversity artifact; a rig-A+comma head gi
 transfer is untestable on comma (comma yaw unreadable in-domain — C6). Branch B's aug caveat is
 **closed** (weakness is real, not augmentation). See `v1-encoder-char/RESULTS_v1_encoder_char.md`.
 
+> 🔴 **2026-07-27 (C29): "untestable on comma" is LIFTED.** comma yaw was unreadable because its
+> heading is `arctan2` of the ENU velocity, undefined at standstill (**26.27 %** of comma frames below
+> 0.5 m/s physically impossible, **0.000 %** above; PhysicalAI zero in every bin, so `yaw +0.504` and
+> every rig number here stand). With `heading_repair` ON (`v_min` 0.5): deployed head comma yaw
+> **R² +0.3308**, retrained **+0.679**. ⭐ But comma-only **medAE moves −1.1 % and nMedAE gets 8.0 %
+> WORSE** — the repair fixes the tail and the summary statistic, not typical accuracy, so the
+> cross-class yaw question is now *testable*, not *answered*.
+> Inventory: `…/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/`.
+
 ## Escalation (integration) — read first
 
 0. **The own-encoder / GAIA-2 camera-conditioning path is NOT validated at 40k/2466-clip scale.**
