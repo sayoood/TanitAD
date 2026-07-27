@@ -184,9 +184,22 @@ Grounding heads live **outside** the model (separate ckpt keys) so a vanilla `Wo
 | ADE@0.5s | 0.0762 ± 0.0046 | — |
 | ADE@1s | 0.1584 ± 0.0149 | — |
 | ADE@1.5s | 0.2883 ± 0.0227 | — |
-| **ADE@2s (`ade_0_2s`)** | **0.4522 ± 0.0312** | **0.4271** |
+| **ADE@2s (`ade_0_2s`)** ⚠️ **= `wm_fidelity_ade_2s` — a WORLD-MODEL FIDELITY number, NOT a planning number** | **0.4522 ± 0.0312** | **0.4271** |
 | FDE@2s | 0.9437 ± 0.0630 | — |
 | miss@2m | 0.0602 ± 0.0121 | — |
+
+⛔ **WHAT THIS ROW MEASURES — verified in code 2026-07-27, and it is NOT what it has repeatedly been
+quoted as.** `taniteval/rollout.py:170` sets **`actions_source="expert_future"`** and `:174` names the
+metric **`wm_fidelity_ade_2s`**. ⇒ **the model is HANDED THE EXPERT'S TRUE FUTURE ACTIONS and asked
+only to roll them out.** `0.4271` therefore measures **how well v1's world model integrates known
+actions**, not how well anything *chooses* them.
+
+⚠️ **CONSEQUENCE: `0.4271` IS NOT A PLANNING BAR AND MUST NOT BE USED AS ONE.** A selector that must
+*choose* actions is not expected to beat a world model that was *given* them — that bar is closer to
+an oracle than to a baseline, which is part of why nothing in the program has cleared it. *(Flagged
+independently by two streams on 2026-07-26 and 2026-07-27; it had already propagated into `V5_PLAN.md`'s
+STRONG bar and into several agent briefs, mine included. The legitimate same-surface bar is the
+in-sample re-scoring ceiling **0.4907**.)*
 
 Clears every trivial bar on the same 881 windows: best-of-3 kinematic floor 0.5005 · CTRV oracle 0.523 ·
 no-vision ego-status ceiling 0.5735 · CV 0.8248 heldout / **0.8377 full-set**.

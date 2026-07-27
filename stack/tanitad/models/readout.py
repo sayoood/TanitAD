@@ -17,24 +17,65 @@ from torch import Tensor, nn
 
 
 class SpatialGridReadout(nn.Module):
-    """Token grid [B, N, D] -> compact state [B, G*G*d_r] preserving layout."""
+    """Token grid [B, N, D] -> compact state [B, Gh*Gw*d_r] preserving layout.
 
-    def __init__(self, n_tokens: int, d_model: int, grid: int = 4, d_readout: int = 32):
+    ``token_grid`` (opt-in, default ``None``) states the token grid as
+    ``(rows, cols)`` for a NON-SQUARE encoder input; ``None`` infers the square
+    grid from ``n_tokens`` exactly as before. ``grid_w`` likewise defaults to
+    ``grid`` (square readout).
+
+    ⭐ The readout is the geometry FIREWALL of the stack: whatever the input
+    geometry, the compact state stays ``grid * grid_w * d_readout``. A wide
+    256x640 input therefore produces the SAME state_dim 2048 the flagship
+    predictor, tactical/strategic policies and every grounding head expect —
+    which is why widening the field is a data+encoder change and not a
+    whole-model redesign.
+
+    ⚠️ ``grid_w`` is the ONE knob that breaks that firewall: setting it spends
+    readout cells asymmetrically and CHANGES ``state_dim`` (4x10x128 = 5120
+    instead of 2048), which makes every downstream checkpoint unloadable. It is
+    ``None`` by default and should stay that way unless someone is deliberately
+    paying that price — this is the cost the FOV-audit stream flagged.
+    """
+
+    def __init__(self, n_tokens: int, d_model: int, grid: int = 4,
+                 d_readout: int = 32,
+                 token_grid: tuple[int, int] | None = None,
+                 grid_w: int | None = None):
         super().__init__()
-        hw = int(n_tokens ** 0.5)
-        assert hw * hw == n_tokens, "readout expects a square token grid"
-        assert hw % grid == 0, "token grid must be divisible by readout grid"
-        self.hw, self.grid = hw, grid
-        self.pool = nn.AvgPool2d(hw // grid)
+        if token_grid is None:
+            hw = int(n_tokens ** 0.5)
+            assert hw * hw == n_tokens, (
+                f"readout got {n_tokens} tokens, which is not a square grid. "
+                f"Pass token_grid=(rows, cols) for a non-square encoder.")
+            th, tw = hw, hw
+        else:
+            th, tw = int(token_grid[0]), int(token_grid[1])
+            assert th * tw == n_tokens, (
+                f"token_grid {th}x{tw} does not match n_tokens {n_tokens}")
+        gw = grid if grid_w is None else int(grid_w)
+        self.hw, self.grid = th, grid          # .hw kept: square back-compat
+        self.token_h, self.token_w, self.grid_w = th, tw, gw
+        # Pooling route (converged with the FOV-audit stream 2026-07-27).
+        # MEASURED (route_and_rig_2026-07-27.json): where the token grid tiles
+        # evenly, `AvgPool2d((th//grid, tw//gw))` and `AdaptiveAvgPool2d((grid,
+        # gw))` are the SAME operation — bit-identical at 16x16 (deployed) and
+        # 16x40, and equal to float32 summation noise (<= 6e-8) at 24x60 / 24x24.
+        # The exact kernel is used wherever it applies, so the DEPLOYED path
+        # stays byte-for-byte what it was; adaptive is the fallback that makes a
+        # non-tiling grid (e.g. 16x42) expressible instead of an assert.
+        self.exact_pool = (th % grid == 0 and tw % gw == 0)
+        self.pool = (nn.AvgPool2d((th // grid, tw // gw)) if self.exact_pool
+                     else nn.AdaptiveAvgPool2d((grid, gw)))
         self.proj = nn.Linear(d_model, d_readout)
-        self.out_dim = grid * grid * d_readout
+        self.out_dim = grid * gw * d_readout
 
     def forward(self, tokens: Tensor) -> Tensor:
         b, n, d = tokens.shape
-        x = tokens.transpose(1, 2).reshape(b, d, self.hw, self.hw)
-        x = self.pool(x)                                  # [B, D, G, G]
-        x = x.flatten(2).transpose(1, 2)                  # [B, G*G, D]
-        return self.proj(x).flatten(1)                    # [B, G*G*d_r]
+        x = tokens.transpose(1, 2).reshape(b, d, self.token_h, self.token_w)
+        x = self.pool(x)                                  # [B, D, Gh, Gw]
+        x = x.flatten(2).transpose(1, 2)                  # [B, Gh*Gw, D]
+        return self.proj(x).flatten(1)                    # [B, Gh*Gw*d_r]
 
 
 class RidgeProbe:

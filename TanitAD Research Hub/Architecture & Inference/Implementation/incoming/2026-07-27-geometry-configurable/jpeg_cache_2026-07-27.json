@@ -1,0 +1,1989 @@
+{
+  "artifact": "compressed-cache viability for a wide-FOV v5",
+  "date": "2026-07-27",
+  "machine": "dev box, CPU only (no GPU -> the WDDM host-RAM spill artefact cannot affect any timing here)",
+  "codec_backend": "PIL",
+  "backend_note": "sizes and fidelity are backend-independent (same libjpeg-turbo/libpng); PIL wall-clock carries extra Python overhead and is an UPPER BOUND on the torchvision path production uses.",
+  "confidentiality": "no clip UUID (index + sha1 prefix only)",
+  "anchors": {
+    "raw_episode_mb_MEASURED": 117.384,
+    "stored_frames_per_episode": 199,
+    "decoded_frames_per_episode": 605,
+    "episodes_train": 2376,
+    "episodes_val": 600,
+    "trainer_window": 8,
+    "n_stack": 3,
+    "note": "v2 stores UNSTACKED frames (T + n_stack - 1) and restacks at load, so the ~2.97x from not triplicating each frame is LOSSLESS and separate from the codec's contribution."
+  },
+  "clips": [
+    {
+      "index": 0,
+      "clip_sha1_8": "b1474ccc",
+      "rig": "B",
+      "per_clip_calib": true,
+      "frames_used": 40
+    },
+    {
+      "index": 1,
+      "clip_sha1_8": "2a9807fb",
+      "rig": "B",
+      "per_clip_calib": true,
+      "frames_used": 40
+    },
+    {
+      "index": 2,
+      "clip_sha1_8": "87b5fdbd",
+      "rig": "B",
+      "per_clip_calib": true,
+      "frames_used": 40
+    }
+  ],
+  "summary": [
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 37.36,
+      "max_abs_err": 116,
+      "mean_abs_err": 2.1398,
+      "bit_exact": false,
+      "bytes_per_frame": 17041.0,
+      "codec_ratio_vs_unstacked_raw": 30.1,
+      "episode_mb": 3.43,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 85.67,
+      "corpus_gb": 10.2,
+      "encode_s_per_frame": 0.00184,
+      "decode_s_per_frame": 0.00173,
+      "window_serve_ms": 17.28,
+      "build_encode_min_per_1000ep": 6.2
+    },
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 39.27,
+      "max_abs_err": 106,
+      "mean_abs_err": 1.7268,
+      "bit_exact": false,
+      "bytes_per_frame": 23285.7,
+      "codec_ratio_vs_unstacked_raw": 21.94,
+      "episode_mb": 4.68,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 62.69,
+      "corpus_gb": 13.9,
+      "encode_s_per_frame": 0.0018,
+      "decode_s_per_frame": 0.00137,
+      "window_serve_ms": 13.66,
+      "build_encode_min_per_1000ep": 6.0
+    },
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 40.73,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.4718,
+      "bit_exact": false,
+      "bytes_per_frame": 29621.4,
+      "codec_ratio_vs_unstacked_raw": 17.16,
+      "episode_mb": 5.95,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 49.28,
+      "corpus_gb": 17.7,
+      "encode_s_per_frame": 0.0073,
+      "decode_s_per_frame": 0.00227,
+      "window_serve_ms": 22.71,
+      "build_encode_min_per_1000ep": 24.5
+    },
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 42.9,
+      "max_abs_err": 74,
+      "mean_abs_err": 1.1513,
+      "bit_exact": false,
+      "bytes_per_frame": 43249.7,
+      "codec_ratio_vs_unstacked_raw": 11.66,
+      "episode_mb": 8.69,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 33.75,
+      "corpus_gb": 25.9,
+      "encode_s_per_frame": 0.00229,
+      "decode_s_per_frame": 0.00491,
+      "window_serve_ms": 49.06,
+      "build_encode_min_per_1000ep": 7.7
+    },
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 145195.0,
+      "codec_ratio_vs_unstacked_raw": 3.4,
+      "episode_mb": 29.18,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 10.05,
+      "corpus_gb": 86.9,
+      "encode_s_per_frame": 0.32376,
+      "decode_s_per_frame": 0.0118,
+      "window_serve_ms": 118.05,
+      "build_encode_min_per_1000ep": 1084.6
+    },
+    {
+      "geometry": "100deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 196261.1,
+      "codec_ratio_vs_unstacked_raw": 2.51,
+      "episode_mb": 39.45,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 7.44,
+      "corpus_gb": 117.4,
+      "encode_s_per_frame": 0.02773,
+      "decode_s_per_frame": 0.01256,
+      "window_serve_ms": 125.59,
+      "build_encode_min_per_1000ep": 92.9
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 37.21,
+      "max_abs_err": 125,
+      "mean_abs_err": 2.1211,
+      "bit_exact": false,
+      "bytes_per_frame": 16664.2,
+      "codec_ratio_vs_unstacked_raw": 31.19,
+      "episode_mb": 3.35,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 87.61,
+      "corpus_gb": 10.0,
+      "encode_s_per_frame": 0.00187,
+      "decode_s_per_frame": 0.00329,
+      "window_serve_ms": 32.87,
+      "build_encode_min_per_1000ep": 6.3
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 39.07,
+      "max_abs_err": 117,
+      "mean_abs_err": 1.7202,
+      "bit_exact": false,
+      "bytes_per_frame": 22795.2,
+      "codec_ratio_vs_unstacked_raw": 22.68,
+      "episode_mb": 4.58,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 64.04,
+      "corpus_gb": 13.6,
+      "encode_s_per_frame": 0.00192,
+      "decode_s_per_frame": 0.00131,
+      "window_serve_ms": 13.07,
+      "build_encode_min_per_1000ep": 6.4
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 40.49,
+      "max_abs_err": 99,
+      "mean_abs_err": 1.4686,
+      "bit_exact": false,
+      "bytes_per_frame": 28987.4,
+      "codec_ratio_vs_unstacked_raw": 17.72,
+      "episode_mb": 5.83,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 50.36,
+      "corpus_gb": 17.3,
+      "encode_s_per_frame": 0.002,
+      "decode_s_per_frame": 0.00537,
+      "window_serve_ms": 53.75,
+      "build_encode_min_per_1000ep": 6.7
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": false,
+      "psnr_db": 42.6,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.1517,
+      "bit_exact": false,
+      "bytes_per_frame": 42213.8,
+      "codec_ratio_vs_unstacked_raw": 12.05,
+      "episode_mb": 8.48,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 34.58,
+      "corpus_gb": 25.3,
+      "encode_s_per_frame": 0.00222,
+      "decode_s_per_frame": 0.00305,
+      "window_serve_ms": 30.54,
+      "build_encode_min_per_1000ep": 7.4
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 139733.6,
+      "codec_ratio_vs_unstacked_raw": 3.53,
+      "episode_mb": 28.09,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 10.45,
+      "corpus_gb": 83.6,
+      "encode_s_per_frame": 0.2795,
+      "decode_s_per_frame": 0.01257,
+      "window_serve_ms": 125.69,
+      "build_encode_min_per_1000ep": 936.3
+    },
+    {
+      "geometry": "120deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 188803.1,
+      "codec_ratio_vs_unstacked_raw": 2.62,
+      "episode_mb": 37.95,
+      "raw_stacked_episode_mb": 293.44,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 7.73,
+      "corpus_gb": 112.9,
+      "encode_s_per_frame": 0.02715,
+      "decode_s_per_frame": 0.00492,
+      "window_serve_ms": 49.16,
+      "build_encode_min_per_1000ep": 90.9
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": false,
+      "psnr_db": 39.04,
+      "max_abs_err": 106,
+      "mean_abs_err": 1.725,
+      "bit_exact": false,
+      "bytes_per_frame": 31028.2,
+      "codec_ratio_vs_unstacked_raw": 38.05,
+      "episode_mb": 6.24,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 105.86,
+      "corpus_gb": 18.6,
+      "encode_s_per_frame": 0.00491,
+      "decode_s_per_frame": 0.00764,
+      "window_serve_ms": 76.45,
+      "build_encode_min_per_1000ep": 16.4
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": false,
+      "psnr_db": 40.91,
+      "max_abs_err": 91,
+      "mean_abs_err": 1.3914,
+      "bit_exact": false,
+      "bytes_per_frame": 42412.3,
+      "codec_ratio_vs_unstacked_raw": 27.66,
+      "episode_mb": 8.52,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 77.45,
+      "corpus_gb": 25.4,
+      "encode_s_per_frame": 0.00478,
+      "decode_s_per_frame": 0.00483,
+      "window_serve_ms": 48.32,
+      "build_encode_min_per_1000ep": 16.0
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": false,
+      "psnr_db": 42.32,
+      "max_abs_err": 70,
+      "mean_abs_err": 1.1879,
+      "bit_exact": false,
+      "bytes_per_frame": 54084.5,
+      "codec_ratio_vs_unstacked_raw": 21.56,
+      "episode_mb": 10.87,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 60.73,
+      "corpus_gb": 32.4,
+      "encode_s_per_frame": 0.00855,
+      "decode_s_per_frame": 0.01081,
+      "window_serve_ms": 108.06,
+      "build_encode_min_per_1000ep": 28.7
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": false,
+      "psnr_db": 44.45,
+      "max_abs_err": 69,
+      "mean_abs_err": 0.9315,
+      "bit_exact": false,
+      "bytes_per_frame": 79743.3,
+      "codec_ratio_vs_unstacked_raw": 14.46,
+      "episode_mb": 16.03,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 41.19,
+      "corpus_gb": 47.7,
+      "encode_s_per_frame": 0.0117,
+      "decode_s_per_frame": 0.01146,
+      "window_serve_ms": 114.62,
+      "build_encode_min_per_1000ep": 39.2
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 271462.1,
+      "codec_ratio_vs_unstacked_raw": 4.09,
+      "episode_mb": 54.56,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 12.1,
+      "corpus_gb": 162.4,
+      "encode_s_per_frame": 0.30892,
+      "decode_s_per_frame": 0.01705,
+      "window_serve_ms": 170.51,
+      "build_encode_min_per_1000ep": 1034.9
+    },
+    {
+      "geometry": "120deg_384x960_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 370896.3,
+      "codec_ratio_vs_unstacked_raw": 3.0,
+      "episode_mb": 74.55,
+      "raw_stacked_episode_mb": 660.23,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 8.86,
+      "corpus_gb": 221.9,
+      "encode_s_per_frame": 0.05364,
+      "decode_s_per_frame": 0.01992,
+      "window_serve_ms": 199.19,
+      "build_encode_min_per_1000ep": 179.7
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": false,
+      "psnr_db": 36.08,
+      "max_abs_err": 133,
+      "mean_abs_err": 2.3341,
+      "bit_exact": false,
+      "bytes_per_frame": 7660.0,
+      "codec_ratio_vs_unstacked_raw": 26.31,
+      "episode_mb": 1.54,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 76.23,
+      "corpus_gb": 4.6,
+      "encode_s_per_frame": 0.00153,
+      "decode_s_per_frame": 0.00284,
+      "window_serve_ms": 28.4,
+      "build_encode_min_per_1000ep": 5.1
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": false,
+      "psnr_db": 38.08,
+      "max_abs_err": 123,
+      "mean_abs_err": 1.8746,
+      "bit_exact": false,
+      "bytes_per_frame": 10257.2,
+      "codec_ratio_vs_unstacked_raw": 19.59,
+      "episode_mb": 2.06,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 56.93,
+      "corpus_gb": 6.1,
+      "encode_s_per_frame": 0.00103,
+      "decode_s_per_frame": 0.00185,
+      "window_serve_ms": 18.48,
+      "build_encode_min_per_1000ep": 3.5
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": false,
+      "psnr_db": 39.6,
+      "max_abs_err": 116,
+      "mean_abs_err": 1.5914,
+      "bit_exact": false,
+      "bytes_per_frame": 12870.8,
+      "codec_ratio_vs_unstacked_raw": 15.56,
+      "episode_mb": 2.59,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 45.37,
+      "corpus_gb": 7.7,
+      "encode_s_per_frame": 0.00116,
+      "decode_s_per_frame": 0.00305,
+      "window_serve_ms": 30.54,
+      "build_encode_min_per_1000ep": 3.9
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": false,
+      "psnr_db": 41.82,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.2386,
+      "bit_exact": false,
+      "bytes_per_frame": 18517.8,
+      "codec_ratio_vs_unstacked_raw": 10.76,
+      "episode_mb": 3.72,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 31.53,
+      "corpus_gb": 11.1,
+      "encode_s_per_frame": 0.00104,
+      "decode_s_per_frame": 0.01481,
+      "window_serve_ms": 148.1,
+      "build_encode_min_per_1000ep": 3.5
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 55418.7,
+      "codec_ratio_vs_unstacked_raw": 3.59,
+      "episode_mb": 11.14,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 10.54,
+      "corpus_gb": 33.2,
+      "encode_s_per_frame": 0.10282,
+      "decode_s_per_frame": 0.0085,
+      "window_serve_ms": 84.99,
+      "build_encode_min_per_1000ep": 344.4
+    },
+    {
+      "geometry": "deployed_256sq_51deg",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "lossless": true,
+      "psnr_db": null,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "bit_exact": true,
+      "bytes_per_frame": 74934.9,
+      "codec_ratio_vs_unstacked_raw": 2.64,
+      "episode_mb": 15.06,
+      "raw_stacked_episode_mb": 117.37,
+      "unstack_only_saving_x": 2.97,
+      "total_saving_vs_raw_stacked_x": 7.79,
+      "corpus_gb": 44.8,
+      "encode_s_per_frame": 0.00891,
+      "decode_s_per_frame": 0.00753,
+      "window_serve_ms": 75.33,
+      "build_encode_min_per_1000ep": 29.9
+    }
+  ],
+  "rows": [
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 6770.35,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 29.03956220874844,
+      "encode_s_per_frame": 0.002702422499714885,
+      "decode_s_per_frame": 0.00673287750032614,
+      "lossless": false,
+      "psnr_db": 36.814892292022705,
+      "max_abs_err": 133,
+      "mean_abs_err": 2.1830949783325195,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 9243.425,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 21.27003789179877,
+      "encode_s_per_frame": 0.0013293500000145287,
+      "decode_s_per_frame": 0.003882290000183275,
+      "lossless": false,
+      "psnr_db": 38.201537132263184,
+      "max_abs_err": 123,
+      "mean_abs_err": 1.8643238544464111,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 11786.225,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 16.68116805847504,
+      "encode_s_per_frame": 0.0016567200000281446,
+      "decode_s_per_frame": 0.007672222499968484,
+      "lossless": false,
+      "psnr_db": 39.17363882064819,
+      "max_abs_err": 116,
+      "mean_abs_err": 1.6682260036468506,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 17304.375,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 11.361751002275437,
+      "encode_s_per_frame": 0.0012578949994349387,
+      "decode_s_per_frame": 0.04286276499988162,
+      "lossless": false,
+      "psnr_db": 40.53109169006348,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.404649019241333,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 79359.6,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 2.477431841894364,
+      "encode_s_per_frame": 0.009731757499685046,
+      "decode_s_per_frame": 0.010158390000287908,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 63809.25,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 3.081183370749539,
+      "encode_s_per_frame": 0.10564624250037014,
+      "decode_s_per_frame": 0.010936282499460503,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 15193.2,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 32.35131506200142,
+      "encode_s_per_frame": 0.0018526100000599399,
+      "decode_s_per_frame": 0.001588429999537766,
+      "lossless": false,
+      "psnr_db": 38.21122646331787,
+      "max_abs_err": 116,
+      "mean_abs_err": 1.921488881111145,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 20994.375,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 23.411985353219613,
+      "encode_s_per_frame": 0.0014565775003575255,
+      "decode_s_per_frame": 0.0010491075001482387,
+      "lossless": false,
+      "psnr_db": 39.665939807891846,
+      "max_abs_err": 106,
+      "mean_abs_err": 1.6190600395202637,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 26958.075,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 18.232755862575498,
+      "encode_s_per_frame": 0.0013460250003845431,
+      "decode_s_per_frame": 0.0024931474996265023,
+      "lossless": false,
+      "psnr_db": 40.73099613189697,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.4376293420791626,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 39951.225,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 12.303001973030865,
+      "encode_s_per_frame": 0.0024840975005645306,
+      "decode_s_per_frame": 0.011403147500095656,
+      "lossless": false,
+      "psnr_db": 42.23862648010254,
+      "max_abs_err": 74,
+      "mean_abs_err": 1.2019429206848145,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 196361.0,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.503144718146679,
+      "encode_s_per_frame": 0.03829598249940318,
+      "decode_s_per_frame": 0.014984684999944875,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 154884.0,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.173471759510343,
+      "encode_s_per_frame": 0.35188758250005775,
+      "decode_s_per_frame": 0.016097437500138766,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 14344.925,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 34.26438269980498,
+      "encode_s_per_frame": 0.0024666900004376656,
+      "decode_s_per_frame": 0.007718244999705348,
+      "lossless": false,
+      "psnr_db": 38.1722092628479,
+      "max_abs_err": 125,
+      "mean_abs_err": 1.8705302476882935,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 19954.75,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 24.631729287512997,
+      "encode_s_per_frame": 0.0021619724997435697,
+      "decode_s_per_frame": 0.0015814950005733409,
+      "lossless": false,
+      "psnr_db": 39.52679634094238,
+      "max_abs_err": 117,
+      "mean_abs_err": 1.5970607995986938,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 25734.0,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 19.10002331545815,
+      "encode_s_per_frame": 0.0022604649995628277,
+      "decode_s_per_frame": 0.0016045024996856228,
+      "lossless": false,
+      "psnr_db": 40.49680233001709,
+      "max_abs_err": 99,
+      "mean_abs_err": 1.4315952062606812,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 38230.125,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 12.856876612357402,
+      "encode_s_per_frame": 0.0023190674997749738,
+      "decode_s_per_frame": 0.0017638600002101157,
+      "lossless": false,
+      "psnr_db": 41.93474769592285,
+      "max_abs_err": 98,
+      "mean_abs_err": 1.203295111656189,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 187146.325,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.626394079605891,
+      "encode_s_per_frame": 0.046920310000132304,
+      "decode_s_per_frame": 0.004205569999612635,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 144792.15,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.394659171785211,
+      "encode_s_per_frame": 0.2736710425000638,
+      "decode_s_per_frame": 0.017678205000265734,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 26316.625,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 42.02362574988244,
+      "encode_s_per_frame": 0.005355059999419609,
+      "decode_s_per_frame": 0.009395782500359929,
+      "lossless": false,
+      "psnr_db": 40.169997215270996,
+      "max_abs_err": 106,
+      "mean_abs_err": 1.5090450048446655,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 36550.0,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 30.257729138166894,
+      "encode_s_per_frame": 0.005247292500280309,
+      "decode_s_per_frame": 0.004714027500449447,
+      "lossless": false,
+      "psnr_db": 41.706604957580566,
+      "max_abs_err": 91,
+      "mean_abs_err": 1.2559456825256348,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 47127.6,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 23.466503704835382,
+      "encode_s_per_frame": 0.01581532749987673,
+      "decode_s_per_frame": 0.01664903749988298,
+      "lossless": false,
+      "psnr_db": 42.77010440826416,
+      "max_abs_err": 70,
+      "mean_abs_err": 1.1125684976577759,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 70762.4,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 15.628638938193166,
+      "encode_s_per_frame": 0.00569151250019786,
+      "decode_s_per_frame": 0.017917644999397454,
+      "lossless": false,
+      "psnr_db": 44.25921440124512,
+      "max_abs_err": 69,
+      "mean_abs_err": 0.9343900084495544,
+      "exact": false
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 365000.0,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 3.029917808219178,
+      "encode_s_per_frame": 0.0638512774996343,
+      "decode_s_per_frame": 0.04199627749985666,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 0,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 280788.35,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 3.938624946512204,
+      "encode_s_per_frame": 0.4184588874995825,
+      "decode_s_per_frame": 0.026555727500090144,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 6757.025,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 29.096828855894422,
+      "encode_s_per_frame": 0.0009288950001064223,
+      "decode_s_per_frame": 0.000842509999347385,
+      "lossless": false,
+      "psnr_db": 37.40375757217407,
+      "max_abs_err": 57,
+      "mean_abs_err": 2.030998945236206,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 9035.775,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 21.75884193663521,
+      "encode_s_per_frame": 0.0008847224999044556,
+      "decode_s_per_frame": 0.0008539199996448587,
+      "lossless": false,
+      "psnr_db": 39.289653301239014,
+      "max_abs_err": 56,
+      "mean_abs_err": 1.6571935415267944,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 11399.85,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 17.24654271766734,
+      "encode_s_per_frame": 0.0008988749999844003,
+      "decode_s_per_frame": 0.0007209000003058463,
+      "lossless": false,
+      "psnr_db": 40.796217918395996,
+      "max_abs_err": 49,
+      "mean_abs_err": 1.42653489112854,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 16619.65,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 11.829852012527338,
+      "encode_s_per_frame": 0.0009273575000406708,
+      "decode_s_per_frame": 0.0007739799999399111,
+      "lossless": false,
+      "psnr_db": 43.10561656951904,
+      "max_abs_err": 36,
+      "mean_abs_err": 1.1154859066009521,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 67514.175,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 2.912099570201369,
+      "encode_s_per_frame": 0.009462417499889852,
+      "decode_s_per_frame": 0.011173055000108434,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 48565.95,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 4.048268385566431,
+      "encode_s_per_frame": 0.11825890999971307,
+      "decode_s_per_frame": 0.00724640249973163,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 13716.325,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 35.834671459009606,
+      "encode_s_per_frame": 0.002245625000068685,
+      "decode_s_per_frame": 0.0021265100003802218,
+      "lossless": false,
+      "psnr_db": 39.242796897888184,
+      "max_abs_err": 62,
+      "mean_abs_err": 1.7741154432296753,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 18895.85,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 26.012060849339935,
+      "encode_s_per_frame": 0.002315445000567706,
+      "decode_s_per_frame": 0.0018097124993801117,
+      "lossless": false,
+      "psnr_db": 40.97033977508545,
+      "max_abs_err": 50,
+      "mean_abs_err": 1.4664865732192993,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 24394.3,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 20.14896922641765,
+      "encode_s_per_frame": 0.018854445000033592,
+      "decode_s_per_frame": 0.0032370349996199365,
+      "lossless": false,
+      "psnr_db": 42.26815700531006,
+      "max_abs_err": 43,
+      "mean_abs_err": 1.2848552465438843,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 36516.0,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 13.460400920144593,
+      "encode_s_per_frame": 0.002403665000019828,
+      "decode_s_per_frame": 0.0017689100001007318,
+      "lossless": false,
+      "psnr_db": 44.223337173461914,
+      "max_abs_err": 41,
+      "mean_abs_err": 1.045091152191162,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 182765.275,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.689351136314051,
+      "encode_s_per_frame": 0.026153340000018944,
+      "decode_s_per_frame": 0.004186244999436895,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 135568.4,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.6256236704128693,
+      "encode_s_per_frame": 0.2954218124999898,
+      "decode_s_per_frame": 0.01399649499944644,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 13103.225,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 37.51137601620975,
+      "encode_s_per_frame": 0.00195817249987158,
+      "decode_s_per_frame": 0.0013643924998177682,
+      "lossless": false,
+      "psnr_db": 39.21810865402222,
+      "max_abs_err": 56,
+      "mean_abs_err": 1.6914774179458618,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 18063.55,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 27.210598138239718,
+      "encode_s_per_frame": 0.001942057500127703,
+      "decode_s_per_frame": 0.001337575000070501,
+      "lossless": false,
+      "psnr_db": 40.940256118774414,
+      "max_abs_err": 51,
+      "mean_abs_err": 1.4099527597427368,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 23297.7,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 21.097361542126475,
+      "encode_s_per_frame": 0.0019965275001595727,
+      "decode_s_per_frame": 0.0013821274995279964,
+      "lossless": false,
+      "psnr_db": 42.281532287597656,
+      "max_abs_err": 48,
+      "mean_abs_err": 1.2320102453231812,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 34813.4,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 14.118701419568326,
+      "encode_s_per_frame": 0.002029804999619955,
+      "decode_s_per_frame": 0.0013939174998085946,
+      "lossless": false,
+      "psnr_db": 44.21053886413574,
+      "max_abs_err": 37,
+      "mean_abs_err": 1.008435845375061,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 172786.075,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.844673681024353,
+      "encode_s_per_frame": 0.01985293499965337,
+      "decode_s_per_frame": 0.0030773749997024423,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 129247.2,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.8029450541288323,
+      "encode_s_per_frame": 0.28108684000035283,
+      "decode_s_per_frame": 0.005323642499570269,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 23849.625,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 46.37054041730216,
+      "encode_s_per_frame": 0.005232909999904223,
+      "decode_s_per_frame": 0.009910730000410695,
+      "lossless": false,
+      "psnr_db": 41.07219219207764,
+      "max_abs_err": 49,
+      "mean_abs_err": 1.3899370431900024,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 32922.3,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 33.59182074156423,
+      "encode_s_per_frame": 0.004675124999630497,
+      "decode_s_per_frame": 0.00699549749988364,
+      "lossless": false,
+      "psnr_db": 42.780890464782715,
+      "max_abs_err": 43,
+      "mean_abs_err": 1.142364501953125,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 42611.1,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 25.953800770221843,
+      "encode_s_per_frame": 0.005012539999734144,
+      "decode_s_per_frame": 0.0072646699998585975,
+      "lossless": false,
+      "psnr_db": 44.01918411254883,
+      "max_abs_err": 45,
+      "mean_abs_err": 1.003429889678955,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 64649.475,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 17.106403416269043,
+      "encode_s_per_frame": 0.005209764999744948,
+      "decode_s_per_frame": 0.013146842500282219,
+      "lossless": false,
+      "psnr_db": 45.86284637451172,
+      "max_abs_err": 29,
+      "mean_abs_err": 0.8255410194396973,
+      "exact": false
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 337231.2,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 3.2794118693644005,
+      "encode_s_per_frame": 0.06525517499976559,
+      "decode_s_per_frame": 0.010232059999543708,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 1,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 250318.3,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 4.4180549324599925,
+      "encode_s_per_frame": 0.30006589249969695,
+      "decode_s_per_frame": 0.014166187499358784,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 9452.75,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 20.799026738250774,
+      "encode_s_per_frame": 0.0009644999998272396,
+      "decode_s_per_frame": 0.0009449375000258442,
+      "lossless": false,
+      "psnr_db": 34.02579069137573,
+      "max_abs_err": 64,
+      "mean_abs_err": 2.788330078125,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 12492.3,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 15.738334814245576,
+      "encode_s_per_frame": 0.0008901424997020512,
+      "decode_s_per_frame": 0.0008079825005552266,
+      "lossless": false,
+      "psnr_db": 36.756412982940674,
+      "max_abs_err": 57,
+      "mean_abs_err": 2.102229595184326,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 15426.2,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 12.74507007558569,
+      "encode_s_per_frame": 0.0009152500002528541,
+      "decode_s_per_frame": 0.0007679725000343751,
+      "lossless": false,
+      "psnr_db": 38.83630037307739,
+      "max_abs_err": 48,
+      "mean_abs_err": 1.67929208278656,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 21629.4,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 9.089849926488945,
+      "encode_s_per_frame": 0.0009316449999460019,
+      "decode_s_per_frame": 0.0007939400005852803,
+      "lossless": false,
+      "psnr_db": 41.82386875152588,
+      "max_abs_err": 41,
+      "mean_abs_err": 1.1956874132156372,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 77931.05,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 2.5228455153626186,
+      "encode_s_per_frame": 0.007546972500131232,
+      "decode_s_per_frame": 0.0012680249994446058,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "deployed_256sq_51deg",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        256
+      ],
+      "bytes_per_frame": 53880.85,
+      "raw_frame_bytes": 196608,
+      "codec_ratio_vs_unstacked_raw": 3.6489402078846194,
+      "encode_s_per_frame": 0.08454811249976046,
+      "decode_s_per_frame": 0.007315312499849824,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 22213.6,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 22.126985270284873,
+      "encode_s_per_frame": 0.0014271499996539206,
+      "decode_s_per_frame": 0.0014698525003041141,
+      "lossless": false,
+      "psnr_db": 34.62672710418701,
+      "max_abs_err": 60,
+      "mean_abs_err": 2.723834991455078,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 29966.875,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 16.40211066385801,
+      "encode_s_per_frame": 0.001638595000258647,
+      "decode_s_per_frame": 0.0012378900006297044,
+      "lossless": false,
+      "psnr_db": 37.16248273849487,
+      "max_abs_err": 49,
+      "mean_abs_err": 2.094996929168701,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 37511.85,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 13.103059433219103,
+      "encode_s_per_frame": 0.001700689999415772,
+      "decode_s_per_frame": 0.001082299999688985,
+      "lossless": false,
+      "psnr_db": 39.19001817703247,
+      "max_abs_err": 46,
+      "mean_abs_err": 1.69302237033844,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 53281.875,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 9.224900587676391,
+      "encode_s_per_frame": 0.001968017499893904,
+      "decode_s_per_frame": 0.001547345000290079,
+      "lossless": false,
+      "psnr_db": 42.24423885345459,
+      "max_abs_err": 38,
+      "mean_abs_err": 1.2068835496902466,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 209657.1,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.3443994980375096,
+      "encode_s_per_frame": 0.018738315000518924,
+      "decode_s_per_frame": 0.018504969999776223,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "100deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 145132.5,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.3866983618417654,
+      "encode_s_per_frame": 0.3239662399995723,
+      "decode_s_per_frame": 0.005319814999529627,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 22544.45,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 21.802261754001538,
+      "encode_s_per_frame": 0.0011861724997288547,
+      "decode_s_per_frame": 0.0007796899997629225,
+      "lossless": false,
+      "psnr_db": 34.23926591873169,
+      "max_abs_err": 66,
+      "mean_abs_err": 2.8012025356292725,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 30367.275,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 16.185844795096035,
+      "encode_s_per_frame": 0.0016438149999885355,
+      "decode_s_per_frame": 0.0010011649996158668,
+      "lossless": false,
+      "psnr_db": 36.727962493896484,
+      "max_abs_err": 54,
+      "mean_abs_err": 2.1534667015075684,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 37930.475,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 12.958445682528364,
+      "encode_s_per_frame": 0.0017346674998407253,
+      "decode_s_per_frame": 0.013137797500530724,
+      "lossless": false,
+      "psnr_db": 38.69807481765747,
+      "max_abs_err": 49,
+      "mean_abs_err": 1.7421427965164185,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 53597.975,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 9.170495713690675,
+      "encode_s_per_frame": 0.002319872500083875,
+      "decode_s_per_frame": 0.006003980000241427,
+      "lossless": false,
+      "psnr_db": 41.652207374572754,
+      "max_abs_err": 40,
+      "mean_abs_err": 1.2434675693511963,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 206476.975,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 2.3805075602255408,
+      "encode_s_per_frame": 0.0146652074996382,
+      "decode_s_per_frame": 0.0074644699998316355,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_256x640_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        256,
+        640
+      ],
+      "bytes_per_frame": 145161.4,
+      "raw_frame_bytes": 491520,
+      "codec_ratio_vs_unstacked_raw": 3.3860241083373404,
+      "encode_s_per_frame": 0.2837300024999422,
+      "decode_s_per_frame": 0.014703979999467265,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q75",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 42918.4,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 25.767968983000298,
+      "encode_s_per_frame": 0.004135122500156285,
+      "decode_s_per_frame": 0.0036284424997575114,
+      "lossless": false,
+      "psnr_db": 35.87606906890869,
+      "max_abs_err": 56,
+      "mean_abs_err": 2.276045560836792,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q85",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 57764.75,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 19.145239960356445,
+      "encode_s_per_frame": 0.004403794999961974,
+      "decode_s_per_frame": 0.00278625999999349,
+      "lossless": false,
+      "psnr_db": 38.24242830276489,
+      "max_abs_err": 46,
+      "mean_abs_err": 1.7758079767227173,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q90",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 72514.8,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 15.250955666981085,
+      "encode_s_per_frame": 0.004831487499905052,
+      "decode_s_per_frame": 0.008504179999727057,
+      "lossless": false,
+      "psnr_db": 40.177741050720215,
+      "max_abs_err": 42,
+      "mean_abs_err": 1.447650671005249,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "jpeg_q95",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 103818.05,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 10.652482877495773,
+      "encode_s_per_frame": 0.024212937499396504,
+      "decode_s_per_frame": 0.003321092500118539,
+      "lossless": false,
+      "psnr_db": 43.23578357696533,
+      "max_abs_err": 37,
+      "mean_abs_err": 1.034460186958313,
+      "exact": false
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "png_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 410457.775,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 2.6943575377515994,
+      "encode_s_per_frame": 0.03182671750037116,
+      "decode_s_per_frame": 0.007529120000253897,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    },
+    {
+      "clip_index": 2,
+      "geometry": "120deg_384x960_cyl",
+      "codec": "webp_lossless",
+      "frame_hw": [
+        384,
+        960
+      ],
+      "bytes_per_frame": 283279.65,
+      "raw_frame_bytes": 1105920,
+      "codec_ratio_vs_unstacked_raw": 3.903986749489418,
+      "encode_s_per_frame": 0.20824289000011048,
+      "decode_s_per_frame": 0.010432120000041322,
+      "lossless": true,
+      "psnr_db": Infinity,
+      "max_abs_err": 0,
+      "mean_abs_err": 0.0,
+      "exact": true
+    }
+  ]
+}

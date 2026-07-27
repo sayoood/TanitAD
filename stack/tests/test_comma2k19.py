@@ -8,10 +8,12 @@ import numpy as np
 import pytest
 import torch
 
-from tanitad.data.comma2k19 import (Comma2k19Dataset, actions_and_poses,
-                                    build_episode, discover_segments,
-                                    ecef_to_enu, split_by_route,
-                                    stack_two_frames)
+from tanitad.data.comma2k19 import (HEADING_MODE_HOLD, HEADING_MODE_LEGACY,
+                                    HEADING_OBSERVABLE_V_MPS, Comma2k19Dataset,
+                                    actions_and_poses, build_episode,
+                                    discover_segments, ecef_to_enu,
+                                    hold_heading_through_standstill,
+                                    split_by_route, stack_two_frames)
 
 T_FRAMES = 100  # 20 fps -> 5 s segment
 
@@ -58,6 +60,68 @@ def test_actions_and_poses_math(tmp_path):
     assert abs(poses[5, 3] - 10.0) < 0.2                          # v ~ 10 m/s
     d = np.linalg.norm(poses[-1, :2] - poses[0, :2])
     assert 35.0 < d < 60.0                                        # ~10 m/s * ~4.9 s
+
+
+# --------------------------------------------------------------------------- #
+# IDM v3 (2026-07-27): the standstill heading defect and its opt-in repair.     #
+# comma2k19 heading is arctan2 of the ENU VELOCITY, undefined at v ~ 0. MEASURED
+# on the 64-segment val build: 26.27 % of frames below 0.5 m/s carry a           #
+# physically impossible |yaw_rate| (up to 15.53 rad/s at 0.00-0.01 m/s); 0.000 % #
+# above it. Cost: the deployed IDM head read yaw R2 0.105 against these labels   #
+# and 0.83 against the repaired ones.                                           #
+# --------------------------------------------------------------------------- #
+def test_hold_heading_repairs_standstill_and_is_wrap_safe():
+    # stationary for 5 frames with GARBAGE heading, then driving north-east.
+    yaw = np.array([3.0, -3.0, 2.5, -2.9, 0.4, 0.80, 0.81, 0.79, 0.80])
+    v = np.array([0.0, 0.01, 0.0, 0.02, 0.0, 12.0, 12.0, 12.0, 12.0])
+    fixed, obs = hold_heading_through_standstill(yaw, v)
+    assert obs.tolist() == [False] * 5 + [True] * 4
+    # the standstill run is BACK-filled with the first observable heading ...
+    assert np.allclose(fixed[:5], 0.80, atol=1e-9)
+    # ... the observable part is untouched ...
+    assert np.allclose(fixed[5:], yaw[5:])
+    # ... and the derived yaw_rate is now ~0 while stationary, not +-15 rad/s.
+    yr_legacy = np.diff(yaw[:5]) / 0.1
+    yr_fixed = np.diff(fixed[:5]) / 0.1
+    assert np.abs(yr_legacy).max() > 50.0        # the defect, reproduced
+    assert np.abs(yr_fixed).max() < 1e-9         # the repair
+
+
+def test_hold_heading_no_observable_frames_is_a_noop():
+    yaw = np.array([1.0, -2.0, 3.0])
+    fixed, obs = hold_heading_through_standstill(yaw, np.zeros(3))
+    assert not obs.any()
+    assert np.allclose(fixed, yaw)               # never invent a heading
+
+
+def test_heading_mode_default_is_byte_identical(tmp_path):
+    """FIX-FORWARD ONLY: the default must not move any existing cache."""
+    seg = make_fake_segment(tmp_path, "d0_2018-01-01--10-00-00", "3")
+    ft = np.load(seg / "global_pose" / "frame_times")
+    pos = np.load(seg / "global_pose" / "frame_positions")
+    vel = np.load(seg / "global_pose" / "frame_velocities")
+    can = (ft, np.full(T_FRAMES, 10.0))
+    steer = (ft, np.full(T_FRAMES, 15.3))
+    a_def, p_def = actions_and_poses(ft, pos, vel, can, steer, stride=2)
+    a_leg, p_leg = actions_and_poses(ft, pos, vel, can, steer, stride=2,
+                                     heading_mode=HEADING_MODE_LEGACY)
+    assert np.array_equal(a_def, a_leg) and np.array_equal(p_def, p_leg)
+    # and on a MOVING segment the repair is also a no-op (nothing to repair)
+    _, p_hold = actions_and_poses(ft, pos, vel, can, steer, stride=2,
+                                  heading_mode=HEADING_MODE_HOLD)
+    assert np.allclose(p_def[:, 2], p_hold[:, 2], atol=1e-6)
+
+
+def test_heading_mode_rejects_unknown():
+    with pytest.raises(ValueError, match="unknown heading_mode"):
+        actions_and_poses(np.arange(4.0), np.zeros((4, 3)), np.zeros((4, 3)),
+                          (np.arange(4.0), np.zeros(4)),
+                          (np.arange(4.0), np.zeros(4)), stride=1,
+                          heading_mode="nope")
+
+
+def test_heading_threshold_is_the_measured_one():
+    assert HEADING_OBSERVABLE_V_MPS == 0.5
 
 
 def test_ecef_to_enu_starts_at_origin():

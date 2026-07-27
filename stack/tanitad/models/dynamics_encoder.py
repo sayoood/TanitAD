@@ -131,7 +131,10 @@ class CameraConditionedEncoder(nn.Module):
     token stream (GAIA-2 "added to the input latents at each transformer block").
     Per-block projections are zero-init => identity at start (warm-start byte-
     identical). The readout still sees an unmodified square token grid, so
-    ``state_dim`` matches the flagship (2048 for the launch config).
+    ``state_dim`` matches the flagship (2048 for the launch config) — and keeps
+    matching it on a NON-SQUARE input (2026-07-27): the readout pools a
+    ``grid_h x grid_w`` token grid onto the same ``grid x grid`` cells, so the
+    state dim is invariant to the input geometry.
     """
 
     def __init__(self, enc_cfg: EncoderConfig, grid: int, d_readout: int,
@@ -141,7 +144,8 @@ class CameraConditionedEncoder(nn.Module):
         self.grad_checkpoint = grad_checkpoint
         self.enc = ViTEncoder(enc_cfg)
         self.readout = SpatialGridReadout(self.enc.n_tokens, enc_cfg.d_model,
-                                          grid=grid, d_readout=d_readout)
+                                          grid=grid, d_readout=d_readout,
+                                          token_grid=self.enc.grid_shape)
         self.cam_enc = CameraEncoding(enc_cfg.d_model, hidden=cam_hidden)
         # one zero-init projection per block -> additive per-block injection.
         self.inject = nn.ModuleList(
@@ -220,7 +224,8 @@ class DynEncConfig:
     """Config for the dynamics-estimation encoder + its training auxiliaries."""
     # --- backbone (defaults = flagship-v1 camera encoder, sub-300M) ---
     in_channels: int = 9              # 3-frame stack, D-015 input contract
-    image_size: int = 256
+    image_size: int = 256             # HEIGHT (and width, unless image_width set)
+    image_width: int | None = None    # non-square input; None == square (default)
     patch_size: int = 16              # -> 16x16 = 256 tokens
     d_model: int = 768
     depth: int = 12                   # flagship4b encoder depth
@@ -253,6 +258,7 @@ class DynEncConfig:
 
     def enc_cfg(self) -> EncoderConfig:
         return EncoderConfig(in_channels=self.in_channels, image_size=self.image_size,
+                             image_width=self.image_width,
                              patch_size=self.patch_size, d_model=self.d_model,
                              depth=self.depth, n_heads=self.n_heads)
 

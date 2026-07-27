@@ -1,0 +1,415 @@
+{
+  "artifact": "route conflict + rig-asymmetry resolution",
+  "date": "2026-07-27",
+  "route": {
+    "pooling_routes": [
+      {
+        "token_grid": [
+          16,
+          16
+        ],
+        "label": "deployed 256x256",
+        "adaptive_out": [
+          4,
+          4
+        ],
+        "adaptive_state_dim": 2048,
+        "exact_kernel": [
+          4,
+          4
+        ],
+        "exact_out": [
+          4,
+          4
+        ],
+        "exact_state_dim": 2048,
+        "bit_identical": true,
+        "max_abs_diff": 0.0
+      },
+      {
+        "token_grid": [
+          16,
+          40
+        ],
+        "label": "256x640",
+        "adaptive_out": [
+          4,
+          4
+        ],
+        "adaptive_state_dim": 2048,
+        "exact_kernel": [
+          4,
+          10
+        ],
+        "exact_out": [
+          4,
+          4
+        ],
+        "exact_state_dim": 2048,
+        "bit_identical": true,
+        "max_abs_diff": 0.0
+      },
+      {
+        "token_grid": [
+          24,
+          60
+        ],
+        "label": "384x960",
+        "adaptive_out": [
+          4,
+          4
+        ],
+        "adaptive_state_dim": 2048,
+        "exact_kernel": [
+          6,
+          15
+        ],
+        "exact_out": [
+          4,
+          4
+        ],
+        "exact_state_dim": 2048,
+        "bit_identical": false,
+        "max_abs_diff": 2.9802322387695312e-08
+      },
+      {
+        "token_grid": [
+          24,
+          24
+        ],
+        "label": "384x384",
+        "adaptive_out": [
+          4,
+          4
+        ],
+        "adaptive_state_dim": 2048,
+        "exact_kernel": [
+          6,
+          6
+        ],
+        "exact_out": [
+          4,
+          4
+        ],
+        "exact_state_dim": 2048,
+        "bit_identical": false,
+        "max_abs_diff": 5.960464477539063e-08
+      },
+      {
+        "token_grid": [
+          16,
+          42
+        ],
+        "label": "672px wide - NOT divisible by 4",
+        "adaptive_out": [
+          4,
+          4
+        ],
+        "adaptive_state_dim": 2048,
+        "exact_kernel": null,
+        "bit_identical": null,
+        "note": "AvgPool2d cannot tile this grid; AdaptiveAvgPool2d can. This is the ONLY case where the routes differ."
+      }
+    ],
+    "this_impl_default": [
+      {
+        "token_grid": [
+          16,
+          16
+        ],
+        "label": "deployed 256x256",
+        "pool_kernel": [
+          4,
+          4
+        ],
+        "out_dim": 2048,
+        "forward_shape": [
+          2,
+          2048
+        ],
+        "state_dim_2048": true
+      },
+      {
+        "token_grid": [
+          16,
+          40
+        ],
+        "label": "256x640",
+        "pool_kernel": [
+          4,
+          10
+        ],
+        "out_dim": 2048,
+        "forward_shape": [
+          2,
+          2048
+        ],
+        "state_dim_2048": true
+      },
+      {
+        "token_grid": [
+          24,
+          60
+        ],
+        "label": "384x960",
+        "pool_kernel": [
+          6,
+          15
+        ],
+        "out_dim": 2048,
+        "forward_shape": [
+          2,
+          2048
+        ],
+        "state_dim_2048": true
+      },
+      {
+        "token_grid": [
+          24,
+          24
+        ],
+        "label": "384x384",
+        "pool_kernel": [
+          6,
+          6
+        ],
+        "out_dim": 2048,
+        "forward_shape": [
+          2,
+          2048
+        ],
+        "state_dim_2048": true
+      }
+    ],
+    "grid_w_knob": {
+      "is_default": false,
+      "default_value": null,
+      "out_dim_when_set_to_10": 5120,
+      "note": "grid_w is an OPT-IN knob that spends readout cells asymmetrically; it is None by default, so the DEFAULT path is the 4x4 route. Setting it DOES change state_dim (and therefore breaks checkpoint loading) \u2014 which is exactly the cost the FOV-audit stream is warning about."
+    }
+  },
+  "rig": {
+    "nominal_rigs": {
+      "rigA_cy543": {
+        "deployed_256sq": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            832,
+            832
+          ],
+          "top": 127,
+          "left": 542,
+          "pad_top": 0,
+          "pad_bottom": 0,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.0,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": false
+        },
+        "100deg_256x640_pin": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            825,
+            1595
+          ],
+          "top": 130,
+          "left": 160,
+          "pad_top": 0,
+          "pad_bottom": 0,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.0,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": false
+        },
+        "120deg_256x640_pin": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            1080,
+            1899
+          ],
+          "top": 3,
+          "left": 8,
+          "pad_top": 0,
+          "pad_bottom": 3,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.00278,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": true
+        },
+        "100deg_256x640_cyl": {
+          "path": "cylindrical",
+          "observed_frac": 1.0,
+          "unobserved_frac": 0.0,
+          "fully_unobserved_rows": 0,
+          "rows": 256,
+          "fabricated_pixels": false
+        },
+        "120deg_256x640_cyl": {
+          "path": "cylindrical",
+          "observed_frac": 1.0,
+          "unobserved_frac": 0.0,
+          "fully_unobserved_rows": 0,
+          "rows": 256,
+          "fabricated_pixels": false
+        }
+      },
+      "rigB_cy755": {
+        "deployed_256sq": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            832,
+            832
+          ],
+          "top": 339,
+          "left": 542,
+          "pad_top": 0,
+          "pad_bottom": 91,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.10938,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": true
+        },
+        "100deg_256x640_pin": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            825,
+            1595
+          ],
+          "top": 342,
+          "left": 160,
+          "pad_top": 0,
+          "pad_bottom": 87,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.10545,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": true
+        },
+        "120deg_256x640_pin": {
+          "path": "ftheta_crop",
+          "crop_hw": [
+            1080,
+            1899
+          ],
+          "top": 215,
+          "left": 8,
+          "pad_top": 0,
+          "pad_bottom": 215,
+          "pad_left": 0,
+          "pad_right": 0,
+          "padded_row_frac": 0.19907,
+          "padded_col_frac": 0.0,
+          "fabricated_pixels": true
+        },
+        "100deg_256x640_cyl": {
+          "path": "cylindrical",
+          "observed_frac": 0.99314,
+          "unobserved_frac": 0.00686,
+          "fully_unobserved_rows": 0,
+          "rows": 256,
+          "fabricated_pixels": false
+        },
+        "120deg_256x640_cyl": {
+          "path": "cylindrical",
+          "observed_frac": 0.91086,
+          "unobserved_frac": 0.08914,
+          "fully_unobserved_rows": 17,
+          "rows": 256,
+          "fabricated_pixels": false
+        }
+      }
+    },
+    "real_clips": {
+      "n": 10,
+      "clips": [
+        {
+          "index": 0,
+          "clip_sha1_8": "b1474ccc",
+          "rig": "B",
+          "cy": 754.3,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.11098
+        },
+        {
+          "index": 1,
+          "clip_sha1_8": "2a9807fb",
+          "rig": "B",
+          "cy": 757.2,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.11178
+        },
+        {
+          "index": 2,
+          "clip_sha1_8": "87b5fdbd",
+          "rig": "B",
+          "cy": 758.7,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.11405
+        },
+        {
+          "index": 3,
+          "clip_sha1_8": "642ced54",
+          "rig": "A",
+          "cy": 540.1,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.0
+        },
+        {
+          "index": 4,
+          "clip_sha1_8": "5770efbe",
+          "rig": "A",
+          "cy": 535.9,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.0
+        },
+        {
+          "index": 5,
+          "clip_sha1_8": "89811338",
+          "rig": "A",
+          "cy": 537.2,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.0
+        },
+        {
+          "index": 6,
+          "clip_sha1_8": "f19f5622",
+          "rig": "B",
+          "cy": 757.4,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.11744
+        },
+        {
+          "index": 7,
+          "clip_sha1_8": "608cf0d7",
+          "rig": "B",
+          "cy": 752.0,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.10939
+        },
+        {
+          "index": 8,
+          "clip_sha1_8": "f9a35246",
+          "rig": "B",
+          "cy": 753.9,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.10911
+        },
+        {
+          "index": 9,
+          "clip_sha1_8": "1e9d360a",
+          "rig": "A",
+          "cy": 549.2,
+          "per_clip": true,
+          "deployed_padded_row_frac": 0.0
+        }
+      ],
+      "rigA_mean_padded_row_frac": 0.0,
+      "rigB_mean_padded_row_frac": 0.11212,
+      "asymmetry_confirmed": true
+    }
+  }
+}

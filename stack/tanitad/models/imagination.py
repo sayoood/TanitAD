@@ -43,51 +43,73 @@ from tanitad.models.encoder import Block
 SECTORS = ("left", "right", "top", "bottom")
 
 
-def sector_mask(frames: Tensor, grid_hw: int,
+def _grid_shape(grid_hw: int | tuple[int, int]) -> tuple[int, int]:
+    """Accept the legacy scalar token-grid side OR a general ``(rows, cols)``.
+
+    Every geometry-aware entry point in this module takes this union so a
+    non-square encoder (2026-07-27) needs no parallel code path. A scalar is
+    exactly ``(g, g)``, so the square behaviour is unchanged.
+    """
+    if isinstance(grid_hw, (tuple, list)):
+        return int(grid_hw[0]), int(grid_hw[1])
+    return int(grid_hw), int(grid_hw)
+
+
+def sector_mask(frames: Tensor, grid_hw: int | tuple[int, int],
                 generator: torch.Generator | None = None
                 ) -> tuple[Tensor, Tensor]:
     """Hide one random half-sector per sample.
 
-    frames: [B, C, H, W]. Returns (masked frames, token visibility [B, N])
-    with N = grid_hw**2, 1.0 = visible, 0.0 = hidden.
+    frames: [B, C, H, W]. ``grid_hw`` is the token grid — a scalar side (square)
+    or ``(rows, cols)``. Returns (masked frames, token visibility [B, N]) with
+    N = rows*cols, 1.0 = visible, 0.0 = hidden.
     """
     b, _, h, w = frames.shape
+    gh, gw = _grid_shape(grid_hw)
     device = frames.device
     masked = frames.clone()
-    vis = torch.ones(b, grid_hw, grid_hw, device=device)
+    vis = torch.ones(b, gh, gw, device=device)
     idx = torch.randint(0, len(SECTORS), (b,), generator=generator, device=device)
     for i in range(b):
         s = SECTORS[int(idx[i])]
         if s == "left":
             masked[i, :, :, : w // 2] = 0.0
-            vis[i, :, : grid_hw // 2] = 0.0
+            vis[i, :, : gw // 2] = 0.0
         elif s == "right":
             masked[i, :, :, w // 2:] = 0.0
-            vis[i, :, grid_hw // 2:] = 0.0
+            vis[i, :, gw // 2:] = 0.0
         elif s == "top":
             masked[i, :, : h // 2, :] = 0.0
-            vis[i, : grid_hw // 2, :] = 0.0
+            vis[i, : gh // 2, :] = 0.0
         else:
             masked[i, :, h // 2:, :] = 0.0
-            vis[i, grid_hw // 2:, :] = 0.0
+            vis[i, gh // 2:, :] = 0.0
     return masked, vis.reshape(b, -1)
 
 
-def advect(tokens: Tensor, flow: Tensor, grid_hw: int) -> Tensor:
+def advect(tokens: Tensor, flow: Tensor, grid_hw: int | tuple[int, int]) -> Tensor:
     """Semi-Lagrangian warp of a token grid by a per-cell flow (in cell units).
 
     tokens: [B, N, D], flow: [B, N, 2] (dx, dy). value'(x) = value(x - v(x)).
+    ``grid_hw`` is a scalar side (square) or ``(rows, cols)``.
+
+    ⚠️ Flow is in CELL units and each axis is normalized by its OWN extent, so on
+    a non-square grid one cell of dx and one cell of dy remain one cell each —
+    they are not silently rescaled into a common normalized unit.
     """
     b, n, d = tokens.shape
-    x = tokens.transpose(1, 2).reshape(b, d, grid_hw, grid_hw)
+    gh, gw = _grid_shape(grid_hw)
+    x = tokens.transpose(1, 2).reshape(b, d, gh, gw)
     ys, xs = torch.meshgrid(
-        torch.arange(grid_hw, device=tokens.device, dtype=tokens.dtype),
-        torch.arange(grid_hw, device=tokens.device, dtype=tokens.dtype),
+        torch.arange(gh, device=tokens.device, dtype=tokens.dtype),
+        torch.arange(gw, device=tokens.device, dtype=tokens.dtype),
         indexing="ij")
-    base = torch.stack([xs, ys], dim=-1)                       # [h, w, 2]
-    f = flow.reshape(b, grid_hw, grid_hw, 2)
+    base = torch.stack([xs, ys], dim=-1)                       # [gh, gw, 2]
+    f = flow.reshape(b, gh, gw, 2)
     pos = base.unsqueeze(0) - f                                # sample source
-    pos = 2.0 * pos / max(grid_hw - 1, 1) - 1.0                # -> [-1, 1]
+    denom = torch.tensor([max(gw - 1, 1), max(gh - 1, 1)],
+                         device=tokens.device, dtype=pos.dtype)
+    pos = 2.0 * pos / denom - 1.0                              # -> [-1, 1]
     warped = F.grid_sample(x, pos, mode="bilinear",
                            padding_mode="border", align_corners=True)
     return warped.flatten(2).transpose(1, 2)
@@ -96,10 +118,10 @@ def advect(tokens: Tensor, flow: Tensor, grid_hw: int) -> Tensor:
 class ImaginationField(nn.Module):
     """Belief maintenance over the token grid: advect -> refine -> quantify."""
 
-    def __init__(self, d_model: int, grid_hw: int, depth: int = 3,
-                 n_heads: int = 12):
+    def __init__(self, d_model: int, grid_hw: int | tuple[int, int],
+                 depth: int = 3, n_heads: int = 12):
         super().__init__()
-        self.grid_hw = grid_hw
+        self.grid_hw = grid_hw          # scalar OR (rows, cols); see _grid_shape
         self.flow_head = nn.Sequential(
             nn.Linear(d_model, 512), nn.GELU(), nn.Linear(512, 2))
         nn.init.zeros_(self.flow_head[-1].weight)              # start at identity

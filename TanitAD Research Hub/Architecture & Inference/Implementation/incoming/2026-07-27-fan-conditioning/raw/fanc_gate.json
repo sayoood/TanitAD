@@ -1,0 +1,260 @@
+{
+  "_stream": "2026-07-27-fan-conditioning",
+  "_estimator": "episode_cluster_bootstrap B=2000 (unit=episode)",
+  "_note": "S0 gate = committed numbers reproduced from raw artifacts. S1 = is the shipped fan v0-conditioned?",
+  "S0_gate": {
+    "refc_xl": {
+      "n_windows": 881,
+      "n_anchors": 256,
+      "oracle_in_fan": 0.164,
+      "as_trained": 0.4714,
+      "cv_own_ade": 0.8377
+    },
+    "refc_base": {
+      "n_windows": 881,
+      "n_anchors": 128,
+      "oracle_in_fan": 0.1914,
+      "as_trained": 0.4728,
+      "cv_own_ade": 0.8377
+    },
+    "refc_small": {
+      "n_windows": 881,
+      "n_anchors": 64,
+      "oracle_in_fan": 0.2213,
+      "as_trained": 0.5261,
+      "cv_own_ade": 0.8377
+    },
+    "v4_fan_v1_scorer": {
+      "oracle_in_fan": 0.2505,
+      "A0_as_trained": 0.8563,
+      "C2_wm_ref_proximity": 0.5645,
+      "A4_imag_combo_oof": 0.5645
+    },
+    "window_identity": {
+      "v0_allclose_refcxl_vs_v5dump": true,
+      "n_windows_match": true
+    },
+    "_checks": {
+      "refc_xl.oracle_in_fan": {
+        "expected": 0.164,
+        "got": 0.164,
+        "ok": true
+      },
+      "refc_xl.as_trained": {
+        "expected": 0.4714,
+        "got": 0.4714,
+        "ok": true
+      },
+      "refc_base.oracle_in_fan": {
+        "expected": 0.1914,
+        "got": 0.1914,
+        "ok": true
+      },
+      "refc_small.oracle_in_fan": {
+        "expected": 0.2213,
+        "got": 0.2213,
+        "ok": true
+      },
+      "v4_fan_v1_scorer.oracle_in_fan": {
+        "expected": 0.2505,
+        "got": 0.2505,
+        "ok": true
+      },
+      "v4_fan_v1_scorer.A0_as_trained": {
+        "expected": 0.8563,
+        "got": 0.8563,
+        "ok": true
+      },
+      "v4_fan_v1_scorer.C2_wm_ref_proximity": {
+        "expected": 0.5645,
+        "got": 0.5645,
+        "ok": true
+      }
+    },
+    "_all_ok": true
+  },
+  "S1_premise": {
+    "_definition": "slope = OLS d(candidate mean speed)/d(v0). A state-conditioned proposal set has slope ~ +1 (GT's own value). 0 means the fan ignores ego speed entirely.",
+    "refc_xl": {
+      "n_anchors": 256,
+      "slope_fan_speed_on_v0": -0.1294,
+      "slope_gt_speed_on_v0": 1.0003,
+      "corr_fan_speed_v0": -0.974,
+      "fan_mean_speed_over_windows": 16.1229,
+      "fan_mean_speed_sd_over_windows": 1.2407,
+      "v0_sd_over_windows": 9.3381,
+      "frac_candidates_within_2ms_of_gt": 0.1197,
+      "effective_usable_candidates": 30.6322,
+      "by_v0_quintile": [
+        {
+          "v0_lo": 0.0,
+          "v0_hi": 5.0783,
+          "n": 176,
+          "gt_mean_speed": 2.5998,
+          "fan_cand_mean_speed": 17.1068,
+          "miscentring_ms": 14.507,
+          "frac_within_2ms": 0.0865
+        },
+        {
+          "v0_lo": 5.0783,
+          "v0_hi": 8.412,
+          "n": 176,
+          "gt_mean_speed": 6.627,
+          "fan_cand_mean_speed": 17.0087,
+          "miscentring_ms": 10.3817,
+          "frac_within_2ms": 0.1566
+        },
+        {
+          "v0_lo": 8.412,
+          "v0_hi": 12.7452,
+          "n": 176,
+          "gt_mean_speed": 10.3658,
+          "fan_cand_mean_speed": 16.591,
+          "miscentring_ms": 6.2252,
+          "frac_within_2ms": 0.1416
+        },
+        {
+          "v0_lo": 12.7452,
+          "v0_hi": 19.8225,
+          "n": 176,
+          "gt_mean_speed": 15.4647,
+          "fan_cand_mean_speed": 15.938,
+          "miscentring_ms": 0.4733,
+          "frac_within_2ms": 0.1252
+        },
+        {
+          "v0_lo": 19.8225,
+          "v0_hi": 36.5479,
+          "n": 177,
+          "gt_mean_speed": 28.3439,
+          "fan_cand_mean_speed": 13.9823,
+          "miscentring_ms": -14.3616,
+          "frac_within_2ms": 0.0885
+        }
+      ]
+    },
+    "refc_base": {
+      "n_anchors": 128,
+      "slope_fan_speed_on_v0": -0.0686,
+      "slope_gt_speed_on_v0": 1.0003,
+      "corr_fan_speed_v0": -0.9172,
+      "fan_mean_speed_over_windows": 17.4056,
+      "fan_mean_speed_sd_over_windows": 0.6981,
+      "v0_sd_over_windows": 9.3381,
+      "frac_candidates_within_2ms_of_gt": 0.1187,
+      "effective_usable_candidates": 15.193,
+      "by_v0_quintile": [
+        {
+          "v0_lo": 0.0,
+          "v0_hi": 5.0783,
+          "n": 176,
+          "gt_mean_speed": 2.5998,
+          "fan_cand_mean_speed": 17.8243,
+          "miscentring_ms": 15.2245,
+          "frac_within_2ms": 0.0848
+        },
+        {
+          "v0_lo": 5.0783,
+          "v0_hi": 8.412,
+          "n": 176,
+          "gt_mean_speed": 6.627,
+          "fan_cand_mean_speed": 18.0307,
+          "miscentring_ms": 11.4037,
+          "frac_within_2ms": 0.1473
+        },
+        {
+          "v0_lo": 8.412,
+          "v0_hi": 12.7452,
+          "n": 176,
+          "gt_mean_speed": 10.3658,
+          "fan_cand_mean_speed": 17.7273,
+          "miscentring_ms": 7.3615,
+          "frac_within_2ms": 0.1466
+        },
+        {
+          "v0_lo": 12.7452,
+          "v0_hi": 19.8225,
+          "n": 176,
+          "gt_mean_speed": 15.4647,
+          "fan_cand_mean_speed": 17.258,
+          "miscentring_ms": 1.7934,
+          "frac_within_2ms": 0.1245
+        },
+        {
+          "v0_lo": 19.8225,
+          "v0_hi": 36.5479,
+          "n": 177,
+          "gt_mean_speed": 28.3439,
+          "fan_cand_mean_speed": 16.1948,
+          "miscentring_ms": -12.1491,
+          "frac_within_2ms": 0.0905
+        }
+      ]
+    },
+    "refc_small": {
+      "n_anchors": 64,
+      "slope_fan_speed_on_v0": -0.1586,
+      "slope_gt_speed_on_v0": 1.0003,
+      "corr_fan_speed_v0": -0.9601,
+      "fan_mean_speed_over_windows": 16.3921,
+      "fan_mean_speed_sd_over_windows": 1.5427,
+      "v0_sd_over_windows": 9.3381,
+      "frac_candidates_within_2ms_of_gt": 0.1446,
+      "effective_usable_candidates": 9.2543,
+      "by_v0_quintile": [
+        {
+          "v0_lo": 0.0,
+          "v0_hi": 5.0783,
+          "n": 176,
+          "gt_mean_speed": 2.5998,
+          "fan_cand_mean_speed": 17.5716,
+          "miscentring_ms": 14.9718,
+          "frac_within_2ms": 0.1024
+        },
+        {
+          "v0_lo": 5.0783,
+          "v0_hi": 8.412,
+          "n": 176,
+          "gt_mean_speed": 6.627,
+          "fan_cand_mean_speed": 17.2957,
+          "miscentring_ms": 10.6687,
+          "frac_within_2ms": 0.1733
+        },
+        {
+          "v0_lo": 8.412,
+          "v0_hi": 12.7452,
+          "n": 176,
+          "gt_mean_speed": 10.3658,
+          "fan_cand_mean_speed": 16.9999,
+          "miscentring_ms": 6.634,
+          "frac_within_2ms": 0.1807
+        },
+        {
+          "v0_lo": 12.7452,
+          "v0_hi": 19.8225,
+          "n": 176,
+          "gt_mean_speed": 15.4647,
+          "fan_cand_mean_speed": 16.4123,
+          "miscentring_ms": 0.9477,
+          "frac_within_2ms": 0.1561
+        },
+        {
+          "v0_lo": 19.8225,
+          "v0_hi": 36.5479,
+          "n": 177,
+          "gt_mean_speed": 28.3439,
+          "fan_cand_mean_speed": 13.6965,
+          "miscentring_ms": -14.6474,
+          "frac_within_2ms": 0.1108
+        }
+      ]
+    },
+    "v4_fan": {
+      "n_anchors": 256,
+      "slope_fan_speed_on_v0": -0.1442,
+      "corr_fan_speed_v0": -0.9312,
+      "fan_mean_speed_over_windows": 16.6685,
+      "fan_mean_speed_sd_over_windows": 1.4462
+    }
+  }
+}

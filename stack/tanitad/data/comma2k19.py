@@ -45,6 +45,59 @@ FPS = 20
 STEER_RATIO = 15.3           # steering wheel -> road wheel, v0 constant
 WHEEL_TO_RAD = math.pi / 180.0
 
+# --------------------------------------------------------------------------- #
+# Heading derivation mode (IDM v3, 2026-07-27)                                 #
+# --------------------------------------------------------------------------- #
+# comma2k19 heading is `arctan2(enu_v_north, enu_v_east)` — the direction of the
+# ENU VELOCITY vector, which is **undefined when the vehicle is stationary**.
+# MEASURED on the 64-segment val build: in the v < 0.5 m/s bin, **26.27 % of
+# frames carry a physically impossible |yaw_rate|** (up to 15.53 rad/s = 890
+# deg/s, at speeds of 0.00-0.01 m/s); in every bin above 0.5 m/s the figure is
+# **0.000 %**. The defect is razor-sharp and confined to standstill.
+#
+# What it cost: the deployed IDM head's pooled `yaw_rate` R2 read **0.105**
+# against these labels and **0.83** against the repaired ones — the channel was
+# never a model failure. See
+# `…/incoming/2026-07-27-idm-v3/IDM_V3.md` §4.
+#
+# PUBLISHED precedent: comma.ai's own `calib_challenge` **discards every frame
+# below 4 m/s** for exactly this reason. Our measured threshold is far less
+# aggressive because it is derived from the data rather than assumed.
+#
+# ⚠️ FIX-FORWARD ONLY. `HEADING_MODE_LEGACY` is the default so every existing
+# cache and every published number stays byte-identical — the same discipline
+# `physicalai.WHEELBASE_MODE` uses. Opt in on NEW builds only.
+HEADING_MODE_LEGACY = "enu_velocity"        # arctan2 of ENU velocity, as shipped
+HEADING_MODE_HOLD = "enu_velocity_hold_v1"  # + hold last observable direction
+HEADING_MODES = (HEADING_MODE_LEGACY, HEADING_MODE_HOLD)
+DEFAULT_HEADING_MODE = HEADING_MODE_LEGACY
+HEADING_OBSERVABLE_V_MPS = 0.5              # MEASURED: 26.27% impossible below,
+#                                             0.000% above (see the table above)
+
+
+def hold_heading_through_standstill(yaw: np.ndarray, v: np.ndarray,
+                                    v_min: float = HEADING_OBSERVABLE_V_MPS
+                                    ) -> tuple[np.ndarray, np.ndarray]:
+    """Replace the heading wherever the ENU velocity is too small to define one,
+    by holding the last OBSERVABLE direction (back-filling the leading run).
+
+    Operates on the unit direction vector, not the angle, so no 2*pi wrap can be
+    introduced. Returns ``(yaw_fixed, observable_mask)``; callers that need a
+    strict admissibility mask should keep the second return value.
+
+    A road vehicle at v ~ 0 has yaw_rate ~ 0 — it cannot rotate in place — so
+    holding the heading is the physically correct completion, not a convenience.
+    """
+    yaw = np.asarray(yaw, dtype=np.float64)
+    v = np.asarray(v, dtype=np.float64)
+    obs = v >= v_min
+    if not obs.any():                     # a wholly-stationary segment
+        return yaw.copy(), obs
+    idx = np.where(obs, np.arange(yaw.size), -1)
+    np.maximum.accumulate(idx, out=idx)                     # forward-fill
+    idx[idx < 0] = int(np.argmax(obs))                      # back-fill the head
+    return np.arctan2(np.sin(yaw)[idx], np.cos(yaw)[idx]), obs
+
 # I7 task-identity fingerprint (D-017): probes fit on this corpus may only be
 # consumed by streams with an IDENTICAL fingerprint (i7_task_identity check).
 CORPUS_META = {
@@ -159,8 +212,19 @@ def ecef_to_enu(positions: np.ndarray, velocities: np.ndarray
 def actions_and_poses(frame_times: np.ndarray, positions: np.ndarray,
                       velocities: np.ndarray, can_speed: tuple[np.ndarray, np.ndarray],
                       can_steer_deg: tuple[np.ndarray, np.ndarray],
-                      stride: int) -> tuple[np.ndarray, np.ndarray]:
-    """Contract actions [T,2] and poses [T,4] at frame_times[::stride]."""
+                      stride: int,
+                      heading_mode: str = DEFAULT_HEADING_MODE
+                      ) -> tuple[np.ndarray, np.ndarray]:
+    """Contract actions [T,2] and poses [T,4] at frame_times[::stride].
+
+    ``heading_mode`` defaults to LEGACY, so this function is byte-identical to
+    its pre-2026-07-27 behaviour for every existing caller and cache. Pass
+    ``HEADING_MODE_HOLD`` on NEW builds to repair the standstill defect
+    documented at the top of this module.
+    """
+    if heading_mode not in HEADING_MODES:
+        raise ValueError(f"unknown heading_mode {heading_mode!r}; "
+                         f"expected one of {HEADING_MODES}")
     t = frame_times[::stride]
     speed = np.interp(t, *can_speed)
     steer_wheel_deg = np.interp(t, *can_steer_deg)
@@ -171,6 +235,8 @@ def actions_and_poses(frame_times: np.ndarray, positions: np.ndarray,
     enu_p, enu_v = ecef_to_enu(positions[::stride], velocities[::stride])
     yaw = np.arctan2(enu_v[:, 1], enu_v[:, 0])                 # heading in ENU
     v = np.linalg.norm(enu_v, axis=1)
+    if heading_mode == HEADING_MODE_HOLD:
+        yaw, _ = hold_heading_through_standstill(yaw, v)
     poses = np.column_stack([enu_p[:, 0], enu_p[:, 1], yaw, v]).astype(np.float32)
     return actions, poses
 
@@ -178,27 +244,66 @@ def actions_and_poses(frame_times: np.ndarray, positions: np.ndarray,
 # --------------------------------------------------------------------------- #
 # Video decode (lazy av import) and frame preprocessing                        #
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Geometry regimes (wide-FOV enablement, 2026-07-27)                           #
+# --------------------------------------------------------------------------- #
+# ⚠️ THE HARD FACT THIS CORPUS IMPOSES. comma2k19's ENTIRE horizontal field is
+# ``2*atan(582/910) = 65.2027 deg`` (calib.COMMA2K19_MAX_HFOV_DEG). It physically
+# CANNOT supply the 100-120 deg the PI asked for, at any resolution or focal.
+# Three policies are therefore live, and ALL THREE are expressible here — which
+# one the flagship mix uses is the PI's decision, not this module's:
+#
+#   (a) PER-CORPUS geometry  — comma keeps its own (narrower) frame while
+#       PhysicalAI runs wide. `build_episode(..., frame=<comma frame>)`.
+#   (b) LETTERBOX            — comma is rendered ON the wide frame with the
+#       unobservable periphery EXPLICITLY masked, never silently zoomed:
+#       `geometry_mode="rectify"` (calib.pinhole_rectify, which reports
+#       `last_observed_frac`). At a 100-deg frame the honest observed fraction
+#       is well under 1 and the model sees a black band, which is a real
+#       modelling decision and must be visible, not accidental.
+#   (c) DROP comma           — a trainer/mix decision, no code here.
+#
+# ``focal_crop`` is the DEPLOYED regime and the default; it is byte-identical to
+# the pre-2026-07-27 path. ⛔ Under `focal_crop` a frame wider than the sensor
+# does NOT widen the field — the crop clamps and the image ZOOMS. That is why
+# (b) exists and why `focal_crop_resize.last_clamped` is recorded.
+GEOMETRY_MODE_CROP = "focal_crop"
+GEOMETRY_MODE_RECTIFY = "rectify"
+GEOMETRY_MODES = (GEOMETRY_MODE_CROP, GEOMETRY_MODE_RECTIFY)
+DEFAULT_GEOMETRY_MODE = GEOMETRY_MODE_CROP
+
+
 def _decode_video(seg: Path, stride: int, size: int,
-                  max_frames: int | None) -> torch.Tensor:
-    """video.hevc -> uint8 [T, 3, size, size], every stride-th frame,
-    center-cropped square then bilinearly resized."""
+                  max_frames: int | None, frame=None,
+                  geometry_mode: str = DEFAULT_GEOMETRY_MODE) -> torch.Tensor:
+    """video.hevc -> uint8 [T, 3, H, W], every stride-th frame, canonicalized.
+
+    ``frame`` / ``geometry_mode`` default to the deployed square focal-crop, so
+    this is byte-identical to its pre-2026-07-27 behaviour for every caller.
+    """
     import av                                                   # lazy: .[real]
+    if geometry_mode not in GEOMETRY_MODES:
+        raise ValueError(f"unknown geometry_mode {geometry_mode!r}; "
+                         f"expected one of {GEOMETRY_MODES}")
     out = []
     with av.open(str(seg / "video.hevc")) as container:
         stream = container.streams.video[0]
         stream.thread_type = "AUTO"
-        for i, frame in enumerate(container.decode(stream)):
+        for i, f in enumerate(container.decode(stream)):
             if i % stride:
                 continue
-            rgb = torch.from_numpy(frame.to_ndarray(format="rgb24"))  # H W 3
+            rgb = torch.from_numpy(f.to_ndarray(format="rgb24"))  # H W 3
             out.append(rgb.permute(2, 0, 1))
             if max_frames is not None and len(out) >= max_frames:
                 break
     vid = torch.stack(out)                                      # T 3 H W uint8
     # D-016: canonical effective focal across corpora (comma is the reference
     # camera — its crop is ~the full frame height, matching prior behavior).
-    from tanitad.data.calib import COMMA2K19_FOCAL_PX, focal_crop_resize
-    return focal_crop_resize(vid, COMMA2K19_FOCAL_PX, size)
+    from tanitad.data.calib import (COMMA2K19_FOCAL_PX, COMMA2K19_INTR,
+                                    focal_crop_resize, pinhole_rectify)
+    if geometry_mode == GEOMETRY_MODE_RECTIFY:
+        return pinhole_rectify(vid, COMMA2K19_INTR, frame=frame)
+    return focal_crop_resize(vid, COMMA2K19_FOCAL_PX, size, frame=frame)
 
 
 def stack_frames(vid_u8: torch.Tensor, n_stack: int = 3) -> torch.Tensor:
@@ -219,7 +324,10 @@ def stack_two_frames(vid_u8: torch.Tensor) -> torch.Tensor:
 
 def build_episode(segment: Path, size: int = 256, stride: int = 2,
                   max_steps: int | None = 300, n_stack: int = 3,
-                  decode_fn=_decode_video) -> ToyEpisode:
+                  decode_fn=_decode_video,
+                  heading_mode: str = DEFAULT_HEADING_MODE,
+                  frame=None,
+                  geometry_mode: str = DEFAULT_GEOMETRY_MODE) -> ToyEpisode:
     """One comma2k19 segment -> contract episode at FPS/stride Hz.
 
     D-015: n_stack consecutive strided frames (100 ms apart at stride 2) are
@@ -236,8 +344,13 @@ def build_episode(segment: Path, size: int = 256, stride: int = 2,
 
     actions, poses = actions_and_poses(
         ft, pos, vel, _load_tv(segment, "speed"),
-        _load_tv(segment, "steering_angle"), stride)
-    vid = decode_fn(segment, stride, size, n)                   # [n,3,S,S] u8
+        _load_tv(segment, "steering_angle"), stride,
+        heading_mode=heading_mode)
+    if frame is None and geometry_mode == DEFAULT_GEOMETRY_MODE:
+        vid = decode_fn(segment, stride, size, n)               # [n,3,S,S] u8
+    else:                                                       # [n,3,H,W] u8
+        vid = decode_fn(segment, stride, size, n, frame=frame,
+                        geometry_mode=geometry_mode)
     n = min(n, vid.shape[0], actions.shape[0])
     stacked = stack_frames(vid[:n], n_stack)                    # [n-k+1,3k,S,S]
     k = n_stack - 1

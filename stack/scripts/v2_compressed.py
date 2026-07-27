@@ -27,7 +27,8 @@ sys.path.insert(0, _STACK); sys.path.append(os.path.join(_STACK, "scripts"))
 from tanitad.data.physicalai import (                          # noqa: E402
     _decode_mp4, signals_at, load_egomotion, maneuvers_for_poses, TARGET_HZ,
     intrinsics_for_clip, _physicalai_root_of)
-from tanitad.data.calib import ftheta_crop_resize              # noqa: E402
+from tanitad.data.calib import (CanonicalFrame, as_frame,      # noqa: E402
+                                cylindrical_rectify, ftheta_crop_resize)
 from tanitad.data.comma2k19 import stack_frames                # noqa: E402
 from tanitad.data.toy_driving import ToyEpisode                # noqa: E402
 
@@ -36,7 +37,16 @@ if _TN > 0:
     torch.set_num_threads(_TN)
 
 
-def _decode_cropped_selected(mp4, size, frame_idx):
+def _remap(vid, intr, frame, projection_mode):
+    """Batch -> canonical frame, via the selected resampler (mirrors
+    physicalai._remap_batch so the two paths cannot drift)."""
+    if projection_mode == "cylindrical":
+        return cylindrical_rectify(vid, intr, frame)
+    return ftheta_crop_resize(vid, intr, frame=frame)
+
+
+def _decode_cropped_selected(mp4, size, frame_idx, frame=None,
+                             projection_mode="ftheta_crop"):
     """f-theta-crop ONLY the frames in frame_idx (the ~201 kept @10Hz), not all
     ~605. build_episode crops every frame then subsamples — 2/3 wasted. Per-frame
     crop is independent, so cropping the kept frames gives a BIT-IDENTICAL result
@@ -44,13 +54,14 @@ def _decode_cropped_selected(mp4, size, frame_idx):
     import av
     clip_id = os.path.basename(str(mp4)).split(".")[0]
     intr = intrinsics_for_clip(clip_id, _physicalai_root_of(mp4))
+    fr = as_frame(frame, size, 266.0)
     need = set(int(i) for i in frame_idx.tolist())
     batch = int(os.environ.get("PAI_DECODE_BATCH", "16"))
     crops: dict[int, torch.Tensor] = {}
     bidx: list[int] = []; bfr: list[torch.Tensor] = []
     def flush():
         if bfr:
-            c = ftheta_crop_resize(torch.stack(bfr), intr, size)
+            c = _remap(torch.stack(bfr), intr, fr, projection_mode)
             for j, idx in enumerate(bidx):
                 crops[idx] = c[j]
     with av.open(str(mp4)) as c:
@@ -72,7 +83,8 @@ CAM_TMPL = ("camera/camera_front_wide_120fov/"
             "camera_front_wide_120fov.chunk_{chunk_id:04d}.zip")
 
 
-def _resampled(clip: dict, size: int):
+def _resampled(clip: dict, size: int, frame=None,
+               projection_mode="ftheta_crop"):
     """build_episode's frames/actions/poses up to vid[:n] (UN-stacked)."""
     ts = pd.read_parquet(clip["timestamps"])
     tcol = next(c for c in ts.columns if "time" in c.lower())
@@ -85,17 +97,30 @@ def _resampled(clip: dict, size: int):
     n_target = max(int(span / unit * TARGET_HZ), 4)
     t_query = np.linspace(t_frames[0], t_frames[-1], n_target)
     frame_idx = np.searchsorted(t_frames, t_query).clip(0, len(t_frames) - 1)
-    vid = _decode_cropped_selected(clip["mp4"], size, frame_idx)   # [n,3,S,S] u8
+    vid = _decode_cropped_selected(clip["mp4"], size, frame_idx, frame,
+                                   projection_mode)                # [n,3,H,W] u8
     actions, poses = signals_at(ego, t_query)
     n = min(vid.shape[0], actions.shape[0])
     return vid[:n].contiguous(), actions[:n], poses[:n]
 
 
 def build_compressed(clip: dict, out_path: str, size: int = 256,
-                     n_stack: int = 3, quality: int = 90) -> int:
-    vid, actions, poses = _resampled(clip, size)
-    jpegs = [tvio.encode_jpeg(vid[i].contiguous(), quality=quality)
-             for i in range(vid.shape[0])]
+                     n_stack: int = 3, quality: int = 90, frame=None,
+                     projection_mode: str = "ftheta_crop",
+                     codec: str = "jpeg") -> int:
+    """Build one compressed clip payload.
+
+    ``codec="jpeg"`` (default) is the deployed lossy path. ``codec="png"`` is the
+    LOSSLESS alternative — same container, same loader (the decoder is selected
+    from the stored codec), so the two are A/B-able without a format fork.
+    ``frame`` / ``projection_mode`` carry the canonical geometry; ``None`` ==
+    the deployed square frame, byte-identical to the pre-2026-07-27 path.
+    """
+    fr = as_frame(frame, size, 266.0)
+    vid, actions, poses = _resampled(clip, size, frame, projection_mode)
+    enc = (tvio.encode_png if codec == "png" else
+           (lambda x: tvio.encode_jpeg(x, quality=quality)))
+    jpegs = [enc(vid[i].contiguous()) for i in range(vid.shape[0])]
     lens = torch.tensor([int(j.numel()) for j in jpegs], dtype=torch.int64)
     buf = torch.cat(jpegs) if jpegs else torch.zeros(0, dtype=torch.uint8)
     ep_id = int.from_bytes(clip["clip_id"].encode()[:4].ljust(4, b"\0"), "big")
@@ -103,7 +128,13 @@ def build_compressed(clip: dict, out_path: str, size: int = 256,
     torch.save({"jpeg_buf": buf, "jpeg_len": lens,            # must not leave a corrupt .pt
                 "actions": torch.from_numpy(actions), "poses": torch.from_numpy(poses),
                 "n_stack": n_stack, "image_size": size, "episode_id": ep_id,
-                "clip_id": clip["clip_id"], "quality": quality}, tmp)
+                "clip_id": clip["clip_id"], "quality": quality,
+                # geometry (2026-07-27). image_size is KEPT so an older reader
+                # still works on a square payload; image_h/image_w are what a
+                # non-square one needs, and `frame` is the full provenance.
+                "image_h": int(fr.height), "image_w": int(fr.width),
+                "frame": fr.to_dict(), "projection_mode": projection_mode,
+                "codec": codec}, tmp)
     os.replace(tmp, out_path)
     return int(buf.numel())
 
@@ -113,8 +144,9 @@ def load_compressed(path: str) -> ToyEpisode:
     lens = d["jpeg_len"]
     offs = torch.cat([torch.zeros(1, dtype=torch.int64), torch.cumsum(lens, 0)])
     buf = d["jpeg_buf"]
-    frames = [tvio.decode_jpeg(buf[int(offs[i]):int(offs[i + 1])],
-                               mode=tvio.ImageReadMode.RGB) for i in range(len(lens))]
+    dec = (tvio.decode_png if d.get("codec") == "png" else tvio.decode_jpeg)
+    frames = [dec(buf[int(offs[i]):int(offs[i + 1])],
+                  mode=tvio.ImageReadMode.RGB) for i in range(len(lens))]
     vid = torch.stack(frames)                                  # [n,3,S,S] u8
     k = d["n_stack"] - 1
     stacked = stack_frames(vid, d["n_stack"])                  # [n-k,9,S,S]

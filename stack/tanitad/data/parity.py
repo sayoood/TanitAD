@@ -718,6 +718,88 @@ def guard_val_split(root: str | Path, *, label: str,
                                pattern=file_glob, manifest_path=manifest_path)
 
 
+# --------------------------------------------------------------------------- #
+# 8. GEOMETRY SIBLINGS — a re-cropped corpus of the SAME episodes               #
+# --------------------------------------------------------------------------- #
+# MEASURED 2026-07-27 (…/incoming/2026-07-27-geometry-configurable/
+# selection_verdict_2026-07-27.json): changing the crop/resolution is a
+# RE-CACHE, not a re-selection. The ordered source list comes from
+# ``discover_r0_clips`` + ``split_clips``, neither of which takes any geometry
+# argument; the episode uid is its POSITION in that list; and a build failure
+# writes ``skip_%05d`` at the same index regardless of geometry. Only
+# ``epcache.cache_key``'s ``params`` moves — so the DIRECTORY NAME changes while
+# the episode set does not.
+#
+# ⚠️ THE OPERATIONAL CONSEQUENCE, which "it is only a re-cache" hides:
+# ``corpus_key_of`` substring-matches REGISTERED keys, so a re-cropped cache
+# reads as NON-PARITY and every ``require=True`` caller (``train_flagship_v4``)
+# REFUSES it. A geometry change is therefore blocked until the new key is
+# registered — and the ONLY safe registration is one that PROVES the episode set
+# did not move. That is what this function is: it copies the parity entry under
+# a new key and refuses if the observed uid digest, count or skip set differ.
+
+
+def register_geometry_sibling(cache_dir: str | Path, *, new_key: str,
+                              geometry: dict, source_key: str = PARITY_TRAIN_KEY,
+                              manifest: dict | None = None) -> dict:
+    """Build a manifest entry for a RE-CROPPED build of the parity episode set.
+
+    ``cache_dir`` is the freshly built split dir. The entry is minted ONLY if its
+    uid set, count and skip indices match the ``source_key`` entry exactly — i.e.
+    only if the rebuild really was a re-cache. Any difference means episodes were
+    re-selected, added or lost, and that is refused: cross-arm comparability is
+    the thing the parity key exists to protect, and a geometry change is allowed
+    to move pixels, never membership.
+
+    Returns the new entry (the caller writes it into ``parity_manifest.json`` and
+    commits the diff). It records ``geometry`` and ``derived_from`` so the
+    sibling can never be mistaken for an independent corpus.
+    """
+    src = manifest_entry(source_key, None if manifest is None else None)
+    if src is None:
+        raise ParityViolation(
+            f"cannot register a geometry sibling of {source_key!r}: no manifest "
+            f"entry for it.")
+    obs = scan_cache_dir(cache_dir)
+    skips = scan_skip_markers(cache_dir)
+    problems = []
+    if len(obs) != int(src["episode_count"]):
+        problems.append(f"episode count {len(obs)} != {src['episode_count']}")
+    if src.get("episode_uid_sha256") and obs:
+        got = uid_digest(obs)
+        if got != src["episode_uid_sha256"]:
+            missing = sorted(set(src.get("episode_uids") or []) - set(obs))
+            extra = sorted(set(obs) - set(src.get("episode_uids") or []))
+            problems.append(f"uid sha256 {got} != {src['episode_uid_sha256']}")
+            if missing or extra:
+                problems.append(f"missing {_fmt(missing)} / extra {_fmt(extra)}")
+    if sorted(skips) != sorted(int(i) for i in src.get("skip_indices", [])):
+        problems.append(f"skip indices {skips} != {src.get('skip_indices')}")
+    if problems:
+        _refuse("geometry sibling", new_key, cache_dir, [
+            "  A re-cropped corpus must contain EXACTLY the parity episode set —",
+            "  geometry may change PIXELS, never MEMBERSHIP.",
+            *(f"  {p}" for p in problems),
+            f"  source     : {source_key}",
+        ])
+    ent = build_entry(obs, corpus_key=new_key, split=src.get("split", "train"),
+                      skip_indices=skips,
+                      uid_source=f"re-cache of {source_key} at a new geometry",
+                      provenance={
+                          "derived_from": source_key,
+                          "relation": "geometry sibling — identical episode "
+                                      "selection, different canonical frame",
+                          "geometry": dict(geometry),
+                          "verified": "uid digest, episode count and skip "
+                                      "indices matched the source entry exactly",
+                      })
+    print(f"[parity] geometry sibling VERIFIED: {new_key} holds the SAME "
+          f"{len(obs)} episodes and the SAME {len(skips)} skips as "
+          f"{source_key} (uid sha256 {ent['episode_uid_sha256'][:12]}…). "
+          f"Selection parity is preserved; only the pixels differ.", flush=True)
+    return ent
+
+
 def assert_not_parity(*paths: str | Path, label: str) -> None:
     """The FIREWALL direction, for SIDE models that claim in their own docstring
     never to touch the parity corpus (``train_dynamics_encoder``). Turns that

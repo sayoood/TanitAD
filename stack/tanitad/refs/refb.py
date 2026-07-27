@@ -380,7 +380,8 @@ class RefBModel(nn.Module):
         self.encoder = ViTEncoder(cfg.encoder)
         self.readout = SpatialGridReadout(
             self.encoder.n_tokens, cfg.encoder.d_model,
-            grid=cfg.readout.grid, d_readout=cfg.readout.d_readout)
+            grid=cfg.readout.grid, d_readout=cfg.readout.d_readout,
+            token_grid=self.encoder.grid_shape, grid_w=cfg.readout.grid_w)
         self.state_dim = self.readout.out_dim
         # Strategic (rev2): nav-command embedding -> FiLM cond of a real
         # transformer over the window; its ctx token conditions tactical.

@@ -167,11 +167,16 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
 
         from tanitad.data.epcache import build_episodes_cached
         cache = _P(data_root) / "_epcache"
-        params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10}
+        from tanitad.geometry import build_params, frame_of
+        _frame = frame_of(cfg)
+        params = build_params(cfg, {"size": cfg.encoder.image_size,
+                                    "n_stack": 3, "hz": 10})
 
         def mk(cs, split):
             eps = build_episodes_cached(
-                cs, lambda c: build_episode(c, size=cfg.encoder.image_size),
+                cs, lambda c: build_episode(c, size=cfg.encoder.image_size,
+                                            frame=None if _frame.is_canonical
+                                            else _frame),
                 cache, f"physicalai-{split}", params)
             return EpisodeWindowDataset(eps, window=cfg.predictor.window,
                                         max_horizon=max_h)
@@ -211,12 +216,17 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         from tanitad.data.comma2k19 import build_episode as build_comma
         from tanitad.data.epcache import build_episodes_cached
         cache = _P(data_root) / "_epcache"
-        params = {"size": cfg.encoder.image_size, "n_stack": 3, "stride": 2,
-                  "max_steps": 300}
+        from tanitad.geometry import build_params, frame_of
+        _frame = frame_of(cfg)
+        params = build_params(cfg, {"size": cfg.encoder.image_size,
+                                    "n_stack": 3, "stride": 2,
+                                    "max_steps": 300})
 
         def mk(s, split):
             eps = build_episodes_cached(
-                s, lambda seg: build_comma(seg, size=cfg.encoder.image_size),
+                s, lambda seg: build_comma(seg, size=cfg.encoder.image_size,
+                                           frame=None if _frame.is_canonical
+                                           else _frame),
                 cache, f"comma2k19-{split}", params)
             return EpisodeWindowDataset(eps, window=cfg.predictor.window,
                                         max_horizon=max_h)
@@ -339,7 +349,7 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
             if (model.imagination is not None
                     and torch.rand(()) < cfg.h15.mask_prob):
                 f_t, f_next = frames[:, -1], fut[:, 0]
-                masked, vis = sector_mask(f_t, model.encoder.grid_hw)
+                masked, vis = sector_mask(f_t, model.encoder.grid_shape)
                 tok_belief = model.encode_tokens(masked)
                 tok_true = model.encode_tokens(f_next)
                 imag_pred, logvar = model.imagination(tok_belief, vis)
@@ -409,7 +419,7 @@ def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
     d9 = {}
     if model.imagination is not None:
         with torch.no_grad():
-            masked, vis = sector_mask(frames[:, -1], model.encoder.grid_hw)
+            masked, vis = sector_mask(frames[:, -1], model.encoder.grid_shape)
             imag_pred, logvar = model.imagination(model.encode_tokens(masked), vis)
             d9 = d9_rows(imag_pred, model.encode_tokens(fut[:, 0]), logvar, vis)
 

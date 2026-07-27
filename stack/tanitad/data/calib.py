@@ -39,10 +39,222 @@ F_REF = 266.0                     # effective focal [px] at the 256-px input
 COMMA2K19_FOCAL_PX = 910.0        # EON road camera, 1164x874
 PHYSICALAI_FRONT_WIDE_HFOV_DEG = 120.0
 
+# comma2k19's ENTIRE horizontal field, MEASURED from its published intrinsics
+# (1164x874, f=910): 2*atan(582/910) = 65.2027 deg. It is a HARD CEILING — no
+# choice of F_REF, output size or projection can extract more field than the
+# sensor recorded. Any canonical frame wider than this necessarily letterboxes
+# (or drops) comma2k19. Stated here so the number is quotable from code.
+COMMA2K19_MAX_HFOV_DEG = math.degrees(2.0 * math.atan(582.0 / COMMA2K19_FOCAL_PX))
+
 
 def nominal_focal_from_hfov(width_px: int, hfov_deg: float) -> float:
     """Pinhole focal from horizontal FOV: f = W / (2 tan(HFOV/2))."""
     return width_px / (2.0 * math.tan(math.radians(hfov_deg) / 2.0))
+
+
+# =========================================================================== #
+# THE CANONICAL FRAME — one explicit object instead of ~10 (size, f_ref) pairs #
+# =========================================================================== #
+# WHY THIS EXISTS. Until 2026-07-27 the canonical input geometry was two module
+# constants (``F_REF``) threaded as DEFAULT ARGUMENTS through ~10 functions
+# (``size: int = 256, f_ref: float = F_REF``) and re-declared as a literal in
+# every corpus module's ``CORPUS_META`` and every cache-build ``params`` dict.
+# Changing the geometry therefore meant editing every call site, and MISSING ONE
+# was silent — the exact failure class that produced this program's
+# unreproducible v4 numbers (a changed ``vision_rank`` default made every
+# committed number fail a STRICT load).
+#
+# ``CanonicalFrame`` is the single object that flows config -> cache build ->
+# trainer -> encoder. ``CANONICAL_256`` is byte-for-byte today's geometry, and
+# every function below keeps its old signature with the frame as an OPTIONAL
+# keyword — so nothing changes unless a frame is explicitly passed.
+#
+# ⛔ NOTHING IN THIS FILE CHOOSES A GEOMETRY. Which frame to train on is the
+# `2026-07-27-fov-crop-audit` measurement's decision.
+
+PROJECTIONS = ("pinhole", "cylindrical")
+
+
+@dataclass(frozen=True)
+class CanonicalFrame:
+    """The model's input geometry: output size, canonical focal, projection.
+
+    ``height`` / ``width`` are the OUTPUT pixel dims (H, W) — independent, so a
+    wide non-square frame (e.g. 256 x 640) is expressible. ``f_ref`` is the
+    canonical focal in output px. ``projection`` fixes how an output pixel
+    offset maps to a ray angle, and therefore how (width, f_ref) determine the
+    field:
+
+    - ``"pinhole"``   x = f_ref * tan(phi)   ->  HFOV = 2*atan((W/2)/f_ref)
+      The legacy convention. Every number this program has published is this.
+    - ``"cylindrical"`` x = f_ref * phi      ->  HFOV = 2*(W/2)/f_ref  (linear)
+      Equidistant in azimuth; vertical stays pinhole per column. Standard for
+      wide driving cameras — at a 50 deg half-angle ``tan 50 = 1.19``, so a
+      pinhole rectification spends 19 % of its new pixels stretching the
+      periphery, while equidistant azimuth spends them uniformly.
+
+    ``CANONICAL_256 == CanonicalFrame()`` is the deployed frame. ``is_canonical``
+    is what every parity-preserving branch keys on.
+    """
+
+    height: int = 256
+    width: int = 256
+    f_ref: float = F_REF
+    projection: str = "pinhole"
+
+    def __post_init__(self):
+        if self.projection not in PROJECTIONS:
+            raise ValueError(f"projection must be one of {PROJECTIONS}, "
+                             f"got {self.projection!r}")
+        if self.height < 8 or self.width < 8:
+            raise ValueError(f"degenerate frame {self.height}x{self.width}")
+        if not (self.f_ref > 0):
+            raise ValueError(f"f_ref must be positive, got {self.f_ref}")
+
+    # -- identity ---------------------------------------------------------- #
+    @property
+    def is_square(self) -> bool:
+        return self.height == self.width
+
+    @property
+    def is_canonical(self) -> bool:
+        """True iff this is EXACTLY the deployed 256/266/pinhole/square frame.
+
+        Every parity-preserving branch in the codebase keys on this and on
+        nothing else, so "canonical" can never drift to mean something looser.
+        """
+        return (self.height == 256 and self.width == 256
+                and float(self.f_ref) == 266.0 and self.projection == "pinhole")
+
+    @property
+    def size(self) -> int:
+        """Back-compat scalar for square frames only — raises otherwise.
+
+        Deliberately FAILS LOUD on a non-square frame instead of silently
+        returning one dimension: a caller that still thinks in one scalar is a
+        call site that has not been converted, and that is what must surface.
+        """
+        if not self.is_square:
+            raise ValueError(
+                f"CanonicalFrame({self.height}x{self.width}) is not square — "
+                f"this call site still assumes one scalar `size`. Use "
+                f"`frame.height` / `frame.width` (or `frame.hw`).")
+        return self.height
+
+    @property
+    def hw(self) -> tuple[int, int]:
+        return (self.height, self.width)
+
+    # -- angles ------------------------------------------------------------ #
+    def half_angle_x_rad(self) -> float:
+        """Retained HORIZONTAL half-angle of this frame."""
+        r = (self.width / 2.0) / self.f_ref
+        return math.atan(r) if self.projection == "pinhole" else r
+
+    def half_angle_y_rad(self) -> float:
+        """Retained VERTICAL half-angle. Pinhole in both projections — a
+        cylinder is only equidistant in azimuth."""
+        return math.atan((self.height / 2.0) / self.f_ref)
+
+    @property
+    def hfov_deg(self) -> float:
+        return math.degrees(2.0 * self.half_angle_x_rad())
+
+    @property
+    def vfov_deg(self) -> float:
+        return math.degrees(2.0 * self.half_angle_y_rad())
+
+    def focal_for_halfangle_x(self, theta: float) -> float:
+        """The f_ref that would put ray ``theta`` exactly at the frame edge."""
+        return (self.width / 2.0) / (math.tan(theta)
+                                     if self.projection == "pinhole" else theta)
+
+    # -- constructors ------------------------------------------------------ #
+    @classmethod
+    def from_hfov(cls, hfov_deg: float, height: int, width: int,
+                  projection: str = "pinhole") -> "CanonicalFrame":
+        """Solve f_ref so this (H, W) frame retains exactly ``hfov_deg``.
+
+        This is the constructor the FOV decision will use: state the field and
+        the pixel budget, get the focal. It does NOT pick either.
+        """
+        theta = math.radians(hfov_deg) / 2.0
+        f = (width / 2.0) / (math.tan(theta) if projection == "pinhole" else theta)
+        return cls(height=height, width=width, f_ref=f, projection=projection)
+
+    # -- serialization ----------------------------------------------------- #
+    def to_dict(self) -> dict:
+        return {"height": int(self.height), "width": int(self.width),
+                "f_ref": float(self.f_ref), "projection": self.projection}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "CanonicalFrame":
+        return cls(height=int(d["height"]), width=int(d["width"]),
+                   f_ref=float(d["f_ref"]),
+                   projection=str(d.get("projection", "pinhole")))
+
+    def tag(self) -> str:
+        """Compact, stable, filesystem-safe identity — the cache-key fragment."""
+        f = f"{float(self.f_ref):.4f}".rstrip("0").rstrip(".")
+        return f"{self.height}x{self.width}f{f}{self.projection[:3]}"
+
+    def report(self) -> dict:
+        """Data-card row: what field this frame actually retains."""
+        return {
+            **self.to_dict(),
+            "tag": self.tag(),
+            "hfov_deg": round(self.hfov_deg, 3),
+            "vfov_deg": round(self.vfov_deg, 3),
+            "n_tokens_at_patch16": (self.height // 16) * (self.width // 16),
+            "is_canonical": self.is_canonical,
+            "comma2k19_hfov_ceiling_deg": round(COMMA2K19_MAX_HFOV_DEG, 3),
+            "exceeds_comma2k19_field": self.hfov_deg > COMMA2K19_MAX_HFOV_DEG,
+        }
+
+
+#: The deployed frame. Identical to the pre-2026-07-27 constants in every path.
+CANONICAL_256 = CanonicalFrame()
+
+
+def as_frame(frame: "CanonicalFrame | None", size: int, f_ref: float
+             ) -> "CanonicalFrame":
+    """Resolve the (frame | legacy scalars) pair every geometry function takes.
+
+    ``frame=None`` reconstructs the SQUARE frame the legacy ``(size, f_ref)``
+    arguments describe, so an unconverted call site keeps producing exactly what
+    it produced before. Passing BOTH a frame and non-default scalars is a
+    programming error and is refused rather than silently resolved — that
+    ambiguity is precisely how a stale default survives a refactor.
+    """
+    if frame is None:
+        return CanonicalFrame(height=size, width=size, f_ref=f_ref)
+    if size != 256 or float(f_ref) != float(F_REF):
+        raise ValueError(
+            f"both a CanonicalFrame ({frame.tag()}) and non-default legacy "
+            f"scalars (size={size}, f_ref={f_ref}) were passed. Pass the frame "
+            f"alone — the scalars are the pre-2026-07-27 spelling of the same "
+            f"thing and having two sources of truth is the bug this object "
+            f"exists to remove.")
+    return frame
+
+
+def geometry_params(frame: "CanonicalFrame | None" = None) -> dict:
+    """Build-param fragment that separates geometries by CACHE KEY.
+
+    ⚠️ PARITY-CRITICAL, and the exact discipline of
+    :func:`physicalai.label_params`: the CANONICAL frame contributes an EMPTY
+    dict, so ``epcache.cache_key`` hashes exactly what it hashes today and
+    ``physicalai-train-e438721ae894`` keeps meaning precisely what it means.
+    Only a NON-canonical frame adds a key — which is what makes a re-cropped
+    cache structurally unable to collide with the parity cache.
+
+    ⚠️ NOTE THE PRE-EXISTING HOLE THIS CLOSES: the build params carried
+    ``{"size": ...}`` but NEVER ``f_ref``. Changing ``F_REF`` alone therefore
+    produced DIFFERENT PIXELS UNDER THE SAME CACHE KEY — a silent collision.
+    Never make this unconditional.
+    """
+    f = frame or CANONICAL_256
+    return {} if f.is_canonical else {"geom": f.tag()}
 
 
 def focal_crop_size(f_px: float, h: int, w: int, size: int,
@@ -53,19 +265,37 @@ def focal_crop_size(f_px: float, h: int, w: int, size: int,
 
 
 def focal_crop_resize(vid: Tensor, f_px: float, size: int,
-                      f_ref: float = F_REF) -> Tensor:
-    """[T, 3, H, W] (uint8 or float) -> [T, 3, size, size] uint8, canonical focal.
+                      f_ref: float = F_REF,
+                      frame: "CanonicalFrame | None" = None) -> Tensor:
+    """[T, 3, H, W] (uint8 or float) -> [T, 3, H_out, W_out] uint8, canonical focal.
 
     Center crop of side focal_crop_size(...), then bilinear resize. Returns the
     achieved effective focal in `focal_crop_resize.last_f_eff` for data cards.
+
+    ``frame`` (default None == the square legacy frame) generalises the crop to
+    a RECTANGLE: ``c_w = f_px*W/f_ref``, ``c_h = f_px*H/f_ref``. The crop CLAMPS
+    to the native frame, so asking a narrow camera for a wide field silently
+    ZOOMS instead of widening — ``.last_clamped`` / ``.last_f_eff`` expose that,
+    and :func:`pinhole_rectify` is the honest alternative (explicit unobserved
+    mask). ⚠️ comma2k19's entire field is 65.2027 deg (``COMMA2K19_MAX_HFOV_DEG``);
+    no crop can widen it.
     """
     t, _, h, w = vid.shape
-    c = focal_crop_size(f_px, h, w, size, f_ref)
-    top, left = (h - c) // 2, (w - c) // 2
-    out = vid[..., top:top + c, left:left + c].float()
-    out = F.interpolate(out, size=(size, size), mode="bilinear",
+    fr = as_frame(frame, size, f_ref)
+    c_w = focal_crop_size(f_px, h, w, fr.width, fr.f_ref)
+    c_h = focal_crop_size(f_px, h, w, fr.height, fr.f_ref)
+    if fr.is_square:
+        c_h = c_w = min(c_h, c_w)                 # legacy expression, exactly
+    top, left = (h - c_h) // 2, (w - c_w) // 2
+    out = vid[..., top:top + c_h, left:left + c_w].float()
+    out = F.interpolate(out, size=(fr.height, fr.width), mode="bilinear",
                         align_corners=False)
-    focal_crop_resize.last_f_eff = f_px * size / c
+    focal_crop_resize.last_f_eff = f_px * fr.width / c_w
+    focal_crop_resize.last_f_eff_y = f_px * fr.height / c_h
+    focal_crop_resize.last_clamped = bool(
+        int(round(f_px * fr.width / fr.f_ref)) > min(h, w)
+        or int(round(f_px * fr.height / fr.f_ref)) > min(h, w))
+    focal_crop_resize.last_frame = fr
     return out.clamp(0, 255).to(torch.uint8)
 
 
@@ -176,7 +406,62 @@ def ftheta_crop_size(intr: FThetaIntrinsics, size: int = 256,
     return max(32, min(c, min(intr.height, intr.width)))
 
 
+def ftheta_crop_size_hw(intr: FThetaIntrinsics, frame: CanonicalFrame
+                        ) -> tuple[int, int]:
+    """Native ``(c_h, c_w)`` crop RECTANGLE retaining ``frame``'s half-angles.
+
+    The fisheye radial map is isotropic, so a rectangle of half-width
+    ``r(theta_x)`` and half-height ``r(theta_y)`` retains exactly ``theta_x``
+    horizontally and ``theta_y`` vertically — which is what makes a WIDE
+    (non-square) canonical frame expressible on this sensor at all.
+
+    ⚠️ For a SQUARE frame this is bit-identical to :func:`ftheta_crop_size`,
+    including the clamp: ``theta_x == theta_y`` so both sides round to the same
+    integer, and the square branch re-applies the legacy ``min(H, W)`` bound
+    rather than a per-axis one. That equality is asserted in
+    ``tests/test_geometry_configurable.py``.
+    """
+    rx = float(intr.r_of_theta(frame.half_angle_x_rad()))
+    ry = float(intr.r_of_theta(frame.half_angle_y_rad()))
+    c_w = max(32, min(int(round(2.0 * rx)), intr.width))
+    c_h = max(32, min(int(round(2.0 * ry)), intr.height))
+    if frame.is_square:                       # legacy clamp, exactly
+        c_h = c_w = min(c_h, c_w)
+    return c_h, c_w
+
+
 _warned_geometric = [False]
+
+
+def ftheta_crop_box_hw(intr: FThetaIntrinsics, h: int, w: int,
+                       size: int = 256, f_ref: float = F_REF, *,
+                       center: str = "principal",
+                       frame: CanonicalFrame | None = None
+                       ) -> tuple[int, int, int, int]:
+    """Rectangular crop box ``(c_h, c_w, top, left)`` in DECODED pixels.
+
+    The general form of :func:`ftheta_crop_box` (which is this function with
+    ``c_h == c_w``). Position rules are unchanged: ``center="principal"``
+    centers on the per-clip ``(cx, cy)`` — the two-rig fix — and
+    ``center="geometric"`` uses the frame center.
+    """
+    f = as_frame(frame, size, f_ref)
+    sx = w / float(intr.width)
+    sy = h / float(intr.height)
+    c_h_native, c_w_native = ftheta_crop_size_hw(intr, f)
+    s = min(sx, sy)                       # isotropic: preserves aspect on rescale
+    c_w = max(32, min(int(round(c_w_native * s)), w))
+    c_h = max(32, min(int(round(c_h_native * s)), h))
+    if f.is_square:                       # legacy clamp, exactly
+        c_h = c_w = min(c_h, c_w)
+    if center == "principal":
+        top = int(round(intr.cy * sy - c_h / 2.0))
+        left = int(round(intr.cx * sx - c_w / 2.0))
+    elif center == "geometric":
+        top, left = (h - c_h) // 2, (w - c_w) // 2
+    else:
+        raise ValueError(f"center must be 'principal' or 'geometric', got {center!r}")
+    return c_h, c_w, top, left
 
 
 def ftheta_crop_box(intr: FThetaIntrinsics, h: int, w: int, size: int = 256,
@@ -198,26 +483,26 @@ def ftheta_crop_box(intr: FThetaIntrinsics, h: int, w: int, size: int = 256,
       geometric center, so a centered crop overflows the bottom by ~90 px);
       `ftheta_crop_resize` pads that genuinely-unobserved region rather than
       shifting the box (which would reintroduce the per-rig offset).
+
+    Square-only by signature (it returns ONE side). :func:`ftheta_crop_box_hw`
+    is the rectangular form; this is a thin unpack of it.
     """
-    sx = w / float(intr.width)
-    sy = h / float(intr.height)
-    c_native = ftheta_crop_size(intr, size, f_ref)
-    c = int(round(c_native * min(sx, sy)))
-    c = max(32, min(c, min(h, w)))
-    if center == "principal":
-        top = int(round(intr.cy * sy - c / 2.0))
-        left = int(round(intr.cx * sx - c / 2.0))
-    elif center == "geometric":
-        top, left = (h - c) // 2, (w - c) // 2
-    else:
-        raise ValueError(f"center must be 'principal' or 'geometric', got {center!r}")
-    return c, top, left
+    c_h, c_w, top, left = ftheta_crop_box_hw(intr, h, w, size, f_ref,
+                                             center=center)
+    assert c_h == c_w                          # square by construction here
+    return c_w, top, left
 
 
 def ftheta_crop_resize(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
-                       f_ref: float = F_REF, *, center: str = "principal"
-                       ) -> Tensor:
+                       f_ref: float = F_REF, *, center: str = "principal",
+                       frame: CanonicalFrame | None = None) -> Tensor:
     """[T,3,H,W] uint8/float -> [T,3,size,size] uint8, f-theta-correct canonical.
+
+    ``frame`` (opt-in, default None == today's square 256/266 frame) generalises
+    the crop to a RECTANGLE, so a wide canonical frame is expressible. It only
+    changes WHICH FIELD is retained — the output pixels remain the sensor's own
+    f-theta mapping, rescaled. For a projection-faithful resample see
+    :func:`cylindrical_rectify`.
 
     Square crop of side `ftheta_crop_size` (retaining the shared canonical
     half-angle), then bilinear resize. ``center`` selects where the square sits:
@@ -240,6 +525,7 @@ def ftheta_crop_resize(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
     value.
     """
     t, _, h, w = vid.shape
+    f = as_frame(frame, size, f_ref)
     eff_center = center
     if center == "principal" and not intr.per_clip:
         if not _warned_geometric[0]:
@@ -252,21 +538,26 @@ def ftheta_crop_resize(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
                 RuntimeWarning, stacklevel=2)
         eff_center = "geometric"
 
-    c, top, left = ftheta_crop_box(intr, h, w, size, f_ref, center=eff_center)
-    # Clip the box to the frame, then replicate-pad the shortfall back to c x c so
-    # the principal point stays at the exact crop center even when the box spills
-    # past a native edge (rig B). Float only the (<= c x c) crop, never the clip.
-    y0, y1 = max(0, top), min(h, top + c)
-    x0, x1 = max(0, left), min(w, left + c)
+    c_h, c_w, top, left = ftheta_crop_box_hw(intr, h, w, center=eff_center,
+                                             frame=f)
+    # Clip the box to the frame, then replicate-pad the shortfall back to
+    # c_h x c_w so the principal point stays at the exact crop center even when
+    # the box spills past a native edge (rig B). Float only the crop, never the
+    # clip.
+    y0, y1 = max(0, top), min(h, top + c_h)
+    x0, x1 = max(0, left), min(w, left + c_w)
     out = vid[..., y0:y1, x0:x1].float()
-    pt, pb, pl, pr = y0 - top, (top + c) - y1, x0 - left, (left + c) - x1
+    pt, pb, pl, pr = y0 - top, (top + c_h) - y1, x0 - left, (left + c_w) - x1
     if pt or pb or pl or pr:
         out = F.pad(out, (pl, pr, pt, pb), mode="replicate")
-    out = F.interpolate(out, size=(size, size), mode="bilinear",
+    out = F.interpolate(out, size=(f.height, f.width), mode="bilinear",
                         align_corners=False)
     sx, sy = w / float(intr.width), h / float(intr.height)
-    theta_edge = intr.theta_of_r((c / min(sx, sy)) / 2.0)
-    ftheta_crop_resize.last_f_eff = (size / 2.0) / math.tan(theta_edge)
+    theta_x = intr.theta_of_r((c_w / min(sx, sy)) / 2.0)
+    theta_y = intr.theta_of_r((c_h / min(sx, sy)) / 2.0)
+    ftheta_crop_resize.last_f_eff = f.focal_for_halfangle_x(theta_x)
+    ftheta_crop_resize.last_f_eff_y = (f.height / 2.0) / math.tan(theta_y)
+    ftheta_crop_resize.last_frame = f
     return out.clamp(0, 255).to(torch.uint8)
 
 
@@ -293,8 +584,8 @@ def ftheta_project_ray(intr: FThetaIntrinsics,
 def ftheta_horizon_row(intr: FThetaIntrinsics,
                        d_cam: tuple[float, float, float] = (0.0, 0.0, 1.0),
                        h: int = 1080, w: int = 1920, size: int = 256,
-                       f_ref: float = F_REF, *, center: str = "principal"
-                       ) -> float:
+                       f_ref: float = F_REF, *, center: str = "principal",
+                       frame: CanonicalFrame | None = None) -> float:
     """Output ROW that the horizon ray ``d_cam`` (vehicle-forward, in the camera
     frame — from the clip's extrinsics) lands on after the crop+resize.
 
@@ -308,8 +599,10 @@ def ftheta_horizon_row(intr: FThetaIntrinsics,
     """
     _u, v = ftheta_project_ray(intr, d_cam)
     sy = h / float(intr.height)
-    c, top, _left = ftheta_crop_box(intr, h, w, size, f_ref, center=center)
-    return (v * sy - top) * size / c
+    f = as_frame(frame, size, f_ref)
+    c_h, _c_w, top, _left = ftheta_crop_box_hw(intr, h, w, center=center,
+                                               frame=f)
+    return (v * sy - top) * f.height / c_h
 
 
 def ftheta_feff_report(intr: FThetaIntrinsics, size: int = 256,
@@ -456,7 +749,8 @@ def brown_conrady_distort(x: Tensor, y: Tensor,
 
 def pinhole_rectify_grid(intr: PinholeIntrinsics, h: int, w: int,
                          size: int = 256, f_ref: float = F_REF,
-                         device: str | torch.device = "cpu"
+                         device: str | torch.device = "cpu",
+                         frame: CanonicalFrame | None = None
                          ) -> tuple[Tensor, Tensor]:
     """``grid_sample`` grid + observed mask mapping an ideal pinhole (focal
     ``f_ref``, centered on the optical axis) onto the native ``h x w`` frame.
@@ -468,16 +762,26 @@ def pinhole_rectify_grid(intr: PinholeIntrinsics, h: int, w: int,
     native frame (the observed region). ``f_eff == f_ref`` holds by construction:
     output pixel at ``d`` px from center is the ray ``atan(d / f_ref)``.
     """
+    fr = as_frame(frame, size, f_ref)
     sx = w / float(intr.width)
     sy = h / float(intr.height)
     fx, fy = intr.fx * sx, intr.fy * sy
     cx, cy = intr.cx * sx, intr.cy * sy
 
     ys, xs = torch.meshgrid(
-        torch.arange(size, dtype=torch.float32, device=device),
-        torch.arange(size, dtype=torch.float32, device=device), indexing="ij")
-    x = (xs - (size - 1) / 2.0) / float(f_ref)             # ideal normalized ray
-    y = (ys - (size - 1) / 2.0) / float(f_ref)
+        torch.arange(fr.height, dtype=torch.float32, device=device),
+        torch.arange(fr.width, dtype=torch.float32, device=device), indexing="ij")
+    if fr.projection == "cylindrical":
+        # equidistant azimuth: x_px = f_ref * phi; vertical stays pinhole per
+        # column. Ray (sin phi, y_n, cos phi) -> ideal normalized (x/z, y/z).
+        phi = (xs - (fr.width - 1) / 2.0) / float(fr.f_ref)
+        y_n = (ys - (fr.height - 1) / 2.0) / float(fr.f_ref)
+        cosp = torch.cos(phi).clamp_min(1e-6)
+        x = torch.tan(phi)
+        y = y_n / cosp
+    else:
+        x = (xs - (fr.width - 1) / 2.0) / float(fr.f_ref)   # ideal normalized ray
+        y = (ys - (fr.height - 1) / 2.0) / float(fr.f_ref)
     x_d, y_d = brown_conrady_distort(x, y, intr.dist)
     u = fx * x_d + cx                                      # native px
     v = fy * y_d + cy
@@ -490,7 +794,8 @@ def pinhole_rectify_grid(intr: PinholeIntrinsics, h: int, w: int,
 
 
 def pinhole_rectify(vid: Tensor, intr: PinholeIntrinsics, size: int = 256,
-                    f_ref: float = F_REF, padding_mode: str = "zeros") -> Tensor:
+                    f_ref: float = F_REF, padding_mode: str = "zeros",
+                    frame: CanonicalFrame | None = None) -> Tensor:
     """[T,3,H,W] uint8/float -> [T,3,size,size] uint8 rectilinear pinhole at
     ``f_eff == f_ref``, barrel distortion removed, out-of-frame periphery masked.
 
@@ -502,15 +807,17 @@ def pinhole_rectify(vid: Tensor, intr: PinholeIntrinsics, size: int = 256,
         ``pinhole_rectify.last_mask``          [size,size] bool observed mask
     """
     t, _, h, w = vid.shape
-    grid, mask = pinhole_rectify_grid(intr, h, w, size, f_ref, device=vid.device)
+    fr = as_frame(frame, size, f_ref)
+    grid, mask = pinhole_rectify_grid(intr, h, w, device=vid.device, frame=fr)
     out = F.grid_sample(vid.float(), grid.expand(t, -1, -1, -1),
                         mode="bilinear", padding_mode=padding_mode,
                         align_corners=False)
     if padding_mode == "zeros":
         out = out * mask.to(out.dtype)                     # crisp unobserved band
-    pinhole_rectify.last_f_eff = float(f_ref)
+    pinhole_rectify.last_f_eff = float(fr.f_ref)
     pinhole_rectify.last_mask = mask
     pinhole_rectify.last_observed_frac = float(mask.float().mean())
+    pinhole_rectify.last_frame = fr
     return out.clamp(0, 255).to(torch.uint8)
 
 
@@ -555,6 +862,166 @@ def pinhole_geometry_report(intr: PinholeIntrinsics, size: int = 256,
         "rectify_drop_in": True,
         "max_distort_px_at_edge": round(max_distort_px, 2),
         "k1": intr.dist[0],
+    }
+
+
+# =========================================================================== #
+# CYLINDRICAL / equidistant-azimuth rectification (2026-07-27)                 #
+# =========================================================================== #
+# WHY A THIRD PROJECTION EXISTS. `ftheta_crop_resize` equalizes the retained
+# FIELD but leaves the sensor's own fisheye warp in the pixels;
+# `pinhole_rectify` / `ftheta_undistort` produce a true rectilinear image, whose
+# cost grows as tan(theta). COMPUTED from the definitions (no data, no model);
+# reproduced by `projection_density_report` and pinned in
+# tests/test_geometry_configurable.py:
+#
+#   half-angle    cumulative radius     LOCAL px-per-radian at the edge
+#                 tan(t)/t              1/cos^2(t)           cylindrical
+#     25.70 deg   1.0730                1.2316               1.0  <- today
+#     50.00 deg   1.3656                2.4203               1.0
+#     60.00 deg   1.6540                4.0000               1.0
+#
+# i.e. a pinhole canvas at a 50-deg half-angle packs 2.42x more pixels per radian
+# at the edge than at the center: the NEW pixels the PI is asking for would land
+# disproportionately on smeared periphery. A cylinder is equidistant in azimuth
+# (x = f*phi), so angular density is UNIFORM across the width, and it keeps
+# straight verticals (a pole stays a column) which a raw fisheye does not.
+# This is the standard choice for wide driving cameras.
+#
+# ⚠️ IT IS NOT A CLAIM THAT CYLINDRICAL WINS. Uniform angular density is a
+# geometric fact; whether it produces a better world model is an EXPERIMENT and
+# belongs to `2026-07-27-fov-crop-audit`. This code makes that experiment a
+# config change instead of a refactor.
+#
+# ⚠️ THE RIG FIX IS PRESERVED BY CONSTRUCTION, not by care: the output center
+# ray is (0, 0, 1) = the boresight, and `ftheta_project_ray` maps the boresight
+# to EXACTLY (cx, cy) — the clip's own principal point. So rig A (cy~543) and
+# rig B (cy~755) both land their optical axis at the output center, which is the
+# same guarantee `ftheta_crop_resize(center="principal")` gives. A fallback
+# (per_clip=False) intrinsic is REFUSED here rather than silently downgraded:
+# unlike a crop there is no "geometric center" fallback that is even meaningful
+# for a full ray-fan resample.
+
+
+def cylindrical_rays(frame: CanonicalFrame, device: str | torch.device = "cpu"
+                     ) -> tuple[Tensor, Tensor, Tensor]:
+    """Per-output-pixel camera-frame ray ``(x, y, z)`` for ``frame``.
+
+    Camera convention matches :func:`ftheta_project_ray`: +x right, +y DOWN, +z
+    boresight. For ``projection="cylindrical"`` the ray is
+    ``(sin phi, y_n, cos phi)`` with ``phi = (u - (W-1)/2)/f_ref`` and
+    ``y_n = (v - (H-1)/2)/f_ref``; for ``"pinhole"`` it is ``(x_n, y_n, 1)``.
+    Returned unnormalized (only the direction matters downstream).
+    """
+    ys, xs = torch.meshgrid(
+        torch.arange(frame.height, dtype=torch.float32, device=device),
+        torch.arange(frame.width, dtype=torch.float32, device=device),
+        indexing="ij")
+    u = (xs - (frame.width - 1) / 2.0) / float(frame.f_ref)
+    v = (ys - (frame.height - 1) / 2.0) / float(frame.f_ref)
+    if frame.projection == "cylindrical":
+        return torch.sin(u), v, torch.cos(u)
+    return u, v, torch.ones_like(u)
+
+
+def ftheta_project_rays(intr: FThetaIntrinsics, x: Tensor, y: Tensor, z: Tensor
+                        ) -> tuple[Tensor, Tensor]:
+    """Tensor form of :func:`ftheta_project_ray` — rays -> native ``(u, v)`` px."""
+    rho = torch.sqrt(x * x + y * y)
+    theta = torch.atan2(rho, z)
+    r = intr.r_of_theta(theta)
+    scale = torch.where(rho > 1e-9, r / rho.clamp_min(1e-9), torch.zeros_like(rho))
+    return intr.cx + x * scale, intr.cy + y * scale
+
+
+def cylindrical_grid(intr: FThetaIntrinsics, h: int, w: int,
+                     frame: CanonicalFrame,
+                     device: str | torch.device = "cpu"
+                     ) -> tuple[Tensor, Tensor]:
+    """``grid_sample`` grid + observed mask for a cylindrical/pinhole resample of
+    an f-theta fisheye onto ``frame``.
+
+    Intrinsics are defined on ``intr.width x intr.height`` and are scaled to the
+    DECODED ``(h, w)``. Returns ``(grid [1,H,W,2] in [-1,1], mask [H,W] bool)``;
+    ``mask`` is True where the ideal ray lands INSIDE the native frame, i.e. the
+    genuinely observed region (a wide cylinder over a 120-deg sensor is mostly
+    observed horizontally and unobserved in the corners).
+    """
+    x, y, z = cylindrical_rays(frame, device=device)
+    u_n, v_n = ftheta_project_rays(intr, x, y, z)          # native-sensor px
+    sx, sy = w / float(intr.width), h / float(intr.height)
+    u, v = u_n * sx, v_n * sy
+    mask = (u >= 0) & (u <= w - 1) & (v >= 0) & (v <= h - 1) & (z > 0)
+    gx = u / (w - 1) * 2.0 - 1.0
+    gy = v / (h - 1) * 2.0 - 1.0
+    return torch.stack([gx, gy], dim=-1).unsqueeze(0), mask
+
+
+def cylindrical_rectify(vid: Tensor, intr: FThetaIntrinsics,
+                        frame: CanonicalFrame,
+                        padding_mode: str = "zeros",
+                        *, require_per_clip: bool = True) -> Tensor:
+    """[T,3,H,W] uint8/float -> [T,3,frame.height,frame.width] uint8, equidistant
+    -azimuth (or pinhole) resample of an f-theta fisheye.
+
+    ``f_eff`` is ``frame.f_ref`` exactly by construction. Unobserved pixels
+    follow ``padding_mode`` ("zeros" = honest black, the default). Provenance for
+    the data card:
+        ``cylindrical_rectify.last_f_eff``         == frame.f_ref
+        ``cylindrical_rectify.last_observed_frac`` fraction inside the native frame
+        ``cylindrical_rectify.last_mask``          [H,W] bool observed mask
+        ``cylindrical_rectify.last_frame``         the frame it was run with
+
+    ``require_per_clip=True`` (default) REFUSES a corpus-median intrinsic: its
+    ``cy`` is a rig-B value, and centering a full ray fan on the wrong principal
+    point reintroduces the ~215 px two-rig error this program already paid for.
+    """
+    if require_per_clip and not intr.per_clip:
+        raise ValueError(
+            "cylindrical_rectify needs a PER-CLIP principal point but got the "
+            "corpus-median fallback (per_clip=False; its cy is a rig-B value). "
+            "The front-wide has two rigs (cy~543 / cy~755) and a ray fan "
+            "centered on the wrong one is ~215 px off — the D-016 R1 error. "
+            "Provide per-clip calibration, or pass require_per_clip=False and "
+            "state in the artifact that the rig fix is DISABLED.")
+    t = vid.shape[0]
+    h, w = int(vid.shape[-2]), int(vid.shape[-1])
+    grid, mask = cylindrical_grid(intr, h, w, frame, device=vid.device)
+    out = F.grid_sample(vid.float(), grid.expand(t, -1, -1, -1), mode="bilinear",
+                        padding_mode=padding_mode, align_corners=False)
+    if padding_mode == "zeros":
+        out = out * mask.to(out.dtype)
+    cylindrical_rectify.last_f_eff = float(frame.f_ref)
+    cylindrical_rectify.last_mask = mask
+    cylindrical_rectify.last_observed_frac = float(mask.float().mean())
+    cylindrical_rectify.last_frame = frame
+    return out.clamp(0, 255).to(torch.uint8)
+
+
+def projection_density_report(frame: CanonicalFrame) -> dict:
+    """Angular-density cost of ``frame``'s projection — the number that motivates
+    the cylindrical option, computed from the definitions (no data needed).
+
+    Two distinct quantities, reported separately because conflating them is easy:
+
+    - ``edge_local_density_vs_center`` — LOCAL px per radian at the edge relative
+      to the center. Pinhole ``d/dphi (f tan phi)/f = 1/cos^2(phi)``;
+      cylindrical ``d/dphi (f phi)/f = 1`` exactly.
+    - ``cumulative_radius_vs_equidistant`` — how much image RADIUS the projection
+      spends to reach the same field: pinhole ``tan(t)/t``, cylindrical 1.
+    """
+    th = frame.half_angle_x_rad()
+    cyl = frame.projection == "cylindrical"
+    return {
+        "projection": frame.projection,
+        "half_angle_x_deg": round(math.degrees(th), 4),
+        "hfov_deg": round(frame.hfov_deg, 4),
+        "edge_local_density_vs_center":
+            1.0 if cyl else round(1.0 / (math.cos(th) ** 2), 4),
+        "cumulative_radius_vs_equidistant":
+            1.0 if cyl else round(math.tan(th) / th, 4),
+        "pinhole_edge_local_density_at_this_field":
+            round(1.0 / (math.cos(th) ** 2), 4),
     }
 
 

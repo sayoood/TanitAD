@@ -1,0 +1,653 @@
+{
+  "artifact": "selection-vs-cache verdict + measured rebuild cost",
+  "date": "2026-07-27",
+  "confidentiality": "PhysicalAI-AV is gated; no clip UUID appears here (clips are index + sha1 prefix only).",
+  "selection": {
+    "selection_signatures": {
+      "discover_r0_clips": "(root: 'str | Path') -> 'list[dict]'",
+      "split_clips": "(clips: 'list[dict]', val_frac: 'float' = 0.2, seed: 'int' = 0) -> 'tuple[list[dict], list[dict]]'"
+    },
+    "selection_takes_no_geometry_argument": true,
+    "local_selection": {
+      "note": "NON-PARITY local selection, used only to exercise the chain",
+      "n_clips": 500,
+      "n_train": 400,
+      "n_val": 100,
+      "ordered_train_id_sha256": "b5b7f8afe3d7856caca2fe8fab69f7d7aff20e3026549ab0f815c9f89120a4d3",
+      "ordered_val_id_sha256": "a55187ca363299295962017e1bf2a87c3a0dd846887a3a7974ee313774b465fe"
+    },
+    "cache_keys": [
+      {
+        "candidate": "deployed_256sq_51deg",
+        "frame": {
+          "height": 256,
+          "width": 256,
+          "f_ref": 266.0,
+          "projection": "pinhole"
+        },
+        "tag": "256x256f266pin",
+        "projection_mode": "ftheta_crop",
+        "params_fragment": {},
+        "hfov_deg": 51.394,
+        "train_cache_key": "14231cd29c74",
+        "params_identical_to_legacy": true
+      },
+      {
+        "candidate": "100deg_256x256_pin",
+        "frame": {
+          "height": 256,
+          "width": 256,
+          "f_ref": 107.40475279069184,
+          "projection": "pinhole"
+        },
+        "tag": "256x256f107.4048pin",
+        "projection_mode": "ftheta_crop",
+        "params_fragment": {
+          "geom": "256x256f107.4048pin"
+        },
+        "hfov_deg": 100.0,
+        "train_cache_key": "2ed046e007ac",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "100deg_256x640_pin",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 268.51188197672957,
+          "projection": "pinhole"
+        },
+        "tag": "256x640f268.5119pin",
+        "projection_mode": "ftheta_crop",
+        "params_fragment": {
+          "geom": "256x640f268.5119pin"
+        },
+        "hfov_deg": 100.0,
+        "train_cache_key": "c5f922dde3f0",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "100deg_256x640_cyl",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 366.69298888372685,
+          "projection": "cylindrical"
+        },
+        "tag": "256x640f366.693cyl",
+        "projection_mode": "cylindrical",
+        "params_fragment": {
+          "geom": "256x640f366.693cyl",
+          "projection_mode": "cylindrical"
+        },
+        "hfov_deg": 100.0,
+        "train_cache_key": "d4adc870c25d",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "120deg_256x640_pin",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 184.7520861406803,
+          "projection": "pinhole"
+        },
+        "tag": "256x640f184.7521pin",
+        "projection_mode": "ftheta_crop",
+        "params_fragment": {
+          "geom": "256x640f184.7521pin"
+        },
+        "hfov_deg": 120.0,
+        "train_cache_key": "b168416f8d3a",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "120deg_256x640_cyl",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "tag": "256x640f305.5775cyl",
+        "projection_mode": "cylindrical",
+        "params_fragment": {
+          "geom": "256x640f305.5775cyl",
+          "projection_mode": "cylindrical"
+        },
+        "hfov_deg": 120.0,
+        "train_cache_key": "2748411b3218",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "120deg_384x960_cyl",
+        "frame": {
+          "height": 384,
+          "width": 960,
+          "f_ref": 458.36623610465864,
+          "projection": "cylindrical"
+        },
+        "tag": "384x960f458.3662cyl",
+        "projection_mode": "cylindrical",
+        "params_fragment": {
+          "geom": "384x960f458.3662cyl",
+          "projection_mode": "cylindrical"
+        },
+        "hfov_deg": 120.0,
+        "train_cache_key": "145e83b7085a",
+        "params_identical_to_legacy": false
+      },
+      {
+        "candidate": "120deg_384x384_cyl",
+        "frame": {
+          "height": 384,
+          "width": 384,
+          "f_ref": 183.34649444186346,
+          "projection": "cylindrical"
+        },
+        "tag": "384x384f183.3465cyl",
+        "projection_mode": "cylindrical",
+        "params_fragment": {
+          "geom": "384x384f183.3465cyl",
+          "projection_mode": "cylindrical"
+        },
+        "hfov_deg": 120.0,
+        "train_cache_key": "84499e1f3adc",
+        "params_identical_to_legacy": false
+      }
+    ],
+    "canonical_key_unchanged": true,
+    "all_candidate_keys_distinct": true,
+    "identity_under_geometry_change": {
+      "runs": {
+        "canonical_256sq": {
+          "episode_uids": [
+            "ep_00000.pt",
+            "ep_00001.pt",
+            "ep_00002.pt",
+            "ep_00004.pt",
+            "ep_00005.pt",
+            "ep_00006.pt",
+            "ep_00008.pt",
+            "ep_00009.pt",
+            "ep_00010.pt",
+            "ep_00011.pt"
+          ],
+          "skip_indices": [
+            3,
+            7
+          ],
+          "n_episodes": 10,
+          "T_per_episode": 5,
+          "frame_hw": [
+            256,
+            256
+          ]
+        },
+        "wide_256x640": {
+          "episode_uids": [
+            "ep_00000.pt",
+            "ep_00001.pt",
+            "ep_00002.pt",
+            "ep_00004.pt",
+            "ep_00005.pt",
+            "ep_00006.pt",
+            "ep_00008.pt",
+            "ep_00009.pt",
+            "ep_00010.pt",
+            "ep_00011.pt"
+          ],
+          "skip_indices": [
+            3,
+            7
+          ],
+          "n_episodes": 10,
+          "T_per_episode": 5,
+          "frame_hw": [
+            256,
+            640
+          ]
+        }
+      },
+      "episode_uid_sets_identical": true,
+      "skip_indices_identical": true,
+      "episode_counts_identical": true,
+      "T_identical": true,
+      "only_the_pixels_differ": true,
+      "uid_sha256_canonical": "a6ebf6b11019f1312b8e1cf03659f2cca10def92fd4db0c51161cbf5d357aef3",
+      "uid_sha256_wide": "a6ebf6b11019f1312b8e1cf03659f2cca10def92fd4db0c51161cbf5d357aef3"
+    },
+    "parity_guard": {
+      "parity_train_key": "physicalai-train-e438721ae894",
+      "corpus_key_of_recropped_dir": null,
+      "recropped_dir_is_recognised": false,
+      "note": "corpus_key_of() substring-matches REGISTERED keys. A re-cropped cache has a new key, so it reads as NON-PARITY and any caller with require=True (train_flagship_v4) REFUSES it until the new key is registered in parity_manifest.json."
+    },
+    "parity_manifest": {
+      "episode_count": 2376,
+      "skip_count": 24,
+      "episode_uid_sha256": "9877bef64da35f384b380b23ab0e760f3ef5396c6f3e849d5de81c7243ac7386",
+      "uid_kind": "epcache_basename",
+      "note": "uid_kind == epcache_basename: identity is ep_%05d.pt, i.e. the POSITION in the ordered source list. Geometry cannot move it."
+    }
+  },
+  "cost": {
+    "machine": "dev box (Windows 11, CPU decode+remap; NO GPU involved, so the WDDM host-RAM spill artefact does not apply to any number here)",
+    "n_clips_sampled": 6,
+    "max_frames_per_clip": 48,
+    "frames_decoded_mean": 48.0,
+    "native_frame_hw": [
+      1080,
+      1920
+    ],
+    "decode_s_per_frame": 0.01336,
+    "decode_is_geometry_independent": true,
+    "clips": [
+      {
+        "index": 0,
+        "clip_sha1_8": "b1474ccc",
+        "per_clip_calib": true,
+        "rig": "B",
+        "frames_decoded": 48
+      },
+      {
+        "index": 1,
+        "clip_sha1_8": "2a9807fb",
+        "per_clip_calib": true,
+        "rig": "B",
+        "frames_decoded": 48
+      },
+      {
+        "index": 2,
+        "clip_sha1_8": "87b5fdbd",
+        "per_clip_calib": true,
+        "rig": "B",
+        "frames_decoded": 48
+      },
+      {
+        "index": 3,
+        "clip_sha1_8": "642ced54",
+        "per_clip_calib": true,
+        "rig": "A",
+        "frames_decoded": 48
+      },
+      {
+        "index": 4,
+        "clip_sha1_8": "5770efbe",
+        "per_clip_calib": true,
+        "rig": "A",
+        "frames_decoded": 48
+      },
+      {
+        "index": 5,
+        "clip_sha1_8": "89811338",
+        "per_clip_calib": true,
+        "rig": "A",
+        "frames_decoded": 48
+      }
+    ],
+    "candidates": [
+      {
+        "candidate": "deployed_256sq_51deg",
+        "frame": {
+          "height": 256,
+          "width": 256,
+          "f_ref": 266.0,
+          "projection": "pinhole"
+        },
+        "tag": "256x256f266pin",
+        "projection_mode": "ftheta_crop",
+        "hfov_deg": 51.394,
+        "vfov_deg": 51.394,
+        "n_tokens_patch16": 256,
+        "native_crop_hw_mean": [
+          830.2,
+          830.2
+        ],
+        "requested_f_ref": 266.0,
+        "achieved_f_eff_mean": 265.942,
+        "achieved_hfov_deg": 51.404,
+        "field_shortfall_deg": -0.01,
+        "observed_frac_mean": 1.0,
+        "remap_s_per_frame": 0.00196,
+        "remap_rel_to_deployed": 1.0,
+        "bytes_per_stacked_frame": 589824,
+        "peak_float_intermediate_mb_batch24": 198.5,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 23.0,
+        "projection": "pinhole",
+        "half_angle_x_deg": 25.697,
+        "edge_local_density_vs_center": 1.2316,
+        "cumulative_radius_vs_equidistant": 1.0729,
+        "pinhole_edge_local_density_at_this_field": 1.2316,
+        "bytes_rel_to_deployed": 1.0
+      },
+      {
+        "candidate": "100deg_256x256_pin",
+        "frame": {
+          "height": 256,
+          "width": 256,
+          "f_ref": 107.40475279069184,
+          "projection": "pinhole"
+        },
+        "tag": "256x256f107.4048pin",
+        "projection_mode": "ftheta_crop",
+        "hfov_deg": 100.0,
+        "vfov_deg": 100.0,
+        "n_tokens_patch16": 256,
+        "native_crop_hw_mean": [
+          1080.0,
+          1080.0
+        ],
+        "requested_f_ref": 107.405,
+        "achieved_f_eff_mean": 193.019,
+        "achieved_hfov_deg": 67.101,
+        "field_shortfall_deg": 32.899,
+        "observed_frac_mean": 1.0,
+        "remap_s_per_frame": 0.00553,
+        "remap_rel_to_deployed": 2.821,
+        "bytes_per_stacked_frame": 589824,
+        "peak_float_intermediate_mb_batch24": 335.9,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 31.7,
+        "projection": "pinhole",
+        "half_angle_x_deg": 50.0,
+        "edge_local_density_vs_center": 2.4203,
+        "cumulative_radius_vs_equidistant": 1.3656,
+        "pinhole_edge_local_density_at_this_field": 2.4203,
+        "bytes_rel_to_deployed": 1.0
+      },
+      {
+        "candidate": "100deg_256x640_pin",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 268.51188197672957,
+          "projection": "pinhole"
+        },
+        "tag": "256x640f268.5119pin",
+        "projection_mode": "ftheta_crop",
+        "hfov_deg": 100.0,
+        "vfov_deg": 50.974,
+        "n_tokens_patch16": 640,
+        "native_crop_hw_mean": [
+          823.3,
+          1593.7
+        ],
+        "requested_f_ref": 268.512,
+        "achieved_f_eff_mean": 268.51,
+        "achieved_hfov_deg": 100.0,
+        "field_shortfall_deg": -0.0,
+        "observed_frac_mean": 1.0,
+        "remap_s_per_frame": 0.00392,
+        "remap_rel_to_deployed": 2.0,
+        "bytes_per_stacked_frame": 1474560,
+        "peak_float_intermediate_mb_batch24": 377.9,
+        "rss_delta_mb_mean_NOT_QUOTABLE": -80.9,
+        "projection": "pinhole",
+        "half_angle_x_deg": 50.0,
+        "edge_local_density_vs_center": 2.4203,
+        "cumulative_radius_vs_equidistant": 1.3656,
+        "pinhole_edge_local_density_at_this_field": 2.4203,
+        "bytes_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "100deg_256x640_cyl",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 366.69298888372685,
+          "projection": "cylindrical"
+        },
+        "tag": "256x640f366.693cyl",
+        "projection_mode": "cylindrical",
+        "hfov_deg": 100.0,
+        "vfov_deg": 38.485,
+        "n_tokens_patch16": 640,
+        "native_crop_hw_mean": [
+          256.0,
+          640.0
+        ],
+        "requested_f_ref": 366.693,
+        "achieved_f_eff_mean": 366.693,
+        "achieved_hfov_deg": 100.0,
+        "field_shortfall_deg": 0.0,
+        "observed_frac_mean": 0.99563,
+        "remap_s_per_frame": 0.00275,
+        "remap_rel_to_deployed": 1.403,
+        "bytes_per_stacked_frame": 1474560,
+        "peak_float_intermediate_mb_batch24": 597.2,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 126.3,
+        "projection": "cylindrical",
+        "half_angle_x_deg": 50.0,
+        "edge_local_density_vs_center": 1.0,
+        "cumulative_radius_vs_equidistant": 1.0,
+        "pinhole_edge_local_density_at_this_field": 2.4203,
+        "bytes_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_256x640_pin",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 184.7520861406803,
+          "projection": "pinhole"
+        },
+        "tag": "256x640f184.7521pin",
+        "projection_mode": "ftheta_crop",
+        "hfov_deg": 120.0,
+        "vfov_deg": 69.43,
+        "n_tokens_patch16": 640,
+        "native_crop_hw_mean": [
+          1080.0,
+          1898.8
+        ],
+        "requested_f_ref": 184.752,
+        "achieved_f_eff_mean": 184.743,
+        "achieved_hfov_deg": 120.002,
+        "field_shortfall_deg": -0.002,
+        "observed_frac_mean": 1.0,
+        "remap_s_per_frame": 0.00518,
+        "remap_rel_to_deployed": 2.643,
+        "bytes_per_stacked_frame": 1474560,
+        "peak_float_intermediate_mb_batch24": 590.6,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 148.0,
+        "projection": "pinhole",
+        "half_angle_x_deg": 60.0,
+        "edge_local_density_vs_center": 4.0,
+        "cumulative_radius_vs_equidistant": 1.654,
+        "pinhole_edge_local_density_at_this_field": 4.0,
+        "bytes_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_256x640_cyl",
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "tag": "256x640f305.5775cyl",
+        "projection_mode": "cylindrical",
+        "hfov_deg": 120.0,
+        "vfov_deg": 45.456,
+        "n_tokens_patch16": 640,
+        "native_crop_hw_mean": [
+          256.0,
+          640.0
+        ],
+        "requested_f_ref": 305.577,
+        "achieved_f_eff_mean": 305.577,
+        "achieved_hfov_deg": 120.0,
+        "field_shortfall_deg": 0.0,
+        "observed_frac_mean": 0.95363,
+        "remap_s_per_frame": 0.00271,
+        "remap_rel_to_deployed": 1.383,
+        "bytes_per_stacked_frame": 1474560,
+        "peak_float_intermediate_mb_batch24": 597.2,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 183.0,
+        "projection": "cylindrical",
+        "half_angle_x_deg": 60.0,
+        "edge_local_density_vs_center": 1.0,
+        "cumulative_radius_vs_equidistant": 1.0,
+        "pinhole_edge_local_density_at_this_field": 4.0,
+        "bytes_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_384x960_cyl",
+        "frame": {
+          "height": 384,
+          "width": 960,
+          "f_ref": 458.36623610465864,
+          "projection": "cylindrical"
+        },
+        "tag": "384x960f458.3662cyl",
+        "projection_mode": "cylindrical",
+        "hfov_deg": 120.0,
+        "vfov_deg": 45.456,
+        "n_tokens_patch16": 1440,
+        "native_crop_hw_mean": [
+          384.0,
+          960.0
+        ],
+        "requested_f_ref": 458.366,
+        "achieved_f_eff_mean": 458.366,
+        "achieved_hfov_deg": 120.0,
+        "field_shortfall_deg": 0.0,
+        "observed_frac_mean": 0.95363,
+        "remap_s_per_frame": 0.0034,
+        "remap_rel_to_deployed": 1.735,
+        "bytes_per_stacked_frame": 3317760,
+        "peak_float_intermediate_mb_batch24": 597.2,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 20.9,
+        "projection": "cylindrical",
+        "half_angle_x_deg": 60.0,
+        "edge_local_density_vs_center": 1.0,
+        "cumulative_radius_vs_equidistant": 1.0,
+        "pinhole_edge_local_density_at_this_field": 4.0,
+        "bytes_rel_to_deployed": 5.625
+      },
+      {
+        "candidate": "120deg_384x384_cyl",
+        "frame": {
+          "height": 384,
+          "width": 384,
+          "f_ref": 183.34649444186346,
+          "projection": "cylindrical"
+        },
+        "tag": "384x384f183.3465cyl",
+        "projection_mode": "cylindrical",
+        "hfov_deg": 120.0,
+        "vfov_deg": 92.641,
+        "n_tokens_patch16": 576,
+        "native_crop_hw_mean": [
+          384.0,
+          384.0
+        ],
+        "requested_f_ref": 183.346,
+        "achieved_f_eff_mean": 183.346,
+        "achieved_hfov_deg": 120.0,
+        "field_shortfall_deg": 0.0,
+        "observed_frac_mean": 0.61904,
+        "remap_s_per_frame": 0.00247,
+        "remap_rel_to_deployed": 1.26,
+        "bytes_per_stacked_frame": 1327104,
+        "peak_float_intermediate_mb_batch24": 597.2,
+        "rss_delta_mb_mean_NOT_QUOTABLE": 7.5,
+        "projection": "cylindrical",
+        "half_angle_x_deg": 60.0,
+        "edge_local_density_vs_center": 1.0,
+        "cumulative_radius_vs_equidistant": 1.0,
+        "pinhole_edge_local_density_at_this_field": 4.0,
+        "bytes_rel_to_deployed": 2.25
+      }
+    ]
+  },
+  "extrapolation": {
+    "method": "Whole-corpus projection. STATED EXTRAPOLATION, and the two frame counts\nare DIFFERENT \u2014 conflating them understates the build by ~3x:\n\n  work    per episode = (decode s/frame + remap s/frame)\n                        * DECODED_frames_per_episode   [605: the clip is\n                        decoded in full, then resampled]\n  storage per episode = bytes_per_stacked_frame * STORED_frames_per_episode\n                        [199: 10 Hz over ~20.2 s, minus n_stack-1]\n\nWhole corpus = per-episode * (train + val), divided by the number of\nparallel build workers. Decode dominates and is geometry-INDEPENDENT, so the\ngeometry delta is the remap column alone.\n\n\u26a0\ufe0f Wall-clock is from THIS dev box (CPU decode, 4 decoder threads/clip). A\npod's own decode throughput should be substituted; the remap RATIO is the\nportable number. No GPU is involved anywhere here, so the WDDM\nhost-RAM-spill artefact cannot inflate any figure on this page.",
+    "episodes_train": 2376,
+    "episodes_val": 600,
+    "stored_frames_per_episode": 199.0,
+    "decoded_frames_per_episode": 605.0,
+    "rows": [
+      {
+        "candidate": "deployed_256sq_51deg",
+        "hfov_deg": 51.394,
+        "seconds_per_episode_1worker": 9.27,
+        "hours_full_corpus_1worker": 7.66,
+        "hours_full_corpus_8workers": 0.96,
+        "hours_full_corpus_16workers": 0.48,
+        "cache_size_gb": 349.3,
+        "cache_size_rel_to_deployed": 1.0
+      },
+      {
+        "candidate": "100deg_256x256_pin",
+        "hfov_deg": 100.0,
+        "seconds_per_episode_1worker": 11.43,
+        "hours_full_corpus_1worker": 9.45,
+        "hours_full_corpus_8workers": 1.18,
+        "hours_full_corpus_16workers": 0.59,
+        "cache_size_gb": 349.3,
+        "cache_size_rel_to_deployed": 1.0
+      },
+      {
+        "candidate": "100deg_256x640_pin",
+        "hfov_deg": 100.0,
+        "seconds_per_episode_1worker": 10.45,
+        "hours_full_corpus_1worker": 8.64,
+        "hours_full_corpus_8workers": 1.08,
+        "hours_full_corpus_16workers": 0.54,
+        "cache_size_gb": 873.3,
+        "cache_size_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "100deg_256x640_cyl",
+        "hfov_deg": 100.0,
+        "seconds_per_episode_1worker": 9.75,
+        "hours_full_corpus_1worker": 8.06,
+        "hours_full_corpus_8workers": 1.01,
+        "hours_full_corpus_16workers": 0.5,
+        "cache_size_gb": 873.3,
+        "cache_size_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_256x640_pin",
+        "hfov_deg": 120.0,
+        "seconds_per_episode_1worker": 11.22,
+        "hours_full_corpus_1worker": 9.27,
+        "hours_full_corpus_8workers": 1.16,
+        "hours_full_corpus_16workers": 0.58,
+        "cache_size_gb": 873.3,
+        "cache_size_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_256x640_cyl",
+        "hfov_deg": 120.0,
+        "seconds_per_episode_1worker": 9.72,
+        "hours_full_corpus_1worker": 8.04,
+        "hours_full_corpus_8workers": 1.0,
+        "hours_full_corpus_16workers": 0.5,
+        "cache_size_gb": 873.3,
+        "cache_size_rel_to_deployed": 2.5
+      },
+      {
+        "candidate": "120deg_384x960_cyl",
+        "hfov_deg": 120.0,
+        "seconds_per_episode_1worker": 10.14,
+        "hours_full_corpus_1worker": 8.38,
+        "hours_full_corpus_8workers": 1.05,
+        "hours_full_corpus_16workers": 0.52,
+        "cache_size_gb": 1964.9,
+        "cache_size_rel_to_deployed": 5.625
+      },
+      {
+        "candidate": "120deg_384x384_cyl",
+        "hfov_deg": 120.0,
+        "seconds_per_episode_1worker": 9.58,
+        "hours_full_corpus_1worker": 7.92,
+        "hours_full_corpus_8workers": 0.99,
+        "hours_full_corpus_16workers": 0.49,
+        "cache_size_gb": 785.9,
+        "cache_size_rel_to_deployed": 2.25
+      }
+    ]
+  }
+}

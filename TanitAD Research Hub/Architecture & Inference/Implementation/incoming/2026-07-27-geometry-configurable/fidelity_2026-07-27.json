@@ -1,0 +1,775 @@
+{
+  "artifact": "geometry-configurable fidelity + deliberate-failure suite",
+  "date": "2026-07-27",
+  "tolerance": "BIT-EXACT (torch.equal) on uint8 output; exact equality on integer crop boxes and float f_eff",
+  "reference": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/calib_ref.py",
+  "checks": [
+    {
+      "check": "F_REF unchanged",
+      "pass": true,
+      "detail": {
+        "new": 266.0,
+        "ref": 266.0
+      }
+    },
+    {
+      "check": "COMMA2K19_FOCAL_PX unchanged",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "PHYSICALAI fallback intrinsics unchanged",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "canonical_halfangle_rad unchanged",
+      "pass": true,
+      "detail": {
+        "rad": 0.4484972531260363,
+        "deg": 51.39399945466489
+      }
+    },
+    {
+      "check": "CANONICAL_256 is the deployed frame",
+      "pass": true,
+      "detail": {
+        "height": 256,
+        "width": 256,
+        "f_ref": 266.0,
+        "projection": "pinhole",
+        "tag": "256x256f266pin",
+        "hfov_deg": 51.394,
+        "vfov_deg": 51.394,
+        "n_tokens_at_patch16": 256,
+        "is_canonical": true,
+        "comma2k19_hfov_ceiling_deg": 65.203,
+        "exceeds_comma2k19_field": false
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigA_per_clip,256]",
+      "pass": true,
+      "detail": {
+        "c": 832
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,256,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          127,
+          542
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,256,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          124,
+          544
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigA_per_clip,224]",
+      "pass": true,
+      "detail": {
+        "c": 740
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,224,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          173,
+          588
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,224,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          170,
+          590
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigA_per_clip,128]",
+      "pass": true,
+      "detail": {
+        "c": 439
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,128,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          324,
+          738
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigA_per_clip,128,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          320,
+          740
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[rigA_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[rigA_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[rigA_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[rigA_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[rigA_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[rigA_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[rigA_per_clip,principal]",
+      "pass": true,
+      "detail": {
+        "row": 128.0
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[rigA_per_clip,geometric]",
+      "pass": true,
+      "detail": {
+        "row": 128.9231
+      }
+    },
+    {
+      "check": "ftheta_feff_report[rigA_per_clip]",
+      "pass": true,
+      "detail": {
+        "f_eff_after": 266.02,
+        "f_eff_before_nominal": 434.25,
+        "crop_side_after": 832,
+        "crop_side_before": 533,
+        "retained_hfov_after_deg": 51.39,
+        "retained_hfov_before_deg": 32.85,
+        "paraxial_focal_px": 927.5,
+        "nominal_pinhole_focal_px": 554.26
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigB_per_clip,256]",
+      "pass": true,
+      "detail": {
+        "c": 832
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,256,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          339,
+          545
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,256,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          124,
+          544
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigB_per_clip,224]",
+      "pass": true,
+      "detail": {
+        "c": 740
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,224,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          385,
+          591
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,224,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          170,
+          590
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[rigB_per_clip,128]",
+      "pass": true,
+      "detail": {
+        "c": 439
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,128,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          536,
+          742
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[rigB_per_clip,128,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          320,
+          740
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[rigB_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[rigB_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[rigB_per_clip,1080x1920]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[rigB_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[rigB_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[rigB_per_clip,540x960]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[rigB_per_clip,principal]",
+      "pass": true,
+      "detail": {
+        "row": 128.0
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[rigB_per_clip,geometric]",
+      "pass": true,
+      "detail": {
+        "row": 194.1538
+      }
+    },
+    {
+      "check": "ftheta_feff_report[rigB_per_clip]",
+      "pass": true,
+      "detail": {
+        "f_eff_after": 266.02,
+        "f_eff_before_nominal": 434.25,
+        "crop_side_after": 832,
+        "crop_side_before": 533,
+        "retained_hfov_after_deg": 51.39,
+        "retained_hfov_before_deg": 32.85,
+        "paraxial_focal_px": 927.5,
+        "nominal_pinhole_focal_px": 554.26
+      }
+    },
+    {
+      "check": "ftheta_crop_size[median_fallback,256]",
+      "pass": true,
+      "detail": {
+        "c": 832
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,256,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          337,
+          542
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,256,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          832,
+          124,
+          544
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[median_fallback,224]",
+      "pass": true,
+      "detail": {
+        "c": 740
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,224,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          383,
+          588
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,224,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          740,
+          170,
+          590
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_size[median_fallback,128]",
+      "pass": true,
+      "detail": {
+        "c": 439
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,128,principal]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          534,
+          738
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_box[median_fallback,128,geometric]",
+      "pass": true,
+      "detail": {
+        "c_top_left": [
+          439,
+          320,
+          740
+        ]
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[median_fallback,1080x1920]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[median_fallback,1080x1920]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[median_fallback,1080x1920]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize BIT-EXACT[median_fallback,540x960]",
+      "pass": true,
+      "detail": {
+        "shape": [
+          3,
+          3,
+          256,
+          256
+        ],
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_crop_resize.last_f_eff[median_fallback,540x960]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.01962384006845
+      }
+    },
+    {
+      "check": "explicit CANONICAL_256 frame BIT-EXACT[median_fallback,540x960]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[median_fallback,principal]",
+      "pass": true,
+      "detail": {
+        "row": 128.0554
+      }
+    },
+    {
+      "check": "ftheta_horizon_row[median_fallback,geometric]",
+      "pass": true,
+      "detail": {
+        "row": 193.5938
+      }
+    },
+    {
+      "check": "ftheta_feff_report[median_fallback]",
+      "pass": true,
+      "detail": {
+        "f_eff_after": 266.02,
+        "f_eff_before_nominal": 434.25,
+        "crop_side_after": 832,
+        "crop_side_before": 533,
+        "retained_hfov_after_deg": 51.39,
+        "retained_hfov_before_deg": 32.85,
+        "paraxial_focal_px": 927.5,
+        "nominal_pinhole_focal_px": 554.26
+      }
+    },
+    {
+      "check": "pinhole_rectify BIT-EXACT[comma2k19]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0,
+        "observed_frac": 0.996094
+      }
+    },
+    {
+      "check": "pinhole_rectify observed_frac[comma2k19]",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "pinhole_geometry_report[comma2k19]",
+      "pass": true,
+      "detail": {
+        "camera_hfov_deg": 65.2,
+        "camera_vfov_deg": 51.3,
+        "canonical_hfov_deg": 51.39,
+        "naive_square_crop": {
+          "ideal_crop_px": 876,
+          "used_crop_px": 874,
+          "achieved_feff_px": 266.54,
+          "height_clamped": true,
+          "drop_in": true
+        },
+        "rectify_feff_px": 266.0,
+        "rectify_observed_frac": 0.9961,
+        "rectify_drop_in": true,
+        "max_distort_px_at_edge": 0.0,
+        "k1": 0.0
+      }
+    },
+    {
+      "check": "pinhole explicit-frame BIT-EXACT[comma2k19]",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "pinhole_rectify BIT-EXACT[pandaset]",
+      "pass": true,
+      "detail": {
+        "maxabsdiff": 0,
+        "observed_frac": 0.623322
+      }
+    },
+    {
+      "check": "pinhole_rectify observed_frac[pandaset]",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "pinhole_geometry_report[pandaset]",
+      "pass": true,
+      "detail": {
+        "camera_hfov_deg": 51.96,
+        "camera_vfov_deg": 30.66,
+        "canonical_hfov_deg": 51.39,
+        "naive_square_crop": {
+          "ideal_crop_px": 1896,
+          "used_crop_px": 1080,
+          "achieved_feff_px": 466.97,
+          "height_clamped": true,
+          "drop_in": false
+        },
+        "rectify_feff_px": 266.0,
+        "rectify_observed_frac": 0.6233,
+        "rectify_drop_in": true,
+        "max_distort_px_at_edge": 109.07,
+        "k1": -0.5894
+      }
+    },
+    {
+      "check": "pinhole explicit-frame BIT-EXACT[pandaset]",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "focal_crop_resize BIT-EXACT[comma2k19]",
+      "pass": true,
+      "detail": {
+        "f_eff": 266.5446224256293,
+        "maxabsdiff": 0
+      }
+    },
+    {
+      "check": "focal_crop_resize explicit-frame BIT-EXACT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "ftheta_undistort BIT-EXACT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "rect crop == square crop[256]",
+      "pass": true,
+      "detail": {
+        "c_h": 832,
+        "c_w": 832
+      }
+    },
+    {
+      "check": "rect crop == square crop[128]",
+      "pass": true,
+      "detail": {
+        "c_h": 439,
+        "c_w": 439
+      }
+    },
+    {
+      "check": "geometry_params(canonical) is EMPTY",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "check": "geometry_build_params(canonical) is EMPTY",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "canonical geometry leaves the cache key IDENTICAL",
+      "pass": true,
+      "detail": {
+        "key": "c7dea9971467"
+      }
+    },
+    {
+      "check": "a NON-canonical geometry mints a DIFFERENT key",
+      "pass": true,
+      "detail": {
+        "legacy": "c7dea9971467",
+        "wide": "5601bb64e332",
+        "fragment": {
+          "geom": "256x640f268.5119pin"
+        }
+      }
+    },
+    {
+      "check": "projection alone mints a DIFFERENT key",
+      "pass": true,
+      "detail": {
+        "cyl": "6675b2a3d2d7"
+      }
+    },
+    {
+      "check": "the SAME frame is key-STABLE (re-derivable, not random)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "changing ONLY f_ref now moves the key (it did NOT before)",
+      "pass": true,
+      "detail": {
+        "note": "pre-refactor params carried `size` but never `f_ref`, so a changed F_REF produced different pixels under the SAME key"
+      }
+    },
+    {
+      "check": "REFUSES a frame AND non-default legacy scalars together",
+      "pass": true,
+      "detail": "ValueError: both a CanonicalFrame (128x128f266pin) and non-default legacy scalars (size=256, f_ref=999.0) were passed. Pass the fram"
+    },
+    {
+      "check": "REFUSES an unknown projection",
+      "pass": true,
+      "detail": "ValueError: projection must be one of ('pinhole', 'cylindrical'), got 'fisheye'"
+    },
+    {
+      "check": "REFUSES a degenerate frame",
+      "pass": true,
+      "detail": "ValueError: degenerate frame 4x4"
+    },
+    {
+      "check": "REFUSES a non-positive f_ref",
+      "pass": true,
+      "detail": "ValueError: f_ref must be positive, got 0.0"
+    },
+    {
+      "check": "REFUSES frame.size on a NON-SQUARE frame",
+      "pass": true,
+      "detail": "ValueError: CanonicalFrame(256x640) is not square \u2014 this call site still assumes one scalar `size`. Use `frame.height` / `frame.widt"
+    },
+    {
+      "check": "REFUSES cylindrical_rectify on the corpus-median (rig-B) intrinsic",
+      "pass": true,
+      "detail": "ValueError: cylindrical_rectify needs a PER-CLIP principal point but got the corpus-median fallback (per_clip=False; its cy is a rig"
+    },
+    {
+      "check": "REFUSES an encoder input that does not match the declared geometry",
+      "pass": true,
+      "detail": "ValueError: encoder input is (32, 32) but the config declares (32, 64) (image_size=32, image_width=64). The positional embedding is "
+    },
+    {
+      "check": "REFUSES grid_hw read on a NON-SQUARE token grid",
+      "pass": true,
+      "detail": "ValueError: token grid is 4x8 (non-square) \u2014 this caller still reads the scalar `grid_hw`. Use `grid_shape` (rows, cols); every cons"
+    },
+    {
+      "check": "REFUSES a frame not divisible by the patch size",
+      "pass": true,
+      "detail": "GeometryMismatch: frame 60x60 is not divisible by patch 8; the ViT cannot tokenize it. Pick a multiple of the patch size (or change patch_"
+    },
+    {
+      "check": "REFUSES a HALF-APPLIED geometry (frame moved, encoder stale)",
+      "pass": true,
+      "detail": "GeometryMismatch: [config] GEOMETRY IS HALF-APPLIED.\n  declared frame     : 64x128 (f_ref 266.0, pinhole)\n  encoder input      : 64x64 (im"
+    },
+    {
+      "check": "REFUSES a HALF-APPLIED geometry (encoder moved, frame stale)",
+      "pass": true,
+      "detail": "GeometryMismatch: [config] GEOMETRY IS HALF-APPLIED.\n  declared frame     : 256x256 (f_ref 266.0, pinhole)\n  encoder input      : 64x128 ("
+    }
+  ],
+  "n_checks": 90,
+  "n_failed": 0,
+  "all_pass": true
+}

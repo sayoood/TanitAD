@@ -57,7 +57,9 @@ import torchvision.io as tvio
 from tanitad.data.comma2k19 import stack_frames
 
 MANIFEST_NAME = "_v2manifest.pt"
-MANIFEST_VERSION = 2        # v2: manifest also carries clip_id + episode_uid
+MANIFEST_VERSION = 3        # v2: + clip_id/episode_uid; v3: + per-clip image_h/
+#                             image_w (NON-SQUARE frames, 2026-07-27). A v2
+#                             sidecar is simply rebuilt — it is a derived cache.
 
 
 # --------------------------------------------------------------------------- #
@@ -104,7 +106,7 @@ def _jpeg_offsets(jpeg_len: torch.Tensor) -> torch.Tensor:
 
 
 def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
-                    a: int, b: int) -> torch.Tensor:
+                    a: int, b: int, codec: str = "jpeg") -> torch.Tensor:
     """Decode + D-015 channel-stack ONLY stacked-frame rows ``[a:b]``.
 
     ``stack_frames`` output row ``j`` = channel-concat of raw frames
@@ -113,10 +115,11 @@ def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
     just that raw sub-block and stacking it is BIT-IDENTICAL to decoding the
     whole clip and slicing ``[a:b]`` (validated in tests + on real data)."""
     k = n_stack - 1
-    raw = [tvio.decode_jpeg(jpeg_buf[int(offs[i]):int(offs[i + 1])],
-                            mode=tvio.ImageReadMode.RGB)
-           for i in range(a, b + k)]                       # [3, S, S] u8 each
-    return stack_frames(torch.stack(raw), n_stack)         # [b-a, 3*n_stack, S, S] u8
+    dec = tvio.decode_png if codec == "png" else tvio.decode_jpeg
+    raw = [dec(jpeg_buf[int(offs[i]):int(offs[i + 1])],
+               mode=tvio.ImageReadMode.RGB)
+           for i in range(a, b + k)]                       # [3, H, W] u8 each
+    return stack_frames(torch.stack(raw), n_stack)         # [b-a, 3*n_stack, H, W] u8
 
 
 # --------------------------------------------------------------------------- #
@@ -194,7 +197,7 @@ class LazyV2Episode:
 # --------------------------------------------------------------------------- #
 class V2CompressedCache:
     """Owns one v2 cache dir: the clip filename list and a bounded LRU of loaded
-    compressed payloads ``(jpeg_buf, offsets, n_stack)``. One instance is shared
+    compressed payloads ``(jpeg_buf, offsets, n_stack, codec)``. One instance is shared
     by all :class:`LazyV2Episode` of that dir.
 
     The LRU is per-PROCESS and never crosses the DataLoader-worker boundary (see
@@ -228,15 +231,16 @@ class V2CompressedCache:
             return hit
         path = os.path.join(self.cache_dir, self.files[clip_idx])
         d = torch.load(path, map_location="cpu", weights_only=False)
-        payload = (d["jpeg_buf"], _jpeg_offsets(d["jpeg_len"]), int(d["n_stack"]))
+        payload = (d["jpeg_buf"], _jpeg_offsets(d["jpeg_len"]),
+                   int(d["n_stack"]), str(d.get("codec", "jpeg")))
         self._lru[clip_idx] = payload
         while len(self._lru) > self.lru_size:
             self._lru.popitem(last=False)
         return payload
 
     def decode_stacked_range(self, clip_idx: int, a: int, b: int) -> torch.Tensor:
-        jpeg_buf, offs, n_stack = self._payload(clip_idx)
-        return _decode_stacked(jpeg_buf, offs, n_stack, a, b)
+        jpeg_buf, offs, n_stack, codec = self._payload(clip_idx)
+        return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec)
 
 
 # --------------------------------------------------------------------------- #
@@ -250,14 +254,21 @@ def _scan_meta(path: str) -> tuple:
 
     ``clip_id`` is the full UUID string ``build_compressed`` stores alongside
     the 16-bit ``episode_id``; it is what :func:`stable_episode_id` hashes.
-    Falls back to the filename stem for any payload predating that field."""
+    Falls back to the filename stem for any payload predating that field.
+
+    Geometry (2026-07-27): payloads written after the wide-FOV enablement carry
+    ``image_h`` / ``image_w``; older ones carry only the scalar ``image_size``
+    and are SQUARE by construction, so the fallback is exact, not a guess."""
     d = torch.load(path, map_location="cpu", weights_only=False, mmap=True)
     k = int(d["n_stack"]) - 1
     poses = d["poses"][k:].clone().contiguous().float()
     actions = d["actions"][k:].clone().contiguous().float()
     clip_id = str(d.get("clip_id") or os.path.basename(path).split(".v2ep")[0])
+    s = int(d["image_size"])
+    h = int(d.get("image_h", s))
+    w = int(d.get("image_w", s))
     return (poses, actions, int(d["episode_id"]), int(d["n_stack"]),
-            int(d["image_size"]), clip_id)
+            s, clip_id, h, w)
 
 
 def _list_clips(cache_dir: str) -> list[str]:
@@ -289,10 +300,10 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
                 print(f"[v2] manifest {mp} unreadable ({e!r}) -> rebuild",
                       flush=True)
     poses_l, act_l, eid_l, ns_l, sz_l, tout_l = [], [], [], [], [], []
-    cid_l, uid_l = [], []
+    cid_l, uid_l, h_l, w_l = [], [], [], []
     t0 = time.time()
     for j, fn in enumerate(files):
-        poses, actions, eid, n_stack, S, cid = _scan_meta(
+        poses, actions, eid, n_stack, S, cid, H, W = _scan_meta(
             os.path.join(cache_dir, fn))
         poses_l.append(poses)
         act_l.append(actions)
@@ -301,13 +312,15 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
         uid_l.append(stable_episode_id(cid))
         ns_l.append(n_stack)
         sz_l.append(S)
+        h_l.append(H)
+        w_l.append(W)
         tout_l.append(int(poses.shape[0]))
         if verbose and (j + 1) % 500 == 0:
             print(f"[v2] manifest {cache_dir}: {j + 1}/{len(files)} clips "
                   f"({time.time() - t0:.0f}s)", flush=True)
     man = {"version": MANIFEST_VERSION, "files": files, "poses": poses_l,
            "actions": act_l, "episode_id": eid_l, "n_stack": ns_l,
-           "image_size": sz_l, "T_out": tout_l,
+           "image_size": sz_l, "image_h": h_l, "image_w": w_l, "T_out": tout_l,
            "clip_id": cid_l, "episode_uid": uid_l}
     try:
         tmp = mp + ".tmp"
@@ -357,15 +370,21 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
         for i in range(len(man["files"])):
             n_stack = int(man["n_stack"][i])
             S = int(man["image_size"][i])
-            shape = torch.Size((int(man["T_out"][i]), 3 * n_stack, S, S))
+            # NON-SQUARE support (2026-07-27): a manifest predating v3 carries no
+            # image_h/image_w, and every such cache is square, so S is exact.
+            H = int(man.get("image_h", [S] * len(man["files"]))[i])
+            W = int(man.get("image_w", [S] * len(man["files"]))[i])
+            shape = torch.Size((int(man["T_out"][i]), 3 * n_stack, H, W))
             providers.append(LazyV2Episode(
                 cache, i, man["poses"][i], man["actions"][i],
                 int(man[key][i]), shape))
         if verbose:
             n_raw = len(set(int(x) for x in man["episode_id"]))
+            _h0 = int(man.get("image_h", man["image_size"])[0])
+            _w0 = int(man.get("image_w", man["image_size"])[0])
             msg = (f"[v2] {cd}: {len(man['files'])} providers "
                    f"(channels {3 * int(man['n_stack'][0])}, "
-                   f"{int(man['image_size'][0])} px), episode ids from '{key}'")
+                   f"{_h0}x{_w0} px), episode ids from '{key}'")
             if key == "episode_uid":
                 msg += (f" [collision-free; the as-built 16-bit ids would give "
                         f"only {n_raw} distinct for {len(man['files'])} clips]")
@@ -392,7 +411,8 @@ def decode_full_episode(path: str):
     n_stack = int(d["n_stack"])
     k = n_stack - 1
     offs = _jpeg_offsets(d["jpeg_len"])
-    frames = _decode_stacked(d["jpeg_buf"], offs, n_stack, 0, len(d["jpeg_len"]) - k)
+    frames = _decode_stacked(d["jpeg_buf"], offs, n_stack, 0,
+                             len(d["jpeg_len"]) - k, str(d.get("codec", "jpeg")))
     return ToyEpisode(frames=frames, actions=d["actions"][k:].float(),
                       poses=d["poses"][k:].float(), episode_id=int(d["episode_id"]),
                       maneuvers=None)

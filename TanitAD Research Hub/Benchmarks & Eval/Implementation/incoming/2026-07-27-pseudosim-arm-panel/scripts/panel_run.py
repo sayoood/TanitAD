@@ -53,12 +53,19 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import torch
+
+# ⚠️ MEASURED 2026-07-27 on pod2: torch defaults to one OMP thread per core (96),
+# so N concurrent arms spawn ~113 threads EACH and spend their time spinning in
+# OMP barriers -- GPU sm sat at 0-6 % while `utime` climbed. Cap it. This is a
+# scheduling fix only: thread count cannot change a float32 result here.
+torch.set_num_threads(int(os.environ.get("TORCH_THREADS", "6")))
 
 for p in ("/root/TanitAD/stack", "/root/TanitAD/stack/scripts", "/root/taniteval"):
     if p not in sys.path:
@@ -413,7 +420,7 @@ def main():
     t1 = time.time()
     pw = PS.pseudo_evaluate(planner, episodes, grid, device=device,
                             stride=a.stride, horizon=a.horizon, goals=goals,
-                            batch=a.batch, verbose=False)
+                            batch=a.batch, verbose=True)
     meta["planner_calls"] = int(pw["planner_calls"])
     meta["rollout_steps_executed"] = int(pw["rollout_steps_executed"])
     meta["wallclock_s"] = round(time.time() - t1, 1)

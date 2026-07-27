@@ -42,9 +42,11 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from tanitad.data._contract import finite_diff_accel
-from tanitad.data.calib import (F_REF, PHYSICALAI_FRONT_WIDE_FTHETA,
-                                FThetaIntrinsics, ftheta_crop_resize,
-                                ftheta_horizon_row)
+from tanitad.data.calib import (CANONICAL_256, F_REF,
+                                PHYSICALAI_FRONT_WIDE_FTHETA, CanonicalFrame,
+                                FThetaIntrinsics, as_frame, cylindrical_rectify,
+                                ftheta_crop_resize, ftheta_horizon_row,
+                                geometry_params)
 from tanitad.data.comma2k19 import stack_frames
 from tanitad.data.toy_driving import ToyEpisode
 
@@ -95,6 +97,39 @@ def label_params(wheelbase_mode: str = DEFAULT_WHEELBASE_MODE) -> dict:
     if wheelbase_mode == WHEELBASE_MODE_LEGACY:
         return {}
     return {"wheelbase_mode": wheelbase_mode}
+
+
+# ---------------------------------------------------------------------------
+# Projection regimes (wide-FOV enablement, 2026-07-27) — same discipline again.
+#
+# ``ftheta_crop``  the DEPLOYED path: crop the fisheye to the canonical field and
+#                  resize. Keeps the sensor's own radial warp in the pixels.
+# ``cylindrical``  equidistant-azimuth resample (`calib.cylindrical_rectify`):
+#                  uniform angular density across the width, straight verticals.
+#
+# BOTH centre on the per-clip principal point, so the two-rig fix holds either
+# way. The legacy regime contributes NO cache key (via `geometry_params`, which
+# keys on the FRAME); the projection travels inside the frame's tag, so a
+# cylindrical build can never collide with a crop build of the same size.
+# ---------------------------------------------------------------------------
+PROJECTION_MODE_CROP = "ftheta_crop"
+PROJECTION_MODE_CYLINDRICAL = "cylindrical"
+PROJECTION_MODES = (PROJECTION_MODE_CROP, PROJECTION_MODE_CYLINDRICAL)
+DEFAULT_PROJECTION_MODE = PROJECTION_MODE_CROP
+
+
+def geometry_build_params(frame: CanonicalFrame | None = None,
+                          projection_mode: str = DEFAULT_PROJECTION_MODE) -> dict:
+    """Build-param fragment for the input GEOMETRY. Empty for the canonical
+    256/266/pinhole/ftheta_crop setup — see `calib.geometry_params` for why that
+    emptiness is parity-critical and must never become unconditional."""
+    if projection_mode not in PROJECTION_MODES:
+        raise ValueError(f"unknown projection_mode {projection_mode!r}; "
+                         f"expected one of {PROJECTION_MODES}")
+    out = dict(geometry_params(frame))
+    if projection_mode != DEFAULT_PROJECTION_MODE:
+        out["projection_mode"] = projection_mode
+    return out
 
 # I7 task-identity fingerprint (D-017) — matches comma2k19's on purpose:
 # D-016 canonicalization makes the corpora compatible; I7 PROVES it per run.
@@ -448,8 +483,9 @@ def load_egomotion(ego_zip: Path, clip_id: str) -> pd.DataFrame:
         return pd.read_parquet(io.BytesIO(z.read(name)))
 
 
-def _decode_mp4(mp4: Path, size: int) -> Tensor:
-    """All frames of the clip -> uint8 [N, 3, size, size], f-theta-correct crop.
+def _decode_mp4(mp4: Path, size: int, frame: CanonicalFrame | None = None,
+                projection_mode: str = DEFAULT_PROJECTION_MODE) -> Tensor:
+    """All frames of the clip -> uint8 [N, 3, H, W], f-theta-correct crop.
 
     D-016 fix (GEOMETRY_INTEGRITY_AUDIT.md): the front-wide is an f-theta
     FISHEYE. Resolve the clip's REAL per-clip intrinsics (keyed by the clip_id
@@ -465,12 +501,24 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
     horizon) and the achieved horizon output row is recorded in
     ``_decode_mp4.last_calib`` for the data card / build check. The sacrificed
     wide periphery still returns later as H2 side-view modalities.
+
+    2026-07-27 (wide-FOV enablement): ``frame`` (default ``None`` == the square
+    256/266 frame) states the canonical geometry, and ``projection_mode``
+    selects the resampler — ``"ftheta_crop"`` (the deployed path, unchanged) or
+    ``"cylindrical"`` (equidistant azimuth, `calib.cylindrical_rectify`). BOTH
+    preserve the per-clip principal-point centring, i.e. the two-rig fix.
     """
     import av
     clip_id = Path(mp4).name.split(".")[0]
     root = _physicalai_root_of(mp4)
     intr = intrinsics_for_clip(clip_id, root)
     extr = extrinsics_for_clip(clip_id, root)
+    fr = as_frame(frame, size, F_REF)
+    if projection_mode not in PROJECTION_MODES:
+        raise ValueError(f"unknown projection_mode {projection_mode!r}; "
+                         f"expected one of {PROJECTION_MODES}")
+    remap = (cylindrical_rectify if projection_mode == PROJECTION_MODE_CYLINDRICAL
+             else None)
     # Decode + f-theta crop in FRAME BATCHES so the float32 upcast inside
     # ftheta_crop_resize never materializes the whole full-res clip at once: peak
     # is ~one batch (~1 GB) instead of ~15-18 GB for a 604-frame 1080p clip, so
@@ -494,10 +542,10 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
                 h, w = int(rgb.shape[-2]), int(rgb.shape[-1])
             buf.append(rgb)
             if len(buf) >= batch:
-                outs.append(ftheta_crop_resize(torch.stack(buf), intr, size))
+                outs.append(_remap_batch(torch.stack(buf), intr, fr, remap))
                 buf = []
     if buf:
-        outs.append(ftheta_crop_resize(torch.stack(buf), intr, size))
+        outs.append(_remap_batch(torch.stack(buf), intr, fr, remap))
     # Provenance: with the per-clip (cx, cy) crop the horizon output row is
     # ~size/2 for both rigs; record it (and the legacy geometric-center row it
     # replaces) so a build check can confirm rig A and rig B now agree.
@@ -507,12 +555,23 @@ def _decode_mp4(mp4: Path, size: int) -> Tensor:
         "clip_id": clip_id, "per_clip": intr.per_clip, "center": applied,
         "cx": round(intr.cx, 1), "cy": round(intr.cy, 1),
         "extrinsics": extr is not None,
-        "horizon_row": round(ftheta_horizon_row(intr, d_cam, h, w, size,
-                                                center=applied), 1),
+        "projection_mode": projection_mode,
+        "frame": fr.to_dict(), "frame_tag": fr.tag(),
+        "horizon_row": round(ftheta_horizon_row(intr, d_cam, h, w,
+                                                center=applied, frame=fr), 1),
         "horizon_row_legacy_geometric": round(
-            ftheta_horizon_row(intr, d_cam, h, w, size, center="geometric"), 1),
+            ftheta_horizon_row(intr, d_cam, h, w, center="geometric",
+                               frame=fr), 1),
     }
     return torch.cat(outs)
+
+
+def _remap_batch(vid: Tensor, intr: FThetaIntrinsics, frame: CanonicalFrame,
+                 remap) -> Tensor:
+    """One decode batch -> canonical frame, via the selected resampler."""
+    if remap is None:
+        return ftheta_crop_resize(vid, intr, frame=frame)
+    return remap(vid, intr, frame)
 
 
 def quaternion_yaw(qx: np.ndarray, qy: np.ndarray, qz: np.ndarray,
@@ -613,7 +672,9 @@ def maneuvers_for_poses(poses: Tensor) -> Tensor:
 
 def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
                   decode_fn=_decode_mp4,
-                  wheelbase_mode: str = DEFAULT_WHEELBASE_MODE) -> ToyEpisode:
+                  wheelbase_mode: str = DEFAULT_WHEELBASE_MODE,
+                  frame: CanonicalFrame | None = None,
+                  projection_mode: str = DEFAULT_PROJECTION_MODE) -> ToyEpisode:
     """One R0 clip -> contract episode at 10 Hz with D-015 stacking + per-timestep
     maneuver labels (refs.refb MANEUVER_CLASSES, derived from the poses).
 
@@ -623,6 +684,17 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     ``per_clip_v1`` joins the clip's real wheelbase from the dataset's own
     ``calibration/vehicle_dimensions`` and mints ``steer = atan(L_clip * curvature)``.
     A build in the corrected regime resolves STRICTLY (no silent 2.9 fallback).
+
+    ``frame`` / ``projection_mode`` (both default to the deployed geometry) set
+    the canonical input frame. They are passed to ``decode_fn`` ONLY when
+    non-default, so an injected test decoder with the legacy ``(mp4, size)``
+    signature keeps working untouched.
+
+    ⚠️ NEITHER AFFECTS EPISODE SELECTION OR IDENTITY. ``clip`` is chosen by
+    ``discover_r0_clips`` + ``split_clips``; the episode's index (and therefore
+    its ``ep_%05d.pt`` uid) is its position in that list; ``T`` comes from the
+    timestamp parquet and the egomotion, not from the pixels. Geometry changes
+    the PIXELS of an episode, never which episodes exist.
     """
     ts = pd.read_parquet(clip["timestamps"])
     tcol = next(c for c in ts.columns if "time" in c.lower())
@@ -640,7 +712,11 @@ def build_episode(clip: dict, size: int = 256, n_stack: int = 3,
     t_query = np.linspace(t_frames[0], t_frames[-1], n_target)
     frame_idx = np.searchsorted(t_frames, t_query).clip(0, len(t_frames) - 1)
 
-    vid = decode_fn(clip["mp4"], size)[frame_idx]              # [n,3,S,S] u8
+    if frame is None and projection_mode == DEFAULT_PROJECTION_MODE:
+        vid = decode_fn(clip["mp4"], size)[frame_idx]          # [n,3,S,S] u8
+    else:                                                      # [n,3,H,W] u8
+        vid = decode_fn(clip["mp4"], size, frame=frame,
+                        projection_mode=projection_mode)[frame_idx]
     if wheelbase_mode == WHEELBASE_MODE_LEGACY:
         wb = WHEELBASE
     elif wheelbase_mode == WHEELBASE_MODE_PER_CLIP:

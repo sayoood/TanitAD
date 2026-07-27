@@ -96,6 +96,12 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--reference", default="v4_oracle")
     ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--adversary", default="stand_still",
+                    help="comma-separated VALIDATION PROBES: scored and "
+                         "reported, but excluded from the panel gate and from "
+                         "the ranking. A probe whose whole purpose is to be "
+                         "REFUSED must not be able to delete the metric for "
+                         "every real arm.")
     a = ap.parse_args()
 
     in_dir = Path(a.in_dir)
@@ -165,11 +171,13 @@ def main():
         out_p.write_text(json.dumps(res, indent=2, default=str), encoding="utf-8")
 
     # --- 2b. THE PANEL GATE: admissible for EVERY arm, or not in the composite #
+    adversary = {s for s in a.adversary.split(",") if s.strip()}
+    gate_arms = [n for n in arms if n not in adversary]
     per_arm_ranges = {n: PS.discriminative_range(by_arm[n], by_arm=by_arm)
                       for n in arms}
     panel_admissible, panel_why = {}, {}
     for comp in PS.COMPONENT_WEIGHTS:
-        bad = [n for n in arms
+        bad = [n for n in gate_arms
                if not per_arm_ranges[n].get(comp, {}).get("admissible")]
         panel_admissible[comp] = (len(bad) == 0)
         panel_why[comp] = ("admissible for every arm" if not bad else
@@ -186,6 +194,15 @@ def main():
         "per_arm_admissibility": {
             n: {c: per_arm_ranges[n].get(c, {}).get("admissible")
                 for c in PS.COMPONENT_WEIGHTS} for n in sorted(arms)},
+        "validation_probes_excluded_from_the_gate": sorted(adversary & set(arms)),
+        "why_probes_are_excluded": (
+            "`stand_still` is an ADVERSARY, not a candidate: its whole purpose "
+            "is to be refused. It is inadmissible on EVERY component by "
+            "construction (ego_progress identically 0, recovery 100 % NaN, "
+            "comfort saturated at 1.0), so letting it into the intersection "
+            "would make the composite vacuous for every real arm -- the probe "
+            "would delete the metric it exists to test. It is still scored and "
+            "still reported; it just does not vote on the gate."),
     }
     print("[panel] PANEL GATE admitted="
           f"{sorted(res['PANEL_GATE']['admitted'])} "
@@ -319,7 +336,7 @@ def main():
                      "ABOVE a sighted arm.")}
 
     # D-NULL: is the instrument able to rank at all?
-    learned = [n for n in names if n not in ("v4_blind", "stand_still")]
+    learned = [n for n in names if n != "v4_blind" and n not in adversary]
     contrasts, n_sep = [], 0
     for i, x in enumerate(learned):
         for y in learned[i + 1:]:

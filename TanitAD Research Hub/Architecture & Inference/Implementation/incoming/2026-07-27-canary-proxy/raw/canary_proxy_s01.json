@@ -1,0 +1,309 @@
+{
+  "_experiment": "E-CP-1 \u2014 deploy-time proxy for world-model trustworthiness",
+  "_evidence_class": "MEASURED (ours) \u2014 recomputed from 2026-07-26-v5-imagination-selection/raw/v5_{v4,v1}_windows_reduced.pt, no GPU, no pod",
+  "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, unit = episode. NEVER overlapping_holdout_se.",
+  "_n": {
+    "windows": 881,
+    "episodes": 40
+  },
+  "_date": "2026-07-27",
+  "S_tests": {
+    "_read": "S-tests. The harness may not adjudicate until every PASS is true. S0d/S0e are the DELIBERATELY FAILING direction.",
+    "S0a_same_fan_and_windows": {
+      "ep": true,
+      "v0": true,
+      "fan_err4": true,
+      "A0_pick": true,
+      "C1_cost_is_WM_free": true,
+      "PASS": true
+    },
+    "S0b_reproduce_committed_arm_means": {
+      "v4": {
+        "A0": {
+          "got": 0.8563,
+          "committed": 0.8563,
+          "abs_diff": 2e-05,
+          "PASS": true
+        },
+        "C2": {
+          "got": 1.0653,
+          "committed": 1.0653,
+          "abs_diff": 3e-05,
+          "PASS": true
+        },
+        "O": {
+          "got": 0.2505,
+          "committed": 0.2505,
+          "abs_diff": 5e-05,
+          "PASS": true
+        },
+        "R": {
+          "got": 15.8738,
+          "committed": 15.8738,
+          "abs_diff": 3e-05,
+          "PASS": true
+        }
+      },
+      "v1": {
+        "A0": {
+          "got": 0.8563,
+          "committed": 0.8563,
+          "abs_diff": 2e-05,
+          "PASS": true
+        },
+        "C2": {
+          "got": 0.5645,
+          "committed": 0.5645,
+          "abs_diff": 1e-05,
+          "PASS": true
+        },
+        "O": {
+          "got": 0.2505,
+          "committed": 0.2505,
+          "abs_diff": 5e-05,
+          "PASS": true
+        }
+      }
+    },
+    "S0c_reproduce_oracle_gated_stratum": {
+      "n_windows": 200,
+      "n_episodes": 29,
+      "A0": 0.7085,
+      "C2": 0.333,
+      "delta": -0.3754,
+      "committed_delta": -0.3754,
+      "PASS": true
+    },
+    "S0d_noise_gate_must_NOT_win": {
+      "delta": 0.0343,
+      "lo": -0.0051,
+      "hi": 0.0744,
+      "ci95": 0.0398,
+      "p_delta_gt0": 0.955,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "selected_frac": 0.227,
+      "PASS": true,
+      "_read": "a random 22.7 % gate on v4's WM applies a rule that is separated-WORSE whole-set, so it must come out >= 0."
+    },
+    "S0e_empty_gate_is_exactly_zero": {
+      "delta": 0.0,
+      "separated": false,
+      "PASS": true
+    },
+    "S0f_oracle_features_excluded": {
+      "oracle_arrays": [
+        "canary_err",
+        "fan_err4"
+      ],
+      "used_as_gate_input": false,
+      "PASS": true,
+      "_read": "`canary_err` and `fan_err4` appear ONLY in the ceiling rows and the S-tests' answer key; `features()` never reads them."
+    },
+    "ALL_PASS": true
+  },
+  "stage1_ungated_baseline_and_ceilings": {
+    "_read": "\u2b50 PRIORITY 1. Every row is a DEPLOYABLE POLICY scored on all 881 windows / 40 episodes, so gated and ungated are on one axis. `delta` NEGATIVE = better than the as-trained selector.",
+    "A0_as_trained_ade_0_2s": 0.8563,
+    "arms": {
+      "v4": {
+        "UNGATED_C2_everywhere": {
+          "delta": 0.209,
+          "lo": 0.055,
+          "hi": 0.3642,
+          "ci95": 0.1546,
+          "p_delta_gt0": 0.9945,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 1.0653,
+          "selected_frac": 1.0,
+          "n_selected": 881,
+          "n_selected_episodes": 40
+        },
+        "ORACLE_gate_canary_le_0.55": {
+          "delta": -0.0852,
+          "lo": -0.119,
+          "hi": -0.0548,
+          "ci95": 0.0321,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.771,
+          "selected_frac": 0.227,
+          "n_selected": 200,
+          "n_selected_episodes": 29
+        },
+        "ORACLE_gate_best_canary_threshold_INSAMPLE": {
+          "delta": -0.1072,
+          "lo": -0.1599,
+          "hi": -0.0584,
+          "ci95": 0.0508,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.7491,
+          "selected_frac": 0.4007,
+          "n_selected": 353,
+          "n_selected_episodes": 37,
+          "threshold": 0.8285
+        },
+        "CEILING_perfect_per_window_gate": {
+          "delta": -0.2353,
+          "lo": -0.3287,
+          "hi": -0.1583,
+          "ci95": 0.0852,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.621,
+          "selected_frac": 0.336,
+          "n_selected": 296,
+          "n_selected_episodes": 36
+        },
+        "_single_arm": {
+          "A0": {
+            "mean": 0.8563,
+            "lo": 0.7189,
+            "hi": 1.0044,
+            "ci95": 0.1427,
+            "se": 0.0723,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "C2": {
+            "mean": 1.0653,
+            "lo": 0.9217,
+            "hi": 1.203,
+            "ci95": 0.1406,
+            "se": 0.0736,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        }
+      },
+      "v1": {
+        "UNGATED_C2_everywhere": {
+          "delta": -0.2918,
+          "lo": -0.4233,
+          "hi": -0.1598,
+          "ci95": 0.1318,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.5645,
+          "selected_frac": 1.0,
+          "n_selected": 881,
+          "n_selected_episodes": 40
+        },
+        "ORACLE_gate_canary_le_0.55": {
+          "delta": -0.3025,
+          "lo": -0.419,
+          "hi": -0.2021,
+          "ci95": 0.1085,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.5538,
+          "selected_frac": 0.7446,
+          "n_selected": 656,
+          "n_selected_episodes": 38
+        },
+        "ORACLE_gate_best_canary_threshold_INSAMPLE": {
+          "delta": -0.3147,
+          "lo": -0.4358,
+          "hi": -0.2022,
+          "ci95": 0.1168,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.5416,
+          "selected_frac": 0.8797,
+          "n_selected": 775,
+          "n_selected_episodes": 40,
+          "threshold": 0.7634
+        },
+        "CEILING_perfect_per_window_gate": {
+          "delta": -0.4065,
+          "lo": -0.5157,
+          "hi": -0.3097,
+          "ci95": 0.103,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap",
+          "policy_ade_0_2s": 0.4497,
+          "selected_frac": 0.5494,
+          "n_selected": 484,
+          "n_selected_episodes": 38
+        },
+        "_single_arm": {
+          "A0": {
+            "mean": 0.8563,
+            "lo": 0.7189,
+            "hi": 1.0044,
+            "ci95": 0.1427,
+            "se": 0.0723,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "C2": {
+            "mean": 0.5645,
+            "lo": 0.4851,
+            "hi": 0.6467,
+            "ci95": 0.0808,
+            "se": 0.0423,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        }
+      }
+    }
+  }
+}

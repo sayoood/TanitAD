@@ -260,7 +260,7 @@ def compute_losses(model, heads, batch, cfg, needed_fut, idx_of, *,
     loss_inv = (a_hat - actions[:, -2]).pow(2).mean()
     loss_h15 = torch.zeros((), device=device)
     if model.imagination is not None and torch.rand(()) < cfg.h15.mask_prob:
-        masked, vis = sector_mask(frames[:, -1], model.encoder.grid_hw)
+        masked, vis = sector_mask(frames[:, -1], model.encoder.grid_shape)
         tok_belief = model.encode_tokens(masked)
         tok_true = model.encode_tokens(fut[:, 0])
         imag_pred, logvar = model.imagination(tok_belief, vis)

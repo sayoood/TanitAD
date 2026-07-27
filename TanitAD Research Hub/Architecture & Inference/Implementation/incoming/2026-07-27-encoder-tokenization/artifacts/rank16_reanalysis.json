@@ -1,0 +1,716 @@
+{
+  "what": "PAIRED contrasts for the rank-16 dose-response ladder",
+  "source_scores": "2026-07-26-situation-semantics/artifacts/t1_heldout_scores.npz",
+  "estimator": "episode-cluster bootstrap over held-out CLIP CLUSTERS (taniteval.ci._draws), B=2000, seed=0; paired = same resampled clusters for both arms of a contrast",
+  "NOT_used": "overlapping_holdout_se",
+  "n_frames": 50119,
+  "n_positives": 1642,
+  "base_rate": 0.03276202637722221,
+  "n_clip_clusters": 322,
+  "readers": [
+    "ridge",
+    "logistic"
+  ],
+  "contrasts": {
+    "[R1-A] ego_win+img_pca16 - ego_win (ridge)": {
+      "question": "THE LOAD-BEARING ONE: does rank-16 vision add anything to ego?",
+      "AP_a": 0.120728,
+      "AP_b": 0.119873,
+      "ratio_a": 3.685,
+      "ratio_b": 3.6589,
+      "delta_AP_point": 0.000855,
+      "delta_boot_median": 0.001134,
+      "lo": -0.022041,
+      "hi": 0.022991,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca64 - ego_win (ridge)": {
+      "question": "does rank-64 vision add to ego?",
+      "AP_a": 0.098283,
+      "AP_b": 0.119873,
+      "ratio_a": 2.9999,
+      "ratio_b": 3.6589,
+      "delta_AP_point": -0.02159,
+      "delta_boot_median": -0.021746,
+      "lo": -0.050609,
+      "hi": 0.001751,
+      "separated": false,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca256 - ego_win (ridge)": {
+      "question": "does rank-256 vision add to ego?",
+      "AP_a": 0.069312,
+      "AP_b": 0.119873,
+      "ratio_a": 2.1156,
+      "ratio_b": 3.6589,
+      "delta_AP_point": -0.050561,
+      "delta_boot_median": -0.050713,
+      "lo": -0.086038,
+      "hi": -0.019558,
+      "separated": true,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca16 - ego_win+img_pca64 (ridge)": {
+      "question": "is the k16->k64 'degradation' separated?",
+      "AP_a": 0.120728,
+      "AP_b": 0.098283,
+      "ratio_a": 3.685,
+      "ratio_b": 2.9999,
+      "delta_AP_point": 0.022445,
+      "delta_boot_median": 0.022368,
+      "lo": 0.004996,
+      "hi": 0.045585,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca64 - ego_win+img_pca256 (ridge)": {
+      "question": "is the k64->k256 degradation separated?",
+      "AP_a": 0.098283,
+      "AP_b": 0.069312,
+      "ratio_a": 2.9999,
+      "ratio_b": 2.1156,
+      "delta_AP_point": 0.028971,
+      "delta_boot_median": 0.028027,
+      "lo": 0.006462,
+      "hi": 0.053668,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca16 - ego_win+img_pca256 (ridge)": {
+      "question": "is the k16->k256 degradation separated?",
+      "AP_a": 0.120728,
+      "AP_b": 0.069312,
+      "ratio_a": 3.685,
+      "ratio_b": 2.1156,
+      "delta_AP_point": 0.051416,
+      "delta_boot_median": 0.050581,
+      "lo": 0.017012,
+      "hi": 0.087918,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win - ego_t (ridge)": {
+      "question": "is the ego window itself worth its 16 dims?",
+      "AP_a": 0.119873,
+      "AP_b": 0.117982,
+      "ratio_a": 3.6589,
+      "ratio_b": 3.6012,
+      "delta_AP_point": 0.001891,
+      "delta_boot_median": 0.001956,
+      "lo": -0.010458,
+      "hi": 0.01662,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_t (ridge)": {
+      "question": "DISCRIMINATOR: image-alone rank16 vs raw2048 - flat or peaked?",
+      "AP_a": 0.062119,
+      "AP_b": 0.061963,
+      "ratio_a": 1.8961,
+      "ratio_b": 1.8913,
+      "delta_AP_point": 0.000156,
+      "delta_boot_median": 0.000371,
+      "lo": -0.001065,
+      "hi": 0.002144,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca64 - img_t (ridge)": {
+      "question": "image-alone rank64 vs raw2048",
+      "AP_a": 0.061967,
+      "AP_b": 0.061963,
+      "ratio_a": 1.8914,
+      "ratio_b": 1.8913,
+      "delta_AP_point": 4e-06,
+      "delta_boot_median": 3e-06,
+      "lo": -1.1e-05,
+      "hi": 3e-05,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca256 - img_t (ridge)": {
+      "question": "image-alone rank256 vs raw2048",
+      "AP_a": 0.061963,
+      "AP_b": 0.061963,
+      "ratio_a": 1.8913,
+      "ratio_b": 1.8913,
+      "delta_AP_point": 0.0,
+      "delta_boot_median": 0.0,
+      "lo": -0.0,
+      "hi": 0.0,
+      "separated": false,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_pca64 (ridge)": {
+      "question": "image-alone k16 vs k64",
+      "AP_a": 0.062119,
+      "AP_b": 0.061967,
+      "ratio_a": 1.8961,
+      "ratio_b": 1.8914,
+      "delta_AP_point": 0.000152,
+      "delta_boot_median": 0.000367,
+      "lo": -0.00108,
+      "hi": 0.002132,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_pca256 (ridge)": {
+      "question": "image-alone k16 vs k256",
+      "AP_a": 0.062119,
+      "AP_b": 0.061963,
+      "ratio_a": 1.8961,
+      "ratio_b": 1.8913,
+      "delta_AP_point": 0.000156,
+      "delta_boot_median": 0.000371,
+      "lo": -0.001065,
+      "hi": 0.002144,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_t - img_t_SHUFFLED (ridge)": {
+      "question": "does the raw 2048-d image state carry signal at all?",
+      "AP_a": 0.061963,
+      "AP_b": 0.032961,
+      "ratio_a": 1.8913,
+      "ratio_b": 1.0061,
+      "delta_AP_point": 0.029002,
+      "delta_boot_median": 0.028215,
+      "lo": 0.014968,
+      "hi": 0.04662,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca16 - ego_win (logistic)": {
+      "question": "THE LOAD-BEARING ONE: does rank-16 vision add anything to ego?",
+      "AP_a": 0.116598,
+      "AP_b": 0.112335,
+      "ratio_a": 3.5589,
+      "ratio_b": 3.4288,
+      "delta_AP_point": 0.004263,
+      "delta_boot_median": 0.003677,
+      "lo": -0.02142,
+      "hi": 0.029714,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca64 - ego_win (logistic)": {
+      "question": "does rank-64 vision add to ego?",
+      "AP_a": 0.082078,
+      "AP_b": 0.112335,
+      "ratio_a": 2.5053,
+      "ratio_b": 3.4288,
+      "delta_AP_point": -0.030257,
+      "delta_boot_median": -0.030535,
+      "lo": -0.061627,
+      "hi": -0.00601,
+      "separated": true,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca256 - ego_win (logistic)": {
+      "question": "does rank-256 vision add to ego?",
+      "AP_a": 0.0661,
+      "AP_b": 0.112335,
+      "ratio_a": 2.0176,
+      "ratio_b": 3.4288,
+      "delta_AP_point": -0.046235,
+      "delta_boot_median": -0.046599,
+      "lo": -0.079513,
+      "hi": -0.019963,
+      "separated": true,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca16 - ego_win+img_pca64 (logistic)": {
+      "question": "is the k16->k64 'degradation' separated?",
+      "AP_a": 0.116598,
+      "AP_b": 0.082078,
+      "ratio_a": 3.5589,
+      "ratio_b": 2.5053,
+      "delta_AP_point": 0.03452,
+      "delta_boot_median": 0.033848,
+      "lo": 0.014742,
+      "hi": 0.061544,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca64 - ego_win+img_pca256 (logistic)": {
+      "question": "is the k64->k256 degradation separated?",
+      "AP_a": 0.082078,
+      "AP_b": 0.0661,
+      "ratio_a": 2.5053,
+      "ratio_b": 2.0176,
+      "delta_AP_point": 0.015978,
+      "delta_boot_median": 0.015862,
+      "lo": -0.002579,
+      "hi": 0.036159,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win+img_pca16 - ego_win+img_pca256 (logistic)": {
+      "question": "is the k16->k256 degradation separated?",
+      "AP_a": 0.116598,
+      "AP_b": 0.0661,
+      "ratio_a": 3.5589,
+      "ratio_b": 2.0176,
+      "delta_AP_point": 0.050498,
+      "delta_boot_median": 0.049828,
+      "lo": 0.021723,
+      "hi": 0.085479,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-A] ego_win - ego_t (logistic)": {
+      "question": "is the ego window itself worth its 16 dims?",
+      "AP_a": 0.112335,
+      "AP_b": 0.115193,
+      "ratio_a": 3.4288,
+      "ratio_b": 3.5161,
+      "delta_AP_point": -0.002858,
+      "delta_boot_median": -0.00261,
+      "lo": -0.016667,
+      "hi": 0.011796,
+      "separated": false,
+      "direction": "b>a",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_t (logistic)": {
+      "question": "DISCRIMINATOR: image-alone rank16 vs raw2048 - flat or peaked?",
+      "AP_a": 0.060018,
+      "AP_b": 0.058674,
+      "ratio_a": 1.8319,
+      "ratio_b": 1.7909,
+      "delta_AP_point": 0.001344,
+      "delta_boot_median": 0.00118,
+      "lo": -0.001352,
+      "hi": 0.004557,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca64 - img_t (logistic)": {
+      "question": "image-alone rank64 vs raw2048",
+      "AP_a": 0.058677,
+      "AP_b": 0.058674,
+      "ratio_a": 1.791,
+      "ratio_b": 1.7909,
+      "delta_AP_point": 3e-06,
+      "delta_boot_median": -2e-06,
+      "lo": -3e-05,
+      "hi": 3.2e-05,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca256 - img_t (logistic)": {
+      "question": "image-alone rank256 vs raw2048",
+      "AP_a": 0.058677,
+      "AP_b": 0.058674,
+      "ratio_a": 1.791,
+      "ratio_b": 1.7909,
+      "delta_AP_point": 3e-06,
+      "delta_boot_median": 3e-06,
+      "lo": -4e-06,
+      "hi": 1.3e-05,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_pca64 (logistic)": {
+      "question": "image-alone k16 vs k64",
+      "AP_a": 0.060018,
+      "AP_b": 0.058677,
+      "ratio_a": 1.8319,
+      "ratio_b": 1.791,
+      "delta_AP_point": 0.001341,
+      "delta_boot_median": 0.001184,
+      "lo": -0.001339,
+      "hi": 0.004573,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_pca16 - img_pca256 (logistic)": {
+      "question": "image-alone k16 vs k256",
+      "AP_a": 0.060018,
+      "AP_b": 0.058677,
+      "ratio_a": 1.8319,
+      "ratio_b": 1.791,
+      "delta_AP_point": 0.001341,
+      "delta_boot_median": 0.001179,
+      "lo": -0.001356,
+      "hi": 0.004559,
+      "separated": false,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    },
+    "[R1-B] img_t - img_t_SHUFFLED (logistic)": {
+      "question": "does the raw 2048-d image state carry signal at all?",
+      "AP_a": 0.058674,
+      "AP_b": 0.033354,
+      "ratio_a": 1.7909,
+      "ratio_b": 1.0181,
+      "delta_AP_point": 0.02532,
+      "delta_boot_median": 0.025187,
+      "lo": 0.013301,
+      "hi": 0.041868,
+      "separated": true,
+      "direction": "a>b",
+      "n_draws_used": 2000
+    }
+  },
+  "arms": {
+    "ego_t_ridge": {
+      "AP": 0.117982,
+      "AP_lo": 0.076671,
+      "AP_hi": 0.169736,
+      "AP_over_base": 3.6012,
+      "n_draws_used": 2000
+    },
+    "ego_win_ridge": {
+      "AP": 0.119873,
+      "AP_lo": 0.08006,
+      "AP_hi": 0.17042,
+      "AP_over_base": 3.6589,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca16_ridge": {
+      "AP": 0.120728,
+      "AP_lo": 0.082013,
+      "AP_hi": 0.171668,
+      "AP_over_base": 3.685,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca256_ridge": {
+      "AP": 0.069312,
+      "AP_lo": 0.047019,
+      "AP_hi": 0.103963,
+      "AP_over_base": 2.1156,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca64_ridge": {
+      "AP": 0.098283,
+      "AP_lo": 0.065636,
+      "AP_hi": 0.141293,
+      "AP_over_base": 2.9999,
+      "n_draws_used": 2000
+    },
+    "img_pca16_ridge": {
+      "AP": 0.062119,
+      "AP_lo": 0.044493,
+      "AP_hi": 0.083513,
+      "AP_over_base": 1.8961,
+      "n_draws_used": 2000
+    },
+    "img_pca256_ridge": {
+      "AP": 0.061963,
+      "AP_lo": 0.044389,
+      "AP_hi": 0.083006,
+      "AP_over_base": 1.8913,
+      "n_draws_used": 2000
+    },
+    "img_pca64_ridge": {
+      "AP": 0.061967,
+      "AP_lo": 0.044385,
+      "AP_hi": 0.083004,
+      "AP_over_base": 1.8914,
+      "n_draws_used": 2000
+    },
+    "img_t_ridge": {
+      "AP": 0.061963,
+      "AP_lo": 0.044389,
+      "AP_hi": 0.083006,
+      "AP_over_base": 1.8913,
+      "n_draws_used": 2000
+    },
+    "img_t_SHUFFLED_ridge": {
+      "AP": 0.032961,
+      "AP_lo": 0.025131,
+      "AP_hi": 0.041397,
+      "AP_over_base": 1.0061,
+      "n_draws_used": 2000
+    },
+    "img_win_flat_ridge": {
+      "AP": 0.040019,
+      "AP_lo": 0.029426,
+      "AP_hi": 0.054595,
+      "AP_over_base": 1.2215,
+      "n_draws_used": 2000
+    },
+    "img_win_mean_ridge": {
+      "AP": 0.040571,
+      "AP_lo": 0.029794,
+      "AP_hi": 0.057885,
+      "AP_over_base": 1.2384,
+      "n_draws_used": 2000
+    },
+    "ego_t_logistic": {
+      "AP": 0.115193,
+      "AP_lo": 0.075264,
+      "AP_hi": 0.165802,
+      "AP_over_base": 3.5161,
+      "n_draws_used": 2000
+    },
+    "ego_win_logistic": {
+      "AP": 0.112335,
+      "AP_lo": 0.075545,
+      "AP_hi": 0.159247,
+      "AP_over_base": 3.4288,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca16_logistic": {
+      "AP": 0.116598,
+      "AP_lo": 0.077248,
+      "AP_hi": 0.166208,
+      "AP_over_base": 3.5589,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca256_logistic": {
+      "AP": 0.0661,
+      "AP_lo": 0.043992,
+      "AP_hi": 0.094708,
+      "AP_over_base": 2.0176,
+      "n_draws_used": 2000
+    },
+    "ego_win+img_pca64_logistic": {
+      "AP": 0.082078,
+      "AP_lo": 0.054647,
+      "AP_hi": 0.118447,
+      "AP_over_base": 2.5053,
+      "n_draws_used": 2000
+    },
+    "img_pca16_logistic": {
+      "AP": 0.060018,
+      "AP_lo": 0.043263,
+      "AP_hi": 0.081318,
+      "AP_over_base": 1.8319,
+      "n_draws_used": 2000
+    },
+    "img_pca256_logistic": {
+      "AP": 0.058677,
+      "AP_lo": 0.042985,
+      "AP_hi": 0.078889,
+      "AP_over_base": 1.791,
+      "n_draws_used": 2000
+    },
+    "img_pca64_logistic": {
+      "AP": 0.058677,
+      "AP_lo": 0.042975,
+      "AP_hi": 0.078874,
+      "AP_over_base": 1.791,
+      "n_draws_used": 2000
+    },
+    "img_t_logistic": {
+      "AP": 0.058674,
+      "AP_lo": 0.042985,
+      "AP_hi": 0.078877,
+      "AP_over_base": 1.7909,
+      "n_draws_used": 2000
+    },
+    "img_t_SHUFFLED_logistic": {
+      "AP": 0.033354,
+      "AP_lo": 0.02546,
+      "AP_hi": 0.041899,
+      "AP_over_base": 1.0181,
+      "n_draws_used": 2000
+    },
+    "img_win_flat_logistic": {
+      "AP": 0.063469,
+      "AP_lo": 0.045861,
+      "AP_hi": 0.084737,
+      "AP_over_base": 1.9373,
+      "n_draws_used": 2000
+    },
+    "img_win_mean_logistic": {
+      "AP": 0.041282,
+      "AP_lo": 0.030289,
+      "AP_hi": 0.058103,
+      "AP_over_base": 1.26,
+      "n_draws_used": 2000
+    }
+  },
+  "C_FID_reproduce_published_AP": {
+    "tol": 1e-06,
+    "checked": [
+      {
+        "arm": "ego_t_ridge",
+        "recomputed": 0.11798206,
+        "published": 0.117982,
+        "match": true
+      },
+      {
+        "arm": "ego_t_logistic",
+        "recomputed": 0.11519299,
+        "published": 0.115193,
+        "match": true
+      },
+      {
+        "arm": "ego_win_ridge",
+        "recomputed": 0.11987307,
+        "published": 0.119873,
+        "match": true
+      },
+      {
+        "arm": "ego_win_logistic",
+        "recomputed": 0.11233535,
+        "published": 0.112335,
+        "match": true
+      },
+      {
+        "arm": "img_t_SHUFFLED_ridge",
+        "recomputed": 0.03296137,
+        "published": 0.032961,
+        "match": true
+      },
+      {
+        "arm": "img_t_SHUFFLED_logistic",
+        "recomputed": 0.03335375,
+        "published": 0.033354,
+        "match": true
+      },
+      {
+        "arm": "img_t_ridge",
+        "recomputed": 0.06196265,
+        "published": 0.061963,
+        "match": true
+      },
+      {
+        "arm": "img_t_logistic",
+        "recomputed": 0.0586736,
+        "published": 0.058674,
+        "match": true
+      },
+      {
+        "arm": "img_win_mean_ridge",
+        "recomputed": 0.04057111,
+        "published": 0.040571,
+        "match": true
+      },
+      {
+        "arm": "img_win_mean_logistic",
+        "recomputed": 0.04128167,
+        "published": 0.041282,
+        "match": true
+      },
+      {
+        "arm": "img_win_flat_ridge",
+        "recomputed": 0.04001898,
+        "published": 0.040019,
+        "match": true
+      },
+      {
+        "arm": "img_win_flat_logistic",
+        "recomputed": 0.06346927,
+        "published": 0.063469,
+        "match": true
+      },
+      {
+        "arm": "img_pca16_ridge",
+        "recomputed": 0.06211853,
+        "published": 0.062118,
+        "match": true
+      },
+      {
+        "arm": "img_pca16_logistic",
+        "recomputed": 0.06001829,
+        "published": 0.060018,
+        "match": true
+      },
+      {
+        "arm": "img_pca64_ridge",
+        "recomputed": 0.06196697,
+        "published": 0.061967,
+        "match": true
+      },
+      {
+        "arm": "img_pca64_logistic",
+        "recomputed": 0.05867716,
+        "published": 0.058677,
+        "match": true
+      },
+      {
+        "arm": "img_pca256_ridge",
+        "recomputed": 0.06196265,
+        "published": 0.061963,
+        "match": true
+      },
+      {
+        "arm": "img_pca256_logistic",
+        "recomputed": 0.05867688,
+        "published": 0.058677,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca16_ridge",
+        "recomputed": 0.12072803,
+        "published": 0.120728,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca16_logistic",
+        "recomputed": 0.11659776,
+        "published": 0.116598,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca64_ridge",
+        "recomputed": 0.09828317,
+        "published": 0.098283,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca64_logistic",
+        "recomputed": 0.08207839,
+        "published": 0.082078,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca256_ridge",
+        "recomputed": 0.06931167,
+        "published": 0.069312,
+        "match": true
+      },
+      {
+        "arm": "ego_win+img_pca256_logistic",
+        "recomputed": 0.06609989,
+        "published": 0.0661,
+        "match": true
+      }
+    ],
+    "all_match": true
+  },
+  "C_NEG_shuffled_must_not_separate": {
+    "img_t_SHUFFLED_ridge": {
+      "delta_vs_random_ranker": 0.000176,
+      "lo": -0.002021,
+      "hi": 0.002433,
+      "separated": false,
+      "n_draws_used": 2000
+    },
+    "img_t_SHUFFLED_logistic": {
+      "delta_vs_random_ranker": 0.000535,
+      "lo": -0.001792,
+      "hi": 0.002894,
+      "separated": false,
+      "n_draws_used": 2000
+    }
+  }
+}

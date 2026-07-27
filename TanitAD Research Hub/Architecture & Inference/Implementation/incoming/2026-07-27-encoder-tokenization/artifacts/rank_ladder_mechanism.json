@@ -1,0 +1,305 @@
+{
+  "what": "Is the rank-16 dose-response a property of VISION or of the READER? Synthetic reproduction at the real shapes.",
+  "DECLARED_LIMITATION": "SYNTHETIC. The real 2048-d features are on a busy pod. This says nothing about PhysicalAI content; it characterises the ESTIMATOR at these shapes.",
+  "shapes": {
+    "train_rows": 31032,
+    "train_clusters": 198,
+    "heldout_rows": 50119,
+    "heldout_clusters": 322,
+    "d_ego": 16,
+    "ks": [
+      16,
+      64,
+      256,
+      2048
+    ]
+  },
+  "arms": {
+    "noise_sharedlam": {
+      "arm": "noise_sharedlam",
+      "img_signal_weight": 0.0,
+      "per_block_lambda": false,
+      "ks_evaluated": [
+        16,
+        64,
+        256,
+        2048
+      ],
+      "heldout_base_rate": 0.04084,
+      "rows": {
+        "ego_alone": {
+          "AP_over_base": 1.2638,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "ego+img_k16": {
+          "AP_over_base": 1.2607,
+          "dim": 32,
+          "lam": [
+            0.31622776601683794,
+            0.31622776601683794
+          ]
+        },
+        "ego+img_k64": {
+          "AP_over_base": 1.2648,
+          "dim": 80,
+          "lam": [
+            1.0,
+            1.0
+          ]
+        },
+        "ego+img_k256": {
+          "AP_over_base": 1.2746,
+          "dim": 272,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "ego+img_k2048": {
+          "AP_over_base": 1.2088,
+          "dim": 2064,
+          "lam": [
+            3162.2776601683795,
+            3162.2776601683795
+          ]
+        },
+        "img_k16_alone": {
+          "AP_over_base": 0.9869,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "img_k2048_alone": {
+          "AP_over_base": 1.0041,
+          "dim": 2048,
+          "lam": [
+            3162.2776601683795,
+            3162.2776601683795
+          ]
+        }
+      },
+      "ladder_ego_then_ks": [
+        1.2638,
+        1.2607,
+        1.2648,
+        1.2746,
+        1.2088
+      ],
+      "monotone_decline_after_peak": false,
+      "collapse_ratio_k16_over_kmax": 1.043
+    },
+    "signal_sharedlam": {
+      "arm": "signal_sharedlam",
+      "img_signal_weight": 0.45,
+      "per_block_lambda": false,
+      "ks_evaluated": [
+        16,
+        64,
+        256,
+        2048
+      ],
+      "heldout_base_rate": 0.04104,
+      "rows": {
+        "ego_alone": {
+          "AP_over_base": 1.252,
+          "dim": 16,
+          "lam": [
+            0.31622776601683794,
+            0.31622776601683794
+          ]
+        },
+        "ego+img_k16": {
+          "AP_over_base": 1.2511,
+          "dim": 32,
+          "lam": [
+            0.31622776601683794,
+            0.31622776601683794
+          ]
+        },
+        "ego+img_k64": {
+          "AP_over_base": 1.254,
+          "dim": 80,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "ego+img_k256": {
+          "AP_over_base": 1.2635,
+          "dim": 272,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "ego+img_k2048": {
+          "AP_over_base": 1.2109,
+          "dim": 2064,
+          "lam": [
+            3162.2776601683795,
+            3162.2776601683795
+          ]
+        },
+        "img_k16_alone": {
+          "AP_over_base": 1.0297,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.1
+          ]
+        },
+        "img_k2048_alone": {
+          "AP_over_base": 1.0267,
+          "dim": 2048,
+          "lam": [
+            10000.0,
+            10000.0
+          ]
+        }
+      },
+      "ladder_ego_then_ks": [
+        1.252,
+        1.2511,
+        1.254,
+        1.2635,
+        1.2109
+      ],
+      "monotone_decline_after_peak": false,
+      "collapse_ratio_k16_over_kmax": 1.033
+    },
+    "noise_perblocklam": {
+      "arm": "noise_perblocklam",
+      "img_signal_weight": 0.0,
+      "per_block_lambda": true,
+      "ks_evaluated": [
+        16,
+        64,
+        256
+      ],
+      "heldout_base_rate": 0.04084,
+      "rows": {
+        "ego_alone": {
+          "AP_over_base": 1.2638,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.001
+          ]
+        },
+        "ego+img_k16": {
+          "AP_over_base": 1.2614,
+          "dim": 32,
+          "lam": [
+            316.22776601683796,
+            31622.776601683796
+          ]
+        },
+        "ego+img_k64": {
+          "AP_over_base": 1.2609,
+          "dim": 80,
+          "lam": [
+            1000.0,
+            100000.0
+          ]
+        },
+        "ego+img_k256": {
+          "AP_over_base": 1.2646,
+          "dim": 272,
+          "lam": [
+            1000.0,
+            100000.0
+          ]
+        },
+        "img_k16_alone": {
+          "AP_over_base": 0.9869,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.001
+          ]
+        }
+      },
+      "ladder_ego_then_ks": [
+        1.2638,
+        1.2614,
+        1.2609,
+        1.2646
+      ],
+      "monotone_decline_after_peak": false,
+      "collapse_ratio_k16_over_kmax": 0.997
+    },
+    "signal_perblocklam": {
+      "arm": "signal_perblocklam",
+      "img_signal_weight": 0.45,
+      "per_block_lambda": true,
+      "ks_evaluated": [
+        16,
+        64,
+        256
+      ],
+      "heldout_base_rate": 0.04104,
+      "rows": {
+        "ego_alone": {
+          "AP_over_base": 1.252,
+          "dim": 16,
+          "lam": [
+            0.31622776601683794,
+            0.0031622776601683794
+          ]
+        },
+        "ego+img_k16": {
+          "AP_over_base": 1.2488,
+          "dim": 32,
+          "lam": [
+            1000.0,
+            100000.0
+          ]
+        },
+        "ego+img_k64": {
+          "AP_over_base": 1.2501,
+          "dim": 80,
+          "lam": [
+            1000.0,
+            100000.0
+          ]
+        },
+        "ego+img_k256": {
+          "AP_over_base": 1.2539,
+          "dim": 272,
+          "lam": [
+            1000.0,
+            100000.0
+          ]
+        },
+        "img_k16_alone": {
+          "AP_over_base": 1.0297,
+          "dim": 16,
+          "lam": [
+            0.1,
+            0.001
+          ]
+        }
+      },
+      "ladder_ego_then_ks": [
+        1.252,
+        1.2488,
+        1.2501,
+        1.2539
+      ],
+      "monotone_decline_after_peak": false,
+      "collapse_ratio_k16_over_kmax": 0.996
+    }
+  },
+  "VERDICT": {
+    "noise_block_reproduces_the_collapse": false,
+    "noise_collapse_ratio": 1.043,
+    "published_collapse_ratio_k16_over_k256": 1.741,
+    "reading": "If a ZERO-INFORMATION image block reproduces the monotone collapse, the ladder's shape is not evidence about visual content or about the predictor's dimensional need."
+  }
+}

@@ -15,13 +15,35 @@ from pathlib import Path
 @dataclass
 class EncoderConfig:
     in_channels: int = 1          # 1 = BEV toy; 9 = camera (3-frame stack, D-015)
-    image_size: int = 64
+    image_size: int = 64          # HEIGHT (and width, unless image_width is set)
     patch_size: int = 8           # 8 for 64px toy -> 8x8 grid; 16 for 256px camera
     d_model: int = 128
     depth: int = 6
     n_heads: int = 4
     grad_checkpoint: bool = False  # recompute block activations (F-5 GPU-memory lever)
     # Batch-free norms only (I2 batch-consistency): never BatchNorm here.
+    # ---- non-square input (2026-07-27, wide-FOV enablement). OPT-IN, default
+    # OFF: None == width equals image_size == every config that ever trained, so
+    # n_tokens, the positional embedding shape and the parameter count are all
+    # byte-identical. Driving is horizontally wide, so a wide frame (e.g.
+    # image_size=256, image_width=640 -> a 16x40 token grid at patch 16) buys
+    # field where it is useful instead of vertical sky/hood. ⛔ WHICH geometry to
+    # train on is NOT decided here — see 2026-07-27-fov-crop-audit.
+    image_width: int | None = None
+
+    def image_hw(self) -> tuple[int, int]:
+        """Input geometry as ``(height, width)``. The ONE accessor models use."""
+        return (self.image_size,
+                self.image_size if self.image_width is None else self.image_width)
+
+    @property
+    def is_square(self) -> bool:
+        return self.image_width is None or self.image_width == self.image_size
+
+    def token_grid(self) -> tuple[int, int]:
+        """Patch-token grid ``(rows, cols)`` this config produces."""
+        h, w = self.image_hw()
+        return (h // self.patch_size, w // self.patch_size)
 
 
 @dataclass
@@ -57,8 +79,15 @@ class LossConfig:
 
 @dataclass
 class ReadoutConfig:
-    grid: int = 4                 # spatial grid readout G x G (A7: never global-pool)
+    grid: int = 4                 # spatial grid readout ROWS (A7: never global-pool)
     d_readout: int = 32           # per-cell projection dim
+    # Readout COLUMNS. None == grid (square), i.e. every config that ever
+    # trained. Set it only to spend readout cells asymmetrically on a wide input
+    # (e.g. grid=4, grid_w=10 on a 16x40 token grid). ⚠️ Changing it CHANGES
+    # state_dim = grid * grid_w * d_readout and therefore breaks checkpoint
+    # loading for the predictor and every grounding head — leaving it None keeps
+    # a wide input at the SAME state_dim 2048 the whole stack expects.
+    grid_w: int | None = None
 
 
 @dataclass
@@ -262,6 +291,15 @@ class StackConfig:
     # all, and v2.1 so that gradient sees 3x the windows and is never taught
     # `straight` on a window it cannot judge.
     v21_route_labels: bool = False
+    # ---- canonical INPUT GEOMETRY (2026-07-27, wide-FOV enablement).
+    # ``None`` == the deployed 256x256 / f_ref 266 / pinhole frame — every arm,
+    # cache and published number to date. A dict (``CanonicalFrame.to_dict()``)
+    # declares a different frame. ⛔ NEVER set this field directly: use
+    # ``tanitad.geometry.apply_frame(cfg, frame)``, which writes it AND the
+    # encoder's image_size/image_width together. ``assert_geometry_consistent``
+    # refuses a config where only one of them moved — the half-applied change
+    # that made every committed v4 number unreproducible.
+    geometry: dict | None = None
 
     def to_json(self) -> str:
         return json.dumps(dataclasses.asdict(self), indent=2, default=str)

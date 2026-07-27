@@ -1,0 +1,408 @@
+{
+  "device": "cuda",
+  "batch": 4,
+  "backbone": {
+    "d_model": 768,
+    "depth": 12,
+    "n_heads": 12,
+    "patch": 16,
+    "in_channels": 9
+  },
+  "spill_filter": "per-sample time at batch B vs batch B/2; ratio > 2.0 at constant per-sample work == SPILLED, not a capacity",
+  "geometries": {
+    "today_256x256": {
+      "input_hw": [
+        256,
+        256
+      ],
+      "token_grid": [
+        16,
+        16
+      ],
+      "n_tokens": 256,
+      "tokens_vs_today": 1.0,
+      "params_total": 87022848,
+      "params_pos_embed": 196608,
+      "hfov_deg_at_F_REF": 51.39,
+      "px_per_deg_centre": 4.643,
+      "sampling": "uniform",
+      "flops": {
+        "linear_macs": 21743271936,
+        "attn_quad_macs": 1207959552,
+        "total_macs": 22951231488,
+        "attn_share": 0.0526
+      },
+      "flops_vs_today": 1.0,
+      "infer": {
+        "by_batch": {
+          "4": {
+            "ms_min": 42.138,
+            "ms_median": 70.526,
+            "ms_per_sample": 10.535,
+            "median_over_min": 1.674,
+            "peak_alloc_MiB": 386.1,
+            "peak_reserved_MiB": 446.0
+          },
+          "2": {
+            "ms_min": 14.442,
+            "ms_median": 25.076,
+            "ms_per_sample": 7.221,
+            "median_over_min": 1.736,
+            "peak_alloc_MiB": 365.6,
+            "peak_reserved_MiB": 400.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 1.459,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      },
+      "train_fwd_bwd": {
+        "by_batch": {
+          "4": {
+            "ms_min": 99.999,
+            "ms_median": 211.406,
+            "ms_per_sample": 25.0,
+            "median_over_min": 2.114,
+            "peak_alloc_MiB": 1005.0,
+            "peak_reserved_MiB": 1132.0
+          },
+          "2": {
+            "ms_min": 64.276,
+            "ms_median": 117.401,
+            "ms_per_sample": 32.138,
+            "median_over_min": 1.827,
+            "peak_alloc_MiB": 711.1,
+            "peak_reserved_MiB": 874.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 0.778,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      }
+    },
+    "wide_640x256": {
+      "input_hw": [
+        256,
+        640
+      ],
+      "token_grid": [
+        16,
+        40
+      ],
+      "n_tokens": 640,
+      "tokens_vs_today": 2.5,
+      "params_total": 87317760,
+      "params_pos_embed": 491520,
+      "hfov_deg_at_F_REF": 100.53,
+      "px_per_deg_centre": 4.643,
+      "sampling": "uniform",
+      "flops": {
+        "linear_macs": 54358179840,
+        "attn_quad_macs": 7549747200,
+        "total_macs": 61907927040,
+        "attn_share": 0.122
+      },
+      "flops_vs_today": 2.697,
+      "infer": {
+        "by_batch": {
+          "4": {
+            "ms_min": 122.247,
+            "ms_median": 192.331,
+            "ms_per_sample": 30.562,
+            "median_over_min": 1.573,
+            "peak_alloc_MiB": 463.6,
+            "peak_reserved_MiB": 542.0
+          },
+          "2": {
+            "ms_min": 94.676,
+            "ms_median": 96.399,
+            "ms_per_sample": 47.338,
+            "median_over_min": 1.018,
+            "peak_alloc_MiB": 410.6,
+            "peak_reserved_MiB": 468.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 0.646,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      },
+      "train_fwd_bwd": {
+        "by_batch": {
+          "4": {
+            "ms_min": 974.112,
+            "ms_median": 986.416,
+            "ms_per_sample": 243.528,
+            "median_over_min": 1.013,
+            "peak_alloc_MiB": 1975.5,
+            "peak_reserved_MiB": 2214.0
+          },
+          "2": {
+            "ms_min": 354.942,
+            "ms_median": 500.647,
+            "ms_per_sample": 177.471,
+            "median_over_min": 1.411,
+            "peak_alloc_MiB": 1191.5,
+            "peak_reserved_MiB": 1312.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 1.372,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      }
+    },
+    "square_640x640": {
+      "input_hw": [
+        640,
+        640
+      ],
+      "token_grid": [
+        40,
+        40
+      ],
+      "n_tokens": 1600,
+      "tokens_vs_today": 6.25,
+      "params_total": 88055040,
+      "params_pos_embed": 1228800,
+      "hfov_deg_at_F_REF": 100.53,
+      "px_per_deg_centre": 4.643,
+      "sampling": "uniform",
+      "flops": {
+        "linear_macs": 135895449600,
+        "attn_quad_macs": 47185920000,
+        "total_macs": 183081369600,
+        "attn_share": 0.2577
+      },
+      "flops_vs_today": 7.977,
+      "infer": {
+        "by_batch": {
+          "4": {
+            "ms_min": 615.042,
+            "ms_median": 914.433,
+            "ms_per_sample": 153.761,
+            "median_over_min": 1.487,
+            "peak_alloc_MiB": 637.0,
+            "peak_reserved_MiB": 772.0
+          },
+          "2": {
+            "ms_min": 399.303,
+            "ms_median": 474.536,
+            "ms_per_sample": 199.651,
+            "median_over_min": 1.188,
+            "peak_alloc_MiB": 495.4,
+            "peak_reserved_MiB": 572.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 0.77,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      },
+      "train_fwd_bwd": {
+        "by_batch": {
+          "4": {
+            "ms_min": 855.363,
+            "ms_median": 3176.136,
+            "ms_per_sample": 213.841,
+            "median_over_min": 3.713,
+            "peak_alloc_MiB": 4404.2,
+            "peak_reserved_MiB": 4704.0
+          },
+          "2": {
+            "ms_min": 1551.172,
+            "ms_median": 2144.055,
+            "ms_per_sample": 775.586,
+            "median_over_min": 1.382,
+            "peak_alloc_MiB": 2392.5,
+            "peak_reserved_MiB": 2576.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 0.276,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      }
+    },
+    "foveated_640x256_shared": {
+      "input_hw": [
+        256,
+        640
+      ],
+      "token_grid": [
+        "centre 16x16",
+        "2 wings 8x6"
+      ],
+      "n_tokens": 352,
+      "tokens_vs_today": 1.375,
+      "params_total": 87096576,
+      "params_pos_embed": 270336,
+      "hfov_deg_at_F_REF": 100.53,
+      "px_per_deg_centre": 4.643,
+      "sampling": "two-scale (16px centre / 32px wings, wing=shared)",
+      "flops": {
+        "linear_macs": 29896998912,
+        "attn_quad_macs": 2283798528,
+        "total_macs": 32180797440,
+        "attn_share": 0.071
+      },
+      "flops_vs_today": 1.402,
+      "infer": {
+        "by_batch": {
+          "4": {
+            "ms_min": 125.039,
+            "ms_median": 152.238,
+            "ms_per_sample": 31.26,
+            "median_over_min": 1.218,
+            "peak_alloc_MiB": 422.3,
+            "peak_reserved_MiB": 476.0
+          },
+          "2": {
+            "ms_min": 49.563,
+            "ms_median": 49.821,
+            "ms_per_sample": 24.782,
+            "median_over_min": 1.005,
+            "peak_alloc_MiB": 387.1,
+            "peak_reserved_MiB": 448.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 1.261,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      },
+      "train_fwd_bwd": {
+        "by_batch": {
+          "4": {
+            "ms_min": 337.912,
+            "ms_median": 492.537,
+            "ms_per_sample": 84.478,
+            "median_over_min": 1.458,
+            "peak_alloc_MiB": 1261.4,
+            "peak_reserved_MiB": 1436.0
+          },
+          "2": {
+            "ms_min": 167.763,
+            "ms_median": 250.978,
+            "ms_per_sample": 83.881,
+            "median_over_min": 1.496,
+            "peak_alloc_MiB": 807.4,
+            "peak_reserved_MiB": 888.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 1.007,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      }
+    },
+    "foveated_640x256_sep": {
+      "input_hw": [
+        256,
+        640
+      ],
+      "token_grid": [
+        "centre 16x16",
+        "2 wings 8x6"
+      ],
+      "n_tokens": 352,
+      "tokens_vs_today": 1.375,
+      "params_total": 94175232,
+      "params_pos_embed": 270336,
+      "hfov_deg_at_F_REF": 100.53,
+      "px_per_deg_centre": 4.643,
+      "sampling": "two-scale (16px centre / 32px wings, wing=sep)",
+      "flops": {
+        "linear_macs": 29896998912,
+        "attn_quad_macs": 2283798528,
+        "total_macs": 32180797440,
+        "attn_share": 0.071
+      },
+      "flops_vs_today": 1.402,
+      "infer": {
+        "by_batch": {
+          "4": {
+            "ms_min": 121.26,
+            "ms_median": 153.963,
+            "ms_per_sample": 30.315,
+            "median_over_min": 1.27,
+            "peak_alloc_MiB": 457.6,
+            "peak_reserved_MiB": 498.0
+          },
+          "2": {
+            "ms_min": 52.282,
+            "ms_median": 55.109,
+            "ms_per_sample": 26.141,
+            "median_over_min": 1.054,
+            "peak_alloc_MiB": 437.5,
+            "peak_reserved_MiB": 482.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 1.16,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      },
+      "train_fwd_bwd": {
+        "by_batch": {
+          "4": {
+            "ms_min": 134.627,
+            "ms_median": 255.647,
+            "ms_per_sample": 33.657,
+            "median_over_min": 1.899,
+            "peak_alloc_MiB": 1286.0,
+            "peak_reserved_MiB": 1582.0
+          },
+          "2": {
+            "ms_min": 68.393,
+            "ms_median": 71.051,
+            "ms_per_sample": 34.196,
+            "median_over_min": 1.039,
+            "peak_alloc_MiB": 834.4,
+            "peak_reserved_MiB": 1076.0
+          }
+        },
+        "spill_filter": {
+          "per_sample_ratio_B_over_Bhalf": 0.984,
+          "SPILLED": false,
+          "note": "computed on min-times; under foreign GPU load this test itself is noisy -- read with the contention sentinel"
+        }
+      }
+    }
+  },
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 4060",
+    "total_GiB": 8.0,
+    "free_at_start_GiB": 6.71
+  },
+  "attention_share_check": {
+    "claim_in_brief": "at 640-1600 tokens attention becomes the dominant term",
+    "formula": "attn_share = 2N^2 d / (12 N d^2 + 2 N^2 d) = N / (6d + N), d=768",
+    "measured_analytically": {
+      "256": 0.0526,
+      "352": 0.071,
+      "640": 0.122,
+      "1600": 0.2577,
+      "4608": 0.5
+    },
+    "N_at_which_attention_is_50pct": 4608
+  },
+  "contention_sentinel": {
+    "reference_ms_before": 35.535,
+    "reference_ms_after": 20.522,
+    "drift_ratio": 1.732,
+    "CONTENDED": true,
+    "verdict": "absolute latencies NOT quotable; params/tokens/FLOPs are unaffected (deterministic)"
+  }
+}

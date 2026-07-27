@@ -186,7 +186,8 @@ class CNNEncoderConfig:
     the deep-34 (3, 6, 16, 6) shape; XL deepens stage-3/4). Param counts are
     measured, not estimated — see MODEL_REGISTRY.md section 4."""
     in_channels: int = 9          # D-015 3-frame RGB stack (latest = [-3:])
-    image_size: int = 256
+    image_size: int = 256         # HEIGHT (and width, unless image_width is set)
+    image_width: int | None = None   # non-square input; None == square (default)
     base_width: int = 88          # V2-99-class width (90.5 M trunk); XL -> 124
     blocks: tuple[int, ...] = (3, 6, 16, 6)    # deep-34 (8x8xF map preserved)
 
@@ -196,7 +197,24 @@ class CNNEncoderConfig:
 
     @property
     def grid(self) -> int:
-        return self.image_size // 32
+        """Square feature-map side. Raises on a non-square input ON PURPOSE —
+        :attr:`grid_shape` is the general accessor."""
+        gh, gw = self.grid_shape
+        if gh != gw:
+            raise ValueError(
+                f"REF-C feature map is {gh}x{gw} (non-square) — this caller "
+                f"still reads the scalar `grid`. Use `grid_shape`.")
+        return gh
+
+    def image_hw(self) -> tuple[int, int]:
+        return (self.image_size,
+                self.image_size if self.image_width is None else self.image_width)
+
+    @property
+    def grid_shape(self) -> tuple[int, int]:
+        """Conv feature-map grid ``(rows, cols)`` = input // 32 per axis."""
+        h, w = self.image_hw()
+        return (h // 32, w // 32)
 
 
 @dataclass
@@ -388,9 +406,13 @@ class ResNetEncoder(nn.Module):
 
     def __init__(self, cfg: CNNEncoderConfig):
         super().__init__()
-        if cfg.image_size % 32 != 0:
-            raise ValueError(f"image_size must be divisible by 32, "
-                             f"got {cfg.image_size}")
+        # ⚠️ The stride-32 constraint is PER AXIS. Written for a square input it
+        # checked ONE number, so a 256x640 frame would have passed while the
+        # other axis was silently mis-sized (found 2026-07-27).
+        _h, _w = cfg.image_hw()
+        if _h % 32 != 0 or _w % 32 != 0:
+            raise ValueError(f"image height and width must each be divisible "
+                             f"by 32, got {_h}x{_w}")
         w = cfg.base_width
         self.stem = nn.Sequential(
             nn.Conv2d(cfg.in_channels, w, 7, stride=2, padding=3, bias=False),
@@ -591,24 +613,11 @@ class AnchoredDiffusionDecoder(nn.Module):
 # H15 imagination field (gated graft — belief over the conv-map tokens)
 # ============================================================================
 
-def advect(tokens: Tensor, flow: Tensor, grid_hw: int) -> Tensor:
-    """Semi-Lagrangian warp of a token grid by a per-cell flow (in cell units):
-    value'(x) = value(x - v(x)). The latent-advection prior (object permanence —
-    a latent behind an occluder keeps moving while unobserved). Self-contained
-    port of tanitad.models.imagination.advect (refc.py stays torch-only)."""
-    b, n, d = tokens.shape
-    x = tokens.transpose(1, 2).reshape(b, d, grid_hw, grid_hw)
-    ys, xs = torch.meshgrid(
-        torch.arange(grid_hw, device=tokens.device, dtype=tokens.dtype),
-        torch.arange(grid_hw, device=tokens.device, dtype=tokens.dtype),
-        indexing="ij")
-    base = torch.stack([xs, ys], dim=-1)                       # [g, g, 2]
-    f = flow.reshape(b, grid_hw, grid_hw, 2)
-    pos = base.unsqueeze(0) - f                                # sample source
-    pos = 2.0 * pos / max(grid_hw - 1, 1) - 1.0               # -> [-1, 1]
-    warped = F.grid_sample(x, pos, mode="bilinear",
-                           padding_mode="border", align_corners=True)
-    return warped.flatten(2).transpose(1, 2)
+# `advect` was a self-contained COPY of tanitad.models.imagination.advect. The
+# copy is RETIRED (2026-07-27): two implementations of the same warp is how
+# geometries drift apart, and the shared one is now grid-general (scalar side OR
+# (rows, cols)). Re-exported so `from tanitad.refs.refc import advect` still works.
+from tanitad.models.imagination import advect                    # noqa: E402,F401
 
 
 class ImagBlock(nn.Module):
@@ -640,9 +649,9 @@ class ImaginationField(nn.Module):
     Every parameter (in_proj, flow, blocks, norm, logvar, out_proj) sits in the
     trajectory-loss gradient path — no dead params. Gated: absent when off."""
 
-    def __init__(self, feat_dim: int, grid_hw: int, cfg: ImaginationConfig):
+    def __init__(self, feat_dim: int, grid_hw, cfg: ImaginationConfig):
         super().__init__()
-        self.grid_hw = grid_hw
+        self.grid_hw = grid_hw          # scalar side OR (rows, cols)
         d = cfg.d
         self.in_proj = nn.Linear(feat_dim, d)                 # conv tokens -> d
         self.flow_head = nn.Sequential(
@@ -717,7 +726,7 @@ class RefCModel(nn.Module):
         # H15 imagination graft (gated): belief field over the conv-map tokens,
         # refining the [B, F, 8, 8] map the decoder cross-attends. Absent when off.
         if cfg.graft_imagination:
-            self.imagination = ImaginationField(feat, self.encoder.grid,
+            self.imagination = ImaginationField(feat, cfg.encoder.grid_shape,
                                                 cfg.imagination)
         # Aux heads (always present): the maneuver head feeds BOTH the maneuver
         # CE and the H19 anchor reweight; the route head is the strategic aux.

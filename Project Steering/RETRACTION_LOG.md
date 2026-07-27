@@ -157,3 +157,159 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   Same weights, opposite decisions. ⚠️ Sibling to C1 (*faster-moving source*) and to the 07-25
   metric-definition case (*a metric NAME is not a metric DEFINITION*): all three are "the number was
   computed correctly and answers a different question than the one asked."
+- **C16 — FABRICATING INTERMEDIARY: the source text never existed** *(new class, added 2026-07-27)* ⇒
+  **a summarising fetch layer can invent a verbatim quotation, a section name and numbers, and they
+  read exactly like primary evidence.** MEASURED in the latent-action research stream: fetching
+  **arXiv:2605.20223 as a PDF** returned a named section, a **verbatim quote** — *"latent actions
+  cannot inherently recover metric/scale information"* — and a *"when not to use latent actions"*
+  recommendation. **All three returned NOT FOUND at full-text and abstract depth.** The same path
+  invented **three numbers** for a second paper (MVP-LAM).
+  ⚠️ **And note WHICH claim was fabricated: the single most load-bearing one in the brief** — it would
+  have settled the stream's crux question *by citation instead of by reasoning*. The hallucination
+  landed precisely on the question the agent most wanted answered. **Treat convenient primary-source
+  quotes with more suspicion than inconvenient ones, not less.**
+  **Distinct from C4 (inherited/propagation), which is why it gets its own class.** C4 is *"a real
+  claim travelled without re-verification"* and its remedy is to re-verify the chain. Here **there is
+  no chain — the artifact never existed**, so re-verifying the relay finds nothing wrong. Sibling to
+  the C13/C14/C9 trio in that the instrument produces **confident output it is structurally unable to
+  support**, but worse: those report a real measurement of the wrong thing, this reports a measurement
+  of nothing.
+  ⇒ **STANDING RULE: PDF-summarisation output is a model-generated summary, NOT source text, and is
+  INADMISSIBLE as a quotation.** A verbatim quote or a cited number must come from HTML full text or
+  the abstract, retrieved directly. **Every citation records the depth at which it was verified**
+  (`CITATIONS.md` in the latent-action stream is the reference implementation — depth per row, with
+  the fabricated entries quarantined rather than deleted). A PUBLISHED evidence class is only as good
+  as the retrieval that produced it: **`PUBLISHED` now requires a stated fetch depth.**
+- **C17 — MARGINAL MISTAKEN FOR CONDITIONAL** *(new class, added 2026-07-27)* ⇒ **a marginal
+  distribution that looks wrong tells you NOTHING about whether the conditional is wrong, and the
+  conditional is what the system actually uses.** MEASURED: the trajectory fan's candidate speed
+  tracks ego speed at slope **−0.129** where ground truth tracks it at **+1.0003** — a genuinely
+  un-conditioned marginal, and true. From it I inferred that the fan was mis-placed and that
+  longitudinal admissibility was the highest-value engineering task. **It cost nothing at all:
+  100.0 % of windows already contain a candidate within 0.5 m/s of the speed the car actually took**
+  (mean gap **0.0525 m/s**), and restricting the oracle to speed-matched candidates moves it
+  **+0.0000 m [0.0000, 0.0000]**. **The fan was WIDE, not MIS-PLACED.**
+  ⚠️ **Two independent streams converged on the wrong lever, and convergence read as confirmation.**
+  One measured the *span* (108.7 m per window vs a 25.40 m ground truth), the other the *unreachable
+  anchors* (94.36 %) — **both marginal, neither conditional.** Agreement between two measurements of
+  the same marginal is not replication of a claim about the conditional; it is the same blind spot
+  twice. ⇒ **Before acting on "the distribution of X is wrong", measure `P(good | context)` — the
+  quantity the system consumes — not `P(X)`.**
+- **C18 — CORRELATION WITHOUT SLOPE** *(new class, added 2026-07-27)* ⇒ **a correlation coefficient
+  can be near-perfect while the slope says the opposite of what you conclude; the SLOPE carries the
+  physics and the correlation carries only the tightness.** MEASURED in the same stream: **r = −0.974**
+  on a relationship whose slope is **−0.129** against a required **+1.0**. The correlation says the
+  points lie on a line; **only the slope says which line**, and a strong correlation on the wrong
+  slope reads as strong evidence for the wrong model. ⇒ **Quote a slope with its units, or do not
+  quote the relationship.** Sibling to the standing rule that an exponent is inadmissible without its
+  fit window, R² and n — same failure, one dimension down.
+- **C19 — A STRATUM WIN IS NOT A DEPLOYABLE WIN** *(new class, added 2026-07-27)* ⇒ **an effect
+  measured inside a stratum must be multiplied by that stratum's FIRING RATE before it can be
+  compared to anything, and a stratum mean cannot be compared across gates with different firing
+  rates at all.** MEASURED: the good-world-model stratum shows **0.7085 → 0.3330, −0.3754** — *"a
+  53 % cut in selector error"* — but it fires on only **22.7 %** of windows, so **deployed as a policy
+  it is worth −0.0852 [−0.1190, −0.0548]. Quoted bare, it overstates the deployable win by 4.4×**
+  (0.227 × 0.3754 = 0.0852). It had already propagated bare into two documents.
+  ⚠️ **The correct frame is a POLICY over ALL windows** — *"use B where the gate fires, else A"* —
+  because that is the only form in which two gates are commensurable. Converting to it reversed the
+  conclusion: the gate was worth **3.4× LESS** than simply applying the treatment **ungated**, and
+  even an *unattainable perfect* gate lost to it. ⇒ **Every conditional result reports its
+  `selected_frac` beside its effect, and reports the whole-set policy value. A gate that fires on
+  everything or nothing is degenerate and must be visible as such** — in this same stream **two
+  PURE-NOISE gates would have been written up as separated wins** without that column.
+- **C20 — OPTIMISE THE OBJECTIVE YOU ARE PAID FOR, NOT ITS LEGIBLE CORRELATE** *(new class, added
+  2026-07-27)* ⇒ **when a decision rule can be aimed either at the quantity you actually want or at an
+  interpretable proxy that correlates with it, aiming at the proxy is a measurable, quantified loss —
+  not a stylistic choice.** MEASURED, same features and same folds: gating on **predicted C2-vs-A0
+  utility** (the thing we are paid for) recovers **−0.1397**; gating on the **predicted canary** (the
+  legible correlate we had named as the missing instrument) recovers **−0.0383**. **Aiming at the
+  correlate costs 3.6×** — and the canary is a weak gate *even as an oracle*, recovering only 9.3 %
+  of the available headroom on v1's world model. ⇒ **State what the rule is optimising and why it is
+  the payoff rather than a stand-in.** Related to C9/C13/C14 (instruments structurally unable to
+  report the answer they are cited for), but distinct: this instrument reports its own quantity
+  correctly — **the quantity is simply not the one that pays.**
+- **C21 — A DOCSTRING IS NOT A MEASUREMENT** *(new class, added 2026-07-27; a sharper instance of the
+  "prose lied to us" rule `CLAUDE.md` opens with)* ⇒ **a module docstring and a usage example in a
+  `--help` block are PROSE. Grepping them and calling it verification is the same error as quoting a
+  weekly report.** RETRACTED: *"verified — the flagship trains on a comma2k19 + PhysicalAI mix."*
+  **It does not.** `flagship4b-speedjerk-30k` trains on **PhysicalAI alone, 100 %**: `--data cached`
+  **discards every cache dir after the first** (`train_flagship4b.py:186-188`), confirmed
+  independently by the registry command **and** by the run's own committed config JSON. The
+  *"0.40/0.60 mix"* is a **stale docstring belonging to a different run** (`p0-sB01-realmix`).
+  ⚠️ **What makes this expensive rather than merely wrong: the false premise became a DECISION.** It
+  produced a three-option comma2k19 dilemma (per-corpus geometry / letterbox / drop), that dilemma was
+  **escalated to the PI as a decision he needed to make**, and it was written into **three agent
+  briefs** as a binding constraint. **None of it existed. There is no comma mixture to break.**
+  ⇒ **A claim about what a RUN did is answered by the run's config JSON, its launch command, or the
+  code path that consumes the flag — never by the docstring above it.** The evidence class for
+  "grepped a docstring" is **not** MEASURED; at best it is a hypothesis to go and check.
+  *(Also flagged for repair: `GEOMETRY_INTEGRITY_AUDIT.md:26` and `train_flagship4b.py:3-4` both assert
+  the corpus mix the deployed model does not have.)*
+- **C22 — BOUND QUOTED AS CAPABILITY** *(new class, added 2026-07-27)* ⇒ **an oracle result is an
+  UPPER BOUND on what an achievable version could deliver, and the distance between the two is not a
+  detail — it can be the whole result, and it can have the opposite sign.** MEASURED: handing the
+  selector the **true 2 s goal position** recovered **88.0 % of the fan's headroom, separated,
+  replicated ×3** — reported (by me, to the PI) as the first thing in the program to clear both bars.
+  The achievable version is **separated-WORSE**: break-even needs **σ₀ = 0.955 m** radial RMS
+  (**0.721 m** for the realistic *biased-regressor* family), the best out-of-fold head achieves
+  **1.330 m** ⇒ **recovery −10.4 %**, and the latent-only head a strategic brain would actually carry
+  is **+0.0464 [+0.0164, +0.0792]** — damage, on all three fans, with the curve reaching **+8.37 m**.
+  ⇒ **Every oracle number is quoted with (a) the achievable value or (b) an explicit "not yet
+  measured", and a bound NEVER licenses a decision on its own.** Sibling to **C19** (a stratum win is
+  not a deployable win): both are *"the number is real and it is not the number that would ship."*
+- **C23 — ORACLE SHAPED AS EGO STATE** *(new class, added 2026-07-27; caught PRE-FIT, which is the
+  point)* ⇒ **a feature can carry future information while sitting in a dump beside genuine
+  present-time state, and its NAME will not tell you.** MEASURED: `head_deg` is the **future net
+  heading change** over the window and sits next to `v0` in every fan dump. Fitting a "deploy-time"
+  head on it would have produced a strong, plausible, entirely leaked result — the same shape as
+  REF-A's I-JEPA val leak. ⇒ **Before fitting anything called deploy-time, audit every input for
+  future content by DEFINITION, not by name.**
+- **C24 — RMS PLACED ON A NOISE CURVE** *(new class, added 2026-07-27)* ⇒ **an achieved RMS error and
+  a synthetic-noise σ are not the same quantity, and reading one off the other's curve mis-states the
+  damage — here by 5.7×.** A noise sweep injects zero-mean isotropic error; a real estimator is
+  **biased and correlated with the target**, which is why the `SHRINK` family sits **25 % stricter**
+  than the isotropic one. ⇒ **Place a measured estimator on a requirement curve only via a family
+  that matches its error STRUCTURE, and say which family you used.**
+- **C25 — AN UNPAIRED POINT-ESTIMATE LADDER QUOTED AS A MEASURED EFFECT** *(new class, added
+  2026-07-27)* ⇒ **a monotone-looking sequence of point estimates is not a measured trend. Bootstrapping
+  each rung AGAINST CHANCE tells you nothing about whether one rung differs from the NEXT — and the
+  contrast between rungs is the only quantity the claim is about.** RETRACTED: *"vision enters at
+  rank ≈ 16"* (`3.659× → 3.685× (k16) → 3.000× → 2.116× → 1.59×`), which sat under **VALIDATED** in the
+  v5 PREP card and propagated into **≥4 documents and three agent briefs, mine included**.
+  **The paired test cost seconds — the raw held-out scores were already banked — and it kills the
+  headline: the "peak at k=16" is `+0.00085 [−0.02204, +0.02299]` against ego alone, a CI 27× WIDER
+  THAN THE EFFECT. It cannot distinguish "16 dimensions of vision help" from "vision contributes
+  zero."** ⭐ **The decisive control was cheaper still: the image-ONLY ladder is FLAT to 5 decimal
+  places.** If 16 were the visual state's information content, image-alone would peak at 16 and fall.
+  ⚠️ **Three defects rode along, and each is its own trap:** the ladder **spliced two instruments**
+  (rungs 1–4 a linear ridge, rung 5 a 2.17 M-param attention head on a different baseline); it measured
+  a **linear probe on a binary anticipation target, not the predictor it was cited to constrain**; and
+  the **"replicated by two independent streams, all ten arms selecting r=16" ran three arms that do not
+  read the PCA rank at all** — *a replication of something else.*
+  ⇒ **Before quoting a dose–response, ADJACENT-RUNG CONTRASTS OR NOTHING**, and state the instrument
+  for every rung. ⭐ **And note what the refutation bought: it CANCELLED a planned experiment** —
+  re-measuring the ladder on wider crops would have reproduced the same shape regardless of crop
+  content. *A false premise does not only mislead a decision; it funds work that cannot inform one.*
+- **C26 — A RIG-CORRELATED FABRICATION IN THE DEPLOYED INPUT, PRESENT IN EVERY NUMBER SINCE D-016 R1**
+  *(new class, added 2026-07-27: **the preprocessing itself was the confound**)* ⇒ **a geometry fix can
+  introduce a corpus-identifiable artefact that correlates perfectly with a latent grouping variable,
+  and nothing downstream will flag it because every metric is computed on the fabricated pixels.**
+  MEASURED on 10 real clips: today's canonical crop **replicate-pads 0.00 % of rows on rig A and
+  11.21 % on rig B** — and the rig split is **29.1 % of clips**, stamped consistently across all three
+  120° f-theta cameras. ⇒ **roughly a third of our training frames carry invented pixels the rest do
+  not, in a pattern that identifies the rig.** This model demonstrably eats shortcuts (zeroing `v0`
+  moves the imagined decode **×93.7** while the perceived decode is bit-exactly unchanged), so a
+  free rig label is not a harmless artefact.
+  ⚠️ **Scope: this is in EVERY number the program has produced since D-016 R1, not only in v5's
+  future.** It is not retracted here — it is **flagged as an unquantified common-mode confound** on
+  the whole post-D-016 record, and the cost of quantifying it must be stated before anything is
+  restated. **A widened CROP inherits it and makes it worse (120° → 19.91 %); the cylindrical
+  projection removes the fabrication entirely** (an explicit mask, not replicate-pad), cutting rig B
+  to **0.69 %** at 100°.
+  ⭐ **And the residual is the subtle half: a rig-correlated BLACK region is still a rig-correlated
+  signal.** Masking converts fabricated content into *identifiable absence*, which a shortcut-hungry
+  model can use just as well. **The clean fix is a vertical field BOTH rigs fully observe** — made
+  expressible, deliberately **not** chosen, because choosing it is a measurement someone still owes.
+  ⇒ **Before trusting a preprocessing "fix", ask what it FABRICATES and whether the fabrication
+  correlates with anything.** Sibling to C17 (marginal vs conditional): both are defects invisible to
+  every downstream metric because the metric is computed *after* the defect.

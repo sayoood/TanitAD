@@ -22,9 +22,12 @@ from pathlib import Path
 
 from tanitad.config import base250cam_config
 from tanitad.data.epcache import build_episodes_cached
-from tanitad.data.physicalai import (DEFAULT_WHEELBASE_MODE, WHEELBASE_MODES,
-                                     build_episode, discover_r0_clips,
+from tanitad.data.physicalai import (DEFAULT_PROJECTION_MODE,
+                                     DEFAULT_WHEELBASE_MODE, PROJECTION_MODES,
+                                     WHEELBASE_MODES, build_episode,
+                                     discover_r0_clips, geometry_build_params,
                                      label_params, split_clips)
+from tanitad.geometry import add_geometry_args, apply_geometry_args
 
 
 def main():
@@ -46,9 +49,21 @@ def main():
     ap.add_argument("--wheelbase-mode", choices=list(WHEELBASE_MODES),
                     default=DEFAULT_WHEELBASE_MODE,
                     help="steer label regime (default const2p9 = parity-preserving)")
+    # ---- INPUT GEOMETRY (wide-FOV enablement, 2026-07-27). Same fix-forward
+    # discipline as --wheelbase-mode: every default reproduces the deployed
+    # 256x256 / f_ref 266 / pinhole / ftheta_crop frame BYTE-IDENTICALLY, so
+    # `physicalai-train-e438721ae894` keeps its exact meaning. Any non-default
+    # mints a SEPARATE key that cannot collide.
+    add_geometry_args(ap)
+    ap.add_argument("--projection-mode", choices=list(PROJECTION_MODES),
+                    default=DEFAULT_PROJECTION_MODE,
+                    help="resampler: ftheta_crop (deployed) or cylindrical "
+                         "(equidistant azimuth). Both keep the per-clip "
+                         "principal-point centring (the two-rig fix).")
     args = ap.parse_args()
 
     cfg = base250cam_config()
+    frame = apply_geometry_args(args, cfg, label="build_pai_cache")
     clips = discover_r0_clips(args.root)
     if args.episodes:
         clips = clips[:args.episodes]
@@ -58,16 +73,50 @@ def main():
     # PROVE the corrected crop lands f_eff ~= F_REF (266) before a 40-min decode,
     # so a bad intrinsics/poly change fails loudly instead of silently shipping
     # the wrong zoom the audit found (nominal path was ~434 px).
-    from tanitad.data.calib import F_REF, ftheta_feff_report
+    from tanitad.data.calib import (F_REF, cylindrical_rectify,
+                                    ftheta_crop_resize, ftheta_feff_report)
     from tanitad.data.physicalai import intrinsics_for_clip
     if clips:
         cid = clips[0]["clip_id"]
-        rep = ftheta_feff_report(intrinsics_for_clip(cid, args.root))
-        print(f"[build] f-theta f_eff check (clip {cid}): "
-              f"after={rep['f_eff_after']} before(nominal)={rep['f_eff_before_nominal']} "
-              f"retained_hfov={rep['retained_hfov_after_deg']}deg", flush=True)
-        assert abs(rep["f_eff_after"] - F_REF) < 8.0, (
-            f"corrected f_eff {rep['f_eff_after']} != {F_REF} (D-016); ABORT")
+        intr = intrinsics_for_clip(cid, args.root)
+        if frame.is_canonical and args.projection_mode == DEFAULT_PROJECTION_MODE:
+            rep = ftheta_feff_report(intr)
+            print(f"[build] f-theta f_eff check (clip {cid}): "
+                  f"after={rep['f_eff_after']} "
+                  f"before(nominal)={rep['f_eff_before_nominal']} "
+                  f"retained_hfov={rep['retained_hfov_after_deg']}deg", flush=True)
+            assert abs(rep["f_eff_after"] - F_REF) < 8.0, (
+                f"corrected f_eff {rep['f_eff_after']} != {F_REF} (D-016); ABORT")
+        else:
+            # Same guard, generalized: PROVE the requested field is actually
+            # DELIVERED before a multi-hour decode. A crop that clamps at the
+            # sensor edge does not widen — it silently ZOOMS (MEASURED: a
+            # 100-deg SQUARE 256 frame delivers only 67.1 deg).
+            import torch
+            probe = torch.zeros(1, 3, intr.height, intr.width, dtype=torch.uint8)
+            if args.projection_mode == "cylindrical":
+                cylindrical_rectify(probe, intr, frame,
+                                    require_per_clip=intr.per_clip)
+                got_f = cylindrical_rectify.last_f_eff
+                obs = cylindrical_rectify.last_observed_frac
+            else:
+                ftheta_crop_resize(probe, intr, frame=frame)
+                got_f = ftheta_crop_resize.last_f_eff
+                obs = 1.0
+            import math as _m
+            got_hfov = _m.degrees(2 * (
+                _m.atan((frame.width / 2) / got_f)
+                if frame.projection == "pinhole" else (frame.width / 2) / got_f))
+            print(f"[build] geometry check (clip {cid}): requested "
+                  f"f_ref={frame.f_ref:.2f} HFOV={frame.hfov_deg:.2f}deg -> "
+                  f"achieved f_eff={got_f:.2f} HFOV={got_hfov:.2f}deg, "
+                  f"observed_frac={obs:.4f}", flush=True)
+            assert abs(got_hfov - frame.hfov_deg) < 0.5, (
+                f"ABORT: requested {frame.hfov_deg:.2f}deg but this sensor can "
+                f"only deliver {got_hfov:.2f}deg at {frame.height}x"
+                f"{frame.width} — the crop CLAMPED at the sensor edge and would "
+                f"have zoomed instead of widening. Widen the frame (more "
+                f"columns) or lower the requested HFOV.")
 
     tr, va = split_clips(clips, val_frac=0.2, seed=cfg.train.seed)   # I3
     print(f"[build] split: {len(tr)} train / {len(va)} val "
@@ -83,8 +132,11 @@ def main():
     # regime, so the legacy dict below is bit-identical to the one that minted
     # e438721ae894 — parity is preserved by construction, not by promise.
     params = {"size": cfg.encoder.image_size, "n_stack": 3, "hz": 10,
-              "calib": "ftheta_v2", **label_params(args.wheelbase_mode)}
-    print(f"[build] wheelbase_mode={args.wheelbase_mode} params={params}", flush=True)
+              "calib": "ftheta_v2", **label_params(args.wheelbase_mode),
+              **geometry_build_params(frame, args.projection_mode)}
+    print(f"[build] wheelbase_mode={args.wheelbase_mode} "
+          f"projection_mode={args.projection_mode} params={params}", flush=True)
+    _fr = None if frame.is_canonical else frame
     for cs, split in ((tr, "train"), (va, "val")):
         if args.only != "both" and split != args.only:
             print(f"[build] --only={args.only} -> skipping {split} split",
@@ -92,7 +144,9 @@ def main():
             continue
         eps = build_episodes_cached(
             cs, lambda c: build_episode(c, size=cfg.encoder.image_size,
-                                        wheelbase_mode=args.wheelbase_mode),
+                                        wheelbase_mode=args.wheelbase_mode,
+                                        frame=_fr,
+                                        projection_mode=args.projection_mode),
             cache, f"physicalai-{split}", params)
         print(f"[build] physicalai-{split}: {len(eps)} episodes cached",
               flush=True)

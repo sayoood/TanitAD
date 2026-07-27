@@ -243,6 +243,11 @@ def train(args) -> dict:
     cfg = {"smoke": flagship4b_smoke_config,
            "flagship4b_reduced": flagship4b_reduced_config,
            "flagship4b": flagship4b_config}[args.config]()
+    # Input geometry: defaults reproduce the deployed frame exactly, and the
+    # guard REFUSES a half-applied change (frame moved but encoder stale, or
+    # vice versa) before any GPU work.
+    from tanitad.geometry import apply_geometry_args
+    apply_geometry_args(args, cfg, label=f"train_flagship4b/{args.config}")
     if args.grad_checkpoint:
         cfg.encoder.grad_checkpoint = True
     if args.rollout_k is not None:
@@ -572,6 +577,8 @@ def main(argv=None):
     ap.add_argument("--v2-lru", type=int, default=64,
                     help="per-worker LRU size (compressed clip payloads) for "
                          "--v2-cache; bounds RAM at ~2-4 MB/clip. Default 64.")
+    from tanitad.geometry import add_geometry_args
+    add_geometry_args(ap)
     ap.add_argument("--out", required=True)
     ap.add_argument("--config",
                     choices=["flagship4b", "flagship4b_reduced", "smoke"],

@@ -71,6 +71,10 @@ Every subagent brief MUST carry the preamble in
   ~1 MB/s. Push → HF from the source pod (~118 MB/s), then pull. Verify md5.
 - **A RunPod volume resize stops the pod and reassigns its SSH port** (`Connection refused`, not
   `timed out`). The working key is `~/.ssh/tanitad_pod`, not the console's `id_ed25519`.
+- **`torch` spawns ~113 threads PER PROCESS, and concurrent eval arms then make NO PROGRESS —
+  it looks exactly like a hang.** MEASURED 2026-07-27: 7 concurrent arms sat at GPU `sm` **0–6 %**
+  for **50 minutes** with zero progress; `OMP_NUM_THREADS=6` and the same arm finished in **232 s**.
+  Set it before any multi-arm panel; do not diagnose the symptom as a deadlock or a dead job.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 

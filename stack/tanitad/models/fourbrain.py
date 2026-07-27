@@ -411,7 +411,8 @@ class WorldModel(nn.Module):
         self.encoder = ViTEncoder(cfg.encoder)
         self.readout = SpatialGridReadout(
             self.encoder.n_tokens, cfg.encoder.d_model,
-            grid=cfg.readout.grid, d_readout=cfg.readout.d_readout)
+            grid=cfg.readout.grid, d_readout=cfg.readout.d_readout,
+            token_grid=self.encoder.grid_shape, grid_w=cfg.readout.grid_w)
         self.state_dim = self.readout.out_dim
         # The trained policy brains are a matched set (the hierarchy needs the
         # strategic context to condition tactical): enable both or neither.
@@ -453,7 +454,7 @@ class WorldModel(nn.Module):
             and cfg.tactical_policy is not None else None)
         # H15: belief maintenance over unobserved sectors (D-008).
         self.imagination = (ImaginationField(cfg.encoder.d_model,
-                                             self.encoder.grid_hw,
+                                             self.encoder.grid_shape,
                                              depth=cfg.h15.depth,
                                              n_heads=cfg.encoder.n_heads)
                             if cfg.h15.enabled else None)

@@ -53,8 +53,14 @@ Two ways to get at information a feature vector does not expose:
 ## 4. Direction 1 — v1's world model + REF-C's planner
 
 **The asymmetry that motivates it, MEASURED:** v4's own `wm_canary_ade_2s` is **1.1409** (bar ≤0.55)
-while the v1 line is cited at **~0.452** *(INHERITED — to be established, not assumed)*. **v1 imagines
-far better than v4. v4 proposes far better than v1.** Nothing has combined them.
+while the v1 line is **0.4271** — ⭐ **now ESTABLISHED, not inherited** (§8; the **~0.452** this line
+previously carried was the deprecated `heldout` split-mean, and the independent re-derivation landed
+on the registry's `full_set` value to four decimals). **v1 imagines far better than v4. v4 proposes
+far better than v1.** Nothing has combined them.
+
+✅ **EXECUTED 2026-07-27 — see §8.** Combining them is **FEASIBLE and general**; the simulator swap is
+worth **9.2×** on the imagination rule; and the combination still **REFUTES** the pre-registered bar,
+which is what relocated the lever to the fan.
 
 ⚠️ **And a scoring rule is only as good as its simulator.** If we score candidates by imagining
 consequences, we should imagine with **the best world model we have**, which is not v4's. Whether v1's
@@ -80,7 +86,12 @@ and `k` is free. It is a per-candidate imagination roll-out, ready to use.
 **Bars, pre-registered:**
 - **CONFIRM** — beats **0.4907**, the in-sample ceiling of *any* re-scoring of this fan ⇒ imagination
   does what discrimination provably cannot.
-- **STRONG** — additionally beats **v1's 0.4271** ⇒ the synthesis is real and v5 has a spine.
+- ⛔ **STRONG — WITHDRAWN 2026-07-27, THE BAR WAS INCOHERENT.** It read *"additionally beats v1's
+  0.4271"*, but `taniteval/rollout.py:170` sets **`actions_source="expert_future"`** and `:174` names
+  the metric **`wm_fidelity_ade_2s`** ⇒ **0.4271 is what v1's world model scores when HANDED THE
+  EXPERT'S TRUE FUTURE ACTIONS.** Asking a *selector* to beat a model that was *given* the answer is
+  not a stretch goal, it is a category error — and it is part of why nothing has cleared it.
+  **The legitimate same-surface bar is the in-sample re-scoring ceiling 0.4907, which stands.**
 - **REFUTE** — fails to beat 0.4907 ⇒ the limit is the fan's own action-sequence information, and we
   say so.
 
@@ -125,8 +136,177 @@ you could not.
 59-hour v4 restart into a 2-hour refutation — and it is why declining *that* restart is not
 inaction: **it is what makes these four experiments affordable.**
 
-## 8. Status
+## 8. Status — E-V5-1 and E-V5-1b RETURNED (2026-07-27). **The lever moved off the scorer.**
 
-E-V5-1 through E-V5-3 are **running on the eval pod** as of 2026-07-26. The blind-imagination sweep
-that supplies `T_blind` is running on pod2. v4's restart budget stays **0/2** — unspent, not
-forfeited.
+Artifact: `…/incoming/2026-07-26-v5-imagination-selection/V5_IMAGINATION_SELECTION.md`. Estimator:
+paired episode-cluster bootstrap, B = 2000, unit = episode, 881 windows / 40 clusters.
+
+**E-V5-1b — Direction 1 executed. FEASIBLE, and it is a GENERAL capability of this architecture.**
+The fan is **metric trajectories in the ego frame, not latents**, so a foreign world model needs only
+to consume our frames and emit metres — **`state_dim` need not match, because the two arms never
+exchange a latent; they meet at the metric interface.** ⇒ *any* arm with a grounded step-readout can
+score *any* other arm's proposals. (MEASURED · CONFIRMED.)
+
+The simulator gap is large: **v1's WM is 2.67× better than v4's on identical windows (0.4271 vs
+1.1381)**, and swapping it in improved the per-candidate imagination rule **9.2×** with nothing else
+changed. ⚠️ **The v1 line is 0.4271 (`full_set`), not the ~0.452 this document previously carried —
+that was the `heldout` split-mean.** Independently re-derived to four decimals; it also confirms that
+v1's canary and v1's headline `ade_0_2s` are the same quantity.
+
+**E-V5-1 — REFUTE, as pre-registered, and not re-scoped.** Best imagination arm **0.5645** vs
+CONFIRM **< 0.4907** — a **1.15×** miss on v1's WM (**1.57×** on v4's). The stratified "deployable
+gate" escape hatch is **CLOSED**: WM quality grades the damage monotonically and never rescues the
+rule.
+
+⭐ **THE MECHANISM, and it is the finding — the world model does not VETO an implausible plan, it
+obediently SIMULATES it.** Within one window the 256 candidates span **−15.47 m … +100.57 m** of 2 s
+along-track displacement (**mean per-window span 108.7 m**) against a ground truth of **25.40 m** — a
+2 s candidate travelling 100 m is a **181 km/h plan, and it is in the fan.** Asked to execute it, the
+roll-out also travels ≈100 m, so the candidate is **maximally self-consistent** and
+imagination-*consistency* ranks it first (**+19.66 m** along-track bias).
+
+⇒ **The advance commitment in §0.9 is discharged verbatim: the limitation is the fan's own
+action-sequence information, not the scorer.** `oracle_in_fan = 0.2505` is a statement about the
+**marginal coverage of a 256-anchor vocabulary that also contains 181 km/h plans**.
+
+⛔ **BUT THE REDIRECT I DREW FROM IT — *"THE v5 LEVER MOVES TO THE FAN"* — IS REFUTED, BY TWO
+INDEPENDENT STREAMS, AND IT WAS MINE.** (`…/incoming/2026-07-27-fan-conditioning/FAN_CONDITIONING.md`,
+DECISION-GRADE, replicated on 4 fans; and `…/incoming/2026-07-27-fan-clip-local/`, independently, the
+night before.) **The premise is true and the inference from it is false:**
+
+- **TRUE** — the fan is not `v0`-conditioned. Candidate speed tracks ego speed at slope **−0.129**;
+  ground truth tracks it at **+1.0003**. The same ~17 m/s distribution appears in every window, on
+  REF-C-xl/base/small **and on v4's own fan**.
+- **FALSE** — that this costs anything. ⭐ **100.0 % of windows ALREADY contain a candidate within
+  0.5 m/s of the exact speed the car took** (mean gap **0.0525 m/s**), and restricting the oracle to
+  *only* speed-matched candidates changes it by **+0.0000 m [0.0000, 0.0000]**. **The best-in-fan
+  candidate is already speed-matched.**
+
+⇒ **THE FAN IS WIDE, NOT MIS-PLACED. Marginal over-dispersion and exact conditional coverage are the
+same fact seen from two directions** — stream 1 measured the *span*, stream 2 the *unreachable
+anchors*, and **neither measured the conditional**, which is the only quantity that could have
+licensed the inference. *(New retraction class: **MARGINAL MISTAKEN FOR CONDITIONAL**. Sibling class
+**CORRELATION-WITHOUT-SLOPE** — here the correlation is **−0.974** and is misleading; the slope
+carries the physics.)*
+
+**Both pre-registered halves fail.** Every `v0`-conditioning transform of the real fan is
+separated-*worse* (up to **+1.62 m**); the realised pick tops out at **0.7968** vs CONFIRM 0.4907 — a
+**1.62×** miss. On *static* anchor sets conditioning does move the ceiling, but the equal-storage
+control shows it is **anchor COUNT, not conditioning**: `A_cond(16,16)` is separated-worse than
+`A_fixed(256)` (**+0.0555 [+0.0308, +0.0809]**). The instrument was shown able to return the opposite
+verdict — on a deliberately starved fan `F_narrow`, conditioning helps monotonically (−0.51 → −7.59,
+all separated).
+
+⭐⭐ **THE SHARPEST NUMBER IN THE STREAM, AND IT REDIRECTS THE PROGRAM: an in-sample anchor set with a
+PERFECT ceiling (0.0000) still realises only 0.4167. 100 % OF THE RESIDUAL IS SELECTION.** The 2 s
+proposal surface is exhausted; **do not fund CoverNet-style anchor sets, longitudinal admissibility
+filtering, or any further re-scoring of the frozen 2 s fan.**
+
+### ⭐ What DOES move it: the goal input — 88.0 % of the fan's headroom
+
+Giving the selector the **true 2 s goal position** — **2 of 8 target scalars** — moves the realised
+pick **0.4714 → 0.2009 [0.1689, 0.2351]**, paired **−0.2705, separated**: **88.0 % of the fan's
+headroom, clearing BOTH pre-registered bars.** *The first thing in this program to do so.*
+
+**It is a pure INTERACTION, replicated ×3:** along-track alone **−31.4 %**, cross-track alone
+**−5.8 %**, both together **+88.0 %**. Neither coordinate is the lever; the *position* is.
+
+⛔ **TESTED 2026-07-27 AND REFUTED — THE 88 % IS AN ORACLE ARTIFACT.**
+(`…/incoming/2026-07-27-goal-input/GOAL_INPUT.md`.) **The tautology test came back a NULL, and it is a
+null and not an underpowered measurement:** on one axis (2 s endpoint L2, metres) the as-trained
+selector's own pick is **1.0061 [0.827, 1.193]** and the best out-of-fold learned goal head is
+**1.0028 [0.846, 1.169]** — paired **−0.0034 [−0.1169, +0.1232], not separated. The head is 0.33 %
+better than the thing it was meant to inform, and separating that would need ≈ 4.99 × 10⁴ episodes.**
+⇒ **PREDICTING THE 2-D ENDPOINT *IS* THE PICKING PROBLEM.** The selector already predicts the 2 s
+endpoint to 1.0 m against a mean displacement of 25.5 m.
+
+**The operative test agrees.** Break-even is **σ₀ = 0.955 m** radial RMS goal error (**0.606 m** for
+half the prize; **0.721 m** for a *biased regressor*, the realistic family, 25 % stricter). **Achieved
+1.330 m ⇒ recovery −10.4 %.** The fan-independent **latent-only** head — what a strategic brain would
+actually have — is **separated-WORSE (+0.0464 [+0.0164, +0.0792])**, replicated on all three REF-C
+fans; **on none is a realisable goal separated-better.** Damage reaches **+8.37 m**.
+*(New classes: **BOUND-QUOTED-AS-CAPABILITY**; **ORACLE-SHAPED-AS-EGO-STATE** — `head_deg` is *future*
+net heading change and sits beside `v0` in every fan dump, caught pre-fit; **RMS-PLACED-ON-A-NOISE-CURVE**,
+which over-predicted damage 5.7×.)*
+
+⚠️ **Scope it honestly: this refutes ONE argument for the hierarchy — the cheapest one — not the
+hierarchy.** Goal conditioning **does** work below 0.955 m. What is refuted is that *our features
+reach it*, and that *a map would help*.
+
+⭐⭐ **AND THE REDIRECT IS THE MORE VALUABLE HALF — WE WERE AIMING AT THE WRONG AXIS.** Holding the
+other axis at its **learned** value: oracle **along-track recovers +83.7 % (separated)**; oracle
+**cross-track recovers +2.9 % (NOT separated)**. **Even a *perfect* cross-track buys 2.9 %.**
+⇒ **The 88 % lives on HOW FAR THE CAR WILL TRAVEL IN 2 s — not on where the road goes.**
+
+⛔ **THEREFORE THE "WE NEED ALPASIM OR AN EXTERNAL MAPPED CORPUS" LINE TARGETS THE +2.9 % AXIS AND IS
+THE WRONG BLOCKER.** A map / route / lane-graph supplies the axis worth 2.9 %. **The +83.7 %
+longitudinal axis is UNBLOCKED and its signal is ALREADY IN PhysicalAI-AV** — `obstacle.offline`,
+**97.44 % coverage, 53.6 agents/window**, sitting in the 32-of-36 features our ingest does not read.
+*(AlpaSim's `traffic_light.parquet`, 51/51 scenes, is likewise a **speed-intent** asset misfiled as a
+map asset.)* **Spec in supplier units: 2 s-mean speed to 0.219 m/s (half prize) / 0.406 m/s
+(break-even); the best head achieves 0.576 m/s — 1.42× short of doing no harm.**
+→ **E-GOAL-1 launched:** lead-vehicle gap/TTC into the head, against pre-registered along-track RMS
+bars **0.813 m / 0.439 m**.
+
+🟠 **Provenance defect, recorded rather than buried:** `fanc_goal_decomp.json` — the source of the
+widely-quoted *"−31.4 % / −5.8 % / +88.0 % pure interaction"* — **has no producing script staged
+anywhere** (probed twice), so that decomposition is **currently unreproducible from the repo** and it
+had already propagated into this document. **The substance survives independent re-derivation**
+(+83.7 % / +2.9 % above, from a separate implementation), **but the original artifact must be
+reproducible or withdrawn.**
+
+⭐ **And this vindicates a suspicion already on the record in `CLAUDE.md`:** the *"strategic choice is
+a ~2 % lever"* reading was flagged as **confounded** because REF-C evaluates with **`nav_cmd=None`**,
+so a decoder that never had a working route input learned the marginal. **That confound is now
+measured: with a working goal the lever is worth 88.0 % of the headroom.** The three-planner
+hierarchy is not over-design — *we had simply never wired the strategic input.*
+
+### What is genuinely positive, with its honesty conditions attached
+
+- ⭐ **C2 (one WM roll as a reference trajectory) with v1's WM beats the as-trained selector,
+  separated: −0.2918 [−0.4233, −0.1598], with ZERO training, UNGATED, on 100 % of windows.**
+  ⚠️ **The stratum figure — *"0.7085 → 0.3330, a 53 % cut"* on the 22.7 % of windows where the WM is
+  good — MUST NEVER TRAVEL WITHOUT ITS 22.7 % FIRING RATE. Deployed as a policy it is worth
+  −0.0852 [−0.1190, −0.0548]; quoted bare it overstates the deployable win by 4.4×.**
+  *(0.227 × 0.3754 = 0.0852. New retraction class: **a stratum win is not a deployable win**.)*
+- **A4 moved the LONGITUDINAL axis: −0.0898 [−0.1708, −0.0160], p = 0.008** — the axis v4's 15k→30k
+  regression was **100 %** concentrated on, and the axis Bar A's **trained** regret objective could
+  not move at all (+0.0038, p = 0.63, flat). **A training-free scoring rule moved what a trained
+  objective could not.** Its `ade_0_2s` (−0.0857, p = 0.033) is **UNPOWERED, NOT REFUTED** at n = 40
+  and would separate at n = 600 — the cheapest open question in the stream.
+- With a good simulator, per-candidate imagination beats the **WM-free** control, separated
+  (**−0.5364 [−1.2234, −0.0842]**) — the first genuine imagination result in the program. **But it
+  stays separated-worse than rolling ONCE** ⇒ the failure is the **per-candidate structure**, not the
+  world model and not imagination.
+- ⛔ **A4's winning weights put their mass on the two CONTROLS** (WM-free bicycle + single reference
+  roll); the per-candidate imagination term carries the smallest non-zero weight. **A4 is a
+  longitudinal-plausibility result that uses a world model as a reference trajectory** — a different
+  and much cheaper mechanism than imagination-scored selection. Read it that way.
+- ✅ **RESOLVED 2026-07-27 — the missing instrument EXISTS, and building it proved we should not use
+  it.** (`…/incoming/2026-07-27-canary-proxy/CANARY_PROXY.md`, out-of-fold, episode-disjoint.)
+  `wm_canary_ade_2s` **is** predictable from deploy-time observables — **R² 0.5526 / Pearson 0.7518**
+  (R² 0.4203 with a single world model) against **R² 0.070** for `v0` — and it converts: a learned
+  **utility** gate recovers **164 % of the oracle** (−0.1397 [−0.2289, −0.0634], separated, stable
+  across 5 fold seeds).
+  ⛔ **But the gate is DOMINATED BY ITS OWN PREREQUISITE and should not ship.** The robustly separated
+  gate needs **2-world-model ensemble features** — and with a second world model you can simply score
+  **ungated** for **−0.2918**, **2.1× more**. Even an *unattainable perfect* per-window gate on v4's
+  WM (−0.2353) loses to ungated C2. Single-WM gates are −0.047…−0.060, **UNPOWERED NOT REFUTED**
+  (they separate at n ≈ 61–129).
+  ⭐ **DECISION AVAILABLE TODAY: apply C2 with v1's WM, UNGATED. Best measured deployable policy
+  0.5196–0.5221 vs as-trained 0.8563 ⇒ −0.3366 [−0.4507, −0.2310], separated, out-of-fold — a 39 %
+  cut with NO ORACLE ANYWHERE, zero training, one extra roll-out per window.**
+  **Three findings that close threads:** `v0` used as a gate is **separated-WORSE than doing nothing**
+  (+0.0411 [+0.0133, +0.0752]) — that thread is closed, not merely weak. **Aiming at the canary costs
+  3.6×**: gating on predicted **C2-vs-A0 utility** beats gating on the predicted canary
+  (−0.1397 vs −0.0383, same features, same folds) ⇒ *optimise the objective you are paid for, not its
+  legible correlate*. And **roll-out drift — the most theoretically attractive proxy family — was the
+  WEAKEST** (+0.0108 on v4), independently confirming §2.2's mechanism: a simulator with no
+  plausibility prior has uninformative self-consistency.
+  🚨 **Near-miss worth recording: TWO PURE-NOISE GATES WOULD HAVE BEEN WRITTEN UP AS SEPARATED WINS**
+  (−0.2918 and −0.2761 vs A0) **had the pre-registration not required a `selected_frac` and
+  incremental columns.** The degeneracy check caught both. 6 pre-registered S-tests + 6 downstream
+  negative controls all pass; the harness **refuses to adjudicate if any S-test fails**.
+
+E-V5-2 and E-V5-3 remain on the eval pod. The blind-imagination sweep supplying `T_blind` is on pod2.
+**v4's restart budget stays 0/2 — unspent, not forfeited.**
