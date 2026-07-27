@@ -1,0 +1,82 @@
+diff --git a/Project Steering/MODEL_REGISTRY.md b/Project Steering/MODEL_REGISTRY.md
+index a3359c8..22287c7 100644
+--- a/Project Steering/MODEL_REGISTRY.md	
++++ b/Project Steering/MODEL_REGISTRY.md	
+@@ -201,6 +201,20 @@ independently by two streams on 2026-07-26 and 2026-07-27; it had already propag
+ STRONG bar and into several agent briefs, mine included. The legitimate same-surface bar is the
+ in-sample re-scoring ceiling **0.4907**.)*
+ 
++⚠️ **AND `0.4907` CARRIES ITS OWN DEPLOYMENT TAG — added 2026-07-27, because it is being quoted
++against 600-episode numbers.** **`0.4907` is an 881-window / 40-episode number** (the canonical val
++deployment, the same surface as `0.4271`), on which the `a0` as-trained reference reads **0.4714**.
++**MEASURED** — `…/incoming/2026-07-26-bar-a-selector/raw/bar_a_produced.json`:
++`in_sample_ceiling.ce.ade_0_2s_in_sample = 0.4907`, `_cache.n_eval_windows = 881`,
++`_cache.n_episodes = 40`, `_goal_mode "produced"`, `_ckpt_step 29999` — i.e. an **IN-SAMPLE** ceiling
++(*"fit and scored on the same windows … NOT deployable, NOT a generalization number"*, the artifact's
++own `_read`) over the **frozen** produced-surface fan of `flagship-v4-fromscratch` @ 29 999 (§1.5.5).
++`0.4714` = REF-C-XL's full-set `ade_0_2s` on that same deployment (§1.5's v1.6 table, row *ADE@2s
++full-set*). ⛔ **The 600-episode panels are a DIFFERENT deployment** — 13 198 windows / 600 episode
++clusters, where the same `a0` reads **0.5015** (`…/incoming/2026-07-28-egoal-4-joint/raw/e4_summary.json`,
++`deployment.a0_as_trained`). **A 0.4907-vs-600-episode comparison is cross-deployment and is not a
++result**, by the same rule that forbids substituting v1's 600-ep 0.4108 for its 0.4271 (§1.2a).
++
+ Clears every trivial bar on the same 881 windows: best-of-3 kinematic floor 0.5005 · CTRV oracle 0.523 ·
+ no-vision ego-status ceiling 0.5735 · CV 0.8248 heldout / **0.8377 full-set**.
+ ⚠️ **Read this comparison LIKE-FOR-LIKE (noted 2026-07-26).** The three bars are **full-set means by
+@@ -741,6 +755,11 @@ step=29999 (TRAINABLE)` (`…/incoming/2026-07-23-v41-10k-gate/v4.1_train.log:1`
+ > MEASURED support: the from-scratch smoke-loop co-evolves the WM from random init with **no collapse**
+ > (canary 1.52 → 1.165, §1.5.5). The pending **v4.2b Phase-B canary** is the discriminating test: if a
+ > floored-λ planner still breaches the canary, the coupling is *not* floor-tunable ⇒ from-scratch.
++> ⚠️ **STATUS MOVED 2026-07-27 — this block was written while the from-scratch arm was still a
++> *fallback*; it has since RUN TO 30 k** (§1.5.5, corrected the same day). Its real-run canary is
++> **1.1409** from a random-init baseline of **15.6742** — i.e. **no collapse**, consistent with the
++> hypothesis, but still far from v1's **0.452**. **This line records the new evidence and does NOT
++> re-adjudicate the hypothesis**, which remains owned by the v4.2b Phase-B read.
+ 
+ ---
+ 
+@@ -857,15 +876,30 @@ Per the pre-registered rule this **confirms "floor too high"** → v4.2b (floor
+ 
+ ---
+ 
+-#### 1.5.5 flagship-v4 from-scratch fallback — `flagship-v4-fromscratch` — ✅ **READY, not launched**
++#### 1.5.5 flagship-v4 from-scratch — `flagship-v4-fromscratch` — ✅ **COMPLETE (30 k, `rc=0`)**
++
++> 🔴 **ROW CORRECTED 2026-07-27 — it recorded an INTENT and was never advanced to an OUTCOME.**
++> **Superseded text, kept visible on purpose** (a registry whose history is erased cannot be audited).
++> Until 2026-07-27 the heading read *"✅ **READY, not launched**"* and the Status row read verbatim:
++> *"✅ **CODE STAGED + VALIDATED, NOT LAUNCHED.** Fires **only** if v4.2b's Phase-B canary runs away,
++> and only on Sayed's go. **Zero GPU-day committed.**"*, with **Cost** *"~53 h / 30 k (ESTIMATED)"*.
++> **All of that was false from 2026-07-23T21:54:44Z onward** — the arm launched that night, ran
++> **59.04 h** to `final_step 29999`, exited `rc=0`, and by 2026-07-27 was **the substrate of every
++> selection experiment of the week** (Bar A, T3, E-V5-1, the fan work, E-GOAL-1→4). A reader auditing
++> those results was told their substrate did not exist. **Every field below was re-read from the run's
++> own artifacts on pod2 on 2026-07-27** (`metrics.json`, `supervisor.log`, `config.json`, `train.out`,
++> `ls -la`) — **not** from any summary, changelog or report. Root-cause class and the standing check
++> that would have caught it: `Project Steering/RETRACTION_LOG.md`, entry **2026-07-27 / class C41**.
+ 
+ | Field | Value |
+ |---|---|
+-| **Status** | ✅ **CODE STAGED + VALIDATED, NOT LAUNCHED.** Fires **only** if v4.2b's Phase-B canary runs away, and only on Sayed's go. Zero GPU-day committed. Spec: `…/incoming/2026-07-23-v4-fromscratch/V4_FROMSCRATCH_LAUNCH.md`; artifact `a05a5c9e`. |
++| **Status** | ✅ **LAUNCHED 2026-07-23T21:54:44Z, RAN TO COMPLETION 2026-07-26T09:01:37Z.** **MEASURED** (mine, direct pod2 reads 2026-07-27): `metrics.json` → **`final_step 29999`**; `supervisor.log` → *"launch attempt (**restarts=0**)"*, *"trainer **pid=108011**"*, **`trainer exited rc=0`**, *"clean finish"*, *"supervisor exiting (run complete)"*. ⚠️ *"clean finish (**summary.json** done)"* is a **fixed log string** — `summary.json` does **not** exist in the run dir; the branch of `is_done()` that actually fired is the trainer's own terminal line in `train.out`: `{"done": true, "final_step": 29999, …}` (both re-read; state it this way so nobody hunts a `summary.json` artifact). **Parity intact** — the run's `config.json` carries `train_corpus_key physicalai-train-e438721ae894`, `skip_hash f09e44db`. Spec: `…/incoming/2026-07-23-v4-fromscratch/V4_FROMSCRATCH_LAUNCH.md`; launch record `…/incoming/2026-07-23-v4-fromscratch-launch/LAUNCH_CONFIRMED.md`. |
+ | **Distinguishing lever** | **`--from-scratch`** = skip `_warmstart_trunk`, random-init the trunk (the not-frozen gate then passes trivially). Byte-identical to v4.2b in every other flag (eff batch 64, lr_trunk 1e-4, floor 0.25, λ_plan sched) → **one-lever attributability**: if v4.2b's canary runs away and this one does not, the warm-start coupling is confirmed as the cause. |
+ | **Validation** | MEASURED: full `pytest -q` **786 passed / 2 skipped** + 5 new from-scratch tests (14 passed in `test_train_flagship_v4.py`). `--smoke-loop` from random init: canary baseline **1.5189** → drops monotonically **1.385 → 1.312 → 1.232 → 1.179 → 1.165** as the WM co-evolves — **improves, does not collapse** (the existence-proof for the through-line above). |
+-| **Cost** | **~53 h / 30 k** (ESTIMATED, MEASURED basis: v4.1 ~1.57 s/step at accum 1 → ~6.3 s/step at accum 4 → ~52.5 h + eval overhead). Gate read at step 10 000 (~18 h). |
+-| **Code state** | `--from-scratch` / `--trunk none` sentinel in `stack/scripts/train_flagship_v4.py` (STAGED); tests in `stack/tests/test_train_flagship_v4.py` (STAGED). |
++| **Cost** | **MEASURED 59.04 h** — `metrics.json` `wallclock_s` **212 544.6** (= 212 544.6 / 3600), on **pod2 / NVIDIA A40 46 068 MiB**, host `08f6ce7d8e55` (the supervisor's *"supervisor UP on 08f6ce7d8e55"* matches pod2's live `hostname`, both MEASURED 2026-07-27). ⚠️ The superseded row carried **~53 h ESTIMATED**: the estimate was **~11 % low**, and *"zero GPU-day committed"* understated the real spend by **≈2.5 GPU-days**. |
++| **Result** | ⚠️ **Two protocols — never mix them.** **(a) TRAINER in-loop val** (`metrics.json`, n = **881**): `ade@2s` **0.5063**, `oracle_ade@2s` 0.1892, `sel_gap@2s` 0.3172, `miss@2m` 0.2145; `canary_ade@2s` **1.1409** against a random-init `canary_baseline` **15.6742** (the co-evolution signature — no collapse). ⛔ **Trainer val is NOT quotable against v1** (§0, and the v1.6 retraction at §1.5's sibling row). **(b) DECISION-GRADE** `eval_flagship_v4.py`, **episode-cluster bootstrap**, **881 windows / 40 val episodes**: @ step **15 000** `ade_0_2s` **0.5839 [0.4962, 0.6821]**, **paired** vs deployed v1 **+0.1568 [+0.0630, +0.2504]** (`p_delta_gt0` 1.0, ✅ separated; **positive = BEHIND v1**) — `…/incoming/2026-07-25-flagship-v4-midtrain-eval/flagship-v4-fromscratch-15k.json` + `…_lateral_and_paired.json`. @ step **29 999**: deployable **produced** surface **0.8563 [0.7282, 1.0035]**, `beats_cv` **❌** (CV floor 0.8377 on the same windows); **oracle-goal** surface 0.6423 [0.5348, 0.7586], `beats_cv` ✅ but `goal_provenance.deployable = false` ⇒ **not a leaderboard number** — `…/incoming/2026-07-26-v4-30k-gate/raw/flagship-v4-fromscratch-30k-{produced,oracle}.json` (both `ckpt_step 29999`). |
++| **Code state** | `--from-scratch` / `--trunk none` sentinel in `stack/scripts/train_flagship_v4.py`; the run's own `config.json` proves the lever was **in force**: `"from_scratch": true`, `trunk.init "from-scratch (random)"`, `trunk.ckpt null`, `trunk.step -1`. **As launched** (`config.json` → `args`): `steps 30000, batch 16, accum 4 (eff 64), lr_head 1e-4, lr_trunk 1e-4, warmup 2000, lam_mult_floor 0.25, phase_a_steps 2000, phase_b_steps 8000, gate_step 10000, labels v3, strategic full, dense_plan true, rollout_k 4, eval_episodes 40, seed 0`. Tests in `stack/tests/test_train_flagship_v4.py`. |
++| **Location** | `tanitad-pod2:/workspace/experiments/flagship-v4-fromscratch/` — `ckpt.pt` **3 243 109 310 B** (step 29999) + `ckpt_step{5,10,15,20}000.pt`; `train_log.jsonl` **661 rows**, last row step **29999** (`plan_ade 0.3659`, `oracle_ade 0.1647`). ⭐ **Partly HF-backed** (MEASURED 2026-07-27, HF API): `Sayood/flagship-v4-fromscratch`, public + **`gated: manual`**, `lastModified` **2026-07-26T09:12:06Z**, files `ckpt.pt`, `ckpt_step20000.pt`, `config.json`, `metrics.json`, `train_log.jsonl`, `README.md`. 🔴 **`ckpt_step{5,10,15}000.pt` exist on the pod disk ONLY** — the 15 k milestone that carries this arm's decision-grade read is single-disk. |
+ 
+ > 🟥 **GATE-COMPLETENESS / RECONSTRUCTION RISK (the whole v4 line).** The v4 held-out eval **driver was
+ > the standing blocker** — it did not exist until `eval_flagship_v4.py` was built + O-03-validated on
+@@ -875,6 +909,9 @@ Per the pre-registered rule this **confirms "floor too high"** → v4.2b (floor
+ > comparative matched-step-ratio path is also dead for v4: `g_op_fwd_ade_m` is computed in
+ > `v4_loss_step` but never reaches `train_log.jsonl` (whitelist gap in `_training_loop`). Checkpoints
+ > live on single pod disks (v4.1 3.24 GB, v4.2 both on pod2) and are **not HF-backed**.
++> *(⭐ **One exception, MEASURED 2026-07-27:** `flagship-v4-fromscratch` **is** HF-backed —
++> `Sayood/flagship-v4-fromscratch`, gated:manual — but only `ckpt.pt` + `ckpt_step20000.pt`; its
++> 5 k / 10 k / **15 k** milestones are still single-disk. See §1.5.5 **Location**.)*
+ 
+ ---
+ 

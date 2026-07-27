@@ -1,0 +1,46 @@
+diff --git a/Project Steering/RETRACTION_LOG.md b/Project Steering/RETRACTION_LOG.md
+index e18352f..a2bb643 100644
+--- a/Project Steering/RETRACTION_LOG.md	
++++ b/Project Steering/RETRACTION_LOG.md	
+@@ -511,3 +511,41 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
+   answer "was it blocked?". (2) **Append, never truncate, any log that is the sole record of an external
+   interaction.** Sibling to C13 (a guard that cannot fail): here the *instrument* could not report the
+   distinction it was being read for.
++- **C41 — A REGISTRY ROW THAT RECORDED AN INTENT AND WAS NEVER ADVANCED TO AN OUTCOME** *(new class,
++  added 2026-07-27)* ⇒ **the same row served as the pre-registration AND as the status, so the launch
++  had nowhere to be written — and the ONLY quotable source for model facts went on asserting the
++  arm did not exist while every experiment of the week measured on it.**
++  **Retracted claim:** `MODEL_REGISTRY.md` §1.5.5 — *"`flagship-v4-fromscratch` — ✅ **READY, not
++  launched** … CODE STAGED + VALIDATED, NOT LAUNCHED … **Zero GPU-day committed**"*, with Cost
++  *"~53 h ESTIMATED"*.
++  **MEASURED, re-read from the run's own artifacts on pod2 (2026-07-27), not from prose:**
++  `metrics.json` **`final_step 29999`**; `supervisor.log` **launched 2026-07-23T21:54:44Z**, pid 108011,
++  **restarts 0**, **`trainer exited rc=0`** 2026-07-26T09:01:37Z; `wallclock_s` **212 544.6 = 59.04 h**
++  on pod2/A40; `config.json` `from_scratch true`, `trunk.ckpt null`, parity key
++  `physicalai-train-e438721ae894` / `f09e44db`; `ckpt.pt` + four milestone checkpoints on disk;
++  `Sayood/flagship-v4-fromscratch` on HF since 2026-07-26T09:12:06Z.
++  **What it cost / would have cost:** the row was false for **4 days**, and not on a dormant arm — it is
++  **the substrate of every selection experiment of the week** (Bar A, T3, E-V5-1, the fan work,
++  E-GOAL-1→4; the `0.4907` re-scoring ceiling is measured on *this* checkpoint at 29 999). Anyone
++  auditing those results was told by the authoritative source that their substrate had never run, and
++  the "zero GPU-day committed" line understated real spend by **≈2.5 GPU-days**.
++  ⚠️ **The failure is not that nobody noticed — four program reports, `LOOP_STATE.md` and two
++  `RETRACTION_LOG` entries all recorded the run correctly.** Every *fast* surface was right and the
++  *authoritative* one was wrong, which is the inverse of C1 and is why no reader caught it: the rule
++  says trust the registry over the prose.
++  ⇒ **Three standing consequences.**
++  (1) **A pre-registration row and a status row must not be the same row.** A planned arm carries
++  `Status: PLANNED` plus a separate `Outcome:` field that starts empty — an empty field is visibly
++  unanswered; a stale sentence is not.
++  (2) **THE CHECK THAT WOULD HAVE CAUGHT IT, and it is mechanical:** every `Location:` path in the
++  registry is a real directory. **Any row whose status says NOT LAUNCHED while its run directory
++  contains a `metrics.json` with a `final_step` is a contradiction a script can find** — the same
++  nightly sweep as `stack/scripts/pod_git_drift.py`, pointed at experiment dirs instead of code.
++  Equivalently, at the *repo* end: a committed eval JSON naming `ckpt_step 29999` for an arm the
++  registry calls unlaunched is the same contradiction, findable without touching a pod.
++  (3) **Registry refresh is already in `AGENT_OPERATING_STANDARD.md` ("whenever a model version is
++  created, retired, or re-measured") — the gap is that LAUNCH and COMPLETION are neither.** Add both:
++  a row is refreshed on *launch*, on *completion*, and on *first decision-grade eval*.
++  Sibling to **C4** (inherited without re-verification) inverted — here the primary source was the
++  stale one — and to **C13** (a guard that cannot fail): a row that can only ever be written once
++  cannot report a state change.

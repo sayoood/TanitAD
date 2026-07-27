@@ -1,0 +1,67 @@
+{
+  "_what": "RE-RENDER BLOCKED \u2014 the raw draws this node needs are not persisted anywhere.",
+  "_evidence_class": "MEASURED (ours) for the probes and the arithmetic; the node's own values are quoted from the committed artifact, unmodified.",
+  "_source_artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44.json",
+  "_source_node": "paired_common_start/deltas_vs_K20/longitudinal/160/d_closed_ade2s_m",
+  "_source_artifact_unmodified": true,
+  "committed_rendering": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.975,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 80,
+    "n_episodes": 21,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "RE_RENDERED": false,
+  "_blocked_because": "e1a_horizon.py persists only the summary JSON; the per-window closed-loop ade2s vectors at K=160 and K=20 exist in no artifact.",
+  "_probes": [
+    {
+      "where": "the committed artifact",
+      "result": "summary nodes only; all_windows[K] holds bootstrapped blocks, not per-window arrays"
+    },
+    {
+      "where": "repo-wide search for this run's per-window dumps",
+      "result": "none; \u2026/2026-07-26-horizon-envelope-closeout/artifacts/perwindow_K*.pt is a different design (K 20/60/70/185, 41 common windows) and is NOT a substitute"
+    },
+    {
+      "where": "tanitad-pod3:/workspace/e1a_e2a/ (the producing host)",
+      "result": "JSONs + scripts present; no per-window tensor"
+    }
+  ],
+  "_what_recovery_would_cost": "re-running the closed-loop rollouts on a GPU = a RECOMPUTE, which this job explicitly excludes.",
+  "derivable_without_the_draws": {
+    "_rule": "p_delta_gt0 = (d > 0).mean() over B draws; lo = np.percentile(d, 2.5).",
+    "n_boot": 2000,
+    "n_draws_gt_0": 1950,
+    "n_draws_le_0": 50,
+    "percentile_index_0based": 49.975,
+    "lo_is_interpolated_between": [
+      "d[49]",
+      "d[50]"
+    ],
+    "weight_on_upper_order_statistic": 0.9750000000000014,
+    "reading": "d[49] <= 0 < d[50], so `lo` sits on the exact 2.5 % boundary and `separated` is decided by ONE order statistic. It holds only while d[49] > -39 * d[50].",
+    "bounds_from_the_printed_rounding": "|delta| < 5e-5 and |lo| < 5e-5, since both round to 0.0 at 4 dp.",
+    "demonstration": {
+      "separated_if_d49_is_barely_negative": {
+        "p_delta_gt0": 0.975,
+        "lo": 9.749750000000014e-07,
+        "hi": 1e-06,
+        "separated": true
+      },
+      "NOT_separated_if_d49_is_more_negative": {
+        "p_delta_gt0": 0.975,
+        "lo": -1.5249999999998564e-06,
+        "hi": 1e-06,
+        "separated": false
+      }
+    }
+  },
+  "_conclusion_impact": "NONE. E1a_E2a_RESULTS.md's verdict rests on corridor-departure at an 18.5 s horizon and states explicitly that ADE@2s 'CANNOT see 18 s drift'; it quotes closed_ade2s only as the all-window 0.485->0.496 move, not this paired node. No published conclusion leans on it.",
+  "_escalation": "OWNER of 2026-07-25-closedloop-horizon-and-shift: this node cannot be re-rendered from anything that exists. Either re-run e1a_horizon.py with a per-window dump added (one np.savez), or stamp the node unquotable the way legA_v5config_structural.json was stamped. Do not leave '0.0 [0.0, 0.0] separated' standing."
+}

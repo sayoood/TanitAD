@@ -1,0 +1,66 @@
+{
+  "_what": "RE-RENDER of one committed node. The statistics are unchanged; only ci.py's display precision differs (fix at f45b100).",
+  "_evidence_class": "MEASURED (ours) \u2014 deterministic replay of the committed per-window dumps; no model, no GPU, no pod.",
+  "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed=0, unit = val episode. overlapping_holdout_se NEVER called.",
+  "_source_artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-tactical-action-input/artifacts/blockA/blockA_full_panel_20arm.json",
+  "_source_node": "paired/refc_base_produced__minus__refc_base_v0on/recovery",
+  "_source_artifact_unmodified": true,
+  "_inputs": {
+    "refc_base_produced": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudosim-arm-panel/artifacts/pw_refc_base_produced.npz",
+    "refc_base_v0on": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-tactical-action-input/artifacts/blockA/pw_refc_base_v0on.npz",
+    "v1_tactical_follow": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudosim-arm-panel/artifacts/pw_v1_tactical_follow.npz"
+  },
+  "_reference_arm": "v1_tactical_follow",
+  "_row_identity": {
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "_eid_identical_across_arms": {
+    "refc_base_produced": true,
+    "refc_base_v0on": true,
+    "v1_tactical_follow": true
+  },
+  "committed_rendering": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.9885,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 13184,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_rows_paired": 13184
+  },
+  "rerendered": {
+    "delta": 8e-07,
+    "lo": 1e-07,
+    "hi": 1.8e-06,
+    "ci95": 9e-07,
+    "p_delta_gt0": 0.9885,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 13184,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "display_dp": 7,
+    "display_note": "rendered at 7 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged.",
+    "n_rows_paired": 13184
+  },
+  "RE_RENDER_VERIFIED_IDENTICAL": true,
+  "_verification_rule": "fields untouched by the rendering fix must be EQUAL; delta/lo/hi/ci95 must be equal AT 4 dp. A difference in any of them would mean this was a RECOMPUTE, not a re-render.",
+  "_mismatches": {}
+}
