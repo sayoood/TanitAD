@@ -1,0 +1,62 @@
+{
+ "what": "V2_PARITY_ENFORCEMENT.md §7 runbook, executed end to end on a synthetic corpus with the published key",
+ "when": "2026-07-27",
+ "evidence_class": "MEASURED (subprocess runs of the real scripts/register_v2_sibling.py; committed parity_manifest.json untouched)",
+ "v5_key_under_test": "physicalai-train-e438721ae894-w120-256x640cyl",
+ "steps": [
+  {
+   "step": "2a  register_v2_sibling.py --verify-only",
+   "exit": 0,
+   "pass_criteria_as_published": {
+    "extra_count == 0": true,
+    "membership_identical OR shortfall==recorded 24": true
+   },
+   "observed": {
+    "clips_built": 12,
+    "clips_expected": 12,
+    "membership_identical": true,
+    "missing_count": 0,
+    "extra_count": 0,
+    "shortfall_matches_recorded_skips": true,
+    "mode": "set-diff (expect_clips supplied)"
+   },
+   "wrote_nothing_to_the_manifest": true
+  },
+  {
+   "step": "2c  register_v2_sibling.py --write-manifest",
+   "exit": 0,
+   "registered": true,
+   "uid_kind": "v2ep_clipid",
+   "episode_count": 12,
+   "derived_from": "synthetic-train-aaaaaaaaaaaa",
+   "geometry_recorded": true,
+   "reminds_the_operator_to_stage": true
+  },
+  {
+   "step": "corpus_key_of on the published key",
+   "resolved": "physicalai-train-e438721ae894-w120-256x640cyl",
+   "is_the_sibling": true,
+   "old_lexicographic_rule_would_have_resolved": "physicalai-train-e438721ae894",
+   "old_rule_was_wrong": true,
+   "candidates_matching_this_path": [
+    "physicalai-train-e438721ae894",
+    "physicalai-train-e438721ae894-w120-256x640cyl"
+   ],
+   "reading": "the runbook key contains its parent's key on purpose; without the longest-match tie-break the guard reads a registered wide cache as the RAW parent corpus (uid_kind epcache_basename) and refuses it for the wrong reason."
+  },
+  {
+   "step": "4  train_flagship4b --require-parity (guard only)",
+   "parity": true,
+   "corpus_key": "physicalai-train-e438721ae894-w120-256x640cyl",
+   "episodes_loaded": 12,
+   "content_check": "sha256(sorted clip ids) MATCHES the committed manifest entry"
+  },
+  {
+   "step": "re-registration WITHOUT --force",
+   "exit": 1,
+   "refused": true,
+   "reason": "[v2-sibling] physicalai-train-e438721ae894-w120-256x640cyl is ALREADY registered (12 episodes, digest c3f9d5eae261…). Re-registering would let a truncated cache"
+  }
+ ],
+ "ALL_PASS": true
+}

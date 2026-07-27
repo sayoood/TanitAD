@@ -1,0 +1,52 @@
+{
+ "what": "the two premises behind parity.py §9's v2 membership check, each read from the artifact that owns it",
+ "when": "2026-07-27",
+ "evidence_class": "MEASURED (committed artifacts, read directly; no prose, no summary)",
+ "premise_1_clips_are_not_episodes": {
+  "source": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-wide-fov-build/raw/parity_split_meta_2026-07-27.json",
+  "discovered_clips": 3000,
+  "train_clips": 2400,
+  "val_clips": 600,
+  "verified_train_key": "e438721ae894",
+  "verified_val_key": "0c5f7dac3b11",
+  "keys_match_parity": true,
+  "train_key_equals_PARITY_TRAIN_KEY": true,
+  "val_key_equals_PARITY_VAL_KEY": true,
+  "val_clips_equals_PARITY_VAL_EPISODES": true,
+  "reading": "3000 discovered -> split_clips(val_frac=0.2) -> 2400 train / 600 val. A check written against 2400-as-total or 2376-as-clips is wrong in opposite directions."
+ },
+ "premise_2_skip_indices_tile_the_split": {
+  "source": "stack/tanitad/data/parity_manifest.json",
+  "episode_count": 2376,
+  "n_episode_uids": 2376,
+  "uid_index_min": 0,
+  "uid_index_max": 2399,
+  "n_skip_indices": 24,
+  "skip_index_first": 1798,
+  "skip_index_last": 1941,
+  "union_is_exactly_0_to_N_minus_1": true,
+  "N": 2400,
+  "N_equals_train_clips": true,
+  "reading": "⭐ the 2376 episode positions and the 24 skip positions tile 0..2399 with no gap and no overlap. That is the independent confirmation that (a) the split really is 2400 clips and (b) skip_%05d indexes the SAME ordered list as ep_%05d.pt — which is exactly what the identity-of-the-24 shortfall check assumes."
+ },
+ "premise_3_order_equals_sort": {
+  "train_ordered_digest": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+  "train_sorted_digest": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+  "identical": true,
+  "reading": "the discovered clip order already IS clip-id order, so a SET membership proof (all the v2 format can offer) is exactly as strong here as an ordered one. ⚠️ that is a property of THIS corpus, not a general guarantee."
+ },
+ "manifest_agrees_with_the_export": {
+  "manifest_clip_id_sha256_sorted": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+  "export_train_ids_sha256_sorted": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+  "identical": true,
+  "manifest_n_clips": 2400,
+  "export_train_clips": 2400
+ },
+ "ALL_PASS": true,
+ "checks": {
+  "premise_1": true,
+  "premise_2": true,
+  "premise_3": true,
+  "manifest_matches_export": true
+ }
+}

@@ -8,6 +8,25 @@
       "uid_kind": "epcache_basename",
       "uid_source": "measured-enumeration",
       "episode_uid_sha256": "9877bef64da35f384b380b23ab0e760f3ef5396c6f3e849d5de81c7243ac7386",
+      "clip_membership": {
+        "n_clips": 2400,
+        "clip_id_sha256_sorted": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+        "clip_id_sha256_ordered": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+        "ordered_equals_sorted": true,
+        "discovered_clips": 3000,
+        "val_clips": 600,
+        "decode_failures": 24,
+        "digest": "sha256('\\n'.join(sorted(clip_ids))) — byte-identical to parity.uid_digest(), so the two are directly comparable",
+        "why": "CLIPS != EPISODES. split_clips(val_frac=0.2) on 3000 discovered clips gives 2400 train / 600 val; the 24 skips are decode failures INSIDE the 2400, leaving episode_count 2376. A v2 cache is a flat set of <clip_id>.v2ep.pt with no positions, so this clip-id digest — not episode_uid_sha256 — is what a v2 geometry sibling is proven against (parity.py §9).",
+        "provenance": {
+          "derived_from": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-wide-fov-build/raw/parity_split_meta_2026-07-27.json",
+          "derived_on": "2026-07-27",
+          "exporter": "…/2026-07-28-wide-fov-build/code/parity_split_export.py — runs discover_r0_clips -> split_clips(val_frac=0.2, seed=0) -> epcache.cache_key and REFUSES to write unless the host reproduces BOTH canonical keys first",
+          "exported_on": "tanitad-pod (pod1), the only host in the fleet holding all 3000 clips; probed read-only while it was training",
+          "evidence_class": "MEASURED (pod-side export; verified_train_key e438721ae894 == PARITY_TRAIN_KEY and verified_val_key 0c5f7dac3b11 == PARITY_VAL_KEY, keys_match_parity true)",
+          "confidentiality": "🔒 the clip ids themselves are gated-confidential PhysicalAI-AV content and live only on pods; only these digests are quotable in the repo"
+        }
+      },
       "skip_indices": [
         1798,
         1835,
@@ -2433,6 +2452,24 @@
       "uid_kind": "epcache_basename",
       "uid_source": "count-only-unrecorded",
       "episode_uid_sha256": null,
+      "clip_membership": {
+        "n_clips": 600,
+        "clip_id_sha256_sorted": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+        "clip_id_sha256_ordered": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+        "ordered_equals_sorted": true,
+        "discovered_clips": 3000,
+        "decode_failures": null,
+        "digest": "sha256('\\n'.join(sorted(clip_ids)))",
+        "why": "the val half of the same export; enables a v2 sibling of the CLEAN val split. decode_failures is UNRECORDED for val (no skip_indices are committed for 0c5f7dac3b11), so a v2 val sibling can only be registered from a COMPLETE 600-clip build.",
+        "provenance": {
+          "derived_from": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-wide-fov-build/raw/parity_split_meta_2026-07-27.json",
+          "derived_on": "2026-07-27",
+          "exporter": "…/2026-07-28-wide-fov-build/code/parity_split_export.py — runs discover_r0_clips -> split_clips(val_frac=0.2, seed=0) -> epcache.cache_key and REFUSES to write unless the host reproduces BOTH canonical keys first",
+          "exported_on": "tanitad-pod (pod1), the only host in the fleet holding all 3000 clips; probed read-only while it was training",
+          "evidence_class": "MEASURED (pod-side export; verified_train_key e438721ae894 == PARITY_TRAIN_KEY and verified_val_key 0c5f7dac3b11 == PARITY_VAL_KEY, keys_match_parity true)",
+          "confidentiality": "🔒 the clip ids themselves are gated-confidential PhysicalAI-AV content and live only on pods; only these digests are quotable in the repo"
+        }
+      },
       "skip_indices": [],
       "skip_count": 0,
       "provenance": {
@@ -2480,6 +2517,7 @@
     "uid": "episode uid = the ep_%05d.pt basename; the index is the position in the ordered source list (tanitad/data/epcache.py), so it is the stable identity WITHIN a build key.",
     "digest": "episode_uid_sha256 = sha256('\\n'.join(sorted(uids)))",
     "limitations": "This pins WHICH episode slots are present. It does not hash episode CONTENT, so a same-name file with different tensor bytes is not detected here (the build key e438721ae894 and compute_skipset.py cover the build side).",
-    "regenerate": "scripts/make_parity_manifest.py --from-profile-csv (dev box) or --record --cache-dir <verified cache> (pod)"
+    "regenerate": "scripts/make_parity_manifest.py --from-profile-csv (dev box) or --record --cache-dir <verified cache> (pod)",
+    "clip_membership": "Added 2026-07-27 (v2-parity-enforcement). A V2 COMPRESSED cache (<clip_id>.v2ep.pt) has no ep_%05d.pt positions, so episode_uid_sha256 cannot be evaluated against it and register_geometry_sibling() correctly refuses it. clip_membership carries the corpus's CLIP-ID digest instead — the uid space a v2 cache actually has. See parity.py §9 (verify_v2_membership / register_v2_geometry_sibling / assert_v2_parity_cache) and scripts/register_v2_sibling.py."
   }
 }

@@ -1,0 +1,405 @@
+{
+ "_stream": "2026-07-28-egoal-4-joint",
+ "_stage": "S0 audit",
+ "_inputs": {
+  "fan": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/fan_refc-xl-30k_600ep.pt",
+  "feat": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/egoal3/e3_val600_windows.npz",
+  "preds": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/egoal3/e3_head_preds.npz"
+ },
+ "_fan_provenance": {
+  "ckpt_md5": "/root/models/refc-xl-30k/ckpt.pt",
+  "ckpt_step": 29999,
+  "n_anchors": 256,
+  "nav_mode": "follow_constant"
+ },
+ "_deployment": {
+  "n_windows": 13198,
+  "n_candidates": 256,
+  "n_episode_clusters": 600,
+  "n_rows": 3378688
+ },
+ "G_0_deployment": {
+  "_what": "the deployment re-derives from the fan",
+  "mine": {
+   "a0": 0.5015,
+   "r_goal2s": 0.1933,
+   "oracle_in_fan": 0.1547,
+   "headroom": 0.3082
+  },
+  "reference_E2_E3": {
+   "a0": 0.5015,
+   "r_goal2s": 0.1933,
+   "oracle_in_fan": 0.1547,
+   "headroom": 0.3082
+  },
+  "passes": true
+ },
+ "G_3_label_is_the_metric": {
+  "_what": "label(w, sel[w]) == per-window a0; min_c label == oracle_in_fan",
+  "max_abs_delta_a0": 0.0,
+  "max_abs_delta_oracle": 0.0,
+  "passes": true
+ },
+ "G_5_label_gate_has_power": {
+  "_what": "the identical comparison with rows shifted by one",
+  "max_abs_delta_shifted": 5.8926,
+  "fails_as_required": true
+ },
+ "F_2_join_identity": {
+  "_what": "fan `v0` vs pose-derived `v`, per row, all 13,198",
+  "max_abs_delta": 0.0,
+  "passes": true,
+  "power_shifted_by_one": 35.4032,
+  "power_ok": true
+ },
+ "C23_by_definition": {
+  "_what": "every fed column with its index expression; the runtime guard refuses the fan dump's future fields",
+  "columns": [
+   {
+    "name": "logit",
+    "block": "F_ans",
+    "expr": "logits[w,c]                       REF-C's own score (past)"
+   },
+   {
+    "name": "softmax",
+    "block": "F_ans",
+    "expr": "softmax_c(logits[w,:])[c]         (past)"
+   },
+   {
+    "name": "logit_rank",
+    "block": "F_ans",
+    "expr": "rank_c(logits[w,:])[c] / 255      (past)"
+   },
+   {
+    "name": "end_along",
+    "block": "F_ans",
+    "expr": "fan[w,c,3,0]                      the PROPOSAL (past-conditioned)"
+   },
+   {
+    "name": "end_cross",
+    "block": "F_ans",
+    "expr": "fan[w,c,3,1]"
+   },
+   {
+    "name": "mid_along",
+    "block": "F_ans",
+    "expr": "fan[w,c,1,0]                      the 1.0 s waypoint"
+   },
+   {
+    "name": "mid_cross",
+    "block": "F_ans",
+    "expr": "fan[w,c,1,1]"
+   },
+   {
+    "name": "pathlen",
+    "block": "F_ans",
+    "expr": "sum_k |fan[w,c,k]-fan[w,c,k-1]|,  fan[w,c,-1]:=0"
+   },
+   {
+    "name": "mean_speed",
+    "block": "F_ans",
+    "expr": "pathlen / 2.0 s"
+   },
+   {
+    "name": "abs_head_end",
+    "block": "F_ans",
+    "expr": "|atan2(end_cross, end_along)|"
+   },
+   {
+    "name": "shape_dev",
+    "block": "F_ans",
+    "expr": "end_along - 2*mid_along           non-constant-rate along"
+   },
+   {
+    "name": "v0",
+    "block": "F_ctx",
+    "expr": "v0[w] == poses[L] speed           (past; gate F-2 per-row)"
+   },
+   {
+    "name": "ax_fd",
+    "block": "F_ctx",
+    "expr": "(s[L]-s[L-1])/0.1                 offsets {0,-1}, max 0 (past)"
+   },
+   {
+    "name": "cv_end_along",
+    "block": "F_ctx",
+    "expr": "cv[w,3,0]                         constant-velocity rollout of v0"
+   },
+   {
+    "name": "sel_end_along",
+    "block": "F_ctx",
+    "expr": "fan[w,sel[w],3,0]                 the as-trained pick (past)"
+   },
+   {
+    "name": "sel_end_cross",
+    "block": "F_ctx",
+    "expr": "fan[w,sel[w],3,1]"
+   },
+   {
+    "name": "logit_max",
+    "block": "F_ctx",
+    "expr": "max_c logits[w,c]"
+   },
+   {
+    "name": "logit_ent",
+    "block": "F_ctx",
+    "expr": "-sum_c p log p, p = softmax(logits[w,:])"
+   },
+   {
+    "name": "g_along",
+    "block": "F_goal",
+    "expr": "THE TREATMENT: the goal head's OOF prediction"
+   },
+   {
+    "name": "g_cross",
+    "block": "F_goal",
+    "expr": "THE TREATMENT: the cross-track BACKGROUND (see below)"
+   },
+   {
+    "name": "d_along",
+    "block": "F_goal",
+    "expr": "end_along - g_along"
+   },
+   {
+    "name": "d_cross",
+    "block": "F_goal",
+    "expr": "end_cross - g_cross"
+   },
+   {
+    "name": "d_rule",
+    "block": "F_goal",
+    "expr": "\u2b50 mean_k |fan[w,c,k] - goal*FRAC[k]|  == THE FIXED RULE'S OWN STATISTIC. With this column the learner CAN express `argmin d_rule` exactly, so `CONTROL-WEAK-BY-MODEL-CLASS` is closed by construction."
+   }
+  ],
+  "future_fields_refused": [
+   "a_gt",
+   "gt",
+   "head_deg",
+   "speed",
+   "v_target",
+   "vt_lookahead",
+   "vt_valid"
+  ],
+  "any_future_field_in_fed_set": [],
+  "passes": true,
+  "pose_offsets_read": {
+   "v": [
+    0
+   ],
+   "ax_fd": [
+    0,
+    -1
+   ],
+   "max_offset": 0,
+   "_source": "E-GOAL-3 `e3_features.features()`; every index is max(L+off, 0)"
+  },
+  "negative_index_trap": {
+   "_what": "a negative python index wraps to the END of the episode -- i.e. the FUTURE. E-GOAL-3's clamp is what stops it.",
+   "windows_clamped": 600,
+   "of_windows": 13198,
+   "pct": 4.5461,
+   "_note": "exactly the first window of every episode"
+  }
+ },
+ "C23_future_blind": {
+  "_what": "every pose row after L, and every future field, overwritten with N(1e4,1e4); every fed column re-derived. Run over ALL 13198 windows x 256 candidates = 3378688 rows -- not a sample.",
+  "static_cols_max_abs_delta": {
+   "logit": 0.0,
+   "softmax": 0.0,
+   "logit_rank": 0.0,
+   "end_along": 0.0,
+   "end_cross": 0.0,
+   "mid_along": 0.0,
+   "mid_cross": 0.0,
+   "pathlen": 0.0,
+   "mean_speed": 0.0,
+   "abs_head_end": 0.0,
+   "shape_dev": 0.0,
+   "v0": 0.0,
+   "ax_fd": 0.0,
+   "cv_end_along": 0.0,
+   "sel_end_along": 0.0,
+   "sel_end_cross": 0.0,
+   "logit_max": 0.0,
+   "logit_ent": 0.0
+  },
+  "static_max_over_all": 0.0,
+  "static_is_future_blind": true,
+  "goal_cols_by_background": {
+   "parent_resampled": {
+    "g_along": 0.0,
+    "g_cross": 52008.77734375,
+    "d_along": 0.0,
+    "d_cross": 52008.77734375,
+    "d_rule": 32505.443359375,
+    "_max_over_goal_cols": 52008.77734375,
+    "_future_blind": false
+   },
+   "sel": {
+    "g_along": 0.0,
+    "g_cross": 0.0,
+    "d_along": 0.0,
+    "d_cross": 0.0,
+    "d_rule": 0.0,
+    "_max_over_goal_cols": 0.0,
+    "_future_blind": true
+   }
+  },
+  "POWER_label_moved_fraction_of_windows": 1.0,
+  "POWER_label_max_abs_delta": 36109.9721,
+  "_reading": "\u2b50 THE INSTRUMENT DISCRIMINATES: it returns exactly 0.0 on every F_ans/F_ctx column and on `sel`'s goal columns, and it FIRES on `parent_resampled`'s -- which is `true_cross + resampled_residual`, future-derived BY CONSTRUCTION and inherited from E-GOAL-2/3. A test that could not fail would prove nothing."
+ },
+ "C23_pose_level_inherited": {
+  "_class": "INHERITED (E-GOAL-3), re-read from its RAW JSON",
+  "_path": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-egoal-3-trained-head\\raw\\e3_features_val.json",
+  "_what": "the POSE-level future_blind test. This stream cannot re-run it (the poses live on pod2, which is running the 120\u00b0 cache build and is not touched). It covers `v` and `ax_fd`, the two pose-derived columns E-GOAL-4 feeds; the FAN- and GOAL-derived columns E-GOAL-4 ADDS are audited above, by this stream, over all rows.",
+  "future_blind": {
+   "max_abs_feature_delta": 0.0,
+   "max_abs_target_delta": 53106.84480952639,
+   "target_changed_on_n_windows": 13198,
+   "n_windows_audited": 13198,
+   "features_unchanged": true,
+   "power": true
+  },
+  "negative_index_clamp": {
+   "what": "a negative index wraps to the END of the array = FUTURE content. Every index is max(L+off, 0).",
+   "offsets_read": [
+    0,
+    -1,
+    -2,
+    -5,
+    -10
+   ],
+   "max_offset": 0,
+   "all_offsets_non_positive": true,
+   "n_windows_clamped": 600,
+   "frac_windows_clamped": 0.045461
+  },
+  "protocol": {
+   "WINDOW": 8,
+   "STRIDE": 8,
+   "K_MAX": 20,
+   "DT": 0.1,
+   "L": "start + WINDOW - 1 (last OBSERVED frame)"
+  }
+ },
+ "G_2_fold_identity": {
+  "_what": "the selector's folds vs the goal head's (`clip_folds(epi.astype(str), 5, 0)`, e3_fit.py:172)",
+  "fold_sizes_windows": [
+   2639,
+   2640,
+   2640,
+   2641,
+   2638
+  ],
+  "fold_sizes_episodes": [
+   120,
+   120,
+   120,
+   120,
+   120
+  ],
+  "epi_matches_eid_partition": true,
+  "\u26a0\ufe0f_using_fan_eid_instead_would_give_the_same_folds": true,
+  "convention_used": "epi.astype(str) -- the goal head's own",
+  "passes": true
+ },
+ "LEAK": {
+  "_method": "sha256 over the raw poses[T,4] float32 bytes, computed by E-GOAL-3's `e3_features.py` ON THE SAME IN-MEMORY TENSOR the features are derived from; re-read here from its staged RAW JSON",
+  "_path_checked": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-egoal-3-trained-head\\raw\\e3_features_val.json",
+  "_corpus_path_fingerprinted": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "_n_fingerprints_found": 600,
+  "_episode_key_convention": "fan `epi` == the sorted-file index; ep_%05d.pt <-> epi, which E-GOAL-3's gate F-4 proved equal to the dump's `eid` on all 13,198 rows and F-2 re-derived here per row (max|\u0394| = 0.0)",
+  "L_3_internal_collisions": {
+   "n_episodes": 600,
+   "n_unique_sha256": 600,
+   "passes": true
+  },
+  "L_1_fold_disjointness_by_content": {
+   "_what": "\u2b50 THE CHECK THAT BINDS THIS STREAM: every pair of the 5 episode-disjoint folds compared BY POSE sha256, not by episode id and not by filename",
+   "shared_fingerprints_per_pair": {
+    "0x1": 0,
+    "0x2": 0,
+    "0x3": 0,
+    "0x4": 0,
+    "1x2": 0,
+    "1x3": 0,
+    "1x4": 0,
+    "2x3": 0,
+    "2x4": 0,
+    "3x4": 0
+   },
+   "n_fold_pairs": 10,
+   "total_shared": 0,
+   "n_unique_fingerprints_across_folds": 600,
+   "n_episodes": 600,
+   "fingerprints_per_fold": [
+    120,
+    120,
+    120,
+    120,
+    120
+   ],
+   "passes": true
+  },
+  "L_2_filename_contrast": {
+   "_class": "INHERITED (E-GOAL-2 \u00a71, E-GOAL-3 \u00a72), from raw JSON",
+   "val600_x_parity_train_by_filename": "600 / 600 = 100 %",
+   "val600_x_parity_train_by_content": "0 / 600 = 0.0000 %",
+   "_reading": "a name check would have called this a total leak"
+  },
+  "L_5_val600_x_parity_train": {
+   "_class": "INHERITED (E-GOAL-3), re-read from its RAW JSON",
+   "_path": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-egoal-3-trained-head\\raw\\e3_leak.json",
+   "_paths_checked": {
+    "scoring_set_val600": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "training_set_train2376": "/workspace/data/physicalai_phase0/_epcache/physicalai-train-e438721ae894",
+    "path_the_committed_fan_dump_reads (refc_rerank.VAL)": "/root/valdata/physicalai-val-0c5f7dac3b11"
+   },
+   "by_content": {
+    "_required": "overlap == 0",
+    "n_val": 600,
+    "n_train": 2376,
+    "overlap_n": 0,
+    "overlap_frac_of_val": 0.0,
+    "overlapping_sha256": [],
+    "passes": true
+   },
+   "by_filename": {
+    "_what": "the check the fingerprint replaces -- reported so the fingerprint is visibly load-bearing, not decorative",
+    "overlap_n": 600,
+    "overlap_frac_of_val": 1.0
+   },
+   "internal_collisions": {
+    "val600_unique_sha_of_n": [
+     600,
+     600
+    ],
+    "train2376_unique_sha_of_n": [
+     2376,
+     2376
+    ]
+   },
+   "verdict": "CLEAN -- 0 episodes shared by content",
+   "_relevance": "this stream does NOT train on the parity corpus -- it trains inside the 600 val episodes -- so L-1 is the check that binds. L-5 is reported because the GOAL HEAD's `T_TRAIN` variant does, and because a surface reported clean is still a surface."
+  }
+ },
+ "backgrounds": {
+  "parent_resampled": {
+   "cross_mae_m": 0.4023,
+   "cross_rms_m": 0.6722,
+   "pool_n": 881,
+   "future_blind": false,
+   "_desc": "E-GOAL-2's registered CONSERVATIVE carrier: the parent head's own 881 cross residuals resampled onto the TRUE cross-track. \u26d4 FUTURE-DERIVED BY CONSTRUCTION."
+  },
+  "sel": {
+   "cross_mae_m": 0.2347,
+   "cross_rms_m": 0.4466,
+   "pool_n": 0,
+   "future_blind": true,
+   "_desc": "the REF-C selector's OWN 2 s endpoint cross. Zero fit, \u2b50 FULLY FUTURE-BLIND."
+  }
+ },
+ "_wall_s": 3.9,
+ "_verdict": "AUDIT CLEAN -- every F_ans/F_ctx column is provably future-blind over all rows, the instrument is shown to have power, the label is the metric per row, the folds are the goal head's own, and the fold split is disjoint BY POSE CONTENT."
+}

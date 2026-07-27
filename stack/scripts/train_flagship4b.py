@@ -151,15 +151,21 @@ def _wrap(episodes, cfg, plan, channels):
                                                     False))
 
 
-def _cache_split(cache_dir: Path, split: str, n: int):
+def _cache_split(cache_dir: Path, split: str, n: int, require: bool = False):
     """Load one split. PARITY GUARD (Wave-1 B, 2026-07-25): when the resolved dir
     references the sacred corpus, its episode set is content-checked against
     ``tanitad/data/parity_manifest.json`` BEFORE a single episode is unpickled —
     a quota-truncated cache used to load silently here. Non-parity roots (toy /
-    comma2k19 / v2) warn once and proceed."""
+    comma2k19 / v2) warn once and proceed.
+
+    ``require`` (``--require-parity``, default False so nothing existing moves)
+    additionally refuses a root that references NO registered corpus at all —
+    the ``require=True`` semantics ``train_flagship_v4._assert_parity`` has
+    always had on its train cache."""
     d = parity.resolve_split_dir(cache_dir, f"*{split}*")
     parity.assert_parity_corpus(d, label=f"cache-dirs/{split}",
-                                mode="subset" if n else "strict")
+                                mode="subset" if n else "strict",
+                                require=require)
     files = sorted(d.glob("ep_*.pt"))
     files = files[:n] if n else files
     assert files, f"no ep_*.pt in {d}"
@@ -167,7 +173,7 @@ def _cache_split(cache_dir: Path, split: str, n: int):
 
 
 def build_datasets(cfg, plan, data: str, cache_dirs, n_episodes: int,
-                   sim_frac: float, seed: int):
+                   sim_frac: float, seed: int, require_parity: bool = False):
     """Datasets for the flagship. ``realmix`` = mix the ``--cache-dirs`` train
     sets (on the pod: the comma2k19 + PhysicalAI epcache roots — the image-cache
     realmix); ``cached`` = a single cache root; ``toy`` = procedural episodes
@@ -188,9 +194,13 @@ def build_datasets(cfg, plan, data: str, cache_dirs, n_episodes: int,
         roots = roots[:1]
     train_sets, val_sets = [], []
     for r in roots:
-        train_sets.append(_wrap(_cache_split(r, "train", n_episodes), cfg, plan,
+        train_sets.append(_wrap(_cache_split(r, "train", n_episodes,
+                                             require_parity), cfg, plan,
                                 channels))
         try:
+            # val stays require=False even under --require-parity: a deliberate
+            # alternative held-out set must warn, not block, and several callers
+            # rely on the AssertionError escape below.
             val_sets.append(_wrap(_cache_split(r, "val", n_episodes), cfg, plan,
                                   channels))
         except AssertionError:
@@ -371,14 +381,42 @@ def train(args) -> dict:
         start_cache_guard(guard_dirs, limit_gb=args.guard_limit_gb)
 
     if args.v2_cache:
-        # v2 NEXT-GEN corpus (physicalai-v2bal): a JPEG-compressed on-disk cache
-        # far too large to hold decoded in RAM. Lazy, LRU-bounded providers feed
-        # the SAME FlagshipWindowDataset (via _wrap), so every window is
-        # byte-identical to the raw path -- only the frame SOURCE differs. This
-        # is a SEPARATE corpus and does NOT touch the raw parity path (the else
-        # branch below is unchanged; with no --v2-cache the trainer is today).
+        # v2 NEXT-GEN corpus: a compressed on-disk cache far too large to hold
+        # decoded in RAM. Lazy, LRU-bounded providers feed the SAME
+        # FlagshipWindowDataset (via _wrap), so every window is byte-identical
+        # to the raw path -- only the frame SOURCE differs.
+        #
+        # PARITY GUARD (2026-07-27). This branch used to carry NO parity check
+        # of any kind -- the guard lives in _cache_split, which only the
+        # --cache-dirs branch calls -- on the reasoning that a v2 cache "is a
+        # SEPARATE corpus and does NOT touch the raw parity path". That held
+        # while the only v2 corpus was the deliberately-non-parity 9k
+        # physicalai-v2bal. It stopped holding the moment v5's corpus became a
+        # v2 RE-CACHE OF THE SACRED SPLIT (raw epcache at 120deg/256x640 is
+        # ~697 GB and fits on no host), which was therefore trainable with zero
+        # enforcement. assert_v2_parity_cache checks CLIP-ID MEMBERSHIP against
+        # the committed manifest before a single clip is opened.
+        #
+        # require=False by default, so every existing --v2-cache command --
+        # including the physicalai-v2bal run training as this lands -- behaves
+        # exactly as before (one loud NON-PARITY line, then proceed). A parity
+        # run opts in with --require-parity, which REFUSES an unregistered or
+        # mismatched cache.
+        v2_parity = parity.assert_v2_parity_cache(
+            args.v2_cache, label="v2-cache", require=args.require_parity)
         from tanitad.data.v2_dataset import build_v2_providers
         providers = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)
+        # A second, independent count check: the guard counts FILES, the loader
+        # builds PROVIDERS. They can only differ if the manifest sidecar is
+        # stale w.r.t. the directory, which is exactly the state a mid-build
+        # cache is in.
+        if v2_parity.get("parity") and len(providers) != v2_parity["episodes_loaded"]:
+            raise parity.ParityViolation(
+                f"PARITY VIOLATION [v2-cache]: the parity guard verified "
+                f"{v2_parity['episodes_loaded']} clip files but the loader "
+                f"built {len(providers)} providers. The _v2manifest.pt sidecar "
+                f"disagrees with the directory -- rebuild it "
+                f"(build_v2_providers(..., rebuild=True)) and re-run.")
         ds_train = _wrap(providers, cfg, plan, cfg.encoder.in_channels)
         ds_val = None                              # this trainer runs no val loop
         print(f"[data] v2-cache {args.v2_cache}: {len(providers)} lazy "
@@ -387,8 +425,10 @@ def train(args) -> dict:
               f"v21_route_labels {cfg.v21_route_labels}, "
               f"route_from_vision {cfg.v2_route_from_vision}", flush=True)
     else:
+        v2_parity = None
         ds_train, ds_val = build_datasets(cfg, plan, args.data, args.cache_dirs,
-                                          args.episodes, args.sim_frac, args.seed)
+                                          args.episodes, args.sim_frac, args.seed,
+                                          require_parity=args.require_parity)
     assert len(ds_train) >= args.batch_size, \
         f"only {len(ds_train)} windows for batch {args.batch_size}"
     dl = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True,
@@ -448,6 +488,12 @@ def train(args) -> dict:
                          "max_horizon": plan.max_horizon},
         "weights": vars(weights), "sigreg_free_dims": cfg.loss.sigreg.free_dims,
         "pose_scale": args.pose_scale, "param_breakdown": ptab,
+        # The run's own artifact carries its parity proof, mirroring
+        # train_flagship_v4's `"parity": provenance`. Without this the only
+        # record that a v2 run was parity-checked is a stdout line in a log
+        # that has gone stale before ("REF-B v2 died at 22,600" — it did not).
+        "v2_cache": args.v2_cache, "require_parity": bool(args.require_parity),
+        "v2_parity": v2_parity,
     }
     if args.staged_levers:                 # v3enc: record the step-conditional plan
         cfg_record["staged_levers"] = {
@@ -577,6 +623,14 @@ def main(argv=None):
     ap.add_argument("--v2-lru", type=int, default=64,
                     help="per-worker LRU size (compressed clip payloads) for "
                          "--v2-cache; bounds RAM at ~2-4 MB/clip. Default 64.")
+    ap.add_argument("--require-parity", action="store_true",
+                    help="REFUSE to train unless the corpus is a REGISTERED "
+                         "parity corpus. Applies to both --cache-dirs (train "
+                         "split) and --v2-cache. Off by default so every "
+                         "existing command is byte-identical; a v5-class run on "
+                         "the sacred corpus MUST pass it — without it an "
+                         "unregistered cache only prints one NON-PARITY line "
+                         "and trains anyway.")
     from tanitad.geometry import add_geometry_args
     add_geometry_args(ap)
     ap.add_argument("--out", required=True)

@@ -1,0 +1,26 @@
+{
+ "what": "RED/GREEN proof that the new wiring test actually detects the defect it exists for. A wiring test that passes with the wiring removed proves nothing (class C13).",
+ "when": "2026-07-27",
+ "evidence_class": "MEASURED (dev box, C:/Users/Admin/venvs/tanitad, stack/)",
+ "defect_under_test": "train_flagship4b's --v2-cache branch reaching tanitad.data.v2_dataset.build_v2_providers with no parity check at all, on a cache that references no registered corpus key, under --require-parity",
+ "procedure": [
+  "1. RED: in stack/scripts/train_flagship4b.py replace the `v2_parity = parity.assert_v2_parity_cache(args.v2_cache, label='v2-cache', require=args.require_parity)` call with `v2_parity = None` (i.e. exactly the pre-2026-07-27 state of that branch, which carried no check).",
+  "2. run: python -m pytest -q stack/tests/test_v2_parity.py",
+  "3. GREEN: restore the call verbatim; re-run the same command."
+ ],
+ "red": {
+  "result": "1 failed, 33 passed in 3.34s",
+  "failing_test": "tests/test_v2_parity.py::test_trainer_v2_branch_refuses_before_the_loader_is_reached",
+  "failure_line": "scripts/train_flagship4b.py:407: in train -> providers = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)",
+  "assertion": "AssertionError: build_v2_providers was REACHED despite an unregistered cache under --require-parity",
+  "reading": "the loader IS reached with the guard removed -- i.e. the escalated finding reproduces on this repo at HEAD, and the test is bound to the real call site, not to a stub."
+ },
+ "green": {
+  "result": "34 passed in 5.50s",
+  "reading": "with the guard restored the same cache is refused BEFORE the loader is reached (reached['loader'] is False is asserted, not inferred)."
+ },
+ "what_this_does_NOT_prove": [
+  "that the refusal message is the RIGHT one -- that is asserted separately ('unregistered v2 cache' + 'register_v2_sibling.py' must both appear), because a guard that fires for the wrong cause is the same defect one layer down;",
+  "anything about the raw --cache-dirs branch, which already had a guard and was not touched except to thread the new opt-in --require-parity through it (default False)."
+ ]
+}

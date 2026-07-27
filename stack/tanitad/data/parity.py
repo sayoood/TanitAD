@@ -40,6 +40,18 @@ identity of an episode *within a build key* — and the build key itself
 change. It does NOT hash episode CONTENT (tensor bytes) — see the manifest's
 ``limitations`` field and WAVE1_B_REPORT.md.
 
+Two uid spaces, not one (added 2026-07-27)
+------------------------------------------
+Everything above describes the **raw epcache**. The **v2 compressed** cache is a
+flat set of ``<clip_id>.v2ep.pt`` with no positions at all, so ``ep_*.pt`` uids
+simply do not exist in it and the checks above cannot be evaluated against one.
+That is not academic: the raw epcache at the v5 wide geometry is ~697 GB for the
+train split and fits on no host, so **v5's corpus is a v2 cache** — and
+``train_flagship4b --v2-cache`` applied NO parity check on that branch at all
+(MEASURED, WIDE_FOV_BUILD.md §6). §9 adds the clip-id membership proof, its
+registration path and the trainer guard. Read §9's header for exactly what the
+v2 path can and cannot prove; it is a shorter list than the raw path's.
+
 Escape hatches, on purpose
 --------------------------
 Trainers legitimately run on non-parity corpora (toy episodes, comma2k19, the
@@ -84,6 +96,13 @@ MANIFEST_PATH = Path(__file__).with_name("parity_manifest.json")
 MANIFEST_SCHEMA = "tanitad.parity_manifest/1"
 EPISODE_GLOB = "ep_*.pt"
 _EP_RE = re.compile(r"^ep_(\d+)\.pt$")
+
+#: The v2 COMPRESSED cache is a flat set of ``<clip_id>.v2ep.pt`` — a different
+#: uid space from the epcache's positional ``ep_%05d.pt``. See §9.
+V2_EPISODE_GLOB = "*.v2ep.pt"
+V2_SUFFIX = ".v2ep.pt"
+V2_UID_KIND = "v2ep_clipid"
+EPCACHE_UID_KIND = "epcache_basename"
 
 
 class ParityViolation(SystemExit):
@@ -161,19 +180,62 @@ def scan_skip_markers(cache_dir: str | Path) -> list[int]:
     return sorted(out)
 
 
-def corpus_key_of(path: str | Path) -> str | None:
+def _V2_HINT(cache_dir: str | Path) -> str:
+    """A trailing note appended to a RAW-path refusal when the directory it was
+    given is actually a **v2 compressed cache**.
+
+    ⚠️ This exists because the raw guard's refusals were technically correct and
+    diagnostically misleading on a v2 dir: pointing ``train_flagship_v4
+    --train-cache`` at one produces *"does not reference the canonical corpus"*,
+    which sends the reader off to rename a directory — when the real answer is
+    that **``train_flagship_v4`` has no v2 support at all** and never should
+    acquire one speculatively. The absence is now NAMED at the point of failure
+    instead of being latent (see §9 and V2_PARITY_ENFORCEMENT.md §4)."""
+    try:
+        if not any(Path(cache_dir).glob(V2_EPISODE_GLOB)):
+            return ""
+    except OSError:                                       # unreadable dir
+        return ""
+    return (
+        f"\n  ⚠️ THIS IS A V2 COMPRESSED CACHE ({V2_EPISODE_GLOB}), not a raw "
+        f"epcache."
+        f"\n  Raw-epcache trainers (train_flagship_v4 --train-cache, "
+        f"train_flagship4b --cache-dirs)"
+        f"\n  CANNOT read it: episode identity here is a CLIP ID, not an "
+        f"ep_%05d.pt position."
+        f"\n  Use:  train_flagship4b.py --v2-cache <dir> --require-parity"
+        f"\n  and register the corpus first: scripts/register_v2_sibling.py "
+        f"(parity.py §9).")
+
+
+def corpus_key_of(path: str | Path,
+                  manifest_path: str | Path | None = None) -> str | None:
     """The registered corpus key this path references, or ``None``.
 
     Substring match on the resolved POSIX path — identical to the rule
     ``train_flagship_v4._assert_parity`` has always used, so wiring this in
-    never *loosens* an existing check."""
+    never *loosens* an existing check.
+
+    Ties are broken **longest key first**, then lexicographically. That matters
+    only once GEOMETRY SIBLINGS exist (§8/§9): a sibling cache legitimately
+    lives under a path that also contains its parent's key
+    (``…/physicalai-train-e438721ae894/wide120/physicalai-train-w120-<hex>/``),
+    and the plain lexicographic rule would resolve it to the PARENT — reporting
+    a real cache as the wrong corpus. ⚠️ This cannot change any pre-existing
+    resolution, and that is a fact rather than a hope: the three keys registered
+    before siblings existed (``physicalai-train-e438721ae894`` 29 chars,
+    ``physicalai-val-0c5f7dac3b11`` and ``physicalai-val-f1b378f295ae`` 27 each)
+    are pairwise non-overlapping, so on any path where several match, the
+    longest-first order and the lexicographic order agree
+    (``tests/test_v2_parity.py::test_longest_match_cannot_change_legacy_resolution``).
+    """
     s = str(Path(path).resolve()).replace("\\", "/")
     keys = {PARITY_TRAIN_KEY, PARITY_VAL_KEY, *LEAKY_SPLIT_KEYS}
     try:                       # manifest may register more; a missing manifest
-        keys |= set(load_manifest().get("corpora", {}))   # must not break the
+        keys |= set(load_manifest(manifest_path).get("corpora", {}))
     except SystemExit:                                    # firewall direction
         pass
-    for key in sorted(keys):
+    for key in sorted(keys, key=lambda k: (-len(k), k)):
         if key in s:
             return key
     return None
@@ -414,7 +476,7 @@ def assert_parity_corpus(cache_dir: str | Path, *, label: str,
       otherwise one loud ``NON-PARITY`` line and ``parity=False``.
     """
     d = Path(cache_dir)
-    key = corpus_key_of(d)
+    key = corpus_key_of(d, manifest_path)
     if key in LEAKY_SPLIT_KEYS:
         _refuse(label, key, d, [
             "  LEAKED SPLIT — this directory is not a valid held-out set:",
@@ -423,13 +485,14 @@ def assert_parity_corpus(cache_dir: str | Path, *, label: str,
     if key is None:
         msg = (f"[parity] ⚠ NON-PARITY corpus for {label}: {d} references no "
                f"registered parity key ({PARITY_TRAIN_KEY} / {PARITY_VAL_KEY}). "
-               f"Results off it are NOT cross-arm comparable with the parity arms.")
+               f"Results off it are NOT cross-arm comparable with the parity arms."
+               + _V2_HINT(d))
         if require:
             raise ParityViolation(
                 f"PARITY VIOLATION: {label}={str(cache_dir)!r} does not reference "
                 f"the canonical corpus {PARITY_TRAIN_KEY}. Any re-selected episode "
                 f"set breaks cross-arm comparability and is refused "
-                f"(CLAUDE.md §Invariants).")
+                f"(CLAUDE.md §Invariants)." + _V2_HINT(d))
         print(msg, flush=True)
         return {"parity": False, "cache_dir": str(d), "corpus_key": None,
                 "label": label}
@@ -439,6 +502,7 @@ def assert_parity_corpus(cache_dir: str | Path, *, label: str,
             f"  episodes   : 0 loaded — no {pattern} in this directory",
             "  does the path point at the SPLIT dir (…/physicalai-train-<key>) "
             "and not its parent?",
+            *(ln for ln in _V2_HINT(d).split("\n") if ln),
         ])
     rec = check_uids(uids, corpus_key=key, label=label, cache_dir=d, mode=mode,
                      manifest_path=manifest_path)
@@ -798,6 +862,540 @@ def register_geometry_sibling(cache_dir: str | Path, *, new_key: str,
           f"{source_key} (uid sha256 {ent['episode_uid_sha256'][:12]}…). "
           f"Selection parity is preserved; only the pixels differ.", flush=True)
     return ent
+
+
+# --------------------------------------------------------------------------- #
+# 9. V2 COMPRESSED SIBLINGS — the clip-id uid space                             #
+# --------------------------------------------------------------------------- #
+# THE HOLE THIS CLOSES (MEASURED by the wide-FOV build stream, 2026-07-27,
+# …/incoming/2026-07-28-wide-fov-build/WIDE_FOV_BUILD.md §6):
+#
+#   ``train_flagship_v4`` has NO v2 support at all, while ``train_flagship4b
+#   --v2-cache`` reads v2 and applied NO PARITY CHECK on that branch — its guard
+#   lives in ``_cache_split``, which only the ``--cache-dirs`` branch calls. The
+#   v5 wide cache was therefore trainable with ZERO parity enforcement.
+#
+# It is not an oversight that §8's :func:`register_geometry_sibling` could not
+# fix it: that function compares ``sha256(sorted ep_*.pt basenames)``, and a v2
+# cache HAS no ``ep_*.pt``. The two uid spaces are:
+#
+#   epcache : ``ep_%05d.pt``          — identity = POSITION in the ordered clip
+#                                       list; a build failure leaves ``skip_%05d``
+#                                       at the same index, so the positions are
+#                                       dense and self-describing.
+#   v2      : ``<clip_id>.v2ep.pt``   — identity = the CLIP ID; the directory is
+#                                       a flat SET with no positions at all, and
+#                                       a decode failure leaves NO marker — the
+#                                       file is simply absent.
+#
+# ⚠️ The re-cache had to be v2: the raw epcache at 120°/256×640 is 293.4 MB per
+# episode = ~697 GB for the train split alone (MEASURED, WIDE_FOV_BUILD.md §3)
+# and fits on no host in the fleet, against ~95 GB for the v2 PNG build.
+#
+# WHAT THIS SECTION PROVES, AND WHAT IT CANNOT
+# --------------------------------------------
+# It proves MEMBERSHIP: the set of clip ids built equals, exactly, the parity
+# train split. ⚠️ A COUNT CANNOT DO THIS — drop one clip and add one foreign clip
+# and the count is unchanged, which is precisely why the wide-FOV census
+# recomputed the corpus key instead of counting clips. Both directions are
+# pinned in ``tests/test_v2_parity.py`` (a swapped clip at IDENTICAL count is
+# refused, with the reason asserted).
+#
+# It does NOT prove:
+#   * that the PIXELS are right — the geometry is recorded (``_geometry.json``,
+#     the entry's ``geometry`` block) and asserted pre-decode by the builder, not
+#     re-derived here. A cache built at the wrong FOV with the right clips passes
+#     membership and is caught by the geometry record, not by this check;
+#   * WHICH clips are missing, in digest-only mode (no ``expect_clips``) — see
+#     :func:`verify_v2_membership`;
+#   * anything about ORDER. The v2 directory is a set. That costs nothing HERE
+#     because for the parity train split the ordered and sorted clip-id digests
+#     are IDENTICAL (MEASURED, ``parity_split_meta_2026-07-27.json``: the
+#     discovered order already is clip-id order), so the set proof is exactly as
+#     strong as an ordered one — but that is a property of this corpus, not a
+#     general one, and :func:`verify_v2_membership` records it per run.
+#
+# 🔒 CONFIDENTIALITY. Clip ids are gated-confidential PhysicalAI-AV content and
+# must never leave a pod. Every refusal in this section therefore prints COUNTS
+# and DIGESTS only — never an id — which is why it cannot reuse
+# :func:`_diff_lines` (that prints uids, safe for positional ``ep_*.pt``, not for
+# clip ids). The repo carries only the digests.
+
+
+def v2_clip_ids(cache_dirs) -> list[str]:
+    """Sorted clip ids physically present across one or more v2 cache dirs.
+
+    ``--v2-cache`` is ``nargs="+"`` and the dirs are CONCATENATED by
+    ``build_v2_providers``, so the training set is their UNION and the union is
+    what must be checked. A clip present in two dirs would be trained on twice
+    and is refused here, not silently duplicated."""
+    if isinstance(cache_dirs, (str, Path)):
+        cache_dirs = [cache_dirs]
+    seen: dict[str, list[str]] = {}
+    for cd in cache_dirs:
+        for p in Path(cd).glob(V2_EPISODE_GLOB):
+            seen.setdefault(p.name[:-len(V2_SUFFIX)], []).append(str(cd))
+    dupes = {k: v for k, v in seen.items() if len(v) > 1}
+    if dupes:
+        raise ParityViolation(
+            f"PARITY VIOLATION [v2-cache]: {len(dupes)} clip(s) appear in more "
+            f"than one --v2-cache dir. build_v2_providers CONCATENATES the dirs, "
+            f"so each duplicate would contribute its windows TWICE and re-weight "
+            f"the corpus. Dirs: {sorted({d for v in dupes.values() for d in v})}. "
+            f"(clip ids withheld — gated-confidential)")
+    return sorted(seen)
+
+
+def _v2_paths(cache_dirs) -> list[str]:
+    if isinstance(cache_dirs, (str, Path)):
+        cache_dirs = [cache_dirs]
+    return [str(c) for c in cache_dirs]
+
+
+def _refuse_v2(label: str, key: str, cache_dirs, lines: list[str]) -> None:
+    """A v2 refusal. Same shape as :func:`_refuse`, different remediation — and
+    🔒 NO ids, ever."""
+    raise ParityViolation(
+        "\n".join([
+            "",
+            "=" * 78,
+            f"PARITY VIOLATION [{label}] — v2 corpus {key}",
+            "=" * 78,
+            *(f"  cache      : {c}" for c in _v2_paths(cache_dirs)),
+            *lines,
+            "",
+            "  The canonical corpus is SACRED (CLAUDE.md §Invariants). Geometry may",
+            "  change PIXELS, never MEMBERSHIP: a v2 re-cache that drops, adds or",
+            "  substitutes a clip is a RE-SELECTION, and every cross-arm number off it",
+            "  is void — invisibly, because a wrong cache trains perfectly happily.",
+            "",
+            "  🔒 clip ids are gated-confidential and are NOT printed. Counts and",
+            "  digests above are the whole of the evidence that may leave a pod.",
+            "",
+            "  Prove membership on the pod (writes the raw proof JSON):",
+            "    scripts/register_v2_sibling.py --verify-only --cache <dir> \\",
+            "        --expect-clips <parity_train_clips.txt> --out <proof.json>",
+            "  Then register + stage the manifest diff:",
+            "    scripts/register_v2_sibling.py --cache <dir> --new-key <key> \\",
+            "        --expect-clips <parity_train_clips.txt> --write-manifest",
+            "=" * 78,
+        ]))
+
+
+def clip_membership_of(corpus_key: str = PARITY_TRAIN_KEY,
+                       manifest_path: str | Path | None = None) -> dict | None:
+    """The CLIP-ID membership record of a raw-epcache corpus entry, or ``None``.
+
+    Distinct from ``episode_count`` on purpose, and the distinction has already
+    corrected one brief: the parity train split is **2 400 CLIPS**, of which 24
+    fail to decode, leaving **2 376 EPISODES**. ``episode_count`` is 2 376;
+    ``clip_membership.n_clips`` is 2 400. A check written against 2 400-as-total
+    or against 2 376-as-clips is wrong in opposite directions."""
+    ent = manifest_entry(corpus_key, manifest_path) or {}
+    cm = ent.get("clip_membership")
+    return dict(cm) if cm else None
+
+
+def verify_v2_membership(cache_dirs, *, label: str = "v2-membership",
+                         source_key: str = PARITY_TRAIN_KEY,
+                         expect_clips: str | Path | None = None,
+                         manifest_path: str | Path | None = None) -> dict:
+    """PROVE that a v2 cache holds exactly the ``source_key`` clip split.
+
+    Adapted from ``…/2026-07-28-wide-fov-build/code/verify_v2_parity.py`` (the
+    sibling stream's membership proof, whose pass criteria were fixed BEFORE the
+    number existed), with three changes, all strengthenings:
+
+    1. **The expected set is bound to the COMMITTED manifest**, not only to the
+       export's own sidecar. The original compared the built digest against
+       ``train_ids_sha256_sorted`` inside the same ``parity_split_meta.json``
+       that shipped beside the clip list — so a self-consistent WRONG pair would
+       have verified. Here the supplied list must first reproduce the manifest's
+       ``clip_membership.clip_id_sha256_sorted`` before it is trusted as the
+       expectation.
+    2. **The 24 decode failures are checked by IDENTITY, not by count.** The
+       original accepted any ``len(missing) == 24``. The skip indices are
+       positions in the ordered clip list, and that list is exactly what
+       ``--expect-clips`` supplies, so the *same 24 clips must fail again* — the
+       check WIDE_FOV_BUILD.md §8 calls "a strong independent check" but tested
+       only by cardinality. A shortfall of 24 made of a DIFFERENT 24 is a
+       different episode set and is refused. (Falls back to the count test, and
+       says so in the record, if the entry carries no skip indices.)
+    3. **It refuses instead of returning a verdict string.** The original wrote
+       ``VERDICT: NOT VERIFIED`` into JSON and exited 0 unless there were EXTRA
+       clips, so a truncated build did not fail the command.
+
+    ``expect_clips`` is the ordered clip-id list exported from a parity host by
+    ``parity_split_export.py`` (which refuses to write unless the host
+    reproduces both corpus keys). 🔒 It is gated-confidential and lives only on
+    pods. **Without it this degrades to DIGEST-ONLY**: a COMPLETE build still
+    proves membership exactly, but an incomplete one can only be refused, not
+    diagnosed — the check cannot name what is missing without the list.
+    """
+    dirs = _v2_paths(cache_dirs)
+    built = v2_clip_ids(dirs)
+    cm = clip_membership_of(source_key, manifest_path)
+    if cm is None:
+        _refuse_v2(label, source_key, dirs, [
+            f"  manifest   : NO clip_membership block for {source_key!r} in "
+            f"{Path(manifest_path or MANIFEST_PATH)}",
+            "  A v2 cache is a set of CLIP IDS; without the corpus's committed",
+            "  clip-id digest there is nothing to compare it to.",
+        ])
+    n_exp = int(cm["n_clips"])
+    exp_digest = str(cm["clip_id_sha256_sorted"])
+    ent = manifest_entry(source_key, manifest_path) or {}
+    skip_idx = sorted(int(i) for i in ent.get("skip_indices", []))
+    if not built:
+        _refuse_v2(label, source_key, dirs, [
+            f"  clips      : 0 built — no {V2_EPISODE_GLOB} in these dir(s)",
+            "  does the path point at the v2 cache dir itself, not its parent?",
+        ])
+    got_digest = uid_digest(built)
+    rec: dict = {
+        "label": label, "cache_dirs": dirs, "source_corpus_key": source_key,
+        "uid_kind": V2_UID_KIND,
+        "clips_expected": n_exp, "clips_built": len(built),
+        "clip_id_sha256_sorted": got_digest,
+        "clip_id_sha256_sorted_expected": exp_digest,
+        "membership_identical": got_digest == exp_digest,
+        "expected_decode_failures": len(skip_idx),
+        "order_independent": True,
+        "ordered_equals_sorted_for_this_corpus": bool(
+            cm.get("ordered_equals_sorted")),
+        "expect_clips": str(expect_clips) if expect_clips else None,
+    }
+
+    # -- extras are ALWAYS fatal, in either mode ---------------------------- #
+    if len(built) > n_exp:
+        rec["mode"] = "digest-only" if expect_clips is None else "set-diff"
+        _refuse_v2(label, source_key, dirs, [
+            f"  clips      : {len(built)} built, {n_exp} in the parity split"
+            f"   <-- {len(built) - n_exp} FOREIGN clip(s)",
+            f"  clip sha256: {got_digest}  built",
+            f"               {exp_digest}  parity split   <-- MISMATCH",
+            "  A v2 cache may never hold a clip the parity split does not.",
+        ])
+
+    # -- mode A: the exported clip list is available (the strong proof) ------ #
+    if expect_clips is not None:
+        expect = [ln.strip() for ln in
+                  Path(expect_clips).read_text(encoding="utf-8").splitlines()
+                  if ln.strip()]
+        rec["mode"] = "set-diff (expect_clips supplied)"
+        rec["expect_clips_count"] = len(expect)
+        rec["expect_clips_sha256_sorted"] = uid_digest(expect)
+        rec["expect_clips_is_sorted"] = expect == sorted(expect)
+        # (1) the SUPPLIED LIST must itself be the parity split -------------- #
+        if uid_digest(expect) != exp_digest or len(expect) != n_exp:
+            _refuse_v2(label, source_key, dirs, [
+                "  the --expect-clips LIST is not the parity split, so it cannot",
+                "  be used as the expectation (a self-consistent wrong pair would",
+                "  otherwise verify):",
+                f"  list       : {len(expect)} ids, sha256 "
+                f"{uid_digest(expect)}",
+                f"  manifest   : {n_exp} ids, sha256 {exp_digest}   <-- MISMATCH",
+                "  Re-export it with code/parity_split_export.py on a host that",
+                "  reproduces BOTH corpus keys (it refuses to write otherwise).",
+            ])
+        built_s, expect_s = set(built), set(expect)
+        missing = sorted(expect_s - built_s)
+        extra = sorted(built_s - expect_s)
+        rec.update({"missing_count": len(missing), "extra_count": len(extra)})
+        if extra:
+            _refuse_v2(label, source_key, dirs, [
+                f"  clips      : {len(built)} built, {n_exp} in the parity split",
+                f"  extra      : {len(extra)}  <-- NOT IN THE PARITY SPLIT",
+                f"  missing    : {len(missing)}",
+                "  ⚠️ note the counts can MATCH while membership differs — a "
+                "swapped",
+                "  clip leaves the count untouched. That is why this is a set "
+                "diff.",
+            ])
+        if missing:
+            # (2) the shortfall must be EXACTLY the recorded decode failures.  #
+            if skip_idx and max(skip_idx) < len(expect):
+                expected_missing = sorted(expect[i] for i in skip_idx)
+                rec["shortfall_identity_checked"] = True
+                rec["shortfall_matches_recorded_skips"] = (
+                    missing == expected_missing)
+                if missing != expected_missing:
+                    n_same = len(set(missing) & set(expected_missing))
+                    _refuse_v2(label, source_key, dirs, [
+                        f"  clips      : {len(built)} built, {n_exp} in the "
+                        f"parity split",
+                        f"  missing    : {len(missing)}  (the parity corpus "
+                        f"records {len(skip_idx)} decode failures)",
+                        f"  of those, {n_same} are the RECORDED failures and "
+                        f"{len(missing) - n_same} are NOT",
+                        "  A shortfall of the right SIZE made of the WRONG clips is a",
+                        "  different episode set. The recorded failures are corrupt",
+                        "  source clips and must fail again at any geometry; anything",
+                        "  else is a build that lost data.",
+                        "  Do not register and do not train — report it.",
+                    ])
+            else:
+                rec["shortfall_identity_checked"] = False
+                rec["shortfall_matches_recorded_skips"] = (
+                    len(missing) == len(skip_idx))
+                if len(missing) != len(skip_idx):
+                    _refuse_v2(label, source_key, dirs, [
+                        f"  missing    : {len(missing)}, expected at most "
+                        f"{len(skip_idx)} decode failures",
+                        "  (COUNT-ONLY: this manifest entry carries no skip "
+                        "indices, so the",
+                        "   identity of the failures could not be checked.)",
+                    ])
+        else:
+            rec["shortfall_identity_checked"] = True
+            rec["shortfall_matches_recorded_skips"] = True
+        rec["verified"] = True
+        rec["content_check"] = (
+            "set-diff vs the exported parity clip list: 0 extra, "
+            + ("0 missing (COMPLETE build)" if not missing else
+               f"{len(missing)} missing == the recorded decode failures"
+               + ("" if rec.get("shortfall_identity_checked")
+                  else " (BY COUNT ONLY)")))
+        print(f"[parity] {label}: v2 MEMBERSHIP VERIFIED — {len(built)} of "
+              f"{n_exp} parity clips, 0 foreign, {len(missing)} missing "
+              f"({rec['content_check']}).", flush=True)
+        return rec
+
+    # -- mode B: digest only (no clip list on this host) --------------------- #
+    rec["mode"] = "digest-only (no expect_clips)"
+    if got_digest != exp_digest:
+        short = n_exp - len(built)
+        _refuse_v2(label, source_key, dirs, [
+            f"  clips      : {len(built)} built, {n_exp} in the parity split"
+            + (f"   <-- SHORT BY {short}" if short > 0 else "   (count OK)"),
+            f"  clip sha256: {got_digest}  built",
+            f"               {exp_digest}  parity split   <-- MISMATCH",
+            "",
+            "  DIGEST-ONLY MODE cannot say WHICH clips differ — it has no clip",
+            "  list to diff against, only the corpus digest. ⚠️ It therefore also",
+            "  cannot accept the 24 legitimate decode failures: any incomplete",
+            "  build fails here even when it is correct.",
+            "  Re-run on a host holding the exported split, with:",
+            "    --expect-clips <parity_train_clips.txt>",
+        ])
+    rec.update({"missing_count": 0, "extra_count": 0, "verified": True,
+                "shortfall_identity_checked": None,
+                "content_check": "sha256(sorted clip ids) MATCHES the committed "
+                                 "clip_membership digest (COMPLETE build)"})
+    print(f"[parity] {label}: v2 MEMBERSHIP VERIFIED (digest-only) — "
+          f"{len(built)} clips, sha256 {got_digest[:12]}… matches the committed "
+          f"{source_key} clip split.", flush=True)
+    return rec
+
+
+def register_v2_geometry_sibling(cache_dirs, *, new_key: str, geometry: dict,
+                                 source_key: str = PARITY_TRAIN_KEY,
+                                 expect_clips: str | Path | None = None,
+                                 manifest_path: str | Path | None = None) -> dict:
+    """Mint a manifest entry for a V2 re-cache of the parity clip split.
+
+    The v2 twin of :func:`register_geometry_sibling`, and it keeps that
+    function's contract exactly: **the registration IS the proof** — the entry is
+    minted only if :func:`verify_v2_membership` passes, so a key can never exist
+    for a cache whose membership was not demonstrated.
+
+    ``new_key`` must appear in the cache DIRECTORY NAME, because
+    :func:`corpus_key_of` resolves by path substring and a key nothing resolves
+    to is an inert registration — the exact failure mode WIDE_FOV_BUILD.md §6.3
+    identified ("on the v2 path the registration would be INERT"). That is
+    asserted here rather than left to the runbook.
+
+    Returns the new entry; the caller writes it into ``parity_manifest.json``
+    and stages the diff (``scripts/register_v2_sibling.py --write-manifest``).
+    """
+    dirs = _v2_paths(cache_dirs)
+    if new_key in (PARITY_TRAIN_KEY, PARITY_VAL_KEY, *LEAKY_SPLIT_KEYS):
+        raise ParityViolation(
+            f"refusing to register {new_key!r}: it is an EXISTING registered "
+            f"corpus key. A geometry sibling is a NEW corpus with the same "
+            f"membership, never an overwrite of the source entry.")
+    if not any(new_key in str(Path(d).resolve()).replace("\\", "/")
+               for d in dirs):
+        raise ParityViolation(
+            f"refusing to register {new_key!r}: it does not appear in the cache "
+            f"path(s) {dirs}. corpus_key_of() resolves by path substring, so a "
+            f"key absent from the directory name would NEVER be found at train "
+            f"time — the registration would be INERT and the trainer would read "
+            f"the cache as NON-PARITY. Rename the cache dir to contain "
+            f"{new_key!r} (or pass the key that is already in it).")
+    proof = verify_v2_membership(dirs, label=f"register:{new_key}",
+                                 source_key=source_key,
+                                 expect_clips=expect_clips,
+                                 manifest_path=manifest_path)
+    built = v2_clip_ids(dirs)
+    src = manifest_entry(source_key, manifest_path) or {}
+    ent = {
+        "corpus_key": new_key,
+        "split": src.get("split", "train"),
+        "episode_count": len(built),
+        "uid_kind": V2_UID_KIND,
+        "uid_source": f"v2 re-cache of {source_key} at a new geometry",
+        "episode_uid_sha256": uid_digest(built),
+        "skip_indices": [],
+        "skip_count": 0,
+        "provenance": {
+            "derived_from": source_key,
+            "relation": "geometry sibling (v2 compressed) — identical clip "
+                        "selection, different canonical frame and container",
+            "geometry": dict(geometry),
+            "membership_proof": proof,
+            "verified": proof.get("content_check"),
+            "uid_note": "uids here are CLIP IDS, not epcache positions; they are "
+                        "gated-confidential and are NOT enumerated in this "
+                        "manifest — only their sorted sha256 is.",
+        },
+    }
+    print(f"[parity] v2 geometry sibling VERIFIED: {new_key} holds "
+          f"{len(built)} of the {proof['clips_expected']} parity clips "
+          f"(clip sha256 {ent['episode_uid_sha256'][:12]}…), 0 foreign. "
+          f"Selection parity is preserved; only the pixels and the container "
+          f"differ.", flush=True)
+    return ent
+
+
+def assert_v2_parity_cache(cache_dirs, *, label: str, require: bool = False,
+                           manifest_path: str | Path | None = None) -> dict:
+    """THE trainer-facing guard for ``--v2-cache``. Call BEFORE any GPU work.
+
+    Deliberately mirrors :func:`assert_parity_corpus` decision-for-decision, so
+    the two paths cannot drift:
+
+    * dir(s) reference a registered **v2 sibling** key  -> full count + clip-id
+      digest check against the committed manifest;
+    * dir(s) reference a registered key of the **wrong uid kind** (an epcache
+      key on a ``*.v2ep.pt`` directory) -> refuse, naming the kind — never a
+      silent pass and never a misleading "no episodes found";
+    * dir(s) reference a KNOWN-LEAKY split key         -> always refuse;
+    * dir(s) reference nothing registered              -> ``require=True``
+      refuses, otherwise one loud ``NON-PARITY`` line and ``parity=False``.
+
+    ⚠️ ``require`` defaults to **False**, which is what preserves the deliberate
+    non-parity v2 corpora (``physicalai-v2bal``, 9 000 clips — one of which is
+    training as this lands). Enforcement for a parity run is opt-in at the
+    trainer's ``--require-parity``, so no existing command changes behaviour.
+    """
+    dirs = _v2_paths(cache_dirs)
+    # FIRST, unconditionally: a clip present in two dirs is a defect whatever
+    # the corpus is (the dirs are CONCATENATED, so it trains twice and
+    # re-weights the mix), so this must not sit behind the parity branch.
+    built = v2_clip_ids(dirs)
+    keys = {corpus_key_of(d, manifest_path) for d in dirs}
+    named = sorted(k for k in keys if k)
+    if len(named) > 1:
+        _refuse_v2(label, "/".join(named), dirs, [
+            f"  the --v2-cache dirs reference {len(named)} DIFFERENT registered "
+            f"corpora: {named}",
+            "  They are CONCATENATED into one training set, so the result is",
+            "  neither corpus. Refusing.",
+        ])
+    key = named[0] if named else None
+    if key in LEAKY_SPLIT_KEYS:
+        _refuse_v2(label, key, dirs, [
+            "  LEAKED SPLIT — this directory is not a valid held-out set:",
+            f"  {LEAKY_SPLIT_KEYS[key]}",
+        ])
+    if key is None:
+        msg = (f"[parity] ⚠ NON-PARITY v2 corpus for {label}: {dirs} reference "
+               f"no registered parity key. Results off it are NOT cross-arm "
+               f"comparable with the parity arms.")
+        if require:
+            raise ParityViolation(
+                "\n".join([
+                    "",
+                    "=" * 78,
+                    f"PARITY VIOLATION [{label}] — unregistered v2 cache",
+                    "=" * 78,
+                    *(f"  cache      : {d}" for d in dirs),
+                    "  --require-parity was passed and none of these dirs "
+                    "references a",
+                    "  registered corpus key. A v2 re-cache of the sacred corpus "
+                    "must be",
+                    "  REGISTERED before it can be trained on — the registration "
+                    "is the",
+                    "  proof that geometry changed the pixels and not the "
+                    "membership.",
+                    "",
+                    "    scripts/register_v2_sibling.py --cache <dir> --new-key "
+                    "<key> \\",
+                    "        --expect-clips <parity_train_clips.txt> "
+                    "--write-manifest",
+                    "",
+                    "  Then stage tanitad/data/parity_manifest.json and make sure "
+                    "the cache",
+                    "  DIRECTORY NAME contains <key> (corpus_key_of resolves by "
+                    "path).",
+                    "=" * 78,
+                ]))
+        print(msg, flush=True)
+        return {"parity": False, "cache_dirs": dirs, "corpus_key": None,
+                "label": label, "uid_kind": V2_UID_KIND, "checked": False,
+                "clips_present": len(built)}
+    ent = manifest_entry(key, manifest_path)
+    if ent is None:
+        _refuse_v2(label, key, dirs, [
+            f"  manifest   : NO ENTRY for {key!r} in "
+            f"{Path(manifest_path or MANIFEST_PATH)}",
+            "  A registered parity key with no manifest entry cannot be verified.",
+        ])
+    if ent.get("uid_kind") != V2_UID_KIND:
+        _refuse_v2(label, key, dirs, [
+            f"  uid kind   : this directory holds {V2_EPISODE_GLOB} "
+            f"(uid_kind {V2_UID_KIND!r}),",
+            f"               but {key!r} is registered as "
+            f"{ent.get('uid_kind')!r} — a RAW EPCACHE corpus whose episode",
+            "               identity is a POSITION, not a clip id.",
+            "  The two uid spaces are not comparable, so passing this check would",
+            "  prove nothing. Register the re-cache as its OWN v2 sibling key",
+            "  instead of borrowing the epcache key's name.",
+        ])
+    if not built:
+        _refuse_v2(label, key, dirs, [
+            f"  clips      : 0 present — no {V2_EPISODE_GLOB} in these dir(s)",
+            "  does the path point at the v2 cache dir itself, not its parent?",
+        ])
+    n_exp = int(ent["episode_count"])
+    exp_digest = ent.get("episode_uid_sha256")
+    got = uid_digest(built)
+    rec = {"parity": True, "checked": True, "label": label, "cache_dirs": dirs,
+           "corpus_key": key, "uid_kind": V2_UID_KIND,
+           "split": ent.get("split"), "uid_source": ent.get("uid_source"),
+           "skip_hash": PARITY_SKIP_HASH,
+           "episodes_expected": n_exp, "episodes_loaded": len(built),
+           "episode_uid_sha256": got,
+           "episode_uid_sha256_expected": exp_digest,
+           "derived_from": (ent.get("provenance") or {}).get("derived_from"),
+           "geometry": (ent.get("provenance") or {}).get("geometry")}
+    if exp_digest is None:
+        _refuse_v2(label, key, dirs, [
+            "  manifest   : this v2 entry carries NO clip-id digest, so nothing",
+            "               about its membership can be checked.",
+            "  A v2 entry is minted BY the membership proof "
+            "(register_v2_geometry_sibling),",
+            "  so a digest-less v2 entry means the manifest was hand-edited.",
+        ])
+    if len(built) != n_exp or got != exp_digest:
+        delta = (f"TRUNCATED by {n_exp - len(built)}" if len(built) < n_exp
+                 else f"EXTRA {len(built) - n_exp}" if len(built) > n_exp
+                 else "count OK — MEMBERSHIP DIFFERS AT THE SAME COUNT")
+        _refuse_v2(label, key, dirs, [
+            f"  clips      : {len(built)} present, {n_exp} registered   <-- {delta}",
+            f"  clip sha256: {got}  present",
+            f"               {exp_digest}  registered   <-- MISMATCH",
+            "  ⚠️ a COUNT alone cannot catch this class: drop one clip and add one",
+            "  foreign clip and the count is unchanged. The digest is the check.",
+        ])
+    print(f"[parity] {label}: {key} v2 VERIFIED — {len(built)} clips, clip "
+          f"sha256 {got[:12]}… matches the committed manifest "
+          f"(sibling of {rec['derived_from']}, skip-hash {PARITY_SKIP_HASH}).",
+          flush=True)
+    rec["content_check"] = ("sha256(sorted clip ids) MATCHES the committed "
+                            "manifest entry")
+    return rec
 
 
 def assert_not_parity(*paths: str | Path, label: str) -> None:

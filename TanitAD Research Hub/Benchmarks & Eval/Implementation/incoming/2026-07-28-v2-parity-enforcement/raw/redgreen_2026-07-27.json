@@ -1,0 +1,121 @@
+{
+ "what": "both-directions probe of parity.assert_v2_parity_cache / verify_v2_membership",
+ "when": "2026-07-27",
+ "evidence_class": "MEASURED (synthetic caches, this repo, dev box)",
+ "synthetic_corpus": {
+  "n_clips": 12,
+  "recorded_decode_failures": [
+   3,
+   7
+  ]
+ },
+ "cases": [
+  {
+   "case": "CORRECT — the registered parity cache",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "PASS",
+   "guard_reason": "sha256(sorted clip ids) MATCHES the committed manifest entry",
+   "count_only_would_have_missed_it": false
+  },
+  {
+   "case": "DROPPED one clip",
+   "clips_present": 11,
+   "clips_expected": 12,
+   "count_only_verdict": "REFUSE (count differs by -1)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "clips      : 11 present, 12 registered   <-- TRUNCATED by 1",
+   "count_only_would_have_missed_it": false
+  },
+  {
+   "case": "SWAPPED one clip (IDENTICAL COUNT)",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "clips      : 12 present, 12 registered   <-- count OK — MEMBERSHIP DIFFERS AT THE SAME COUNT",
+   "count_only_would_have_missed_it": true
+  },
+  {
+   "case": "RE-SELECTED split (IDENTICAL COUNT)",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "clips      : 12 present, 12 registered   <-- count OK — MEMBERSHIP DIFFERS AT THE SAME COUNT",
+   "count_only_would_have_missed_it": true
+  },
+  {
+   "case": "EXTRA foreign clip",
+   "clips_present": 13,
+   "clips_expected": 12,
+   "count_only_verdict": "REFUSE (count differs by +1)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "clips      : 13 present, 12 registered   <-- EXTRA 1",
+   "count_only_would_have_missed_it": false
+  },
+  {
+   "case": "UNREGISTERED cache (the v5 state as built today)",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "--require-parity was passed and none of these dirs references a",
+   "count_only_would_have_missed_it": true
+  },
+  {
+   "case": "UNREGISTERED cache, WITHOUT --require-parity (physicalai-v2bal must still run)",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "PASS-THROUGH (NON-PARITY, warned)",
+   "guard_reason": "warn-and-proceed",
+   "count_only_would_have_missed_it": false
+  },
+  {
+   "case": "v2 cache wearing a RAW EPCACHE key",
+   "clips_present": 12,
+   "clips_expected": 12,
+   "count_only_verdict": "PASS (a count check sees nothing wrong)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "uid kind   : this directory holds *.v2ep.pt (uid_kind 'v2ep_clipid'),",
+   "count_only_would_have_missed_it": true
+  },
+  {
+   "case": "SAME CLIP in two --v2-cache dirs",
+   "clips_present": 14,
+   "clips_expected": 12,
+   "count_only_verdict": "REFUSE (count differs by +2)",
+   "guard_verdict": "REFUSE",
+   "guard_reason": "PARITY VIOLATION [v2-cache]: 2 clip(s) appear in more than one --v2-cache dir. build_v2_providers CONCATENATES the dirs, so each duplicate would contribute its windows TWICE and re-weight the corpus. Dirs: ['C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\tmpnm30xw0i\\\\d_dup\\\\synthetic-w120x256cyl-bbbbbbbbbbbb_a', 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\tmpnm30xw0i\\\\d_dup\\\\synthetic-w120x256cyl-bbbbbbbbbbbb_b']. (clip ids withheld — gated-confidential)",
+   "count_only_would_have_missed_it": false
+  }
+ ],
+ "membership_proof_cases": {
+  "shortfall_is_the_recorded_decode_failures": {
+   "verdict": "PASS",
+   "missing": 2,
+   "identity_checked": true
+  },
+  "shortfall_right_size_wrong_clips": {
+   "verdict": "REFUSE",
+   "reason": "of those, 0 are the RECORDED failures and 2 are NOT",
+   "note": "the sibling stream's verify_v2_parity.py accepted ANY len(missing)==24; identity is the strengthening"
+  },
+  "digest_only_on_an_incomplete_build": {
+   "verdict": "REFUSE",
+   "note": "⚠️ WHAT THE V2 PATH CANNOT DO: without the exported clip list the check cannot tell a legitimate decode failure from a lost clip, so a CORRECT incomplete build is also refused. --expect-clips is required on the pod.",
+   "reason": "DIGEST-ONLY MODE cannot say WHICH clips differ — it has no clip"
+  }
+ },
+ "c13_self_check": {
+  "count_only_would_have_missed": [
+   "SWAPPED one clip (IDENTICAL COUNT)",
+   "RE-SELECTED split (IDENTICAL COUNT)",
+   "UNREGISTERED cache (the v5 state as built today)",
+   "v2 cache wearing a RAW EPCACHE key"
+  ],
+  "reading": "a guard whose refusals are a SUBSET of what a count check already refuses is a count check; these rows are the evidence that it is not."
+ }
+}
