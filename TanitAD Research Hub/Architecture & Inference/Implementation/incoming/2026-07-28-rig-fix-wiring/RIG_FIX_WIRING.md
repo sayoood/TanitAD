@@ -192,8 +192,11 @@ masked `0.0006347895` = the census `0.00063479`. The rig split (26.75 / 73.25) r
 but the two numbers answer different questions and should not be swapped.
 
 ⭐ The restamped files also now carry `subframe_observability`: at **both** `176×624` and `128×576`
-the observed fraction is **exactly 1.0 — mean, min and max, on every clip of both rigs** (val: 170 A
-+ 430 B). That is the rig-clean claim re-derived on the shipped cache's own population.
+the observed fraction is **exactly 1.0 — mean, min AND max — on every clip of both rigs, across both
+splits: 812 rig A + 2 188 rig B = 3 000 clips** (train 642 A / 1 758 B, val 170 A / 430 B). That is
+the rig-clean claim re-derived on the shipped caches' own populations, and it is a **wider** basis
+than the original result (240 decoded clips): exact ray-map geometry over every clip that will
+actually be trained and gated on. *(The 812/2 188 total also reproduces the census split exactly.)*
 
 ### 4.3 ⚠️ What the false value invalidated — and how close it came
 
@@ -402,9 +405,30 @@ python3 -u scripts/train_flagship_v4.py \
 | `pod2:/workspace/rigfix/wireprobe{,576}/` — symlink probe dirs | pod2 | **pod only** (disposable, symlinks; regenerable in seconds) |
 | `pod2:/workspace/rigfix/stack_head/` — the shipped stack the pod ran | pod2 | no (every file is from the repo) |
 
-**Staged, never committed, never pushed. No branch switched.**
-⚠️ The index also contains a sibling stream's `2026-07-28-resolution-gain/` deliverables, staged
-before I started. I added only my own paths and left theirs alone.
+**I ran no `git commit`, no `git push`, and switched no branch.** I `git add`ed only my own paths;
+the sibling `2026-07-28-resolution-gain/` deliverables were already in the index when I arrived and
+I left them untouched.
+
+### ⚠️ SHARED-INDEX DISCLOSURE — this stream's work was committed AND PUSHED by another stream
+
+While I was writing this document, commit **`13e12aa`** (`sayoood`, 2026-07-27 16:23:32 +0200) —
+whose message is *"resolution: NO GAIN — do not build 384×960…"* — **swept the entire index**,
+which contained every artifact in §9, and the branch was pushed
+(`agent/benchmarks-eval-20260721` == `origin/…`, no divergence).
+
+**Verified byte-for-byte:** all four code files (`v2_dataset.py`, `parity.py`,
+`train_flagship_v4.py`, `test_v5_frame_wiring.py`) have HEAD blob hashes **identical** to my working
+tree, and every `code/` and `raw/` artifact is in the tree. **Nothing is stranded and nothing is
+lost** — but this stream's work now lives under another stream's commit message on the remote. Only
+this file's final edit remains staged-and-uncommitted.
+
+⇒ **This is the FOURTH occurrence of the CLAUDE.md §Git-hygiene hazard** (`git commit` commits the
+ENTIRE INDEX, not what you just `git add`ed) — after `60265d3`, `3d41bd0`, and `d5d5afb`
+(recorded in `RIG_CLEAN_FIX.md` §11, one commit earlier). **It is now happening roughly once per
+commit on this branch, which makes commit messages an unreliable index of who did what.** I am not
+attempting to repair it: rewriting a pushed commit is strictly more dangerous than the mislabelling.
+**Recommended (a human decision):** either serialise commits, or accept that attribution lives in
+these `incoming/` documents rather than in `git log`. Recorded here so the record is not silent.
 
 ---
 
