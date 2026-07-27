@@ -367,6 +367,15 @@ and both are verified end-to-end. Nothing in the code prefers either.
 | P2 | both splits registered **and the manifest staged** | ✅ (§6) |
 | P3 | the PI has chosen the frame | ⛔ **OPEN** — `176x624` below is an example, not a decision |
 | P4 | ⭐ the micro-batch fits | 🔴 **`--batch 16` DOES NOT FIT** on a 44 GB A40 at either candidate frame — MEASURED, §8.1. The command below uses **`--batch 8 --accum 8`**, which preserves the effective batch of 64 and needs no code change |
+| P5 | ⛔ **every EVAL command pins the stack** | ✅ **CORRECTED 2026-07-27** — §7.3/§7.4 now carry `TANITEVAL_STACK_OVERRIDE`. Without it, importing `taniteval` prepended a **pre-v5 `/root/TanitAD/stack`** and the eval published a number computed by pre-v5 code, *with no error*. `…/incoming/2026-07-27-stale-import-guard/STALE_IMPORT_GUARD.md` |
+| P6 | ⛔ **every path a command prints exists** | ✅ **CORRECTED 2026-07-27** — `--anchors-dense` pointed at `/workspace/experiments/anchors/anchors_dense_1to20.pt`, an **empty directory on pod2**, in both commands below, and `--print-launch` printed `PREFLIGHT: OK` anyway. Path existence is now a preflight gate (`train_flagship_v4.PATH_ARGS`) |
+
+⚠️ **THE FRAME NUMBER, ONCE, BECAUSE IT IS QUOTED WRONG.** `--frame-hfov 120` below is the
+**PARENT CACHE's** render (256×640 cylindrical, `f_ref` 305.5775) and is correct as written. The arm
+that actually trains is the `--v2-subframe 176x624` slice of it: **176×624, HFOV 117.000° × VFOV
+32.131°, 429 tokens**, rows `[40:216]`, cols `[8:632]` — MEASURED through the trainer's own
+`resolve_v2_frames` on pod2. ⇒ **v5's frame is 117°, not 120°; the rig-clean fix costs 3° of field.**
+Both flags are needed and neither is wrong; what was wrong is prose that called the *arm* 120°.
 
 ### 7.1 TRAIN
 
@@ -383,7 +392,7 @@ python3 -u scripts/train_flagship_v4.py \
   --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical \
   --v2-subframe 176x624 \
   --from-scratch \
-  --anchors-dense /workspace/experiments/anchors/anchors_dense_1to20.pt \
+  --anchors-dense /workspace/experiments/flagship_v4_anchors_dense.pt \
   --out   /workspace/experiments/flagship-v5-w120-rigclean-30k \
   --steps 30000 --batch 8 --accum 8 --lr-head 1e-4 --lr-trunk 1e-4 \
   --warmup 2000 --workers 8 --eval-every 500 --save-every 1000 --rollout-k 4 \
@@ -394,6 +403,16 @@ python3 -u scripts/train_flagship_v4.py \
 Verdicts, both MEASURED: as written → **`PREFLIGHT: OK`**, exit 0. Identical command with
 `--v2-subframe` **omitted** → **`PREFLIGHT: BLOCKED`, exit 2**, naming 8.897 % / 0.0017 % and
 both admissible frames.
+
+⛔ **CORRECTED 2026-07-27 — `--anchors-dense` was `/workspace/experiments/anchors/anchors_dense_1to20.pt`,
+which DOES NOT EXIST on pod2** (that directory is empty; the real file is
+`/workspace/experiments/flagship_v4_anchors_dense.pt`, `[256, 20, 2]`, `method fps`, horizons 1..20).
+⚠️ **And `--print-launch` printed `PREFLIGHT: OK` for it** — it checked argument *presence*, never
+path *existence*. RED→GREEN against this document's own HEAD is banked at
+`…/2026-07-27-stale-import-guard/raw/preflight_path_demo.json`; the fix is
+`train_flagship_v4.preflight_path_problems` plus an exhaustiveness contract over the parser
+(`stack/tests/test_preflight_paths.py`), because a hand-maintained check list is what let this
+through — `--poses-*` and `--labels-*` were never checked either.
 
 ### 7.2 GATE — register the card BEFORE the launch
 
@@ -419,21 +438,43 @@ overwrite an existing card, which is what makes pre-registration real.
 
 ### 7.3 EVAL — ⭐ the leg that did not exist until this stream
 
+⛔⛔ **EVERY COMMAND BELOW CARRIES `TANITEVAL_STACK_OVERRIDE`, AND IT IS NOT OPTIONAL.**
+`eval_flagship_v4.py` imports `taniteval.bench` and `taniteval.driving`; until 2026-07-27 those
+modules ran `sys.path.insert(0, "/root/TanitAD/stack")`, which on pod2 is a **12 MB pre-v5 tree**
+(no `heldout_gate`, no `resolve_v2_frames`). The commands as first published carried none of it, so
+they would have **evaluated a v5 checkpoint with pre-v5 code and printed a plausible number**
+(`SMALL_VALIDATION.md` §5; mechanism, guard and demonstrated failure in
+`…/incoming/2026-07-27-stale-import-guard/STALE_IMPORT_GUARD.md`).
+⚠️ A bare `import tanitad` resolves *correctly* and does **not** catch this.
+
 ```bash
+# ⭐ STEP 0 — one second, and it is the difference between a wrong number and an
+#   exit 2. Refuses if the `tanitad` that `taniteval` will actually import is not
+#   /workspace/TanitAD/stack, or if that tree is pre-v5.
+cd /workspace/TanitAD/stack && \
+TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts:/workspace/TanitAD/taniteval \
+python3 -m taniteval.stack_check --require v5 \
+  --json /workspace/taniteval/results/stack_guard_v5.json
+
 # MODE A FIRST (GATE_PROTOCOL O-03): validate the harness against the KNOWN v1 number.
 #   ⚠️ v1 is a 256x256 raw-epcache arm, so MODE A stays on the RAW path — it is a
 #   harness check, not a v5 measurement, and it must not move.
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
 python3 scripts/eval_flagship_v4.py \
   --ckpt /workspace/models/flagship-30k/ckpt.pt --canary-only \
   --val-cache /workspace/data/physicalai-val-0c5f7dac3b11 \
   --key v1-validation --out /workspace/taniteval/results/v1-validation.json
 
 # MODE B — the v5 gate primary, on the v5 corpus, at the v5 frame.
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
+#   --frame-hfov 120 is the PARENT cache's render; the arm evaluated here is the
+#   176x624 slice = HFOV 117.000 deg x VFOV 32.131 deg, 429 tokens.
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
 python3 scripts/eval_flagship_v4.py \
   --ckpt /workspace/experiments/flagship-v5-w120-rigclean-30k/ckpt_best.pt \
-  --anchors-dense /workspace/experiments/anchors/anchors_dense_1to20.pt \
+  --anchors-dense /workspace/experiments/flagship_v4_anchors_dense.pt \
   --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl \
   --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical \
   --v2-subframe 176x624 \
@@ -443,6 +484,12 @@ python3 scripts/eval_flagship_v4.py \
 
 #  … and the DEPLOYABLE twin (no goal oracle) — add:  --goal-mode produced
 ```
+
+⚠️ **`TANITEVAL_STACK_OVERRIDE` must be set BEFORE `python3` starts** (as above, not inside the
+script): it works by importing `tanitad` from that root inside `taniteval/__init__.py`, so the
+`sys.modules` cache beats every later insert. ⭐ Since 2026-07-27 it is **verified, not trusted** —
+an override that is set but ineffective (a typo, a moved checkout) now refuses instead of printing
+its success line over a stale resolution.
 
 ⭐ **`--v2-subframe` must equal the run's.** It is not a convention: the value is cross-checked
 against the checkpoint's own `config.json` and a mismatch is a refusal that prints the correct
@@ -455,7 +502,8 @@ separate 256×256 v1 trunk.
 ### 7.4 GATE — check at the gate step
 
 ```bash
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack \
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack \
 python3 scripts/run_gate.py check \
   --card gates/flagship-v5-w120-rigclean-30k.card.json \
   --log  /workspace/experiments/flagship-v5-w120-rigclean-30k/train_log.jsonl \
@@ -466,6 +514,16 @@ python3 scripts/run_gate.py check \
 ⚠️ The **corridor** co-primary (K=185 CDR) has its own emitter and is **not** produced by
 `eval_flagship_v4.py`. On the v2 corpus that emitter is in the same state this evaluator was in
 an hour ago — **UNVERIFIED, and it is the next thing someone must probe** (§9.4).
+
+⭐ **Where the override is LOAD-BEARING and where it is belt-and-braces — stated, not assumed
+(VERIFIED IN CODE 2026-07-27):**
+
+| command | imports `taniteval`? | the override is |
+|---|---|---|
+| `scripts/eval_flagship_v4.py` | ✅ `taniteval.bench` (:1116), `taniteval.driving` (:1155) — **both had the hardcoded insert** | ⛔ **REQUIRED** |
+| `scripts/gate_emitters.py corridor` | ✅ `taniteval.corridor`, `taniteval.rollout` (:356-357) — **both had it** | ⛔ **REQUIRED** |
+| `scripts/train_flagship_v4.py` (the `--heldout-gate` probe) | ✅ lazily, via `heldout_gate._taniteval()` → `taniteval.pseudosim` + `taniteval.ci` | ⛔ **REQUIRED** |
+| `scripts/run_gate.py` | ❌ none — it *mirrors* `taniteval.ood` in pure arithmetic on purpose | defensive only, kept so the whole leg is spelled one way |
 
 ---
 

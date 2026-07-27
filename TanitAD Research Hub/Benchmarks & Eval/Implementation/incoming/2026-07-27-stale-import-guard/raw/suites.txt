@@ -1,0 +1,26 @@
+# SUITES — MEASURED (ours), 2026-07-27, dev box, C:/Users/Admin/venvs/tanitad.
+# Zero new skips. Runs are in chronological order.
+
+[1] BASELINE, before any change of mine
+    cd stack     && python -m pytest -q  ->  1523 passed, 12 skipped, 2 warnings in 108.51s
+    cd taniteval && python -m pytest -q  ->   644 passed,             1 warning  in  68.37s
+
+[2] AFTER the 28-module rewrite (52 hardcoded sys.path.insert lines removed),
+    BEFORE any new test was added -- so the rewrite is separable from the additions
+    cd taniteval && python -m pytest -q  ->   644 passed,             1 warning  in  68.35s   (UNCHANGED)
+
+[3] FINAL, with the new tests
+    cd stack     && python -m pytest -q  ->  1534 passed, 12 skipped, 2 warnings in 124.96s
+                                             (+11 = stack/tests/test_preflight_paths.py)
+    cd taniteval && python -m pytest -q  ->   661 passed,             1 warning  in  70.61s
+                                             (+17 = taniteval/tests/test_stack_guard.py)
+
+  new skips: 0        skipped count: 12 -> 12 (stack), 0 -> 0 (taniteval)
+
+[4] targeted, during development
+    stack/tests/test_preflight_paths.py                 -> 11 passed
+    stack/tests/{test_train_flagship_v4,test_v5_trainer_v2_val,test_v5_frame_wiring,
+                 test_preflight_parity,test_accum_effective_batch,
+                 test_heldout_gate_real_head,test_heldout_gate_goal_wiring}.py
+                                                        -> 109 passed  (the preflight users)
+    taniteval/tests/test_stack_guard.py                 -> 17 passed

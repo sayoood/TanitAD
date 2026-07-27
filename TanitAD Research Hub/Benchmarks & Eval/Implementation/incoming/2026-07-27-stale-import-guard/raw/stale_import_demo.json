@@ -1,0 +1,66 @@
+{
+  "S1_RED_wrong_number_guard_off": {
+    "exit": 0,
+    "json": {
+      "tag": "STALE",
+      "hfov": 120.0
+    },
+    "guard_lines": [],
+    "raised_StackShadowError": false
+  },
+  "S2_RED_bare_import_tanitad_says_GOOD": {
+    "exit": 0,
+    "json": {
+      "tag": "GOOD"
+    },
+    "guard_lines": [],
+    "raised_StackShadowError": false
+  },
+  "S2b_RED_same_import_after_the_stale_insert": {
+    "exit": 0,
+    "json": {
+      "tag": "STALE"
+    },
+    "guard_lines": [],
+    "raised_StackShadowError": false
+  },
+  "S3_GREEN_late_stale_insert_refused": {
+    "exit": 1,
+    "json": null,
+    "guard_lines": [
+      "taniteval.stack_guard.StackShadowError: \u26d4 STACK SHADOWING \u2014 `tanitad` would be imported from"
+    ],
+    "raised_StackShadowError": true
+  },
+  "S4_GREEN_override_set_but_ineffective_refused": {
+    "exit": 1,
+    "json": null,
+    "guard_lines": [
+      "taniteval.stack_guard.StackShadowError: \u26d4 STACK SHADOWING \u2014 `tanitad` would be imported from"
+    ],
+    "raised_StackShadowError": true
+  },
+  "S5_GREEN_capability_probe_refuses_pre_v5": {
+    "exit": 2,
+    "json": "\u26d4 STACK GUARD REFUSED \u2014 pinned root C:\\Users\\Admin\\AppData\\Local\\Temp\\stale_stack_tdzi4xgk\\root_stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:\n  tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'\n  tanitad.train.heldout_goal:make_goal_kwargs_fn -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_goal'\n  tanitad.data.parity:register_v2_geometry_sibling -> module resolved from C:\\Users\\Admin\\AppData\\Local\\Temp\\stale_stack_tdzi4xgk\\root_stack\\tanitad\\data\\parity.py has NO attribute 'register_v2_geometry_sibling' (a PRE-v5 tree looks exactly like this)\n  train_flagship_v4:resolve_v2_frames -> module resolved from C:\\Users\\Admin\\AppData\\Local\\Temp\\stale_stack_tdzi4xgk\\root_stack\\scripts\\train_flagship_v4.py has NO attribute 'resolve_v2_frames' (a PRE-v5 tree looks exactly like this)\n\u21d2 export TANITEVAL_STACK_OVERRIDE=C:\\Users\\Admin\\AppData\\Local\\Temp\\stale_stack_tdzi4xgk\\root_stack BEFORE python3 starts, and make sure no stale tree (e.g. /root/TanitAD/stack) precedes it.",
+    "guard_lines": [
+      "\u26d4 STACK GUARD REFUSED \u2014 pinned root C:\\Users\\Admin\\AppData\\Local\\Temp\\stale_stack_tdzi4xgk\\root_stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:"
+    ],
+    "raised_StackShadowError": false
+  },
+  "S6_GREEN_capability_probe_accepts_post_v5": {
+    "exit": 0,
+    "json": null,
+    "guard_lines": [],
+    "raised_StackShadowError": false
+  },
+  "_summary": {
+    "RED S1 produced the wrong number with no error": true,
+    "RED S2 the bare `import tanitad` sync proof PASSES": true,
+    "RED S2b the SAME import after the stale insert is STALE": true,
+    "GREEN S3 refuses with NO env var": true,
+    "GREEN S4 refuses a set-but-ineffective override": true,
+    "GREEN S5 capability probe exits 2 on a pre-v5 tree": true,
+    "GREEN S6 capability probe exits 0 on a post-v5 tree": true
+  }
+}

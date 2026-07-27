@@ -495,6 +495,12 @@ entry is the one the previous stream staged.
 | 1 | `--batch 16 --accum 4` | **`--batch 8 --accum 8`** | 16 OOMs; 8×8 verified on real steps, gradient-equivalent to 6.5e-8 (§3) |
 | 2 | `--anchors-dense /workspace/experiments/anchors/anchors_dense_1to20.pt` | **`/workspace/experiments/flagship_v4_anchors_dense.pt`** | ⛔ **the staged path does not exist on pod2** — MEASURED. The run would have died at load. Verify on whichever pod hosts the launch |
 | 3 | `run_gate.py check … --out <f>` | **`--json <f>`** | `check` has no `--out`; the previously staged line would have errored |
+| 4 | *(added 2026-07-27)* no stack pin on any eval leg | **`TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack` on §5.3 and §5.4** | ⛔⛔ **the highest-blast-radius of the four.** `eval_flagship_v4` imports `taniteval.bench`/`.driving` and `gate_emitters corridor` imports `taniteval.corridor`/`.rollout`; until 2026-07-27 those modules ran `sys.path.insert(0, "/root/TanitAD/stack")`, which on pod2 is a **12 MB pre-v5 tree**. The commands as published would have **evaluated a v5 checkpoint with pre-v5 code and printed a plausible number** — not an error. `…/incoming/2026-07-27-stale-import-guard/STALE_IMPORT_GUARD.md` |
+| 5 | *(added 2026-07-27)* §5.4's `PYTHONPATH=…:/root/taniteval` | **`…:/workspace/TanitAD/taniteval`** | same class, other package: `/root/taniteval` is the pod's own old checkout of the *harness*. The stack guard cannot see this one — it pins `tanitad`, not `taniteval` — so it must be right in the command |
+
+⚠️ **The frame number, once:** `--frame-hfov 120` in §5.1/§5.3 is the **PARENT cache's** render and is
+correct. The arm that trains and is scored is the `--v2-subframe 176x624` slice: **HFOV 117.000° ×
+VFOV 32.131°, 429 tokens** (MEASURED via `resolve_v2_frames` on pod2). **v5 is a 117° arm.**
 
 ### 5.1 TRAIN
 
@@ -554,16 +560,25 @@ co-primary needs `--no-co-primary "<reason>"` and puts a *blind* gate on the rec
 ### 5.3 EVAL
 
 ```bash
+# ⭐ STEP 0 — refuse in one second rather than publish a pre-v5 number (correction 4).
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts:/workspace/TanitAD/taniteval \
+python3 -m taniteval.stack_check --require v5 \
+  --json /workspace/taniteval/results/stack_guard_v5.json
+
 # MODE A FIRST (GATE_PROTOCOL O-03): validate the harness against the KNOWN v1 number.
 #   v1 is a 256x256 raw-epcache arm, so MODE A stays on the RAW path.
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
 python3 scripts/eval_flagship_v4.py \
   --ckpt /workspace/models/flagship-30k/ckpt.pt --canary-only \
   --val-cache /workspace/data/physicalai-val-0c5f7dac3b11 \
   --key v1-validation --out /workspace/taniteval/results/v1-validation.json
 
 # MODE B — the v5 gate primary (DEMOTED to diagnostic), on the v5 corpus, at the v5 frame.
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
+#   --frame-hfov 120 is the PARENT cache; the scored arm is the 176x624 slice = 117.000 deg.
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts \
 python3 scripts/eval_flagship_v4.py \
   --ckpt /workspace/experiments/flagship-v5-w120-rigclean-30k/ckpt_step10000.pt \
   --anchors-dense /workspace/experiments/flagship_v4_anchors_dense.pt \
@@ -586,7 +601,11 @@ dumps were in (`GATE_PROTOCOL` §5).
 ### 5.4 THE CO-PRIMARY PANEL
 
 ```bash
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack:/root/taniteval \
+# ⛔ TANITEVAL_STACK_OVERRIDE is REQUIRED here: gate_emitters.py:356-357 imports
+#   taniteval.corridor + taniteval.rollout, and BOTH carried the stale insert.
+#   ⚠️ /root/taniteval -> /workspace/TanitAD/taniteval (correction 5).
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/taniteval \
 python3 scripts/gate_emitters.py corridor \
   --windows   /workspace/taniteval/results/windows_flagship-v5-w120-rigclean-10k.pt \
   --out-corridor /workspace/taniteval/results/corridor_flagship-v5-w120-rigclean-10k.json
@@ -600,7 +619,11 @@ the co-primary is missing rather than passing.
 ### 5.5 GATE — check
 
 ```bash
-cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack \
+# TANITEVAL_STACK_OVERRIDE is defensive here — VERIFIED IN CODE: run_gate.py imports
+# no taniteval (it mirrors taniteval.ood in pure arithmetic on purpose). Kept so the
+# whole leg is spelled one way and nobody has to remember which command is exempt.
+cd /workspace/TanitAD/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack \
+PYTHONPATH=/workspace/TanitAD/stack \
 python3 scripts/run_gate.py check \
   --card "Project Steering/Gates/flagship-v5-w120-rigclean-30k.card.json" \
   --log  /workspace/experiments/flagship-v5-w120-rigclean-30k/train_log.jsonl \

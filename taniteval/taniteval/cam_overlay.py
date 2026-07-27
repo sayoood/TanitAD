@@ -23,7 +23,11 @@ import torch
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, "/root/taniteval")
-sys.path.insert(0, "/root/TanitAD/stack")
+# ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — that put a
+# possibly PRE-v5 tree IN FRONT of the caller's PYTHONPATH and published a
+# plausible wrong number instead of an error (STALE_IMPORT_GUARD.md).
+from taniteval.stack_guard import ensure_stack_on_path as _ensure_stack  # noqa: E402
+_ensure_stack()
 
 F_EFF, CX, CY = 265.83, 128.0, 128.0
 CAM_H = 1.5                      # metres above ground (front-wide rig approx)

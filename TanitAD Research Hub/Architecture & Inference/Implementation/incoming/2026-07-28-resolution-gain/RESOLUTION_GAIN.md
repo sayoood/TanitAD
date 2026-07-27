@@ -533,7 +533,7 @@ which this program does not currently instrument and which is *not* what the v5 
 
 | arm | frame | px/deg | tokens | isolates |
 |---|---|---:|---:|---|
-| `R_640` | 256×640 cyl @120° | 5.3333 | 640 | the chosen v5 frame |
+| `R_640` | 256×640 cyl @120° | 5.3333 | 640 | the chosen v5 **cache** — ⚠️ the *arm* is its `176×624` slice, **117.000°**, 429 tokens (§4.7) |
 | `R_960` | 384×960 cyl @120° | 8.0000 | 1440 | **the candidate** |
 
 Identical episodes (a **declared subset** of the parity train split — see the parity note below),
@@ -607,7 +607,12 @@ cannot be guaranteed by the tooling, build the full 2,400-clip 384×960 cache on
 
 # 7. RECOMMENDATION — one plain paragraph, and it is a decision to NOT spend
 
-> ## **Train v5 at 256×640 / 120° cylindrical and do not build 384×960.**
+> ## **Train v5 from the 256×640 / 120° cylindrical cache and do not build 384×960.**
+>
+> ⚠️ **Frame vs cache, corrected 2026-07-27:** the *cache* is 256×640 / 120°; the *arm* is its
+> rig-clean `--v2-subframe 176x624` slice — **117.000° × 32.131°, 429 tokens** (§4.7). The
+> px/deg figure this recommendation turns on (**5.3333**) is set by `f_ref` 305.5775 and is
+> **unchanged by the slice**, so the verdict below is unaffected; only the field is.
 >
 > **The measured answer to the PI's question — *"which gain do we have in using the higher
 > resolution"* — is: none that we can detect, on the tasks we train and gate on.** A **1.5×**

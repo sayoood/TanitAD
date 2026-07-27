@@ -1881,10 +1881,107 @@ def preflight_parity_problems(a, *, manifest_path=None) -> list[str]:
     return problems
 
 
+#: ⭐ EVERY free-form string argument, classified as a path or explicitly not.
+#: `preflight_path_problems` checks the paths; `tests/test_preflight_paths.py`
+#: asserts this table stays EXHAUSTIVE over the parser, so the next path flag
+#: cannot be added without a decision. A hand-maintained subset is how
+#: `--anchors-dense` was printed under `PREFLIGHT: OK` while pointing at an
+#: empty directory (V5_EVALUABLE §7.1/§7.3; SMALL_VALIDATION §7.1 item 5).
+#:
+#: kinds: ``in-file`` · ``in-dir`` · ``in-dir-list`` · ``out-dir`` ·
+#:        ``in-file-sentinel`` (the literal 'none' is a deliberate choice)
+PATH_ARGS: dict[str, tuple[str, str]] = {
+    "train_cache":    ("in-dir",           "--train-cache"),
+    "val_cache":      ("in-dir",           "--val-cache"),
+    "v2_train_cache": ("in-dir-list",      "--v2-train-cache"),
+    "v2_val_cache":   ("in-dir-list",      "--v2-val-cache"),
+    "poses_train":    ("in-file",          "--poses-train"),
+    "poses_val":      ("in-file",          "--poses-val"),
+    "labels_train":   ("in-file",          "--labels-train"),
+    "labels_val":     ("in-file",          "--labels-val"),
+    "trunk":          ("in-file-sentinel", "--trunk"),
+    "anchors_dense":  ("in-file",          "--anchors-dense"),
+    "anchors_coarse": ("in-file",          "--anchors-coarse"),
+    "probes":         ("in-file",          "--probes"),
+    "out":            ("out-dir",          "--out"),
+}
+
+#: Free-form string arguments that are NOT paths. Listed, not inferred, so the
+#: exhaustiveness test has something to check them against.
+NOT_A_PATH: dict[str, str] = {
+    "v2_subframe": "a frame spec ('176x624' / 'none'), validated by the geometry layer",
+    "device":      "a torch device string",
+}
+
+
+def preflight_path_problems(a) -> list[str]:
+    """⭐ EVERY PATH THE STAGED COMMAND PRINTS MUST EXIST ON THIS HOST.
+
+    THE DEFECT THIS REMOVES (MEASURED 2026-07-27):
+    ``--anchors-dense /workspace/experiments/anchors/anchors_dense_1to20.pt``
+    appears in BOTH published v5 launch commands and **does not exist on pod2**
+    (that directory is empty; the real file is
+    ``/workspace/experiments/flagship_v4_anchors_dense.pt``). ``--print-launch``
+    checked **argument presence**, never **path existence**, so it printed
+    ``PREFLIGHT: OK`` for a command that crashes after the model is built.
+
+    ⚠️ This is the SECOND time ``PREFLIGHT: OK`` covered an input it never
+    looked at — the first was ``--require-parity`` against a cache whose
+    ``corpus_key_of`` resolved to ``None`` (:func:`preflight_parity_problems`).
+    **A preflight that checks only some of its inputs will keep doing this**,
+    which is why the classification above is exhaustive-by-test rather than a
+    list someone remembers to extend.
+
+    Scope, stated so it is not over-read: existence and kind (file vs
+    directory) only. It does not read, parse or validate contents — the anchor
+    tensor's shape is checked where it is loaded, and the caches' membership by
+    :func:`preflight_parity_problems`.
+    """
+    problems: list[str] = []
+    host = socket.gethostname()
+    for dest, (kind, flag) in sorted(PATH_ARGS.items()):
+        raw = getattr(a, dest, None)
+        if raw in (None, "", []):
+            continue
+        if kind == "in-file-sentinel" and str(raw).strip().lower() in ("none", ""):
+            continue                       # the deliberate 'no warm-start' spelling
+        values = list(raw) if isinstance(raw, (list, tuple)) else [str(raw)]
+        for v in values:
+            p = Path(v)
+            if kind == "out-dir":
+                # The OUTPUT dir may legitimately not exist yet — its PARENT
+                # must, or the run dies after the model build with ENOENT.
+                parent = p if p.is_dir() else p.parent
+                if not parent.exists():
+                    problems.append(
+                        f"[PATH-PREFLIGHT] {flag} {v}: the parent directory "
+                        f"{parent} does not exist on THIS host ({host}). The run "
+                        f"would build the model, then die writing config.json.")
+                continue
+            if not p.exists():
+                problems.append(
+                    f"[PATH-PREFLIGHT] {flag} {v}: DOES NOT EXIST on THIS host "
+                    f"({host}). MEASURED precedent: this exact flag pointed at "
+                    f"an empty directory in both published v5 launch commands "
+                    f"and preflight printed OK anyway. If the cache lives on "
+                    f"another pod, run --print-launch THERE.")
+                continue
+            if kind == "in-file" and not p.is_file():
+                problems.append(f"[PATH-PREFLIGHT] {flag} {v}: exists but is not "
+                                f"a FILE.")
+            if kind in ("in-dir", "in-dir-list") and not p.is_dir():
+                problems.append(f"[PATH-PREFLIGHT] {flag} {v}: exists but is not "
+                                f"a DIRECTORY.")
+    return problems
+
+
 def preflight_asserts(a) -> list[str]:
     """The §17.1 / §9 invariants a launch must satisfy — checked here so a bad
     config fails loudly BEFORE any GPU-day is spent."""
     problems = []
+    # ⭐ Paths FIRST: a missing file is the cheapest possible refusal and the one
+    # that already slipped through twice.
+    problems += preflight_path_problems(a)
     phases = CurriculumPhases(a.phase_a_steps, a.phase_b_steps)
     # ⭐ CAUSE #1 of the last run's failure, made un-repeatable-by-accident.
     # ~29.5 GPU-h — half the v4 30k run — went into training past the best

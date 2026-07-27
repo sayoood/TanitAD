@@ -1,0 +1,41 @@
+# FLEET STACK INVENTORY — read-only probe, 2026-07-27. MEASURED (ours).
+# ⛔ pod1 NEVER CONTACTED (training). pod2 READ-ONLY (small validation running:
+#    trainer PID 3695401, chain 3695397, eval chain 3696611 — none touched).
+# Purpose: decide whether the hardcoded sys.path.insert(0, '/root/TanitAD/stack')
+#          can be removed without breaking the DEPLOYED eval path.
+
+======== tanitad-pod2
+  host: 08f6ce7d8e55
+  PRESENT /root/TanitAD/stack  py(<=2deep)=177  NO-git  12M
+  PRESENT /workspace/TanitAD/stack  py(<=2deep)=207  git  54M
+  PRESENT /root/taniteval  py(<=2deep)=107  NO-git  22M
+  PRESENT /workspace/TanitAD/taniteval  py(<=2deep)=115  git  29M
+  post-v5 marker tanitad/train/heldout_gate.py:
+    NO  /root/TanitAD/stack   <- PRE-v5
+    YES /workspace/TanitAD/stack
+  grep -c resolve_v2_frames in scripts/train_flagship_v4.py:
+    0  /root/TanitAD/stack
+    3  /workspace/TanitAD/stack
+
+======== tanitad-pod3
+  host: 1682186f1e9b
+  ABSENT  /root/TanitAD/stack
+  PRESENT /workspace/TanitAD/stack  py(<=2deep)=166  git  60M
+  PRESENT /root/taniteval  py(<=2deep)=0  NO-git  0
+  PRESENT /workspace/TanitAD/taniteval  py(<=2deep)=45  git  4.9M
+  post-v5 marker tanitad/train/heldout_gate.py:
+    NO  /workspace/TanitAD/stack   <- PRE-v5
+  grep -c resolve_v2_frames in scripts/train_flagship_v4.py:
+    0  /workspace/TanitAD/stack
+
+======== tanitad-eval
+  host: 1e0bac0df88a
+  PRESENT /root/TanitAD/stack  py(<=2deep)=100  git  5.8M
+  ABSENT  /workspace/TanitAD/stack
+  PRESENT /root/taniteval  py(<=2deep)=79  NO-git  224M
+  ABSENT  /workspace/TanitAD/taniteval
+  post-v5 marker tanitad/train/heldout_gate.py:
+    NO  /root/TanitAD/stack   <- PRE-v5
+  grep -c resolve_v2_frames in scripts/train_flagship_v4.py:
+    0  /root/TanitAD/stack
+

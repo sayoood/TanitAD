@@ -1,0 +1,70 @@
+# STAGING VERIFICATION — 'git ls-files --cached', NOT an exit code.
+# CLAUDE.md: git add can silently no-op on files in a NEW directory.
+# (This file re-stages itself after being written; counts below are post-add.)
+
+## the new deliverable directory (git ls-files --cached):
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/STALE_IMPORT_GUARD.md
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/code/preflight_path_demo.py
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/code/stale_import_demo.py
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/fleet_stack_inventory.txt
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/hardcoded_insert_rewrite.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/preflight_path_demo.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/staged_files.txt
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/stale_import_demo.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/suites.txt
+
+  count: 9   expected 9 = 1 md + 2 code + 6 raw
+
+## every path staged by this stream (git diff --cached --name-only):
+  Project Steering/Gates/flagship-v5-retrain.PREP.md
+  TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-resolution-gain/RESOLUTION_GAIN.md
+  TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-v5-evaluable/V5_EVALUABLE.md
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/STALE_IMPORT_GUARD.md
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/code/preflight_path_demo.py
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/code/stale_import_demo.py
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/fleet_stack_inventory.txt
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/hardcoded_insert_rewrite.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/preflight_path_demo.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/staged_files.txt
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/stale_import_demo.json
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-stale-import-guard/raw/suites.txt
+  TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-v5-gateable/V5_GATEABLE.md
+  stack/scripts/train_flagship_v4.py
+  stack/tests/test_preflight_paths.py
+  taniteval/taniteval/__init__.py
+  taniteval/taniteval/ab.py
+  taniteval/taniteval/bench.py
+  taniteval/taniteval/blind_baseline.py
+  taniteval/taniteval/cam_overlay.py
+  taniteval/taniteval/closedloop.py
+  taniteval/taniteval/corpus_overlay.py
+  taniteval/taniteval/corridor.py
+  taniteval/taniteval/data.py
+  taniteval/taniteval/direct_overlay.py
+  taniteval/taniteval/driving.py
+  taniteval/taniteval/efficiency.py
+  taniteval/taniteval/flagship_overlay.py
+  taniteval/taniteval/generalization.py
+  taniteval/taniteval/hierarchy.py
+  taniteval/taniteval/imagination.py
+  taniteval/taniteval/lateral.py
+  taniteval/taniteval/loaders.py
+  taniteval/taniteval/pathspeed.py
+  taniteval/taniteval/plan_fan.py
+  taniteval/taniteval/plan_fan_clips.py
+  taniteval/taniteval/planner_p2.py
+  taniteval/taniteval/planning.py
+  taniteval/taniteval/refb_eval.py
+  taniteval/taniteval/refc_eval.py
+  taniteval/taniteval/refc_rerank.py
+  taniteval/taniteval/rollout.py
+  taniteval/taniteval/runner.py
+  taniteval/taniteval/stack_check.py
+  taniteval/taniteval/stack_guard.py
+  taniteval/taniteval/strategic_probes.py
+  taniteval/tests/test_stack_guard.py
+
+  total staged: 47
+
+## no commit, no push, no branch switch:
+  HEAD: 40aa6ff  branch: agent/benchmarks-eval-20260721

@@ -29,7 +29,11 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, "/root/taniteval")
-sys.path.insert(0, "/root/TanitAD/stack")
+# ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — that put a
+# possibly PRE-v5 tree IN FRONT of the caller's PYTHONPATH and published a
+# plausible wrong number instead of an error (STALE_IMPORT_GUARD.md).
+from taniteval.stack_guard import ensure_stack_on_path as _ensure_stack  # noqa: E402
+_ensure_stack()
 
 from taniteval import ab as abmod  # noqa: E402
 from taniteval import bench, data, loaders, rollout  # noqa: E402

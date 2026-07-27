@@ -719,8 +719,10 @@ def main():
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--out", default="")
     a = ap.parse_args()
-    sys.path.insert(0, "/root/TanitAD/stack")
-    sys.path.insert(0, "/root/TanitAD/stack/scripts")
+    # ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — see
+    # STALE_IMPORT_GUARD.md; the legacy tree must never shadow PYTHONPATH.
+    from taniteval.stack_guard import ensure_stack_on_path as _ensure_stack
+    _ensure_stack()
     import refb_labels as rl
     from tanitad.data.mixing import load_episode
 

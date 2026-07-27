@@ -33,8 +33,11 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, "/root/taniteval")
-sys.path.insert(0, "/root/TanitAD/stack")
-sys.path.insert(0, "/root/TanitAD/stack/scripts")
+# ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — that put a
+# possibly PRE-v5 tree IN FRONT of the caller's PYTHONPATH and published a
+# plausible wrong number instead of an error (STALE_IMPORT_GUARD.md).
+from taniteval.stack_guard import ensure_stack_on_path as _ensure_stack  # noqa: E402
+_ensure_stack()
 
 from driving_diagnostic import (WP_STEPS, baseline_waypoints,  # noqa: E402
                                 gt_ego_waypoints, net_heading_change_deg)
