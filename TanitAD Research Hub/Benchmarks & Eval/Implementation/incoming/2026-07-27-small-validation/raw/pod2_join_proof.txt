@@ -1,0 +1,24 @@
+# THE JOIN PROOF — MEASURED 2026-07-27T18:43:23Z
+# 'can the shared-2376 restriction be EXPRESSED?' — and is val already matched?
+# CONFIDENTIALITY: counts and sha256 digests only. No clip UUID is printed.
+train clip list n = 2400  ordered==sorted: True
+val   clip list n = 600  ordered==sorted: True
+epcache train present: 2376  skips: 24  union: 2400
+index space contiguous 0..2399: True
+present INTERSECT skips empty: True
+v2 train clip ids: 2400  == clip-list set: True
+
+SHARED (epcache INTERSECT v2) n = 2376
+EXCLUDED (decode failures)  n = 24
+sha256(sorted shared 2376)  = 34b233015fe4e10b5cf807b7626848b79340d47983e4b6b5eebbcfbc49a8d660
+sha256(sorted excluded 24)  = 077ebf063a27038637f31c23a5bfcb236824b9ca596eaffa7a55e5bc60390e88
+sha256(sorted all 2400)     = e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de   <- committed manifest: e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de
+  reproduces the manifest: True
+
+VAL epcache present: 600  contiguous 0..599: True
+VAL v2 clip ids    : 600  == clip-list set: True
+VAL sha256(sorted) = 0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e   <- committed manifest: 0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e
+  reproduces the manifest: True
+
+*** VAL MATCHED WITHOUT RESTRICTION: True ***
+*** TRAIN asymmetry: 2376 vs 2400 = 1.00 % of episodes ***

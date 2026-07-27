@@ -1,0 +1,22 @@
+# pod2 sync verification — MEASURED 2026-07-27T18:43:23Z
+## BEFORE: pod2 /workspace/TanitAD was 0f93b98 with 52 modified tracked files.
+##   heldout_gate.py DID NOT EXIST; --heldout-goal / --v2-train-cache / _render_bounds
+##   / register_v2_geometry_sibling all grepped 0.
+## Drift snapshotted BEFORE overwrite:
+  28009 /workspace/_pod2_drift_2026-07-27.patch
+     88 /workspace/_pod2_status_2026-07-27.txt
+  28097 total
+
+## AFTER — synced from repo HEAD a32bdb2 via 'git -c core.autocrlf=false -c core.eol=lf archive'
+### parity manifest sha256 (repo copy: 51b1792ff52aa8ea37cbe62bbf796fa1d23464bc76a0ef92b6a3b48090cd9cea)
+51b1792ff52aa8ea37cbe62bbf796fa1d23464bc76a0ef92b6a3b48090cd9cea  /workspace/TanitAD/stack/tanitad/data/parity_manifest.json
+### files containing CR under stack/+taniteval/ (expect 0): 0
+### A REAL import tanitad (not a git log):
+  tanitad OK from /workspace/TanitAD/stack/tanitad/__init__.py
+  parity.register_v2_geometry_sibling: True | parity.assert_v2_parity_cache: True
+  heldout_gate.PRIMARY_NAME = pseudosim_composite_PSS_recovery_progress@twosided_v2
+  heldout_gate.GOAL_OPTION_DEFAULT = dropped
+  v2_dataset.build_v2_providers: True
+  torch 2.4.1+cu124 | torchvision 0.19.1+cu124 | cuda True
+  ci.paired_episode_cluster_bootstrap: True | ci._render_bounds: True
+  pseudosim.metric_id() = PSS_recovery_progress@twosided_v2

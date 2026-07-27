@@ -1,0 +1,55 @@
+# EVAL PLUMBING — GREEN. MEASURED on pod2, 2026-07-27, WITH the shadowing guard
+# (code/smallval_pseudosim.py :: pin_stack), which sets TANITEVAL_STACK_OVERRIDE
+# and then VERIFIES the outcome on six modules instead of trusting the env var.
+
+=== 1. NEGATIVE CONTROL: the guard must REFUSE a stack that is not the synced tree ===
+  SMALLVAL_STACK=/root/TanitAD/stack  ->  pin_stack RAISED and the process STOPPED
+  (ModuleNotFoundError: No module named 'taniteval' -- /root/TanitAD has no
+   taniteval package at all).
+  ⚠️ HONEST SCOPE: this fails CLOSED, which is the safety property, but it exits on
+  a DIFFERENT branch than the shadowing check. The real negative control for the
+  shadowing branch is eval_plumbing_RED.txt, which is the same smoke run WITHOUT
+  the guard and shows the stale tree actually winning. RED -> GREEN, not a
+  synthetic fixture.
+
+=== 2. POSITIVE: the guard pins /workspace/TanitAD/stack ===
+[taniteval] tanitad OVERRIDE -> /workspace/TanitAD/stack (/workspace/TanitAD/stack/tanitad/__init__.py)
+  PINNED: {"stack": "/workspace/TanitAD/stack",
+           "tanitad": "/workspace/TanitAD/stack/tanitad/__init__.py",
+           "TANITEVAL_STACK_OVERRIDE": "/workspace/TanitAD/stack",
+           "verified_modules": 6}
+  DeployableSurfacePlanner / make_goal_kwargs_fn / resolve_v2_frames /
+  load_v4_from_ck / build_v2_providers  ALL import
+  PRIMARY_NAME: pseudosim_composite_PSS_recovery_progress@twosided_v2
+  goal 'dropped' legal: True
+  grid n_points: 21 | envelope: MEASUREMENT — every step stayed inside the envelope
+  COMPONENT_WEIGHTS: {'ego_progress': 5.0, 'recovery': 5.0, 'comfort': 2.0}
+  PROGRESS_TERMS: ['clamp_v1', 'twosided_asym_w0p5', 'twosided_asym_w1p5',
+                   'twosided_asym_w2', 'twosided_asym_w3', 'twosided_v2']
+
+=== 3. THE FRAME SEAM the wide arms need — via the TRAINER's own resolve_v2_frames ===
+[geometry] smoke: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical,
+           HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16),
+           state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field
+           (65.203deg). comma2k19 cannot supply it at any resolution — it must be
+           letterboxed (geometry_mode='rectify', explicit unobserved mask), given
+           its own frame, or dropped from the mix. That is a PI decision, not a
+           default.
+  --v2-subframe none     -> TRAIN 256x640 f_ref 305.5775 hfov 120.000 cylindrical | slice_needed=False
+
+[geometry] smoke: SUB-FRAME 176x624 (HFOV 117.000deg / VFOV 32.131deg)
+           = rows [40:216], cols [8:632] of the 256x640 cache — a pure pixel
+           slice (same f_ref 305.5775, same cylindrical). The model is trained on
+           the SUB-frame; the cache is unchanged.
+  --v2-subframe 176x624  -> TRAIN 176x624 f_ref 305.5775 hfov 117.000 cylindrical | slice_needed=True
+
+  ⭐ NOTE FOR THE RECORD: v5's ACTUAL frame is 117.000 deg, not 120 — the rig-clean
+  sub-frame costs 3 deg of horizontal field. Several documents say "v5 is 120 deg".
+
+=== 4. combiner ===
+[taniteval] tanitad OVERRIDE -> /workspace/TanitAD/stack (...)
+  smallval_combine imports and pins OK
+
+SMOKE COMPLETE — the eval driver's plumbing is sound, verified on the real pod
+against the real shadowing tree, BEFORE any checkpoint existed to evaluate.

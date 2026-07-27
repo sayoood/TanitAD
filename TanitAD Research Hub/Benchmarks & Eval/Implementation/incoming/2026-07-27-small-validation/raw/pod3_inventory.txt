@@ -1,0 +1,35 @@
+# pod3 (tanitad-pod3) — READ-ONLY inventory probe, MEASURED 2026-07-27
+# Purpose: the brief stated the old-geometry parity corpus lives ONLY on pod1
+# (which is TRAINING and must not be touched). Operating-standard rule 2 says
+# absence found at ONE location is not absence, so a second host was probed.
+# ⛔ NOTHING was written, launched or killed on pod3. YouTube was NEVER touched.
+
+host        : 1682186f1e9b
+gpu         : NVIDIA A40, 0 MiB used / 46068 MiB  (IDLE)
+stack commit: 0f93b98   (drifted; NOT synced by this stream — nothing was run here)
+
+## parity-keyed corpora found on pod3
+/workspace/pai_epcache/physicalai-train-e438721ae894
+/workspace/s3parity/views/physicalai-train-e438721ae894
+/workspace/s3parity/views/physicalai-val-0c5f7dac3b11
+
+## other physicalai caches present (NOT parity)
+/workspace/pai_epcache/physicalai-val-f1b378f295ae
+/workspace/pai_epcache/physicalai-train-51f40f5ebc21
+/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6
+/workspace/tmp/dino_feats_320/physicalai-{train-51f40f5ebc21,val-f1b378f295ae}-dinov2-b14
+/workspace/tmp/ijepa_feats/physicalai-{train-51f40f5ebc21,val-f1b378f295ae}-ijepa-vith14
+
+## checkpoints on pod3 (REF-A / REF-C only — no flagship v4 arm, so pod3 could
+## not have supplied an MDE anchor for the v4 composite without a 3.24 GB move)
+/workspace/experiments/refa-*  (11 dirs)
+/workspace/experiments/refc-diffusion-{base,xl}-*, refc-v12, refc-smoke320
+
+## CONCLUSION
+pod1 is NOT the only holder of `physicalai-train-e438721ae894`. pod2 holds a
+complete 2376-episode build (see pod2_corpus_inventory.txt) and pod3 holds at
+least two more copies/views. The brief's binding constraint — "only pod1 has it,
+and pod1 is training" — is FALSIFIED, and option (a) (the geometry contrast the
+PI actually asked for) is runnable without touching pod1.
+
+🔒 counts and paths only; no clip ids.

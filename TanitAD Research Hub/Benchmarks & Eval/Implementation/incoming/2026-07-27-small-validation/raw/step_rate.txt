@@ -1,0 +1,24 @@
+# STEP-RATE MEASUREMENT — MEASURED 2026-07-27T18:53:26Z on pod2 (A40)
+# The finding: at --batch 8 --accum 8 ONE OPTIMIZER STEP IS 8 MICRO-BATCHES.
+# V5_EVALUABLE.md 8.2's column is headed 'full step s' but its own images/step
+# column (144 = batch 8 x 18) shows it is a MICRO-batch. 8.3 multiplies by accum 8
+# CORRECTLY (113 GPU-h); only the 8.2 label is ambiguous.
+
+## Arm A_OLD (256x256, 256 tokens), the aborted 6000-step launch:
+  step     0  elapsed_s     19.2
+  step    50  elapsed_s    448.1   -> 8.578 s/optimizer-step over the last 50
+
+  MEASURED: 8.578 s / optimizer step
+  implied micro-step: 1.0723 s  (= /accum 8)
+  CROSS-CHECK vs V5_EVALUABLE 8.2 (independent host/instrument):
+    288 tokens -> 1.0835 s/micro-step (INHERITED)
+    256 tokens -> 1.0723 s/micro-step (ours)   <- must sit JUST BELOW. It does.
+
+  PROJECTION at 30000 optimizer steps x accum 8 on one A40:
+    256x256 / 51.4 deg (deployed, 256 tok)       71.5 GPU-h
+    176x624 / ~117 deg (v5 actual, 429 tok)      86.6 GPU-h
+    256x640 / 120 deg  (640 tok)                113.0 GPU-h
+
+## elapsed_s definition (train_flagship_v4.py:989): round(time.time() - t0, 1)
+##   -> CUMULATIVE wall clock since the train loop start, NOT the accumulated
+##      step_s trap. Differencing consecutive rows gives s/optimizer-step.

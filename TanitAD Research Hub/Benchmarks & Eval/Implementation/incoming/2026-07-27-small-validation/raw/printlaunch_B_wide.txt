@@ -1,0 +1,12 @@
+[parity] --v2-train-cache: physicalai-train-e438721ae894-w120-256x640cyl v2 VERIFIED — 2400 clips, clip sha256 e61a04553df5… matches the committed manifest (sibling of physicalai-train-e438721ae894, skip-hash f09e44db).
+[parity] --v2-val-cache: physicalai-val-0c5f7dac3b11-w120-256x640cyl v2 VERIFIED — 600 clips, clip sha256 0b176d2e5cb4… matches the committed manifest (sibling of physicalai-val-0c5f7dac3b11, skip-hash f09e44db).
+=== flagship v4 - STAGED launch (NOT executed; Sayed owns go/no-go) ===
+trunk init: FROM-SCRATCH (random) -- NO v1 warm-start; WM + anchored-diffusion planner co-evolve jointly like v1 (sidesteps the warm-start coupling degradation; canary starts high/untrained). The canary controller is inert by construction (baseline = untrained canary); floor + schedule kept identical to v4.2b for attributability.
+parity: physicalai-train-e438721ae894 / skip-hash f09e44db (episodes must not re-select)
+phases: A[0,400) B[400,1600) C[1600,6000)  |  gate at 1600
+levers: lambda_plan + strategic = 2 of 2 encoder-touching (door CLOSED)
+schedule fix: lr_trunk=0.0001 (v4 3e-4 / v4.1 3e-5) | cap-and-hold lam_mult_floor=0.25 (v4.1 halved to ~0)
+same-as-v1: micro-batch 8 x accum 8 = EFFECTIVE 64 (v1=64; v4.1 was 16)
+staged command (run on the pod, NOT here):
+  PYTHONPATH=/workspace/TanitAD/stack python3 scripts/train_flagship_v4.py --v2-train-cache /workspace/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 64 --v2-subframe none --frame-h 256 --frame-w 640 --frame-hfov 120.0 --projection cylindrical --anchors-dense /workspace/experiments/flagship_v4_anchors_dense.pt --out /workspace/smallval/B_wide-256x640 --labels v3 --lambda-plan sched --phase-a-steps 400 --phase-b-steps 1600 --strategic full --long-horizon-k 50 --steps 6000 --gate-step 1600 --batch 8 --accum 8 --lr-head 0.0001 --lr-trunk 0.0001 --lam-mult-floor 0.25 --warmup 400 --workers 8 --eval-every 500 --save-every 1000 --eval-episodes 40 --rollout-k 4 --heldout-every 1000 --heldout-episodes 8 --heldout-patience 2 --heldout-stride 8 --heldout-nboot 2000 --heldout-goal dropped --seed 0 --device cuda --from-scratch --heldout-gate --require-parity
+PREFLIGHT: OK

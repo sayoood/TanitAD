@@ -1,0 +1,27 @@
+# pod2 corpus inventory — MEASURED 2026-07-27T18:43:16Z
+# host: 08f6ce7d8e55
+## OLD-GEOMETRY RAW EPCACHE (the corpus the brief said only pod1 held)
+train ep_*.pt count: 2376
+train skip_* count : 24
+train DONE marker  : 1
+val   ep_*.pt count: 600
+train index min/max: 00000 02399 
+val   index min/max: 00000 00599 
+skip indices: 01798 01835 01841 01842 01843 01847 01854 01857 01858 01860 01862 01863 01873 01875 01876 01877 01879 01880 01885 01888 01892 01896 01898 01941 
+du:
+260G	/workspace/data/physicalai_phase0/_epcache/physicalai-train-e438721ae894
+66G	/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11
+## payload shape (episode 0)
+   frames_u8 torch.Size([199, 9, 256, 256]) torch.uint8
+   actions torch.Size([199, 2]) torch.float32
+   poses torch.Size([199, 4]) torch.float32
+   episode_id 808464740 
+## NEW-GEOMETRY v2 SIBLING
+v2 train *.v2ep.pt: 2400
+v2 val   *.v2ep.pt: 600
+80G	/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl
+20G	/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl
+  image_h/w = 256 640  codec = png  projection = cylindrical
+  frame     = {'height': 256, 'width': 640, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}
+## real dd write test (NEVER df)
+524288000 bytes (524 MB, 500 MiB) copied, 1.00538 s, 521 MB/s

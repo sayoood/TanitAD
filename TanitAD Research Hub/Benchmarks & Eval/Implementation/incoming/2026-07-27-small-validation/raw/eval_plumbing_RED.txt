@@ -1,0 +1,54 @@
+# EVAL PLUMBING — RED. MEASURED on pod2, 2026-07-27, BEFORE the shadowing guard.
+#
+# Command: PYTHONPATH=/workspace/TanitAD/stack:/workspace/TanitAD/stack/scripts:
+#                     /workspace/TanitAD/taniteval
+#          cwd=/workspace/TanitAD/stack, CUDA_VISIBLE_DEVICES="", OMP_NUM_THREADS=2
+#
+# i.e. PYTHONPATH pointed ONLY at the freshly synced tree, and the process still
+# resolved `tanitad` from the STALE /root/TanitAD/stack.
+
+=== CPU-ONLY plumbing smoke for smallval_pseudosim.py (NO GPU, NO decode) ===
+  OK   import taniteval.pseudosim
+  OK   default_grid n_points=21 verdict='MEASUREMENT — every step stayed inside the MEASURED envelope'
+  FAIL DeployableSurfacePlanner -> ModuleNotFoundError("No module named 'tanitad.train.heldout_gate'")
+  FAIL make_goal_kwargs_fn -> ModuleNotFoundError("No module named 'tanitad.train.heldout_goal'")
+  OK   eval_flagship_v4.load_v4_from_ck
+  FAIL train_flagship_v4.resolve_v2_frames -> ImportError("cannot import name
+       'resolve_v2_frames' from 'train_flagship_v4'
+       (/root/TanitAD/stack/scripts/train_flagship_v4.py)")
+
+## THE CAUSE — MEASURED, not inferred
+~15 taniteval submodules contain a literal `sys.path.insert(0, "/root/TanitAD/stack")`:
+
+  taniteval/ab.py:14              sys.path.insert(0, "/root/TanitAD/stack/scripts")
+  taniteval/bench.py:37,38        sys.path.insert(0, "/root/TanitAD/stack"[/scripts])
+  taniteval/blind_baseline.py:722,723
+  taniteval/cam_overlay.py:26
+  taniteval/closedloop.py:84,85
+  taniteval/corpus_overlay.py:68,69
+  taniteval/corridor.py:84,85
+  taniteval/data.py:20
+  taniteval/direct_overlay.py:50,51
+  taniteval/driving.py:88
+  ... (grep truncated at 20 hits)
+
+## WHAT /root/TanitAD IS ON POD2
+  /root/TanitAD                                   -> exists, "no git", 12 MB
+  /root/TanitAD/stack/tanitad/train/heldout_gate.py -> NO (absent)
+  grep -c resolve_v2_frames .../scripts/train_flagship_v4.py -> 0
+
+## WHY THIS IS WORSE THAN A CRASH
+The crash above only happens for modules that exist in the NEW tree and not the
+old one. A module present in BOTH resolves silently to the stale copy, and the
+eval publishes a number computed by pre-v5 code with no error at all.
+
+## WHY THE SYNC PROOF DID NOT CATCH IT
+`import tanitad` on its own resolves correctly from /workspace/TanitAD/stack
+(see pod2_sync.txt). The shadowing is introduced only once `taniteval` is
+imported — which every eval does.
+
+## THE RUNNING TRAINER IS NOT AFFECTED
+`ls -l /proc/3695401/cwd` -> /workspace/TanitAD/stack, and its banner reads
+`[heldout-gate] ON — ... primary=pseudosim_composite_PSS_recovery_progress@twosided_v2`,
+which exists only in the synced tree. Training imports `tanitad` directly and
+never imports `taniteval` at module scope.
