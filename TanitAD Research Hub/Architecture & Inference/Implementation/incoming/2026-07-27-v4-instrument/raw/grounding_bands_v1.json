@@ -1,0 +1,242 @@
+{
+ "experiment": "GAP 1 - v4 real-vs-imagined decode bands, eval-side",
+ "arm": "v1",
+ "utc": "2026-07-27T01:20:22Z",
+ "host": "pod3 (A40)",
+ "device": "cuda",
+ "torch": "2.8.0+cu128",
+ "ckpt": "/workspace/tmp/idm/ckpt.pt",
+ "ckpt_step": 29999,
+ "state_dim": 2048,
+ "action_dim": 3,
+ "corpus": {
+  "cache_dir": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+  "n_episodes": 44,
+  "PARITY": "parity val split physicalai-val-0c5f7dac3b11",
+  "episode_reselection": "none - first N files, consumed whole"
+ },
+ "n_windows": 967,
+ "n_episode_clusters": 44,
+ "window": 8,
+ "stride": 8,
+ "level_cfg": {
+  "op": [
+   [
+    1,
+    2,
+    4
+   ],
+   4
+  ],
+  "tac": [
+   [
+    8,
+    16
+   ],
+   16
+  ],
+  "str": [
+   [
+    20
+   ],
+   20
+  ]
+ },
+ "means": {
+  "baseline": {
+   "op_mid": 1.418452,
+   "op_fwd": 0.038359,
+   "tac_mid": 6.050532,
+   "tac_fwd": 0.137129,
+   "str_mid": 6.099219,
+   "str_fwd": 0.186986,
+   "op_mid_shuffled": 2.826292
+  },
+  "v0_zero": {
+   "op_mid": 1.418452,
+   "op_fwd": 3.59548,
+   "tac_mid": 6.050532,
+   "tac_fwd": 12.512944,
+   "str_mid": 6.099219,
+   "str_fwd": 15.336214
+  },
+  "v0_shuffled": {
+   "op_mid": 1.418452,
+   "op_fwd": 0.528396,
+   "tac_mid": 6.050532,
+   "tac_fwd": 1.8216,
+   "str_mid": 6.099219,
+   "str_fwd": 2.243335
+  },
+  "v0_gshuffled": {
+   "op_mid": 1.418452,
+   "op_fwd": 2.576923,
+   "tac_mid": 6.050532,
+   "tac_fwd": 9.047499,
+   "str_mid": 6.099219,
+   "str_fwd": 11.130811
+  },
+  "v0_half": {
+   "op_mid": 1.418452,
+   "op_fwd": 1.860638,
+   "tac_mid": 6.050532,
+   "tac_fwd": 6.434286,
+   "str_mid": 6.099219,
+   "str_fwd": 7.964174
+  },
+  "v0_double": {
+   "op_mid": 1.418452,
+   "op_fwd": 3.452732,
+   "tac_mid": 6.050532,
+   "tac_fwd": 12.597137,
+   "str_mid": 6.099219,
+   "str_fwd": 15.633559
+  },
+  "act_zero": {
+   "op_mid": 1.418452,
+   "op_fwd": 0.050688,
+   "tac_mid": 6.050532,
+   "tac_fwd": 0.391489,
+   "str_mid": 6.099219,
+   "str_fwd": 0.576814
+  }
+ },
+ "ratios_real_over_imagined": {
+  "baseline": {
+   "op": 36.9788,
+   "tac": 44.1229,
+   "str": 32.6185
+  },
+  "v0_zero": {
+   "op": 0.3945,
+   "tac": 0.4835,
+   "str": 0.3977
+  },
+  "v0_shuffled": {
+   "op": 2.6844,
+   "tac": 3.3215,
+   "str": 2.7188
+  },
+  "v0_gshuffled": {
+   "op": 0.5504,
+   "tac": 0.6688,
+   "str": 0.548
+  },
+  "v0_half": {
+   "op": 0.7623,
+   "tac": 0.9404,
+   "str": 0.7658
+  },
+  "v0_double": {
+   "op": 0.4108,
+   "tac": 0.4803,
+   "str": 0.3901
+  },
+  "act_zero": {
+   "op": 27.9839,
+   "tac": 15.4552,
+   "str": 10.574
+  }
+ },
+ "imagined_degradation_x_vs_baseline": {
+  "v0_zero": {
+   "op": 93.7335,
+   "tac": 91.2494,
+   "str": 82.0178
+  },
+  "v0_shuffled": {
+   "op": 13.7752,
+   "tac": 13.2838,
+   "str": 11.9973
+  },
+  "v0_gshuffled": {
+   "op": 67.1799,
+   "tac": 65.978,
+   "str": 59.5274
+  },
+  "v0_half": {
+   "op": 48.5065,
+   "tac": 46.9214,
+   "str": 42.5923
+  },
+  "v0_double": {
+   "op": 90.0121,
+   "tac": 91.8634,
+   "str": 83.608
+  },
+  "act_zero": {
+   "op": 1.3214,
+   "tac": 2.8549,
+   "str": 3.0848
+  }
+ },
+ "ablation_magnitude": {
+  "mean_abs_delta_v0_mps": {
+   "baseline": 0.0,
+   "v0_zero": 15.07,
+   "v0_shuffled": 2.1131,
+   "v0_gshuffled": 10.831,
+   "v0_half": 7.535,
+   "v0_double": 15.07,
+   "act_zero": 0.0
+  },
+  "corpus_mean_speed_mps": 15.072
+ },
+ "prereg_validation": {
+  "V1_fidelity_imagined": {
+   "rule": "op_fwd <= 3.0x 0.0304",
+   "got": 0.0384,
+   "PASS": true,
+   "applies_to": "v1 only (the anchor); reported for every arm"
+  },
+  "V2_fidelity_real_pair": {
+   "rule": "op_mid <= 2.0x 1.0129",
+   "got": 1.4185,
+   "PASS": true,
+   "applies_to": "v1 only (the anchor); reported for every arm"
+  },
+  "V3_shuffle_control_must_fail": {
+   "rule": "op_mid_shuffled > 1.5x op_mid",
+   "got": 2.8263,
+   "PASS": true
+  },
+  "V5_dt_self_check": {
+   "rule": "0.09 <= dt <= 0.11",
+   "got": 0.10063,
+   "PASS": true
+  },
+  "FA_real_side_bit_exact_under_v0_ablation": {
+   "v0_zero": {
+    "op": true,
+    "tac": true,
+    "str": true
+   },
+   "v0_shuffled": {
+    "op": true,
+    "tac": true,
+    "str": true
+   },
+   "v0_gshuffled": {
+    "op": true,
+    "tac": true,
+    "str": true
+   },
+   "v0_half": {
+    "op": true,
+    "tac": true,
+    "str": true
+   },
+   "v0_double": {
+    "op": true,
+    "tac": true,
+    "str": true
+   },
+   "act_zero": {
+    "op": true,
+    "tac": true,
+    "str": true
+   }
+  }
+ },
+ "elapsed_s": 179.1
+}

@@ -66,6 +66,12 @@ YAW_RATE_MAX = 0.95
 EGO_RAD_PAD = 0.35
 TTC_HORIZON_S = 1.0
 
+# clock-quality gate. 0.25 m is ~5x the worst PASSING episode measured here
+# (0.0535 m) and ~10x the median (0.0088 m); it is a wide gate on a bimodal
+# statistic, not a tuned threshold.
+CLOCK_RMS_MAX_M = 0.25
+V0_ERR_MAX_MS = 0.20
+
 
 # --------------------------------------------------------------------------- #
 # kinematics / labels — the SAME arithmetic as t2_labels.py                    #
@@ -233,6 +239,14 @@ def fit_clock(poses, ego):
     ex = ego["x"].to_numpy(np.float64)
     ey = ego["y"].to_numpy(np.float64)
     ev = np.hypot(ego["vx"].to_numpy(np.float64), ego["vy"].to_numpy(np.float64))
+
+    def rms_of(t0, stepv):
+        tq = t0 + stepv * np.arange(T, dtype=np.float64)
+        dx = np.interp(tq, et, ex) - poses[:, 0]
+        dy = np.interp(tq, et, ey) - poses[:, 1]
+        return float(np.sqrt((dx * dx + dy * dy).mean()))
+
+    # --- seed A: nearest-neighbour + Theil-Sen ------------------------------
     d2 = ((poses[:, 0][:, None] - ex[None]) ** 2
           + (poses[:, 1][:, None] - ey[None]) ** 2
           + (poses[:, 3][:, None] - ev[None]) ** 2)
@@ -242,13 +256,37 @@ def fit_clock(poses, ego):
     for aa in range(0, max(T - 20, 1), 7):
         for bb in range(aa + 20, T, 37):
             sl.append((tm[bb] - tm[aa]) / (bb - aa))
-    slope = float(np.median(sl))
-    inter = float(np.median(tm - slope * i))
-    t_of_index = inter + slope * i
-    xy = np.stack([np.interp(t_of_index, et, ex),
-                   np.interp(t_of_index, et, ey)], axis=1)
-    rms = float(np.sqrt(((xy - poses[:, :2]) ** 2).sum(1).mean()))
-    return t_of_index, rms, N
+    seeds = [(float(np.median(tm - float(np.median(sl)) * i)), float(np.median(sl)))]
+
+    # --- seed B: the CANONICAL clip geometry --------------------------------
+    # ⚠️ Seed A alone FAILS on a clip with a standstill: (x, y, v) matching is
+    # degenerate over the stationary stretch and the Theil-Sen slope collapses
+    # (MEASURED 2026-07-27, 1 of 40 val clips -- step 74.0 ms instead of ~100.7,
+    # rms 2.60 m instead of ~0.009). The clip proper is the DENSE 100 Hz region
+    # of egomotion, ~20.1 s, resampled to N points, so seed the canonical
+    # geometry too and keep whichever seed fits better.
+    gaps = np.nonzero(np.diff(et) > 5e5)[0]
+    hi = et[gaps[0]] if len(gaps) else et.max()
+    seeds.append((max(et.min(), 0.0), (hi - et.min()) / (N - 1)))
+
+    best = None
+    for t0, stepv in seeds:
+        a_, b_ = t0, stepv
+        hw_t, hw_s = 5.0e5, 5.0e3
+        for _ in range(60):
+            cand = [(a_ + dt_, b_ + ds_)
+                    for dt_ in np.linspace(-hw_t, hw_t, 9)
+                    for ds_ in np.linspace(-hw_s, hw_s, 9)]
+            a_, b_ = min(cand, key=lambda c: rms_of(*c))
+            hw_t *= 0.5
+            hw_s *= 0.5
+            if hw_t < 0.5 and hw_s < 0.05:
+                break
+        r = rms_of(a_, b_)
+        if best is None or r < best[0]:
+            best = (r, a_, b_)
+    rms, t0, stepv = best
+    return t0 + stepv * np.arange(T, dtype=np.float64), rms, N
 
 
 def index_offset_scan(t_of_index, ego, tidx, v0_cache, kmax=14):
@@ -296,6 +334,17 @@ def label_episode(args):
     # something else) shows up here even when the clock fit is perfect.
     k_off, v0_errs = index_offset_scan(t_of_index, ego, tidx, v0)
     v0_err = v0_errs[k_off]
+    # ⛔ CLOCK-QUALITY GATE. An episode whose affine clock does not reproduce
+    # its own egomotion path places every agent track on the wrong clock, so its
+    # rule labels are NOT trustworthy. Two independent conditions, both measured
+    # rather than assumed: the xy residual, and whether the index-offset scan
+    # returns an INTERIOR minimum (a k pinned at the scan edge means the scan
+    # never bottomed out). Failing episodes are EXCLUDED and reported, never
+    # silently kept.
+    ks = sorted(int(x) for x in v0_errs)
+    clock_ok = bool(rms <= CLOCK_RMS_MAX_M
+                    and k_off not in (ks[0], ks[-1])
+                    and v0_err <= V0_ERR_MAX_MS)
 
     for wi in range(W):
         ti = int(min(int(tidx[wi]) + k_off, len(t_of_index) - 1))
@@ -338,7 +387,7 @@ def label_episode(args):
             (np.abs(gjerk).max() <= JERK_MAX) and
             (np.abs(gyr).max() <= YAW_RATE_MAX))
     return (ep, alias, rms, N, out, gt, n_ag, t0s,
-            bool(obst is not None), v0_err, k_off, v0_errs)
+            bool(obst is not None), v0_err, k_off, v0_errs, clock_ok)
 
 
 def main(argv=None):
@@ -388,9 +437,10 @@ def main(argv=None):
     t0s = np.zeros(W)
     clock = {}
     has_tracks = {}
+    clock_ok_by_ep = {}
     with ProcessPoolExecutor(max_workers=a.workers) as pool:
-        for (ep, alias, rms, N, out, gt, na, t0, ok, v0e, koff, verr) in (
-                pool.map(label_episode, jobs)):
+        for (ep, alias, rms, N, out, gt, na, t0, ok, v0e, koff, verr,
+             cok) in pool.map(label_episode, jobs):
             sel = np.nonzero(ep_arr == ep)[0]
             for k in L:
                 L[k][sel] = out[k]
@@ -404,9 +454,12 @@ def main(argv=None):
                             "index_offset_k": int(koff),
                             "v0_err_by_offset": {str(k): round(v, 4)
                                                  for k, v in verr.items()},
-                            "has_obstacle_offline": bool(ok)}
-            has_tracks[int(ep)] = bool(ok)
-            print(f"  [ep {ep:02d}] {alias} rms={rms:.4f} m k={koff} dv0={v0e:.4f}  "
+                            "has_obstacle_offline": bool(ok),
+                            "clock_ok": bool(cok)}
+            has_tracks[int(ep)] = bool(ok) and bool(cok)
+            clock_ok_by_ep[int(ep)] = bool(cok)
+            print(f"  [ep {ep:02d}] {alias} rms={rms:.4f} m k={koff} dv0={v0e:.4f} "
+                  f"clock_ok={cok}  "
                   f"agents/window={na.mean():.1f}  tracks={ok}  "
                   f"({time.time()-t_start:.0f}s)", flush=True)
 
@@ -447,6 +500,16 @@ def main(argv=None):
             max(v["v0_max_abs_err_ms"] for v in clock.values()), 6),
         "index_offset_k_measured": sorted(set(
             v["index_offset_k"] for v in clock.values())),
+        "clock_gate": {
+            "rule": f"clock_ok iff xy rms <= {CLOCK_RMS_MAX_M} m AND the "
+                    f"index-offset scan minimum is INTERIOR AND the v0 error at "
+                    f"that offset <= {V0_ERR_MAX_MS} m/s",
+            "n_episodes_pass": int(sum(clock_ok_by_ep.values())),
+            "n_episodes_fail": int(len(clock_ok_by_ep)
+                                   - sum(clock_ok_by_ep.values())),
+            "failed": [a for a, v in clock.items() if not v["clock_ok"]]},
+        "_trusted_set": "has_tracks == obstacle.offline present AND clock_ok; "
+                        "every T3 rule number is scored on the trusted set only",
         "agents_per_window": {
             "mean": round(float(n_ag[ok].mean()), 2),
             "median": float(np.median(n_ag[ok])),

@@ -1,0 +1,435 @@
+{
+ "_experiment": "T3 -- the 4-head BCE rule rescorer on flagship-v4-fromscratch-30k's frozen fan, scored on PDMS-lite",
+ "_evidence_class": "MEASURED (ours)",
+ "_primary_read": "PDMS-lite (no-map). ade_0_2s is REPORTED but does NOT adjudicate (L2/ADE vs closed-loop Driving Score rho = -0.36, p = 0.43).",
+ "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, unit = episode. NEVER overlapping_holdout_se.",
+ "_host": "1e0bac0df88a",
+ "_python": "3.12.3",
+ "_torch": "2.8.0+cu128",
+ "_gpu": "NVIDIA A40",
+ "_ckpt": {
+  "path": "/workspace/_v4gate/flagship-v4-fromscratch-30k/ckpt.pt",
+  "md5": "8771c1d9d3da696dcde2a745d628f6a8"
+ },
+ "_smoke": false,
+ "_ckpt_step": 29999,
+ "precondition_kinematic_clip": {
+  "rule": "v_term in [max(0, v0 - 5.0), v0 + 5.0], reach = sel_accel_max * horizon = 2.5 * 2.0",
+  "frac_candidates_removed": 0.7388,
+  "frac_windows_emptied_and_restored": 0.0,
+  "frac_windows_ade_oracle_survives": 1.0
+ },
+ "_windows": {
+  "n_total": 6844,
+  "n_eval": 881,
+  "n_eval_with_tracks": 859,
+  "n_episodes": 40,
+  "n_episodes_with_tracks": 39
+ },
+ "T1_clip_on_v4_own_fan": {
+  "_prediction_from_T1": "on REF-C-XL's fan the clip moved the as-trained pick in ZERO windows (paired delta exactly 0.0000). Tested here on v4's OWN emitted fan.",
+  "frac_windows_pick_moves": 0.0,
+  "as_trained_ade_unclipped": 0.8563,
+  "as_trained_ade_clipped": 0.8563,
+  "paired_delta_ade": 0.0
+ },
+ "selftest": {
+  "cache_fidelity": {
+   "ade_0_2s_via_cache": 0.8563,
+   "ade_0_2s_committed": 0.8563,
+   "abs_diff": 2e-05,
+   "frac_windows_pick_differs_from_forward_pass": 0.0,
+   "oracle_in_fan_4wp_via_cache": 0.2505,
+   "oracle_in_fan_4wp_committed": 0.2505,
+   "oif_abs_diff": 5e-05,
+   "PASS": true
+  },
+  "failing_input": {
+   "random_pick_ade_0_2s": 15.3622,
+   "random_pick_pdms_lite": 0.3968,
+   "as_trained_ade_0_2s": 0.8563,
+   "as_trained_pdms_lite": 0.6131,
+   "_rule": "a random selector over the same frozen fan must be WORSE on BOTH surfaces, or the harness cannot detect a bad selector",
+   "PASS": true
+  }
+ },
+ "_folds": {
+  "fold0": [
+   22,
+   15,
+   27,
+   30,
+   13,
+   7,
+   31,
+   19
+  ],
+  "fold1": [
+   20,
+   28,
+   35,
+   34,
+   5,
+   32,
+   24,
+   9
+  ],
+  "fold2": [
+   25,
+   11,
+   37,
+   16,
+   17,
+   1,
+   6,
+   38
+  ],
+  "fold3": [
+   4,
+   18,
+   2,
+   36,
+   14,
+   26,
+   23,
+   3
+  ],
+  "fold4": [
+   10,
+   29,
+   39,
+   8,
+   33,
+   12,
+   21,
+   0
+  ]
+ },
+ "point_estimates": {
+  "ce": {
+   "pdms_lite": 0.6096,
+   "at_fault_collision_rate": 0.0373,
+   "ttc_infraction_rate": 0.1711,
+   "ade_0_2s_all_881": 0.893,
+   "ade_0_2s_track_subset": 0.8691
+  },
+  "bce_rule": {
+   "pdms_lite": 0.6098,
+   "at_fault_collision_rate": 0.0373,
+   "ttc_infraction_rate": 0.1723,
+   "ade_0_2s_all_881": 0.901,
+   "ade_0_2s_track_subset": 0.8777
+  },
+  "as_trained": {
+   "pdms_lite": 0.61,
+   "at_fault_collision_rate": 0.0361,
+   "ttc_infraction_rate": 0.1653,
+   "ade_0_2s_all_881": 0.8563,
+   "ade_0_2s_track_subset": 0.8352
+  },
+  "as_trained_clipped": {
+   "pdms_lite": 0.61,
+   "at_fault_collision_rate": 0.0361,
+   "ttc_infraction_rate": 0.1653,
+   "ade_0_2s_all_881": 0.8563,
+   "ade_0_2s_track_subset": 0.8352
+  }
+ },
+ "_reproduction_check": {
+  "bar_a_ce_control_oof_ade_committed": 0.9231,
+  "_note": "Bar A selected LR on inner-val ADE and applied NO kinematic clip; this run selects on inner-val PDMS-lite WITH the clip, so an exact match is not expected. The matched quantity that MUST reproduce is the as-trained bar 0.8563 (cache fidelity)."
+ },
+ "paired_intervals": {
+  "PRIMARY_bce_rule_minus_ce_control": {
+   "pdms_lite": {
+    "delta": 0.0002,
+    "lo": -0.0025,
+    "hi": 0.0031,
+    "ci95": 0.0028,
+    "p_delta_gt0": 0.5535,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "delta": 0.0,
+    "lo": -0.0035,
+    "hi": 0.0035,
+    "ci95": 0.0035,
+    "p_delta_gt0": 0.3535,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ttc_infraction_rate": {
+    "delta": 0.0012,
+    "lo": -0.0047,
+    "hi": 0.0081,
+    "ci95": 0.0064,
+    "p_delta_gt0": 0.5605,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade_0_2s": {
+    "delta": 0.0086,
+    "lo": -0.0115,
+    "hi": 0.0303,
+    "ci95": 0.0209,
+    "p_delta_gt0": 0.797,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "_orientation": "arm - control; PDMS-lite POSITIVE = better, collision/TTC/ADE NEGATIVE = better"
+  },
+  "bce_rule_minus_as_trained": {
+   "pdms_lite": {
+    "delta": -0.0003,
+    "lo": -0.0034,
+    "hi": 0.0027,
+    "ci95": 0.003,
+    "p_delta_gt0": 0.4255,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "delta": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0035,
+    "ci95": 0.0017,
+    "p_delta_gt0": 0.6385,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade_0_2s": {
+    "delta": 0.0425,
+    "lo": -0.0138,
+    "hi": 0.1004,
+    "ci95": 0.0571,
+    "p_delta_gt0": 0.9295,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "ce_control_minus_as_trained": {
+   "pdms_lite": {
+    "delta": -0.0005,
+    "lo": -0.0037,
+    "hi": 0.0027,
+    "ci95": 0.0032,
+    "p_delta_gt0": 0.407,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "delta": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0035,
+    "ci95": 0.0017,
+    "p_delta_gt0": 0.6215,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade_0_2s": {
+    "delta": 0.0339,
+    "lo": -0.0203,
+    "hi": 0.0881,
+    "ci95": 0.0542,
+    "p_delta_gt0": 0.883,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "bce_rule_minus_as_trained_CLIPPED_matched_candidate_set": {
+   "pdms_lite": {
+    "delta": -0.0003,
+    "lo": -0.0034,
+    "hi": 0.0027,
+    "ci95": 0.003,
+    "p_delta_gt0": 0.4255,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "delta": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0035,
+    "ci95": 0.0017,
+    "p_delta_gt0": 0.6385,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade_0_2s": {
+    "delta": 0.0425,
+    "lo": -0.0138,
+    "hi": 0.1004,
+    "ci95": 0.0571,
+    "p_delta_gt0": 0.9295,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "single_arm_intervals": {
+  "ce": {
+   "pdms_lite": {
+    "mean": 0.6096,
+    "lo": 0.5556,
+    "hi": 0.6597,
+    "ci95": 0.052,
+    "se": 0.0262,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "mean": 0.0373,
+    "lo": 0.014,
+    "hi": 0.0652,
+    "ci95": 0.0256,
+    "se": 0.0132,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "bce_rule": {
+   "pdms_lite": {
+    "mean": 0.6098,
+    "lo": 0.555,
+    "hi": 0.66,
+    "ci95": 0.0525,
+    "se": 0.0263,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "mean": 0.0373,
+    "lo": 0.014,
+    "hi": 0.0653,
+    "ci95": 0.0256,
+    "se": 0.0132,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "as_trained": {
+   "pdms_lite": {
+    "mean": 0.61,
+    "lo": 0.5552,
+    "hi": 0.6604,
+    "ci95": 0.0526,
+    "se": 0.0263,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "mean": 0.0361,
+    "lo": 0.0128,
+    "hi": 0.0641,
+    "ci95": 0.0256,
+    "se": 0.0133,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "as_trained_clipped": {
+   "pdms_lite": {
+    "mean": 0.61,
+    "lo": 0.5552,
+    "hi": 0.6604,
+    "ci95": 0.0526,
+    "se": 0.0263,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "at_fault_collision_rate": {
+    "mean": 0.0361,
+    "lo": 0.0128,
+    "hi": 0.0641,
+    "ci95": 0.0256,
+    "se": 0.0133,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  }
+ },
+ "VERDICT": {
+  "verdict": "REFUTE",
+  "_rule": "CONFIRM iff BCE_RULE - CE_CONTROL is separated-BETTER on PDMS-lite AND its at-fault collision rate is separated-BELOW CE_CONTROL's. Anything else is REFUTE -- stated plainly, never re-scoped.",
+  "pdms_lite_separated_better": false,
+  "collision_separated_below": false
+ },
+ "_wallclock_s": 837.0
+}

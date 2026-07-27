@@ -262,6 +262,42 @@ def main():
               f"–{h['separated_better_interval_s']['last_s']} s "
               f"({h['separated_better_interval_s']['n_steps']}/185)", flush=True)
 
+    # ---- ⭐ DOES RUNG 1's ACTION-DAMPING FIX STILL PAY WITH A DEAD LATENT? -- #
+    # If damping is a pure action-space repair it should help the frozen arm as
+    # much as the live one. If it only pays when there IS a live latent to
+    # decode, then the fix and the latent are not independent — and that is
+    # evidence about which of the two is carrying the horizon.
+    a0i, a0f = ALPHAS["0"]
+    dmp = {"note": ("paired gain in de@2s from damping the action, measured "
+                    "SEPARATELY on the live-latent and frozen-latent arms; "
+                    "positive = damping helps")}
+    for al in ("0.25", "0.75", "1"):
+        ai, bf = ALPHAS[al]
+        pi = paired_at(de[a0i], de[ai], draws, 20)   # a=0 minus a=al, INTACT
+        pf = paired_at(de[a0f], de[bf], draws, 20)   # ditto, FROZEN
+        gi, gf = -pi["delta_b_minus_a"], -pf["delta_b_minus_a"]
+        dmp[f"alpha_0_to_{al}"] = {
+            "gain_INTACT_m": round(gi, 4),
+            "gain_INTACT_ci95": [round(-pi["hi"], 4), round(-pi["lo"], 4)],
+            "gain_INTACT_separated": pi["separated"],
+            "gain_FROZEN_m": round(gf, 4),
+            "gain_FROZEN_ci95": [round(-pf["hi"], 4), round(-pf["lo"], 4)],
+            "gain_FROZEN_separated": pf["separated"],
+            "ratio_intact_over_frozen": round(gi / gf, 3) if gf else None,
+            "intervals_disjoint": bool(-pi["lo"] > -pf["hi"]
+                                       or -pf["lo"] > -pi["hi"]),
+            "pct_improvement_INTACT": round(
+                100.0 * gi / float(de[a0i][:, 19].mean()), 1),
+            "pct_improvement_FROZEN": round(
+                100.0 * gf / float(de[a0f][:, 19].mean()), 1)}
+    out["damping_needs_a_live_latent"] = dmp
+    for al in ("0.25", "0.75", "1"):
+        b = dmp[f"alpha_0_to_{al}"]
+        print(f"[A] damping 0->{al:<5} gain INTACT {b['gain_INTACT_m']:+.4f} "
+              f"{b['gain_INTACT_ci95']} vs FROZEN {b['gain_FROZEN_m']:+.4f} "
+              f"{b['gain_FROZEN_ci95']}  ratio {b['ratio_intact_over_frozen']}× "
+              f"disjoint={b['intervals_disjoint']}", flush=True)
+
     Path(a.out).mkdir(parents=True, exist_ok=True)
     p = Path(a.out) / "la_stage_a_frozen.json"
     p.write_text(json.dumps(out, indent=2), encoding="utf-8")

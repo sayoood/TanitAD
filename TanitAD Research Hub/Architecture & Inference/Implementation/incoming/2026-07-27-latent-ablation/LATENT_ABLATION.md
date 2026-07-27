@@ -29,6 +29,8 @@ appears nowhere in this folder.
 >
 > ## ⇒ **Both halves of the PI's question are true of different parts of the system. The ACTION loop is not merely un-helpful, it is NET DESTRUCTIVE — it turns a model that beats a one-scalar integrator into one that loses to it. The LATENT is what beats the integrator. "The world model drives blind" is not withdrawn; what must be withdrawn is any claim that it drives blind *through its own action loop*.**
 
+> ## ⭐ **AND RUNG 1's ZERO-TRAINING FIX TURNS OUT TO DEPEND ON THE LATENT BEING ALIVE.** Damping the action from α = 0 to α = 1 is worth **+1.1447 m [1.0485, 1.2513]** on the live-latent arm and only **+0.1792 m [0.1534, 0.2067]** on the frozen-latent one — **6.4× more, intervals disjoint** (9.2× at α = 0.25). ⇒ **The filter is not an action-space repair that would work on anything. It works because there is a live imagined latent whose decode the model's own action was corrupting.**
+
 > ## ⚠️ **AND THE HORIZON DEPENDENCE IS THE FINDING NOBODY ASKED FOR.** The frozen-latent penalty peaks at **1 s (+3.61)**, is **+2.05 at 2 s**, decays to **+0.14 at 9 s** and **+0.04 at 12 s**, and is **−0.06 at 18.5 s — the frozen latent is separated-BETTER there.** **The imagined latent carries driving content for roughly the first 3–6 s and essentially none past 9 s.** The headline `T_blind` of **11.5 s** sits deep inside the region where it contributes nothing — and at that horizon **both arms are ~74–79 m from the truth.** `T_blind` at 11.5 s is a *relative* statistic about which of two catastrophically wrong paths is marginally less wrong; the capability statistic is `T_useful@1m = 2.3 s`.
 
 | what the brief asked | the answer, `MEASURED` |
@@ -96,11 +98,35 @@ contributes 0 % of the steer/accel command and `T_blind` is 11.5 s with `de@2s` 
 **α = 0.75 it is 11.6 s with `de@2s` 0.6842 — worse accuracy.** The 11.6 s headline is the hold-last
 ceiling. The genuinely model-driven point is **α = 0.25: 8.5 s, `de@2s` 1.0736, beats-CV 43/185.**
 
-## 2.3 The plumbing self-test and the vacuity audit
+## 2.3 ⚠️ THE C13 CHECK — the failing values, and proof in advance they can fire
 
-See §2.4 (they are resolved on the sweep dump, at the full K = 185).
+Declared in `PRE_REGISTRATION.md` §5 and emitted as
+`artifacts/la_gates.json → G4_vacuity_audit`. **The positive control is a REAL arm on these very
+windows**, not a synthetic demonstration:
 
-## 2.4 *(populated by `la_analyze.py` — the sweep stage)*
+| control | what it is | what the rule returns on it |
+|---|---|---|
+| **`own_vupd`** (Rung 1) | the model's own predicted speed fed into the `v0` channel | `de@2s` **1.8165 → 23.9351**, `R = 12.176` ⇒ ⭐ **PRIMARY returns SEMANTIC**; `T_blind` 25 → 9, `cost = 0.640` ⇒ **CO-PRIMARY returns PARTIAL** |
+| the three identity-permutation self-test arms | `shuffled\|seed=-1` etc. | bit-identical ⇒ `R = 0` ⇒ **INTEGRATOR** |
+
+> ### ⭐ **Both adjudicating buckets are demonstrably REACHABLE, and the positive control also demonstrates that the two statistics CAN DISAGREE — which the pre-registered rule forces to PARTIAL rather than to a choice of which to quote. The rule discriminates, and it was written before any number here existed.**
+
+⛔ **Declared and honoured: `T_blind(FROZEN vs FROZEN)` is structurally 1 step and is NOT EMITTED
+anywhere in this folder** — only the note that it cannot be anything else. A diagnostic that cannot
+fail is not caveated here, it is omitted.
+
+⭐ **The gates were also shown to FAIL.** The whole `compact → analyze → tables` pipeline was
+dry-run end-to-end on a synthetic dump with the correct shapes and the correct `eid`/`t0`: **G1
+(window identity) and G3 (fidelity) both returned `False`** and the run halted, while G2 (the
+self-test) passed because the self-test arms were bit-identical by construction. The gates are not
+decorative.
+
+## 2.4 Window-set identity and the plumbing self-test at the full K = 185
+
+⏳ **PENDING — the sweep stage.** These are resolved by `la_compact.py` (self-test, at full K, before
+compaction) and `la_analyze.py::stage_gates` (the eight anchors), and written to
+`artifacts/la_gates.json`. **Nothing in §4–§6 may be read until they pass**, and `la_analyze.py`
+halts rather than reporting when they do not.
 
 ---
 
@@ -159,16 +185,190 @@ latent PROBE. Both are true and they are not in conflict: X1 probed what a linea
 can recover; this measures what the trained readout plus predictor produce when the latent is or is
 not allowed to evolve.)*
 
+## 3.3 ⭐ Rung 1's zero-training fix only pays because there IS a live latent
+
+`la_stage_a_frozen.json → damping_needs_a_live_latent`. If action damping were a pure *action-space*
+repair it would help the frozen arm as much as the live one. It does not — and the intervals are
+**disjoint at every α**:
+
+| damping | gain on the **live-latent** arm | gain on the **frozen-latent** arm | ratio | intervals disjoint |
+|---|---|---|---:|---|
+| α 0 → 0.25 | **+0.7429 m [0.6673, 0.8224]** ✅ (−40.9 %) | +0.0808 m [0.0668, 0.0968] ✅ (−3.6 %) | **9.19×** | ✅ |
+| α 0 → 0.75 | **+1.1323 m [1.0357, 1.2369]** ✅ (−62.3 %) | +0.1591 m [0.1358, 0.1841] ✅ (−7.1 %) | **7.12×** | ✅ |
+| α 0 → 1 | **+1.1447 m [1.0485, 1.2513]** ✅ (−63.0 %) | +0.1792 m [0.1534, 0.2067] ✅ (−8.0 %) | **6.39×** | ✅ |
+
+> ### ⭐ **Rung 1's headline — "one filter on the action tensor, no retraining, 2.5 s → 11.6 s" — is worth 6.4–9.2× MORE when the latent is alive, with non-overlapping intervals. The damping is not an action-space repair that would work on anything; it works BECAUSE there is a live imagined latent whose decode the model's own action was corrupting. The fix and the latent are not independent, and the latent is the thing being rescued.**
+
+⚠️ Stated conservatively: the ratio is a point estimate of two separately-bootstrapped paired gains
+on the same windows; the admissible claim is that **both gains are separated and their 95 % intervals
+do not overlap** at any α, not a CI on the ratio itself.
+
 ---
 
-# 4. *(the destructive ablations — populated by the sweep)*
+---
 
-# 5. *(the verdict, applied mechanically)*
+# 4. ⏳ THE DESTRUCTIVE ABLATIONS — **PENDING** (the sweep)
 
-# 6. *(the fixed-point probe)*
+⚠️ **This section is NOT MEASURED yet and nothing in it may be quoted.** Stated plainly rather than
+left blank, because an empty numbered section reads as a result.
 
-# 7. ESCALATIONS
+**Status.** The 41-arm sweep is running on pod2 (`/workspace/latab`, launched 01:04 UTC, PID 268280).
+It reached episode 250/600 of the encode and is **I/O-starved**: a sibling stream started **seven**
+`panel_run.py` jobs on the same host *after* my idle check and *after* launch, all reading the same
+val cache. Forward progress is confirmed (RSS rising monotonically, 22.6 → 31.5 GB). The run is
+deterministic and its window-identity gate is against the committed dump, so contention can move the
+wall-clock but **cannot move a number**.
 
-# 8. Amendments
+**What lands here when it completes** — six state sources beyond INTACT/FROZEN, at each of
+α ∈ {0, 0.25, 0.75, 1}, each with `de@2s` · `de@6s` · `ade_0_2s` · `T_blind` vs FROZEN · `cost` ·
+beats-CV · `T_useful@1m` · the horizon grid · and the **decoded-speed diagnostic** (does the decoded
+speed survive the ablation? — the integrator hypothesis says it rides the constant `v0`, in which
+case it should):
 
-# 9. Limitations
+| arm | what it destroys | the question it alone answers |
+|---|---|---|
+| **FROZEN-OTHER** | a *different* window's percept, held constant | is FROZEN's damage the **constancy** (off-distribution window) or the **content**? |
+| **SHUFFLED** | a different window's *imagined* latent, per step | does the evolving latent have to be **this** window's? |
+| **SHUF-REAL** | a different window's *real* latent, per step | the same, with the real-latent marginal |
+| **MEAN** | the batch-mean percept | does any per-window content matter? |
+| **ZERO** | all zeros | the strongest ablation |
+| *FULL-OBS* | *nothing — the TRUE future percept* | *privileged DIAGNOSTIC ceiling.* ⚠️ Not an upper bound: on the committed dump, with true actions, **imagination (0.8136) already BEATS full observation (1.0139)** at the `op` readout. |
+
+# 5. ⏳ THE VERDICT — **PENDING**
+
+The buckets, thresholds and the mandatory-PARTIAL-on-disagreement rule are fixed in
+`PRE_REGISTRATION.md` §4 and implemented in `la_analyze.py::stage_verdict`; §2.3 shows both
+adjudicating buckets fire on a real arm. **§3 already answers the PI on the frozen-latent contrast;
+§5 will say whether *destroying* the latent's content costs as much as *freezing* it.**
+
+# 6. ⏳ THE FIXED-POINT PROBE — **PENDING**
+
+Criterion fixed in `PRE_REGISTRATION.md` §7; implemented in `blindimag.blind_rollout(latent_stats=
+True)` and pinned to return **both** readings by
+`test_fixed_point_probe_can_report_BOTH_readings`.
+
+---
+
+# 7. 🔴 ESCALATIONS — in the headline, not written into a README
+
+**E-1. 🔴 `T_blind` IS a latent ablation, and a steering document is already reading it as something
+else.** `tb_rung0.t_blind`'s comparator is `frozen_last` in **every** committed pair
+(`COMMITTED_T_BLIND`, all five entries), so *"`T_blind` = 11.5 s"* means **"the imagined latent stays
+separated-ahead of a frozen percept for 11.5 s"**. At that horizon **both arms are 74–79 m from the
+truth** (§3.1) and `T_useful@1m` is **2.3 s**.
+
+⛔ **The misreading is live, in a primary source.** `Project Steering/V5_PLAN.md:97` glosses it as
+*"`T_blind` — how long the model can drive without the front camera"*, and builds on it: *"is the
+horizon over which imagination-based scoring is trustworthy. One measurement serves both."* **The
+statistic does not license either sentence.** It is a *relative contiguity* statistic against a
+degraded comparator, not an absolute competence horizon; and §3.1 shows the latent contributes
+**nothing** past 9–12 s, which is where V5's imagination-scoring argument wants to stand.
+
+⇒ **Three concrete asks, for the PI:** (1) rename it in the steering docs to carry its comparator —
+`T_blind_vs_frozen_percept`; (2) **never quote it without `T_useful@1m` beside it** (M10 is already
+binding and this is the case it was written for — `BOOST_PROGRAM.md` §8.4); (3) **re-derive V5's
+imagination-scoring trust horizon at ≤ 6 s**, because the 11.5 s figure it currently inherits is not
+a horizon over which the imagined latent is doing anything.
+
+**E-2. 🔴 The deployed blind configuration is WORSE than a one-scalar integrator, and that is a
+stronger statement than "damping helps".** At α = 0 — the model driving its own action loop, which is
+what `own_kinematic` means — `de@2s` is **1.8165 against `hold_v0`'s 1.2442 (ratio 0.685)** and it is
+separated-better than that floor on **0 of 185 steps**. Rung 1 established that damping recovers the
+horizon; this establishes that **without damping the arm loses to the cheapest baseline in the
+program**. ⇒ **No blind-imagination configuration driving its own undamped action loop may be
+deployed or quoted as a capability.** Same class as Rung 1's E-2 (`own_vupd`), one level up.
+
+**E-3. The latent's contribution is a SHORT-HORIZON phenomenon and dies by 9–12 s.** `R_FROZEN` at
+α = 1: **+3.61 at 1 s → +0.37 at 6 s → +0.14 at 9 s → +0.04 at 12 s → −0.06 at 18.5 s.** ⇒ **Any
+roadmap item that assumes the imagined latent carries driving content at 10 s+ is unsupported by
+this measurement.** In particular the ladder's long-horizon rungs and any "imagination-in-the-loop
+planning at 10 s" framing need a bar re-derived at ≤ 6 s. Same **C-STALE-BAR** class as Rung 1's own
+retraction row.
+
+**E-4. ⚠️ PROCESS — TWO sibling commits swept this agent's in-progress files, in one session.**
+
+| commit | its stated subject | what of THIS stream it actually contains |
+|---|---|---|
+| **`19a0b87`** | "FOUR CONFIRMED DEFECTS FIXED…" | this folder's `PRE_REGISTRATION.md`, the 152-line `taniteval/blindimag.py` latent-ablation extension, the 275-line `test_blindimag_latent.py` |
+| **`6bf905d`** | "v5 RETRAIN PREP CARD…" | `la_sweep.py`, `la_analyze.py`, `la_compact.py`, `la_tables.py`, `la_stage_a_frozen.py`, `la_stage_a_frozen.json`, `_tables.md` |
+
+This is exactly the `CLAUDE.md` hazard *"`git commit` commits the ENTIRE INDEX, not the files you
+just `git add`ed"* — now on its **third and fourth** occurrences (`60265d3`, `3d41bd0`, `19a0b87`,
+`6bf905d`), **two of them inside this one session**. Nothing is lost and no history is being
+rewritten; it is escalated because **the lineage of this stream's code now reads as belonging to two
+unrelated streams**, and because the documented mitigation (list `git diff --cached --name-only`
+first, and name foreign work in the message) was applied by neither. ⇒ **The rule as written asks
+each committer to check the index; it has now failed four times. It needs a mechanism, not another
+reminder** — e.g. a pre-commit hook that refuses when the index spans more than one
+`incoming/<date>-<stream>/` directory.
+
+---
+
+# 8. Amendments to my own pre-registration
+
+| # | what changed | why, and what it can and cannot bias |
+|---|---|---|
+| **A1** | The pre-registration listed six state sources; the sweep runs **eight** — `full_obs` was added as a **privileged DIAGNOSTIC ceiling** (it reads the true future) and `frozen_other` was promoted from a note to a first-class arm. | Both are **additions to the reported table, not to the adjudicating set**. `DESTRUCTIVE` — the set the verdict is computed over — is unchanged from §3 of the pre-registration. `full_obs` is marked `DIAGNOSTIC(privileged)` in every row and can never set the verdict. |
+| **A2** | The pre-registration's §8 priority order put the α = 0.75 row fourth. It was run in the same pass as the others because the sweep's dominant cost is the **single 600-episode encode**, which is paid once regardless of arm count. | Cost only; no bar, bucket or eligibility set was touched. |
+| **A3** | Stage A grew a `vs_pure_kinematic_integrators` block (§3.2) that the pre-registration did not name. | It is **comparator-free and adjudicates nothing** — it compares each arm to two floors that contain no latent at all. It was added because it is the most direct available reading of the PI's question and it costs nothing. It is reported beside, never inside, the pre-registered rule. |
+
+---
+
+# 9. Limitations, stated plainly
+
+1. **One arm, one action policy, one readout.** v1 `flagship4b-speedjerk-30k` @ 29999; the
+   `own_kinematic` inverse plus the blend filter; the `str` (k = 20) readout. Nothing on v4, REF-B or
+   REF-C. **v4 in particular cannot inherit any of this** — X4 measured that v4 carries no grounding
+   instrument at all.
+2. ⚠️ **A latent ablation cannot prove the latent is empty in general** — only that it is not
+   carrying *this rollout's metric path*. A latent could hold semantics the `str` step readout was
+   never trained to extract. The verdict wording keeps that distinction.
+3. ⚠️ **At α < 1 the ablation is JOINT** (latent + the action derived from it). Only the α = 1 row is
+   attributable to the latent alone, and it is the row the verdict quotes.
+4. ⚠️ **The window set is EPISODE-INITIAL** (596 of 599 windows at `t0 = 0`) and runs ~6–12 % low in
+   absolute level (`INHERITED-MEASURED`). Every contrast is paired on identical windows.
+5. ⚠️ **Everything past 2.0 s is extrapolation for the `str` readout** (calibrated at k = 20). The
+   9–18.5 s rows are quoted only to show where the latent's contribution *ends*, which is a
+   conservative direction for that caveat.
+6. ⛔ **Not a safety result.** PhysicalAI-AV ships no map, lane graph or agent boxes. Drift only.
+7. ⚠️ **`mean_latent` and the derangements are batch-local** (batch = 32, deterministic given the
+   fixed window order). The seed-robustness rows exist because of this and are reported.
+8. ⚠️ **pod2 acquired a second tenant mid-run.** Another stream's `panel_run.py` jobs started after
+   my idle check and after launch, so the wall-clock here is not a benchmark. It cannot affect any
+   number — the sweep is deterministic and its window-identity gate is against the committed dump.
+
+---
+
+# 10. DELIVERABLE MANIFEST
+
+**Nothing in this stream lives in only one place.** The instrument and its certification are in
+`taniteval/`, on pod2, and in git; every number is reproducible from a committed per-window dump with
+**no GPU**.
+
+| artifact | where it lives | only one place? |
+|---|---|---|
+| `LATENT_ABLATION.md` (this file) | `repo:…/incoming/2026-07-27-latent-ablation/` | no |
+| `PRE_REGISTRATION.md` | same folder | no |
+| **The instrument** — 5 new latent-ablation `state_source`s, `parse_state_source`, `_derangement`, the fixed-point probe | `repo:taniteval/taniteval/blindimag.py` · `pod2:/root/taniteval/taniteval/blindimag.py` (md5 `f731a510…` on both) | **no** ✅ |
+| **Its certification** — 45 tests, both self-test directions + anti-no-op + the both-readings probe | `repo:taniteval/tests/test_blindimag_latent.py` · `pod2:/root/taniteval/tests/` | **no** ✅ |
+| `scripts/la_sweep.py` (the pod driver, 41 arms) | `repo:…/scripts/` · `pod2:/workspace/latab/la_sweep.py` | no |
+| `scripts/la_compact.py` | `repo:…/scripts/` · `pod2:/workspace/latab/` | no |
+| `scripts/la_stage_a_frozen.py` · `la_analyze.py` · `la_tables.py` | `repo:…/scripts/` | **repo only** (zero-GPU, they need no pod) |
+| `artifacts/la_stage_a_frozen.json` — ⭐ the priority-1 answer | `repo:…/artifacts/` | repo only *(regenerable with no GPU from the committed Rung-1 dump)* |
+| `artifacts/la_gates.json` · `la_table.json` · `la_verdict.json` · `la_fixedpoint.json` | `repo:…/artifacts/` | repo only *(regenerable from the per-window dump)* |
+| `artifacts/_tables.md` — every table in this report, machine-rendered from the raw JSON | `repo:…/artifacts/` | repo only |
+| `perwindow/latab_perwindow_compact.pt` — dense per-window `de` for all 41 arms + the fixed-point probe | `repo:…/perwindow/` · `pod2:/workspace/latab/perwindow/` | no ✅ |
+| the full sweep dump `latab_sweep_K185.pt` (~180 MB) | `pod2:/workspace/latab/perwindow/` | **POD ONLY — deliberately.** It is the compact dump plus per-arm `pred`/`psi` tensors that nothing in this report reads; the compaction is lossless for every statistic quoted here, and its plumbing self-test is resolved *before* compaction at the full K = 185. |
+| the sweep log + `chain.sh` | `pod2:/workspace/latab/` | pod only (provenance, not data) |
+
+**⭐ Every bar in this report recomputes with no GPU** from `perwindow/latab_perwindow_compact.pt`
+plus the committed Rung-1 dump — `python la_analyze.py --new perwindow/latab_perwindow_compact.pt`.
+
+## 10.1 What this unblocks
+
+| stream | what it gets |
+|---|---|
+| 🔴 **the V5 plan** | E-1: its imagination-scoring trust horizon is currently inherited from a statistic that does not mean what §97 says it means, and the latent contributes nothing past 9–12 s. **A bar re-derivation is owed before V5 commits GPU.** |
+| 🔴 **the blind-imagination ladder (R1/R3)** | E-2: the undamped own-action arm loses to `hold_v0`. Any rung whose success criterion is "the model drives blind" must be stated against that floor, not against `frozen_last`. |
+| ⭐ **the three-planner / hierarchy direction** | the latent's contribution is real but **short-horizon**. That argues for a tactical/operative loop at ≤ 6 s and against a strategic loop that leans on imagined latents at 10 s+. |
+| **the instrument itself** | `blindimag` now carries a reusable latent-ablation axis (`state_source` accepts `\|seed=N`) and a fixed-point probe, both inert on every pre-existing call site and test-pinned. Any future arm can be latent-ablated for the cost of one string. |
