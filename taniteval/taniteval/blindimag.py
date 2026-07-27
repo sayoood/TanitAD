@@ -192,11 +192,39 @@ STEER_CLAMP = 0.05             # clhorizon/closedloop convention
 ACCEL_CLAMP = 3.0              # clhorizon/closedloop convention
 V_EPS = 0.5                    # m/s floor when inverting steer (avoids /0)
 
-STATE_SOURCES = ("imagination", "frozen_last", "full_obs", "observed_pair")
+#: The LATENT-ABLATION state sources (2026-07-27). Each replaces ONLY the latent
+#: appended to the predictor's window; the action channel — including the
+#: CONSTANT true ``v0`` carried in the action template — is untouched. They exist
+#: to answer whether the blind horizon is the imagined latent's content or the
+#: integration of that action channel.
+#:
+#: ``frozen_other``  the last real percept of a DIFFERENT window, held constant.
+#:                   Same constant-window shape as ``frozen_last``, wrong content
+#:                   — it separates "a constant window is off-distribution" from
+#:                   "the content matters".
+#: ``shuffled``      at each step, the IMAGINED latent of a different window. The
+#:                   per-step marginal is the same multiset; correspondence gone.
+#: ``shuffled_obs``  the same, on the TRUE observed latents.
+#: ``mean_latent``   the batch mean of the last real percept — marginally
+#:                   central, zero per-window information.
+#: ``zero_latent``   all zeros. The strongest, deliberately off-distribution.
+_ABLATION_SOURCES = ("frozen_other", "shuffled", "shuffled_obs",
+                     "mean_latent", "zero_latent")
+STATE_SOURCES = (("imagination", "frozen_last", "full_obs", "observed_pair")
+                 + _ABLATION_SOURCES)
+#: Ablations that draw their latent from a permutation over the batch.
+_PERMUTED_SOURCES = ("frozen_other", "shuffled", "shuffled_obs")
 ACTION_SOURCES = ("true_future", "own_kinematic", "gt_kinematic", "hold_last",
                   "planner")
 #: Sources whose action is produced by the kinematic inverse (the filter axis).
 _KINEMATIC_SOURCES = ("own_kinematic", "gt_kinematic")
+#: ⭐ PLUMBING SELF-TEST HOOK. ``seed = IDENTITY_PERM_SEED`` makes every permuted
+#: source use the IDENTITY permutation, under which ``shuffled`` reduces
+#: algebraically to ``imagination``, ``shuffled_obs`` to ``full_obs`` and
+#: ``frozen_other`` to ``frozen_last``. A filter knob that is silently a no-op
+#: produces a flat, confident, wrong table; this is how that is caught, and it is
+#: the only reason this sentinel exists. It is never used for a reported arm.
+IDENTITY_PERM_SEED = -1
 
 
 # --------------------------------------------------------------------------- #
@@ -263,6 +291,53 @@ ACTION_MOD_KEYS = ("blend", "ema", "every", "steer_clip", "accel_clip", "chan",
 #: controller stands on and where its lookahead target comes from; they are NOT
 #: filters and are refused on any other base.
 PLANNER_MOD_KEYS = ("vsrc", "look")
+
+
+def parse_state_source(spec: str):
+    """``"shuffled|seed=7"`` -> ``("shuffled", {"seed": 7})``.
+
+    A bare source parses to an EMPTY modifier dict, so every pre-ablation call
+    site is bit-identical by construction. ``seed`` is the only key; it is
+    refused on a source that does not permute, because a silently-ignored knob
+    is how a sweep produces a flat, confident, wrong table.
+    """
+    base, _, rest = str(spec).partition("|")
+    base = base.strip()
+    mod: dict = {}
+    for part in (p for p in rest.split("|") if p.strip()):
+        k, _, v = part.partition("=")
+        k = k.strip()
+        if k != "seed":
+            raise ValueError(f"unknown state modifier {k!r}; expected 'seed'")
+        mod[k] = int(v)
+    if mod and base not in _PERMUTED_SOURCES:
+        raise ValueError(
+            f"state modifier 'seed' is only defined for a permuted latent "
+            f"ablation {_PERMUTED_SOURCES}; got base {base!r}")
+    return base, mod
+
+
+def _derangement(b: int, seed: int, j: int, device) -> torch.Tensor:
+    """A permutation of ``range(b)`` with **no fixed point**, deterministic in
+    ``(seed, j)``.
+
+    A random ROLL is used rather than a rejection-sampled random derangement:
+    it is a guaranteed derangement for any ``b >= 2``, it preserves the batch's
+    multiset of latents EXACTLY (so the per-step marginal statistics of the
+    ablated arm are identical to the intact one's), and it is reproducible from
+    two integers. ``seed = IDENTITY_PERM_SEED`` returns the identity — the
+    plumbing self-test, and the ONLY way a fixed point can occur.
+    """
+    idx = torch.arange(b, device=device)
+    if int(seed) == IDENTITY_PERM_SEED:
+        return idx
+    if b < 2:
+        raise ValueError(
+            "a permuted latent ablation needs batch >= 2 (a batch of 1 has no "
+            "derangement, so the ablation would silently be a no-op)")
+    g = torch.Generator(device="cpu").manual_seed(int(seed) * 100003 + int(j))
+    off = int(torch.randint(1, b, (1,), generator=g).item())
+    return (idx + off) % b
 
 
 def parse_action_source(spec: str):
@@ -394,7 +469,9 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
                   plan_fn=None,
                   gt_pos: torch.Tensor | None = None,
                   peek_period: int | None = None,
-                  peek_oracle_bar: float | None = None) -> dict:
+                  peek_oracle_bar: float | None = None,
+                  latent_perm_seed: int = 0,
+                  latent_stats: bool = False) -> dict:
     """Roll ``predictor`` forward ``k`` steps and decode a metric path.
 
     ``states [B,W,S]``      encoded REAL frames of the observed window.
@@ -426,20 +503,34 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
     ``"own_kinematic|blend=0.25"`` — see :func:`parse_action_source`. A bare
     source is bit-identical to the pre-Rung-1 behaviour.
 
+    ``state_source`` may carry a ``|seed=N`` suffix for the permuted LATENT
+    ABLATIONS (2026-07-27) — see :func:`parse_state_source`. ``latent_perm_seed``
+    is the default when the string carries none.
+
+    ``latent_stats=True`` additionally returns the FIXED-POINT probe:
+    ``lat_dz`` (``||z_j - z_{j-1}||``, with ``z_{-1}`` the last real percept),
+    ``lat_d0`` (``||z_j - z_0||``), ``lat_cos0`` (``cos(z_j, z_0)``) and
+    ``lat_norm`` (``||z_j||``), each ``[B,k]``, all measured on the latent the
+    predictor EMITTED (``z_hat``) — not on the ablated substitute, so the probe
+    reads the imagination itself.
+
     ⚠️ With ``state_source="imagination"``, ``action_source="true_future"`` and no
     peek policy the loop is byte-for-byte ``metric_dynamics.rollout_decode``
     (test-pinned).
     """
+    state_source, state_mod = parse_state_source(state_source)
     if state_source not in STATE_SOURCES:
         raise ValueError(f"state_source must be one of {STATE_SOURCES}, "
                          f"got {state_source!r}")
+    perm_seed = int(state_mod.get("seed", latent_perm_seed))
+    if state_source in ("full_obs", "observed_pair", "shuffled_obs") \
+            and obs_states is None:
+        raise ValueError(f"state_source={state_source!r} needs obs_states "
+                         f"[B,k,S] (the TRUE next-frame encodings)")
     action_source, action_mod = parse_action_source(action_source)
     if action_source not in ACTION_SOURCES:
         raise ValueError(f"action_source must be one of {ACTION_SOURCES}, "
                          f"got {action_source!r}")
-    if state_source in ("full_obs", "observed_pair") and obs_states is None:
-        raise ValueError(f"state_source={state_source!r} needs obs_states "
-                         f"[B,k,S] (the TRUE next-frame encodings)")
     if action_source == "true_future" and future_actions is None:
         raise ValueError("action_source='true_future' needs future_actions")
     if action_source == "gt_kinematic" and gt_step_dpose is None:
@@ -473,6 +564,20 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
     v_prev = v_last
     dposes, fed, speeds, peeks = [], [], [], []
     b = states.shape[0]
+    # ---- the LATENT-ABLATION substitutes, built once ----------------------- #
+    z_const = None                                 # a CONSTANT ablated latent
+    if state_source == "frozen_other":
+        # one permutation for the whole rollout: a constant, WRONG percept
+        z_const = z_frozen[_derangement(b, perm_seed, 0, states.device)]
+    elif state_source == "mean_latent":
+        z_const = z_frozen.mean(dim=0, keepdim=True).expand_as(z_frozen)
+    elif state_source == "zero_latent":
+        z_const = torch.zeros_like(z_frozen)
+    lat_dz, lat_d0, lat_cos0, lat_nrm = [], [], [], []
+    if latent_stats:
+        _z0 = z_frozen
+        _z0n = _z0.flatten(1).norm(dim=-1).clamp_min(1e-12)
+        _z_prev = _z0
     if action_source == "planner":
         # the controller's own speed bookkeeping, byte-for-byte
         # closedloop.closed_loop_rollout's `v = (v + accel*DT).clamp_min(0)`
@@ -484,6 +589,18 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
 
     for j in range(k):
         z_hat = predictor(win_s, win_a)[1]         # 1-step head -> z_{t+j+1}
+        if latent_stats:
+            # ⭐ THE FIXED-POINT PROBE. Measured on what the predictor EMITTED,
+            # so it reads the imagination itself and is well defined for every
+            # state source (including the ablations, where it reports what the
+            # predictor does when its context is corrupted).
+            _f, _fp, _f0 = z_hat.flatten(1), _z_prev.flatten(1), _z0.flatten(1)
+            _n = _f.norm(dim=-1)
+            lat_nrm.append(_n)
+            lat_dz.append((_f - _fp).norm(dim=-1))
+            lat_d0.append((_f - _f0).norm(dim=-1))
+            lat_cos0.append((_f * _f0).sum(-1) / (_n.clamp_min(1e-12) * _z0n))
+            _z_prev = z_hat
         if state_source == "observed_pair":
             dpose = step_readout(win_s[:, -1], obs_states[:, j])
         else:
@@ -550,10 +667,21 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
                 # odometry. Unchanged by any filter.
                 v_prev = v_now
             # ---- the latent appended at step j+1 --------------------------- #
+            # ⚠️ ONLY this line differs between the latent ablations. The action
+            # tensor above — including the CONSTANT true `v0` channel — is
+            # produced identically for every state source, which is what makes
+            # these arms a test of the latent rather than of the action loop.
             if state_source == "imagination":
                 z_next = z_hat
             elif state_source == "frozen_last":
                 z_next = z_frozen
+            elif z_const is not None:               # frozen_other / mean / zero
+                z_next = z_const
+            elif state_source == "shuffled":
+                z_next = z_hat[_derangement(b, perm_seed, j, states.device)]
+            elif state_source == "shuffled_obs":
+                z_next = obs_states[:, j][
+                    _derangement(b, perm_seed, j, states.device)]
             else:                                   # full_obs / observed_pair
                 z_next = obs_states[:, j]
             # ---- the peek policy overrides the latent source ---------------- #
@@ -584,10 +712,16 @@ def blind_rollout(predictor, states: torch.Tensor, actions: torch.Tensor,
 
     step_dpose = torch.stack(dposes, dim=1)                       # [B,k,3]
     wp, psi = accumulate_se2_pose(step_dpose)
-    return {"waypoints": wp, "psi": psi, "step_dpose": step_dpose,
-            "fed_actions": torch.stack(fed, dim=1),
-            "pred_speed": torch.stack(speeds, dim=1),
-            "peek_mask": torch.stack(peeks, dim=1)}
+    out = {"waypoints": wp, "psi": psi, "step_dpose": step_dpose,
+           "fed_actions": torch.stack(fed, dim=1),
+           "pred_speed": torch.stack(speeds, dim=1),
+           "peek_mask": torch.stack(peeks, dim=1)}
+    if latent_stats:
+        out.update({"lat_dz": torch.stack(lat_dz, dim=1),
+                    "lat_d0": torch.stack(lat_d0, dim=1),
+                    "lat_cos0": torch.stack(lat_cos0, dim=1),
+                    "lat_norm": torch.stack(lat_nrm, dim=1)})
+    return out
 
 
 # --------------------------------------------------------------------------- #

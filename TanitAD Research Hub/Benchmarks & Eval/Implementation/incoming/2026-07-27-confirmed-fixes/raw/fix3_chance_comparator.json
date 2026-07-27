@@ -1,0 +1,618 @@
+{
+  "block": "confirmed_fixes/FIX3_chance_comparator",
+  "defect": "h2c_eval.py:138 `chance = np.zeros_like(y)` ranked by a STABLE argsort in h2c_stats.average_precision => ROW ORDER; the row order is [all left-camera rows, then all right]",
+  "repair": "taniteval.rank_metrics.average_precision collapses ties (the sklearn definition), so a constant score scores the base rate exactly; taniteval.rank_metrics.assert_chance_comparator refuses any comparator that does not, and h2c_eval.py now calls it",
+  "estimator": {
+    "interval": "paired_episode_cluster_bootstrap",
+    "module": "h2c_stats -> taniteval.ci._draws",
+    "n_boot": 2000,
+    "seed": 0,
+    "resampling_unit": "clip (episode cluster)"
+  },
+  "fidelity_gate": {
+    "head_img_ego": {
+      "committed_AP_a": 0.007948,
+      "recomputed_AP_a": 0.007948,
+      "committed_AP_b": 0.005269,
+      "recomputed_AP_b": 0.005269,
+      "matches": true
+    },
+    "head_img": {
+      "committed_AP_a": 0.005506,
+      "recomputed_AP_a": 0.005506,
+      "committed_AP_b": 0.005269,
+      "recomputed_AP_b": 0.005269,
+      "matches": true
+    },
+    "head_ego": {
+      "committed_AP_a": 0.012758,
+      "recomputed_AP_a": 0.012758,
+      "committed_AP_b": 0.005269,
+      "recomputed_AP_b": 0.005269,
+      "matches": true
+    },
+    "heur_speed": {
+      "committed_AP_a": 0.001987,
+      "recomputed_AP_a": 0.001987,
+      "committed_AP_b": 0.005269,
+      "recomputed_AP_b": 0.005269,
+      "matches": true
+    },
+    "heur_decel": {
+      "committed_AP_a": 0.007674,
+      "recomputed_AP_a": 0.007674,
+      "committed_AP_b": 0.005269,
+      "recomputed_AP_b": 0.005269,
+      "matches": true
+    },
+    "REPRODUCES": true
+  },
+  "surfaces": {
+    "trigger": {
+      "base_rate": 0.0030527,
+      "n_rows": 100238,
+      "n_positives": 306,
+      "n_clusters": 322,
+      "comparator_audit": {
+        "block": "taniteval.rank_metrics",
+        "version": "1.0.0",
+        "name": "trigger/published_constant_zero",
+        "base_rate": 0.003052734491909256,
+        "AP": 0.003052734491909256,
+        "AP_row_order": 0.005268806581981618,
+        "inflation_vs_chance": 1.0,
+        "inflation_vs_chance_row_order": 1.7259301770087367,
+        "n_distinct_scores": 1,
+        "is_constant": true,
+        "is_chance": true,
+        "row_order_leaks": true,
+        "_read": "a constant score is a valid chance comparator ONLY under ties='collapse'; under row-order tie-breaking it ranks by the array layout, which is what h2c_eval.py:138 unknowingly did",
+        "published_AP_b_in_artifact": 0.005269,
+        "reproduces_published_AP_b": true,
+        "true_random_ranking": {
+          "n_seeds": 24,
+          "mean": 0.003171509688978386,
+          "p2.5": 0.0028134688212339276,
+          "p97.5": 0.003746092511966354,
+          "seed0": 10000
+        },
+        "guard_fires_on_the_legacy_comparator": true,
+        "guard_message": "'trigger/legacy' is sold as CHANCE but scores AP 0.005269 against a base rate of 0.0030527 (1.7259x chance) \u2014 the score is CONSTANT, so this is a TIE-HANDLING defect: a stable argsort on an all-tied score ranks by ROW ORDER. Use ties='collapse'. Every AP-vs-chance delta measured against it is biased, and for a control the bias runs toward the desired verdict."
+      },
+      "arms": {
+        "head_img_ego": {
+          "AP_arm": 0.007948,
+          "published": {
+            "AP_a": 0.007948,
+            "AP_b": 0.005269,
+            "delta": 0.002679
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.0030527,
+            "delta": 0.004895,
+            "lo": 0.000706,
+            "hi": 0.028013,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": 0.00038,
+                "hi": 0.027712,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.000875,
+                "hi": 0.028325,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.000467,
+                "hi": 0.027709,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.004776,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "head_img": {
+          "AP_arm": 0.005506,
+          "published": {
+            "AP_a": 0.005506,
+            "AP_b": 0.005269,
+            "delta": 0.000237
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.0030527,
+            "delta": 0.002453,
+            "lo": 0.000387,
+            "hi": 0.009624,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": -6.5e-05,
+                "hi": 0.009473,
+                "separated": false,
+                "favours_a": false,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.000483,
+                "hi": 0.009858,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.000133,
+                "hi": 0.009044,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.002335,
+            "n_ci_seeds_separated": 2
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "head_ego": {
+          "AP_arm": 0.012758,
+          "published": {
+            "AP_a": 0.012758,
+            "AP_b": 0.005269,
+            "delta": 0.007489
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.0030527,
+            "delta": 0.009705,
+            "lo": 0.001378,
+            "hi": 0.033221,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": 0.000916,
+                "hi": 0.033106,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.001477,
+                "hi": 0.033656,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.00119,
+                "hi": 0.032914,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.009586,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "heur_speed": {
+          "AP_arm": 0.001987,
+          "published": {
+            "AP_a": 0.001987,
+            "AP_b": 0.005269,
+            "delta": -0.003282
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.0030527,
+            "delta": -0.001066,
+            "lo": -0.001604,
+            "hi": -0.000597,
+            "separated": true,
+            "favours_a": false,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": -0.002367,
+                "hi": -0.000598,
+                "separated": true,
+                "favours_a": false,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": -0.002428,
+                "hi": -0.000376,
+                "separated": true,
+                "favours_a": false,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": -0.002195,
+                "hi": -0.000649,
+                "separated": true,
+                "favours_a": false,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": -0.001185,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "BELOW CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "heur_decel": {
+          "AP_arm": 0.007672,
+          "published": {
+            "AP_a": 0.007674,
+            "AP_b": 0.005269,
+            "delta": 0.002405
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.0030527,
+            "delta": 0.004619,
+            "lo": 0.000295,
+            "hi": 0.015898,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": -0.000193,
+                "hi": 0.015654,
+                "separated": false,
+                "favours_a": false,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.00013,
+                "hi": 0.016231,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 2.6e-05,
+                "hi": 0.015343,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.004501,
+            "n_ci_seeds_separated": 2
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        }
+      }
+    },
+    "NOT_T_seen": {
+      "base_rate": 0.032762,
+      "n_rows": 50119,
+      "n_positives": 1642,
+      "n_clusters": 322,
+      "comparator_audit": {
+        "block": "taniteval.rank_metrics",
+        "version": "1.0.0",
+        "name": "NOT_T_seen/published_constant_zero",
+        "base_rate": 0.03276202637722221,
+        "AP": 0.03276202637722221,
+        "AP_row_order": 0.04604044264550914,
+        "inflation_vs_chance": 1.0,
+        "inflation_vs_chance_row_order": 1.4052989920525412,
+        "n_distinct_scores": 1,
+        "is_constant": true,
+        "is_chance": true,
+        "row_order_leaks": true,
+        "_read": "a constant score is a valid chance comparator ONLY under ties='collapse'; under row-order tie-breaking it ranks by the array layout, which is what h2c_eval.py:138 unknowingly did",
+        "published_AP_b_in_artifact": 0.04604,
+        "reproduces_published_AP_b": true,
+        "true_random_ranking": {
+          "n_seeds": 24,
+          "mean": 0.033259846768499024,
+          "p2.5": 0.03181083702341954,
+          "p97.5": 0.03465484645552656,
+          "seed0": 10000
+        },
+        "guard_fires_on_the_legacy_comparator": true,
+        "guard_message": "'NOT_T_seen/legacy' is sold as CHANCE but scores AP 0.046040 against a base rate of 0.0327620 (1.4053x chance) \u2014 the score is CONSTANT, so this is a TIE-HANDLING defect: a stable argsort on an all-tied score ranks by ROW ORDER. Use ties='collapse'. Every AP-vs-chance delta measured against it is biased, and for a control the bias runs toward the desired verdict."
+      },
+      "arms": {
+        "head_img_ego": {
+          "AP_arm": 0.052046,
+          "published": {
+            "AP_a": 0.052046,
+            "AP_b": 0.04604,
+            "delta": 0.006006
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.032762,
+            "delta": 0.019284,
+            "lo": 0.008323,
+            "hi": 0.040387,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": 0.008428,
+                "hi": 0.03936,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.00753,
+                "hi": 0.039654,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.008828,
+                "hi": 0.040677,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.018786,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "head_img": {
+          "AP_arm": 0.049144,
+          "published": {
+            "AP_a": 0.049144,
+            "AP_b": 0.04604,
+            "delta": 0.003104
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.032762,
+            "delta": 0.016382,
+            "lo": 0.005652,
+            "hi": 0.042374,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": 0.0057,
+                "hi": 0.041567,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.004629,
+                "hi": 0.041687,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.006205,
+                "hi": 0.042786,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.015884,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        },
+        "head_ego": {
+          "AP_arm": 0.12263,
+          "published": {
+            "AP_a": 0.122631,
+            "AP_b": 0.04604,
+            "delta": 0.076591
+          },
+          "corrected_vs_exact_chance": {
+            "AP_chance": 0.032762,
+            "delta": 0.089868,
+            "lo": 0.053051,
+            "hi": 0.137277,
+            "separated": true,
+            "favours_a": true,
+            "n_draws_used": 2000,
+            "comparator": "constant score, ties collapsed -> AP == base rate in EVERY draw (exact, seed-free)"
+          },
+          "corrected_vs_true_random": {
+            "n_ci_seeds": 3,
+            "per_seed": [
+              {
+                "lo": 0.053852,
+                "hi": 0.136643,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.052647,
+                "hi": 0.136137,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              },
+              {
+                "lo": 0.054,
+                "hi": 0.137243,
+                "separated": true,
+                "favours_a": true,
+                "n_draws_used": 2000
+              }
+            ],
+            "delta_point": 0.08937,
+            "n_ci_seeds_separated": 3
+          },
+          "VERDICT": "ABOVE CHANCE",
+          "published_said": "not separated",
+          "CHANGED": true
+        }
+      }
+    }
+  },
+  "fidelity_gate_NOT_T_seen": {
+    "head_img_ego": {
+      "committed_AP": 0.052046,
+      "recomputed_AP": 0.052046,
+      "matches": true
+    },
+    "head_img": {
+      "committed_AP": 0.049144,
+      "recomputed_AP": 0.049144,
+      "matches": true
+    },
+    "head_ego": {
+      "committed_AP": 0.122631,
+      "recomputed_AP": 0.122631,
+      "matches": true
+    },
+    "REPRODUCES": true
+  },
+  "predecessor_audit_defects": {
+    "file": "\u2026/2026-07-27-rung1-planner-and-owed-controls/scripts/owed_chance_baseline.py",
+    "rows_affected": [
+      71,
+      74
+    ],
+    "defect_1": "used `C['Y']` \u2014 the TRIGGER label, unfolded to (camera, frame) \u2014 as the NOT_T_seen target; the correct target is `1 - EX[:,1]` at FRAME level (h2c_c12fix.py:39)",
+    "defect_2": "picked the score key with `arm in k`, so arm 'head_img' matched 's__head_img_ego__NOT_T_seen' first; rows 71 and 74 therefore scored the SAME array (both report AP_a = 0.00398)",
+    "consequence": "the '0/24 seeds separate' reading for the image arms on NOT_T_seen was computed on the wrong target and, for row 74, the wrong score. Re-derived correctly in surfaces.NOT_T_seen above."
+  },
+  "arm_APs_are_unchanged": {
+    "trigger": {
+      "head_img_ego": {
+        "published_AP": 0.007948,
+        "corrected_AP": 0.007948,
+        "unchanged": true
+      },
+      "head_img": {
+        "published_AP": 0.005506,
+        "corrected_AP": 0.005506,
+        "unchanged": true
+      },
+      "head_ego": {
+        "published_AP": 0.012758,
+        "corrected_AP": 0.012758,
+        "unchanged": true
+      },
+      "heur_speed": {
+        "published_AP": 0.001987,
+        "corrected_AP": 0.001987,
+        "unchanged": true
+      },
+      "heur_decel": {
+        "published_AP": 0.007674,
+        "corrected_AP": 0.007672,
+        "unchanged": true
+      }
+    },
+    "NOT_T_seen": {
+      "head_img_ego": {
+        "published_AP": 0.052046,
+        "corrected_AP": 0.052046,
+        "unchanged": true
+      },
+      "head_img": {
+        "published_AP": 0.049144,
+        "corrected_AP": 0.049144,
+        "unchanged": true
+      },
+      "head_ego": {
+        "published_AP": 0.122631,
+        "corrected_AP": 0.12263,
+        "unchanged": true
+      }
+    }
+  },
+  "headline": {
+    "published_sentence": "H2_CLASSIFIER.md \u00a70.2: 'NO ARM IS ABOVE CHANCE'",
+    "status": "FALSE \u2014 on a comparator that IS chance, every learned arm separates above it on BOTH surfaces",
+    "only_the_comparator_moved": true,
+    "_read": "no arm's AP changed by more than 1e-5: the learned scores carry almost no ties, so collapsing ties leaves them exactly where they were. The ONLY quantity that moved is the 'chance' baseline, from 1.7259x (trigger) / 1.4053x (NOT_T_seen) chance down to chance.",
+    "trigger_surface": {
+      "head_img_ego": "ABOVE CHANCE",
+      "head_img": "ABOVE CHANCE",
+      "head_ego": "ABOVE CHANCE",
+      "heur_speed": "BELOW CHANCE",
+      "heur_decel": "ABOVE CHANCE"
+    },
+    "NOT_T_seen_surface": {
+      "head_img_ego": "ABOVE CHANCE",
+      "head_img": "ABOVE CHANCE",
+      "head_ego": "ABOVE CHANCE"
+    },
+    "conservative_reading_true_random_comparator": {
+      "trigger/head_img_ego": "3/3 seeds",
+      "trigger/head_img": "2/3 seeds",
+      "trigger/head_ego": "3/3 seeds",
+      "trigger/heur_speed": "3/3 seeds",
+      "trigger/heur_decel": "2/3 seeds",
+      "NOT_T_seen/head_img_ego": "3/3 seeds",
+      "NOT_T_seen/head_img": "3/3 seeds",
+      "NOT_T_seen/head_ego": "3/3 seeds"
+    },
+    "WHAT_STILL_STANDS": "'adding images DESTROYS the working ego head' is UNTOUCHED: it is an ARM-vs-ARM comparison (head_ego AP 0.1226 = 3.74x base vs head_img_ego 0.0521 = 1.59x on NOT_T_seen) and no chance comparator enters it. Both APs are reproduced unchanged above.",
+    "WHAT_DOES_NOT_STAND": "the SUB-CLAUSE 'neither image arm clears chance at all' (H2_CLASSIFIER.md \u00a70.4 / \u00a77.1). Both image arms DO clear a correct chance comparator on NOT_T_seen (+0.0193 [+0.0083,+0.0404] and +0.0164 [+0.0057,+0.0424]). They remain far below the ego arm; 'weak but non-zero' replaces 'nothing'.",
+    "ALSO_NOT_RESCUED": "the PRE-REGISTERED VERDICT stays UNDERPOWERED. It is decided on paired RECALL vs a rate-matched heuristic and vs random at the operating point (h2c_eval.py:399-414) \u2014 neither of which uses the AP chance comparator. Nothing here moves it, and the ~52 GB expansion is still the thing that would.",
+    "predecessor_0_of_24_reading_is_VOID": "the '0/24 seeds' for the image arms on NOT_T_seen came from owed_chance_baseline.py rows 71/74, which scored the WRONG TARGET and (row 74) the WRONG SCORE ARRAY \u2014 see predecessor_audit_defects."
+  }
+}

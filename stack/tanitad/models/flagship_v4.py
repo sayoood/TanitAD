@@ -121,6 +121,24 @@ class V4Config(V15Config):
     graft_lambda: float = 1.0
     graft_tau: float = 1.0
 
+    # --- the reachability clamp: DELIBERATELY OFF ON v4 ---------------------
+    # `V15Config.sel_reach_clamp` defaults to True because it was MEASURED free
+    # on REF-C-XL's emitted 256-candidate fan (881 canonical val windows: 72.08 %
+    # of candidates removed, ADE-oracle surviving 100 %, paired Δ exactly
+    # 0.0000). That measurement does NOT transfer to v4 and must not be assumed
+    # to: the same study's surface B (`v5_v4_windows_reduced.pt`) carries v4's
+    # per-candidate errors but NO fan geometry and no usable score ranking, so
+    # the zero-change property is **UNMEASURED on v4's own fan**.
+    # v4 also carries a standing invariant — `q` must never exist in the
+    # deployment path, every candidate stays rankable, no masking and no top-k
+    # (`test_the_selector_never_truncates_the_candidate_set`). A physical
+    # reachability band is a different object from a score-based truncation, but
+    # "different in kind" is an argument and this program settles those with
+    # measurements. 🔴 ESCALATION: dump v4's fan geometry + logits on the same
+    # 881 windows, re-run `t1_clip_and_fansize.py`, and flip this only if the
+    # paired Δ is again 0.0000 with the oracle surviving.
+    sel_reach_clamp: bool = False
+
 
 def v4_config() -> V4Config:
     """The v4 OPERATIVE planner (③): dense 2 s, factorised selection, null row."""

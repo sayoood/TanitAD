@@ -17,6 +17,64 @@ number in this document is typed by hand.)*
 
 ---
 
+# ⛔ CORRECTION 2026-07-27 — THE "CHANCE" COMPARATOR WAS NOT CHANCE
+
+> **`§0 point 2`'s headline — "⛔ NO ARM IS ABOVE CHANCE" — is FALSE, and so is
+> `§0 point 4`'s "neither image arm clears chance at all".** The arms were never wrong; **the
+> comparator was.**
+>
+> `h2c_eval.py:138` built it as `chance = np.zeros_like(y)` on the documented belief that *"a
+> constant score has AP exactly equal to the base rate WITHIN EACH DRAW"*. That is true only if ties
+> COLLAPSE. `h2c_stats.average_precision` ranked with a **stable** argsort, which on an all-tied
+> score returns the **identity permutation** — i.e. **ROW ORDER**, and `h2c_eval.py:85` lays the rows
+> out as *[every left-camera row, then every right-camera row]*. The "constant score" was really the
+> ranker **"fire the left camera everywhere"**, and the left camera carries the larger share of
+> positives.
+>
+> **MEASURED** (`…/2026-07-27-confirmed-fixes/raw/fix3_chance_comparator.json`; every committed
+> number in this document reproduces bit-for-bit first, under `ties="row_order"`):
+>
+> | surface | published "chance" AP | true base rate | inflation |
+> |---|---|---|---|
+> | `L2_trigger` | **0.005269** | 0.0030527 | **1.7259x** |
+> | `NOT_T_seen` | **0.046040** | 0.0327620 | **1.4053x** |
+>
+> A genuinely random ranking scores **0.003172** / **0.033260** (24 seeds). The comparator was
+> **HARDER than chance**, so every `ΔAP vs chance` was **understated** and every above-chance null
+> was biased toward *"not separated"* — for a control, toward the desired verdict.
+>
+> ### ⭐ What changed, and what did NOT
+>
+> **Only the comparator moved.** No arm's AP changed by more than 1e-5 — the learned scores carry
+> almost no ties, so collapsing ties leaves them exactly where they were. Against a comparator that
+> IS chance, **every learned arm separates above it on BOTH surfaces**, and `heur_speed` separates
+> below. Corrected tables are inline in §6 and §7 below.
+>
+> ✅ **STILL STANDS, untouched:** *"adding the image features to a WORKING ego head destroys it"*
+> (§0.4 point 2). That is an **arm-vs-arm** comparison — `head_ego` AP 0.1226 = 3.74x base vs
+> `head_img_ego` 0.0521 = 1.59x on `NOT_T_seen` — and no chance comparator enters it. Both APs are
+> reproduced unchanged.
+>
+> ✅ **STILL STANDS:** the **pre-registered verdict is UNDERPOWERED**. It is decided on paired
+> RECALL against a rate-matched heuristic and against random at the operating point
+> (`h2c_eval.py:399-414`); neither uses the AP chance comparator. **Nothing here moves it, and the
+> ~52 GB expansion is still the thing that would.** 🔴 But the expansion must now be booked against
+> the CORRECTED baseline, not the broken one.
+>
+> ⛔ **What must NOT be quoted any more:** the sentence *"no arm is above chance"*, in this document
+> or anywhere downstream of it; and the *"0/24 seeds"* reading for the image arms on `NOT_T_seen`
+> (`…/2026-07-27-rung1-planner-and-owed-controls/raw/owed_chance_baseline.json`, rows 71/74), which
+> was computed on the **wrong target** — `C["Y"]`, the trigger label, instead of `1 - EX[:,1]` — and,
+> for row 74, on the **wrong score array** (`arm in k` matched `head_img` against
+> `s__head_img_ego__NOT_T_seen`). Both rows report the identical `AP_a = 0.00398`, which is the tell.
+>
+> **Repaired at source:** `taniteval/rank_metrics.py` (tie-collapsing AP + `assert_chance_comparator`,
+> which now REFUSES a comparator whose AP is not the base rate), `h2c_stats.average_precision`
+> delegates to it, and `h2c_eval.py` calls the guard before it uses the comparator. Test:
+> `taniteval/tests/test_rank_metrics.py`.
+
+---
+
 # 0. VERDICT IN ONE BOX
 
 > ## **The head exists and is trained. The pre-registered comparison is UNDERPOWERED — but the run is not empty: it settles the efficiency claim, closes the C12 trap, and returns one WELL-POWERED negative about the frozen representation.**
@@ -41,25 +99,35 @@ number in this document is typed by hand.)*
 > thin: at B\* the head catches **42 of 306** events (recall **0.1373 [0.0188, 0.3199]**) and
 > **10 of 36** behavioural-slice events.
 >
-> **2. ⛔ NO ARM IS ABOVE CHANCE — and that test is the one I nearly got wrong.** Comparing an AP
-> interval to the full-sample base rate is *not* an above-chance test, because the base rate is
-> itself random under episode resampling. The correct statistic is a **paired ΔAP against a constant
-> score** (whose AP equals the base rate *inside every draw*). Measured that way:
+> **2. ⛔ RETRACTED 2026-07-27 — see the CORRECTION box above. The comparator was 1.7259x chance.**
+> The reasoning below is right and the arithmetic under it was wrong: comparing an AP interval to the
+> full-sample base rate is indeed *not* an above-chance test, and the correct statistic **is** a
+> paired ΔAP against a constant score whose AP equals the base rate inside every draw — but the
+> implementation's stable argsort meant the constant score did **not** have that property.
 >
-> | arm | ΔAP vs chance | CI95 | above chance? |
-> |---|---|---|---|
-> | `head_img_ego` (PRIMARY) | +0.00268 | [−0.00278, +0.02639] | **no** |
-> | `head_img` | +0.00024 | [−0.00421, +0.00918] | **no** |
-> | `head_ego` | +0.00749 | [−0.00113, +0.03170] | **no** |
-> | `heur_decel` | +0.00241 | [−0.00314, +0.01535] | **no** |
-> | `heur_speed` | −0.00328 | [−0.00835, −0.00015] | **separated BELOW chance** |
+> ~~**NO ARM IS ABOVE CHANCE.**~~ **CORRECTED** (paired episode-cluster bootstrap, B = 2000, 322
+> clusters, comparator = constant score with ties COLLAPSED ⇒ AP = base rate exactly in every draw;
+> `…/2026-07-27-confirmed-fixes/raw/fix3_chance_comparator.json`):
 >
-> **The only separated result in the entire primary comparison is that ego SPEED is worse than
-> chance** — trigger frames are *slower* (AUROC 0.2965), the same confound E1 recorded. Everything
-> else is a point estimate with a CI through zero. The ordering (`head_ego` > `head_img_ego` >
-> `head_img`) is the same in the training CV (0.0198 / 0.0097 / 0.0095) and in the held-out point
-> estimates (4.18× / 2.60× / 1.80× base), and `head_img_ego` − `heur_decel` is **+0.00027
-> [−0.00633, +0.01462]** — but **none of it clears chance, so it is a hint, not a finding.**
+> | arm | ~~published ΔAP~~ | **corrected ΔAP** | **CI95** | above chance? |
+> |---|---|---|---|---|
+> | `head_img_ego` (PRIMARY) | ~~+0.00268~~ | **+0.004895** | **[+0.000706, +0.028013]** | ✅ **YES** |
+> | `head_img` | ~~+0.00024~~ | **+0.002453** | **[+0.000387, +0.009624]** | ✅ **YES** |
+> | `head_ego` | ~~+0.00749~~ | **+0.009705** | **[+0.001378, +0.033221]** | ✅ **YES** |
+> | `heur_decel` | ~~+0.00241~~ | **+0.004619** | **[+0.000295, +0.015898]** | ✅ **YES** |
+> | `heur_speed` | ~~−0.00328~~ | **−0.001066** | **[−0.001604, −0.000597]** | **separated BELOW chance** |
+>
+> ⚠️ **Read the size, not just the sign.** These are separations of **0.002–0.010 AP** against a base
+> rate of 0.0031 — real, and *tiny*. Every one of them sits at the bottom edge of its interval, and
+> `head_img_ego` − `heur_decel` remains **+0.00027 [−0.00633, +0.01462]**: the vision head is still
+> indistinguishable from a one-line deceleration rule. **"Above chance" is not "useful", and it is
+> not the pre-registered success bar** (§0's `UNDERPOWERED` verdict is decided on paired RECALL and
+> is unchanged).
+>
+> ego SPEED remains separated *below* chance — trigger frames are *slower* (AUROC 0.2965), the same
+> confound E1 recorded. The ordering (`head_ego` > `head_img_ego` > `head_img`) is the same in the
+> training CV (0.0198 / 0.0097 / 0.0095) and in the held-out point estimates (4.18× / 2.60× / 1.80×
+> base), and it survives the correction unchanged, because only the comparator moved.
 > ⚠️ **And even if it held, the conclusion would NOT be "ship a kinematic gate".** The ego arms key
 > on the **trailing** 0.5 s acceleration, i.e. on braking already under way — the label's own
 > confound (`P(already braking | trigger⁺) = 35.6 %` vs `14.1 %`; adjusting for it collapses the
@@ -78,11 +146,18 @@ number in this document is typed by hand.)*
 > encoder CAN see requires braking ≥ τ\*"*, **1,642 held-out positives across 101 clips**, i.e.
 > **5.4× the positives and 2.9× the clusters** of the composite — the answer is unambiguous:
 >
-> | arm | AP | AP / base | ΔAP vs chance | above chance? |
-> |---|---|---|---|---|
-> | **`head_ego`** (NO camera) | **0.1226** | **3.74×** | **+0.0766 [+0.0506, +0.1353]** | ✅ **YES** |
-> | `head_img_ego` | 0.0521 | 1.59× | +0.0060 [−0.0004, +0.0395] | no |
-> | `head_img` | 0.0491 | 1.50× | +0.0031 [−0.0029, +0.0428] | no |
+> | arm | AP | AP / base | ~~published ΔAP~~ | **corrected ΔAP vs chance** | above chance? |
+> |---|---|---|---|---|---|
+> | **`head_ego`** (NO camera) | **0.1226** | **3.74×** | ~~+0.0766 [+0.0506, +0.1353]~~ | **+0.089868 [+0.053051, +0.137277]** | ✅ **YES** |
+> | `head_img_ego` | 0.0521 | 1.59× | ~~+0.0060 [−0.0004, +0.0395]~~ | **+0.019284 [+0.008323, +0.040387]** | ✅ **YES** (corrected) |
+> | `head_img` | 0.0491 | 1.50× | ~~+0.0031 [−0.0029, +0.0428]~~ | **+0.016382 [+0.005652, +0.042374]** | ✅ **YES** (corrected) |
+>
+> ⛔ **CORRECTED 2026-07-27.** This surface's comparator was **1.4053x** chance (AP 0.046040 against
+> a base rate of 0.032762), for the same tie-handling reason. **The APs are unchanged; only the
+> comparator moved.** Both image arms DO clear a correct chance comparator here, so *"neither image
+> arm clears it at all"* is **retracted**. What is **NOT** retracted is the finding this section
+> exists for: `head_ego` sits at **3.74×** base and the image arms at **1.59× / 1.50×** — a **2.4x**
+> gap that no comparator change touches, on 1,642 positives across 101 clusters.
 >
 > **This is a POSITIVE CONTROL that fires, and it changes what "nothing is above chance" means.**
 > The pipeline, the head, the CV and the estimator are all capable of finding a separated signal —
@@ -312,6 +387,13 @@ reducer.
 
 *A constant score has AP equal to the base rate **inside every bootstrap draw**, so this — not "does the AP interval clear the full-sample base rate" — is the correct above-chance test.*
 
+⛔ **THE TABLE BELOW IS THE RETRACTED ONE.** It is generated by `h2c_report.py` from the pre-fix
+`artifacts/h2c_results.json` and is left in place unedited so the retraction has an exhibit — *no
+number in this document is typed by hand*, including a wrong one. **It was computed against a
+comparator scoring 1.7259x chance.** The corrected table is directly beneath it and in the
+CORRECTION box at the top; re-running `h2c_eval.py` (now repaired, and now calling
+`assert_chance_comparator`) regenerates this block correctly.
+
 | arm | ΔAP vs chance | CI95 | above chance? |
 |---|---|---|---|
 | `head_img_ego` | +0.00268 | [-0.00278, +0.02639] | no |
@@ -319,6 +401,26 @@ reducer.
 | `head_ego` | +0.00749 | [-0.00113, +0.03170] | no |
 | `heur_speed` | -0.00328 | [-0.00835, -0.00015] | below chance |
 | `heur_decel` | +0.00241 | [-0.00314, +0.01535] | no |
+
+### ✅ Is any arm above CHANCE? — **CORRECTED 2026-07-27**
+
+*Comparator: a constant score with ties COLLAPSED, so its AP is the base rate **exactly** in every
+draw (`taniteval.rank_metrics`). Paired episode-cluster bootstrap, B = 2000, 322 clusters. Source:*
+`…/2026-07-27-confirmed-fixes/raw/fix3_chance_comparator.json`.
+
+| arm | AP (unchanged) | corrected ΔAP vs chance | CI95 | above chance? |
+|---|---|---|---|---|
+| `head_img_ego` | 0.007948 | **+0.004895** | [+0.000706, +0.028013] | ✅ **YES** |
+| `head_img` | 0.005506 | **+0.002453** | [+0.000387, +0.009624] | ✅ **YES** |
+| `head_ego` | 0.012758 | **+0.009705** | [+0.001378, +0.033221] | ✅ **YES** |
+| `heur_speed` | 0.001987 | **−0.001066** | [−0.001604, −0.000597] | **below chance** |
+| `heur_decel` | 0.007672 | **+0.004619** | [+0.000295, +0.015898] | ✅ **YES** |
+
+⚠️ **Every one of these separations is 0.002–0.010 AP against a 0.0031 base rate, and every interval
+touches its own lower edge.** "Above chance" here means *detectably non-zero*, not *useful*: the
+vision head still does not separate from `heur_decel` (+0.00027 [−0.00633, +0.01462]), and the
+pre-registered verdict — decided on paired RECALL, not on this table — is unchanged at
+**UNDERPOWERED**.
 
 ### Paired AP deltas vs the primary (`head_img_ego`)
 
@@ -384,13 +486,16 @@ Budget `B* = 0.05` extra camera activations/frame ⇒ target camera-frame rate 0
 
 ### 6.1 Reading the result
 
-**a. Nothing separates from anything, and nothing clears chance.** Every pairwise contrast between
-the learned arms and the non-learned ego rules has a CI spanning 0, and — on the *correct*
-above-chance test (paired ΔAP against a constant score, §0 point 2) — **no arm is separated from
-chance.** The two separations measured anywhere in the primary comparison are (i) `head_img_ego`
-over **raw ego speed** and (ii) raw ego speed **below chance** — which are the same fact: ego speed
-is *anti*-predictive here (AUROC **0.2965**: trigger frames are **slower**, the same confound E1
-recorded). Beating it is not evidence of vision.
+**a. Nothing separates from anything — but ⛔ CORRECTED 2026-07-27, the arms DO clear chance.**
+Every pairwise contrast between the learned arms and the non-learned ego rules still has a CI
+spanning 0; that part is unchanged and it is the part that decides the verdict. ~~On the correct
+above-chance test no arm is separated from chance.~~ **Retracted:** the comparator was 1.7259x
+chance (see the CORRECTION box). Against a comparator that IS chance, all four non-speed arms
+separate above it, by **+0.0025 to +0.0097 AP** on a 0.0031 base rate. ego speed remains separated
+*below* chance — it is *anti*-predictive here (AUROC **0.2965**: trigger frames are **slower**, the
+same confound E1 recorded), so beating it is still not evidence of vision. **The reading that
+survives is the one that mattered: the vision head is not distinguishable from a one-line
+deceleration rule**, and "above chance" at this effect size does not change that.
 
 **b. The vision head is indistinguishable from a one-line deceleration rule.** `head_img_ego` −
 `heur_decel` = **+0.00027 [−0.00633, +0.01462]**. The heuristic is *"rank frames by how hard the ego
@@ -473,14 +578,18 @@ the events.
 
 ### 7.1 Reading the sensitivities
 
-- **⭐ `NOT_T_seen` (amendment A1) is the best-powered probe in this study, and it is the only place
-  anything separates.** **1,642** held-out positives across **101** positive clips, against the
-  composite's 306 across 35, and **836** training positives against 169. It asks the strictly
-  easier, strictly more visual question: *is there an agent the encoder CAN see that requires
-  braking?* **`head_ego` clears chance by +0.0766 [+0.0506, +0.1353]; neither image arm clears it at
-  all**, and adding image features to the ego head takes it from 3.74× base to 1.59× and from
-  separated to not-separated. Training-side CV agrees (CV-AP `head_ego` **0.0967** vs `head_img`
-  0.0327 vs `head_img_ego` 0.0296, TRAIN base 0.0269).
+- **⭐ `NOT_T_seen` (amendment A1) is the best-powered probe in this study.** ~~and it is the only
+  place anything separates.~~ ⛔ **CORRECTED 2026-07-27 (A4).** **1,642** held-out positives across
+  **101** positive clips, against the composite's 306 across 35, and **836** training positives
+  against 169. It asks the strictly easier, strictly more visual question: *is there an agent the
+  encoder CAN see that requires braking?* **`head_ego` clears chance by +0.089868 [+0.053051,
+  +0.137277]** (published: +0.0766, against a comparator at 1.4053x chance). ~~neither image arm
+  clears it at all~~ — **retracted: both do**, at +0.019284 [+0.008323, +0.040387] and +0.016382
+  [+0.005652, +0.042374]. **The finding this bullet exists for is unaffected:** adding image
+  features to the ego head takes it from **3.74× base to 1.59×**, a 2.4x collapse that involves no
+  chance comparator at all. Training-side CV agrees (CV-AP `head_ego` **0.0967** vs `head_img`
+  0.0327 vs `head_img_ego` 0.0296, TRAIN base 0.0269) — and the CV, which was measured
+  independently, is what makes the collapse a direction rather than a fluke.
   ⚠️ **Read the ego arm's success carefully** — it is the *same reactive channel* as §6.1 d-bis:
   when an agent ahead requires braking, the ego is usually already braking. An anticipation claim
   cannot be built on it, but a **positive control** can, and that is what it serves as here.
@@ -535,9 +644,11 @@ which is the strongest evidence that §6's ordering is not a held-out fluke.
 1. ⚠️ **Power is the binding limitation, and it was measured before the result (§4).** 306 held-out
    positives across **35** positive clips; the label's *own* effect is not separated on this exact
    subset (2.171× [0.645, 4.469]). Any non-separation here is **UNPOWERED, not refuted**. ⛔ And it
-   is not merely that the arms fail to separate *from each other*: **no arm separates from CHANCE**
-   on the correct paired test. At this n the study cannot distinguish "a weak classifier" from "no
-   classifier".
+   is not merely that the arms fail to separate *from each other*: ~~no arm separates from CHANCE
+   on the correct paired test.~~ ⛔ **RETRACTED 2026-07-27 — the comparator was 1.7259x chance; every
+   arm DOES separate from chance, by +0.0025 to +0.0097 AP.** The limitation itself survives in the
+   form that matters: at this n the study cannot distinguish **a weak classifier from a useful one**,
+   and no arm separates from the one-line deceleration rule.
 2. ⚠️ **One pre-registered instrument was mis-posed and is not read** (amendment A1): `T_seen` is a
    96.7 %-positive target trained with a rare-positive recipe. Found by reading my own result. Its
    corrected form (`NOT_T_seen`) is in §7 and it is a *diagnostic*, not an arm.
@@ -638,6 +749,7 @@ which is what makes the expansion worth authorising.
 | **A1** | The `T_seen` conjunct head is **not read**, and a corrected `NOT_T_seen` diagnostic was run in its place (§7) | `T_seen` is a **96.7 %-positive** target and the pre-registered recipe (BCE + `pos_weight`) up-weights the *majority* class on it. Reading its complement would have been an over-read of a mis-posed instrument. `NOT_T_seen` poses the identical question as a rare-positive target at ~5× the power. **It is a diagnostic, not an arm**, and it takes no part in the primary comparison or the verdict — which was computed and frozen before it existed. |
 | **A2** | The alignment guard's **10 % BLOCK branch was not taken**, on measured grounds (§3) | The guard's own statistic is undefined on constant-speed clips. A second probe puts the *genuine* failure rate at **7.39 %**, inside the bar, and the dropped clips carry **0.42 %** of positives. The admitted set was **not widened** — the strict rule's output is what the primary uses. |
 | **A3** | The baselines are matched to the head's **realised** held-out firing rate as well as to the pre-registered budget | Matching a firing rate reads the held-out **score distribution**, never the held-out **targets**, so no test metric enters a selection path. Both forms are reported and they agree. |
+| **A4** ⛔ | **2026-07-27, POST-HOC AND EXTERNAL: every `ΔAP vs chance` number in this document was measured against a comparator that is not chance**, and is superseded by `…/2026-07-27-confirmed-fixes/raw/fix3_chance_comparator.json` | `h2c_eval.py:138`'s constant score was ranked by a STABLE argsort ⇒ ROW ORDER ⇒ effectively *"fire the left camera everywhere"*: **AP 0.005269 vs base 0.0030527 = 1.7259x** (trigger), **0.046040 vs 0.032762 = 1.4053x** (`NOT_T_seen`). Direction: the comparator was HARDER than chance, so every null was biased toward "not separated". **Bias direction matters for what this amendment can and cannot do:** it can only ever make an arm look BETTER, so it cannot manufacture a negative — and it did not move the pre-registered verdict, which reads paired RECALL and never touches this comparator. Every arm's AP is unchanged to <1e-5; **only the comparator moved**. Fixed at source in `taniteval/rank_metrics.py` + `h2c_stats` + `h2c_eval`, with `assert_chance_comparator` now refusing the defect and `taniteval/tests/test_rank_metrics.py` pinning it. |
 
 ---
 

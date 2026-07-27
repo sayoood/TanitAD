@@ -30,8 +30,8 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from h2c_stats import (ESTIMATOR, average_precision, boot_stat,  # noqa: E402
-                       paired_stat, roc_auc)
+from h2c_stats import (ESTIMATOR, assert_chance_comparator,  # noqa: E402
+                       average_precision, boot_stat, paired_stat, roc_auc)
 
 BUDGETS = [0.005, 0.01, 0.02, 0.05, 0.10, 0.20]
 B_STAR = 0.05
@@ -135,7 +135,17 @@ def main():
     # test: the base rate is itself a random quantity under episode resampling. A constant score
     # has AP exactly equal to the base rate WITHIN EACH DRAW, so the paired delta against it is
     # the correct "is this above chance?" statistic.
+    #
+    # ⛔ FIXED 2026-07-27. The sentence above is only true if ties COLLAPSE. Until
+    # today `h2c_stats.average_precision` broke ties with a stable argsort, so
+    # this constant score was ranked by ROW ORDER — and row order here is `cf()`'s
+    # [all left-camera rows, then all right-camera rows]. MEASURED: the "chance"
+    # comparator scored AP 0.005269 against a base rate of 0.0030527 = 1.7259x
+    # chance, so every null below was adjudicated against an inflated comparator.
+    # The guard now MAKES THE ASSUMPTION FAIL LOUDLY instead of documenting it.
     chance = np.zeros_like(y)
+    out["chance_comparator_audit"] = assert_chance_comparator(
+        y, chance, name="paired_AP_vs_chance/constant_score")
     out["paired_AP_vs_chance"] = {
         a: _paired_ap(y, s, chance, eid, args.boot)
         for a, s in [(k, v[0]) for k, v in arms.items()] + list(ego_scores.items())}

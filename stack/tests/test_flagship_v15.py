@@ -135,7 +135,10 @@ def test_steps0_reproduces_the_parent_exactly():
 
 
 def test_selection_uses_the_returned_score():
+    """With the reachability clamp OFF, `sel_idx` is the bare argmax of the
+    returned score — the pre-2026-07-27 contract, kept reachable by the flag."""
     cfg = _small()
+    cfg.sel_reach_clamp = False
     head = FlagshipV15Head(cfg).eval()
     b = _batch(cfg)
     out = head(b["states"], b["v0"], imagined=b["imagined"],
@@ -144,6 +147,111 @@ def test_selection_uses_the_returned_score():
     assert torch.equal(out["sel_idx"], out["sel_score"].argmax(dim=1))
     picked = out["anchor_traj"][torch.arange(3), out["sel_idx"]]
     assert torch.equal(out["traj"], picked)
+
+
+# ------------------------------------------- (b2) the reachability clamp ----
+# FIX 2. The vocabulary is blameless — `furthest_point_sample` returns
+# `pool[chosen]`, so all 256 anchors are bitwise identical to real human
+# windows. The UNBOUNDED OFFSET HEAD is what emits 171.5 km/h candidates (p99
+# 159.6 against a val GT max of 132.4). MEASURED on 881 canonical val windows:
+# the head's OWN clamp applied to the candidates removes 72.08 % of the fan, the
+# ADE-oracle survives in 100 % of windows, and the pick moves in ZERO windows
+# (paired Δ exactly 0.0000). The real-data proof is
+# `taniteval/tests/test_reach_clamp_committed_windows.py`; these are the unit
+# properties that hold on any fan.
+
+def test_reachability_mask_is_the_band_it_claims_to_be():
+    from tanitad.models.flagship_v15 import (candidate_mean_speed,
+                                             reachability_mask)
+    v0 = torch.tensor([10.0, 10.0])
+    # terminal waypoints at 2 s implying 5 / 10 / 15 / 30 m/s mean speed
+    fan = torch.zeros(2, 4, 4, 2)
+    for j, v in enumerate((5.0, 10.0, 15.0, 30.0)):
+        fan[:, j, -1, 0] = v * 2.0
+    assert torch.allclose(candidate_mean_speed(fan, 2.0)[0],
+                          torch.tensor([5.0, 10.0, 15.0, 30.0]))
+    keep = reachability_mask(fan, v0, accel_max=2.5, horizon_s=2.0)
+    # band = 10 +- 5 => 5 and 15 are ON the edge and admitted, 30 is not
+    assert keep[0].tolist() == [True, True, True, False]
+
+    # v0 = 1 m/s: the lower edge clamps at 0, never negative
+    keep2 = reachability_mask(fan, torch.tensor([1.0, 1.0]),
+                              accel_max=2.5, horizon_s=2.0)
+    assert keep2[0].tolist() == [True, False, False, False]
+
+
+def test_the_clamp_MOVES_the_pick_when_the_top_candidate_is_unflyable():
+    """DESIGNED TO FAIL: the highest-scoring candidate implies 47 m/s.
+
+    A clamp that cannot change any outcome is the C13 class — a guard that
+    cannot fire. This is the input that makes it fire."""
+    cfg = _small()
+    head = FlagshipV15Head(cfg).eval()
+    n = cfg.n_anchors
+    fan = torch.zeros(1, n, len(cfg.horizons), 2)
+    fan[0, :, -1, 0] = 20.0                      # 10 m/s: inside the band
+    fan[0, 0, -1, 0] = 94.0                      # 47 m/s: far outside it
+    logits = torch.zeros(1, n)
+    logits[0, 0] = 10.0                          # ...and it wins the argmax
+    v0 = torch.tensor([10.0])
+
+    head.cfg.sel_reach_clamp = False
+    _, idx_off, _, _ = head.select(fan, logits, None, None, v0)
+    assert int(idx_off) == 0, "without the clamp the unflyable plan is chosen"
+
+    head.cfg.sel_reach_clamp = True
+    _, idx_on, score, tele = head.select(fan, logits, None, None, v0)
+    assert int(idx_on) != 0, "the clamp must delete the unflyable plan"
+    assert tele["reach_frac_candidates_clipped"] == pytest.approx(1.0 / n)
+    assert tele["reach_frac_windows_empty"] == 0.0
+
+
+def test_the_clamp_never_touches_the_SUPERVISED_score():
+    """The mask is applied to the argmax only. `sel_score` — the tensor
+    `v15_losses` cross-entropies — must be bit-identical with the clamp on and
+    off, or turning the default on would perturb a live training run."""
+    cfg = _small()
+    head = FlagshipV15Head(cfg).eval()
+    b = _batch(cfg)
+    kw = dict(imagined=b["imagined"], vt_band=b["vt_band"], route=b["route"],
+              route_graded=b["route_graded"], vt_speed=b["v0"])
+    head.cfg.sel_reach_clamp = True
+    on = head(b["states"], b["v0"], **kw)
+    head.cfg.sel_reach_clamp = False
+    off = head(b["states"], b["v0"], **kw)
+    assert torch.equal(on["sel_score"], off["sel_score"])
+    assert torch.isfinite(on["sel_score"]).all(), "no -inf may reach the loss"
+    la = v15_losses(on, head.decoder.anchors, b["traj_tgt"])
+    lb = v15_losses(off, head.decoder.anchors, b["traj_tgt"])
+    for k in ("cls", "cls_refined", "traj"):
+        assert torch.equal(la[k], lb[k]), k
+
+
+def test_a_window_with_no_reachable_candidate_keeps_its_whole_fan():
+    """DESIGNED TO FAIL: every candidate is out of band.
+
+    An unreachable-everywhere window is a measurement failure, not a licence to
+    return no plan. It must fall back, not crash and not emit -inf."""
+    cfg = _small()
+    head = FlagshipV15Head(cfg).eval()
+    n = cfg.n_anchors
+    fan = torch.zeros(1, n, len(cfg.horizons), 2)
+    fan[0, :, -1, 0] = 200.0                     # 100 m/s everywhere
+    logits = torch.randn(1, n)
+    _, idx, _, tele = head.select(fan, logits, None, None, torch.tensor([10.0]))
+    assert int(idx) == int(logits.argmax(dim=1)), "fall back to the full fan"
+    assert tele["reach_frac_windows_empty"] == 1.0
+    assert torch.isfinite(fan[0, int(idx)]).all()
+
+
+def test_the_clamp_reuses_the_heads_OWN_constant_and_is_not_tuned():
+    cfg = _small()
+    head = FlagshipV15Head(cfg).eval()
+    lo, hi = head.reach_band(torch.tensor([10.0, 1.0]))
+    reach = cfg.sel_accel_max * cfg.horizons[-1] * 0.1
+    assert reach == pytest.approx(5.0)
+    assert lo.tolist() == [5.0, 0.0] and hi.tolist() == [15.0, 6.0]
+    assert V15Config().sel_reach_clamp is True, "default ON"
 
 
 def test_longitudinal_gate_receives_a_gradient():
@@ -353,6 +461,119 @@ def test_imagine_probes_shape_and_speed_channel_is_held():
     for seen in pred.seen[1:]:
         assert torch.allclose(seen[:, 2].reshape(b, m)[:, 0], v0n)
     assert SPEED_SCALE == 10.0
+
+
+# ------------------------------- FIX 1: the missing candidate axis, made LOUD
+# MEASURED 2026-07-27 (`…/2026-07-27-percandidate-labels/raw/
+# t4_imagination_conditioning.json`): `imagine_probes` returns 32 tokens at
+# n_anchors 64 AND 256, identical for every candidate. The imagination path
+# structurally cannot rank candidates, so E-V5-1's imagination-scoring negative
+# is OVER-DETERMINED. A function that silently returns the same thing for every
+# candidate is the same class as a guard that cannot fail.
+
+def test_imagination_token_count_is_INVARIANT_to_n_anchors():
+    """The measured fact, pinned as an executable invariant."""
+    from tanitad.models.flagship_v15 import (IMAGINATION_HAS_CANDIDATE_AXIS,
+                                             imagination_token_count)
+    counts = set()
+    for n_anchors in (64, 256):
+        cfg = V15Config()
+        cfg.n_anchors = n_anchors
+        counts.add(imagination_token_count(cfg))
+    assert counts == {32}, counts
+    assert IMAGINATION_HAS_CANDIDATE_AXIS is False
+
+
+def test_imagine_probes_output_is_IDENTICAL_for_every_candidate():
+    """The tokens serve the whole fan. Shown, not asserted in prose."""
+    from tanitad.models.flagship_v15 import (NoCandidateAxis,
+                                             assert_candidate_axis)
+    b, w, s, m, k = 3, 4, 8, 8, 8
+    out = imagine_probes(_StubPredictor(), torch.zeros(b, w, s),
+                         torch.zeros(b, w, 3), torch.randn(m, k, 2),
+                         (2, 4, 6, 8), torch.tensor([1.5, 2.5, 3.5]))
+    assert out.shape == (b, 32, s)      # 8 probes x 4 read steps, as shipped
+    # broadcast it across a 256-candidate fan the way the decoder does, and the
+    # guard must refuse it: constant along the candidate axis.
+    broadcast = out[:, None].expand(b, 256, 32, s)
+    with pytest.raises(NoCandidateAxis, match="CONSTANT along it"):
+        assert_candidate_axis(broadcast, 256, name="imagination tokens")
+
+
+def test_asking_imagine_probes_for_a_candidate_axis_RAISES():
+    """DESIGNED TO FAIL: the request E-V5-1 implicitly made."""
+    from tanitad.models.flagship_v15 import NoCandidateAxis
+    with pytest.raises(NoCandidateAxis) as e:
+        imagine_probes(_StubPredictor(), torch.zeros(2, 4, 8),
+                       torch.zeros(2, 4, 3), torch.randn(8, 8, 2), (2, 4, 6, 8),
+                       torch.tensor([1.0, 2.0]), n_candidates=256)
+    assert "imagine_candidates" in str(e.value)
+    assert "invariant to n_anchors" in str(e.value)
+    # ...and the ordinary call still works, or the guard is just a wall
+    assert imagine_probes(_StubPredictor(), torch.zeros(2, 4, 8),
+                          torch.zeros(2, 4, 3), torch.randn(8, 8, 2),
+                          (2, 4, 6, 8), torch.tensor([1.0, 2.0])
+                          ).shape == (2, 32, 8)
+
+
+def test_assert_candidate_axis_fires_on_BOTH_degenerate_shapes():
+    from tanitad.models.flagship_v15 import (NoCandidateAxis,
+                                             assert_candidate_axis)
+    with pytest.raises(NoCandidateAxis, match="no candidate axis"):
+        assert_candidate_axis(torch.randn(2, 32, 8), 256, name="x")
+    with pytest.raises(NoCandidateAxis, match="CONSTANT"):
+        assert_candidate_axis(torch.zeros(2, 4, 8), 4, name="x")
+    ok = torch.randn(2, 4, 8)
+    assert assert_candidate_axis(ok, 4, name="x") is ok
+
+
+def test_imagine_candidates_HAS_a_real_candidate_axis():
+    """The repair: one rollout per candidate, and the output actually varies."""
+    from tanitad.models.flagship_v15 import (assert_candidate_axis,
+                                             imagine_candidates)
+    b, w, s, n, k = 2, 4, 8, 5, 6
+    read = (2, 4, 6)
+
+    class _P:            # latent depends on the ACTION, so candidates differ
+        def __call__(self, states, actions):
+            return {1: states[:, -1] + actions[:, -1, :1]}
+
+    out = imagine_candidates(_P(), torch.zeros(b, w, s), torch.zeros(b, w, 3),
+                             torch.randn(b, n, k, 2), read,
+                             torch.tensor([1.0, 2.0]))
+    assert out.shape == (b, n, len(read), s)
+    assert_candidate_axis(out, n, name="imagine_candidates")     # must NOT raise
+
+
+def test_imagine_candidates_rolls_only_the_REACHABLE_candidates():
+    """FIX 2 paying for FIX 1: 72.08 % of the fan is unflyable, so a masked
+    roll costs 3.58x less. Masked rows must come back zero, not stale."""
+    from tanitad.models.flagship_v15 import imagine_candidates
+    b, w, s, n, k = 2, 4, 8, 6, 6
+    read = (2, 4)
+    calls = []
+
+    class _P:
+        def __call__(self, states, actions):
+            calls.append(states.shape[0])
+            return {1: states[:, -1] + 1.0}
+
+    keep = torch.zeros(b, n, dtype=torch.bool)
+    keep[:, :2] = True                                  # 4 of 12 survive
+    out = imagine_candidates(_P(), torch.zeros(b, w, s), torch.zeros(b, w, 3),
+                             torch.randn(b, n, k, 2), read,
+                             torch.tensor([1.0, 2.0]), keep=keep)
+    assert out.shape == (b, n, len(read), s)
+    assert calls[0] == 4, "only the surviving candidates may be rolled"
+    assert torch.count_nonzero(out[~keep]) == 0, "masked rows must stay zero"
+    assert torch.count_nonzero(out[keep]) > 0
+
+    # an empty mask must not crash and must not fabricate latents
+    out0 = imagine_candidates(_P(), torch.zeros(b, w, s), torch.zeros(b, w, 3),
+                              torch.randn(b, n, k, 2), read,
+                              torch.tensor([1.0, 2.0]),
+                              keep=torch.zeros(b, n, dtype=torch.bool))
+    assert torch.count_nonzero(out0) == 0
 
 
 def test_probe_vocabulary_is_fps_and_deterministic():

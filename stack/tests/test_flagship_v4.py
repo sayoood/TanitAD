@@ -249,12 +249,28 @@ def test_graft_tau_to_zero_makes_the_class_posterior_one_hot():
     assert o4["sel_score"].shape[1] == cfg.n_anchors
 
 
+def test_the_reachability_clamp_is_OFF_on_v4_until_it_is_measured_there():
+    """v1.5 turns the clamp on because it was MEASURED free on REF-C-XL's fan
+    (72.08 % removed, oracle 100 % intact, paired Δ 0.0000). v4's own fan
+    geometry was never dumped, so the property is UNMEASURED there — and v4
+    carries the no-truncation invariant below. Inheritance must not smuggle a
+    default across a surface it was not measured on."""
+    from tanitad.models.flagship_v15 import V15Config
+    assert V15Config().sel_reach_clamp is True
+    assert V4Config().sel_reach_clamp is False
+    assert tactical_config().sel_reach_clamp is False
+
+
 def test_the_selector_never_truncates_the_candidate_set():
     """⛔ `q` MUST NOT EXIST in the deployment path. Every candidate stays
     rankable at every (λ, τ): no masking, no -inf, no top-k. This is the guard
     that stops `H_graft(q)` — a MEASUREMENT arm that cost +0.21…+5.82 m — from
     ever creeping into the deployed selector."""
     cfg = _small()
+    assert cfg.sel_reach_clamp is False, (
+        "this guard is about SCORE-BASED truncation; a physical reachability "
+        "band is a different object and is measured separately. If it is ever "
+        "enabled on v4, this test must be re-derived, not silently relaxed.")
     cfg.seam_clamp, cfg.seam_fail = 1.0e6, 1.0e9
     head = FlagshipV4Head(cfg).eval()
     _trained_grafts(head)

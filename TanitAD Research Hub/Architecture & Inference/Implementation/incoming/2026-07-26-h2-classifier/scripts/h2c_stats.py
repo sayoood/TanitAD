@@ -27,13 +27,56 @@ if os.path.isdir(_REPO):
 else:                                      # pod-side copy
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from taniteval.ci import DEFAULT_N_BOOT, _draws, episode_index   # noqa: E402
+from taniteval.rank_metrics import (assert_chance_comparator,  # noqa: E402,F401
+                                    chance_ap, comparator_audit)
+from taniteval.rank_metrics import average_precision as _ap_pkg   # noqa: E402
 
 ESTIMATOR = "paired_episode_cluster_bootstrap (reducer form; taniteval.ci._draws, B=2000)"
 ESTIMATOR_1 = "episode_cluster_bootstrap (taniteval.ci._draws, B=2000)"
 
+#: ⛔ FIXED 2026-07-27. The original implementation broke ties with a STABLE
+#: argsort, i.e. by ROW ORDER, while its own docstring claimed to compute what
+#: `sklearn.average_precision_score` computes. It does not — sklearn COLLAPSES
+#: ties. On the all-tied "chance" comparator (`h2c_eval.py:138`,
+#: `np.zeros_like(y)`) a stable sort returns the identity permutation, so the
+#: comparator silently became the ranker *"fire the left camera everywhere"* and
+#: scored **AP 0.005269 against a base rate of 0.0030527 = 1.7259x chance**.
+#: Every AP-vs-chance null in `H2_CLASSIFIER.md` was adjudicated against it.
+#: `"row_order"` reproduces the pre-fix numbers bit-for-bit and is kept ONLY for
+#: that; no NEW number may be measured with it.
+TIE_POLICY = "collapse"
 
-def average_precision(y, s):
-    """AP = sum_k (R_k - R_{k-1}) * P_k over the realised PR points.
+
+def average_precision(y, s, ties=None):
+    """AP — delegated to `taniteval.rank_metrics`, never re-implemented here.
+
+    Ties COLLAPSE into a single precision/recall point (the sklearn definition),
+    so the metric cannot read information out of a row order that carries none,
+    and a constant score scores exactly the base rate — which is what every
+    "is this above chance?" test in this stream assumed and did not have.
+
+    Pass `ties="row_order"` ONLY to reproduce a pre-2026-07-27 committed number.
+    """
+    return _ap_pkg(y, s, ties=TIE_POLICY if ties is None else ties)
+
+
+def _legacy_average_precision(y, s):
+    """⛔ THE PRE-2026-07-27 IMPLEMENTATION. Reproduction only — never a new number.
+
+    Kept verbatim so every committed H2 number stays bit-reproducible, and so the
+    retraction has an executable exhibit. Equivalent to
+    `average_precision(y, s, ties="row_order")`.
+
+    Its own docstring (retained below) is the retraction: it claimed to be what
+    `sklearn.average_precision_score` computes. sklearn COLLAPSES ties; this does
+    not. The paragraph correctly identifies that row-order tie-breaking flatters
+    heavily-tied scores and correctly reasons that this is "the safe direction"
+    — but it never asked what happens to the score that is tied EVERYWHERE, the
+    chance comparator, which is the one number the whole above-chance test rests
+    on. C13 class: the failure mode was named and then not applied to the guard.
+
+    -- original docstring --
+    AP = sum_k (R_k - R_{k-1}) * P_k over the realised PR points.
 
     Named exactly (C1: a metric NAME is not a metric DEFINITION): this is the step-interpolated
     AP that `sklearn.average_precision_score` computes, NOT the trapezoidal area under an

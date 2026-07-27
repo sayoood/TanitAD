@@ -139,6 +139,13 @@ class V15Config:
     sel_accel_max: float = 2.5      # m/s^2 — the 2 s reachable-speed clamp
                                     # (P2's accel clamp; keeps an aspiration
                                     # 10 m/s away from demanding the impossible)
+    sel_reach_clamp: bool = True    # apply that SAME clamp to the CANDIDATES,
+                                    # not only to the goal — see
+                                    # :func:`reachability_mask`. Default ON:
+                                    # MEASURED to delete 72.08 % of the fan for
+                                    # a paired ADE delta of exactly 0.0000.
+                                    # Set False to restore the pre-2026-07-27
+                                    # unfiltered argmax.
 
     def __post_init__(self):
         if not (self.cond_states or self.cond_imagination):
@@ -241,6 +248,48 @@ class V15Decoder(AnchoredDiffusionDecoder):
 
         return {"anchor_logits": conf, "refined_logits": refined,
                 "anchor_traj": x, "offset": offset}
+
+
+# ============================================================================
+# The reachability clamp — the head's own band, applied to the CANDIDATES
+# ============================================================================
+
+def candidate_mean_speed(fan: Tensor, horizon_s: float) -> Tensor:
+    """Implied MEAN speed over the horizon of each candidate. [B, N, S, 2] -> [B, N].
+
+    ``||wp_last|| / horizon_s`` — the ego-frame terminal waypoint is displacement
+    from the ego origin, so its norm over the horizon is the average speed the
+    candidate commits to.
+
+    ⚠️ **Not** :meth:`FlagshipV15Head.terminal_speed`, which is the INSTANTANEOUS
+    terminal speed ``(wp[-1] - wp[-2]) / 0.5 s`` and answers a different question
+    (what is this plan doing AT +2 s, for the VTARGET aspiration term). The clamp
+    uses the mean because that is the quantity a bounded-acceleration bound is
+    tightest on, and because it is the quantity the 72.08 % measurement was made
+    with (``t1_clip_and_fansize.py``). Naming them apart is deliberate: the
+    program has already lost days to two metrics sharing one name.
+    """
+    return fan[..., -1, :].norm(dim=-1) / horizon_s
+
+
+def reachability_mask(fan: Tensor, v0: Tensor, *, accel_max: float = 2.5,
+                      horizon_s: float = 2.0) -> Tensor:
+    """[B, N] — which candidates could a bounded-acceleration ego actually fly?
+
+    ``v_mean(i) ∈ [max(0, v0 - a*T), v0 + a*T]``. Free-standing so a caller that
+    wants to PRUNE BEFORE spending per-candidate compute (a candidate-conditioned
+    imagination roll costs a full predictor rollout each) can reuse the identical
+    rule without instantiating a head.
+
+    This is a strictly conservative band: under |a| <= a_max the mean speed is
+    bounded by ``v0 ± a_max*T/2``, so the ±a_max*T used here is 2x wider than the
+    kinematic bound. It still removes 72.08 % of the emitted fan, which is a
+    statement about the offset head, not about the band.
+    """
+    v_mean = candidate_mean_speed(fan, horizon_s)
+    reach = accel_max * horizon_s
+    lo = (v0 - reach).clamp_min(0.0)[:, None]
+    return (v_mean >= lo) & (v_mean <= (v0 + reach)[:, None])
 
 
 # ============================================================================
@@ -409,6 +458,26 @@ class FlagshipV15Head(nn.Module):
         return m, tele, vt_keep
 
     # ------------------------------------------------------------ selection --
+    def reach_band(self, v0: Tensor) -> tuple[Tensor, Tensor]:
+        """The head's OWN reachable-speed band around ``v0`` -> ``(lo, hi)`` [B].
+
+        ``reach = sel_accel_max * horizon`` — the identical constant
+        :meth:`select` already applies to the GOAL. Nothing here is tuned on
+        held-out error; the band comes from the config and from physics.
+        """
+        reach = self.cfg.sel_accel_max * self.cfg.horizons[-1] * 0.1
+        return (v0 - reach).clamp_min(0.0), v0 + reach
+
+    def reachability_mask(self, fan: Tensor, v0: Tensor) -> Tensor:
+        """Which candidates are physically reachable from ``v0``? -> [B, N] bool.
+
+        See the module-level :func:`reachability_mask` for the full rationale;
+        this is the bound method that reads the config.
+        """
+        lo, hi = self.reach_band(v0)
+        v_mean = candidate_mean_speed(fan, self.cfg.horizons[-1] * 0.1)
+        return (v_mean >= lo[:, None]) & (v_mean <= hi[:, None])
+
     def terminal_speed(self, traj: Tensor) -> Tensor:
         """Implied terminal speed of each fan trajectory [B, N, S, 2] -> [B, N].
 
@@ -447,6 +516,37 @@ class FlagshipV15Head(nn.Module):
         reachable set around ``v0`` so an aspiration 10 m/s away cannot demand a
         physically impossible plan. The term is masked off wherever the goal was
         dropped or is untrustworthy, so it never leaks past goal-dropout.
+
+        **THE REACHABILITY CLAMP (default ON since 2026-07-27).** The same band
+        is applied to the CANDIDATES, not only to the goal. The vocabulary is
+        blameless — ``furthest_point_sample`` returns ``pool[chosen]``, so all
+        256 anchors are bitwise identical to real human windows — but the
+        UNBOUNDED OFFSET HEAD refines them into candidates implying up to
+        **171.5 km/h** (p99 159.6, against a val GT max of 132.4). Those are not
+        plans; they are search space for an approximate scorer to lose in.
+
+        MEASURED on the 881 canonical val windows / 40 episodes
+        (``taniteval/results/fan_refc-xl-30k.pt``,
+        ``…/2026-07-27-percandidate-labels/raw/t1_clip_fansize.json``):
+
+        =====================================  ==========
+        candidates removed                     **72.08 %**
+        windows with an EMPTY survivor set     0.00 %
+        ADE-oracle survives                    **100 %**
+        paired Δ ADE (episode-cluster, B=2000) **0.0000** [0.0000, 0.0000]
+        miss@2m                                0.0159 -> 0.0159 (unchanged)
+        =====================================  ==========
+
+        ⇒ it costs nothing, deletes 72.08 % of the fan, and makes any
+        PER-CANDIDATE computation (the candidate-conditioned imagination this
+        head still lacks — see :func:`imagine_candidates`) **3.58x cheaper**.
+
+        The mask is applied to the ARGMAX ONLY; the returned ``score`` stays
+        unmasked, so ``v15_losses`` sees exactly the tensor it saw before and no
+        ``-inf`` can reach a cross-entropy. A row whose survivor set is empty
+        keeps its whole fan rather than crashing or emitting nothing — an
+        unreachable-everywhere window is a measurement failure, not a licence to
+        return no plan.
         """
         score = refined_logits
         tele: dict = {}
@@ -462,7 +562,17 @@ class FlagshipV15Head(nn.Module):
             tele["sel_gate"] = float(self.sel_gate.detach())
             tele["sel_pen_span"] = float(
                 (pen.max(dim=1).values - pen.min(dim=1).values).mean().detach())
-        idx = score.argmax(dim=1)
+        rank = score
+        if self.cfg.sel_reach_clamp:
+            keep = self.reachability_mask(fan, v0)                # [B, N]
+            dead = ~keep.any(dim=1)                               # [B]
+            keep = keep | dead[:, None]        # empty survivor set -> keep all
+            rank = score.masked_fill(~keep, float("-inf"))
+            tele["reach_frac_candidates_clipped"] = float(
+                1.0 - keep.to(score.dtype).mean().detach())
+            tele["reach_frac_windows_empty"] = float(
+                dead.to(score.dtype).mean().detach())
+        idx = rank.argmax(dim=1)
         traj = fan[torch.arange(fan.shape[0], device=fan.device), idx]
         return traj, idx, score, tele
 
@@ -501,9 +611,119 @@ class FlagshipV15Head(nn.Module):
 # (b) imagination — roll the FROZEN predictor under the probe action vocabulary
 # ============================================================================
 
+class NoCandidateAxis(RuntimeError):
+    """A per-candidate quantity was asked of something that has no candidate axis."""
+
+
+#: ⛔ MEASURED 2026-07-27 (`…/2026-07-27-percandidate-labels/raw/
+#: t4_imagination_conditioning.json`): :func:`imagine_probes` returns **32
+#: tokens, invariant to `n_anchors`** — verified at both 64 and 256 — and those
+#: 32 tokens are IDENTICAL for every one of the 256 candidates, because
+#: ``probes`` is a vocabulary shared across the batch and ``V15Decoder._decode``
+#: emits all candidates from the SAME ``kv``. **The imagination path structurally
+#: cannot rank candidates.** E-V5-1's imagination-scoring negative is therefore
+#: OVER-DETERMINED: the experiment could not have worked.
+#:
+#: A function that silently returns the same thing for every candidate is the
+#: same class as a guard that cannot fail. So the absence is a named constant, it
+#: is asserted in the test suite, and asking for the missing axis raises.
+IMAGINATION_HAS_CANDIDATE_AXIS = False
+IMAGINATION_TOKEN_AXES = ("batch", "probe x read_step", "state_dim")
+
+
+def imagination_token_count(cfg: V15Config) -> int:
+    """How many imagination tokens a config produces — ``n_probes * |imag_read|``.
+
+    Deliberately takes the config: the answer does NOT depend on ``n_anchors``,
+    and the only way to see that is to be able to ask.
+    """
+    return cfg.n_probes * len(cfg.imag_read) if cfg.cond_imagination else 0
+
+
+def assert_candidate_axis(x: Tensor, n_candidates: int, *, name: str,
+                          axis: int = 1) -> Tensor:
+    """Refuse a would-be per-candidate tensor that cannot discriminate candidates.
+
+    Fails in BOTH degenerate ways, because they are different bugs with the same
+    silent symptom:
+
+    * ``x`` has no axis of length ``n_candidates`` at all → shape error;
+    * ``x`` has one but is CONSTANT along it → it carries no candidate
+      information, so any ranking built on it is a ranking of nothing.
+
+    This is the guard that would have made E-V5-1 fail loudly on day one instead
+    of returning a clean negative about imagination-based selection.
+    """
+    if x.dim() <= axis or x.shape[axis] != n_candidates:
+        raise NoCandidateAxis(
+            f"{name}: expected a candidate axis of length {n_candidates} at "
+            f"dim {axis}, got shape {tuple(x.shape)}. There is no candidate "
+            "axis here, so nothing built on this can rank candidates.")
+    if n_candidates > 1:
+        ref = x.select(axis, 0).unsqueeze(axis)
+        if torch.allclose(x, ref.expand_as(x)):
+            raise NoCandidateAxis(
+                f"{name}: has a candidate axis of length {n_candidates} but is "
+                "CONSTANT along it — every candidate gets the identical value, "
+                "so it cannot rank them. This is the measured `imagine_probes` "
+                "failure (32 tokens serving all 256 candidates); use "
+                "`imagine_candidates` for a candidate-conditioned roll.")
+    return x
+
+
+@torch.no_grad()
+def imagine_candidates(predictor, states: Tensor, actions: Tensor,
+                       cand_actions: Tensor, read: tuple[int, ...],
+                       v0n: Tensor, keep: Tensor | None = None) -> Tensor:
+    """⭐ THE CANDIDATE-CONDITIONED roll — one rollout PER CANDIDATE.
+
+    What :func:`imagine_probes` cannot do. ``cand_actions`` [B, N, K, 2] is each
+    candidate's own (steer, accel) sequence — obtained from the fan by the
+    inverse of the corpus's action definition (``traj_to_actions``, the v5
+    stream) — so the returned [B, N, |read|, S] has a REAL candidate axis and a
+    scorer built on it can actually rank.
+
+    ``keep`` [B, N] bool (e.g. from :func:`reachability_mask`) rolls ONLY the
+    surviving candidates and leaves the rest zero. This is where FIX 2 pays for
+    itself: 72.08 % of the fan is unflyable, so the roll costs **3.58x less**.
+    Rows masked out are zero AND excluded from ``keep`` — a caller must not rank
+    on them, which is why the mask is an input rather than a hidden default.
+
+    Mechanism identical to :func:`imagine_probes`: 1-step head, slide the window,
+    append the next action, and the v1 speed channel HELD at the observed v0
+    (leakage-safe).
+    """
+    b, w, s = states.shape
+    n, k = cand_actions.shape[1], cand_actions.shape[2]
+    a_dim = actions.shape[-1]
+    flat = torch.arange(b * n, device=states.device)
+    if keep is not None:
+        flat = flat[keep.reshape(-1)]
+    bi = flat // n
+    ws = states[bi].clone()
+    wa = actions[bi].clone()
+    pr = cand_actions.reshape(b * n, k, 2)[flat]
+    v_col = v0n.reshape(b, 1).expand(b, n).reshape(-1, 1)[flat]
+    out = states.new_zeros(b * n, len(read), s)
+    if flat.numel():
+        reads, k_max = [], max(read)
+        for j in range(k_max):
+            z = predictor(ws, wa)[1]
+            if (j + 1) in read:
+                reads.append(z)
+            if j < k_max - 1:
+                a_next = (torch.cat([pr[:, min(j, k - 1)], v_col], dim=-1)
+                          if a_dim == 3 else pr[:, min(j, k - 1)])
+                ws = torch.cat([ws[:, 1:], z.unsqueeze(1)], dim=1)
+                wa = torch.cat([wa[:, 1:], a_next.unsqueeze(1)], dim=1)
+        out[flat] = torch.stack(reads, dim=1)
+    return out.reshape(b, n, len(read), s)
+
+
 @torch.no_grad()
 def imagine_probes(predictor, states: Tensor, actions: Tensor, probes: Tensor,
-                   read: tuple[int, ...], v0n: Tensor) -> Tensor:
+                   read: tuple[int, ...], v0n: Tensor,
+                   n_candidates: int | None = None) -> Tensor:
     """Frozen-predictor consequence rollout -> conditioning latents.
 
     ``states`` [B, W, S], ``actions`` [B, W, A] (the OBSERVED window, A=3 with
@@ -511,12 +731,33 @@ def imagine_probes(predictor, states: Tensor, actions: Tensor, probes: Tensor,
     sequences, ``v0n`` [B] the observed speed ALREADY divided by SPEED_SCALE.
     Returns [B, M*len(read), S].
 
+    ⛔ **THERE IS NO CANDIDATE AXIS HERE, AND THERE NEVER WAS.** ``probes`` is a
+    vocabulary of M action sequences SHARED ACROSS THE BATCH (line ``pr =
+    probes.unsqueeze(0).expand(...)``), so the output has axes
+    :data:`IMAGINATION_TOKEN_AXES` = ``(batch, probe x read_step, state_dim)``.
+    MEASURED: 32 tokens at ``n_anchors`` 64 **and** 256, identical for all 256
+    candidates. These tokens condition the decode of the WHOLE fan; they cannot
+    distinguish one candidate from another, so no imagination-based ranking is
+    possible through this function. Pass ``n_candidates`` to have that refusal
+    raised instead of silently assumed — and use :func:`imagine_candidates` when
+    a real per-candidate roll is what is wanted.
+
     The roll is byte-identical in mechanism to
     ``metric_dynamics.rollout_transitions`` (the gate path): 1-step head, slide
     the window, append the next action. The v1 speed channel is HELD at the
     observed v0 — never a future speed (leakage-safe; matches every trainer and
     the P2 planner).
     """
+    if n_candidates is not None:
+        raise NoCandidateAxis(
+            f"imagine_probes has NO candidate axis (axes are "
+            f"{IMAGINATION_TOKEN_AXES}); it returns "
+            f"{probes.shape[0] * len(read)} tokens that are IDENTICAL for all "
+            f"{n_candidates} candidates, invariant to n_anchors. MEASURED "
+            "2026-07-27: this is why the E-V5-1 imagination-scoring result is "
+            "over-determined. Use `imagine_candidates(predictor, states, "
+            "actions, cand_actions, read, v0n, keep=...)`, which rolls the "
+            "frozen predictor once per candidate.")
     b, w, s = states.shape
     m, k, _ = probes.shape
     a_dim = actions.shape[-1]

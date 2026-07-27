@@ -1,0 +1,133 @@
+{
+ "_experiment": "E-H3b -- GoalFlow's LITERAL shadow rule on the E-H2 cache (the neutral branch's TRAJECTORY, which no previously staged artifact held)",
+ "_evidence_class": "MEASURED (ours)",
+ "_estimator": "paired_episode_cluster_bootstrap (B=2000, unit = episode cluster). NEVER overlapping_holdout_se.",
+ "_host": "1e0bac0df88a",
+ "_n_windows": 881,
+ "_n_episodes": 40,
+ "arms": {
+  "produced_always": 0.8563,
+  "neutral_always": 0.762,
+  "ORACLE_shadow_bound_not_deployable": 0.6883,
+  "frac_windows_produced_better": 0.4313
+ },
+ "deviation_signal_stats": {
+  "mean_dense": {
+   "mean": 0.286,
+   "p50": 0.1424,
+   "p95": 0.9143,
+   "max": 9.5919
+  },
+  "endpoint": {
+   "mean": 0.7033,
+   "p50": 0.3383,
+   "p95": 2.249,
+   "max": 20.3608
+  },
+  "max_dense": {
+   "mean": 0.742,
+   "p50": 0.3851,
+   "p95": 2.249,
+   "max": 20.9614
+  }
+ },
+ "deployable_rules": {
+  "mean_dense": {
+   "leave_one_episode_out_ade": 0.7615,
+   "in_sample_ceiling_NOT_deployable": 0.7593,
+   "vs_neutral_always": {
+    "delta": -0.0005,
+    "lo": -0.0042,
+    "hi": 0.0031,
+    "ci95": 0.0036,
+    "p_delta_gt0": 0.377,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "vs_produced_always": {
+    "delta": -0.0948,
+    "lo": -0.1298,
+    "hi": -0.0619,
+    "ci95": 0.0339,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "endpoint": {
+   "leave_one_episode_out_ade": 0.7607,
+   "in_sample_ceiling_NOT_deployable": 0.7592,
+   "vs_neutral_always": {
+    "delta": -0.0014,
+    "lo": -0.0066,
+    "hi": 0.0038,
+    "ci95": 0.0052,
+    "p_delta_gt0": 0.3185,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "vs_produced_always": {
+    "delta": -0.0956,
+    "lo": -0.1297,
+    "hi": -0.0635,
+    "ci95": 0.0331,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "max_dense": {
+   "leave_one_episode_out_ade": 0.761,
+   "in_sample_ceiling_NOT_deployable": 0.7585,
+   "vs_neutral_always": {
+    "delta": -0.001,
+    "lo": -0.0054,
+    "hi": 0.0034,
+    "ci95": 0.0044,
+    "p_delta_gt0": 0.3275,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "vs_produced_always": {
+    "delta": -0.0953,
+    "lo": -0.1297,
+    "hi": -0.0625,
+    "ci95": 0.0336,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "VERDICT": {
+  "verdict": "REFUTE",
+  "best_signal": "endpoint",
+  "_bar": "CONFIRM iff the best deployable shadow rule is paired-and-separated BETTER than the neutral-always arm. Otherwise REFUTE -- stated plainly, never re-scoped.",
+  "_note": "the ORACLE shadow bound is reported for scale only and is NOT a deployable number."
+ },
+ "_wallclock_s": 1.2
+}

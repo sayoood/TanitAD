@@ -65,9 +65,14 @@ import numpy as np
 import torch
 
 # ---- the ONLY admissible estimator ----------------------------------------
+# 2026-07-27 (eval-host run): the probe assumed the repo layout and raised
+# IndexError on any shallower path (e.g. /workspace/_eh2/). Made tolerant --
+# a LOCATOR fix only; no arithmetic, no estimator, no cell value changes.
 _HERE = Path(__file__).resolve()
-for _c in (_HERE.parents[6] / "taniteval", Path("/root/taniteval"),
-           Path("/workspace/taniteval")):
+_cands = [Path("/root/taniteval"), Path("/workspace/taniteval")]
+if len(_HERE.parents) > 6:
+    _cands.insert(0, _HERE.parents[6] / "taniteval")
+for _c in _cands:
     if (_c / "taniteval" / "ci.py").exists():
         sys.path.insert(0, str(_c))
         break

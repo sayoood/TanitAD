@@ -836,6 +836,31 @@ of a stream that produced nothing, at higher cost.**
    before it is applied to any binary target below ~5 % positives. This is the C13 pattern inverted:
    **a guard that cannot pass.** It belongs in `RETRACTION_LOG.md` under the control-degeneracy class
    — flagged here rather than written by me into a shared program file mid-session.
+
+   > ### ✅ CLOSED 2026-07-27 — this escalation was acted on, not filed
+   > `taniteval/taniteval/blind_baseline.py` is repaired. Both degenerate clauses are now disarmed
+   > when they cannot fail (`degeneracy_audit` in every record says which), the verdict falls back to
+   > **balanced accuracy** — whose floor is `1/n_class` at any imbalance — and a target where even
+   > that is undefined returns the new verdict **`REFUSED`**, which blocks registration without
+   > libelling the target as circular.
+   >
+   > **Re-adjudicated on this stream's own held-out frames** (same context construction, same
+   > subsample rule, every published number reproduced —
+   > `…/2026-07-27-confirmed-fixes/raw/fix4_situation_readjudication.json`):
+   >
+   > | situation | published | **repaired** | balanced blind | balanced real |
+   > |---|---|---|---|---|
+   > | `lane_change` | CIRCULAR | ✅ **CLEAN** | 0.4999 | **0.6069** |
+   > | `roundabout` | CIRCULAR | ✅ **CLEAN** | 0.5000 | **0.5570** |
+   > | `intersection` | CIRCULAR | ✅ **CLEAN** | 0.5000 | **0.7288** |
+   >
+   > The balanced numbers say plainly what raw accuracy hid: the blind head is a **constant
+   > predictor** (0.500 = exactly its floor), while the image model carries **real** balanced skill.
+   > `vision_buys_nothing` was not merely degenerate — it was **backwards**.
+   >
+   > ⚠️ **This does not say the situation heads work.** It says the circularity firewall was not the
+   > instrument that retired them; the pre-registered AP-based `− head_ego` contrast is untouched.
+   > Tests: `taniteval/tests/test_blind_baseline_rare_events.py` (13, both directions).
 2. **🔴 The roundabout situation is not decidable on PhysicalAI-AV, and the PI should be told
    plainly.** Two of his three situations are buildable here; the third is not. §3 and §4 give the
    numbers (27 held-out positive clusters against a 40-cluster bar; ~18 % of held-out detections

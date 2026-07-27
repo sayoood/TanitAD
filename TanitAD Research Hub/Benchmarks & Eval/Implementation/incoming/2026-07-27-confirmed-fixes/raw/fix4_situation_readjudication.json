@@ -1,0 +1,152 @@
+{
+  "block": "confirmed_fixes/FIX4_rare_event_firewall",
+  "source": "\u2026/2026-07-26-situation-classifier/artifacts/heldout_frames.npz + sc_results.json",
+  "context_construction": "sc_eval.py:251-254, verbatim",
+  "n_boot": 400,
+  "situations": {
+    "lane_change": {
+      "published": {
+        "verdict": "CIRCULAR",
+        "blind_skill_over_majority": -7.6e-05,
+        "target_is_deterministic_in_context": 0.0,
+        "vision_buys_nothing": 1.0,
+        "context_leaks": 0.0,
+        "summary": "situation:lane_change: blind 0.9787 (linear 0.9785) vs majority 0.9788 vs real 0.9193 -> CIRCULAR  [n=39609/254 eps]"
+      },
+      "published_MDE_AUDIT_already_said": "the branch can fail on this target; verdict is readable",
+      "repaired": {
+        "verdict": "CLEAN",
+        "statistic": "balanced_accuracy",
+        "admissible": true,
+        "blind_skill_over_majority": -7.6e-05,
+        "target_is_deterministic_in_context": false,
+        "vision_buys_nothing": false,
+        "context_leaks": false,
+        "summary": "situation:lane_change: blind 0.9787 (linear 0.9785) vs majority 0.9788 vs real 0.9193 | balanced blind 0.5000 vs floor 0.5000 -> CLEAN (on balanced_accuracy)  [n=39609/254 eps]"
+      },
+      "degeneracy_audit": {
+        "majority_base_rate_point": 0.978767,
+        "max_possible_blind_skill": 0.021233,
+        "deterministic_test_degenerate": false,
+        "vision_buys_nothing_test_degenerate": true,
+        "leak_test_degenerate": true,
+        "raw_accuracy_scale_is_degenerate": true,
+        "balanced_accuracy_blind": 0.499961,
+        "balanced_accuracy_real": 0.60688,
+        "balanced_accuracy_floor": 0.5,
+        "n_classes_with_support": 2,
+        "_read": "raw accuracy cannot decide this target: the real model does not clear the accuracy floor, so `blind >= real - eps` cannot distinguish 'vision buys nothing' from 'accuracy is the wrong statistic'; the largest attainable blind skill is below SKILL_EPS, so the LEAKY test cannot fire; the verdict is decided on BALANCED accuracy instead"
+      },
+      "reproduction": {
+        "published_blind_accuracy": 0.9787,
+        "repaired_blind_accuracy": 0.9787,
+        "published_majority": 0.9788,
+        "repaired_majority": 0.9788,
+        "published_real": 0.9193,
+        "repaired_real": 0.9193,
+        "n_windows_published": 39609.0,
+        "n_windows_repaired": 39609
+      },
+      "VERDICT_CHANGED": true
+    },
+    "roundabout": {
+      "published": {
+        "verdict": "CIRCULAR",
+        "blind_skill_over_majority": 0.0,
+        "target_is_deterministic_in_context": 1.0,
+        "vision_buys_nothing": 1.0,
+        "context_leaks": 0.0,
+        "summary": "situation:roundabout: blind 0.9970 (linear 0.9970) vs majority 0.9970 vs real 0.9864 -> CIRCULAR  [n=39904/249 eps]"
+      },
+      "published_MDE_AUDIT_already_said": "DEGENERATE \u2014 the CIRCULAR branch cannot fail on this target: the majority-class predictor alone clears 1 - deterministic_eps, and the largest accuracy gain any context could add is the positive rate itself. Read `blind_skill_over_majority` and `context_leaks` instead; the informative form of this question on a rare-positive target is the AP-based `vs_head_ego` contrast, which is the pre-registered primary comparison.",
+      "repaired": {
+        "verdict": "CLEAN",
+        "statistic": "balanced_accuracy",
+        "admissible": true,
+        "blind_skill_over_majority": 0.0,
+        "target_is_deterministic_in_context": false,
+        "vision_buys_nothing": false,
+        "context_leaks": false,
+        "summary": "situation:roundabout: blind 0.9970 (linear 0.9970) vs majority 0.9970 vs real 0.9864 | balanced blind 0.5000 vs floor 0.5000 -> CLEAN (on balanced_accuracy)  [n=39904/249 eps]"
+      },
+      "degeneracy_audit": {
+        "majority_base_rate_point": 0.996993,
+        "max_possible_blind_skill": 0.003007,
+        "deterministic_test_degenerate": true,
+        "vision_buys_nothing_test_degenerate": true,
+        "leak_test_degenerate": true,
+        "raw_accuracy_scale_is_degenerate": true,
+        "balanced_accuracy_blind": 0.5,
+        "balanced_accuracy_real": 0.556995,
+        "balanced_accuracy_floor": 0.5,
+        "n_classes_with_support": 2,
+        "_read": "raw accuracy cannot decide this target: the MAJORITY CLASS alone clears `blind >= 1 - eps`; the real model does not clear the accuracy floor, so `blind >= real - eps` cannot distinguish 'vision buys nothing' from 'accuracy is the wrong statistic'; the largest attainable blind skill is below SKILL_EPS, so the LEAKY test cannot fire; the verdict is decided on BALANCED accuracy instead"
+      },
+      "reproduction": {
+        "published_blind_accuracy": 0.997,
+        "repaired_blind_accuracy": 0.997,
+        "published_majority": 0.997,
+        "repaired_majority": 0.997,
+        "published_real": 0.9864,
+        "repaired_real": 0.9864,
+        "n_windows_published": 39904.0,
+        "n_windows_repaired": 39904
+      },
+      "VERDICT_CHANGED": true
+    },
+    "intersection": {
+      "published": {
+        "verdict": "CIRCULAR",
+        "blind_skill_over_majority": 0.0,
+        "target_is_deterministic_in_context": 0.0,
+        "vision_buys_nothing": 1.0,
+        "context_leaks": 0.0,
+        "summary": "situation:intersection: blind 0.9743 (linear 0.9734) vs majority 0.9743 vs real 0.8194 -> CIRCULAR  [n=40385/258 eps]"
+      },
+      "published_MDE_AUDIT_already_said": "the branch can fail on this target; verdict is readable",
+      "repaired": {
+        "verdict": "CLEAN",
+        "statistic": "balanced_accuracy",
+        "admissible": true,
+        "blind_skill_over_majority": 0.0,
+        "target_is_deterministic_in_context": false,
+        "vision_buys_nothing": false,
+        "context_leaks": false,
+        "summary": "situation:intersection: blind 0.9743 (linear 0.9734) vs majority 0.9743 vs real 0.8194 | balanced blind 0.5000 vs floor 0.5000 -> CLEAN (on balanced_accuracy)  [n=40385/258 eps]"
+      },
+      "degeneracy_audit": {
+        "majority_base_rate_point": 0.974273,
+        "max_possible_blind_skill": 0.025727,
+        "deterministic_test_degenerate": false,
+        "vision_buys_nothing_test_degenerate": true,
+        "leak_test_degenerate": true,
+        "raw_accuracy_scale_is_degenerate": true,
+        "balanced_accuracy_blind": 0.5,
+        "balanced_accuracy_real": 0.728827,
+        "balanced_accuracy_floor": 0.5,
+        "n_classes_with_support": 2,
+        "_read": "raw accuracy cannot decide this target: the real model does not clear the accuracy floor, so `blind >= real - eps` cannot distinguish 'vision buys nothing' from 'accuracy is the wrong statistic'; the largest attainable blind skill is below SKILL_EPS, so the LEAKY test cannot fire; the verdict is decided on BALANCED accuracy instead"
+      },
+      "reproduction": {
+        "published_blind_accuracy": 0.9743,
+        "repaired_blind_accuracy": 0.9743,
+        "published_majority": 0.9743,
+        "repaired_majority": 0.9743,
+        "published_real": 0.8194,
+        "repaired_real": 0.8194,
+        "n_windows_published": 40385.0,
+        "n_windows_repaired": 40385
+      },
+      "VERDICT_CHANGED": true
+    }
+  },
+  "headline": {
+    "changed": [
+      "lane_change",
+      "roundabout",
+      "intersection"
+    ],
+    "_read": "every situation target was published CIRCULAR \u2014 i.e. INADMISSIBLE, its scores 'measuring the lookup, not the model' \u2014 on a firewall whose own `context_leaks = false` said the context carries nothing. The repaired firewall decides on balanced accuracy, whose floor is 1/n_class at any imbalance.",
+    "what_this_does_NOT_say": "nothing here says the situation heads WORK. It says the circularity firewall was not the instrument that retired them. The pre-registered primary comparison (the AP-based vs_head_ego contrast) is untouched."
+  }
+}
