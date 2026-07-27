@@ -376,9 +376,62 @@ def load_v4_from_ck(ck: dict, device, head_config_path=None,
 
 
 @torch.no_grad()
+def build_c2_scorer(scorer: str | None, world, grounding, device):
+    """Resolve ``--select-rule c2-wm-ref``'s scoring world model. -> dict | None.
+
+    ``scorer`` is a path to a v1-shaped checkpoint, or the literal ``"self"``.
+    ⛔ ``None`` raises: this rule's SIGN depends on the scorer (MEASURED
+    -0.2918 m under v1's world model, **+0.2090 m WORSE** self-scoring), so it
+    may never be chosen by omission — see
+    :mod:`tanitad.models.wm_reference_select`.
+    """
+    from tanitad.models.wm_reference_select import SELF_SCORING, resolve_scorer_tag
+    tag = resolve_scorer_tag(scorer)
+    if tag == SELF_SCORING:
+        print("[v4-eval] ⛔ --c2-scorer self: the arm scores its OWN fan. This "
+              "configuration was MEASURED separated-WORSE (+0.2090 "
+              "[+0.0550, +0.3642], 881 windows / 40 clusters). Diagnostic only.",
+              flush=True)
+        return {"world": world, "step_readout": grounding.step["op"], "tag": tag,
+                "self_scoring": True}
+    t0 = time.time()
+    ck = torch.load(tag, map_location="cpu", weights_only=False)
+    w_s, g_s, s_step = load_v1_from_ck(ck, device)
+    del ck
+    print(f"[v4-eval] C2 scorer loaded from {tag} (step={s_step}) in "
+          f"{time.time() - t0:.1f}s", flush=True)
+    return {"world": w_s, "step_readout": g_s.step["op"], "tag": tag,
+            "self_scoring": False, "scorer_step": s_step}
+
+
+def apply_c2_selection(out: dict, horizons, ref, tag: str) -> dict:
+    """Swap the head's argmax pick for C2's, keeping every derived key in step.
+
+    Mutates ``out`` and returns the selection telemetry. ``out["anchor_traj"]``
+    — the fan itself — is NOT touched, so ``oracle_ade`` and every coverage
+    diagnostic are invariant by construction: this changes WHICH candidate is
+    deployed and nothing else. Every key the head derives from the pick
+    (``traj``, ``wp_seq``, ``waypoints``) is recomputed here, because leaving one
+    of them describing the OLD pick is exactly how a re-selection silently
+    half-lands.
+    """
+    import torch as _t
+    from tanitad.models.wm_reference_select import select_by_wm_reference
+    idx, _cost, tele = select_by_wm_reference(
+        out["anchor_traj"], ref, horizons=tuple(horizons),
+        baseline_idx=out["sel_idx"], scorer=tag)
+    ar = _t.arange(out["anchor_traj"].shape[0], device=idx.device)
+    out["sel_idx"] = idx
+    out["traj"] = out["anchor_traj"][ar, idx]
+    out["wp_seq"] = out["traj"]
+    out["waypoints"] = {k: out["traj"][:, i] for i, k in enumerate(horizons)}
+    return tele
+
+
 def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                     stride, batch, wp_steps=WP_STEPS, goal_mode="oracle",
-                    goal_head=None, goal_fallback=False):
+                    goal_head=None, goal_fallback=False,
+                    select_rule="as-trained", c2=None):
     """v4 PLANNER PATH: head-selected trajectory (lambda_plan=1, NOT fed true
     future actions), re-encoding the CURRENT (jointly fine-tuned) trunk.
 
@@ -397,13 +450,28 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
     DENSE-horizon quantities (train-loop-comparable) and a self-computed
     4-waypoint oracle/ADE (a cross-check against taniteval.driving's number
     computed from the SAME persisted windows via a completely different code
-    path)."""
+    path).
+
+    ``select_rule`` (2026-07-28, DEFAULT ``"as-trained"`` — unchanged behaviour):
+    ``"c2-wm-ref"`` replaces the head's argmax pick with C2, i.e. the fan
+    candidate closest to ONE world-model reference roll-out
+    (:mod:`tanitad.models.wm_reference_select`). It re-selects inside the SAME
+    frozen fan, so ``oracle_ade`` is untouched by construction and only the pick
+    moves. ``c2`` is :func:`build_c2_scorer`'s dict. The rule is OFF by default
+    because it is MEASURED separated-WORSE on one of the two arms it has been
+    measured on."""
     from torch.utils.data import default_collate
     from train_flagship_v4 import _to_device
-    from tanitad.models.flagship_v15 import v15_losses
+    from tanitad.models.flagship_v15 import SPEED_SCALE, v15_losses
+    from tanitad.models.wm_reference_select import wm_reference_rollout
     import refb_labels
 
     assert goal_mode in goal_modes.GOAL_MODES, goal_mode
+    if select_rule not in ("as-trained", "c2-wm-ref"):
+        raise SystemExit(f"[v4-eval] unknown --select-rule {select_rule!r}")
+    if select_rule == "c2-wm-ref" and c2 is None:
+        raise SystemExit("[v4-eval] --select-rule c2-wm-ref needs --c2-scorer")
+    c2_tele: dict = {}
     agree = goal_modes.GoalAgreement() if goal_mode == "produced" else None
     goal_rec: dict = {}
     head.eval()
@@ -461,6 +529,32 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
         goal_rec = {k: v for k, v in rec.items() if k != "scalars"}
         # --- pass 2: the planner head, on whatever goal that resolved to ------
         out = head(st, v0, lambda_plan=1.0, **goal_kw)
+
+        # --- OPTIONAL C2 re-selection over the SAME frozen fan ---------------
+        # One extra roll-out per WINDOW (not per candidate): the world model is
+        # rolled once under the observed action, zero-order-held, and the fan
+        # candidate closest to that reference is taken. Nothing about the fan,
+        # the goal or the decoder changes; only `sel_idx` and the trajectory
+        # read off it. Placed BEFORE v15_losses so every diagnostic below
+        # (ade / sel_gap / rank_acc / dense / 4wp) describes the DEPLOYED pick.
+        if select_rule == "c2-wm-ref":
+            with torch.no_grad():
+                st_s = (st if c2["self_scoring"]
+                        else c2["world"].encode_window(b["frames"]))
+                aw = b["actions"].float()
+                if world.predictor.cfg.action_dim == 3:
+                    vch = (v0 / SPEED_SCALE)[:, None, None]
+                    aw = torch.cat([aw, vch.expand(-1, aw.shape[1], -1)], dim=-1)
+                ref = wm_reference_rollout(c2["world"].predictor, st_s, aw,
+                                           c2["step_readout"], max(horizons))
+                tele = apply_c2_selection(out, horizons, ref, c2["tag"])
+            for k_t, v_t in tele.items():
+                if isinstance(v_t, (int, float)) and not isinstance(v_t, bool):
+                    c2_tele[k_t] = c2_tele.get(k_t, 0.0) + float(v_t) * (
+                        1.0 if k_t.startswith("n_") else len(idx))
+                else:
+                    c2_tele[k_t] = v_t
+
         lg = v15_losses(out, head.decoder.anchors, traj_tgt)
 
         bs = len(idx)
@@ -515,6 +609,15 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
     _oracle_tag = " [GOAL ORACLE]" if goal_mode == "oracle" else ""
     _fb = goal_rec.get("fallback")
     _fb_tag = (" [FALLBACK=" + str(_fb) + "]") if _fb else ""
+    _sel_tag = ("" if select_rule == "as-trained" else
+                f", SELECT-RULE=C2 wm-reference (scorer={c2['tag']})")
+    if c2_tele:
+        for k_t in list(c2_tele):
+            if not k_t.startswith("n_") and isinstance(c2_tele[k_t], float):
+                c2_tele[k_t] = round(c2_tele[k_t] / max(n, 1), 6)
+        c2_tele["_read"] = ("selected_frac 1.000 = the rule is UNCONDITIONAL. A "
+                            "gated variant must report its firing rate here or "
+                            "its whole-set value is unknown (C19).")
     data = {
         "pred": torch.cat(P), "gt": torch.cat(G).float(),
         "cv": torch.cat(C).float(), "eid": EID,
@@ -526,7 +629,7 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                   f"lambda_plan=1.0, {head.decoder.anchors.shape[0]} anchors), "
                   f"4wp sub-selected at steps {wp_steps}, "
                   f"goal_mode={goal_mode}"
-                  f"{_oracle_tag}{_fb_tag}"),
+                  f"{_oracle_tag}{_fb_tag}{_sel_tag}"),
     }
     if dense_ok:
         # `gt_dense` comes from `refb_labels.waypoint_targets` (the head's own
@@ -544,6 +647,8 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                         "pred_dense[:, wp_steps[j]-1] by construction."))
     diag = {
         "n_windows": n,
+        "select_rule": select_rule,
+        "c2_selection": c2_tele or None,
         "goal_mode": goal_mode,
         "goal_mode_record": goal_rec,
         "goal_agreement_vs_oracle": agree.report() if agree is not None else None,
@@ -627,6 +732,22 @@ def main(argv=None) -> int:
                          "produced-goal number. Off by default: silently "
                          "substituting a different goal source is the failure "
                          "this flag exists to prevent.")
+    ap.add_argument("--select-rule", choices=("as-trained", "c2-wm-ref"),
+                    default="as-trained",
+                    help="WHICH candidate of the emitted fan is deployed. "
+                         "'as-trained' (DEFAULT, unchanged) = the head's own "
+                         "argmax. 'c2-wm-ref' = the candidate closest to ONE "
+                         "world-model reference roll-out (C2). MEASURED on 881 "
+                         "windows / 40 clusters: -0.2918 [-0.4233, -0.1598] "
+                         "with v1's world model as the scorer, but +0.2090 "
+                         "[+0.0550, +0.3642] WORSE when an arm scores its own "
+                         "fan -- hence OFF by default and hence --c2-scorer.")
+    ap.add_argument("--c2-scorer", default=None,
+                    help="path to the v1-shaped checkpoint that SCORES the fan "
+                         "under --select-rule c2-wm-ref, or the literal 'self' "
+                         "to ask for the (measured-worse) self-scoring "
+                         "diagnostic on purpose. There is no default: the sign "
+                         "of the rule depends on this argument.")
     ap.add_argument("--canary-only", action="store_true",
                     help="force MODE A even if the ckpt has a 'head' key")
     ap.add_argument("--episodes", type=int, default=40)
@@ -641,6 +762,18 @@ def main(argv=None) -> int:
                     help="dir for windows_<key>.pt / driving_<key>.json "
                          "(default: dirname(--out))")
     a = ap.parse_args(argv)
+
+    # Fail on the ARGUMENTS, not 3 GB of checkpoint later: --select-rule
+    # c2-wm-ref has no default scorer, because the rule's sign depends on it.
+    if a.select_rule == "c2-wm-ref" and a.c2_scorer is None:
+        from tanitad.models.wm_reference_select import resolve_scorer_tag
+        try:
+            resolve_scorer_tag(None)
+        except ValueError as ex:
+            raise SystemExit(f"[v4-eval] --select-rule c2-wm-ref: {ex}")
+    if a.select_rule == "as-trained" and a.c2_scorer is not None:
+        raise SystemExit("[v4-eval] --c2-scorer given without --select-rule "
+                         "c2-wm-ref: it would be silently ignored.")
 
     device = a.device
     if device == "cuda" and not torch.cuda.is_available():
@@ -751,12 +884,16 @@ def main(argv=None) -> int:
     print(f"[v4-eval] canary_ade@2s={can['canary_ade@2s']:.4f} n={can['n']} "
           f"({can['wallclock_s']:.0f}s)", flush=True)
 
+    c2 = (build_c2_scorer(a.c2_scorer, world, grounding, device)
+          if a.select_rule == "c2-wm-ref" else None)
+
     print("[v4-eval] running the planner path (the gate primary)...",
           flush=True)
     data, diag = collect_planner(world, grounding, head, ds_val, device, dd,
                                  a.episodes, a.stride, a.batch,
                                  goal_mode=a.goal_mode, goal_head=goal_head,
-                                 goal_fallback=a.goal_fallback)
+                                 goal_fallback=a.goal_fallback,
+                                 select_rule=a.select_rule, c2=c2)
 
     wp = results_dir / f"windows_{a.key}.pt"
     _keys = ["pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps"]
@@ -795,6 +932,12 @@ def main(argv=None) -> int:
                "goal_agreement_vs_oracle": diag["goal_agreement_vs_oracle"]})
     res["wm_canary_ade_2s"] = can["canary_ade@2s"]
     res["wm_canary_n"] = can["n"]
+    # SELECTION PROVENANCE — stamped for every mode so no artifact can be read
+    # without knowing WHICH candidate of the fan it deployed.
+    res["select_rule"] = a.select_rule
+    res["c2_scorer"] = (None if c2 is None else
+                        {"tag": c2["tag"], "self_scoring": c2["self_scoring"],
+                         "step": c2.get("scorer_step")})
     res_json_path.write_text(json.dumps(res, indent=2, default=str),
                              encoding="utf-8")
     print(f"[v4-eval] -> {res_json_path}", flush=True)

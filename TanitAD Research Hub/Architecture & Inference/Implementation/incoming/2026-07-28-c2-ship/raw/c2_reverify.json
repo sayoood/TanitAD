@@ -1,0 +1,188 @@
+{
+ "_experiment": "C2 ship \u2014 re-verification of the published headline by the SHIPPED implementation before shipping it",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "_estimator": "paired episode-cluster bootstrap (taniteval/ci.py, B=2000, unit = episode). NEVER overlapping_holdout_se.",
+ "_tolerance": {
+  "ade": 5e-05,
+  "delta": 5e-05,
+  "bound": 5e-05
+ },
+ "_host": "FREEDOM2035",
+ "_device": "cpu",
+ "_n": {
+  "windows": 881,
+  "episodes": 40
+ },
+ "_date": "2026-07-27",
+ "L1_reduced_dump_chain": {
+  "_read": "cost -> pick -> policy -> interval, recomputed from the tracked reduced dumps independently of canary_proxy.py",
+  "v1": {
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-v5-imagination-selection/raw/v5_v1_windows_reduced.pt",
+   "sha256_16": "4f64198de1ce23ef",
+   "picks_match_published": 881,
+   "of": 881,
+   "as_trained_ade_0_2s": 0.8563,
+   "C2_ade_0_2s": 0.5645,
+   "paired": {
+    "delta": -0.2918,
+    "lo": -0.4233,
+    "hi": -0.1598,
+    "ci95": 0.1318,
+    "separated": true,
+    "p_delta_gt0": 0.0,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "selected_frac": 1.0,
+   "single_arm_C2": {
+    "mean": 0.5645,
+    "lo": 0.4851,
+    "hi": 0.6467,
+    "ci95": 0.0808,
+    "se": 0.0423,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "PASS": true
+  },
+  "v4": {
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-v5-imagination-selection/raw/v5_v4_windows_reduced.pt",
+   "sha256_16": "a8be2a5748ff5767",
+   "picks_match_published": 881,
+   "of": 881,
+   "as_trained_ade_0_2s": 0.8563,
+   "C2_ade_0_2s": 1.0653,
+   "paired": {
+    "delta": 0.209,
+    "lo": 0.055,
+    "hi": 0.3642,
+    "ci95": 0.1546,
+    "separated": true,
+    "p_delta_gt0": 0.9945,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "selected_frac": 1.0,
+   "single_arm_C2": {
+    "mean": 1.0653,
+    "lo": 0.9217,
+    "hi": 1.203,
+    "ci95": 0.1406,
+    "se": 0.0736,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "PASS": true
+  }
+ },
+ "L2_shipped_cost_from_raw_geometry": {
+  "_read": "\u2b50 the strongest layer: the SHIPPED `wm_reference_cost` re-derives the published cost matrix from the fan and the ONE reference roll-out. Nothing stored is trusted except the geometry itself.",
+  "geometry": {
+   "src": "tanitad-eval:/workspace/_v5/v5_v1_windows.pt (scorer = v1's WM)",
+   "sha256_16": "0b414d18f7fcfd77",
+   "fan": [
+    881,
+    256,
+    20,
+    2
+   ],
+   "imag_ref": [
+    881,
+    20,
+    2
+   ]
+  },
+  "cost_bit_exact_vs_published": false,
+  "cost_max_abs_diff": 1.1444091796875e-05,
+  "cost_mean_magnitude": 12.514,
+  "cost_max_rel_diff": 9.145027562732031e-07,
+  "_not_bit_exact_because": "the published matrix was reduced on an NVIDIA A40 in float32 and this one on the dev box CPU; `.norm().mean()` is order-sensitive at float32. Reported, not hidden: the bar that matters is whether the DECISION moves, measured below.",
+  "picks_match_published": 881,
+  "of": 881,
+  "decision_margin": {
+   "min_top1_top2_gap": 2.485513687133789e-05,
+   "p1_top1_top2_gap": 0.0004014790174551308,
+   "median_gap": 0.033563196659088135,
+   "n_windows_with_gap_below_maxdiff": 0,
+   "n_windows_with_gap_below_10x_maxdiff": 3,
+   "worst_case_headroom_x": 2.2,
+   "_read": "0 / 881 windows have a winner-vs-runner-up gap smaller than the largest CPU-vs-GPU disagreement, and all 881 picks agree. \u26a0\ufe0f Stated rather than hidden: in the TIGHTEST window the gap is only 2.2x that disagreement, so C2's pick is numerically robust on this corpus but not by a wide margin at the tail. A different accumulation order could flip a small number of near-tied windows on a future host."
+  },
+  "telemetry": {
+   "rule": "C2_wm_reference_proximity",
+   "scorer": "flagship-30k (v1)",
+   "selected_frac": 1.0,
+   "n_windows": 881,
+   "n_candidates": 256,
+   "n_tied_argmin": 0,
+   "n_constant_cost_rows": 0,
+   "cost_span_mean": 37.62665557861328,
+   "n_distinct_picks": 184,
+   "frac_pick_equals_baseline": 0.12826333940029144,
+   "keep_applied": false
+  },
+  "PASS": true
+ },
+ "L3_policy_from_geometry": {
+  "_read": "ade_0_2s recomputed from fan+tgt at WP_STEPS (5,10,15,20) \u2014 no stored per-arm column is read at all.",
+  "as_trained_ade_0_2s": 0.8563,
+  "C2_ade_0_2s": 0.5645,
+  "selected_frac": 1.0,
+  "paired": {
+   "delta": -0.2918,
+   "lo": -0.4233,
+   "hi": -0.1598,
+   "ci95": 0.1318,
+   "separated": true,
+   "p_delta_gt0": 0.0,
+   "n_windows": 881,
+   "n_episodes": 40,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "agrees_with_stored_ade_column_max_abs": 2.384185791015625e-07,
+  "PASS": true
+ },
+ "ADJUDICATION_of_the_brief_headline": {
+  "brief_claim": "C2 ... applied with v1's world model, UNGATED, on 100 % of windows: 0.5196-0.5221, paired -0.3366 [-0.4507, -0.2310]",
+  "what_-0.3366_actually_is": {
+   "row": "stage3_learned_gates_oof.arms.v1.learned_gate_ALL_ridge_tau0",
+   "delta": -0.3366,
+   "lo": -0.4507,
+   "hi": -0.231,
+   "policy_ade_0_2s": 0.5196,
+   "selected_frac": 0.6697,
+   "is_ungated": false,
+   "needs": "a ridge utility model fitted out-of-fold over the 73-feature bank INCLUDING the 2-world-model ensemble family"
+  },
+  "what_0.5221_actually_is": {
+   "row": "learned_gate_1WM_ridge_tau0",
+   "delta": -0.3342,
+   "policy_ade_0_2s": 0.5221,
+   "selected_frac": 0.6788
+  },
+  "the_actual_UNGATED_cell": {
+   "row": "stage1_ungated_baseline_and_ceilings.arms.v1.UNGATED_C2_everywhere",
+   "delta": -0.2918,
+   "lo": -0.4233,
+   "hi": -0.1598,
+   "policy_ade_0_2s": 0.5645,
+   "selected_frac": 1.0
+  },
+  "overstatement_of_the_shipped_rule_m": 0.0448,
+  "overstatement_ratio": 1.154,
+  "_read": "the shipped UNGATED rule reproduces EXACTLY; the brief's headline number belongs to a GATED policy firing on 66.97 % of windows and overstates the ungated rule by 0.0448 m (1.154x). C19 class: a conditional number quoted without its firing rate."
+ },
+ "MEASURED_ARMS_in_stack_matches": {
+  "v1_scores_v4_fan": true,
+  "v4_scores_its_own_fan": true
+ },
+ "VERDICT": "CONFIRM \u2014 the shipped implementation reproduces the UNGATED C2 cell to 4 dp at every layer: 0.8563 -> 0.5645, paired -0.2918 [-0.4233, -0.1598], separated, selected_frac 1.000. The cost matrix re-derived from raw geometry gives 881/881 IDENTICAL picks (not bit-identical costs: 1.14e-05 m CPU-vs-A40 float32 reduction noise, below every decision margin). The brief's -0.3366 headline is a SEPARATE, GATED cell (frac 0.6697) and is NOT what ships."
+}

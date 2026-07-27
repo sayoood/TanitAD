@@ -1,0 +1,100 @@
+{
+  "_what": "Block B -- the tactical plan's SHAPE re-timed onto a SCHEDULE that knows the ego speed. Zero fitted parameters.",
+  "_evidence_class": "MEASURED (ours; artifact = the pw_*.npz written here)",
+  "_no_gpu": true,
+  "source_arm": "v1_tactical_follow",
+  "n_rows": 15981,
+  "horizon_steps": 20,
+  "dt": 0.1,
+  "_estimator_note": "scoring is done by panel_combine.py, which imports taniteval.pseudosim verbatim; NOTHING is reimplemented",
+  "self_validation": {
+    "gamma_v1_o_s_v1_reproduces_the_published_v1_arm": {
+      "max_abs_err_m": 7.62939453125e-06,
+      "tol_m": 0.001,
+      "pass": true
+    },
+    "gamma_straight_o_s_cv_reproduces_the_published_cv_arm": {
+      "max_abs_err_m": 0.0,
+      "tol_m": 0.001,
+      "pass": true
+    }
+  },
+  "arms": {
+    "v1_ego_v0": {
+      "what": "v1's tactical CURVE, re-timed to v0*t*dt -- the plan now knows the ego speed. ZERO fitted parameters.",
+      "frac_rows_extrapolated_past_path_end": 0.373443,
+      "frac_rows_degenerate_no_tangent": 0.0,
+      "mean_plan_endpoint_x_m": 25.0819,
+      "mean_plan_endpoint_y_m": -0.0353,
+      "mean_plan_path_length_m": 25.1885,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true
+    },
+    "v1_ego_oracle_lon": {
+      "what": "ORACLE: v1's curve re-timed to the TRUE logged arc length. Upper bound of any longitudinal input. NOT DEPLOYABLE.",
+      "frac_rows_extrapolated_past_path_end": 0.406483,
+      "frac_rows_degenerate_no_tangent": 0.0,
+      "mean_plan_endpoint_x_m": 25.3391,
+      "mean_plan_endpoint_y_m": -0.0249,
+      "mean_plan_path_length_m": 25.4613,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true,
+      "⚠️_ORACLE": "reads the ego's OWN FUTURE -- an upper bound, never a deployable arm"
+    },
+    "oracle_lon_straight": {
+      "what": "ORACLE: straight-ahead shape walked to the TRUE logged distance -- the pure longitudinal ceiling, zero steering. NOT DEPLOYABLE.",
+      "frac_rows_extrapolated_past_path_end": 0.0,
+      "frac_rows_degenerate_no_tangent": 0.014017,
+      "mean_plan_endpoint_x_m": 25.4619,
+      "mean_plan_endpoint_y_m": 0.0,
+      "mean_plan_path_length_m": 25.4619,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true,
+      "⚠️_ORACLE": "reads the ego's OWN FUTURE -- an upper bound, never a deployable arm"
+    },
+    "v1_lat_straight": {
+      "what": "straight-ahead shape on v1's OWN schedule -- isolates what v1's steering contributes.",
+      "frac_rows_extrapolated_past_path_end": 0.0,
+      "frac_rows_degenerate_no_tangent": 0.0,
+      "mean_plan_endpoint_x_m": 26.7637,
+      "mean_plan_endpoint_y_m": 0.0,
+      "mean_plan_path_length_m": 26.7637,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true
+    },
+    "v1_ego_half": {
+      "what": "⛔ DELIBERATE DEGRADATION (half speed). MUST score WORSE -- the composite is known to RISE for a slowed planner because a barely-moving plan is scored NaN.",
+      "frac_rows_extrapolated_past_path_end": 0.021526,
+      "frac_rows_degenerate_no_tangent": 0.0,
+      "mean_plan_endpoint_x_m": 12.5689,
+      "mean_plan_endpoint_y_m": -0.0123,
+      "mean_plan_path_length_m": 12.5943,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true
+    },
+    "v1_ego_double": {
+      "what": "⛔ DELIBERATE DEGRADATION (double speed). MUST also score worse -- a control that only fails in one direction cannot detect a monotone artefact.",
+      "frac_rows_extrapolated_past_path_end": 0.884488,
+      "frac_rows_degenerate_no_tangent": 0.0,
+      "mean_plan_endpoint_x_m": 50.066,
+      "mean_plan_endpoint_y_m": -0.066,
+      "mean_plan_path_length_m": 50.377,
+      "_derived_from": "v1_tactical_follow",
+      "_no_gpu_no_checkpoint": true
+    }
+  },
+  "reference_arms": {
+    "v1_tactical_follow": {
+      "mean_plan_endpoint_x_m": 26.6498,
+      "mean_plan_endpoint_y_m": 0.0282,
+      "mean_plan_path_length_m": 26.7637
+    },
+    "cv_holdv0": {
+      "mean_plan_endpoint_x_m": 25.189,
+      "mean_plan_path_length_m": 25.189
+    },
+    "logged_human_oracle": {
+      "mean_path_length_m": 25.4619
+    }
+  }
+}

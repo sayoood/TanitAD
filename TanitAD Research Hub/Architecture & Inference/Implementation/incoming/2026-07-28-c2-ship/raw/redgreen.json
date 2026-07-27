@@ -1,0 +1,90 @@
+{
+ "_read": "each row REMOVES one guard and requires its test to FAIL",
+ "cases": [
+  {
+   "file": "stack/tanitad/models/wm_reference_select.py",
+   "guard_removed": "WM_REFERENCE_SELECT_DEFAULT = False",
+   "suite": "stack",
+   "test": "tests/test_wm_reference_select.py",
+   "proves": "the default cannot be flipped ON while a measured arm is separated-WORSE",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed in 1.71s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/tanitad/models/wm_reference_select.py",
+   "guard_removed": "return (fan - r[:, None].to(fan.dtype)).norm(dim=-1).mean(dim=-1)",
+   "suite": "stack",
+   "test": "tests/test_wm_reference_select.py",
+   "proves": "the cost formula is pinned to the published cost_C2_ref",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed, 4 passed in 1.76s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/tanitad/models/wm_reference_select.py",
+   "guard_removed": "return (fan - r[:, None].to(fan.dtype)).norm(dim=-1).mean(dim=-1)",
+   "suite": "taniteval",
+   "test": "tests/test_c2_published_policy.py",
+   "proves": "a changed cost formula breaks fidelity to the 881-window picks",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed in 1.67s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/tanitad/models/wm_reference_select.py",
+   "guard_removed": "wp, _ = rollout_decode(predictor, states, actions, None, step_readout, k)",
+   "suite": "stack",
+   "test": "tests/test_wm_reference_select.py",
+   "proves": "the reference roll cannot be handed future actions (the expert_future trap)",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed, 8 passed in 1.69s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/scripts/eval_flagship_v4.py",
+   "guard_removed": "default=\"as-trained\",",
+   "suite": "stack",
+   "test": "tests/test_eval_flagship_v4_select_rule.py",
+   "proves": "the CLI default cannot silently become the new rule",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed, 1 passed in 1.67s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/scripts/eval_flagship_v4.py",
+   "guard_removed": "if select_rule == \"c2-wm-ref\" and c2 is None:",
+   "suite": "stack",
+   "test": "tests/test_eval_flagship_v4_select_rule.py",
+   "proves": "c2-wm-ref cannot run without a named scorer",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed, 2 passed in 1.90s"
+   ],
+   "restored_bit_exact": true
+  },
+  {
+   "file": "stack/tanitad/models/wm_reference_select.py",
+   "guard_removed": "if scorer is None:",
+   "suite": "stack",
+   "test": "tests/test_wm_reference_select.py",
+   "proves": "self-scoring cannot be reached by omission",
+   "WENT_RED": true,
+   "pytest_tail": [
+    "1 failed, 14 passed in 1.69s"
+   ],
+   "restored_bit_exact": true
+  }
+ ],
+ "ALL_PASS": true
+}

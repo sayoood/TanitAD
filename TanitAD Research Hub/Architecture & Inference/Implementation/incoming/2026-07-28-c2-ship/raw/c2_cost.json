@@ -1,0 +1,85 @@
+{
+ "_experiment": "C2 cost per window, MEASURED on the real architecture",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "_host": "FREEDOM2035",
+ "_device": "cuda",
+ "_gpu": "NVIDIA GeForce RTX 4060",
+ "_torch": "2.11.0+cu128",
+ "_shapes": {
+  "state_dim": 2048,
+  "window": 8,
+  "k": 20,
+  "d_model": 768,
+  "depth": 10,
+  "action_dim": 3,
+  "n_candidates": 256
+ },
+ "_note": "random weights: wall-clock depends on shapes/ops, not values",
+ "predictor_steps_per_window": {
+  "C2_wm_reference (this rule)": 20,
+  "A1_per_candidate_imagination": 5120,
+  "ratio_A1_over_C2": 256,
+  "_read": "C2 is ONE roll-out per window; A1 is one per candidate."
+ },
+ "C2_reference_rollout": {
+  "batch_1": {
+   "wallclock_s": 0.1156,
+   "ms_per_window": 115.5962
+  },
+  "batch_4": {
+   "wallclock_s": 0.1117,
+   "ms_per_window": 27.9243
+  },
+  "batch_8": {
+   "wallclock_s": 0.12293,
+   "ms_per_window": 15.3658
+  },
+  "batch_16": {
+   "wallclock_s": 0.12052,
+   "ms_per_window": 7.5328
+  },
+  "batch_32": {
+   "wallclock_s": 0.14837,
+   "ms_per_window": 4.6365
+  }
+ },
+ "A1_per_candidate_rollout_batch4": {
+  "wallclock_s": 4.26202,
+  "ms_per_window": 1065.5062,
+  "C2_is_cheaper_by": 38.2
+ },
+ "foreign_scorer_second_encode": {
+  "frame_shape": [
+   8,
+   9,
+   256,
+   256
+  ],
+  "by_batch": {
+   "batch_1": {
+    "wallclock_s": 0.05515,
+    "ms_per_window": 55.149
+   },
+   "batch_4": {
+    "wallclock_s": 0.22775,
+    "ms_per_window": 56.938
+   },
+   "batch_16": {
+    "wallclock_s": 0.88957,
+    "ms_per_window": 55.598
+   }
+  },
+  "_read": "paid ONLY when the scorer is a different world model than the one that produced the fan \u2014 which is the measured-better configuration. Self-scoring reuses `states` and pays 0 here, but is separated-WORSE (+0.2090)."
+ },
+ "_cross_check_from_the_producing_run": {
+  "source": "\u2026/2026-07-26-v5-imagination-selection/raw/v5_v1.json",
+  "evidence_class": "INHERITED (not re-measured here)",
+  "gpu": "NVIDIA A40",
+  "imagination_wallclock_s": 440.4,
+  "n_rollouts": 225536,
+  "k": 20,
+  "ms_per_rollout_amortised": 1.9527,
+  "implied_C2_only_881_windows_s": 1.72,
+  "_read": "the producing run rolled 881x256 candidates AND the 881 C2 reference rolls inside the same loop. C2 alone is 1/256 of that work."
+ }
+}

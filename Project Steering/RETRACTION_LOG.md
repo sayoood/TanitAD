@@ -439,3 +439,22 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   same goal into **−18.55 %, separated-WORSE** — **a 16.7×–33.6× collapse in the value of accuracy.**
   ⇒ **Before buying a signal, test whether a crude version of it captures the gain. If it does, you are
   buying structure, not information, and you can build structure yourself.**
+- **C37 — A GATED RESULT RELAYED AS ITS UNGATED SIBLING** *(new class, added 2026-07-28; the relay was
+  MINE, and it happened inside a brief whose own trap list warns about this class)* ⇒ **when a document
+  publishes a rule and several fitted variants of it, the strongest number on the page is usually a
+  FITTED one — and relaying it under the plain rule's name ships the fitter.** RETRACTED: *"C2 ungated:
+  0.8563 → 0.5196, −0.3366 [−0.4507, −0.2310], a 39 % cut."* **`−0.3366 / 0.5196–0.5221` is
+  `learned_gate_ALL_ridge_tau0` — a fitted ridge gate firing on 66.97 % of windows over a 73-feature
+  bank INCLUDING the 2-WM ensemble family**, i.e. exactly the gate the same stream showed is
+  **dominated by its own prerequisite**.
+  ✅ **The true ungated value: 0.8563 → 0.5645, −0.2918 [−0.4233, −0.1598], separated,
+  `selected_frac` 1.000** — a **34.1 %** cut, not 39 %. My figure overstated it by **0.0448 m
+  (1.154×)**, and I gave it to the PI twice.
+  ⚠️ **The source document was INTERNALLY CORRECT** — §1.2 publishes −0.2918 and §5.2 recommends it.
+  **The defect was entirely in the relay**, which is what makes this distinct from C4: nothing was
+  wrong upstream, and re-verifying the chain would have found nothing wrong *with the chain*.
+  ⭐ **What caught it: the implementing agent was told to reproduce −0.3366 and REFUSED to call its
+  −0.2918 a failure** — it re-derived the cost matrix from raw geometry (881/881 identical picks) and
+  reported the label as the defect. *"Had I reproduced −0.3366 I would have shipped a gate."*
+  ⇒ **When quoting a headline out of a multi-arm document, quote the ARM NAME and its `selected_frac`,
+  not just the number.** A `selected_frac` below 1.000 means you are looking at a gate.
