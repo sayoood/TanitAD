@@ -1069,7 +1069,8 @@
         "n_boot": 2000,
         "estimator": "episode_cluster_bootstrap"
       },
-      "T_useful_1m_s": 1.7
+      "T_useful_1m_s": 1.7,
+      "what": "last one-step world velocity rotated into ego and extrapolated linearly (blindimag.cv_dense_path)"
     },
     "hold_v0": {
       "de_2s": {
@@ -1093,7 +1094,274 @@
         "n_boot": 2000,
         "estimator": "episode_cluster_bootstrap"
       },
-      "T_useful_1m_s": 1.7
+      "T_useful_1m_s": 1.7,
+      "what": "go straight at the current speed \u2014 ONE SCALAR, no latent (blindimag.hold_v0_dense_path)"
+    }
+  },
+  "vs_pure_kinematic_integrators": {
+    "alpha=0": {
+      "hold_v0": {
+        "ratio_floor_over_arm_at_2s": 0.6849,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": -0.5723,
+          "lo": -0.6729,
+          "hi": -0.4694,
+          "separated": true,
+          "a_better": false,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": false,
+        "separated_better_interval_s": {
+          "first_s": null,
+          "last_s": null,
+          "n_steps": 0,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.5109,
+          "1s": 0.7046,
+          "2s": 0.6849,
+          "3s": 0.7053,
+          "4.5s": 0.7188,
+          "6s": 0.7037,
+          "9s": 0.6826,
+          "12s": 0.6755,
+          "18.5s": 0.6782
+        }
+      },
+      "constant_velocity": {
+        "ratio_floor_over_arm_at_2s": 0.6979,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": -0.5488,
+          "lo": -0.6552,
+          "hi": -0.4429,
+          "separated": true,
+          "a_better": false,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": false,
+        "separated_better_interval_s": {
+          "first_s": null,
+          "last_s": null,
+          "n_steps": 0,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.545,
+          "1s": 0.7311,
+          "2s": 0.6979,
+          "3s": 0.7137,
+          "4.5s": 0.7245,
+          "6s": 0.7089,
+          "9s": 0.6875,
+          "12s": 0.6798,
+          "18.5s": 0.681
+        }
+      }
+    },
+    "alpha=0.25": {
+      "hold_v0": {
+        "ratio_floor_over_arm_at_2s": 1.1589,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.1706,
+          "lo": 0.0847,
+          "hi": 0.2636,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 1.3,
+          "last_s": 5.2,
+          "n_steps": 40,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.6037,
+          "1s": 1.0255,
+          "2s": 1.1589,
+          "3s": 1.1645,
+          "4.5s": 1.0991,
+          "6s": 1.0279,
+          "9s": 0.9414,
+          "12s": 0.893,
+          "18.5s": 0.8368
+        }
+      },
+      "constant_velocity": {
+        "ratio_floor_over_arm_at_2s": 1.1808,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.1941,
+          "lo": 0.0989,
+          "hi": 0.2939,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 1.2,
+          "last_s": 5.4,
+          "n_steps": 43,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.6439,
+          "1s": 1.0641,
+          "2s": 1.1808,
+          "3s": 1.1783,
+          "4.5s": 1.1079,
+          "6s": 1.0354,
+          "9s": 0.948,
+          "12s": 0.8986,
+          "18.5s": 0.8403
+        }
+      }
+    },
+    "alpha=0.75": {
+      "hold_v0": {
+        "ratio_floor_over_arm_at_2s": 1.8184,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.56,
+          "lo": 0.4768,
+          "hi": 0.6497,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 0.7,
+          "last_s": 8.5,
+          "n_steps": 79,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.7719,
+          "1s": 1.6324,
+          "2s": 1.8184,
+          "3s": 1.5877,
+          "4.5s": 1.3566,
+          "6s": 1.2053,
+          "9s": 1.0415,
+          "12s": 0.9665,
+          "18.5s": 0.8812
+        }
+      },
+      "constant_velocity": {
+        "ratio_floor_over_arm_at_2s": 1.8527,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.5835,
+          "lo": 0.4919,
+          "hi": 0.6818,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 0.7,
+          "last_s": 8.7,
+          "n_steps": 81,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.8233,
+          "1s": 1.6939,
+          "2s": 1.8527,
+          "3s": 1.6066,
+          "4.5s": 1.3675,
+          "6s": 1.2141,
+          "9s": 1.0489,
+          "12s": 0.9726,
+          "18.5s": 0.8849
+        }
+      }
+    },
+    "alpha=1": {
+      "hold_v0": {
+        "ratio_floor_over_arm_at_2s": 1.8519,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.5724,
+          "lo": 0.4847,
+          "hi": 0.6645,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 0.7,
+          "last_s": 8.6,
+          "n_steps": 80,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.8263,
+          "1s": 1.7181,
+          "2s": 1.8519,
+          "3s": 1.6284,
+          "4.5s": 1.3782,
+          "6s": 1.2181,
+          "9s": 1.0495,
+          "12s": 0.9714,
+          "18.5s": 0.8853
+        }
+      },
+      "constant_velocity": {
+        "ratio_floor_over_arm_at_2s": 1.8869,
+        "paired_2s_floor_minus_arm": {
+          "delta_b_minus_a": 0.5958,
+          "lo": 0.5031,
+          "hi": 0.694,
+          "separated": true,
+          "a_better": true,
+          "n_windows": 599,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "arm_better_separated": true,
+        "separated_better_interval_s": {
+          "first_s": 0.6,
+          "last_s": 8.8,
+          "n_steps": 83,
+          "K": 185,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "grid_ratio": {
+          "0.5s": 0.8814,
+          "1s": 1.7829,
+          "2s": 1.8869,
+          "3s": 1.6478,
+          "4.5s": 1.3892,
+          "6s": 1.227,
+          "9s": 1.0569,
+          "12s": 0.9775,
+          "18.5s": 0.889
+        }
+      }
     }
   }
 }

@@ -216,13 +216,51 @@ def main():
     out["table"] = tab
 
     # ---- the comparator-free floors, for context --------------------------- #
+    hv = de["d2_hold_v0"]
     out["floors"] = {
         "constant_velocity": {"de_2s": single_at(cv, eid, draws, 20),
                               "ade_0_2s": ade_0_2s(cv, eid),
-                              "T_useful_1m_s": t_useful(cv, 1.0)},
-        "hold_v0": {"de_2s": single_at(de["d2_hold_v0"], eid, draws, 20),
-                    "ade_0_2s": ade_0_2s(de["d2_hold_v0"], eid),
-                    "T_useful_1m_s": t_useful(de["d2_hold_v0"], 1.0)}}
+                              "T_useful_1m_s": t_useful(cv, 1.0),
+                              "what": ("last one-step world velocity rotated "
+                                       "into ego and extrapolated linearly "
+                                       "(blindimag.cv_dense_path)")},
+        "hold_v0": {"de_2s": single_at(hv, eid, draws, 20),
+                    "ade_0_2s": ade_0_2s(hv, eid),
+                    "T_useful_1m_s": t_useful(hv, 1.0),
+                    "what": ("go straight at the current speed — ONE SCALAR, "
+                             "no latent (blindimag.hold_v0_dense_path)")}}
+
+    # ---- ⭐ THE DIRECT FORM OF THE PI's QUESTION ---------------------------- #
+    # "Is it kinematic integration?" has a comparator-free reading: is the blind
+    # arm better than a PURE kinematic integrator at all, and by how much? Both
+    # floors are pure kinematics on one observed scalar/vector — no latent
+    # whatsoever — so this needs no ablation and no matched comparator.
+    vsi = {}
+    for al, (ai, _bi) in ALPHAS.items():
+        d_i = de[ai]
+        blk = {}
+        for fl, d_f in (("hold_v0", hv), ("constant_velocity", cv)):
+            p = paired_at(d_i, d_f, draws, 20)     # positive => the ARM is better
+            blk[fl] = {
+                "ratio_floor_over_arm_at_2s": round(
+                    float(d_f[:, 19].mean()) / float(d_i[:, 19].mean()), 4),
+                "paired_2s_floor_minus_arm": p,
+                "arm_better_separated": p["a_better"],
+                "separated_better_interval_s": separated_better_interval(
+                    d_i, d_f, draws),
+                "grid_ratio": {f"{n * DT:g}s": round(
+                    float(d_f[:, n - 1].mean()) / float(d_i[:, n - 1].mean()), 4)
+                    for n in GRID}}
+        vsi[f"alpha={al}"] = blk
+    out["vs_pure_kinematic_integrators"] = vsi
+    for al, blk in vsi.items():
+        h = blk["hold_v0"]
+        print(f"[A] {al:>10} vs hold_v0 (one scalar, no latent): "
+              f"ratio@2s={h['ratio_floor_over_arm_at_2s']:.3f} "
+              f"({'ARM better' if h['arm_better_separated'] else 'floor better/tie'})"
+              f"  sep-better window {h['separated_better_interval_s']['first_s']}"
+              f"–{h['separated_better_interval_s']['last_s']} s "
+              f"({h['separated_better_interval_s']['n_steps']}/185)", flush=True)
 
     Path(a.out).mkdir(parents=True, exist_ok=True)
     p = Path(a.out) / "la_stage_a_frozen.json"

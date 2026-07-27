@@ -20,10 +20,39 @@ import torch
 from taniteval import blindimag as bi
 from tanitad.models.metric_dynamics import StepDisplacementReadout
 
-from test_blindimag import A, B, _kin_fixture       # noqa: F401  (shared fixture)
+#: Deliberately SELF-CONTAINED — it does not import ``test_blindimag``'s fixture.
+#: A cross-test-module import made this file uncollectable against an older copy
+#: of the sibling module on pod2, and a certification that cannot run where the
+#: code runs is not a certification. Same shapes and same stub contract.
+S, A, WIN, B = 24, 3, 8, 5
 
 _ABL = ("frozen_other", "shuffled", "shuffled_obs", "mean_latent",
         "zero_latent")
+
+
+class _StubPredictor(torch.nn.Module):
+    """1-step predictor with the WorldModel predictor's contract. Depends on
+    BOTH the window and the actions, so a test that swaps either can fail."""
+
+    def __init__(self, s=S, a=A):
+        super().__init__()
+        torch.manual_seed(0)
+        self.lin = torch.nn.Linear(s * WIN + a * WIN, s)
+
+    def forward(self, states, actions):
+        x = torch.cat([states.flatten(1), actions.flatten(1)], dim=-1)
+        return {1: torch.tanh(self.lin(x))}
+
+
+def _kin_fixture(seed=0, k=12):
+    torch.manual_seed(seed)
+    states = torch.randn(B, WIN, S)
+    actions = torch.randn(B, WIN, A) * 0.1
+    obs = torch.randn(B, k, S)
+    pred = _StubPredictor().eval()
+    ro = StepDisplacementReadout(S).eval()
+    v0 = torch.rand(B) * 8 + 2
+    return states, actions, obs, pred, ro, v0, k
 
 
 def _abl(state_source, *, seed=None, action="own_kinematic|blend=0.25", k=12):
