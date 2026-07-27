@@ -35,6 +35,8 @@ from driving_diagnostic import WP_STEPS, gt_ego_waypoints  # noqa: E402
 from tanitad.eval.gates import split_by_episode  # noqa: E402
 from tanitad.refs.refb import MANEUVER_CLASSES, ROUTE_CLASSES  # noqa: E402
 
+from taniteval import ego_guard as _eg  # noqa: E402
+
 SPEED_SCALE = 10.0
 WIN = 8
 GOAL_H = max(WP_STEPS)                    # 20 (2 s) — maneuver + goal horizon
@@ -106,7 +108,8 @@ def _behavior_probe(feats, labels, eid, n_classes):
 
 
 @torch.no_grad()
-def run(model, episodes, device, max_eps=20, stride=8):
+def run(model, episodes, device, max_eps=20, stride=8,
+        pose_scale=_eg.POSE_SCALE_DEFAULT):
     if getattr(model, "tactical_policy", None) is None:
         return {"skipped": "no trained tactical/strategic policy brains"}
     model.eval()
@@ -152,8 +155,15 @@ def run(model, episodes, device, max_eps=20, stride=8):
 
             # --- strategic: route from VISION (follow) vs with command -------
             follow = torch.zeros(len(ch), dtype=torch.long, device=device)
-            sf = model.strategic_policy(states, follow)
-            sn = model.strategic_policy(states, nav)
+            # ⛔ E1 (2026-07-28): feed the planner brains' ego port when the
+            # checkpoint owns one. `None` for every pre-2026-07-28 arm.
+            ego = (_eg.ego_from_poses(ep.poses, last, pose_scale, device)
+                   if _eg.planner_ego_capability(model)["ego_input_on_planners"]
+                   else None)
+            _eg.assert_planner_ego(model, ego, where="planning.run",
+                                   ego_source="observed pose at t and t-1")
+            sf = model.strategic_policy(states, follow, ego=ego)
+            sn = model.strategic_policy(states, nav, ego=ego)
             if vmask.any():
                 rf = sf["route_logits"].argmax(-1)[vmask]
                 rn = sn["route_logits"].argmax(-1)[vmask]
@@ -163,7 +173,7 @@ def run(model, episodes, device, max_eps=20, stride=8):
                 route_valid.extend(rt[vmask].tolist())
 
             # --- tactical: maneuver + waypoints + goal latent (follow ctx) ---
-            tac = model.tactical_policy(states, sf["ctx"])
+            tac = model.tactical_policy(states, sf["ctx"], ego=ego)
             mp = tac["maneuver_logits"].argmax(-1)
             man_ok += int((mp == man_tgt).sum()); man_n += len(ch)
             for gt_c, pr_c in zip(man_tgt.tolist(), mp.tolist()):

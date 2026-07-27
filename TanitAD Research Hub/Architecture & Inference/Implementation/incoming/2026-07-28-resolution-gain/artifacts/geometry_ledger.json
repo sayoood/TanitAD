@@ -1,0 +1,108 @@
+{
+  "class": "MEASURED (deterministic arithmetic on calib.py's own conventions)",
+  "frames": {
+    "today_deployed": {
+      "frame": "256x256 deployed",
+      "projection": "pinhole",
+      "f_ref": 266.0,
+      "hfov_deg": 51.39399945466489,
+      "px_per_deg_on_axis": 4.642575810304916,
+      "px_per_deg_at_edge": 5.717593647322777,
+      "px_per_deg_average_width_over_hfov": 4.98112625435621,
+      "tokens": 256
+    },
+    "v5_256x640_120cyl": {
+      "frame": "256x640f305.5775cyl",
+      "projection": "cylindrical",
+      "f_ref": 305.5774907364391,
+      "hfov_deg": 119.99999999999999,
+      "vfov_deg": 45.455574652043005,
+      "px_per_deg_on_axis": 5.333333333333333,
+      "px_per_deg_at_edge": 5.333333333333333,
+      "px_per_deg_average_width_over_hfov": 5.333333333333334,
+      "tokens": 640
+    },
+    "up_384x960_120cyl": {
+      "frame": "384x960f458.3662cyl",
+      "projection": "cylindrical",
+      "f_ref": 458.36623610465864,
+      "hfov_deg": 119.99999999999999,
+      "vfov_deg": 45.455574652043,
+      "px_per_deg_on_axis": 8.000000000000002,
+      "px_per_deg_at_edge": 8.000000000000002,
+      "px_per_deg_average_width_over_hfov": 8.000000000000002,
+      "tokens": 1440
+    },
+    "alt_320x800_120cyl": {
+      "frame": "320x800f381.9719cyl",
+      "projection": "cylindrical",
+      "f_ref": 381.97186342054886,
+      "hfov_deg": 119.99999999999999,
+      "vfov_deg": 45.455574652043005,
+      "px_per_deg_on_axis": 6.666666666666668,
+      "px_per_deg_at_edge": 6.666666666666668,
+      "px_per_deg_average_width_over_hfov": 6.666666666666668,
+      "tokens": 1000
+    },
+    "fov_audit_256x640_100deg_PINHOLE": {
+      "frame": "256x640 @100 deg pinhole",
+      "projection": "pinhole",
+      "f_ref": 268.51188197672957,
+      "hfov_deg": 100.0,
+      "px_per_deg_on_axis": 4.686416421220351,
+      "px_per_deg_at_edge": 11.342424121457174,
+      "tokens": 640,
+      "note": "THIS is the 4.686 the brief quotes. It is NOT the frame v5 is built at."
+    }
+  },
+  "ladder_rungs_ladder_A": {
+    "V5_640": {
+      "k": 1.0,
+      "px_per_deg": 5.333333,
+      "equivalent_width_px_at_120deg": 640.0,
+      "ratio_to_todays_on_axis": 1.1488
+    },
+    "D_today": {
+      "k": 1.148788,
+      "px_per_deg": 4.642576,
+      "equivalent_width_px_at_120deg": 557.11,
+      "ratio_to_todays_on_axis": 1.0
+    },
+    "D_1p5": {
+      "k": 1.5,
+      "px_per_deg": 3.555556,
+      "equivalent_width_px_at_120deg": 426.67,
+      "ratio_to_todays_on_axis": 0.7659
+    },
+    "D_2": {
+      "k": 2.0,
+      "px_per_deg": 2.666667,
+      "equivalent_width_px_at_120deg": 320.0,
+      "ratio_to_todays_on_axis": 0.5744
+    },
+    "D_3": {
+      "k": 3.0,
+      "px_per_deg": 1.777778,
+      "equivalent_width_px_at_120deg": 213.33,
+      "ratio_to_todays_on_axis": 0.3829
+    },
+    "D_6": {
+      "k": 6.0,
+      "px_per_deg": 0.888889,
+      "equivalent_width_px_at_120deg": 106.67,
+      "ratio_to_todays_on_axis": 0.1915
+    }
+  },
+  "correction_to_brief": {
+    "brief_says": "256x640 @120 deg has essentially the same on-axis figure (4.686) as today's 4.643",
+    "measured": {
+      "today_on_axis": 4.642576,
+      "v5_120cyl_uniform": 5.333333,
+      "ratio_v5_over_today_on_axis": 1.148788,
+      "ratio_v5_over_today_at_edge": 0.932793,
+      "where_4p686_comes_from": 4.686416
+    },
+    "verdict": "the QUALITATIVE claim survives (v5 is 1.149x today's on-axis and 0.933x today's edge density \u2014 genuinely comparable); the NUMBER 4.686 does not, it belongs to the 100 deg pinhole letterbox",
+    "consequence": "the ladder carries an explicit rung k = 1.148788 (D_today) that lands the wide frame EXACTLY on today's deployed on-axis angular resolution \u2014 that is the calibration point"
+  }
+}

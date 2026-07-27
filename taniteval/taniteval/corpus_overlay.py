@@ -70,7 +70,7 @@ sys.path.insert(0, "/root/TanitAD/stack/scripts")
 
 import torch                                                        # noqa: E402
 
-from taniteval import data, loaders                                # noqa: E402
+from taniteval import data, ego_guard as _eg, loaders              # noqa: E402
 from taniteval.cam_overlay import (CAM_H, F_EFF, UP,               # noqa: E402
                                    ego_future_path)
 from taniteval.flagship_overlay import (                          # noqa: E402
@@ -302,9 +302,17 @@ def episode_rollouts(model, step_readout, enc_input, poses, actions, feed,
         man_ids = route_ids = None
         if has_policy:
             follow = torch.zeros(len(ch), dtype=torch.long, device=device)
-            sf = model.strategic_policy(states, follow)          # deploy command
+            # ⛔ E1 (2026-07-28): None unless the ckpt owns trained ego weights.
+            ego = (_eg.ego_from_poses(poses, last, _eg.POSE_SCALE_DEFAULT,
+                                      device)
+                   if _eg.planner_ego_capability(model)["ego_input_on_planners"]
+                   else None)
+            _eg.assert_planner_ego(model, ego,
+                                   where="corpus_overlay.episode_rollouts",
+                                   ego_source="observed pose at t and t-1")
+            sf = model.strategic_policy(states, follow, ego=ego)  # deploy command
             route_ids = sf["route_logits"].argmax(-1).cpu().tolist()
-            tacf = model.tactical_policy(states, sf["ctx"])
+            tacf = model.tactical_policy(states, sf["ctx"], ego=ego)
             man_ids = tacf["maneuver_logits"].argmax(-1).cpu().tolist()
         for j, s in enumerate(ch):
             t = s + WINDOW - 1

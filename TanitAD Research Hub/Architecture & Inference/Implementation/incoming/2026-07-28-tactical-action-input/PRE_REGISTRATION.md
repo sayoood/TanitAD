@@ -154,7 +154,7 @@ does not, Block A is quarantined and reported as such.
 
 1. **The composite can go UP for a degradation.** A sibling slowed a planner down and the composite
    rose **+0.1698**, because a barely-moving plan is scored `recovery = NaN` **by construction**
-   (`pseudosim.py:514` — `rc = NaN where xt_hold <= 0.10`). ⇒ **`v1_ego_half` must score worse. If it
+   (`pseudosim.py:515` — `rc = NaN where xt_hold <= 0.10`). ⇒ **`v1_ego_half` must score worse. If it
    does not, Block B is VOID and I say so instead of reporting the other arms.**
 2. **`recovery` `defined_fraction`** is reported for every arm. If it moves by **> 2 pp** vs the
    control, that arm's `recovery` (and hence its composite) is flagged as

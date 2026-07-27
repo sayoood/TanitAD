@@ -1,0 +1,307 @@
+{
+  "arm": "refc_base_v0off",
+  "protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "grid": {
+    "dlat_m": [
+      0.0
+    ],
+    "dyaw_deg": [
+      -12.0,
+      -8.0,
+      -4.0,
+      0.0,
+      4.0,
+      8.0,
+      12.0
+    ],
+    "dlon_steps": [
+      -10,
+      0,
+      10
+    ],
+    "n_points": 21,
+    "lateral_axis": "REFUSED",
+    "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+    "warped_axes": [
+      "heading"
+    ],
+    "unwarped_axes": [
+      "longitudinal (real frames at an index offset)"
+    ]
+  },
+  "envelope_proof": {
+    "n_grid_points": 21,
+    "max_abs_dlat_m": 0.0,
+    "max_abs_dyaw_deg": 12.0,
+    "envelope": {
+      "lat_max_m": 3.0,
+      "yaw_max_deg": 12.0,
+      "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+    },
+    "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+    "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+    "EXTRAPOLATION_frac_steps_any": 0.0,
+    "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+    "ood_peak_ratio": null,
+    "ratio_is_lower_bound": false,
+    "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope",
+    "why_zero_by_construction": "Deviation is the GRID, not an accumulated rollout state. The protocol has no mechanism by which a window can drift outside the envelope, because no window ever advances.",
+    "falsifier": {
+      "_what": "the assertion CAN fail; these are the values that fail it",
+      "smallest_failing_abs_dyaw_deg": 12.000000001,
+      "smallest_failing_abs_dlat_m": 3.000000001,
+      "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+    }
+  },
+  "horizon_s": 2.0,
+  "n_evaluations": 15981,
+  "n_episodes": 40,
+  "planner_calls": 15981,
+  "rollout_steps_executed": 0,
+  "_no_accumulation": "rollout_steps_executed == 0 BY CONSTRUCTION: the loop never advances, so deviation cannot accumulate and the envelope cannot be left.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap (B=2000, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+  "component_discriminative_range": {
+    "_gate": {
+      "ceil_frac_max": 0.95,
+      "range_min": 0.05,
+      "rule": "admissible iff ceiling_frac < ceil_frac_max AND (max - min) >= range_min. When >= 2 arms are supplied, the between-arm spread must also be non-zero."
+    },
+    "ego_progress": {
+      "n": 15442,
+      "n_nan": 539,
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.837734,
+      "p05": 0.447434,
+      "p95": 1.0,
+      "iqr": 0.251862,
+      "ceiling_frac_ge_0p999": 0.332664,
+      "floor_frac_le_0p001": 0.004145,
+      "observed_range": 1.0,
+      "admissible": true
+    },
+    "recovery": {
+      "n": 13081,
+      "n_nan": 2900,
+      "min": 0.0,
+      "max": 0.999773,
+      "mean": 0.038338,
+      "p05": 0.0,
+      "p95": 0.322266,
+      "iqr": 0.0,
+      "ceiling_frac_ge_0p999": 7.6e-05,
+      "floor_frac_le_0p001": 0.89932,
+      "observed_range": 0.999773,
+      "admissible": true
+    },
+    "comfort": {
+      "n": 15981,
+      "n_nan": 0,
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.003567,
+      "p05": 0.0,
+      "p95": 0.0,
+      "iqr": 0.0,
+      "ceiling_frac_ge_0p999": 0.003567,
+      "floor_frac_le_0p001": 0.996433,
+      "observed_range": 1.0,
+      "admissible": true
+    },
+    "no_collision": {
+      "admissible": false,
+      "reason": "NOT COMPUTABLE",
+      "detail": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric."
+    },
+    "ttc": {
+      "admissible": false,
+      "reason": "NOT COMPUTABLE",
+      "detail": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric."
+    }
+  },
+  "components": {
+    "ego_progress": {
+      "ci": {
+        "mean": 0.8377,
+        "lo": 0.8101,
+        "hi": 0.8626,
+        "ci95": 0.0263,
+        "se": 0.0134,
+        "reducer": "mean",
+        "n_windows": 15442,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "admissible": true
+    },
+    "recovery": {
+      "ci": {
+        "mean": 0.0383,
+        "lo": 0.0237,
+        "hi": 0.0529,
+        "ci95": 0.0146,
+        "se": 0.0076,
+        "reducer": "mean",
+        "n_windows": 13081,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "admissible": true
+    },
+    "comfort": {
+      "ci": {
+        "mean": 0.0036,
+        "lo": 0.0022,
+        "hi": 0.005,
+        "ci95": 0.0014,
+        "se": 0.0007,
+        "reducer": "mean",
+        "n_windows": 15981,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "admissible": true
+    },
+    "no_collision": {
+      "ci": null,
+      "admissible": false,
+      "reason": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric."
+    },
+    "ttc": {
+      "ci": null,
+      "admissible": false,
+      "reason": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric."
+    }
+  },
+  "composite": {
+    "name": "PSS_recovery_progress",
+    "_not_a_driving_score": "There is NO collision gate in this composite because the cuboids are not available (see gates.reason). PDMS-shaped, but it scores RECOVERY and PROGRESS only. Do not report it as a Driving Score and do not compare it to a PDMS number.",
+    "formula": "(empty gate product) x (sum w_x s_x / sum w_x)",
+    "weights_admitted": {
+      "ego_progress": 5.0,
+      "recovery": 5.0,
+      "comfort": 2.0
+    },
+    "components_dropped": {},
+    "gates": {
+      "no_collision": {
+        "available": false,
+        "reason": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric."
+      }
+    },
+    "ci": {
+      "mean": 0.3891,
+      "lo": 0.3696,
+      "hi": 0.4057,
+      "ci95": 0.0181,
+      "se": 0.0094,
+      "reducer": "mean",
+      "n_windows": 15981,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "proximity_weighted_mean": 0.415472,
+    "unweighted_mean": 0.389115
+  },
+  "_meta": {
+    "arm": "refc_base_v0off",
+    "kind": "refc",
+    "v0_mode": "zero",
+    "V0_ABLATION": "the planner is handed v0 = 0 on EVERY path it consumes it (resolve_nav AND the decoder). IN-DISTRIBUTION: REF-C trains with ego_dropout = 0.5, so v0 = 0 is what half of its training steps saw.",
+    "ckpt": "/root/models/refc-base-30k/ckpt.pt",
+    "ckpt_md5": "8f10d6f934f4199e11ddc7352e074939",
+    "ckpt_step": 29999,
+    "refc_preset": "base",
+    "refc_nav_mode": "produced",
+    "refc_denoise_steps": 2,
+    "refc_n_anchors": 128,
+    "refc_ego_dropout_at_train": 0.5,
+    "envelope_proof": {
+      "n_grid_points": 21,
+      "max_abs_dlat_m": 0.0,
+      "max_abs_dyaw_deg": 12.0,
+      "envelope": {
+        "lat_max_m": 3.0,
+        "yaw_max_deg": 12.0,
+        "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+      },
+      "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+      "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+      "EXTRAPOLATION_frac_steps_any": 0.0,
+      "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+      "ood_peak_ratio": null,
+      "ratio_is_lower_bound": false,
+      "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope",
+      "why_zero_by_construction": "Deviation is the GRID, not an accumulated rollout state. The protocol has no mechanism by which a window can drift outside the envelope, because no window ever advances.",
+      "falsifier": {
+        "_what": "the assertion CAN fail; these are the values that fail it",
+        "smallest_failing_abs_dyaw_deg": 12.000000001,
+        "smallest_failing_abs_dlat_m": 3.000000001,
+        "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+      }
+    },
+    "G4_falsifier_exercised": {
+      "edge_value_accepted": true,
+      "just_outside_raises": true,
+      "lateral_refused": true,
+      "G4_PASS": true
+    },
+    "grid": {
+      "dlat_m": [
+        0.0
+      ],
+      "dyaw_deg": [
+        -12.0,
+        -8.0,
+        -4.0,
+        0.0,
+        4.0,
+        8.0,
+        12.0
+      ],
+      "dlon_steps": [
+        -10,
+        0,
+        10
+      ],
+      "n_points": 21,
+      "lateral_axis": "REFUSED",
+      "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+      "warped_axes": [
+        "heading"
+      ],
+      "unwarped_axes": [
+        "longitudinal (real frames at an index offset)"
+      ]
+    },
+    "stride": 8,
+    "horizon": 20,
+    "n_episodes": 40,
+    "val_dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+    "traffic_mode": "log_replay_nonreactive",
+    "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+    "protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+    "host": "tanitad-eval",
+    "python": "3.12.3",
+    "torch": "2.8.0+cu128",
+    "goal_provenance": "none (REF-C produces its own route from the image)",
+    "densify_endpoint_max_err": 0.0,
+    "planner_calls": 15981,
+    "rollout_steps_executed": 0,
+    "wallclock_s": 513.2,
+    "n_rows": 15981,
+    "refc_fed_command_hist": {
+      "follow": 8946,
+      "left": 3946,
+      "right": 3089
+    },
+    "refc_nav_note": "PRODUCED by the model's own route_head (image-only, no future, no label)"
+  }
+}

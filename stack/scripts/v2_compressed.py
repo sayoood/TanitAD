@@ -28,7 +28,8 @@ from tanitad.data.physicalai import (                          # noqa: E402
     _decode_mp4, signals_at, load_egomotion, maneuvers_for_poses, TARGET_HZ,
     intrinsics_for_clip, _physicalai_root_of)
 from tanitad.data.calib import (CanonicalFrame, as_frame,      # noqa: E402
-                                cylindrical_rectify, ftheta_crop_resize)
+                                cylindrical_rectify, ftheta_crop_resize,
+                                observed_report, subframe_slice)
 from tanitad.data.comma2k19 import stack_frames                # noqa: E402
 from tanitad.data.toy_driving import ToyEpisode                # noqa: E402
 
@@ -156,7 +157,21 @@ def build_compressed(clip: dict, out_path: str, size: int = 256,
     return int(buf.numel())
 
 
-def load_compressed(path: str) -> ToyEpisode:
+def load_compressed(path: str, frame: CanonicalFrame | None = None
+                    ) -> ToyEpisode:
+    """Decode one payload. ``frame`` (opt-in) delivers a CENTRED SUB-FRAME.
+
+    ⭐ THE ZERO-COST RIG FIX. A centred sub-frame of the stored geometry is a
+    pure pixel slice of it (``calib.centred_subframe``), so passing e.g.
+    ``PHYSICALAI_RIG_CLEAN_176x624`` against a ``256x640`` cache yields EXACTLY
+    the frames a rebuild at that geometry would produce — no re-encode, no
+    re-decode of source video, no second copy of the corpus. The slice happens
+    after the PNG decode that already runs, so it is strictly cheaper than today
+    (fewer bytes into ``stack_frames`` and into the collate).
+
+    ``None`` (default) returns the stored geometry unchanged, so every existing
+    reader is byte-identical.
+    """
     d = torch.load(path, map_location="cpu", weights_only=False)
     lens = d["jpeg_len"]
     offs = torch.cat([torch.zeros(1, dtype=torch.int64), torch.cumsum(lens, 0)])
@@ -165,6 +180,14 @@ def load_compressed(path: str) -> ToyEpisode:
     frames = [dec(buf[int(offs[i]):int(offs[i + 1])],
                   mode=tvio.ImageReadMode.RGB) for i in range(len(lens))]
     vid = torch.stack(frames)                                  # [n,3,S,S] u8
+    if frame is not None:
+        stored = CanonicalFrame.from_dict(d["frame"]) if "frame" in d else \
+            CanonicalFrame(height=int(d.get("image_h", d["image_size"])),
+                           width=int(d.get("image_w", d["image_size"])),
+                           f_ref=266.0)
+        if frame != stored:
+            rs, cs = subframe_slice(stored, frame)   # refuses a non-slice
+            vid = vid[:, :, rs, cs].contiguous()
     k = d["n_stack"] - 1
     stacked = stack_frames(vid, d["n_stack"])                  # [n-k,9,S,S]
     poses = d["poses"][k:]
@@ -292,6 +315,7 @@ def _assert_geometry_deliverable(a, frame, clip_id, root):
     rep = {"requested_hfov_deg": round(float(frame.hfov_deg), 4),
            "achieved_hfov_deg": round(got_hfov, 4), "f_eff": round(got_f, 4),
            "observed_frac": round(obs, 6), "frame_tag": frame.tag()}
+    rep.update(_rig_observability(a, frame, root))
     print(f"[build] geometry check (clip {clip_id[:8]}): {json.dumps(rep)}",
           flush=True)
     assert abs(got_hfov - frame.hfov_deg) < 0.5, (
@@ -299,7 +323,57 @@ def _assert_geometry_deliverable(a, frame, clip_id, root):
         f"deliver {got_hfov:.2f}deg at {frame.height}x{frame.width} — the crop "
         f"CLAMPED at the sensor edge and would have ZOOMED instead of widening. "
         f"Widen the frame (more columns) or lower the requested HFOV.")
+    if getattr(a, "require_fully_observed", False):
+        ro = rep.get("rig_observability") or {}
+        assert ro.get("fully_observed_by_all_sampled") is True, (
+            f"ABORT (--require-fully-observed): {frame.tag()} is NOT fully "
+            f"observed by every sampled clip — {json.dumps(ro)}. A masked region "
+            f"that correlates with the rig is a free rig label (class C26). "
+            f"Shrink the frame (see scripts/rig_band_scan.py) or drop the flag "
+            f"and state the asymmetry in the artifact.")
     return rep
+
+
+def _rig_observability(a, frame, root, n: int = 60) -> dict:
+    """⚠️ THE ONE-CLIP DECLARATION IS THE BUG THIS CLOSES.
+
+    ``_assert_geometry_deliverable`` probes ONE clip, so a 120 deg / 256x640 build
+    whose first clip happened to be rig A wrote ``observed_frac: 1.0`` into
+    ``_geometry.json`` while the corpus mean was 0.911 — a declaration that is
+    true of the sample and false of the corpus. This samples a POPULATION and
+    reports BOTH rigs separately, so the manifest says what a consumer needs:
+    whether the frame is fully observed by every clip, or by only one rig.
+
+    Cheap: the mask comes from the ray map, so no video is decoded.
+    """
+    try:
+        sel = pd.read_parquet(a.sel) if getattr(a, "sel", "") else None
+        if sel is None:
+            return {}
+        ids = [str(c) for c in sel["clip_id"].astype(str).tolist()]
+        step = max(1, len(ids) // max(n, 1))
+        rows = []
+        for cid in ids[::step][:n]:
+            intr = intrinsics_for_clip(cid, root)
+            if not intr.per_clip:
+                continue
+            rows.append((("B" if intr.cy >= 650.872 else "A"),
+                         observed_report(intr, frame)["masked_frac"]))
+        if not rows:
+            return {}
+        out = {rg: {"n": sum(1 for r in rows if r[0] == rg),
+                    "masked_frac_max": max([r[1] for r in rows if r[0] == rg],
+                                           default=None),
+                    "masked_frac_mean": (
+                        sum(r[1] for r in rows if r[0] == rg) /
+                        max(sum(1 for r in rows if r[0] == rg), 1))}
+               for rg in ("A", "B")}
+        out["fully_observed_by_all_sampled"] = max(r[1] for r in rows) == 0.0
+        out["n_sampled"] = len(rows)
+        return {"rig_observability": out}
+    except Exception as e:                                    # noqa: BLE001
+        # a declaration that could not be computed must SAY so, never be absent
+        return {"rig_observability": {"error": f"{type(e).__name__}: {e}"}}
 
 
 def build(a):
@@ -469,6 +543,13 @@ def _add_geometry_args(p):
                    default="ftheta_crop",
                    help="ftheta_crop (deployed; replicate-pads rig B) or "
                         "cylindrical (masks instead of fabricating)")
+    p.add_argument("--require-fully-observed", action="store_true",
+                   help="ABORT unless EVERY sampled clip of BOTH rigs fully "
+                        "observes the requested frame (class C26). Off by "
+                        "default so no existing build changes behaviour; the "
+                        "per-rig numbers are recorded in _geometry.json either "
+                        "way. See scripts/rig_band_scan.py for the frame that "
+                        "passes it.")
     p.add_argument("--codec", choices=("jpeg", "png"), default="jpeg",
                    help="png = LOSSLESS (bit-exact, ~2.6x; decodes FASTER than "
                         "jpeg); jpeg = deployed lossy path")

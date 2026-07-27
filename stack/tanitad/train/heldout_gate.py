@@ -84,8 +84,19 @@ __all__ = [
     "probe_grid", "PRIMARY_NAME", "PRIMARY_RATIONALE", "REFUSED_PRIMARY",
 ]
 
-#: The primary the gate stops on. Named, so it can never be quietly swapped.
-PRIMARY_NAME = "pseudosim_composite_PSS_recovery_progress"
+#: ⛔ The progress term the gate scores under. VERSIONED (2026-07-28): the
+#: published ``clamp_v1`` term is ONE-SIDED — it charges nothing for over-travel,
+#: and MEASURED on the 2026-07-27 panel's own rows it returned **n.s.** on a
+#: **5.65x** along-track RMS improvement while SEPARATING a **3.36x** degradation
+#: of the same axis. A v5 run gated on it cannot see a longitudinal lever.
+#: Set to ``"clamp_v1"`` to reproduce a pre-2026-07-28 gate exactly.
+PROGRESS_TERM = "twosided_v2"
+#: The primary the gate stops on. Named — INCLUDING the progress term — so it can
+#: never be quietly swapped OR silently redefined under a stable name.
+PRIMARY_NAME = f"pseudosim_composite_PSS_recovery_progress@{PROGRESS_TERM}"
+#: What every PSS number published before 2026-07-28 was computed under.
+PRIMARY_NAME_PUBLISHED_THROUGH_20260727 = (
+    "pseudosim_composite_PSS_recovery_progress@clamp_v1")
 PRIMARY_RATIONALE = (
     "MEASURED: the ADE-optimal pick collides 4.7x more often than the rule-"
     "optimal pick (3.36 % vs 0.71 %, separated). PUBLISHED: L2/ADE vs closed-"
@@ -236,6 +247,10 @@ class HeldoutGateConfig:
     first_probe_step: int = 0
     grid: object | None = None     # a GridSpec; None -> probe_grid()
     weights: dict | None = None    # composite weights; None -> pseudosim default
+    #: ⛔ the VERSIONED ego-progress term (see :data:`PROGRESS_TERM`). Pin it to
+    #: ``"clamp_v1"`` only to reproduce a pre-2026-07-28 gate; that term cannot
+    #: see over-travel and therefore cannot see a longitudinal lever.
+    progress_term: str = PROGRESS_TERM
 
     def resolved_grid(self):
         return probe_grid() if self.grid is None else self.grid
@@ -437,14 +452,16 @@ class HeldoutGate:
         """Per-window composite under the PINNED admitted-component set."""
         import numpy as np
         ps, _ = _taniteval()
-        sc = ps.score_windows(pw)
+        term = getattr(self.cfg, "progress_term", PROGRESS_TERM)
+        sc = ps.score_windows(pw, progress_term=term)
         comps = {k: sc[k] for k in ("ego_progress", "recovery", "comfort")}
         comps["no_collision"] = None
         comps["ttc"] = None
         if self._pinned_ranges is None:
             ranges = ps.discriminative_range(comps)
             try:
-                comp = ps.composite(comps, ranges, weights=self.cfg.weights)
+                comp = ps.composite(comps, ranges, weights=self.cfg.weights,
+                                    progress_term=term)
             except ps.VacuousMetric as exc:
                 raise GateNotUsableError(
                     f"the FIRST probe cannot form a composite: {exc} The gate "
@@ -456,8 +473,9 @@ class HeldoutGate:
             # ⚠️ PINNED: re-deriving admissibility per probe would let the metric
             # change definition mid-run and compare two different composites.
             comp = ps.composite(comps, self._pinned_ranges,
-                                weights=self.cfg.weights)
-        node = {"grid": pw.get("grid"), "traffic_mode": pw.get("traffic_mode"),
+                                weights=self.cfg.weights, progress_term=term)
+        node = {"metric_id": comp.get("name"), "progress_term": term,
+                "grid": pw.get("grid"), "traffic_mode": pw.get("traffic_mode"),
                 "_estimator": f"paired episode-cluster bootstrap "
                               f"(B={self.cfg.n_boot}, unit = held-out episode)"}
         return np.asarray(comp["value"], dtype=float), list(pw["eid"]), node

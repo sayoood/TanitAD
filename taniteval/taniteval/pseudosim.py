@@ -93,6 +93,7 @@ import numpy as np
 import torch
 
 from taniteval import ci as _ci
+from taniteval import ego_guard as _egg
 from taniteval import ood as _ood
 from taniteval.clhorizon import (DT, LOOKAHEAD_STEP, W as WINDOW,  # noqa: F401
                                  sampling_homography, warp_batch, wrap_angle)
@@ -106,7 +107,116 @@ __all__ = [
     "proximity_weights", "pseudo_evaluate", "score_windows",
     "discriminative_range", "composite", "emit",
     "COMFORT_LIMITS", "COMPONENT_WEIGHTS", "CEIL_FRAC_MAX", "RANGE_MIN",
+    "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
+    "progress_from_ratio", "metric_id", "UnknownProgressTerm",
 ]
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE PROGRESS TERM IS VERSIONED — v1 was ONE-SIDED (MEASURED 2026-07-28)     #
+# --------------------------------------------------------------------------- #
+#: ``clamp_v1`` is ``clamp(ratio, 0, 1)``: it charges NOTHING for OVER-travel.
+#: MEASURED (…/2026-07-28-tactical-action-input/): v1's tactical plan
+#: over-travels on **48.80 %** of windows (p95 ratio **2.430x**), all of which
+#: clamp to 1.0. An intervention that cut along-track RMS **8.799 -> 1.557 m
+#: (5.65x)** and lifted the +-5 % distance hit-rate **15.00 % -> 58.93 %** moved
+#: the composite **+0.0078 [-0.0110, +0.0260], n.s.** — while the SAME estimator
+#: on the SAME 15,981 rows SEPARATED a 3.36x DEGRADATION of the same axis
+#: (REF-C-XL trained-`v0` ablation, -0.0332 [-0.0433, -0.0243] SEP, replicated
+#: at base scale -0.0461). ⇒ **one-sided blindness, not low power: `clamp_v1`
+#: punishes going too slow and cannot see going too fast.**
+#:
+#: ⚠️ EVERY PSS NUMBER PUBLISHED BEFORE 2026-07-28 IS A ``clamp_v1`` NUMBER.
+#: It stays exactly computable (``progress_term="clamp_v1"``) and is IDENTIFIED
+#: in the composite's own ``name``, so the fix is a new metric id rather than a
+#: silent redefinition under a stable name — the failure class this program has
+#: logged repeatedly (most recently ``ax``, deliberately NOT redefined).
+PROGRESS_TERM_PUBLISHED = "clamp_v1"
+#: ``twosided_v2`` is ``clamp(1 - under - OVER_TRAVEL_WEIGHT * over, 0, 1)`` with
+#: ``under = max(1 - r, 0)``, ``over = max(r - 1, 0)``.
+#:
+#: WHY THIS SHAPE, and why the default weight is 1.0:
+#:  * It is a **strict refinement**: for every ``r <= 1`` it is IDENTICAL to
+#:    ``clamp_v1``, so the under-travel half of the published term is preserved
+#:    bit-for-bit and the change is purely *additive information* on the side
+#:    the old term was blind to. Pinned by
+#:    ``test_twosided_is_IDENTICAL_to_clamp_v1_on_every_under_travelling_row``.
+#:  * It is **piecewise-linear and zero-parameter at w = 1**, so the fix cannot
+#:    be accused of being tuned to produce a ranking.
+#:  * ⚠️ **Two-sided is NOT automatically symmetric.** Over-travel (planning
+#:    through space the car will not have) is plausibly MORE dangerous than
+#:    under-travel in driving. But this surface has **no collision gate and no
+#:    cuboids** (:data:`COLLISION_UNAVAILABLE_REASON`), so danger is NOT
+#:    measurable here and any ``w != 1`` would be an ASSUMPTION dressed as a
+#:    measurement. ⇒ the default is the minimum-assumption ``w = 1``, and the
+#:    ranking's sensitivity to ``w`` is published instead of chosen
+#:    (``asym_w0p5`` / ``asym_w2`` / ``asym_w3`` below).
+OVER_TRAVEL_WEIGHT = 1.0
+#: ⭐ THE DEFAULT IS THE FIXED TERM. A capability that must be passed explicitly
+#: is a capability nobody passes — that is exactly the E1 bug this same report
+#: found (``assert_ego_is_fed`` existed, was tested, and had never been called).
+#: The versioned ``name``/``metric_id`` is what prevents a silent redefinition,
+#: not a frozen default.
+PROGRESS_TERM_DEFAULT = "twosided_v2"
+
+
+class UnknownProgressTerm(ValueError):
+    """A progress-term name that is not in :data:`PROGRESS_TERMS`.
+
+    Never falls back to a default: a typo'd term would silently produce a
+    number under the wrong metric id, which is the whole failure being fixed."""
+
+
+def _progress_clamp_v1(ratio):
+    """⛔ THE PUBLISHED (BLIND) TERM. Kept exactly, forever, for reproduction."""
+    return ratio.clamp(0.0, 1.0)
+
+
+def _progress_twosided(weight):
+    """``clamp_v1(r) - w * max(r - 1, 0)``, re-clipped to [0, 1].
+
+    ⭐ Written as *the published term minus an over-travel charge* rather than as
+    ``1 - |1 - r|`` on purpose: for every ``r <= 1`` the charge is exactly ``0.0``
+    and the result is **BIT-identical** to :func:`_progress_clamp_v1`, not merely
+    equal to float tolerance. ``1 - (1 - r)`` is NOT ``r`` in float32, and a
+    2.5e-4-level drift on 36 % of rows would have crept into every paired delta
+    between the two terms. Pinned by
+    ``test_twosided_is_IDENTICAL_to_clamp_v1_on_every_under_travelling_row``."""
+    def _f(ratio):
+        base = _progress_clamp_v1(ratio)
+        over = (ratio - 1.0).clamp_min(0.0)
+        return (base - float(weight) * over).clamp(0.0, 1.0)
+    return _f
+
+
+#: name -> ratio-to-score function. Every published number names its key.
+PROGRESS_TERMS = {
+    "clamp_v1": _progress_clamp_v1,
+    "twosided_v2": _progress_twosided(OVER_TRAVEL_WEIGHT),
+    # the pre-registered SENSITIVITY grid on the over-travel slope
+    "twosided_asym_w0p5": _progress_twosided(0.5),
+    "twosided_asym_w1p5": _progress_twosided(1.5),
+    "twosided_asym_w2": _progress_twosided(2.0),
+    "twosided_asym_w3": _progress_twosided(3.0),
+}
+
+
+def progress_from_ratio(ratio, progress_term=PROGRESS_TERM_DEFAULT):
+    """``ratio = plan_along / human_along`` -> the ``ego_progress`` sub-score."""
+    if progress_term not in PROGRESS_TERMS:
+        raise UnknownProgressTerm(
+            f"unknown progress_term {progress_term!r}; known: "
+            f"{sorted(PROGRESS_TERMS)}. Refusing to fall back to a default — a "
+            f"typo must not silently produce a number under the wrong metric "
+            f"id. Every PSS number published before 2026-07-28 is "
+            f"{PROGRESS_TERM_PUBLISHED!r}.")
+    return PROGRESS_TERMS[progress_term](ratio)
+
+
+def metric_id(progress_term=PROGRESS_TERM_DEFAULT) -> str:
+    """The quotable name. ⛔ Quote THIS, never a bare ``PSS``."""
+    if progress_term not in PROGRESS_TERMS:
+        raise UnknownProgressTerm(f"unknown progress_term {progress_term!r}")
+    return f"PSS_recovery_progress@{progress_term}"
 
 # --------------------------------------------------------------------------- #
 # provenance strings that must ride along with every number                    #
@@ -355,6 +465,11 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
     absence forced five closed-loop artifacts to be re-driven in July.
     """
     proof = assert_grid_in_envelope(grid)          # BEFORE any model touch
+    # ⛔ E1 (2026-07-28): an ego-TRAINED checkpoint scored ego-BLIND is silent.
+    # Refused here, BEFORE any model is touched, for the same reason the
+    # envelope assertion is: a bad run must cost zero GPU seconds.
+    ego_prov = _egg.assert_adapter_declares_ego(
+        planner, where="pseudosim.pseudo_evaluate")
     frames_of = frames_of or _default_frames
     pts = grid.points()
     lon_lo, lon_hi = min(p[2] for p in pts), max(p[2] for p in pts)
@@ -402,12 +517,14 @@ def pseudo_evaluate(planner, episodes, grid, *, device="cpu", stride=8,
                   f"planner calls so far {n_calls}", flush=True)
     if not rec["eid"]:
         return {"_empty": True, "envelope_proof": proof,
+                "ego_input": ego_prov,
                 "traffic_mode": TRAFFIC_MODE_LOG_REPLAY}
     out = {k: (v if k == "eid" else torch.cat(v)) for k, v in rec.items()}
     out["traj"] = torch.cat(trajs)                 # [n, horizon, 2] ego frame
     out["ref_path"] = torch.cat(ref_paths)         # [n, horizon+1, 2] world
     out["ref_yaw"] = torch.cat(ref_yaw)            # [n] world heading at ref
     out["envelope_proof"] = proof
+    out["ego_input"] = ego_prov
     out["grid"] = grid.describe()
     out["horizon_steps"] = int(horizon)
     out["horizon_s"] = round(horizon * DT, 2)
@@ -452,17 +569,27 @@ def _cross_and_along(pw):
     return x, y, ref_x, ref_y
 
 
-def score_windows(pw, *, comfort_limits=None, dt=DT) -> dict:
+def score_windows(pw, *, comfort_limits=None, dt=DT,
+                  progress_term=PROGRESS_TERM_DEFAULT) -> dict:
     """Per-(window, grid point) sub-scores. Pure arithmetic — **no GPU**.
 
     Components, each map-free and each with its discriminative range MEASURED
     (never assumed) by :func:`discriminative_range`:
 
     ``ego_progress``  along-track distance the plan covers, over the along-track
-                      distance the human covered on the same window, clipped to
-                      [0, 1]. **PUBLISHED: the strongest single predictor of
-                      closed-loop Driving Score, Spearman rho = 0.83**, ahead of
-                      collision rate (0.45); ADE/L2 is **-0.36, p = 0.43**.
+                      distance the human covered on the same window, scored by
+                      the VERSIONED :data:`PROGRESS_TERMS` map. **PUBLISHED: the
+                      strongest single predictor of closed-loop Driving Score,
+                      Spearman rho = 0.83**, ahead of collision rate (0.45);
+                      ADE/L2 is **-0.36, p = 0.43**.
+
+                      ⛔ The published term ``clamp_v1`` is ONE-SIDED: it charges
+                      NOTHING for over-travel, and v1 over-travels on 48.80 % of
+                      windows (p95 ratio 2.430x), so a 5.65x along-track RMS
+                      improvement scored **n.s.** while a 3.36x DEGRADATION on
+                      the same axis and rows scored SEPARATED. The default is
+                      now ``twosided_v2``; the old value stays computable and is
+                      identified in the composite's ``name``.
     ``recovery``      does the plan converge back to the logged path from the
                       perturbed state? ``1 - |xt_end| / |xt_hold_matched|``
                       clipped to [0, 1]. **This is the error-recovery signal
@@ -497,7 +624,7 @@ def score_windows(pw, *, comfort_limits=None, dt=DT) -> dict:
                        + (ref_y[:, -1] - ref_y[:, 0]) ** 2)
     ego = x[:, -1]                                    # along-track, ref frame
     ratio = ego / human.clamp_min(1e-3)
-    ep_score = ratio.clamp(0.0, 1.0)
+    ep_score = progress_from_ratio(ratio, progress_term)
     ep_score = torch.where(human > 0.5, ep_score, torch.full_like(ep_score,
                                                                  float("nan")))
 
@@ -534,6 +661,11 @@ def score_windows(pw, *, comfort_limits=None, dt=DT) -> dict:
     return {
         "ego_progress": ep_score.numpy(),
         "ego_progress_raw_ratio": ratio.numpy(),
+        "_progress_term": progress_term,
+        "_progress_term_note": (
+            "clamp_v1 = clamp(r,0,1), the term EVERY pre-2026-07-28 PSS number "
+            "was computed under; it charges nothing for over-travel. "
+            "twosided_v2 = clamp(1-|1-r|,0,1), identical to clamp_v1 for r<=1."),
         "recovery": rc.numpy(),
         "cross_track_end_m": xt_end.numpy(),
         "cross_track_hold_matched_m": xt_hold.numpy(),
@@ -619,7 +751,8 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
     return out
 
 
-def composite(scores, ranges, *, weights=None, gates=("no_collision",)) -> dict:
+def composite(scores, ranges, *, weights=None, gates=("no_collision",),
+              progress_term=None) -> dict:
     """PDM-shaped composite over the **admissible** components only.
 
     ``PDMS = (prod gate_m) x (sum w_x s_x / sum w_x)``. Here every multiplicative
@@ -633,6 +766,11 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",)) -> dict:
     Raises :class:`VacuousMetric` if no weighted component is admissible —
     refusing to emit is the only honest output when every clause is dead.
     """
+    # The progress term rides in the NAME. `scores` carries it when it came from
+    # `score_windows`; an explicit argument wins. Never guessed: an unlabelled
+    # composite is exactly the silent-redefinition failure being fixed.
+    term = (progress_term if progress_term is not None
+            else scores.get("_progress_term", PROGRESS_TERM_DEFAULT))
     w = dict(COMPONENT_WEIGHTS if weights is None else weights)
     admitted, dropped = {}, {}
     for name, wt in w.items():
@@ -659,7 +797,13 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",)) -> dict:
                       "reason": None if scores.get(g) is not None
                       else COLLISION_UNAVAILABLE_REASON} for g in gates}
     return {
-        "name": "PSS_recovery_progress",
+        "name": metric_id(term),
+        "progress_term": term,
+        "_progress_term_warning": (
+            "⛔ QUOTE THE VERSIONED NAME. Every PSS number published before "
+            f"2026-07-28 is {PROGRESS_TERM_PUBLISHED!r} — a ONE-SIDED term that "
+            "charges nothing for over-travel. Two values under different terms "
+            "are DIFFERENT METRICS and must never be compared."),
         "_not_a_driving_score": (
             "There is NO collision gate in this composite because the cuboids "
             "are not available (see gates.reason). PDMS-shaped, but it scores "
@@ -686,14 +830,14 @@ def _boot(x, eid, n_boot, seed):
 
 
 def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
-         by_arm_scores=None) -> dict:
+         by_arm_scores=None, progress_term=PROGRESS_TERM_DEFAULT) -> dict:
     """The full result node for one arm: sub-scores, ranges, composite, CIs.
 
     Every node carries ``traffic_mode``, the envelope proof, the estimator and
     the refused estimator. Nothing here can be quoted without them.
     """
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
-    sc = score_windows(pw)
+    sc = score_windows(pw, progress_term=progress_term)
     eid = list(pw["eid"])
     comps = {k: sc[k] for k in ("ego_progress", "recovery", "comfort")}
     comps["no_collision"] = None
@@ -702,6 +846,9 @@ def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
 
     node = {
         "arm": arm,
+        "metric_id": metric_id(progress_term),
+        "progress_term": progress_term,
+        "ego_input": pw.get("ego_input"),
         "protocol": PROTOCOL,
         "traffic_mode": TRAFFIC_MODE_LOG_REPLAY,
         "traffic_mode_note": TRAFFIC_MODE_NOTE,
@@ -727,7 +874,8 @@ def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
             else {"ci": None, "admissible": False,
                   "reason": COLLISION_UNAVAILABLE_REASON})
     try:
-        comp = composite(comps, ranges, weights=weights)
+        comp = composite(comps, ranges, weights=weights,
+                         progress_term=progress_term)
         val = comp.pop("value")
         comp["ci"] = _boot(val, eid, n_boot, seed)
         # the weighted-vs-unweighted disagreement check

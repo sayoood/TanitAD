@@ -1,0 +1,23 @@
+{
+  "class": "MEASURED (ours)",
+  "what": "the frozen deployed-v1 encoder+readout every probe in this stream, the FOV crop audit and the situation classifier are built on",
+  "payload": {
+    "encoder_params": 87022848,
+    "readout_params": 98432,
+    "n_tensors": 151,
+    "dtype": "torch.float32",
+    "step": 29999,
+    "sha256_of_payload_file": "10fc27f207cc0f55c76c888cdb6a72f5ed7374ec95e3aeae01f48db301e329b5"
+  },
+  "where_it_currently_lives": "C:/Users/Admin/AppData/Local/Temp/claude/.../8fc25020-.../scratchpad/sitclf/v1_trunk.pt  (a SESSION SCRATCHPAD, outside git, 348 MB)",
+  "REPRODUCIBILITY_CHECK": {
+    "question": "is that scratchpad file the only copy of the weights three streams depend on?",
+    "answer": "NO - it is reproducible from a PERMANENT local artifact",
+    "permanent_source": "C:/Users/Admin/tanitad-data/eval/v1_speedjerk_ckpt.pt",
+    "source_step": 29999,
+    "recipe": "python 2026-07-26-situation-classifier/scripts/sc_extract_trunk.py <v1_speedjerk_ckpt.pt> v1_trunk.pt",
+    "verified": "BITWISE IDENTICAL on all 151 encoder./readout. tensors (torch.equal, no tolerance)",
+    "shim_fidelity": "shape_shim.verify_identity() -> max_abs_diff 0.0, bit_identical true at the deployed 256x256 shape"
+  },
+  "why_this_is_recorded": "the payload's own `src` field points at ANOTHER session's temp directory. Three streams' headline probes rest on it and none of them records how to rebuild it from something permanent. This entry is that recipe."
+}

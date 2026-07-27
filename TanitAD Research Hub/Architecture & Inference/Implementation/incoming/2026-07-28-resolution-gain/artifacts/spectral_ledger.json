@@ -1,0 +1,104 @@
+{
+  "n_clips": 10,
+  "n_frames_per_clip": 6,
+  "central_crop": [
+    192,
+    448
+  ],
+  "note": "f95 = radial frequency (cyc/px) below which 95 % of AC power lies (a percentile of a RENORMALISED distribution, so it is monotone but NOT expected to scale as 1/k). f_cut = the -40 dB cutoff of the radial power profile \u2014 THAT is what a low-pass sets and it must land at the rung's own Nyquist 0.5/k.",
+  "per_arm": {
+    "A_1p5_alias": {
+      "k": 1.5,
+      "antialias": false,
+      "px_per_deg": 3.5556,
+      "f95_mean": 0.085156,
+      "f95_sd": 0.043451,
+      "f95_ratio_to_baseline": 0.4192,
+      "f_cut_mean": 0.160156,
+      "f_cut_sd": 0.04745,
+      "f_cut_predicted_0p5_over_k": 0.3333,
+      "f_cut_over_prediction": 0.4805
+    },
+    "D_1p5": {
+      "k": 1.5,
+      "antialias": true,
+      "px_per_deg": 3.5556,
+      "f95_mean": 0.06875,
+      "f95_sd": 0.028539,
+      "f95_ratio_to_baseline": 0.3385,
+      "f_cut_mean": 0.141406,
+      "f_cut_sd": 0.034193,
+      "f_cut_predicted_0p5_over_k": 0.3333,
+      "f_cut_over_prediction": 0.4242
+    },
+    "D_2": {
+      "k": 2.0,
+      "antialias": true,
+      "px_per_deg": 2.6667,
+      "f95_mean": 0.050781,
+      "f95_sd": 0.018042,
+      "f95_ratio_to_baseline": 0.25,
+      "f_cut_mean": 0.119531,
+      "f_cut_sd": 0.023524,
+      "f_cut_predicted_0p5_over_k": 0.25,
+      "f_cut_over_prediction": 0.4781
+    },
+    "D_3": {
+      "k": 3.0,
+      "antialias": true,
+      "px_per_deg": 1.7778,
+      "f95_mean": 0.039063,
+      "f95_sd": 0.01289,
+      "f95_ratio_to_baseline": 0.1923,
+      "f_cut_mean": 0.098437,
+      "f_cut_sd": 0.014476,
+      "f_cut_predicted_0p5_over_k": 0.1667,
+      "f_cut_over_prediction": 0.5906
+    },
+    "D_6": {
+      "k": 6.0,
+      "antialias": true,
+      "px_per_deg": 0.8889,
+      "f95_mean": 0.025781,
+      "f95_sd": 0.008069,
+      "f95_ratio_to_baseline": 0.1269,
+      "f_cut_mean": 0.066406,
+      "f_cut_sd": 0.008235,
+      "f_cut_predicted_0p5_over_k": 0.0833,
+      "f_cut_over_prediction": 0.7969
+    },
+    "D_today": {
+      "k": 1.148788,
+      "antialias": true,
+      "px_per_deg": 4.6426,
+      "f95_mean": 0.082812,
+      "f95_sd": 0.041085,
+      "f95_ratio_to_baseline": 0.4077,
+      "f_cut_mean": 0.15625,
+      "f_cut_sd": 0.047343,
+      "f_cut_predicted_0p5_over_k": 0.4352,
+      "f_cut_over_prediction": 0.359
+    },
+    "V5_640": {
+      "k": 1.0,
+      "antialias": true,
+      "px_per_deg": 5.3333,
+      "f95_mean": 0.203125,
+      "f95_sd": 0.103595,
+      "f95_ratio_to_baseline": 1.0,
+      "f_cut_mean": 0.216406,
+      "f_cut_sd": 0.111451,
+      "f_cut_predicted_0p5_over_k": 0.5,
+      "f_cut_over_prediction": 0.4328
+    }
+  },
+  "A_CTRL_antialias_matters": {
+    "f_cut_D_1p5_lowpassed": 0.141406,
+    "f_cut_A_1p5_aliased": 0.160156,
+    "f95_D_1p5_lowpassed": 0.06875,
+    "f95_A_1p5_aliased": 0.085156,
+    "aliased_carries_more_hf": true,
+    "ratio_aliased_over_lowpassed_f95": 1.2386,
+    "rule": "aliasing folds energy back into the band, so at the SAME nominal factor the no-low-pass arm must carry MORE high-frequency power. If it does not, the ladder's 'we removed information' claim is unsupported."
+  }
+}

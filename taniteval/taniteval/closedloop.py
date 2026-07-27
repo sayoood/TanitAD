@@ -92,6 +92,7 @@ from tanitad.models.metric_dynamics import accumulate_se2, rollout_decode  # noq
 
 from taniteval import ci as _ci  # noqa: E402
 from taniteval import driving as _drv  # noqa: E402
+from taniteval import ego_guard as _eg  # noqa: E402
 
 # --- protocol constants (parity with bench.py / rollout.py) ----------------- #
 SPEED_SCALE = 10.0          # v0 action-channel scale (every trainer)
@@ -217,7 +218,7 @@ def bicycle_integrate(v0: torch.Tensor, steer_seq: torch.Tensor,
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def closed_loop_rollout(model, step_readout, states0, aw, v0, speed_input,
-                        k=K_MAX, plan_fn=None):
+                        k=K_MAX, plan_fn=None, ego=None, pose_scale=None):
     """Roll the imagination-in-the-loop closed loop for a batch of windows.
 
     states0 [b,W,S] encoded latent window; aw [b,W,A] observed action window
@@ -230,23 +231,51 @@ def closed_loop_rollout(model, step_readout, states0, aw, v0, speed_input,
     ``strategic_policy``/``tactical_policy`` hierarchy — a v4 ``FlagshipV4Head``
     checkpoint has neither, and before 2026-07-26 that made this whole harness
     unusable for the v4 line. It takes ``(model, win_s, v)`` and returns the
-    ``[b, 2]`` 0.5 s lookahead waypoint in the current ego frame."""
+    ``[b, 2]`` 0.5 s lookahead waypoint in the current ego frame.
+
+    ⛔ ``ego`` ``[b, 2]`` is ``[v0 / pose_scale, yr0]`` from the OBSERVED poses at
+    tick 0 (:func:`taniteval.ego_guard.ego_from_poses`). It is REQUIRED for a
+    checkpoint whose planner brains own trained ``ego_emb`` weights and is
+    refused otherwise — see :mod:`taniteval.ego_guard`. ``None`` is correct for
+    every arm published before 2026-07-28 (all have ``ego_emb is None``) and the
+    guard is a provable no-op for them.
+
+    ⭐ Inside the loop the ego is PROPRIOCEPTION OF THE SIMULATED VEHICLE, not a
+    replay of the log: the speed channel tracks the loop's own ``v`` and the yaw
+    rate is the previous tick's EXECUTED bicycle rate. That is the only
+    self-consistent source here — the logged pose history stops being the ego's
+    history the moment the closed loop deviates from it, and feeding it anyway
+    would leak the future into a closed-loop arm."""
     b = states0.shape[0]
     nav_follow = torch.zeros(b, dtype=torch.long, device=states0.device)
+    if plan_fn is None:      # an injected planner does not touch the brains
+        _eg.assert_planner_ego(model, ego,
+                               where="closedloop.closed_loop_rollout",
+                               ego_source="observed pose at tick 0, then the "
+                                          "simulated bicycle's own state")
     win_s = states0.clone()
     win_a = aw.clone()
     v = v0.clone()
+    ego_t = None if ego is None else ego.clone()
+    ps = (_eg.POSE_SCALE_DEFAULT if pose_scale is None else float(pose_scale))
     steer_seq, accel_seq, grnd_dp = [], [], []
     for _ in range(k):
         # (a) PLAN on the current (imagined) latent window — deploy path, state-only
         if plan_fn is not None:
             w_look = plan_fn(model, win_s, v)                # [b,2] 0.5 s target
         else:
-            ctx = model.strategic_policy(win_s, nav_follow)["ctx"]
-            wp = model.tactical_policy(win_s, ctx)["waypoints"]
+            ctx = model.strategic_policy(win_s, nav_follow, ego=ego_t)["ctx"]
+            wp = model.tactical_policy(win_s, ctx, ego=ego_t)["waypoints"]
             w_look = wp[LOOKAHEAD_STEP]                      # [b,2] 0.5 s target
         # (b) CONTROL: waypoint -> (steer, accel)
         steer, accel = wp_to_control(w_look, v)
+        if ego_t is not None:
+            # next tick's proprioception: the loop's OWN speed and the rate the
+            # bicycle is about to execute (identical formula to
+            # `bicycle_integrate`, so the two cannot drift).
+            ego_t = torch.stack(
+                [(v + accel * DT).clamp_min(0.0) / ps,
+                 v / WHEELBASE * torch.tan(steer)], dim=-1).to(ego_t.dtype)
         a_exec = build_action(steer, accel, v, speed_input)  # [b,A]
         # (c) IMAGINE: step the latent under a_exec (intent-free, on-manifold)
         win_a_exec = win_a.clone()
@@ -303,7 +332,7 @@ def densify_plan(wp: dict, k: int = K_MAX, horizons=tuple(WP_STEPS)) -> torch.Te
 
 
 @torch.no_grad()
-def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX):
+def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX, ego=None):
     """ARM (A): plan ONCE on the real latent, TRACK it open-loop (no imagination).
 
     Same strategic->tactical plan as the closed loop's first tick (deploy path,
@@ -314,8 +343,10 @@ def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX):
     (plan_direct = the model's open-loop trajectory with no executor)."""
     b = states0.shape[0]
     nav_follow = torch.zeros(b, dtype=torch.long, device=states0.device)
-    ctx = model.strategic_policy(states0, nav_follow)["ctx"]
-    wp = model.tactical_policy(states0, ctx)["waypoints"]    # {h:[b,2]} on REAL z0
+    _eg.assert_planner_ego(model, ego, where="closedloop.open_loop_plan_rollout",
+                           ego_source="observed pose at the last input frame")
+    ctx = model.strategic_policy(states0, nav_follow, ego=ego)["ctx"]
+    wp = model.tactical_policy(states0, ctx, ego=ego)["waypoints"]  # on REAL z0
     plan = densify_plan(wp, k)                               # [b,k,2] FROZEN path
     x = torch.zeros(b, device=states0.device)
     y = torch.zeros(b, device=states0.device)
@@ -348,7 +379,8 @@ def open_loop_plan_rollout(model, states0, v0, speed_input, k=K_MAX):
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def collect(model, step_readout, episodes, device, speed_input=False,
-            window=WINDOW, stride=STRIDE, batch=BATCH, k=K_MAX, plan_fn=None):
+            window=WINDOW, stride=STRIDE, batch=BATCH, k=K_MAX, plan_fn=None,
+            pose_scale=_eg.POSE_SCALE_DEFAULT):
     """Every stride-window of every episode -> all six paths [N,4,2] + meta.
 
     Paths (ego frame at the window's last frame, waypoints at steps 5/10/15/20):
@@ -389,6 +421,13 @@ def collect(model, step_readout, episodes, device, speed_input=False,
                 aw = torch.cat([aw, v0c.expand(-1, aw.shape[1], -1)], dim=-1)
                 fa = torch.cat([fa, v0c.expand(-1, fa.shape[1], -1)], dim=-1)
             states0 = model.encode_window(fw)                # [b,W,S]
+            # ⛔ E1 (2026-07-28): the planner brains' ego port. Built ONLY when
+            # the checkpoint owns trained `ego_emb` weights, so every arm
+            # published before 2026-07-28 keeps `ego=None` and byte-identical
+            # behaviour; an ego-TRAINED checkpoint is otherwise scored ego-blind.
+            ego = (_eg.ego_from_poses(ep.poses, last, pose_scale, device)
+                   if (plan_fn is None and _eg.planner_ego_capability(model)
+                       ["ego_input_on_planners"]) else None)
 
             # --- open-loop grounded (TRUE actions) = the gate rollout ---------
             open_wp, _ = rollout_decode(model.predictor, states0, aw, fa,
@@ -399,12 +438,14 @@ def collect(model, step_readout, episodes, device, speed_input=False,
             open_bike, _ = bicycle_integrate(v0, true_steer, true_accel)
             # --- closed loop (imagination in the loop) = ARM (B) -------------
             cl = closed_loop_rollout(model, step_readout, states0, aw, v0,
-                                     speed_input, k, plan_fn=plan_fn)
+                                     speed_input, k, plan_fn=plan_fn, ego=ego,
+                                     pose_scale=pose_scale)
             # --- single-shot open-loop plan track (no imagination) = ARM (A) -
             # Arm (A) needs the tactical head's knots; it is skipped rather than
             # faked when an injected planner replaces that head, or when k runs
             # past the last knot (the frozen plan has no waypoints there).
-            ol = (open_loop_plan_rollout(model, states0, v0, speed_input, k)
+            ol = (open_loop_plan_rollout(model, states0, v0, speed_input, k,
+                                         ego=ego)
                   if plan_fn is None and k <= OPEN_PLAN_MAX_K else None)
             if ol is None:
                 # NaN, never zeros: a zero path is a *plausible* path and would

@@ -1,0 +1,106 @@
+{
+  "class": "MEASURED (deterministic arithmetic) for FLOPs/tokens/params; ESTIMATED for step-time; INHERITED for storage and for the encoder's share of a training step",
+  "formula": "per layer 12*N*d^2 + 2*N^2*d, d=768, depth=12, patch=16, in_channels=9",
+  "encoder_share_of_step_INHERITED_bracket": [
+    0.45,
+    0.6,
+    0.75
+  ],
+  "shapes": {
+    "today_256x256_51.4deg": {
+      "h": 256,
+      "w": 256,
+      "hfov_deg": 51.394,
+      "projection": "pinhole",
+      "f_ref": 266.0,
+      "px_per_deg": 4.6426,
+      "tokens": 256,
+      "pos_embed_params": 196608,
+      "encoder_flops_per_frame": 23404216320,
+      "attention_share_of_encoder": 0.0516,
+      "storage_gb_png_lossless_INHERITED": 44.8,
+      "x_encoder_vs_today_256": 1.0,
+      "x_encoder_vs_v5_640": 0.3713,
+      "step_time_x_vs_v5_640_ESTIMATED": {
+        "enc_share_0.45": 0.717,
+        "enc_share_0.60": 0.623,
+        "enc_share_0.75": 0.528
+      },
+      "encoder_params": 87022848,
+      "encoder_params_delta_vs_today": 0
+    },
+    "v5_256x640_120deg": {
+      "h": 256,
+      "w": 640,
+      "hfov_deg": 120.0,
+      "projection": "cylindrical",
+      "f_ref": 305.5775,
+      "px_per_deg": 5.3333,
+      "tokens": 640,
+      "pos_embed_params": 491520,
+      "encoder_flops_per_frame": 63040389120,
+      "attention_share_of_encoder": 0.1198,
+      "storage_gb_png_lossless_INHERITED": 112.9,
+      "x_encoder_vs_today_256": 2.6935,
+      "x_encoder_vs_v5_640": 1.0,
+      "step_time_x_vs_v5_640_ESTIMATED": {
+        "enc_share_0.45": 1.0,
+        "enc_share_0.60": 1.0,
+        "enc_share_0.75": 1.0
+      },
+      "encoder_params": 87317760,
+      "encoder_params_delta_vs_today": 294912
+    },
+    "up_384x960_120deg": {
+      "h": 384,
+      "w": 960,
+      "hfov_deg": 120.0,
+      "projection": "cylindrical",
+      "f_ref": 458.3662,
+      "px_per_deg": 8.0,
+      "tokens": 1440,
+      "pos_embed_params": 1105920,
+      "encoder_flops_per_frame": 163074539520,
+      "attention_share_of_encoder": 0.2344,
+      "storage_gb_png_lossless_INHERITED": 221.9,
+      "x_encoder_vs_today_256": 6.9677,
+      "x_encoder_vs_v5_640": 2.5868,
+      "step_time_x_vs_v5_640_ESTIMATED": {
+        "enc_share_0.45": 1.714,
+        "enc_share_0.60": 1.952,
+        "enc_share_0.75": 2.19
+      },
+      "encoder_params": 87932160,
+      "encoder_params_delta_vs_today": 909312
+    },
+    "alt_320x800_120deg": {
+      "h": 320,
+      "w": 800,
+      "hfov_deg": 120.0,
+      "projection": "cylindrical",
+      "f_ref": 381.9719,
+      "px_per_deg": 6.6667,
+      "tokens": 1000,
+      "pos_embed_params": 768000,
+      "encoder_flops_per_frame": 105136128000,
+      "attention_share_of_encoder": 0.1753,
+      "storage_gb_png_lossless_INHERITED": null,
+      "x_encoder_vs_today_256": 4.4922,
+      "x_encoder_vs_v5_640": 1.6678,
+      "step_time_x_vs_v5_640_ESTIMATED": {
+        "enc_share_0.45": 1.3,
+        "enc_share_0.60": 1.401,
+        "enc_share_0.75": 1.501
+      },
+      "encoder_params": 87594240,
+      "encoder_params_delta_vs_today": 571392
+    }
+  },
+  "headline": {
+    "up_vs_v5_encoder_flops": 2.5868,
+    "up_vs_today_encoder_flops": 6.9677,
+    "v5_vs_today_encoder_flops": 2.6935,
+    "brief_claimed_up_vs_today": "8-9x",
+    "brief_claim_status": "OVERSTATED \u2014 measured 6.99x vs today's 256 tokens, and the decision-relevant ratio is vs the CHOSEN 640-token frame, which is 2.59x"
+  }
+}

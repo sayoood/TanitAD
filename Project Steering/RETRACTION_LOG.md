@@ -458,3 +458,39 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   reported the label as the defect. *"Had I reproduced −0.3366 I would have shipped a gate."*
   ⇒ **When quoting a headline out of a multi-arm document, quote the ARM NAME and its `selected_frac`,
   not just the number.** A `selected_frac` below 1.000 means you are looking at a gate.
+- **C38 — A RIG-CORRELATED SIGNAL THAT SURVIVES THE GEOMETRY FIX, BECAUSE IT WAS NEVER GEOMETRY**
+  *(new class, added 2026-07-27; found while CLOSING C26, and it is the half of C26 nobody had
+  measured)* ⇒ **when a confound is removed by construction, verify the residual ON REAL PIXELS —
+  the mechanism you fixed may not be the only one producing the signal you were worried about.**
+  ✅ **C26 IS CLOSED for its own mechanism.** The clean field `176x624` (a centred slice of the built
+  `256x640`/120°/cylindrical frame) has a replicate-pad/mask fraction of **0.0000000000 on rig A and
+  0.0000000000 on rig B — maximum, not mean, over 240 real clips (120/120)**, against
+  0.0000159 / 0.0900333 at the frame the corpus is built at.
+  ⛔ **AND THE RIG IS STILL READABLE FROM THE PIXELS.** Real all-zero fraction inside the clean slice:
+  **0.0000834 (A) vs 0.0079316 (B) — 95×**. ~97 % of it is **TRANSIENT** (night, tunnels), i.e.
+  genuine image content: **the two rigs recorded systematically different imaging conditions.**
+  **No choice of frame removes it** — it is a corpus-BALANCE confound wearing a preprocessing
+  confound's clothes. ~3 % is persistent black beyond the rectangle-based mask (the lens image
+  circle, θ 56–61°): **0.0000000 on rig A, 0.0002711 on rig B**.
+  ⚠️ **And the sample size decided the answer.** At **n = 24** the same diagnostic said `160x592`
+  would be free of persistent black; at **n = 240** the union covers **5.57 %** of the rig-B frame and
+  **no useful centred frame is free of it**. The small sample fitted scene content and would have
+  shipped a needless 3.5 pp of field loss. *"You cannot crop your way out of night scenes."*
+  ⇒ **Two rules. (a) A fix verified only by the instrument that defined the defect is unverified —
+  the ray map said 0.0000 while the pixels said 95×. (b) A residual measured on ≤ tens of clips is a
+  direction, not a rate.** Sibling to **C26** (the defect it closes), to **C13** (a guard that cannot
+  fail), and to **C5** (a scalar off too little data).
+- **C39 — A FIELD REQUEST THE SENSOR NEVER SATISFIED, MASKED INTO INVISIBILITY** *(new class, added
+  2026-07-27)* ⇒ **an "achieved == requested" geometry check can pass on the FRAME while failing on
+  the CLIPS, because the check probes one clip and the shortfall is per-clip.** MEASURED, n = 3,000:
+  the v5 wide build requests **120.000°** and **260 clips (8.67 %) cannot deliver it horizontally**
+  (238 rig B + **22 rig A**; pooled min **118.958°**). The build's own `_geometry.json` records
+  **`"observed_frac": 1.0`** — true of the single clip it probed, false of the corpus (**0.911**).
+  ⚠️ **The failure is at the frame's vertical CENTRE row**, not at the corners where one would look:
+  as `|v|` grows, `ρ` grows faster than `r(θ)`, so the horizontal excursion is *largest* on the
+  centre line. A "rows only" fix therefore CANNOT reach zero at 640 columns — at every height tested
+  the residual stayed non-zero on **both** rigs.
+  ⇒ **A geometry declaration must be computed over a POPULATION and reported PER STRATUM, and the
+  builder must be able to abort on it** (`v2_compressed.py --require-fully-observed`, off by default).
+  Sibling to **C2** (absence from a single probe) — same shape, applied to a *property* instead of an
+  *existence*.

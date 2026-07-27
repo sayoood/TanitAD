@@ -4,6 +4,7 @@ sys.path.insert(0, "/root/TanitAD/stack/scripts")
 import torch
 from pathlib import Path
 from taniteval import loaders, data
+from taniteval import ego_guard as eg
 from taniteval.registry import MODELS
 from taniteval.rollout import append_ego
 from tanitad.data.mixing import load_episode
@@ -44,9 +45,14 @@ def probe(key, corpus_root, use_feats, feat_kind, speed_input, dyn_input):
     ade=float(torch.linalg.norm(wp_full[0].cpu()[idx]-gt[idx],dim=-1).mean())
     print("  ADE@window:", round(ade,3), "v0:", round(float(poses[last,3]),2))
     follow=torch.zeros(1,dtype=torch.long,device=device)
-    sf=model.strategic_policy(states, follow)
-    route=int(sf["route_logits"].argmax(-1)); 
-    tacf=model.tactical_policy(states, sf["ctx"])
+    # ⛔ E1 (2026-07-28): None unless the ckpt owns trained ego weights.
+    ego=(eg.ego_from_poses(poses, last, eg.POSE_SCALE_DEFAULT, device)
+         if eg.planner_ego_capability(model)["ego_input_on_planners"] else None)
+    eg.assert_planner_ego(model, ego, where="probe_overlay.probe",
+                          ego_source="observed pose at t and t-1")
+    sf=model.strategic_policy(states, follow, ego=ego)
+    route=int(sf["route_logits"].argmax(-1));
+    tacf=model.tactical_policy(states, sf["ctx"], ego=ego)
     man=int(tacf["maneuver_logits"].argmax(-1))
     print("  route:", ROUTE_CLASSES[route], "maneuver:", MANEUVER_CLASSES[man])
 

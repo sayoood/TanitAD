@@ -1,0 +1,60 @@
+{
+  "_what": "the E1 guard's FAILING VALUE, demonstrated on a real TacticalPolicy, plus the magnitude of the bug it catches",
+  "_evidence_class": "MEASURED (ours; this JSON is the artifact)",
+  "_context": "flagship-v2corpus-30k is training on pod1 with v2_ego_to_planners = true; before 2026-07-28 every eval path in the repo called the policy with two positional arguments and dropped ego= silently.",
+  "1_the_bug_has_teeth": {
+    "ego_vector_contract": "[v0 / pose_scale, yr0]  (flagship_losses.py:202-210)",
+    "ego_fed_example": [
+      0.454,
+      0.0952
+    ],
+    "a_fresh_build_FiLM_zero_init": {
+      "waypoint_horizons": [
+        5,
+        10,
+        15,
+        20
+      ],
+      "mean_waypoint_shift_m": 0.0,
+      "max_waypoint_shift_m": 0.0,
+      "terminal_waypoint_shift_m": 0.0,
+      "ctx_l2_shift": 0.0,
+      "_reading": "0.0 BY CONSTRUCTION \u2014 FiLM.to_scale_shift is zero-init (predictor.py:25-26), so a fresh brain's whole cond path is dead. \u26a0\ufe0f A demo run only on a fresh build would have 'proved' this bug harmless. Found while writing the demo; it is escalation E6 of the source report, hit in practice."
+    },
+    "b_trained_like_FiLM_nonzero": {
+      "waypoint_horizons": [
+        5,
+        10,
+        15,
+        20
+      ],
+      "mean_waypoint_shift_m": 0.112516,
+      "max_waypoint_shift_m": 0.283979,
+      "terminal_waypoint_shift_m": 0.093695,
+      "ctx_l2_shift": 0.899396,
+      "_reading": "NON-ZERO => scoring an ego-trained checkpoint with ego=None measures a DIFFERENT MODEL, silently. This is the state pod1's arm will be in."
+    }
+  },
+  "2_guard_refuses": {
+    "RAISED": true,
+    "exception": "tanitad.ego_plan.EgoInputDropped",
+    "message": "demo.eval_path [strategic_policy]: StrategicPolicy has TRAINED ego weights (ego_emb: 2->128) but was called with ego=None, so they are silently unused. Pass ego = [v0/pose_scale, yr0] (tanitad.ego_plan.ego_vector), or explicitly pass a zero vector if an ego-ablated arm is intended \u2014 zeros are IN-DISTRIBUTION when the run used v2_ego_dropout, ego=None is not the same thing (it skips the bias too).",
+    "_reading": "this is the state every eval path was in until today"
+  },
+  "3_warn_mode_records_rather_than_hides": {
+    "warnings_emitted": [
+      "demo.eval_path: planner brains own TRAINED ego weights but ego=None \u2014 they are silently unused and this arm is being scored EGO-BLIND. Running anyway because TA"
+    ],
+    "node_stamp_ego_input_DROPPED": true,
+    "_reading": "a number produced in warn mode is identifiable as ego-blind FROM THE JSON ALONE \u2014 a stderr line in a multi-hour eval log is not a record"
+  },
+  "4_control_no_lever_is_a_provable_no_op": {
+    "capability": false,
+    "guard_result": false,
+    "_reading": "every arm in the 2026-07-27 panel and every checkpoint in MODEL_REGISTRY has ego_emb is None, so adding the call changes NO published number"
+  },
+  "5_control_explicit_zero_ego_is_a_real_ablation": {
+    "guard_result": false,
+    "_reading": "ego=0 is IN-distribution when the run used v2_ego_dropout and is a DIFFERENT object from ego=None (which skips the ego_emb bias too)"
+  }
+}

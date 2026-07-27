@@ -1025,6 +1025,244 @@ def projection_density_report(frame: CanonicalFrame) -> dict:
     }
 
 
+# =========================================================================== #
+# THE RIG-CLEAN FIELD — a frame BOTH rigs fully observe (2026-07-27)           #
+# =========================================================================== #
+# WHY. Retraction class C26: the deployed crop replicate-PADS rows that fall
+# outside the sensor — 0.0017 % on rig A, 8.897 % on rig B (n = 3,000) — so
+# ~73 % of training frames carry fabricated rows the rest do not, in a pattern
+# that identifies the rig. `cylindrical_rectify` removes the FABRICATION (an
+# explicit mask, not replicate-pad) but NOT the asymmetry: a rig-correlated
+# BLACK region is still a rig-correlated signal, and this model eats shortcuts.
+#
+# The clean fix is a field BOTH rigs fully observe, i.e. one whose observed mask
+# is EXACTLY zero for every clip of both rigs.
+#
+# ⭐ AND IT IS A PURE SLICE OF THE PARENT'S PIXELS. `cylindrical_rays` puts the
+# boresight at ((W-1)/2, (H-1)/2), so for a CENTRED sub-rectangle of even
+# margin the child's ray coordinates are *identically equal* to the parent's:
+#
+#     u_parent(c0 + j) = (c0 + j - (W-1)/2)/f
+#                      = (j - (w-1)/2)/f  =  u_child(j)   when c0 == (W-w)/2
+#
+# — an exact float identity, not an approximation (the (W-1)/2 and (w-1)/2 halves
+# cancel against the integer margin). The same holds for rows. So the ray map,
+# the native (u, v), the sampling grid, the observed mask and therefore the
+# `grid_sample` output of a centred sub-frame are the corresponding sub-block of
+# the parent's. **A rebuild at a centred sub-frame is a ROW/COLUMN SLICE of the
+# frames already built**, and (with a LOSSLESS codec) the cached pixels can be
+# re-emitted at the smaller geometry with no decode of the source video at all.
+#
+# ⚠️ THE LOSSLESS CAVEAT IS LOAD-BEARING. A slice is bit-exact only if the cache
+# stores the pixels losslessly (`codec="png"`). Slicing a JPEG cache re-encodes
+# 8x8 blocks at different offsets and is NOT bit-exact — check `codec` first.
+
+
+def centred_subframe(frame: "CanonicalFrame", height: int,
+                     width: int | None = None) -> "CanonicalFrame":
+    """A CENTRED sub-rectangle of ``frame``: same ``f_ref``, same projection.
+
+    This is the ONLY sub-frame shape that is simultaneously (a) expressible as a
+    :class:`CanonicalFrame` — which pins the boresight at the output centre — and
+    (b) a pure pixel slice of ``frame``'s output. Both margins must be even, so
+    ``frame.height - height`` and ``frame.width - width`` must be even; an odd
+    margin is REFUSED rather than rounded, because a half-pixel boresight shift
+    is exactly the silent geometry drift this module exists to prevent.
+    """
+    width = frame.width if width is None else width
+    if height > frame.height or width > frame.width:
+        raise ValueError(
+            f"centred_subframe({height}x{width}) is not INSIDE "
+            f"{frame.height}x{frame.width} — a sub-frame can only shrink. To "
+            f"widen the field you must rebuild from the source video.")
+    if (frame.height - height) % 2 or (frame.width - width) % 2:
+        raise ValueError(
+            f"centred_subframe needs EVEN margins: {frame.height}-{height} and "
+            f"{frame.width}-{width} must both be even, else the boresight lands "
+            f"half a pixel off centre and the sub-frame is no longer the frame "
+            f"it declares.")
+    return CanonicalFrame(height=height, width=width, f_ref=frame.f_ref,
+                          projection=frame.projection)
+
+
+def subframe_slice(parent: "CanonicalFrame", sub: "CanonicalFrame"
+                   ) -> tuple[slice, slice]:
+    """``(rows, cols)`` of ``parent``'s output that are exactly ``sub``'s output.
+
+    Refuses any pair that is not a centred sub-rectangle with the SAME focal and
+    projection — those are the conditions under which the slice is bit-exact.
+    """
+    if sub.projection != parent.projection or \
+            float(sub.f_ref) != float(parent.f_ref):
+        raise ValueError(
+            f"{sub.tag()} is not a slice of {parent.tag()}: a slice preserves "
+            f"f_ref and projection exactly (got f_ref "
+            f"{sub.f_ref} vs {parent.f_ref}, projection {sub.projection} vs "
+            f"{parent.projection}). Changing either is a RESAMPLE, i.e. a "
+            f"rebuild from the source video.")
+    centred_subframe(parent, sub.height, sub.width)          # validates margins
+    r0 = (parent.height - sub.height) // 2
+    c0 = (parent.width - sub.width) // 2
+    return slice(r0, r0 + sub.height), slice(c0, c0 + sub.width)
+
+
+def observed_report(intr: FThetaIntrinsics, frame: "CanonicalFrame") -> dict:
+    """What ``intr``'s sensor actually delivers for ``frame`` — from the RAY MAP.
+
+    ``observed_frac`` is a property of the per-clip intrinsics and the requested
+    frame, not of the pixels, so this needs no decode and is exact. Also reports
+    the widest field the sensor could deliver on each axis, which is what turns
+    "it is masked" into "by how much, and in which direction".
+    """
+    _, mask = cylindrical_grid(intr, int(intr.height), int(intr.width), frame)
+    row_ok = mask.all(dim=1)
+    col_ok = mask.all(dim=0)
+    half_x_px = min(float(intr.cx), float(intr.width) - 1 - float(intr.cx))
+    return {
+        "frame": frame.tag(),
+        "observed_frac": float(mask.float().mean()),
+        "masked_frac": float(1.0 - mask.float().mean()),
+        "fully_observed": bool(mask.all()),
+        "n_rows_fully_observed": int(row_ok.sum()),
+        "n_cols_fully_observed": int(col_ok.sum()),
+        # widest SYMMETRIC field this sensor can deliver, per axis
+        "max_hfov_deg": math.degrees(2.0 * intr.theta_of_r(half_x_px)),
+        "up_halffield_deg": math.degrees(intr.theta_of_r(float(intr.cy))),
+        "down_halffield_deg": math.degrees(
+            intr.theta_of_r(float(intr.height) - 1 - float(intr.cy))),
+        "requested_hfov_deg": float(frame.hfov_deg),
+        "requested_half_vfov_deg": float(frame.vfov_deg) / 2.0,
+        "cy": float(intr.cy), "cx": float(intr.cx),
+        "per_clip": bool(intr.per_clip),
+    }
+
+
+def ftheta_crop_pad_report(intr: FThetaIntrinsics, h: int, w: int,
+                           frame: "CanonicalFrame | None" = None,
+                           *, center: str = "principal") -> dict:
+    """FABRICATED-pixel fractions of the DEPLOYED crop path — the C26 defect.
+
+    :func:`ftheta_crop_resize` replicate-pads whatever part of the principal-
+    point-centred box falls outside the native frame. This reports that padding
+    as a fraction of the box, without decoding anything, so the deployed path and
+    the cylindrical path can be compared on ONE instrument.
+    """
+    f = as_frame(frame, 256, F_REF)
+    c_h, c_w, top, left = ftheta_crop_box_hw(intr, h, w, center=center, frame=f)
+    pad_rows = max(0, -top) + max(0, top + c_h - h)
+    pad_cols = max(0, -left) + max(0, left + c_w - w)
+    kept_h, kept_w = c_h - pad_rows, c_w - pad_cols
+    return {
+        "pad_frac_rows": pad_rows / float(c_h),
+        "pad_frac_cols": pad_cols / float(c_w),
+        "fabricated_frac": 1.0 - max(kept_h, 0) * max(kept_w, 0) /
+                           float(c_h * c_w),
+        "box_hw": [int(c_h), int(c_w)], "top": int(top), "left": int(left),
+        "fabricates": bool(pad_rows or pad_cols),
+    }
+
+
+class RigAsymmetry(ValueError):
+    """A frame whose observed mask is non-zero — i.e. rig-correlated content."""
+
+
+def assert_fully_observed(intrs, frame: "CanonicalFrame", *,
+                          label: str = "frame") -> dict:
+    """⭐ THE C26 GUARD. REFUSE a frame any clip does not fully observe.
+
+    ``intrs`` is one :class:`FThetaIntrinsics` or an iterable of them. Raises
+    :class:`RigAsymmetry` naming the worst offender when ANY clip has a single
+    masked pixel — deliberately zero-tolerance, because the defect this guards is
+    not "a lot of mask" but "a mask that correlates with the rig".
+
+    ⚠️ It CAN fail, and must: at ``256x640`` / 120 deg cylindrical it fails on rig B
+    (~8.9 % masked) and, less obviously, on rig A too (~0.06 % — the 120 deg
+    request over-runs some clips' horizontal field). That second failure is why
+    this takes a POPULATION, not one clip.
+    """
+    seq = [intrs] if isinstance(intrs, FThetaIntrinsics) else list(intrs)
+    worst, worst_rep = None, None
+    for i in seq:
+        rep = observed_report(i, frame)
+        if worst_rep is None or rep["masked_frac"] > worst_rep["masked_frac"]:
+            worst, worst_rep = i, rep
+    if worst_rep is None:
+        raise RigAsymmetry(f"[{label}] no intrinsics supplied — a guard with an "
+                           f"empty population cannot fail, so it is not a guard.")
+    if worst_rep["masked_frac"] > 0.0:
+        raise RigAsymmetry(
+            f"[{label}] {frame.tag()} is NOT fully observed by every clip.\n"
+            f"  worst clip: masked_frac {worst_rep['masked_frac']:.6f} "
+            f"(cx {worst.cx:.2f}, cy {worst.cy:.2f}, "
+            f"rig {'B' if worst.cy >= 650 else 'A'})\n"
+            f"  requested   HFOV {frame.hfov_deg:.3f} deg, half-VFOV "
+            f"{frame.vfov_deg / 2:.3f} deg\n"
+            f"  sensor can  HFOV {worst_rep['max_hfov_deg']:.3f} deg, down "
+            f"{worst_rep['down_halffield_deg']:.3f} deg / up "
+            f"{worst_rep['up_halffield_deg']:.3f} deg\n"
+            f"  A masked region that correlates with the rig is a free rig label "
+            f"(class C26). Shrink the frame — see largest_fully_observed_"
+            f"subframe() — or state explicitly that the asymmetry is accepted.")
+    return {"frame": frame.tag(), "n_clips": len(seq), "masked_frac_max": 0.0,
+            "fully_observed_by_all": True}
+
+
+def largest_fully_observed_subframe(intrs, parent: "CanonicalFrame", *,
+                                    heights=None, widths=None,
+                                    patch: int = 16, tile: int | None = None
+                                    ) -> tuple["CanonicalFrame | None", list]:
+    """Largest CENTRED sub-frame of ``parent`` that EVERY clip fully observes.
+
+    Returns ``(frame_or_None, table)``; ``table`` carries the worst-case masked
+    fraction of every candidate so the trade is visible, not just the winner.
+    ``tile`` (e.g. ``patch * readout.grid == 64``) restricts the search to
+    candidates whose token grid tiles the readout grid exactly.
+    """
+    step = tile or patch
+    heights = heights or [h for h in range(parent.height, patch - 1, -step)
+                          if (parent.height - h) % 2 == 0]
+    widths = widths or [w for w in range(parent.width, patch - 1, -step)
+                        if (parent.width - w) % 2 == 0]
+    seq = [intrs] if isinstance(intrs, FThetaIntrinsics) else list(intrs)
+    masks = [cylindrical_grid(i, int(i.height), int(i.width), parent)[1]
+             for i in seq]
+    table, best = [], None
+    for h in heights:
+        r0 = (parent.height - h) // 2
+        for w in widths:
+            c0 = (parent.width - w) // 2
+            worst = max(float(1.0 - m[r0:r0 + h, c0:c0 + w].float().mean())
+                        for m in masks)
+            ok = worst == 0.0
+            table.append({"height": h, "width": w, "masked_frac_max": worst,
+                          "fully_observed": ok,
+                          "n_tokens": (h // patch) * (w // patch)})
+            if ok and (best is None or h * w > best.height * best.width):
+                best = centred_subframe(parent, h, w)
+    return best, table
+
+
+#: The wide-FOV frame the v5 corpus was BUILT at (`_geometry.json`, pod2
+#: 2026-07-27). Its observed mask is 8.897 % on rig B and 0.0017 % on rig A.
+PHYSICALAI_WIDE120_256x640 = CanonicalFrame(
+    height=256, width=640, f_ref=305.5774907364391, projection="cylindrical")
+
+#: ⭐ THE RIG-CLEAN FRAME. MEASURED 2026-07-27 over all 3,000 clips of the
+#: canonical selection (812 rig A / 2,188 rig B, 121 distinct sensor geometries,
+#: 0 intrinsics failures): the LARGEST centred sub-rectangle of
+#: `PHYSICALAI_WIDE120_256x640` whose observed mask is EXACTLY 0.000000 for every
+#: clip of BOTH rigs. 117.000 deg x 32.131 deg, a pure [40:216, 8:632] slice of the
+#: built frames. Raw: `…/incoming/2026-07-28-rig-clean-fix/band_full_3000.json`.
+PHYSICALAI_RIG_CLEAN_176x624 = CanonicalFrame(
+    height=176, width=624, f_ref=305.5774907364391, projection="cylindrical")
+
+#: The same guarantee under a STRICT readout-tiling constraint (token grid
+#: divisible by the 4x4 readout grid, i.e. both dims a multiple of 64): 108 deg x
+#: 23.658 deg. Buys exact pooling bins for 33 % fewer tokens than the 176x624 frame.
+PHYSICALAI_RIG_CLEAN_128x576 = CanonicalFrame(
+    height=128, width=576, f_ref=305.5774907364391, projection="cylindrical")
+
+
 # The REAL PandaSet front calibration (arXiv 2112.12610), grounded 2026-07-15.
 PANDASET_FRONT_INTR = PinholeIntrinsics(
     fx=1970.0131, fy=1970.0091, cx=970.0002, cy=483.2988,

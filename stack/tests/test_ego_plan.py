@@ -15,7 +15,8 @@ import math
 import pytest
 import torch
 
-from tanitad.ego_plan import (SPEED_SCALE, arc_length, attach_ego_input,
+from tanitad.ego_plan import (SPEED_SCALE, EgoInputDropped, arc_length,
+                              assert_ego_is_fed, attach_ego_input,
                               constant_speed_schedule, ego_vector, resample_by_arclength,
                               retime, straight_plan, terminal_tangent)
 
@@ -349,6 +350,49 @@ def test_strategic_policy_has_the_same_gap_and_the_same_graft():
     with torch.no_grad():
         after = pol(st, nav, ego=torch.randn(3, 2))["ctx"]
     torch.testing.assert_close(before, after)
+
+
+# --------------------------------------------------------------------------- #
+# the guard for the silent gap (escalation E1)                                 #
+# --------------------------------------------------------------------------- #
+def test_guard_fires_when_a_trained_ego_policy_is_called_without_ego():
+    """⛔ The whole point of E1: this is the error the 8 shipped call sites do
+    NOT raise today, which is why an ego-trained checkpoint scores ego-blind."""
+    pol = _tactical(ego_input=True)
+    with pytest.raises(EgoInputDropped, match="silently unused"):
+        assert_ego_is_fed(pol, None, where="taniteval/closedloop.py:317")
+
+
+def test_guard_is_a_NO_OP_for_every_arm_in_the_published_panel():
+    """A policy without the lever must pass — otherwise adding the guard would
+    change published numbers, and it must not."""
+    assert_ego_is_fed(_tactical(ego_input=False), None)
+    assert_ego_is_fed(_tactical(ego_input=False), torch.zeros(3, 2))
+
+
+def test_guard_accepts_an_EXPLICIT_zero_ego_because_that_is_a_real_ablation():
+    """⚠️ ego=None and ego=zeros are NOT the same: None skips the term entirely,
+    zeros still add the bias. An ablation must say which it means."""
+    assert_ego_is_fed(_tactical(ego_input=True), torch.zeros(3, 2))
+
+
+def test_guard_message_names_the_call_site():
+    pol = _tactical(ego_input=True)
+    with pytest.raises(EgoInputDropped, match=r"planner_p2\.py:279"):
+        assert_ego_is_fed(pol, None, where="taniteval/planner_p2.py:279")
+
+
+def test_guard_also_covers_the_strategic_brain():
+    from tanitad.config import StrategicPolicyConfig
+    from tanitad.models.fourbrain import StrategicPolicy
+    cfg = StrategicPolicyConfig(d_model=32, depth=1, n_heads=2, d_cmd=12, d_ctx=16)
+    pol = StrategicPolicy(cfg, state_dim=16, window=4, ego_input=True)
+    with pytest.raises(EgoInputDropped):
+        assert_ego_is_fed(pol, None)
+
+
+def test_guard_tolerates_a_module_with_no_ego_slot():
+    assert_ego_is_fed(torch.nn.Linear(2, 2), None)      # not a policy: no-op
 
 
 # --------------------------------------------------------------------------- #

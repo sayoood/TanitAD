@@ -223,7 +223,13 @@ def test_composite_is_not_called_a_driving_score():
     node = PS.emit(pw, arm="stub", n_boot=64)
     comp = node["composite"]
     if "REFUSED_TO_EMIT" not in comp:
-        assert comp["name"] == "PSS_recovery_progress"
+        # ⛔ The name CARRIES THE PROGRESS TERM (2026-07-28). A bare
+        # "PSS_recovery_progress" is no longer emittable, because the published
+        # `clamp_v1` term and the two-sided `twosided_v2` term are DIFFERENT
+        # METRICS and a stable name over a changed definition is the exact
+        # failure class this versioning exists to prevent.
+        assert comp["name"] == "PSS_recovery_progress@twosided_v2"
+        assert comp["progress_term"] == PS.PROGRESS_TERM_DEFAULT
         assert "Driving Score" in comp["_not_a_driving_score"]
 
 

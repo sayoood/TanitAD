@@ -268,16 +268,22 @@ def cem_plan(model, step_readout, states, aw, v_target, v0, w, cfg,
 # Head proposal prior — the v1 tactical head's immediate control as a seed  #
 # ======================================================================== #
 @torch.no_grad()
-def head_action_seed(model, states, v0, K):
+def head_action_seed(model, states, v0, K, ego=None):
     """Convert the frozen v1 tactical head's 0.5 s waypoint into a constant
     (steer,accel) seed via the harness pure-pursuit inverse — the single-mode
-    v1 head reused as the planner's learned proposal prior (spec M3)."""
+    v1 head reused as the planner's learned proposal prior (spec M3).
+
+    ⛔ ``ego`` is the planner brains' ego port (E1, 2026-07-28); ``None`` is
+    correct only for a checkpoint with no trained ``ego_emb`` and is refused
+    otherwise by :func:`taniteval.ego_guard.assert_planner_ego`."""
     if getattr(model, "tactical_policy", None) is None:
         return None
     B = states.shape[0]
     nav = torch.zeros(B, dtype=torch.long, device=states.device)
-    ctx = model.strategic_policy(states, nav)["ctx"]
-    wp = model.tactical_policy(states, ctx)["waypoints"]
+    _eg.assert_planner_ego(model, ego, where="planner_p2.head_action_seed",
+                           ego_source="observed pose at t and t-1")
+    ctx = model.strategic_policy(states, nav, ego=ego)["ctx"]
+    wp = model.tactical_policy(states, ctx, ego=ego)["waypoints"]
     steer, accel = cl.wp_to_control(wp[cl.LOOKAHEAD_STEP], v0)
     row = torch.stack([steer.clamp(-STEER_CLAMP, STEER_CLAMP),
                        accel.clamp(-ACCEL_CLAMP, ACCEL_CLAMP)], dim=-1)     # [B,2]
@@ -328,7 +334,12 @@ def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
             vt = vt.to(device)
 
             # --- planner: CEM over the frozen operative WM -------------------
-            hs = head_action_seed(model, states, v0, cfg["K"])
+            # ⛔ E1 (2026-07-28): None unless the ckpt owns trained ego weights.
+            ego = (_eg.ego_from_poses(ep.poses, last, _eg.POSE_SCALE_DEFAULT,
+                                      device)
+                   if _eg.planner_ego_capability(model)["ego_input_on_planners"]
+                   else None)
+            hs = head_action_seed(model, states, v0, cfg["K"], ego=ego)
             _, plan_traj, plan_cost = cem_plan(
                 model, step_readout, states, aw, vt, v0, w, cfg,
                 head_seed=hs, plan_first=False)
@@ -337,8 +348,10 @@ def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
                                           step_readout, K_MAX)
             # --- head tactical waypoints (the baseline being challenged) -----
             nav = torch.zeros(len(ch), dtype=torch.long, device=device)
-            ctx = model.strategic_policy(states, nav)["ctx"]
-            hwp = model.tactical_policy(states, ctx)["waypoints"]
+            _eg.assert_planner_ego(model, ego, where="planner_p2.collect",
+                                   ego_source="observed pose at t and t-1")
+            ctx = model.strategic_policy(states, nav, ego=ego)["ctx"]
+            hwp = model.tactical_policy(states, ctx, ego=ego)["waypoints"]
             head_wp = torch.stack([hwp[k] for k in WP_STEPS], dim=1)        # [b,4,2]
 
             gt_full = gt_ego_waypoints(ep.poses, last,

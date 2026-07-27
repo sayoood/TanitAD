@@ -216,6 +216,42 @@ def ego_vector(v0: Tensor, yaw_rate: Tensor, pose_scale: float) -> Tensor:
     return torch.stack([v0 / pose_scale, yaw_rate], dim=-1)
 
 
+class EgoInputDropped(AssertionError):
+    """A policy that OWNS trained ego weights was called without an ego vector."""
+
+
+def assert_ego_is_fed(policy: nn.Module, ego: Tensor | None, *,
+                      where: str = "<caller>") -> None:
+    """⛔ THE GUARD FOR THE SILENT GAP. Call before every planner forward.
+
+    ``TacticalPolicy`` / ``StrategicPolicy`` accept ``ego=None`` and quietly skip
+    the ego term. That is correct for a policy built WITHOUT the lever, and it is
+    a **silent evaluation bug** for one built with it: the trained ``ego_emb``
+    weights are simply never exercised, no error is raised, no log line is
+    written, and the arm gets scored as though the lever did nothing.
+
+    MEASURED 2026-07-28: **all 8** eval/planner call sites in the repo pass the
+    policy positionally with two arguments and none passes ``ego=`` —
+    ``taniteval/closedloop.py:245,317``, ``planner_p2.py:279,340``,
+    ``planning.py:166``, ``corpus_overlay.py:307``, ``blindimag.py:101``,
+    ``probe_overlay.py:49``, ``panel_run.py:137,165``, ``refs/refa.py:260``. So
+    ``flagship-v2corpus-30k`` — training with ``v2_ego_to_planners = true`` —
+    would be evaluated ego-blind by every one of them.
+
+    A policy with ``ego_emb is None`` is unaffected: this is a no-op for every
+    arm in the 2026-07-27 panel, so adding the call changes no published number.
+    """
+    if getattr(policy, "ego_emb", None) is not None and ego is None:
+        raise EgoInputDropped(
+            f"{where}: {type(policy).__name__} has TRAINED ego weights "
+            f"(ego_emb: {policy.ego_emb.in_features}->{policy.ego_emb.out_features}) "
+            f"but was called with ego=None, so they are silently unused. Pass "
+            f"ego = [v0/pose_scale, yr0] (tanitad.ego_plan.ego_vector), or "
+            f"explicitly pass a zero vector if an ego-ablated arm is intended — "
+            f"zeros are IN-DISTRIBUTION when the run used v2_ego_dropout, "
+            f"ego=None is not the same thing (it skips the bias too).")
+
+
 @torch.no_grad()
 def attach_ego_input(policy: nn.Module, d_cond: int | None = None) -> nn.Module:
     """Graft the shipped ``ego_emb`` seam onto a built policy, ZERO-INITIALISED.
