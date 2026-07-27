@@ -10,7 +10,7 @@ Retraction class **C26**. Repo HEAD at start `2b0f166`.*
 | question | answer | class |
 |---|---|---|
 | **Slice or rebuild?** | ⭐ **SLICE.** A rebuild at the clean frame is **BIT-IDENTICAL** to a row/column slice of the frames already built — verified on **1,206 real decoded frames** of the real cache, 6 clips, both rigs, `max_abs_diff 0`, `n_pixels_differing 0`. **The ~3.5 h build is not wasted, and the fix can be applied in the LOADER at zero storage cost.** | MEASURED |
-| **The band** | Rig A fully observes **all 256 rows**; rig B fully observes **rows 0–218 at worst**. Intersection ⇒ largest **centred** frame both rigs fully observe is **176 × 624** (rows `[40:216]`, cols `[8:632]`). n = 3,000, 0 failures. | MEASURED |
+| **The band** | At 624 columns: rig A fully observes **rows [0, 255] — the whole frame**; rig B **rows [0, 218] at worst**. Both contiguous, every distinct geometry. Intersection ⇒ largest **centred** frame both rigs fully observe is **176 × 624** (rows `[40:216]`, cols `[8:632]`). n = 3,000, 0 failures. | MEASURED |
 | **The field price** | **1.195 %** of parent-visible agent samples (n = 2,409,188 samples over 400 clips). ⭐ **98.6 % of that price is the 16 columns, not the 80 rows** — the height cut alone costs **0.0165 %**. Near-field ground: **+1.39 m** (rig A) / **+0.99 m** (rig B). | MEASURED |
 | **The residual** | Pad/mask fraction on the fix: **rig A 0.0000, rig B 0.0000** (n = 240 real clips, 120/120, max as well as mean). ⛔ **But a rig-correlated residual survives that is NOT geometry**: real all-zero pixels **0.0001 (A) vs 0.0079 (B)**, ~95 % of it *scene* black (night/tunnel). No crop removes it. | MEASURED |
 
@@ -28,6 +28,7 @@ one-clip `observed_frac: 1.0` declaration is wrong about the corpus and is fixed
 | instrument | host | n | raw |
 |---|---|---|---|
 | per-rig observed band, ray map, real per-clip intrinsics | pod3 (idle A40) | **3,000 clips**, 121 distinct sensor geometries, **0 errors** | `raw/band_full_3000.json` |
+| the vertical band at 624 columns (unambiguous form) | pod3 | 121 distinct geometries | `raw/band624.json` |
 | slice-vs-rebuild on the REAL built cache (rebuild from mp4) | pod2 (build finished) | 6 clips × 201 frames, both rigs | `raw/verify_val.json` |
 | residual on real decoded pixels, inside the slice | pod2 | **240 clips** (120 A / 120 B) | `raw/residual_final.json` |
 | residual mechanism split (persistent vs scene black) | pod2 | 200 + 240 clips | `raw/zero_diag_train200.json` |
@@ -85,13 +86,13 @@ PNG is what turns this from "cheap" into "free".
 
 | path | measured cost | storage |
 |---|---|---|
-| **rebuild from source** | 19.4 s/clip + **~374 GB HF egress**, ~3.5 h at 8 shards | +55 GB |
-| **re-emit the cache** (`slice_v2_cache.py`) | **8.8 s/clip** single process, no egress; embarrassingly parallel on 96 cores | +55 GB (or replace) |
+| **rebuild from source** | 19.4 s/clip + **~374 GB HF egress**, ~3.5 h at 8 shards | +59 GB |
+| **re-emit the cache** (`slice_v2_cache.py`) | **8.82 s/clip** single process (24 clips / 211.6 s), **no egress**; embarrassingly parallel on 96 idle cores | **25.2 MB/clip** measured ⇒ **59 GB** train + **15 GB** val (vs 80 + 20 GB) — a **26 GB saving** if it replaces, +74 GB if kept alongside |
 | ⭐ **slice in the LOADER** (`load_compressed(..., frame=…)`) | **+0.113 s/clip on load** (1.214 s vs 1.101 s), and every downstream tensor 33 % smaller | **0 bytes** |
 
 Loader-slice output verified **bit-identical to the re-emitted cache** on a real clip
 (`max_abs_diff 0`, shapes `[199, 9, 176, 624]`). Loading the re-emitted cache is *faster* than the
-parent (0.929 s vs 1.101 s), so a re-emit is worth it only if the 25 GB saving or the load time
+parent (0.929 s vs 1.101 s), so a re-emit is worth it only if the 26 GB saving or the load time
 matters — **it is not needed to apply the fix**.
 
 ⇒ **Scheduling fact for the PI: nothing has to be rebuilt, and nothing has to be re-emitted. The
@@ -133,7 +134,23 @@ The frame asks for **120.000° × ±22.728°**. So:
   needs 624 columns and not merely fewer rows. The horizontal excursion is largest exactly at the
   centre row (as `|v|` grows, `ρ` grows faster than `r(θ)`), so it appears where it is least expected.
 
-### 3.2 The band, and why it is expressed as a centred rectangle
+### 3.2 ⭐ THE BAND ITSELF — stated at 624 columns, where it is unambiguous
+
+⚠️ **At 640 columns the "fully observed rows" statement is not clean**, because the horizontal
+deficit of §3.1 breaks the row runs *in the middle* of the frame: some clips' maximal run from row 0
+ends at row 87. Quoting a vertical band off the 640-wide frame therefore mixes two different failures.
+Measured again at **624 columns**, where the horizontal deficit is gone and the rig split is the only
+thing left (`raw/band624.json`, `code/band624.py`, every distinct sensor geometry):
+
+| | distinct geometries | run contiguous | first row | **last fully-observed row** | rows |
+|---|---:|---|---:|---|---:|
+| **rig A** | 57 | **all** | 0 | **255 (min = max)** — the entire frame | **256** |
+| **rig B** | 64 | **all** | 0 | **218 worst, 223 best** | **219 worst** |
+
+⇒ **The intersection is rows `[0, 218]`.** The largest *centred* band inside it is rows `[37, 218]`
+= 182 rows; rounded down to the patch size, **176 rows = rows `[40, 215]`**. That is the frame.
+
+### 3.3 Why it is expressed as a centred rectangle
 
 Only a **centred** sub-frame is (a) expressible as a `CanonicalFrame` — which pins the boresight at
 the output centre — and (b) a pure pixel slice. Rig B's shortfall is at the **bottom**, so a centred
@@ -444,7 +461,8 @@ behaviour without `--require-fully-observed` are all byte-identical.)*
 | `raw/field_cost_2026-07-27.json`, `raw/field_cost_decomp_2026-07-27.json` | repo | **repo only** |
 | `raw/token_cost.json` — measured compute delta | repo + `pod3:/workspace/rigfix/` | no |
 | `raw/extremes.json` — the real intrinsics behind the test fixtures | repo + `pod3:/workspace/rigfix/` | no |
-| `code/field_cost.py`, `code/zero_residual_diag.py`, `code/verify_slice_on_built.py`, `code/slice_equiv.py`, `code/pick_extremes.py` | repo | **repo only** (copies on pods) |
+| `raw/band624.json` — the vertical band at 624 columns | repo + `pod3:/workspace/rigfix/` | no |
+| `code/field_cost.py`, `code/zero_residual_diag.py`, `code/verify_slice_on_built.py`, `code/slice_equiv.py`, `code/pick_extremes.py`, `code/token_cost.py`, `code/band624.py`, `code/rig_band_scan.py` | repo | **repo only** (copies on pods) |
 | **`stack/tanitad/data/calib.py`** — the fix | `repo:stack/` (staged) | no |
 | **`stack/scripts/rig_band_scan.py`** | `repo:stack/` (staged) | no |
 | **`stack/scripts/slice_v2_cache.py`** | `repo:stack/` (staged) | no |
@@ -453,7 +471,26 @@ behaviour without `--require-fully-observed` are all byte-identical.)*
 | `pod2:/workspace/data/rigclean-val-176x624-SMOKE/` — 24-clip proof output | pod2 | **pod only** (disposable; regenerable in 3.5 min) |
 | `pod3:/workspace/rigfix/`, `pod2:/workspace/rigfix/` — shipped HEAD stack + tools | pods | no (all from repo) |
 
-**Staged, not committed. Nothing pushed. No branch switched.**
+### ⚠️ SHARED-INDEX DISCLOSURE — my work was committed AND PUSHED by another stream
+
+**I did not run `git commit` or `git push`, and I switched no branch.** I staged into the working
+tree as the standard requires. While I was working, commit **`d5d5afb`** (`sayoood`,
+2026-07-27 15:32:29 +0200) — whose message is *"the closed-loop metric was BLIND TO OVER-TRAVEL…"* —
+**swept the entire index**, which contained my in-progress deliverables, and the branch was pushed to
+`origin/agent/benchmarks-eval-20260721`.
+
+**Verified byte-for-byte**: every file in §11 is in `HEAD` with a blob hash identical to my working
+tree, and `git status --short` is clean apart from a pre-existing `.claude/settings.local.json` and a
+stray `4}` that is not mine. **Nothing is stranded and nothing is lost** — but this stream's work now
+lives under another stream's commit message, on the remote.
+
+⇒ **This is the third occurrence of the CLAUDE.md §Git-hygiene hazard** (`git commit` commits the
+ENTIRE INDEX, not what you just `git add`ed) — after `60265d3` and `3d41bd0`. I am **not** attempting
+to repair it: rewriting a pushed commit is strictly more dangerous than the mislabelling.
+**Recommended (a human decision):** leave the history and record the attribution here, which this
+paragraph does.
+
+**No branch switched. No push initiated by this stream.**
 
 ---
 
