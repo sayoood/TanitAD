@@ -1,0 +1,23 @@
+[taniteval] tanitad OVERRIDE -> /workspace/TanitAD-main/stack (/workspace/TanitAD-main/stack/tanitad/__init__.py)
+[20:14:33] estimator pinned -> /workspace/TanitAD-main/taniteval/taniteval/ci.py
+[20:14:33] v3 split reproduced: 68 train / 36 val
+[20:15:28] LEAK CHECK: 4 of 36 val episodes found in the pool by CONTENT and excluded -> ['cmx_00008', 'cmx_00020', 'paix_00600', 'paix_00612']
+[20:15:28] pool = 757 (cm 121 / pai 636); 77 internal duplicates dropped
+[20:15:30] val (4195, 17, 2048)  repaired 50 yaw labels
+[20:15:30] A0 on these windows: steer R2 +0.7419 (pai +0.7340 cm +0.5648)
+WROTE /workspace/idmretrain/out/idm5_ensemble.json
+[20:16:07] train windows (141628, 17, 2048)
+[20:25:56]   seed 0  steer R2 +0.7866 (pai +0.7737 cm +0.7663) | speed +0.8586 | yaw +0.9055
+WROTE /workspace/idmretrain/out/idm5_ensemble.json
+[20:35:41]   seed 1  steer R2 +0.7857 (pai +0.7726 cm +0.7682) | speed +0.8567 | yaw +0.9049
+WROTE /workspace/idmretrain/out/idm5_ensemble.json
+[20:45:40]   seed 2  steer R2 +0.7891 (pai +0.7749 cm +0.7986) | speed +0.8490 | yaw +0.9089
+WROTE /workspace/idmretrain/out/idm5_ensemble.json
+[20:45:40] saved ensemble ckpt -> /workspace/idmretrain/out/idm_head_v4_steer_ens3.pt (34.8 MB)
+[20:45:41] RELOAD CHECK: max|delta| = 0.000e+00 -> REPRODUCES
+[20:45:44] ENSEMBLE steer R2 +0.7993 (pai +0.7858 cm +0.8071)
+[20:45:44] ENSEMBLE paired dMAE vs A0  pai {"delta": -0.0042, "lo": -0.0066, "hi": -0.0013, "ci95": 0.0026, "p_delta_gt0": 0.0015, "separated": true, "reducer": "mean", "n_windows": 1203, "n_episodes": 14, "n_boot": 2000, "estimator": "paired_
+[20:45:44] ENSEMBLE paired dMAE vs A0  cm  {"delta": -0.003, "lo": -0.0048, "hi": -0.0017, "ci95": 0.0015, "p_delta_gt0": 0.0005, "separated": true, "reducer": "mean", "n_windows": 2992, "n_episodes": 22, "n_boot": 2000, "estimator": "paired_e
+[20:45:44] REPRODUCTION: prior seed-mean +0.7993 vs here +0.7993 (delta +0.000000)
+WROTE /workspace/idmretrain/out/idm5_ensemble.json
+[20:45:44] IDM5_DONE 1871.2s -> /workspace/idmretrain/out/idm5_ensemble.json

@@ -1,0 +1,70 @@
+{
+  "what": "comma2k19 heading DEFAULT FLIP \u2014 guard + reproducibility pin",
+  "date": "2026-07-27",
+  "evidence_class": "MEASURED (ours; this script, run on the dev box)",
+  "tier": "instrument-grade (a synthetic fixture that REPRODUCES the measured corpus defect; it is not a corpus measurement)",
+  "label_protocol": {
+    "heading_repair_default_before": "enu_velocity",
+    "heading_repair_default_after": "enu_velocity_hold_v1",
+    "v_min": 0.5
+  },
+  "defect": {
+    "fixture": "6 standstill frames (|v| = 0.01 m/s, random direction) then 24 frames at 10 m/s, dt=0.05s",
+    "max_abs_yaw_rate_rad_s_LEGACY": 61.78333759307861,
+    "max_abs_yaw_rate_rad_s_REPAIRED": 0.0,
+    "physically_impossible_threshold_rad_s": 1.5,
+    "legacy_is_impossible": true,
+    "moving_part_bit_identical": true,
+    "speed_channel_bit_identical": true,
+    "n_frames_changed": 6,
+    "n_frames_changed_above_v_min": 0
+  },
+  "guard": {
+    "legacy_bare": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64-segme"
+    },
+    "legacy_flag_no_reason": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64-segme"
+    },
+    "legacy_flag_blank_reason": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64-segme"
+    },
+    "legacy_reason_no_flag": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64-segme"
+    },
+    "unknown_mode": {
+      "raised": "ValueError",
+      "msg": "unknown heading_mode 'enu_velocty'; expected one of ('enu_velocity', 'enu_velocity_hold_v1')"
+    },
+    "cache_build_params_legacy_bare": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "comma heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64"
+    },
+    "actions_and_poses_legacy_bare": {
+      "raised": "LegacyHeadingRefused",
+      "msg": "heading_mode='enu_velocity' requests the LEGACY comma2k19 heading, which is arctan2 of the ENU velocity and is UNDEFINED AT STANDSTILL. MEASURED on the 64-segme"
+    },
+    "accident_None_resolves_to": "enu_velocity_hold_v1",
+    "full_acknowledgement_resolves_to": "enu_velocity"
+  },
+  "cache_keys": {
+    "label_params_legacy": {},
+    "label_params_default": {
+      "heading_mode": "enu_velocity_hold_v1"
+    },
+    "key_base_preflip": "4bce7a330c31",
+    "key_legacy": "4bce7a330c31",
+    "key_repaired": "79a902d541f6",
+    "existing_cache_dir_name_unchanged": true,
+    "repaired_cannot_collide_with_legacy": true
+  },
+  "reproducibility_pin": {
+    "claim": "acknowledged LEGACY == an INDEPENDENT reimplementation of the pre-flip formula, exactly",
+    "bit_identical": true,
+    "max_abs_delta": 0.0
+  }
+}

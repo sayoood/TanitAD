@@ -1,0 +1,430 @@
+{
+  "what": "idm_head_v1 (DEPLOYED, nothing retrained) re-scored on the COMMA HALF of its own val_heldout_traindomain split",
+  "date": "2026-07-27",
+  "agent": "heading-default",
+  "escalation": "COMMA_YAW_REISSUE.md \u00a78 #2 / IDM_V3 #2",
+  "evidence_class": "MEASURED (ours; dev box RTX 4060, this script)",
+  "tier": "decision-grade for the comma channel on THIS substrate",
+  "host": "dev box only \u2014 pod1/pod2/pod3 not touched",
+  "substrate": {
+    "split": "idm_head_v1_train.py VAL_HELDOUT_TAGS, comma part",
+    "tags": "cm_[40:70]",
+    "cache": "C:\\Users\\Admin\\tanitad-data\\eval\\comma2k19-val-61c46fca8f7f",
+    "n_clips": 30,
+    "n_windows": 4140,
+    "k": 4,
+    "stride": 2,
+    "window_frames": 9,
+    "pooled_split_n_windows": 9420,
+    "comma_share_of_pooled": 0.4395,
+    "NOT_INCLUDED": "rig-A + rig-B (5,280 windows). physicalai-train-e438721ae894 is not on this box, and PhysicalAI is provably unaffected (n_pai_changed = 0). \u26d4 Do not re-issue the POOLED number from this file."
+  },
+  "label_protocol": {
+    "OFF": "heading_repair off (the cached poses ARE the legacy label); no v_min \u2014 this is the card's own protocol",
+    "ON": "heading_repair on, v_min = 0.5 m/s (comma2k19.HEADING_OBSERVABLE_V_MPS, MEASURED)",
+    "windows_dropped": 0,
+    "note": "v_min is the repair's OBSERVABILITY threshold, not a scoring gate; both arms score the identical windows"
+  },
+  "artifacts": {
+    "head_md5": "fa4462f0b898b036be729c790278b823",
+    "encoder_ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+    "head_params": 2899724
+  },
+  "repair_extent": {
+    "n_frames_below_v_min": 576,
+    "n_windows_label_changed": 120,
+    "frac_windows_changed": 0.028986,
+    "max_abs_yaw_rate_label_delta_rad_s": 14.945747375488281,
+    "n_impossible_legacy_gt1p5": 132,
+    "n_impossible_repaired_gt1p5": 84,
+    "gt_speed_at_changed_windows_max": 0.6145642399787903
+  },
+  "channels": {
+    "speed": {
+      "OFF": {
+        "r2": 0.5544720750731194,
+        "rho": 0.59798503343978,
+        "mae": 5.79415942244631,
+        "medae": 4.4183349609375,
+        "nmedae": 0.5819729770266288,
+        "rmse": 8.038826784950349,
+        "gt_std": 12.04356901996514,
+        "gt_mad": 7.59199333190918,
+        "n": 4140,
+        "r2_ci": {
+          "mean": 0.5545,
+          "lo": 0.3154,
+          "hi": 0.7169,
+          "ci95": 0.2008,
+          "se": 0.1056,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "ON": {
+        "r2": 0.5544720750731194,
+        "rho": 0.59798503343978,
+        "mae": 5.79415942244631,
+        "medae": 4.4183349609375,
+        "nmedae": 0.5819729770266288,
+        "rmse": 8.038826784950349,
+        "gt_std": 12.04356901996514,
+        "gt_mad": 7.59199333190918,
+        "n": 4140,
+        "r2_ci": {
+          "mean": 0.5545,
+          "lo": 0.3154,
+          "hi": 0.7169,
+          "ci95": 0.2008,
+          "se": 0.1056,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    },
+    "yaw_rate": {
+      "OFF": {
+        "r2": 4.761339211567517e-05,
+        "rho": 0.19803023869808276,
+        "mae": 0.2288037247971546,
+        "medae": 0.025025397539138794,
+        "nmedae": 2.262279756452395,
+        "rmse": 1.2269808338086114,
+        "gt_std": 1.2270100452115353,
+        "gt_mad": 0.011062026023864746,
+        "n": 4140,
+        "r2_ci": {
+          "mean": 0.0,
+          "lo": -0.0042,
+          "hi": 0.0032,
+          "ci95": 0.0037,
+          "se": 0.0752,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "ON": {
+        "r2": -0.00042090892336776875,
+        "rho": 0.1987444794454888,
+        "mae": 0.15269527297966398,
+        "medae": 0.02437874674797058,
+        "nmedae": 2.490000608790941,
+        "rmse": 0.9383568323256453,
+        "gt_std": 0.938159413263029,
+        "gt_mad": 0.009790658950805664,
+        "n": 4140,
+        "r2_ci": {
+          "mean": -0.0004,
+          "lo": -2.2876,
+          "hi": 0.1485,
+          "ci95": 1.218,
+          "se": 0.6323,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    },
+    "steer": {
+      "OFF": {
+        "r2": 0.409044259730137,
+        "rho": 0.22009923538949824,
+        "mae": 0.011654241269710715,
+        "medae": 0.005573380505666137,
+        "nmedae": 2.8739806667890897,
+        "rmse": 0.02439453049081298,
+        "gt_std": 0.03173328163343064,
+        "gt_mad": 0.0019392546964809299,
+        "n": 4140,
+        "r2_ci": {
+          "mean": 0.409,
+          "lo": -9.549,
+          "hi": 0.5941,
+          "ci95": 5.0716,
+          "se": 2.8635,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "ON": {
+        "r2": 0.409044259730137,
+        "rho": 0.22009923538949824,
+        "mae": 0.011654241269710715,
+        "medae": 0.005573380505666137,
+        "nmedae": 2.8739806667890897,
+        "rmse": 0.02439453049081298,
+        "gt_std": 0.03173328163343064,
+        "gt_mad": 0.0019392546964809299,
+        "n": 4140,
+        "r2_ci": {
+          "mean": 0.409,
+          "lo": -9.549,
+          "hi": 0.5941,
+          "ci95": 5.0716,
+          "se": 2.8635,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    },
+    "long_accel": {
+      "OFF": {
+        "r2": -0.7374568550591596,
+        "rho": 0.05583710851551208,
+        "mae": 0.532351749390919,
+        "medae": 0.3210201822221279,
+        "nmedae": 1.3230408671789486,
+        "rmse": 0.8051528566782973,
+        "gt_std": 0.6108313573570633,
+        "gt_mad": 0.24263814534060657,
+        "n": 4140,
+        "r2_ci": {
+          "mean": -0.7375,
+          "lo": -1.0165,
+          "hi": -0.5286,
+          "ci95": 0.244,
+          "se": 0.1253,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "ON": {
+        "r2": -0.7374568550591596,
+        "rho": 0.05583710851551208,
+        "mae": 0.532351749390919,
+        "medae": 0.3210201822221279,
+        "nmedae": 1.3230408671789486,
+        "rmse": 0.8051528566782973,
+        "gt_std": 0.6108313573570633,
+        "gt_mad": 0.24263814534060657,
+        "n": 4140,
+        "r2_ci": {
+          "mean": -0.7375,
+          "lo": -1.0165,
+          "hi": -0.5286,
+          "ci95": 0.244,
+          "se": 0.1253,
+          "reducer": "r2",
+          "n_windows": 4140,
+          "n_episodes": 30,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      }
+    }
+  },
+  "contrast": {
+    "yaw_rate_r2_ON_minus_OFF": {
+      "delta": -0.0005,
+      "lo": -2.2774,
+      "hi": 0.1296,
+      "separated": false,
+      "p_delta_gt0": 0.3065,
+      "n_windows": 4140,
+      "n_episodes": 30,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap (label-protocol contrast: identical predictions, two label sets)"
+    },
+    "yaw_rate_absErr_ON_minus_OFF": {
+      "delta": -0.0761,
+      "lo": -0.1504,
+      "hi": -0.0121,
+      "ci95": 0.0691,
+      "p_delta_gt0": 0.011,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 4140,
+      "n_episodes": 30,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "yaw_rate_medAbsErr_ON_minus_OFF": {
+      "delta": -0.0006,
+      "lo": -0.0016,
+      "hi": 0.0,
+      "ci95": 0.0008,
+      "p_delta_gt0": 0.032,
+      "separated": false,
+      "reducer": "median",
+      "n_windows": 4140,
+      "n_episodes": 30,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    }
+  },
+  "controls": {
+    "other_channels_bit_identical": {
+      "speed": true,
+      "steer": true,
+      "long_accel": true
+    },
+    "unchanged_windows": {
+      "n": 4020,
+      "max_abs_label_delta": 0.0,
+      "identical": true
+    },
+    "changed_windows": {
+      "n": 120,
+      "legacy_label_absmax": 14.945747375488281,
+      "legacy_label_absmean": 2.6863105331857997,
+      "repaired_label_absmax": 0.3769111633300781,
+      "repaired_label_absmean": 0.007855462531248728,
+      "head_pred_absmean": 0.0508268674214681,
+      "gt_speed_mean": 0.10443030808673939,
+      "reading": "a road vehicle at v~0 has yaw_rate ~0; a small prediction against a huge legacy label is C29 \u2014 the MODEL was right and the LABEL was wrong"
+    },
+    "encode_fidelity": {
+      "why": "the latents are re-encoded here, not the pod's lat_flagshipv1, so a faithful pipeline must reproduce the head's KNOWN comma behaviour on channels the repair cannot touch",
+      "comma_speed_r2_here": 0.5544720750731194,
+      "comma_speed_r2_idm_v3_A0": 0.7589944415742614,
+      "idm_v3_substrate": "v3 val split, 2,992 comma windows, v_min 0.5 \u2014 a DIFFERENT substrate, so this is a plausibility band, not an equality check"
+    }
+  },
+  "residual_defect": {
+    "why": "the standstill repair only touches frames below v_min. Any impossible yaw label at or ABOVE v_min survives it \u2014 and R\u00b2 has an unbounded left tail, so a handful still dominate.",
+    "n_impossible_after_repair": 84,
+    "frac_of_windows": 0.02029,
+    "their_gt_speed_min": 0.0002642603649292141,
+    "their_gt_speed_median": 0.0026851424481719732,
+    "their_abs_label_max": 15.275287628173828,
+    "gt_std_rad_s": {
+      "OFF": 1.2270100452115353,
+      "ON": 0.938159413263029
+    },
+    "gt_std_of_a_clean_yaw_channel_for_scale": {
+      "physicalai_A0_v3": 0.14241782117652835,
+      "source": "compare_v3.json LABEL_FIX_deployed_head/yaw_rate/legacy/pai/gt_std"
+    }
+  },
+  "diagnostic_v_min_sweep": {
+    "v_min_1.0": {
+      "r2": -0.00019921019102264736,
+      "mae": 0.15258431363342428,
+      "medae": 0.024342525750398636,
+      "nmedae": 2.6763643140338806,
+      "rho": 0.20369995753143333,
+      "gt_std": 0.938729865961486,
+      "n_impossible_gt1p5": 85
+    },
+    "v_min_2.0": {
+      "r2": -2.1396176900889685e-05,
+      "mae": 0.1527130126842896,
+      "medae": 0.024278391152620316,
+      "nmedae": 2.879631053375751,
+      "rho": 0.18715920950075904,
+      "gt_std": 0.9397765838086498,
+      "n_impossible_gt1p5": 85
+    },
+    "v_min_4.0": {
+      "r2": -0.0016140732819089898,
+      "mae": 0.1523765551270512,
+      "medae": 0.024396780878305435,
+      "nmedae": 3.5531929554234125,
+      "rho": 0.17179532579513082,
+      "gt_std": 0.9375858694644118,
+      "n_impossible_gt1p5": 84
+    },
+    "WARNING": "\u26d4 DIAGNOSTIC, NOT A RE-ISSUE. Each row is a DIFFERENT label protocol. The shipped repair is v_min 0.5, which is the MEASURED threshold; these rows say what a different threshold would do, not what any published number should become."
+  },
+  "leak_probe": {
+    "question": "are any of the v3 anchor's 22 comma val segments also among idm_head_v1's 40 comma TRAINING segments?",
+    "why_it_matters": "the anchor (+0.0114 -> +0.3308) is the number a re-issue would be tempted to paste in. It is measured on comma2k19-val-76b6e94a97a1 (64 segs / 21 routes), a DIFFERENT cache from the 61c46fca8f7f (90 eps) that A0 trained on, so the cm_ tag indices are NOT comparable and the overlap is UNKNOWN.",
+    "status": "UNRESOLVED \u2014 needs /root/idm2/manifest.json (eval pod), which records episode_id per cm_ tag",
+    "a0_comma_TRAIN_episode_ids": [
+      2121828738,
+      1253660068,
+      2651766402,
+      4213159682,
+      25089381,
+      2305174300,
+      3597123400,
+      4203966195,
+      2831231267,
+      773399109,
+      2973864241,
+      2684089795,
+      527825693,
+      1282641432,
+      3444288398,
+      2122268583,
+      3188286164,
+      3302753282,
+      2332657804,
+      1398039745,
+      2160020170,
+      3213854088,
+      3914976766,
+      2422405123,
+      661653456,
+      2413513374,
+      1553429990,
+      889646819,
+      1346272467,
+      1461217487,
+      3902509663,
+      1320703745,
+      2998305916,
+      185209688,
+      3242552286,
+      3133381288,
+      1983537122,
+      484475873,
+      2780345014,
+      1314974214
+    ],
+    "a0_comma_HELDOUT_episode_ids_used_here": [
+      4050696222,
+      3743041030,
+      1254983927,
+      2448476713,
+      133481541,
+      2719721775,
+      707316465,
+      2165097510,
+      2852500767,
+      3423348117,
+      1209646299,
+      755111004,
+      664177329,
+      3035792280,
+      3528557488,
+      2529514828,
+      2563880119,
+      2761141811,
+      487995887,
+      1367012291,
+      3731302142,
+      3903290475,
+      743012531,
+      452131470,
+      1355626905,
+      464315565,
+      1872854082,
+      3897578505,
+      3897964694,
+      2192699340
+    ],
+    "disjoint_here": true,
+    "how": "intersect a0_comma_TRAIN_episode_ids with the episode_id of the 22 v3 val tags (cm_00000, cm_00003, ..., cm_00063). Non-empty => the anchor is partly IN-TRAIN."
+  }
+}

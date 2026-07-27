@@ -1,32 +1,42 @@
-# stack_check field test — HOST tanitad-pod3 — 2026-07-27T20:28:44Z UTC
-# repo tree under test: /workspace/TanitAD-main @ 37ccfea
+# stack_check field test — HOST tanitad-pod3
+# 2026-07-27T20:56:23Z UTC   |   tree under test: /workspace/TanitAD-main @ 8ab5327  (clean)
+# NOTE: this tree carries the F1 fix, so a GREEN now PRINTS what it probed.
 
 ##### 1. GREEN — the SYNCED tree, --require v5
-$ cd /workspace/TanitAD-main/stack && TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD-main/stack PYTHONPATH=<stack>:<stack>/scripts:<taniteval> python3 -m taniteval.stack_check --require v5
+$ cd /workspace/TanitAD-main/stack && TANITEVAL_STACK_OVERRIDE=<stack> PYTHONPATH=<stack>:<stack>/scripts:<taniteval> python3 -m taniteval.stack_check --require v5
 [taniteval] tanitad OVERRIDE -> /workspace/TanitAD-main/stack (/workspace/TanitAD-main/stack/tanitad/__init__.py)
 {
   "pinned_root": "/workspace/TanitAD-main/stack",
   "provenance": "explicit-argument",
   "mode": "error",
   "tanitad_file": "/workspace/TanitAD-main/stack/tanitad/__init__.py",
+  "required": [
+    "tanitad.train.heldout_gate:PRIMARY_NAME",
+    "tanitad.train.heldout_goal:make_goal_kwargs_fn",
+    "tanitad.data.parity:register_v2_geometry_sibling",
+    "tanitad.geometry:frame_from_args",
+    "train_flagship_v4:resolve_v2_frames"
+  ],
   "ok": true,
   "problems": []
 }
 EXIT=0
 
-##### 2. RED (defect) — THE SAME COMMAND WITH --require OMITTED: probes ZERO capabilities, output is BYTE-IDENTICAL
+##### 2. F1 FIXED — the SAME command with --require OMITTED is now DISTINGUISHABLE
+#  (before the fix, at 37ccfea, this printed a BYTE-IDENTICAL summary to the one above)
 [taniteval] tanitad OVERRIDE -> /workspace/TanitAD-main/stack (/workspace/TanitAD-main/stack/tanitad/__init__.py)
 {
   "pinned_root": "/workspace/TanitAD-main/stack",
   "provenance": "explicit-argument",
   "mode": "error",
   "tanitad_file": "/workspace/TanitAD-main/stack/tanitad/__init__.py",
+  "required": [],
   "ok": true,
   "problems": []
 }
 EXIT=0
 
-##### 3. RED (correct refusal) — pod3 canonical tree /workspace/TanitAD/stack (PRE-v5, 0f93b98 + 185 local changes)
+##### 3. RED — pod3 canonical tree /workspace/TanitAD/stack (PRE-v5, 0f93b98 + 185 local changes)
 [taniteval] tanitad OVERRIDE -> /workspace/TanitAD/stack (/workspace/TanitAD/stack/tanitad/__init__.py)
 ⛔ STACK GUARD REFUSED — pinned root /workspace/TanitAD/stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:
   tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'
@@ -41,8 +51,14 @@ EXIT=0
   "mode": "error",
   "tanitad_file": "/workspace/TanitAD/stack/tanitad/__init__.py",
   "ok": false,
+  "required": [
+    "tanitad.train.heldout_gate:PRIMARY_NAME",
+    "tanitad.train.heldout_goal:make_goal_kwargs_fn",
+    "tanitad.data.parity:register_v2_geometry_sibling",
+    "tanitad.geometry:frame_from_args",
+    "train_flagship_v4:resolve_v2_frames"
+  ],
   "problems": [
-    "\u26d4 STACK GUARD REFUSED \u2014 pinned root /workspace/TanitAD/stack (intent: env:TANITEVAL_STACK_OVERRIDE); offenders:\n  tanitad.train.heldout_gate:PRIMARY_NAME -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_gate'\n  tanitad.train.heldout_goal:make_goal_kwargs_fn -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.train.heldout_goal'\n  tanitad.data.parity:register_v2_geometry_sibling -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.data.parity'\n  tanitad.geometry:frame_from_args -> IMPORT FAILED ModuleNotFoundError: No module named 'tanitad.geometry'\n  train_flagship_v4:resolve_v2_frames -> module resolved from /workspace/TanitAD/stack/scripts/train_flagship_v4.py has NO attribute 'resolve_v2_frames' (a PRE-v5 tree looks exactly like this)\n\u21d2 export TANITEVAL_STACK_OVERRIDE=/workspace/TanitAD/stack BEFORE python3 starts, and make sure no stale tree (e.g. /root/TanitAD/stack) precedes it."
   ]
 }
 EXIT=2

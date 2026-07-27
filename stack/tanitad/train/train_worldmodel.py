@@ -96,7 +96,9 @@ def cosine_lr(step: int, total: int, warmup: int, base: float) -> float:
 
 def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
                     data_root: str | None, sim_root: str | None = None,
-                    sim_frac: float = 0.2):
+                    sim_frac: float = 0.2,
+                    comma_heading_mode: str | None = None,
+                    comma_legacy_heading_reason: str = ""):
     max_h = _max_horizon(cfg)
     if data == "mix":
         # D-010: real (comma2k19) + sim (pre-generated MetaDrive episodes,
@@ -106,8 +108,10 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         from tanitad.data.metadrive_env import MetaDriveDataset
         from tanitad.data.mixing import MixedWindowDataset, load_episode
         assert sim_root, "--sim-root required for --data mix"
-        real_train, real_val = _build_datasets(cfg, n_episodes, "comma2k19",
-                                               data_root)
+        real_train, real_val = _build_datasets(
+            cfg, n_episodes, "comma2k19", data_root,
+            comma_heading_mode=comma_heading_mode,
+            comma_legacy_heading_reason=comma_legacy_heading_reason)
         sim_eps = [load_episode(str(p))
                    for p in sorted(Path(sim_root).glob("*.pt"))]
         assert sim_eps, f"no sim episodes (*.pt) under {sim_root}"
@@ -186,7 +190,10 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
         from tanitad.data.mixing import MixedWindowDataset
         assert sim_root, ("--sim-root is reused as the PhysicalAI R0 root for "
                           "--data realmix (comma root via --data-root)")
-        c_tr, c_va = _build_datasets(cfg, n_episodes, "comma2k19", data_root)
+        c_tr, c_va = _build_datasets(
+            cfg, n_episodes, "comma2k19", data_root,
+            comma_heading_mode=comma_heading_mode,
+            comma_legacy_heading_reason=comma_legacy_heading_reason)
         p_tr, p_va = _build_datasets(cfg, n_episodes, "physicalai", sim_root)
         frac = min(max(sim_frac, 0.0), 1.0)      # here: PhysicalAI share (~0.6)
         train = MixedWindowDataset([(c_tr, 1.0 - frac), (p_tr, frac)],
@@ -214,19 +221,38 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
 
         from tanitad.data._contract import EpisodeWindowDataset
         from tanitad.data.comma2k19 import build_episode as build_comma
+        from tanitad.data.comma2k19 import cache_build_params
         from tanitad.data.epcache import build_episodes_cached
         cache = _P(data_root) / "_epcache"
         from tanitad.geometry import build_params, frame_of
         _frame = frame_of(cfg)
+        # ⛔ The label fragment MUST go through `cache_build_params`, not a bare
+        # dict: it both RESOLVES the mode (so a legacy request without a written
+        # reason dies here, before 40 min of video decode) and adds the key that
+        # stops a repaired build from landing in a legacy-keyed cache dir.
+        # Legacy contributes NO key, so every pre-2026-07-27 comma cache keeps
+        # its exact name — see `comma2k19.label_params`.
+        _heading = cache_build_params(
+            {}, comma_heading_mode, allow_legacy=bool(
+                comma_legacy_heading_reason.strip()),
+            reason=comma_legacy_heading_reason)
         params = build_params(cfg, {"size": cfg.encoder.image_size,
                                     "n_stack": 3, "stride": 2,
-                                    "max_steps": 300})
+                                    "max_steps": 300, **_heading})
+        from tanitad.data.comma2k19 import DEFAULT_HEADING_MODE as _CHM
+        _mode = comma_heading_mode or _CHM
+        print(f"[data] comma2k19 heading_mode={_mode} "
+              f"(cache fragment {_heading or '{} — legacy, key unchanged'})")
 
         def mk(s, split):
             eps = build_episodes_cached(
-                s, lambda seg: build_comma(seg, size=cfg.encoder.image_size,
-                                           frame=None if _frame.is_canonical
-                                           else _frame),
+                s, lambda seg: build_comma(
+                    seg, size=cfg.encoder.image_size,
+                    frame=None if _frame.is_canonical else _frame,
+                    heading_mode=_mode,
+                    allow_legacy_heading=bool(
+                        comma_legacy_heading_reason.strip()),
+                    legacy_heading_reason=comma_legacy_heading_reason),
                 cache, f"comma2k19-{split}", params)
             return EpisodeWindowDataset(eps, window=cfg.predictor.window,
                                         max_horizon=max_h)
@@ -244,15 +270,19 @@ def _build_datasets(cfg: StackConfig, n_episodes: int, data: str,
 
 def train(cfg: StackConfig, n_episodes: int = 40, data: str = "toy",
           data_root: str | None = None, sim_root: str | None = None,
-          sim_frac: float = 0.2, amp: bool = True) -> dict:
+          sim_frac: float = 0.2, amp: bool = True,
+          comma_heading_mode: str | None = None,
+          comma_legacy_heading_reason: str = "") -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if cfg.train.device == "auto" else cfg.train.device
     torch.manual_seed(cfg.train.seed)
     use_amp = amp and device == "cuda"          # bf16 autocast; SIGReg stays fp32
     needed_fut, idx_of = _needed_future_indices(cfg)
 
-    ds_train, ds_val = _build_datasets(cfg, n_episodes, data, data_root,
-                                       sim_root=sim_root, sim_frac=sim_frac)
+    ds_train, ds_val = _build_datasets(
+        cfg, n_episodes, data, data_root, sim_root=sim_root, sim_frac=sim_frac,
+        comma_heading_mode=comma_heading_mode,
+        comma_legacy_heading_reason=comma_legacy_heading_reason)
     dl = DataLoader(ds_train, batch_size=cfg.train.batch_size, shuffle=True,
                     drop_last=True)
 
@@ -462,6 +492,21 @@ def main():
                     help="dir of pre-generated sim episodes (*.pt) for --data mix")
     ap.add_argument("--sim-frac", type=float, default=0.2,
                     help="sim share of training windows in --data mix")
+    from tanitad.data.comma2k19 import (DEFAULT_HEADING_MODE,
+                                        HEADING_MODE_LEGACY, HEADING_MODES)
+    ap.add_argument("--comma-heading-mode", choices=list(HEADING_MODES),
+                    default=DEFAULT_HEADING_MODE,
+                    help=f"comma2k19 heading derivation (default "
+                         f"{DEFAULT_HEADING_MODE} = the 2026-07-27 repair). "
+                         f"{HEADING_MODE_LEGACY!r} is undefined at standstill "
+                         f"(26.27 %% of sub-0.5 m/s frames physically "
+                         f"impossible) and REQUIRES "
+                         f"--comma-legacy-heading-reason")
+    ap.add_argument("--comma-legacy-heading-reason", type=str, default="",
+                    help="written acknowledgement required to build comma2k19 "
+                         "on the legacy (broken) heading; it is recorded in the "
+                         "run log. Reproducing a pre-2026-07-27 cache is the "
+                         "only intended use")
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--episodes", type=int, default=40,
                     help="toy: #episodes; comma2k19: max #segments")
@@ -500,7 +545,9 @@ def main():
         cfg.train.out_dir = args.out
     n_eps = 8 if (args.smoke or args.config == "smoke") else args.episodes
     train(cfg, n_episodes=n_eps, data=args.data, data_root=args.data_root,
-          sim_root=args.sim_root, sim_frac=args.sim_frac, amp=not args.no_amp)
+          sim_root=args.sim_root, sim_frac=args.sim_frac, amp=not args.no_amp,
+          comma_heading_mode=args.comma_heading_mode,
+          comma_legacy_heading_reason=args.comma_legacy_heading_reason)
 
 
 if __name__ == "__main__":

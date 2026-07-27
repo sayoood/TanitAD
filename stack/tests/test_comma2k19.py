@@ -63,7 +63,10 @@ def test_actions_and_poses_math(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
-# IDM v3 (2026-07-27): the standstill heading defect and its opt-in repair.     #
+# IDM v3 (2026-07-27): the standstill heading defect and its repair.            #
+# ⭐ The repair became the DEFAULT later the same day (`heading-default` pass);  #
+# the flip, its guard and the legacy reproducibility pin live in                 #
+# tests/test_comma_heading_regime.py.  What follows is the mechanism only.       #
 # comma2k19 heading is arctan2 of the ENU VELOCITY, undefined at v ~ 0. MEASURED
 # on the 64-segment val build: 26.27 % of frames below 0.5 m/s carry a           #
 # physically impossible |yaw_rate| (up to 15.53 rad/s at 0.00-0.01 m/s); 0.000 % #
@@ -105,8 +108,13 @@ def test_hold_heading_no_observable_frames_is_a_noop():
     assert np.allclose(fixed, yaw)               # never invent a heading
 
 
-def test_heading_mode_default_is_byte_identical(tmp_path):
-    """FIX-FORWARD ONLY: the default must not move any existing cache."""
+def test_heading_mode_default_is_the_repair(tmp_path):
+    """⭐ FLIPPED 2026-07-27: the default is the REPAIR, not the legacy label.
+
+    On this MOVING fixture the two agree (nothing to repair), which is exactly
+    why it cannot be the only assertion — the default-flip and the legacy
+    refusal are demonstrated FIRING in tests/test_comma_heading_regime.py.
+    """
     seg = make_fake_segment(tmp_path, "d0_2018-01-01--10-00-00", "3")
     ft = np.load(seg / "global_pose" / "frame_times")
     pos = np.load(seg / "global_pose" / "frame_positions")
@@ -114,13 +122,16 @@ def test_heading_mode_default_is_byte_identical(tmp_path):
     can = (ft, np.full(T_FRAMES, 10.0))
     steer = (ft, np.full(T_FRAMES, 15.3))
     a_def, p_def = actions_and_poses(ft, pos, vel, can, steer, stride=2)
-    a_leg, p_leg = actions_and_poses(ft, pos, vel, can, steer, stride=2,
-                                     heading_mode=HEADING_MODE_LEGACY)
-    assert np.array_equal(a_def, a_leg) and np.array_equal(p_def, p_leg)
-    # and on a MOVING segment the repair is also a no-op (nothing to repair)
-    _, p_hold = actions_and_poses(ft, pos, vel, can, steer, stride=2,
-                                  heading_mode=HEADING_MODE_HOLD)
-    assert np.allclose(p_def[:, 2], p_hold[:, 2], atol=1e-6)
+    a_hold, p_hold = actions_and_poses(ft, pos, vel, can, steer, stride=2,
+                                       heading_mode=HEADING_MODE_HOLD)
+    assert np.array_equal(a_def, a_hold) and np.array_equal(p_def, p_hold)
+    # legacy stays REACHABLE — with the written acknowledgement — and on a
+    # moving segment it is identical, so this fixture pins the no-op direction.
+    _, p_leg = actions_and_poses(ft, pos, vel, can, steer, stride=2,
+                                 heading_mode=HEADING_MODE_LEGACY,
+                                 allow_legacy_heading=True,
+                                 legacy_heading_reason="unit test")
+    assert np.allclose(p_def[:, 2], p_leg[:, 2], atol=1e-6)
 
 
 def test_heading_mode_rejects_unknown():
