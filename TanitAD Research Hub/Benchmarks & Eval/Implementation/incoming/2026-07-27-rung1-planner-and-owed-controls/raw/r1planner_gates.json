@@ -1,0 +1,103 @@
+{
+  "window_set_identity": {
+    "n_windows_new": 599,
+    "n_windows_committed_bi": 599,
+    "n_windows_committed_matched": 599,
+    "n_episode_clusters": 596,
+    "eid_identical_vs_bi": true,
+    "eid_identical_vs_matched": true,
+    "t0_identical_vs_bi": true,
+    "t0_identical_vs_matched": true,
+    "anchors": {
+      "a_imagination__own__roSTR": {
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001
+      },
+      "a_imagination__hold__roSTR": {
+        "max_abs_diff_m": 3.0517578125e-05,
+        "within_tol": true,
+        "tol_m": 0.0001
+      },
+      "b_frozenlast__own__roSTR": {
+        "max_abs_diff_m": 0.0,
+        "within_tol": true,
+        "tol_m": 0.0001
+      },
+      "b_frozenlast__hold__roSTR": {
+        "max_abs_diff_m": 0.0,
+        "within_tol": true,
+        "tol_m": 0.0001
+      }
+    },
+    "IDENTITY_PASS": true
+  },
+  "plumbing_selftest": {
+    "a_planner": {
+      "max_abs_diff_vs_own_m": 512.340942,
+      "max_abs_diff_vs_hold_m": 507.18988,
+      "is_not_a_noop": true
+    },
+    "a_planner_vupd": {
+      "max_abs_diff_vs_own_m": 487.236755,
+      "max_abs_diff_vs_hold_m": 495.863892,
+      "is_not_a_noop": true
+    },
+    "a_planner_vdec": {
+      "max_abs_diff_vs_own_m": 504.336151,
+      "max_abs_diff_vs_hold_m": 514.784424,
+      "is_not_a_noop": true
+    },
+    "a_planner_gtlook": {
+      "max_abs_diff_vs_own_m": 454.98407,
+      "max_abs_diff_vs_hold_m": 272.253113,
+      "is_not_a_noop": true
+    },
+    "_wp_to_control_is_imported_not_copied": true,
+    "_cpu_fixture_pins": "taniteval/tests/test_blindimag.py::test_planner_feeds_exactly_wp_to_control asserts torch.equal against closedloop.wp_to_control's own output; ::test_planner_speed_bookkeeping_is_closed_loop_rollouts pins the v <- clamp_min(v + accel*DT, 0) integration; ::test_no_planner_leaves_every_pre_existing_path_bit_identical pins inertness on every pre-planner call site",
+    "SELFTEST_PASS": true
+  },
+  "fidelity_vs_ladder": {
+    "T_blind_own_str_steps": {
+      "committed": 25,
+      "recomputed": 25
+    },
+    "T_blind_hold_str_steps": {
+      "committed": 115,
+      "recomputed": 115
+    },
+    "de2s_own_str": {
+      "committed": 1.8165,
+      "recomputed": 1.8165
+    },
+    "de2s_hold_str": {
+      "committed": 0.6718,
+      "recomputed": 0.6718
+    },
+    "ade_0_2s_own_str": {
+      "committed": 0.871,
+      "recomputed": 0.871
+    },
+    "ade_0_2s_hold_str": {
+      "committed": 0.3351,
+      "recomputed": 0.3351
+    },
+    "T_useful_1m_own_str_s": {
+      "committed": 1.4,
+      "recomputed": 1.4
+    },
+    "T_useful_1m_hold_str_s": {
+      "committed": 2.3,
+      "recomputed": 2.3
+    },
+    "LEVEL_FIDELITY_PASS": true,
+    "T_BLIND_EXACT_REPRODUCTION": true,
+    "_note": "level agreement was declared BLOCKING and the T_blind integer reproduction REPORTED, NON-BLOCKING, in advance (PRE_REGISTRATION.md B.5.2) \u2014 a step count is a threshold crossing and the arms come from a second encode pass"
+  },
+  "failing_value_probe": {
+    "identical_arms": 1,
+    "swapped_arms": 1,
+    "expected": 1,
+    "_read": "the primary statistic's failing value is 1 step (0.1 s), not 0, and it is returned on real arms \u2014 the rule can fail"
+  }
+}

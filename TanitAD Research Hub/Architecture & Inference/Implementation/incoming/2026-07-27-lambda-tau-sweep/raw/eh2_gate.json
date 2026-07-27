@@ -1,0 +1,131 @@
+{
+  "_experiment": "E-H2 gate \u2014 bit-identity, committed bars, no-truncation, base_rank semantics",
+  "_evidence_class": "MEASURED (ours)",
+  "_host": "FREEDOM2035",
+  "_python": "3.13.5",
+  "_torch": "2.11.0+cu128",
+  "_device": "cpu (dev box; no pod contacted, no GPU used)",
+  "G1_bit_identity": {
+    "lambda1_tau1_bit_identical_to_shipped": true,
+    "max_abs_diff": 0.0,
+    "lambda0_reproduces_pre_graft_score_exactly": true,
+    "PASS": true,
+    "_why": "x/1.0 and 1.0*x are EXACT in IEEE-754, so the two divisions and one multiply the knobs add are provably no-ops at the defaults. Asserted, not assumed.",
+    "_also_pinned_in": "stack/tests/test_flagship_v4.py::test_lambda_one_tau_one_is_bit_identical_to_the_shipped_graft_path"
+  },
+  "G2_committed_bars": {
+    "bars": {
+      "produced|F_flat": {
+        "committed": 0.8563,
+        "recomputed": 0.8563,
+        "match": true
+      },
+      "produced|O_oracle_in_fan": {
+        "committed": 0.2505,
+        "recomputed": 0.2505,
+        "match": true
+      },
+      "produced|F_base_only": {
+        "committed": 0.8781,
+        "recomputed": 0.8781,
+        "match": true
+      },
+      "neutral|F_flat": {
+        "committed": 0.762,
+        "recomputed": 0.762,
+        "match": true
+      },
+      "oracle|F_flat": {
+        "committed": 0.6423,
+        "recomputed": 0.6423,
+        "match": true
+      },
+      "oracle|F_base_only": {
+        "committed": 0.6615,
+        "recomputed": 0.6615,
+        "match": true
+      }
+    },
+    "windows": 881,
+    "episodes": 40,
+    "H_graft_q64_minus_flat_paired": {
+      "delta": 0.2059,
+      "lo": 0.1316,
+      "hi": 0.2897,
+      "ci95": 0.0791,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "produced_F_flat_interval": {
+      "mean": 0.8563,
+      "lo": 0.722,
+      "hi": 0.9984,
+      "ci95": 0.1382,
+      "se": 0.072,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "hier_and_reduced_dumps_are_the_SAME_881_windows": true,
+    "PASS": true,
+    "_estimator": "episode-cluster bootstrap, B=2000, unit = episode cluster. NEVER overlapping_holdout_se."
+  },
+  "G3_no_truncation": {
+    "selection_path_scanned": [
+      "FlagshipV15Head.select",
+      "FlagshipV4Head._factor_grafts"
+    ],
+    "banned_token_hits_in_the_selection_path": {},
+    "hits_elsewhere_accounted_for": {
+      "masked_fill x2 in FlagshipV15Head.condition": "goal-token dropout during TRAINING (vt_band -> VT_DROPPED, route -> ROUTE_DROPPED). Masks the CONDITION, never the candidate set; not in the selection path."
+    },
+    "executed": {
+      "lam0.0_tau1.0": {
+        "n_candidates_scored": 12,
+        "all_finite": true,
+        "pick_is_flat_argmax": true
+      },
+      "lam1.0_tau1.0": {
+        "n_candidates_scored": 12,
+        "all_finite": true,
+        "pick_is_flat_argmax": true
+      },
+      "lam8.0_tau1.0": {
+        "n_candidates_scored": 12,
+        "all_finite": true,
+        "pick_is_flat_argmax": true
+      },
+      "lam1.0_tau0.1": {
+        "n_candidates_scored": 12,
+        "all_finite": true,
+        "pick_is_flat_argmax": true
+      },
+      "lam8.0_tau0.1": {
+        "n_candidates_scored": 12,
+        "all_finite": true,
+        "pick_is_flat_argmax": true
+      }
+    },
+    "PASS": true,
+    "_finding": "`q` was NEVER in the deployment path \u2014 it exists only in the E-V5-2 MEASUREMENT harness (v5_hierarchical_select.py::hierarchical_pick). 'Delete q from the deployment path' is therefore a VERIFICATION plus a regression guard, not a deletion.",
+    "_guard": "stack/tests/test_flagship_v4.py::test_the_selector_never_truncates_the_candidate_set"
+  },
+  "G4_base_rank_semantics": {
+    "rows_matching_[pick]++[index order]": 881,
+    "n_rows": 881,
+    "rows_whose_tail_is_strictly_increasing_anchor_index": 881,
+    "column0_reproduces_F_flat": 0.8563,
+    "PASS": true,
+    "_correction": "`base_rank` is NOT a rank. V5 section 5.2's label 'top-n by the as-trained base ranking' is wrong; the columns are '[the as-trained pick] ++ [anchors in INDEX order]'. Its CONCLUSIONS survive \u2014 index order is still a nested family \u2014 but the label does not.",
+    "_root_cause_class": "a tensor's semantics taken from its NAME rather than from its construction site (v5_cost_curve.py:109-122)"
+  },
+  "ALL_PASS": true,
+  "_wallclock_s": 0.3
+}

@@ -136,6 +136,140 @@ def test_zero_init_grafts_leave_the_ranked_score_bit_identical():
     assert out["telemetry"]["seam_norm_ratio_preclamp_max"] == 0.0
 
 
+# ------------------------------------- (b2) E-H2 prior strength (λ, τ) ------
+def _trained_grafts(head, seed: int = 7) -> None:
+    """Give the three zero-init grafts a deterministic NON-zero weight, so the
+    (λ, τ) knobs have something to scale. Zero-init grafts make every λ identical
+    and would let a broken knob pass — the failure this helper exists to avoid."""
+    g = torch.Generator().manual_seed(seed)
+    with torch.no_grad():
+        for lin in (head.lat_to_anchor, head.lon_to_anchor, head.dist_to_anchor):
+            lin.weight.copy_(torch.randn(lin.weight.shape, generator=g) * 0.05)
+
+
+def test_lambda_one_tau_one_is_bit_identical_to_the_shipped_graft_path():
+    """⛔ THE GATE for the whole (λ, τ) sweep: at the defaults the exposed knobs
+    must reproduce the SHIPPED arithmetic bit-for-bit, or every swept cell is
+    measured against a baseline that is not the deployed model.
+
+    The reference is not another config — it is the pre-change expression
+    ``W(log_softmax(logits)) summed, norm-clamped``, re-implemented here so the
+    assertion cannot pass by comparing the new code to itself.
+    """
+    cfg = _small()
+    cfg.seam_fail = 100.0                         # this test is about EQUALITY
+    head = FlagshipV4Head(cfg).eval()
+    _trained_grafts(head)                         # non-zero, else λ is unobservable
+    b = _batch(cfg)
+    out = _run(head, b)
+
+    # --- the SHIPPED expression, verbatim, with no λ and no τ ----------------
+    tokens = head.build_tokens(grad_scale(b["states"], 1.0), b["imagined"])
+    m, _, _ = head.condition(b["v0"], b["vt_band"], b["route"], b["route_graded"])
+    dec = head.decoder(tokens, m, steps=cfg.decoder.diffusion_steps)
+    refined = dec["refined_logits"]
+    lsm = torch.log_softmax
+    lat_l, lon_l, dist_l = out["lat_logits"], out["lon_logits"], out["dist_logits"]
+    graft = (head.lat_to_anchor(lsm(lat_l, dim=-1))
+             + head.lon_to_anchor(lsm(lon_l, dim=-1))
+             + head.dist_to_anchor(lsm(dist_l, dim=-1)))
+    base = refined.norm(dim=-1).clamp_min(1e-9)
+    ratio = graft.norm(dim=-1) / base
+    scale = cfg.seam_clamp / ratio.clamp_min(cfg.seam_clamp)
+    shipped = refined + graft * scale[:, None]
+
+    assert cfg.graft_lambda == 1.0 and cfg.graft_tau == 1.0        # the defaults
+    assert torch.equal(out["refined_logits"], shipped), (
+        "λ=1, τ=1 is NOT bit-identical to the shipped graft path — every swept "
+        "cell would be measured against the wrong baseline")
+    assert torch.equal(out["sel_idx"],
+                       out["sel_score"].argmax(dim=1))             # flat argmax
+
+
+def test_graft_lambda_zero_removes_the_prior_exactly():
+    """λ=0 must reproduce the PRE-GRAFT score bit-for-bit — the `F_base_only` arm
+    becomes a config, not a re-implementation."""
+    cfg = _small()
+    cfg.seam_fail = 100.0
+    head = FlagshipV4Head(cfg).eval()
+    _trained_grafts(head)
+    b = _batch(cfg)
+    tokens = head.build_tokens(grad_scale(b["states"], 1.0), b["imagined"])
+    m, _, _ = head.condition(b["v0"], b["vt_band"], b["route"], b["route_graded"])
+    pre = head.decoder(tokens, m, steps=cfg.decoder.diffusion_steps)["refined_logits"]
+    head.cfg.graft_lambda = 0.0
+    out0 = _run(head, b)
+    assert torch.equal(out0["refined_logits"], pre)
+    assert out0["telemetry"]["seam_norm_ratio_preclamp_max"] == 0.0
+    assert out0["telemetry"]["seam_clamp_bound_frac"] == 0.0
+
+
+def test_graft_tau_to_zero_makes_the_class_posterior_one_hot():
+    """τ→0 is MAXIMALLY HARD commitment WITHOUT truncating the candidate set —
+    the axis `q` could never give us.
+
+    Two properties are pinned, and the second is the one that is easy to get
+    wrong: because the graft consumes ``log_softmax`` (not ``softmax``), τ→0 does
+    NOT converge to "the argmax class's weight column". The non-argmax entries go
+    to −(gap)/τ, so the graft's DIRECTION converges while its MAGNITUDE diverges
+    like 1/τ. That divergence is precisely why the norm clamp decides the τ axis,
+    and why every swept cell must report its pre-clamp ratio.
+    """
+    cfg = _small()
+    cfg.seam_clamp, cfg.seam_fail = 1.0e9, 1.0e12  # isolate sharpness, not the clamp
+    head = FlagshipV4Head(cfg).eval()
+    _trained_grafts(head)
+    b = _batch(cfg)
+    tokens = head.build_tokens(grad_scale(b["states"], 1.0), b["imagined"])
+    m, _, _ = head.condition(b["v0"], b["vt_band"], b["route"], b["route_graded"])
+    pre = head.decoder(tokens, m, steps=cfg.decoder.diffusion_steps)["refined_logits"]
+
+    def graft_at(tau):
+        head.cfg.graft_tau = tau
+        o = _run(head, b)
+        return o, o["refined_logits"] - pre
+
+    o_hi, _ = graft_at(1.0)
+    # (1) the class posterior itself is one-hot at small τ
+    for k in ("lat", "lon", "dist"):
+        p = torch.softmax(o_hi[f"{k}_logits"].detach() / 1.0e-4, dim=-1)
+        assert float(p.max(dim=-1).values.min()) > 1.0 - 1e-6, k
+
+    # (2) the graft DIRECTION converges as τ→0 while its magnitude diverges ~1/τ
+    _, g3 = graft_at(1.0e-3)
+    _, g4 = graft_at(1.0e-4)
+    cos = torch.nn.functional.cosine_similarity(g3, g4, dim=-1)
+    assert float(cos.min()) > 0.999, float(cos.min())
+    grow = (g4.norm(dim=-1) / g3.norm(dim=-1).clamp_min(1e-30))
+    assert 5.0 < float(grow.min()) and float(grow.max()) < 20.0, float(grow.mean())
+
+    # ... and the candidate set is STILL the full vocabulary: nothing was masked
+    o4 = _run(head, b)
+    assert torch.isfinite(o4["sel_score"]).all()
+    assert o4["sel_score"].shape[1] == cfg.n_anchors
+
+
+def test_the_selector_never_truncates_the_candidate_set():
+    """⛔ `q` MUST NOT EXIST in the deployment path. Every candidate stays
+    rankable at every (λ, τ): no masking, no -inf, no top-k. This is the guard
+    that stops `H_graft(q)` — a MEASUREMENT arm that cost +0.21…+5.82 m — from
+    ever creeping into the deployed selector."""
+    cfg = _small()
+    cfg.seam_clamp, cfg.seam_fail = 1.0e6, 1.0e9
+    head = FlagshipV4Head(cfg).eval()
+    _trained_grafts(head)
+    b = _batch(cfg)
+    for lam, tau in ((0.0, 1.0), (1.0, 1.0), (8.0, 1.0), (1.0, 0.1), (8.0, 0.1)):
+        head.cfg.graft_lambda, head.cfg.graft_tau = lam, tau
+        out = _run(head, b)
+        s = out["sel_score"]
+        assert s.shape[1] == cfg.n_anchors, (lam, tau)
+        assert torch.isfinite(s).all(), (lam, tau)
+        # every candidate is reachable: no anchor is pinned at -inf/NaN, and the
+        # emitted pick is the flat argmax over ALL of them
+        assert torch.equal(out["sel_idx"], s.argmax(dim=1)), (lam, tau)
+
+
 def test_a_trained_graft_actually_moves_the_ranking():
     """The flip side: once a graft is non-zero it MUST change the ranked score —
     else the seam is decorative (the failure §6.2 discipline 4 guards against).

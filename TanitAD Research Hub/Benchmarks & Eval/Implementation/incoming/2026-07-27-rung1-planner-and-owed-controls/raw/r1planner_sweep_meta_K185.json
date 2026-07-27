@@ -1,0 +1,137 @@
+{
+  "block": "taniteval.blindimag/blind_horizon",
+  "version": "1.0.0",
+  "stage": "sweep+peek",
+  "arm_ckpt": "flagship-30k",
+  "ckpt_step": 29999,
+  "kmax": 185,
+  "stride": 8,
+  "episodes_requested": 600,
+  "n_windows": 599,
+  "n_episode_clusters": 596,
+  "val_parity": {
+    "corpus_key": "physicalai-val-0c5f7dac3b11",
+    "split": "val",
+    "cache_dir": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+    "mode": "subset",
+    "episodes_expected": 600,
+    "episodes_loaded": 600,
+    "uid_source": "count-only-unrecorded",
+    "skip_hash": "f09e44db",
+    "episode_uid_sha256": "75a4d429be8cef8ea47a319e2033d792ee9eecbff033fad27dbb624b5634df20",
+    "episode_uid_sha256_expected": null,
+    "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+    "parity": true,
+    "checked": true,
+    "episodes_present": 600,
+    "registered_deployments": [
+      40,
+      600
+    ],
+    "deployment": {
+      "n_episodes": 600,
+      "role": "full build (the epcache split dir on the training pods)",
+      "where": "<epcache root>/physicalai-val-0c5f7dac3b11 \u2014 pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+      "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+      "evidence_class": "MEASURED"
+    },
+    "label": "val physicalai-val-0c5f7dac3b11",
+    "requested_episodes": 600,
+    "decision_grade": true,
+    "episodes_listed": 600
+  },
+  "wheelbase_used": 2.9,
+  "speed_scale": 10.0,
+  "dt_s": 0.1,
+  "arms": {},
+  "extra_arms": {
+    "a_imagination__own__roSTR": {
+      "state_source": "imagination",
+      "action_source": "own_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_frozenlast__own__roSTR": {
+      "state_source": "frozen_last",
+      "action_source": "own_kinematic",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_imagination__hold__roSTR": {
+      "state_source": "imagination",
+      "action_source": "hold_last",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_frozenlast__hold__roSTR": {
+      "state_source": "frozen_last",
+      "action_source": "hold_last",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_planner": {
+      "state_source": "imagination",
+      "action_source": "planner",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_planner": {
+      "state_source": "frozen_last",
+      "action_source": "planner",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_planner_vupd": {
+      "state_source": "imagination",
+      "action_source": "planner",
+      "update_speed_channel": true,
+      "readout_level": "str"
+    },
+    "b_planner_vupd": {
+      "state_source": "frozen_last",
+      "action_source": "planner",
+      "update_speed_channel": true,
+      "readout_level": "str"
+    },
+    "a_planner_vdec": {
+      "state_source": "imagination",
+      "action_source": "planner|vsrc=decoded",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_planner_vdec": {
+      "state_source": "frozen_last",
+      "action_source": "planner|vsrc=decoded",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "a_planner_gtlook": {
+      "state_source": "imagination",
+      "action_source": "planner|look=gt",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    },
+    "b_planner_gtlook": {
+      "state_source": "frozen_last",
+      "action_source": "planner|look=gt",
+      "update_speed_channel": false,
+      "readout_level": "str"
+    }
+  },
+  "trained_rollout_lengths_steps": {
+    "op": 4,
+    "tac": 16,
+    "str": 20
+  },
+  "peek": {},
+  "uniform_periods": [
+    2
+  ],
+  "oracle_bars": [
+    0.5
+  ],
+  "peek_bases": [],
+  "utc": "2026-07-26T23:38:04Z",
+  "seconds_encode": 807.3,
+  "seconds_rollout": 314.5
+}

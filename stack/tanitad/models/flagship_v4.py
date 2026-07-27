@@ -103,6 +103,24 @@ class V4Config(V15Config):
     seam_clamp: float = 1.0                 # rescale the graft in-graph at this ratio
     seam_fail: float = 1.5                  # fail loud above this pre-clamp ratio
 
+    # --- PRIOR STRENGTH (E-H2): the two knobs that were hard-wired -----------
+    # The class->anchor grafts are a norm-capped product-of-experts PRIOR added
+    # to the flat score; the selector then argmaxes over the FULL candidate set.
+    # Its strength was implicit (gain 1, temperature 1). These expose it:
+    #   graft_lambda -- gain. The classifier-free-guidance `w` analogue: how loud
+    #                   the prior is, its shape unchanged. 0.0 removes it.
+    #   graft_tau    -- temperature on the class posterior BEFORE the linear map.
+    #                   tau -> 0 makes the posterior one-hot (maximally hard
+    #                   commitment); tau -> inf makes it uniform (no class
+    #                   information, a per-window constant offset per anchor).
+    # Together they reach arbitrarily hard commitment WITHOUT truncating the
+    # candidate set -- which is why v4 has no `q` and must never grow one.
+    # DEFAULTS ARE BIT-IDENTICAL to the shipped path (x/1.0 and 1.0*x are exact
+    # in IEEE-754); pinned by
+    # ``test_lambda_one_tau_one_is_bit_identical_to_the_shipped_graft_path``.
+    graft_lambda: float = 1.0
+    graft_tau: float = 1.0
+
 
 def v4_config() -> V4Config:
     """The v4 OPERATIVE planner (③): dense 2 s, factorised selection, null row."""
@@ -171,14 +189,15 @@ class FlagshipV4Head(FlagshipV15Head):
         ``seam_fail`` raises (the clamp itself would be broken).
         """
         lsm = torch.log_softmax
-        g_lat = self.lat_to_anchor(lsm(lat_logits, dim=-1))       # [B, N]
-        g_lon = self.lon_to_anchor(lsm(lon_logits, dim=-1))
-        g_dist = self.dist_to_anchor(lsm(dist_logits, dim=-1))
-        graft = g_lat + g_lon + g_dist                            # [B, N]
+        tau, lam = self.cfg.graft_tau, self.cfg.graft_lambda       # E-H2 knobs
+        g_lat = self.lat_to_anchor(lsm(lat_logits / tau, dim=-1))  # [B, N]
+        g_lon = self.lon_to_anchor(lsm(lon_logits / tau, dim=-1))
+        g_dist = self.dist_to_anchor(lsm(dist_logits / tau, dim=-1))
+        graft = lam * (g_lat + g_lon + g_dist)                    # [B, N]
 
         base = refined.norm(dim=-1).clamp_min(1e-9)               # [B]
         tele = {f"{k}_over_conf": round(float(
-                    (g.norm(dim=-1) / base).mean().detach()), 4)
+                    (lam * g).norm(dim=-1).div(base).mean().detach()), 4)
                 for k, g in (("lat", g_lat), ("lon", g_lon), ("dist", g_dist))}
         ratio = graft.norm(dim=-1) / base                        # [B]
         pre_max = float(ratio.max().detach())
@@ -186,12 +205,22 @@ class FlagshipV4Head(FlagshipV15Head):
             raise RuntimeError(
                 f"factorised-selection seam norm ratio {pre_max:.3f} > "
                 f"{self.cfg.seam_fail} (fail-loud): a graft is swamping the base "
-                f"score — the in-graph clamp is not holding, i.e. a code fault.")
+                f"score — the in-graph clamp is not holding, i.e. a code fault. "
+                f"(graft_lambda={lam}, graft_tau={tau}: a PRIOR-STRENGTH sweep "
+                f"must raise seam_fail explicitly and record that it did.)")
         # rescale in-graph so the EFFECTIVE ratio never exceeds seam_clamp
         scale = self.cfg.seam_clamp / ratio.clamp_min(self.cfg.seam_clamp)  # <=1
         graft = graft * scale[:, None]
         tele["seam_norm_ratio_max"] = round(min(pre_max, self.cfg.seam_clamp), 4)
         tele["seam_norm_ratio_preclamp_max"] = round(pre_max, 4)
+        # ⚠️ THE NAMED TRAP (E-H2): above the clamp the gain λ is a NO-OP, so a λ
+        # sweep read without these two keys shows a flat axis that is saturation,
+        # not a finding. `preclamp_mean` is the axis's true position; `bound_frac`
+        # is the share of the batch for which λ has already stopped mattering.
+        tele["seam_norm_ratio_preclamp_mean"] = round(
+            float(ratio.mean().detach()), 4)
+        tele["seam_clamp_bound_frac"] = round(
+            float((ratio > self.cfg.seam_clamp).to(ratio.dtype).mean().detach()), 4)
         return refined + graft, tele
 
     # -------------------------------------------------------------- forward --

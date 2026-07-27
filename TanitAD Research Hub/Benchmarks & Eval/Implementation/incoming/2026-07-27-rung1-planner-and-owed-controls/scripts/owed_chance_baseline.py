@@ -359,8 +359,14 @@ def main():
     C = np.load(sc / "run_c12fix" / "scores_heldout.npz")
     key_y = "Y" if "Y" in C.files else None
     if key_y is not None:
-        yc = _cf(C[key_y]).astype(float) if C[key_y].ndim == 2 else C[key_y].astype(float)
-        eidc = _cf(C["clip"]) if C[key_y].ndim == 2 else C["clip"]
+        # ⚠️ the c12 target is FRAME-level, not (camera, frame): its arrays are
+        # [N] or [N,1], so `_cf`'s two-camera unfold does not apply. Detected
+        # from the shape rather than assumed — the crash that taught this is
+        # recorded as amendment A2.
+        def _flat(a):
+            return _cf(a) if (a.ndim == 2 and a.shape[1] == 2) else np.asarray(a).reshape(-1)
+        yc = _flat(C[key_y]).astype(float)
+        eidc = _flat(C["clip"])
         cz = np.zeros_like(yc)
         for row, arm in (("71", "head_img_ego"), ("74", "head_img")):
             c = c12["arms"][arm]["paired_AP_vs_chance"]
@@ -372,7 +378,7 @@ def main():
                        c["lo"], c["hi"], c["delta"],
                        1.0 - c.get("AP_b", c12["base_rate"]))}
             if sk:
-                s = _cf(C[sk[0]]) if C[sk[0]].ndim == 2 else C[sk[0]]
+                s = _flat(C[sk[0]])
                 r = _paired_ap(yc, s, cz, eidc, a.boot)
                 rec["recomputed_as_published"] = {k: r[k] for k in
                                                   ("AP_a", "AP_b", "delta", "lo", "hi",

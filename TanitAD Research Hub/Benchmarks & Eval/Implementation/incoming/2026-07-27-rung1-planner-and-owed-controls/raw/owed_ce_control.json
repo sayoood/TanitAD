@@ -1,0 +1,559 @@
+{
+  "block": "owed_controls/CE-CONTROL",
+  "frozen_list_rows": [
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65
+  ],
+  "estimator": {
+    "interval": "paired_episode_cluster_bootstrap",
+    "module": "taniteval.ci (as recorded on every node)",
+    "n_boot": 2000,
+    "resampling_unit": "val episode"
+  },
+  "structural_zeros": {
+    "produced": {
+      "ce": {
+        "folds_early_stopped_at_step_0": [
+          0,
+          4
+        ],
+        "n_folds_zero": 2,
+        "n_folds": 5,
+        "n_windows_structurally_as_trained": 353,
+        "frac_windows": 0.4007,
+        "n_episode_clusters_structurally_as_trained": 16,
+        "effective_clusters": 24
+      },
+      "regret": {
+        "folds_early_stopped_at_step_0": [
+          0,
+          1,
+          4
+        ],
+        "n_folds_zero": 3,
+        "n_folds": 5,
+        "n_windows_structurally_as_trained": 529,
+        "frac_windows": 0.6005,
+        "n_episode_clusters_structurally_as_trained": 24,
+        "effective_clusters": 16
+      },
+      "both_arms_zero": {
+        "folds": [
+          0,
+          4
+        ],
+        "n_windows_identically_zero": 353,
+        "frac_windows": 0.4007,
+        "n_episode_clusters": 16,
+        "effective_clusters_for_regret_minus_ce": 24,
+        "_read": "on these windows `regret - ce_control` is EXACTLY 0 by construction -- the node that names itself ISOLATES_THE_LOSS is measuring nothing there"
+      }
+    },
+    "oracle": {
+      "ce": {
+        "folds_early_stopped_at_step_0": [
+          4
+        ],
+        "n_folds_zero": 1,
+        "n_folds": 5,
+        "n_windows_structurally_as_trained": 177,
+        "frac_windows": 0.2009,
+        "n_episode_clusters_structurally_as_trained": 8,
+        "effective_clusters": 32
+      },
+      "regret": {
+        "folds_early_stopped_at_step_0": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "n_folds_zero": 4,
+        "n_folds": 5,
+        "n_windows_structurally_as_trained": 705,
+        "frac_windows": 0.8002,
+        "n_episode_clusters_structurally_as_trained": 32,
+        "effective_clusters": 8
+      },
+      "both_arms_zero": {
+        "folds": [
+          4
+        ],
+        "n_windows_identically_zero": 177,
+        "frac_windows": 0.2009,
+        "n_episode_clusters": 8,
+        "effective_clusters_for_regret_minus_ce": 32,
+        "_read": "on these windows `regret - ce_control` is EXACTLY 0 by construction -- the node that names itself ISOLATES_THE_LOSS is measuring nothing there"
+      }
+    }
+  },
+  "repower_blocker": {
+    "measured_bytes_on_gpu_at_40_val_episodes": 4373151744,
+    "gib_at_40_episodes": 4.073,
+    "n_cache_windows_at_40_episodes": 6844,
+    "stride": 1,
+    "cache_build_seconds_per_goal_mode": 1072.5,
+    "projected_gib_at_600_episodes": 61.1,
+    "a40_vram_gib": 46.0,
+    "fits_at_600": false,
+    "max_episodes_that_fit": 392,
+    "other_blockers": [
+      "the rescorer's stack root is the EVAL POD (`_stack_root` = /root/v4eval/stack); this task's mandate is pod2 only",
+      "the checkpoint is flagship-v4-fromscratch-30k, not the v1 this task's other job used",
+      "going 40 -> N val episodes changes the CORPUS as well as n (MODEL_REGISTRY.md 1.2a: the 600-ep build is a measurably easier deployment, never substituted for the 40-ep canonical)"
+    ],
+    "_read": "re-powering these 14 rows is a real, costed job on a different host with a re-architected cache -- it is OWED, and saying so is the honest verdict, not 'checked'"
+  },
+  "rows": {
+    "52": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.ce_control_minus_as_trained.cross_abs_dense_LATERAL",
+      "metric": "cross_abs_dense_LATERAL",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0081,
+        "lo": -0.0004,
+        "hi": 0.0211,
+        "ci95": 0.0107,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.013516,
+      "attenuation_corrected_shift": 0.005416,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0107,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.0141,
+        "mde_as_pct_of_companion_effect": 75.9,
+        "sharp_enough": true
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "53": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.ce_control_minus_as_trained.along_abs_dense_LONGITUDINAL",
+      "metric": "along_abs_dense_LONGITUDINAL",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0235,
+        "lo": -0.0061,
+        "hi": 0.0624,
+        "ci95": 0.0342,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.029408,
+      "attenuation_corrected_shift": 0.005908,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0342,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.0204,
+        "mde_as_pct_of_companion_effect": 167.6,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "54": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.along_abs_dense_LONGITUDINAL",
+      "metric": "along_abs_dense_LONGITUDINAL",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": -0.0529,
+        "lo": -0.1571,
+        "hi": 0.01,
+        "ci95": 0.0836,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": -0.08827,
+      "attenuation_corrected_shift": -0.03537,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0836,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0567,
+        "mde_as_pct_of_companion_effect": 147.4,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "55": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.ce_control_minus_as_trained.ade_0_2s",
+      "metric": "ade_0_2s",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0238,
+        "lo": -0.0101,
+        "hi": 0.0685,
+        "ci95": 0.0393,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.029784,
+      "attenuation_corrected_shift": 0.005984,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0393,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.0197,
+        "mde_as_pct_of_companion_effect": 199.5,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "56": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.ce_control_minus_as_trained.along_abs_dense_LONGITUDINAL",
+      "metric": "along_abs_dense_LONGITUDINAL",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0567,
+        "lo": -0.0197,
+        "hi": 0.1711,
+        "ci95": 0.0954,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.09461,
+      "attenuation_corrected_shift": 0.03791,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0954,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.0529,
+        "mde_as_pct_of_companion_effect": 180.3,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "57": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.along_abs_dense_LONGITUDINAL",
+      "metric": "along_abs_dense_LONGITUDINAL",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": -0.0204,
+        "lo": -0.0584,
+        "hi": 0.0105,
+        "ci95": 0.0344,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": -0.025529,
+      "attenuation_corrected_shift": -0.005129,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0344,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0235,
+        "mde_as_pct_of_companion_effect": 146.4,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "58": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.ce_control_minus_as_trained.miss_at_2m",
+      "metric": "miss_at_2m",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0114,
+        "lo": -0.0057,
+        "hi": 0.034,
+        "ci95": 0.0198,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.014266,
+      "attenuation_corrected_shift": 0.002866,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0198,
+        "companion_contrast_it_must_be_distinguished_from": null,
+        "companion_effect_size": null,
+        "mde_as_pct_of_companion_effect": null,
+        "sharp_enough": null
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "59": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.cross_abs_dense_LATERAL",
+      "metric": "cross_abs_dense_LATERAL",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": 0.0141,
+        "lo": -0.0047,
+        "hi": 0.0445,
+        "ci95": 0.0246,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.023527,
+      "attenuation_corrected_shift": 0.009427,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0246,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0081,
+        "mde_as_pct_of_companion_effect": 303.7,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "60": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.ce_control_minus_as_trained.ade_0_2s",
+      "metric": "ade_0_2s",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0668,
+        "lo": -0.0271,
+        "hi": 0.2066,
+        "ci95": 0.1169,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.111463,
+      "attenuation_corrected_shift": 0.044663,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.1169,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.0414,
+        "mde_as_pct_of_companion_effect": 282.4,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "61": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.ce_control_minus_as_trained.cross_abs_dense_LATERAL",
+      "metric": "cross_abs_dense_LATERAL",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0027,
+        "lo": -0.0025,
+        "hi": 0.0073,
+        "ci95": 0.0049,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.003379,
+      "attenuation_corrected_shift": 0.000679,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0049,
+        "companion_contrast_it_must_be_distinguished_from": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+        "companion_effect_size": 0.002,
+        "mde_as_pct_of_companion_effect": 245.0,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "62": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.ade_0_2s",
+      "metric": "ade_0_2s",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": -0.0197,
+        "lo": -0.0651,
+        "hi": 0.0158,
+        "ci95": 0.0404,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": -0.024653,
+      "attenuation_corrected_shift": -0.004953,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0404,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0238,
+        "mde_as_pct_of_companion_effect": 169.7,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "63": {
+      "goal_mode": "oracle",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.cross_abs_dense_LATERAL",
+      "metric": "cross_abs_dense_LATERAL",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": -0.002,
+        "lo": -0.0065,
+        "hi": 0.0029,
+        "ci95": 0.0047,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.2009,
+      "effective_episode_clusters": 32,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": -0.002503,
+      "attenuation_corrected_shift": -0.000503,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0047,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0027,
+        "mde_as_pct_of_companion_effect": 174.1,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "20.1% of the windows (8 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 32"
+    },
+    "64": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.regret_minus_ce_control_ISOLATES_THE_LOSS.ade_0_2s",
+      "metric": "ade_0_2s",
+      "group": "regret_minus_ce_control_ISOLATES_THE_LOSS",
+      "committed": {
+        "delta": -0.0414,
+        "lo": -0.1702,
+        "hi": 0.0421,
+        "ci95": 0.1062,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": -0.069081,
+      "attenuation_corrected_shift": -0.027681,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.1062,
+        "companion_contrast_it_must_be_distinguished_from": "ce_control_minus_as_trained",
+        "companion_effect_size": 0.0668,
+        "mde_as_pct_of_companion_effect": 159.0,
+        "sharp_enough": false
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    },
+    "65": {
+      "goal_mode": "produced",
+      "node": "paired_intervals.ce_control_minus_as_trained.miss_at_2m",
+      "metric": "miss_at_2m",
+      "group": "ce_control_minus_as_trained",
+      "committed": {
+        "delta": 0.0091,
+        "lo": -0.025,
+        "hi": 0.0443,
+        "ci95": 0.0346,
+        "separated": false,
+        "n_windows": 881,
+        "n_episodes": 40,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "structural_zero_fraction_of_windows": 0.4007,
+      "effective_episode_clusters": 24,
+      "reported_episode_clusters": 40,
+      "attenuation_corrected_point_estimate": 0.015184,
+      "attenuation_corrected_shift": 0.006084,
+      "_attenuation_note": "EXACT arithmetic, not a projection: the mean over all windows equals (1 - f0) x the mean over the windows where the fine-tune actually differed, because the rest are identically zero. \u26a0\ufe0f The INTERVAL cannot be recomputed without per-window data, which is on the eval pod -- so the corrected point estimate is MEASURED and its interval is OWED.",
+      "power_ceiling": {
+        "mde": 0.0346,
+        "companion_contrast_it_must_be_distinguished_from": null,
+        "companion_effect_size": null,
+        "mde_as_pct_of_companion_effect": null,
+        "sharp_enough": null
+      },
+      "VERDICT": "UNDER-POWERED (OWED) + STRUCTURALLY ATTENUATED",
+      "why": "40.1% of the windows (16 of 40 episode clusters) are identically zero by construction because the fine-tune early-stopped at step 0 on those folds; the reported n_episodes = 40 overstates the clusters that can carry signal, which is 24"
+    }
+  },
+  "fidelity_vs_committed": {
+    "all_nodes_resolve": true,
+    "mismatches": []
+  }
+}

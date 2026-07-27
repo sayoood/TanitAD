@@ -1,0 +1,94 @@
+{
+  "_experiment": "E-H2 -- the (lambda, tau) prior-strength sweep, q=256 always",
+  "_prereg": "HIERARCHY_PRIOR_RESEARCH.md 6.3",
+  "_evidence_class": "MEASURED (ours)",
+  "_estimator": "paired_episode_cluster_bootstrap (B=2000, unit = episode cluster). NEVER overlapping_holdout_se.",
+  "_host": "FREEDOM2035",
+  "_python": "3.13.5",
+  "_torch": "2.11.0+cu128",
+  "_grid": {
+    "lambda": [
+      0.0,
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ],
+    "tau": [
+      0.1,
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "q": 256,
+    "n_cells": 42
+  },
+  "_committed_bars": {
+    "produced|F_flat": 0.8563,
+    "produced|O_oracle_in_fan": 0.2505,
+    "oracle|F_flat": 0.6423,
+    "produced|F_base_only": 0.8781,
+    "neutral|F_flat": 0.762
+  },
+  "selftest": {
+    "PASS": true,
+    "cases": {
+      "planted": {
+        "expected": "CONFIRM-INTERIOR",
+        "got": "CONFIRM-INTERIOR",
+        "pass": true,
+        "argmin": {
+          "lambda": 1.0,
+          "tau": 0.25,
+          "ade_0_2s": 0.4119
+        },
+        "why": "argmin (1.0, 0.25) is interior and separated-better than the shipped lambda=1/tau=1 cell by +0.0244 m",
+        "n_admissible": 10,
+        "argmin_is_not_lambda0": true,
+        "admissible_set_is_an_interval": true
+      },
+      "degenerate": {
+        "expected": "DEGENERATE",
+        "got": "DEGENERATE",
+        "pass": true,
+        "argmin": {
+          "lambda": 0.0,
+          "tau": 0.1,
+          "ade_0_2s": 0.457
+        },
+        "why": "the prior does not move the pick anywhere on the grid (total spread 0.000e+00 m) -- there is no axis to optimise",
+        "n_admissible": 42
+      },
+      "saturated": {
+        "expected": "SATURATED",
+        "got": "SATURATED",
+        "pass": true,
+        "argmin": {
+          "lambda": 0.25,
+          "tau": 0.1,
+          "ade_0_2s": 0.4502
+        },
+        "why": "the argmin (0.25, 0.1) is 100% clamp-bound and numerically TIED with lambda=[0.5, 1.0, 2.0, 4.0, 8.0] at the same tau -- lambda is a no-op there, so the 'optimum' is an artefact of seam_clamp, not a located optimum (6/7 cells in this row are fully clamp-bound). Read the diagnostic sheet",
+        "n_admissible": 42
+      },
+      "unpowered": {
+        "expected": "UNPOWERED",
+        "got": "UNPOWERED",
+        "pass": true,
+        "argmin": {
+          "lambda": 8.0,
+          "tau": 0.1,
+          "ade_0_2s": 0.4468
+        },
+        "why": "argmin (8.0, 0.1) beats the shipped cell by only +0.0100 m, CI [-0.0260, +0.0062] includes zero -- a null at n=40 episodes is UNPOWERED, not refuted",
+        "n_admissible": 42
+      }
+    },
+    "_read": "the rule returns a FAILING verdict on three fixtures built to fail and the PASSING verdict on one built to pass. A harness that can only ever return PASS has not been validated.",
+    "_what_makes_it_FAIL_on_real_data": "DEGENERATE if the grafts were still at their ReZero zero-init; SATURATED if seam_clamp=1.0 pins every lambda cell (the named trap); UNPOWERED if the best cell's paired CI vs lambda=1/tau=1 includes zero at n=40 episodes; NO-INTERIOR if the argmin lands on lambda=0/8 or tau=0.1/4."
+  }
+}

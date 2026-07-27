@@ -1,0 +1,555 @@
+{
+  "block": "owed_controls/CHANCE-BASELINE",
+  "frozen_list_rows": [
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75
+  ],
+  "estimator": {
+    "interval": "paired_episode_cluster_bootstrap (reducer form)",
+    "module": "h2c_stats -> taniteval.ci._draws",
+    "n_boot": 2000,
+    "seed": 0,
+    "resampling_unit": "clip (episode cluster)"
+  },
+  "n_cannot_grow_here": "n = 322 clusters is bounded by LABELLED CLIPS admitted to the pod2 episode cache, not by episodes; the x3.4 episode-shrinkage projection does not transfer to it",
+  "duplicate_rows": {
+    "rows": [
+      66,
+      68
+    ],
+    "nodes": [
+      "operating_point.paired_recall_deltas['head_img_ego - random_at_rate']",
+      "verdict.delta_vs_random"
+    ],
+    "identical": true,
+    "source": "h2c_eval.py:399 re-serialises the first node as the second",
+    "consequence": "the frozen list holds 9 DISTINCT chance nulls, not 10"
+  },
+  "sibling_can_fire_demonstrations": {
+    "c12_fix.arms.head_ego.paired_AP_vs_chance": {
+      "delta": 0.07659,
+      "lo": 0.05055,
+      "hi": 0.135293,
+      "separated": true,
+      "n_episodes": 322
+    },
+    "h2c_results.paired_AP_vs_chance.heur_speed": {
+      "delta": -0.003282,
+      "lo": -0.008355,
+      "hi": -0.000152,
+      "separated": true,
+      "n_episodes": 322
+    },
+    "_read": "the SAME rig, estimator and 322 clusters DO separate from this comparator, in both directions. So a null here is a genuine 'not separated', not a structurally dead test -- which is exactly the distinction the VOID verdict exists for"
+  },
+  "comparator_audit": {
+    "AP_of_the_published_constant_zero_comparator": 0.005269,
+    "base_rate": 0.0030527,
+    "inflation_factor": 1.7259,
+    "AP_of_a_TRUE_random_ranking": {
+      "n_seeds": 24,
+      "mean": 0.003172,
+      "p2.5": 0.002813,
+      "p97.5": 0.003746
+    },
+    "the_claim_in_the_source": "h2c_stats.average_precision's docstring and h2c_eval.py:134-137 assert a constant score has AP equal to the base rate within each draw",
+    "MEASURED": "FALSE as implemented -- a STABLE argsort on an all-tied score ranks by row order, and the row order is all left-camera rows first",
+    "direction_of_the_bias": "the comparator is HARDER than chance, so every AP-vs-chance delta is understated and every null is biased toward 'not separated' -- for a control, toward the desired verdict"
+  },
+  "rows": {
+    "69": {
+      "node": "paired_AP_vs_chance.head_ego",
+      "arm": "head_ego",
+      "committed": {
+        "AP_a": 0.012758,
+        "AP_b": 0.005269,
+        "delta": 0.007489,
+        "lo": -0.001133,
+        "hi": 0.031695,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "as_published_recomputed": {
+        "lo": -0.001133,
+        "hi": 0.031695,
+        "separated": false,
+        "n_draws_used": 2000,
+        "delta": 0.007489
+      },
+      "corrected_comparator": {
+        "delta_vs_true_random": 0.009586,
+        "delta_shift_vs_published": 0.002097,
+        "n_seeds": 24,
+        "n_seeds_separated": 24,
+        "lo_range": [
+          2.9e-05,
+          0.001566
+        ],
+        "hi_range": [
+          0.031811,
+          0.033277
+        ]
+      },
+      "power_ceiling": {
+        "mde": 0.016414,
+        "max_possible_effect": 0.994731,
+        "mde_as_pct_of_max_possible": 1.7,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "CONTROL FAILS",
+      "why": "separated from a TRUE random ranking on every seed"
+    },
+    "72": {
+      "node": "paired_AP_vs_chance.heur_decel",
+      "arm": "heur_decel",
+      "committed": {
+        "AP_a": 0.007674,
+        "AP_b": 0.005269,
+        "delta": 0.002406,
+        "lo": -0.003141,
+        "hi": 0.015347,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "as_published_recomputed": {
+        "lo": -0.003141,
+        "hi": 0.015347,
+        "separated": false,
+        "n_draws_used": 2000,
+        "delta": 0.002406
+      },
+      "corrected_comparator": {
+        "delta_vs_true_random": 0.004503,
+        "delta_shift_vs_published": 0.002097,
+        "n_seeds": 24,
+        "n_seeds_separated": 16,
+        "lo_range": [
+          -0.001752,
+          0.000504
+        ],
+        "hi_range": [
+          0.0147,
+          0.015926
+        ]
+      },
+      "power_ceiling": {
+        "mde": 0.009244,
+        "max_possible_effect": 0.994731,
+        "mde_as_pct_of_max_possible": 0.9,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "not separated; the comparator was 1.73x chance, and correcting it moves the point estimate by +0.002097 without separating (16/24 seeds)"
+    },
+    "73": {
+      "node": "paired_AP_vs_chance.head_img_ego",
+      "arm": "head_img_ego",
+      "committed": {
+        "AP_a": 0.007948,
+        "AP_b": 0.005269,
+        "delta": 0.002679,
+        "lo": -0.002782,
+        "hi": 0.026391,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "as_published_recomputed": {
+        "lo": -0.002782,
+        "hi": 0.026391,
+        "separated": false,
+        "n_draws_used": 2000,
+        "delta": 0.002679
+      },
+      "corrected_comparator": {
+        "delta_vs_true_random": 0.004776,
+        "delta_shift_vs_published": 0.002097,
+        "n_seeds": 24,
+        "n_seeds_separated": 21,
+        "lo_range": [
+          -0.001986,
+          0.000882
+        ],
+        "hi_range": [
+          0.025933,
+          0.027431
+        ]
+      },
+      "power_ceiling": {
+        "mde": 0.014587,
+        "max_possible_effect": 0.994731,
+        "mde_as_pct_of_max_possible": 1.5,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "not separated; the comparator was 1.73x chance, and correcting it moves the point estimate by +0.002097 without separating (21/24 seeds)"
+    },
+    "75": {
+      "node": "paired_AP_vs_chance.head_img",
+      "arm": "head_img",
+      "committed": {
+        "AP_a": 0.005506,
+        "AP_b": 0.005269,
+        "delta": 0.000237,
+        "lo": -0.004207,
+        "hi": 0.009181,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "as_published_recomputed": {
+        "lo": -0.004207,
+        "hi": 0.009181,
+        "separated": false,
+        "n_draws_used": 2000,
+        "delta": 0.000237
+      },
+      "corrected_comparator": {
+        "delta_vs_true_random": 0.002335,
+        "delta_shift_vs_published": 0.002098,
+        "n_seeds": 24,
+        "n_seeds_separated": 20,
+        "lo_range": [
+          -0.002761,
+          0.000581
+        ],
+        "hi_range": [
+          0.00868,
+          0.009706
+        ]
+      },
+      "power_ceiling": {
+        "mde": 0.006694,
+        "max_possible_effect": 0.994731,
+        "mde_as_pct_of_max_possible": 0.7,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "not separated; the comparator was 1.73x chance, and correcting it moves the point estimate by +0.002098 without separating (20/24 seeds)"
+    },
+    "66": {
+      "node": "operating_point.paired_recall_deltas['head_img_ego - random_at_rate']",
+      "arm": "head_img_ego",
+      "committed": {
+        "recall_a": 0.137255,
+        "recall_b": 0.035948,
+        "delta": 0.101307,
+        "lo": -0.01576,
+        "hi": 0.272727,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "corrected_comparator": {
+        "published_delta": 0.101307,
+        "mean_delta_over_seeds": 0.107434,
+        "delta_shift": 0.006127,
+        "n_seeds_separated": 1,
+        "n_seeds": 24
+      },
+      "power_ceiling": {
+        "mde": 0.144243,
+        "max_possible_effect": 0.964052,
+        "mde_as_pct_of_max_possible": 15.0,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "separated from a random firing rule on 1/24 seeds; the published number used ONE seed"
+    },
+    "67": {
+      "node": "operating_point.paired_recall_deltas['head_ego - random_at_rate']",
+      "arm": "head_ego",
+      "committed": {
+        "recall_a": 0.169935,
+        "recall_b": 0.035948,
+        "delta": 0.133987,
+        "lo": -0.011031,
+        "hi": 0.324682,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "corrected_comparator": {
+        "published_delta": 0.133987,
+        "mean_delta_over_seeds": 0.140115,
+        "delta_shift": 0.006128,
+        "n_seeds_separated": 7,
+        "n_seeds": 24
+      },
+      "power_ceiling": {
+        "mde": 0.167857,
+        "max_possible_effect": 0.964052,
+        "mde_as_pct_of_max_possible": 17.4,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "separated from a random firing rule on 7/24 seeds; the published number used ONE seed"
+    },
+    "70": {
+      "node": "operating_point.paired_recall_deltas['head_img - random_at_rate']",
+      "arm": "head_img",
+      "committed": {
+        "recall_a": 0.065359,
+        "recall_b": 0.035948,
+        "delta": 0.029412,
+        "lo": -0.041667,
+        "hi": 0.132883,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "corrected_comparator": {
+        "published_delta": 0.029412,
+        "mean_delta_over_seeds": 0.03554,
+        "delta_shift": 0.006128,
+        "n_seeds_separated": 0,
+        "n_seeds": 24
+      },
+      "power_ceiling": {
+        "mde": 0.087275,
+        "max_possible_effect": 0.964052,
+        "mde_as_pct_of_max_possible": 9.1,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "separated from a random firing rule on 0/24 seeds; the published number used ONE seed"
+    },
+    "68": {
+      "node": "verdict.delta_vs_random",
+      "DUPLICATE_OF": "66",
+      "VERDICT": "DUPLICATE \u2014 same number, second location"
+    },
+    "71": {
+      "node": "c12_fix.arms.head_img_ego.paired_AP_vs_chance",
+      "arm": "head_img_ego",
+      "committed": {
+        "delta": 0.006006,
+        "lo": -0.000403,
+        "hi": 0.039468,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "power_ceiling": {
+        "mde": 0.019936,
+        "max_possible_effect": 0.95396,
+        "mde_as_pct_of_max_possible": 2.1,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "recomputed_as_published": {
+        "AP_a": 0.00398,
+        "AP_b": 0.005269,
+        "delta": -0.001289,
+        "lo": -0.009657,
+        "hi": 0.005221,
+        "separated": false
+      },
+      "corrected_comparator": {
+        "n_seeds": 24,
+        "n_boot_per_seed": 400,
+        "mean_delta": 0.000673,
+        "n_seeds_separated": 0,
+        "AP_of_constant_comparator": 0.005269,
+        "AP_of_true_random_mean": 0.003307
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "0/24 seeds separate against a TRUE random ranking; the published comparator scored AP 0.005269 against a base rate of 0.032762"
+    },
+    "74": {
+      "node": "c12_fix.arms.head_img.paired_AP_vs_chance",
+      "arm": "head_img",
+      "committed": {
+        "delta": 0.003103,
+        "lo": -0.002906,
+        "hi": 0.042844,
+        "separated": false,
+        "n_episodes": 322
+      },
+      "power_ceiling": {
+        "mde": 0.022875,
+        "max_possible_effect": 0.95396,
+        "mde_as_pct_of_max_possible": 2.4,
+        "can_fire": true,
+        "half_width_exceeds_point_estimate": true,
+        "_read": "can separate; it did not, at this n"
+      },
+      "recomputed_as_published": {
+        "AP_a": 0.00398,
+        "AP_b": 0.005269,
+        "delta": -0.001289,
+        "lo": -0.009657,
+        "hi": 0.005221,
+        "separated": false
+      },
+      "corrected_comparator": {
+        "n_seeds": 24,
+        "n_boot_per_seed": 400,
+        "mean_delta": 0.000673,
+        "n_seeds_separated": 0,
+        "AP_of_constant_comparator": 0.005269,
+        "AP_of_true_random_mean": 0.003307
+      },
+      "VERDICT": "UNDER-POWERED (OWED)",
+      "why": "0/24 seeds separate against a TRUE random ranking; the published comparator scored AP 0.005269 against a base rate of 0.032762"
+    }
+  },
+  "recall_vs_random_seed_audit": {
+    "published_single_seed": 1000,
+    "published_random_recall": 0.035948,
+    "random_seed_spread_in_the_same_artifact": {
+      "recall_mean": 0.024705882352941175,
+      "recall_p2.5": 0.00980392156862745,
+      "recall_p97.5": 0.0392156862745098,
+      "n_seeds": 200,
+      "analytic_expectation": 0.025,
+      "precision_expected": 0.003052734491909256
+    },
+    "my_seeds": {
+      "n": 24,
+      "recall_mean": 0.02982,
+      "recall_p2.5": 0.014951,
+      "recall_p97.5": 0.043873
+    },
+    "per_arm": {
+      "head_img_ego": {
+        "published_delta": 0.101307,
+        "mean_delta_over_seeds": 0.107434,
+        "delta_shift": 0.006127,
+        "n_seeds_separated": 1,
+        "n_seeds": 24
+      },
+      "head_ego": {
+        "published_delta": 0.133987,
+        "mean_delta_over_seeds": 0.140115,
+        "delta_shift": 0.006128,
+        "n_seeds_separated": 7,
+        "n_seeds": 24
+      },
+      "head_img": {
+        "published_delta": 0.029412,
+        "mean_delta_over_seeds": 0.03554,
+        "delta_shift": 0.006128,
+        "n_seeds_separated": 0,
+        "n_seeds": 24
+      }
+    }
+  },
+  "selftest": {
+    "fidelity_paired_AP_vs_chance": {
+      "head_img_ego": {
+        "committed": {
+          "AP_a": 0.007948,
+          "AP_b": 0.005269,
+          "delta": 0.002679,
+          "lo": -0.002782,
+          "hi": 0.026391,
+          "separated": false
+        },
+        "recomputed": {
+          "AP_a": 0.007948,
+          "AP_b": 0.005269,
+          "delta": 0.002679,
+          "lo": -0.002782,
+          "hi": 0.026391,
+          "separated": false
+        },
+        "matches": true
+      },
+      "head_img": {
+        "committed": {
+          "AP_a": 0.005506,
+          "AP_b": 0.005269,
+          "delta": 0.000237,
+          "lo": -0.004207,
+          "hi": 0.009181,
+          "separated": false
+        },
+        "recomputed": {
+          "AP_a": 0.005506,
+          "AP_b": 0.005269,
+          "delta": 0.000237,
+          "lo": -0.004207,
+          "hi": 0.009181,
+          "separated": false
+        },
+        "matches": true
+      },
+      "head_ego": {
+        "committed": {
+          "AP_a": 0.012758,
+          "AP_b": 0.005269,
+          "delta": 0.007489,
+          "lo": -0.001133,
+          "hi": 0.031695,
+          "separated": false
+        },
+        "recomputed": {
+          "AP_a": 0.012758,
+          "AP_b": 0.005269,
+          "delta": 0.007489,
+          "lo": -0.001133,
+          "hi": 0.031695,
+          "separated": false
+        },
+        "matches": true
+      },
+      "heur_decel": {
+        "committed": {
+          "AP_a": 0.007674,
+          "AP_b": 0.005269,
+          "delta": 0.002406,
+          "lo": -0.003141,
+          "hi": 0.015347,
+          "separated": false
+        },
+        "recomputed": {
+          "AP_a": 0.007674,
+          "AP_b": 0.005269,
+          "delta": 0.002406,
+          "lo": -0.003141,
+          "hi": 0.015347,
+          "separated": false
+        },
+        "matches": true
+      },
+      "heur_speed": {
+        "committed": {
+          "AP_a": 0.001987,
+          "AP_b": 0.005269,
+          "delta": -0.003282,
+          "lo": -0.008355,
+          "hi": -0.000152,
+          "separated": true
+        },
+        "recomputed": {
+          "AP_a": 0.001987,
+          "AP_b": 0.005269,
+          "delta": -0.003282,
+          "lo": -0.008355,
+          "hi": -0.000152,
+          "separated": true
+        },
+        "matches": true
+      },
+      "REPRODUCES": true
+    }
+  }
+}
