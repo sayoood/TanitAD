@@ -199,6 +199,27 @@ def test_the_default_option_survives_a_round_trip_through_the_parser():
 # --------------------------------------------------------------------------- #
 # 2. the refusals stay refusals                                                #
 # --------------------------------------------------------------------------- #
+def test_produced_is_ALSO_one_flag_away_when_a_goal_head_exists():
+    """⭐ 'One flag away' has to hold for ``produced`` too, and ``produced`` is the
+    one option that needed the ``states`` half of the signature change — the goal
+    is a function of ``world.encode_window(frames)``, which the old ``traj``
+    computed AFTER it had already built ``kw``.
+
+    The trainer builds a ``goal_head`` from step 0 and now forwards it into
+    ``probe``, so this path is reachable on a real run."""
+    pytest.importorskip("taniteval.pseudosim")
+    from tanitad.models.strategic_goal import GoalScalarConfig, GoalScalarHead
+
+    world, head, cfg = _real_stack()
+    gh = GoalScalarHead(GoalScalarConfig(in_dim=world.state_dim)).eval()
+    gate = HG.HeldoutGate(HG.HeldoutGateConfig(
+        every=1, episodes=3, stride=4, horizon=4, batch=4, n_boot=50,
+        frame=_legacy_frame(), goal_option="produced"))
+    rec = gate.probe(0, world, head, _episodes(cfg), device="cpu", goal_head=gh)
+    assert rec["pseudosim"]["goal_option"] == "produced"
+    assert rec["n_windows"] >= 2
+
+
 def test_probe_REFUSES_produced_without_a_goal_head_rather_than_downgrading():
     """⛔ Falling back to a cheaper option would make the probe's meaning depend
     on a call-site accident — the exact class ``GATE_PROTOCOL`` §0.8 forbids."""

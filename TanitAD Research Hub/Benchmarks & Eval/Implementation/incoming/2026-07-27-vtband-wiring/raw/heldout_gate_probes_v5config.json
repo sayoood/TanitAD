@@ -1,0 +1,431 @@
+{
+  "_what": "THE PROOF that --heldout-gate REACHES AND PASSES its probe on the REAL v5 config + REAL v5 caches. Before the 2026-07-27 wiring this raised ValueError: cond_vtarget is on but no vt_band supplied at the FIRST probe.",
+  "host": "tanitad-pod2 (A40)",
+  "run": "/workspace/v5gate/run/flagship-v5-WIRING-dropped",
+  "command": "launch_smoke2.sh's real v5 config with --heldout-every 20 --steps 65 --heldout-episodes 4 --heldout-nboot 400 --heldout-goal dropped",
+  "config": {
+    "v2_train_cache": "physicalai-train-e438721ae894-w120-256x640cyl (parity VERIFIED, 2400 clips)",
+    "v2_val_cache": "physicalai-val-0c5f7dac3b11-w120-256x640cyl (parity VERIFIED, 600 clips)",
+    "frame": "256x640 hfov120 cylindrical, --v2-subframe 176x624",
+    "from_scratch": true,
+    "heldout_goal": "dropped",
+    "patience": 2
+  },
+  "GOAL_OPTION_is_an_AGENTS_default": "'dropped' chosen by the vtband-WIRING stream, PENDING THE PI's OVERRIDE. --heldout-goal band0|produced flips it; nothing else changes.",
+  "VALUES_NOT_QUOTABLE_AS_QUALITY": true,
+  "_why_not_quotable": "a from-scratch model at steps 20/40/60 inside the lambda_plan Phase-B ramp. What is proved here is that the gate RUNS, SCORES, forms a composite, pins its admitted components, renders a paired interval and executes the STOP PATH - not that any of these numbers describe model quality.",
+  "outcome": {
+    "probe_reached": true,
+    "probe_raised": false,
+    "trainer_early_stop_executed": true,
+    "EARLY_STOP_line": "{\"EARLY_STOP\": true, \"step\": 60, \"reason\": \"...separated-WORSE than the incumbent (step 20) for 2 consecutive probes (patience=2); last delta -0.1377 [-0.2121, -0.0572], paired_episode_cluster_bootstrap, n_episodes=4...\"}",
+    "ckpt_best_written_at_incumbent": true,
+    "NOTE_the_decline_is_NOT_an_injected_degradation": "this stop was caused by real early-training dynamics under the Phase-B ramp; its DIRECTION was not pre-verified, so it is evidence that the STOP PATH EXECUTES end-to-end, NOT that the gate discriminates a decayed model. The direction-verified degradation proof is gate_stop_proof_v4fs15k.json."
+  },
+  "probes": [
+    {
+      "step": 20,
+      "primary": "pseudosim_composite_PSS_recovery_progress@twosided_v2",
+      "primary_value": 0.265049,
+      "n_windows": 264,
+      "n_episodes": 4,
+      "diagnostics": {},
+      "_diagnostics_are_not_the_rule": "ade_0_2s (diagnostic only \u2014 see PRIMARY_RATIONALE)",
+      "role": "incumbent (first probe)",
+      "paired": null,
+      "separated_worse": false,
+      "worse_streak": 0,
+      "stop": false,
+      "incumbent_step": 20,
+      "pseudosim": {
+        "grid": {
+          "dlat_m": [
+            0.0
+          ],
+          "dyaw_deg": [
+            -8.0,
+            0.0,
+            8.0
+          ],
+          "dlon_steps": [
+            0
+          ],
+          "n_points": 3,
+          "lateral_axis": "REFUSED",
+          "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+          "warped_axes": [
+            "heading"
+          ],
+          "unwarped_axes": [
+            "longitudinal (real frames at an index offset)"
+          ]
+        },
+        "envelope_proof": {
+          "n_grid_points": 3,
+          "max_abs_dlat_m": 0.0,
+          "max_abs_dyaw_deg": 8.0,
+          "envelope": {
+            "lat_max_m": 3.0,
+            "yaw_max_deg": 12.0,
+            "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+          },
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_steps_any": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "ood_peak_ratio": null,
+          "ratio_is_lower_bound": false,
+          "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope",
+          "why_zero_by_construction": "Deviation is the GRID, not an accumulated rollout state. The protocol has no mechanism by which a window can drift outside the envelope, because no window ever advances.",
+          "falsifier": {
+            "_what": "the assertion CAN fail; these are the values that fail it",
+            "smallest_failing_abs_dyaw_deg": 12.000000001,
+            "smallest_failing_abs_dlat_m": 3.000000001,
+            "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+          }
+        },
+        "traffic_mode": "log_replay_nonreactive",
+        "rollout_steps_executed": 0,
+        "planner_calls": 264,
+        "horizon_s": 2.0,
+        "estimator": "paired episode-cluster bootstrap (B=400, unit = held-out episode)",
+        "surface": {
+          "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+          "selected_not_oracle": true,
+          "goal_conditioning": "goal option 'dropped' via goal_kwargs_fn(states, v0)",
+          "goal_option": "dropped",
+          "goal_protocol": "goal_kwargs_fn(states, v0)",
+          "horizons": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "amp": true,
+          "goal_option_meaning": "vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4), route_graded=0.0. The probe measures the deployed NO-GOAL surface, on the embedding rows goal_dropout=0.5 trains on ~50 % of every batch. The longitudinal selection term is masked OFF (vt_keep=False)."
+        },
+        "warp": {
+          "frame": {
+            "height": 176,
+            "width": 624,
+            "f_ref": 305.5774907364391,
+            "projection": "cylindrical"
+          },
+          "frame_tag": "176x624f305.5775cyl",
+          "warp_model": "cylindrical_ground_plane_field",
+          "is_deployed_frame": false,
+          "path": "sampling_source_grid+warp_batch_grid",
+          "principal_point_px": [
+            311.5,
+            87.5
+          ],
+          "falsifier": "any frame tensor whose trailing (H, W) differs from the declared frame, or a non-256x256 raster with no frame declared at all",
+          "max_no_ground_preimage_frac": 0.0
+        },
+        "goal_option": "dropped",
+        "goal_option_provenance": "default 'dropped' chosen by the vtband-WIRING stream 2026-07-27, PENDING THE PI's OVERRIDE \u2014 VTBAND_DECISION.md priced the options and deliberately did not choose. Override with --heldout-goal {band0,produced}; nothing else changes.",
+        "components_admitted": {
+          "ego_progress": 5.0,
+          "recovery": 5.0
+        },
+        "components_pinned_at_step": 20
+      }
+    },
+    {
+      "step": 40,
+      "primary": "pseudosim_composite_PSS_recovery_progress@twosided_v2",
+      "primary_value": 0.131927,
+      "n_windows": 264,
+      "n_episodes": 4,
+      "diagnostics": {},
+      "_diagnostics_are_not_the_rule": "ade_0_2s (diagnostic only \u2014 see PRIMARY_RATIONALE)",
+      "role": "challenger",
+      "incumbent_step": 20,
+      "incumbent_value": 0.265049,
+      "paired": {
+        "delta": -0.1331,
+        "lo": -0.1882,
+        "hi": -0.0614,
+        "ci95": 0.0634,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 264,
+        "n_episodes": 4,
+        "n_boot": 400,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "separated_worse": true,
+      "separated_better": false,
+      "worse_streak": 1,
+      "patience": 2,
+      "stop": false,
+      "stop_reason": null,
+      "pseudosim": {
+        "grid": {
+          "dlat_m": [
+            0.0
+          ],
+          "dyaw_deg": [
+            -8.0,
+            0.0,
+            8.0
+          ],
+          "dlon_steps": [
+            0
+          ],
+          "n_points": 3,
+          "lateral_axis": "REFUSED",
+          "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+          "warped_axes": [
+            "heading"
+          ],
+          "unwarped_axes": [
+            "longitudinal (real frames at an index offset)"
+          ]
+        },
+        "envelope_proof": {
+          "n_grid_points": 3,
+          "max_abs_dlat_m": 0.0,
+          "max_abs_dyaw_deg": 8.0,
+          "envelope": {
+            "lat_max_m": 3.0,
+            "yaw_max_deg": 12.0,
+            "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+          },
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_steps_any": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "ood_peak_ratio": null,
+          "ratio_is_lower_bound": false,
+          "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope",
+          "why_zero_by_construction": "Deviation is the GRID, not an accumulated rollout state. The protocol has no mechanism by which a window can drift outside the envelope, because no window ever advances.",
+          "falsifier": {
+            "_what": "the assertion CAN fail; these are the values that fail it",
+            "smallest_failing_abs_dyaw_deg": 12.000000001,
+            "smallest_failing_abs_dlat_m": 3.000000001,
+            "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+          }
+        },
+        "traffic_mode": "log_replay_nonreactive",
+        "rollout_steps_executed": 0,
+        "planner_calls": 264,
+        "horizon_s": 2.0,
+        "estimator": "paired episode-cluster bootstrap (B=400, unit = held-out episode)",
+        "surface": {
+          "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+          "selected_not_oracle": true,
+          "goal_conditioning": "goal option 'dropped' via goal_kwargs_fn(states, v0)",
+          "goal_option": "dropped",
+          "goal_protocol": "goal_kwargs_fn(states, v0)",
+          "horizons": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "amp": true,
+          "goal_option_meaning": "vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4), route_graded=0.0. The probe measures the deployed NO-GOAL surface, on the embedding rows goal_dropout=0.5 trains on ~50 % of every batch. The longitudinal selection term is masked OFF (vt_keep=False)."
+        },
+        "warp": {
+          "frame": {
+            "height": 176,
+            "width": 624,
+            "f_ref": 305.5774907364391,
+            "projection": "cylindrical"
+          },
+          "frame_tag": "176x624f305.5775cyl",
+          "warp_model": "cylindrical_ground_plane_field",
+          "is_deployed_frame": false,
+          "path": "sampling_source_grid+warp_batch_grid",
+          "principal_point_px": [
+            311.5,
+            87.5
+          ],
+          "falsifier": "any frame tensor whose trailing (H, W) differs from the declared frame, or a non-256x256 raster with no frame declared at all",
+          "max_no_ground_preimage_frac": 0.0
+        },
+        "goal_option": "dropped",
+        "goal_option_provenance": "default 'dropped' chosen by the vtband-WIRING stream 2026-07-27, PENDING THE PI's OVERRIDE \u2014 VTBAND_DECISION.md priced the options and deliberately did not choose. Override with --heldout-goal {band0,produced}; nothing else changes.",
+        "components_admitted": {
+          "ego_progress": 5.0,
+          "recovery": 5.0
+        },
+        "components_pinned_at_step": 20
+      }
+    },
+    {
+      "step": 60,
+      "primary": "pseudosim_composite_PSS_recovery_progress@twosided_v2",
+      "primary_value": 0.127348,
+      "n_windows": 264,
+      "n_episodes": 4,
+      "diagnostics": {},
+      "_diagnostics_are_not_the_rule": "ade_0_2s (diagnostic only \u2014 see PRIMARY_RATIONALE)",
+      "role": "challenger",
+      "incumbent_step": 20,
+      "incumbent_value": 0.265049,
+      "paired": {
+        "delta": -0.1377,
+        "lo": -0.2121,
+        "hi": -0.0572,
+        "ci95": 0.0774,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 264,
+        "n_episodes": 4,
+        "n_boot": 400,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "separated_worse": true,
+      "separated_better": false,
+      "worse_streak": 2,
+      "patience": 2,
+      "stop": true,
+      "stop_reason": "held-out primary (pseudosim_composite_PSS_recovery_progress@twosided_v2) separated-WORSE than the incumbent (step 20) for 2 consecutive probes (patience=2); last delta -0.1377 [-0.2121, -0.0572], paired_episode_cluster_bootstrap, n_episodes=4. Training past this point is the ~29.5 GPU-h this gate exists to stop spending.",
+      "pseudosim": {
+        "grid": {
+          "dlat_m": [
+            0.0
+          ],
+          "dyaw_deg": [
+            -8.0,
+            0.0,
+            8.0
+          ],
+          "dlon_steps": [
+            0
+          ],
+          "n_points": 3,
+          "lateral_axis": "REFUSED",
+          "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+          "warped_axes": [
+            "heading"
+          ],
+          "unwarped_axes": [
+            "longitudinal (real frames at an index offset)"
+          ]
+        },
+        "envelope_proof": {
+          "n_grid_points": 3,
+          "max_abs_dlat_m": 0.0,
+          "max_abs_dyaw_deg": 8.0,
+          "envelope": {
+            "lat_max_m": 3.0,
+            "yaw_max_deg": 12.0,
+            "provenance": "P1 MEASURED (lowood_flagship_ci.json), on the flagship v1 arm \u2014 NOT on v4"
+          },
+          "EXTRAPOLATION_frac_steps_lat_over_3m": 0.0,
+          "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.0,
+          "EXTRAPOLATION_frac_steps_any": 0.0,
+          "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.0,
+          "ood_peak_ratio": null,
+          "ratio_is_lower_bound": false,
+          "EXTRAPOLATION_VERDICT": "MEASUREMENT \u2014 every step stayed inside the MEASURED envelope",
+          "why_zero_by_construction": "Deviation is the GRID, not an accumulated rollout state. The protocol has no mechanism by which a window can drift outside the envelope, because no window ever advances.",
+          "falsifier": {
+            "_what": "the assertion CAN fail; these are the values that fail it",
+            "smallest_failing_abs_dyaw_deg": 12.000000001,
+            "smallest_failing_abs_dlat_m": 3.000000001,
+            "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+          }
+        },
+        "traffic_mode": "log_replay_nonreactive",
+        "rollout_steps_executed": 0,
+        "planner_calls": 264,
+        "horizon_s": 2.0,
+        "estimator": "paired episode-cluster bootstrap (B=400, unit = held-out episode)",
+        "surface": {
+          "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
+          "selected_not_oracle": true,
+          "goal_conditioning": "goal option 'dropped' via goal_kwargs_fn(states, v0)",
+          "goal_option": "dropped",
+          "goal_protocol": "goal_kwargs_fn(states, v0)",
+          "horizons": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "amp": true,
+          "goal_option_meaning": "vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4), route_graded=0.0. The probe measures the deployed NO-GOAL surface, on the embedding rows goal_dropout=0.5 trains on ~50 % of every batch. The longitudinal selection term is masked OFF (vt_keep=False)."
+        },
+        "warp": {
+          "frame": {
+            "height": 176,
+            "width": 624,
+            "f_ref": 305.5774907364391,
+            "projection": "cylindrical"
+          },
+          "frame_tag": "176x624f305.5775cyl",
+          "warp_model": "cylindrical_ground_plane_field",
+          "is_deployed_frame": false,
+          "path": "sampling_source_grid+warp_batch_grid",
+          "principal_point_px": [
+            311.5,
+            87.5
+          ],
+          "falsifier": "any frame tensor whose trailing (H, W) differs from the declared frame, or a non-256x256 raster with no frame declared at all",
+          "max_no_ground_preimage_frac": 0.0
+        },
+        "goal_option": "dropped",
+        "goal_option_provenance": "default 'dropped' chosen by the vtband-WIRING stream 2026-07-27, PENDING THE PI's OVERRIDE \u2014 VTBAND_DECISION.md priced the options and deliberately did not choose. Override with --heldout-goal {band0,produced}; nothing else changes.",
+        "components_admitted": {
+          "ego_progress": 5.0,
+          "recovery": 5.0
+        },
+        "components_pinned_at_step": 20
+      }
+    }
+  ]
+}
