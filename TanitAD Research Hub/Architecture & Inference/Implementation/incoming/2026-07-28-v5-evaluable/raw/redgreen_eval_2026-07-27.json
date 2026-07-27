@@ -1,0 +1,112 @@
+{
+ "stack": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack",
+ "tests": "tests/test_eval_v2_frame.py",
+ "evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "green_before": {
+  "exit": 0,
+  "summary": "25 passed in 3.96s",
+  "n_failed": 0,
+  "failed_tests": [],
+  "first_error_lines": []
+ },
+ "mutations": {
+  "drop_frame_arg": {
+   "exit": 1,
+   "summary": "4 failed, 21 passed in 2.60s",
+   "n_failed": 4,
+   "failed_tests": [
+    "test_it_FAILS_LOUD_when_the_eval_loader_is_never_told_the_frame",
+    "test_the_evaluator_reads_a_v2_cache_and_gets_the_exact_subframe",
+    "test_the_other_frame_is_one_flag_value",
+    "test_without_require_parity_an_unregistered_cache_only_warns"
+   ],
+   "first_error_lines": [
+    "E               tanitad.data.parity.ParityViolation:",
+    "E               ==============================================================================",
+    "E               GEOMETRY VIOLATION [--v2-val-cache] \u2014 the SUB-FRAME WAS DECLARED BUT NEVER APPLIED",
+    "E               ==============================================================================",
+    "E                 run declares : 176x624 px, f_ref 305.5775, cylindrical",
+    "E                 cache holds  : 256x640 px   <-- MISMATCH"
+   ],
+   "why": "the evaluator scores the un-sliced parent \u2014 THE PRE-FIX STATE",
+   "file": "scripts/eval_flagship_v4.py",
+   "restored_sha256_matches": true,
+   "sha256_of_shipped_source": "401009f3ba6388391c66b38f6810bd93f5adefbda7948db4dae7372146e607bf"
+  },
+  "drop_parent_arg": {
+   "exit": 1,
+   "summary": "2 failed, 23 passed in 2.37s",
+   "n_failed": 2,
+   "failed_tests": [
+    "test_it_FAILS_LOUD_when_the_eval_loader_is_never_told_the_frame",
+    "test_the_evaluator_reads_a_v2_cache_and_gets_the_exact_subframe"
+   ],
+   "first_error_lines": [
+    "E       KeyError: 'sliced_from'",
+    "E       AssertionError: assert 'SUB-FRAME WAS DECLARED BUT NEVER APPLIED' in '\\n==============================================================================\\nGEOMETRY VIOLATION [--v2-val-cache]...eg> --projection <pinhole|cylindrical>\\n=============================================================================='"
+   ],
+   "why": "the binding can no longer tell a slice from a mismatch",
+   "file": "scripts/eval_flagship_v4.py",
+   "restored_sha256_matches": true,
+   "sha256_of_shipped_source": "401009f3ba6388391c66b38f6810bd93f5adefbda7948db4dae7372146e607bf"
+  },
+  "drop_frame_check": {
+   "exit": 1,
+   "summary": "1 failed, 24 passed in 2.48s",
+   "n_failed": 1,
+   "failed_tests": [
+    "test_the_frame_guard_fires_from_main_BEFORE_the_ckpt_is_loaded"
+   ],
+   "first_error_lines": [
+    "E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Admin\\\\pytest-641\\\\test_the_frame_guard_fires_fro0\\\\run\\\\ckpt.pt'"
+   ],
+   "why": "the `ego=` failure becomes reachable by omission again",
+   "file": "scripts/eval_flagship_v4.py",
+   "restored_sha256_matches": true,
+   "sha256_of_shipped_source": "401009f3ba6388391c66b38f6810bd93f5adefbda7948db4dae7372146e607bf"
+  },
+  "drop_frame_to_cfg": {
+   "exit": 1,
+   "summary": "1 failed, 24 passed in 2.38s",
+   "n_failed": 1,
+   "failed_tests": [
+    "test_eval_cfg_sizes_the_encoder_for_the_frame"
+   ],
+   "first_error_lines": [
+    "E       assert (256, 256) == (176, 624)",
+    "E",
+    "E         At index 0 diff: 256 != 176",
+    "E         Use -v to get more diff"
+   ],
+   "why": "the encoder is not sized for the frame the eval reads",
+   "file": "scripts/eval_flagship_v4.py",
+   "restored_sha256_matches": true,
+   "sha256_of_shipped_source": "401009f3ba6388391c66b38f6810bd93f5adefbda7948db4dae7372146e607bf"
+  },
+  "drop_cache_binding": {
+   "exit": 1,
+   "summary": "2 failed, 23 passed in 2.46s",
+   "n_failed": 2,
+   "failed_tests": [
+    "test_a_same_size_slice_of_a_DIFFERENT_cache_is_refused",
+    "test_the_matching_frame_passes_and_records_both"
+   ],
+   "first_error_lines": [
+    "E       KeyError: 'cache_frame_matches_run'",
+    "E       Failed: DID NOT RAISE ParityViolation"
+   ],
+   "why": "a same-size slice of a DIFFERENT field passes silently",
+   "file": "tanitad/data/parity.py",
+   "restored_sha256_matches": true,
+   "sha256_of_shipped_source": "637391542c33e7e1981cd6d26ef11ed26ba273a6622c611fd5c45c67dd064baa"
+  }
+ },
+ "green_after": {
+  "exit": 0,
+  "summary": "25 passed in 2.33s",
+  "n_failed": 0,
+  "failed_tests": [],
+  "first_error_lines": []
+ },
+ "ALL_GUARDS_CAN_FAIL": true
+}

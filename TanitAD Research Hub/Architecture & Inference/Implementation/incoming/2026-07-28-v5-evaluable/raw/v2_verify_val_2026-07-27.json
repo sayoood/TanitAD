@@ -1,0 +1,116 @@
+{
+ "label": "verify-v2",
+ "cache_dirs": [
+  "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+ ],
+ "source_corpus_key": "physicalai-val-0c5f7dac3b11",
+ "uid_kind": "v2ep_clipid",
+ "clips_expected": 600,
+ "clips_built": 600,
+ "clip_id_sha256_sorted": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+ "clip_id_sha256_sorted_expected": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+ "membership_identical": true,
+ "expected_decode_failures": 0,
+ "order_independent": true,
+ "ordered_equals_sorted_for_this_corpus": true,
+ "expect_clips": "/workspace/wfov/paritysplit/parity_val_clips.txt",
+ "mode": "set-diff (expect_clips supplied)",
+ "expect_clips_count": 600,
+ "expect_clips_sha256_sorted": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+ "expect_clips_is_sorted": true,
+ "missing_count": 0,
+ "extra_count": 0,
+ "shortfall_identity_checked": true,
+ "shortfall_matches_recorded_skips": true,
+ "verified": true,
+ "content_check": "set-diff vs the exported parity clip list: 0 extra, 0 missing (COMPLETE build)",
+ "geometry": {
+  "frame": {
+   "height": 256,
+   "width": 640,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "frame_tag": "256x640f305.5775cyl",
+  "projection_mode": "cylindrical",
+  "codec": "png",
+  "quality": null,
+  "selection_parquet": "/workspace/data/physicalai_phase0/r0/r0_selection.parquet",
+  "only_clips": "/workspace/wfov/paritysplit/parity_val_clips.txt",
+  "clips_requested": 600,
+  "geometry_check": {
+   "requested_hfov_deg": 120.0,
+   "achieved_hfov_deg": 120.0,
+   "f_eff": 305.5775,
+   "observed_frac": 0.9360899822,
+   "frame_tag": "256x640f305.5775cyl",
+   "observed_frac_superseded": 1.0,
+   "observed_frac_basis": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+   "observed_frac_note": "CORRECTED 2026-07-27. The superseded value came from a ONE-CLIP pre-decode probe and is false of this corpus. See corrections[]."
+  },
+  "rig_observability": {
+   "A": {
+    "n": 170,
+    "mean": 0.9999701276,
+    "min": 0.9993652105,
+    "max": 1.0
+   },
+   "B": {
+    "n": 430,
+    "mean": 0.910835041,
+    "min": 0.8947876096,
+    "max": 0.9190063477
+   },
+   "rig_assignment": "native principal-point row cy, boundary 650.872 (MEASURED: largest gap 193.35 px over 3,000 clips; no clip ambiguous)",
+   "fully_observed_by_all": false
+  },
+  "subframe_observability": {
+   "176x624": {
+    "A": {
+     "n": 170,
+     "mean": 1.0,
+     "min": 1.0,
+     "max": 1.0
+    },
+    "B": {
+     "n": 430,
+     "mean": 1.0,
+     "min": 1.0,
+     "max": 1.0
+    }
+   },
+   "128x576": {
+    "A": {
+     "n": 170,
+     "mean": 1.0,
+     "min": 1.0,
+     "max": 1.0
+    },
+    "B": {
+     "n": 430,
+     "mean": 1.0,
+     "min": 1.0,
+     "max": 1.0
+    }
+   },
+   "_": "what a CENTRED sub-frame of this cache would deliver. It is a pure pixel slice — `v2_dataset.build_v2_providers(frame=…)` / `v2_compressed.load_compressed(path, frame=…)`. Nothing needs rebuilding to reach these numbers."
+  },
+  "corrections": [
+   {
+    "date": "2026-07-27",
+    "field": "geometry_check.observed_frac",
+    "old": 1.0,
+    "new": 0.9360899822,
+    "old_basis": "ONE clip. `v2_compressed._assert_geometry_deliverable` probed clips[0] before the first decode; that clip was rig A, which this frame fully observes.",
+    "new_basis": 600,
+    "new_basis_note": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+    "why": "the front-wide camera is TWO RIGS whose principal points differ ~211 px vertically; a 120 deg x 45.456 deg request over-runs rig B's sensor, so the rectifier masks ~8.9 % of every rig-B frame. A single-clip probe cannot see that, and nothing hashes pixels — this declaration is what a consumer checks, and `register_v2_sibling.py` copies it verbatim into parity_manifest.json.",
+    "changes_no_pixels": true,
+    "backup_of_original": "_geometry.json.orig-2026-07-27",
+    "instrument": "restamp_geometry_manifest.py (rig-fix-wiring stream)",
+    "raw": "restamp_2026-07-27.json"
+   }
+  ]
+ },
+ "verified_on": "2026-07-27"
+}

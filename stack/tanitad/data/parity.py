@@ -1251,6 +1251,123 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
     return out
 
 
+def assert_eval_frame_matches_run(run_cfg: dict | None, frame, *, label: str,
+                                  cache_frame=None,
+                                  flag: str = "--v2-subframe") -> dict:
+    """⭐ SCORE THE CHECKPOINT ON THE FRAME IT WAS TRAINED ON — or refuse.
+
+    :func:`assert_v2_geometry_matches` binds the run's declared frame to the
+    CACHE. This binds it to the **CHECKPOINT**, and it is a different failure:
+
+        the trainer slices to ``176x624`` and trains 30k steps there; the
+        evaluator is handed the same cache, forgets ``--v2-subframe``, reads
+        ``256x640`` and publishes an ADE.
+
+    That is the ``ego=`` bug's exact shape — *trained with a capability, scored
+    without it* — and it is invisible in every artifact: the cache is right, the
+    membership is right, the checkpoint loads, the number is wrong. It is also
+    reachable by pure OMISSION, which is why the guard is here and not in a
+    runbook.
+
+    ``run_cfg`` is the run's own ``config.json`` (already parsed). The trainer
+    writes two geometry blocks and they answer different questions:
+
+    * ``geometry``       — the frame the MODEL saw (``geometry_report(cfg)``,
+      i.e. post-``apply_frame``, so it IS the sub-frame on a sliced run);
+    * ``geometry_cache`` — the frame the BYTES are, present only when the run
+      sliced (``None`` when the model frame and the cache frame are the same).
+
+    ⛔ A checkpoint with no geometry record is NOT silently passed and NOT
+    refused: it is reported ``checked=False`` with a loud line, because every
+    pre-2026-07-27 arm is in that state and refusing would make the historical
+    record unreproducible. The caller decides; the evaluator prints it.
+
+    Returns the check record for the output JSON.
+    """
+    out = {"label": label, "checked": False,
+           "eval_frame": {"height": int(frame.height), "width": int(frame.width),
+                          "f_ref": float(frame.f_ref),
+                          "projection": str(frame.projection)}}
+    geo = (run_cfg or {}).get("geometry")
+    if not isinstance(geo, dict) or not {"height", "width"} <= set(geo):
+        out["note"] = (
+            "the checkpoint's config.json carries no `geometry` block (a "
+            "pre-2026-07-27 run, or no sibling config.json was found). The "
+            "frame this checkpoint was TRAINED on is therefore UNVERIFIED — "
+            "the eval frame above is an assumption, not a match.")
+        return out
+
+    from tanitad.data.calib import CanonicalFrame
+    trained = CanonicalFrame.from_dict(geo)
+    out["checked"] = True
+    out["trained_frame"] = trained.to_dict()
+    out["trained_frame_tag"] = trained.tag()
+    tcache = (run_cfg or {}).get("geometry_cache")
+    if isinstance(tcache, dict) and {"height", "width"} <= set(tcache):
+        out["trained_cache_frame"] = CanonicalFrame.from_dict(tcache).to_dict()
+
+    if trained != frame:
+        sub = f"{trained.height}x{trained.width}"
+        # The single most useful line: WHICH flag value reproduces the run.
+        fix = ([f"      {flag} {sub}"] if isinstance(tcache, dict) else
+               [f"      --frame-h {trained.height} --frame-w {trained.width} "
+                f"--projection {trained.projection}"])
+        raise ParityViolation("\n".join([
+            "",
+            "=" * 78,
+            f"FRAME VIOLATION [{label}] — SCORING A CHECKPOINT ON A FRAME IT "
+            f"WAS NOT TRAINED ON",
+            "=" * 78,
+            f"  trained on : {trained.height}x{trained.width} px, f_ref "
+            f"{trained.f_ref:.4f}, {trained.projection}   ({trained.tag()})",
+            f"  eval reads : {frame.height}x{frame.width} px, f_ref "
+            f"{frame.f_ref:.4f}, {frame.projection}   ({frame.tag()})",
+            "",
+            "  This is the `ego=` failure in geometry: the capability was",
+            "  present in training and absent at scoring. It does not crash —",
+            "  the encoder's positional embedding is sized from this frame, so",
+            "  a mismatch either fails the STRICT load with a shape error whose",
+            "  cause is three files away, or (same token count, different",
+            "  field) produces a plausible ADE off the wrong pixels.",
+            "",
+            "  Reproduce the run's frame:",
+            *fix,
+            "",
+            "  (read from the checkpoint's own config.json `geometry` block —",
+            f"  `geometry_cache` is {'set' if isinstance(tcache, dict) else 'null'}, "
+            f"so the run "
+            + ("SLICED a larger cache." if isinstance(tcache, dict)
+               else "read the cache unsliced."),
+            "=" * 78,
+        ]))
+
+    if cache_frame is not None and isinstance(tcache, dict):
+        tc = CanonicalFrame.from_dict(tcache)
+        if tc != cache_frame:
+            raise ParityViolation("\n".join([
+                "",
+                "=" * 78,
+                f"FRAME VIOLATION [{label}] — the run sliced a DIFFERENT cache",
+                "=" * 78,
+                f"  run's cache : {tc.height}x{tc.width}, f_ref {tc.f_ref:.4f}, "
+                f"{tc.projection}   ({tc.tag()})",
+                f"  eval cache  : {cache_frame.height}x{cache_frame.width}, "
+                f"f_ref {cache_frame.f_ref:.4f}, {cache_frame.projection}   "
+                f"({cache_frame.tag()})",
+                "",
+                "  The model frame agrees, so the encoder loads and the number",
+                "  looks fine — but the same-size slice was taken out of a",
+                "  different field. Pass the geometry the RUN's cache was built",
+                "  at (--frame-h/--frame-w/--frame-hfov/--projection).",
+                "=" * 78,
+            ]))
+        out["cache_frame_matches_run"] = True
+    print(f"[parity] {label}: frame MATCHES the checkpoint's own config.json — "
+          f"trained and scored at {trained.height}x{trained.width} "
+          f"({trained.tag()}).", flush=True)
+    return out
+
+
 def clip_membership_of(corpus_key: str = PARITY_TRAIN_KEY,
                        manifest_path: str | Path | None = None) -> dict | None:
     """The CLIP-ID membership record of a raw-epcache corpus entry, or ``None``.

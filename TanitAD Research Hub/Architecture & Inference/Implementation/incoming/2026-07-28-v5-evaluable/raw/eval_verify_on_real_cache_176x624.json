@@ -1,0 +1,119 @@
+{
+ "host": "pod2",
+ "val_cache": "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+ "subframe": "176x624",
+ "evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "L1_precondition": {
+  "n_clips": 600,
+  "codec": "png",
+  "raster": [
+   256,
+   640
+  ],
+  "stored_frame": {
+   "height": 256,
+   "width": 640,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "corpus_key_resolved": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+  "registered": true,
+  "registered_episode_count": 600,
+  "registered_geometry_observed_frac": 0.9360899822
+ },
+ "L2_seam": {
+  "n_providers": 600,
+  "provider_shape": [
+   199,
+   9,
+   176,
+   624
+  ],
+  "encoder_hw": [
+   176,
+   624
+  ],
+  "token_grid": [
+   11,
+   39
+  ],
+  "n_tokens": 429,
+  "cache_frame": {
+   "height": 256,
+   "width": 640,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "model_frame": {
+   "height": 176,
+   "width": 624,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "sliced_from": {
+   "parent": {
+    "height": 256,
+    "width": 640,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "parent_tag": "256x640f305.5775cyl",
+   "sub_tag": "176x624f305.5775cyl",
+   "rows": [
+    40,
+    216
+   ],
+   "cols": [
+    8,
+    632
+   ],
+   "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+  },
+  "val_parity": {
+   "corpus_key": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+   "parity": true,
+   "episodes_loaded": 600,
+   "episode_uid_sha256": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+   "content_check": "sha256(sorted clip ids) MATCHES the committed manifest entry"
+  }
+ },
+ "L3_vs_hand_slice": {
+  "clips": 6,
+  "stacked_rows": 1194,
+  "max_abs_diff": 0,
+  "bit_identical": true
+ },
+ "L4_vs_trainer_seam": {
+  "clips": 6,
+  "max_abs_diff": 0,
+  "identical": true,
+  "trainer_frame": {
+   "height": 176,
+   "width": 624,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "eval_frame": {
+   "height": 176,
+   "width": 624,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "frames_agree": true
+ },
+ "L5_neg_loader_not_told": {
+  "refused": true,
+  "names_the_case": true,
+  "names_the_call": true
+ },
+ "L6_neg_scored_on_parent": {
+  "refused": true,
+  "names_the_case": true,
+  "names_the_flag_value": true
+ },
+ "L6_pos_matching_frame": {
+  "checked": true,
+  "trained_frame_tag": "176x624f305.5775cyl",
+  "cache_frame_matches_run": true
+ }
+}

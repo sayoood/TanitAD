@@ -61,6 +61,33 @@ Usage (eval pod; PYTHONPATH must include this dir's parent AND this dir):
   # ... and the same checkpoint WITHOUT the goal oracle (the deployable path)
   #     add:  --goal-mode produced
 
+  # MODE B on the V2 COMPRESSED corpus -- THE v5 GATE PATH (2026-07-28)
+  python3 eval_flagship_v4.py \\
+      --ckpt /workspace/experiments/flagship-v5-.../ckpt_best.pt \\
+      --anchors-dense /workspace/experiments/anchors/anchors_dense_1to20.pt \\
+      --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl \\
+      --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical \\
+      --v2-subframe 176x624 --require-parity \\
+      --key flagship-v5-... --out .../flagship-v5-....json
+
+⭐ TWO CORPUS FORMATS (2026-07-28). ``--val-cache`` is the RAW EPCACHE
+(``ep_*.pt``) every historical v4 number was produced on. ``--v2-val-cache`` is
+the V2 COMPRESSED corpus (``<clip_id>.v2ep.pt``) — **the only format v5 has**,
+because at 120 deg / 256x640 the raw epcache is ~697 GB for one split and fits
+on no host in the fleet. Before this existed, ``build_v2_providers`` was called
+from exactly TWO files in the repo, both trainers: a v5 checkpoint was
+**trainable but not evaluable on its own corpus**, so no gate could be run on
+it. Exactly one of the two flags, never both.
+
+⛔ ``--v2-subframe`` IS NOT OPTIONAL PAPERWORK. The v5 corpus is built at
+256x640 and the model is trained on a CENTRED SLICE of it (the rig-clean fix).
+Scoring the checkpoint on the un-sliced parent is the ``ego=`` failure in
+geometry — trained with a capability, scored without it — and it does not
+crash: same corpus, same clips, different pixels, plausible ADE. The frame this
+harness resolves is therefore cross-checked against the ``geometry`` block in
+the checkpoint's OWN ``config.json`` (``parity.assert_eval_frame_matches_run``)
+and a mismatch is a REFUSAL that names the flag value which reproduces the run.
+
 ⚠️ GOAL PROVENANCE (``--goal-mode``, 2026-07-26 -- see ``goal_modes.py``).
 MODE B's goal channels ``route`` / ``route_graded`` / ``vt_band`` are minted per
 window from the ego's own FUTURE poses, so every v4 MODE-B number published
@@ -118,8 +145,15 @@ VALIDATION_TOL = 0.05                 # metres -- "small tolerance" per the brie
 # ============================================================================
 # shared setup -- the v1 trunk architecture EVERY flagship arm shares
 # ============================================================================
-def _eval_cfg():
-    """CLAUDE.md source of truth: speed_input, action_dim=3, grad-ckpt OFF."""
+def _eval_cfg(frame=None):
+    """CLAUDE.md source of truth: speed_input, action_dim=3, grad-ckpt OFF.
+
+    ⭐ ``frame`` (2026-07-28) sizes the ENCODER for the frame this eval reads.
+    It must be threaded into every config the harness builds, because
+    ``load_v1_from_ck`` / ``load_v4_from_ck`` STRICT-load: an encoder built at
+    256x256 against a checkpoint trained at 176x624 fails on
+    ``encoder.pos_embed`` with a shape error whose cause is three files away.
+    ``None`` (default) is byte-identical to the pre-2026-07-28 behaviour."""
     from tanitad.config import flagship4b_config
     cfg = flagship4b_config()
     cfg.speed_input = True
@@ -127,6 +161,9 @@ def _eval_cfg():
     if getattr(cfg, "tactical_pred", None) is not None:
         cfg.tactical_pred = dc.replace(cfg.tactical_pred, action_dim=3)
     object.__setattr__(cfg.encoder, "grad_checkpoint", False)
+    if frame is not None:
+        from tanitad.geometry import apply_frame
+        apply_frame(cfg, frame)
     return cfg
 
 
@@ -137,16 +174,113 @@ def _plan(cfg):
     return horizon_plan(cfg, op_fwd_k=4, tac_fwd_k=16, str_fwd_k=20)
 
 
-def build_val_dataset_base(val_cache, cfg, plan):
-    """Plain FlagshipWindowDataset (v1/v2.1 keys only) -- used for MODE A so the
-    validation exercises the MINIMUM moving parts (no v4 label minting)."""
+def resolve_eval_frames(a, cfg, *, label: str = "eval_flagship_v4"):
+    """⭐ THE EVAL-SIDE RIG-CLEAN SEAM. Returns ``(cache_frame, model_frame)``.
+
+    ⛔ NOTHING IS REIMPLEMENTED. This delegates to
+    ``train_flagship_v4.resolve_v2_frames``, the SAME function the trainer uses,
+    so the evaluator and the trainer cannot resolve ``--v2-subframe`` two
+    different ways. If they could, the rig-clean fix would be exactly as easy to
+    lose on the eval side as it was on the train side.
+
+    With no geometry flags at all this returns ``(CANONICAL_256, CANONICAL_256)``
+    and leaves ``cfg`` byte-identical (``flagship4b_config()`` IS the deployed
+    frame), so every existing raw-epcache eval is unchanged."""
+    from train_flagship_v4 import resolve_v2_frames
+    return resolve_v2_frames(a, cfg, label=label)
+
+
+def build_v2_val_episodes(a, *, cache_frame, train_frame, verbose: bool = True):
+    """⭐ WHERE A V2 EVAL READS FRAMES — the eval-side twin of
+    ``train_flagship_v4.build_v2_data``.
+
+    WHY THIS EXISTS (2026-07-28). v5 trains at 120° / 256x640, where the RAW
+    epcache is ~697 GB for the val split alone and fits on no host in the fleet,
+    so v5's corpus can only be a v2 compressed cache. Until this function
+    existed, ``build_v2_providers`` was called from EXACTLY TWO files in the
+    repo, both trainers — no evaluator, nothing in ``taniteval/``. A v5
+    checkpoint was therefore **trainable but not evaluable on its own corpus**,
+    and no gate could be run on it.
+
+    ⛔ THIS IS NOT A THIRD DECODE PATH. The repo already carries three
+    implementations of the v2 payload decode — ``scripts/v2_compressed.py``
+    (the builder + its round-trip validator), ``scripts/slice_v2_cache.py``
+    (the re-emitter) and ``tanitad/data/v2_dataset.py`` (the loader the trainers
+    read through). This function calls the THIRD one, the same object the
+    trainer's seam calls, and adds no decode of its own. Adding a fourth is how
+    the rig-clean fix came to be applied to a function nobody's training path
+    reached.
+
+    The two arguments that matter are the same two the trainer's seam turns on:
+    ``frame=`` (the providers deliver the SLICED raster) and ``parent=`` (the
+    binding compares the shape they hand back against the frame the eval
+    declares) — so a sub-frame that is configured but never applied is a REFUSAL
+    before the first window, not a silently wrong published ADE.
+    """
+    from tanitad.data.v2_dataset import build_v2_providers
+    dirs = a.v2_val_cache if isinstance(a.v2_val_cache, (list, tuple)) \
+        else [a.v2_val_cache]
+    rec = parity.assert_v2_parity_cache(
+        dirs, label="--v2-val-cache", require=bool(getattr(a, "require_parity",
+                                                           False)))
+    slice_frame = None if train_frame == cache_frame else train_frame
+    eps = build_v2_providers(dirs, lru_size=int(getattr(a, "v2_lru", 64)),
+                             frame=slice_frame, verbose=verbose)
+    if not eps:
+        raise SystemExit(
+            f"[v4-eval] no *.v2ep.pt under {dirs} — does --v2-val-cache point "
+            f"at the split dir?")
+    binding = parity.assert_v2_geometry_matches(
+        rec, train_frame, label="--v2-val-cache", providers=eps,
+        parent=cache_frame)
+    return eps, {"val_parity": rec, "geometry_binding": binding}
+
+
+def load_val_episodes(a, *, cache_frame, train_frame, verbose: bool = True):
+    """THE ONE PLACE the evaluator resolves its val episodes, either format.
+
+    Returns ``(episodes, provenance)``. ``--val-cache`` is the raw epcache
+    (every historical v4 number); ``--v2-val-cache`` is the v2 compressed
+    corpus (v5). Exactly one, never both — episode identity is a POSITION in
+    one and a CLIP ID in the other."""
+    if getattr(a, "v2_val_cache", None):
+        return build_v2_val_episodes(a, cache_frame=cache_frame,
+                                     train_frame=train_frame, verbose=verbose)
     from tanitad.data.mixing import load_episode
-    from train_flagship4b import FlagshipWindowDataset
-    parity.assert_val_cache(val_cache, label='--val-cache')
-    files = sorted(Path(val_cache).glob("ep_*.pt"))
+    rec = parity.assert_val_cache(a.val_cache, label='--val-cache')
+    files = sorted(Path(a.val_cache).glob("ep_*.pt"))
     if not files:
-        raise SystemExit(f"[v4-eval] no ep_*.pt under {val_cache}")
+        raise SystemExit(f"[v4-eval] no ep_*.pt under {a.val_cache}")
     eps = [load_episode(str(p), mmap=True) for p in files]
+    return eps, {"val_parity": rec, "geometry_binding": None}
+
+
+def assert_val_corpus_args(a) -> bool:
+    """Resolve WHICH corpus format this eval reads. Returns ``True`` for v2.
+
+    Mirrors ``train_flagship_v4.assert_corpus_args`` decision-for-decision so
+    the trainer and the evaluator cannot disagree about what a corpus is."""
+    raw = bool(getattr(a, "val_cache", None))
+    v2 = bool(getattr(a, "v2_val_cache", None))
+    if raw and v2:
+        raise SystemExit(
+            "[v4-eval] --val-cache (raw epcache) and --v2-val-cache (v2 "
+            "compressed) are two CORPUS FORMATS, not two sources to mix. Pass "
+            "exactly one.")
+    if not raw and not v2:
+        raise SystemExit(
+            "[v4-eval] one of --val-cache (raw epcache) or --v2-val-cache "
+            "(v2 compressed, the v5 corpus) is required.")
+    return v2
+
+
+def build_val_dataset_base(eps, cfg, plan):
+    """Plain FlagshipWindowDataset (v1/v2.1 keys only) -- used for MODE A so the
+    validation exercises the MINIMUM moving parts (no v4 label minting).
+
+    Takes the ALREADY-RESOLVED episode list (``load_val_episodes``) so the two
+    corpus formats meet at one seam instead of two globs."""
+    from train_flagship4b import FlagshipWindowDataset
     ds = FlagshipWindowDataset(eps, window=cfg.predictor.window,
                                max_horizon=plan.max_horizon,
                                maneuver_h=plan.maneuver_h,
@@ -157,17 +291,11 @@ def build_val_dataset_base(val_cache, cfg, plan):
     return ds
 
 
-def build_val_dataset_v4(val_cache, cfg, plan):
+def build_val_dataset_v4(eps, cfg, plan):
     """FlagshipV4Dataset (mints v3 factorised + strategic labels on the fly) --
     needed for MODE B because the head's _goal_inputs reads vt_band/route/
     route_graded off the batch."""
-    from tanitad.data.mixing import load_episode
     from flagship_v4_data import FlagshipV4Dataset
-    parity.assert_val_cache(val_cache, label='--val-cache')
-    files = sorted(Path(val_cache).glob("ep_*.pt"))
-    if not files:
-        raise SystemExit(f"[v4-eval] no ep_*.pt under {val_cache}")
-    eps = [load_episode(str(p), mmap=True) for p in files]
     ds = FlagshipV4Dataset(eps, window=cfg.predictor.window,
                            max_horizon=plan.max_horizon, maneuver_h=plan.maneuver_h,
                            channels=cfg.encoder.in_channels)
@@ -193,7 +321,7 @@ def run_canary(world, grounding, ds_val, device, episodes, stride, batch):
 # ============================================================================
 # MODE A -- load a plain v1-shaped checkpoint (model + grounding, no head)
 # ============================================================================
-def load_v1_from_ck(ck: dict, device):
+def load_v1_from_ck(ck: dict, device, frame=None):
     """Inline equivalent of v15_prep.load_frozen_v1, taking an ALREADY-loaded
     ckpt dict (avoids reading a 3+ GB file twice). Refuses a non-speed trunk
     the same way (near-identical-name inversion risk, CLAUDE.md source of
@@ -208,7 +336,7 @@ def load_v1_from_ck(ck: dict, device):
             f"REFUSING: predictor action_dim={a_dim}, not 3. This must be the "
             "speed arm (flagship4b-speedjerk-30k), NOT the no-speed ablation "
             "control flagship4b-phase0-30k (CLAUDE.md source of truth).")
-    cfg = _eval_cfg()
+    cfg = _eval_cfg(frame)
     world = WorldModel(cfg)
     world.load_state_dict(sd)                             # STRICT
     world = world.to(device).eval()
@@ -229,7 +357,8 @@ def load_v1_from_ck(ck: dict, device):
 # MODE B -- load a v4 checkpoint (model + grounding + head [+ goal_head])
 # ============================================================================
 def load_v4_from_ck(ck: dict, device, head_config_path=None,
-                    anchors_dense_path=None, cond_imagination_override=None):
+                    anchors_dense_path=None, cond_imagination_override=None,
+                    frame=None):
     from tanitad.models.fourbrain import WorldModel
     from tanitad.models.flagship_v4 import FlagshipV4Head, V4Config, v4_config
     from tanitad.refs.refc import DecoderConfig
@@ -240,7 +369,7 @@ def load_v4_from_ck(ck: dict, device, head_config_path=None,
         raise SystemExit(f"REFUSING: predictor action_dim={a_dim}, not 3 -- "
                          "not a speed-input v4 trunk.")
 
-    cfg = _eval_cfg()
+    cfg = _eval_cfg(frame)
     world = WorldModel(cfg)
     world.load_state_dict(ck["model"])                    # STRICT
     world = world.to(device).eval()
@@ -698,7 +827,32 @@ def main(argv=None) -> int:
         "eval_flagship_v4", description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ckpt", required=True)
-    ap.add_argument("--val-cache", required=True)
+    ap.add_argument("--val-cache", default=None,
+                    help="RAW EPCACHE val split (ep_*.pt) -- every historical "
+                         "v4 number. Mutually exclusive with --v2-val-cache.")
+    ap.add_argument("--v2-val-cache", default=None, nargs="+",
+                    help="⭐ V2 COMPRESSED val split (<clip_id>.v2ep.pt) -- THE "
+                         "v5 CORPUS. v5 trains at 120deg / 256x640, where the "
+                         "raw epcache is ~697 GB and fits on no host in the "
+                         "fleet, so a v5 checkpoint can only be scored through "
+                         "this path. Mutually exclusive with --val-cache.")
+    ap.add_argument("--v2-lru", type=int, default=64,
+                    help="decoded-payload LRU per v2 cache dir")
+    ap.add_argument("--v2-subframe", default=None,
+                    help="⭐ HxW (e.g. 176x624) -- the CENTRED SUB-FRAME the "
+                         "MODEL reads out of the cache, or 'none' to read the "
+                         "cache exactly as built. THIS MUST MATCH THE RUN: a "
+                         "checkpoint trained on a slice and scored on the "
+                         "parent is the `ego=` failure in geometry. The frame "
+                         "is cross-checked against the checkpoint's own "
+                         "config.json, so omitting it is a REFUSAL, not a "
+                         "wrong number.")
+    ap.add_argument("--require-parity", action="store_true",
+                    help="refuse an UNREGISTERED v2 val cache instead of "
+                         "warning (the raw path's val guard already refuses an "
+                         "unregistered episode count)")
+    from tanitad.geometry import add_geometry_args
+    add_geometry_args(ap)      # --frame-h/--frame-w/--frame-hfov/--projection
     ap.add_argument("--key", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--head-config", default=None,
@@ -774,6 +928,22 @@ def main(argv=None) -> int:
     if a.select_rule == "as-trained" and a.c2_scorer is not None:
         raise SystemExit("[v4-eval] --c2-scorer given without --select-rule "
                          "c2-wm-ref: it would be silently ignored.")
+    use_v2 = assert_val_corpus_args(a)
+    if a.v2_subframe and not use_v2:
+        raise SystemExit(
+            "[v4-eval] --v2-subframe applies to --v2-val-cache only. The raw "
+            "epcache holds whatever frame it was built at and there is no "
+            "loader slice on that path.")
+    if a.select_rule == "c2-wm-ref" and (a.v2_subframe or a.frame_h or a.frame_w):
+        # The C2 scorer is a SEPARATE v1-shaped checkpoint trained at the
+        # deployed 256x256 frame; it encodes the same batch as the arm. On a
+        # non-deployed frame its encoder cannot take those tensors at all, and
+        # a rule whose SIGN depends on its scorer must not be reached broken.
+        raise SystemExit(
+            "[v4-eval] --select-rule c2-wm-ref is not available on a "
+            "non-deployed frame: the C2 scorer is a separate 256x256 v1 trunk "
+            "and it encodes THE SAME batch as the arm. Score the fan "
+            "'as-trained', or train a scorer at this frame first.")
 
     device = a.device
     if device == "cuda" and not torch.cuda.is_available():
@@ -786,6 +956,33 @@ def main(argv=None) -> int:
     results_dir = Path(a.results_dir) if a.results_dir else out_path.parent
     results_dir.mkdir(parents=True, exist_ok=True)
 
+    # ⭐ GEOMETRY FIRST, BEFORE THE CHECKPOINT. `cfg` sizes the encoder's
+    # positional embedding, the loaders below are STRICT, and the frame is read
+    # from flags that a gate command can silently omit — so it is resolved,
+    # printed and cross-checked against the run's own config.json before 3 GB of
+    # weights are touched.
+    cfg = _eval_cfg()
+    cache_frame, model_frame = resolve_eval_frames(a, cfg)
+    plan = _plan(cfg)
+
+    # The run's own config.json — the ONLY artifact that records the frame the
+    # checkpoint was TRAINED on. Read early: it is a few KB and it decides
+    # whether this eval may proceed at all.
+    ckpt_dir = Path(a.ckpt).parent
+    head_cfg_path = a.head_config or (ckpt_dir / "config.json")
+    run_cfg = None
+    if Path(head_cfg_path).exists():
+        try:
+            run_cfg = json.loads(Path(head_cfg_path).read_text())
+        except Exception as ex:                              # pragma: no cover
+            print(f"[v4-eval] WARNING: could not parse {head_cfg_path}: {ex}",
+                  flush=True)
+    frame_check = parity.assert_eval_frame_matches_run(
+        run_cfg, model_frame, label="--ckpt vs eval frame",
+        cache_frame=(cache_frame if use_v2 else None))
+    if not frame_check["checked"]:
+        print(f"[v4-eval] ⚠ FRAME UNVERIFIED: {frame_check['note']}", flush=True)
+
     print(f"[v4-eval] loading checkpoint {a.ckpt} ...", flush=True)
     t_load0 = time.time()
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
@@ -794,13 +991,25 @@ def main(argv=None) -> int:
           flush=True)
     is_v4 = isinstance(ck, dict) and ("head" in ck) and not a.canary_only
 
-    cfg = _eval_cfg()
-    plan = _plan(cfg)
+    val_eps, val_prov = load_val_episodes(a, cache_frame=cache_frame,
+                                          train_frame=model_frame)
+    corpus_report = {
+        "corpus_format": ("v2 compressed (<clip_id>.v2ep.pt)" if use_v2
+                          else "raw epcache (ep_%05d.pt)"),
+        "val_cache": (list(a.v2_val_cache) if use_v2 else a.val_cache),
+        "require_parity": bool(a.require_parity),
+        "eval_frame": model_frame.report(),
+        "cache_frame": (cache_frame.report() if use_v2 else None),
+        "v2_subframe_arg": a.v2_subframe,
+        "frame_matches_checkpoint": frame_check,
+        "val_parity": val_prov["val_parity"],
+        "geometry_binding": val_prov["geometry_binding"],
+    }
 
     if not is_v4:
         # ------------------------------- MODE A -------------------------------
-        ds_val = build_val_dataset_base(a.val_cache, cfg, plan)
-        world, grounding, step = load_v1_from_ck(ck, device)
+        ds_val = build_val_dataset_base(val_eps, cfg, plan)
+        world, grounding, step = load_v1_from_ck(ck, device, frame=model_frame)
         can = run_canary(world, grounding, ds_val, device, a.episodes,
                          a.stride, a.batch)
         delta_heldout = can["canary_ade@2s"] - REGISTRY_V1_HELDOUT
@@ -811,6 +1020,7 @@ def main(argv=None) -> int:
             "evidence_class": "MEASURED (ours; artifact = this JSON)",
             "ckpt": a.ckpt, "ckpt_step": step, "key": a.key,
             "val_cache": a.val_cache, "episodes": a.episodes,
+            "corpus": corpus_report,
             "stride": a.stride, "batch": a.batch,
             "n_windows": can["n"], "wallclock_s": can["wallclock_s"],
             "canary_ade_2s_MEASURED": can["canary_ade@2s"],
@@ -845,24 +1055,18 @@ def main(argv=None) -> int:
         return 0 if reproduces else 1
 
     # ---------------------------------- MODE B --------------------------------
-    ds_val = build_val_dataset_v4(a.val_cache, cfg, plan)
-    ckpt_dir = Path(a.ckpt).parent
-    head_cfg_path = a.head_config or (ckpt_dir / "config.json")
+    ds_val = build_val_dataset_v4(val_eps, cfg, plan)
     anchors_path = a.anchors_dense
-    if anchors_path is None and Path(head_cfg_path).exists():
-        try:
-            hj = json.loads(Path(head_cfg_path).read_text())
-            cand = hj.get("args", {}).get("anchors_dense")
-            if cand and Path(cand).exists():
-                anchors_path = cand
-        except Exception:
-            pass
+    if anchors_path is None and isinstance(run_cfg, dict):
+        cand = (run_cfg.get("args") or {}).get("anchors_dense")
+        if cand and Path(cand).exists():
+            anchors_path = cand
     cond_imag_override = {"auto": None, "true": True,
                           "false": False}[a.cond_imagination]
 
     world, grounding, head, step, hcfg, goal_head = load_v4_from_ck(
         ck, device, head_config_path=head_cfg_path,
-        anchors_dense_path=anchors_path,
+        anchors_dense_path=anchors_path, frame=model_frame,
         cond_imagination_override=cond_imag_override)
     del ck  # free the raw state-dict copy before the eval loop
 
@@ -920,6 +1124,10 @@ def main(argv=None) -> int:
     res["ckpt"] = a.ckpt
     res["ckpt_step"] = step
     res["v4_diagnostics"] = diag
+    # CORPUS + FRAME PROVENANCE. Stamped so no v5 artifact can be read without
+    # knowing WHICH corpus format and WHICH frame produced it — the two facts a
+    # v2-capable evaluator newly makes variable.
+    res["corpus"] = corpus_report
     # GOAL PROVENANCE (2026-07-26, PC1 item #5). Stamped for EVERY mode, so no
     # artifact can be read without knowing where its goal came from. Under the
     # default `--goal-mode oracle` this is the same ORACLE disclosure as before

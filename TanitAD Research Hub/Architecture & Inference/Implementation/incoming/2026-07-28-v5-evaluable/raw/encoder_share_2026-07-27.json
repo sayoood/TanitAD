@@ -1,0 +1,157 @@
+{
+ "evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "passes": 6,
+ "inputs": [
+  "/workspace/v5eval/raw/encshare_p1_128x576.json",
+  "/workspace/v5eval/raw/encshare_p1_176x624.json",
+  "/workspace/v5eval/raw/encshare_p1_256x640.json",
+  "/workspace/v5eval/raw/encshare_p2_128x576.json",
+  "/workspace/v5eval/raw/encshare_p2_176x624.json",
+  "/workspace/v5eval/raw/encshare_p2_256x640.json"
+ ],
+ "micro_batch": 8,
+ "arms": {
+  "128x576": {
+   "frame": {
+    "height": 128,
+    "width": 576,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "token_grid": [
+    8,
+    36
+   ],
+   "n_tokens": 288,
+   "images_encoded_per_step": 144,
+   "obs_window": 8,
+   "n_future_encoded": 10,
+   "encoder_params_M": 87.047,
+   "total_params_M": 285.923,
+   "full_step_s": {
+    "median": 1.08347,
+    "samples": [
+     1.04898,
+     1.11797
+    ],
+    "spread_pct": 6.37
+   },
+   "encoder_only_s": {
+    "median": 0.51005,
+    "samples": [
+     0.50982,
+     0.51027
+    ],
+    "spread_pct": 0.09
+   },
+   "step_ratio_vs_256x640": 0.6394,
+   "encoder_ratio_vs_256x640": 0.4546,
+   "encoder_share_of_step_standalone": 0.4708,
+   "encoder_share_implied_by_step_ratio": 0.661
+  },
+  "176x624": {
+   "frame": {
+    "height": 176,
+    "width": 624,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "token_grid": [
+    11,
+    39
+   ],
+   "n_tokens": 429,
+   "images_encoded_per_step": 144,
+   "obs_window": 8,
+   "n_future_encoded": 10,
+   "encoder_params_M": 87.156,
+   "total_params_M": 286.031,
+   "full_step_s": {
+    "median": 1.29878,
+    "samples": [
+     1.29751,
+     1.30004
+    ],
+    "spread_pct": 0.19
+   },
+   "encoder_only_s": {
+    "median": 0.75427,
+    "samples": [
+     0.75381,
+     0.75473
+    ],
+    "spread_pct": 0.12
+   },
+   "step_ratio_vs_256x640": 0.7665,
+   "encoder_ratio_vs_256x640": 0.6722,
+   "encoder_share_of_step_standalone": 0.5808,
+   "encoder_share_implied_by_step_ratio": 0.7123
+  },
+  "256x640": {
+   "frame": {
+    "height": 256,
+    "width": 640,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "token_grid": [
+    16,
+    40
+   ],
+   "n_tokens": 640,
+   "images_encoded_per_step": 144,
+   "obs_window": 8,
+   "n_future_encoded": 10,
+   "encoder_params_M": 87.318,
+   "total_params_M": 286.193,
+   "full_step_s": {
+    "median": 1.69438,
+    "samples": [
+     1.69057,
+     1.69819
+    ],
+    "spread_pct": 0.45
+   },
+   "encoder_only_s": {
+    "median": 1.12203,
+    "samples": [
+     1.12128,
+     1.12279
+    ],
+    "spread_pct": 0.13
+   },
+   "step_ratio_vs_256x640": 1.0,
+   "encoder_ratio_vs_256x640": 1.0,
+   "encoder_share_of_step_standalone": 0.6622,
+   "encoder_share_implied_by_step_ratio": null
+  }
+ },
+ "headline": {
+  "PRIMARY_run_level_step_ratio_vs_256x640": {
+   "128x576": 0.6394,
+   "176x624": 0.7665,
+   "256x640": 1.0
+  },
+  "encoder_only_ratio_vs_256x640": {
+   "128x576": 0.4546,
+   "176x624": 0.6722,
+   "256x640": 1.0
+  },
+  "encoder_share_of_a_full_step_BRACKET": {
+   "128x576": [
+    0.4708,
+    0.661
+   ],
+   "176x624": [
+    0.5808,
+    0.7123
+   ],
+   "256x640": [
+    0.6622
+   ]
+  },
+  "how_to_read": "the PRIMARY is the direct one and needs no decomposition: it is the ratio of two REAL training steps. The share is reported as a BRACKET of two estimators of the same quantity (encoder timed standalone / step, and the share implied by the step ratio) because a standalone encoder timing does not reproduce the kernel overlap or memory pressure it sees inside the step.",
+  "micro_batch": 8,
+  "scope": "ONE A40, micro-batch 8 (the largest that fits at 256x640 \u2014 see capacity_*.json; --batch 16 OOMs there), real modules and a real batch off the REGISTERED v5 val cache, DATA LOADING EXCLUDED. A COMPUTE ratio, not a wall-clock run ratio \u2014 the +6 % decode cost of the slice is CPU work in the DataLoader workers and is not in these numbers."
+ }
+}
