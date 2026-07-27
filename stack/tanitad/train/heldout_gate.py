@@ -37,6 +37,16 @@ The surface is measured under **pseudo-simulation** (:mod:`taniteval.pseudosim`)
 which is **0.00 % out-of-envelope** by construction — sequential closed-loop is
 90.2 % out of envelope at K=185 and cannot be used mid-run.
 
+⭐ **WHAT GOAL THE PROBE HANDS THE HEAD** (2026-07-27). The real ``FlagshipV4Head``
+has ``cond_vtarget=True`` and **refuses** to plan without a ``vt_band``, so until
+this date ``--heldout-gate`` crashed at its first probe — ~2 000 optimizer steps
+and several GPU-hours into the run. The fix is a **signature change**:
+``goal_kwargs_fn(states, v0)`` (not ``(batch_size, device)``, which could carry
+neither), plus a named option from :mod:`tanitad.train.heldout_goal` selected by
+:attr:`HeldoutGateConfig.goal_option` / ``--heldout-goal``. The default is
+:data:`GOAL_OPTION_DEFAULT` — read its note, **it is an agent's choice pending the
+PI's override**, and it is one flag away from either alternative.
+
 THE DECISION RULE — pre-registered here, before any checkpoint exists
 ---------------------------------------------------------------------
 1. The first probe becomes the **incumbent**.
@@ -82,6 +92,7 @@ __all__ = [
     "HeldoutGateConfig", "HeldoutGate", "DeployableSurfacePlanner",
     "WindowAlignmentError", "GateNotUsableError", "NonDensePlanError",
     "probe_grid", "PRIMARY_NAME", "PRIMARY_RATIONALE", "REFUSED_PRIMARY",
+    "GOAL_OPTION_DEFAULT", "GOAL_OPTION_PROVENANCE",
 ]
 
 #: ⛔ The progress term the gate scores under. VERSIONED (2026-07-28): the
@@ -104,6 +115,43 @@ PRIMARY_RATIONALE = (
     "early-stop gated on ADE stops the run in the wrong place with confidence.")
 #: What this gate will NOT stop on, at any threshold.
 REFUSED_PRIMARY = "ade_0_2s (diagnostic only — see PRIMARY_RATIONALE)"
+
+#: ⭐ THE GOAL STATE THE PROBE CONDITIONS ON (2026-07-27).
+#:
+#: ⚠️ **This default is an AGENT'S CHOICE PENDING THE PI's OVERRIDE, not the PI's
+#: decision.** ``VTBAND_DECISION.md`` prices all of them and explicitly declines to
+#: choose; the wiring stream picked ``"dropped"`` so the gate could run at all, and
+#: made the alternatives **one flag away** (``--heldout-goal band0|produced``) so
+#: overriding costs nothing. Change this constant OR pass the flag — both work, and
+#: neither requires touching the probe.
+#:
+#: WHY ``dropped`` (MEASURED, `VTBAND_DECISION.md` §2–§5, arm
+#: ``flagship-v4-fromscratch`` @ step 15000, 528 windows / 8 held-out episodes):
+#:
+#: * it is **in-distribution by construction** — ``V15Config.goal_dropout = 0.5``
+#:   ships, ``V4Config`` inherits it and the trainer never overrides it, so
+#:   ``VT_DROPPED``/``ROUTE_DROPPED`` are **learned embedding rows** seen on ~50 %
+#:   of every training batch. They are the most frequently trained value of that
+#:   channel, not a zero-fill;
+#: * it makes :attr:`DeployableSurfacePlanner.provenance`'s "no-route state" claim
+#:   TRUE, which ``band0`` does not;
+#: * it gives the early-stop the **largest detectable drop** (−0.4157 paired vs a
+#:   randomised-selection degradation) because it has the highest baseline (0.6383).
+#:
+#: ⛔ ``band0`` is NOT a neutral zero: ``VTARGET_TOKENS[0] == "v_stop"`` and
+#: ``route 0 == ROUTE_LEFT``. It costs −0.0621 [−0.0878, −0.0371] (separated), 93 %
+#: of it from the VTARGET channel alone, by making the planner travel 9.1 % less.
+#: ⛔ ``zeros_naive`` (also zeroing ``vt_speed``) is WORSE THAN USELESS — it brakes
+#: the probe and NaNs ``recovery``, so the gate reads HEALTHIER while probing a
+#: braking planner. It is reachable only by naming it explicitly.
+GOAL_OPTION_DEFAULT = "dropped"
+#: Who chose :data:`GOAL_OPTION_DEFAULT`, carried into every probe record so a
+#: reader of the JSON never has to guess whether this was adjudicated.
+GOAL_OPTION_PROVENANCE = (
+    "default 'dropped' chosen by the vtband-WIRING stream 2026-07-27, PENDING THE "
+    "PI's OVERRIDE — VTBAND_DECISION.md priced the options and deliberately did "
+    "not choose. Override with --heldout-goal {band0,produced}; nothing else "
+    "changes.")
 
 
 class WindowAlignmentError(AssertionError):
@@ -170,17 +218,35 @@ class DeployableSurfacePlanner:
     teacher forcing. v4's regression was in SELECTION, so a probe that read the
     oracle would have reported the run as healthy while it decayed.
 
-    ``goal_kwargs_fn(batch_size, device) -> dict`` supplies the head's optional
-    conditioning. The default is the **withheld/unknown** state — zeros, i.e. the
-    ``vt_band``/``route`` defaults ``_goal_inputs`` falls back to — which is what a
-    deployed car has when no route is supplied. That choice is RECORDED in
-    :attr:`provenance` because a readout taken with a route input is a different
-    measurement from one taken without, and the program has already been burned by
-    a decoder evaluated at ``nav_cmd=None`` it never trained against.
+    ⭐ ``goal_kwargs_fn(states, v0) -> dict`` supplies the head's optional
+    conditioning. **The protocol takes ``(states, v0)``, NOT ``(batch_size,
+    device)``** — that is a 2026-07-27 SIGNATURE change, and it is the fix, not a
+    cosmetic one. The old signature carried neither ``v0`` nor ``states``, so it
+    could not express *any* goal option faithfully:
+
+    * ``_goal_inputs`` sets ``vt_speed = v0``, and :meth:`FlagshipV15Head.select`
+      clamps ``vt_speed`` into the reachable band around ``v0`` — so a fn without
+      ``v0`` either fabricates a speed target or zeroes it, and **zeroing it makes
+      the selector rank up the maximally decelerating candidate**
+      (``v_goal = (v0 - 5)⁺``; see :mod:`tanitad.train.heldout_goal`);
+    * ``produced`` (the model's own ``goal_head``) is a function of the encoded
+      window, which the old ``traj`` computed *after* it had already built ``kw``.
+
+    ⛔ ``goal_kwargs_fn=None`` means **no goal channels at all**, and a head with
+    ``cond_vtarget=True`` REFUSES it (``ValueError``). That refusal is the head's
+    own ``ego_guard`` and is correct; it is not a fallback. The gate never takes
+    that path — :meth:`HeldoutGate.probe` builds a fn from
+    :attr:`HeldoutGateConfig.goal_option` (default ``"dropped"``).
+
+    The choice is RECORDED verbatim in :attr:`provenance`, because a readout taken
+    with a route input is a different measurement from one taken without, and the
+    program has already been burned by a decoder evaluated at ``nav_cmd=None`` it
+    never trained against.
     """
 
     def __init__(self, world, head, *, device="cpu", amp: bool = False,
-                 goal_kwargs_fn=None, expect_dense: bool = True):
+                 goal_kwargs_fn=None, expect_dense: bool = True,
+                 goal_option: str | None = None):
         self.world, self.head = world, head
         self.device = device
         self.amp = bool(amp)
@@ -195,32 +261,48 @@ class DeployableSurfacePlanner:
                 f"derivative by the wrong dt — pass expect_dense=False only with "
                 f"a written reason.")
         self.horizons = horizons
+        self.goal_option = goal_option
+        if goal_kwargs_fn is None:
+            cond = ("⛔ NONE — no goal channels are supplied at all. A head with "
+                    "cond_vtarget/cond_route REFUSES this (ValueError); it is "
+                    "the RED baseline, not a withheld-goal default.")
+        else:
+            cond = (f"goal option {goal_option!r} via goal_kwargs_fn(states, v0)"
+                    if goal_option else "caller-supplied goal_kwargs_fn(states, v0)")
         self.provenance = {
             "surface": "deployable (encode_window -> head -> SELECTED wp_seq)",
             "selected_not_oracle": True,
-            "goal_conditioning": ("withheld/unknown defaults (zeros) — the "
-                                  "deployed no-route state"
-                                  if goal_kwargs_fn is None else
-                                  "caller-supplied goal_kwargs_fn"),
+            "goal_conditioning": cond,
+            "goal_option": goal_option,
+            "goal_protocol": "goal_kwargs_fn(states, v0)",
             "horizons": list(horizons),
             "amp": self.amp,
         }
+        if goal_option:
+            from tanitad.train.heldout_goal import OPTION_MEANING
+            self.provenance["goal_option_meaning"] = OPTION_MEANING.get(
+                goal_option, goal_option)
 
     @torch.no_grad()
     def traj(self, frames, v0, goal=None):
-        """frames [B, W, C, H, W] · v0 [B] -> the SELECTED plan [B, S, 2]."""
+        """frames [B, W, C, H, W] · v0 [B] -> the SELECTED plan [B, S, 2].
+
+        ⭐ ``states`` is encoded BEFORE ``kw`` is built — that ordering is the
+        wiring fix, not an incidental refactor: ``produced`` derives the goal
+        from ``states``, so building ``kw`` first made that option unreachable.
+        """
         was_training = self.head.training
         self.head.eval(); self.world.eval()
         try:
-            b = int(frames.shape[0])
-            kw = (self.goal_kwargs_fn(b, self.device)
-                  if self.goal_kwargs_fn is not None else {})
-            if goal is not None:
-                kw = {**kw, **goal} if isinstance(goal, dict) else kw
             amp_on = self.amp and str(self.device) == "cuda"
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp_on):
                 states = self.world.encode_window(frames.to(self.device))
-                out = self.head(states, v0.to(self.device), **kw)
+                v0d = v0.to(self.device)
+                kw = (self.goal_kwargs_fn(states, v0d)
+                      if self.goal_kwargs_fn is not None else {})
+                if isinstance(goal, dict):
+                    kw = {**kw, **goal}
+                out = self.head(states, v0d, **kw)
             return out["wp_seq"].float().cpu()
         finally:
             self.world.train(was_training); self.head.train(was_training)
@@ -259,6 +341,11 @@ class HeldoutGateConfig:
     #: ``"clamp_v1"`` only to reproduce a pre-2026-07-28 gate; that term cannot
     #: see over-travel and therefore cannot see a longitudinal lever.
     progress_term: str = PROGRESS_TERM
+    #: ⭐ WHAT GOAL STATE THE PROBE CONDITIONS ON — see :data:`GOAL_OPTION_DEFAULT`.
+    #: One of :data:`tanitad.train.heldout_goal.CANDIDATES` (plus the priced trap
+    #: and the two channel-isolation diagnostics). ``--heldout-goal`` on the
+    #: trainer sets it; changing it is one flag, by design.
+    goal_option: str = GOAL_OPTION_DEFAULT
 
     def resolved_grid(self):
         return probe_grid() if self.grid is None else self.grid
@@ -420,12 +507,20 @@ class HeldoutGate:
     # ---------------------------------------------------- the probe (GPU) --
     def probe(self, step: int, world, head, episodes, *, device="cpu",
               goal_kwargs_fn=None, diagnostics=None, verbose=False,
-              frame=None) -> dict:
+              frame=None, goal_head=None) -> dict:
         """Run pseudo-simulation on the deployable surface, then :meth:`observe`.
 
         ``episodes`` are HELD-OUT episode objects (``.poses`` / ``.frames``).
         Determinism matters: the same episodes, stride and grid must be passed
         every probe or :meth:`observe` raises :class:`WindowAlignmentError`.
+
+        ⭐ **GOAL CONDITIONING.** When ``goal_kwargs_fn`` is not given, one is
+        built from :attr:`HeldoutGateConfig.goal_option` (default
+        :data:`GOAL_OPTION_DEFAULT` == ``"dropped"``). Before 2026-07-27 no fn was
+        built at all and the probe handed the real head ``kw = {}``, which it
+        refuses — ``--heldout-gate`` therefore died at its FIRST probe, ~2 000
+        optimizer steps and several GPU-hours into a run. ``goal_head`` is
+        required only by ``goal_option="produced"``.
 
         ⭐ ``frame`` is the :class:`~tanitad.data.calib.CanonicalFrame` the
         held-out pixels were BUILT at — the TRAIN frame, i.e. the sub-frame if
@@ -440,9 +535,19 @@ class HeldoutGate:
         """
         ps, _ = _taniteval()
         grid = self.cfg.resolved_grid()
+        option = getattr(self.cfg, "goal_option", GOAL_OPTION_DEFAULT)
+        if goal_kwargs_fn is None:
+            from tanitad.train import heldout_goal as _HGoal
+            # ⛔ raises rather than falling back: 'dropped' on a config with
+            # goal_dropout == 0 would probe untrained N(0, 0.02) rows, and
+            # 'produced' without a goal_head has no model-side producer. A gate
+            # that silently substituted something cheaper is the failure this
+            # module exists to remove.
+            goal_kwargs_fn = _HGoal.make_goal_kwargs_fn(
+                option, head.cfg, goal_head=goal_head)
         planner = DeployableSurfacePlanner(
             world, head, device=device, amp=self.cfg.amp,
-            goal_kwargs_fn=goal_kwargs_fn)
+            goal_kwargs_fn=goal_kwargs_fn, goal_option=option)
         frame = self.cfg.frame if frame is None else frame
         pw = ps.pseudo_evaluate(planner, episodes, grid, device=device,
                                 stride=self.cfg.stride,
@@ -466,6 +571,8 @@ class HeldoutGate:
             "estimator": node.get("_estimator"),
             "surface": planner.provenance,
             "warp": pw.get("warp"),
+            "goal_option": option,
+            "goal_option_provenance": GOAL_OPTION_PROVENANCE,
             "components_admitted": self._pinned_admitted,
             "components_pinned_at_step": self.history[0]["step"],
         }

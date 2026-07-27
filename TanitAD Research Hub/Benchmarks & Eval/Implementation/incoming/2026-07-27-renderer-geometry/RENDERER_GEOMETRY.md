@@ -39,14 +39,28 @@ arbitrary field.** So the *representation* had to change, not the machinery.
 | 3 | ⭐ **the CONTROL — did the deployed path regress?** | ⛔ **NO. `torch.equal`, `max_abs_pixel_diff = 0.0`**, on real camera pixels, at all four probed conditions incl. `dlat 3.0 m / dψ 12°`. The coordinate-field control reproduces the audit's **max 0.118 px** exactly (**0.1177** at +8°) (§5) | MEASURED |
 | 4 | the defect, re-measured by the SHIPPED code | mean **46.3002** px / max **189.2039** / **99.0776 %** > 1 px / spurious \|Δv\| **47.0354** at ±8° — reproduces `warp_geometry_audit_2026-07-27.json` to 4 decimals from a completely different code path (§3) | MEASURED |
 | 5 | ⭐ the guard, DEMONSTRATED FAILING | `assert_warp_frame` REFUSES (a) an undeclared frame on a 176×624 raster and (b) a declared frame that is not the raster — both on **real pod2 frames** (§6) | MEASURED |
-| 6 | admissible K | ⭐ **PRODUCIBLE at K = 60 (6.0 s)** on the real v5 cylindrical cache through the corrected re-render — see §7 | MEASURED |
-| 7 | `run_gate.py check` | ⭐ renders a **COMPLETE** verdict with the corridor present, **`INCOMPLETE`** without it, and **every rule can return a FAILING value** — demonstrated, not asserted (§8) | MEASURED |
+| 6 | admissible K | ⭐ **PRODUCIBLE at K = 60 AND at the horizon-honest K = 100** on the real v5 cylindrical cache. K=100 overall **0.3775 [0.2784, 0.4766]**, junction **0.8267 [0.7800, 0.8600]**, n = 120/24 (§7) | MEASURED |
+| 7 | `run_gate.py check` | ⭐ renders **`VERDICT: CONTINUE — all pre-registered gates pass`**, `horizon_honest: true`; **`INCOMPLETE`** without the corridor; and **every rule was shown returning a FAILING value** — 10-row matrix, demonstrated not asserted (§8) | MEASURED |
+| 8 | ⭐ is the renderer LOAD-BEARING or just plumbed? | **LOAD-BEARING, on the LATERAL axis.** Paired episode-cluster bootstrap, matched windows, n = 144/24: peak \|cross-track\| **Δ −0.9110 m [−1.7359, −0.1309] SEPARATED**; corridor *rate* and the longitudinal-dominated ADE@2s **not separated** — C9's own shape, reproduced on our data (§7.2) | MEASURED |
 
 🔴 **THE ESCALATION THAT MATTERS MOST IS NOT THE GATE — IT IS THE TRAINER.** The same warp is
 `pseudosim`'s, and `pseudosim` is the surface of `tanitad.train.heldout_gate`, whose probe grid is
 **exactly `(−8, 0, +8)°`**. It did not crash; it produced numbers. **It is now wired to the run's own
 `CanonicalFrame` (`HeldoutGateConfig.frame`, fed from `resolve_v2_frames`) and REFUSES an undeclared
 geometry.** §9.
+
+### 0.1 The pre-registered outcomes, adjudicated
+
+| outcome | fired? | evidence |
+|---|---|---|
+| **CONFIRM** — correct on the v5 frame **and** the co-primary producible at an admissible K with a complete verdict | ⭐ **YES** | §4 (2.44e-05 max, 41× inside the stated bar), §5 (control bit-identical), §7.3 (K=100 produced), §8 row 3 (`CONTINUE`, `horizon_honest: true`) |
+| **PARTIAL** — correct re-render, horizon still blocked for another reason | no | K = 60 **and** K = 100 both produced end to end |
+| **REFUTE** — a cylindrical frame cannot be re-rendered by this machinery | **no, and the coarse version of the claim is itself wrong** | §2.3: yaw on a cylinder **IS** a 3×3 (residual 0.000000 px); only the *lateral* axis is not (43.76 px), and `grid_sample` carries both |
+
+⚠️ **The one thing I would flag against my own CONFIRM:** the co-primary is producible, but the arm
+that produced it is a **reference policy, not v5** (§7.0) — there is no v5 checkpoint to point it at.
+**What is confirmed is the INSTRUMENT, not any v5 quality claim**, and no number in this document may
+be quoted as a v5 result.
 
 ---
 
@@ -226,11 +240,28 @@ is off by **0.9937 of full scale on a frame whose dynamic range is 1.0** — it 
 version of the right image, it is a different image, which is the same conclusion §3 reaches in
 pixels rather than in coordinates.
 
-**Pre-registered bar, and it was met.** I stated in advance that a correct re-render must land
-**≤ 1e-3 max abs intensity error** against the independent oracle (a bar chosen to be ~40× looser
-than float32 round-off, so that a real model error could not hide inside it). Measured worst case:
-**2.4438e-05**, i.e. **41× inside the bar**. The falsifier is published with the number: any
-`NEW_max_abs_intensity_err` above 1e-3 refutes correctness.
+### 4.1 The bars, and exactly when each was fixed
+
+⚠️ Stated precisely rather than claimed loosely, because "pre-registered" is a word this program has
+had to retract before.
+
+| bar | value | fixed WHEN |
+|---|---|---|
+| cylindrical yaw `su` == the analytic shift | **< 1e-9 px** | in `test_warp_geometry.py`, green **before** the pod run |
+| pinhole field == `sampling_homography` | **< 1e-9 px** | same, **before** |
+| deployed-frame control | **≤ 0.118 px** max | inherited from `warp_geometry_audit_2026-07-27.json`; **pre-existing**, not mine |
+| deployed path unchanged | **`torch.equal`** (exact) | same, **before** |
+| real-pixel agreement with the independent oracle | **≤ 1e-3** max abs intensity | when the oracle was written; the *criterion* (bit-level agreement with a numpy oracle that shares no code) is the script's design, shipped to pod2 **before** any number returned |
+
+Measured worst case on real frames: **2.4438e-05** — **41× inside** the 1e-3 bar. The falsifier is
+published with the number: any `NEW_max_abs_intensity_err` above 1e-3 refutes correctness.
+
+🔴 **ONE BAR WAS RELAXED AFTER MEASURING, and it is recorded rather than quietly re-fitted.** I first
+asserted the cylindrical yaw leaves rows **exactly** unmoved (`sv - v == 0.0`). Measured:
+**2.84e-14 px**. The cause is `√(sin²φ + cos²φ) ≠ 1.0` in binary float64 — round-off, not a model
+term — so the bar was relaxed to `< 1e-12` **with that reason written into the test**. ⚠️ It is a
+1e-16 fraction of the frame and does not touch any conclusion, but relaxing a bar after seeing a
+number is exactly the move that needs to be visible, not smoothed over.
 
 ---
 
@@ -348,8 +379,8 @@ re-render `sampling_source_grid + warp_batch_grid`, surface `closed_loop`, corri
 |---|---|---|
 | **overall** | **0.2257 [0.1468, 0.3120]** (se 0.0421) | **144 / 24** |
 | **junction** | **0.6256 [0.5070, 0.7205]** (se 0.0554) | **30 / 11** |
-| longitudinal | *(in the artifact)* | 61 |
-| other | *(in the artifact)* | 53 |
+| longitudinal | 0.1473 [0.0739, 0.2360] | 61 / 14 |
+| other | 0.0896 [0.0479, 0.1398] | 53 / 14 |
 
 Wallclock 558.4 s on pod2 (CPU), `rollout_advanced_K_steps: true`.
 
@@ -374,17 +405,133 @@ with every block.
 
 ### 7.2 ⭐ Is the renderer LOAD-BEARING, or merely plumbed?
 
-*(filled in from `raw/paired_renderer_effect_K60.json`)*
+**A frame threaded through the call chain but never APPLIED passes every plumbing test in silence.**
+So it is measured: the *same* planner, *same* 24 episodes, *same* anchors, *same* K = 60, differing
+**only** in the re-render — projection-aware vs the shipped 266/128 homography — compared with the
+**paired episode-cluster bootstrap** (`taniteval/ci.py`, B = 2000, unit = val episode; window
+alignment asserted on `eid` **and** `t0` before anything is computed). ⛔ `overlapping_holdout_se`
+appears nowhere. `raw/paired_renderer_effect_K60.json`, n = **144 windows / 24 episodes**.
 
-### 7.3 The horizon-honest floor
+**Overall**, corrected − legacy:
 
-*(filled in from `raw/corridor_v5frame_cv_K100.json`)*
+| component | axis | corrected | legacy | **paired Δ** | separated? |
+|---|---|---:|---:|---|---|
+| **peak \|cross-track\|** | **LATERAL** | 9.0387 m | 9.9497 m | **−0.9110 [−1.7359, −0.1309]** | ⭐ **YES** |
+| **mean \|cross-track\|** | **LATERAL** | 3.3549 m | 3.6625 m | **−0.3076 [−0.5520, −0.0746]** | ⭐ **YES** |
+| corridor_departure_rate | lateral (a RATE) | 0.7778 | 0.7986 | −0.0208 [−0.0556, +0.0139] | no |
+| ade_0_2s (closed loop) | **LONGITUDINAL-dominated** | 0.9963 m | 1.0090 m | −0.0127 [−0.0398, +0.0071] | no |
+
+⇒ **The renderer is load-bearing, and it moves the LATERAL axis.** Driving the loop through the
+correct camera cuts peak cross-track deviation by **0.91 m**, CI-separated.
+
+⭐ **AND THE DECOMPOSITION REPLICATES CLASS C9's OWN SHAPE, on our own data.** The lateral
+*magnitude* separates; the *rate* does not, and neither does the longitudinal-dominated ADE. Two
+independent reasons, both visible in the table: the rate is **saturated** on this probe (0.78–0.90 —
+a deliberately bad policy departs almost every window, so a rate cannot register an improvement it
+has no headroom for), and ADE@2s is measured at K = 20 while the effect accrues over K = 60. **A
+reader who looked only at `ade_0_2s` would have concluded the renderer does nothing.**
+
+Per stratum (peak \|cross-track\|, the sensitive lateral component):
+
+| stratum | n | corrected | legacy | paired Δ | separated? |
+|---|---:|---:|---:|---|---|
+| junction | 30 / 11 | 18.5188 | 19.7949 | **−1.2761 [−2.2993, −0.0746]** | ⭐ YES |
+| longitudinal | 61 / 14 | 8.0782 | 9.8293 | **−1.7512 [−2.8810, −0.5662]** | ⭐ YES |
+| other | 53 / 14 | 4.7783 | 4.5155 | +0.2627 [−0.5870, +1.2819] | no |
+
+⚠️ **Reported against my own direction of interest:** in the `other` stratum the closed-loop ADE
+moves the *wrong* way and is separated (**+0.0151 [+0.0039, +0.0277]**), and junction corridor
+departure is nominally *worse* (+0.0333, not separated). ⛔ **This is NOT "the correct renderer is
+better".** The planner is a pixel-sensitive probe with no driving merit; the only admissible reading
+is *the re-render changes the loop, materially and on the lateral axis*. Which direction a **real**
+model moves is unmeasured and stays unmeasured until a v5 checkpoint exists.
+
+**The falsifier is published in the artifact**: a paired Δ of exactly 0.0 across every stratum and
+every component would mean the frame is threaded but not applied — the defect this leg exists to
+catch.
+
+### 7.3 ⭐ The horizon-honest floor — K = 100 also produces
+
+`run_gate.HORIZON_HONEST_MIN_K = 100`, so K = 60 is *admissible* but stamped `horizon_honest: false`.
+K = 100 was therefore produced too, `raw/corridor_v5frame_cv_K100.json` (same policy, same cache,
+stride 20):
+
+| stratum | corridor_departure_rate @ K=100 (10.0 s) | n windows / episodes |
+|---|---|---|
+| **overall** | **0.3775 [0.2784, 0.4766]** (se 0.0512) | **120 / 24** |
+| **junction** | **0.8267 [0.7800, 0.8600]** (se 0.0207) | **18 / 8** |
+
+Wallclock 929.5 s. ⭐ **The horizon effect reproduces on v5's frame with the corrected renderer**:
+overall **0.2257 → 0.3775** and junction **0.6256 → 0.8267** going K = 60 → 100, on the same policy
+and corpus — the same direction and comparable magnitude to E1a's K = 20 → 185. **This is the
+co-primary's whole reason for existing, and it is now measurable on v5's geometry.**
+
+⇒ **Both K = 60 and K = 100 are producible. Which one the v5 PREP card registers is a PI decision,
+and it is now an informed one instead of a defaulted one.**
 
 ---
 
-## 8. `run_gate.py` — the verdict, and what makes every rule FAIL
+## 8. ⭐ `run_gate.py` — a COMPLETE verdict, and every rule shown FAILING
 
-*(filled in below from `raw/gate_check_*.json`)*
+`raw/gate_matrix_v5frame.log` + `raw/gate_check_*.json`. Arm `v5frame-CVREF-176x624`; the diagnostic
+primary (`ade_0_2s = 0.7153 [0.4846, 0.9672]`, `episode_cluster_bootstrap`) is minted by
+`code/mint_gate_inputs.py` **from the same rollout, the same windows and the same estimator** as the
+corridor block — no other arm's ADE is borrowed to make `check` proceed.
+
+⚠️ **The three co-primary bars were fixed A PRIORI** — `0.99` (nothing can breach), `0.35` (the
+v4/v5 PREP family's value), `0.01` (nothing can meet) — precisely so that neither branch is chosen
+after reading the number. `0.3/0.35` forking paths are what this discipline exists to prevent.
+
+| # | input | outcome | exit |
+|---|---|---|---|
+| 1 | `register --co-primary-horizon-K 20` | ⛔ **REFUSED** — *"at or below `ade_0_2s`' own horizon … a ~168× difference the 2 s horizon cannot see"* | 1 |
+| 2 | `register --co-primary-horizon-K 200` | ⛔ **REFUSED** — *"the structural ceiling on this corpus is K=190"* | 1 |
+| 3 | K=100 card, **all bars loose**, corridor present | ⭐ **`VERDICT: CONTINUE` — all pre-registered gates pass**, `horizon_honest: true`, `surface=closed_loop`, n=120/24 | 0 |
+| 4 | K=100 card, bar 0.99 + **junction bar 0.50** | **`RESTART`** — junction 0.8267 breaches 0.50 | 0 |
+| 5 | K=100 card, **bar 0.01** (the falsifier) | **`RESTART`** — co-primary 0.3775 > 0.01 | 0 |
+| 6 | K=100 card, bar 0.35 (the PREP value) | **`RESTART`** — 0.3775 > 0.35 | 0 |
+| 7 | K=100 card, secondaries breached (9.99 / 0.99) | **`RESTART`** — *"kill criteria FAILED: `wm_canary_ade_2s = 9.99 <= 0.55`, `miss_2m = 0.99 <= 0.1`"* | 0 |
+| 8 | K=100 card, **no corridor** | ⚠️ **`INCOMPLETE`** — *"the pre-registered CO-PRIMARY … was not measured"*, `horizon_honest: false` | 0 |
+| 9 | K=100 card + a **K=60** corridor | ⛔ **REFUSED** on the horizon mismatch | 1 |
+| 10 | K=60 card + K=60 corridor | **`RESTART`**, and *"`!! NOT horizon-honest`: K=60 … below the floor K=100"* | 0 |
+
+⇒ ⭐ **`check` renders a COMPLETE verdict on the v5 frame** (row 3 — the exact state `V5_GATEABLE`
+§1.6 recorded as unreachable), **`INCOMPLETE` remains reachable and correct** (row 8), and **every
+rule was shown returning a failing value on a MEASURED number** (rows 4–7).
+
+### 8.1 ⭐ `nonav_route_beats_majority` — INSTRUMENT-FAIL, printed, never MODEL-FAIL
+
+`GATE_PROTOCOL` §0.7 is binding, and it was exercised rather than assumed. Registered via
+`--secondary-void`, it appears in **every** verdict:
+
+```
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`);
+                       it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        RE-ARMS WHEN : --labels-v2 + --v2-route-from-vision
+```
+
+**It is printed even in the `CONTINUE` verdict** — a suppressed criterion that is not printed is
+indistinguishable from one that passed.
+
+### 8.2 ⚠️ And the verdict carries its EXTRAPOLATION warning
+
+Even in the `CONTINUE` row the gate prints:
+
+```
+OOD = EXTRAPOLATION — NOT a measurement at this horizon
+      ratio None (fires=False, informative=False) OR steps-outside-envelope
+      (fires=True, steps=0.35375, windows=0.625)
+      !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m /
+         |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+```
+
+⛔ **A correct renderer did not make this a measurement, and nothing here should be read as claiming
+it did.** C13 and C14 stand untouched.
 
 ---
 
@@ -418,24 +565,32 @@ the second is next.
 
 ## 10. Suites — zero new skips
 
-| suite | before (this checkout, HEAD `a7ba1b2`) | after | new skips |
-|---|---|---|---|
-| `taniteval/` (dev box) | 606 passed | ✅ **638 passed** | **0** |
-| `stack/` (dev box) | 1506 passed, 12 skipped | ✅ **1509 passed, 12 skipped** | **0** |
+| suite | before (this checkout, HEAD `a7ba1b2`) | after my 32 tests | **final** (combined, HEAD `8e3491f`) | new skips |
+|---|---|---|---|---|
+| `taniteval/` (dev box) | 606 passed | 638 passed | ✅ **644 passed** | **0** |
+| `stack/` (dev box) | 1506 passed, 12 skipped | 1509 passed, 12 skipped | ✅ **1522 passed, 12 skipped** | **0** |
 
-New tests **mine**: `taniteval/tests/test_warp_geometry.py` — **32** (606 → 638).
+New tests **mine**: `taniteval/tests/test_warp_geometry.py` — **32** (606 → 638). Everything above 638
+/ 1509 arrived from **concurrent sibling streams while I ran**; the final columns are the numbers a
+reviewer will reproduce, and **0 failures** in either.
 
-⚠️ **Two count discrepancies, both explained rather than rounded away:**
+⚠️ **Three count facts, explained rather than rounded away:**
 
 * **The brief's `stack/` baseline of "1489 passed" is one HEAD stale.** This checkout collects
   **1506** in `stack/` before any of my changes — the repo advanced `530f199` → `a7ba1b2` while
   `V5_GATEABLE` was being written.
-* **`stack/` moved 1506 → 1509 DURING the session, and none of the +3 is mine.** A sibling stream
-  added `stack/tests/test_vtband_options.py` (untracked, not staged by me) while I was working.
-  **I added zero `stack/` tests**, verified mechanically: `def test_` counts in every file I touched
-  are **identical to HEAD** (`test_heldout_gate` 18→18, `test_v5_trainer_v2_val` 26→26,
-  `test_clhorizon` 15→15, `test_pseudosim` 21→21, `test_ego_guard` 23→23). Those five files gained
-  **one `frame=` kwarg each** to declare `LEGACY_WARP` (§6.1) and pass otherwise unchanged.
+* **`stack/` moved 1506 → 1522 DURING the session, and NONE of the +16 is mine.** A sibling stream
+  (the `vt_band` decision, commit `8e3491f`) added `test_vtband_options.py` and
+  `test_heldout_gate_goal_wiring.py` while I was working. **I added zero `stack/` tests**, verified
+  mechanically: `def test_` counts in every file I touched are **identical to HEAD**
+  (`test_heldout_gate` 18→18, `test_v5_trainer_v2_val` 26→26, `test_clhorizon` 15→15,
+  `test_pseudosim` 21→21, `test_ego_guard` 23→23). Those five files gained **one `frame=` kwarg
+  each** to declare `LEGACY_WARP` (§6.1) and pass otherwise unchanged.
+* ⭐ **The guard caught the sibling's brand-new tests mid-session, and they adopted the convention.**
+  `test_heldout_gate_goal_wiring.py` probes on a synthetic 64×64 raster; `assert_warp_frame` refused
+  it. Their file now carries its own `_legacy_frame()` helper returning `clhorizon.LEGACY_WARP`,
+  with the rationale restated in place. **Two independent streams converged on the same declaration
+  without a coordination message** — which is the outcome a named sentinel is for.
 
 **No test was deleted, disabled, xfailed or skipped. Zero new skips in either suite.**
 
@@ -458,8 +613,15 @@ New tests **mine**: `taniteval/tests/test_warp_geometry.py` — **32** (606 → 
 | the 168× E1a horizon result (0.0035 → 0.5877); `K ≤ 20` refused; ceiling `K = 190` | **INHERITED** (cited) | `GATE_PROTOCOL.md` §0.1 / §0.3 |
 | closed-loop numbers are EXTRAPOLATIONS at every admissible horizon | **INHERITED** (cited) | `RETRACTION_LOG.md` **C14** |
 | the yaw warp is geometrically exact for arbitrary depth (`max\|ΔH\| = 0.000e+00`, 30 conditions) | **INHERITED** (cited), and consistent with §2.3's 0.000000 px | `RETRACTION_LOG.md` **C14** |
+| corridor co-primary K=60 overall **0.2257 [0.1468, 0.3120]** n=144/24; junction **0.6256 [0.5070, 0.7205]** n=30/11 | **MEASURED** (ours) | `raw/corridor_v5frame_cv_K60.json` |
+| corridor co-primary K=100 overall **0.3775 [0.2784, 0.4766]** n=120/24; junction **0.8267 [0.7800, 0.8600]** n=18/8 | **MEASURED** (ours) | `raw/corridor_v5frame_cv_K100.json` |
+| paired renderer effect: peak \|cross-track\| **Δ −0.9110 [−1.7359, −0.1309] separated**; corridor rate **−0.0208 [−0.0556, +0.0139] not separated**; ADE@2s **−0.0127 [−0.0398, +0.0071] not separated**; n=144/24 | **MEASURED** (ours) | `raw/paired_renderer_effect_K60.json`, `paired_episode_cluster_bootstrap` B=2000 |
+| `check` renders **CONTINUE** (horizon-honest, K=100), **INCOMPLETE** without the corridor, **RESTART** on a breached co-primary / junction / secondary, and REFUSES K≤20, K>190 and a horizon mismatch | **MEASURED** (ours) | `raw/gate_check_*.json` + `raw/gate_matrix_v5frame.log` |
+| `nonav_route_beats_majority` printed as VOID / INSTRUMENT-FAIL, excluded from the kill conjunction, in every verdict incl. CONTINUE | **MEASURED** (ours) | same |
+| the `cond_vtarget`/`vt_band` crash is fixed | **INHERITED** (sibling commit `8e3491f`, not re-verified by me) | that commit + the green combined suites |
 | pod2 quota healthy: **395 MB/s** by real `dd` (500 MiB, `oflag=direct`) | **MEASURED** (ours) | this session |
 | pod1 is training | **NOT PROBED** | pod1 was not contacted at all |
+| pod3 is running the D-B YouTube retry | **NOT PROBED** | pod3 was not contacted at all |
 
 🔒 No clip UUID appears in this document, in any artifact, or in any test fixture — counts, digests
 and geometry only.
@@ -470,6 +632,17 @@ and geometry only.
 
 ⭐ **STAGED, NEVER PUSHED.** I ran no `git commit`, no `git push`, and switched no branch. I
 `git add`ed only my own paths.
+
+🔴 **BUT NOTE WHERE THE CODE ACTUALLY LANDED — this is the CLAUDE.md hazard, live.** While I was
+running on pod2, a sibling stream committed **`8e3491f` ("vt_band is now a PRICED decision…")**, and
+because `git commit` takes the **whole index**, that commit **swallowed my entire staged renderer
+change**: `clhorizon.py` (+433), `pseudosim.py`, `test_warp_geometry.py` (378 lines),
+`train_flagship_v4.py`, `heldout_gate.py` and the five `LEGACY_WARP` test edits. ⛔ **Nothing is
+lost — everything is in git** — but **the renderer-geometry work is NOT findable from that commit's
+message**, and an earlier commit similarly carries `incoming/2026-07-27-renderer-geometry/code/` and
+`raw/warp_realframes_2026-07-27.json`. **`git log --oneline -- taniteval/taniteval/clhorizon.py` is
+the only way to find it.** Flagging so the registry/lineage owner records it rather than discovering
+it in an audit.
 
 | artifact | where it lives | only one place? |
 |---|---|---|
@@ -487,7 +660,8 @@ and geometry only.
 | `raw/warp_realframes_2026-07-27.json` | repo (staged) + `pod2:/workspace/v5gate/geom/` | no |
 | `raw/corridor_v5frame_cv_K60.json`, `…_cv_K100.json`, `…_pix_K60.json`, `…_pix_K60_LEGACYWARP.json` | repo (staged) + `pod2:` | no |
 | `raw/paired_renderer_effect_K60.json` | repo (staged) + `pod2:` | no |
-| `raw/gate_check_*.json`, `raw/gate_matrix_v5frame.log`, `raw/cards/` | repo (staged) + `pod2:/workspace/v5gate/geom/` | no |
+| `raw/gate_check_K100_{CONTINUE,PASS,FALSIFIER,T035,NO_CORRIDOR,SECONDARY_FAIL}.json`, `raw/gate_check_K60_PASS.json`, `raw/gate_matrix_v5frame.log` | repo (staged) + `pod2:/workspace/v5gate/geom/raw/` | no |
+| the gate cards (`pod2:/workspace/v5gate/geom/gates/*.card.json`) | **`pod2:` ONLY** | ⚠️ **YES — pod only, deliberately.** They are INSTRUMENT PROBES for a reference policy, not v5 cards; committing them into `Project Steering/Gates/` would put non-gates in the gate registry. Every card's content is echoed in `raw/gate_matrix_v5frame.log`. |
 | the per-window `*.pt` dumps (`corridor_v5frame_*_perwindow_K*.pt`) | **`pod2:/workspace/v5gate/geom/` ONLY** | ⚠️ **YES — pod only.** Deliberate: they are large tensor dumps, and every number derived from them is in the staged JSON. **They are regenerable in ~10 min from `code/corridor_v5frame_K60.py` with the command recorded in each JSON.** If the PI wants them durable, HF-relay them (they are ≪ 1 GB). |
 
 ⚠️ **Not mine, and not staged by me:** `git status` also shows `.claude/settings.local.json`
@@ -505,11 +679,13 @@ and geometry only.
    the correct change and it is *required* — without it the guard would refuse and the run would
    die at the first probe — but it is a decision-grade instrument and the PI should see it. It is
    in the diff, not in a README.
-2. 🔴 **STILL OPEN, and it is now the #1 blocker: `V5_GATEABLE` §3.5 / §6.0** — the held-out gate
-   crashes at its first probe with `ValueError: cond_vtarget is on but no vt_band supplied`.
-   ⛔ **Not fixed here** (it is a semantic choice about what v5 stops on, and a sibling stream is on
-   it — `…/2026-07-27-vtband-decision/`). **Both defects sat on the same call stack; the geometry
-   one is now removed, which makes the crash the next thing between v5 and a launch.**
+2. ✅ **CLOSED WHILE I RAN, by a sibling: `V5_GATEABLE` §3.5 / §6.0** — the `ValueError:
+   cond_vtarget is on but no vt_band supplied` crash. Commit **`8e3491f`** ("vt_band is now a
+   PRICED decision…") lands `HeldoutGateConfig.goal_option` and the `goal_kwargs_fn(states, v0)`
+   signature. ⛔ **Not my work and not re-verified by me — INHERITED.** ⭐ **But it means the two
+   defects that sat on the same call stack are BOTH now removed**, and the full `stack/` +
+   `taniteval/` suites are green in the combined state (**1522 + 638, 0 failures**), which is the
+   one thing about it I did measure.
 3. ⚠️ **The deployed warp's principal point is `c = 128` where the deployed frame's centre is
    `127.5`** (§5.2). Half a pixel at yaw-only, **1.42 px at `dlat = 3 m`**. Deliberately NOT fixed —
    fixing it moves every published closed-loop number. **Now measured and on the record.** A PI call

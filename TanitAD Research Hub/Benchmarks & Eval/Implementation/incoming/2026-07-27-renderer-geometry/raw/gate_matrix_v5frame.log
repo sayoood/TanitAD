@@ -1,0 +1,327 @@
+Mon Jul 27 17:25:57 UTC 2026
+=== both batches finished ===
+########## PAIRED: corrected re-render vs the shipped 266/128 warp ######
+[taniteval] tanitad OVERRIDE -> /workspace/v5gate/stack (/workspace/v5gate/stack/tanitad/__init__.py)
+Traceback (most recent call last):
+  File "/workspace/v5gate/geom/paired_renderer_effect.py", line 142, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/workspace/v5gate/geom/paired_renderer_effect.py", line 129, in main
+    or abs(ov["paired_delta_corrected_minus_legacy"]["mean"]) > 0.0),
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'mean'
+PAIRED_EXIT=0
+
+########## GATE MATRIX ##################################################
+[taniteval] tanitad OVERRIDE -> /workspace/v5gate/stack (/workspace/v5gate/stack/tanitad/__init__.py)
+{
+  "ade_0_2s": {
+    "mean": 0.7153,
+    "lo": 0.4846,
+    "hi": 0.9672,
+    "ci95": 0.2413,
+    "se": 0.1253,
+    "reducer": "mean",
+    "n_windows": 120,
+    "n_episodes": 24,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+  },
+  "eval_json": "/workspace/v5gate/geom/eval_v5frame-CVREF-176x624_diagnostic.json",
+  "log": "/workspace/v5gate/geom/v5frame-CVREF-176x624_log.jsonl"
+}
+MINT_EXIT=0
+
+############ 1. register K=20  -> MUST BE REFUSED (blind horizon) #######
+[gate] REFUSING to register a co-primary at K=20: that is at or below ade_0_2s' own horizon (K=20 = 2.0 s), which is the instrument this co-primary exists to replace. MEASURED (E1a, e1a_horizon_heldout44_K185.json, 43 paired windows): corridor departure 0.0035 at K=20 vs 0.5877 at K=185 — a ~168x difference the 2 s horizon cannot see.
+EXIT_K20=1
+
+############ 2. register K=200 -> MUST BE REFUSED (above ceiling) ######
+[gate] REFUSING a co-primary at K=200: the structural ceiling on this corpus is K=190 (19.0 s). PhysicalAI clips are 190-199 frames and a window exists only if T - W - K >= 1, so no episode can produce a window at that horizon (E1a _horizon_ceiling_note; taniteval.corridor.horizon_ceiling).
+EXIT_K200=1
+
+############ 3. register the ADMISSIBLE cards ###########################
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=100 T=0.99 exit=0
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=100 T=0.35 exit=0
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=100 T=0.01 exit=0
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=60 T=0.99 exit=0
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=60 T=0.35 exit=0
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTERED K=60 T=0.01 exit=0
+
+##### 4. K=100 card + K=100 corridor + bar 0.99 -> COMPLETE, HORIZON-HONEST
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:09.361955+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.99 @ K=100 (10.0 s)
+  overall  = 0.3775 [0.2784, 0.4766] (episode_cluster_bootstrap, n=120 windows / 24 episodes) -> FAIL
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.35375, windows=0.625)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8267 [0.78, 0.86] (n=18 windows / 8 episodes) -> FAIL
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: co_primary.corridor_departure_rate
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=120 windows / 24 episodes, surface=closed_loop
+-> /workspace/v5gate/geom/raw/gate_check_K100_PASS.json
+EXIT_K100_PASS=0
+
+##### 5. THE CO-PRIMARY FALSIFIER: bar 0.01 -> must FAIL ################
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:11.261572+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.01 @ K=100 (10.0 s)
+  overall  = 0.3775 [0.2784, 0.4766] (episode_cluster_bootstrap, n=120 windows / 24 episodes) -> FAIL
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.35375, windows=0.625)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8267 [0.78, 0.86] (n=18 windows / 8 episodes) -> FAIL
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: co_primary.corridor_departure_rate
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=120 windows / 24 episodes, surface=closed_loop
+-> /workspace/v5gate/geom/raw/gate_check_K100_FALSIFIER.json
+EXIT_K100_FALSIFIER=0
+
+##### 6. the PREP-family bar 0.35 at K=100 #############################
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:10.357126+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.35 @ K=100 (10.0 s)
+  overall  = 0.3775 [0.2784, 0.4766] (episode_cluster_bootstrap, n=120 windows / 24 episodes) -> FAIL
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.35375, windows=0.625)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8267 [0.78, 0.86] (n=18 windows / 8 episodes) -> FAIL
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: co_primary.corridor_departure_rate
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=120 windows / 24 episodes, surface=closed_loop
+-> /workspace/v5gate/geom/raw/gate_check_K100_T035.json
+EXIT_K100_T035=0
+
+##### 7. SAME card, NO corridor -> must render INCOMPLETE ###############
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:09.361955+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.99 @ K=100 (10.0 s)
+  NOT MEASURED -> no --corridor-json supplied. The co-primary is a taniteval.corridor block on held-out windows; the gate refuses to infer it from anything else.
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: INCOMPLETE — the pre-registered CO-PRIMARY (corridor_departure_rate @ K=100, 10.0 s) was not measured: no --corridor-json supplied. The co-primary is a taniteval.corridor block on held-out windows; the gate refuses to infer it from anything else.. ade_0_2s alone may not decide this gate — it is MEASURED blind to corridor departure at the event's own horizon.
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=? windows / ? episodes, surface=?
+  !! NOT horizon-honest: the co-primary was not measured
+-> /workspace/v5gate/geom/raw/gate_check_K100_NO_CORRIDOR.json
+EXIT_K100_NO_CORRIDOR=0
+
+##### 8. SECONDARY FALSIFIER (breached values) ##########################
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:09.361955+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.99 @ K=100 (10.0 s)
+  overall  = 0.3775 [0.2784, 0.4766] (episode_cluster_bootstrap, n=120 windows / 24 episodes) -> FAIL
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.35375, windows=0.625)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8267 [0.78, 0.86] (n=18 windows / 8 episodes) -> FAIL
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 9.99 <= 0.55 -> FAIL
+[secondary] miss_2m = 0.99 <= 0.1 -> FAIL
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: wm_canary_ade_2s = 9.99 <= 0.55, miss_2m = 0.99 <= 0.1
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=120 windows / 24 episodes, surface=closed_loop
+-> /workspace/v5gate/geom/raw/gate_check_K100_SECONDARY_FAIL.json
+EXIT_K100_SECONDARY_FAIL=0
+
+##### 9. a K=60 corridor against the K=100 card -> must be REFUSED ######
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:09.361955+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+[gate] REFUSING: corridor block is at K=60 (6.0 s) but the card pre-registered K=100 (10.0 s). Re-render at the registered horizon, or register a new card before the run — not after seeing the number.
+EXIT_K100_WITH_K60_CORRIDOR=1
+
+##### 10. K=60 card + K=60 corridor -> COMPLETE but NOT horizon-honest ##
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:26:12.254663+00:00 — gate step 0, primary ade_0_2s <= 0.6 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.6 -> FAIL  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.99 @ K=60 (6.0 s)
+  overall  = 0.2257 [0.1468, 0.312] (episode_cluster_bootstrap, n=144 windows / 24 episodes) -> FAIL
+  OOD      = PARTIAL EXTRAPOLATION — a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.2309, windows=0.4167)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.6256 [0.507, 0.7205] (n=30 windows / 11 episodes) -> FAIL
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.
+        RE-ARMS WHEN : a run trains with --labels-v2 and --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: RESTART (NOT-CONTINUE) — pre-registered kill criteria FAILED on MEASURED values: co_primary.corridor_departure_rate
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=60 (6.0 s, 32% of the K=190 corpus ceiling), n=144 windows / 24 episodes, surface=closed_loop
+  !! NOT horizon-honest: K=60 (6.0 s) is below the horizon-honest floor K=100 (10.0 s): admissible, but the verdict carries the qualifier.
+-> /workspace/v5gate/geom/raw/gate_check_K60_PASS.json
+EXIT_K60_PASS=0
+ALL_DONE
+AFTER_ALL_DONE
+[gate] ade_0_2s role: diagnostic
+[gate] OK: restart budget 0/2 for lever family 'encoder-geometry'
+REGISTER_EXIT=0
+
+=== GATE: v5frame-CVREF-176x624 ===
+pre-registered 2026-07-27T17:42:37.672343+00:00 — gate step 0, primary ade_0_2s <= 0.99 from held-out taniteval eval JSON
+current step 0 | 0.0 GPU-h | nan s/step
+[step indexing] 1-indexed (step count: cur >= gate_step) -> REACHED: step 0 >= gate step 0
+[restart budget] restart budget 0/2 for lever family 'encoder-geometry'
+
+[primary/diagnostic] ade_0_2s = 0.7153 (from cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]) <= 0.99 -> PASS  (recorded, does NOT adjudicate)
+
+[co-primary/kill] corridor_departure_rate <= 0.99 @ K=100 (10.0 s)
+  overall  = 0.3775 [0.2784, 0.4766] (episode_cluster_bootstrap, n=120 windows / 24 episodes) -> PASS
+  OOD      = EXTRAPOLATION — NOT a measurement at this horizon
+             ratio None (fires=False, informative=False) OR steps-outside-envelope (fires=True, steps=0.35375, windows=0.625)
+             !! the OOD ratio is a LOWER BOUND here (np.interp CLAMPS at |dlat|=3.0 m / |dyaw|=12.0 deg) — it may NOT be quoted as an in-distribution certificate
+  junction = 0.8267 [0.78, 0.86] (n=18 windows / 8 episodes) -> PASS
+
+[secondary_void] 1 criterion(a) adjudicated INSTRUMENT-FAIL per GATE_PROTOCOL 0.7 — excluded from the kill conjunction, printed in full:
+
+[VOID]  nonav_route_beats_majority    original bar: >=1
+        STATUS       : VOID_BY_CONSTRUCTION
+        ADJUDICATION : INSTRUMENT-FAIL, NEVER MODEL-FAIL
+        AUTHORITY    : GATE_PROTOCOL 0.7
+        IN KILL SET  : NO — structurally excluded (card `secondary_void`, not `secondary`); it did NOT contribute to the verdict
+        MEASURED     : value null on this checkpoint
+        REASON       : route_target is a LOOKUP of the route input, so route_skill is 0.0 BY CONSTRUCTION.
+        RE-ARMS WHEN : --labels-v2 + --v2-route-from-vision
+[secondary] wm_canary_ade_2s = 0.42 <= 0.55 -> PASS
+[secondary] miss_2m = 0.05 <= 0.1 -> PASS
+
+VERDICT: CONTINUE — all pre-registered gates pass
+  step:    1-indexed (step count: cur >= gate_step) — step 0 >= gate step 0
+  horizon: corridor_departure_rate@1.75m K=100 (10.0 s, 53% of the K=190 corpus ceiling), n=120 windows / 24 episodes, surface=closed_loop
+-> /workspace/v5gate/geom/raw/gate_check_K100_CONTINUE.json
+CHECK_EXIT=0
+PASS_BRANCH_DONE

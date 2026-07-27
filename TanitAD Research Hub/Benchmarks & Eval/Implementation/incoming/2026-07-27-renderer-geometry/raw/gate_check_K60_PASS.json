@@ -1,0 +1,206 @@
+{
+  "run": "v5frame-CVREF-176x624",
+  "card": "/workspace/v5gate/geom/gates/v5frame-CVREF-176x624-K60-T099.card.json",
+  "current_step": 0,
+  "gate_step": 0,
+  "gpu_hours": 0.0,
+  "s_per_step": NaN,
+  "step_indexing": {
+    "reached": true,
+    "convention": "1-indexed (step count: cur >= gate_step)",
+    "current_step": 0,
+    "gate_step": 0,
+    "steps_completed": 1,
+    "note": "step 0 >= gate step 0"
+  },
+  "restart_budget_ok": true,
+  "primary": {
+    "metric": "ade_0_2s",
+    "value": 0.7153,
+    "threshold": 0.6,
+    "direction": "<=",
+    "pass": false,
+    "provenance": "cluster_bootstrap (primary, episode_cluster_bootstrap; headline) CI [0.4846, 0.9672]",
+    "role": "diagnostic",
+    "horizon_K": 20,
+    "horizon_s": 2.0,
+    "demotion_note": "PROPOSAL-QUALITY DIAGNOSTIC: read and recorded, but it does not adjudicate on this card. ade_0_2s is measured over K=20 (2.0 s) and is MEASURED blind to corridor departure \u2014 on E1a's 43 paired windows the same trajectories give 0.0035 at K=20 vs 0.5877 at K=185, while the paired ADE@2s delta (0.0109 [-0.0, 0.0312]) is NOT separated."
+  },
+  "co_primary": {
+    "registered": true,
+    "metric": "corridor_departure_rate",
+    "threshold": 0.99,
+    "direction": "<=",
+    "registered_horizon_K": 60,
+    "registered_horizon_s": 6.0,
+    "registered_corridor_m": 1.75,
+    "stratum": "overall",
+    "junction_threshold": 0.5,
+    "source": null,
+    "role": "kill",
+    "adjudicates": true,
+    "role_rationale": null,
+    "becomes_kill_criterion_at": null,
+    "value": 0.2257,
+    "lo": 0.1468,
+    "hi": 0.312,
+    "estimator": "episode_cluster_bootstrap",
+    "n_boot": 2000,
+    "horizon_K": 60,
+    "horizon_s": 6.0,
+    "corridor_primary_m": 1.75,
+    "corridor_thresholds_m": [
+      1.0,
+      1.75,
+      2.5
+    ],
+    "n_windows": 144,
+    "n_episodes": 24,
+    "surface": "closed_loop",
+    "block_version": "1.0.0",
+    "found_in": "top-level",
+    "by_threshold_m": {
+      "1": {
+        "mean": 0.2957,
+        "lo": 0.2133,
+        "hi": 0.3823
+      },
+      "1.75": {
+        "mean": 0.2257,
+        "lo": 0.1468,
+        "hi": 0.312
+      },
+      "2.5": {
+        "mean": 0.1875,
+        "lo": 0.1157,
+        "hi": 0.2681
+      }
+    },
+    "window_departure_rate": 0.4722,
+    "peak_xte_m": 6.1412,
+    "EXTRAPOLATION_frac_steps_lat_over_3m": 0.17106,
+    "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.20544,
+    "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.4167,
+    "ood": {
+      "EXTRAPOLATION_VERDICT": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there",
+      "ratio_is_lower_bound": true,
+      "criterion_1_ratio_over_1p5": {
+        "fires": false,
+        "peak_ratio_mean": null,
+        "informative": false
+      },
+      "criterion_2_steps_outside_measured_envelope": {
+        "fires": true,
+        "frac_steps_any": 0.2309,
+        "frac_windows_any_step_outside": 0.4167
+      },
+      "is_extrapolation": false,
+      "_rule": "E1a's FULL disjunction (e1a_horizon.py:28-30): peak OOD ratio > ~1.5x OR steps leave the MEASURED envelope (|dlat|<=3.0 m, |dyaw|<=12.0 deg). The ratio clamps at the envelope edge, so it is a LOWER BOUND beyond it and cannot be quoted as an in-distribution certificate.",
+      "_canonical_implementation": "taniteval.ood.readjudicate",
+      "EXTRAPOLATION_frac_steps_lat_over_3m": 0.17106,
+      "EXTRAPOLATION_frac_steps_yaw_over_12deg": 0.20544,
+      "EXTRAPOLATION_frac_steps_any": 0.2309,
+      "EXTRAPOLATION_frac_windows_any_step_out_of_envelope": 0.4167,
+      "emitted_verdict": "PARTIAL EXTRAPOLATION \u2014 a minority of windows leave the MEASURED envelope; the OOD ratio is a LOWER BOUND there",
+      "superseded_emitted_verdict": false
+    },
+    "junction": {
+      "value": 0.6256,
+      "measured": true,
+      "lo": 0.507,
+      "hi": 0.7205,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows": 30,
+      "n_episodes": 11,
+      "horizon_K": 60,
+      "peak_xte_m": 19.5759,
+      "definition": "|net heading change over the FIRST 2 s| >= 10 deg (E1a's kinematic signature, held FIXED across horizons). NEVER a topology \u2014 there is no map or lane graph in this corpus.",
+      "adjudicated": true,
+      "threshold": 0.5,
+      "pass": false
+    },
+    "n_by_stratum": {
+      "overall": 144,
+      "junction": 30,
+      "longitudinal": 61,
+      "other": 53
+    },
+    "surface_warning": null,
+    "measured": true,
+    "pass": false,
+    "no_threshold_note": null,
+    "artifact": "/workspace/v5gate/geom/corridor_v5frame_cv_K60.json",
+    "estimator_note": "episode-cluster bootstrap over val EPISODES (taniteval/ci.py). 'overlapping_holdout_se' is refused by this reader, not merely discouraged."
+  },
+  "horizon": {
+    "horizon_honest": false,
+    "adjudicating_metric": "co_primary.corridor_departure_rate",
+    "registered_horizon_K": 60,
+    "registered_horizon_s": 6.0,
+    "measured_horizon_K": 60,
+    "measured_horizon_s": 6.0,
+    "ceiling_K": 190,
+    "frac_of_ceiling": 0.3158,
+    "n_windows": 144,
+    "n_episodes": 24,
+    "n_junction_windows": 30,
+    "surface": "closed_loop",
+    "rendered": "corridor_departure_rate@1.75m K=60 (6.0 s, 32% of the K=190 corpus ceiling), n=144 windows / 24 episodes, surface=closed_loop",
+    "warning": "K=60 (6.0 s) is below the horizon-honest floor K=100 (10.0 s): admissible, but the verdict carries the qualifier."
+  },
+  "secondary_void": [
+    {
+      "metric": "nonav_route_beats_majority",
+      "original_threshold": ">=1",
+      "status": "VOID_BY_CONSTRUCTION",
+      "adjudication": "INSTRUMENT-FAIL, NEVER MODEL-FAIL",
+      "authority": "GATE_PROTOCOL 0.7",
+      "reason": "route_target is a LOOKUP of the route input (refb_labels.route_target = _NAV_TO_ROUTE[nav_cmd]), so route_skill is 0.0 BY CONSTRUCTION and the metric measures the label bug, not the model.",
+      "re_arms_when": "a run trains with --labels-v2 and --v2-route-from-vision",
+      "in_kill_set": false,
+      "adjudicated": false,
+      "value": null,
+      "supplied_as": null,
+      "note": "EXCLUDED from the kill conjunction and PRINTED \u2014 a suppressed criterion that is not printed is indistinguishable from one that passed (GATE_PROTOCOL 0.7 step 3). It did NOT count against the model."
+    }
+  ],
+  "secondary": [
+    {
+      "metric": "wm_canary_ade_2s",
+      "value": 0.42,
+      "op": "<=",
+      "threshold": 0.55,
+      "pass": true
+    },
+    {
+      "metric": "miss_2m",
+      "value": 0.05,
+      "op": "<=",
+      "threshold": 0.1,
+      "pass": true
+    }
+  ],
+  "report_only": [],
+  "verdict_adjudicated_by": [
+    "co_primary.corridor_departure_rate",
+    "secondary(2)"
+  ],
+  "co_primary_role": "kill",
+  "kill_conjunction": {
+    "adjudicated_by": [
+      "co_primary.corridor_departure_rate",
+      "secondary(2)"
+    ],
+    "n_pass": 2,
+    "n_fail": 0,
+    "n_unmeasured": 0,
+    "n_void": 1,
+    "unmeasured": [],
+    "failed": [],
+    "satisfiable": false
+  },
+  "verdict": "RESTART",
+  "not_continue": true,
+  "reason": "pre-registered kill criteria FAILED on MEASURED values: co_primary.corridor_departure_rate",
+  "horizon_honest": false
+}

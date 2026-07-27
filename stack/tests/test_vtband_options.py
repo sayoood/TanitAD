@@ -114,11 +114,29 @@ def test_VT_DROPPED_is_IN_DISTRIBUTION_because_goal_dropout_ships_at_half():
         "v4_config no longer ships goal_dropout=0.5 — the 'DROPPED rows are " \
         "trained' argument is void and VTBAND_DECISION.md must be re-read"
 
-    src = Path(T.__file__).read_text(encoding="utf-8")
-    body = src[src.index("def train("):]
-    assert "goal_dropout" not in body, \
-        "the trainer now touches goal_dropout — re-derive whether the DROPPED " \
-        "rows are still trained at 0.5"
+    # ⚠️ AST, not a substring scan. The original substring form tripped on
+    # ``--heldout-goal``'s own help text, which *documents* goal_dropout = 0.5
+    # rather than setting it — a false positive that would have pressured the
+    # next reader to delete the check. What matters is ASSIGNMENT: any
+    # ``x.goal_dropout = …`` or ``Cfg(goal_dropout=…)`` anywhere in the trainer.
+    import ast
+    tree = ast.parse(Path(T.__file__).read_text(encoding="utf-8"))
+    writes = []
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+            tgts = n.targets if isinstance(n, ast.Assign) else [n.target]
+            for t in tgts:
+                name = (t.attr if isinstance(t, ast.Attribute)
+                        else t.id if isinstance(t, ast.Name) else None)
+                if name == "goal_dropout":
+                    writes.append(f"assign@{n.lineno}")
+        if isinstance(n, ast.Call):
+            writes += [f"kwarg@{n.lineno}" for k in n.keywords
+                       if k.arg == "goal_dropout"]
+    assert not writes, \
+        f"the trainer now WRITES goal_dropout ({writes}) — re-derive whether " \
+        f"the DROPPED rows are still trained at 0.5 before trusting " \
+        f"--heldout-goal dropped"
 
 
 def test_the_dropped_rows_are_real_embedding_rows_distinct_from_UNKNOWN():
@@ -221,18 +239,23 @@ def test_the_gates_probe_grid_has_dlat_zero_so_a_slow_plan_NaNs_recovery():
 # --------------------------------------------------------------------------- #
 # 4. the signature gap                                                         #
 # --------------------------------------------------------------------------- #
-def test_todays_signature_cannot_carry_v0_or_states():
-    """⛔ Why the fix is a SIGNATURE change, not a default change.
+def test_the_shipped_signature_now_CARRIES_v0_and_states():
+    """⭐ INVERTED 2026-07-27 — this pinned the signature gap; it now pins the fix.
 
-    The shipped call is ``self.goal_kwargs_fn(b, self.device)``. ``v0`` is in
-    scope at that line and is not passed; ``states`` does not exist yet."""
+    The old shipped call was ``self.goal_kwargs_fn(b, self.device)``: ``v0`` was
+    in scope at that line and not passed, and ``states`` did not exist yet, so
+    ``band0`` could not be expressed faithfully (``vt_speed = v0``) and
+    ``produced`` could not be expressed at all. Both halves are now inverted —
+    the protocol AND the ordering, because either alone would leave ``produced``
+    unreachable."""
     import tanitad.train.heldout_gate as HGate
     src = Path(HGate.__file__).read_text(encoding="utf-8")
     i = src.index("def traj(self, frames, v0, goal=None):")
-    body = src[i:i + 900]
-    assert "self.goal_kwargs_fn(b, self.device)" in body, body
-    # states is computed AFTER kw is built -> `produced` is unreachable from it
-    assert body.index("kw = (") < body.index("encode_window")
+    body = src[i:i + 1400]
+    assert "self.goal_kwargs_fn(b, self.device)" not in body, body
+    assert "self.goal_kwargs_fn(states, v0d)" in body, body
+    # states is now computed BEFORE kw is built -> `produced` is reachable
+    assert body.index("encode_window") < body.index("kw = ("), body
 
 
 def test_every_option_filters_to_the_heads_own_cond_switches():
@@ -319,7 +342,13 @@ def test_the_harness_is_equivalent_to_the_shipped_planner_when_the_goal_matches(
     ``StatesAwareSurfacePlanner`` must differ from ``DeployableSurfacePlanner``
     ONLY in how ``kw`` is built. Fed the same kwargs, the two must emit the same
     trajectory bit-for-bit — otherwise an "option effect" could be a harness
-    effect."""
+    effect.
+
+    ⭐ Since 2026-07-27 the shipped planner takes the SAME ``(states, v0)``
+    protocol, so this equivalence is now structural rather than coincidental —
+    the shim delegates instead of copying ``traj``'s body. The test is kept
+    because the numbers in ``VTBAND_DECISION.md`` were taken through the shim,
+    and it is also what would catch a future re-divergence."""
     from tanitad.train.heldout_gate import DeployableSurfacePlanner
     world, head, cfg = _real_stack()
     b, W = 3, cfg.predictor.window
@@ -328,7 +357,7 @@ def test_the_harness_is_equivalent_to_the_shipped_planner_when_the_goal_matches(
 
     shipped = DeployableSurfacePlanner(
         world, head, device="cpu",
-        goal_kwargs_fn=lambda n, dev: HG.band0_kwargs(head.cfg, torch.full((n,), 8.0)))
+        goal_kwargs_fn=lambda states, v0_: HG.band0_kwargs(head.cfg, v0_))
     mine = StatesAwareSurfacePlanner(
         world, head, device="cpu", option="band0",
         goal_kwargs_fn=make_goal_kwargs_fn("band0", head.cfg))

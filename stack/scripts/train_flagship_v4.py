@@ -44,6 +44,7 @@ from tanitad.data import parity  # noqa: E402
 from tanitad.models.flagship_v4 import (FlagshipV4Head, V4Config,  # noqa: E402
                                         v4_config)
 from tanitad.train import heldout_gate as _HG  # noqa: E402
+from tanitad.train import heldout_goal as _HGOAL  # noqa: E402
 from tanitad.train.flagship_losses import (LossWeights,  # noqa: E402
                                            build_grounding, flagship_loss,
                                            horizon_plan)
@@ -1066,8 +1067,12 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
         # optimal pick collides 4.7x more often than the rule-optimal one.
         # ---------------------------------------------------------------- #
         if heldout_gate is not None and heldout_gate.due(step):
+            # ⭐ goal_head is passed so --heldout-goal produced is reachable; it is
+            # ignored by every other option. Before 2026-07-27 this call passed no
+            # goal at all and the real head REFUSED it — the run died here, ~2 000
+            # steps in. See heldout_gate.GOAL_OPTION_DEFAULT.
             hrec = heldout_gate.probe(step, world, head, heldout_episodes,
-                                      device=str(device))
+                                      device=str(device), goal_head=goal_head)
             print(json.dumps({"heldout_gate": hrec}, default=str), flush=True)
             log_f.write(json.dumps({"step": step, "heldout_gate": hrec},
                                    default=str) + "\n")
@@ -1360,12 +1365,20 @@ def train(a) -> dict:
             every=a.heldout_every, episodes=a.heldout_episodes,
             stride=a.heldout_stride, n_boot=a.heldout_nboot,
             patience=a.heldout_patience, amp=amp,
-            first_probe_step=a.heldout_every, frame=frame))
+            first_probe_step=a.heldout_every, frame=frame,
+            goal_option=a.heldout_goal))
         hg_eps = val_eps[:a.heldout_episodes]
         print(f"[heldout-gate] ON — every {a.heldout_every} steps on "
               f"{len(hg_eps)} held-out episodes; primary={_HG.PRIMARY_NAME}; "
               f"patience={a.heldout_patience}; re-render frame={frame.tag()} "
               f"({frame.projection}). NOT gated on ade_0_2s.", flush=True)
+        # ⭐ the goal state is part of WHAT THE PROBE MEASURES, so it is printed
+        # as loudly as the primary — a run whose early-stop conditioning is only
+        # discoverable from a JSON field is a run whose stop nobody can read.
+        print(f"[heldout-gate] goal={a.heldout_goal!r} — "
+              f"{_HGOAL.OPTION_MEANING.get(a.heldout_goal, '?')}", flush=True)
+        if a.heldout_goal == _HG.GOAL_OPTION_DEFAULT:
+            print(f"[heldout-gate] ⚠️ {_HG.GOAL_OPTION_PROVENANCE}", flush=True)
     else:
         print("[heldout-gate] ⚠️ OFF — this run has NO held-out early-stop "
               "signal, the cause of the last run's ~29.5 wasted GPU-h.",
@@ -1745,6 +1758,26 @@ def build_parser() -> argparse.ArgumentParser:
                          "rule is that an isolated read is not a refutation")
     ap.add_argument("--heldout-stride", type=int, default=8)
     ap.add_argument("--heldout-nboot", type=int, default=2000)
+    ap.add_argument("--heldout-goal", default=_HG.GOAL_OPTION_DEFAULT,
+                    choices=list(_HGOAL.OPTIONS),
+                    help="⭐ WHAT GOAL STATE THE PROBE CONDITIONS ON. Default "
+                         f"{_HG.GOAL_OPTION_DEFAULT!r} — ⚠️ an AGENT'S CHOICE "
+                         "PENDING THE PI's OVERRIDE (VTBAND_DECISION.md priced "
+                         "the options and declined to choose); flipping it is "
+                         "this one flag and nothing else. 'dropped' = the "
+                         "learned VT_DROPPED/ROUTE_DROPPED rows goal_dropout=0.5 "
+                         "trains on ~50 %% of every batch (in-distribution by "
+                         "construction, largest detectable drop). 'band0' = "
+                         "_goal_inputs' zeros fallback — ⛔ NOT neutral: index 0 "
+                         "is v_stop / ROUTE_LEFT, MEASURED -0.0621 [-0.0878, "
+                         "-0.0371] separated. 'produced' = the model's own "
+                         "goal_head (the deployable surface; right primary for "
+                         "the 10k gate, but its quality drifts as a second head "
+                         "trains). ⛔ 'zeros_naive' is a PRICED TRAP: it also "
+                         "zeroes vt_speed, brakes the probe and NaNs recovery, "
+                         "so the gate reads HEALTHIER while the planner brakes. "
+                         "⛔ 'crash_today' reproduces the pre-2026-07-27 crash "
+                         "on purpose (RED baseline).")
 
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--gate-step", type=int, default=10000)
@@ -1880,6 +1913,35 @@ def preflight_asserts(a) -> list[str]:
                 f"[HELDOUT-GATE] --heldout-patience {a.heldout_patience} would "
                 f"stop on a SINGLE separated probe. An isolated read is not a "
                 f"refutation (standing rule); patience must be >= 2.")
+        # ⛔ THE GOAL STATE. Two of the six options must never reach a 30k run by
+        # accident; both are reachable only by being NAMED, and both are blocked
+        # here so naming them is not enough either.
+        goal = getattr(a, "heldout_goal", _HG.GOAL_OPTION_DEFAULT)
+        if goal == "crash_today":
+            problems.append(
+                "[HELDOUT-GATE] --heldout-goal crash_today is the RED baseline: "
+                "it hands the head NO goal channels, and the real v4/v5 head "
+                "REFUSES that (ValueError: cond_vtarget is on but no vt_band "
+                "supplied). MEASURED: the run dies at its FIRST probe — with "
+                f"--heldout-every {a.heldout_every} that is "
+                f"{a.heldout_every} optimizer steps, several GPU-hours, thrown "
+                "away. It exists to reproduce the defect in a test, not to launch.")
+        if goal == "zeros_naive":
+            problems.append(
+                "[HELDOUT-GATE] --heldout-goal zeros_naive is a PRICED TRAP, not "
+                "a conservative default. It zeroes vt_speed as well as the "
+                "categoricals, so the selector chases v_goal = (v0-5)+ and ranks "
+                "up the maximally decelerating candidate; a braking plan has "
+                "s_along -> 0, which NaNs `recovery` by construction on the "
+                "gate's dlat=0 grid. ⛔ The composite then goes UP: the gate "
+                "reports a HEALTHIER run while probing a planner that brakes. "
+                "MEASURED 0.5685 vs dropped's 0.6383 (VTBAND_DECISION.md §2.3).")
+        if goal in ("band0_vt_only", "band0_route_only"):
+            problems.append(
+                f"[HELDOUT-GATE] --heldout-goal {goal} is a channel-isolation "
+                f"DIAGNOSTIC, not a candidate — it exists to split band0's "
+                f"penalty across the VTARGET and ROUTE channels on a probe "
+                f"harness, not to decide a 30k run's early-stop.")
         if a.heldout_episodes < 4:
             problems.append(
                 f"[HELDOUT-GATE] --heldout-episodes {a.heldout_episodes} is the "
@@ -2023,6 +2085,11 @@ def _staged_command(a) -> str:
             ("--heldout-patience", a.heldout_patience),
             ("--heldout-stride", a.heldout_stride),
             ("--heldout-nboot", a.heldout_nboot),
+            # ⭐ the goal state the probe conditions on CHANGES WHAT THE EARLY-STOP
+            # MEANS (band0 = "you are stopping and turning left" on every window,
+            # MEASURED -0.0621 separated), so it must be explicit in the staged
+            # command — a reconstruction that dropped it would silently re-decide.
+            ("--heldout-goal", a.heldout_goal),
             ("--seed", a.seed), ("--device", a.device)]
     for flag, val in pairs:
         if val is not None and val != "":

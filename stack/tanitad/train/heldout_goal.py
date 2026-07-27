@@ -1,9 +1,17 @@
 """THE ``vt_band`` DECISION — the candidate goal states for the mid-run held-out gate.
 
-⛔ **NOTHING HERE IS WIRED IN AND NO DEFAULT CHANGES.** ``heldout_gate.py`` and
-``train_flagship_v4.py`` are untouched by this module. It exists so the choice
-the PI has to make can be *measured* instead of argued, and so that whichever
-option is chosen is one named import rather than a fresh patch.
+⭐ **WIRED IN 2026-07-27.** *(This module shipped INERT on 2026-07-27 — nothing
+imported it — so ``--heldout-gate`` still died at its first probe. It is now the
+gate's goal source.)* :meth:`tanitad.train.heldout_gate.HeldoutGate.probe` builds
+its ``goal_kwargs_fn`` from :func:`make_goal_kwargs_fn` against
+:attr:`HeldoutGateConfig.goal_option`, whose default is
+:data:`~tanitad.train.heldout_gate.GOAL_OPTION_DEFAULT` == ``"dropped"`` and whose
+trainer flag is ``--heldout-goal``.
+
+⚠️ **``dropped`` is the WIRING stream's choice PENDING THE PI's OVERRIDE** — this
+document priced the options and deliberately did not choose. Every alternative is
+one flag away and nothing else changes. The reasoning is in
+``GOAL_OPTION_DEFAULT``'s own note; the measurements are below.
 
 THE DEFECT THIS PRICES (MEASURED 2026-07-27, pod2, real caches)
 ---------------------------------------------------------------
@@ -118,8 +126,10 @@ patched that way reports a healthier run while probing a planner that brakes.
 
 ⇒ **whichever option is chosen, the fix is a SIGNATURE CHANGE, not a default
 change.** This module therefore standardises on ``goal_kwargs_fn(states, v0)``,
-which every option can express, and keeps the legacy ``(b, device)`` adapters
-only so the naive patch can be measured rather than argued about.
+which every option can express. ⭐ **``DeployableSurfacePlanner`` adopted that
+protocol on 2026-07-27** — the legacy ``(b, device)`` signature is gone from the
+shipped path, and ``traj`` now encodes ``states`` BEFORE it builds ``kw`` so
+``produced`` is reachable at all.
 
 THE OPTIONS
 -----------
@@ -285,7 +295,15 @@ def make_goal_kwargs_fn(option: str, cfg, *, goal_head=None):
         return lambda states, v0: band0_kwargs(cfg, v0)
     if option == "dropped":
         gd = float(getattr(cfg, "goal_dropout", 0.0) or 0.0)
-        if gd <= 0:
+        # ⚠️ The refusal is about FEEDING an untrained embedding row, so it is
+        # scoped to heads that actually have one. A head with neither
+        # cond_vtarget nor cond_route never receives a categorical at all
+        # (``_filter`` returns ``{}``), so there is no untrained row to touch and
+        # refusing would only make the gate unusable against such a head — which
+        # is the "silently disabled early-stop" failure with the sign flipped.
+        conditioned = bool(getattr(cfg, "cond_vtarget", False)
+                           or getattr(cfg, "cond_route", False))
+        if gd <= 0 and conditioned:
             raise ValueError(
                 "option 'dropped' needs goal_dropout > 0 on the TRAINED config: "
                 "with goal_dropout == 0 the VT_DROPPED / ROUTE_DROPPED embedding "
@@ -339,36 +357,37 @@ def make_goal_kwargs_fn(option: str, cfg, *, goal_head=None):
 # the option that does NOT fit today's signature                               #
 # --------------------------------------------------------------------------- #
 class StatesAwareSurfacePlanner:
-    """``DeployableSurfacePlanner`` under the ``(states, v0)`` protocol.
+    """⭐ **NOW A THIN SHIM** over :class:`DeployableSurfacePlanner`.
 
-    ⭐ **The point of this class is to make the signature gap visible and priced.**
-    ``goal_kwargs_fn(batch_size, device)`` receives neither ``v0`` nor ``states``,
-    so it cannot express ``band0`` faithfully (``vt_speed = v0``) and cannot
+    HISTORY, kept because it is the reason the shipped planner looks the way it
+    does. On 2026-07-27 this was a full re-implementation, written to make the
+    signature gap *visible and priced* without touching ``heldout_gate.py``:
+    ``goal_kwargs_fn(batch_size, device)`` received neither ``v0`` nor ``states``,
+    so it could not express ``band0`` faithfully (``vt_speed = v0``) and could not
     express ``produced`` at all (the goal is a function of
-    ``world.encode_window(frames)``, which ``traj`` computes *after* it has
-    already built ``kw``). Wiring ANY option into the shipped gate is therefore
-    this reordering, not a default change:
+    ``world.encode_window(frames)``, which ``traj`` computed *after* it had
+    already built ``kw``).
 
-    .. code-block:: python
+    ⭐ **The shipped planner has since adopted exactly that protocol and that
+    ordering**, so this class no longer re-implements ``traj`` — it *delegates*.
+    That is deliberate: a shim that copied the body would be free to drift from
+    the thing it claims to be equivalent to, and
+    ``test_the_harness_is_equivalent_to_the_shipped_planner_when_the_goal_matches``
+    would then be pinning a copy against its original rather than a wrapper
+    against the code the run actually executes.
 
-        states = self.world.encode_window(frames.to(self.device))
-        kw = (self.goal_kwargs_fn(states, v0d)         # <- states/v0, not (b, device)
-              if self.goal_kwargs_fn is not None else {})
-        out = self.head(states, v0d, **kw)
-
-    Written as a separate class rather than a patch so ``heldout_gate.py`` stays
-    byte-identical while every option is measured through it. ⚠️ It is otherwise
-    a faithful copy of ``DeployableSurfacePlanner.traj`` — same ``eval()``
-    discipline, same autocast, same ``wp_seq`` read, same train-mode restore — so
-    an option difference measured here is an option difference, not a harness one.
-    ``test_vtband_options.py`` pins that equivalence against a stub head.
+    It survives only so the measurement driver
+    (``…/2026-07-27-vtband-decision/code/vtband_probe.py``) and its raw JSON stay
+    reproducible, and to carry the ``vtband_option`` provenance key those
+    artifacts were written with.
     """
 
     def __init__(self, world, head, *, device="cpu", amp=False,
                  goal_kwargs_fn=None, option="?", expect_dense=True):
         from tanitad.train.heldout_gate import DeployableSurfacePlanner
         self._base = DeployableSurfacePlanner(
-            world, head, device=device, amp=amp, expect_dense=expect_dense)
+            world, head, device=device, amp=amp, expect_dense=expect_dense,
+            goal_kwargs_fn=goal_kwargs_fn, goal_option=option)
         self.world, self.head = world, head
         self.device, self.amp = device, bool(amp)
         self.goal_kwargs_fn = goal_kwargs_fn
@@ -381,23 +400,8 @@ class StatesAwareSurfacePlanner:
             "protocol": "goal_kwargs_fn(states, v0)",
         }
 
-    @torch.no_grad()
     def traj(self, frames, v0, goal=None):
-        was_training = self.head.training
-        self.head.eval(); self.world.eval()
-        try:
-            amp_on = self.amp and str(self.device) == "cuda"
-            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp_on):
-                states = self.world.encode_window(frames.to(self.device))
-                v0d = v0.to(self.device)
-                kw = (self.goal_kwargs_fn(states, v0d)
-                      if self.goal_kwargs_fn is not None else {})
-                if isinstance(goal, dict):
-                    kw = {**kw, **goal}
-                out = self.head(states, v0d, **kw)
-            return out["wp_seq"].float().cpu()
-        finally:
-            self.world.train(was_training); self.head.train(was_training)
+        return self._base.traj(frames, v0, goal)
 
 
 # --------------------------------------------------------------------------- #

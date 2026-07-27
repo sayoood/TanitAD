@@ -122,11 +122,16 @@ def main(argv=None):
         out["by_stratum"][name] = node
 
     ov = out["by_stratum"]["overall"]["corridor_departure_rate"]
+    dl = ov["paired_delta_corrected_minus_legacy"]
+    any_nonzero = any(
+        float(node[k]["paired_delta_corrected_minus_legacy"]["delta"]) != 0.0
+        for node in out["by_stratum"].values() if "n_windows" in node
+        and node["n_windows"] for k in cA)
     out["headline"] = {
         "corridor_departure_rate_overall": ov,
-        "renderer_is_load_bearing": bool(
-            ov["paired_delta_corrected_minus_legacy"].get("separated")
-            or abs(ov["paired_delta_corrected_minus_legacy"]["mean"]) > 0.0),
+        "paired_delta": dl["delta"], "ci": [dl["lo"], dl["hi"]],
+        "separated": bool(dl["separated"]),
+        "renderer_is_load_bearing": bool(any_nonzero),
         "_falsifier": ("a paired delta of exactly 0.0 across every stratum and "
                        "every component would mean the frame is threaded but "
                        "NOT applied — the failure this file exists to catch."),
