@@ -468,6 +468,16 @@ staged.** Nothing lives on a pod: **no pod was contacted.**
 **Reproducing everything measured here:** two staged tensors, two staged JSON diagnostics,
 `taniteval/ci.py` and `stack/`. No GPU, no pod, no network.
 
+⚠️ **Staging note — the repo advanced mid-run.** I staged incrementally, and a sweep by the
+orchestrator committed the first batch (`stack/tanitad/models/flagship_v4.py`,
+`stack/tests/test_flagship_v4.py`, `code/eh2_build_cache.py`, `code/eh2_lambda_tau_sweep.py`,
+`raw/eh2_selftest.json`, and an earlier `code/eh2_gate.py` + `raw/eh2_gate.json`) into HEAD while
+this stream was still running. **I committed nothing and pushed nothing.** Verified with
+`git ls-files --stage` + per-file `git hash-object` comparison, not a scoped `git status --short`,
+which under-reported the set here exactly as warned. The index also carries a **sibling stream's**
+`…/2026-07-26-situation-classifier/SITUATION_CLASSIFIER.md`, untouched by me.
+`cd stack && pytest -q` → **1123 passed, 7 skipped** on the final tree.
+
 ### 9.1 ESCALATIONS — these must not sit in a file
 
 1. ⛔ **The (λ, τ) curve is one forward pass away and that pass has an owner-shaped hole.**
