@@ -94,9 +94,15 @@ failure — and it is the same shape as the tactical brain deciding when to thin
 Imagination-scoring costs `n_candidates × k` predictor steps and **zero camera passes**. That makes
 the efficiency claim structural rather than rhetorical: *think more, look less*.
 
-It also joins the blind-imagination stream: **`T_blind`** — how long the model can drive without the
-front camera — is the horizon over which imagination-based scoring is trustworthy. **One measurement
-serves both.**
+It also joins the blind-imagination stream: ⛔ **`T_blind`'s gloss here OVERCLAIMED and is WITHDRAWN (corrected 2026-07-27).** It is measured
+**against a FROZEN-LATENT comparator**, so it means *"how long imagination beats holding the last
+percept"* — **not** *"how long the model can drive"*. MEASURED: the latent's contribution **peaks at
+1 s (+3.61), is +0.14 at 9 s, and is NEGATIVE at 18.5 s**, so **the 11.5 s headline sits exactly where
+the latent contributes NOTHING and both arms are ~75 m off track.** V5's imagination-scoring trust
+horizon must be re-derived at **≤ 6 s**.
+
+⭐ **What survives, and it is the useful half:** the two streams still share one measurement — *the horizon over which the imagined latent carries anything at all*. It is simply **shorter than the
+headline suggested: ≤ 6 s, peaking at 1 s.** Imagination-scoring must be trusted only inside it.
 
 ⚠️ **§7.3 binding:** state what value of the efficiency metric would be **disappointing** before
 quoting it. H2 MEASURED that the naive framing is information-free — never-escalate saves 85.7 %, a

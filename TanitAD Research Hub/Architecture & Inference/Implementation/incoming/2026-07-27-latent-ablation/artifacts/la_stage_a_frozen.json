@@ -1420,5 +1420,61 @@
       "pct_improvement_INTACT": 63.0,
       "pct_improvement_FROZEN": 8.0
     }
+  },
+  "decoded_speed_is_action_borne": {
+    "true_mean_v0_mps": 12.8997,
+    "note": "`pred_speed` is the decoded step displacement magnitude /dt. R2 is against the TRUE v0 that the action template injects, held constant for the whole rollout.",
+    "matched_pair": [
+      "a_imagination__own__roSTR (INTACT, alpha=0)",
+      "b_frozenlast__own__roSTR (FROZEN, alpha=0)"
+    ],
+    "arms": {
+      "a_blend0.5": {
+        "mean_decoded_speed_0_2s_mps": 13.0495,
+        "r2_with_true_v0": 0.9965,
+        "mean_abs_speed_error_mps": 0.4346,
+        "de_2s_m": 0.7924
+      },
+      "a_ema0.8": {
+        "mean_decoded_speed_0_2s_mps": 13.108,
+        "r2_with_true_v0": 0.9964,
+        "mean_abs_speed_error_mps": 0.4649,
+        "de_2s_m": 0.9864
+      },
+      "a_gtkin": {
+        "mean_decoded_speed_0_2s_mps": 12.9251,
+        "r2_with_true_v0": 0.9953,
+        "mean_abs_speed_error_mps": 0.4374,
+        "de_2s_m": 0.4361
+      },
+      "a_imagination__hold__roSTR": {
+        "mean_decoded_speed_0_2s_mps": 12.9703,
+        "r2_with_true_v0": 0.9953,
+        "mean_abs_speed_error_mps": 0.4349,
+        "de_2s_m": 0.6718
+      },
+      "a_imagination__own__roSTR": {
+        "mean_decoded_speed_0_2s_mps": 12.952,
+        "r2_with_true_v0": 0.9924,
+        "mean_abs_speed_error_mps": 0.6785,
+        "de_2s_m": 1.8165
+      },
+      "b_frozenlast__own__roSTR": {
+        "mean_decoded_speed_0_2s_mps": 13.0656,
+        "r2_with_true_v0": 0.9878,
+        "mean_abs_speed_error_mps": 0.8426,
+        "de_2s_m": 2.2295
+      }
+    },
+    "MATCHED_alpha0_contrast": {
+      "r2_intact": 0.9924,
+      "r2_frozen": 0.9878,
+      "r2_delta": -0.0046,
+      "abs_speed_err_intact": 0.6785,
+      "abs_speed_err_frozen": 0.8426,
+      "de_2s_intact": 1.8165,
+      "de_2s_frozen": 2.2295,
+      "\u26a0\ufe0f reading": "the decoded speed's AGREEMENT with the injected v0 barely moves when the latent is frozen, but its ABSOLUTE error nearly doubles \u2014 so the speed's structure is action-borne while the latent supplies a refinement. A full along/cross attribution needs the sweep's matched alpha=1 pair; this pair is alpha=0 only, which is where the INTACT arm is itself degraded by its own action loop."
+    }
   }
 }

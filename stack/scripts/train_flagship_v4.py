@@ -42,6 +42,7 @@ import refb_labels  # noqa: E402
 from tanitad.data import parity  # noqa: E402
 from tanitad.models.flagship_v4 import (FlagshipV4Head, V4Config,  # noqa: E402
                                         v4_config)
+from tanitad.train import heldout_gate as _HG  # noqa: E402
 from tanitad.train.flagship_losses import (LossWeights,  # noqa: E402
                                            build_grounding, flagship_loss,
                                            horizon_plan)
@@ -156,7 +157,49 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
            # earlier fix was silently inert: MEASURED on
            # flagship-v4.{1-10k,2-step4000} train logs, 0 occurrences each.)
            # Fix is LOG-ONLY: no loss term, no parity effect.
-           **{k: v for k, v in wm_log.items() if k in ("g_op_fwd_ade_m",)},
+           #
+           # ⭐ `g_op_mid_de_m` ADDED 2026-07-27 (v5 prep §1.4). The GROUNDING
+           # INSTRUMENT is a PAIR and is worthless as a single number:
+           #   `g_op_mid_de_m`  — metric inverse dynamics on REAL pairs
+           #                      (`metric_dynamics.py:388`), i.e. how well the
+           #                      encoder's own latents carry ego-motion;
+           #   `g_op_fwd_ade_m` — forward consistency on the IMAGINED rollout
+           #                      (`:389`), i.e. how well the predictor's
+           #                      imagined transitions decode to metres.
+           # The diagnostic quantity is their RATIO (real vs imagined; v1 runs
+           # 2.36x at 0-1k -> 33.3x at 28-30k). With only the imagined half
+           # logged, a rise is unattributable — encoder drift and predictor
+           # drift are indistinguishable, which is why all three v4 logs were
+           # undiagnosable. Both come from the SAME batch and the SAME forward
+           # pass (one `flagship_loss` call, one `rollout_transitions` to k_max
+           # shared by every level), exactly as v1's log does — v1 gets them by
+           # an UNFILTERED `row.update(log)` (`train_flagship4b.py:535`), which
+           # is why it never had this defect.
+           # ⚠️ BOTH filters must change: this one AND the row-writer's tuple
+           # below. Patching one leaves the other starved and the fix silently
+           # inert — the exact failure documented above.
+           **{k: v for k, v in wm_log.items()
+              if k in ("g_op_fwd_ade_m", "g_op_mid_de_m")},
+           # ⭐ THE FOUR SELECTION DIAGNOSTICS — the SECOND half of the M4 fix,
+           # added 2026-07-27 (v5 prep §1.5).
+           #
+           # ⚠️ FOUND BY TEST, 2026-07-27: the M4 row-writer fix was ALREADY
+           # INERT. `_training_loop`'s row tuple lists `sel_gap` / `rank_acc` /
+           # `frac_sel_2x_worse_than_oracle` guarded by `if k in log` — but
+           # `v15_losses` returns them in `plan_l`, which THIS dict never merged.
+           # Only `ade` and `oracle_ade` were ever lifted out of `plan_l`. So the
+           # guard evaluated False every step and all three were dropped exactly
+           # as before, silently, with a fix in place that looked done. This is
+           # the SAME double-filter failure as `g_op_fwd_ade_m` above, on the
+           # very diagnostics that were computed 601x per run and thrown away —
+           # the ones that would have shown held-out selection regressing from
+           # ~step 11,000 while every training term improved (~29.5 GPU-h).
+           # `sel_gate` / `sel_pen_span` arrive separately via `out["telemetry"]`
+           # and only when the longitudinal selection term is active.
+           # LOG-ONLY: detached floats, no loss term, no parity effect.
+           **{k: float(plan_l[k].detach()) for k in
+              ("sel_gap", "rank_acc", "frac_sel_2x_worse_than_oracle")
+              if k in plan_l},
            **fac_log, **sm_log, **strat_log, **out.get("telemetry", {})}
     return total, log
 
@@ -515,7 +558,7 @@ def evaluate_planner(head, world, ds_val, device, *, episodes: int = 40,
 # --------------------------------------------------------------------------- #
 def _save_ckpt_v4(path: Path, *, world, grounding, head, goal_head, opt, step,
                   controller: CanaryController, phases: CurriculumPhases,
-                  milestones=()) -> None:
+                  milestones=(), heldout_gate=None) -> None:
     obj = {
         "model": world.state_dict(), "grounding": grounding.state_dict(),
         "head": head.state_dict(),
@@ -528,6 +571,12 @@ def _save_ckpt_v4(path: Path, *, world, grounding, head, goal_head, opt, step,
                        "_hard_streak": int(controller._hard_streak),
                        "_mult": float(controller._mult)},
         "phases": {"phase_a": phases.phase_a, "phase_b": phases.phase_b},
+        # ⭐ the mid-run held-out gate's state — streak, incumbent and the PINNED
+        # admitted-component set. A restart that reset the streak to 0 would let
+        # a decayed run walk past two bad probes forever by dying every other
+        # probe: the same unwatched-run failure with extra steps.
+        "heldout_gate": (None if heldout_gate is None
+                         else heldout_gate.state_dict()),
     }
     tmp = path.with_suffix(".tmp")
     torch.save(obj, tmp)
@@ -544,10 +593,12 @@ def _save_ckpt_v4(path: Path, *, world, grounding, head, goal_head, opt, step,
 
 
 def load_checkpoint_v4(path: Path, *, world, grounding, head, goal_head, opt,
-                       controller: CanaryController, device) -> int:
+                       controller: CanaryController, device,
+                       heldout_gate=None) -> int:
     """Restore a run from ``ckpt.pt`` and return the step to RESUME at
     (``saved_step + 1``). Restores model/grounding/head/goal_head/opt AND the
-    controller's ``_mult`` / ``_hard_streak`` / ``baseline`` bit-exact."""
+    controller's ``_mult`` / ``_hard_streak`` / ``baseline`` bit-exact — and, when
+    supplied, the mid-run held-out gate's streak/incumbent/pinned ranges."""
     ck = torch.load(path, map_location=device, weights_only=False)
     world.load_state_dict(ck["model"])
     grounding.load_state_dict(ck["grounding"])
@@ -559,6 +610,8 @@ def load_checkpoint_v4(path: Path, *, world, grounding, head, goal_head, opt,
     controller.baseline = float(c.get("baseline", controller.baseline))
     controller._hard_streak = int(c.get("_hard_streak", 0))
     controller._mult = float(c.get("_mult", ck.get("lam_mult", 1.0)))
+    if heldout_gate is not None and ck.get("heldout_gate"):
+        heldout_gate.load_state_dict(ck["heldout_gate"])
     return int(ck["step"]) + 1
 
 
@@ -605,7 +658,8 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                    warmup: int, lr_head: float, lr_trunk: float, gate_step: int,
                    lam_mode: str, canary_horizons, canary_kmax: int,
                    eval_episodes: int, batch: int, milestones,
-                   accum: int = 1, canary_override=None) -> dict:
+                   accum: int = 1, canary_override=None,
+                   heldout_gate=None, heldout_episodes=None) -> dict:
     """Run the joint WM + planner training loop. Auto-resumes from ``ckpt.pt`` if
     present (pod-restart safe). Returns a result dict (final step, canary trace,
     controller multiplier trace, milestone archives) for the smoke proof.
@@ -613,7 +667,17 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
     ``accum`` micro-batches are accumulated per optimizer step (each micro loss is
     scaled by 1/accum), so the EFFECTIVE batch = ``batch × accum``. v4.2 uses
     16 × 4 = 64 to match v1's effective batch (registry §1.2:
-    ``--batch-size 16 --accum 4``); v4.1 ran accum 1 = effective 16, 4× too small."""
+    ``--batch-size 16 --accum 4``); v4.1 ran accum 1 = effective 16, 4× too small.
+
+    ⭐ ``heldout_gate`` (:class:`tanitad.train.heldout_gate.HeldoutGate`) is THE
+    MID-RUN HELD-OUT GATE. At its own fixed cadence it probes the DEPLOYABLE
+    SURFACE on ``heldout_episodes`` under pseudo-simulation and **breaks the loop
+    when the held-out primary has been separated-worse for two consecutive
+    probes**. MEASURED cost of not having it on the v4 30k run: **~29.5 GPU-h,
+    half the run, spent training past the best checkpoint while every training
+    term improved.** It also archives ``ckpt_best.pt`` at every new incumbent, so
+    the best checkpoint survives even when the run is allowed to continue.
+    ``None`` leaves the loop byte-identical to before (the smoke/tests path)."""
     ckpt_p = out_dir / "ckpt.pt"
     log_f = (out_dir / "train_log.jsonl").open("a")
 
@@ -621,8 +685,18 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
     if ckpt_p.exists():
         step = load_checkpoint_v4(ckpt_p, world=world, grounding=grounding,
                                   head=head, goal_head=goal_head, opt=opt,
-                                  controller=controller, device=device)
-        print(f"[resume] step {step} lam_mult={controller._mult}", flush=True)
+                                  controller=controller, device=device,
+                                  heldout_gate=heldout_gate)
+        print(f"[resume] step {step} lam_mult={controller._mult}"
+              + ("" if heldout_gate is None else
+                 f" heldout_worse_streak={heldout_gate.worse_streak}"), flush=True)
+        if heldout_gate is not None and heldout_gate.stop:
+            raise SystemExit(
+                f"[v4] refusing to resume: the mid-run held-out gate already "
+                f"STOPPED this run at step {step - 1}. {heldout_gate.stop_reason} "
+                f"The best checkpoint is ckpt_best.pt. Resuming would spend "
+                f"exactly the GPU-hours this gate exists to save; if that is "
+                f"deliberate, say so and clear the gate state explicitly.")
 
     world.train(); grounding.train(); head.train()
     if goal_head is not None:
@@ -701,6 +775,17 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                                           # reference arms (flagship4b) log it. Adding
                                           # it is LOG-ONLY (no loss/parity effect).
                                           "g_op_fwd_ade_m",
+                                          # ⭐ THE OTHER HALF OF THE GROUNDING
+                                          # INSTRUMENT (added 2026-07-27). Real
+                                          # pairs (`g_op_mid_de_m`) vs imagined
+                                          # pairs (`g_op_fwd_ade_m`), same batch
+                                          # and same forward pass. The ratio is
+                                          # the diagnostic; one number alone
+                                          # cannot separate encoder drift from
+                                          # predictor drift, which is why v4 was
+                                          # undiagnosable (defect #3 of the last
+                                          # run). v1 logs both.
+                                          "g_op_mid_de_m",
                                           # ⭐ THE FOUR SELECTION DIAGNOSTICS, added
                                           # 2026-07-26 (BOOST_PROGRAM M4). They are
                                           # ALREADY COMPUTED EVERY STEP — `v15_losses`
@@ -752,11 +837,45 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
             print(json.dumps(row), flush=True)
             log_f.write(json.dumps(row) + "\n"); log_f.flush()
 
+        # ---------------------------------------------------------------- #
+        # ⭐ THE MID-RUN HELD-OUT GATE (v5 prep §1.6). The single most valuable
+        # item on the card: it converts the measured 59-hour loss into ~20 h.
+        # The primary is the MAP-FREE COMPOSITE, never `ade_0_2s` — the ADE-
+        # optimal pick collides 4.7x more often than the rule-optimal one.
+        # ---------------------------------------------------------------- #
+        if heldout_gate is not None and heldout_gate.due(step):
+            hrec = heldout_gate.probe(step, world, head, heldout_episodes,
+                                      device=str(device))
+            print(json.dumps({"heldout_gate": hrec}, default=str), flush=True)
+            log_f.write(json.dumps({"step": step, "heldout_gate": hrec},
+                                   default=str) + "\n")
+            log_f.flush()
+            if hrec.get("incumbent_step") == step:
+                # the best-so-far checkpoint, kept SEPARATELY from ckpt.pt so the
+                # run's peak survives whatever the tail does. Not having this is
+                # why the last run's best weights had to be recovered by hand.
+                _save_ckpt_v4(out_dir / "ckpt_best.pt", world=world,
+                              grounding=grounding, head=head, goal_head=goal_head,
+                              opt=opt, step=step, controller=controller,
+                              phases=phases, milestones=())
+            if heldout_gate.stop:
+                _save_ckpt_v4(ckpt_p, world=world, grounding=grounding, head=head,
+                              goal_head=goal_head, opt=opt, step=step,
+                              controller=controller, phases=phases,
+                              milestones=milestones, heldout_gate=heldout_gate)
+                print(json.dumps({"EARLY_STOP": True, "step": step,
+                                  "reason": heldout_gate.stop_reason}), flush=True)
+                log_f.write(json.dumps({"step": step, "EARLY_STOP": True,
+                                        "reason": heldout_gate.stop_reason})
+                            + "\n")
+                log_f.flush()
+                break
+
         if step > 0 and step % save_every == 0:
             _save_ckpt_v4(ckpt_p, world=world, grounding=grounding, head=head,
                           goal_head=goal_head, opt=opt, step=step,
                           controller=controller, phases=phases,
-                          milestones=milestones)
+                          milestones=milestones, heldout_gate=heldout_gate)
         step += 1
 
     _save_ckpt_v4(ckpt_p, world=world, grounding=grounding, head=head,
@@ -772,7 +891,21 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                "canary_baseline": controller.baseline, "val": final_ev,
                "lam_mult_final": float(controller._mult),
                "milestone_archives": archives,
-               "wallclock_s": round(time.time() - t0, 1)}
+               "wallclock_s": round(time.time() - t0, 1),
+               # the gate's verdict is part of the run record, not a side note:
+               # "why did this run end" must be answerable from metrics.json.
+               "heldout_gate": (None if heldout_gate is None else {
+                   "primary": _HG.PRIMARY_NAME,
+                   "refused_primary": _HG.REFUSED_PRIMARY,
+                   "early_stopped": bool(heldout_gate.stop),
+                   "stop_reason": heldout_gate.stop_reason,
+                   "worse_streak": int(heldout_gate.worse_streak),
+                   "best_step": (None if heldout_gate._incumbent is None
+                                 else heldout_gate._incumbent.step),
+                   "best_ckpt": ("ckpt_best.pt"
+                                 if (out_dir / "ckpt_best.pt").exists() else None),
+                   "n_probes": len(heldout_gate.history),
+                   "history": heldout_gate.history})}
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2),
                                           encoding="utf-8")
     log_f.close()
@@ -781,7 +914,10 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                        "milestone_archives")}}), flush=True)
     return {"final_step": step - 1, "canary_trace": canary_trace,
             "mult_trace": mult_trace, "archives": archives, "metrics": metrics,
-            "ckpt": str(ckpt_p)}
+            "ckpt": str(ckpt_p),
+            "early_stopped": bool(heldout_gate is not None and heldout_gate.stop),
+            "heldout_history": ([] if heldout_gate is None
+                                else heldout_gate.history)}
 
 
 def train(a) -> dict:
@@ -954,6 +1090,25 @@ def train(a) -> dict:
         "args": vars(a),
     }, indent=2, default=str), encoding="utf-8")
 
+    # ⭐ THE MID-RUN HELD-OUT GATE. The probed episodes are a FIXED prefix of the
+    # val split — the same episodes every probe, which is what makes the paired
+    # episode-cluster bootstrap valid (and what WindowAlignmentError enforces).
+    hgate, hg_eps = None, None
+    if getattr(a, "heldout_gate", True):
+        hgate = _HG.HeldoutGate(_HG.HeldoutGateConfig(
+            every=a.heldout_every, episodes=a.heldout_episodes,
+            stride=a.heldout_stride, n_boot=a.heldout_nboot,
+            patience=a.heldout_patience, amp=amp,
+            first_probe_step=a.heldout_every))
+        hg_eps = val_eps[:a.heldout_episodes]
+        print(f"[heldout-gate] ON — every {a.heldout_every} steps on "
+              f"{len(hg_eps)} held-out episodes; primary={_HG.PRIMARY_NAME}; "
+              f"patience={a.heldout_patience}. NOT gated on ade_0_2s.", flush=True)
+    else:
+        print("[heldout-gate] ⚠️ OFF — this run has NO held-out early-stop "
+              "signal, the cause of the last run's ~29.5 wasted GPU-h.",
+              flush=True)
+
     return _training_loop(
         out_dir=out_dir, device=device, amp=amp, world=world, grounding=grounding,
         head=head, goal_head=goal_head, opt=opt, plan=plan, cfg=cfg, phases=phases,
@@ -963,7 +1118,7 @@ def train(a) -> dict:
         gate_step=a.gate_step, lam_mode=a.lambda_plan,
         canary_horizons=(5, 10, 15, 20), canary_kmax=20,
         eval_episodes=a.eval_episodes, batch=a.batch, accum=a.accum,
-        milestones=milestones)
+        milestones=milestones, heldout_gate=hgate, heldout_episodes=hg_eps)
 
 
 def _is_from_scratch(a) -> bool:
@@ -1063,7 +1218,8 @@ def _assert_trunk_trainable(world, opt, lr_trunk: float) -> dict:
 # + milestone archive on toy episodes across phases A/B/C, in seconds.
 # ============================================================================
 
-def smoke_loop(tmp_dir: str | None = None) -> dict:
+def smoke_loop(tmp_dir: str | None = None, heldout_gate=None,
+               heldout_episodes=None) -> dict:
     """The acceptance proof for P4: run the real ``_training_loop`` on toy episodes
     (tiny config, ~6 steps spanning phases A/B/C), then show:
 
@@ -1087,6 +1243,7 @@ def smoke_loop(tmp_dir: str | None = None) -> dict:
 
     torch.manual_seed(0)
     out_dir = Path(tmp_dir or tempfile.mkdtemp(prefix="v4smoke_"))
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     def build():
         cfg = flagship4b_smoke_config()
@@ -1142,7 +1299,10 @@ def smoke_loop(tmp_dir: str | None = None) -> dict:
         lw=lw, controller=controller, dl=dl, ds_val=ds, steps=6, log_every=1,
         eval_every=1, save_every=2, warmup=1, lr_head=1e-4, lr_trunk=1e-4,
         gate_step=gate, lam_mode="sched", canary_horizons=ch, canary_kmax=ck_max,
-        eval_episodes=4, batch=4, milestones=milestones, canary_override=override)
+        eval_episodes=4, batch=4, milestones=milestones, canary_override=override,
+        heldout_gate=heldout_gate,
+        heldout_episodes=(eps[:2] if heldout_episodes is None
+                          else heldout_episodes))
 
     # resume proof: fresh modules + controller, restore from ckpt.pt, check state.
     cfg2, plan2, world2, grounding2, head2, goal_head2, opt2 = build()
@@ -1170,6 +1330,11 @@ def smoke_loop(tmp_dir: str | None = None) -> dict:
                    "mult_saved": float(controller._mult),
                    "mult_restored": float(controller2._mult),
                    "mult_bit_exact": float(controller._mult) == float(controller2._mult)},
+        # the mid-run held-out gate's observable effect on the LOOP
+        "early_stopped": res.get("early_stopped", False),
+        "heldout_history": res.get("heldout_history", []),
+        "best_ckpt_present": (out_dir / "ckpt_best.pt").exists(),
+        "train_log": str(out_dir / "train_log.jsonl"),
     }
 
 
@@ -1247,6 +1412,32 @@ def build_parser() -> argparse.ArgumentParser:
                     help="v1 verbatim; [PM] #2 — do NOT raise before speed_benefit_recovered_frac unlocks it")
     ap.add_argument("--s2-film", action="store_true", help="0-for-4 seam family; pre-registered A/B only")
 
+    # --- ⭐ THE MID-RUN HELD-OUT GATE (v5 prep §1.6) ---------------------------
+    # Cause #1 of the last run's failure: NO held-out early-stop signal. MEASURED
+    # ~29.5 GPU-h — half the run — training past the best checkpoint while every
+    # training term improved. ON BY DEFAULT; turning it off takes an explicit
+    # flag and trips the preflight, because the default must be the safe one.
+    ap.add_argument("--heldout-gate", dest="heldout_gate", action="store_true",
+                    default=True,
+                    help="probe the DEPLOYABLE surface on held-out episodes under "
+                         "pseudo-simulation every --heldout-every steps and STOP "
+                         "when the held-out primary (the MAP-FREE COMPOSITE, not "
+                         "ade_0_2s) is separated-worse for two consecutive probes")
+    ap.add_argument("--no-heldout-gate", dest="heldout_gate", action="store_false",
+                    help="⚠️ disables the early-stop that exists because ~29.5 "
+                         "GPU-h were burned without it; trips preflight_asserts")
+    ap.add_argument("--heldout-every", type=int, default=2000,
+                    help="probe cadence in steps (fixed, never data-dependent)")
+    ap.add_argument("--heldout-episodes", type=int, default=8,
+                    help="held-out episodes per probe — the bootstrap's resampling "
+                         "unit, so this is the gate's statistical power")
+    ap.add_argument("--heldout-patience", type=int, default=2,
+                    help="consecutive separated-worse probes that stop the run. "
+                         "1 would stop on a single sample; this program's standing "
+                         "rule is that an isolated read is not a refutation")
+    ap.add_argument("--heldout-stride", type=int, default=8)
+    ap.add_argument("--heldout-nboot", type=int, default=2000)
+
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--gate-step", type=int, default=10000)
     ap.add_argument("--batch", type=int, default=16, help="micro-batch (per forward)")
@@ -1296,6 +1487,39 @@ def preflight_asserts(a) -> list[str]:
     config fails loudly BEFORE any GPU-day is spent."""
     problems = []
     phases = CurriculumPhases(a.phase_a_steps, a.phase_b_steps)
+    # ⭐ CAUSE #1 of the last run's failure, made un-repeatable-by-accident.
+    # ~29.5 GPU-h — half the v4 30k run — went into training past the best
+    # checkpoint because there was NO held-out early-stop signal. Launching
+    # without the gate is now a deliberate, visible act.
+    if not getattr(a, "heldout_gate", True):
+        problems.append(
+            "[HELDOUT-GATE] --no-heldout-gate: this run would have NO held-out "
+            "early-stop signal. MEASURED cost of that on the v4 30k run: ~29.5 "
+            "GPU-h, half the run, spent training past the best checkpoint while "
+            "every training term improved. Drop the flag, or record the reason.")
+    if getattr(a, "heldout_gate", True):
+        if a.heldout_every <= 0 or a.heldout_every > a.steps:
+            problems.append(
+                f"[HELDOUT-GATE] --heldout-every {a.heldout_every} never fires "
+                f"within --steps {a.steps}: the gate would be present and inert, "
+                f"which is worse than absent because it looks like cover.")
+        if a.steps // max(a.heldout_every, 1) < a.heldout_patience + 1:
+            problems.append(
+                f"[HELDOUT-GATE] --steps {a.steps} / --heldout-every "
+                f"{a.heldout_every} allows only {a.steps // max(a.heldout_every, 1)} "
+                f"probes, but the rule needs an incumbent plus "
+                f"{a.heldout_patience} consecutive challengers to ever stop.")
+        if a.heldout_patience < 2:
+            problems.append(
+                f"[HELDOUT-GATE] --heldout-patience {a.heldout_patience} would "
+                f"stop on a SINGLE separated probe. An isolated read is not a "
+                f"refutation (standing rule); patience must be >= 2.")
+        if a.heldout_episodes < 4:
+            problems.append(
+                f"[HELDOUT-GATE] --heldout-episodes {a.heldout_episodes} is the "
+                f"bootstrap's resampling unit; below 4 the interval is not "
+                f"informative and the gate will read 'not separated' forever "
+                f"— an UNPOWERED gate, which is the silent-disable failure.")
     # ⭐ from-scratch XOR warm-start: a real --trunk together with --from-scratch is
     # ambiguous (the trunk would be built then discarded by the random init). Fail
     # loudly so the intent is unmistakable BEFORE a GPU-day.

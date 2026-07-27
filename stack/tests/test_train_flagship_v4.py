@@ -207,6 +207,150 @@ def test_joint_step_log_carries_g_op_fwd_ade_m():
     assert SB.GATE_METRIC == "g_op_fwd_ade_m"
 
 
+# ---------------------------- the GROUNDING INSTRUMENT is a PAIR (v5 prep) ----
+GROUNDING_PAIR = ("g_op_mid_de_m", "g_op_fwd_ade_m")
+
+
+def test_joint_step_log_carries_the_GROUNDING_PAIR_not_just_the_imagined_half():
+    """v5 prep §1.4 — defect #3 of the last run: all three v4 logs carry NO ``g_*``
+    pair, so the real-vs-imagined gap is unmeasurable and v4 is undiagnosable.
+
+    ``g_op_fwd_ade_m`` alone is not the instrument. It is the IMAGINED half; the
+    diagnostic quantity is its ratio to ``g_op_mid_de_m``, the REAL-pair half
+    (``metric_dynamics.py:386-389``). With one number a rise cannot be attributed
+    — encoder drift and predictor drift are indistinguishable. v1 logs both, by
+    an unfiltered ``row.update(log)``.
+    """
+    out = T.smoke()
+    for step, log in out["logs"]:
+        for k in GROUNDING_PAIR:
+            assert k in log, (f"step {step}: the grounding instrument is "
+                              f"incomplete — {k} missing. keys={sorted(log)}")
+            assert log[k] == log[k]                                  # not NaN
+        # the ratio the instrument exists to produce must be computable
+        assert log["g_op_fwd_ade_m"] >= 0.0 and log["g_op_mid_de_m"] >= 0.0
+
+
+def test_the_WRITTEN_ROW_carries_the_pair_and_the_four_selection_diagnostics(
+        tmp_path):
+    """⭐ The test that would have caught BOTH of the last run's logging defects.
+
+    There are TWO filters between a computed metric and ``train_log.jsonl`` — the
+    ``wm_log`` comprehension in ``v4_loss_step`` and the row-writer's key tuple in
+    ``_training_loop``. Patching only one leaves the other starved and the fix
+    SILENTLY INERT: that is exactly what happened to ``g_op_fwd_ade_m`` (MEASURED
+    0 occurrences in flagship-v4.1-10k and v4.2-step4000 *after* the row-writer
+    had been 'fixed'). A test on ``v4_loss_step``'s dict alone cannot see it.
+
+    This reads the ACTUAL JSONL the loop wrote.
+
+    It also pins the four selection diagnostics, which were computed **601 times
+    per run and discarded** — the exact numbers that would have shown held-out
+    selection regressing from ~step 11,000 while every training term improved.
+    """
+    import json
+
+    out = T.smoke_loop(tmp_dir=str(tmp_path))
+    rows = [json.loads(x) for x in
+            Path(out["train_log"]).read_text(encoding="utf-8").splitlines() if x]
+    step_rows = [r for r in rows if "total" in r]
+    assert step_rows, "the loop wrote no per-step rows at all"
+
+    for k in GROUNDING_PAIR:
+        n = sum(1 for r in step_rows if k in r)
+        assert n == len(step_rows), (
+            f"{k} reached the written row in only {n}/{len(step_rows)} rows — "
+            f"a starved filter. Both the v4_loss_step comprehension AND the "
+            f"row-writer tuple must carry it.")
+
+    for k in ("sel_gap", "rank_acc", "frac_sel_2x_worse_than_oracle"):
+        n = sum(1 for r in step_rows if k in r)
+        assert n == len(step_rows), (
+            f"selection diagnostic {k} reached only {n}/{len(step_rows)} written "
+            f"rows; these were computed 601x per run and thrown away.")
+
+
+# ------------------------------------ the MID-RUN HELD-OUT GATE (v5 prep) -----
+def test_preflight_refuses_a_silently_disabled_heldout_gate():
+    """Cause #1 made un-repeatable-by-accident: the gate is ON by default and
+    turning it off is a visible, preflight-tripping act."""
+    assert T.preflight_asserts(_args()) == []                 # ON by default
+    a = T.build_parser().parse_args(["--print-launch", "--no-heldout-gate"])
+    assert a.heldout_gate is False
+    assert any("HELDOUT-GATE" in p and "29.5" in p
+               for p in T.preflight_asserts(a))
+
+
+def test_preflight_catches_a_gate_that_is_present_but_INERT():
+    """A gate that can never fire is worse than none — it looks like cover.
+
+    Three ways to build one, each driven here: a cadence longer than the run, a
+    run too short to hold incumbent+patience probes, and patience below 2.
+    """
+    assert any("never fires" in p
+               for p in T.preflight_asserts(_args(heldout_every=99999)))
+    assert any("consecutive challengers" in p
+               for p in T.preflight_asserts(_args(steps=4000,
+                                                  heldout_every=2000)))
+    assert any("patience must be >= 2" in p
+               for p in T.preflight_asserts(_args(heldout_patience=1)))
+    assert any("UNPOWERED" in p
+               for p in T.preflight_asserts(_args(heldout_episodes=2)))
+
+
+def test_the_training_LOOP_stops_and_banks_the_best_checkpoint(tmp_path):
+    """⭐ The end-to-end proof, on the REAL ``_training_loop``.
+
+    A real :class:`HeldoutGate` is driven with a decaying per-window primary (its
+    pseudo-sim stage is replaced so the test needs no renderer), and the loop
+    must (a) break early, (b) leave ``ckpt_best.pt`` banked at the incumbent, and
+    (c) record the reason in the run's own log.
+
+    The control runs the identical loop with NO gate and shows it runs to the
+    end — so the early stop is attributable to the gate and not to the smoke.
+    """
+    import json
+
+    import numpy as np
+
+    from tanitad.train.heldout_gate import HeldoutGate, HeldoutGateConfig
+
+    eid = [f"ep{e}" for e in range(8) for _ in range(4)]
+    series = iter([0.90, 0.55, 0.20, 0.10, 0.05])
+
+    class _Decaying(HeldoutGate):
+        def _composite_of(self, pw):                     # no renderer needed
+            lvl = next(series)
+            rng = np.random.default_rng(0)
+            return (lvl + rng.normal(0, 0.01, len(eid)), list(eid),
+                    {"grid": None, "traffic_mode": "test", "_estimator": "test"})
+
+        def probe(self, step, world, head, episodes, **kw):
+            val, e, node = self._composite_of(None)
+            rec = self.observe(step, val, e)
+            rec["pseudosim"] = node
+            return rec
+
+    g = _Decaying(HeldoutGateConfig(every=1, first_probe_step=1, n_boot=300,
+                                    patience=2))
+    out = T.smoke_loop(tmp_dir=str(tmp_path), heldout_gate=g)
+
+    assert out["early_stopped"], "the gate did not stop a decaying run"
+    assert out["final_step"] < 5, (
+        f"the loop ran to step {out['final_step']} despite the gate firing")
+    assert out["best_ckpt_present"], "the best checkpoint was not banked"
+    assert g.stop_reason and "separated-WORSE" in g.stop_reason
+
+    rows = [json.loads(x) for x in
+            Path(out["train_log"]).read_text(encoding="utf-8").splitlines() if x]
+    assert any(r.get("EARLY_STOP") for r in rows), (
+        "the run's own log does not say why it ended")
+
+    # the control: same loop, no gate -> it runs to the end
+    ctl = T.smoke_loop(tmp_dir=str(tmp_path / "ctl"))
+    assert not ctl["early_stopped"] and ctl["final_step"] == 5
+
+
 # ------------------------------------------- the full training LOOP (P4) ----
 def test_smoke_loop_proves_loop_checkpoint_controller_archive(tmp_path):
     """The P4 acceptance proof: the real _training_loop on toy episodes across

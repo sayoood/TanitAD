@@ -298,6 +298,55 @@ def main():
               f"{b['gain_FROZEN_ci95']}  ratio {b['ratio_intact_over_frozen']}× "
               f"disjoint={b['intervals_disjoint']}", flush=True)
 
+    # ---- ⭐ IS THE DECODED SPEED ACTION-BORNE OR LATENT-BORNE? -------------- #
+    # The integrator hypothesis says the longitudinal component rides the
+    # CONSTANT true `v0` in the action template, not the latent. If so, freezing
+    # the latent should leave the decoded speed's agreement with `v0` almost
+    # untouched — while the PATH error moves by 3x. Rung 1 kept `pred_speed` for
+    # a MATCHED alpha=0 INTACT/FROZEN pair, so this is checkable with no GPU.
+    ps = d.get("pred_speed", {})
+    v0 = d["v_last"].double().numpy().ravel()
+    spd = {"true_mean_v0_mps": round(float(v0.mean()), 4),
+           "note": ("`pred_speed` is the decoded step displacement magnitude "
+                    "/dt. R2 is against the TRUE v0 that the action template "
+                    "injects, held constant for the whole rollout."),
+           "matched_pair": ["a_imagination__own__roSTR (INTACT, alpha=0)",
+                            "b_frozenlast__own__roSTR (FROZEN, alpha=0)"],
+           "arms": {}}
+    for k in sorted(ps):
+        v = ps[k].double().numpy()
+        m20 = v[:, :20].mean(axis=1)
+        r = float(np.corrcoef(m20, v0)[0, 1])
+        spd["arms"][k] = {
+            "mean_decoded_speed_0_2s_mps": round(float(m20.mean()), 4),
+            "r2_with_true_v0": round(r * r, 4),
+            "mean_abs_speed_error_mps": round(float(np.abs(m20 - v0).mean()), 4),
+            "de_2s_m": (round(float(de[k][:, 19].mean()), 4) if k in de else None)}
+    if ("a_imagination__own__roSTR" in spd["arms"]
+            and "b_frozenlast__own__roSTR" in spd["arms"]):
+        i = spd["arms"]["a_imagination__own__roSTR"]
+        f = spd["arms"]["b_frozenlast__own__roSTR"]
+        spd["MATCHED_alpha0_contrast"] = {
+            "r2_intact": i["r2_with_true_v0"], "r2_frozen": f["r2_with_true_v0"],
+            "r2_delta": round(f["r2_with_true_v0"] - i["r2_with_true_v0"], 4),
+            "abs_speed_err_intact": i["mean_abs_speed_error_mps"],
+            "abs_speed_err_frozen": f["mean_abs_speed_error_mps"],
+            "de_2s_intact": i["de_2s_m"], "de_2s_frozen": f["de_2s_m"],
+            "⚠️ reading": ("the decoded speed's AGREEMENT with the injected v0 "
+                           "barely moves when the latent is frozen, but its "
+                           "ABSOLUTE error nearly doubles — so the speed's "
+                           "structure is action-borne while the latent supplies "
+                           "a refinement. A full along/cross attribution needs "
+                           "the sweep's matched alpha=1 pair; this pair is "
+                           "alpha=0 only, which is where the INTACT arm is "
+                           "itself degraded by its own action loop.")}
+    out["decoded_speed_is_action_borne"] = spd
+    if "MATCHED_alpha0_contrast" in spd:
+        c = spd["MATCHED_alpha0_contrast"]
+        print(f"[A] speed@alpha0  R2 vs true v0: INTACT {c['r2_intact']} -> "
+              f"FROZEN {c['r2_frozen']} (delta {c['r2_delta']:+.4f})  while "
+              f"de@2s {c['de_2s_intact']} -> {c['de_2s_frozen']}", flush=True)
+
     Path(a.out).mkdir(parents=True, exist_ok=True)
     p = Path(a.out) / "la_stage_a_frozen.json"
     p.write_text(json.dumps(out, indent=2), encoding="utf-8")

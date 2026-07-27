@@ -166,6 +166,11 @@ def probe(world, grounding, eps, states, device, stride, ablations,
     per = {ab: {f"{l}_{s}": [] for l in LEVEL_CFG for s in ("mid", "fwd")}
            for ab in ablations}
     per["baseline"]["op_mid_shuffled"] = []
+    # ⚠️ `op_mid_shuffled` permutes partners WITHIN a <=32-window chunk of ONE
+    # episode, where the latent is strongly autocorrelated -- a WEAK mismatch.
+    # `op_mid_gshuffled` takes the partner from a DIFFERENT EPISODE, which is
+    # the honest "this head is fed the wrong latent" control.
+    per["baseline"]["op_mid_gshuffled"] = []
     eid, t0s, dt_num, dt_den = [], [], [], []
     dv0 = {ab: [] for ab in ablations}
     kmax = max(k for _, k in LEVEL_CFG.values())
@@ -237,6 +242,21 @@ def probe(world, grounding, eps, states, device, stride, ablations,
                 tgt = relative_ego_pose(pose_last, fut_p[:, kh - 1])
                 de = de + (dp[..., :2] - tgt[..., :2]).norm(dim=-1)
             per["baseline"]["op_mid_shuffled"].append(
+                (de / len(LEVEL_CFG["op"][0])).cpu())
+
+            # --- the STRONG version: partner from a DIFFERENT EPISODE --------
+            oj = (ep_i + 17) % len(eps)
+            if oj == ep_i:
+                oj = (ep_i + 1) % len(eps)
+            ost = states[oj]
+            de = 0.0
+            for kh in LEVEL_CFG["op"][0]:
+                ridx = torch.randint(int(ost.shape[0]), (z_t.shape[0],),
+                                     generator=gs)
+                dp = grounding.invdyn["op"](z_t, ost[ridx].to(device))
+                tgt = relative_ego_pose(pose_last, fut_p[:, kh - 1])
+                de = de + (dp[..., :2] - tgt[..., :2]).norm(dim=-1)
+            per["baseline"]["op_mid_gshuffled"].append(
                 (de / len(LEVEL_CFG["op"][0])).cpu())
 
             eid += [str(ep.episode_id)] * len(ch)
@@ -345,7 +365,17 @@ def main():
                 "applies_to": "v1 only (the anchor); reported for every arm"},
             "V3_shuffle_control_must_fail": {
                 "rule": "op_mid_shuffled > 1.5x op_mid",
-                "got": round(b["op_mid_shuffled"], 4), "PASS": bool(ok_shuf)},
+                "got": round(b["op_mid_shuffled"], 4), "PASS": bool(ok_shuf),
+                "x_vs_matched": round(
+                    b["op_mid_shuffled"] / max(1e-12, b["op_mid"]), 4),
+                "caveat": "WITHIN-EPISODE permutation -> a weak mismatch; see "
+                          "V3b"},
+            "V3b_cross_episode_shuffle_must_fail": {
+                "rule": "op_mid_gshuffled > 1.5x op_mid",
+                "got": round(b["op_mid_gshuffled"], 4),
+                "PASS": bool(b["op_mid_gshuffled"] > 1.5 * b["op_mid"]),
+                "x_vs_matched": round(
+                    b["op_mid_gshuffled"] / max(1e-12, b["op_mid"]), 4)},
             "V5_dt_self_check": {"rule": "0.09 <= dt <= 0.11",
                                  "got": round(dt, 5), "PASS": bool(ok_dt)},
             "FA_real_side_bit_exact_under_v0_ablation": real_exact},

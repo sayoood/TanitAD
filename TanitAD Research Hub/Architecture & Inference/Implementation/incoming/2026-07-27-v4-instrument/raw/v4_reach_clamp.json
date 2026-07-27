@@ -1,0 +1,162 @@
+{
+ "experiment": "GAP 2 stage 2 - reachability-clamp zero-change test on flagship-v4's OWN fan",
+ "arm": "flagship-v4-fromscratch",
+ "ckpt_step": 29999,
+ "n_windows": 967,
+ "n_candidates": 256,
+ "n_episode_clusters": 44,
+ "metric": "fan_err4",
+ "estimator": {
+  "name": "paired episode-cluster bootstrap",
+  "module": "taniteval/taniteval/ci.py",
+  "n_boot": 2000,
+  "seed": 0,
+  "unit": "episode cluster",
+  "REFUSED": "overlapping_holdout_se"
+ },
+ "band": {
+  "rule": "v_mean in [max(0, v0 - reach), v0 + reach], reach = sel_accel_max * horizon = 2.5 * 2.0 = 5.0 m/s",
+  "provenance": "flagship_v15.py:139,468 - the head's OWN goal clamp applied to the candidates; NOT tuned on held-out error"
+ },
+ "fidelity_dumped_sel_is_argmax_of_dumped_score": 1.0,
+ "MAIN_4wp_convention": {
+  "accel_max": 2.5,
+  "band_mps": "[max(0, v0-5.0), v0+5.0]",
+  "frac_candidates_removed": 0.7529,
+  "frac_windows_with_empty_survivor_set": 0.0,
+  "oracle_survives_frac": 1.0,
+  "oracle_ade_unfiltered": 0.2553,
+  "oracle_ade_after_clip": 0.2553,
+  "as_trained_ade": 0.748,
+  "clipped_ade": 0.748,
+  "windows_where_pick_moves": 0,
+  "n_windows": 967,
+  "paired_delta": 0.0,
+  "paired_ci95": [
+   0.0,
+   0.0
+  ],
+  "paired_separated": false,
+  "miss_at_2m_as_trained": 0.0641,
+  "miss_at_2m_clipped": 0.0641,
+  "speedup_x": 4.0464
+ },
+ "MAIN_dense_20wp": {
+  "accel_max": 2.5,
+  "band_mps": "[max(0, v0-5.0), v0+5.0]",
+  "frac_candidates_removed": 0.7529,
+  "frac_windows_with_empty_survivor_set": 0.0,
+  "oracle_survives_frac": 1.0,
+  "oracle_ade_unfiltered": 0.2054,
+  "oracle_ade_after_clip": 0.2054,
+  "as_trained_ade": 0.5912,
+  "clipped_ade": 0.5912,
+  "windows_where_pick_moves": 0,
+  "n_windows": 967,
+  "paired_delta": 0.0,
+  "paired_ci95": [
+   0.0,
+   0.0
+  ],
+  "paired_separated": false,
+  "miss_at_2m_as_trained": 0.0341,
+  "miss_at_2m_clipped": 0.0341,
+  "speedup_x": 4.0464
+ },
+ "both_directions_tight_bands": {
+  "accel_max_0.5": {
+   "accel_max": 0.5,
+   "band_mps": "[max(0, v0-1.0), v0+1.0]",
+   "frac_candidates_removed": 0.9361,
+   "frac_windows_with_empty_survivor_set": 0.0,
+   "oracle_survives_frac": 0.8666,
+   "oracle_ade_unfiltered": 0.2553,
+   "oracle_ade_after_clip": 0.318,
+   "as_trained_ade": 0.748,
+   "clipped_ade": 0.6662,
+   "windows_where_pick_moves": 168,
+   "n_windows": 967,
+   "paired_delta": -0.0818,
+   "paired_ci95": [
+    -0.1498,
+    -0.0265
+   ],
+   "paired_separated": true,
+   "miss_at_2m_as_trained": 0.0641,
+   "miss_at_2m_clipped": 0.0331,
+   "speedup_x": 15.6609,
+   "MOVES_the_pick": true,
+   "ADE_strictly_worse": false
+  },
+  "accel_max_0.2": {
+   "accel_max": 0.2,
+   "band_mps": "[max(0, v0-0.4), v0+0.4]",
+   "frac_candidates_removed": 0.9721,
+   "frac_windows_with_empty_survivor_set": 0.0,
+   "oracle_survives_frac": 0.6484,
+   "oracle_ade_unfiltered": 0.2553,
+   "oracle_ade_after_clip": 0.4411,
+   "as_trained_ade": 0.748,
+   "clipped_ade": 0.614,
+   "windows_where_pick_moves": 445,
+   "n_windows": 967,
+   "paired_delta": -0.134,
+   "paired_ci95": [
+    -0.2329,
+    -0.0454
+   ],
+   "paired_separated": true,
+   "miss_at_2m_as_trained": 0.0641,
+   "miss_at_2m_clipped": 0.0331,
+   "speedup_x": 35.8407,
+   "MOVES_the_pick": true,
+   "ADE_strictly_worse": false
+  },
+  "accel_max_0.05": {
+   "accel_max": 0.05,
+   "band_mps": "[max(0, v0-0.1), v0+0.1]",
+   "frac_candidates_removed": 0.9927,
+   "frac_windows_with_empty_survivor_set": 0.1055,
+   "oracle_survives_frac": 0.242,
+   "oracle_ade_unfiltered": 0.2553,
+   "oracle_ade_after_clip": 0.6213,
+   "as_trained_ade": 0.748,
+   "clipped_ade": 0.7159,
+   "windows_where_pick_moves": 675,
+   "n_windows": 967,
+   "paired_delta": -0.0321,
+   "paired_ci95": [
+    -0.1682,
+    0.1042
+   ],
+   "paired_separated": false,
+   "miss_at_2m_as_trained": 0.0641,
+   "miss_at_2m_clipped": 0.0445,
+   "speedup_x": 136.0924,
+   "MOVES_the_pick": true,
+   "ADE_strictly_worse": false
+  }
+ },
+ "both_directions_PASS": {
+  "instrument_can_move_the_pick": true,
+  "tight_band_makes_ADE_worse": false
+ },
+ "vocabulary_vs_offset_head": {
+  "emitted_max_mean_speed_mps": 50.0873,
+  "emitted_p99_mean_speed_mps": 45.8416,
+  "anchor_vocabulary_max_mean_speed_mps": 46.9645,
+  "anchor_vocabulary_p99_mean_speed_mps": 44.3801,
+  "offset_head_contribution_mps": {
+   "mean_abs": 1.6705,
+   "p99_abs": 5.8018,
+   "max_abs": 7.2646
+  },
+  "share_of_removed_candidates_whose_ANCHOR_is_already_unreachable": 0.9436,
+  "note": "share ~1 means the clamp removes VOCABULARY, not offset-head excess -- the opposite of the REF-C-XL framing, and it must be reported either way"
+ },
+ "PRE_REGISTERED_VERDICT": {
+  "rule": "flip V4Config.sel_reach_clamp to True ONLY if pick moves on 0 windows AND paired delta == 0.0000 [0,0] AND oracle survives 100% AND the instrument demonstrably CAN move the pick",
+  "FLIP_THE_DEFAULT": false,
+  "DEFAULT_STAYS_OFF": true
+ }
+}

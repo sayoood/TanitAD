@@ -27,7 +27,9 @@ appears nowhere in this folder.
 
 > ## ⭐⭐ **THE COMPARATOR-FREE FORM IS SHARPER STILL, AND IT SPLITS THE PI's DICHOTOMY IN TWO. Against `hold_v0` — go straight at the current speed, ONE SCALAR, no latent at all — the blind model with its OWN undamped action loop is 1.46× WORSE (ratio 0.685 at 2 s, beats it 0/185 steps). With that action loop damped out, the SAME weights and the SAME latent beat it 1.852× at 2 s, separated over 0.7 – 8.6 s (80/185).**
 >
-> ## ⇒ **Both halves of the PI's question are true of different parts of the system. The ACTION loop is not merely un-helpful, it is NET DESTRUCTIVE — it turns a model that beats a one-scalar integrator into one that loses to it. The LATENT is what beats the integrator. "The world model drives blind" is not withdrawn; what must be withdrawn is any claim that it drives blind *through its own action loop*.**
+> ## ⇒ **The ACTION loop the model drives itself with is not merely un-helpful, it is NET DESTRUCTIVE — it turns a model that beats a one-scalar integrator into one that loses to it. What lifts the arm above that integrator is the evolving latent (§3, §3.3), though NOT its speed component, which is action-borne (§3.4). ⇒ "The world model drives blind" is not withdrawn; what must be withdrawn is any claim that it drives blind *through its own action loop*, and any claim that its longitudinal competence is perception.**
+
+> ## ⭐⭐ **AND THE CLEANEST RESOLUTION IS THAT THE PI's DICHOTOMY IS A FALSE ALTERNATIVE — IT SPLITS BY DEGREE OF FREEDOM.** The decoded **speed** tracks the injected constant `v0` at **R² ≈ 0.99 in every arm, INCLUDING the frozen-latent one** (0.9924 → 0.9878, Δ = −0.0046). **The longitudinal channel is kinematic integration of an injected scalar and is essentially indifferent to whether the model is imagining anything.** The **path** is not: freezing the latent costs **3.05×** while that scalar is untouched. ⇒ **"Prediction from imagined semantics" and "integration of the action channel" are both true, of different degrees of freedom, in the same rollout.**
 
 > ## ⭐ **AND RUNG 1's ZERO-TRAINING FIX TURNS OUT TO DEPEND ON THE LATENT BEING ALIVE.** Damping the action from α = 0 to α = 1 is worth **+1.1447 m [1.0485, 1.2513]** on the live-latent arm and only **+0.1792 m [0.1534, 0.2067]** on the frozen-latent one — **6.4× more, intervals disjoint** (9.2× at α = 0.25). ⇒ **The filter is not an action-space repair that would work on anything. It works because there is a live imagined latent whose decode the model's own action was corrupting.**
 
@@ -178,6 +180,10 @@ no ablation and no matched comparator, so no readout or filter mismatch can ente
 | 0.75 | 25 % | ✅ 1.818 | ✅ 0.7 – 8.5 s (79/185) |
 | **1** ⭐ | 0 % | ✅ **1.852** | ✅ **0.7 – 8.6 s (80/185)** |
 
+The two floors themselves, for scale: `hold_v0` `de@2s` **1.2442** [1.1450, 1.3566], constant
+velocity **1.2677** [1.1626, 1.3783]; both have `T_useful@1m` **1.7 s** — i.e. **higher than the
+undamped model's 1.4 s and lower than the damped model's 2.3 s.**
+
 > ### 🔴 **THE SINGLE MOST DIRECT ANSWER TO THE PI, AND IT SPLITS THE QUESTION. Blind, driving its own action loop, v1 is 1.46× WORSE than a one-scalar straight-line integrator and never beats it. Freeze that action loop — same weights, same latent, same readout — and it beats the same integrator by 1.852× at 2 s, separated over 0.7 – 8.6 s. The action loop is net DESTRUCTIVE; the latent is what beats kinematics.**
 
 *(This is the action-space counterpart of X1's finding that a true-`v0` integrator beats every
@@ -203,6 +209,31 @@ repair it would help the frozen arm as much as the live one. It does not — and
 on the same windows; the admissible claim is that **both gains are separated and their 95 % intervals
 do not overlap** at any α, not a CI on the ratio itself.
 
+## 3.4 ⭐ The decoded SPEED is action-borne — the integrator hypothesis, confirmed for the longitudinal degree of freedom
+
+`la_stage_a_frozen.json → decoded_speed_is_action_borne`. Rung 1 kept `pred_speed` for a **matched
+α = 0 INTACT/FROZEN pair**, so this needs no GPU. True mean `v0` = **12.8997 m/s**.
+
+| arm | mean decoded speed 0–2 s | **R² vs the injected true `v0`** | mean abs speed error | `de@2s` |
+|---|---:|---:|---:|---:|
+| `a_imagination__own__roSTR` (**INTACT**, α = 0) | 12.9520 | **0.9924** | 0.6785 m/s | 1.8165 |
+| `b_frozenlast__own__roSTR` (**FROZEN**, α = 0) | 13.0656 | **0.9878** | 0.8426 m/s | 2.2295 |
+| `a_imagination__hold__roSTR` (INTACT, α = 1) | 12.9703 | 0.9953 | 0.4349 m/s | 0.6718 |
+| `a_gtkin` (privileged — the inverse fed TRUE motion) | 12.9251 | 0.9953 | 0.4374 m/s | — |
+
+> ### ⭐ **The decoded speed tracks the injected constant `v0` at R² ≈ 0.99 in EVERY arm — including when the latent is frozen dead. Freezing the latent moves that agreement by −0.0046. The longitudinal degree of freedom is riding the action channel, exactly as the integrator hypothesis says, and it is essentially indifferent to whether the world model is imagining anything at all.**
+
+⚠️ **What this does NOT establish, stated plainly.** The frozen arm's *absolute* speed error nearly
+doubles (0.4349 → 0.8426 m/s at α = 1 vs α = 0 arms; 0.6785 → 0.8426 on the matched α = 0 pair), and
+a sustained ~0.4 m/s speed error integrates to ~0.8 m over 2 s — the same order as the 1.38 m path
+gap. **So "the latent's contribution is purely lateral" is NOT yet supported.** The admissible claim
+is the weaker and still-important one: **the speed's *structure* (its R² against `v0`) is
+action-borne and survives the ablation; the latent supplies a *refinement* to its magnitude.** The
+matched α = 1 pair and a proper along/cross attribution are in the sweep (§4) and are what would
+settle it.
+
+> ### ⇒ **Read together, §3.2–§3.4 say the PI's dichotomy is a FALSE ALTERNATIVE for this architecture. The longitudinal channel IS kinematic integration of an injected scalar (R² 0.99, indifferent to the latent). The path shape is NOT — freezing the latent costs 3.05× while that scalar is untouched. And the action loop the model drives itself with is a third thing again: net destructive, worth −1.14 m.**
+
 ---
 
 ---
@@ -218,6 +249,20 @@ It reached episode 250/600 of the encode and is **I/O-starved**: a sibling strea
 val cache. Forward progress is confirmed (RSS rising monotonically, 22.6 → 31.5 GB). The run is
 deterministic and its window-identity gate is against the committed dump, so contention can move the
 wall-clock but **cannot move a number**.
+
+**⭐ Completing it needs no decisions and no GPU beyond the run already in flight.** `pod2:/workspace/latab/finish.sh` (PID 271843) is armed and runs `la_compact.py` the moment the sweep
+dump appears — including the plumbing self-test at the full K = 185 — so the pod-side work finishes
+unattended. What remains is two zero-GPU commands:
+
+```
+scp tanitad-pod2:/workspace/latab/perwindow/latab_perwindow_compact.pt perwindow/
+python scripts/la_analyze.py --new perwindow/latab_perwindow_compact.pt --out artifacts
+python scripts/la_tables.py                 # re-renders §4-§6 into artifacts/_tables.md
+```
+
+`la_analyze.py` **halts on a failed gate** rather than reporting, so it cannot be run into a quote by
+accident. The whole `compact → analyze → tables` chain was dry-run end-to-end on a synthetic dump
+(§2.3), so it runs first time.
 
 **What lands here when it completes** — six state sources beyond INTACT/FROZEN, at each of
 α ∈ {0, 0.25, 0.75, 1}, each with `de@2s` · `de@6s` · `ade_0_2s` · `T_blind` vs FROZEN · `cost` ·
@@ -270,13 +315,20 @@ binding and this is the case it was written for — `BOOST_PROGRAM.md` §8.4); (
 imagination-scoring trust horizon at ≤ 6 s**, because the 11.5 s figure it currently inherits is not
 a horizon over which the imagined latent is doing anything.
 
-**E-2. 🔴 The deployed blind configuration is WORSE than a one-scalar integrator, and that is a
-stronger statement than "damping helps".** At α = 0 — the model driving its own action loop, which is
-what `own_kinematic` means — `de@2s` is **1.8165 against `hold_v0`'s 1.2442 (ratio 0.685)** and it is
-separated-better than that floor on **0 of 185 steps**. Rung 1 established that damping recovers the
-horizon; this establishes that **without damping the arm loses to the cheapest baseline in the
-program**. ⇒ **No blind-imagination configuration driving its own undamped action loop may be
-deployed or quoted as a capability.** Same class as Rung 1's E-2 (`own_vupd`), one level up.
+**E-2. 🔴 The deployed blind configuration is WORSE than a one-scalar integrator — on BOTH tiers.**
+At α = 0 — the model driving its own action loop, which is what `own_kinematic` means:
+
+| | undamped model (α = 0) | `hold_v0` floor | constant velocity | damped model (α = 1) |
+|---|---:|---:|---:|---:|
+| `de@2s` | ⛔ **1.8165** | **1.2442** [1.1450, 1.3566] | 1.2677 [1.1626, 1.3783] | ✅ 0.6718 |
+| separated-better than `hold_v0` | ⛔ **0 / 185 steps** | — | — | ✅ 80/185 |
+| **`T_useful@1m`** (the M10 capability statistic) | ⛔ **1.4 s** | **1.7 s** | **1.7 s** | ✅ **2.3 s** |
+
+⇒ **The undamped blind arm loses to the cheapest baseline in the program on the METRIC *and* on the
+capability statistic.** Rung 1 established that damping recovers the horizon; this establishes what
+it is recovering *from*. **No blind-imagination configuration driving its own undamped action loop
+may be deployed or quoted as a capability.** Same class as Rung 1's E-2 (`own_vupd`), one level up —
+and note this is not a `T_blind` artefact: both rows here are comparator-free.
 
 **E-3. The latent's contribution is a SHORT-HORIZON phenomenon and dies by 9–12 s.** `R_FROZEN` at
 α = 1: **+3.61 at 1 s → +0.37 at 6 s → +0.14 at 9 s → +0.04 at 12 s → −0.06 at 18.5 s.** ⇒ **Any
