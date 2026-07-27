@@ -1,0 +1,64 @@
+[pseudosim] envelope proof: frac_steps_any=0.0 frac_windows=0.0 verdict='MEASUREMENT — every step stayed inside the MEASURED envelope'
+[pseudosim] grid 21 points: dyaw=[-12.0, -8.0, -4.0, 0.0, 4.0, 8.0, 12.0] dlon=[-10, 0, 10] dlat=[0.0] (lateral REFUSED)
+[pseudosim] 40 val episodes, T in [198,205], dev cuda
+[v4-eval] loaded TRAINED dense anchors from /root/models/flagship-v4-fromscratch-15k/flagship_v4_anchors_dense.pt
+[v4-eval] loaded goal_head (GoalScalarHead in_dim=2048 hidden=128 n_out=4) -- --goal-mode produced is AVAILABLE on this checkpoint
+[v4-eval] MODE B: loaded v4 head cfg from sibling config.json (/workspace/_v4gate/flagship-v4-fromscratch-30k/config.json)
+  n_anchors=256 horizons=1..20 (n=20) cond(states/imag/vtarget/route)=True/False/True/True factorised=True step=29999
+[pseudosim] goal 'oracle' minted for 7964 indices in 121s; refusals 0
+[v4_oracle] 15981 planner calls, 0 rollout steps, 768s
+[v4_blind] 15981 planner calls, 0 rollout steps, 887s
+[cv_holdv0] 15981 planner calls, 0 rollout steps, 417s
+[v4_oracle] PSS=0.5622 [0.5496,0.5725] n_win=15662 n_ep=40
+[v4_blind] PSS=0.3749 [0.3076,0.4368] n_win=15668 n_ep=40
+[cv_holdv0] PSS=0.5705 [0.5558,0.5844] n_win=15478 n_ep=40
+[paired] v4_oracle - v4_blind: PSS delta=0.1882 [0.124,0.2557] separated=True
+[paired] v4_oracle - cv_holdv0: PSS delta=-0.0034 [-0.0138,0.0078] separated=False
+[paired] v4_blind - cv_holdv0: PSS delta=-0.1939 [-0.2595,-0.1332] separated=True
+{
+  "question": "does the protocol separate an arm that CAN see the perturbation from the IDENTICAL arm that cannot? Only the image differs: same checkpoint, same oracle goal, same v0, same grid, same windows.",
+  "sighted_minus_blind_PSS": {
+    "delta": 0.1882,
+    "lo": 0.124,
+    "hi": 0.2557,
+    "ci95": 0.0658,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 15589,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "sighted_minus_blind_ego_progress": {
+    "delta": 0.3464,
+    "lo": 0.2437,
+    "hi": 0.4593,
+    "ci95": 0.1078,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 15442,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "sighted_minus_blind_recovery": {
+    "delta": -0.0564,
+    "lo": -0.0811,
+    "hi": -0.0314,
+    "ci95": 0.0249,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 9068,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "separated": true,
+  "reading": "If this is NOT separated, the protocol has no sensitivity to the perturbation it applies and no arm score from it is admissible. That is the C13 gate on the instrument itself.",
+  "_why_PSS_and_not_recovery_alone": "`recovery` is UNDEFINED for a plan that does not move (its denominator is the plan's own along-track distance), so a blind arm that stalls is excluded from it rather than scored 1.0. The composite is therefore the correct gate quantity."
+}
+[pseudosim] wrote /workspace/_pseudosim/out/pseudosim_v4_30k.json
+PSEUDOSIM_DONE

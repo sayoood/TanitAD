@@ -1,0 +1,117 @@
+{
+  "_what": "BEFORE (sequential rollout) vs AFTER (pseudo-simulation grid) out-of-envelope fractions, same corpus, same function",
+  "_evidence_class": "MEASURED (ours; recomputed from the COMMITTED per-window tensors of the 30 k gate)",
+  "_function": "taniteval.ood.envelope_fractions",
+  "_envelope": {
+    "lat_max_m": 3.0,
+    "yaw_max_deg": 12.0
+  },
+  "sequential_rollout": [
+    {
+      "arm": "flagship_v4_30k",
+      "K": 185,
+      "horizon_s": 18.5,
+      "n_windows": 41,
+      "frac_steps_lat_over_3m": 0.54634,
+      "frac_steps_yaw_over_12deg": 0.35478,
+      "frac_steps_any": 0.58998,
+      "frac_windows_any_step_out_of_envelope": 0.9024,
+      "verdict_class": "EXTRAPOLATION"
+    },
+    {
+      "arm": "flagship_v4_30k",
+      "K": 20,
+      "horizon_s": 2.0,
+      "n_windows": 881,
+      "frac_steps_lat_over_3m": 0.00465,
+      "frac_steps_yaw_over_12deg": 0.05295,
+      "frac_steps_any": 0.05312,
+      "frac_windows_any_step_out_of_envelope": 0.1226,
+      "verdict_class": "PARTIAL_EXTRAPOLATION"
+    },
+    {
+      "arm": "refc_base_30k",
+      "K": 185,
+      "horizon_s": 18.5,
+      "n_windows": 41,
+      "frac_steps_lat_over_3m": 0.50428,
+      "frac_steps_yaw_over_12deg": 0.32063,
+      "frac_steps_any": 0.54581,
+      "frac_windows_any_step_out_of_envelope": 0.9268,
+      "verdict_class": "EXTRAPOLATION"
+    },
+    {
+      "arm": "refc_base_30k",
+      "K": 20,
+      "horizon_s": 2.0,
+      "n_windows": 881,
+      "frac_steps_lat_over_3m": 0.00159,
+      "frac_steps_yaw_over_12deg": 0.04625,
+      "frac_steps_any": 0.04637,
+      "frac_windows_any_step_out_of_envelope": 0.101,
+      "verdict_class": "PARTIAL_EXTRAPOLATION"
+    }
+  ],
+  "pseudo_simulation": {
+    "grid": {
+      "dlat_m": [
+        0.0
+      ],
+      "dyaw_deg": [
+        -12.0,
+        -8.0,
+        -4.0,
+        0.0,
+        4.0,
+        8.0,
+        12.0
+      ],
+      "dlon_steps": [
+        -10,
+        0,
+        10
+      ],
+      "n_points": 21,
+      "lateral_axis": "REFUSED",
+      "lateral_refusal": "The LATERAL grid axis is REFUSED on MEASURED geometry. The flat-road homography's relative displacement error is exactly height_above_road / h_cam (depth-free, |dlat|-free, f-free): 100 % at the camera height, SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the horizon where the ground plane has no preimage. At |dlat| = 2.0 m only 28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar (required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical test at max error 0.0 px, so the test is not vacuous.",
+      "warped_axes": [
+        "heading"
+      ],
+      "unwarped_axes": [
+        "longitudinal (real frames at an index offset)"
+      ]
+    },
+    "n_grid_points": 21,
+    "frac_steps_lat_over_3m": 0.0,
+    "frac_steps_yaw_over_12deg": 0.0,
+    "frac_steps_any": 0.0,
+    "frac_windows_any_step_out_of_envelope": 0.0,
+    "verdict_class": "MEASUREMENT",
+    "falsifier": {
+      "_what": "the assertion CAN fail; these are the values that fail it",
+      "smallest_failing_abs_dyaw_deg": 12.000000001,
+      "smallest_failing_abs_dlat_m": 3.000000001,
+      "example": "GridSpec(dyaw_deg=(12.5,)) raises EnvelopeViolation; it is exercised in taniteval/tests/test_pseudosim.py."
+    }
+  },
+  "reproduction_check": [
+    {
+      "arm": "flagship_v4_30k",
+      "K": 185,
+      "corridor_departure_rate_overall": 0.6388,
+      "committed_overall": 0.6388,
+      "corridor_departure_rate_junction": 0.8432,
+      "committed_junction": 0.8432,
+      "matches": true
+    },
+    {
+      "arm": "refc_base_30k",
+      "K": 185,
+      "corridor_departure_rate_overall": 0.5833,
+      "committed_overall": 0.5833,
+      "corridor_departure_rate_junction": 0.7027,
+      "committed_junction": 0.7027,
+      "matches": true
+    }
+  ]
+}

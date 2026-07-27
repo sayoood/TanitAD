@@ -23,13 +23,21 @@
 | **7** | ⚠️ **The first metric I built was gameable by standing still, and the smoke caught it.** With a `v0 × horizon` denominator, `recovery` scored the **BLIND** arm **+0.597 ABOVE** the sighted one — a planner that barely moves has a small cross-track error and was being paid for it. Denominator replaced by the plan's **own along-track distance**; a stopped plan is now **undefined, never 1.0**. Regression-tested. | `MEASURED` **tier 1** |
 | **8** | ⛔ **Collision and TTC are NOT EMITTED, and no constant is substituted.** The 40-episode val cache carries `{frames_u8, actions, poses, maneuvers, episode_id}` and no cuboids; the cached `episode_id` is `int.from_bytes(clip_id[:4])` and **collides — 242 `clip_index` rows map onto the 40 val ids**. ⇒ the composite is named **`PSS_recovery_progress`** and explicitly **not** a Driving Score. | `MEASURED` **tier 1** |
 | **9** | ⚠️ **Every result records `traffic_mode: log_replay_nonreactive`.** `trafficsim` disabled ⇒ `skip: true` ⇒ literal replay. This was nowhere on record before 2026-07-27; it is now in every node the harness emits. | `MEASURED` (harness) + `INHERITED` (the disclosure) |
+| **10** | ⭐⭐ **THE INSTRUMENT PASSES ITS OWN GATE — 0 % out-of-envelope AND it discriminates.** `v4_oracle` vs the **identical** checkpoint on a destroyed image: **PSS +0.1882 [+0.1240, +0.2557], SEPARATED**, 15 442 rows / 40 episodes, paired episode-cluster bootstrap. Pre-registered condition **R-a**. ⇒ **the EXTRAPOLATION label comes off this surface.** | `MEASURED` **tier 2** (oracle goal, non-reactive) |
+| **11** | ⛔⛔ **AND THE FIRST THING IT MEASURES IS UNFLATTERING: flagship-v4 30 k is INDISTINGUISHABLE FROM CONSTANT VELOCITY.** `PSS` **−0.0034 [−0.0138, +0.0078] n.s.**; `ego_progress` **+0.0055 [−0.0081, +0.0205] n.s.** — and that is the arm's **best case**, on an **ORACLE** goal built from its own future. Pre-registered as **R-c** *before* the numbers landed. | `MEASURED` **tier 2** |
+| **12** | ⛔⛔ **On ERROR RECOVERY it is significantly WORSE than a planner that never steers.** Displaced by up to 12° of heading, `v4_oracle` cancels **6.3 %** of its own induced drift; `cv_holdv0`, which cancels **none by construction**, scores **7.8 %**. Paired **−0.0168 [−0.0332, −0.0008], SEPARATED** — ⚠️ small, and the interval nearly touches zero. **This is exactly the signal open-loop ADE cannot contain** (ρ = −0.36, p = 0.43). | `MEASURED` **tier 2**, ⚠️ small effect |
+| **13** | ⚠️ **`comfort` is dead — at the FLOOR, opposite to the published finding, and for an arithmetic reason.** `|jerk| ≤ 8 m/s³` at `dt = 0.1 s` means an **8 mm** third-difference in the raw waypoints trips it: 0.0000 on both learned arms, 1.0000 on the analytic CV line. The gate dropped it from all three arms. **It is NOT retuned here** — retuning after seeing who fails is metric-shopping. | `MEASURED` **tier 1** (arithmetic) |
 
 ### 0.1 The verdict in one sentence
 
-**Pre-registered outcome A holds on the axis that survives and outcome L-BAD holds on the axis that does
-not: a heading × longitudinal grid inside our measured envelope evaluates at 0 % out-of-envelope and
-separates arms, so the EXTRAPOLATION label comes off — but the lateral axis is refused in code, not just
-in prose, and we ship a protocol NARROWER than NAVSIM v2's and say so.**
+**Pre-registered outcome A holds — with one axis amputated on measured geometry.** A heading ×
+longitudinal grid inside our envelope evaluates at **0.00 %** out-of-envelope against **12.26 %** for the
+same corpus at the standing K = 20 and **90.24 %** at K = 185, and it **separates arms** (sighted vs
+blind, +0.1882 [+0.1240, +0.2557]) — **so the EXTRAPOLATION label comes off, and TanitAD has a real
+closed-loop instrument for the first time.** The lateral axis is refused **in code**, so we ship a
+protocol NARROWER than NAVSIM v2's and say so. ⛔ **And the instrument's first verdict is that
+flagship-v4 30 k, on an oracle goal, is statistically indistinguishable from constant velocity and
+recovers from a heading perturbation slightly but significantly WORSE than not steering at all.**
 
 ### 0.2 My headline's tier, stated as required
 
@@ -89,6 +97,17 @@ Both constants are `PROPOSED` and both are published in the artifact
 a small lateral axis (≤ 0.5 m) would survive. **P-1 is FALSE and I record it as such**: the relative error
 is **independent of `|dlat|`** (`rel_err = a / h_cam`), so shrinking the axis does **not** buy fidelity —
 it only shrinks a perturbation that was never faithful. There is no small-`dlat` refuge.
+
+### 1.5 The readings for §6, committed BEFORE the 40-episode numbers landed
+
+Written while the run was still on arm 1, so the interpretation cannot be fitted to the result:
+
+| # | if the run shows … | then I write … |
+|:--:|---|---|
+| **R-a** | `v4_oracle − v4_blind` PSS **separated** | the protocol has sensitivity to the perturbation it applies ⇒ arm scores admissible. **This is the gate on the instrument, and it is the only clause that licenses §6.** |
+| **R-b** | `v4_oracle − v4_blind` **NOT separated** | ⛔ **no arm score is admissible** and §6 reports the failure instead of numbers. The whole protocol goes back on the bench. |
+| **R-c** | `v4_oracle − cv_holdv0` **NOT separated** | ⭐ **the learned arm does not beat constant velocity under bounded perturbation.** That is a real, new, closed-loop-class finding consistent with the program's standing result that no arm beats hold-v₀ at cruising — and I report it at full prominence even though it is unflattering. |
+| **R-d** | `comfort` saturates | drop it by the gate, exactly as the published cross-benchmark study found (≥ 99.9 % ceiling), and say the gate earned its keep. |
 
 ---
 
@@ -259,8 +278,27 @@ EXTRAPOLATION_VERDICT  →  class MEASUREMENT
 ratio_is_lower_bound                           = False
 ```
 
-Compare the sequential loop on the same corpus (`INHERITED`, P1/E1a): **K=20 → 12.3 %**, K=60 → 50.7 %,
-**K=185 → 90.2 %** of windows outside.
+### 4.2a ⭐⭐ BEFORE vs AFTER — same corpus, same function, `MEASURED` on both sides
+
+The sequential loop's fractions were `INHERITED`. **They are now `MEASURED` here**, recomputed from the
+**committed** 30 k-gate per-window tensors with the *identical* `ood.envelope_fractions` the grid is
+judged by, so the comparison is not my number against somebody else's.
+**Artifact:** `artifacts/before_after_envelope.json` · **Script:** `scripts/before_after_envelope.py`.
+
+⭐ **Reproduce-before-you-quote, passed:** the same script re-derives the committed corridor headline
+numbers exactly — **v4 K=185 overall 0.6388 / junction 0.8432**, **REF-C base 0.5833 / 0.7027** — and
+`assert`s on them, so nothing new is quoted from a tree that cannot reproduce the old.
+
+| protocol | arm | K | n windows | steps outside | **windows with ≥1 step outside** | verdict class |
+|---|---|---:|---:|---:|---:|---|
+| sequential rollout | flagship-v4 30 k | 185 | 41 | 58.998 % | **90.24 %** | `EXTRAPOLATION` |
+| sequential rollout | flagship-v4 30 k | **20** | 881 | 5.312 % | **12.26 %** | `EXTRAPOLATION` |
+| sequential rollout | REF-C base 30 k | 185 | 41 | 54.581 % | **92.68 %** | `EXTRAPOLATION` |
+| sequential rollout | REF-C base 30 k | **20** | 881 | 4.637 % | **10.10 %** | `EXTRAPOLATION` |
+| ⭐ **pseudo-simulation** | **any** | — | 21 grid points | **0.000 %** | **0.00 %** | ⭐ **`MEASUREMENT`** |
+
+*(The `INHERITED` "12.3 % at K=20" reproduces as **12.26 %** — confirmed, not merely repeated.)*
+`GATE_PROTOCOL` §0.3 refuses K ≤ 20, so **every admissible sequential horizon is in the top four rows.**
 
 ### 4.3 ⭐ What value makes the assertion FAIL — stated, and exercised
 
@@ -347,11 +385,146 @@ The gate, `PROPOSED` and stated before scoring: a component is **admissible iff*
 `ceiling_frac(score ≥ 0.999) < 0.95` **and** `(max − min) ≥ 0.05`, **and**, when ≥ 2 arms are present,
 the **between-arm spread is non-zero**. `composite()` raises `VacuousMetric` if none survives.
 
+**MEASURED, 40 episodes × 3 arms × 21 grid points = 15 981 evaluations per arm**
+(`artifacts/pseudosim_v4_30k.json → arms.*.component_discriminative_range`; table generated by
+`scripts/summarize_pseudosim.py`):
+
+| component | arm | n | n NaN | min | max | mean | IQR | ceiling ≥0.999 | floor ≤0.001 | between-arm spread | **admissible** |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|:--:|
+| `ego_progress` | `v4_oracle` | 15442 | 539 | 0.0000 | 1.0000 | 0.9462 | 0.0642 | 0.4009 | 0.0007 | **0.3464** | ✅ |
+| `ego_progress` | `v4_blind` | 15442 | 539 | 0.0000 | 1.0000 | 0.5999 | 1.0000 | 0.4361 | 0.3178 | 0.3464 | ✅ |
+| `ego_progress` | `cv_holdv0` | 15442 | 539 | 0.0000 | 1.0000 | 0.9407 | 0.0471 | 0.2690 | 0.0050 | 0.3464 | ✅ |
+| `recovery` | `v4_oracle` | 13387 | 2594 | 0.0000 | 0.9990 | 0.0629 | 0.0000 | 0.0001 | 0.7556 | **0.0530** ⚠️ | ✅ (marginal) |
+| `recovery` | `v4_blind` | 9186 | 6795 | 0.0000 | 0.9999 | 0.1159 | 0.1205 | 0.0001 | 0.5579 | 0.0530 ⚠️ | ✅ (marginal) |
+| `recovery` | `cv_holdv0` | 13110 | 2871 | 0.0000 | 0.9995 | 0.0776 | 0.0450 | 0.0002 | 0.5565 | 0.0530 ⚠️ | ✅ (marginal) |
+| `comfort` | `v4_oracle` | 15981 | 0 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **1.0000** | 1.0 | ⛔ range below `range_min` |
+| `comfort` | `v4_blind` | 15981 | 0 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **1.0000** | 1.0 | ⛔ range below `range_min` |
+| `comfort` | `cv_holdv0` | 15981 | 0 | 1.0000 | 1.0000 | 1.0000 | 0.0000 | **1.0000** | 0.0000 | 1.0 | ⛔ **SATURATED at the ceiling** |
+| `no_collision` | (all) | — | — | — | — | — | — | — | — | — | ⛔ **NOT COMPUTABLE** |
+| `ttc` | (all) | — | — | — | — | — | — | — | — | — | ⛔ **NOT COMPUTABLE** |
+
+⚠️ **`recovery`'s between-arm spread is 0.0530 against a `range_min` of 0.05 — it clears by 6 %.**
+It is admitted, and it is reported as **marginal**. `v4_oracle`'s IQR is **0.0000**: three quarters of
+its rows sit at the floor, so the component is carried by a tail. **Do not treat `recovery` as a
+well-conditioned score on this arm** — treat it as evidence that the arm mostly does not recover at all.
+
+#### ⚠️ `comfort` is dead — but at the FLOOR, not the ceiling, and the reason is arithmetic
+
+The published finding is ceiling-saturation (≥ 99.9 % pass). **Ours is the opposite**, and it is not a
+measurement artefact of small `n` — it follows from the discretisation:
+
+```
+j_k = (p_k − 3p_{k−1} + 3p_{k−2} − p_{k−3}) / dt³ ,  dt = 0.1 s  ⇒  dt³ = 1e-3
+|j| ≤ 8 m/s³   ⟺   |third difference of position| ≤ 0.008 m  =  8 mm
+```
+
+**An 8 mm wiggle across three consecutive waypoints trips the clause.** Applied to a *raw* 20-waypoint
+head output (256 anchors, no controller, no smoothing) it measures **waypoint quantisation**, not
+comfort — which is why the analytic `cv_holdv0` straight line passes at exactly 1.0 while both learned
+arms fail at exactly 0.0. The gate refuses it in **both** directions (`range below range_min` for the
+learned arms, `SATURATED at the ceiling` for CV) and `composite()` drops it.
+
+⛔ **It is NOT retuned here.** Retuning a bound after seeing which arms fail is metric-shopping. What a
+usable comfort clause needs is stated instead: score the **controller-tracked** trajectory
+(`clhorizon.wp_to_control` → bicycle), not the raw waypoints — i.e. the same object nuPlan/NAVSIM
+actually measure. `PROPOSED` for whoever picks this up.
+
+⚠️ **Anti-metric-shopping rule, fixed before the numbers landed.** If a component fails the gate, §6
+reports **the pre-registered composite's result first** and only then discusses what a corrected
+component would need. Any variant computed afterwards is labelled **post-hoc** and never becomes the
+headline. The per-window dumps retain `ego_progress_raw_ratio`, `cross_track_end_m`,
+`cross_track_hold_matched_m` and `along_track_end_m` precisely so a variant can be derived **with no GPU
+and no re-run** — and therefore audited.
+
 ---
 
 ## 6. Arm scores
 
-*(section completed after the 40-episode run; see `artifacts/pseudosim_v4_30k.json`.)*
+**Artifact:** `artifacts/pseudosim_v4_30k.json` (+ three `_perwindow_*.npz`) · **Script:**
+`scripts/run_pseudosim.py` · **Tables generated by** `scripts/summarize_pseudosim.py`, not hand-typed.
+40 val episodes · stride 8 · 21 grid points · **15 981 planner calls per arm, 0 rollout steps**.
+`traffic_mode: log_replay_nonreactive` · goal provenance **ORACLE** (an upper bound, not deployable).
+
+### 6.0 ⭐ The instrument's own gate, read BEFORE any arm score
+
+Pre-registered as **R-a/R-b** in §1.5: does the protocol separate an arm that **can** see the
+perturbation from the **identical** arm that cannot? `v4_blind` differs from `v4_oracle` in **exactly one
+thing** — the image is zeroed. Same checkpoint, same oracle goal, same `v0`, same grid, same windows.
+The heading perturbation is visible **only** in the image.
+
+> **`v4_oracle − v4_blind` PSS = +0.1882 [+0.1240, +0.2557] · ⭐ SEPARATED · n = 15 442 rows / 40 episodes**
+> **⇒ R-a fires. The protocol has sensitivity to the perturbation it applies, so §6.1–6.2 are admissible.**
+
+Had this come back n.s., §6 would have reported the failure and no arm score at all (R-b). It did not.
+
+⚠️ **A confound in this control, stated because it bounds the claim.** `v4_blind` is blind to the
+**image** but still receives the **oracle goal** (`route` / `route_graded` / `vt_band`, minted from the
+ego's own future). So the control isolates *"can it see the perturbation"* — the perturbation is
+image-only — but it does **not** make the arm blind to the future. A cleaner control would blind both.
+This matters for §6.3's residual, not for the gate above.
+
+### 6.1 Scores
+
+| arm | n evals | n eps | `ego_progress` | `recovery` | `comfort` | **PSS_recovery_progress** |
+|---|---:|---:|---|---|---|---|
+| `v4_oracle` | 15 981 | 40 | **0.9462** [0.9320, 0.9591] | **0.0629** [0.0449, 0.0816] | 0.0000 ⛔ dropped | **0.5622** [0.5496, 0.5725] |
+| `v4_blind` | 15 981 | 40 | **0.5999** [0.4857, 0.7050] | **0.1159** [0.0913, 0.1426] | 0.0000 ⛔ dropped | **0.3749** [0.3076, 0.4368] |
+| `cv_holdv0` | 15 981 | 40 | **0.9407** [0.9169, 0.9610] | **0.0776** [0.0604, 0.0959] | 1.0000 ⛔ dropped | **0.5705** [0.5558, 0.5844] |
+
+`recovery` **defined fraction**: `v4_oracle` 0.8377 · `v4_blind` **0.5748** · `cv_holdv0` 0.8203 — the
+blind arm is excluded on **42.5 %** of rows because it does not move far enough for the question to
+mean anything. **That is the §5.2 fix working as designed**, not missing data.
+
+### 6.2 Paired contrasts (episode-cluster bootstrap, B = 2000, identical rows, `overlapping_holdout_se` refused)
+
+| contrast | `ego_progress` | `recovery` | **PSS** |
+|---|---|---|---|
+| `v4_oracle − v4_blind` | **+0.3464** [+0.2437, +0.4593] ⭐ SEP | **−0.0564** [−0.0811, −0.0314] ⭐ SEP | **+0.1882** [+0.1240, +0.2557] ⭐ SEP |
+| **`v4_oracle − cv_holdv0`** | +0.0055 [−0.0081, +0.0205] **n.s.** | ⛔ **−0.0168** [−0.0332, −0.0008] ⭐ SEP | ⛔ **−0.0034** [−0.0138, +0.0078] **n.s.** |
+| `v4_blind − cv_holdv0` | −0.3409 [−0.4501, −0.2420] ⭐ SEP | +0.0403 [+0.0211, +0.0589] ⭐ SEP | −0.1939 [−0.2595, −0.1332] ⭐ SEP |
+
+### 6.3 ⭐⭐ Reading — and it is unflattering, which is why R-c was pre-committed in §1.5
+
+**1. ⛔ The flagship v4 30 k arm is INDISTINGUISHABLE FROM CONSTANT VELOCITY on this instrument.**
+`PSS` delta **−0.0034 [−0.0138, +0.0078]**, not separated; `ego_progress` **+0.0055 [−0.0081, +0.0205]**,
+not separated. And this is the arm's **best case**: an **ORACLE** goal built from its own future.
+**R-c fires exactly as pre-registered**, and it is consistent with the program's standing finding that
+no arm beats hold-v₀ at cruising — now stated on a closed-loop-class surface that is a **MEASUREMENT**.
+
+**2. ⛔⛔ On error recovery the learned arm is SIGNIFICANTLY WORSE than a planner that never steers.**
+`recovery` **−0.0168 [−0.0332, −0.0008]**, separated. Displaced by up to 12° of heading, `v4_oracle`
+cancels **6.3 %** of the drift its own forward motion causes; `cv_holdv0`, which by construction cancels
+**none**, scores **7.8 %**. ⚠️ **The effect is small and the interval nearly touches zero (upper bound
+−0.0008) — it is separated, not large.** But the direction is the finding: **there is no evidence the
+arm steers back toward the reference path when displaced, and weak evidence it does slightly worse than
+not trying.** **This is precisely the signal open-loop ADE cannot contain** (`PUBLISHED`, weak tier:
+L2 vs closed-loop Driving Score ρ = −0.36, p = 0.43).
+
+**3. The blind arm's residual `recovery` advantage (+0.0564) is a goal artefact, not a capability.**
+`v4_blind` scores *higher* recovery than `v4_oracle` on the rows where it moves at all — but it keeps
+the **oracle goal**, which encodes the ego's true future route (§6.0). A blind planner steering on a
+true route label will sometimes curve the right way. ⚠️ **This is a confound in my control, not a
+finding about blindness**, and it is why the gate in §6.0 is read on `PSS` (where progress dominates and
+the blind arm collapses, −0.3409) rather than on `recovery` alone.
+
+**4. ⚠️ Constant velocity is a strong baseline at a 2 s horizon, by construction.** Over 2 s most logged
+driving *is* nearly constant-velocity, so `ego_progress` has little room to separate competent planners —
+`cv_holdv0` scores 0.9407 against `v4_oracle`'s 0.9462. **The instrument's sensitivity (§6.0) and its
+resolution between similar planners are different things, and only the first is demonstrated here.**
+The direct remedy is §6.4.
+
+**5. R-d fires:** `comfort` is dead in both directions and the gate dropped it from all three arms
+(§5.3). The published expectation was ceiling-saturation; ours is floor-saturation, for the arithmetic
+reason in §5.3. **The gate earned its keep — a hand-written suite would have shipped this clause.**
+
+### 6.4 ⭐ A property of this protocol worth stating: the scoring horizon is DECOUPLED from the envelope
+
+In the sequential loop, extending the horizon **is** what drives the ego out of the envelope — that is
+the whole wound. In pseudo-simulation **no observation is ever re-synthesised after the grid point**, so
+rolling the *plan* forward further in metric space costs **nothing** envelope-wise: the out-of-envelope
+fraction stays `0` at any scoring horizon. NAVSIM v2 scores over **4 s**; we score over **2 s** only
+because `FlagshipV4Head` emits 20 waypoints. **The cap is the head, not the protocol.** A longer-horizon
+head would immediately get a longer-horizon MEASUREMENT out of this harness with no re-validation.
 
 ---
 
@@ -361,22 +534,44 @@ All repo paths relative to the working tree on the dev box; everything **`git ad
 NOT pushed**. Anything living in only ONE place is marked ⚠️.
 Repo dir: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/`
 
-| artifact | where it lives | what it is |
-|---|---|---|
-| **`taniteval/taniteval/pseudosim.py`** | **repo (the PACKAGE, not `incoming/`)** · `tanitad-eval:/workspace/_pseudosim/taniteval/` | the harness: `GridSpec`, `assert_grid_in_envelope`, `pseudo_evaluate`, `score_windows`, `discriminative_range`, `composite`, `emit`. md5-verified both ends. |
-| **`taniteval/tests/test_pseudosim.py`** | **repo** | 21 tests incl. the deliberately-failing envelope input and the standing-still adversary |
-| `PSEUDO_SIMULATION.md` | repo (this dir) | this report |
-| `scripts/lat_warp_fidelity.py` | repo | §2 — C-GEO-LAT. **CPU only, no GPU, no pod, no corpus, no model.** ~2 s. |
-| `artifacts/lat_warp_fidelity.json` | repo | §2 — A0…A6 + the computed verdict |
-| `scripts/run_pseudosim.py` | repo · `tanitad-eval:/workspace/_pseudosim/run_pseudosim.py` | §6 — the 3-arm driver. md5-verified both ends. |
-| `artifacts/pseudosim_v4_30k.json` | repo · `tanitad-eval:/workspace/_pseudosim/out/` | §6 — arm scores, ranges, paired deltas, envelope proof |
-| `artifacts/pseudosim_v4_30k_perwindow_*.npz` | repo · `tanitad-eval:/workspace/_pseudosim/out/` | per-window dumps (3 arms) — **the arithmetic-only path: any metric can be re-derived with no GPU** |
-| `artifacts/run.log` | repo · `tanitad-eval:/workspace/_pseudosim/out/run.log` | §6 — the run log incl. the live envelope proof |
-| ⚠️ `tanitad-eval:/workspace/_pseudosim/out/smoke.json` | **pod only** | the 2-episode smoke that caught the standing-still defect; superseded by the full run, deliberately not staged (its metric is the pre-fix one) |
+| artifact | where it lives | md5-verified | what it is |
+|---|---|:--:|---|
+| **`taniteval/taniteval/pseudosim.py`** | **repo (the PACKAGE, not `incoming/`)** · `tanitad-eval:/workspace/_pseudosim/taniteval/` | ✅ `86a11c46…` | the harness: `GridSpec`, `assert_grid_in_envelope`, `pseudo_evaluate`, `score_windows`, `discriminative_range`, `composite`, `emit` |
+| **`taniteval/tests/test_pseudosim.py`** | **repo** | — | **21 tests**, incl. the deliberately-failing envelope input and the standing-still adversary. Full `taniteval` suite: **498 passed**. |
+| `PSEUDO_SIMULATION.md` | repo (this dir) | — | this report |
+| `scripts/lat_warp_fidelity.py` | repo | — | §2 — C-GEO-LAT. **CPU only, no GPU, no pod, no corpus, no model.** ~2 s. |
+| `artifacts/lat_warp_fidelity.json` | repo | — | §2 — A0…A6 + the computed verdict |
+| `scripts/before_after_envelope.py` | repo | — | §4.2a — BEFORE/AFTER fractions + the reproduce-before-you-quote `assert` |
+| `artifacts/before_after_envelope.json` | repo | — | §4.2a — 12.26 %/90.24 % vs 0.00 %, and the committed 0.6388/0.8432/0.5833 reproduction |
+| `scripts/run_pseudosim.py` | repo · `tanitad-eval:/workspace/_pseudosim/run_pseudosim.py` | ✅ `171f2ffa…` | §6 — the 3-arm driver |
+| `scripts/summarize_pseudosim.py` | repo | — | §5.3/§6 tables, **generated from the artifact, not hand-typed** |
+| `artifacts/pseudosim_v4_30k.json` | repo · `tanitad-eval:/workspace/_pseudosim/out/` | ✅ `3a8f30fd…` | §6 — arm scores, ranges, paired deltas, envelope proof |
+| `artifacts/pseudosim_v4_30k_perwindow_v4_oracle.npz` | repo · `tanitad-eval:…/out/` | ✅ `a45e216c…` | per-window dump — **the arithmetic-only path: any metric re-derivable with no GPU** |
+| `artifacts/pseudosim_v4_30k_perwindow_v4_blind.npz` | repo · `tanitad-eval:…/out/` | ✅ `49cde496…` | per-window dump |
+| `artifacts/pseudosim_v4_30k_perwindow_cv_holdv0.npz` | repo · `tanitad-eval:…/out/` | ✅ `35cfcd91…` | per-window dump |
+| `artifacts/run.log` | repo · `tanitad-eval:/workspace/_pseudosim/out/run.log` | ✅ `0f03b0ca…` | §6 — the run log incl. the live envelope proof |
+| ⚠️ `tanitad-eval:/workspace/_pseudosim/out/smoke.json` | **pod only** | — | the 2-episode smoke that caught the standing-still defect; superseded, deliberately not staged (its metric is the **pre-fix** one and staging it would put a retracted number in the repo) |
 
 **Nothing that took real effort exists in only one place.** The one pod-only row is a superseded smoke.
-⚠️ The index also contains sibling streams' staged work; per `CLAUDE.md`'s git-hygiene rule it was left
-**exactly as found** and **nothing was committed**, so nothing could be swept in.
+
+⚠️ **A git-hygiene event, reported because it is the third instance of a known class.** This agent staged
+(never committed) its deliverables mid-run. A **sibling stream then committed the whole index** as
+`5a5a905` — *"⭐ THE CONTROLLER IS EXONERATED …"* — which **swept `taniteval/taniteval/pseudosim.py`,
+`taniteval/tests/test_pseudosim.py`, `scripts/lat_warp_fidelity.py`, `artifacts/lat_warp_fidelity.json`
+and `scripts/run_pseudosim.py` into a commit whose message is about the tactical head.** No work was
+lost — the opposite: it is safely tracked — but the pseudo-simulation harness is now findable only under
+an unrelated commit title. `CLAUDE.md` records this class twice already (`60265d3`, `3d41bd0`); this is
+the third. **The "STAGE, NEVER PUSH" rule protects the agent's work but does not protect it from a
+concurrent sibling's whole-index commit** — worth raising with the orchestrator (§8).
+
+### 7.1 ⭐ What this unblocks
+
+| stream | what was blocked | what unblocks now |
+|---|---|---|
+| **Benchmarks & Eval / gates** | `GATE_30K_RESULTS.md` §10.1's second branch closed with *"no admissible horizon holds the envelope"*, leaving **every** closed-loop gate quantity permanently stamped EXTRAPOLATION. | A **closed-loop-class surface that is a MEASUREMENT**, at 0 % out-of-envelope, with a co-primary-shaped emitter. Needs a `GATE_PROTOCOL` home — escalation 5. |
+| **Architecture & Inference / hierarchy** | *"open-loop does not predict closed-loop"* was known but there was no admissible instrument to test a tactical/strategic change against. ADE is the field's **worst** predictor (ρ = −0.36, p = 0.43). | An **error-recovery** signal that ADE provably does not contain, on a bounded grid any arm can be run through in ~13 min/arm on one GPU. |
+| **Data Engineering** | — | A precise, small, high-leverage ask: **store the full `clip_id` in the episode cache.** That single field turns on every safety metric (collision, TTC) for every future eval — escalation 1. |
+| **Whoever writes the next `GATE_*.md`** | — | ⚠️ A **new** disclosure to carry: sequential closed-loop numbers are not only extrapolated, they were computed through a warp that sign-inverts the upper half of the frame — escalation 2. |
 
 **Pods:** `tanitad-eval` only. pod1 (training), pod2 (owed controls), pod3 (classifier build) **untouched**.
 GPU verified idle (0 MiB / 0 %) before use. All writes to `/workspace` (never `/root`, which is 99 % full
@@ -393,7 +588,9 @@ and silently truncates). No process was killed. Parity untouched — no episode 
 | **2** | ⛔ **A NEW charge against the sequential closed loop, beyond EXTRAPOLATION.** `corridor_rollout` warps on **both** axes, so every sequential closed-loop number also carries the lateral infidelity of §2 — at K=20 the *lateral* p90 is 1.74 m (`INHERITED`, P1 §8), i.e. **the warp was sign-inverting the upper half of the frame on most windows**. `MODEL_REGISTRY.md`'s closed-loop rows need this note **in addition to** the EXTRAPOLATION stamp. | Model-registry agent |
 | **3** | ⚠️ **`RETRACTION_LOG.md`, class C13 ("a guard that cannot fail").** Two entries from this run: (a) **C-RT was offered as a fidelity criterion and is provably vacuous** — it returns *exactly 0.0* for the arm under suspicion; (b) **the first `recovery` metric rewarded standing still** and was caught only by an adversarial input, not by review. Both are the same root cause: *a criterion was proposed without asking what value would make it fail.* | whoever maintains the log |
 | **4** | ⚠️ **`ENV_YAW_MAX = 12.0` is still commented `# MEASURED` in two places** (`taniteval/corridor.py:109-110`, `stack/scripts/run_gate.py:613-614`) and P1's re-validation showed it is a **grid endpoint**, not a measurement (usable edge 15.47°). **This harness inherits that constant** — so if the comment is corrected, the shipped grid may widen to ~15°. Not applied here: both files are live and edited by sibling streams. | `corridor.py` / `run_gate.py` maintainers |
+| **0** | ⛔⛔ **THE PROGRAM'S HEADLINE ARM IS NOT SEPARABLE FROM CONSTANT VELOCITY ON THE FIRST CLOSED-LOOP INSTRUMENT THAT IS A MEASUREMENT** (§6.3): `PSS` −0.0034 [−0.0138, +0.0078] n.s., `ego_progress` +0.0055 [−0.0081, +0.0205] n.s., **with an ORACLE goal**, and `recovery` −0.0168 [−0.0332, −0.0008] **worse than not steering**. This is tier 2 and small — but it is the kind of result that should decide what v5 optimises. **Not an agent's call to act on.** | **Sayed** / PI |
 | **5** | ⭐ **The protocol change needs a home in `GATE_PROTOCOL.md`.** Pseudo-simulation is not a horizon `K`; §0.3's "refuse `K ≤ 20`" does not apply to it and must not be applied by analogy. A gate that wants a closed-loop-class MEASUREMENT should register `PSS_recovery_progress` on the `pseudo_simulation` surface with its grid and its traffic mode. **This will not happen by itself.** | PI / gate-card author |
+| **7** | ⚠️ **Git hygiene, third instance of a logged class.** A sibling's whole-index commit `5a5a905` swept this stream's harness and artifacts into a commit titled about the tactical head, while this agent was still running. "Stage, never push" protects an agent's own work but **not from a concurrent sibling committing the index around it**. The mitigation that would actually work is a pre-commit check on foreign staged paths, not another rule in prose. | orchestrator / `AGENT_OPERATING_STANDARD.md` |
 | **6** | ⚠️ **The lateral axis is refused, so the 3-D-reconstruction question is now the ONLY route to it.** If lateral perturbation matters (NAVSIM v2 thinks it does), the substrate must be depth-aware. Our own metric depth is available in principle (`obstacle.offline` cuboids, monocular depth), but AlpaSim's NuRec/gsplat packaging carries a derivative-forbidding licence. **A decision about whether lateral is worth a depth-aware warp belongs to the PI.** | **Sayed** |
 
 ---
@@ -411,3 +608,6 @@ and silently truncates). No process was killed. Parity untouched — no episode 
 | 7 | **The arm scores use an ORACLE goal** (route / route_graded / vt_band from the ego's own future). They are an **upper bound**, not deployable. `--goal-mode produced` is available on this checkpoint and was **not** run for time. | not done, flagged |
 | 8 | **The v1 (`flagship4b-speedjerk-30k`) arm was not scored** — its plan step decodes conditioned on the *future action sequence* (`rollout_decode(…, fa, …)`), which does not exist for a perturbed state, so it is not a planner in the pseudo-simulation sense. REF-C **is** and would be the natural fourth arm. | not done, flagged |
 | 9 | **No comparison to a published leaderboard.** This is an internal number on our own corpus, exactly as Option 1 promised. Option 2 (NAVSIM on OpenScene) remains the only route to a comparable figure. | out of scope |
+| 10 | ⚠️ **My blind control is confounded**: `v4_blind` keeps the **oracle goal**, so it is blind to the image but not to its own future. The §6.0 gate is unaffected (it reads `PSS`, which the blind arm loses on progress by −0.3409), but the residual `recovery` gap of +0.0564 is **probably goal-driven and I do not claim it as a finding**. A doubly-blind control is the fix. | disclosed, §6.3 |
+| 11 | ⚠️ **`recovery` clears its own range gate by 6 %** (spread 0.0530 vs `range_min` 0.05) and `v4_oracle`'s IQR is **exactly 0.0000**. The `−0.0168` result is separated but small and carried by a tail. **Reported as marginal, not as a headline effect size.** | disclosed, §5.3 |
+| 12 | ⚠️ **Constant velocity is a strong baseline at 2 s by construction**, so §6's *non-separation* of `v4_oracle` from `cv_holdv0` is partly a statement about the horizon, not only about the arm. The instrument's **sensitivity** is demonstrated (§6.0); its **resolution between competent planners** is not. §6.4 is the remedy and it costs nothing envelope-wise. | disclosed, §6.3 |
