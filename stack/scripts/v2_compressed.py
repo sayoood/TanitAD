@@ -91,8 +91,13 @@ def _decode_cropped_selected(mp4, size, frame_idx, frame=None,
     return torch.stack([crops[int(i)] for i in frame_idx.tolist()])   # [n,3,H,W] u8
 
 REPO = "nvidia/PhysicalAI-Autonomous-Vehicles"
-CAM_TMPL = ("camera/camera_front_wide_120fov/"
-            "camera_front_wide_120fov.chunk_{chunk_id:04d}.zip")
+#: The sensor name PhysicalAI-AV uses in BOTH the chunk path and the per-clip
+#: artifact name inside the zip: ``<clip_id>.camera_front_wide_120fov.mp4`` /
+#: ``…​.timestamps.parquet``. It is a single constant because the reuse probe in
+#: :func:`build` must look for exactly the name the extractor writes — see the
+#: comment there for the defect that came from spelling it twice.
+CAM_NAME = "camera_front_wide_120fov"
+CAM_TMPL = f"camera/{CAM_NAME}/{CAM_NAME}.chunk_{{chunk_id:04d}}.zip"
 
 
 def _resampled(clip: dict, size: int, frame=None,
@@ -352,12 +357,27 @@ def build(a):
         # re-download it. MEASURED 2026-07-27: pod2 held 760 of the 3,000 clips,
         # so this skips ~25 % of the download. Purely an IO saving — the clips
         # built are EXACTLY the same set either way, so selection is untouched.
+        # ⛔ THE PROBE MUST USE THE NAME THE EXTRACTOR WRITES. The zip entries —
+        # and therefore every mp4 that has ever existed in `cam_dir` — are
+        # `<clip_id>.camera_front_wide_120fov.mp4`. This looked for
+        # `<clip_id>.mp4`, a name NO artifact on this corpus has ever had, so
+        # the reuse branch could never fire and the "reuse" was inert.
+        # MEASURED 2026-07-27: all 8 shards of the wide TRAIN build logged
+        # `reused_local=0` while 761 clips sat decoded on the host — including
+        # ALL 600 clips of the parity VAL split. Silent, because a redundant
+        # download is only slow, never wrong.
+        # ``PAI_NO_LOCAL_REUSE=1`` forces the download path (the recovery route
+        # if a host's local copy is suspect).
         local: dict[str, dict] = {}
-        for cid in sorted(want):
-            mp4 = os.path.join(cam_dir, f"{cid}.mp4")
-            ts = os.path.join(cam_dir, f"{cid}.timestamps.parquet")
-            if os.path.exists(mp4) and os.path.exists(ts):
-                local[cid] = {"mp4": mp4, "timestamps": ts, "_preexisting": True}
+        if os.environ.get("PAI_NO_LOCAL_REUSE") != "1":
+            for cid in sorted(want):
+                for stem in (f"{cid}.{CAM_NAME}", cid):
+                    mp4 = os.path.join(cam_dir, f"{stem}.mp4")
+                    ts = os.path.join(cam_dir, f"{stem}.timestamps.parquet")
+                    if os.path.exists(mp4) and os.path.exists(ts):
+                        local[cid] = {"mp4": mp4, "timestamps": ts,
+                                      "_preexisting": True}
+                        break
         need_dl = want - set(local)
         n_reused += len(local)
         zp = None
