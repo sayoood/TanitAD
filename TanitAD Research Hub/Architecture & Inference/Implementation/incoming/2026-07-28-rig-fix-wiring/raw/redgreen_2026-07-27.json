@@ -1,0 +1,67 @@
+{
+ "stack": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack",
+ "green_before": {
+  "exit": 0,
+  "summary": "24 passed in 2.48s",
+  "failed_tests": [],
+  "first_error_lines": []
+ },
+ "mutations": {
+  "drop_frame_arg": {
+   "exit": 1,
+   "summary": "5 failed, 19 passed in 3.29s",
+   "failed_tests": [
+    "test_a_partial_window_read_is_the_same_slice_as_a_full_one",
+    "test_it_FAILS_LOUD_when_the_loader_is_never_told_the_frame",
+    "test_the_TILED_alternative_is_the_same_one_flag_change",
+    "test_the_seam_feeds_the_configured_subframe_and_it_is_the_exact_slice",
+    "test_train_delegates_to_the_seam_and_keeps_no_second_path"
+   ],
+   "first_error_lines": [
+    "E               tanitad.data.parity.ParityViolation: ",
+    "E               ==============================================================================",
+    "E               GEOMETRY VIOLATION [--v2-train-cache] \u2014 the SUB-FRAME WAS DECLARED BUT NEVER APPLIED",
+    "E               ==============================================================================",
+    "E                 run declares : 176x624 px, f_ref 305.5775, cylindrical",
+    "E                 cache holds  : 256x640 px   <-- MISMATCH"
+   ],
+   "why": "the verified fix exists and no trainer passes it \u2014 verbatim",
+   "restored_sha256_matches": true
+  },
+  "drop_parent_arg": {
+   "exit": 1,
+   "summary": "3 failed, 21 passed in 4.69s",
+   "failed_tests": [
+    "test_it_FAILS_LOUD_when_the_loader_is_never_told_the_frame",
+    "test_the_TILED_alternative_is_the_same_one_flag_change",
+    "test_the_seam_feeds_the_configured_subframe_and_it_is_the_exact_slice"
+   ],
+   "first_error_lines": [
+    "E       KeyError: 'sliced_from'",
+    "E       AssertionError: assert 'SUB-FRAME WAS DECLARED BUT NEVER APPLIED' in '\\n==============================================================================\\nGEOMETRY VIOLATION [--v2-train-cach...eg> --projection <pinhole|cylindrical>\\n=============================================================================='",
+    "E       KeyError: 'sliced_from'"
+   ],
+   "why": "the binding can no longer tell a slice from a mismatch",
+   "restored_sha256_matches": true
+  },
+  "drop_preflight": {
+   "exit": 1,
+   "summary": "1 failed, 23 passed in 2.52s",
+   "failed_tests": [
+    "test_preflight_REFUSES_a_wide_v2_run_that_forgot_the_flag"
+   ],
+   "first_error_lines": [
+    "E       AssertionError: []",
+    "E       assert []"
+   ],
+   "why": "the flag becomes losable by omission again",
+   "restored_sha256_matches": true
+  }
+ },
+ "green_after": {
+  "exit": 0,
+  "summary": "24 passed in 2.48s",
+  "failed_tests": [],
+  "first_error_lines": []
+ }
+}

@@ -54,6 +54,7 @@ from collections import OrderedDict
 import torch
 import torchvision.io as tvio
 
+from tanitad.data.calib import CanonicalFrame, subframe_slice
 from tanitad.data.comma2k19 import stack_frames
 
 MANIFEST_NAME = "_v2manifest.pt"
@@ -106,20 +107,30 @@ def _jpeg_offsets(jpeg_len: torch.Tensor) -> torch.Tensor:
 
 
 def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
-                    a: int, b: int, codec: str = "jpeg") -> torch.Tensor:
+                    a: int, b: int, codec: str = "jpeg",
+                    sl: "tuple[slice, slice] | None" = None) -> torch.Tensor:
     """Decode + D-015 channel-stack ONLY stacked-frame rows ``[a:b]``.
 
     ``stack_frames`` output row ``j`` = channel-concat of raw frames
     ``j, j+1, ..., j+n_stack-1``, so rows ``[a:b]`` need raw frames
     ``[a : b + n_stack - 1]``. Stacking is per-frame-independent, so decoding
     just that raw sub-block and stacking it is BIT-IDENTICAL to decoding the
-    whole clip and slicing ``[a:b]`` (validated in tests + on real data)."""
+    whole clip and slicing ``[a:b]`` (validated in tests + on real data).
+
+    ``sl`` is the ``(rows, cols)`` CENTRED SUB-FRAME slice (see
+    :class:`V2CompressedCache`). It is applied to each RAW frame before
+    stacking, which is the order ``scripts/v2_compressed.load_compressed``
+    uses; slicing spatial dims and concatenating channels commute, so the two
+    orders are bit-identical and the cheaper one is used here."""
     k = n_stack - 1
     dec = tvio.decode_png if codec == "png" else tvio.decode_jpeg
     raw = [dec(jpeg_buf[int(offs[i]):int(offs[i + 1])],
                mode=tvio.ImageReadMode.RGB)
            for i in range(a, b + k)]                       # [3, H, W] u8 each
-    return stack_frames(torch.stack(raw), n_stack)         # [b-a, 3*n_stack, H, W] u8
+    if sl is not None:
+        rs, cs = sl
+        raw = [f[:, rs, cs] for f in raw]                  # [3, h, w] u8 each
+    return stack_frames(torch.stack(raw), n_stack)         # [b-a, 3*n_stack, h, w] u8
 
 
 # --------------------------------------------------------------------------- #
@@ -195,32 +206,94 @@ class LazyV2Episode:
 # --------------------------------------------------------------------------- #
 # Per-cache-dir payload LRU + partial decode                                   #
 # --------------------------------------------------------------------------- #
+def stored_frame_of(payload: dict) -> CanonicalFrame:
+    """The :class:`CanonicalFrame` a ``*.v2ep.pt`` payload was BUILT at.
+
+    Payloads written after the 2026-07-27 wide-FOV enablement carry the full
+    ``frame`` dict; older ones carry only ``image_size`` (square, f_ref 266,
+    pinhole by construction), so the fallback is exact rather than a guess."""
+    fr = payload.get("frame")
+    if isinstance(fr, dict):
+        return CanonicalFrame.from_dict(fr)
+    s = int(payload["image_size"])
+    from tanitad.data.calib import F_REF
+    return CanonicalFrame(height=int(payload.get("image_h", s)),
+                          width=int(payload.get("image_w", s)), f_ref=F_REF)
+
+
 class V2CompressedCache:
     """Owns one v2 cache dir: the clip filename list and a bounded LRU of loaded
-    compressed payloads ``(jpeg_buf, offsets, n_stack, codec)``. One instance is shared
-    by all :class:`LazyV2Episode` of that dir.
+    compressed payloads ``(jpeg_buf, offsets, n_stack, codec, slice)``. One instance
+    is shared by all :class:`LazyV2Episode` of that dir.
 
     The LRU is per-PROCESS and never crosses the DataLoader-worker boundary (see
     ``__getstate__``): every worker fills its own, so total RAM is
-    ``num_workers * lru_size * mean_payload`` (~2-4 MB/clip)."""
+    ``num_workers * lru_size * mean_payload`` (~2-4 MB/clip).
 
-    def __init__(self, cache_dir, lru_size: int = 64):
+    ⭐ ``frame`` (opt-in, 2026-07-28) is THE RIG-CLEAN FIX ON THE TRAINING PATH.
+    A CENTRED sub-frame of the geometry a clip was built at is a pure pixel
+    slice of it, so passing e.g. ``PHYSICALAI_RIG_CLEAN_176x624`` against a
+    ``256x640`` cache feeds the trainer EXACTLY the frames a rebuild at that
+    geometry would produce — MEASURED bit-identical on 6 clips x 201 real frames
+    of this very cache (``max_abs_diff 0``;
+    ``…/incoming/2026-07-28-rig-clean-fix/raw/verify_val.json``). No rebuild, no
+    re-emit, no second copy; the slice happens after the decode that already
+    runs, so it is strictly cheaper than not slicing.
+
+    ``None`` (the default) is byte-identical to the pre-2026-07-28 loader, which
+    is what keeps pod1's running ``--v2-cache`` arm untouched.
+
+    ⚠️ LOAD-BEARING PRECONDITION: the identity holds only for a LOSSLESS cache.
+    Re-encoding a JPEG at a different crop offset moves the 8x8 blocks, so a
+    slice of a lossy cache is NOT what a rebuild would produce. A lossy source
+    is therefore REFUSED unless ``allow_lossy=True`` says the caller knows."""
+
+    def __init__(self, cache_dir, lru_size: int = 64,
+                 frame: CanonicalFrame | None = None,
+                 allow_lossy: bool = False):
         self.cache_dir = str(cache_dir)
         self.lru_size = max(1, int(lru_size))
         self.files: list[str] = []
+        self.frame = frame
+        self.allow_lossy = bool(allow_lossy)
         self._lru: "OrderedDict[int, tuple]" | None = None
 
     # Pickling: drop the live LRU so a populated cache is never serialised into
     # each worker (they rebuild their own, starting empty).
     def __getstate__(self) -> dict:
         return {"cache_dir": self.cache_dir, "lru_size": self.lru_size,
-                "files": self.files}
+                "files": self.files,
+                "frame": None if self.frame is None else self.frame.to_dict(),
+                "allow_lossy": self.allow_lossy}
 
     def __setstate__(self, s: dict) -> None:
         self.cache_dir = s["cache_dir"]
         self.lru_size = s["lru_size"]
         self.files = s["files"]
+        fr = s.get("frame")
+        self.frame = None if fr is None else CanonicalFrame.from_dict(fr)
+        self.allow_lossy = bool(s.get("allow_lossy", False))
         self._lru = None
+
+    def _slice_for(self, d: dict, path: str) -> "tuple[slice, slice] | None":
+        """The ``(rows, cols)`` of THIS clip that are the requested sub-frame.
+
+        Resolved per clip against the clip's OWN stored geometry, so a cache
+        that mixes rasters cannot silently take one clip's slice on another."""
+        if self.frame is None:
+            return None
+        stored = stored_frame_of(d)
+        if self.frame == stored:
+            return None
+        if str(d.get("codec", "jpeg")) != "png" and not self.allow_lossy:
+            raise ValueError(
+                f"refusing to sub-frame a LOSSY cache: {path} has codec "
+                f"{d.get('codec', 'jpeg')!r}. A centred slice equals a rebuild "
+                f"at that geometry only for a LOSSLESS cache — re-encoding a "
+                f"JPEG at a new crop offset moves the 8x8 blocks. Rebuild at "
+                f"the sub-frame, or pass allow_lossy=True to state that an "
+                f"approximate crop is what you want.")
+        return subframe_slice(stored, self.frame)   # refuses a non-slice
 
     def _payload(self, clip_idx: int) -> tuple:
         if self._lru is None:
@@ -232,15 +305,16 @@ class V2CompressedCache:
         path = os.path.join(self.cache_dir, self.files[clip_idx])
         d = torch.load(path, map_location="cpu", weights_only=False)
         payload = (d["jpeg_buf"], _jpeg_offsets(d["jpeg_len"]),
-                   int(d["n_stack"]), str(d.get("codec", "jpeg")))
+                   int(d["n_stack"]), str(d.get("codec", "jpeg")),
+                   self._slice_for(d, path))
         self._lru[clip_idx] = payload
         while len(self._lru) > self.lru_size:
             self._lru.popitem(last=False)
         return payload
 
     def decode_stacked_range(self, clip_idx: int, a: int, b: int) -> torch.Tensor:
-        jpeg_buf, offs, n_stack, codec = self._payload(clip_idx)
-        return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec)
+        jpeg_buf, offs, n_stack, codec, sl = self._payload(clip_idx)
+        return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec, sl)
 
 
 # --------------------------------------------------------------------------- #
@@ -336,10 +410,51 @@ def load_or_build_manifest(cache_dir, rebuild: bool = False,
     return man
 
 
+def _assert_subframe_deliverable(cache_dir: str, files: list[str],
+                                 h: int, w: int, frame: CanonicalFrame,
+                                 allow_lossy: bool) -> dict:
+    """Prove AT LAUNCH that ``frame`` is a real centred slice of this cache.
+
+    ``_slice_for`` would catch a bad sub-frame too — but on the first window
+    fetch, i.e. inside a DataLoader worker, minutes into a run. This raises in
+    the launching process, before any GPU work, and it reads the FIRST CLIP'S
+    OWN payload rather than the manifest, so the focal and projection (which
+    the manifest does not carry) are checked against real bytes on disk."""
+    probe = os.path.join(cache_dir, files[0])
+    d = torch.load(probe, map_location="cpu", weights_only=False, mmap=True)
+    stored = stored_frame_of(d)
+    if (int(stored.height), int(stored.width)) != (int(h), int(w)):
+        raise ValueError(
+            f"{cache_dir}: the manifest says {h}x{w} but the payload declares "
+            f"{stored.height}x{stored.width} — the cache disagrees with its own "
+            f"sidecar; rebuild the manifest (rebuild=True).")
+    codec = str(d.get("codec", "jpeg"))
+    if codec != "png" and not allow_lossy:
+        raise ValueError(
+            f"refusing to sub-frame a LOSSY cache: {cache_dir} has codec "
+            f"{codec!r}. A centred slice equals a rebuild at that geometry only "
+            f"for a LOSSLESS cache. Pass allow_lossy=True to override.")
+    rs, cs = subframe_slice(stored, frame)              # refuses a non-slice
+    return {"parent": stored.to_dict(), "parent_tag": stored.tag(),
+            "sub": frame.to_dict(), "sub_tag": frame.tag(),
+            "rows": [rs.start, rs.stop], "cols": [cs.start, cs.stop],
+            "codec": codec, "bit_exact_slice": codec == "png"}
+
+
 def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
                        verbose: bool = True,
-                       stable_ids: bool = True) -> list[LazyV2Episode]:
+                       stable_ids: bool = True,
+                       frame: CanonicalFrame | None = None,
+                       allow_lossy: bool = False) -> list[LazyV2Episode]:
     """Build the lazy provider list for one or more v2 cache dirs.
+
+    ⭐ ``frame`` (2026-07-28) requests a CENTRED SUB-FRAME of whatever geometry
+    the cache was built at — the zero-cost rig-clean fix. See
+    :class:`V2CompressedCache`. Every provider's ``.frames.shape`` then reports
+    the SLICED raster, which is what makes the trainer's existing geometry
+    binding (``parity.assert_v2_geometry_matches``) able to prove the slice
+    actually happened instead of merely being configured. ``None`` (default)
+    is byte-identical to the pre-2026-07-28 behaviour.
 
     The returned list is a drop-in replacement for the raw episode list fed to
     ``FlagshipWindowDataset`` (via ``_wrap``): every element quacks like a
@@ -364,9 +479,11 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
     for cd in cache_dirs:
         cd = str(cd)
         man = load_or_build_manifest(cd, rebuild=rebuild, verbose=verbose)
-        cache = V2CompressedCache(cd, lru_size=lru_size)
+        cache = V2CompressedCache(cd, lru_size=lru_size, frame=frame,
+                                  allow_lossy=allow_lossy)
         cache.files = man["files"]
         key = "episode_uid" if (stable_ids and "episode_uid" in man) else "episode_id"
+        _sl_rep = None
         for i in range(len(man["files"])):
             n_stack = int(man["n_stack"][i])
             S = int(man["image_size"][i])
@@ -374,6 +491,13 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
             # image_h/image_w, and every such cache is square, so S is exact.
             H = int(man.get("image_h", [S] * len(man["files"]))[i])
             W = int(man.get("image_w", [S] * len(man["files"]))[i])
+            if frame is not None and (H, W) != frame.hw:
+                # Validate ONCE per dir against real bytes, then trust the
+                # manifest's per-clip raster for the remaining shapes.
+                if _sl_rep is None:
+                    _sl_rep = _assert_subframe_deliverable(
+                        cd, man["files"], H, W, frame, allow_lossy)
+                H, W = frame.hw
             shape = torch.Size((int(man["T_out"][i]), 3 * n_stack, H, W))
             providers.append(LazyV2Episode(
                 cache, i, man["poses"][i], man["actions"][i],
@@ -382,6 +506,14 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
             n_raw = len(set(int(x) for x in man["episode_id"]))
             _h0 = int(man.get("image_h", man["image_size"])[0])
             _w0 = int(man.get("image_w", man["image_size"])[0])
+            if _sl_rep is not None:
+                print(f"[v2] {cd}: SUB-FRAME {_sl_rep['sub_tag']} sliced from "
+                      f"{_sl_rep['parent_tag']} at rows {_sl_rep['rows']} cols "
+                      f"{_sl_rep['cols']} (codec {_sl_rep['codec']}, bit-exact "
+                      f"slice {_sl_rep['bit_exact_slice']}) — the trainer sees "
+                      f"{frame.height}x{frame.width}, not {_h0}x{_w0}",
+                      flush=True)
+                _h0, _w0 = frame.hw
             msg = (f"[v2] {cd}: {len(man['files'])} providers "
                    f"(channels {3 * int(man['n_stack'][0])}, "
                    f"{_h0}x{_w0} px), episode ids from '{key}'")

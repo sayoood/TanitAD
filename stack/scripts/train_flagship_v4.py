@@ -657,6 +657,116 @@ def _geometry_report(cfg, frame) -> dict:
     return {**rep, "is_deployed_frame": bool(frame.is_canonical)}
 
 
+def parse_subframe(spec):
+    """``"176x624"`` -> ``(176, 624)``; ``None``/``"none"`` -> ``None``.
+
+    ``"none"`` is not a synonym for omission: preflight REQUIRES one of the two
+    on a non-deployed v2 run, so 'train on the frames exactly as built' has to be
+    written down rather than reached by forgetting a flag."""
+    if spec is None:
+        return None
+    s = str(spec).strip().lower()
+    if s in ("none", "off", "full", ""):
+        return None
+    for sep in ("x", "X", ",", ":"):
+        if sep in s:
+            h, _, w = s.partition(sep)
+            try:
+                return (int(h), int(w))
+            except ValueError:
+                break
+    raise SystemExit(
+        f"[v4] --v2-subframe {spec!r} is not HxW (e.g. 176x624) nor 'none'.")
+
+
+def resolve_v2_frames(a, cfg, *, label: str = "train_flagship_v4"):
+    """⭐ THE RIG-CLEAN SEAM. Returns ``(cache_frame, train_frame)``.
+
+    ``--frame-*`` declares the geometry the CACHE WAS BUILT AT — that is what the
+    parity record and the bytes on disk can be checked against. ``--v2-subframe
+    HxW`` then names the CENTRED SUB-RECTANGLE the model is actually trained on.
+
+    Why a sub-frame at all (MEASURED 2026-07-27, n = 3 000 clips): the 120° /
+    256x640 v5 build is rig-asymmetric — the front-wide camera comes in two rigs
+    whose principal points differ by ~211 px vertically, so the requested field
+    over-runs rig B's sensor and the rectifier masks **8.897 %** of every rig-B
+    frame and **0.0017 %** of every rig-A one. That mask is a rig FINGERPRINT in
+    ~73 % of the corpus. ``176x624`` is the largest centred sub-rectangle both
+    rigs fully observe (masked fraction 0.0000000000, max not mean, over 240 real
+    clips); ``128x576`` is the same guarantee under exact readout tiling.
+
+    Why it is free: a centred sub-frame of a cylindrical frame is a pure PIXEL
+    SLICE of it (``calib.centred_subframe`` / ``subframe_slice``), MEASURED
+    bit-identical to a rebuild on 6 clips x 201 real frames of this cache
+    (``max_abs_diff 0``). Nothing is rebuilt and nothing is re-emitted.
+
+    ⛔ The sub-frame is derived FROM the parent, never constructed from
+    ``--frame-hfov`` independently: ``centred_subframe`` copies ``f_ref`` and the
+    projection exactly, which is the condition under which the slice is bit-exact.
+    (The two agree numerically here — 640/120° and 624/117° both give f_ref
+    305.5774907364391 — but relying on that coincidence is how a geometry drifts.)
+
+    The frame is applied to ``cfg`` too, so the ENCODER is sized for what it will
+    be fed. ``--v2-subframe`` absent/``none`` returns ``(frame, frame)`` and the
+    whole path is byte-identical to before.
+    """
+    from tanitad.data.calib import centred_subframe
+    from tanitad.geometry import apply_frame, apply_geometry_args
+
+    cache_frame = apply_geometry_args(a, cfg, label=label)
+    hw = parse_subframe(getattr(a, "v2_subframe", None))
+    if hw is None:
+        return cache_frame, cache_frame
+    sub = centred_subframe(cache_frame, hw[0], hw[1])   # refuses odd margins
+    apply_frame(cfg, sub)                               # the ENCODER moves too
+    from tanitad.data.calib import subframe_slice
+    rs, cs = subframe_slice(cache_frame, sub)
+    print(f"[geometry] {label}: SUB-FRAME {sub.height}x{sub.width} "
+          f"(HFOV {sub.hfov_deg:.3f}deg / VFOV {sub.vfov_deg:.3f}deg) = rows "
+          f"[{rs.start}:{rs.stop}], cols [{cs.start}:{cs.stop}] of the "
+          f"{cache_frame.height}x{cache_frame.width} cache — a pure pixel slice "
+          f"(same f_ref {sub.f_ref:.4f}, same {sub.projection}). The model is "
+          f"trained on the SUB-frame; the cache is unchanged.", flush=True)
+    return cache_frame, sub
+
+
+def build_v2_data(a, provenance, *, cache_frame, train_frame, verbose: bool = True):
+    """The v2 provider seam: build the providers AT THE TRAIN FRAME and bind it.
+
+    Extracted from :func:`train` so the wiring is testable without a GPU — the
+    thing that made this fix necessary was a verified function nobody called, so
+    the call itself is now under test (``tests/test_v5_frame_wiring.py``).
+
+    ⭐ The two lines that matter are ``frame=slice_frame`` and ``parent=``: the
+    first makes the loader deliver the rig-clean frame, the second makes
+    :func:`parity.assert_v2_geometry_matches` compare the SHAPE the providers
+    actually hand back against the frame the run declares — so a sub-frame that
+    is configured but never applied is a REFUSAL at launch, not a silently
+    wrong 30k run."""
+    from tanitad.data.v2_dataset import build_v2_providers
+    slice_frame = None if train_frame == cache_frame else train_frame
+    train_eps = build_v2_providers(a.v2_train_cache, lru_size=a.v2_lru,
+                                   frame=slice_frame, verbose=verbose)
+    val_eps = build_v2_providers(a.v2_val_cache, lru_size=a.v2_lru,
+                                 frame=slice_frame, verbose=verbose)
+    if not train_eps or not val_eps:
+        raise SystemExit(
+            f"[v4] no *.v2ep.pt under {a.v2_train_cache} / "
+            f"{a.v2_val_cache} — do the caches point at the split dirs?")
+    # ⭐ BIND THE GEOMETRY. Membership proves WHICH CLIPS and never which
+    # pixels, so a cache built at the wrong frame with the right clips passes
+    # every check above. This compares the run's declared frame against (1)
+    # the raster the providers actually deliver and (2) the geometry the
+    # manifest recorded at registration. Neither hashes pixels — see the function.
+    provenance["geometry_binding"] = parity.assert_v2_geometry_matches(
+        provenance["train_parity"], train_frame, label="--v2-train-cache",
+        providers=train_eps, parent=cache_frame)
+    provenance["geometry_binding_val"] = parity.assert_v2_geometry_matches(
+        provenance["val_parity"], train_frame, label="--v2-val-cache",
+        providers=val_eps, parent=cache_frame)
+    return train_eps, val_eps
+
+
 def assert_corpus_args(a) -> bool:
     """Resolve WHICH corpus format this run reads. Returns ``True`` for v2.
 
@@ -1065,8 +1175,9 @@ def train(a) -> dict:
     # Input geometry — the SAME one call train_flagship4b makes, so a wide run is
     # spelled identically on both trainers. Every default reproduces the deployed
     # 256x256 frame exactly, so no existing v4 command moves.
-    from tanitad.geometry import apply_geometry_args
-    frame = apply_geometry_args(a, cfg, label="train_flagship_v4")
+    # ⭐ (cache geometry, TRAIN geometry). They differ only when --v2-subframe
+    # asks for the rig-clean centred slice; see resolve_v2_frames.
+    cache_frame, frame = resolve_v2_frames(a, cfg, label="train_flagship_v4")
     cfg.speed_input = True
     cfg.predictor = dataclasses.replace(cfg.predictor, action_dim=3)
     if getattr(cfg, "tactical_pred", None) is not None:
@@ -1124,24 +1235,8 @@ def train(a) -> dict:
         # tanitad.data.v2_dataset imports torchvision, which the dev box does not
         # have, and a module-scope import would make every v4 CPU test unrunnable
         # there — see train_flagship4b, which does the same.
-        from tanitad.data.v2_dataset import build_v2_providers
-        train_eps = build_v2_providers(a.v2_train_cache, lru_size=a.v2_lru)
-        val_eps = build_v2_providers(a.v2_val_cache, lru_size=a.v2_lru)
-        if not train_eps or not val_eps:
-            raise SystemExit(
-                f"[v4] no *.v2ep.pt under {a.v2_train_cache} / "
-                f"{a.v2_val_cache} — do the caches point at the split dirs?")
-        # ⭐ BIND THE GEOMETRY. Membership proves WHICH CLIPS and never which
-        # pixels, so a cache built at the wrong frame with the right clips passes
-        # every check above. This compares the run's declared frame against (1)
-        # the raster size actually on disk and (2) the geometry the manifest
-        # recorded at registration. Neither hashes pixels — see the function.
-        provenance["geometry_binding"] = parity.assert_v2_geometry_matches(
-            provenance["train_parity"], frame, label="--v2-train-cache",
-            providers=train_eps)
-        provenance["geometry_binding_val"] = parity.assert_v2_geometry_matches(
-            provenance["val_parity"], frame, label="--v2-val-cache",
-            providers=val_eps)
+        train_eps, val_eps = build_v2_data(
+            a, provenance, cache_frame=cache_frame, train_frame=frame)
     else:
         train_eps = [load_episode(str(p), mmap=True)
                      for p in sorted(Path(a.train_cache).glob("ep_*.pt"))]
@@ -1191,6 +1286,17 @@ def train(a) -> dict:
         # episode set — two rows can share the EPISODES and differ in PIXELS).
         "corpus_format": "v2 compressed" if use_v2 else "raw epcache",
         "geometry": _geometry_report(cfg, frame),
+        # ⭐ When the run trains on a centred SLICE of the cache, "geometry" above
+        # is the frame the MODEL sees and this is the frame the BYTES are. Both
+        # are needed: a registry row keyed on one and read as the other is the
+        # "two rows share the episodes and differ in pixels" hazard, one level in.
+        "geometry_cache": (None if frame == cache_frame else {
+            **cache_frame.report(),
+            "subframe_of_cache": provenance.get("geometry_binding", {})
+                                          .get("sliced_from"),
+            "note": "the cache is UNCHANGED on disk; the loader slices it "
+                    "(bit-exact for a lossless/PNG cache).",
+        }),
         "trunk": ({"init": "from-scratch (random)", "ckpt": None, "step": -1,
                    "rationale": "v4 from-scratch fallback — WM + anchored-diffusion "
                    "planner co-evolve from random init like v1 (canary held 0.42); no "
@@ -1534,6 +1640,20 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--v2-lru", type=int, default=64,
                     help="per-worker LRU of compressed clip payloads "
                          "(~2-4 MB/clip); mirrors train_flagship4b's default")
+    # ⭐ THE RIG-CLEAN FIX, as ONE flag. The frame is a PI decision (176x624 vs
+    # 128x576), so it is named on the command line and hard-coded nowhere.
+    ap.add_argument("--v2-subframe", default=None, metavar="HxW",
+                    help="train on a CENTRED SUB-RECTANGLE of the v2 cache "
+                         "(e.g. 176x624), sliced in the loader — no rebuild, no "
+                         "re-emit, 0 bytes. 176x624 (117.000deg x 32.131deg, 429 "
+                         "tokens) is the largest centred frame BOTH PhysicalAI "
+                         "front-wide rigs fully observe (masked fraction "
+                         "0.0000000000, max over 240 real clips); 128x576 is the "
+                         "same guarantee with exact readout tiling, for 3.5pp "
+                         "more agent samples. Pass 'none' to train on the frames "
+                         "exactly as built — on a non-deployed frame preflight "
+                         "requires one or the other, so this can never be lost "
+                         "by omission.")
     ap.add_argument("--require-parity", action="store_true",
                     help="REFUSE to train unless the v2 TRAIN cache is a "
                          "REGISTERED parity corpus (clip-id membership vs the "
@@ -1717,6 +1837,33 @@ def preflight_asserts(a) -> list[str]:
             "[HELDOUT-GATE] --v2-train-cache without --v2-val-cache: the gate "
             "has no held-out episodes to probe, so the run has no early-stop "
             "signal at all (the ~29.5 GPU-h cause).")
+    # ⭐ RIG-CLEAN. A verified fix that nothing calls is the failure this flag
+    # exists to end, and "the flag was absent" must never be how a run loses it.
+    # Scope: only a NON-DEPLOYED frame on the v2 path, i.e. exactly the wide v5
+    # build. The deployed 256x256 square cache (pod1's running --v2-cache arm) is
+    # untouched — its pad defect is upstream of the cache and no slice fixes it.
+    if getattr(a, "v2_train_cache", None) and \
+            getattr(a, "v2_subframe", None) is None:
+        try:
+            from tanitad.config import flagship4b_config
+            from tanitad.geometry import frame_from_args
+            _f = frame_from_args(a, flagship4b_config())
+        except Exception:                                     # noqa: BLE001
+            _f = None
+        if _f is not None and not _f.is_canonical:
+            problems.append(
+                f"[RIG-CLEAN] a v2 run at {_f.height}x{_f.width} "
+                f"({_f.hfov_deg:.3f}deg) without --v2-subframe. MEASURED over "
+                f"3,000 clips: the PhysicalAI front-wide camera is TWO RIGS whose "
+                f"principal points differ ~211 px vertically, so a 120deg request "
+                f"over-runs rig B's sensor and the rectifier MASKS 8.897 % of "
+                f"every rig-B frame vs 0.0017 % of every rig-A one — a rig "
+                f"FINGERPRINT in ~73 % of the corpus. --v2-subframe 176x624 "
+                f"removes it exactly (masked 0.0000000000, max over 240 real "
+                f"clips) as a pure loader slice: no rebuild, 0 bytes, -33 % "
+                f"tokens. Pass --v2-subframe 176x624 (or 128x576), or "
+                f"--v2-subframe none to state that this arm trains on the "
+                f"rig-asymmetric frames deliberately.")
     # ⭐ from-scratch XOR warm-start: a real --trunk together with --from-scratch is
     # ambiguous (the trunk would be built then discarded by the random init). Fail
     # loudly so the intent is unmistakable BEFORE a GPU-day.
@@ -1763,7 +1910,12 @@ def _staged_command(a) -> str:
     if getattr(a, "v2_train_cache", None):
         pairs = [("--v2-train-cache", " ".join(a.v2_train_cache)),
                  ("--v2-val-cache", " ".join(a.v2_val_cache or [])),
-                 ("--v2-lru", a.v2_lru)]
+                 ("--v2-lru", a.v2_lru),
+                 # ⛔ the sub-frame must survive reconstruction, or a launch
+                 # rebuilt from this string trains on the rig-ASYMMETRIC frames
+                 # while every artifact says otherwise. 'none' is emitted too:
+                 # the choice is explicit in both directions.
+                 ("--v2-subframe", getattr(a, "v2_subframe", None))]
     else:
         pairs = [("--train-cache", a.train_cache), ("--val-cache", a.val_cache)]
     # geometry: emitted ONLY when non-default, so an existing v4 command

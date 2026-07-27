@@ -1,0 +1,123 @@
+{
+ "device": "NVIDIA A40",
+ "config": "flagship4b_config",
+ "amp": true,
+ "reps": 10,
+ "window": 8,
+ "in_channels": 9,
+ "images_per_microbatch_at_batch16": 128,
+ "scope": "ENCODER forward+backward only \u2014 the predictor, the four-brain heads and the planner do not shrink with the token count, so the run-level saving is SMALLER.",
+ "frames": [
+  {
+   "tag": "256x640f305.5775cyl",
+   "hw": [
+    256,
+    640
+   ],
+   "n_tokens": 640,
+   "token_grid": [
+    16,
+    40
+   ],
+   "state_dim": 2048,
+   "params_M": 87.318,
+   "by_image_batch": {
+    "16": {
+     "s_per_fwdbwd": 0.13171,
+     "s_per_image": 0.008232,
+     "peak_MiB": 4468.3
+    },
+    "32": {
+     "s_per_fwdbwd": 0.25665,
+     "s_per_image": 0.00802,
+     "peak_MiB": 7967.4
+    },
+    "64": {
+     "s_per_fwdbwd": 0.50229,
+     "s_per_image": 0.007848,
+     "peak_MiB": 15002.6
+    }
+   },
+   "tokens_vs_parent": 1.0,
+   "ratio_vs_parent": {
+    "16": 1.0,
+    "32": 1.0,
+    "64": 1.0
+   }
+  },
+  {
+   "tag": "176x624f305.5775cyl",
+   "hw": [
+    176,
+    624
+   ],
+   "n_tokens": 429,
+   "token_grid": [
+    11,
+    39
+   ],
+   "state_dim": 2048,
+   "params_M": 87.156,
+   "by_image_batch": {
+    "16": {
+     "s_per_fwdbwd": 0.09255,
+     "s_per_image": 0.005784,
+     "peak_MiB": 3271.5
+    },
+    "32": {
+     "s_per_fwdbwd": 0.17832,
+     "s_per_image": 0.005573,
+     "peak_MiB": 5648.1
+    },
+    "64": {
+     "s_per_fwdbwd": 0.33966,
+     "s_per_image": 0.005307,
+     "peak_MiB": 10358.7
+    }
+   },
+   "tokens_vs_parent": 0.6703,
+   "ratio_vs_parent": {
+    "16": 0.7026,
+    "32": 0.6949,
+    "64": 0.6762
+   }
+  },
+  {
+   "tag": "128x576f305.5775cyl",
+   "hw": [
+    128,
+    576
+   ],
+   "n_tokens": 288,
+   "token_grid": [
+    8,
+    36
+   ],
+   "state_dim": 2048,
+   "params_M": 87.047,
+   "by_image_batch": {
+    "16": {
+     "s_per_fwdbwd": 0.06598,
+     "s_per_image": 0.004124,
+     "peak_MiB": 2509.9
+    },
+    "32": {
+     "s_per_fwdbwd": 0.12047,
+     "s_per_image": 0.003765,
+     "peak_MiB": 4113.5
+    },
+    "64": {
+     "s_per_fwdbwd": 0.2301,
+     "s_per_image": 0.003595,
+     "peak_MiB": 7287.9
+    }
+   },
+   "tokens_vs_parent": 0.45,
+   "ratio_vs_parent": {
+    "16": 0.501,
+    "32": 0.4695,
+    "64": 0.4581
+   }
+  }
+ ]
+}

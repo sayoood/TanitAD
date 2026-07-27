@@ -1083,7 +1083,7 @@ def assert_v2_splits_disjoint(train_dirs, val_dirs, *,
 
 
 def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
-                               providers=None) -> dict:
+                               providers=None, parent=None) -> dict:
     """⭐ BIND THE GEOMETRY to what the trainer verified — the gap §9's header
     names ("nothing hashes PIXELS; a wrong-FOV cache with the right clips
     PASSES").
@@ -1105,6 +1105,23 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
        view, which SHAPE alone cannot see: 256x640 at f_ref 305.58 (120 deg) and
        256x640 at f_ref 407 (90 deg) have identical shape.
 
+    ⭐ ``parent`` (2026-07-28) is the SUB-FRAME case: the cache is built at
+    ``parent`` and the trainer reads a CENTRED SLICE of it (``frame``), via
+    ``build_v2_providers(..., frame=…)``. Then the two bindings split cleanly and
+    BOTH get stronger:
+
+    * SHAPE is checked against ``frame`` — the raster the trainer actually
+      receives. ⭐ This is what makes the slice IMPOSSIBLE TO FORGET: a run that
+      declares a sub-frame but whose loader was never told to slice hands back
+      ``parent``-shaped providers and this raises. The wiring cannot be
+      configured-but-inert, which is the exact defect class this check is here
+      for.
+    * DECLARATION is checked against ``parent`` — what the builder recorded and
+      what is registered. It stays a true statement about the bytes on disk.
+    * and ``frame`` must be a real centred slice of ``parent``
+      (``calib.subframe_slice``, which refuses a changed focal or projection),
+      recorded as ``sliced_from`` with the exact rows/cols.
+
     ⛔ WHAT THIS STILL DOES NOT DO: it does not hash pixels. A cache whose
     ``_geometry.json`` says 120 deg but whose resampler actually produced 90 deg
     passes both bindings. Only the builder's pre-decode
@@ -1120,6 +1137,22 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
                "disk, the manifest proves what the BUILDER RECORDED. None of "
                "the three proves the resampler produced that field.")}
 
+    declared = frame
+    if parent is not None and parent != frame:
+        from tanitad.data.calib import subframe_slice
+        rs, cs = subframe_slice(parent, frame)     # refuses a non-slice
+        declared = parent
+        out["sliced_from"] = {
+            "parent": {"height": int(parent.height), "width": int(parent.width),
+                       "f_ref": float(parent.f_ref),
+                       "projection": str(parent.projection)},
+            "parent_tag": parent.tag(), "sub_tag": frame.tag(),
+            "rows": [rs.start, rs.stop], "cols": [cs.start, cs.stop],
+            "note": ("the cache holds the parent; the loader slices it. SHAPE is "
+                     "bound to the SUB-frame (so a slice that was configured but "
+                     "never applied FAILS here), DECLARATION to the PARENT."),
+        }
+
     if providers:
         shapes = sorted({tuple(int(x) for x in p.frames.shape[-2:])
                          for p in providers})
@@ -1127,11 +1160,19 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
         out["cache_frame_shapes"] = [list(s) for s in shapes]
         want = (int(frame.height), int(frame.width))
         if len(shapes) > 1 or shapes[0] != want:
+            # ⭐ THE SUB-FRAME CASE: shapes came back as the PARENT, i.e. the
+            # sub-frame was declared and the LOADER WAS NEVER TOLD TO SLICE.
+            # That is the "verified fix nothing calls" failure, and naming it
+            # here is what turns it from a silent wrong-geometry run into a
+            # refusal at launch.
+            inert = (parent is not None and len(shapes) == 1
+                     and shapes[0] == (int(parent.height), int(parent.width)))
             raise ParityViolation("\n".join([
                 "",
                 "=" * 78,
-                f"GEOMETRY VIOLATION [{label}] — the cache is not the frame the "
-                f"run declares",
+                f"GEOMETRY VIOLATION [{label}] — "
+                + ("the SUB-FRAME WAS DECLARED BUT NEVER APPLIED" if inert else
+                   "the cache is not the frame the run declares"),
                 "=" * 78,
                 f"  run declares : {want[0]}x{want[1]} px, f_ref "
                 f"{frame.f_ref:.4f}, {frame.projection}",
@@ -1139,13 +1180,22 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
                 + ("   <-- MIXED GEOMETRIES IN ONE CACHE" if len(shapes) > 1
                    else "   <-- MISMATCH"),
                 "",
+                *(["  The providers handed back the PARENT raster, so the frame",
+                   "  argument never reached the loader: build_v2_providers() was",
+                   "  called WITHOUT frame=, or something rebuilt the providers",
+                   "  after the geometry was resolved. The run would have trained",
+                   "  on the un-sliced frames while its config.json claimed the",
+                   f"  sub-frame — pass frame={want[0]}x{want[1]} into",
+                   "  tanitad.data.v2_dataset.build_v2_providers().",
+                   ""] if inert else []),
                 "  The encoder's positional embedding is sized for the DECLARED",
                 "  frame. Feeding it a different raster does not crash: it",
                 "  trains, and every number off the run is void.",
                 "",
-                "  Pass the cache's own geometry, e.g.:",
-                f"      --frame-h {shapes[0][0]} --frame-w {shapes[0][1]} "
-                f"--frame-hfov <deg> --projection <pinhole|cylindrical>",
+                *([] if inert else [
+                    "  Pass the cache's own geometry, e.g.:",
+                    f"      --frame-h {shapes[0][0]} --frame-w {shapes[0][1]} "
+                    f"--frame-hfov <deg> --projection <pinhole|cylindrical>"]),
                 "=" * 78,
             ]))
 
@@ -1163,17 +1213,20 @@ def assert_v2_geometry_matches(rec: dict, frame, *, label: str,
         out["checked_declaration"] = True
         out["registered_geometry"] = dict(fr)
         bad = []
-        if int(fr["height"]) != int(frame.height) or \
-                int(fr["width"]) != int(frame.width):
+        if int(fr["height"]) != int(declared.height) or \
+                int(fr["width"]) != int(declared.width):
             bad.append(f"size {fr['height']}x{fr['width']} registered vs "
-                       f"{frame.height}x{frame.width} declared")
-        if fr.get("projection") and str(fr["projection"]) != str(frame.projection):
+                       f"{declared.height}x{declared.width} declared"
+                       + ("  (the CACHE geometry; the run reads the sub-frame "
+                          f"{frame.height}x{frame.width})"
+                          if declared is not frame else ""))
+        if fr.get("projection") and str(fr["projection"]) != str(declared.projection):
             bad.append(f"projection {fr['projection']!r} registered vs "
-                       f"{frame.projection!r} declared")
+                       f"{declared.projection!r} declared")
         if fr.get("f_ref") is not None and \
-                abs(float(fr["f_ref"]) - float(frame.f_ref)) > 1e-3:
+                abs(float(fr["f_ref"]) - float(declared.f_ref)) > 1e-3:
             bad.append(f"f_ref {float(fr['f_ref']):.4f} registered vs "
-                       f"{float(frame.f_ref):.4f} declared  <-- SAME PIXELS, "
+                       f"{float(declared.f_ref):.4f} declared  <-- SAME PIXELS, "
                        f"DIFFERENT FIELD OF VIEW")
         if bad:
             raise ParityViolation("\n".join([

@@ -1,0 +1,300 @@
+{
+ "host": "08f6ce7d8e55",
+ "subframe": "128x576",
+ "stack": "/workspace/rigfix/stack_head",
+ "legs": {
+  "L1_precondition": {
+   "all_png": true,
+   "all_256x640": true,
+   "n": 6,
+   "rows": [
+    {
+     "split": "train",
+     "codec": "png",
+     "frame": {
+      "height": 256,
+      "width": 640,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical"
+     },
+     "image_hw": [
+      256,
+      640
+     ]
+    },
+    {
+     "split": "train",
+     "codec": "png",
+     "frame": {
+      "height": 256,
+      "width": 640,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical"
+     },
+     "image_hw": [
+      256,
+      640
+     ]
+    }
+   ]
+  },
+  "L2_seam": {
+   "cache_frame": {
+    "height": 256,
+    "width": 640,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "train_frame": {
+    "height": 128,
+    "width": 576,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical"
+   },
+   "encoder_image_hw": [
+    128,
+    576
+   ],
+   "token_grid": [
+    8,
+    36
+   ],
+   "n_tokens": 288,
+   "provider_shapes": "[(199, 9, 128, 576)]",
+   "sliced_from": {
+    "parent": {
+     "height": 256,
+     "width": 640,
+     "f_ref": 305.5774907364391,
+     "projection": "cylindrical"
+    },
+    "parent_tag": "256x640f305.5775cyl",
+    "sub_tag": "128x576f305.5775cyl",
+    "rows": [
+     64,
+     192
+    ],
+    "cols": [
+     32,
+     608
+    ],
+    "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+   },
+   "build_s": 0.36
+  },
+  "L3_vs_load_compressed": {
+   "all_bit_identical": true,
+   "max_abs_diff_over_all": 0,
+   "rows": [
+    {
+     "split": "train",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    },
+    {
+     "split": "train",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    },
+    {
+     "split": "train",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    },
+    {
+     "split": "val",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    },
+    {
+     "split": "val",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    },
+    {
+     "split": "val",
+     "n_frames": 199,
+     "shape": [
+      199,
+      9,
+      128,
+      576
+     ],
+     "bit_identical_to_load_compressed_frame": true,
+     "max_abs_diff": 0
+    }
+   ]
+  },
+  "L4_vs_hand_slice_of_parent": {
+   "all_bit_identical": true,
+   "total_pixels_differing": 0,
+   "rows": [
+    {
+     "split": "train",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    },
+    {
+     "split": "train",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    },
+    {
+     "split": "train",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    },
+    {
+     "split": "val",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    },
+    {
+     "split": "val",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    },
+    {
+     "split": "val",
+     "parent_shape": [
+      199,
+      9,
+      256,
+      640
+     ],
+     "bit_identical_to_hand_slice_of_parent": true,
+     "n_pixels_differing": 0
+    }
+   ]
+  },
+  "L5_neg_frame_withheld": {
+   "refused": true,
+   "names_the_cause": true,
+   "names_the_call": true,
+   "message_head": [
+    "==============================================================================",
+    "GEOMETRY VIOLATION [--v2-train-cache] \u2014 the SUB-FRAME WAS DECLARED BUT NEVER APPLIED",
+    "==============================================================================",
+    "  run declares : 128x576 px, f_ref 305.5775, cylindrical",
+    "  cache holds  : 256x640 px   <-- MISMATCH",
+    "  The providers handed back the PARENT raster, so the frame"
+   ]
+  },
+  "L6_cost": {
+   "mean_load_parent_s": 0.9858,
+   "mean_load_subframe_s": 0.9701,
+   "n": 6,
+   "per_clip": [
+    {
+     "split": "train",
+     "load_parent_s": 1.1461,
+     "load_subframe_s": 1.1554
+    },
+    {
+     "split": "train",
+     "load_parent_s": 0.9056,
+     "load_subframe_s": 0.872
+    },
+    {
+     "split": "train",
+     "load_parent_s": 0.9872,
+     "load_subframe_s": 0.9859
+    },
+    {
+     "split": "val",
+     "load_parent_s": 1.138,
+     "load_subframe_s": 1.132
+    },
+    {
+     "split": "val",
+     "load_parent_s": 0.7913,
+     "load_subframe_s": 0.7948
+    },
+    {
+     "split": "val",
+     "load_parent_s": 0.9466,
+     "load_subframe_s": 0.8807
+    }
+   ]
+  }
+ },
+ "dirs": {
+  "train": {
+   "source": "/workspace/data/pai_wide120_v2png_train",
+   "probe_dir": "/workspace/rigfix/wireprobe576/train",
+   "n_clips_total": 2400,
+   "n_probed": 3
+  },
+  "val": {
+   "source": "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+   "probe_dir": "/workspace/rigfix/wireprobe576/val",
+   "n_clips_total": 600,
+   "n_probed": 3
+  }
+ }
+}
