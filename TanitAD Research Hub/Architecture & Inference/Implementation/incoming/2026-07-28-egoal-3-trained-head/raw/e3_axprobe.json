@@ -1,0 +1,174 @@
+{
+ "_stream": "2026-07-28-egoal-3-trained-head",
+ "_stage": "S4 -- the ax-quality discriminating experiment",
+ "_corpus": "E-GOAL-1's dev corpus (key 14231cd29c74, NOT parity) -- this probe is about the FEATURE, not a headline number",
+ "_n_windows": 99935,
+ "_n_clips": 612,
+ "_ax_fd": {
+  "what": "(v[t] - v[t-0.1]) / 0.1, WITHIN clip, backward",
+  "n_rows_without_a_valid_predecessor": 0,
+  "corr_with_native_ax": 0.759,
+  "native_ax_sd": 0.7659,
+  "ax_fd_sd": 0.744
+ },
+ "along_rms_m": {
+  "E1_ego": 0.9305,
+  "E1_nohist": 1.0733,
+  "E1_nohist_axfd": 0.9659,
+  "E1_v": 1.5246,
+  "E1_v_ax": 1.1808,
+  "E1_v_axfd": 0.927
+ },
+ "along_mae_m": {
+  "E1_ego": 0.4925,
+  "E1_nohist": 0.596,
+  "E1_nohist_axfd": 0.507,
+  "E1_v": 0.9829,
+  "E1_v_ax": 0.6694,
+  "E1_v_axfd": 0.4989
+ },
+ "EGOAL_1_published": {
+  "E1_ego": 0.9305,
+  "E1_nohist": 1.0733,
+  "E0_v0": 1.5246
+ },
+ "EGOAL_3_val600_T_OOF": {
+  "H_ego": 0.7449,
+  "H_nohist": 0.7628,
+  "H_v0_ax": 0.7519,
+  "H_v0": 1.45
+ },
+ "FIDELITY": {
+  "E1_ego_reproduces_0p9305": true,
+  "E1_nohist_reproduces_1p0733": true
+ },
+ "contrasts_rms": {
+  "E1_ego__vs__E1_nohist": {
+   "_what": "E-GOAL-2's history block, native ax",
+   "delta_rms_m": -0.1428,
+   "paired_mae_delta": {
+    "delta": -0.1035,
+    "lo": -0.1273,
+    "hi": -0.0838,
+    "ci95": 0.0217,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_ego__vs__E1_nohist_axfd": {
+   "_what": "the same, with ax replaced by a finite difference",
+   "delta_rms_m": -0.0355,
+   "paired_mae_delta": {
+    "delta": -0.0145,
+    "lo": -0.0341,
+    "hi": -0.0023,
+    "ci95": 0.0159,
+    "p_delta_gt0": 0.005,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_nohist_axfd__vs__E1_nohist": {
+   "_what": "\u2b50 ax_fd vs native ax",
+   "delta_rms_m": -0.1074,
+   "paired_mae_delta": {
+    "delta": -0.089,
+    "lo": -0.108,
+    "hi": -0.0713,
+    "ci95": 0.0184,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_v_axfd__vs__E1_v_ax": {
+   "_what": "\u2b50 the same, minimal pair",
+   "delta_rms_m": -0.2539,
+   "paired_mae_delta": {
+    "delta": -0.1704,
+    "lo": -0.2002,
+    "hi": -0.143,
+    "ci95": 0.0286,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_v_ax__vs__E1_v": {
+   "_what": "what the NATIVE ax buys over v alone",
+   "delta_rms_m": -0.3438,
+   "paired_mae_delta": {
+    "delta": -0.3135,
+    "lo": -0.3458,
+    "hi": -0.2806,
+    "ci95": 0.0326,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_v_axfd__vs__E1_v": {
+   "_what": "what a FINITE-DIFFERENCE ax buys over v",
+   "delta_rms_m": -0.5977,
+   "paired_mae_delta": {
+    "delta": -0.484,
+    "lo": -0.5197,
+    "hi": -0.4494,
+    "ci95": 0.0352,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": true
+  },
+  "E1_ego__vs__E1_v_axfd": {
+   "_what": "everything beyond v + ax_fd",
+   "delta_rms_m": 0.0035,
+   "paired_mae_delta": {
+    "delta": -0.0065,
+    "lo": -0.0259,
+    "hi": 0.0095,
+    "ci95": 0.0177,
+    "p_delta_gt0": 0.231,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "separated": false
+  }
+ },
+ "_wall_s": 36.4
+}

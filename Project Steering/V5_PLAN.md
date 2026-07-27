@@ -290,8 +290,61 @@ under-powering, and it would have passed unnoticed as a "stronger" result.)*
 0.9305 m clears it by 1.31× — while FAILING the inherited `ISO` 0.813 bar by 1.14×.** Same number,
 opposite verdicts, decided by which error family the bar was computed on (class C24).
 
-⛔ **NOT LICENSED: +25.4 % is a RESAMPLED RESIDUAL, not a trained head. E-GOAL-3 — an actually
-trained goal head — remains the decisive test, and no v5 commitment should outrun it.**
+### ⭐⭐ E-GOAL-3 (2026-07-28) — THE TRAINED HEAD LANDED, AND IT BEATS THE ESTIMATE THAT PREDICTED IT
+
+`…/incoming/2026-07-28-egoal-3-trained-head/`. **CONFIRM, by 2.4× over its pre-registered ≥ +19.1 % bar.**
+
+| arm (background NAMED: `parent_resampled`) | recovery | realised `ade_0_2s` | paired |
+|---|---:|---:|---|
+| `H_ego` out-of-fold | **+46.3 %** | **0.3589 [0.3487, 0.3701]** | **−0.1426 [−0.1573, −0.1273]** ✅ sep-better |
+| deployable (fitted on the 2376-ep parity train, 0/600 leak) | **+50.7 %** | — | **−0.1564 [−0.1719, −0.1408]** ✅ |
+
+⭐ **0.3589 CLEARS 0.4907 — the in-sample re-scoring ceiling that four consecutive streams failed to
+beat.** It can, because this is not a re-scoring: it injects information the fan never had.
+
+⭐ **The resampled estimate TRANSFERRED AND UNDER-STATED THE LEVER (1.82×).** Decomposed at matched
+RMS (0.9311 vs E-GOAL-2's 0.9305): a **correlated** head is **+3.9 points** better than the
+decorrelated resampler, and the remaining **+17.0 points is pure accuracy** (0.7449 vs 0.9305 m). Head
+RMS/MAE **0.7449 / 0.4819** — clears the family-matched σ₀ by **1.64×** and, for the first time in this
+program, the inherited `ISO` 0.813 bar as well. *(New class: **RESAMPLED-RESIDUAL-UNDER-STATES-A-TRAINED-HEAD**.)*
+
+⛔⛔ **AND IT REFUTES THE MECHANISM IT INHERITED — the feature list above is WRONG.** The lever is
+**not "1 s of speed history". It is ONE 0.1 s speed difference.** `v` alone: **−19.4 %, separated-WORSE**.
+**`v + ax` (finite-difference): +46.3 %, a tight null against the full 10-column head
+(+0.0002 [−0.0023, +0.0027]).** **The `dv_*` / `v_lag_*` block E-GOAL-2 credited with 64 % is worth
+0.9 of 46.3 points — 2.0 %.**
+
+⭐ **Root cause found AND replicated on E-GOAL-2's own corpus with its own fitter, folds and seed**
+(both their anchors 0.9305 / 1.0733 reproduce exactly): **`egomotion`'s NATIVE `ax` channel is a poor
+derivative of the speed the target integrates — they correlate only 0.759.** `v + ax_fd` (a 0.1 s
+backward difference) reaches **0.9270 m**, a null against the whole 10-column block at 0.9305, while
+native `v + ax` reaches only **1.1808 m — 0.2539 m worse for one column choice.** ⇒ **the lag block was
+a PROXY for a derivative the native channel failed to supply. The two streams agree once the column is
+fixed.** *(New class: **ABLATION-CREDITED-TO-THE-WRONG-COLUMN**.)*
+⇒ ⛔ **E-GOAL-2's "64 % of the recovery is speed history" is WITHDRAWN. Its statistical result stands;
+its causal attribution does not.** ⇒ **A v5 built on the published column list would ship a 1-second
+history buffer to buy 2 % of the effect.** ✅ Fixed at the source: `lead_state_gate.py` now emits
+**`ax_fd`** with `EGO_COLS_FD = ["v", "ax_fd"]` alongside the unchanged `EGO_COLS` — **`ax` is NOT
+redefined**, because committed artifacts carry that name and changing a column's meaning under a
+stable name is its own failure mode.
+
+**Controls, all exercised rather than asserted:** REFUTE demonstrated **four** ways
+(`CV_head`, `H_v0`, `H_inst`, `N_SHUF` all separated-WORSE); PARTIAL demonstrated (k=1.5 → +11.6 %,
+separated); three tight nulls. **C30** — background named in advance and held fixed; span **15.8 pts**,
+replicating E-GOAL-2's 15.9, and **separation does NOT flip: 6/6 cells separated-better**. **C31** — the
+predicate is confirmed non-discriminating at this n (a noise-history arm separates at +45.4 %), so the
+mechanism rests on **direct contrasts**. **C23** — `future_blind` over all **13,198 windows, max
+|Δ feature| = 0.0**, with power demonstrated ⚠️ **and the negative-index trap FIRED: 600 windows (the
+first of every episode) would have read `poses[-3]` — the FUTURE — and were clamped.** **C24** — family
+measured independently (`EMPIRICAL`, α 0.9983): σ₀ **1.2276 m** against E-GOAL-2's 1.2195, **0.7 %
+apart on a different error family.** Fidelity: F-1 reproduces E-GOAL-2's n=600 cell to **0.003 recovery
+points**, so +46.3 % vs +25.4 % is **treatment, not code**; F-2 is a per-row exact identity over 13,198
+rows with F-3 failing hard as required. Leak **0/600 by pose content against 600/600 by filename**,
+cross-validated against E-GOAL-2's independent script.
+
+⛔ **STILL NOT LICENSED, and this is the next experiment: that a JOINTLY TRAINED v5 selector inherits
++46 %.** What is measured is a goal injected into a **frozen** fan through a **fixed** rule. **It can
+fail, and no v5 commitment may outrun it.**
 
 ⚠️ **AND THE BARS THIS DOCUMENT PUBLISHED WERE COMPUTED ON THE WRONG FAMILY.** The measured heads are
 **near-unbiased (α ≈ 0.996 — not `SHRINK`)** and **heavy-tailed (RMS/MAE 1.867 — not `ISO`)**. Sweeping

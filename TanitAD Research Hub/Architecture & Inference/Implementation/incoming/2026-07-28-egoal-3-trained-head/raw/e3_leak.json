@@ -1,0 +1,71 @@
+{
+ "_stream": "2026-07-28-egoal-3-trained-head",
+ "_stage": "S0 leak/overlap",
+ "_method": "sha256 over the raw poses[T,4] float32 bytes, computed by e3_features.py ON THE SAME IN-MEMORY TENSOR the features are derived from. episode_id is NOT a key (2376 train episodes, 2342 unique ids); filenames are NOT a key.",
+ "_paths_checked": {
+  "scoring_set_val600": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "training_set_train2376": "/workspace/data/physicalai_phase0/_epcache/physicalai-train-e438721ae894",
+  "path_the_committed_fan_dump_reads (refc_rerank.VAL)": "/root/valdata/physicalai-val-0c5f7dac3b11"
+ },
+ "E_path_identity": {
+  "_what": "the val path my feature builder reads must be the path the fan dump reads, or the join is across two builds",
+  "mine": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "fan_dump": "/root/valdata/physicalai-val-0c5f7dac3b11",
+  "identical": true
+ },
+ "A_train_x_val_by_CONTENT": {
+  "_required": "overlap == 0",
+  "n_val": 600,
+  "n_train": 2376,
+  "overlap_n": 0,
+  "overlap_frac_of_val": 0.0,
+  "overlapping_sha256": [],
+  "passes": true
+ },
+ "B_train_x_val_by_FILENAME": {
+  "_what": "the check the fingerprint replaces -- reported so the fingerprint is visibly load-bearing, not decorative",
+  "overlap_n": 600,
+  "overlap_frac_of_val": 1.0
+ },
+ "C_internal_collisions": {
+  "val600_unique_sha_of_n": [
+   600,
+   600
+  ],
+  "train2376_unique_sha_of_n": [
+   2376,
+   2376
+  ]
+ },
+ "D_independent_crosscheck_vs_EGOAL_2": {
+  "_source": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-egoal-2-power\\raw\\e2_leak.json",
+  "_what": "a DIFFERENT script (e2_leak.py) on a different run must produce the SAME pose fingerprints for the same episodes. Validates the read path, not just the overlap.",
+  "val600": {
+   "available": true,
+   "n_common_filenames": 600,
+   "n_sha256_agree": 600,
+   "all_agree": true
+  },
+  "train2376": {
+   "available": false
+  },
+  "aggregate": {
+   "e2": {
+    "val600_n": 600,
+    "val600_unique_sha": 600,
+    "train_n": 2376,
+    "train_unique_sha": 2376,
+    "overlap_n": 0
+   },
+   "mine": {
+    "val600_n": 600,
+    "val600_unique_sha": 600,
+    "train_n": 2376,
+    "train_unique_sha": 2376,
+    "overlap_n": 0
+   },
+   "identical": true
+  }
+ },
+ "VERDICT": "CLEAN -- 0 episodes shared by content"
+}

@@ -374,3 +374,34 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   dropped-vs-fake-history (**−0.0001 [−0.0006, +0.0004]**) — establishing that **64 % of the recovery
   is speed history** and the lead block is **7.9× smaller**. **Re-run your negative control at the new
   n whenever n changes materially. A control validated at n = 40 is not validated at n = 600.**
+- **C32 — AN ABLATION CREDITED TO THE WRONG COLUMN** *(new class, added 2026-07-28)* ⇒ **an ablation
+  tells you which COLUMN SET carries an effect, never WHY — and when one column is silently defective,
+  a neighbouring block absorbs its credit and looks like the mechanism.** MEASURED: E-GOAL-2 credited
+  **64 %** of the goal-head recovery to a "speed history" block (`dv_0p5`, `dv_1p0`, `v_lag_*`). It is
+  worth **0.9 of 46.3 recovery points — 2.0 %.** The real lever is **one 0.1 s speed difference**:
+  `v` alone is **−19.4 %, separated-WORSE**, while **`v + ax_fd` is +46.3 %, a tight null against the
+  full ten-column head (+0.0002 [−0.0023, +0.0027]).**
+  ⭐ **Root cause, and it was replicated on the ORIGINAL stream's own corpus with its own fitter, folds
+  and seed** (both its anchors reproduce exactly): **`egomotion`'s NATIVE `ax` is a poor derivative of
+  the speed the target integrates — correlation 0.759.** `v + ax_fd` (0.1 s backward difference)
+  reaches **0.9270 m**, a null against the whole block at 0.9305, while native `v + ax` reaches
+  **1.1808 m — 0.2539 m worse for one column choice.** **The lag block was a PROXY for a derivative the
+  native channel failed to supply.**
+  ⇒ **Two streams that appear to disagree about a mechanism may both be right about the statistics and
+  wrong about the cause. Before crediting a block, check whether a single column in it is defective —
+  and check the channel against a derivative you compute yourself.** ⚠️ **Consequence had it stood: v5
+  would have shipped a 1-second history buffer to buy 2 % of the effect.** Fixed at source
+  (`lead_state_gate.py` now emits `ax_fd`; **`ax` deliberately NOT redefined**, because committed
+  artifacts carry that name).
+- **C33 — A RESAMPLED RESIDUAL UNDER-STATES A TRAINED HEAD** *(new class, added 2026-07-28; unusually,
+  a class about being too PESSIMISTIC)* ⇒ **estimating a learned component by resampling a residual
+  assumes its errors are UNCORRELATED with the windows that matter. A real head's errors are
+  correlated — and here that correlation was worth points, not a penalty.** MEASURED: the resampled
+  estimate was **+25.4 %**; the trained head delivered **+46.3 % (OOF) / +50.7 % (deployable)** —
+  **1.82×**, exceeding its pre-registered bar by 2.4×. Decomposed at matched RMS: **+3.9 points** come
+  from the head being *correlated* rather than decorrelated, and **+17.0 points** from it simply being
+  more accurate (0.7449 vs 0.9305 m).
+  ⇒ **A resampled estimate is a LOWER bound on a trained component as often as an upper one, and which
+  it is cannot be assumed — state the direction as unknown and go and train the thing.** Sibling to
+  **C22** (bound quoted as capability) with the sign reversed: there a bound over-stated a capability;
+  here a proxy under-stated one, and **declining to license the +25.4 % is what preserved the finding.**

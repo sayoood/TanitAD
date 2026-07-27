@@ -94,8 +94,17 @@ N_BOOT = 2000
 PASS_THRESHOLD = 0.15
 FAIL_THRESHOLD = 0.05
 
+# ⚠️ `ax` here is the corpus NATIVE channel and is a WEAK derivative of the
+# speed the along-track target integrates (corr 0.759). `ego_frame` also
+# emits `ax_fd`, a 0.1 s backward difference of that speed, which is worth
+# 0.2539 m of along-track RMS more on identical windows (E-GOAL-3). This
+# list is left UNCHANGED so every committed result stays reproducible;
+# new consumers should build their own list including "ax_fd".
 EGO_COLS = ["v", "ax", "ay", "curv", "yawrate", "dv_0p5", "dv_1p0",
             "v_lag_0p5", "v_lag_1p0", "abs_curv"]
+# The column set E-GOAL-3 measured as carrying ~97 % of the goal-head
+# effect. `v + ax_fd` is a tight null against the full 10-column block.
+EGO_COLS_FD = ["v", "ax_fd"]
 LEAD_COLS = ["lead_present", "gap_m", "closing_ms", "ttc_s", "inv_ttc",
              "lead_lat_m", "lead_is_big"]
 DENS_COLS = ["n_ahead_50m", "n_vru_near"]
@@ -154,9 +163,31 @@ def ego_frame(ego: pd.DataFrame, t_grid_s: np.ndarray, horizons=()) -> dict:
         bad = (t_grid_s + h) > min(t_end, CLIP_END_S)
         extra[f"y_long_h{h}"] = np.where(bad, np.nan, s)
         extra[f"dv_h{h}"] = np.where(bad, np.nan, vh - v)
+    # ⭐ `ax_fd` — a 0.1 s BACKWARD difference of the very `speed` this function
+    # interpolates, and the column downstream code should use.
+    #
+    # MEASURED (E-GOAL-3, 2026-07-28): the corpus's NATIVE `ax` is a poor
+    # derivative of the speed the 2 s along-track target integrates — they
+    # correlate only 0.759. On identical windows, `v + ax_fd` reaches 0.9270 m
+    # along-track RMS (a null against the whole 10-column ego block at 0.9305)
+    # while `v + ax` (native) reaches only 1.1808 m: **0.2539 m worse for one
+    # column choice.**
+    #
+    # This is why the `dv_*` / `v_lag_*` lag block looked like the lever. It was
+    # a PROXY for a derivative the native channel failed to supply: once `ax_fd`
+    # is available the lag block is worth 0.9 of 46.3 recovery points (2.0 %),
+    # and `v + ax_fd` alone carries ~97 % of the effect.
+    #
+    # ⚠️ `ax` is NOT redefined. Committed artifacts already carry that name, and
+    # silently changing what a column MEANS under an unchanged name is its own
+    # failure mode in this program. New consumers take `ax_fd`; old ones keep
+    # reproducing exactly what they reproduced before.
+    # Strictly causal: t-0.1 is in the past, like `yaw_b` / `v_l05` / `v_l10`.
+    v_l01 = _interp(t_grid_s - 0.1, t, speed)
     return {**extra, **{
         "v": v,
         "ax": at(t_grid_s, "ax"),
+        "ax_fd": (v - v_l01) / 0.1,
         "ay": at(t_grid_s, "ay"),
         "curv": curv,
         "abs_curv": np.abs(curv),
