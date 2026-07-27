@@ -313,3 +313,38 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   ⇒ **Before trusting a preprocessing "fix", ask what it FABRICATES and whether the fabrication
   correlates with anything.** Sibling to C17 (marginal vs conditional): both are defects invisible to
   every downstream metric because the metric is computed *after* the defect.
+- **C27 — REAL-vs-SHUFFLED MEASURES HARM AVOIDED, NOT BENEFIT GAINED** *(new class, added 2026-07-27;
+  the sharpest methodological catch of the session)* ⇒ **a two-arm design that contrasts a REAL feature
+  against a SHUFFLED one cannot tell you whether the feature helps — only whether corrupting it hurts.
+  A feature the model has learned to route around will still show "real ≫ shuffled".** MEASURED: the
+  within-PhysicalAI geometry test gives **geometry-vs-nothing NOT separated** while **real-vs-shuffled
+  IS separated**. ⚠️ **Reported on its own, that second number reads as "geometry works, p < 0.05" — and
+  it is the number a motivated analyst would reach for.** The three-way **real / shuffled / NONE**
+  design is what catches it, and only that design.
+  ⇒ **Every ablation carries a NONE arm.** A shuffled control bounds *corruption sensitivity*; only an
+  absent arm bounds *contribution*. Sibling to **C13** (a guard that cannot fail) and **C19** (a stratum
+  win is not a deployable win): all three are *"the number is real and it answers a question nobody
+  asked."*
+- **C28 — A CONSTANT WHERE THE QUANTITY IS PER-CLIP** *(new class, added 2026-07-27)* ⇒ **when a
+  physical quantity is measured per clip and code stores it as a program-wide constant, every
+  downstream number inherits an error nobody can see, and the constants BREED.** MEASURED: PhysicalAI
+  camera height is **per-clip, 1.245–1.607 m — a 29 % spread**. **All three constants circulating in
+  this program (1.5 / 1.43 / 1.22 m) are wrong, and 1.22 is BELOW THE OBSERVED MINIMUM.** Four files
+  hard-code one; overlays are off by up to **29 %**. ⚠️ **And the obvious proxy fails too: rig identity
+  does NOT predict height** — rig medians are **1.5 % apart** while within-rig spread is **29 %**, so
+  "handle the two rigs" would not have fixed it.
+  ⇒ **Before a constant is written, check whether the corpus ships the value per unit. Three
+  unreconciled values for one quantity is not a documentation problem — it is the signal that the
+  quantity was never constant.**
+- **C29 — THE MODEL WAS RIGHT AND THE LABEL WAS WRONG** *(new class, added 2026-07-27)* ⇒ **a channel's
+  worst metric is a hypothesis about the MODEL only if the labels have been audited; ours had not.**
+  MEASURED: comma2k19 heading is `arctan2` of ENU velocity and is **undefined at standstill** —
+  **26.27 % of frames below 0.5 m/s are physically impossible, and 0.000 % above it** (PhysicalAI:
+  zero in every bin). Repairing the label moved the **already-deployed head, with nothing retrained,**
+  from pooled `yaw_rate` **R² 0.105 → 0.811**. On the 50 changed windows the vehicle was stationary
+  (max 0.53 m/s), the label claimed up to **9.47 rad/s**, and **the model had predicted 0.023.**
+  ⭐ **Reported against its own interest, which is what makes it trustworthy: R² and MAE (−33 %) move,
+  but medAE moves 0.5 % and nMedAE gets slightly WORSE.** The repair fixes **the tail and the summary
+  statistic, not typical accuracy** — a distinction a headline R² erases.
+  ⇒ **Bin the residuals by a physical covariate BEFORE blaming the architecture.** The defect here was
+  visible in one speed-bin table and had survived every previous investigation of that channel.

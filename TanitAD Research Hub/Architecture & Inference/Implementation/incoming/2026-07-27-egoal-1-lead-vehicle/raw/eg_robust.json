@@ -1,0 +1,129 @@
+{
+ "what": "E-GOAL-1 robustness -- features vs sample size",
+ "bars": {
+  "breakeven_m": 0.813,
+  "halfprize_m": 0.439
+ },
+ "R1_stride_matched": {
+  "what": "every 9th grid point; ~19 windows/clip vs the canonical ~22",
+  "n_windows": 11104,
+  "n_clips": 612,
+  "along_rms_m": {
+   "E0_v0": 1.5503,
+   "E1_ego": 0.9831,
+   "E1_nohist": 1.1322,
+   "E1_L": 0.9644,
+   "E1_L_X": 0.9659
+  },
+  "speed_err_ms": {
+   "E0_v0": 0.7751,
+   "E1_ego": 0.4916,
+   "E1_nohist": 0.5661,
+   "E1_L": 0.4822,
+   "E1_L_X": 0.4829
+  },
+  "paired_E1_ego_vs_E1_L": {
+   "delta": 0.0187,
+   "lo": 0.0014,
+   "hi": 0.0501,
+   "ci95": 0.0244,
+   "p_delta_gt0": 0.989,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 11104,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "paired_E0_v0_vs_E1_ego": {
+   "delta": 0.5671,
+   "lo": 0.4301,
+   "hi": 0.7056,
+   "ci95": 0.1378,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 11104,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "R2_parent_regime": {
+  "what": "the parent's EXACT data regime: 40 clips, ~22 windows each, 5 clip-disjoint folds; repeated over independent clip draws",
+  "n_draws": 15,
+  "median_n_windows": 827,
+  "along_rms_m_median": {
+   "E0_v0": 2.4394,
+   "E1_ego": 2.2759,
+   "E1_nohist": 2.311,
+   "E1_L": 2.3258,
+   "E1_L_X": 2.3027
+  },
+  "along_rms_m_p10_p90": {
+   "E0_v0": [
+    1.8216,
+    3.8388
+   ],
+   "E1_ego": [
+    1.3436,
+    3.8482
+   ],
+   "E1_nohist": [
+    1.4675,
+    3.7266
+   ],
+   "E1_L": [
+    1.3588,
+    3.8613
+   ],
+   "E1_L_X": [
+    1.3926,
+    3.8779
+   ]
+  },
+  "frac_draws_E1_ego_beats_E0_v0": 0.8667,
+  "frac_draws_E1_L_beats_E1_ego": 0.2,
+  "frac_draws_E1_ego_clears_breakeven": 0.0,
+  "parent_head_reference_along_rms_m": 1.151
+ },
+ "R3_history_ablation": {
+  "what": "what the 1 s of speed/accel history is worth on its own",
+  "dropped": [
+   "dv_0p5",
+   "dv_1p0",
+   "v_lag_0p5",
+   "v_lag_1p0"
+  ],
+  "along_rms_m": {
+   "E1_ego": 0.9305,
+   "E1_nohist": 1.0733
+  },
+  "paired": {
+   "delta": 0.1428,
+   "lo": 0.0686,
+   "hi": 0.2516,
+   "ci95": 0.0915,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "paired_MAE": {
+   "delta": 0.1035,
+   "lo": 0.0838,
+   "hi": 0.1273,
+   "ci95": 0.0217,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

@@ -1,0 +1,121 @@
+{
+ "what": "E-GOAL-1 S0 fidelity gate",
+ "mine": {
+  "path": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-27-egoal-1-lead-vehicle\\raw\\eg_windows.parquet",
+  "n_rows": 104652,
+  "n_clips": 612
+ },
+ "F1_per_row_identity": {
+  "what": "every overlapping (clip, t) row must agree EXACTLY with the repo reader's 2026-07-21 dump",
+  "prior_path": "C:\\Users\\Admin\\tanitad-data\\physicalai\\lead_gate\\lead_gate_windows.parquet",
+  "prior_rows": 104994,
+  "n_common_rows": 104652,
+  "max_abs_diff_over_all_columns": 0.0,
+  "n_nan_mismatches": 0,
+  "passes": true,
+  "per_column": {
+   "v": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "ax": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "ay": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "curv": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "yawrate": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "dv_0p5": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "dv_1p0": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "v_lag_0p5": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "v_lag_1p0": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "abs_curv": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "y_long": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "y_lat": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "lead_present": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "gap_m": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "closing_ms": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "ttc_s": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "inv_ttc": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "lead_lat_m": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "lead_is_big": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "n_ahead_50m": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   },
+   "n_vru_near": {
+    "max_abs_diff": 0.0,
+    "n_nan_mismatch": 0
+   }
+  }
+ },
+ "F3_failing_control": {
+  "what": "a deliberately +0.1 s mis-joined row set must FAIL F1",
+  "n_common_rows": 104040,
+  "max_abs_diff_v": 0.5678929296459181,
+  "passes": true
+ },
+ "F2_coverage_reconciliation": {
+  "what": "the committed 0.3851 lead rate should be the COVERED rate diluted by uncovered windows the prior reader could not distinguish from an empty road",
+  "committed_rate_all_windows": 0.3851,
+  "mine_rate_all_windows": 0.3863,
+  "mine_rate_obstacle_covered_only": 0.4046,
+  "frac_windows_obstacle_covered": 0.9549,
+  "predicted_rate_all_from_covered": 0.3863,
+  "abs_error_of_prediction": 0.0,
+  "passes": true,
+  "implication": "the prior dump's lead-presence rate is DEFLATED by the uncovered windows; the corrected rate is the covered one"
+ },
+ "_all_ok": true
+}

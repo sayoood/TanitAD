@@ -379,4 +379,151 @@ reframes v2's headline finding and is stated here as a correction to it.
 
 ---
 
-*(§6 long_accel · §7 the shipped model · §8 what still fails — below.)*
+---
+
+## 6. `long_accel` — classification tested properly, and refuted
+
+The latent-action stream raised, mid-run, that my pre-registered E5 arm (21 hard
+quantile bins) is in the family Farebrother et al. measure as *not* beating MSE —
+the active ingredient being **HL-Gauss Gaussian label smoothing**, not the
+categorical parameterisation. **The registered arm was kept and scored as
+registered; three HL-Gauss arms were added alongside it and declared in
+`PRE_REGISTRATION_IDMV3.md` §5b before any `Dacc` result was read.**
+
+Every arm also reports a **discretisation-fidelity ceiling**: the target's own
+binned representation decoded back through the bin centres. Without it, a
+*binning* failure would be misreported as a *classification* failure.
+
+| arm | loss | bins | spacing | **ceiling R²** | regression R² | **binned R²** | pai | cm |
+|---|---|---:|---|---:|---:|---:|---:|---:|
+| `Dacc` *(pre-registered)* | hard CE | 21 | quantile | 0.5875 † | −0.3172 | **−0.2526** | −0.0210 | −0.8927 |
+| `DaccHL` | HL-Gauss | 101 | quantile | 0.9631 | −0.3965 | −0.4004 | −0.1099 | −1.1845 |
+| **`DaccHLsx`** | **HL-Gauss** | **101** | **symexp** | **0.9999** | −0.3617 | **−0.3386** | −0.0856 | −1.0346 |
+| `Dacc0` | hard CE | 21 | quantile | 0.5875 | −0.3235 | −1.0595 | −0.7523 | −1.9534 |
+| `DaccHL0` | HL-Gauss | 101 | quantile | 0.9631 | −0.4236 | −0.6309 | −0.5359 | −1.0191 |
+
+† `Dacc` predates the ceiling instrument; it uses the identical 21-bin quantile
+hard-CE grid as `Dacc0`, whose ceiling is measured.
+
+> ### E5 — **FAIL, on every variant.** The bar was `R² > 0 on both corpora`; the
+> best binned result anywhere is **−0.25**.
+>
+> ⭐ **And the ceiling instrument is what makes this conclusive rather than
+> suggestive.** `DaccHLsx` has a discretisation ceiling of **0.9999** — its
+> binning throws away essentially nothing — and it still reads **−0.339**.
+> **Classification is genuinely refuted for this channel; it is not a binning
+> artifact and it is not the two-hot/HL-Gauss distinction.**
+>
+> Worth noting against my own registered arm: the hard 21-bin grid could only
+> ever have reached **0.5875**, so E5 as registered was partly handicapped. That
+> does not change the verdict, because the un-handicapped arms fail too — but it
+> is the kind of thing that has to be said out loud.
+
+**⇒ IDM v2's pre-committed recommendation stands, now with a second independent
+line of evidence: remove `long_accel` from the shipped contract.** It is excluded
+from `scalar_names` in the v3 checkpoint.
+
+**Why this was the expected outcome, structurally** (§3.1): `long_accel` is
+translation differentiated *twice*. The channel ordering we measure —
+yaw 0.90 (rotation, scale-free) → speed 0.87 (translation, up to one scalar) →
+long_accel −0.24 (translation, second order) — is exactly the ordering the
+observability argument predicts, and it was not fitted to it.
+
+---
+
+## 7. The shipped model
+
+v3's measurement is that **rotation and translation want different recipes**, so
+the artifact is a **two-expert composite**:
+
+| expert | channels | window | d_model | clip-context | source arm |
+|---|---|---|---|---|---|
+| `rotation` | `yaw_rate`, `steer` | 9 frames (k=4) | 256 | no | `R0` |
+| `translation` | `speed`, trajectory | 17 frames (k=8) | 128 | yes | `V2R` |
+
+**4,301,848 parameters** total, reading the same frozen 2048-d latents.
+
+⚠️ **Decoupling by LOSS WEIGHTS was also tested and was worse.** Arms `Hrot`
+(chan_w `[0,1,1,0]`) and `Htra` (`[1,0,0,1]`) reached yaw 0.786 and speed MAE
+2.936 against the joint `V2R`'s 0.807 / 2.747. **So the literature-motivated
+"give rotation its own head and loss" (TartanVO / Nistér / Rotation-Only BA)
+does NOT reproduce here** — it is the *recipe* that differs, not the gradient
+isolation. Recorded as a negative result against a hypothesis I expected to hold.
+
+### 7.1 Final numbers — n = 4,195 windows / 36 episodes, 3-seed mean
+
+| channel | pooled R² | **PhysicalAI** | **comma2k19** | MAE |
+|---|---:|---:|---:|---:|
+| **speed** | **+0.9067** | +0.8557 | +0.8781 | 2.662 m/s |
+| **yaw_rate** | **+0.8413** | +0.8679 | +0.6791 | 0.0212 rad/s |
+| steer | +0.4077 | +0.3602 | +0.5834 | 0.0155 |
+| ~~long_accel~~ | −0.2430 | −0.0894 | −0.7141 | **not shipped** |
+
+### 7.2 Against the deployed head, both scored on the repaired labels
+
+| channel | paired Δ MAE [95 % CI] | verdict |
+|---|---|---|
+| **yaw_rate** | **−0.0060 [−0.0090, −0.0029]** | **SEPARATED — 22 % MAE reduction** |
+| speed | −0.3327 [−0.9536, +0.3022] | better, not separated |
+| **steer** | +0.0035 [−0.0005, +0.0093] | **worse**, not separated |
+| long_accel | +0.0320 [−0.0367, +0.1132] | not separated |
+
+🔴 **The `steer` regression is real and I am not hiding it: 0.408 vs A0's 0.742.**
+A0 was trained on **160 clips**; every v3 arm has **68**. This is a data-budget
+regression, not a recipe finding. **Do not replace A0's `steer` with v3's.** The
+fix is to retrain the v3 recipe on A0's full corpus — escalated in §9.
+
+### 7.3 The honest before/after against what we actually published
+
+| channel | A0 as published (legacy labels) | v3 shipped | what changed |
+|---|---:|---:|---|
+| `yaw_rate` | **+0.105** | **+0.841** | mostly the **label**, partly the model |
+| `speed` | +0.865 | **+0.907** | the recipe (clip-context) |
+| `steer` | **+0.742** | +0.408 | **regression** — 2.4× less training data |
+| `long_accel` | −0.240 | −0.243 | unchanged; now **removed from the contract** |
+
+---
+
+## 8. What still fails
+
+1. **`long_accel` — closed.** Negative on both corpora, refuted as regression and
+   as classification (at a 0.9999 binning ceiling). Removed from the contract.
+2. **comma2k19 `yaw_rate` 0.679 vs PhysicalAI 0.868.** The repair fixed the
+   catastrophic tail; the remaining gap is that comma's heading is *derived*
+   throughout. **The real fix is to read comma2k19's own fused INS/GNSS/Vision
+   `frame_orientations` instead of `arctan2(enu_v)`** — the loader currently
+   reads only `frame_positions` and `frame_velocities`. Needs a corpus rebuild.
+3. **Speed's per-clip scale bias survives, and it is large.** An oracle per-clip
+   rescale takes PhysicalAI speed MAE from 2.960 to **1.607 m/s**
+   (Δ CI [−1.869, −0.881]). **Camera geometry is now REFUTED as the route to it**
+   — so this headroom is real, unclaimed, and its mechanism is *unknown*, which
+   is a more honest position than it was this morning.
+4. **`steer` at 68 clips** (§7.2).
+5. **comma2k19's `cam_h = 1.22 m` is INHERITED and UNVERIFIED** — the one
+   geometry number in this work not measured from data. The shuffled control
+   makes the conclusion robust to it, but it should still be measured.
+6. **comma2k19's speed label is GNSS (`‖enu_v‖`) while its `long_accel` is d/dt
+   of the CAN speed** (`comma2k19.py:169-173`) — two different sources for two
+   channels that ought to be consistent. Found, not fixed.
+
+---
+
+## 9. 🔴 Escalations — these need an owner, not a note in a file
+
+1. **The loader fix is IMPLEMENTED and STAGED, opt-in and fix-forward:**
+   `stack/tanitad/data/comma2k19.py` now carries `HEADING_MODE_HOLD` +
+   `hold_heading_through_standstill()`, defaulting to **LEGACY** so every
+   existing cache stays byte-identical (the same discipline
+   `physicalai.WHEELBASE_MODE` uses). 6 new tests, `pytest -q` green.
+   **Someone must decide when to flip the default and rebuild the comma corpus.**
+2. **Every published comma2k19 `yaw_rate` number in the program is affected.**
+   The deployed head's is 0.105 → 0.811. `MODEL_REGISTRY.md` and
+   `idm_head_v1_card.json` need re-issuing.
+3. **Four files hard-code a wrong constant camera height** — `rr_log.py:93-94`
+   (1.22 / 1.43), `taniteval/cam_overlay.py:29` (1.5),
+   `taniteval/clhorizon.py:87` (1.5), `scripts/viz_trajectory_fan.py:43` (1.22).
+   The measured truth is **per-clip, 1.245–1.607 m**. Every ground-plane overlay
+   drawn with them is off by up to 29 %.
+4. **Retrain the v3 recipe on A0's full 160-clip corpus** to recover `steer`.
+5. **Read comma2k19's own orientation** instead of deriving heading (§8.2).
+

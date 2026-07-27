@@ -1,0 +1,966 @@
+{
+ "what": "E-GOAL-1 S3 -- OOF along-track RMS with and without lead state",
+ "axis": "2 s ALONG-TRACK displacement error, metres",
+ "model": "gbm",
+ "folds": {
+  "k": 5,
+  "unit": "clip",
+  "seed": 0,
+  "disjoint": "no clip is in both the fit and the score"
+ },
+ "estimator": {
+  "name": "episode_cluster_bootstrap / paired form",
+  "n_boot": 2000,
+  "unit": "clip",
+  "overlapping_holdout_se": "NEVER CALLED"
+ },
+ "bars": {
+  "breakeven_along_rms_m": 0.813,
+  "halfprize_along_rms_m": 0.439,
+  "breakeven_speed_ms": 0.406,
+  "halfprize_speed_ms": 0.219,
+  "best_head_to_date_along_rms_m": 1.151,
+  "best_head_to_date_speed_ms": 0.576,
+  "source": "GOAL_INPUT.md S5 conditional spec (parent stream)"
+ },
+ "n_windows": 99935,
+ "n_clips": 612,
+ "target": {
+  "mean_m": 26.3383,
+  "sd_m": 19.5619
+ },
+ "arms": {
+  "CV": {
+   "arm": "CV",
+   "along_rms_m": {
+    "mean": 1.3827,
+    "lo": 1.3193,
+    "hi": 1.4435,
+    "ci95": 0.0621,
+    "se": 0.0314,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.9142,
+    "lo": 0.8663,
+    "hi": 0.963,
+    "ci95": 0.0484,
+    "se": 0.0243,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.6913,
+    "lo": 0.6596,
+    "hi": 0.7218,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.7007,
+    "ratio_to_halfprize": 3.1496,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.5124,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.009,
+    "shrinkage_alpha_vs_target": 0.998,
+    "p95_abs_err_m": 3.1009
+   }
+  },
+  "E0_v0": {
+   "arm": "E0_v0",
+   "along_rms_m": {
+    "mean": 1.5246,
+    "lo": 1.3623,
+    "hi": 1.7442,
+    "ci95": 0.1909,
+    "se": 0.1002,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.9829,
+    "lo": 0.9196,
+    "hi": 1.0526,
+    "ci95": 0.0665,
+    "se": 0.0331,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.7623,
+    "lo": 0.6812,
+    "hi": 0.8721,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.8753,
+    "ratio_to_halfprize": 3.473,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.5512,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.005,
+    "shrinkage_alpha_vs_target": 0.9948,
+    "p95_abs_err_m": 3.166
+   }
+  },
+  "E1_ego": {
+   "arm": "E1_ego",
+   "along_rms_m": {
+    "mean": 0.9305,
+    "lo": 0.6814,
+    "hi": 1.2531,
+    "ci95": 0.2858,
+    "se": 0.1671,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.4925,
+    "lo": 0.4512,
+    "hi": 0.5471,
+    "ci95": 0.048,
+    "se": 0.0255,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4652,
+    "lo": 0.3407,
+    "hi": 0.6266,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.1445,
+    "ratio_to_halfprize": 2.1195,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.8895,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.0014,
+    "shrinkage_alpha_vs_target": 0.9972,
+    "p95_abs_err_m": 1.4804
+   }
+  },
+  "E1_L": {
+   "arm": "E1_L",
+   "along_rms_m": {
+    "mean": 0.8983,
+    "lo": 0.6627,
+    "hi": 1.2198,
+    "ci95": 0.2786,
+    "se": 0.1717,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.4811,
+    "lo": 0.4434,
+    "hi": 0.5331,
+    "ci95": 0.0448,
+    "se": 0.0244,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4491,
+    "lo": 0.3313,
+    "hi": 0.6099,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.1049,
+    "ratio_to_halfprize": 2.0462,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.8671,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.0099,
+    "shrinkage_alpha_vs_target": 0.9958,
+    "p95_abs_err_m": 1.4555
+   }
+  },
+  "E1_L_D": {
+   "arm": "E1_L_D",
+   "along_rms_m": {
+    "mean": 0.9045,
+    "lo": 0.6671,
+    "hi": 1.229,
+    "ci95": 0.281,
+    "se": 0.1712,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.4848,
+    "lo": 0.4458,
+    "hi": 0.5375,
+    "ci95": 0.0458,
+    "se": 0.0245,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4522,
+    "lo": 0.3336,
+    "hi": 0.6145,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.1125,
+    "ratio_to_halfprize": 2.0603,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.8657,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.0076,
+    "shrinkage_alpha_vs_target": 0.9958,
+    "p95_abs_err_m": 1.4673
+   }
+  },
+  "E1_L_X": {
+   "arm": "E1_L_X",
+   "along_rms_m": {
+    "mean": 0.9056,
+    "lo": 0.6651,
+    "hi": 1.2327,
+    "ci95": 0.2838,
+    "se": 0.1744,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.4837,
+    "lo": 0.4456,
+    "hi": 0.5368,
+    "ci95": 0.0456,
+    "se": 0.0247,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4528,
+    "lo": 0.3326,
+    "hi": 0.6163,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.1138,
+    "ratio_to_halfprize": 2.0628,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.8723,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.0087,
+    "shrinkage_alpha_vs_target": 0.9957,
+    "p95_abs_err_m": 1.4588
+   }
+  },
+  "E1_L_X_D": {
+   "arm": "E1_L_X_D",
+   "along_rms_m": {
+    "mean": 0.9106,
+    "lo": 0.6676,
+    "hi": 1.2427,
+    "ci95": 0.2876,
+    "se": 0.1764,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.4858,
+    "lo": 0.4474,
+    "hi": 0.5404,
+    "ci95": 0.0465,
+    "se": 0.0249,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4553,
+    "lo": 0.3338,
+    "hi": 0.6213,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.12,
+    "ratio_to_halfprize": 2.0743,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.8743,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.0082,
+    "shrinkage_alpha_vs_target": 0.9957,
+    "p95_abs_err_m": 1.4696
+   }
+  },
+  "L_only": {
+   "arm": "L_only",
+   "along_rms_m": {
+    "mean": 18.1743,
+    "lo": 17.2588,
+    "hi": 19.1126,
+    "ci95": 0.9269,
+    "se": 0.4807,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 14.1493,
+    "lo": 13.394,
+    "hi": 14.9384,
+    "ci95": 0.7722,
+    "se": 0.3956,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 9.0871,
+    "lo": 8.6294,
+    "hi": 9.5563,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 22.3546,
+    "ratio_to_halfprize": 41.3993,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.2845,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": -0.2376,
+    "shrinkage_alpha_vs_target": 0.1811,
+    "p95_abs_err_m": 35.9995
+   }
+  },
+  "N_SHUF": {
+   "arm": "N_SHUF",
+   "along_rms_m": {
+    "mean": 0.9744,
+    "lo": 0.6995,
+    "hi": 1.3203,
+    "ci95": 0.3104,
+    "se": 0.1674,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.5065,
+    "lo": 0.4599,
+    "hi": 0.5673,
+    "ci95": 0.0537,
+    "se": 0.0278,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4872,
+    "lo": 0.3498,
+    "hi": 0.6602,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "MISSES",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 1.1985,
+    "ratio_to_halfprize": 2.2196,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 1.9239,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.0044,
+    "shrinkage_alpha_vs_target": 0.9982,
+    "p95_abs_err_m": 1.4953
+   }
+  },
+  "P_ORACLE": {
+   "arm": "P_ORACLE",
+   "along_rms_m": {
+    "mean": 0.7857,
+    "lo": 0.3881,
+    "hi": 1.1534,
+    "ci95": 0.3826,
+    "se": 0.2025,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.2568,
+    "lo": 0.2122,
+    "hi": 0.3188,
+    "ci95": 0.0533,
+    "se": 0.0276,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.3929,
+    "lo": 0.1941,
+    "hi": 0.5767,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "CLEARS",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 0.9665,
+    "ratio_to_halfprize": 1.7898,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 3.0602,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.0163,
+    "shrinkage_alpha_vs_target": 1.0004,
+    "p95_abs_err_m": 0.684
+   }
+  },
+  "P_ORACLE_PROFILE": {
+   "arm": "P_ORACLE_PROFILE",
+   "along_rms_m": {
+    "mean": 0.8107,
+    "lo": 0.3481,
+    "hi": 1.2075,
+    "ci95": 0.4297,
+    "se": 0.2153,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.2075,
+    "lo": 0.1591,
+    "hi": 0.2747,
+    "ci95": 0.0578,
+    "se": 0.0296,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4054,
+    "lo": 0.1741,
+    "hi": 0.6038,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "CLEARS",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 0.9972,
+    "ratio_to_halfprize": 1.8467,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 3.9067,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.0231,
+    "shrinkage_alpha_vs_target": 1.0011,
+    "p95_abs_err_m": 0.5066
+   }
+  },
+  "P_ORACLE_STRONG": {
+   "arm": "P_ORACLE_STRONG",
+   "along_rms_m": {
+    "mean": 0.8062,
+    "lo": 0.3375,
+    "hi": 1.2073,
+    "ci95": 0.4349,
+    "se": 0.2181,
+    "reducer": "rms",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "along_mae_m": {
+    "mean": 0.1911,
+    "lo": 0.1429,
+    "hi": 0.2585,
+    "ci95": 0.0578,
+    "se": 0.0297,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "speed_err_ms": {
+    "mean": 0.4031,
+    "lo": 0.1688,
+    "hi": 0.6037,
+    "definition": "along_rms_m / 2 s (parent's conversion)"
+   },
+   "vs_bars": {
+    "breakeven_0p813_m": "CLEARS",
+    "halfprize_0p439_m": "MISSES",
+    "ratio_to_breakeven": 0.9916,
+    "ratio_to_halfprize": 1.8364,
+    "ci_upper_below_breakeven": false
+   },
+   "error_structure": {
+    "rms_over_mean_abs": 4.2181,
+    "gaussian_reference": 1.2533,
+    "note": "RMS/MAE above the Gaussian 1.2533 means heavy-tailed error; the parent measured that placing such an RMS on an isotropic-noise curve OVER-PREDICTS damage 5.7x (class RMS-PLACED-ON-A-NOISE-CURVE)",
+    "bias_m": 0.0229,
+    "shrinkage_alpha_vs_target": 1.0011,
+    "p95_abs_err_m": 0.4934
+   }
+  }
+ },
+ "paired": {
+  "E1_ego__vs__E1_L": {
+   "delta": 0.0322,
+   "lo": -0.004,
+   "hi": 0.0969,
+   "ci95": 0.0505,
+   "p_delta_gt0": 0.9135,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(E1_L), metres",
+   "why": "\u2b50 THE PRE-REGISTERED TEST: does lead-vehicle state move along-track RMS?",
+   "rel_reduction": -0.0346,
+   "n_clips_to_separate": 1505.3,
+   "secondary_MAE": {
+    "delta": 0.0113,
+    "lo": 0.0011,
+    "hi": 0.0258,
+    "ci95": 0.0124,
+    "p_delta_gt0": 0.986,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.0229,
+    "n_clips_to_separate": null
+   }
+  },
+  "E1_ego__vs__E1_L_X": {
+   "delta": 0.0249,
+   "lo": -0.0131,
+   "hi": 0.0921,
+   "ci95": 0.0526,
+   "p_delta_gt0": 0.8225,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(E1_L_X), metres",
+   "why": "best-effort lead feature set",
+   "rel_reduction": -0.0268,
+   "n_clips_to_separate": 2731.0,
+   "secondary_MAE": {
+    "delta": 0.0088,
+    "lo": -0.0019,
+    "hi": 0.0235,
+    "ci95": 0.0127,
+    "p_delta_gt0": 0.932,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.0179,
+    "n_clips_to_separate": 1274.7
+   }
+  },
+  "E1_ego__vs__E1_L_X_D": {
+   "delta": 0.0199,
+   "lo": -0.0191,
+   "hi": 0.09,
+   "ci95": 0.0546,
+   "p_delta_gt0": 0.757,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(E1_L_X_D), metres",
+   "why": "lead + derived + traffic density",
+   "rel_reduction": -0.0214,
+   "n_clips_to_separate": 4607.1,
+   "secondary_MAE": {
+    "delta": 0.0066,
+    "lo": -0.0033,
+    "hi": 0.0198,
+    "ci95": 0.0115,
+    "p_delta_gt0": 0.8745,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.0134,
+    "n_clips_to_separate": 1858.1
+   }
+  },
+  "E1_ego__vs__N_SHUF": {
+   "delta": -0.0439,
+   "lo": -0.1369,
+   "hi": -0.0046,
+   "ci95": 0.0662,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(N_SHUF), metres",
+   "why": "\u26d4 NEGATIVE CONTROL: a shuffled lead block must NOT help",
+   "rel_reduction": 0.0472,
+   "n_clips_to_separate": null,
+   "secondary_MAE": {
+    "delta": -0.014,
+    "lo": -0.0319,
+    "hi": -0.005,
+    "ci95": 0.0135,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": 0.0284,
+    "n_clips_to_separate": null
+   }
+  },
+  "E1_ego__vs__P_ORACLE": {
+   "delta": 0.1447,
+   "lo": -0.0005,
+   "hi": 0.3096,
+   "ci95": 0.1551,
+   "p_delta_gt0": 0.9745,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(P_ORACLE), metres",
+   "why": "\u26d4 ORACLE (not a capability): future speed at t+2 s only",
+   "rel_reduction": -0.1555,
+   "n_clips_to_separate": 703.1,
+   "secondary_MAE": {
+    "delta": 0.2357,
+    "lo": 0.2088,
+    "hi": 0.2552,
+    "ci95": 0.0232,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.4786,
+    "n_clips_to_separate": null
+   }
+  },
+  "E1_ego__vs__P_ORACLE_PROFILE": {
+   "delta": 0.1198,
+   "lo": -0.1183,
+   "hi": 0.3472,
+   "ci95": 0.2327,
+   "p_delta_gt0": 0.8595,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(P_ORACLE_PROFILE), metres",
+   "why": "\u26d4 ORACLE: the raw future speed profile. Weak in a tree ensemble because y_long is an ADDITIVE function of it -- a model-class artifact, reported to show why the next row is the real control.",
+   "rel_reduction": -0.1288,
+   "n_clips_to_separate": 2309.0,
+   "secondary_MAE": {
+    "delta": 0.2849,
+    "lo": 0.248,
+    "hi": 0.3109,
+    "ci95": 0.0314,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.5785,
+    "n_clips_to_separate": null
+   }
+  },
+  "E1_ego__vs__P_ORACLE_STRONG": {
+   "delta": 0.1243,
+   "lo": -0.1131,
+   "hi": 0.3582,
+   "ci95": 0.2356,
+   "p_delta_gt0": 0.8735,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E1_ego) - along RMS(P_ORACLE_STRONG), metres",
+   "why": "\u26d4 POSITIVE CONTROL (ORACLE, not a capability): the whole future speed profile. MUST be separated-better, or the RMS axis has no power at this n and no non-separation on it means anything.",
+   "rel_reduction": -0.1336,
+   "n_clips_to_separate": 2198.7,
+   "secondary_MAE": {
+    "delta": 0.3013,
+    "lo": 0.2646,
+    "hi": 0.3276,
+    "ci95": 0.0315,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.6118,
+    "n_clips_to_separate": null
+   }
+  },
+  "E0_v0__vs__E1_ego": {
+   "delta": 0.5942,
+   "lo": 0.4458,
+   "hi": 0.7493,
+   "ci95": 0.1517,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(E0_v0) - along RMS(E1_ego), metres",
+   "why": "\u2b50 what EGO HISTORY buys over the parent head's v0-only ego content",
+   "rel_reduction": -0.3897,
+   "n_clips_to_separate": null,
+   "secondary_MAE": {
+    "delta": 0.4904,
+    "lo": 0.4534,
+    "hi": 0.529,
+    "ci95": 0.0378,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.4989,
+    "n_clips_to_separate": null
+   }
+  },
+  "CV__vs__E1_ego": {
+   "delta": 0.4522,
+   "lo": 0.1124,
+   "hi": 0.7035,
+   "ci95": 0.2956,
+   "p_delta_gt0": 0.994,
+   "separated": true,
+   "reducer": "rms",
+   "n_windows": 99935,
+   "n_episodes": 612,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "what": "along RMS(CV) - along RMS(E1_ego), metres",
+   "why": "learned ego vs constant velocity",
+   "rel_reduction": -0.327,
+   "n_clips_to_separate": null,
+   "secondary_MAE": {
+    "delta": 0.4218,
+    "lo": 0.3536,
+    "hi": 0.4775,
+    "ci95": 0.062,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 99935,
+    "n_episodes": 612,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "rel_reduction": -0.4614,
+    "n_clips_to_separate": null
+   }
+  }
+ },
+ "conditional_lead_present": {
+  "firing_rate": 0.4046,
+  "n_windows": 40430,
+  "n_clips": 406,
+  "paired_along_rms_delta_m": {
+   "delta": 0.0018,
+   "lo": -0.0095,
+   "hi": 0.0189,
+   "ci95": 0.0142,
+   "p_delta_gt0": 0.659,
+   "separated": false,
+   "reducer": "rms",
+   "n_windows": 40430,
+   "n_episodes": 406,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "paired_along_mae_delta_m": {
+   "delta": 0.0107,
+   "lo": 0.0027,
+   "hi": 0.0182,
+   "ci95": 0.0078,
+   "p_delta_gt0": 0.995,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 40430,
+   "n_episodes": 406,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "whole_set_policy_value_m": 0.0322,
+  "C19": "a conditional result is reported with its firing rate AND its whole-set policy value; a stratum win is not a deployable win"
+ },
+ "tail_diagnostics": {
+  "what": "the along-track RMS is dominated by a few clips, which is why a clip-cluster bootstrap on it is wide; the MAE read is reported beside every contrast for power",
+  "arm": "E1_ego",
+  "frac_of_squared_error_in_top_1pct_clips": 0.4906,
+  "frac_of_squared_error_in_top_5pct_clips": 0.5888,
+  "frac_of_squared_error_in_top_10pct_clips": 0.6577,
+  "per_window_rms_over_mae": 1.8895
+ },
+ "controls": {
+  "positive_P_ORACLE_STRONG": {
+   "required": "must be separated-better on the RMS axis",
+   "delta_m": 0.1243,
+   "separated": false,
+   "mae_delta_m": 0.3013,
+   "mae_separated": true,
+   "passes": false
+  },
+  "positive_P_ORACLE_weak": {
+   "note": "future speed at t+2 s ALONE; informative about how much of the residual is future ego intent, not a control",
+   "delta_m": 0.1447,
+   "separated": false,
+   "mae_delta_m": 0.2357,
+   "mae_separated": true
+  },
+  "negative_N_SHUF": {
+   "required": "must NOT be separated-better",
+   "delta_m": -0.0439,
+   "separated": true,
+   "direction": "shuffle HURT (expected)",
+   "passes": true
+  },
+  "run_valid": false
+ }
+}

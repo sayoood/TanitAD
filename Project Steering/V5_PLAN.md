@@ -239,14 +239,48 @@ other axis at its **learned** value: oracle **along-track recovers +83.7 % (sepa
 ⇒ **The 88 % lives on HOW FAR THE CAR WILL TRAVEL IN 2 s — not on where the road goes.**
 
 ⛔ **THEREFORE THE "WE NEED ALPASIM OR AN EXTERNAL MAPPED CORPUS" LINE TARGETS THE +2.9 % AXIS AND IS
-THE WRONG BLOCKER.** A map / route / lane-graph supplies the axis worth 2.9 %. **The +83.7 %
-longitudinal axis is UNBLOCKED and its signal is ALREADY IN PhysicalAI-AV** — `obstacle.offline`,
-**97.44 % coverage, 53.6 agents/window**, sitting in the 32-of-36 features our ingest does not read.
-*(AlpaSim's `traffic_light.parquet`, 51/51 scenes, is likewise a **speed-intent** asset misfiled as a
-map asset.)* **Spec in supplier units: 2 s-mean speed to 0.219 m/s (half prize) / 0.406 m/s
-(break-even); the best head achieves 0.576 m/s — 1.42× short of doing no harm.**
-→ **E-GOAL-1 launched:** lead-vehicle gap/TTC into the head, against pre-registered along-track RMS
-bars **0.813 m / 0.439 m**.
+THE WRONG BLOCKER.** A map / route / lane-graph supplies the axis worth 2.9 %.
+
+### ⭐⭐ E-GOAL-1 RETURNED 2026-07-27 — THE LONGITUDINAL AXIS IS REALISABLE, AND THE SUPPLIER IS **EGO SPEED HISTORY**, NOT AGENT TRACKS
+
+⛔ **CORRECTION, AND IT WAS MINE: the text above named `obstacle.offline` / "53.6 agents/window" as the
+supplier. That is WRONG, and a v5 decision taken on it would have funded an agent-track ingest instead
+of a speed-history feature.** `53.6 agents/window` is also the wrong statistic for this hypothesis —
+the same-family census is **2.01 vehicles ahead within 50 m** and **0.40 lead vehicles**.
+
+⛔ **The lead-vehicle hypothesis REFUTES (CONFIRMED tier), and it never could have worked: 41.65 % of
+windows have no vehicle ahead within 50 m at all.** Adding `gap`/`closing`/`TTC` moves along-track RMS
+**0.9305 → 0.8983 m** (+0.0322 [−0.0040, +0.0969], **not separated** on the primary axis; separated on
+the higher-power MAE read at −2.29 %). Worth **+2.3 recovery points**. Not re-scoped.
+
+⭐⭐ **But run through the ACTUAL REF-C rule rather than read off a curve, a head with the measured
+error structure recovers +23.6 % of the fan's headroom FROM EGO KINEMATICS ALONE**
+(−0.0638 [−0.1271, −0.0008], **separated**), **+25.9 %** with lead added — while **the parent's own head,
+pushed through the IDENTICAL construction, is separated-WORSE at −33.1 %.**
+⇒ **THE DIFFERENCE IS SPEED HISTORY. `dv_*` / `v_lag_*` alone are worth +0.1428 m [+0.0686, +0.2516] —
+4.4× the entire lead block. The parent's head had `v0` and NO HISTORY.** The earlier −10.4 % REFUTE was
+a missing-feature result, not a ceiling.
+**Tier: PROVISIONAL** *(the conservative `by_speed` resampler gives the same sign and size, +20.3 %/
++22.9 %, but is **not separated**; `E1_ego|iid`'s upper bound is −0.0008).*
+
+⚠️ **AND THE BARS THIS DOCUMENT PUBLISHED WERE COMPUTED ON THE WRONG FAMILY.** The measured heads are
+**near-unbiased (α ≈ 0.996 — not `SHRINK`)** and **heavy-tailed (RMS/MAE 1.867 — not `ISO`)**. Sweeping
+this stream's own residual pool through the rule gives **σ₀ = 1.1434 m** (half-prize **0.5907 m**)
+against the inherited **0.813 / 0.439 m** — **1.41× more forgiving**, and the lead head clears it.
+⇒ **Reading the `ISO` bar literally returns REFUTE; running the rule returns +25.9 %.** *(New class
+**BAR-INHERITED-FROM-THE-WRONG-FAMILY**.)* **Every bar in this section must now carry its family.**
+
+⭐ **A control that voids an axis rather than a result:** the positive control passes decisively on MAE
+(−61.2 %) and **FAILS TO SEPARATE ON RMS** ⇒ **at n = 612 clips the along-track RMS axis cannot separate
+even a near-perfect oracle, so NO non-separation on it is evidence of absence.** *(A guard that cannot
+fail — class C13 — found in this stream's own pre-registered primary.)* The decorrelation control shows
+the injection is **conservative, not optimistic**; the shuffled-lead negative control is separated-worse.
+
+⚠️ **A live defect in a committed artifact:** `stack/scripts/lead_state_gate.py` (the `obstacle.offline`
+reader, which **already existed** — imported, not forked, and proved bit-faithful over 104,652 rows)
+**never checks that `obstacle.offline` covers its grid. 10.59 % of clips and 4.51 % of windows have no
+obstacle data and SILENTLY BECOME `lead_present = 0`**, deflating the committed rate from a true
+**0.4046** to **0.3851**. Span guard written; the committed result needs a footnote.
 
 🟠 **Provenance defect, recorded rather than buried:** `fanc_goal_decomp.json` — the source of the
 widely-quoted *"−31.4 % / −5.8 % / +88.0 % pure interaction"* — **has no producing script staged

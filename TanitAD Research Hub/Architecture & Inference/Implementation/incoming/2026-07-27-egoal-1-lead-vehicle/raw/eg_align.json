@@ -1,0 +1,245 @@
+{
+ "what": "E-GOAL-1 S1 -- aligned obstacle.offline per-window dump",
+ "host": "dev box, CPU only; no pod contacted",
+ "corpus": {
+  "root": "C:\\Users\\Admin\\tanitad-data\\physicalai",
+  "note": "read-only over labels/*.zip + r0/phase0_selection.parquet; _epcache never written, no clip re-selected, parity key e438721ae894 / skip-hash f09e44db untouched",
+  "chunks": [
+   36,
+   170,
+   174,
+   181,
+   617,
+   834,
+   840,
+   852,
+   868,
+   906,
+   919,
+   928,
+   931,
+   1573,
+   1852,
+   1860,
+   1864,
+   1870,
+   1880,
+   1900,
+   2433,
+   2498,
+   2500,
+   2503,
+   2820,
+   2838
+  ]
+ },
+ "clock_join": {
+  "method": "world-frame dispersion of rig-frame tracks vs a swept clock offset; p10 of per-track xy dispersion, recomputed fresh at every delta so no track is pre-selected",
+  "n_clips": 40,
+  "deltas_s": [
+   -2.0,
+   -1.9,
+   -1.8,
+   -1.7,
+   -1.6,
+   -1.5,
+   -1.4,
+   -1.3,
+   -1.2,
+   -1.1,
+   -1.0,
+   -0.9,
+   -0.8,
+   -0.7,
+   -0.6,
+   -0.5,
+   -0.4,
+   -0.3,
+   -0.2,
+   -0.1,
+   0.0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.9,
+   1.0,
+   1.1,
+   1.2,
+   1.3,
+   1.4,
+   1.5,
+   1.6,
+   1.7,
+   1.8,
+   1.9,
+   2.0
+  ],
+  "median_dispersion_m": [
+   0.5824,
+   0.5648,
+   0.5464,
+   0.5233,
+   0.5057,
+   0.4857,
+   0.4718,
+   0.4547,
+   0.4297,
+   0.4023,
+   0.3794,
+   0.3508,
+   0.318,
+   0.2947,
+   0.2592,
+   0.2235,
+   0.2025,
+   0.1609,
+   0.1212,
+   0.0971,
+   0.0637,
+   0.0897,
+   0.12,
+   0.1531,
+   0.1724,
+   0.1931,
+   0.2135,
+   0.238,
+   0.266,
+   0.2921,
+   0.3117,
+   0.3271,
+   0.349,
+   0.3824,
+   0.3937,
+   0.4033,
+   0.4086,
+   0.4188,
+   0.4391,
+   0.463,
+   0.482
+  ],
+  "best_delta_s": 0.0,
+  "frac_clips_best_at_zero": 0.95,
+  "dispersion_at_0_m": 0.0637,
+  "dispersion_at_plus1s_m": 0.3117,
+  "failing_control": {
+   "what": "a deliberately wrong +1.0 s offset must be reported WORSE",
+   "ratio_plus1s_over_0": 4.8914,
+   "passes": true
+  }
+ },
+ "coverage": {
+  "n_clips_kept": 612,
+  "n_clips_seen": 2417,
+  "dropped": {
+   "not_in_selection": 1803,
+   "no_obstacle_rows": 0,
+   "grid_outside_intersection": 2,
+   "ego_too_short": 0
+  },
+  "n_windows": 104652,
+  "n_windows_obstacle_covered": 99935,
+  "frac_windows_obstacle_covered": 0.9549,
+  "n_windows_finite_target": 99935,
+  "grid": {
+   "t0_s": 1.0,
+   "t1_s": 18.000000000000014,
+   "hz": 10.0,
+   "n_per_clip": 171,
+   "horizon_s": 2.0
+  },
+  "obstacle_rows_present_frac_of_clips": 1.0,
+  "lead_present_frac_windows": 0.4046,
+  "clips_with_any_lead_frac": 0.6634,
+  "per_clip_lead_frac": {
+   "p10": 0.0,
+   "p50": 0.2398,
+   "p90": 1.0
+  },
+  "mean_agents_ahead_50m": 2.0088,
+  "frac_windows_zero_agents_ahead": 0.4165,
+  "gap_m_when_present": {
+   "p10": 9.0282,
+   "p50": 26.7934,
+   "p90": 59.9229
+  },
+  "target": {
+   "y_long_mean_m": 26.3383,
+   "y_long_sd_m": 19.562,
+   "y_lat_sd_m": 1.21,
+   "canonical_881_reference": {
+    "mean_displacement_m": 25.51,
+    "along_sd_m": 18.73,
+    "cross_sd_m": 2.01,
+    "source": "GOAL_INPUT.md S2.1 (parent stream)"
+   }
+  },
+  "v_mean_ms": 13.1737,
+  "n_countries": 25,
+  "n_chunks": 26,
+  "spans": {
+   "n": 614,
+   "ego_t0_s": [
+    -0.2,
+    -0.185
+   ],
+   "ego_t1_s": [
+    20.1899,
+    140.192
+   ],
+   "obst_t0_s": [
+    0.0,
+    19.2344
+   ],
+   "obst_t1_s": [
+    2.6992,
+    20.0
+   ],
+   "frac_grid_inside_intersection": 0.8941,
+   "median_tracks_per_clip": 70,
+   "why_this_matters": "egomotion runs far past 20 s while obstacle.offline stops at ~20 s. A grid point outside the intersection yields NO obstacle rows, which is indistinguishable from an empty road -- it would silently convert a coverage failure into a plausible lead-presence rate."
+  }
+ },
+ "columns": {
+  "ego": [
+   "v",
+   "ax",
+   "ay",
+   "curv",
+   "yawrate",
+   "dv_0p5",
+   "dv_1p0",
+   "v_lag_0p5",
+   "v_lag_1p0",
+   "abs_curv"
+  ],
+  "lead": [
+   "lead_present",
+   "gap_m",
+   "closing_ms",
+   "ttc_s",
+   "inv_ttc",
+   "lead_lat_m",
+   "lead_is_big"
+  ],
+  "density": [
+   "n_ahead_50m",
+   "n_vru_near"
+  ],
+  "derived": [
+   "headway_s",
+   "req_decel",
+   "lead_v_abs",
+   "gap2_m",
+   "inv_gap"
+  ],
+  "targets": [
+   "y_long",
+   "y_lat"
+  ]
+ }
+}
