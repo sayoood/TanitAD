@@ -1,0 +1,130 @@
+{
+ "purpose": "episode-identity overlap between the v3 latent cache (eval) and the idm-proof latent cache (pod3), measured by md5 of float32 poses because the pod3 cache stores no episode_id",
+ "method": {
+  "fingerprint": "md5(ascontiguousarray(poses.float32).tobytes())",
+  "files": [
+   "raw/fp_eval.json",
+   "raw/fp_pod3.json"
+  ],
+  "script": "code/fingerprint_lat.py"
+ },
+ "v3_split": {
+  "val_every": 3,
+  "n_train": 68,
+  "n_val": 36,
+  "val_episodes": [
+   "cm_00000",
+   "cm_00003",
+   "cm_00006",
+   "cm_00009",
+   "cm_00012",
+   "cm_00015",
+   "cm_00018",
+   "cm_00021",
+   "cm_00024",
+   "cm_00027",
+   "cm_00030",
+   "cm_00033",
+   "cm_00036",
+   "cm_00039",
+   "cm_00042",
+   "cm_00045",
+   "cm_00048",
+   "cm_00051",
+   "cm_00054",
+   "cm_00057",
+   "cm_00060",
+   "cm_00063",
+   "pai_00000",
+   "pai_00003",
+   "pai_00006",
+   "pai_00009",
+   "pai_00012",
+   "pai_00015",
+   "pai_00018",
+   "pai_00021",
+   "pai_00024",
+   "pai_00027",
+   "pai_00030",
+   "pai_00033",
+   "pai_00036",
+   "pai_00039"
+  ]
+ },
+ "counts": {
+  "eval_files": 104,
+  "eval_unique": 104,
+  "pod3_files": 770,
+  "pod3_unique": 708,
+  "pod3_internal_duplicate_fingerprints": 62,
+  "pod3_extra_files_from_duplication": 62,
+  "shared_between_caches": 19,
+  "union_unique": 793
+ },
+ "VAL_LEAK_IF_UNCHECKED": {
+  "n": 4,
+  "of_val_episodes": 36,
+  "frac": 0.1111,
+  "collisions": [
+   {
+    "v3_val_episode": "cm_00018",
+    "pod3_tags": [
+     "comma_00008"
+    ]
+   },
+   {
+    "v3_val_episode": "cm_00039",
+    "pod3_tags": [
+     "comma_00020"
+    ]
+   },
+   {
+    "v3_val_episode": "pai_00000",
+    "pod3_tags": [
+     "pai_val_00000"
+    ]
+   },
+   {
+    "v3_val_episode": "pai_00018",
+    "pod3_tags": [
+     "pai_val_00012"
+    ]
+   }
+  ]
+ },
+ "training_pool_after_exclusion": 757,
+ "pod3_internal_duplicate_examples": [
+  [
+   "pai_a_00016",
+   "pai_val_00004"
+  ],
+  [
+   "pai_a_00021",
+   "pai_val_00005"
+  ],
+  [
+   "pai_a_00046",
+   "pai_val_00009"
+  ],
+  [
+   "pai_a_00079",
+   "pai_val_00015"
+  ],
+  [
+   "pai_a_00097",
+   "pai_val_00019"
+  ],
+  [
+   "pai_a_00102",
+   "pai_val_00020"
+  ],
+  [
+   "pai_a_00106",
+   "pai_val_00022"
+  ],
+  [
+   "pai_a_00122",
+   "pai_val_00025"
+  ]
+ ]
+}

@@ -536,8 +536,14 @@ def _decode_mp4(mp4: Path, size: int, frame: CanonicalFrame | None = None,
         # (~35 on a 96-core box), so N parallel build workers oversubscribe
         # cores ~Nx and thrash. Keep N_workers * PAI_DECODE_THREADS ~= n_cores.
         stream.thread_count = int(os.environ.get("PAI_DECODE_THREADS", "4"))
-        for fr in c.decode(stream):
-            rgb = torch.from_numpy(fr.to_ndarray(format="rgb24")).permute(2, 0, 1)
+        # NOTE: the decode variable must NOT be named `fr` — `fr` is the
+        # CanonicalFrame bound above by `as_frame()`, and every use below
+        # (`_remap_batch`, `fr.to_dict()`, `fr.tag()`, `ftheta_horizon_row`)
+        # needs the GEOMETRY, not a PyAV VideoFrame. Shadowing it here made
+        # _decode_mp4 raise AttributeError on EVERY path — deployed included.
+        for vframe in c.decode(stream):
+            rgb = torch.from_numpy(
+                vframe.to_ndarray(format="rgb24")).permute(2, 0, 1)
             if h is None:
                 h, w = int(rgb.shape[-2]), int(rgb.shape[-1])
             buf.append(rgb)
