@@ -33,12 +33,15 @@ i.e. **near-quadratic**. Error does **not** accumulate like integration noise (w
    consistent with quadratic growth; it does not establish it, and it must not be extrapolated —
    the programme's own rule forbids projecting a fit beyond 2× its fitted range, and this *is* the
    2× range.
-2. **The 4 s and 8 s failures are UNDIAGNOSED.** The leading hypothesis is a **dataset bound, not
-   model divergence**: the cached episodes declare `max_horizon: 20` (= 2 s of future poses), so
-   K=40 asks for ground-truth futures that do not exist. ⚠️ **I did not confirm this** — the log did
-   not carry the assert's origin, and asserting a cause I have not read would be exactly the error
-   this programme keeps logging. It is a hypothesis with an obvious test (build a val cache with
-   longer futures), not a finding.
+2. ✅ **The 4 s / 8 s failures are now DIAGNOSED — and my hypothesis was only half right.**
+   The assert is
+   `indexSelectSmallIndex: Assertion 'srcIndex < srcSelectDimSize' failed` (`Indexing.cu:1478`)
+   — an **`index_select` out of bounds**, i.e. an EMBEDDING LOOKUP past the end of a table, not a
+   missing ground-truth label. ⇒ **the 20-step bound lives in the MODEL, not only in the data.**
+   ⛔ **This overturns the fix I first proposed.** Building a val cache with longer futures would
+   **not** unlock 4 s on its own — the predictor cannot be *asked* for a horizon index it has no
+   embedding row for. Extending imagination requires a **model change (a larger horizon table) and
+   a retrain**, which is a materially bigger commitment than rebuilding a cache.
 3. ⚠️ Therefore **"2 s is the usable ceiling" is NOT shown.** What is shown is that error grows
    super-linearly across the only range currently measurable, and that the range is *currently*
    capped by the data, not by an observed failure of the model.
@@ -51,11 +54,21 @@ hierarchy — **a strategic brain planning over long horizons cannot lean on thi
 imagination without re-perception**, and the frequency of that re-perception is now a measurable
 quantity rather than an assumption.
 
-## 5. Next
+## 5. Next — REVISED once the assert was read
 
-Build a val cache with `max_horizon` ≥ 80 (8 s of future poses) and re-run the identical sweep. That
-converts two points into four and turns the exponent from a slope into a fit. Until then the 1.91 is
-a **direction**, not a law.
+⛔ **NOT** "just build a longer val cache" (my first answer). The bound is an embedding table in the
+predictor, so a longer cache alone changes nothing.
+
+The horizon question now splits in two, and only one half is cheap:
+1. **Cheap, and worth doing first:** sweep *within* the trained range — K = 4, 8, 12, 16, 20
+   (0.4–2.0 s). That yields **five** points instead of two and turns 1.91 from a two-point slope
+   into a real fit, with **no model change at all**. If the exponent holds across five points inside
+   the range, it is a property of this world model rather than an artifact of two samples.
+2. **Expensive, and now a PI decision:** to measure beyond 2 s at all, the predictor needs a larger
+   horizon embedding and a retrain. That is not a measurement — it is a new arm.
+
+⇒ **Do (1) next. Do not spend a retrain on (2) until the in-range fit says the extrapolation is
+worth buying.**
 
 ## 6. Provenance
 
