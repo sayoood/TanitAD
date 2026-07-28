@@ -636,6 +636,19 @@ class HeldoutGate:
                 # panel. A probe that stops a GPU-week must show whether the
                 # term that stopped it had any gradient left.
                 "component_saturation": comp.get("component_saturation"),
+                # ⭐ 2026-07-28: WHICH GATE VERSION ADMITTED THOSE COMPONENTS.
+                # `v1` is pinned here deliberately — it is what every published
+                # composite was gated under, and re-gating a running probe under
+                # `v2` mid-programme would change the metric's definition, the
+                # exact failure `_pinned_ranges` above exists to prevent. The
+                # STRONGER verdict is still visible per component
+                # (`admissible_v2` in `_pinned_ranges`), so adopting it is a
+                # decision someone can take with the number in front of them.
+                "gate_version": self._pinned_ranges.get("_gate", {}).get(
+                    "gate_version"),
+                "components_admissible_under_gate_v2": {
+                    k: self._pinned_ranges.get(k, {}).get("admissible_v2")
+                    for k in ("ego_progress", "recovery", "comfort")},
                 "grid": pw.get("grid"), "traffic_mode": pw.get("traffic_mode"),
                 "_estimator": f"paired episode-cluster bootstrap "
                               f"(B={self.cfg.n_boot}, unit = held-out episode)"}

@@ -1,0 +1,1123 @@
+{
+ "_experiment": "FINISH THE BOUNDED-TERM REPAIR: lat_heading (C45's third clamp), the FLOOR_FRAC_MAX guard, ego_progress above r = 2, and the comfort decision. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "9ec002294ea3a7b84044cbf4ff222e47"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "e8c90ab60f0825be3f4af57a918960a8"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "audit": {
+  "_rule": "Three of three audited bounded terms were one-sidedly clamped and the fourth is saturated by construction. Every term is re-audited here on the TWO-SIDED live_frac, and the v1/v2 verdicts are reported side by side so the guard's effect is a measured fact rather than a claim.",
+  "_detection_heuristic": "For any bounded score: (1) compute live_frac = 1 - floor - ceiling on every arm \u2014 NOT the two ends separately; (2) state n_sub, the sub-samples averaged per row, because a per-row term saturates ~20x more readily than a mean-over-20 one; (3) compute |dg/du| at the MEDIAN of the term's own raw quantity and divide by |dg/du| near the ideal \u2014 > 1 means the term rewards polishing good rows more than it charges bad ones (C47).",
+  "terms": {
+   "ego_progress@clamp_v1": {
+    "expr": "clamp(r, 0, 1), r = plan_along / human_along",
+    "clamped_sides": "BOTH (floor at r<=0, ceiling at r>=1)",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.2461,
+    "max_floor_scorable": 0.3178,
+    "max_ceiling_scorable": 0.5703,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": false,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.004986,
+      "ceiling": 0.269007,
+      "live_frac": 0.726007
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.00136,
+      "ceiling": 0.529983,
+      "live_frac": 0.468657
+     },
+     "refc_base_produced": {
+      "floor": 0.001684,
+      "ceiling": 0.32036,
+      "live_frac": 0.677956
+     },
+     "refc_small_produced": {
+      "floor": 0.001684,
+      "ceiling": 0.316798,
+      "live_frac": 0.681518
+     },
+     "refc_xl_produced": {
+      "floor": 0.000518,
+      "ceiling": 0.348595,
+      "live_frac": 0.650887
+     },
+     "stand_still": {
+      "floor": 1.0,
+      "ceiling": 0.0,
+      "live_frac": 0.0
+     },
+     "v1_tactical_follow": {
+      "floor": 0.000648,
+      "ceiling": 0.559124,
+      "live_frac": 0.440228
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.000648,
+      "ceiling": 0.544878,
+      "live_frac": 0.454475
+     },
+     "v4_blind": {
+      "floor": 0.31777,
+      "ceiling": 0.436148,
+      "live_frac": 0.246082
+     },
+     "v4_oracle": {
+      "floor": 0.000712,
+      "ceiling": 0.40092,
+      "live_frac": 0.598368
+     },
+     "oracle_lon_straight": {
+      "floor": 0.0,
+      "ceiling": 0.250486,
+      "live_frac": 0.749514
+     },
+     "v1_ego_double": {
+      "floor": 0.005958,
+      "ceiling": 0.974938,
+      "live_frac": 0.019104
+     },
+     "v1_ego_half": {
+      "floor": 0.005764,
+      "ceiling": 0.008872,
+      "live_frac": 0.985365
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.000842,
+      "ceiling": 0.177697,
+      "live_frac": 0.821461
+     },
+     "v1_ego_v0": {
+      "floor": 0.005893,
+      "ceiling": 0.244852,
+      "live_frac": 0.749255
+     },
+     "v1_lat_straight": {
+      "floor": 0.0,
+      "ceiling": 0.570263,
+      "live_frac": 0.429737
+     },
+     "refc_base_v0off": {
+      "floor": 0.004145,
+      "ceiling": 0.332664,
+      "live_frac": 0.663191
+     },
+     "refc_base_v0on": {
+      "floor": 0.001684,
+      "ceiling": 0.32036,
+      "live_frac": 0.677956
+     },
+     "refc_xl_v0off": {
+      "floor": 0.000712,
+      "ceiling": 0.373721,
+      "live_frac": 0.625567
+     },
+     "refc_xl_v0on": {
+      "floor": 0.000518,
+      "ceiling": 0.348595,
+      "live_frac": 0.650887
+     }
+    }
+   },
+   "ego_progress@twosided_v2": {
+    "expr": "clamp(clamp_v1(r) - w*max(r-1,0), 0, 1), w = 1",
+    "clamped_sides": "FLOOR at r<=0 AND at r>=2 \u2014 two-sided, both ends floor",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.6704,
+    "max_floor_scorable": 0.327,
+    "max_ceiling_scorable": 0.1173,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": true,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.014053,
+      "ceiling": 0.011721,
+      "live_frac": 0.974226
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.078099,
+      "ceiling": 0.002526,
+      "live_frac": 0.919376
+     },
+     "refc_base_produced": {
+      "floor": 0.011397,
+      "ceiling": 0.021759,
+      "live_frac": 0.966844
+     },
+     "refc_small_produced": {
+      "floor": 0.012304,
+      "ceiling": 0.020787,
+      "live_frac": 0.966908
+     },
+     "refc_xl_produced": {
+      "floor": 0.009325,
+      "ceiling": 0.018327,
+      "live_frac": 0.972348
+     },
+     "stand_still": {
+      "floor": 1.0,
+      "ceiling": 0.0,
+      "live_frac": 0.0
+     },
+     "v1_tactical_follow": {
+      "floor": 0.080495,
+      "ceiling": 0.002849,
+      "live_frac": 0.916656
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.07499,
+      "ceiling": 0.003044,
+      "live_frac": 0.921966
+     },
+     "v4_blind": {
+      "floor": 0.32703,
+      "ceiling": 0.00259,
+      "live_frac": 0.670379
+     },
+     "v4_oracle": {
+      "floor": 0.011721,
+      "ceiling": 0.013794,
+      "live_frac": 0.974485
+     },
+     "oracle_lon_straight": {
+      "floor": 0.0,
+      "ceiling": 0.1301,
+      "live_frac": 0.8699
+     },
+     "v1_ego_double": {
+      "floor": 0.24265,
+      "ceiling": 0.0,
+      "live_frac": 0.75735
+     },
+     "v1_ego_half": {
+      "floor": 0.006217,
+      "ceiling": 0.0,
+      "live_frac": 0.993783
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.000842,
+      "ceiling": 0.117342,
+      "live_frac": 0.881816
+     },
+     "v1_ego_v0": {
+      "floor": 0.0147,
+      "ceiling": 0.010426,
+      "live_frac": 0.974874
+     },
+     "v1_lat_straight": {
+      "floor": 0.082243,
+      "ceiling": 0.003432,
+      "live_frac": 0.914325
+     },
+     "refc_base_v0off": {
+      "floor": 0.017355,
+      "ceiling": 0.003691,
+      "live_frac": 0.978954
+     },
+     "refc_base_v0on": {
+      "floor": 0.011397,
+      "ceiling": 0.021824,
+      "live_frac": 0.966779
+     },
+     "refc_xl_v0off": {
+      "floor": 0.015542,
+      "ceiling": 0.00667,
+      "live_frac": 0.977788
+     },
+     "refc_xl_v0on": {
+      "floor": 0.009325,
+      "ceiling": 0.018327,
+      "live_frac": 0.972348
+     }
+    }
+   },
+   "recovery@clamp_v1": {
+    "expr": "clamp(1 - r, 0, 1), r = |xt_end| / |xt_hold|",
+    "clamped_sides": "\u26d4 THE DEFECT (C45) \u2014 floor at r>=1, ceiling never active",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.0781,
+    "max_floor_scorable": 0.9219,
+    "max_ceiling_scorable": 0.0002,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": false,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.556522,
+      "ceiling": 0.000153,
+      "live_frac": 0.443326
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.698778,
+      "ceiling": 0.0,
+      "live_frac": 0.301222
+     },
+     "refc_base_produced": {
+      "floor": 0.916035,
+      "ceiling": 0.0,
+      "live_frac": 0.083965
+     },
+     "refc_small_produced": {
+      "floor": 0.91182,
+      "ceiling": 0.0,
+      "live_frac": 0.08818
+     },
+     "refc_xl_produced": {
+      "floor": 0.921858,
+      "ceiling": 0.0,
+      "live_frac": 0.078142
+     },
+     "stand_still": {
+      "floor": null,
+      "ceiling": null,
+      "live_frac": null
+     },
+     "v1_tactical_follow": {
+      "floor": 0.697274,
+      "ceiling": 0.0,
+      "live_frac": 0.302726
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.69221,
+      "ceiling": 0.0,
+      "live_frac": 0.30779
+     },
+     "v4_blind": {
+      "floor": 0.557914,
+      "ceiling": 0.000109,
+      "live_frac": 0.441977
+     },
+     "v4_oracle": {
+      "floor": 0.755584,
+      "ceiling": 7.5e-05,
+      "live_frac": 0.244342
+     },
+     "oracle_lon_straight": {
+      "floor": 0.550266,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.449658
+     },
+     "v1_ego_double": {
+      "floor": 0.742534,
+      "ceiling": 0.000152,
+      "live_frac": 0.257314
+     },
+     "v1_ego_half": {
+      "floor": 0.689283,
+      "ceiling": 0.0,
+      "live_frac": 0.310717
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.717282,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.282642
+     },
+     "v1_ego_v0": {
+      "floor": 0.728661,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.271263
+     },
+     "v1_lat_straight": {
+      "floor": 0.563503,
+      "ceiling": 7.4e-05,
+      "live_frac": 0.436423
+     },
+     "refc_base_v0off": {
+      "floor": 0.89932,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.100604
+     },
+     "refc_base_v0on": {
+      "floor": 0.915959,
+      "ceiling": 0.0,
+      "live_frac": 0.084041
+     },
+     "refc_xl_v0off": {
+      "floor": 0.900843,
+      "ceiling": 0.000152,
+      "live_frac": 0.099005
+     },
+     "refc_xl_v0on": {
+      "floor": 0.921858,
+      "ceiling": 0.0,
+      "live_frac": 0.078142
+     }
+    }
+   },
+   "recovery@twosided_v2": {
+    "expr": "clamp(1 - r/3, 0, 1) (lin_q0p6667)",
+    "clamped_sides": "FLOOR at r >= 3",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.9161,
+    "max_floor_scorable": 0.0833,
+    "max_ceiling_scorable": 0.0007,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": true,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.067277,
+      "ceiling": 0.000153,
+      "live_frac": 0.932571
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.01977,
+      "ceiling": 0.000222,
+      "live_frac": 0.980007
+     },
+     "refc_base_produced": {
+      "floor": 0.016839,
+      "ceiling": 0.000303,
+      "live_frac": 0.982858
+     },
+     "refc_small_produced": {
+      "floor": 0.018728,
+      "ceiling": 0.0,
+      "live_frac": 0.981272
+     },
+     "refc_xl_produced": {
+      "floor": 0.017508,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.982416
+     },
+     "stand_still": {
+      "floor": null,
+      "ceiling": null,
+      "live_frac": null
+     },
+     "v1_tactical_follow": {
+      "floor": 0.019389,
+      "ceiling": 0.000446,
+      "live_frac": 0.980165
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.020217,
+      "ceiling": 0.000446,
+      "live_frac": 0.979337
+     },
+     "v4_blind": {
+      "floor": 0.083279,
+      "ceiling": 0.000653,
+      "live_frac": 0.916068
+     },
+     "v4_oracle": {
+      "floor": 0.014043,
+      "ceiling": 0.000149,
+      "live_frac": 0.985807
+     },
+     "oracle_lon_straight": {
+      "floor": 0.056644,
+      "ceiling": 0.000456,
+      "live_frac": 0.942901
+     },
+     "v1_ego_double": {
+      "floor": 0.041796,
+      "ceiling": 0.000152,
+      "live_frac": 0.958052
+     },
+     "v1_ego_half": {
+      "floor": 0.114803,
+      "ceiling": 7.7e-05,
+      "live_frac": 0.88512
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.021052,
+      "ceiling": 0.000228,
+      "live_frac": 0.97872
+     },
+     "v1_ego_v0": {
+      "floor": 0.034433,
+      "ceiling": 0.000153,
+      "live_frac": 0.965415
+     },
+     "v1_lat_straight": {
+      "floor": 0.0503,
+      "ceiling": 0.000444,
+      "live_frac": 0.949257
+     },
+     "refc_base_v0off": {
+      "floor": 0.024692,
+      "ceiling": 0.000229,
+      "live_frac": 0.975078
+     },
+     "refc_base_v0on": {
+      "floor": 0.016839,
+      "ceiling": 0.000303,
+      "live_frac": 0.982858
+     },
+     "refc_xl_v0off": {
+      "floor": 0.023782,
+      "ceiling": 0.000228,
+      "live_frac": 0.97599
+     },
+     "refc_xl_v0on": {
+      "floor": 0.017508,
+      "ceiling": 7.6e-05,
+      "live_frac": 0.982416
+     }
+    }
+   },
+   "comfort": {
+    "expr": "AND of four bounds \u2014 a {0,1} INDICATOR, not a score",
+    "clamped_sides": "\u26d4 NOT A CLAMP: 100 % saturated BY CONSTRUCTION",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.0,
+    "max_floor_scorable": 1.0,
+    "max_ceiling_scorable": 1.0,
+    "GATE_V1_ADMITS": false,
+    "GATE_V2_ADMITS": false,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.0,
+      "ceiling": 1.0,
+      "live_frac": 0.0
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.999312,
+      "ceiling": 0.000688,
+      "live_frac": -0.0
+     },
+     "refc_base_produced": {
+      "floor": 0.991803,
+      "ceiling": 0.008197,
+      "live_frac": -0.0
+     },
+     "refc_small_produced": {
+      "floor": 0.997309,
+      "ceiling": 0.002691,
+      "live_frac": -0.0
+     },
+     "refc_xl_produced": {
+      "floor": 0.994619,
+      "ceiling": 0.005381,
+      "live_frac": -0.0
+     },
+     "stand_still": {
+      "floor": 0.0,
+      "ceiling": 1.0,
+      "live_frac": 0.0
+     },
+     "v1_tactical_follow": {
+      "floor": 0.999625,
+      "ceiling": 0.000375,
+      "live_frac": -0.0
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.999625,
+      "ceiling": 0.000375,
+      "live_frac": -0.0
+     },
+     "v4_blind": {
+      "floor": 1.0,
+      "ceiling": 0.0,
+      "live_frac": 0.0
+     },
+     "v4_oracle": {
+      "floor": 1.0,
+      "ceiling": 0.0,
+      "live_frac": 0.0
+     },
+     "oracle_lon_straight": {
+      "floor": 0.063888,
+      "ceiling": 0.936112,
+      "live_frac": 0.0
+     },
+     "v1_ego_double": {
+      "floor": 0.90132,
+      "ceiling": 0.09868,
+      "live_frac": 0.0
+     },
+     "v1_ego_half": {
+      "floor": 0.362806,
+      "ceiling": 0.637194,
+      "live_frac": -0.0
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.754709,
+      "ceiling": 0.245291,
+      "live_frac": 0.0
+     },
+     "v1_ego_v0": {
+      "floor": 0.711783,
+      "ceiling": 0.288217,
+      "live_frac": 0.0
+     },
+     "v1_lat_straight": {
+      "floor": 0.990113,
+      "ceiling": 0.009887,
+      "live_frac": -0.0
+     },
+     "refc_base_v0off": {
+      "floor": 0.996433,
+      "ceiling": 0.003567,
+      "live_frac": 0.0
+     },
+     "refc_base_v0on": {
+      "floor": 0.991803,
+      "ceiling": 0.008197,
+      "live_frac": -0.0
+     },
+     "refc_xl_v0off": {
+      "floor": 0.994994,
+      "ceiling": 0.005006,
+      "live_frac": 0.0
+     },
+     "refc_xl_v0on": {
+      "floor": 0.994681,
+      "ceiling": 0.005319,
+      "live_frac": 0.0
+     }
+    }
+   },
+   "lon_track": {
+    "expr": "mean_k clamp(1 - |t_err_k| / T_TOL, 0, 1)",
+    "clamped_sides": "per-step floor, MEANED over 20 steps",
+    "n_sub_per_row": 20,
+    "min_live_frac_scorable": 0.893,
+    "max_floor_scorable": 0.0029,
+    "max_ceiling_scorable": 0.107,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": true,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.0,
+      "ceiling": 6.5e-05,
+      "live_frac": 0.999935
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.002655,
+      "ceiling": 0.0,
+      "live_frac": 0.997345
+     },
+     "refc_base_produced": {
+      "floor": 0.0,
+      "ceiling": 0.009001,
+      "live_frac": 0.990999
+     },
+     "refc_small_produced": {
+      "floor": 0.0,
+      "ceiling": 0.010879,
+      "live_frac": 0.989121
+     },
+     "refc_xl_produced": {
+      "floor": 0.0,
+      "ceiling": 0.010232,
+      "live_frac": 0.989768
+     },
+     "stand_still": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "v1_tactical_follow": {
+      "floor": 0.002914,
+      "ceiling": 0.00013,
+      "live_frac": 0.996956
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.002137,
+      "ceiling": 0.00013,
+      "live_frac": 0.997733
+     },
+     "v4_blind": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "v4_oracle": {
+      "floor": 0.0,
+      "ceiling": 0.000583,
+      "live_frac": 0.999417
+     },
+     "oracle_lon_straight": {
+      "floor": 0.0,
+      "ceiling": 0.110672,
+      "live_frac": 0.889328
+     },
+     "v1_ego_double": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "v1_ego_half": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.0,
+      "ceiling": 0.107046,
+      "live_frac": 0.892954
+     },
+     "v1_ego_v0": {
+      "floor": 0.0,
+      "ceiling": 6.5e-05,
+      "live_frac": 0.999935
+     },
+     "v1_lat_straight": {
+      "floor": 0.002914,
+      "ceiling": 0.00013,
+      "live_frac": 0.996956
+     },
+     "refc_base_v0off": {
+      "floor": 0.0,
+      "ceiling": 0.000389,
+      "live_frac": 0.999611
+     },
+     "refc_base_v0on": {
+      "floor": 0.0,
+      "ceiling": 0.008937,
+      "live_frac": 0.991063
+     },
+     "refc_xl_v0off": {
+      "floor": 0.0,
+      "ceiling": 0.000259,
+      "live_frac": 0.999741
+     },
+     "refc_xl_v0on": {
+      "floor": 0.0,
+      "ceiling": 0.010167,
+      "live_frac": 0.989833
+     }
+    }
+   },
+   "lat_track": {
+    "expr": "mean_k clamp(1 - |XTE_k| / corridor(s_k), 0, 1)",
+    "clamped_sides": "per-step floor, MEANED over 20 steps",
+    "n_sub_per_row": 20,
+    "min_live_frac_scorable": 0.9051,
+    "max_floor_scorable": 0.0947,
+    "max_ceiling_scorable": 0.0008,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": true,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.074609,
+      "ceiling": 0.000795,
+      "live_frac": 0.924596
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.081467,
+      "ceiling": 0.0,
+      "live_frac": 0.918533
+     },
+     "refc_base_produced": {
+      "floor": 0.093663,
+      "ceiling": 0.000398,
+      "live_frac": 0.905939
+     },
+     "refc_small_produced": {
+      "floor": 0.094135,
+      "ceiling": 0.0,
+      "live_frac": 0.905865
+     },
+     "refc_xl_produced": {
+      "floor": 0.094744,
+      "ceiling": 0.000132,
+      "live_frac": 0.905123
+     },
+     "stand_still": {
+      "floor": null,
+      "ceiling": null,
+      "live_frac": null
+     },
+     "v1_tactical_follow": {
+      "floor": 0.079205,
+      "ceiling": 0.000391,
+      "live_frac": 0.920404
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.076793,
+      "ceiling": 0.000391,
+      "live_frac": 0.922816
+     },
+     "v4_blind": {
+      "floor": 0.078876,
+      "ceiling": 0.0,
+      "live_frac": 0.921124
+     },
+     "v4_oracle": {
+      "floor": 0.071303,
+      "ceiling": 0.0,
+      "live_frac": 0.928697
+     },
+     "oracle_lon_straight": {
+      "floor": 0.074325,
+      "ceiling": 0.000987,
+      "live_frac": 0.924687
+     },
+     "v1_ego_double": {
+      "floor": 0.175128,
+      "ceiling": 0.000394,
+      "live_frac": 0.824479
+     },
+     "v1_ego_half": {
+      "floor": 0.015518,
+      "ceiling": 0.000885,
+      "live_frac": 0.983598
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.082686,
+      "ceiling": 0.000461,
+      "live_frac": 0.916853
+     },
+     "v1_ego_v0": {
+      "floor": 0.082229,
+      "ceiling": 0.000464,
+      "live_frac": 0.917307
+     },
+     "v1_lat_straight": {
+      "floor": 0.07601,
+      "ceiling": 0.000782,
+      "live_frac": 0.923207
+     },
+     "refc_base_v0off": {
+      "floor": 0.070712,
+      "ceiling": 0.000404,
+      "live_frac": 0.928884
+     },
+     "refc_base_v0on": {
+      "floor": 0.093663,
+      "ceiling": 0.000398,
+      "live_frac": 0.905939
+     },
+     "refc_xl_v0off": {
+      "floor": 0.073276,
+      "ceiling": 0.000199,
+      "live_frac": 0.926524
+     },
+     "refc_xl_v0on": {
+      "floor": 0.094744,
+      "ceiling": 0.000132,
+      "live_frac": 0.905123
+     }
+    }
+   },
+   "lat_heading@term_lin_q0 (PUBLISHED)": {
+    "expr": "clamp(1 - |dpsi_end| / PSI_TOL, 0, 1) \u2014 a SINGLE value per row",
+    "clamped_sides": "\u26d4 FLOOR at |dpsi| >= PSI_TOL; ceiling never active",
+    "n_sub_per_row": 1,
+    "min_live_frac_scorable": 0.157,
+    "max_floor_scorable": 0.8429,
+    "max_ceiling_scorable": 0.0023,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": false,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.363835,
+      "ceiling": 0.002253,
+      "live_frac": 0.633912
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.372978,
+      "ceiling": 0.000982,
+      "live_frac": 0.62604
+     },
+     "refc_base_produced": {
+      "floor": 0.505237,
+      "ceiling": 0.001458,
+      "live_frac": 0.493305
+     },
+     "refc_small_produced": {
+      "floor": 0.499868,
+      "ceiling": 0.001523,
+      "live_frac": 0.49861
+     },
+     "refc_xl_produced": {
+      "floor": 0.505942,
+      "ceiling": 0.001585,
+      "live_frac": 0.492473
+     },
+     "stand_still": {
+      "floor": null,
+      "ceiling": null,
+      "live_frac": null
+     },
+     "v1_tactical_follow": {
+      "floor": 0.374967,
+      "ceiling": 0.000978,
+      "live_frac": 0.624055
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.374576,
+      "ceiling": 0.000978,
+      "live_frac": 0.624446
+     },
+     "v4_blind": {
+      "floor": 0.842896,
+      "ceiling": 0.00013,
+      "live_frac": 0.156974
+     },
+     "v4_oracle": {
+      "floor": 0.436362,
+      "ceiling": 0.000326,
+      "live_frac": 0.563311
+     },
+     "oracle_lon_straight": {
+      "floor": 0.369388,
+      "ceiling": 0.002304,
+      "live_frac": 0.628308
+     },
+     "v1_ego_double": {
+      "floor": 0.370064,
+      "ceiling": 0.000984,
+      "live_frac": 0.628952
+     },
+     "v1_ego_half": {
+      "floor": 0.312189,
+      "ceiling": 0.001497,
+      "live_frac": 0.686313
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 0.375708,
+      "ceiling": 0.001119,
+      "live_frac": 0.623173
+     },
+     "v1_ego_v0": {
+      "floor": 0.367016,
+      "ceiling": 0.001259,
+      "live_frac": 0.631725
+     },
+     "v1_lat_straight": {
+      "floor": 0.360887,
+      "ceiling": 0.002347,
+      "live_frac": 0.636767
+     },
+     "refc_base_v0off": {
+      "floor": 0.508721,
+      "ceiling": 0.001145,
+      "live_frac": 0.490134
+     },
+     "refc_base_v0on": {
+      "floor": 0.505237,
+      "ceiling": 0.001458,
+      "live_frac": 0.493305
+     },
+     "refc_xl_v0off": {
+      "floor": 0.512468,
+      "ceiling": 0.00113,
+      "live_frac": 0.486402
+     },
+     "refc_xl_v0on": {
+      "floor": 0.506008,
+      "ceiling": 0.001519,
+      "live_frac": 0.492473
+     }
+    }
+   },
+   "lat_heading@mean1_lin_q0p5 (SHIPPED)": {
+    "expr": "mean_k clamp(1 - |dpsi_k| / PSI_TOL, 0, 1) over 20 steps",
+    "clamped_sides": "per-step floor, MEANED over 20 steps",
+    "n_sub_per_row": 20,
+    "min_live_frac_scorable": 0.9975,
+    "max_floor_scorable": 0.0014,
+    "max_ceiling_scorable": 0.001,
+    "GATE_V1_ADMITS": true,
+    "GATE_V2_ADMITS": true,
+    "per_arm": {
+     "cv_holdv0": {
+      "floor": 0.0,
+      "ceiling": 0.000663,
+      "live_frac": 0.999337
+     },
+     "nospeed_tactical_oracle": {
+      "floor": 0.000327,
+      "ceiling": 0.0,
+      "live_frac": 0.999673
+     },
+     "refc_base_produced": {
+      "floor": 0.000597,
+      "ceiling": 0.000199,
+      "live_frac": 0.999205
+     },
+     "refc_small_produced": {
+      "floor": 0.000596,
+      "ceiling": 0.0,
+      "live_frac": 0.999404
+     },
+     "refc_xl_produced": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "stand_still": {
+      "floor": null,
+      "ceiling": null,
+      "live_frac": null
+     },
+     "v1_tactical_follow": {
+      "floor": 0.000522,
+      "ceiling": 0.0,
+      "live_frac": 0.999478
+     },
+     "v1_tactical_oracle": {
+      "floor": 0.000261,
+      "ceiling": 0.0,
+      "live_frac": 0.999739
+     },
+     "v4_blind": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "v4_oracle": {
+      "floor": 0.000652,
+      "ceiling": 0.0,
+      "live_frac": 0.999348
+     },
+     "oracle_lon_straight": {
+      "floor": 0.0,
+      "ceiling": 0.000658,
+      "live_frac": 0.999342
+     },
+     "v1_ego_double": {
+      "floor": 0.000722,
+      "ceiling": 0.000394,
+      "live_frac": 0.998885
+     },
+     "v1_ego_half": {
+      "floor": 0.0,
+      "ceiling": 0.000681,
+      "live_frac": 0.999319
+     },
+     "v1_ego_oracle_lon": {
+      "floor": 6.6e-05,
+      "ceiling": 0.0,
+      "live_frac": 0.999934
+     },
+     "v1_ego_v0": {
+      "floor": 0.0,
+      "ceiling": 6.6e-05,
+      "live_frac": 0.999934
+     },
+     "v1_lat_straight": {
+      "floor": 0.001434,
+      "ceiling": 0.001043,
+      "live_frac": 0.997523
+     },
+     "refc_base_v0off": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     },
+     "refc_base_v0on": {
+      "floor": 0.000597,
+      "ceiling": 0.000199,
+      "live_frac": 0.999205
+     },
+     "refc_xl_v0off": {
+      "floor": 0.0,
+      "ceiling": 6.6e-05,
+      "live_frac": 0.999934
+     },
+     "refc_xl_v0on": {
+      "floor": 0.0,
+      "ceiling": 0.0,
+      "live_frac": 1.0
+     }
+    }
+   }
+  }
+ }
+}

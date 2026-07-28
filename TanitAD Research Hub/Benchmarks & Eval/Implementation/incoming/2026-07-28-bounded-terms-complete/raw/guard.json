@@ -1,0 +1,295 @@
+{
+ "_experiment": "FINISH THE BOUNDED-TERM REPAIR: lat_heading (C45's third clamp), the FLOOR_FRAC_MAX guard, ego_progress above r = 2, and the comfort decision. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "9ec002294ea3a7b84044cbf4ff222e47"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "e8c90ab60f0825be3f4af57a918960a8"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "guard": {
+  "_defect": "FLOOR_FRAC_MAX = 0.95 is a DEAD-COMPONENT tripwire, not a discrimination test. Two structural reasons it missed lat_heading: (1) RESOLUTION \u2014 0.95 only makes sense for a term that is a MEAN over 20 steps, where a row saturates only if all 20 do; applied to a SINGLE-VALUE-PER-ROW term it is ~20x too loose. (2) IT TESTS EACH END SEPARATELY \u2014 49 % floored plus 49 % ceilinged clears both one-sided thresholds while having gradient on 2 % of rows.",
+  "_fix": "gate v2 adds live_frac = 1 - floor - ceiling >= 0.5, the TWO-SIDED statistic the one-sided pair cannot express, and `saturation` now PUBLISHES the row resolution (n_sub) beside the fraction so the next reader does not have to rediscover why the threshold was wrong.",
+  "_why_the_published_constant_is_not_simply_lowered": "\u26d4 recovery@clamp_v1 floors on 55.65-92.19 % of rows. Lowering FLOOR_FRAC_MAX to 0.50 would make it INADMISSIBLE panel-wide, drop it from the composite and change every published PSS value \u2014 the silent redefinition this program keeps logging. The gate is VERSIONED instead: v1 stays exactly what published numbers were gated under, v2 is strictly stronger and is what `control` uses.",
+  "thresholds": {
+   "floor_frac_max_v1": 0.95,
+   "ceil_frac_max_v1": 0.95,
+   "live_frac_min_v2": 0.5,
+   "saturation_warn_frac": 0.5,
+   "range_min": 0.05
+  },
+  "control_gate_version": "v2",
+  "panels": {
+   "PUBLISHED": {
+    "lat_heading_term": "term_lin_q0",
+    "admitted_v1": {
+     "lon_track": true,
+     "lat_track": true,
+     "lat_heading": true,
+     "recovery": true
+    },
+    "admitted_v2": {
+     "lon_track": true,
+     "lat_track": true,
+     "lat_heading": false,
+     "recovery": true
+    },
+    "dropped_v1": {},
+    "dropped_v2": {
+     "lat_heading": "INADMISSIBLE for refc_base_produced, refc_base_v0off, refc_base_v0on, refc_small_produced, refc_xl_produced, refc_xl_v0off, refc_xl_v0on, v4_blind -> dropped from EVERY arm"
+    },
+    "per_arm_lat_heading_v1": {
+     "cv_holdv0": true,
+     "nospeed_tactical_oracle": true,
+     "refc_base_produced": true,
+     "refc_small_produced": true,
+     "refc_xl_produced": true,
+     "stand_still": null,
+     "v1_tactical_follow": true,
+     "v1_tactical_oracle": true,
+     "v4_blind": true,
+     "v4_oracle": true,
+     "oracle_lon_straight": true,
+     "v1_ego_double": true,
+     "v1_ego_half": true,
+     "v1_ego_oracle_lon": true,
+     "v1_ego_v0": true,
+     "v1_lat_straight": true,
+     "refc_base_v0off": true,
+     "refc_base_v0on": true,
+     "refc_xl_v0off": true,
+     "refc_xl_v0on": true
+    },
+    "per_arm_lat_heading_v2": {
+     "cv_holdv0": true,
+     "nospeed_tactical_oracle": true,
+     "refc_base_produced": false,
+     "refc_small_produced": false,
+     "refc_xl_produced": false,
+     "stand_still": null,
+     "v1_tactical_follow": true,
+     "v1_tactical_oracle": true,
+     "v4_blind": false,
+     "v4_oracle": true,
+     "oracle_lon_straight": true,
+     "v1_ego_double": true,
+     "v1_ego_half": true,
+     "v1_ego_oracle_lon": true,
+     "v1_ego_v0": true,
+     "v1_lat_straight": true,
+     "refc_base_v0off": false,
+     "refc_base_v0on": false,
+     "refc_xl_v0off": false,
+     "refc_xl_v0on": false
+    },
+    "per_arm_lat_heading_live_frac": {
+     "cv_holdv0": 0.633912,
+     "nospeed_tactical_oracle": 0.62604,
+     "refc_base_produced": 0.493305,
+     "refc_small_produced": 0.49861,
+     "refc_xl_produced": 0.492473,
+     "stand_still": null,
+     "v1_tactical_follow": 0.624055,
+     "v1_tactical_oracle": 0.624446,
+     "v4_blind": 0.156974,
+     "v4_oracle": 0.563311,
+     "oracle_lon_straight": 0.628308,
+     "v1_ego_double": 0.628952,
+     "v1_ego_half": 0.686313,
+     "v1_ego_oracle_lon": 0.623173,
+     "v1_ego_v0": 0.631725,
+     "v1_lat_straight": 0.636767,
+     "refc_base_v0off": 0.490134,
+     "refc_base_v0on": 0.493305,
+     "refc_xl_v0off": 0.486402,
+     "refc_xl_v0on": 0.492473
+    }
+   },
+   "FIXED": {
+    "lat_heading_term": "mean1_lin_q0p5",
+    "admitted_v1": {
+     "lon_track": true,
+     "lat_track": true,
+     "lat_heading": true,
+     "recovery": true
+    },
+    "admitted_v2": {
+     "lon_track": true,
+     "lat_track": true,
+     "lat_heading": true,
+     "recovery": true
+    },
+    "dropped_v1": {},
+    "dropped_v2": {},
+    "per_arm_lat_heading_v1": {
+     "cv_holdv0": true,
+     "nospeed_tactical_oracle": true,
+     "refc_base_produced": true,
+     "refc_small_produced": true,
+     "refc_xl_produced": true,
+     "stand_still": null,
+     "v1_tactical_follow": true,
+     "v1_tactical_oracle": true,
+     "v4_blind": true,
+     "v4_oracle": true,
+     "oracle_lon_straight": true,
+     "v1_ego_double": true,
+     "v1_ego_half": true,
+     "v1_ego_oracle_lon": true,
+     "v1_ego_v0": true,
+     "v1_lat_straight": true,
+     "refc_base_v0off": true,
+     "refc_base_v0on": true,
+     "refc_xl_v0off": true,
+     "refc_xl_v0on": true
+    },
+    "per_arm_lat_heading_v2": {
+     "cv_holdv0": true,
+     "nospeed_tactical_oracle": true,
+     "refc_base_produced": true,
+     "refc_small_produced": true,
+     "refc_xl_produced": true,
+     "stand_still": null,
+     "v1_tactical_follow": true,
+     "v1_tactical_oracle": true,
+     "v4_blind": true,
+     "v4_oracle": true,
+     "oracle_lon_straight": true,
+     "v1_ego_double": true,
+     "v1_ego_half": true,
+     "v1_ego_oracle_lon": true,
+     "v1_ego_v0": true,
+     "v1_lat_straight": true,
+     "refc_base_v0off": true,
+     "refc_base_v0on": true,
+     "refc_xl_v0off": true,
+     "refc_xl_v0on": true
+    },
+    "per_arm_lat_heading_live_frac": {
+     "cv_holdv0": 0.999337,
+     "nospeed_tactical_oracle": 0.999673,
+     "refc_base_produced": 0.999205,
+     "refc_small_produced": 0.999404,
+     "refc_xl_produced": 1.0,
+     "stand_still": null,
+     "v1_tactical_follow": 0.999478,
+     "v1_tactical_oracle": 0.999739,
+     "v4_blind": 1.0,
+     "v4_oracle": 0.999348,
+     "oracle_lon_straight": 0.999342,
+     "v1_ego_double": 0.998885,
+     "v1_ego_half": 0.999319,
+     "v1_ego_oracle_lon": 0.999934,
+     "v1_ego_v0": 0.999934,
+     "v1_lat_straight": 0.997523,
+     "refc_base_v0off": 1.0,
+     "refc_base_v0on": 0.999205,
+     "refc_xl_v0off": 0.999934,
+     "refc_xl_v0on": 1.0
+    }
+   }
+  },
+  "GUARD_REFUSES_THE_BROKEN_TERM": true,
+  "GUARD_ADMITS_THE_FIXED_TERM": true,
+  "OLD_GUARD_ADMITTED_THE_BROKEN_TERM": true
+ }
+}

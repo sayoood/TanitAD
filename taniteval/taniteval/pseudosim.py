@@ -206,6 +206,13 @@ PROGRESS_TERMS = {
     "clamp_v1": _progress_clamp_v1,
     "twosided_v2": _progress_twosided(OVER_TRAVEL_WEIGHT),
     # the pre-registered SENSITIVITY grid on the over-travel slope
+    # ⚠️ w0p3333 ADDED 2026-07-28 to complete the curve at the low end: the
+    # term floors at r = 1 + 1/w, so w = 1/3 puts the floor at r = 4 and is the
+    # cheapest point at which the residual E-3 named is arithmetically absent
+    # on every scorable arm. It is a SENSITIVITY anchor, not a proposed default
+    # — a smaller w charges over-travel MORE SLOWLY, which is the range-budget
+    # trade, and "more permissive per unit" is not automatically a fix.
+    "twosided_asym_w0p3333": _progress_twosided(1.0 / 3.0),
     "twosided_asym_w0p5": _progress_twosided(0.5),
     "twosided_asym_w1p5": _progress_twosided(1.5),
     "twosided_asym_w2": _progress_twosided(2.0),

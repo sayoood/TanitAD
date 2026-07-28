@@ -122,7 +122,7 @@ STRESS_ARM = "v4_blind"
 #: plus the angle-native one. `term_lin_q0` is the PUBLISHED term and is in the
 #: list so the acceptance test is shown to be able to fail.
 LATH_CANDIDATES = tuple(
-    f"{r}_{s}" for r in ("term", "mean")
+    f"{r}_{s}" for r in ("term", "mean", "mean1")
     for s in ("lin_q0", "lin_q0p5", "lin_q0p6667", "lin_q0p85", "lin_q0p9",
               "share_q0p5", "cos_q0p5", "cos_q0p75"))
 
@@ -130,6 +130,23 @@ LATH_CANDIDATES = tuple(
 #: BEFORE any panel number is computed, and mirrored verbatim in
 #: `control.LAT_HEADING_TERMS`' docstring.
 LATH_RULE = {
+    "H0": ("⚠️ ADDED MID-RUN AND DISCLOSED AS SUCH — it was NOT pre-registered. "
+           "DISQUALIFY any term for which a pure lateral TRANSLATION moves the "
+           "axis at least as much as a heading degradation does: "
+           "max|delta| over {lat_shift(+2), lat_shift(-2), lat_jitter(1)} must "
+           "be < min|delta| over the 5 heading injections, on BOTH arms. "
+           "⛔ WHY IT IS ADMISSIBLE TO ADD: it is not a new preference invented "
+           "to favour a shape, it is the axis's OWN PUBLISHED DEFINING CLAIM — "
+           "`AXIS_META['lat_heading']` says a pure lateral OFFSET moves "
+           "lat_track and leaves lat_heading unchanged, which is the entire "
+           "reason a SECOND lateral axis exists. ⛔ HOW IT WAS FOUND: a B = 40 "
+           "smoke run showed the `mean` resolution moving -0.0222 SEPARATED "
+           "under lat_shift(+2 m) — the claim destroyed — because step 0's plan "
+           "tangent runs from the REFERENCE POSE to waypoint 0 and a "
+           "translation rotates that one segment enormously. The `mean1` "
+           "resolution (plan-internal segments only) was constructed in "
+           "response, and this rule is what forces the choice between them "
+           "rather than leaving it to taste."),
     "H1": ("DISQUALIFY any term whose injected HEADING degradations are not ALL "
            "separated in the CORRECT (negative) direction on BOTH real arms, "
            "across both signs of every two-sided control AND the ZERO-MEAN "
@@ -178,7 +195,7 @@ PROG_INJECTIONS = (("lon_retime", 1.5), ("lon_retime", 2.0),
 #: it is not. A probe arm is the right substrate for testing a METRIC.
 PROG_ARMS = ("cv_holdv0", "v1_tactical_follow", "v1_ego_double")
 PROG_TERMS = ("clamp_v1", "twosided_v2", "twosided_asym_w0p5",
-              "twosided_asym_w2")
+              "twosided_asym_w0p3333", "twosided_asym_w2")
 
 
 def load_pw(path):
@@ -521,17 +538,33 @@ def job_select(out):
     inj = out["injections_lat_heading"]["terms"]
     sat = out["lat_heading_saturation"]["terms"]
     cr = out["injections_lat_heading"]["charge_rate"]["shapes"]
+    trans = ("lat_shift(+2)", "lat_shift(-2)", "lat_jitter(+1)")
     rows = {}
     for t in inj:
         res, shp = C.LAT_HEADING_TERMS[t]
+        # ---- H0: axis purity, per arm ------------------------------------- #
+        pure, pdet = True, {}
+        for arm in INJECTION_ARMS:
+            tr = [abs(v["lat_heading"]["delta"])
+                  for k, v in inj[t]["contamination_cells"].items()
+                  if k.startswith(arm + "|") and k.split("|")[1] in trans]
+            hd = [abs(v["lat_heading"]["delta"])
+                  for k, v in inj[t]["cells"].items()
+                  if k.startswith(arm + "|")]
+            if tr and hd:
+                pdet[arm] = {"max_abs_delta_translation": round(max(tr), 6),
+                             "min_abs_delta_heading": round(min(hd), 6),
+                             "pure": bool(max(tr) < min(hd))}
+                pure = pure and pdet[arm]["pure"]
         rows[t] = {
             "resolution": res, "shape": shp,
+            "H0_axis_purity": bool(pure), "H0_detail": pdet,
             "H1_all_correct": inj[t]["ALL_CORRECT"],
             "H1_n_correct": inj[t]["n_correct"],
             "H2_pass": sat[t]["H2_PASS"],
             "min_live_frac": sat[t]["min_live_frac_over_scorable_arms"],
             "reward_bias": cr[shp]["reward_bias_near_perfect_over_median"],
-            "survives": bool(inj[t]["ALL_CORRECT"] and sat[t]["H2_PASS"]),
+            "survives": bool(pure and inj[t]["ALL_CORRECT"] and sat[t]["H2_PASS"]),
         }
     surv = [t for t, v in rows.items() if v["survives"]]
     # H3: fewest free parameters first. A pure resolution change keeps the
@@ -542,8 +575,13 @@ def job_select(out):
         s = C.LAT_HEADING_TERMS[t][1]
         return float(s.split("_q")[1].replace("p", ".")) if "_q" in s else 1.0
     if zero_param:
-        pick = sorted(zero_param, key=lambda t: (
-            C.LAT_HEADING_TERMS[t][0] != "term", t))[0]
+        # H3's tie-break WITHIN the zero-parameter class: prefer the resolution
+        # closest to the published one that survives — `term` (no change at
+        # all), then `mean1` (drops only the start-offset-contaminated step 0),
+        # then `mean`.
+        _ord = {"term": 0, "mean1": 1, "mean": 2}
+        pick = sorted(zero_param,
+                      key=lambda t: _ord[C.LAT_HEADING_TERMS[t][0]])[0]
         why = ("H3 — a term that changes only the RESOLUTION keeps the "
                "published per-step expression verbatim and introduces NO free "
                "parameter, so it beats every shape change.")

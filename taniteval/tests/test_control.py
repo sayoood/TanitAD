@@ -247,20 +247,64 @@ def test_a_BOUNDED_score_is_not_monotone_in_the_raw_error_on_a_BIASED_arm():
 # =========================================================================== #
 def test_a_pure_offset_moves_placement_and_NOT_heading():
     """⭐ The two lateral axes are different instruments. FAILING VALUE: a
-    heading response to a pure translation."""
+    heading response to a pure translation.
+
+    ⚠️ UPDATED 2026-07-28 when ``lat_heading`` was VERSIONED (C45's third
+    clamp). The ORIGINAL guarantee is preserved verbatim under the term it was
+    written for, and the same guarantee is then re-asserted for the SHIPPED
+    term in the only form that survives a range change: the offset response
+    must stay far below the heading response. That is rule H0 of the term's
+    selection, and it is what killed the ``mean`` resolution — where a
+    ``lat_shift(2 m)`` moved the axis **-0.0222 SEPARATED**, 3.4x MORE than the
+    smallest heading degradation, because step 0's tangent runs from the
+    reference pose to waypoint 0."""
     pw = _curved()
-    a = C.axes(C.apply_control(pw, "lat_shift", 1.0))
+    # (a) the published term, unchanged
+    a = C.axes(C.apply_control(pw, "lat_shift", 1.0),
+               lat_heading_term="term_lin_q0")
     assert np.nanmean(a["lat_track"]) < 0.9
     assert np.nanmean(a["lat_heading"]) > 0.999
+    # (b) the shipped term: placement must move it MUCH less than pointing does
+    base = float(np.nanmean(C.axes(pw)["lat_heading"]))
+    off = float(np.nanmean(C.axes(C.apply_control(pw, "lat_shift", 1.0))
+                           ["lat_heading"]))
+    rot = float(np.nanmean(C.axes(C.apply_control(pw, "yaw_bias", 5.0))
+                           ["lat_heading"]))
+    assert abs(base - off) < abs(base - rot) / 3.0
+    # (c) and the FAILING VALUE for the rejected resolution is pinned too
+    bad = float(np.nanmean(C.axes(C.apply_control(pw, "lat_shift", 1.0),
+                                  lat_heading_term="mean_lin_q0p5")
+                           ["lat_heading"]))
+    bad_base = float(np.nanmean(C.axes(pw, lat_heading_term="mean_lin_q0p5")
+                                ["lat_heading"]))
+    assert abs(bad_base - bad) > abs(base - off), (
+        "the `mean` resolution must still demonstrate the leak it was rejected "
+        "for; if this stops failing, H0 has lost its teeth")
 
 
 def test_a_rotation_moves_heading():
+    """⚠️ UPDATED 2026-07-28: the bar is expressed in units of the term's OWN
+    range, because a range-budget term with ``q = 0.5`` cannot move 0.5 by
+    construction. The published bar is preserved verbatim under the published
+    term, and the direction is asserted under EVERY term in the registry — a
+    rotation may never raise a heading score."""
     pw = _straight()
-    base = float(np.nanmean(C.axes(pw)["lat_heading"]))
+    # the published bar, on the term it was written for
+    base = float(np.nanmean(C.axes(pw, lat_heading_term="term_lin_q0")
+                            ["lat_heading"]))
     for g in (-10.0, +10.0):
-        v = float(np.nanmean(C.axes(C.apply_control(pw, "yaw_bias", g))
+        v = float(np.nanmean(C.axes(C.apply_control(pw, "yaw_bias", g),
+                                    lat_heading_term="term_lin_q0")
                              ["lat_heading"]))
         assert v < base - 0.5, g
+    # every term: the response is DOWN, and at least half the published bar
+    # once rescaled by the term's own live range (1 - q).
+    for term in sorted(C.LAT_HEADING_TERMS):
+        b = float(np.nanmean(C.axes(pw, lat_heading_term=term)["lat_heading"]))
+        for g in (-10.0, +10.0):
+            v = float(np.nanmean(C.axes(C.apply_control(pw, "yaw_bias", g),
+                                        lat_heading_term=term)["lat_heading"]))
+            assert v < b, (term, g)
 
 
 def test_lon_retime_preserves_the_PATH_and_lon_scale_does_not():

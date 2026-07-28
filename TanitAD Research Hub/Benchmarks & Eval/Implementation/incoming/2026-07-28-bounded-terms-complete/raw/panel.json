@@ -1,0 +1,1204 @@
+{
+ "_experiment": "FINISH THE BOUNDED-TERM REPAIR: lat_heading (C45's third clamp), the FLOOR_FRAC_MAX guard, ego_progress above r = 2, and the comfort decision. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "9ec002294ea3a7b84044cbf4ff222e47"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "e8c90ab60f0825be3f4af57a918960a8"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "panel": {
+  "PSS_composite": {
+   "metric_id": "PSS_recovery_progress@twosided_v2+rec_twosided_v2",
+   "panel_gate_admissible": {
+    "ego_progress": true,
+    "recovery": true,
+    "comfort": false
+   },
+   "levels": {
+    "cv_holdv0": 0.7721,
+    "nospeed_tactical_oracle": 0.6491,
+    "refc_base_produced": 0.7411,
+    "refc_small_produced": 0.737,
+    "refc_xl_produced": 0.7452,
+    "stand_still": 0.0,
+    "v1_tactical_follow": 0.6563,
+    "v1_tactical_oracle": 0.6606,
+    "v4_blind": 0.4742,
+    "v4_oracle": 0.7727,
+    "oracle_lon_straight": 0.8277,
+    "v1_ego_double": 0.3132,
+    "v1_ego_half": 0.5115,
+    "v1_ego_oracle_lon": 0.8205,
+    "v1_ego_v0": 0.7645,
+    "v1_lat_straight": 0.659,
+    "refc_base_v0off": 0.6726,
+    "refc_base_v0on": 0.7411,
+    "refc_xl_v0off": 0.6889,
+    "refc_xl_v0on": 0.7452
+   },
+   "ranking": {
+    "all_non_probe": [
+     {
+      "rank": 1,
+      "arm": "v1_ego_oracle_lon",
+      "value": 0.8205,
+      "oracle": true
+     },
+     {
+      "rank": 2,
+      "arm": "v4_oracle",
+      "value": 0.7727,
+      "oracle": true
+     },
+     {
+      "rank": 3,
+      "arm": "cv_holdv0",
+      "value": 0.7721,
+      "oracle": false
+     },
+     {
+      "rank": 4,
+      "arm": "v1_ego_v0",
+      "value": 0.7645,
+      "oracle": false
+     },
+     {
+      "rank": 5,
+      "arm": "refc_xl_produced",
+      "value": 0.7452,
+      "oracle": false
+     },
+     {
+      "rank": 6,
+      "arm": "refc_xl_v0on",
+      "value": 0.7452,
+      "oracle": false
+     },
+     {
+      "rank": 7,
+      "arm": "refc_base_produced",
+      "value": 0.7411,
+      "oracle": false
+     },
+     {
+      "rank": 8,
+      "arm": "refc_base_v0on",
+      "value": 0.7411,
+      "oracle": false
+     },
+     {
+      "rank": 9,
+      "arm": "refc_small_produced",
+      "value": 0.737,
+      "oracle": false
+     },
+     {
+      "rank": 10,
+      "arm": "refc_xl_v0off",
+      "value": 0.6889,
+      "oracle": false
+     },
+     {
+      "rank": 11,
+      "arm": "refc_base_v0off",
+      "value": 0.6726,
+      "oracle": false
+     },
+     {
+      "rank": 12,
+      "arm": "v1_tactical_oracle",
+      "value": 0.6606,
+      "oracle": true
+     },
+     {
+      "rank": 13,
+      "arm": "v1_lat_straight",
+      "value": 0.659,
+      "oracle": false
+     },
+     {
+      "rank": 14,
+      "arm": "v1_tactical_follow",
+      "value": 0.6563,
+      "oracle": false
+     },
+     {
+      "rank": 15,
+      "arm": "nospeed_tactical_oracle",
+      "value": 0.6491,
+      "oracle": true
+     },
+     {
+      "rank": 16,
+      "arm": "v4_blind",
+      "value": 0.4742,
+      "oracle": false
+     }
+    ],
+    "realisable_only": [
+     {
+      "rank": 1,
+      "arm": "cv_holdv0",
+      "value": 0.7721
+     },
+     {
+      "rank": 2,
+      "arm": "v1_ego_v0",
+      "value": 0.7645
+     },
+     {
+      "rank": 3,
+      "arm": "refc_xl_produced",
+      "value": 0.7452
+     },
+     {
+      "rank": 4,
+      "arm": "refc_xl_v0on",
+      "value": 0.7452
+     },
+     {
+      "rank": 5,
+      "arm": "refc_base_produced",
+      "value": 0.7411
+     },
+     {
+      "rank": 6,
+      "arm": "refc_base_v0on",
+      "value": 0.7411
+     },
+     {
+      "rank": 7,
+      "arm": "refc_small_produced",
+      "value": 0.737
+     },
+     {
+      "rank": 8,
+      "arm": "refc_xl_v0off",
+      "value": 0.6889
+     },
+     {
+      "rank": 9,
+      "arm": "refc_base_v0off",
+      "value": 0.6726
+     },
+     {
+      "rank": 10,
+      "arm": "v1_lat_straight",
+      "value": 0.659
+     },
+     {
+      "rank": 11,
+      "arm": "v1_tactical_follow",
+      "value": 0.6563
+     },
+     {
+      "rank": 12,
+      "arm": "v4_blind",
+      "value": 0.4742
+     }
+    ]
+   },
+   "contrasts": {
+    "v1_ego_v0 - cv_holdv0": {
+     "delta": -0.0076,
+     "lo": -0.0143,
+     "hi": -0.0011,
+     "ci95": 0.0066,
+     "p_delta_gt0": 0.009,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - cv_holdv0": {
+     "delta": -0.1154,
+     "lo": -0.1399,
+     "hi": -0.0896,
+     "ci95": 0.0252,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_produced - cv_holdv0": {
+     "delta": -0.0269,
+     "lo": -0.0401,
+     "hi": -0.0126,
+     "ci95": 0.0138,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_v0 - v1_tactical_follow": {
+     "delta": 0.1078,
+     "lo": 0.083,
+     "hi": 0.131,
+     "ci95": 0.024,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_lat_straight - v1_tactical_follow": {
+     "delta": 0.0027,
+     "lo": -0.0059,
+     "hi": 0.0107,
+     "ci95": 0.0083,
+     "p_delta_gt0": 0.744,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 15702,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_v0on - refc_xl_v0off": {
+     "delta": 0.0562,
+     "lo": 0.0491,
+     "hi": 0.0639,
+     "ci95": 0.0074,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15491,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v4_oracle - v4_blind": {
+     "delta": 0.2992,
+     "lo": 0.2217,
+     "hi": 0.3829,
+     "ci95": 0.0806,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_half - v1_tactical_follow": {
+     "delta": -0.1454,
+     "lo": -0.1758,
+     "hi": -0.1149,
+     "ci95": 0.0304,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_xl_produced": {
+     "delta": -0.0886,
+     "lo": -0.1124,
+     "hi": -0.0635,
+     "ci95": 0.0244,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15465,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_base_v0off": {
+     "delta": -0.0159,
+     "lo": -0.0396,
+     "hi": 0.0089,
+     "ci95": 0.0242,
+     "p_delta_gt0": 0.107,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 15496,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "_unchanged_by_this_work": "`lat_heading` is not in pseudosim.COMPONENT_WEIGHTS, so the PSS panel is recomputed only to PROVE this work did not move it. Compare against the recovery-fix panel."
+  },
+  "CONTROL_composite": {
+   "weights": {
+    "ego_progress": 5.0,
+    "recovery": 5.0,
+    "lon_track": 5.0,
+    "lat_track": 2.0,
+    "lat_heading": 1.0
+   },
+   "suite_id_published": "control_v1@t1s_d1.75m_sref10m_psi0.2rad",
+   "suite_id_new": "control_v1@t1s_d1.75m_sref10m_psi0.2rad+lath_mean1_lin_q0p5",
+   "levels_published_lat_heading": {
+    "cv_holdv0": 0.7499,
+    "nospeed_tactical_oracle": 0.6123,
+    "refc_base_produced": 0.7234,
+    "refc_small_produced": 0.7198,
+    "refc_xl_produced": 0.7268,
+    "stand_still": 0.117,
+    "v1_tactical_follow": 0.6183,
+    "v1_tactical_oracle": 0.6225,
+    "v4_blind": 0.5089,
+    "v4_oracle": 0.7439,
+    "oracle_lon_straight": 0.7944,
+    "v1_ego_double": 0.3121,
+    "v1_ego_half": 0.4872,
+    "v1_ego_oracle_lon": 0.7874,
+    "v1_ego_v0": 0.7425,
+    "v1_lat_straight": 0.6223,
+    "refc_base_v0off": 0.6462,
+    "refc_base_v0on": 0.7234,
+    "refc_xl_v0off": 0.6615,
+    "refc_xl_v0on": 0.7269
+   },
+   "levels_new_lat_heading": {
+    "cv_holdv0": 0.7665,
+    "nospeed_tactical_oracle": 0.629,
+    "refc_base_produced": 0.7407,
+    "refc_small_produced": 0.737,
+    "refc_xl_produced": 0.7444,
+    "stand_still": 0.117,
+    "v1_tactical_follow": 0.6352,
+    "v1_tactical_oracle": 0.6395,
+    "v4_blind": 0.5234,
+    "v4_oracle": 0.7614,
+    "oracle_lon_straight": 0.8112,
+    "v1_ego_double": 0.3279,
+    "v1_ego_half": 0.5036,
+    "v1_ego_oracle_lon": 0.805,
+    "v1_ego_v0": 0.7598,
+    "v1_lat_straight": 0.6381,
+    "refc_base_v0off": 0.6627,
+    "refc_base_v0on": 0.7407,
+    "refc_xl_v0off": 0.6784,
+    "refc_xl_v0on": 0.7444
+   },
+   "ranking_published": {
+    "all_non_probe": [
+     {
+      "rank": 1,
+      "arm": "v1_ego_oracle_lon",
+      "value": 0.7874,
+      "oracle": true
+     },
+     {
+      "rank": 2,
+      "arm": "cv_holdv0",
+      "value": 0.7499,
+      "oracle": false
+     },
+     {
+      "rank": 3,
+      "arm": "v4_oracle",
+      "value": 0.7439,
+      "oracle": true
+     },
+     {
+      "rank": 4,
+      "arm": "v1_ego_v0",
+      "value": 0.7425,
+      "oracle": false
+     },
+     {
+      "rank": 5,
+      "arm": "refc_xl_v0on",
+      "value": 0.7269,
+      "oracle": false
+     },
+     {
+      "rank": 6,
+      "arm": "refc_xl_produced",
+      "value": 0.7268,
+      "oracle": false
+     },
+     {
+      "rank": 7,
+      "arm": "refc_base_produced",
+      "value": 0.7234,
+      "oracle": false
+     },
+     {
+      "rank": 8,
+      "arm": "refc_base_v0on",
+      "value": 0.7234,
+      "oracle": false
+     },
+     {
+      "rank": 9,
+      "arm": "refc_small_produced",
+      "value": 0.7198,
+      "oracle": false
+     },
+     {
+      "rank": 10,
+      "arm": "refc_xl_v0off",
+      "value": 0.6615,
+      "oracle": false
+     },
+     {
+      "rank": 11,
+      "arm": "refc_base_v0off",
+      "value": 0.6462,
+      "oracle": false
+     },
+     {
+      "rank": 12,
+      "arm": "v1_tactical_oracle",
+      "value": 0.6225,
+      "oracle": true
+     },
+     {
+      "rank": 13,
+      "arm": "v1_lat_straight",
+      "value": 0.6223,
+      "oracle": false
+     },
+     {
+      "rank": 14,
+      "arm": "v1_tactical_follow",
+      "value": 0.6183,
+      "oracle": false
+     },
+     {
+      "rank": 15,
+      "arm": "nospeed_tactical_oracle",
+      "value": 0.6123,
+      "oracle": true
+     },
+     {
+      "rank": 16,
+      "arm": "v4_blind",
+      "value": 0.5089,
+      "oracle": false
+     }
+    ],
+    "realisable_only": [
+     {
+      "rank": 1,
+      "arm": "cv_holdv0",
+      "value": 0.7499
+     },
+     {
+      "rank": 2,
+      "arm": "v1_ego_v0",
+      "value": 0.7425
+     },
+     {
+      "rank": 3,
+      "arm": "refc_xl_v0on",
+      "value": 0.7269
+     },
+     {
+      "rank": 4,
+      "arm": "refc_xl_produced",
+      "value": 0.7268
+     },
+     {
+      "rank": 5,
+      "arm": "refc_base_produced",
+      "value": 0.7234
+     },
+     {
+      "rank": 6,
+      "arm": "refc_base_v0on",
+      "value": 0.7234
+     },
+     {
+      "rank": 7,
+      "arm": "refc_small_produced",
+      "value": 0.7198
+     },
+     {
+      "rank": 8,
+      "arm": "refc_xl_v0off",
+      "value": 0.6615
+     },
+     {
+      "rank": 9,
+      "arm": "refc_base_v0off",
+      "value": 0.6462
+     },
+     {
+      "rank": 10,
+      "arm": "v1_lat_straight",
+      "value": 0.6223
+     },
+     {
+      "rank": 11,
+      "arm": "v1_tactical_follow",
+      "value": 0.6183
+     },
+     {
+      "rank": 12,
+      "arm": "v4_blind",
+      "value": 0.5089
+     }
+    ]
+   },
+   "ranking_new": {
+    "all_non_probe": [
+     {
+      "rank": 1,
+      "arm": "v1_ego_oracle_lon",
+      "value": 0.805,
+      "oracle": true
+     },
+     {
+      "rank": 2,
+      "arm": "cv_holdv0",
+      "value": 0.7665,
+      "oracle": false
+     },
+     {
+      "rank": 3,
+      "arm": "v4_oracle",
+      "value": 0.7614,
+      "oracle": true
+     },
+     {
+      "rank": 4,
+      "arm": "v1_ego_v0",
+      "value": 0.7598,
+      "oracle": false
+     },
+     {
+      "rank": 5,
+      "arm": "refc_xl_produced",
+      "value": 0.7444,
+      "oracle": false
+     },
+     {
+      "rank": 6,
+      "arm": "refc_xl_v0on",
+      "value": 0.7444,
+      "oracle": false
+     },
+     {
+      "rank": 7,
+      "arm": "refc_base_produced",
+      "value": 0.7407,
+      "oracle": false
+     },
+     {
+      "rank": 8,
+      "arm": "refc_base_v0on",
+      "value": 0.7407,
+      "oracle": false
+     },
+     {
+      "rank": 9,
+      "arm": "refc_small_produced",
+      "value": 0.737,
+      "oracle": false
+     },
+     {
+      "rank": 10,
+      "arm": "refc_xl_v0off",
+      "value": 0.6784,
+      "oracle": false
+     },
+     {
+      "rank": 11,
+      "arm": "refc_base_v0off",
+      "value": 0.6627,
+      "oracle": false
+     },
+     {
+      "rank": 12,
+      "arm": "v1_tactical_oracle",
+      "value": 0.6395,
+      "oracle": true
+     },
+     {
+      "rank": 13,
+      "arm": "v1_lat_straight",
+      "value": 0.6381,
+      "oracle": false
+     },
+     {
+      "rank": 14,
+      "arm": "v1_tactical_follow",
+      "value": 0.6352,
+      "oracle": false
+     },
+     {
+      "rank": 15,
+      "arm": "nospeed_tactical_oracle",
+      "value": 0.629,
+      "oracle": true
+     },
+     {
+      "rank": 16,
+      "arm": "v4_blind",
+      "value": 0.5234,
+      "oracle": false
+     }
+    ],
+    "realisable_only": [
+     {
+      "rank": 1,
+      "arm": "cv_holdv0",
+      "value": 0.7665
+     },
+     {
+      "rank": 2,
+      "arm": "v1_ego_v0",
+      "value": 0.7598
+     },
+     {
+      "rank": 3,
+      "arm": "refc_xl_produced",
+      "value": 0.7444
+     },
+     {
+      "rank": 4,
+      "arm": "refc_xl_v0on",
+      "value": 0.7444
+     },
+     {
+      "rank": 5,
+      "arm": "refc_base_produced",
+      "value": 0.7407
+     },
+     {
+      "rank": 6,
+      "arm": "refc_base_v0on",
+      "value": 0.7407
+     },
+     {
+      "rank": 7,
+      "arm": "refc_small_produced",
+      "value": 0.737
+     },
+     {
+      "rank": 8,
+      "arm": "refc_xl_v0off",
+      "value": 0.6784
+     },
+     {
+      "rank": 9,
+      "arm": "refc_base_v0off",
+      "value": 0.6627
+     },
+     {
+      "rank": 10,
+      "arm": "v1_lat_straight",
+      "value": 0.6381
+     },
+     {
+      "rank": 11,
+      "arm": "v1_tactical_follow",
+      "value": 0.6352
+     },
+     {
+      "rank": 12,
+      "arm": "v4_blind",
+      "value": 0.5234
+     }
+    ]
+   },
+   "contrasts_published": {
+    "v1_ego_v0 - cv_holdv0": {
+     "delta": -0.0074,
+     "lo": -0.0128,
+     "hi": -0.002,
+     "ci95": 0.0054,
+     "p_delta_gt0": 0.003,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - cv_holdv0": {
+     "delta": -0.1318,
+     "lo": -0.1531,
+     "hi": -0.1097,
+     "ci95": 0.0217,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_produced - cv_holdv0": {
+     "delta": -0.023,
+     "lo": -0.0333,
+     "hi": -0.0122,
+     "ci95": 0.0106,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_v0 - v1_tactical_follow": {
+     "delta": 0.1244,
+     "lo": 0.1022,
+     "hi": 0.1456,
+     "ci95": 0.0217,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_lat_straight - v1_tactical_follow": {
+     "delta": 0.0038,
+     "lo": -0.0025,
+     "hi": 0.0099,
+     "ci95": 0.0062,
+     "p_delta_gt0": 0.8865,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 15702,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_v0on - refc_xl_v0off": {
+     "delta": 0.0653,
+     "lo": 0.0585,
+     "hi": 0.0727,
+     "ci95": 0.0071,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15491,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v4_oracle - v4_blind": {
+     "delta": 0.2353,
+     "lo": 0.1801,
+     "hi": 0.2949,
+     "ci95": 0.0574,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_half - v1_tactical_follow": {
+     "delta": -0.131,
+     "lo": -0.1605,
+     "hi": -0.1003,
+     "ci95": 0.0301,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_xl_produced": {
+     "delta": -0.1089,
+     "lo": -0.1316,
+     "hi": -0.0854,
+     "ci95": 0.0231,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15465,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_base_v0off": {
+     "delta": -0.028,
+     "lo": -0.0509,
+     "hi": -0.0045,
+     "ci95": 0.0232,
+     "p_delta_gt0": 0.007,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15496,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "contrasts_new": {
+    "v1_ego_v0 - cv_holdv0": {
+     "delta": -0.0067,
+     "lo": -0.012,
+     "hi": -0.0015,
+     "ci95": 0.0053,
+     "p_delta_gt0": 0.007,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - cv_holdv0": {
+     "delta": -0.1312,
+     "lo": -0.1526,
+     "hi": -0.1088,
+     "ci95": 0.0219,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_produced - cv_holdv0": {
+     "delta": -0.022,
+     "lo": -0.0323,
+     "hi": -0.0112,
+     "ci95": 0.0106,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_v0 - v1_tactical_follow": {
+     "delta": 0.1245,
+     "lo": 0.1021,
+     "hi": 0.1457,
+     "ci95": 0.0218,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15472,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_lat_straight - v1_tactical_follow": {
+     "delta": 0.0028,
+     "lo": -0.0035,
+     "hi": 0.0087,
+     "ci95": 0.0061,
+     "p_delta_gt0": 0.819,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 15702,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "refc_xl_v0on - refc_xl_v0off": {
+     "delta": 0.066,
+     "lo": 0.0589,
+     "hi": 0.0736,
+     "ci95": 0.0073,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15491,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v4_oracle - v4_blind": {
+     "delta": 0.2384,
+     "lo": 0.1815,
+     "hi": 0.3004,
+     "ci95": 0.0594,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_ego_half - v1_tactical_follow": {
+     "delta": -0.1318,
+     "lo": -0.1614,
+     "hi": -0.101,
+     "ci95": 0.0302,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_xl_produced": {
+     "delta": -0.1092,
+     "lo": -0.1321,
+     "hi": -0.0855,
+     "ci95": 0.0233,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15465,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "v1_tactical_follow - refc_base_v0off": {
+     "delta": -0.0274,
+     "lo": -0.0503,
+     "hi": -0.004,
+     "ci95": 0.0232,
+     "p_delta_gt0": 0.0105,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15496,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "verdicts_that_flipped": {}
+  },
+  "RANKING_STATEMENT": {
+   "cv_holdv0_rank_realisable_PSS": 1,
+   "cv_holdv0_rank_realisable_CONTROL_published": 1,
+   "cv_holdv0_rank_realisable_CONTROL_new": 1,
+   "cv_holdv0_STILL_RANKS_FIRST_AMONG_REALISABLE_PSS": true,
+   "cv_holdv0_STILL_RANKS_FIRST_AMONG_REALISABLE_CONTROL": true,
+   "_v1_family_definition": "the v1 TACTICAL family = v1_tactical_follow, v1_tactical_oracle, v1_lat_straight, nospeed_tactical_oracle. `v1_ego_v0` / `v1_ego_oracle_lon` are ego-SCHEDULE transforms and rank ABOVE every REF-C arm under the published term as well, so they are not part of the claim.",
+   "whole_v1_tactical_family_below_every_REFC_PSS": true,
+   "whole_v1_tactical_family_below_every_REFC_CONTROL_published": true,
+   "whole_v1_tactical_family_below_every_REFC_CONTROL_new": true,
+   "realisable_order_CONTROL_published": [
+    "cv_holdv0",
+    "v1_ego_v0",
+    "refc_xl_v0on",
+    "refc_xl_produced",
+    "refc_base_produced",
+    "refc_base_v0on",
+    "refc_small_produced",
+    "refc_xl_v0off",
+    "refc_base_v0off",
+    "v1_lat_straight",
+    "v1_tactical_follow",
+    "v4_blind"
+   ],
+   "realisable_order_CONTROL_new": [
+    "cv_holdv0",
+    "v1_ego_v0",
+    "refc_xl_produced",
+    "refc_xl_v0on",
+    "refc_base_produced",
+    "refc_base_v0on",
+    "refc_small_produced",
+    "refc_xl_v0off",
+    "refc_base_v0off",
+    "v1_lat_straight",
+    "v1_tactical_follow",
+    "v4_blind"
+   ]
+  },
+  "INSTRUMENT_GUARDS": {
+   "_rule": "\u26a0\ufe0f A fix that makes the metric MORE PERMISSIVE is not a fix. Both guards must survive and should strengthen.",
+   "G1_v4_oracle_minus_v4_blind": {
+    "PSS": {
+     "delta": 0.2992,
+     "lo": 0.2217,
+     "hi": 0.3829,
+     "ci95": 0.0806,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "CONTROL_published": {
+     "delta": 0.2353,
+     "lo": 0.1801,
+     "hi": 0.2949,
+     "ci95": 0.0574,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "CONTROL_new": {
+     "delta": 0.2384,
+     "lo": 0.1815,
+     "hi": 0.3004,
+     "ci95": 0.0594,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15589,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "G2_v1_ego_half_minus_v1_tactical_follow": {
+    "PSS": {
+     "delta": -0.1454,
+     "lo": -0.1758,
+     "hi": -0.1149,
+     "ci95": 0.0304,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "CONTROL_published": {
+     "delta": -0.131,
+     "lo": -0.1605,
+     "hi": -0.1003,
+     "ci95": 0.0301,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "CONTROL_new": {
+     "delta": -0.1318,
+     "lo": -0.1614,
+     "hi": -0.101,
+     "ci95": 0.0302,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 15447,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,264 @@
+{
+ "_experiment": "FINISH THE BOUNDED-TERM REPAIR: lat_heading (C45's third clamp), the FLOOR_FRAC_MAX guard, ego_progress above r = 2, and the comfort decision. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "9ec002294ea3a7b84044cbf4ff222e47"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "e8c90ab60f0825be3f4af57a918960a8"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "repro_gate": {
+  "rule": "Every PUBLISHED @clamp_v1 composite must still reproduce to 4 dp with the gate VERSIONED, `saturation` extended and the lat_heading term versioned with its default flipped.",
+  "progress_term": "clamp_v1",
+  "recovery_term": "clamp_v1",
+  "gate_version_used": "v1",
+  "metric_id_must_be_unchanged": "PSS_recovery_progress@clamp_v1",
+  "panel_gate_admissible": {
+   "ego_progress": true,
+   "recovery": true,
+   "comfort": false
+  },
+  "max_abs_diff": 0.0,
+  "PASS": true,
+  "n_checked": 16,
+  "per_arm": {
+   "cv_holdv0": {
+    "published": 0.5705,
+    "got": 0.5705,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v4_oracle": {
+    "published": 0.5622,
+    "got": 0.5622,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_xl_produced": {
+    "published": 0.5499,
+    "got": 0.5499,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_tactical_follow": {
+    "published": 0.5471,
+    "got": 0.5471,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_tactical_oracle": {
+    "published": 0.5467,
+    "got": 0.5467,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_small_produced": {
+    "published": 0.5444,
+    "got": 0.5444,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_base_produced": {
+    "published": 0.5439,
+    "got": 0.5439,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "nospeed_tactical_oracle": {
+    "published": 0.5394,
+    "got": 0.5394,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v4_blind": {
+    "published": 0.3749,
+    "got": 0.3749,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_ego_v0": {
+    "published": 0.5608,
+    "got": 0.5608,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_ego_oracle_lon": {
+    "published": 0.5946,
+    "got": 0.5946,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_lat_straight": {
+    "published": 0.546,
+    "got": 0.546,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_base_v0on": {
+    "published": 0.5439,
+    "got": 0.5439,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_base_v0off": {
+    "published": 0.498,
+    "got": 0.498,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "refc_xl_v0on": {
+    "published": 0.5499,
+    "got": 0.5499,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   },
+   "v1_ego_half": {
+    "published": 0.3117,
+    "got": 0.3117,
+    "abs_diff": 0.0,
+    "metric_id": "PSS_recovery_progress@clamp_v1",
+    "status": "OK"
+   }
+  },
+  "lat_heading_published_is_BIT_IDENTICAL_per_arm": {
+   "cv_holdv0": true,
+   "nospeed_tactical_oracle": true,
+   "refc_base_produced": true,
+   "refc_small_produced": true,
+   "refc_xl_produced": true,
+   "stand_still": true,
+   "v1_tactical_follow": true,
+   "v1_tactical_oracle": true,
+   "v4_blind": true,
+   "v4_oracle": true,
+   "oracle_lon_straight": true,
+   "v1_ego_double": true,
+   "v1_ego_half": true,
+   "v1_ego_oracle_lon": true,
+   "v1_ego_v0": true,
+   "v1_lat_straight": true,
+   "refc_base_v0off": true,
+   "refc_base_v0on": true,
+   "refc_xl_v0off": true,
+   "refc_xl_v0on": true
+  },
+  "lat_heading_published_is_BIT_IDENTICAL": true,
+  "published_lat_heading_axis_id_unchanged": true,
+  "published_suite_id_unchanged": "control_v1@t1s_d1.75m_sref10m_psi0.2rad",
+  "new_suite_id": "control_v1@t1s_d1.75m_sref10m_psi0.2rad+lath_rowmean_v2"
+ }
+}

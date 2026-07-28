@@ -700,6 +700,7 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   ⇒ **Standing consequence: choose the shape against the DENSITY OF THE DATA, not against the
   algebra** — and prove it with an injection suite the candidate can fail. Two of three candidates here
   were refuted by their own acceptance test, which is the only reason the third is trustworthy.
+  ⚠️ **AMENDED 2026-07-28 — C47 IS BOUNDED, NOT GENERAL, and the bound was measured by a stream that PRE-REGISTERED THE OPPOSITE PREDICTION AND WATCHED IT FAIL.** The `share` form — reward bias 3.332, **0/8 on `recovery`** — scores **10/10 on `lat_heading`**. And **`q = 0.5`, the parameter that FAILED on `recovery`, is the one that WINS on `lat_heading`.** ⇒ **the reward-bias proxy only predicts the outcome when the median row sits ABOVE the anchor** (`recovery` 1.181, 75.4 % past; `lat_heading` 0.9103, 46.3 %). **The rule stands as “judge the charge rate where the data lives”; it does NOT stand as “the share form is bad” or “q = 0.5 is wrong.”** A class stated one level too general is a trap of its own.
   ⭐ **Also established, and shipped as a proof-test: a strict refinement was IMPOSSIBLE.** Any bounded
   `g` agreeing with `1 − r` on `[0, 1]` must be constant above 1 — **i.e. it IS the defect.** So the
   choice was necessarily a range-budget with a free parameter, and pretending otherwise would have

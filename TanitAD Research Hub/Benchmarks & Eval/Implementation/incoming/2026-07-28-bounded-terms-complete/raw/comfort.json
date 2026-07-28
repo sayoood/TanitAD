@@ -1,0 +1,280 @@
+{
+ "_experiment": "FINISH THE BOUNDED-TERM REPAIR: lat_heading (C45's third clamp), the FLOOR_FRAC_MAX guard, ego_progress above r = 2, and the comfort decision. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "9ec002294ea3a7b84044cbf4ff222e47"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "e8c90ab60f0825be3f4af57a918960a8"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "comfort": {
+  "per_arm": {
+   "cv_holdv0": {
+    "mean_pass_rate": 1.0,
+    "n_distinct_values": 1,
+    "observed_range": 0.0,
+    "floor_frac": 0.0,
+    "ceiling_frac": 1.0,
+    "live_frac": 0.0
+   },
+   "nospeed_tactical_oracle": {
+    "mean_pass_rate": 0.000688,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.999312,
+    "ceiling_frac": 0.000688,
+    "live_frac": -0.0
+   },
+   "refc_base_produced": {
+    "mean_pass_rate": 0.008197,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.991803,
+    "ceiling_frac": 0.008197,
+    "live_frac": -0.0
+   },
+   "refc_small_produced": {
+    "mean_pass_rate": 0.002691,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.997309,
+    "ceiling_frac": 0.002691,
+    "live_frac": -0.0
+   },
+   "refc_xl_produced": {
+    "mean_pass_rate": 0.005381,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.994619,
+    "ceiling_frac": 0.005381,
+    "live_frac": -0.0
+   },
+   "stand_still": {
+    "mean_pass_rate": 1.0,
+    "n_distinct_values": 1,
+    "observed_range": 0.0,
+    "floor_frac": 0.0,
+    "ceiling_frac": 1.0,
+    "live_frac": 0.0
+   },
+   "v1_tactical_follow": {
+    "mean_pass_rate": 0.000375,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.999625,
+    "ceiling_frac": 0.000375,
+    "live_frac": -0.0
+   },
+   "v1_tactical_oracle": {
+    "mean_pass_rate": 0.000375,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.999625,
+    "ceiling_frac": 0.000375,
+    "live_frac": -0.0
+   },
+   "v4_blind": {
+    "mean_pass_rate": 0.0,
+    "n_distinct_values": 1,
+    "observed_range": 0.0,
+    "floor_frac": 1.0,
+    "ceiling_frac": 0.0,
+    "live_frac": 0.0
+   },
+   "v4_oracle": {
+    "mean_pass_rate": 0.0,
+    "n_distinct_values": 1,
+    "observed_range": 0.0,
+    "floor_frac": 1.0,
+    "ceiling_frac": 0.0,
+    "live_frac": 0.0
+   },
+   "oracle_lon_straight": {
+    "mean_pass_rate": 0.936112,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.063888,
+    "ceiling_frac": 0.936112,
+    "live_frac": 0.0
+   },
+   "v1_ego_double": {
+    "mean_pass_rate": 0.09868,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.90132,
+    "ceiling_frac": 0.09868,
+    "live_frac": 0.0
+   },
+   "v1_ego_half": {
+    "mean_pass_rate": 0.637194,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.362806,
+    "ceiling_frac": 0.637194,
+    "live_frac": -0.0
+   },
+   "v1_ego_oracle_lon": {
+    "mean_pass_rate": 0.245291,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.754709,
+    "ceiling_frac": 0.245291,
+    "live_frac": 0.0
+   },
+   "v1_ego_v0": {
+    "mean_pass_rate": 0.288217,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.711783,
+    "ceiling_frac": 0.288217,
+    "live_frac": 0.0
+   },
+   "v1_lat_straight": {
+    "mean_pass_rate": 0.009887,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.990113,
+    "ceiling_frac": 0.009887,
+    "live_frac": -0.0
+   },
+   "refc_base_v0off": {
+    "mean_pass_rate": 0.003567,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.996433,
+    "ceiling_frac": 0.003567,
+    "live_frac": 0.0
+   },
+   "refc_base_v0on": {
+    "mean_pass_rate": 0.008197,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.991803,
+    "ceiling_frac": 0.008197,
+    "live_frac": -0.0
+   },
+   "refc_xl_v0off": {
+    "mean_pass_rate": 0.005006,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.994994,
+    "ceiling_frac": 0.005006,
+    "live_frac": 0.0
+   },
+   "refc_xl_v0on": {
+    "mean_pass_rate": 0.005319,
+    "n_distinct_values": 2,
+    "observed_range": 1.0,
+    "floor_frac": 0.994681,
+    "ceiling_frac": 0.005319,
+    "live_frac": 0.0
+   }
+  },
+  "max_live_frac_over_all_arms": 0.0,
+  "every_arm_is_100pct_saturated": true,
+  "observed_range_is_an_ARTEFACT": "\u26d4 `observed_range = 1.0` is the statistic that let this term clear RANGE_MIN for its whole life. For a {0,1} indicator it records ONLY THAT BOTH VALUES OCCUR \u2014 max - min = 1 for any binary array containing at least one 0 and one 1, whatever the mixture. It is not evidence of range and RANGE_MIN cannot see the difference.",
+  "gate_v1_verdict": "ADMISSIBLE on range; dropped only per-arm",
+  "gate_v2_verdict": "REFUSED on every arm: live_frac = 0.0000 < 0.5",
+  "DECISION": "PUBLISH THE MEASUREMENT, RETIRE THE NAME AND THE SCORE-SHAPED NODE. (a) It must not be emitted as `components.comfort` beside two real scores in [0,1]: a reader comparing 0.5492 (recovery) with 1.0000 (comfort) is comparing a mean score with a PASS RATE, and the program has already published `observed_range = 1.0` for it 20 times as if it were range. (b) It must not be silently deleted either: C46 was found BECAUSE the number was still on the page, and a measurement that refutes its own term is the cheapest instrument in the suite. \u21d2 it is emitted as `diagnostics.plan_smoothness_pass_rate`, a RATE with its own units, carrying COMFORT_STATUS and its live_frac = 0.0000, and gate v2 refuses it automatically so no future weight can be attached without the refusal being visible.",
+  "_what_would_make_it_a_score": "The AND of four bounds discards a continuous margin that is already computed: max over the four clauses of (observed / limit). That quantity has real range and would be a usable diagnostic. It is NAMED here and NOT shipped: C46's finding is that the LIMITS themselves fail the human's own logged path on 16.60 % of windows, so a margin against them would be a margin against a bound we know is wrong. Fix the bound first."
+ }
+}

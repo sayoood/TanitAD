@@ -223,7 +223,19 @@ LAT_HEADING_TERM_PUBLISHED = "term_lin_q0"
 #: ⇒ the resolution lever alone clears the 0.50 rule on every arm. The shape
 #: grid is swept anyway, because a rule fixed before the numbers has to be able
 #: to reject the answer the author expects.
-LAT_HEADING_RESOLUTIONS = ("term", "mean")
+#: ⚠️ AND THERE IS A THIRD RESOLUTION, BECAUSE THE SECOND ONE BROKE THE AXIS'S
+#: DEFINING CLAIM AND THE CONTAMINATION PANEL CAUGHT IT.
+#: ``lat_heading`` exists as a SECOND lateral axis only because *"a pure lateral
+#: OFFSET moves lat_track and leaves lat_heading unchanged"*. MEASURED under
+#: ``mean``: ``lat_shift(+2 m)`` moves it **-0.0222 SEPARATED** — the claim is
+#: gone. **Mechanism:** step 0's plan tangent runs from the REFERENCE POSE to
+#: waypoint 0, so translating the whole plan rotates that one segment enormously,
+#: while every waypoint-to-waypoint segment is translation-invariant by
+#: construction. ⇒ ``mean1`` averages over the **K - 1 plan-internal segments
+#: only**: at ``k = 0`` there is no preceding waypoint and using the reference
+#: pose as a stand-in makes the first tangent a function of the START OFFSET
+#: rather than of the plan's aim. The terminal form never used step 0 either.
+LAT_HEADING_RESOLUTIONS = ("term", "mean", "mean1")
 #: the pre-registered anchor grid on ``q``. It runs HIGHER than ``recovery``'s
 #: because this term's tail is heavier at the top end: ``v4_blind``'s MEDIAN
 #: ``u`` is **6.07** (its plans point ~70 deg off), so nothing below q ~ 0.835
@@ -330,17 +342,55 @@ LAT_HEADING_SHAPES = {
 LAT_HEADING_TERMS = {f"{_r}_{_s}": (_r, _s)
                      for _r in LAT_HEADING_RESOLUTIONS
                      for _s in LAT_HEADING_SHAPES}
-#: ⭐ MEASURED OUTCOME OF THE RULE — filled in from
-#: ``raw/injections_lat_heading.json`` AFTER the sweep, and PINNED by a test so
-#: the shape cannot drift without the test failing. See §2 of
-#: ``BOUNDED_TERMS_COMPLETE.md``.
-LAT_HEADING_TERM_DEFAULT_TARGET = "mean_lin_q0"
+#: ⭐ MEASURED OUTCOME OF THE PRE-REGISTERED RULE (20 arms, 15,981 rows each,
+#: B = 2000 paired episode-cluster bootstrap over the 40 val episodes; 24
+#: candidate terms = 3 resolutions x 8 shapes). Banked in
+#: ``…/2026-07-28-bounded-terms-complete/raw/injections_lat_heading.json``, and
+#: PINNED by a test so the term cannot drift without the test failing.
+#:
+#:   H0 (axis purity) ⛔ kills EVERY ``mean_*`` term: a pure ``lat_shift(2 m)``
+#:      moves them -0.0222 SEPARATED, destroying the axis's own defining claim.
+#:      ``term_*`` and ``mean1_*`` pass.
+#:   H1 (all 10 injections separated, correct direction, both arms, incl. the
+#:      ZERO-MEAN ``yaw_jitter``): ⛔ ``term_lin_q0`` **5/10** — the PUBLISHED
+#:      term fails its own acceptance test. ⚠️ ``mean1_lin_q0`` **9/10** — the
+#:      ZERO-PARAMETER candidate is CORRECT IN SIGN on all 10 and not separated
+#:      on one, so H1 disqualifies it rather than arguing it in.
+#:   H2 (live_frac >= 0.50 on every scorable arm): ⛔ ``term_lin_q0`` **0.1570**
+#:      (that is ``v4_blind``); ``term_lin_q0p5`` 0.2536; ``term_lin_q0p6667``
+#:      0.3222 — the terminal resolution needs q >= 0.85 before it clears.
+#:      ``mean1_lin_q0`` 0.7464, ``mean1_lin_q0p5`` **0.9975**.
+#:   H3 ⇒ linear family, smallest surviving q  ⇒  **mean1_lin_q0p5**.
+#:
+#: ⭐⭐ AND THE PARAMETER IS THE ONE THAT FAILED ON THE SIBLING TERM.
+#: ``q = 0.5`` — the even split — scored **7/8 and was DISQUALIFIED** on
+#: ``recovery`` two hours earlier, where ``q = 2/3`` won. Here ``q = 0.5``
+#: passes 10/10 and is selected, because this term's density is different
+#: (median u = 0.910 against recovery's median ratio 1.181). ⇒ C47, confirmed
+#: from the other direction: **an inherited constant is a hypothesis, and the
+#: acceptance test decides — including when it decides in your favour.**
+#:
+#: ⚠️ TWO LEVERS, TWO DIFFERENT JOBS, and neither alone is enough:
+#: the RESOLUTION fixes the SATURATION (live_frac 0.157 -> 0.746 at q = 0 with
+#: no parameter at all) and the SHAPE fixes the POWER (9/10 -> 10/10). Reporting
+#: only one of them would have been a half-repair.
+LAT_HEADING_TERM_DEFAULT_TARGET = "mean1_lin_q0p5"
 LAT_HEADING_TERM_DEFAULT = "rowmean_v2"
 LAT_HEADING_TERMS[LAT_HEADING_TERM_DEFAULT] = LAT_HEADING_TERMS[
     LAT_HEADING_TERM_DEFAULT_TARGET]
 LAT_HEADING_TERM_ALIASES = {LAT_HEADING_TERM_DEFAULT:
                             LAT_HEADING_TERM_DEFAULT_TARGET,
                             "term_lin_q0": LAT_HEADING_TERM_PUBLISHED}
+
+
+def _masked_absmean(a):
+    """``nanmean(|a|, axis=1)`` without the empty-slice warning; an all-NaN row
+    returns NaN by construction rather than by exception handling."""
+    a = np.asarray(a, float)
+    fin = np.isfinite(a)
+    s = np.where(fin, np.abs(np.where(fin, a, 0.0)), 0.0).sum(axis=1)
+    n = fin.sum(axis=1)
+    return np.where(n > 0, s / np.maximum(n, 1), np.nan)
 
 
 def lat_heading_from_err(dpsi_end, dpsi_steps, *, psi_tol=None,
@@ -364,11 +414,19 @@ def lat_heading_from_err(dpsi_end, dpsi_steps, *, psi_tol=None,
     if res == "term":
         return g(np.abs(np.asarray(dpsi_end, float)) / p)
     a = np.asarray(dpsi_steps, float)
-    with np.errstate(invalid="ignore"):
-        # a step with no segment length has no heading; it is NaN and is left
-        # out of the mean rather than scored 1.0 — standing still is not aim.
-        out = np.nanmean(g(np.abs(a) / p), axis=1)
-    return np.where(np.isfinite(a).any(axis=1), out, np.nan)
+    if res == "mean1":
+        # ⭐ drop step 0: its tangent is reference-pose -> waypoint 0 and is
+        # therefore a function of the START OFFSET, not of the plan's aim.
+        a = a[:, 1:]
+    # ⚠️ a step with no segment length has no heading; it is NaN and is left OUT
+    # of the mean rather than scored 1.0 — standing still is not aim, which is
+    # the `recovery` defect one axis over. Written as an explicit masked mean
+    # rather than `nanmean` so an all-NaN row is a REFUSAL (NaN) by
+    # construction instead of a warning plus a NaN.
+    fin = np.isfinite(a)
+    s = np.where(fin, g(np.abs(np.where(fin, a, 0.0)) / p), 0.0).sum(axis=1)
+    n = fin.sum(axis=1)
+    return np.where(n > 0, s / np.maximum(n, 1), np.nan)
 
 
 def lat_heading_axis_id(lat_heading_term=None) -> str:
@@ -718,8 +776,8 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
         # resolution change stays checkable in place and the endpoint
         # sensitivity the mean blurs is still reported.
         "lat_heading_terminal": nanl(lat_heading_published),
-        "lat_heading_err_rad_steps_absmean": nanl(
-            np.nanmean(np.abs(r["heading_err_rad_steps"]), axis=1)),
+        "lat_heading_err_rad_steps_absmean": nanl(_masked_absmean(
+            r["heading_err_rad_steps"])),
         # the two twins, kept so the axis-purity claim is checkable in-place
         "lat_track_flat": nanl(lat_track_flat),
         "lat_timeindexed_abs_m": nan(np.abs(xt_t).mean(1)),
