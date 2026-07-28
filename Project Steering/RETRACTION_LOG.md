@@ -776,3 +776,24 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   ⚠️ **Not yet fixed, and deliberately left for the PI:** the guard still kills on a batch max rather
   than on a persistent population condition, and the false "code fault" wording still stands in the
   message. Changing a fail-loud's *semantics* is a scientific decision, not a cleanup.
+- **C52 — A PUBLISHED REMEDY IMPORTED WITHOUT ITS PRECONDITION** *(new class, added 2026-07-28)* ⇒
+  **citing a result correctly is not the same as establishing that it applies. A method's stated
+  precondition is part of the claim, and it must be MEASURED on our setting before the method is
+  trusted to decide anything.**
+  RETRACTED: my own E1d hypothesis that WiSE-FT-style weight-space interpolation would find a point
+  on the REF-C-base → CL-SFT segment carrying the closed-loop gain without the open-loop regression.
+  The citation was accurate (Wortsman et al. 2022 — interpolating a fine-tune with its base
+  dominates early stopping) and the reasoning from it was sound; **the precondition was never
+  checked.** WiSE-FT's frontier holds *when the fine-tune stays in the base's basin*. MEASURED on our
+  arms it does not: `dep_overall` is **separated-WORSE at five consecutive interior points**
+  (α = 0.20 → +0.1107, 0.30 → +0.1387, 0.40 → +0.1492, 0.50 → +0.1199, 0.60 → +0.0759; every CI
+  excludes zero, paired episode-cluster bootstrap, n = 43 clusters). ⇒ **the interpolation path
+  crosses a region worse than BOTH endpoints — the two solutions are not linearly mode-connected for
+  this metric.**
+  ⭐ **The probe was still worth running, and that is the class rather than a softening of it:** it
+  cost ~1 h of an idle pod, carried a bit-identical reproduction control (α=1.00 reproduces E1c row
+  4000 exactly), and returned a **stronger** negative than "no good α was found" — plus the
+  decomposition that actually redirects the program (`E1D_RESULT.md` §3: junction recovery is cheap
+  and monotone, overall-corridor recovery is expensive and barrier-crossing).
+  ⇒ **Before importing a method, write down what it assumes and price the probe that tests the
+  assumption.** A pre-registered cheap probe turns an unchecked precondition into a measurement.
