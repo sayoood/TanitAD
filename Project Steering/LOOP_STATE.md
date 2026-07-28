@@ -4,12 +4,32 @@
 moved was costing a re-derivation every 30 minutes and shipped stale instructions twice in one day.
 Update this file instead; keep it short and dated.
 
-`LAST_UPDATED: 2026-07-28 06:30 UTC (08:30 Berlin). 🔵 AUTONOMOUS.
-🔴🔴 **FLEET: pod1 AND pod2 UNREACHABLE — PI CONSOLE ACTION REQUIRED** (full diagnosis in the incident
-section immediately below; port-22 banner on pod1's IP is the RunPod HOST NODE, not our container, and
-there is **no RunPod credential** on the dev box, so there is NO path from here). pod3 + eval alive.
-⛔ **176×624 IS DECIDED BY THE PI AND CANNOT START: pod2 holds the ONLY copy of the w120/256×640 cache
-AND arm A's completed validation results.** Verified absent on pod3 and eval.
+`LAST_UPDATED: 2026-07-28 18:2x UTC (20:2x Berlin). 🔵 AUTONOMOUS.
+✅✅ **FLEET OUTAGE RESOLVED — IT WAS NEVER AN OUTAGE.** The migration split the fleet across **TWO
+datacenters** and reassigned ports; I was probing ca-mtl-1 endpoints for pods that had moved to
+**US-TX-1**. **`~/.ssh/config` is now corrected and all four aliases resolve** —
+`tanitad-pod` **38.147.83.15:39198** (was 30107) · `tanitad-pod2` **69.30.85.123:22091** ·
+`tanitad-pod3` **69.30.85.16:22079** · `tanitad-eval` **69.30.85.106:22073**. Plus a **new** A40 pod
+at **69.30.85.48:22192**. ⛔ **Do NOT re-raise "pod1/pod2 unreachable" without re-probing these.**
+✅ **176×624 IS UNBLOCKED AND LAUNCH-READY ON pod2** (A40, 376 GB, restore complete). The w120 caches
+returned and **parity is CRYPTOGRAPHICALLY VERIFIED by the trainer's own preflight** — train **2400
+clips** sha256 `e61a04553df5…`, val **600 clips** sha256 `0b176d2e5cb4…`, both matching the committed
+manifest, skip-hash `f09e44db`. **No rebuild is needed**: 176×624 is a `--v2-subframe` pixel slice of
+the existing 256×640 cache (the cache's own `_geometry.json` says so). `PREFLIGHT: OK` run twice.
+⛔ **NOT LAUNCHED — one PRE-REGISTERED HOLD, and it is the PI's to clear (task #38):** the v5 PREP card
+records *"on EGO YAW RATE the wide frame is separated-WORSE (−0.03546 R²)"*, marked **"under
+investigation before v5 trains"**, while that card calls ego-motion perception *"the real item"*.
+Launching past a pre-registered hold selects the outcome after seeing the convenience.
+⚠️ v5 trains at **117.000°, not 120°** (the rig-clean slice costs 3° of field), and **v1's 0.4271 is
+NOT a valid comparator** for a wide arm — v1's encoder was trained at 51.4°, so wide frames are OOD.
+⚠️ **arm A's validation is GONE** (`/workspace/smallval` empty after the restore) though the arm
+finished `rc=0` — **~4 h to re-run**; PI decides whether it is needed.
+⭐ **C56 — "pods cannot SSH each other" is RETRACTED. MEASURED 42 MB/s cross-datacenter.** Recipe:
+keygen on the DESTINATION, append its **PUBLIC** key to the source's `authorized_keys`, connect to the
+source's **direct** `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22` (**not** the proxy, which cannot move
+files). ⇒ **the ~1 MB/s relay and the HF-403 no longer block any multi-GB move.**
+⚠️ **BOTH pod2 and pod3 were 91 commits behind at `0f93b98`.** pod2 is **synced and verified by a real
+import**; **pod3 IS STILL STALE — sync before its next launch** (task #39).
 ⭐ **THE SEAM GUARD IS FIXED PROPERLY (C51 closed), not raised** — the `seam_fail 8.0` workaround is
 RETIRED. Trigger is now POPULATION-over-TIME: batch **MEAN** ratio > 1.5 **AND** ≥75 % of the batch at
 the clamp **AND** 50 consecutive steps; counter resets on any healthy step; `seam_clamp` untouched, so
