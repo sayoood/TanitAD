@@ -587,7 +587,7 @@ def apply_c2_selection(out: dict, horizons, ref, tag: str) -> dict:
 def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                     stride, batch, wp_steps=WP_STEPS, goal_mode="oracle",
                     goal_head=None, goal_fallback=False,
-                    select_rule="as-trained", c2=None):
+                    select_rule="as-trained", c2=None, agree_dump=None):
     """v4 PLANNER PATH: head-selected trajectory (lambda_plan=1, NOT fed true
     future actions), re-encoding the CURRENT (jointly fine-tuned) trunk.
 
@@ -801,6 +801,12 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                         "(NOT driving_diagnostic.gt_ego_waypoints, which built "
                         "the sparse `gt`). pred[:, j] == "
                         "pred_dense[:, wp_steps[j]-1] by construction."))
+    # PER-WINDOW goal dump (produced mode only). `report()` summarises these and
+    # drops them, which is why the route threshold could not be swept without a
+    # re-run. Costs one torch.save of tensors already in memory.
+    if agree is not None and agree_dump is not None:
+        agree.dump(agree_dump)
+
     diag = {
         "n_windows": n,
         "select_rule": select_rule,
@@ -1124,7 +1130,9 @@ def main(argv=None) -> int:
                                  a.episodes, a.stride, a.batch,
                                  goal_mode=a.goal_mode, goal_head=goal_head,
                                  goal_fallback=a.goal_fallback,
-                                 select_rule=a.select_rule, c2=c2)
+                                 select_rule=a.select_rule, c2=c2,
+                                 agree_dump=(results_dir
+                                             / f"goalagree_{a.key}.pt"))
 
     wp = results_dir / f"windows_{a.key}.pt"
     _keys = ["pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps"]

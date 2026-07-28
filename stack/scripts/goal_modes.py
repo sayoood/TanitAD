@@ -267,6 +267,16 @@ class GoalAgreement:
         self._sc_true: list[torch.Tensor] = []
         self._sc_mask: list[torch.Tensor] = []
         self.route_conf = torch.zeros(5, 5, dtype=torch.long)   # oracle x produced
+        # PER-WINDOW route, kept so the route THRESHOLD can be swept offline.
+        # MEASURED 2026-07-29: the produced route is not a classifier — it is
+        # ``graded = tanh(curv_5s / CURV_TURN_PER_M)`` hard-thresholded at
+        # ``tanh(1.0)`` (:133-166). ``curv_5s`` is the worst-fit scalar (R² 0.3142)
+        # and a regressor that weak shrinks magnitudes toward the mean, so the bar
+        # is effectively ~1.78x the label's own turn definition and almost every
+        # turn rounds to STRAIGHT. Sweeping that one constant needs the per-window
+        # predicted scalars, which this class already had and DISCARDED.
+        self._route_o: list[torch.Tensor] = []
+        self._route_p: list[torch.Tensor] = []
 
     def update(self, produced: dict, batch: dict, scalars: torch.Tensor | None):
         if "route" in produced and "route" in batch:
@@ -274,6 +284,8 @@ class GoalAgreement:
             p = produced["route"].detach().cpu().long()
             self.route_n += o.numel()
             self.route_ok += int((o == p).sum())
+            self._route_o.append(o)
+            self._route_p.append(p)
             for a, b in zip(o.tolist(), p.tolist()):
                 if 0 <= a < 5 and 0 <= b < 5:
                     self.route_conf[a, b] += 1
@@ -287,6 +299,31 @@ class GoalAgreement:
             self._sc_pred.append(scalars.detach().cpu())
             self._sc_true.append(batch["strat_scalars"].detach().cpu().float())
             self._sc_mask.append(batch["strat_scalar_mask"].detach().cpu().bool())
+
+    def dump(self, path) -> dict:
+        """Persist the per-window tensors so the route threshold is sweepable OFFLINE.
+
+        ``report()`` summarises these and drops them, which is why the first pass at
+        this analysis could only see argmax counts. Everything here is already in
+        memory — this costs one ``torch.save``, no extra forward pass, no GPU.
+        """
+        import torch as _t
+        obj = {
+            "sc_pred": _t.cat(self._sc_pred) if self._sc_pred else None,
+            "sc_true": _t.cat(self._sc_true) if self._sc_true else None,
+            "sc_mask": _t.cat(self._sc_mask) if self._sc_mask else None,
+            "route_oracle": _t.cat(self._route_o) if self._route_o else None,
+            "route_produced": _t.cat(self._route_p) if self._route_p else None,
+            "_read": ("per-window goal-head outputs. route is DERIVED, not classified: "
+                      "graded = tanh(sc_pred[:,2] / CURV_TURN_PER_M), then "
+                      "|graded| >= tanh(1.0) -> LEFT/RIGHT else STRAIGHT. Sweep that "
+                      "threshold here rather than re-running the eval."),
+            "scalar_order": "ttm, curv_3s, curv_5s, tspeed_5s",
+        }
+        _t.save(obj, path)
+        n = 0 if obj["route_oracle"] is None else int(obj["route_oracle"].numel())
+        print(f"[goal-agree] per-window dump -> {path} (n={n})", flush=True)
+        return {"path": str(path), "n": n}
 
     def report(self) -> dict:
         from v4_labels import STRAT_SCALAR_NAMES
