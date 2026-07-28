@@ -1,0 +1,203 @@
+{
+ "_what": "every result / artifact / document / registry row that USED physicalai-val-f1b378f295ae",
+ "_date": "2026-07-28",
+ "_agent": "leaky-cache-audit",
+ "_evidence_class": "MEASURED (ours) unless a row says otherwise",
+ "_confidentiality": "counts, window masses and ep_XXXXX cache-local file tags only. No clip UUIDs.",
+ "_the_fact": {
+  "cache": "physicalai-val-f1b378f295ae",
+  "n_episodes": 80,
+  "n_distinct_episode_ids": 79,
+  "n_frames": 15906,
+  "overlap_with_physicalai-train-e438721ae894": 62,
+  "pct_episodes": 77.5,
+  "pct_frames": 77.51,
+  "pct_windows_idm_protocol": 77.5,
+  "families_agreeing": ["poses_sha256", "poses_xy_sha256", "poses_yaw_sha256", "poses_v_sha256", "actions_sha256", "frames_sha256"],
+  "content_clean_file_tags": ["ep_00000","ep_00006","ep_00008","ep_00012","ep_00013","ep_00017","ep_00021","ep_00029","ep_00035","ep_00040","ep_00051","ep_00054","ep_00059","ep_00061","ep_00064","ep_00070","ep_00073","ep_00079"],
+  "first_content_measurement": "2026-07-26 …/2026-07-26-s3-decision-grade/disjointness_result.json (poses sha256, 62/80)",
+  "corroborated": "2026-07-28 …/2026-07-28-parity-leak-check/raw/KNOWNPOSITIVE_f1b378_x_train.json (6 families incl. raw frames_u8)",
+  "reproduced_independently_here": true
+ },
+
+ "A_RESULTS_SCORED_ON_IT": [
+  {
+   "id": "A1",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-idm-youtube-validation/idm_head_v1_card.json",
+   "node": "val.val_parityval",
+   "claim": "idm_head_v1 HELD-OUT generalisation: speed R2 0.885254, yaw R2 0.807472, steer R2 0.782080, long_accel R2 0.081120, speed MAE 2.072577, ADE@2s 2.703221, n=3517 windows / 40 clips",
+   "substrate": "va_a[:20] + va_b[:20] latents built from physicalai-val-f1b378f295ae",
+   "identification_proof": "our reconstruction of the 40-clip set from pod3 rig tables reproduces the card's n EXACTLY (3517 == 3517)",
+   "leaked_clips": 32, "leaked_pct_clips": 80.0,
+   "leaked_windows": 2815, "total_windows": 3517, "leaked_pct_windows": 80.0,
+   "also_in_the_scoring_heads_OWN_120_clip_train_set": {"clips": 16, "windows": 1407, "pct": 40.0},
+   "verdict": "INVALIDATED AS A GENERALISATION CLAIM. 80.0% of its mass is bit-identical to the frozen encoder's training corpus and 40.0% is bit-identical to the IDM head's own training clips - literal train-on-test. Only 8 clips / 702 windows (20.0%) are content-disjoint.",
+   "training_facts_untouched": "weights, params 2899724, weights_md5 fa4462f0b898b036be729c790278b823, the recipe, the train windows - all unaffected",
+   "matched_clean_comparison": {
+    "source": "recon_metrics.json aggregate_40ep_stride2 — same head md5 fa4462f0b898b036be729c790278b823, same frozen encoder, k=4 stride 2, 40 clips, n=3521 (vs the card's 3517)",
+    "substrate": "physicalai-val-0c5f7dac3b11 — content-verified clean, 0/40 overlap with the parity train",
+    "ade_2s": {"leaky_f1b378": 2.703221, "clean_0c5f": 3.856014, "pct": "+42.7% on the clean split"},
+    "mae_speed": {"leaky_f1b378": 2.072577, "clean_0c5f": 2.966595, "pct": "+43.1%"},
+    "r2_speed": {"leaky_f1b378": 0.885254, "clean_0c5f": 0.824929},
+    "r2_yaw_rate": {"leaky_f1b378": 0.807472, "clean_0c5f": 0.784160},
+    "r2_steer": {"leaky_f1b378": 0.782080, "clean_0c5f": 0.669771},
+    "r2_long_accel": {"leaky_f1b378": 0.081120, "clean_0c5f": -0.184694, "note": "SIGN FLIP - better-than-mean becomes worse-than-mean"},
+    "all_six_move_the_same_way": true,
+    "HONEST_LIMIT": "matched on head/encoder/protocol/n but NOT on episodes (the two 40-clip sets share only 8 clips), so this is an UPPER BOUND on the leak effect, not an isolate. It is the only matched-head clean measurement that exists."
+   },
+   "note": "the card's own provenance says 'val metrics below are held-out'; that is false for this node"
+  },
+  {
+   "id": "A2",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json",
+   "node": "experiments.physicalai_to_comma2k19.val.in_corpus_heldout_paival",
+   "claim": "IDM in-corpus held-out PhysicalAI: speed R2 0.929725, yaw R2 0.924424, steer R2 0.857885, ADE@2s 2.733018, n=7028",
+   "substrate": "all 80 episodes of physicalai-val-f1b378f295ae",
+   "identification_proof": "our window count over the 80 episodes = 7028, matches the artifact exactly",
+   "leaked_clips": 62, "leaked_pct_clips": 77.5,
+   "leaked_windows": 5448, "total_windows": 7028, "leaked_pct_windows": 77.5,
+   "also_in_the_scoring_heads_OWN_train_set": {"clips": 19, "windows": 1670, "pct": 23.8},
+   "verdict": "INVALIDATED AS A HELD-OUT NUMBER. It is also the DENOMINATOR of verdicts.physicalai_to_comma2k19.ade_ratio = 2.3988, so the ratio is inflated by an optimistically low in-domain reference.",
+   "verdict_direction": "the PASS/FAIL verdict (PASS=false) is NOT overturned - a leak that flatters the in-domain reference makes the cross-domain gap look WORSE, i.e. conservative for a FAIL. The MAGNITUDE 2.3988 is not quotable.",
+   "downstream": "yaw R2 +0.9244 is quoted in …/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md section 5 as 'checked and correct'"
+  },
+  {
+   "id": "A3",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-idm-pipeline-derisk/results_idm_pipeline_derisk.json",
+   "node": "heldout_domains.rigBval_crossRIG",
+   "claim": "zero-shot cross-rig readiness on 'rigB-val (episode-disjoint)', n=4742",
+   "substrate": "va_b[:54] from physicalai-val-f1b378f295ae",
+   "identification_proof": "our window count over the 54 rig-B episodes = 4742, matches the artifact exactly",
+   "leaked_clips": 41, "leaked_pct_clips": 75.9,
+   "leaked_windows": 3600, "total_windows": 4742, "leaked_pct_windows": 75.9,
+   "also_in_the_scoring_heads_OWN_train_set": {"clips": 15, "windows": 1318, "pct": 27.8},
+   "verdict": "INVALIDATED AS A ZERO-SHOT / EPISODE-DISJOINT CLAIM. The artifact's own label 'episode-disjoint' is false by content."
+  },
+  {
+   "id": "A4",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-idm-downstream-ablation/results_idm_downstream_ablation.json",
+   "node": "domains.rigB_sameClass (pseudo_benefit 2.4346, ceiling_benefit 2.5317, fraction_of_ceiling 0.960)",
+   "substrate": "va_b[:54] from physicalai-val-f1b378f295ae",
+   "leaked_clips": 41, "leaked_pct_clips": 75.9, "leaked_windows": 3600, "total_windows": 4742, "leaked_pct_windows": 75.9,
+   "verdict": "AFFECTED. The rigB_sameClass domain is 75.9% train-contaminated. NOTE THE DIRECTION: this is a floor/pseudo/ceiling RATIO measured on one substrate, so a common-mode inflation partly divides out of fraction_of_ceiling - but not of the absolute per-arm R2, and the 'held-out real-labeled test' framing is false. The comma_crossCLASS domain is a DIFFERENT corpus and is untouched."
+  },
+  {
+   "id": "A5",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-idm-parity-validation/results_idm_parity_validation.json",
+   "node": "arms_mean_std (floor / pseudo / ceiling), fraction_of_ceiling, verdict GO-decision-grade",
+   "substrate": "meta.downstream = 'physicalai-val (both rigs), finetune 15 / test 65' = all 80 episodes of physicalai-val-f1b378f295ae",
+   "leaked_clips": 62, "leaked_pct_clips": 77.5, "leaked_windows": 5448, "total_windows": 7028, "leaked_pct_windows": 77.5,
+   "verdict": "AFFECTED - and this one carried a GO DECISION ('GO-decision-grade'). Same ratio caveat as A4: floor/pseudo/ceiling share the substrate so fraction_of_ceiling is partly protected; the absolute numbers and the word 'validation' are not."
+  },
+  {
+   "id": "A6",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-branchb-transfer-eval/results_branchb_transfer_e50_CONVERGED.json + RESULTS_branchB.md + MODEL_REGISTRY section 10.1",
+   "node": "rig_val and multirig_val rows; paired dR2 -0.755 [-1.336,-0.108] and -1.325 [-2.295,-0.801]",
+   "claim_as_published": "'clean, disjoint' held-out rig-B transfer; 'Episode-leakage controlled (the reason for the val set)'",
+   "substrate": "va_a[:26] + va_b[:54] from physicalai-val-f1b378f295ae",
+   "leaked": {"rigA_val": {"clips": "21/26", "pct": 80.8, "windows": "1848/2286"}, "rigB_val": {"clips": "41/54", "pct": 75.9, "windows": "3600/4742"}},
+   "verdict": "THE 'clean, disjoint' AND 'leakage controlled' LABELS ARE FALSE. Finding 1 (Branch B cross-rig speed R2 -0.667 fails the +0.9 gate) survives on its absolute value. Finding 2 (weaker substrate in-domain / own-head) is not measured here. FINDING 3, the paired dR2 on the two *_val rows, is CONFOUNDED.",
+   "direction_correction": "the registry previously argued the leak 'inflates both arms equally so the WORSE-Branch-B ordering is conservative'. NOT ESTABLISHED and probably backwards: flagship-v1 is the parity-trained control and PROVABLY saw those episodes; Branch B trained on a different 2466-clip set whose overlap with f1b378 is UNMEASURED. Memorisation by the control is a live explanation for the gap."
+  },
+  {
+   "id": "A7",
+   "artifact": "stack/scripts/run_v1_encoder_char.py (v1-encoder-char run, TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-branchb-transfer-eval/v1-encoder-char/)",
+   "node": "VA_B = va_b[:54]",
+   "substrate": "physicalai-val-f1b378f295ae (argument default)",
+   "leaked_pct_windows": 75.9,
+   "verdict": "AFFECTED, same substrate as A3/A4. No separate committed result JSON found in-repo for this run - flagged UNVERIFIED as to which numbers it published."
+  },
+  {
+   "id": "A8",
+   "artifact": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-youtube-idm-pilot/run_youtube_pilot_downstream.py",
+   "node": "VA / VB tag construction",
+   "substrate": "physicalai-val-f1b378f295ae via the same latent cache",
+   "verdict": "AFFECTED BY CONSTRUCTION. Pod-side results only (NOTE.md documents pod_artifacts); no committed metric JSON in-repo. UNVERIFIED which numbers reached a doc."
+  },
+  {
+   "id": "A9",
+   "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_clean17.json",
+   "node": "the whole file: val_dir = /workspace/pai_epcache/physicalai-val-f1b378f295ae, n_episodes 17, 374 windows at K=20",
+   "role": "corpus-robustness check for E1a; the E1a HEADLINE (the C6 horizon retraction) is on physicalai-val-heldout-79d4e3d2d4c6, not this file",
+   "verdict": "NOT INVALIDATED - and this is a MEASURED clearance, not an assumption. The 17 episodes were selected by episode_id (an inadmissible key, C43), but in THIS cache id-clean is a strict SUBSET of content-clean: all 62 content-leaked files also match by episode_id, so a file whose id is absent from train cannot be content-leaked. Whichever 17 of the 18 content-clean files were used, all 17 are content-clean.",
+   "residual": "it used 17 of the 18 content-clean files available - one content-clean episode (22 windows, 5.6% of the available clean episodes) was left on the table because the id key cannot see the two files that share one id.",
+   "downstream": "…/2026-07-26-instrument-fixes/ood_sweep.json re-reads this artifact for OOD ratios - inherits the same (clean) verdict"
+  },
+  {
+   "id": "A10",
+   "artifact": "TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic/ (windows.json, val_full_windows.json, probe_windows.json, res_val_full.json, res_cmp*.json, ab_*.jsonl, sidecars_val/, scenario_strata_val.jsonl, audit_val.tsv, p1_v*.jsonl)",
+   "node": "val = /workspace/pai_epcache/physicalai-val-f1b378f295ae, episodes 40-79, stride 40",
+   "claim": "Cosmos-Reason2-8B prompt/enum compliance: parse_failure_rate 0.0, enum_violation_rate 0.0, truncation 0.0, evidence unique_rate 1.0, confidence field DEGENERATE, n_records 30 over 24 episodes",
+   "leaked_clips": 31, "leaked_pct_clips": 77.5, "leaked_windows": 2722, "total_windows_stride2_equivalent": 3512, "leaked_pct_windows": 77.5,
+   "verdict": "NOT INVALIDATED. This is a VLM output-quality audit - parse rates, enum violations, evidence uniqueness, degeneracy of a confidence field. Cosmos-Reason2-8B never trained on our parity corpus, so 'train/val overlap with e438721ae894' is not a property that can bias it. This is exactly the sanctioned parity.note_leaky_audit class (label scoring, no ADE, no model generalisation claim).",
+   "residual_risk_flagged": "if any VLM label produced on these 31 leaked windows was later consumed as a TRAINING label for a parity arm, that is a train-side question, not a val leak. Not investigated here."
+  },
+  {
+   "id": "A11",
+   "artifact": "stack/scripts/route_label_audit.py, vlm_route_labels.py, vlm_kin_crossval.py, taniteval/taniteval/label_overlay.py (--val default = the leaky split)",
+   "verdict": "NOT INVALIDATED - same class as A10. They score route LABELS and produce no model metric. Since 2026-07-25 they call parity.note_leaky_audit(...) and stamp decision_grade: False."
+  }
+ ],
+
+ "B_RESULTS_EXPLICITLY_NOT_ON_IT": [
+  {"what": "every taniteval decision-grade ADE / closed-loop number", "why": "runner.VAL has been /root/valdata/physicalai-val-0c5f7dac3b11 since the harness's FIRST commit (a91bef8); `git log --all -S f1b378f295ae -- taniteval/` hits only label_overlay.py, a video renderer. All 36 committed result JSONs carry n_windows=881.", "class": "MEASURED (…/2026-07-25-val-parity-integrity/VAL_PARITY_REPORT.md section 4.1-4.2), re-read here"},
+  {"what": "the [-1] lexicographic-resolver hazard actually firing", "why": "the two split dirs never co-exist under any epcache root on pod1/pod2/pod3/eval (read-only ls, 2026-07-25 ADDENDUM). pod3 holds ONLY the leaky split - re-confirmed by us 2026-07-28.", "class": "MEASURED"},
+  {"what": "idm-v2 and idm-v3 (A0 / R0 / V2R / V3F, physicalai_yaw_r2 +0.903482)", "why": "PRE_REGISTRATION_IDMV2/V3 both name physicalai-val-0c5f7dac3b11 (40 eps); idm2_encode.py reads /root/valdata/physicalai-val-0c5f7dac3b11", "class": "MEASURED"},
+  {"what": "E1a headline / E1b / E1c", "why": "physicalai-val-heldout-79d4e3d2d4c6, content-checked 0/44 against the parity train by poses sha256 on 2026-07-26 (disjointness_result.json). FRAMES NOT CHECKED - one family only.", "class": "MEASURED (poses level) / UNVERIFIED (sensor level)"},
+  {"what": "pod2's small validation and the 600-episode build", "why": "f1b378 is not on pod2 at all (POD2_EVAL_HOST.md); 0/600 by content 2026-07-28", "class": "MEASURED"}
+ ],
+
+ "C_DOCUMENTS_AND_REGISTRY_ROWS_MAKING_CLAIMS_ABOUT_IT": [
+  {"file": "Project Steering/MODEL_REGISTRY.md", "row": "section 10.1 Leakage bullet", "was": "62 of its 79 populated episodes (78.5 %), episode_id intersection, dated 2026-07-25", "now": "62 of 80 = 77.5 %, CONTENT-verified", "action": "CORRECTED by this audit; superseded value + its date preserved inline"},
+  {"file": "Project Steering/MODEL_REGISTRY.md", "row": "section 10.1 provenance line ~1975 'val rigA 26 / rigB 54, episode-disjoint'", "verdict": "FALSE", "action": "CORRECTED by this audit with per-rig leaked mass"},
+  {"file": "Project Steering/MODEL_REGISTRY.md", "row": "section 10.1 results table, rig_val / multirig_val '(clean, disjoint)'", "verdict": "FALSE", "action": "CORRECTED by this audit; struck and replaced with the measured 75.9 %"},
+  {"file": "Project Steering/MODEL_REGISTRY.md", "row": "R8 open risk", "was": "re-evaluate on the `f1b378` val before any comparative claim", "verdict": "INVERTED REMEDY - prescribes the 77.5 %-leaked split as the cure for a leak", "action": "CORRECTED by this audit; points at the clean split and names the three other places carrying the same inversion"},
+  {"file": "Project Steering/MODEL_REGISTRY.md", "row": "section 2.2 REF-A ijepa-4b, quoting taniteval/registry.py", "verdict": "quotes the inverted remedy verbatim", "action": "FLAGGED inline by this audit (the quote is left intact; the source must be fixed)"},
+  {"file": "taniteval/taniteval/registry.py:85-87", "text": "clean number lives on the f1b378 val (pod3 gates)", "verdict": "INVERTED - f1b378 is the leaky split", "action": "ESCALATED, not edited (code owner)"},
+  {"file": "Paper/TANITAD_PAPER.md section 7.2", "text": "withdrawn pending re-evaluation on the clean `f1b378` val (pod3 gates)", "verdict": "INVERTED", "action": "ESCALATED"},
+  {"file": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-doc-correction-sweep/DOC_CORRECTION_SWEEP.md", "text": "pending re-evaluation on the clean `f1b378` val", "verdict": "INVERTED", "action": "ESCALATED"},
+  {"file": "Paper/TANITAD_PAPER.md line ~523", "text": "78 % of its episodes (62/79)", "verdict": "SUPERSEDED denominator", "action": "ESCALATED - update to 62/80 = 77.5 %, content-verified"},
+  {"file": "stack/tanitad/data/parity.py:24-26, 85-91", "text": "78.5 % of its populated episodes / 62 of its 79", "verdict": "SUPERSEDED denominator; the REFUSAL itself is correct and must not be weakened", "action": "ESCALATED - docstring/comment only"},
+  {"file": "TanitAD Research Hub/HYPOTHESIS_LEDGER.md item 4", "text": "78.5 % overlap", "verdict": "SUPERSEDED denominator", "action": "ESCALATED"},
+  {"file": "Project Steering/LOOP_STATE.md, PROGRAM_OVERVIEW.md", "text": "78 % / 78.5 % leaking split now hard-refused", "verdict": "SUPERSEDED denominator; substance correct", "action": "ESCALATED"},
+  {"file": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-published-number-provenance/published_numbers.jsonl line 79", "text": "62/79 (78.5 %)", "verdict": "SUPERSEDED denominator", "action": "ESCALATED"},
+  {"file": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-27-v4-instrument/V4_INSTRUMENT.md", "text": "62 of 80 episodes, 77.5 %", "verdict": "ALREADY CORRECT (2026-07-27) - the 80 denominator was found here first and did not propagate", "action": "none"},
+  {"file": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-26-s3-decision-grade/disjointness_result.json", "text": "62/80 by poses sha256", "verdict": "ALREADY CORRECT AND ALREADY CONTENT-BASED (2026-07-26)", "action": "none - but note that PARITY_LEAK_CHECK.md calls 2026-07-28 'the first content confirmation'; it is the SECOND, and the first at sensor level"},
+  {"file": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md section 5", "text": "'NOT stale - 14 locations checked and left alone', listing val_parityval +0.807472, idm-proof in-corpus +0.9244 and the rig-B cells as 'correct'", "verdict": "SCOPE COLLISION. Those numbers are not stale WITH RESPECT TO THE HEADING REPAIR, which is all that section checked - but three of them are 75.9-80.0 % train-contaminated. The section reads as a clean bill of health and is not one.", "action": "ESCALATED"}
+ ],
+
+ "D_EPISODE_DISJOINT_CLAIMS_RESTING_ON_episode_id_FLAGGED": [
+  {"claim": "physicalai-val-heldout-79d4e3d2d4c6 has 0.0 % overlap with the parity train", "source": "E1a_E2a_RESULTS.md section 1.1; planner-frozen-wm/STATUS.md ('44 clips whose episode_id not-in the 2342 parity-train ids')", "key": "episode_id at build time", "status": "SUBSEQUENTLY CONTENT-VERIFIED at the poses level (0/44, disjointness_result.json 2026-07-26). Frames NOT checked. The claim happens to hold; the KEY THAT BUILT THE SPLIT is still not evidence."},
+  {"claim": "physicalai-val-f1b378f295ae 62/79 (78.5 %)", "source": "MODEL_REGISTRY 10.1 since 2026-07-23", "key": "episode_id", "status": "CORROBORATED by content at 62 - but with the WRONG DENOMINATOR (79 vs 80). An id key cannot count episodes when ids are not unique."},
+  {"claim": "physicalai-val-0c5f7dac3b11 @600 is episode-disjoint", "source": "registry section 0.3", "key": "episode_id would report 20 OVERLAPS", "status": "episode_id MANUFACTURES 20 FALSE POSITIVES here. Content says 0. The id key is wrong in BOTH directions and is now measured wrong in both."},
+  {"claim": "'_val sets ... episode-disjoint' in run_branchb_transfer.py docstring and RESULTS_branchB.md", "key": "assumption from the directory name", "status": "FALSE by content, 75.9-80.8 % leaked"},
+  {"claim": "'rigB-val (episode-disjoint)' in results_idm_pipeline_derisk.json", "key": "assumption", "status": "FALSE by content, 75.9 % leaked"},
+  {"claim": "idm_head_v1_train.py: 'two EPISODE-DISJOINT val sets that were never in train'", "key": "assumption (different directory)", "status": "FALSE by content for val_parityval: 80.0 % leaked, 40.0 % in the head's own train clips"}
+ ],
+
+ "E_WITHDRAWN": [
+  {
+   "number": "idm_head_v1 card val_parityval, ALL of it: speed R2 0.885254 / yaw R2 0.807472 / steer R2 0.782080 / long_accel R2 0.081120 / speed MAE 2.072577 / ADE@2s 2.703221",
+   "as": "a HELD-OUT / generalisation number",
+   "why": "80.0 % of its 3,517 windows are bit-identical to the frozen encoder's training episodes and 40.0 % to the scoring head's own training clips",
+   "survives_as": "an IN-SAMPLE reproduction fingerprint - it is still the correct value for verifying that the head weights and metric code are intact (that is exactly what idmval_vacheck.py used it for, and that control remains valid)"
+  },
+  {
+   "number": "MODEL_REGISTRY section 10.1 Branch-B paired dR2 on the two *_val rows: -0.755 [-1.336,-0.108] and -1.325 [-2.295,-0.801]",
+   "as": "a CLEAN, leakage-controlled paired contrast",
+   "why": "the val substrate is 75.9-80.8 % train-contaminated and the contamination is ASYMMETRIC - the flagship-v1 control provably trained on those episodes, Branch B's overlap is unmeasured",
+   "survives_as": "Branch B's absolute cross-rig failure of the +0.9 gate (-0.667) and the in-domain / own-head findings, which do not rest on this substrate"
+  },
+  {
+   "number": "idm-proof verdicts.physicalai_to_comma2k19.ade_ratio = 2.3988",
+   "as": "a quotable magnitude",
+   "why": "its in-domain denominator (ADE@2s 2.7330) is 77.5 % train-contaminated",
+   "survives_as": "the PASS=false verdict, which the contamination direction makes conservative"
+  },
+  {
+   "number": "the 'episode-disjoint' / 'clean, disjoint' / 'leakage controlled' LABELS on A3, A5, A6 and the idm_head_v1 card",
+   "as": "statements of fact",
+   "why": "false by content"
+  }
+ ]
+}

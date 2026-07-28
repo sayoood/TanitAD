@@ -1011,7 +1011,7 @@ every post-reset arm**; `--adapter pool|grid|temporal`, `--speed-input`, `--yaw-
 | **Architecture** | frozen **I-JEPA ViT-H/14**, `d_dino = 1280`, otherwise identical to §2.1 |
 | **Args** | as §2.1 but `--data-root /workspace/tmp/ijepa_feats --steps 15000 --d-dino 1280 --yaw-input false` ✅ |
 | **Results** | fwd-ADE **3.194 vs DINOv2's 3.796 at 15 k**; its own best was **2.816 @ 7 k** (7 k beats 15 k = overfit) |
-| 🟥 **Why the number is unusable** | `taniteval/registry.py` records: *"320-ep variant … Canonical val 80 % LEAKED into its train set → guard excludes; clean number lives on the f1b378 val (pod3 gates)."* Both arms also overfit hard at 320 eps, so the I-JEPA-beats-DINOv2 read is an **overfit-regime ranking with data binding, not a feature-quality verdict.** ✅ |
+| 🟥 **Why the number is unusable** | `taniteval/registry.py` records: *"320-ep variant … Canonical val 80 % LEAKED into its train set → guard excludes; clean number lives on the f1b378 val (pod3 gates)."* Both arms also overfit hard at 320 eps, so the I-JEPA-beats-DINOv2 read is an **overfit-regime ranking with data binding, not a feature-quality verdict.** ✅ ⛔ **THE QUOTED REMEDY IS INVERTED — flagged 2026-07-28.** `f1b378` is **not** the clean val: **62 of its 80 episodes (77.5 %) are bit-identical to parity-train episodes** (MEASURED by content — sha256 of raw `poses` and `frames_u8`). The clean val is `physicalai-val-0c5f7dac3b11` (0/40, 0/600 by content). The wording lives in `taniteval/registry.py:85-87` and must be fixed there; see R8 and `…/incoming/2026-07-28-leaky-cache-audit/`. |
 | **HF** | `Sayood/tanitad-refa-ijepa-4b` |
 
 ---
@@ -1782,7 +1782,7 @@ milestone ladder. **Every one of these was previously published as a split-mean.
 | R14 | **Two primary sources disagree on the flagship's planning tick.** §6 reading 3 quotes **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16, "measured 2026-07-20, `taniteval/results/eff_*.json`"); the committed `eff_flagship-30k.json` says **97.32 / 97.70 / 123.83**, its own kept replicate says **97.13** fp32, and `eff_repeatability.json` (5 clean reps, exclusive GPU) says **99.03–100.05** p50 — three values, none matching §6. REF-C-XL's fp32/tf32 agree across both (44.28≈44.06, 27.84≈27.78) but amp16 does not (**26.12 vs 21.00**). The two sets were evidently taken in different sessions and only one survived into the repo. **No conclusion changes** (REF-C is 2.2–4.6× faster; the flagship misses 10 Hz at p99 in all three precisions in every version) — but a prose figure and its cited artifact must not disagree | 🟡 medium | in-repo artifacts + this table | one reconciliation pass: re-measure on an idle A40 or restate §6 from the committed JSONs. `LEADERBOARD.md` §5 currently quotes the artifact and flags the conflict |
 | R6 | **`gate-eval` skill targets a dead run** (`p0-sB01-realmix`, frozen since 2026-07-12 @ step 28,600) | 🟡 medium | `.claude/skills/gate-eval/SKILL.md` | retarget to the live arm |
 | R7 | **REF-C three-size scaling study never ran** — 🟡 **middle rung now training** (`base` measured 104,191,577 and launched 2026-07-20, §4.3); `small` still only smoked, and the `base` run carries a **scale/label confound** (v2.1 labels vs XL's v1) | 🟡 medium | n/a | let `base` finish + evaluate; then either add a label-controlled arm or state the confound wherever the ladder is quoted |
-| R8 | **REF-A I-JEPA canonical-val result is leak-contaminated** (80 % of val in its train set) | 🟡 medium | flagged in `taniteval/registry.py` | re-evaluate on the `f1b378` val before any comparative claim |
+| R8 | **REF-A I-JEPA canonical-val result is leak-contaminated** (80 % of val in its train set) | 🟡 medium | flagged in `taniteval/registry.py` | 🟥 **REMEDIATION CORRECTED 2026-07-28 — this cell used to read "re-evaluate on the `f1b378` val", which prescribed the 77.5 %-LEAKED split as the cure for a leak.** Re-evaluate on the **content-verified clean** `physicalai-val-0c5f7dac3b11` (0/40 and 0/600 by sha256 of raw `poses` and `frames_u8`, 2026-07-28). The same inverted instruction still stands verbatim in `taniteval/registry.py:85-87` ("clean number lives on the f1b378 val"), in `MODEL_REGISTRY §2.2` (which quotes it), in `Paper/TANITAD_PAPER.md` §7.2 and in `…/2026-07-26-doc-correction-sweep/DOC_CORRECTION_SWEEP.md` — **all four need the same fix** (`…/incoming/2026-07-28-leaky-cache-audit/`) |
 | R9 | **REF-B rev2, `refa-4brain-speedyaw-30k`** have no eval record | 🟢 low | n/a | either evaluate or mark explicitly superseded |
 | R10 | **`refb-speed-30k/ckpt_prepatch_step8500.pt` is misnamed** — it is step 10,000 and byte-identical to `ckpt.pt` | 🟢 low | pod1 | rename |
 | R11 | ~~`combined_tick_harness.py` is not in HEAD~~ ✅ **NOT A GAP — retracted within the hour it was written 2026-07-20.** The harness and its raw JSONs **are** tracked: `Production & Optimization/Implementation/combined_tick/{combined_tick_harness.py, combined_tick_20260718.json, vram_fp16/fp32_20260718.json}`. I asserted the gap from `REPO_TRIAGE_2026-07-20.md`, which was written **before** this session's merges landed, instead of checking `git ls-files` — the exact prose-over-primary-source failure this document exists to prevent. Kept visible as a worked example, not deleted | — | in-repo | ⚠️ `REPO_TRIAGE_2026-07-20.md` is now stale on this point and should be date-stamped or retired |
@@ -1972,7 +1972,10 @@ contrast, **cross speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× in-domain
 `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-branchb-transfer-eval/results_branchb_transfer_e50_CONVERGED.json`;
 ckpt md5s above; flagship-v1 frozen paired control md5 `b5f07d9e3dd2ca643949bc86832e6585`, step 29999;
 episode-cluster bootstrap over rig-B eval clips, 2000×; clips train rigA 100 / rigB 120 / comma 80, val
-rigA 26 / rigB 54, **episode-disjoint**. LOOP_STATE operational run-tag: `ad4e13c4`.)*
+rigA 26 / rigB 54, ~~**episode-disjoint**~~ 🟥 **FALSE — CORRECTED 2026-07-28.** The val clips are
+`physicalai-val-f1b378f295ae`: **rig-A 21 of 26 (80.8 %) and rig-B 41 of 54 (75.9 %) are BIT-IDENTICAL to
+episodes in the parity train corpus the flagship-v1 control was trained on** (MEASURED by content, see the
+Leakage bullet below). LOOP_STATE operational run-tag: `ad4e13c4`.)*
 
 Cross = held-out **rig-B** speed R² (the pre-registered headline). Paired dR2 = Branch B − flagship-v1 on
 **identical windows + identical converged head-fit** (the C6-clean, regime-robust contrast).
@@ -1981,8 +1984,14 @@ Cross = held-out **rig-B** speed R² (the pre-registered headline). Paired dR2 =
 |---|---|---:|---:|---|:--:|
 | rig_train | train-cache (⚠ LEAKED) | −2.662 | −2.948 | +0.286 [−0.270, +0.988] .83 | ❌ |
 | multirig_train | train-cache (⚠ LEAKED) | −1.703 | **+0.382** | −2.085 [−2.902, −1.519] **.00** | ❌ |
-| **rig_val** (clean, disjoint) | val-cache | −1.923 | −1.169 | −0.755 [−1.336, −0.108] .01 | ❌ |
-| **multirig_val** (clean, disjoint) | val-cache | **−0.667** | **+0.657** | −1.325 [−2.295, −0.801] **.00** | ❌ |
+| **rig_val** ~~(clean, disjoint)~~ 🟥 **75.9 % LEAKED** | val-cache `f1b378` | −1.923 | −1.169 | −0.755 [−1.336, −0.108] .01 | ❌ |
+| **multirig_val** ~~(clean, disjoint)~~ 🟥 **75.9 % LEAKED** | val-cache `f1b378` | **−0.667** | **+0.657** | −1.325 [−2.295, −0.801] **.00** | ❌ |
+
+🟥 **The "(clean, disjoint)" labels on the two `*_val` rows were FALSE and are struck, 2026-07-28.** The
+val cache is `physicalai-val-f1b378f295ae`; **3,600 of the 4,742 rig-B eval windows (75.9 %) are
+bit-identical to parity-train episodes**, and the paired `dR2` column contrasts a **parity-trained**
+control (flagship-v1, which saw them) against an arm whose overlap is **unmeasured**. The two paired
+`dR2` values are **CONFOUNDED, not clean**; Branch B's absolute failure of the +0.9 gate is not.
 
 **Branch B's OWN 40k-trained head, in-sample on rig-B** (regime-free — no fresh-head fit): speed R²
 **0.156** (train-cache) / **0.242** (val-cache); yaw R² ≈ 0. The deployed model reads rig-B speed at
@@ -2006,17 +2015,46 @@ R² ≈ 0.2 *even where its head trained on rig-B*.
 - **Harness validated (MEASURED):** flagship-v1 frozen in-domain (train rig-A held-out, converged head)
   speed R² **+0.862 / +0.910**, reproducing the known frozen-flagship quality (registry frozen in-dist
   ~0.93) — the probe works; Branch B's low numbers are its own.
-- **Leakage — CORRECTED 2026-07-25 (was WRONG here):** this bullet previously called
-  `physicalai-val-f1b378f295ae` *"episode-disjoint from …-train-e438721ae894"*. It is **NOT** — a byte-level
-  episode-id intersection (MEASURED, `incoming/2026-07-25-closedloop-horizon-and-shift/E1a_E2a_RESULTS.md`
-  §1.1) shows **62 of its 79 populated episodes (78.5 %) are IN the parity train `e438721ae894`**. So f1b378
-  is a **leaked** val for any arm trained on the parity corpus, and it is **hard-refused in code** since
-  07-23 (`data.list_val_episodes(..., allow_leaky=False)` raises; canonical CLEAN val is
-  `physicalai-val-0c5f7dac3b11`). **Effect on the Branch-B contrast:** the leak inflates *both* arms' val R²
-  equally (both read features on partly-in-train episodes), so the **WORSE-Branch-B ordering is conservative,
-  not manufactured** — but the "leakage controlled" framing was false and the absolute `*_val` R² are
-  optimistic. The `*_train` sets remain separately flagged ⚠ best-case. *(R8/§ line ~1556 — I-JEPA's leak
-  vs its OWN 320-ep subset — is a DIFFERENT overlap, still unmeasured; do not assume f1b378 is clean there.)*
+- **Leakage — CORRECTED 2026-07-25, RE-MEASURED BY CONTENT 2026-07-28 (was WRONG here):** this bullet
+  previously called `physicalai-val-f1b378f295ae` *"episode-disjoint from …-train-e438721ae894"*. It is
+  **NOT**.
+  **CURRENT FIGURE (MEASURED BY CONTENT, 2026-07-28): 62 of its 80 episodes = 77.5 % are IN the parity
+  train `e438721ae894`** — sha256 of the raw `poses` float32 bytes **and** of the raw `frames_u8` sensor
+  bytes, six identifying hash families agreeing at 62, `poses_bitwise_equal` true for every pair
+  (`…/incoming/2026-07-28-parity-leak-check/raw/KNOWNPOSITIVE_f1b378_x_train.json`; first content
+  measurement at the poses level `…/incoming/2026-07-26-s3-decision-grade/disjointness_result.json`).
+  Frame mass: **12,328 of 15,906 frames = 77.5 %**.
+  ⚠️ **SUPERSEDED VALUE, KEPT: "62 of its 79 populated episodes (78.5 %)"** — carried here from
+  **2026-07-25** to 2026-07-28, sourced from
+  `incoming/2026-07-25-closedloop-horizon-and-shift/E1a_E2a_RESULTS.md` §1.1, an **`episode_id`
+  intersection**. The denominator was wrong: the cache holds **80** `ep_*.pt` files with **80 distinct**
+  poses/frames hashes but only **79 distinct `episode_id`s** (two files share an id). **The figure is
+  hereby upgraded from an `episode_id` claim to a CONTENT claim** — and it is the one place where
+  `episode_id` happened to agree with the bytes.
+  ⛔ **`episode_id` is not evidence in either direction** (RETRACTION_LOG **C43**): on
+  `physicalai-val-0c5f7dac3b11` @600 it manufactures **20 false positives** (20 val episodes share an id
+  with a train episode and share **no content**), and it is not even a key inside train (**2,342 distinct
+  ids for 2,376 episodes**). Any "episode-disjoint" claim below that rests on `episode_id` is flagged, not
+  trusted.
+  f1b378 is **hard-refused in code** since 07-23 (`data.list_val_episodes(..., allow_leaky=False)` raises;
+  canonical CLEAN val is `physicalai-val-0c5f7dac3b11`, **content-verified 0/40 and 0/600**, 2026-07-28).
+  **Effect on the Branch-B contrast — the previous mitigation is WITHDRAWN.** This bullet used to argue
+  *"the leak inflates both arms' val R² equally … so the WORSE-Branch-B ordering is conservative, not
+  manufactured."* That is **not established and the asymmetry runs the other way**: flagship-v1 is the
+  parity-trained control and **provably** saw the leaked episodes (MEASURED); Branch B trained on a
+  different 2,466-clip set whose content overlap with f1b378 is **UNMEASURED**. A memorisation advantage
+  for flagship-v1 is therefore a live candidate explanation for the very gap the paired `dR2` rows
+  report. **Finding 1 survives** (Branch B's own cross-rig speed R² −0.667 fails the +0.9 gate on its own
+  absolute value) and so does **Finding 2** (in-domain / own-head, not measured on f1b378); **Finding 3,
+  the paired `dR2` on the two `*_val` rows, is CONFOUNDED and must not be quoted as a clean contrast**
+  until Branch B's own overlap with f1b378 is measured by content.
+  Per-row leaked mass, MEASURED 2026-07-28
+  (`…/incoming/2026-07-28-leaky-cache-audit/leak_mass_by_result_set.json`):
+  **rig-A val 26 clips → 21 leaked (80.8 %), 1,848 / 2,286 windows; rig-B val 54 clips → 41 leaked
+  (75.9 %), 3,600 / 4,742 windows.** The `*_train` sets remain separately flagged ⚠ best-case.
+  *(R8/§ line ~1556 — I-JEPA's leak vs its OWN 320-ep subset — is a DIFFERENT overlap, still unmeasured;
+  do not assume f1b378 is clean there. Related and MEASURED by content 2026-07-26: the 320-episode
+  `physicalai-train-51f40f5ebc21` overlaps the parity train on **256 / 320 = 80 %**.)*
 - **"Held-out rig" = seen GEOMETRY, disjoint EPISODES:** rig-B's cy ≈ 753 geometry *was* in Branch B's
   multi-rig SSL (the GAIA-2 "conditioning ⊗ multi-rig, both required" regime, by design). It fails the
   **easier** seen-geometry test, so the stricter never-seen-rig (YouTube) question is moot.

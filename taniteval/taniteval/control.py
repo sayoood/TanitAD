@@ -87,6 +87,11 @@ __all__ = [
     "TOL_SENSITIVITY", "AXES", "AXIS_META", "CONTROL_WEIGHTS",
     "ZERO_MEAN_CONTROLS", "CONTROLS", "LADDERS", "BOUNDED_AXES",
     "COMFORT_STATUS", "MISSING_GATES",
+    "LAT_HEADING_TERM_PUBLISHED", "LAT_HEADING_TERM_DEFAULT",
+    "LAT_HEADING_TERM_DEFAULT_TARGET", "LAT_HEADING_TERM_ALIASES",
+    "LAT_HEADING_TERMS", "LAT_HEADING_SHAPES", "LAT_HEADING_RESOLUTIONS",
+    "LAT_HEADING_ANCHOR_GRID", "lat_heading_from_err", "lat_heading_axis_id",
+    "UnknownLatHeadingTerm", "AXIS_N_SUB",
     "AxisNotDemonstrated",
     "residuals", "axes", "axis_summary", "apply_control", "ladder_levels",
     "dynamic_range", "admit", "panel_gate", "control_score", "block",
@@ -98,12 +103,20 @@ VERSION = "1.0.0"
 #: number is in the id, for the same reason ``pseudosim.metric_id`` versions the
 #: progress term: a silent redefinition under a stable name is the failure class
 #: this program has logged most often.
-def SUITE_ID(t_tol=None, d_tol=None, psi_tol=None, s_ref=None) -> str:
+def SUITE_ID(t_tol=None, d_tol=None, psi_tol=None, s_ref=None, *,
+             lat_heading_term=None) -> str:
     t = T_TOL_S if t_tol is None else t_tol
     d = D_TOL_M if d_tol is None else d_tol
     p = PSI_TOL_RAD if psi_tol is None else psi_tol
     s = S_REF_M if s_ref is None else s_ref
-    return f"control_v1@t{t:g}s_d{d:g}m_sref{s:g}m_psi{p:g}rad"
+    base = f"control_v1@t{t:g}s_d{d:g}m_sref{s:g}m_psi{p:g}rad"
+    # ⚠️ appended ONLY when the lat_heading term is not the published one, so
+    # every id emitted through 2026-07-28 keeps its exact string.
+    lt = (LAT_HEADING_TERM_DEFAULT if lat_heading_term is None
+          else lat_heading_term)
+    if LAT_HEADING_TERM_ALIASES.get(lt, lt) == LAT_HEADING_TERM_PUBLISHED:
+        return base
+    return f"{base}+lath_{lt}"
 
 
 # --------------------------------------------------------------------------- #
@@ -142,6 +155,16 @@ D_TOL_M = _lat.LANE_HALF_M           # 1.75 m
 #: that is not near either bound. Swept in :data:`TOL_SENSITIVITY`.
 S_REF_M = 10.0
 #: ⚠️ PROPOSED. 0.2 rad = 11.46 deg of terminal heading error. Swept.
+#:
+#: ⛔ AND WIDENING IT IS **NOT** THE FIX FOR ``lat_heading``'s SATURATION —
+#: MEASURED 2026-07-28 and refuted. Floor fraction of the published shape at
+#: psi_tol = 0.1 / 0.2 / 0.4 / 0.8 rad:
+#:   * ``refc_xl_v0off``  0.7620 / 0.5121 / 0.0670 / 0.0015
+#:   * ⛔ ``v4_blind``     0.9172 / **0.8429** / **0.7461** / **0.6120**
+#: ⇒ even at **4x** the published tolerance (0.8 rad = 45.8 deg, at which point
+#: the "tolerance" no longer means anything) ``v4_blind`` is still floored on
+#: **61 %** of its rows. The tolerance moves the floor; it does not remove the
+#: one-sidedness. See :data:`LAT_HEADING_TERMS`.
 PSI_TOL_RAD = 0.2
 #: speed floor for the time-error normaliser: below this the "seconds off
 #: schedule" reading is dominated by the floor, not by control.
@@ -162,6 +185,205 @@ HUMAN_MIN_M = 0.5
 #: :data:`V_MIN_MPS` uses. Pinned by
 #: ``test_lat_track_is_not_gameable_by_standing_still``.
 S_MIN_M = 2.0
+
+# --------------------------------------------------------------------------- #
+# ⛔⛔ THE THIRD ONE-SIDED CLAMP: ``lat_heading`` IS VERSIONED (C45, 2026-07-28) #
+# --------------------------------------------------------------------------- #
+#: ``term_lin_q0`` is ``clamp(1 - |dpsi_end| / PSI_TOL_RAD, 0, 1)``: the
+#: TERMINAL heading error, a SINGLE VALUE PER ROW, one-sidedly clamped.
+#:
+#: ⛔ MEASURED on the 2026-07-27 panel (20 arms, 15,981 rows each): floored on
+#: **31.22 % (`v1_ego_half`) … 84.29 % (`v4_blind`)** of DEFINED rows with the
+#: **ceiling never active (0.0001-0.0023)**, and ``pseudosim.FLOOR_FRAC_MAX =
+#: 0.95`` refuses none of it. **Six of 20 arms exceed 50 %.** It is not in
+#: ``pseudosim.COMPONENT_WEIGHTS``, so no published PSS number is affected — but
+#: :data:`CONTROL_WEIGHTS` proposes it at weight **1.0**, which is why the
+#: control axes could not enter the gate primary until this was treated.
+LAT_HEADING_TERM_PUBLISHED = "term_lin_q0"
+
+#: ⭐⭐ THERE ARE **TWO** LEVERS HERE, NOT ONE, AND THE CHEAP ONE IS THE
+#: STRUCTURAL ONE. ``recovery`` had only a shape to choose because its raw
+#: quantity was already one number per row by construction. ``lat_heading`` is
+#: one number per row **by an implementation choice**: it reads the terminal
+#: heading only, while ``lon_track`` and ``lat_track`` — the two bounded axes
+#: that PASSED the same audit — are MEANS over the 20 horizon steps.
+#:
+#:  * **RESOLUTION** ``term`` (terminal only, published) vs ``mean`` (the mean
+#:    over all 20 steps of the identical per-step expression, each step's plan
+#:    tangent against the human tangent on its OWN arc-matched segment).
+#:  * **SHAPE** how a normalised error ``u = |dpsi| / PSI_TOL_RAD`` becomes a
+#:    score, parameterised by ``q`` = **the score a plan exactly AT the heading
+#:    tolerance receives** (``q = 0`` is the published shape).
+#:
+#: MEASURED floor fraction, published shape, resolution alone:
+#:   ``v4_blind`` **0.8429 -> 0.0260** (32.4x) · ``refc_base_v0off`` 0.5087 ->
+#:   0.2510 · ``cv_holdv0`` 0.3638 -> 0.1981 · ``v4_oracle`` 0.4364 -> 0.0121.
+#:   **Panel max 0.8429 -> 0.2510**, ceiling ~0 throughout, **with no free
+#:   parameter at all.**
+#: ⇒ the resolution lever alone clears the 0.50 rule on every arm. The shape
+#: grid is swept anyway, because a rule fixed before the numbers has to be able
+#: to reject the answer the author expects.
+LAT_HEADING_RESOLUTIONS = ("term", "mean")
+#: the pre-registered anchor grid on ``q``. It runs HIGHER than ``recovery``'s
+#: because this term's tail is heavier at the top end: ``v4_blind``'s MEDIAN
+#: ``u`` is **6.07** (its plans point ~70 deg off), so nothing below q ~ 0.835
+#: could clear the floor rule on the terminal resolution.
+LAT_HEADING_ANCHOR_GRID = (0.0, 0.25, 0.5, 2.0 / 3.0, 0.75, 0.85, 0.9)
+
+
+class UnknownLatHeadingTerm(ValueError):
+    """A ``lat_heading`` term name that is not in :data:`LAT_HEADING_TERMS`.
+
+    Never falls back to a default, for the identical reason
+    :class:`pseudosim.UnknownProgressTerm` does not."""
+
+
+def _lath_linear(q):
+    """``clamp(1 - (1 - q) * u, 0, 1)`` — the LINEAR BUDGET family.
+
+    ⭐ Affine-equivalent to the published shape on ``u <= 1``:
+    ``g = q + (1 - q) * lin_q0``. No pair of in-tolerance rows changes order and
+    the published value is exactly recoverable. ``q = 0`` reproduces the
+    published expression BIT-identically. Charge rate is a CONSTANT ``1 - q``
+    across its whole live range, so its C47 reward bias is exactly **1.000**.
+    ⚠️ It still floors, at ``u = 1 / (1 - q)``."""
+    def _f(u):
+        return np.clip(1.0 - float(1.0 - q) * u, 0.0, 1.0)
+    return _f
+
+
+def _lath_share(q):
+    """``q / (q + (1 - q) * u)`` — the SHARE family. It CANNOT saturate.
+
+    ⛔ Carried **because C47 predicts it fails**: its charge rate decays like
+    ``u^-2`` while the panel's median ``u`` is 0.910, so it rewards a
+    near-perfect row far harder than it charges a typical one. On ``recovery``
+    the identical family scored **0/8** while flooring on 0.0000 of rows. If it
+    fails here too on a DIFFERENT density, C47 stops being an anecdote; if it
+    passes, C47 is bounded. Either way the sweep, not the analogy, decides."""
+    if not 0.0 < q < 1.0:
+        raise ValueError(f"share family needs 0 < q < 1; got {q}")
+
+    def _f(u):
+        return np.clip(q / (q + float(1.0 - q) * np.maximum(u, 0.0)), 0.0, 1.0)
+    return _f
+
+
+def _lath_cos(q):
+    """``(1 + cos(pi * min(u/h, 1))) / 2`` with ``h = pi / arccos(2q - 1)``.
+
+    ⭐ The ANGLE-NATIVE family, and the only one whose charge rate RISES where
+    the data lives: ``|dg/du| = (pi / 2h) * sin(pi u / h)`` is **zero at u = 0**,
+    peaks at ``u = h/2`` and returns to zero at the floor. Its C47 reward bias
+    is therefore **far below 1** — it charges the typical row much harder than
+    it rewards a near-perfect one, which is the direction C47 says wins.
+    ⚠️ AND THAT IS ALSO ITS COST, stated rather than hidden: with zero slope at
+    ``u = 0`` it cannot distinguish an excellent plan from a perfect one, and it
+    is not affine in the published shape, so it RE-SPACES the in-tolerance half.
+    ``h`` is fixed by the same anchor as every other family (``g(1) = q``), so
+    all three are compared at identical points."""
+    h = float(np.pi / np.arccos(np.clip(2.0 * q - 1.0, -1.0, 1.0)))
+
+    def _f(u):
+        return 0.5 * (1.0 + np.cos(np.pi * np.clip(u / h, 0.0, 1.0)))
+    return _f
+
+
+def _q_tag(q):
+    return "q" + f"{float(q):.4g}".replace(".", "p")
+
+
+LAT_HEADING_SHAPES = {
+    **{f"lin_{_q_tag(_q)}": _lath_linear(_q) for _q in LAT_HEADING_ANCHOR_GRID},
+    **{f"share_{_q_tag(_q)}": _lath_share(_q)
+       for _q in LAT_HEADING_ANCHOR_GRID if _q > 0.0},
+    **{f"cos_{_q_tag(_q)}": _lath_cos(_q) for _q in LAT_HEADING_ANCHOR_GRID},
+}
+#: ⭐ THE PRE-REGISTERED SELECTION RULE — banked in
+#: ``…/2026-07-28-bounded-terms-complete/raw/injections_lat_heading.json ›
+#: _selection_rule_PRE_REGISTERED`` BEFORE the panel was computed.
+#:
+#:  H1 DISQUALIFY any term whose injected HEADING degradations are not ALL
+#:     separated in the CORRECT (negative) direction on BOTH real arms
+#:     (``cv_holdv0``, ``v1_tactical_follow``), across both signs of every
+#:     two-sided control AND the ZERO-MEAN ``yaw_jitter``. A constant-sign
+#:     control can re-centre a biased arm; the zero-mean cell cannot, and it is
+#:     the load-bearing one.
+#:  H2 DISQUALIFY any term whose ``lat_heading`` floor OR ceiling fraction is
+#:     >= 0.50 on any scorable (non-probe) arm — equivalently ``live_frac <
+#:     0.50``, ``pseudosim.LIVE_FRAC_MIN``. The two-sided form is used because
+#:     the one-sided pair is what missed this term in the first place.
+#:  H3 Among survivors PREFER the SMALLEST DEPARTURE FROM THE PUBLISHED TERM,
+#:     counted as free parameters first and family second: a term that changes
+#:     only the RESOLUTION introduces no parameter at all and keeps the
+#:     published per-step expression verbatim, so it beats any shape change.
+#:     Within a resolution, prefer the LINEAR family (affine-equivalent on
+#:     ``u <= 1``) and the SMALLEST surviving ``q``.
+#:  H4 If no member of H3's preferred class survives, take the family with the
+#:     lowest C47 reward bias among survivors, and record that C47's law
+#:     decided it.
+#:
+#: ⚠️ PRE-REGISTERED PREDICTION, committed with both outcomes: from C47, the
+#: pass rate should be MONOTONE IN THE REWARD BIAS — ``cos`` (bias << 1) >=
+#: ``lin`` (bias = 1) >= ``share`` (bias > 1). If ``share`` passes here it
+#: bounds C47 rather than confirming it, and that is reported either way.
+LAT_HEADING_TERMS = {f"{_r}_{_s}": (_r, _s)
+                     for _r in LAT_HEADING_RESOLUTIONS
+                     for _s in LAT_HEADING_SHAPES}
+#: ⭐ MEASURED OUTCOME OF THE RULE — filled in from
+#: ``raw/injections_lat_heading.json`` AFTER the sweep, and PINNED by a test so
+#: the shape cannot drift without the test failing. See §2 of
+#: ``BOUNDED_TERMS_COMPLETE.md``.
+LAT_HEADING_TERM_DEFAULT_TARGET = "mean_lin_q0"
+LAT_HEADING_TERM_DEFAULT = "rowmean_v2"
+LAT_HEADING_TERMS[LAT_HEADING_TERM_DEFAULT] = LAT_HEADING_TERMS[
+    LAT_HEADING_TERM_DEFAULT_TARGET]
+LAT_HEADING_TERM_ALIASES = {LAT_HEADING_TERM_DEFAULT:
+                            LAT_HEADING_TERM_DEFAULT_TARGET,
+                            "term_lin_q0": LAT_HEADING_TERM_PUBLISHED}
+
+
+def lat_heading_from_err(dpsi_end, dpsi_steps, *, psi_tol=None,
+                         lat_heading_term=None):
+    """``(terminal dpsi [n], per-step dpsi [n, K]) -> the lat_heading score [n]``.
+
+    ``dpsi`` in radians, signed; only its magnitude is used (the sign lives in
+    ``lat_heading_err_rad``, the one-sidedness detector)."""
+    term = (LAT_HEADING_TERM_DEFAULT if lat_heading_term is None
+            else lat_heading_term)
+    if term not in LAT_HEADING_TERMS:
+        raise UnknownLatHeadingTerm(
+            f"unknown lat_heading_term {term!r}; known: "
+            f"{sorted(LAT_HEADING_TERMS)}. Refusing to fall back to a default — "
+            f"a typo must not silently produce a number under the wrong axis "
+            f"id. Every lat_heading number published before 2026-07-28 is "
+            f"{LAT_HEADING_TERM_PUBLISHED!r}.")
+    res, shape = LAT_HEADING_TERMS[term]
+    p = PSI_TOL_RAD if psi_tol is None else float(psi_tol)
+    g = LAT_HEADING_SHAPES[shape]
+    if res == "term":
+        return g(np.abs(np.asarray(dpsi_end, float)) / p)
+    a = np.asarray(dpsi_steps, float)
+    with np.errstate(invalid="ignore"):
+        # a step with no segment length has no heading; it is NaN and is left
+        # out of the mean rather than scored 1.0 — standing still is not aim.
+        out = np.nanmean(g(np.abs(a) / p), axis=1)
+    return np.where(np.isfinite(a).any(axis=1), out, np.nan)
+
+
+def lat_heading_axis_id(lat_heading_term=None) -> str:
+    """⚠️ The suffix appears ONLY when the term is not the published one, so
+    every ``lat_heading`` value published through 2026-07-28 keeps its exact
+    axis id and no pin stops resolving — the same rule
+    ``pseudosim.metric_id`` uses for the recovery term."""
+    t = (LAT_HEADING_TERM_DEFAULT if lat_heading_term is None
+         else lat_heading_term)
+    if t not in LAT_HEADING_TERMS:
+        raise UnknownLatHeadingTerm(f"unknown lat_heading_term {t!r}")
+    if LAT_HEADING_TERM_ALIASES.get(t, t) == LAT_HEADING_TERM_PUBLISHED:
+        return "lat_heading"
+    return f"lat_heading@{t}"
+
 
 #: every verdict is re-run at each grid point; no verdict may rest on one.
 TOL_SENSITIVITY = {"t_tol_s": (0.5, 1.0, 2.0),
@@ -201,9 +423,19 @@ AXIS_META = {
         "kind": "LATERAL", "higher_is_better": True, "unit": "score [0,1]",
         "raw": "heading_err_rad", "raw_unit": "rad (signed, + = plan turns LEFT)",
         "two_sided": True,
-        "what": "clamp(1 - |terminal heading error| / PSI_TOL_RAD, 0, 1). "
+        "what": "⛔ VERSIONED 2026-07-28 (C45, the THIRD one-sided clamp). The "
+                "PUBLISHED form `term_lin_q0` = clamp(1 - |TERMINAL heading "
+                "error| / PSI_TOL_RAD, 0, 1) is a SINGLE VALUE PER ROW, so its "
+                "floor bites at ROW level: MEASURED floored on 31.22-84.29 % of "
+                "defined rows with the ceiling never active (0.0001-0.0023), "
+                "and `pseudosim.FLOOR_FRAC_MAX = 0.95` refused none of it. The "
+                "shipped form takes the SAME per-step expression as a MEAN over "
+                "the 20 horizon steps — exactly what `lon_track` and `lat_track` "
+                "already do — which drops the panel-max floor to 0.2510 with no "
+                "free parameter. See `LAT_HEADING_TERMS`; quote the term with "
+                "the value and never quote either without its floor fraction. "
                 "⭐ It is a SECOND lateral axis and not a re-skin: a pure "
-                "lateral OFFSET moves lat_track and leaves lat_heading exactly "
+                "lateral OFFSET moves lat_track and leaves lat_heading almost "
                 "unchanged, while a steering DRIFT moves both. The pair is what "
                 "distinguishes 'in the wrong place' from 'pointing the wrong "
                 "way'. ⚠️ UNDEFINED (NaN) for a plan whose final segment has no "
@@ -373,6 +605,23 @@ def residuals(pw, *, dt=DT) -> dict:
     psi_ref = np.arctan2(rdy, rdx)
     psi_ref[np.hypot(rdx, rdy) < 1e-6] = np.nan
     dpsi = wrap_angle(torch.as_tensor(psi_plan - psi_ref)).numpy()
+    # ⭐⭐ THE SAME EXPRESSION AT **EVERY** STEP, not only the last one — the
+    # resolution lever behind `LAT_HEADING_TERMS`. Each plan segment's tangent
+    # is compared with the human tangent on the segment `signed_xte` matched to
+    # THAT step, so the arc-matching correction above is applied per step and
+    # not only at the endpoint. Step k's plan tangent runs from plan point
+    # k - 1 to k, with point -1 being the reference pose at the origin, which is
+    # the identical convention `plan_seg` below uses.
+    _px = np.concatenate([np.zeros((x.shape[0], 1)), x], 1)
+    _py = np.concatenate([np.zeros((y.shape[0], 1)), y], 1)
+    _d0, _d1 = np.diff(_px, axis=1), np.diff(_py, axis=1)       # [n, Hh]
+    _psi_plan_k = np.arctan2(_d1, _d0)
+    _psi_plan_k[np.hypot(_d0, _d1) < 1e-6] = np.nan
+    _rdx_k = np.take_along_axis(np.diff(ref_x, axis=1), seg, 1)
+    _rdy_k = np.take_along_axis(np.diff(ref_y, axis=1), seg, 1)
+    _psi_ref_k = np.arctan2(_rdy_k, _rdx_k)
+    _psi_ref_k[np.hypot(_rdx_k, _rdy_k) < 1e-6] = np.nan
+    dpsi_k = wrap_angle(torch.as_tensor(_psi_plan_k - _psi_ref_k)).numpy()
     plan_seg = np.sqrt(np.diff(np.concatenate([np.zeros((x.shape[0], 1)), x], 1),
                                axis=1) ** 2
                        + np.diff(np.concatenate([np.zeros((y.shape[0], 1)), y], 1),
@@ -385,6 +634,7 @@ def residuals(pw, *, dt=DT) -> dict:
         "human_arc_m": arc, "human_chord_m": chord, "v_ref_mps": v_ref,
         "plan_arc_m": plan_arc, "plan_arc_cum_m": plan_arc_cum,
         "heading_err_rad": dpsi,
+        "heading_err_rad_steps": dpsi_k,
         "row_mask": chord > HUMAN_MIN_M,
         "lat_mask": (chord > HUMAN_MIN_M) & (plan_arc >= S_MIN_M),
         "_lat_mask_rule": (
@@ -401,7 +651,7 @@ def residuals(pw, *, dt=DT) -> dict:
 
 
 def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
-         progress_term=None, recovery_term=None) -> dict:
+         progress_term=None, recovery_term=None, lat_heading_term=None) -> dict:
     """The ranked axes + their raw signed diagnostics, per (window, grid point).
 
     Every returned array is ``[n]``, NaN where the row is masked out, so it
@@ -428,7 +678,16 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
     # the FLAT-tolerance twin, kept only so the contamination measurement that
     # motivated the widening corridor stays reproducible from the same call.
     lat_track_flat = np.clip(1.0 - np.abs(xte) / d_tol, 0.0, 1.0).mean(1)
-    lat_heading = np.clip(1.0 - np.abs(r["heading_err_rad"]) / psi_tol, 0.0, 1.0)
+    # ⛔ VERSIONED (C45, 2026-07-28) — see `LAT_HEADING_TERMS`. The published
+    # `term_lin_q0` reproduces the previous line, `clamp(1 - |dpsi_end|/psi_tol,
+    # 0, 1)`, bit-identically.
+    lth_term = (LAT_HEADING_TERM_DEFAULT if lat_heading_term is None
+                else lat_heading_term)
+    lat_heading = lat_heading_from_err(
+        r["heading_err_rad"], r["heading_err_rad_steps"], psi_tol=psi_tol,
+        lat_heading_term=lth_term)
+    lat_heading_published = np.clip(
+        1.0 - np.abs(r["heading_err_rad"]) / psi_tol, 0.0, 1.0)
     # ---- imported, never reimplemented ------------------------------------ #
     sc = _ps.score_windows(
         pw, dt=dt, recovery_term=recovery_term,
@@ -455,12 +714,21 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
         # a biased arm BETTER on lat_track; only this array shows it.
         "lat_bias_m": nanl(xte.mean(1)),
         "lat_heading_err_rad": nanl(r["heading_err_rad"]),
+        # ⚠️ the TERMINAL-only score, kept under the published expression so the
+        # resolution change stays checkable in place and the endpoint
+        # sensitivity the mean blurs is still reported.
+        "lat_heading_terminal": nanl(lat_heading_published),
+        "lat_heading_err_rad_steps_absmean": nanl(
+            np.nanmean(np.abs(r["heading_err_rad_steps"]), axis=1)),
         # the two twins, kept so the axis-purity claim is checkable in-place
         "lat_track_flat": nanl(lat_track_flat),
         "lat_timeindexed_abs_m": nan(np.abs(xt_t).mean(1)),
         "plan_arc_m": nan(r["plan_arc_m"]),
         # provenance
-        "_suite_id": SUITE_ID(t_tol, d_tol, psi_tol, s_ref),
+        "_suite_id": SUITE_ID(t_tol, d_tol, psi_tol, s_ref,
+                              lat_heading_term=lth_term),
+        "_lat_heading_term": lth_term,
+        "_lat_heading_axis_id": lat_heading_axis_id(lth_term),
         "_tolerances": {"t_tol_s": t_tol, "d_tol_m": d_tol, "s_ref_m": s_ref,
                         "psi_tol_rad": psi_tol, "v_min_mps": V_MIN_MPS,
                         "s_min_m": S_MIN_M,
@@ -479,7 +747,18 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
 #: publish its floor/ceiling fraction (C45). The raw twins are unbounded
 #: physical quantities and saturation is meaningless for them.
 BOUNDED_AXES = ("lon_track", "lat_track", "lat_heading", "recovery",
-                "ego_progress", "lat_track_flat")
+                "ego_progress", "lat_track_flat", "lat_heading_terminal")
+
+#: ⭐ ROW RESOLUTION: how many sub-samples each bounded axis averages into one
+#: row. ⛔ THIS IS THE FACT THAT EXPLAINS THE WHOLE `lat_heading` DEFECT, and it
+#: was nowhere in the code: `FLOOR_FRAC_MAX = 0.95` is a dead-component
+#: tripwire whose calibration only makes sense for n_sub = 20, where a row
+#: saturates only if all 20 steps do. Every axis with **n_sub = 1** saturates at
+#: ROW level and is ~20x more exposed to that threshold. It is declared here so
+#: `pseudosim.saturation` can PUBLISH it beside the fraction instead of leaving
+#: the next reader to rediscover it.
+AXIS_N_SUB = {"lon_track": 20, "lat_track": 20, "lat_track_flat": 20,
+              "lat_heading_terminal": 1, "recovery": 1, "ego_progress": 1}
 
 
 def axis_summary(a, eid, *, names=AXES, n_boot=None, seed=0) -> dict:
@@ -492,17 +771,26 @@ def axis_summary(a, eid, *, names=AXES, n_boot=None, seed=0) -> dict:
     it."""
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
     out = {}
+    lth = a.get("_lat_heading_term", LAT_HEADING_TERM_DEFAULT)
     for k in list(names) + ["lon_time_err_s", "lon_end_err_m",
                             "lon_abs_end_err_m", "lon_speed_err_mps",
                             "lat_xte_end_m", "lat_xte_peak_m", "lat_bias_m",
-                            "lat_heading_err_rad", "ego_progress",
-                            "recovery_raw_ratio"]:
+                            "lat_heading_err_rad", "lat_heading_terminal",
+                            "ego_progress", "recovery_raw_ratio"]:
+        if k not in a:
+            continue
         v = np.asarray(a[k], dtype=np.float64)
         fin = np.isfinite(v)
         node = {"defined_frac": round(float(fin.mean()), 6),
                 "n_defined": int(fin.sum())}
         if k in BOUNDED_AXES:
-            node["saturation"] = _ps.saturation(v)
+            n_sub = AXIS_N_SUB.get(k)
+            if k == "lat_heading":
+                # the live axis' resolution is whatever its TERM says it is.
+                n_sub = 1 if LAT_HEADING_TERMS[lth][0] == "term" else 20
+                node["lat_heading_term"] = lth
+                node["axis_id"] = lat_heading_axis_id(lth)
+            node["saturation"] = _ps.saturation(v, n_sub=n_sub)
         if fin.sum() >= 2 and len(set(np.asarray(eid)[fin])) >= 2:
             node["ci"] = _ci.episode_cluster_bootstrap(
                 v[fin], list(np.asarray(eid)[fin]), n_boot=n_boot, seed=seed)
@@ -721,7 +1009,7 @@ def dynamic_range(pw, eid, *, control, axis, t_tol=None, d_tol=None,
                   psi_tol=None, s_ref=None, n_boot=None, seed=0, levels=None,
                   also=("ego_progress", "recovery", "lat_bias_m"),
                   composite_term=_ps.PROGRESS_TERM_DEFAULT,
-                  recovery_term=None) -> dict:
+                  recovery_term=None, lat_heading_term=None) -> dict:
     """Inject a controlled degradation and MEASURE whether ``axis`` separates.
 
     Returns, for each rung of the ladder:
@@ -755,7 +1043,7 @@ def dynamic_range(pw, eid, *, control, axis, t_tol=None, d_tol=None,
 
     def _score(p):
         a = axes(p, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref,
-                 recovery_term=recovery_term)
+                 recovery_term=recovery_term, lat_heading_term=lat_heading_term)
         sc = {k: np.asarray(a[k], float) for k in (axis,) + tuple(also)}
         comps = {"ego_progress": np.asarray(a["ego_progress"], float),
                  "recovery": np.asarray(a["recovery"], float)}
@@ -802,6 +1090,9 @@ def dynamic_range(pw, eid, *, control, axis, t_tol=None, d_tol=None,
         return s
 
     out = {"control": control, "axis": axis, "unit": spec["unit"],
+           "lat_heading_term": (LAT_HEADING_TERM_DEFAULT
+                                if lat_heading_term is None
+                                else lat_heading_term),
            "null_level": null, "two_sided_ladder": bool(spec["two_sided"]),
            "zero_mean_control": control in ZERO_MEAN_CONTROLS,
            "higher_is_better": AXIS_META.get(axis, {}).get("higher_is_better"),
@@ -933,8 +1224,19 @@ def admit(demos, *, require_zero_mean=True) -> dict:
 # =========================================================================== #
 # the PANEL-WIDE gate and the control-aware composite                          #
 # =========================================================================== #
+#: ⭐ THE CONTROL SURFACE GATES AT **v2**, and it is the only surface that can.
+#: `pseudosim` must default to `v1` because every published PSS composite was
+#: gated under it and `recovery@clamp_v1` floors on 55-92 % of rows — re-gating
+#: those numbers would be the silent redefinition being fixed. The control axes
+#: have no published composite to protect, and they are the ones being proposed
+#: for the gate primary, so they are held to the stronger rule. ⛔ MEASURED
+#: consequence, and it is the point: under v2 `lat_heading@term_lin_q0` (the
+#: published form) is REFUSED and `lat_heading@mean_lin_q0` is admitted.
+CONTROL_GATE_VERSION = "v2"
+
+
 def panel_gate(by_arm, *, probes=(), names=AXES, ceil_frac_max=None,
-               range_min=None) -> dict:
+               range_min=None, gate_version=None) -> dict:
     """⛔ PANEL-WIDE, and it says so. An axis is admitted only if it clears
     ``pseudosim.discriminative_range`` for **every non-probe arm**.
 
@@ -943,15 +1245,26 @@ def panel_gate(by_arm, *, probes=(), names=AXES, ceil_frac_max=None,
     and flipped a stream's own primary from ``n.s.`` to ``SEPARATED``. A
     sensitivity that can only be quoted when it agrees with the author is not a
     sensitivity.
+
+    ⭐ Gates at :data:`CONTROL_GATE_VERSION` (``v2``) by default — see there.
+    ``v1`` is still selectable and both verdicts are emitted per arm, so the
+    difference the stronger gate makes is always visible rather than implied.
     """
-    kw = {}
+    kw = {"gate_version": (CONTROL_GATE_VERSION if gate_version is None
+                           else gate_version)}
     if ceil_frac_max is not None:
         kw["ceil_frac_max"] = ceil_frac_max
     if range_min is not None:
         kw["range_min"] = range_min
     scores = {a: {k: np.asarray(v[k], float) for k in names}
               for a, v in by_arm.items()}
-    per_arm = {a: _ps.discriminative_range(scores[a], by_arm=scores, **kw)
+    lth = next((v.get("_lat_heading_term") for v in by_arm.values()
+                if isinstance(v, dict) and v.get("_lat_heading_term")), None)
+    n_sub = dict(AXIS_N_SUB)
+    if lth is not None and "lat_heading" in names:
+        n_sub["lat_heading"] = 1 if LAT_HEADING_TERMS[lth][0] == "term" else 20
+    per_arm = {a: _ps.discriminative_range(scores[a], by_arm=scores,
+                                           n_sub=n_sub, **kw)
                for a in scores}
     gate_arms = [a for a in scores if a not in probes]
     admitted, why = {}, {}
@@ -962,10 +1275,19 @@ def panel_gate(by_arm, *, probes=(), names=AXES, ceil_frac_max=None,
                   "INADMISSIBLE for " + ", ".join(sorted(bad))
                   + " -> dropped from EVERY arm")
     return {"gate": "PANEL-WIDE",
+            "gate_version": kw["gate_version"],
+            "gate_version_rule": _ps.GATE_VERSIONS[kw["gate_version"]]["what"],
             "gate_refused": ("per-arm — it moved comfort 0.0004 -> 0.2882 "
                              "(720x) between two arms differing only in "
                              "schedule and flipped a primary verdict"),
             "probes_excluded": sorted(set(probes) & set(scores)),
+            # ⭐ what the OLD gate would have said, always, beside what this one
+            # says — a strengthened guard whose effect is invisible teaches
+            # nobody which term it caught.
+            "admitted_under_gate_v1": {
+                k: not [a for a in gate_arms
+                        if not per_arm[a].get(k, {}).get("admissible_v1")]
+                for k in names},
             "admitted": {k: v for k, v in admitted.items() if v},
             "dropped": {k: why[k] for k, v in admitted.items() if not v},
             "per_arm": {a: {k: per_arm[a].get(k, {}).get("admissible")
@@ -1064,17 +1386,20 @@ MISSING_GATES = {
 # =========================================================================== #
 def block(pw, *, arm="unknown", eid=None, t_tol=None, d_tol=None, psi_tol=None,
           s_ref=None, n_boot=None, seed=0, sensitivity=False,
-          recovery_term=None) -> dict:
+          recovery_term=None, lat_heading_term=None) -> dict:
     """Full control block for one arm's pseudo-simulation dump."""
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
     eid = list(pw["eid"]) if eid is None else list(eid)
     a = axes(pw, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref,
-             recovery_term=recovery_term)
+             recovery_term=recovery_term, lat_heading_term=lat_heading_term)
     out = {
         "block": BLOCK, "version": VERSION, "arm": arm,
         "suite_id": a["_suite_id"], "tolerances": a["_tolerances"],
         "recovery_term": a["_recovery_term"],
         "progress_term": a["_progress_term"],
+        "lat_heading_term": a["_lat_heading_term"],
+        "lat_heading_axis_id": a["_lat_heading_axis_id"],
+        "gate_version": CONTROL_GATE_VERSION,
         "axis_meta": AXIS_META,
         "n_rows": int(len(eid)), "n_episodes": int(len(set(eid))),
         "row_mask_rule": a["_row_mask_rule"],

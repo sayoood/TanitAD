@@ -704,3 +704,34 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   `g` agreeing with `1 − r` on `[0, 1]` must be constant above 1 — **i.e. it IS the defect.** So the
   choice was necessarily a range-budget with a free parameter, and pretending otherwise would have
   hidden a judgement call inside an apparently mechanical fix.
+- **C48 — THE PRESCRIBED CURE WAS THE DISEASE** *(new class, added 2026-07-28)* ⇒ **a remedy can name
+  the very artifact that carries the defect, and survive review because everyone reads the sentence as
+  an instruction rather than a claim.** MEASURED: `MODEL_REGISTRY` R8 §2.2, `taniteval/registry.py:85`,
+  `Paper/TANITAD_PAPER.md` §7.2 and `DOC_CORRECTION_SWEEP.md` **all instruct the reader to
+  "re-evaluate on the CLEAN `f1b378` val"** — a split now content-verified as **77.5 % leaked**. The
+  remedy for a leak prescribed the leaked corpus. **R4 F6 flagged it on 2026-07-25 and it is still in
+  the paper.**
+  ⇒ **When a document names a specific artifact as the fix, verify the artifact, not the sentence.** An
+  instruction inherits no evidence from the correctness of the problem statement around it.
+- **C49 — A CONFOUND ASSUMED SYMMETRIC** *(new class, added 2026-07-28)* ⇒ **"the leak inflates both
+  arms equally, so the ordering is conservative" is a claim about the leak's DISTRIBUTION, and it needs
+  measuring on each arm separately.** RETRACTED: the registry's argument that Branch-B's *worse*
+  ordering was safe under contamination. **flagship-v1 is the parity-trained control and PROVABLY saw
+  those episodes; Branch B's overlap was never measured** — so a memorisation advantage for the control
+  is a live explanation of the very gap being reported. Findings 1 and 2 survive; **Finding 3, the
+  paired ΔR², is CONFOUNDED.**
+  ⇒ **Symmetry of a confound is an empirical claim, not a default.** Measure the contamination per arm
+  before arguing an ordering survives it.
+- **C50 — "HELD-OUT" WITH 40 % LITERAL TRAIN-ON-TEST** *(new class, added 2026-07-28)* ⇒ MEASURED on
+  `idm_head_v1`'s published card, labelled *"val metrics below are held-out"*: **32 of 40 clips /
+  2,815 of 3,517 windows (80.0 %) are bit-identical to the frozen encoder's training corpus, and 16 of
+  40 clips / 1,407 windows (40.0 %) are bit-identical to clips the SCORING HEAD ITSELF trained on.**
+  Only 8 clips (20.0 %) are content-disjoint.
+  ⭐ **The matched clean counterpart already existed in the repo** — same head md5, same encoder, same
+  protocol, n = 3,521 vs 3,517: **ADE@2s 2.703 → 3.856 (+42.7 %)**, speed MAE **+43.1 %**, and
+  **`long_accel` R² FLIPS SIGN, +0.0811 → −0.1847.** All six metrics move the same way.
+  ⚠️ **And the gap had already been explained away**: `VALIDATION.md` attributed it to *"clip
+  selection… ADE scales with speed"* — written without knowing **80 % of the comparison set was
+  memorised.** ⇒ **A plausible mechanism for a discrepancy is not a substitute for checking whether the
+  split is clean.** *(Honest bound: the two 40-clip sets share only 8 clips, so +42.7 % is an upper
+  bound, not an isolate — reported by the auditor against its own case.)*

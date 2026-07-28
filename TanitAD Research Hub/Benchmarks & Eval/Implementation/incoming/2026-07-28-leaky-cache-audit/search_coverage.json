@@ -1,0 +1,66 @@
+{
+ "_what": "where the 2026-07-28 leaky-cache audit looked",
+ "_note": "recorded so 'absence at one location is not absence' is checkable",
+ "probes": [
+  {
+   "probe": "cache key literal `f1b378f295ae` / `f1b378`",
+   "scope": "whole repo, all file types",
+   "tool": "ripgrep",
+   "hits": "866 occurrences in 139 files"
+  },
+  {
+   "probe": "regex `physicalai-val-[0-9a-f]+` (enumerate EVERY val cache key referenced)",
+   "scope": "whole repo",
+   "tool": "ripgrep -o + uniq -c",
+   "hits": "0c5f7dac3b11 833 / f1b378f295ae 803 / bb543bdf7836 45 / 8c0d3047924e 4 / physicalai-val-demo (fixture)"
+  },
+  {
+   "probe": "regex `(comma2k19|cosmos|physicalai|nuscenes|waymo)-(val|train|test)-[0-9a-f]+`",
+   "scope": "whole repo",
+   "tool": "grep -o + uniq -c",
+   "hits": "27 distinct cache keys enumerated; no second PhysicalAI val key is content-equivalent to f1b378 (different n and different hashes)"
+  },
+  {
+   "probe": "JSON field probe: `\"val_dir\"|\"val_cache\"|\"cache_dir\"|\"cache_name\"|\"source_dir\"|\"dir\"` whose VALUE contains f1b378",
+   "scope": "whole repo",
+   "tool": "ripgrep",
+   "hits": "7 artifacts"
+  },
+  {
+   "probe": "`--val-cache` / `--pai-val-cache` / `--val` DEFAULT values in committed commands",
+   "scope": "stack/scripts, taniteval, incoming/*",
+   "tool": "ripgrep + file read",
+   "hits": "11 scripts carry the leaky split as an argument default"
+  },
+  {
+   "probe": "content equivalence: is any OTHER cache byte-equal to f1b378?",
+   "scope": "staged sha256 fingerprints of 0c5f7dac3b11@40, @600, f1b378@80, train@2376",
+   "tool": "set intersection of poses_sha256 + frames_sha256",
+   "hits": "f1b378 x deployed40 = 8 shared episodes (NOT equivalence); f1b378 has 80 distinct hashes, no other cache reproduces it"
+  },
+  {
+   "probe": "downstream inheritance: artifacts that re-read e1a_horizon_clean17.json",
+   "scope": "whole repo",
+   "tool": "ripgrep `clean17`",
+   "hits": "2026-07-26-instrument-fixes/ood_sweep.json + INSTRUMENT_FIXES.md; 2026-07-25-jack-blast-radius inventory"
+  },
+  {
+   "probe": "sibling cache `physicalai-val-heldout-79d4e3d2d4c6` (E1a/E1b/E1c substrate)",
+   "scope": "whole repo",
+   "tool": "ripgrep",
+   "hits": "18 files; disjointness content-checked 2026-07-26 (poses sha256, 0/44)"
+  },
+  {
+   "probe": "`62/79` and `78.5` (the superseded figure) everywhere it propagated",
+   "scope": "whole repo",
+   "tool": "ripgrep",
+   "hits": "40+ files"
+  },
+  {
+   "probe": "pod-side ground truth: which caches exist where",
+   "scope": "pod3 (idle, ours), read-only ls + json read",
+   "tool": "ssh",
+   "hits": "pod3 /workspace/pai_epcache holds ONLY physicalai-val-f1b378f295ae as its PhysicalAI val; rig tables recovered"
+  }
+ ]
+}

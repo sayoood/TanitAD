@@ -110,7 +110,9 @@ __all__ = [
     "discriminative_range", "composite", "emit",
     "COMFORT_LIMITS", "COMPONENT_WEIGHTS", "COMPONENT_WEIGHTS_PUBLISHED_V1",
     "WEIGHTS_ID", "COMFORT_STATUS",
-    "CEIL_FRAC_MAX", "FLOOR_FRAC_MAX", "RANGE_MIN",
+    "CEIL_FRAC_MAX", "FLOOR_FRAC_MAX", "RANGE_MIN", "LIVE_FRAC_MIN",
+    "GATE_VERSIONS", "GATE_VERSION_DEFAULT", "GATE_VERSION_PUBLISHED",
+    "UnknownGateVersion",
     "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
     "progress_from_ratio", "metric_id", "UnknownProgressTerm",
     "RECOVERY_TERMS", "RECOVERY_TERM_DEFAULT", "RECOVERY_TERM_PUBLISHED",
@@ -531,7 +533,63 @@ CEIL_FRAC_MAX = 0.95     # a component pinned at its ceiling this often is dead
 #: ``refc_xl`` sits **2.8 points** from being auto-refused by this very gate.
 #: Symmetric with :data:`CEIL_FRAC_MAX` on purpose: a gate that is asymmetric in
 #: a quantity with no preferred direction is a bug, not a policy.
+#:
+#: ⛔⛔ AND IT IS STILL NOT ENOUGH — MEASURED 2026-07-28, ONE DAY LATER.
+#: ``control.lat_heading`` is floored on **31.22-84.29 %** of defined rows with
+#: its ceiling never active (0.0001-0.0023), and **this constant does not refuse
+#: a single one of them.** Two structural reasons, and the second is the one that
+#: will catch the NEXT term:
+#:  1. ⚠️ **RESOLUTION.** 0.95 is a *dead-component* tripwire, implicitly
+#:     calibrated against terms that are MEANS over 20 horizon steps — where a
+#:     row saturates only if all 20 sub-samples do, so a row-level floor
+#:     fraction near 1 really does mean "dead". Applied to a term that is a
+#:     SINGLE VALUE PER ROW it is roughly 20x too loose. ``lat_heading`` is such
+#:     a term; ``lon_track`` and ``lat_track`` are not, and they passed the audit.
+#:  2. ⛔ **IT TESTS EACH END SEPARATELY.** A term 49 % floored AND 49 %
+#:     ceilinged clears ``FLOOR_FRAC_MAX`` *and* :data:`CEIL_FRAC_MAX` while
+#:     having gradient on 2 % of its rows. The pair of one-sided thresholds is
+#:     STRUCTURALLY UNABLE to see combined saturation — the same "audited on one
+#:     side of a two-sided object" class as ``clamp_v1`` itself, one level up.
+#: ⇒ :data:`LIVE_FRAC_MIN` and gate ``v2`` below. ⚠️ **This constant is NOT
+#: lowered**: it is what every published ``@clamp_v1`` composite was gated
+#: under, ``recovery@clamp_v1`` floors on 55.65-92.19 % of rows, and lowering it
+#: would make that term inadmissible panel-wide and silently redefine every
+#: published value. The fix is a VERSIONED gate, not an edited constant.
 FLOOR_FRAC_MAX = 0.95
+#: ⭐⭐ THE CLAUSE THAT CAN REFUSE A PER-ROW-FLOORED TERM. Gate ``v2`` only.
+#: ``live_frac = 1 - floor_frac - ceiling_frac`` — the fraction of defined rows
+#: on which the term has ANY gradient at all. It is the TWO-SIDED statistic the
+#: pair (``CEIL_FRAC_MAX``, ``FLOOR_FRAC_MAX``) cannot express, and it is set to
+#: the same 0.50 as :data:`SATURATION_WARN_FRAC` deliberately: C45's standing
+#: consequence said *"a term saturating on the majority of rows is not a metric;
+#: it is a constant with noise"*, and a rule that is only ever printed as a
+#: warning is a rule the next agent will read past. MEASURED effect: it refuses
+#: ``lat_heading@term_lin_q0`` (live 0.157 on ``v4_blind``) and admits
+#: ``lat_heading@mean_lin_q0`` (live 0.749) — i.e. it refuses the broken term
+#: and passes the fixed one, which is the only test of a guard that counts.
+LIVE_FRAC_MIN = 0.50
+#: the gate is VERSIONED for the same reason the terms are: ``v1`` is what every
+#: published number was gated under and must stay exactly computable; ``v2`` is
+#: strictly STRONGER (it can only refuse more, never admit more) and is what any
+#: NEW surface should use. ⚠️ The default is ``v1``: a default that silently
+#: re-gated every published composite would be the redefinition being fixed.
+GATE_VERSION_PUBLISHED = "v1"
+GATE_VERSION_DEFAULT = "v1"
+GATE_VERSIONS = {
+    "v1": {"live_frac_min": None,
+           "what": ("ceiling_frac < CEIL_FRAC_MAX AND floor_frac < "
+                    "FLOOR_FRAC_MAX AND observed_range >= RANGE_MIN. ⛔ The two "
+                    "saturation clauses are ONE-SIDED and 0.95 is a dead-"
+                    "component tripwire, so a term floored on 84 % of its rows "
+                    "is admissible. This is what every published number was "
+                    "gated under and it is kept EXACTLY for reproduction.")},
+    "v2": {"live_frac_min": LIVE_FRAC_MIN,
+           "what": ("v1 AND live_frac >= LIVE_FRAC_MIN, where live_frac = 1 - "
+                    "floor_frac - ceiling_frac. ⭐ STRICTLY STRONGER than v1: "
+                    "it can only refuse more. It is two-sided, so it also sees "
+                    "a term that splits its saturation between both ends and "
+                    "clears both one-sided thresholds.")},
+}
 RANGE_MIN = 0.05         # observed max - min below this is not a range
 # nuPlan/NAVSIM-style comfort bounds. PROPOSED (their exact constants are not
 # quotable from the material we verified); every one is published in the output.
@@ -1037,7 +1095,7 @@ SATURATION_WARN_FRAC = 0.50
 
 
 def saturation(arr, *, floor=1e-3, ceil=0.999,
-               warn_frac=SATURATION_WARN_FRAC) -> dict:
+               warn_frac=SATURATION_WARN_FRAC, n_sub=None) -> dict:
     """⚠️ REPORT THIS BESIDE EVERY BOUNDED SCORE. C45's standing consequence.
 
     *"For every bounded term, report the FLOOR/CEILING FRACTION beside the
@@ -1049,34 +1107,72 @@ def saturation(arr, *, floor=1e-3, ceil=0.999,
     A term at its floor on ``f`` of rows has **zero gradient on ``f`` of the
     data**: it is a constant with noise there, and any perturbation that moves
     the remaining ``1 - f`` in the good direction moves the mean the wrong way.
+
+    ⭐⭐ ``live_frac = 1 - floor_frac - ceiling_frac`` IS THE HEADLINE NUMBER,
+    added 2026-07-28 after ``lat_heading``. The floor and ceiling fractions are
+    each ONE-SIDED, and a rule written on them one at a time is structurally
+    unable to see a term that splits its saturation between the two ends — 49 %
+    floored plus 49 % ceilinged passes both 0.95 thresholds while having
+    gradient on 2 % of its rows. ``live_frac`` is the two-sided statistic and it
+    is what gate ``v2`` keys on (:data:`LIVE_FRAC_MIN`).
+
+    ⚠️ ``n_sub`` DECLARES THE TERM'S ROW RESOLUTION — how many sub-samples are
+    averaged into each row. It is metadata, not a threshold, and it exists
+    because it is the *explanation* of which terms trip the gate: ``n_sub = 1``
+    (a single value per row, e.g. ``lat_heading``, ``recovery``,
+    ``ego_progress``) saturates at ROW level, while ``n_sub = 20``
+    (``lon_track``, ``lat_track``) needs all 20 steps clamped before the row
+    saturates at all. Undeclared is reported as UNDECLARED rather than guessed.
     """
     a = np.asarray(arr, dtype=float)
     fin = a[np.isfinite(a)]
+    res = ("UNDECLARED" if n_sub is None else
+           "PER-ROW (a single sample; its floor bites at ROW level)"
+           if int(n_sub) <= 1 else
+           f"MEAN over {int(n_sub)} sub-samples (a row saturates only if all "
+           f"{int(n_sub)} do)")
     if fin.size == 0:
         return {"n_defined": 0, "defined_frac": 0.0,
                 "floor_frac_le_0p001": None, "ceiling_frac_ge_0p999": None,
-                "saturated_frac": None, "SATURATION_WARNING": "no finite values"}
+                "saturated_frac": None, "live_frac": None,
+                "n_sub_per_row": n_sub, "row_resolution": res,
+                "SATURATION_WARNING": "no finite values"}
     fl = float((fin <= floor).mean())
     ce = float((fin >= ceil).mean())
+    live = 1.0 - fl - ce
     node = {"n_defined": int(fin.size),
             "defined_frac": round(float(np.isfinite(a).mean()), 6),
             "floor_frac_le_0p001": round(fl, 6),
             "ceiling_frac_ge_0p999": round(ce, 6),
             "saturated_frac": round(fl + ce, 6),
+            # ⭐ the two-sided statistic. Gate v2 keys on THIS.
+            "live_frac": round(live, 6),
+            "n_sub_per_row": n_sub, "row_resolution": res,
             "SATURATION_WARNING": None}
-    if max(fl, ce) >= warn_frac:
-        where = "FLOOR" if fl >= ce else "CEILING"
+    if max(fl, ce) >= warn_frac or live <= 1.0 - warn_frac:
+        where = ("FLOOR" if fl >= ce else "CEILING") if max(fl, ce) >= warn_frac \
+            else "TWO ENDS COMBINED"
         node["SATURATION_WARNING"] = (
-            f"⛔ {max(fl, ce):.2%} of defined rows sit at this term's {where}. "
-            f"On those rows the term has ZERO GRADIENT: it cannot charge a "
-            f"further degradation, so an injection that helps a minority can "
-            f"move the mean the WRONG WAY. This is class C45; do not quote the "
-            f"level without this fraction.")
+            f"⛔ {fl + ce:.2%} of defined rows are SATURATED ({fl:.2%} floor, "
+            f"{ce:.2%} ceiling; worst end: {where}), leaving live_frac = "
+            f"{live:.4f}. On saturated rows the term has ZERO GRADIENT: it "
+            f"cannot charge a further degradation, so an injection that helps a "
+            f"minority can move the mean the WRONG WAY. This is class C45; do "
+            f"not quote the level without this fraction. Row resolution: {res}.")
     return node
 
 
+class UnknownGateVersion(ValueError):
+    """A gate version that is not in :data:`GATE_VERSIONS`.
+
+    Never falls back, for the identical reason :class:`UnknownProgressTerm`
+    does not: a typo'd gate version would silently re-gate a published number."""
+
+
 def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
-                         range_min=RANGE_MIN, floor_frac_max=FLOOR_FRAC_MAX) -> dict:
+                         range_min=RANGE_MIN, floor_frac_max=FLOOR_FRAC_MAX,
+                         gate_version=GATE_VERSION_DEFAULT,
+                         live_frac_min=None, n_sub=None) -> dict:
     """⚠️ BOOST M8 / C13 applied to METRICS: state the range before adopting.
 
     *"Comfort saturates at >= 99.9 %, contributing essentially zero
@@ -1087,14 +1183,51 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
     ``by_arm`` optionally maps arm name -> {component: array}; the BETWEEN-ARM
     spread is what actually decides an adjudication, so it is reported when
     available and is what ``admissible`` keys on.
+
+    ⭐ ``gate_version`` (2026-07-28). ``v1`` is the PUBLISHED gate and the
+    default, so every pre-2026-07-28 composite re-gates identically. ``v2`` adds
+    the two-sided ``live_frac >= LIVE_FRAC_MIN`` clause that can refuse a
+    per-row-floored term — see :data:`FLOOR_FRAC_MAX` for why the published
+    constant is not simply lowered instead. ``v2`` is strictly stronger: it
+    never admits anything ``v1`` refuses. Both verdicts are ALWAYS emitted
+    (``admissible_v1`` / ``admissible_v2``), whichever version gates, so the
+    difference can never be invisible.
+
+    ``n_sub`` optionally maps component name -> sub-samples averaged per row;
+    it is passed to :func:`saturation` as metadata (see there).
     """
+    if gate_version not in GATE_VERSIONS:
+        raise UnknownGateVersion(
+            f"unknown gate_version {gate_version!r}; known: "
+            f"{sorted(GATE_VERSIONS)}. Refusing to fall back — every number "
+            f"published through 2026-07-28 was gated under "
+            f"{GATE_VERSION_PUBLISHED!r}.")
+    lfm = (GATE_VERSIONS[gate_version]["live_frac_min"] if live_frac_min is None
+           else float(live_frac_min))
+    n_sub = dict(n_sub or {})
     out = {"_gate": {"ceil_frac_max": ceil_frac_max, "range_min": range_min,
                      "floor_frac_max": floor_frac_max,
+                     "gate_version": gate_version,
+                     "live_frac_min": lfm,
+                     "gate_versions": GATE_VERSIONS,
                      "rule": "admissible iff ceiling_frac < ceil_frac_max AND "
                              "floor_frac < floor_frac_max AND "
                              "(max - min) >= range_min. When >= 2 arms are "
                              "supplied, the between-arm spread must also be "
-                             "non-zero.",
+                             "non-zero. GATE v2 ADDS: live_frac >= "
+                             "live_frac_min.",
+                     "_live_frac_clause_added": (
+                         "2026-07-28, one day after the floor clause and for "
+                         "the SAME root cause one level up. floor_frac and "
+                         "ceiling_frac are each ONE-SIDED, so the pair cannot "
+                         "express 'this term has no gradient left' — 49 % "
+                         "floored + 49 % ceilinged clears both. And 0.95 is a "
+                         "dead-component tripwire calibrated against terms that "
+                         "are MEANS over 20 steps; applied to a SINGLE-VALUE-"
+                         "PER-ROW term it is ~20x too loose. MEASURED: "
+                         "`control.lat_heading` floors on 31.22-84.29 % of rows "
+                         "with its ceiling never active and FLOOR_FRAC_MAX = "
+                         "0.95 refuses none of it."),
                      "_floor_clause_added": (
                          "2026-07-28. floor_frac was COMPUTED and never USED, "
                          "so a component pinned at its FLOOR was admissible "
@@ -1137,16 +1270,27 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
             # ⚠️ C45: the saturation node travels WITH the score, always. The
             # floor fraction was computed here and discarded for this gate's
             # whole life; it is now emitted whether or not it gates.
-            "saturation": saturation(a),
+            "saturation": saturation(a, n_sub=n_sub.get(name)),
         }
-        node["admissible"] = bool(ceil < ceil_frac_max
-                                  and floor < floor_frac_max
-                                  and rng >= range_min)
+        live = 1.0 - ceil - floor
+        node["live_frac"] = round(float(live), 6)
+        v1 = bool(ceil < ceil_frac_max and floor < floor_frac_max
+                  and rng >= range_min)
+        # ⭐ BOTH verdicts are always emitted, whichever version gates — a gate
+        # whose stricter reading is invisible is a gate nobody will ever adopt.
+        v2 = bool(v1 and live >= GATE_VERSIONS["v2"]["live_frac_min"])
+        node["admissible_v1"] = v1
+        node["admissible_v2"] = v2
+        node["admissible"] = v1 if lfm is None else bool(v1 and live >= lfm)
         if not node["admissible"]:
             node["reason"] = (
                 "SATURATED at the ceiling" if ceil >= ceil_frac_max else
                 "SATURATED at the floor" if floor >= floor_frac_max else
-                "range below range_min")
+                "range below range_min" if rng < range_min else
+                f"NO GRADIENT LEFT: live_frac {live:.4f} < {lfm} — "
+                f"{floor:.2%} of rows at the floor and {ceil:.2%} at the "
+                f"ceiling. Refused by gate {gate_version}; gate v1 admitted it, "
+                f"which is the defect v2 exists to fix (C45 / lat_heading).")
         if by_arm and len(by_arm) >= 2:
             means = {k: float(np.nanmean(np.asarray(v[name], float)))
                      for k, v in by_arm.items()
@@ -1159,6 +1303,7 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
                 node["between_arm_spread"] = round(float(sp), 6)
                 if sp <= 0.0:
                     node["admissible"] = False
+                    node["admissible_v1"] = node["admissible_v2"] = False
                     node["reason"] = "zero between-arm spread — cannot adjudicate"
         out[name] = node
     return out
