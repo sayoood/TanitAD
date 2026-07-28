@@ -945,3 +945,32 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   / class imbalance rather than at the planner.
   ⚠️ **Neighbour of C57, distinct mechanism.** C57: a quantity whose interval was never computed.
   C58: a quantity that *could not have been non-zero*. Both end in an unearned claim about zero.
+- **C59 — SEARCHING BY THE NAME I EXPECTED, THEN REPORTING ABSENCE** *(new class, added 2026-07-29;
+  FOUR instances in a single day, which is why it is a class and not an incident)*
+  ⇒ **a search that matches on a name I chose tests my naming convention, not the world. Absence is
+  only reportable after searching by SUBJECT MATTER.**
+  RETRACTED: *"the situation classification for MoE camera usage — nothing measured, DoA 15 %,
+  design only."* Told to the PI in answer to a direct question. **FALSE.** A complete
+  pre-registered study exists — `…/incoming/2026-07-26-situation-classifier/` — with scripts,
+  artifacts, checkpoints, and adjudicated verdicts:
+  **LANE CHANGE** (153 held-out clusters) and **INTERSECTION** (264) both **A−**: the image arm is
+  above chance (lane change ΔAP **+0.01987 [+0.01141, +0.02901]**, AUROC 0.703; intersection ΔAP
+  **+0.04894 [+0.03735, +0.06277]**, AUROC 0.769), **anticipation demonstrated** at median lead
+  **1.4 s / 2.0 s** — but **vision adds NOTHING over ego state** (`head_ego` CV-AP **0.0697** beats
+  every image arm; shuffled control 0.0166). ROUNDABOUT **UNPOWERED** (26 clusters).
+  **Root cause:** I searched `h2-sensor-attention/` — the folder named after the *hypothesis* — and
+  concluded absence. The work lived under `situation-classifier/`, named after the *artifact*.
+  ⚠️ **THE SAME ERROR, FOUR TIMES ON 2026-07-29:**
+  1. `find -iname "*flagship-v4*"` missed **`v4fs_ckpt.pt`** → I declared a completed 30 k arm LOST.
+  2. `find -name "anchors*.pt"` missed **`flagship_v4_anchors_dense.pt`** → "no anchors on the fleet".
+  3. `ASSET_INVENTORY.md` inventoried what I had touched → **seven workstreams omitted** (Part 2).
+  4. This one.
+  ⇒ **PROCEDURE, not a resolution to try harder.** Before writing that something does not exist:
+  **(a)** grep the hub's `incoming/` tree for the SUBJECT (`situation`, `anchors`, `idm`), never the
+  name you assumed; **(b)** list the directory rather than glob it; **(c)** state the search you ran
+  next to the claim, so the reader can see what was actually tested. A claim of absence that does not
+  name its search is not evidence.
+  ⭐ **The correction carries more than the retraction:** the measured verdict is a NEGATIVE for the
+  MoE camera plan — the situations are anticipatable, but **from ego dynamics, not from the camera**.
+  A sensor-request policy conditioned on front-camera situation classification has no measured
+  signal to stand on today. That changes what to build, and I nearly left it unsaid.
