@@ -195,8 +195,29 @@ The collapse finding is unchanged by the correction — **it is slightly stronge
 | `ttm` | 0.3829 | 3.1969 | 283 | 3.8391 | 3.6495 |
 | `curv_5s` | 0.3142 | 0.0123 | 625 | 0.0008 | 0.0017 |
 
-**`tspeed_5s` is the BEST of the four and still carries 4.45 m/s RMSE (~16 km/h).** Every curvature
-and time-to-manoeuvre channel sits at **R² 0.31–0.45**.
+**`tspeed_5s` carries 4.45 m/s RMSE (~16 km/h)** and every curvature / time-to-manoeuvre channel
+sits at **R² 0.31–0.45**.
+
+⚠️ **"BEST OF THE FOUR" WITHDRAWN — the four R² values are NOT on a common population.** Audited in
+`scripts/goal_modes.py:255+` 2026-07-29: each scalar carries its **own** validity mask
+(`m = M[:, i]; n = m.sum()`), and R² is computed **inside** that subset — `ss_tot` is the variance of
+`t = T[m, i]`, i.e. of the masked labels only. So each number is internally valid but they rank
+across **different windows with different intrinsic variance**:
+
+| scalar | n | **coverage of the 881 ADE windows** |
+|---|---|---|
+| `tspeed_5s` | 721 | **81.8 %** |
+| `curv_5s` | 625 | 70.9 % |
+| `curv_3s` | 584 | 66.3 % |
+| `ttm` | 283 | **32.1 %** |
+
+⚠️ **The artifact's own note says these are *"measured on the same windows the ADE is measured on"* —
+true only up to each scalar's mask, and I inherited that framing.** `ttm` is measured on **under a
+third** of them. ⇒ **quote each channel against its own n; do not rank them against each other**
+without equalising the population first.
+✅ **`route_n` and `vt_band_n` are `o.numel()` — UNMASKED, all 881** (`goal_modes.py:274`, `:283`),
+so the C58 denominator problem is specific to route's *class* structure and does **not** extend to
+`vt_band`: 0.1725 / 0.3837 are clean all-window figures.
 
 ⭐ **This is the mechanism behind §1.3's oracle-dependence, and it REFINES §1.4's reading.** At the
 *trajectory* level both signed components overlapped zero, which I read as "noisy, not
