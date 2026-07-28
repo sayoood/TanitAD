@@ -130,6 +130,27 @@ def produce_goal_scalars(goal_head, states: torch.Tensor) -> torch.Tensor:
     return goal_head(states[:, -1]).float()
 
 
+#: Route decision threshold on ``|tanh(curv_5s / CURV_TURN_PER_M)|``. ``None`` = the
+#: historical ``tanh(1.0)`` and is the DEFAULT, so no published number moves unless a
+#: caller opts in via ``set_route_thr`` / ``--route-thr``.
+ROUTE_THR: float | None = None
+
+
+def set_route_thr(v: float | None) -> None:
+    """Override the route threshold (or restore the default with ``None``).
+
+    Exists so a swept value can be EVALUATED without being silently adopted — the
+    override is recorded in the run's goal_mode_record, so any artifact produced under
+    a non-default threshold says so on its face.
+    """
+    global ROUTE_THR
+    if v is not None:
+        v = float(v)
+        if not 0.0 < v < 1.0:
+            raise ValueError(f"route threshold must lie in (0, 1); got {v}")
+    ROUTE_THR = v
+
+
 def scalars_to_goal(scalars: torch.Tensor, v0: torch.Tensor) -> dict:
     """[B, 4] produced ``(ttm, curv_3s, curv_5s, tspeed_5s)`` -> the head's goal
     channels. Pure; no batch, no poses, no future. See the module docstring for
@@ -145,7 +166,17 @@ def scalars_to_goal(scalars: torch.Tensor, v0: torch.Tensor) -> dict:
     graded = torch.tanh(curv_5s / rl.CURV_TURN_PER_M)
 
     # route class: |mean_curv| >= CURV_TURN_PER_M  <=>  |graded| >= tanh(1).
-    thr = float(torch.tanh(torch.tensor(1.0)))
+    #
+    # ⚠️ NO LONGER A LITERAL (2026-07-29). MEASURED: `curv_5s` is the worst-fit goal
+    # scalar (R² 0.3142, RMSE 0.0123 /m) and a regressor that weak shrinks magnitudes
+    # toward the mean, so a bar at tanh(1.0) fires only for turns ~1.78x sharper than
+    # the label's own definition — right-turn RECALL 0.041, while left PRECISION stays
+    # 0.907 (the head knows and will not commit). Sweeping this one constant moved
+    # balanced accuracy 0.4242 -> 0.5493 with NO training.
+    # ⛔ The DEFAULT is unchanged, deliberately: every published v4 produced-goal number
+    # was measured at tanh(1.0), and silently moving it would restate history.
+    # …/incoming/2026-07-29-route-threshold-sweep/ROUTE_THRESHOLD_SWEEP.md
+    thr = ROUTE_THR if ROUTE_THR is not None else float(torch.tanh(torch.tensor(1.0)))
     route = torch.full_like(graded, float(rl.ROUTE_STRAIGHT))
     route = torch.where(graded >= thr, torch.full_like(graded,
                                                        float(rl.ROUTE_LEFT)),

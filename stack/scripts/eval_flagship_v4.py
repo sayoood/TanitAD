@@ -937,6 +937,14 @@ def main(argv=None) -> int:
                          "of the rule depends on this argument.")
     ap.add_argument("--canary-only", action="store_true",
                     help="force MODE A even if the ckpt has a 'head' key")
+    ap.add_argument("--route-thr", type=float, default=None,
+                    help="OVERRIDE the produced-goal route decision threshold on "
+                         "|tanh(curv_5s / CURV_TURN_PER_M)|. Default (unset) = the "
+                         "historical tanh(1.0)=0.7616, so no published number moves "
+                         "unless you opt in. MEASURED 2026-07-29: 0.35 lifts balanced "
+                         "route accuracy 0.4242 -> 0.5493 with no training, but that "
+                         "value was CHOSEN ON THE EVAL SPLIT and is an upper bound "
+                         "until confirmed elsewhere.")
     ap.add_argument("--episodes", type=int, default=40)
     ap.add_argument("--stride", type=int, default=8)
     ap.add_argument("--batch", type=int, default=16)
@@ -1126,6 +1134,13 @@ def main(argv=None) -> int:
 
     print("[v4-eval] running the planner path (the gate primary)...",
           flush=True)
+    if a.route_thr is not None:
+        goal_modes.set_route_thr(a.route_thr)
+        print(f"[v4-eval] ⚠ ROUTE THRESHOLD OVERRIDDEN to {a.route_thr} "
+              f"(default is tanh(1.0)=0.7616). This number is NOT comparable to "
+              f"published v4 produced-goal results measured at the default.",
+              flush=True)
+
     data, diag = collect_planner(world, grounding, head, ds_val, device, dd,
                                  a.episodes, a.stride, a.batch,
                                  goal_mode=a.goal_mode, goal_head=goal_head,
