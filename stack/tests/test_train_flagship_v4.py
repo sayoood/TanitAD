@@ -270,6 +270,58 @@ def test_the_WRITTEN_ROW_carries_the_pair_and_the_four_selection_diagnostics(
             f"rows; these were computed 601x per run and thrown away.")
 
 
+# ------------------------------------ the factorised seam becomes OBSERVABLE ---
+SEAM_KEYS = ("seam_norm_ratio_preclamp_max", "seam_norm_ratio_preclamp_mean",
+             "seam_clamp_bound_frac")
+
+
+def test_the_WRITTEN_ROW_carries_the_factorised_seam_telemetry(tmp_path):
+    """⭐ The seam's ONLY output channel used to be a fatal ``RuntimeError``.
+
+    ``_factor_grafts`` computes five seam numbers on every forward pass, and
+    ``v4_loss_step`` already merges them into ``log`` via ``**out["telemetry"]``
+    (:205) — the row-writer tuple dropped every one. So ``train_log.jsonl`` never
+    carried the ratio, and once an arm died to the guard there was NO TREND to
+    inspect: "how close did the control get?" is unanswerable from arm A's log.
+
+    MEASURED 2026-07-28: the PI's geometry validation lost both wide arms exactly
+    this way (B_wide 1.760, C_v5 1.511) after ~2.7 GPU-h, with the ratio written
+    nowhere. ``_preclamp_mean`` and ``_bound_frac`` are precisely the two keys the
+    module's own NAMED TRAP comment (flagship_v4.py:245-248) says a λ read is
+    invalid without — a trap that was fully armed because neither was logged.
+
+    Same double-filter class as the test above; this one reads the ACTUAL JSONL.
+    """
+    import json
+
+    out = T.smoke_loop(tmp_dir=str(tmp_path))
+    rows = [json.loads(x) for x in
+            Path(out["train_log"]).read_text(encoding="utf-8").splitlines() if x]
+    step_rows = [r for r in rows if "total" in r]
+    assert step_rows, "the loop wrote no per-step rows at all"
+
+    for k in SEAM_KEYS:
+        n = sum(1 for r in step_rows if k in r)
+        assert n == len(step_rows), (
+            f"seam telemetry {k} reached only {n}/{len(step_rows)} written rows — "
+            f"the seam is back to being observable ONLY by killing the run.")
+
+
+def test_seam_fail_is_exposed_on_the_cli_and_defaults_to_the_shipped_value():
+    """The raise-message instructs the operator that a sweep "must raise
+    seam_fail explicitly and record that it did" — an instruction the codebase
+    provided NO WAY to follow until 2026-07-28. The default must not move, or
+    every existing v4 arm silently changes guard behaviour."""
+    from tanitad.models.flagship_v4 import V4Config
+
+    assert V4Config.seam_fail == 1.5              # the shipped value, pinned
+    a = T.build_parser().parse_args(["--print-launch"])
+    assert a.seam_fail == V4Config.seam_fail, (
+        "the CLI default drifted from V4Config — existing arms would move")
+    a2 = T.build_parser().parse_args(["--print-launch", "--seam-fail", "8"])
+    assert a2.seam_fail == 8.0
+
+
 # ------------------------------------ the MID-RUN HELD-OUT GATE (v5 prep) -----
 def test_preflight_refuses_a_silently_disabled_heldout_gate():
     """Cause #1 made un-repeatable-by-accident: the gate is ON by default and

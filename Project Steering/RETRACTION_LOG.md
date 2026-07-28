@@ -736,3 +736,43 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   memorised.** ⇒ **A plausible mechanism for a discrepancy is not a substitute for checking whether the
   split is clean.** *(Honest bound: the two 40-clip sets share only 8 clips, so +42.7 % is an upper
   bound, not an isolate — reported by the auditor against its own case.)*
+- **C51 — A GUARD THAT COULD ONLY KILL, NEVER REPORT** *(new class, added 2026-07-28)* ⇒ **a threshold
+  with no reporting channel converts a diagnostic into an outage, and a guard whose message names a
+  cause that is IMPOSSIBLE BY CONSTRUCTION sends the reader hunting a bug that cannot exist.**
+  MEASURED: the PI's geometry validation lost **both** wide arms to `flagship_v4.py:233`
+  (`seam_fail` hard-wired at 1.5) — `B_wide` pre-clamp **1.760**, `C_v5` **1.511**, both at ~step 350,
+  both at `λ_plan 0.833`, ~**2.7 GPU-h** burned. Four separable defects:
+  1. ⚠️ **THE MESSAGE IS FALSE BY CONSTRUCTION.** It reads *"the in-graph clamp is not holding, i.e. a
+     code fault."* The clamp is `scale = seam_clamp / ratio.clamp_min(seam_clamp)` (`:241`), which
+     **cannot fail to bound the ratio at `seam_clamp`**. The check is on the **PRE**-clamp ratio, so it
+     fires on precisely the condition the clamp then handles correctly. There was no code fault.
+  2. **IT IS NOT A DIVERGENCE GUARD.** On **matched steps** both wide arms sat *at or below* the 51.4°
+     control on total, `wm`, `plan_ade` and `oracle_ade` — and **`C_v5` tripped it at the LOWEST total
+     (9.834), `wm` (4.242) and `plan_ade` (1.509) of its entire run.** The trip is uncorrelated with
+     training health. *(My own first reading — "the wide arms are diverging" — was RETRACTED: it came
+     from comparing A@1499 against B@350. The matched-step table inverts it.)*
+  3. **THE KILL CRITERION IS A BATCH MAX.** `ratio.max()` — **one sample of 64 sets it.** The robust
+     population statistic (`seam_clamp_bound_frac`) is computed **two lines below** and was used for
+     nothing.
+  4. **THE INSTRUCTION WAS UNFOLLOWABLE.** The raise tells the operator a sweep *"must raise seam_fail
+     explicitly and record that it did"* — and `seam_fail` was **exposed nowhere**: no CLI flag, no
+     config key. The codebase demanded an action it provided no way to perform.
+  ⭐ **AND THE GUARD'S ONLY OUTPUT CHANNEL WAS A FATAL EXCEPTION.** `_factor_grafts` computes five seam
+  numbers every forward pass and `v4_loss_step` already merges them into `log` (`:205`) — the
+  **row-writer tuple dropped every one**. MEASURED: **0 seam keys in all three arm logs**, so *"how
+  close did the control get to 1.5?"* is **unanswerable from arm A's log**. The module's own NAMED TRAP
+  comment (`:245-248`) says a λ read is invalid without `_preclamp_mean` and `_bound_frac` — neither
+  was ever written.
+  ⭐ **The suite had been telling us for months:** **six existing tests set `seam_fail` to
+  100.0 / 1e6 / 1e9 / 1e12** to get their measurements done. A default that every test disables is a
+  default that is wrong.
+  ⇒ **FIXED, and the fix is shaped by the class:** `seam_fail` exposed (`--seam-fail`, default
+  **unchanged at 1.5** so no existing arm moves, recorded in `config.json`) and the seam telemetry now
+  **written every log step**. Re-run cost avoided: `seam_fail` appears **only in the raise**, never in
+  a computed value, so moving it cannot alter any forward result — arm A completed without raising,
+  therefore raising it is a **provable no-op for A**, the A-vs-B contrast stays matched, and **A did
+  not need re-running (3 h 47 m of A40 saved)**. Pinned by
+  `test_seam_fail_is_a_pure_guard_and_changes_no_computed_value`.
+  ⚠️ **Not yet fixed, and deliberately left for the PI:** the guard still kills on a batch max rather
+  than on a persistent population condition, and the false "code fault" wording still stands in the
+  message. Changing a fail-loud's *semantics* is a scientific decision, not a cleanup.

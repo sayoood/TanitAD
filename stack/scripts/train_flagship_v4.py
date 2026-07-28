@@ -1036,7 +1036,35 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                                           # (e.g. a non-v15 head).
                                           "sel_gap", "rank_acc",
                                           "frac_sel_2x_worse_than_oracle",
-                                          "sel_gate", "sel_pen_span")
+                                          "sel_gate", "sel_pen_span",
+                                          # ⭐ THE FACTORISED-SEAM TELEMETRY, added
+                                          # 2026-07-28. `_factor_grafts` computes all
+                                          # five every forward pass and `v4_loss_step`
+                                          # already merges them into `log` via
+                                          # `**out["telemetry"]` (:205) — THIS tuple
+                                          # was the only thing dropping them, so the
+                                          # seam's ONLY output channel was a fatal
+                                          # RuntimeError. That is how the geometry
+                                          # validation lost two arms with no warning
+                                          # and no trend to inspect afterwards: the
+                                          # ratio was never written, so "how close was
+                                          # arm A?" is UNANSWERABLE from its log.
+                                          # `_preclamp_mean` is the axis's true
+                                          # position and `_bound_frac` the share of the
+                                          # batch for which λ has already stopped
+                                          # mattering — the two keys the module's own
+                                          # NAMED TRAP comment (:245-248) says a λ read
+                                          # is invalid without.
+                                          # ⚠️ `_preclamp_max` is a batch MAX: ONE
+                                          # sample of 64 sets it, which is why it is a
+                                          # bad kill criterion and a fine telemetry
+                                          # one. LOG-ONLY: no loss term, no parity
+                                          # effect.
+                                          "seam_norm_ratio_preclamp_max",
+                                          "seam_norm_ratio_preclamp_mean",
+                                          "seam_clamp_bound_frac",
+                                          "lat_over_conf", "lon_over_conf",
+                                          "dist_over_conf")
                                        if k in log}}
             print(json.dumps(row), flush=True)
             log_f.write(json.dumps(row) + "\n"); log_f.flush()
@@ -1214,6 +1242,24 @@ def train(a) -> dict:
     hcfg.cond_imagination = False
     hcfg.window = cfg.predictor.window
     hcfg.ego_null_row = a.ego_null_row                   # P5b default True (X15 off)
+    # ⭐ seam_fail EXPOSED 2026-07-28. It was hard-wired at 1.5 in V4Config while
+    # its own raise-message instructs the operator that a sweep "must raise
+    # seam_fail explicitly and record that it did" — an instruction the codebase
+    # provided NO WAY to follow. MEASURED cost: the PI's geometry validation lost
+    # BOTH wide arms to it (B_wide pre-clamp 1.760, C_v5 1.511, both at ~step 350,
+    # both at λ_plan 0.833) after ~2.7 GPU-h. It is NOT a divergence guard: on
+    # matched steps both wide arms sat AT OR BELOW the 51.4° control on every loss
+    # term, and C_v5 tripped it at the LOWEST total/wm/plan_ade of its whole run.
+    # `seam_fail` appears ONLY in the raise (flagship_v4.py:233) — never in a
+    # computed value — so changing it CANNOT alter any forward/backward result;
+    # `seam_clamp` (1.0) is what shapes the graft and is untouched. Default stays
+    # 1.5 so no existing arm moves.
+    hcfg.seam_fail = a.seam_fail
+    if a.seam_fail != V4Config.seam_fail:
+        print(f"[v4][seam] seam_fail RAISED {V4Config.seam_fail} -> {a.seam_fail} "
+              f"(explicit, recorded in config.json). seam_clamp stays "
+              f"{hcfg.seam_clamp} — the graft is still bounded in-graph; only the "
+              f"fail-loud threshold moved.", flush=True)
     head = FlagshipV4Head(hcfg).to(device)
     if a.anchors_dense:
         anc = torch.load(a.anchors_dense, weights_only=False)
@@ -1726,6 +1772,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--jerk-w", type=float, default=0.02)
     ap.add_argument("--curv-w", type=float, default=0.01)
     # P5b: learned null row is the default; the zero-fill is X15 (ablation only)
+    ap.add_argument("--seam-fail", dest="seam_fail", type=float,
+                    default=V4Config.seam_fail,
+                    help="fail-loud threshold on the PRE-CLAMP factorised-seam norm "
+                         "ratio (V4Config.seam_fail, default 1.5). Raising it does "
+                         "NOT weaken the graft bound — seam_clamp (1.0) still "
+                         "rescales in-graph — it only stops a batch-MAX outlier "
+                         "from killing the run. Recorded in config.json.")
     ap.add_argument("--ego-null-row", dest="ego_null_row", action="store_true", default=True)
     ap.add_argument("--ego-zero-fill", dest="ego_null_row", action="store_false",
                     help="X15 — the v3enc zero-fill bug; ablation ONLY, never a shipping run")

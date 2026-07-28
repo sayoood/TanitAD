@@ -374,6 +374,65 @@ def test_seam_clamp_rescales_in_graph_below_the_fail_ratio():
     assert eff <= cfg.seam_clamp + 1e-6, eff     # ... and was rescaled in-graph
 
 
+def test_seam_fail_is_a_pure_guard_and_changes_no_computed_value():
+    """⭐ The claim that rescued the PI's geometry validation without re-running
+    its control arm.
+
+    MEASURED 2026-07-28: the small validation lost BOTH wide arms to this guard
+    (B_wide pre-clamp 1.760, C_v5 1.511, both ~step 350 at λ_plan 0.833) while
+    the 51.4° control ran clean to 1500. Because arm A never raised, its
+    pre-clamp max never crossed 1.5 at ANY forward pass — so raising the
+    threshold is provably a NO-OP for arm A, the A-vs-B contrast stays matched,
+    and A does not need re-running (3 h 47 m of A40 saved).
+
+    That argument rests entirely on ``seam_fail`` appearing ONLY in the raise
+    (``flagship_v4.py:233``) and never in a computed value — ``seam_clamp`` is
+    what shapes the graft. This test is that argument, executable: two heads
+    identical but for ``seam_fail``, both above the trip, must agree bit-exactly;
+    and the threshold must still control whether it raises at all.
+
+    ⚠️ It is NOT a claim the guard is worthless — it is a claim the guard is a
+    REPORTING threshold wearing a kill switch's clothes.
+    """
+    FILL = 50.0                                   # as the fail-loud test above
+
+    def _built(seam_fail: float):
+        torch.manual_seed(0)                      # identical init...
+        cfg = _small()
+        cfg.seam_fail = seam_fail
+        head = FlagshipV4Head(cfg).eval()
+        with torch.no_grad():
+            head.lat_to_anchor.weight.fill_(FILL)
+        torch.manual_seed(1)                      # ...and an identical batch
+        return head, _batch(cfg)
+
+    # (1) measure the pre-clamp ratio with the guard effectively off
+    head_off, b_off = _built(1.0e9)
+    torch.manual_seed(2)                          # the decoder is STOCHASTIC
+    out_off = _run(head_off, b_off)
+    r = out_off["telemetry"]["seam_norm_ratio_preclamp_max"]
+    assert r > _small().seam_fail, (
+        f"the fixture must exceed the SHIPPED default {_small().seam_fail} for "
+        f"this test to be decision-relevant (got {r})")
+
+    # (2) a threshold just above the observed ratio: no raise, and every tensor
+    #     must be bit-identical to the guard-off run
+    head_ok, b_ok = _built(r * 1.01)
+    torch.manual_seed(2)
+    out_ok = _run(head_ok, b_ok)
+    moved = [k for k, v in out_off.items()
+             if isinstance(v, torch.Tensor) and not torch.equal(v, out_ok[k])]
+    assert not moved, (
+        f"output(s) {moved} MOVED when ONLY seam_fail changed — seam_fail is not "
+        f"a pure guard, and the 'arm A needs no re-run' argument is void.")
+
+    # (3) just below it: the one and only thing the threshold changes
+    head_bad, b_bad = _built(r * 0.99)
+    torch.manual_seed(2)
+    with pytest.raises(RuntimeError, match="fail-loud"):
+        _run(head_bad, b_bad)
+
+
 # --------------------------------------------------------- (d) P5b null row --
 def test_null_row_differs_from_the_zero_fill():
     """P5b: with ego_null_row a dropped v0 yields the LEARNED null embedding, which
