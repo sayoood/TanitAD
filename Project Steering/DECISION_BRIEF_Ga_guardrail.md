@@ -70,9 +70,29 @@ different early line** (E1c: +0.2154 m extra lateral deviation at ≤2 s) and ar
 stable long-horizon**. The frame confound I initially feared here **does not exist** — prediction and
 ground truth share origin *and* rotation, and every window re-initialises at the recorded pose.
 
-⚠️ **Not established:** whether that early deviation is a *recovery-oriented* line or merely tolerated.
-No per-window traces exist; it needs a capture re-run. **It is an input to this decision, not a
-consequence of it** — say the word and I'll run it on pod3.
+⭐ **PARTIALLY SETTLED 2026-07-28 — no GPU needed, and on the SAME metric at two horizons.**
+The frontier carries a `closed_loop_K20_nondeciding` block, and **K=20 @10 Hz is a 2 s rollout**.
+Peak cross-track, base → ft:
+
+| arm | @ **2 s** (K=20, non-deciding) | @ **18.5 s** (K=185) |
+|---|---|---|
+| **E1c** | 0.368 → **0.518** (+0.1493, sep **worse**) | 38.944 → **3.042** (−35.90, sep **better**) |
+| E1e-A | 0.368 → 0.440 (+0.0721, sep worse) | 38.944 → 4.502 (−34.44, sep better) |
+| E1e-B | 0.368 → 0.390 (+0.0218, n.s.) | 38.944 → 7.790 (−31.15, sep better) |
+| E1f | 0.368 → 0.457 (+0.0888, sep worse) | 38.944 → 15.012 (−23.93, sep better) |
+
+**A clean sign reversal across horizon, one metric, every arm.**
+⇒ **RULED OUT: the early deviation is NOT drift that compounds** — a compounding drift cannot end
+bounded at 3 m when the untouched base reaches 39 m. Base tracks tightly for 2 s and then diverges;
+the fine-tuned arms concede ~0.15 m early and stay bounded.
+⇒ **For E1c: 0.15 m given up at 2 s to gain 35.9 m at 18.5 s — ~240 : 1, same metric, same arms, same
+episodes.** This is a cleaner comparison than §3's 167:1, which crossed metrics.
+
+⚠️ **STILL NOT established:** whether the early deviation is an *active recovery manoeuvre* or simply
+a different, more stable operating point. That distinction needs trajectory inspection (a capture
+re-run, ~1 h on pod3) and is **not** required to choose between §6's options.
+⚠️ **K=20 is NON-DECIDING by design** — it is reported, never gated on. It is used here as
+*mechanistic* evidence about horizon behaviour, clearly labelled, not as a gate.
 
 ---
 
