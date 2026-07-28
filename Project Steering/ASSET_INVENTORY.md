@@ -6,6 +6,12 @@ results and assets… Are these documented, their code clean, committed and push
 Only **validated, quotable** items appear here. Every number cites `MODEL_REGISTRY.md` or a raw
 artifact, never prose. Estimator for every interval: **episode-cluster bootstrap**.
 
+⛔ **THIS FILE IS INCOMPLETE ON ITS OWN — READ `ASSET_INVENTORY_PART2.md` WITH IT.** The PI flagged
+2026-07-29 that it omits IDM, hierarchical planning, strategic routing, the side-camera attention
+work (H2), AlpaSim/TanitResim, pseudo-simulation, the VLM curation pipeline and the datasets. The
+omission was systematic: I inventoried what I had recently touched and treated that as what the
+programme has. **Part 2 carries those seven workstreams and their measured numbers.**
+
 ---
 
 ## 1. ⭐ THE BEST RESULT — flagship v1 beats the constant-velocity floor, twice, separated
@@ -95,7 +101,9 @@ encoder scale** — a genuine architecture finding, not a null.
 | registry | `MODEL_REGISTRY.md` is the single quotable source and is current |
 | artifacts | every result above has a dated `…/incoming/<date>-<topic>/` folder with raw JSON + the script that produced it |
 
-⚠️ **ONE REAL GAP: the working branch is 153 commits ahead of `main` and has never been merged.**
-Everything is pushed to `origin/agent/benchmarks-eval-20260721`, so nothing is at risk — but `main`
-does not reflect the programme. The standing authorization covers "branch AND main"; I have not
-merged 153 commits unannounced. **This needs a decision: merge, or keep `main` as a release line.**
+✅ **RESOLVED 2026-07-29 — the PI said "merge".** `origin/main` fast-forwarded `2d903ba → d33a101`
+(92 commits, **no force**), and `main` now tracks the programme.
+⚠️ **The check that mattered:** my *local* `main` was **62 commits stale**, so the "clean
+fast-forward" reported against it was against a stale reference — pushing that could have discarded
+other people's work. **After `git fetch`, `origin/main` was confirmed an ancestor of the branch and
+0 commits would be lost.** Verify against `origin/`, never a local branch that has sat unused.
