@@ -45,20 +45,46 @@ along is not a checkpoint that passes — that distinction is why the criterion 
 **THREE LEVERS, THREE BOUNDs, THREE DIFFERENT STRUCTURAL REASONS:** training time = plateau (E1c);
 weight space = barrier, endpoints not linearly mode-connected (E1d, **C52**); loss weighting =
 asymptote (E1e).
-▶ **E1f RUNNING (pod3, launched 09:57:40Z) — the TARGET hypothesis, the last one inside CL-SFT's
-configuration space.** Buffer restricted to junctions at the evaluator's OWN 10° threshold:
-**733/3,537 records (20.7 %) across 102 of 362 episodes**, md5 `35fe24a2…`; byte-identical to E1e-A
-otherwise, so exactly ONE thing changes. Three outcomes pre-registered, including **Outcome C
-(P2 improves while P1 degrades)** named in advance because it is likely and would otherwise read as
-a muddle.
-⚠️ **THE FEASIBILITY NOTE'S MEMORISATION WARNING WAS WRONG AND WAS CORRECTED BEFORE THE RUN:** the
-trainer's leak-guard proves buffer episodes × held-out 44 = **intersection 0**, so over-reuse CANNOT
-inflate held-out metrics — it would show as UNDERperformance. Run left step-matched. The real bound
-is **DIVERSITY: 102 episodes**.
-⭐ **INTERIM, AND IT CONTRADICTS MY OWN "the gate is uninformative here":** at matched steps and
-identical λ=3, the junction buffer runs FAR below the full buffer — 250: 0.0867 vs 0.1997; 500:
-0.0958 vs 0.2578; 1000: **0.0714** vs 0.1640. Restricting the target **substantially lowers the
-open-loop cost at unchanged λ**. Ga still fails at every probe and **P1/P2 remain UNMEASURED**.
+✅ **E1f DONE — BOUND, `primary_ok 0/4`.** Pre-registered **OUTCOME C exactly**: P2 (junction)
+separates-better at 3/4 and strengthens monotonically to **−0.2108**; **P1 (overall) fails at all four,
+sitting AT ZERO** (+0.0025, +0.0576, −0.0302, +0.0004).
+⭐ **AND IT REFUTES THE INFERENCE THAT LAUNCHED IT (C55):** E1c full-buffer reaches junction
+**−0.4982**; E1f junction-only reaches **−0.2108**. **Training on junctions alone HALVES junction
+recovery** — if the "expensive half" had been interfering, removal should have left it ≥ equal. E1f
+buys 42 % of the gain at 27 % of the cost with ZERO overall gain: a **scaled-down** arm, not a
+targeted one. *(E1d's decomposition is NOT wrong; the TRANSFER was — it described a PATH BETWEEN two
+models trained on everything, which says nothing about training on a subset.)*
+⛔ **FOUR LEVERS, FOUR BOUNDs:** training time (plateau) · weight space (barrier, **C52**) · loss
+weighting (asymptote +0.023) · **the target (restriction gives less of everything)**.
+**THERE IS STILL NO D-A DELIVERABLE.**
+
+## 🔴🔴 THE Ga DECISION — BOTH MAGNITUDES NOW ON THE TABLE (PI JUDGEMENT, NOT ANOTHER ARM)
+
+⭐⭐ **MEASURED and previously UNREPORTED by me across four experiments:** `peak_xte`/`mean_xte` sat in
+every frontier artifact since E1c and I reported only departure RATES and open-loop ADE.
+**The BASE arm wanders 38.944 m off track at peak in an 18.5 s closed-loop rollout — against a 1.75 m
+corridor** (mean 14.306 m). It does not leave the lane; it leaves the road.
+| arm | peak_xte base→ft | paired Δ | sep |
+|---|---|---|---|
+| **E1c** | **38.944 → 3.042 m** | **−35.9030** [−49.33, −24.12] | ✅ |
+| E1e-A | 38.944 → 4.502 m | −34.4430 | ✅ |
+| E1e-B | 38.944 → 7.790 m | −31.1540 | ✅ |
+| E1f | 38.944 → 15.012 m | −23.9328 | ✅ |
+⇒ **E1c cuts peak excursion 92 %.** Ga blocks on an open-loop regression of **+0.05–0.20 m** — a ratio
+of order **167 : 1**. ⚠️ **NOT an argument to relax Ga, and NO verdict changes** — the arms still fail
+the gate and the open-loop cost is real, CI-separated on BOTH axes and **tail-heavy laterally**
+(E1c `cross_p90` **+0.3945** vs mean +0.1611 = 2.45×). It is the **missing magnitude**, so the
+judgement is made on both sides rather than on departure rates alone.
+✅ **RESOLVED same day (code read, no GPU):** the closed-loop knot-ADE frame confound **does not
+exist** — `oyaw`/`oxy` and `gt_ego_waypoints` share **the same origin AND rotation** (`poses[last]`),
+and **every window re-initialises at the recorded pose**, so both arms start identically. My "different
+ego states" worry was wrong. **The horizon mismatch reconciles it:** knot-ADE spans **0.5–2.0 s**,
+departure spans **18.5 s** ⇒ the arms take a slightly different EARLY line (+0.2154 m lateral at ≤2 s
+for E1c) and are **dramatically more stable long-horizon**. This CHARACTERISES the gain; it does not
+undermine it.
+⚠️ **Still open, needs GPU and sits DOWNSTREAM of the Ga call:** whether that early lateral deviation
+is a **recovery-oriented** line or merely tolerated. No per-window traces exist; it needs a capture
+re-run. **Not spent.**
 ✅ **D-B COMPLETE (not re-fired; authorization spent):** YouTube→GeoCalib→IDM end-to-end. **Block has
 LIFTED** — 0 bot-block messages, retried from **the same pod3 egress** after ~37 h (NOT rotation;
 idle eval deliberately unused). 20 clips / 3 videos; ⭐ **GeoCalib resolved hfov 53° and 58° against
