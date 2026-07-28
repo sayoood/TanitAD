@@ -33,15 +33,40 @@ every field. ⚠️ **Stated precisely: E1c's best (−0.4407) still has the LAR
 neither point dominates — the true claim is that E1e-A occupies a region E1c never attained.**
 **Structural: `lam_replay` sets the ASYMPTOTIC open-loop cost and does NOT remove the plateau** (A
 plateaus ~+0.10 from step 2000; E1c ~+0.20 from 2250) ⇒ longer training cannot close Ga for A either.
-▶ **E1e-B (λ=8) RUNNING** — the LAST point on this axis by pre-registration (a finer grid is
-pre-committed as INADMISSIBLE). Interim gates flat near **+0.082**, so returns are DIMINISHING
-(λ=1→3 halved the plateau; λ=3→8 is buying ~0.10→0.08) — but that is **open-loop only** and whether
-P1 survives at λ=8 is the actual question.
-✅ **E1f FEASIBILITY MEASURED (CPU only, not launched, not pre-registered):** the mined buffer carries
-`dpsi` and is filterable at the evaluator's own 10° junction threshold — **733 of 3,537 records =
-20.7 %**, 362 episodes; `dpsi` is in RADIANS (max 0.8272, 0 records ≥10 raw). 🔴 **Risk priced in
-advance: a 4.8× smaller buffer means ~87× reuse per record vs E1c's ~18× — a memorisation regime**,
-the same bound that stopped GATE-1. E1f goes live ONLY if B is BOUND.
+**E1e-B (λ=8) DONE: BOUND, 0/4 success, but P1∧P2 4/4** — ⭐ **the risk it was run to test did NOT
+materialise: P1 survives at λ=8.** Ga's lower bound walked 0.047→0.038→0.024→**0.023 and FLATTENED**.
+⛔ **THE λ AXIS IS CLOSED** (a finer grid was pre-committed as INADMISSIBLE *before* any of it ran,
+precisely so a near-miss could not tempt a sweep — the temptation was real and was declined).
+⭐ **THE AXIS'S DELIVERABLE IS A TRADE-OFF CURVE, monotone and non-crossing, none dominating:**
+λ=1 → CL **−0.4407** @ OL +0.2158 · λ=3 → −0.3911 @ +0.0958 · λ=8 → −0.2891 @ **+0.0500**.
+⇒ `lam_replay` is a **calibrated control**: the program can now CHOOSE an operating point.
+⚠️ **BUT NO POINT PASSES THE GATE, SO THERE IS STILL NO D-A DELIVERABLE.** A curve one can choose
+along is not a checkpoint that passes — that distinction is why the criterion was fixed in advance.
+**THREE LEVERS, THREE BOUNDs, THREE DIFFERENT STRUCTURAL REASONS:** training time = plateau (E1c);
+weight space = barrier, endpoints not linearly mode-connected (E1d, **C52**); loss weighting =
+asymptote (E1e).
+▶ **E1f RUNNING (pod3, launched 09:57:40Z) — the TARGET hypothesis, the last one inside CL-SFT's
+configuration space.** Buffer restricted to junctions at the evaluator's OWN 10° threshold:
+**733/3,537 records (20.7 %) across 102 of 362 episodes**, md5 `35fe24a2…`; byte-identical to E1e-A
+otherwise, so exactly ONE thing changes. Three outcomes pre-registered, including **Outcome C
+(P2 improves while P1 degrades)** named in advance because it is likely and would otherwise read as
+a muddle.
+⚠️ **THE FEASIBILITY NOTE'S MEMORISATION WARNING WAS WRONG AND WAS CORRECTED BEFORE THE RUN:** the
+trainer's leak-guard proves buffer episodes × held-out 44 = **intersection 0**, so over-reuse CANNOT
+inflate held-out metrics — it would show as UNDERperformance. Run left step-matched. The real bound
+is **DIVERSITY: 102 episodes**.
+⭐ **INTERIM, AND IT CONTRADICTS MY OWN "the gate is uninformative here":** at matched steps and
+identical λ=3, the junction buffer runs FAR below the full buffer — 250: 0.0867 vs 0.1997; 500:
+0.0958 vs 0.2578; 1000: **0.0714** vs 0.1640. Restricting the target **substantially lowers the
+open-loop cost at unchanged λ**. Ga still fails at every probe and **P1/P2 remain UNMEASURED**.
+✅ **D-B COMPLETE (not re-fired; authorization spent):** YouTube→GeoCalib→IDM end-to-end. **Block has
+LIFTED** — 0 bot-block messages, retried from **the same pod3 egress** after ~37 h (NOT rotation;
+idle eval deliberately unused). 20 clips / 3 videos; ⭐ **GeoCalib resolved hfov 53° and 58° against
+the 100° fallback — both ~2× off, independently reproducing "the fixed HFOV is wrong" on a fresh
+sample.** IDM: 2,240 windows, `frac_in_plausible_0_45_mps = 1.0`, mean 14.212 m/s. Privacy VERIFIED
+BY PROBE (0 media files remain). ⛔ **No ground truth exists — these are UNVALIDATED pseudo-labels;
+no accuracy claim is quotable.** 🔴 **PI DECISION: licensing** — `{None: 27, CC-BY: 1}`, the harvest
+kept non-CC by default.
 ✅ **E1's held-out split is CONTENT-CLEAN at the sensor level** — 0/44 episodes and **0 shared frames**
 vs `physicalai-train-e438721ae894`, which is **REF-C base's OWN training corpus** (config-verified,
 same path, same n=2376) ⇒ the C49-class gap is CLOSED and E1a/E1c/E1d are not leak artifacts. SPIKE
