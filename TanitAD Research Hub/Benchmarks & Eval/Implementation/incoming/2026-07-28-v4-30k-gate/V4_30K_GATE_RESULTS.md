@@ -151,17 +151,38 @@ outcome. It is measured on the **same 881 windows** as every number above.
 **Route head — NEAR-COLLAPSE.** Confusion matrix (oracle rows × produced cols) sums to 881; the
 **predicted-column** totals are **75 / 793 / 13 / 0 / 0**:
 
-| quantity | value |
-|---|---|
-| predicts **"straight"** | **793 / 881 = 90.0 % of all windows** |
-| exact agreement | **0.5085** |
-| always-straight majority baseline | 394 / 881 = **0.4472** |
-| **margin over majority** | **+6.1 points** |
-| `ROUTE_UNKNOWN` (class 3) | occurs **154** times, predicted **0** times |
+⛔ **CORRECTED 2026-07-29 — my first version of this table was misleading on one line and the
+accuracy framing was wrong.** I wrote *"`ROUTE_UNKNOWN` (class 3) occurs 154 times and is predicted
+**0** times"* as if it were a defect. **It is the intended behaviour.** `v4_curriculum.py:40`:
+`IGNORE_INDEX = -100` is *"the masked target sentinel — the labeler writes this for every window
+whose LAT/LON/DIST/route mode is `unknown`; `F.cross_entropy` **skips it**"*, and `goal_modes.py`
+declares `N_ROUTE_CLASSES = 4  # left/straight/right + the v2.1 UNKNOWN sentinel` with
+`ROUTE_DROPPED = 4`. ⇒ **the head receives no gradient for UNKNOWN and structurally cannot emit it;
+columns 3 and 4 are not manoeuvre classes at all.**
 
-⇒ **This is the SAME pathology as the VOID secondary `nonav_route_beats_majority`** (which fails
-because the route target is a lookup of the route input), now measured on the *goal* head and *not*
-void: **a near-constant "straight" predictor that clears majority by 6 points.**
+**The harness's `route_exact_agreement` = 448/881 counts the masked rows in the denominator.** Both
+framings, so neither can be quoted without the other:
+
+| quantity | over **all 881** (harness) | over **judgeable 727** (left/straight/right) |
+|---|---|---|
+| exact agreement | 0.5085 | **0.6162** |
+| always-straight majority | 394/881 = 0.4472 | 394/727 = **0.5420** |
+| **margin over majority** | +6.1 pts | **+7.4 pts** |
+| predicts **"straight"** | 793/881 = 90.0 % | **665/727 = 91.5 %** |
+
+⭐ **PER-CLASS RECALL is the sharpest statement, and it survives the correction intact:**
+
+| oracle class | n | recalled | recall |
+|---|---|---|---|
+| straight | 394 | 394 | **100.0 %** |
+| left | 212 | 49 | **23.1 %** |
+| **right** | 121 | 5 | **4.1 %** |
+
+⇒ **The head answers "straight" for essentially every turn it is shown, and is near-blind to RIGHT
+turns specifically (4.1 %).** ⇒ **This is the SAME pathology as the VOID secondary
+`nonav_route_beats_majority`** (which fails because the route target is a lookup of the route input),
+now measured on the *goal* head where it is **not** void: **a near-constant "straight" predictor.**
+The collapse finding is unchanged by the correction — **it is slightly stronger** (91.5 % vs 90.0 %).
 
 **Speed-target band:** exact **0.1725**, within-1 **0.3837** (23 bands).
 
