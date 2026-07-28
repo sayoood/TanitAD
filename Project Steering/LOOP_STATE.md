@@ -23,10 +23,25 @@ and *stronger than a null*: `dep_overall` is **separated-WORSE at five consecuti
 base→FT segment **crosses a barrier**, the endpoints are NOT linearly mode-connected (**C52** — a
 published remedy imported without checking its precondition). E1d also **decomposed the primary**:
 junction recovery is **cheap and monotone** (separated-better at α=0.20 for +6.5 % open-loop) while
-overall-corridor recovery is **expensive and barrier-crossing**. ▶ **E1e (loss weighting) RUNNING on
-pod3** — `lam_replay` 1.0→3.0, the one flag `e1c_clsft.py` itself calls "deliberately NOT a lever".
-INTERIM MEASURED: open-loop cost cut **49–67 % at every matched step** (e.g. 1500: +0.2997→+0.1530) —
-**but Ga still fails at every step and the CLOSED-LOOP side is UNMEASURED until the frontier eval**.
+overall-corridor recovery is **expensive and barrier-crossing**. ▶ **E1e (loss weighting) — `lam_replay`, the one flag
+`e1c_clsft.py` itself calls "deliberately NOT a lever".**
+**E1e-A (λ=3) DONE, MEASURED: VERDICT BOUND, 0/4 success — but P1∧P2 fired 4/4** (E1c: 15/17), and
+**the frontier EXTENDED**: ⭐ **no E1c checkpoint anywhere on its 17-point frontier reaches an
+open-loop cost below +0.1893, while E1e-A reaches +0.0958 holding −0.3911** (step 3000: 88.7 % of
+E1c's best closed-loop gain at 44.4 % of its open-loop cost). Base-reproduction control matched E1c on
+every field. ⚠️ **Stated precisely: E1c's best (−0.4407) still has the LARGER closed-loop gain, so
+neither point dominates — the true claim is that E1e-A occupies a region E1c never attained.**
+**Structural: `lam_replay` sets the ASYMPTOTIC open-loop cost and does NOT remove the plateau** (A
+plateaus ~+0.10 from step 2000; E1c ~+0.20 from 2250) ⇒ longer training cannot close Ga for A either.
+▶ **E1e-B (λ=8) RUNNING** — the LAST point on this axis by pre-registration (a finer grid is
+pre-committed as INADMISSIBLE). Interim gates flat near **+0.082**, so returns are DIMINISHING
+(λ=1→3 halved the plateau; λ=3→8 is buying ~0.10→0.08) — but that is **open-loop only** and whether
+P1 survives at λ=8 is the actual question.
+✅ **E1f FEASIBILITY MEASURED (CPU only, not launched, not pre-registered):** the mined buffer carries
+`dpsi` and is filterable at the evaluator's own 10° junction threshold — **733 of 3,537 records =
+20.7 %**, 362 episodes; `dpsi` is in RADIANS (max 0.8272, 0 records ≥10 raw). 🔴 **Risk priced in
+advance: a 4.8× smaller buffer means ~87× reuse per record vs E1c's ~18× — a memorisation regime**,
+the same bound that stopped GATE-1. E1f goes live ONLY if B is BOUND.
 ✅ **E1's held-out split is CONTENT-CLEAN at the sensor level** — 0/44 episodes and **0 shared frames**
 vs `physicalai-train-e438721ae894`, which is **REF-C base's OWN training corpus** (config-verified,
 same path, same n=2376) ⇒ the C49-class gap is CLOSED and E1a/E1c/E1d are not leak artifacts. SPIKE
