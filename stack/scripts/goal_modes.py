@@ -225,7 +225,8 @@ def neutral_goal(v0: torch.Tensor, goal_dropout: float) -> tuple[dict, str]:
 # ---------------------------------------------------------------------------
 def resolve_goal(mode: str, *, head, batch: dict, v0: torch.Tensor,
                  states: torch.Tensor, goal_head=None,
-                 allow_fallback: bool = False) -> tuple[dict, dict]:
+                 allow_fallback: bool = False,
+                 oracle_channels: tuple[str, ...] = ()) -> tuple[dict, dict]:
     """-> (kwargs for ``head(...)``, per-batch provenance record).
 
     ``oracle`` delegates to ``train_flagship_v4._goal_inputs`` **verbatim** — the
@@ -262,6 +263,29 @@ def resolve_goal(mode: str, *, head, batch: dict, v0: torch.Tensor,
     sc = produce_goal_scalars(goal_head, states)
     kw = scalars_to_goal(sc, v0)
     thr = kw.pop("_produced_thr")
+
+    # PER-CHANNEL ORACLE OVERRIDE (2026-07-29). The oracle-vs-produced ADE gap is 0.2140
+    # and route is MEASURED to explain <= 2.6 % of it (paired, +0.0022 [-0.0008, +0.0055]).
+    # Attributing the REST needs a mixed arm — oracle speed with produced route, or the
+    # reverse — which all-or-nothing --goal-mode cannot express. This substitutes only the
+    # named channels from the oracle path and leaves every other channel produced.
+    # ⛔ Any arm using this is NOT a deployable number: it is fed a future-derived quantity
+    # by construction. It exists to ATTRIBUTE the gap, never to score the model.
+    if mode == "produced" and oracle_channels:
+        okw = _goal_inputs(cfg, batch, v0)
+        subbed = []
+        for ch in oracle_channels:
+            if ch in okw and ch in kw:
+                kw[ch] = okw[ch]
+                subbed.append(ch)
+        return _filter(cfg, kw), {
+            "mode": "produced", "fallback": None,
+            "route_threshold_abs_graded": thr, "scalars": sc.cpu(),
+            "oracle_channels_substituted": subbed,
+            "_read": ("MIXED arm: the listed channels come from the ORACLE (future poses); "
+                      "the rest are produced. Diagnostic attribution only — NOT deployable."),
+        }
+
     return _filter(cfg, kw), {"mode": "produced", "fallback": None,
                               "route_threshold_abs_graded": thr,
                               "scalars": sc.cpu()}

@@ -587,7 +587,8 @@ def apply_c2_selection(out: dict, horizons, ref, tag: str) -> dict:
 def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                     stride, batch, wp_steps=WP_STEPS, goal_mode="oracle",
                     goal_head=None, goal_fallback=False,
-                    select_rule="as-trained", c2=None, agree_dump=None):
+                    select_rule="as-trained", c2=None, agree_dump=None,
+                    oracle_channels=()):
     """v4 PLANNER PATH: head-selected trajectory (lambda_plan=1, NOT fed true
     future actions), re-encoding the CURRENT (jointly fine-tuned) trunk.
 
@@ -679,7 +680,8 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
         # --- WHERE THE GOAL COMES FROM (pass 1 when goal_mode == "produced") --
         goal_kw, rec = goal_modes.resolve_goal(
             goal_mode, head=head, batch=b, v0=v0, states=st,
-            goal_head=goal_head, allow_fallback=goal_fallback)
+            goal_head=goal_head, allow_fallback=goal_fallback,
+            oracle_channels=oracle_channels)
         if agree is not None:
             agree.update(goal_kw, b, rec.pop("scalars", None))
         goal_rec = {k: v for k, v in rec.items() if k != "scalars"}
@@ -937,6 +939,13 @@ def main(argv=None) -> int:
                          "of the rule depends on this argument.")
     ap.add_argument("--canary-only", action="store_true",
                     help="force MODE A even if the ckpt has a 'head' key")
+    ap.add_argument("--oracle-channels", default=None,
+                    help="DIAGNOSTIC ONLY. Comma-separated goal channels to take from the "
+                         "ORACLE while the rest stay produced, e.g. 'vt_band,vt_speed'. "
+                         "Exists to ATTRIBUTE the oracle-vs-produced ADE gap per channel "
+                         "(route is already measured at <=2.6%% of it). "
+                         "⛔ An arm using this is fed a future-derived quantity and is NOT "
+                         "a deployable number.")
     ap.add_argument("--route-thr", type=float, default=None,
                     help="OVERRIDE the produced-goal route decision threshold on "
                          "|tanh(curv_5s / CURV_TURN_PER_M)|. Default (unset) = the "
@@ -1147,7 +1156,10 @@ def main(argv=None) -> int:
                                  goal_fallback=a.goal_fallback,
                                  select_rule=a.select_rule, c2=c2,
                                  agree_dump=(results_dir
-                                             / f"goalagree_{a.key}.pt"))
+                                             / f"goalagree_{a.key}.pt"),
+                                 oracle_channels=tuple(
+                                     c.strip() for c in a.oracle_channels.split(",")
+                                     if c.strip()) if a.oracle_channels else ())
 
     wp = results_dir / f"windows_{a.key}.pt"
     _keys = ["pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps"]
