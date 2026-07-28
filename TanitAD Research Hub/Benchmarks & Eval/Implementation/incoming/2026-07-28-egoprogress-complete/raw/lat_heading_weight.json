@@ -1,0 +1,374 @@
+{
+ "_experiment": "THE ego_progress UNDER SIDE (never audited by any injection suite) AND THE OVER-SIDE ZERO-MEAN DEFECT. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "d566e02a19472cb2960d26c109296e08"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "a5a652ef67619eefe565c6211de60638"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_human_replay_ego_progress": 0.99144,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_synthetic_substrates_kept_out_of_the_gate_vote": [
+  "human_replay",
+  "reverse_half = lon_scale(-0.5) o v1_tactical_follow"
+ ],
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "_preregistration": "raw/PREREGISTRATION.json (staged before any under-side number was computed)",
+ "lat_heading_weight": {
+  "_why": "A composite weight is only meaningful relative to the range the axis actually exercises. Halving an axis's live range at constant weight halves its influence on the composite, silently.",
+  "terms": {
+   "term_lin_q0": {
+    "per_arm": {
+     "cv_holdv0": {
+      "mean": 0.3379,
+      "sd": 0.339,
+      "p05": 0.0,
+      "p95": 0.9668
+     },
+     "nospeed_tactical_oracle": {
+      "mean": 0.3203,
+      "sd": 0.3336,
+      "p05": 0.0,
+      "p95": 0.934
+     },
+     "refc_base_produced": {
+      "mean": 0.2688,
+      "sd": 0.3374,
+      "p05": 0.0,
+      "p95": 0.9651
+     },
+     "refc_small_produced": {
+      "mean": 0.2691,
+      "sd": 0.3379,
+      "p05": 0.0,
+      "p95": 0.962
+     },
+     "refc_xl_produced": {
+      "mean": 0.2676,
+      "sd": 0.3378,
+      "p05": 0.0,
+      "p95": 0.9636
+     },
+     "v1_tactical_follow": {
+      "mean": 0.3192,
+      "sd": 0.3347,
+      "p05": 0.0,
+      "p95": 0.9424
+     },
+     "v1_tactical_oracle": {
+      "mean": 0.3194,
+      "sd": 0.3347,
+      "p05": 0.0,
+      "p95": 0.943
+     },
+     "v4_blind": {
+      "mean": 0.0807,
+      "sd": 0.2177,
+      "p05": 0.0,
+      "p95": 0.6919
+     },
+     "v4_oracle": {
+      "mean": 0.2949,
+      "sd": 0.3361,
+      "p05": 0.0,
+      "p95": 0.9228
+     },
+     "oracle_lon_straight": {
+      "mean": 0.3347,
+      "sd": 0.339,
+      "p05": 0.0,
+      "p95": 0.9658
+     },
+     "v1_ego_double": {
+      "mean": 0.3206,
+      "sd": 0.3353,
+      "p05": 0.0,
+      "p95": 0.9441
+     },
+     "v1_ego_half": {
+      "mean": 0.3595,
+      "sd": 0.3378,
+      "p05": 0.0,
+      "p95": 0.9651
+     },
+     "v1_ego_oracle_lon": {
+      "mean": 0.3181,
+      "sd": 0.3353,
+      "p05": 0.0,
+      "p95": 0.9437
+     },
+     "v1_ego_v0": {
+      "mean": 0.3229,
+      "sd": 0.3356,
+      "p05": 0.0,
+      "p95": 0.9456
+     },
+     "v1_lat_straight": {
+      "mean": 0.3401,
+      "sd": 0.3389,
+      "p05": 0.0,
+      "p95": 0.9679
+     },
+     "refc_base_v0off": {
+      "mean": 0.2678,
+      "sd": 0.3387,
+      "p05": 0.0,
+      "p95": 0.9635
+     },
+     "refc_base_v0on": {
+      "mean": 0.2688,
+      "sd": 0.3374,
+      "p05": 0.0,
+      "p95": 0.9651
+     },
+     "refc_xl_v0off": {
+      "mean": 0.2665,
+      "sd": 0.3386,
+      "p05": 0.0,
+      "p95": 0.9657
+     },
+     "refc_xl_v0on": {
+      "mean": 0.2676,
+      "sd": 0.3378,
+      "p05": 0.0,
+      "p95": 0.9636
+     }
+    },
+    "pooled_sd_within": 0.3359,
+    "pooled_p05_p95_span": 0.9531,
+    "BETWEEN_ARM_sd_of_means": 0.059,
+    "BETWEEN_ARM_span_of_means": 0.2594
+   },
+   "mean1_lin_q0p5": {
+    "per_arm": {
+     "cv_holdv0": {
+      "mean": 0.6349,
+      "sd": 0.2278,
+      "p05": 0.1767,
+      "p95": 0.9878
+     },
+     "nospeed_tactical_oracle": {
+      "mean": 0.6217,
+      "sd": 0.2297,
+      "p05": 0.2034,
+      "p95": 0.968
+     },
+     "refc_base_produced": {
+      "mean": 0.5824,
+      "sd": 0.2482,
+      "p05": 0.1943,
+      "p95": 0.9867
+     },
+     "refc_small_produced": {
+      "mean": 0.5796,
+      "sd": 0.2485,
+      "p05": 0.189,
+      "p95": 0.9858
+     },
+     "refc_xl_produced": {
+      "mean": 0.5834,
+      "sd": 0.2478,
+      "p05": 0.2003,
+      "p95": 0.9869
+     },
+     "v1_tactical_follow": {
+      "mean": 0.6217,
+      "sd": 0.2282,
+      "p05": 0.2051,
+      "p95": 0.9699
+     },
+     "v1_tactical_oracle": {
+      "mean": 0.6216,
+      "sd": 0.2279,
+      "p05": 0.2031,
+      "p95": 0.9697
+     },
+     "v4_blind": {
+      "mean": 0.3224,
+      "sd": 0.2761,
+      "p05": 0.0365,
+      "p95": 0.8301
+     },
+     "v4_oracle": {
+      "mean": 0.6009,
+      "sd": 0.2047,
+      "p05": 0.2623,
+      "p95": 0.9273
+     },
+     "oracle_lon_straight": {
+      "mean": 0.6326,
+      "sd": 0.2289,
+      "p05": 0.1758,
+      "p95": 0.9878
+     },
+     "v1_ego_double": {
+      "mean": 0.6012,
+      "sd": 0.2459,
+      "p05": 0.123,
+      "p95": 0.9648
+     },
+     "v1_ego_half": {
+      "mean": 0.6634,
+      "sd": 0.2008,
+      "p05": 0.3562,
+      "p95": 0.9873
+     },
+     "v1_ego_oracle_lon": {
+      "mean": 0.6297,
+      "sd": 0.2206,
+      "p05": 0.2322,
+      "p95": 0.9741
+     },
+     "v1_ego_v0": {
+      "mean": 0.631,
+      "sd": 0.2202,
+      "p05": 0.2348,
+      "p95": 0.9744
+     },
+     "v1_lat_straight": {
+      "mean": 0.6253,
+      "sd": 0.2425,
+      "p05": 0.1219,
+      "p95": 0.9873
+     },
+     "refc_base_v0off": {
+      "mean": 0.5722,
+      "sd": 0.2558,
+      "p05": 0.1677,
+      "p95": 0.9864
+     },
+     "refc_base_v0on": {
+      "mean": 0.5824,
+      "sd": 0.2482,
+      "p05": 0.1943,
+      "p95": 0.9867
+     },
+     "refc_xl_v0off": {
+      "mean": 0.5732,
+      "sd": 0.2552,
+      "p05": 0.1814,
+      "p95": 0.9871
+     },
+     "refc_xl_v0on": {
+      "mean": 0.5834,
+      "sd": 0.2478,
+      "p05": 0.2003,
+      "p95": 0.9869
+     }
+    },
+    "pooled_sd_within": 0.2505,
+    "pooled_p05_p95_span": 0.836,
+    "BETWEEN_ARM_sd_of_means": 0.0715,
+    "BETWEEN_ARM_span_of_means": 0.3125
+   }
+  },
+  "shipped_over_published_BETWEEN_ARM_span": 1.2047,
+  "weight_that_PRESERVES_the_published_influence": 0.83,
+  "CONTROL_WEIGHTS_today": {
+   "ego_progress": 5.0,
+   "recovery": 5.0,
+   "lon_track": 5.0,
+   "lat_track": 2.0,
+   "lat_heading": 1.0
+  },
+  "STATUS": "MEASURED and ESCALATED, not changed. CONTROL_WEIGHTS is a PI decision and the control composite is being proposed as the gate primary; a weight change made by an agent inside an unrelated repair is exactly the silent redefinition this programme keeps logging."
+ }
+}

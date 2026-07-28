@@ -1,0 +1,216 @@
+{
+ "_experiment": "THE ego_progress UNDER SIDE (never audited by any injection suite) AND THE OVER-SIDE ZERO-MEAN DEFECT. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "d566e02a19472cb2960d26c109296e08"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "a5a652ef67619eefe565c6211de60638"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_human_replay_ego_progress": 0.99144,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_synthetic_substrates_kept_out_of_the_gate_vote": [
+  "human_replay",
+  "reverse_half = lon_scale(-0.5) o v1_tactical_follow"
+ ],
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "_preregistration": "raw/PREREGISTRATION.json (staged before any under-side number was computed)",
+ "under_fix": {
+  "_impossibility": "A bounded score agreeing with clamp_v1 on [0,1] is forced to 0 on (-inf, 0]: a plan reversing 1 m and a plan reversing 10 m MUST score the same. The only escape is a range budget g(0) = p > 0, which pays stand_still p for not moving. REFUSED \u2014 measured, not argued.",
+  "_family": "g(r) = p + (1-p)*clamp_v1(r) for r >= 0; p*(1+r) clipped at 0 below. p = 0 IS the published term, bit-identically.",
+  "mean_ego_progress_per_arm_at_each_p": {
+   "p=0": {
+    "cv_holdv0": 0.940738,
+    "nospeed_tactical_oracle": 0.89608,
+    "refc_base_produced": 0.931725,
+    "refc_small_produced": 0.931531,
+    "refc_xl_produced": 0.943811,
+    "stand_still": 0.0,
+    "v1_tactical_follow": 0.908109,
+    "v1_tactical_oracle": 0.904716,
+    "v4_blind": 0.599887,
+    "v4_oracle": 0.946246,
+    "oracle_lon_straight": 0.991616,
+    "v1_ego_double": 0.986595,
+    "v1_ego_half": 0.486352,
+    "v1_ego_oracle_lon": 0.980466,
+    "v1_ego_v0": 0.932388,
+    "v1_lat_straight": 0.913805,
+    "refc_base_v0off": 0.837734,
+    "refc_base_v0on": 0.931725,
+    "refc_xl_v0off": 0.873184,
+    "refc_xl_v0on": 0.943811
+   },
+   "p=0.05": {
+    "cv_holdv0": 0.943701,
+    "nospeed_tactical_oracle": 0.901249,
+    "refc_base_produced": 0.935115,
+    "refc_small_produced": 0.934932,
+    "refc_xl_produced": 0.94662,
+    "stand_still": 0.05,
+    "v1_tactical_follow": 0.912686,
+    "v1_tactical_oracle": 0.909463,
+    "v4_blind": 0.617629,
+    "v4_oracle": 0.948908,
+    "oracle_lon_straight": 0.992035,
+    "v1_ego_double": 0.987237,
+    "v1_ego_half": 0.512026,
+    "v1_ego_oracle_lon": 0.98142,
+    "v1_ego_v0": 0.935754,
+    "v1_lat_straight": 0.918115,
+    "refc_base_v0off": 0.845785,
+    "refc_base_v0on": 0.935115,
+    "refc_xl_v0off": 0.879524,
+    "refc_xl_v0on": 0.94662
+   },
+   "p=0.1": {
+    "cv_holdv0": 0.946664,
+    "nospeed_tactical_oracle": 0.906418,
+    "refc_base_produced": 0.938505,
+    "refc_small_produced": 0.938333,
+    "refc_xl_produced": 0.949429,
+    "stand_still": 0.1,
+    "v1_tactical_follow": 0.917264,
+    "v1_tactical_oracle": 0.91421,
+    "v4_blind": 0.635371,
+    "v4_oracle": 0.95157,
+    "oracle_lon_straight": 0.992454,
+    "v1_ego_double": 0.98788,
+    "v1_ego_half": 0.537701,
+    "v1_ego_oracle_lon": 0.982374,
+    "v1_ego_v0": 0.939119,
+    "v1_lat_straight": 0.922424,
+    "refc_base_v0off": 0.853837,
+    "refc_base_v0on": 0.938505,
+    "refc_xl_v0off": 0.885864,
+    "refc_xl_v0on": 0.949429
+   },
+   "p=0.25": {
+    "cv_holdv0": 0.955553,
+    "nospeed_tactical_oracle": 0.921924,
+    "refc_base_produced": 0.948674,
+    "refc_small_produced": 0.948536,
+    "refc_xl_produced": 0.957856,
+    "stand_still": 0.25,
+    "v1_tactical_follow": 0.930996,
+    "v1_tactical_oracle": 0.928452,
+    "v4_blind": 0.688597,
+    "v4_oracle": 0.959555,
+    "oracle_lon_straight": 0.993712,
+    "v1_ego_double": 0.989806,
+    "v1_ego_half": 0.614724,
+    "v1_ego_oracle_lon": 0.985235,
+    "v1_ego_v0": 0.949216,
+    "v1_lat_straight": 0.935354,
+    "refc_base_v0off": 0.877991,
+    "refc_base_v0on": 0.948674,
+    "refc_xl_v0off": 0.904885,
+    "refc_xl_v0on": 0.957856
+   }
+  },
+  "\u26d4 stand_still_price": {
+   "p=0": 0.0,
+   "p=0.05": 0.05,
+   "p=0.1": 0.1,
+   "p=0.25": 0.25
+  },
+  "DECISION": "REFUSED, on the measurement and not on the argument. stand_still does not move on any row and its ego_progress rises 0.000000 -> p for free at every p > 0. This programme has already paid for that trade once: the naive v0-based recovery denominator scored the BLIND arm +0.597 ABOVE the sighted one because a planner that barely moves has a small cross-track error. 'Standing still is not progress.' \u21d2 the under floor is NAMED, PRICED and LEFT OPEN, and the honest instrument is to PUBLISH the under-floor fraction beside every ego_progress value \u2014 which `saturation` now does."
+ }
+}

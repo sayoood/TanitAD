@@ -920,6 +920,30 @@ def _ctl_lon_retime(pw, k):
     return _copy_with_traj(pw, torch.as_tensor(out, dtype=t.dtype))
 
 
+def _ctl_lon_shift(pw, d):
+    """⭐ Add a CONSTANT along-track offset ``d`` metres. ``d = 0`` is the null.
+
+    ADDED 2026-07-28 by the ``ego_progress`` under-side audit. It is the exact
+    along-track twin of :func:`_ctl_lat_shift`, and :func:`_ctl_lon_jitter` is
+    already its zero-mean counterpart — the along axis simply never had the
+    constant-sign member, which is why **the under side of ``ego_progress``
+    (``r <= 0``) had never been probed by any injection suite**: no existing
+    control could push a row that is ALREADY travelling backwards FURTHER
+    backwards. ``lon_scale`` multiplies (so it moves a row at ``r = 0`` not at
+    all) and ``lon_retime`` re-samples along the plan's own arc (so it cannot
+    leave it).
+
+    ⛔ **Directionally dangerous by construction, exactly like ``lat_shift``.**
+    A constant-sign along-track offset RE-CENTRES an arm biased the other way:
+    ``d < 0`` degrades an under-travelling row and *improves* an over-travelling
+    one. ⇒ its direction must be VERIFIED against a metric-independent ground
+    truth (``|s_plan - s_human|``) on each arm before any verdict is read off
+    it. Never assume the name."""
+    t = pw["traj"].clone()
+    t[..., 0] = t[..., 0] + float(d)
+    return _copy_with_traj(pw, t)
+
+
 def _ctl_lat_shift(pw, d):
     """Add a CONSTANT lateral offset ``d`` metres. ``d = 0`` is the null.
 
@@ -1007,6 +1031,7 @@ CONTROLS = {
     "lon_scale": _ctl_lon_scale,
     "lon_retime": _ctl_lon_retime,
     "lon_jitter": _ctl_lon_jitter,
+    "lon_shift": _ctl_lon_shift,
     "lat_shift": _ctl_lat_shift,
     "lat_drift": _ctl_lat_drift,
     "lat_jitter": _ctl_lat_jitter,
@@ -1026,6 +1051,12 @@ LADDERS = {
                               1.05, 1.15, 1.30, 1.50, 2.00)},
     "lon_jitter": {"null": 0.0, "unit": "m sigma (zero-mean)", "two_sided": False,
                    "levels": (0.0, 0.25, 0.5, 1.0, 2.0, 4.0)},
+    # ⭐ the along-track constant-sign control the suite was missing. Its ladder
+    # STRADDLES 0 because an axis validated on one side is the clamp_v1 failure
+    # repeated — and here the UNDER half is the one that had never been probed.
+    "lon_shift": {"null": 0.0, "unit": "m constant along-track offset",
+                  "two_sided": True,
+                  "levels": (-5.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 5.0)},
     "lat_shift": {"null": 0.0, "unit": "m constant offset", "two_sided": True,
                   "levels": (-2.0, -1.0, -0.5, -0.25, 0.0,
                              0.25, 0.5, 1.0, 2.0)},

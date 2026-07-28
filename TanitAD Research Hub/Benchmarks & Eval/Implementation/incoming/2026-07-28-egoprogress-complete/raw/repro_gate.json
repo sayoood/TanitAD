@@ -1,0 +1,263 @@
+{
+ "_experiment": "THE ego_progress UNDER SIDE (never audited by any injection suite) AND THE OVER-SIDE ZERO-MEAN DEFECT. 0 GPU-h.",
+ "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+ "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap (B=2000, unit = val episode)",
+ "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+ "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+ "_hosts": "dev box only. pod1 (TRAINING 23,000/30,000) and pod2 (small validation) were NOT contacted.",
+ "_import_provenance_md5": {
+  "taniteval.ci": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+   "md5": "c92618a02b36f8191a581fb74a491a8d"
+  },
+  "taniteval.control": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+   "md5": "d566e02a19472cb2960d26c109296e08"
+  },
+  "taniteval.pseudosim": {
+   "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+   "md5": "a5a652ef67619eefe565c6211de60638"
+  }
+ },
+ "_row_identity": {
+  "cv_holdv0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "nospeed_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_small_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_produced": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "stand_still": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_follow": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_tactical_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_blind": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v4_oracle": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "oracle_lon_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_double": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_half": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_oracle_lon": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_ego_v0": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "v1_lat_straight": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_base_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0off": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  },
+  "refc_xl_v0on": {
+   "n_rows": 15981,
+   "identical_to_reference": true
+  }
+ },
+ "_refused_arms": {},
+ "_human_replay_max_residual_m": 1.52587890625e-05,
+ "_human_replay_ego_progress": 0.99144,
+ "_zero_bias_reference_kept_out_of_the_gate_vote": true,
+ "_synthetic_substrates_kept_out_of_the_gate_vote": [
+  "human_replay",
+  "reverse_half = lon_scale(-0.5) o v1_tactical_follow"
+ ],
+ "_parity": "No episode is re-selected. All arms share the identical row set and row identity is ASSERTED, not assumed. Counts only \u2014 no clip UUID appears in any artifact.",
+ "_preregistration": "raw/PREREGISTRATION.json (staged before any under-side number was computed)",
+ "repro_gate": {
+  "n_published_composites_checked": 16,
+  "max_abs_diff": 0.0,
+  "PASS": true,
+  "per_arm": {
+   "cv_holdv0": {
+    "published": 0.5705,
+    "measured": 0.570495,
+    "abs_diff": 0.0
+   },
+   "v4_oracle": {
+    "published": 0.5622,
+    "measured": 0.562181,
+    "abs_diff": 0.0
+   },
+   "refc_xl_produced": {
+    "published": 0.5499,
+    "measured": 0.549911,
+    "abs_diff": 0.0
+   },
+   "v1_tactical_follow": {
+    "published": 0.5471,
+    "measured": 0.547051,
+    "abs_diff": 0.0
+   },
+   "v1_tactical_oracle": {
+    "published": 0.5467,
+    "measured": 0.546749,
+    "abs_diff": 0.0
+   },
+   "refc_small_produced": {
+    "published": 0.5444,
+    "measured": 0.544418,
+    "abs_diff": 0.0
+   },
+   "refc_base_produced": {
+    "published": 0.5439,
+    "measured": 0.543941,
+    "abs_diff": 0.0
+   },
+   "nospeed_tactical_oracle": {
+    "published": 0.5394,
+    "measured": 0.53943,
+    "abs_diff": 0.0
+   },
+   "v4_blind": {
+    "published": 0.3749,
+    "measured": 0.374868,
+    "abs_diff": 0.0
+   },
+   "v1_ego_v0": {
+    "published": 0.5608,
+    "measured": 0.56075,
+    "abs_diff": 0.0
+   },
+   "v1_ego_oracle_lon": {
+    "published": 0.5946,
+    "measured": 0.59462,
+    "abs_diff": 0.0
+   },
+   "v1_lat_straight": {
+    "published": 0.546,
+    "measured": 0.545972,
+    "abs_diff": 0.0
+   },
+   "refc_base_v0on": {
+    "published": 0.5439,
+    "measured": 0.543941,
+    "abs_diff": 0.0
+   },
+   "refc_base_v0off": {
+    "published": 0.498,
+    "measured": 0.497957,
+    "abs_diff": 0.0
+   },
+   "refc_xl_v0on": {
+    "published": 0.5499,
+    "measured": 0.549911,
+    "abs_diff": 0.0
+   },
+   "v1_ego_half": {
+    "published": 0.3117,
+    "measured": 0.311691,
+    "abs_diff": 0.0
+   }
+  },
+  "strict_refinement_bit_identity": {
+   "clamp_v1": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "twosided_v2": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "twosided_asym_w0p5": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "twosided_asym_w0p3333": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "twosided_asym_w2": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "hyp_w1": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "hyp_w0p5": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "hyp_w2": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "exp_w1": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "exp_w0p5": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "sqrtlin_w1": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "sqrtlin_w0p5": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "sqrtlin_w0p3333": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   },
+   "sqrtlin_w0p25": {
+    "bit_identical_to_clamp_v1_on_every_r_le_1_row": true,
+    "n_arms": 20
+   }
+  },
+  "_published_metric_id": "PSS_recovery_progress@clamp_v1",
+  "_default_metric_id": "PSS_recovery_progress@twosided_v2",
+  "_note": "The published values are computed by NAMING clamp_v1 explicitly, so they are immune to any default change \u2014 that is the whole point of the versioned term registry."
+ }
+}

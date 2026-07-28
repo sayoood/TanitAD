@@ -1,0 +1,90 @@
+{
+ "_what": "PRE-REGISTRATION for the ego_progress UNDER-SIDE audit (never tested by any injection suite in this programme) and for the over-side zero-mean repair. Written and staged BEFORE any under-side number was computed.",
+ "_wall_clock_utc": "2026-07-28",
+ "_repo_head_at_write": "29038cb",
+ "_author_note": "⛔ Everything below is committed in advance, in BOTH directions. Where I state an expectation I also state what I will write if it does NOT fire. A prediction that can only confirm is not a prediction — the sibling stream's own C47 prediction FAILED and that failure was its most useful result.",
+
+ "U_SUBSTRATES": {
+  "primary_real": ["cv_holdv0", "v1_tactical_follow"],
+  "decisive": "v4_blind — 31.78 % of its DEFINED rows sit at ego_progress = 0 with r <= 0 (INHERITED from …/2026-07-28-bounded-terms-complete/raw/density.json). It is the only non-degenerate arm on the panel with real under-floor mass; every other scorable arm is <= 0.60 %.",
+  "stress_synthetic": "reverse_half = lon_scale(-0.5) applied to v1_tactical_follow — a plan that travels BACKWARDS at half the human's speed, so ~100 % of its rows are at r <= 0. ⛔ It is a METRIC-TEST SUBSTRATE, is never inserted into `arms`, and NEVER votes on any gate or ranking. Same role v1_ego_double played for the over side.",
+  "degenerate_reference": "stand_still — r = 0 on every row by construction; used ONLY to price the under-side range budget (U-6)."
+ },
+
+ "U_CONTROLS_AND_THE_DIRECTION_RULE": {
+  "⭐ RULE U-0 (the brief's explicit demand: 'verify each control's direction')": "A control is admissible as an UNDER-TRAVEL DEGRADATION on a given arm only if it INCREASES a METRIC-INDEPENDENT ground truth on that arm: the absolute along-track endpoint error |s_plan - s_human| (mean AND median), measured with a paired episode-cluster bootstrap and SEPARATED. A cell whose control fails this check is reported as REFUSED_CONTROL and is NOT counted as a metric failure. ⛔ This exists because lon_shift and lon_scale have a CONSTANT SIGN and can RE-CENTRE an arm that is biased the other way — control._ctl_lat_shift's own docstring warns of exactly this, and an under-travel injection is the shape that has fooled this programme before.",
+  "controls": [
+   {"name": "lon_retime", "levels": [0.7, 0.5], "why": "PATH-PRESERVING slowdown — re-samples the plan along its OWN polyline. The axis-pure under-travel control."},
+   {"name": "lon_scale", "levels": [0.5], "why": "the panel's own v1_ego_half construction; kept for comparability, NOT axis-pure (it rotates every segment)."},
+   {"name": "lon_shift", "levels": [-2.0, -5.0], "why": "⭐ NEW CONTROL. Constant along-track back-shift of every plan point — the exact along-track analogue of lat_shift, and the only control that pushes rows ALREADY at r <= 0 FURTHER backwards. Without it the under floor cannot be probed at all."},
+   {"name": "lon_jitter", "levels": [2.0], "why": "⭐⭐ THE LOAD-BEARING CELL. ZERO-MEAN along-track noise, one draw per row. Its expectation is 0 by construction, so it CANNOT re-centre a bias and its direction is unambiguous: it strictly adds error and must therefore LOWER any sound progress score."}
+  ]
+ },
+
+ "U_PREDICTIONS": {
+  "U-1 the direction check nobody has ever run": {
+   "claim": "On cv_holdv0 and v1_tactical_follow a CONSTANT SLOWDOWN (lon_retime 0.7 and 0.5) LOWERS ego_progress, SEPARATED, under BOTH clamp_v1 and twosided_v2.",
+   "expect": "PASS on both terms. The published docstring asserts clamp_v1 'punishes going too slow' — that has never been measured by injection and is being measured here for the first time.",
+   "if_it_fails": "the under half of a weight-5.0 term is broken in the plainest possible way and every downstream result in this report is void; I will lead with that and stop."
+  },
+  "U-2 the reversal floor": {
+   "claim": "On the reversing substrate (~100 % of rows at r <= 0) a FURTHER reversal (a deeper lon_shift, or lon_scale -0.5 -> -1.0) is charged NOTHING.",
+   "expect": "FAIL — delta ~ 0.0000, degenerate, IDENTICALLY under clamp_v1 and twosided_v2, because the two terms are bit-identical for r <= 1 and both floor at r <= 0. A plan reversing 1 m and a plan reversing 10 m score the same 0.0000.",
+   "if_it_does_not_fire": "the under floor is not reachable by any realisable degradation and E-3 can be closed as MEASURED-BENIGN; I will say so and drop the fix."
+  },
+  "U-3 ⭐⭐ THE LOAD-BEARING ZERO-MEAN CELL": {
+   "claim": "On v4_blind (31.78 % under-floor) a ZERO-MEAN lon_jitter(sigma = 2 m) RAISES ego_progress — the C45 mechanism, on the side nobody has audited.",
+   "expect": "delta > 0 and SEPARATED under clamp_v1. Under twosided_v2 I expect the SAME SIGN but a SMALLER magnitude, because twosided_v2 charges the positive draws that clamp_v1 ceilings away. ⇒ a DISCRIMINATING prediction: clamp_v1's leak must exceed twosided_v2's on this arm.",
+   "if_it_does_not_fire": "the under floor is measurably benign at the panel's own density and I will write that the under side is SOUND at 31.78 % floor — which would be a genuine surprise given the over side leaked at 23.42 %."
+  },
+  "U-4 the NaN hazard, asserted rather than predicted": {
+   "claim": "ego_progress is NaN iff the HUMAN's 2 s chord <= 0.5 m — a property of the LOGGED path, not of the plan. Its defined_frac must therefore be EXACTLY invariant under every plan-space injection.",
+   "test": "ASSERTED bit-exactly on every cell. ⚠️ The COMPOSITE's definedness is NOT invariant (recovery's mask xt_hold > 0.10 m is plan-dependent and a barely-moving plan yields recovery = NaN BY CONSTRUCTION — a slowdown once raised the composite +0.1698 this way). defined_frac is published for every composite cell and any cell moving it by more than 0.5 pp is read as CONFOUNDED, not as a metric verdict."
+  },
+  "U-5 the negative control": {
+   "claim": "On cv_holdv0 (under-floor 0.50 %) the same zero-mean lon_jitter must NOT be rewarded.",
+   "expect": "delta <= 0 under twosided_v2. Under clamp_v1 I expect delta < 0 as well — not because clamp_v1 is sound but because its CEILING at r >= 1 clips 26 % of that arm's rows, and a clipped ceiling is CONCAVE, which charges zero-mean noise. ⇒ the two ends of the same clamp bias in OPPOSITE directions, and which one wins is a fact about the arm's density, not about the term."
+  },
+  "U-6 the under-side fix, and the reason I expect to refuse it": {
+   "arithmetic": "Any bounded g: R -> [0,1] that agrees with clamp_v1 on [0,1] has g(0) = 0, and g >= 0 forces g == 0 on (-inf, 0]. ⇒ A STRICT REFINEMENT OF THE UNDER SIDE IS PROVABLY IMPOSSIBLE — identical in structure to C47's impossibility proof for recovery. Charging reversal requires g(0) = p > 0, i.e. a RANGE BUDGET with a free parameter, exactly recovery's q.",
+   "expect": "REFUSE the budget on a MEASURED semantic ground: p > 0 pays a plan that does not move. stand_still is at r = 0 on 100 % of rows and would rise 0.0000 -> p. This programme has already been burned by exactly that (the v0-based recovery denominator put the BLIND arm +0.597 above the sighted one; 'standing still is not recovery'). I commit in advance to publishing p's price on stand_still and on v4_blind and letting the number decide, not the argument.",
+   "if_the_price_is_low": "I will ship the budget as a versioned non-default term with the full ranking impact published."
+  },
+  "U-7 the resolution lever, checked before any shape parameter": {
+   "claim": "The brief's ⭐ lever: lat_heading was one value per row BY IMPLEMENTATION CHOICE and a 20-step mean cut its worst floor 32.4x with no free parameter. ego_progress has the SAME structure — score_windows uses ONLY the terminal along-track distance (x[:, -1] over the human's 2 s chord) although the plan has 20 steps and the reference has 20 matching poses.",
+   "expect": "a per-step resolution (mean over the k with human_k > 0.5 m — the PUBLISHED constant, reused verbatim, so no new parameter) lowers the floor fraction on both ends. ⚠️ AND I EXPECT A NEW PATHOLOGY: r_k = x_k / human_k has a SMALL DENOMINATOR at early k, so a constant along-track offset e produces e/human_k which EXPLODES at k = 1 — the exact structural twin of the step-0 tangent that destroyed the `mean` resolution for lat_heading. If that fires, the resolution lever does NOT transfer and I will say so rather than shipping it."
+  }
+ },
+
+ "O_PREDICTIONS_over_side": {
+  "O-0 reproduction of the inherited failing cell": "My twosided_v2 numbers on the 12 published over-side cells must reproduce …/2026-07-28-bounded-terms-complete/raw/injections_ego_progress.json EXACTLY (same controls, same arms, same B = 2000, same seed). ASSERTED before any new shape is scored.",
+  "O-1 the acceptance rule": "A term PASSES only if every VERIFIED-DIRECTION cell moves NEGATIVE and SEPARATED — over side (4 injections x 3 arms) AND under side. The zero-mean cells are load-bearing on both sides.",
+  "O-2 ⛔ THE PREDICTION I EXPECT TO CONSTRAIN THE ANSWER": "A term LINEAR on its live range has E[g(r + delta)] = g(r) exactly for zero-mean delta, so it can never SEPARATE on a zero-mean cell — it can only be n.s. Charging zero-mean noise requires CONCAVITY where the data lives. But a bounded, decreasing, CONCAVE function must reach 0 at finite r and stay there, and that floor is a CONVEX kink which REWARDS the same noise. ⇒ I predict the grid is a TRADE, not a search, and that the winner is whichever shape puts its concave region on the density and its convex kink beyond it. ⛔ BOTH OUTCOMES COMMITTED: if some term scores a clean sweep I will ship it and this prediction is refuted; if none does, the correct deliverable is the PROOF of the trade plus the measured frontier, and 'the composite is sound end to end' still may not be written.",
+  "O-3 the shapes swept": "clamp_v1 (published); lin/twosided w in {1/3, 0.5, 1, 2} (floor at r = 1 + 1/w); hyp_w = 1/(1 + w(r-1)) — NEVER floors and has the SAME charge rate w at r = 1 as lin_w, so it is the shape that answers 'move the floor without halving the rate'; exp_w = exp(-w(r-1)) — never floors, same rate at r = 1; sqrtlin_w = sqrt(max(1 - w(r-1), 0)) — the only CONCAVE member, floors at the same r = 1 + 1/w as lin_w. Every one of them is a STRICT REFINEMENT: bit-identical to clamp_v1 for r <= 1.",
+  "O-4 C47, re-derived here and NOT inherited": "C47 was AMENDED today to BOUNDED: the same share form scored 0/8 on recovery and 10/10 on lat_heading, and q = 0.5 lost on one and won on the other. The reward-bias proxy only predicts the outcome when the median row sits ABOVE the anchor. ⇒ I re-measure the charge rate at THIS term's own density, per substrate arm, and inherit no verdict. Note the substrates differ sharply: cv_holdv0 median r = 0.983 (BELOW the anchor r = 1) and v1_ego_double median r = 1.956 (ABOVE it), so C47's own boundary condition is straddled INSIDE this one experiment."
+ },
+
+ "CONTAMINATION_PANEL": {
+  "rule": "⚠️ A term can pass its injections and still be wrong — the plain-mean lat_heading candidate scored 10/10 and was killed by contamination. ego_progress's defining claim is that it measures ALONG-TRACK travel. ⇒ purely LATERAL degradations (lat_shift +-2 m, lat_jitter 1 m, yaw_bias 5 deg) must move it LEAST: max|delta| over the lateral controls must be < min|delta| over the verified longitudinal injections, on both real arms.",
+  "note": "yaw_bias is included although it is not a pure translation: rotating a plan DOES shorten its along-track projection, so it is expected to move ego_progress a little. It is reported, and only lat_shift/lat_jitter carry the purity rule."
+ },
+
+ "⚠️ SELECTION_RULE_ADDENDUM — ADDED AFTER A B = 40 SMOKE AND DISCLOSED AS SUCH": {
+  "_why_this_is_disclosed_rather_than_presented_as_pre-registered": "The sibling stream added its H0 rule mid-run after a B = 40 smoke and said so in the rule dict itself rather than only in prose; that disclosure is the reason its result is readable. The ACCEPTANCE bar (O-1, U-0, U-4) was fixed before any number. What is added here is only the PREFERENCE ORDER among survivors, and it was written after a B = 40 smoke and BEFORE the decision-grade B = 2000 run.",
+  "A1": "DISQUALIFY any term with a cell SEPARATED IN THE WRONG DIRECTION, anywhere: over side, under side, or the reversing substrate — verified control or not. A metric that moves up, separated, under a perturbation the ground truth cannot even detect is displaying spurious sensitivity of the wrong sign.",
+  "A2": "DISQUALIFY any term that is not negative-and-separated on every VERIFIED-direction cell.",
+  "A3": "DISQUALIFY any term that fails the CONTAMINATION panel on either real arm (a pure lateral degradation must move this longitudinal axis less than the smallest longitudinal one does).",
+  "A4": "DISQUALIFY any term gate v2 refuses (live_frac < 0.50 on any scorable arm).",
+  "A5": "⛔ DISQUALIFY any term that WEAKENS an instrument guard: `v4_oracle - v4_blind` must not fall below its value under the shipped `twosided_v2`, and `v1_ego_half - v1_tactical_follow` must not rise above it. A fix that makes the metric more permissive is not a fix.",
+  "A6": "Among survivors PREFER the SMALLEST DEPARTURE FROM THE PUBLISHED TERM: (i) the PUBLISHED RESOLUTION (terminal, n_sub = 1) beats a resolution change; (ii) the LARGEST surviving w, because w is exactly the over-travel charge rate at r = 1+ and the published value is 1.0; (iii) the LINEAR family before any other.",
+  "A7": "⛔ AND A STANDING REFUSAL: if the surviving point requires changing `OVER_TRAVEL_WEIGHT` or `PROGRESS_TERM_DEFAULT`, that moves EVERY published PSS level and every ranking. It is shipped as a DEFAULT only if A1-A5 all hold AND the ranking statement is unchanged; otherwise it is shipped as a named, versioned, non-default term with the frontier published and the decision escalated."
+ },
+
+ "NON_NEGOTIABLE": {
+  "reproduction_gate": "the 16 published @clamp_v1 composites must return max|diff| = 0.000000.",
+  "guards_must_strengthen": "v4_oracle - v4_blind is +0.2384 under the shipped control composite and +0.2992 on PSS. A fix that makes the metric MORE PERMISSIVE is not a fix.",
+  "synthetic_arms": "human_replay and reverse_half are built, asserted and kept OUT of the gate vote. The sibling stream's gate caught human_replay silently redefining the composite for every arm (max|diff| 0.000000 -> 0.393900).",
+  "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B = 2000, unit = val episode. ⛔ overlapping_holdout_se appears nowhere.",
+  "hosts": "dev box only. pod1 (TRAINING) and pod2 (small validation) are NOT contacted. 0 GPU-h."
+ }
+}

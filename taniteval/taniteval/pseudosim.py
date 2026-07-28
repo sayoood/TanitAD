@@ -114,6 +114,8 @@ __all__ = [
     "GATE_VERSIONS", "GATE_VERSION_DEFAULT", "GATE_VERSION_PUBLISHED",
     "UnknownGateVersion",
     "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
+    "PROGRESS_UNDER_FLOOR_IS_UNFIXABLE", "PROGRESS_OVER_SIDE_TRICHOTOMY",
+    "PROGRESS_HUMAN_MIN_M", "progress_ratios_per_step",
     "progress_from_ratio", "metric_id", "UnknownProgressTerm",
     "RECOVERY_TERMS", "RECOVERY_TERM_DEFAULT", "RECOVERY_TERM_PUBLISHED",
     "RECOVERY_TERM_DEFAULT_TARGET", "RECOVERY_TERM_ALIASES",
@@ -201,6 +203,94 @@ def _progress_twosided(weight):
     return _f
 
 
+def _progress_hyperbolic(weight):
+    """``1 / (1 + w * max(r - 1, 0))`` on the over side; ``clamp_v1`` below.
+
+    ⭐ THE SHAPE THAT ANSWERS *"MOVE THE FLOOR WITHOUT HALVING THE CHARGE RATE"*.
+    Its derivative at ``r = 1+`` is exactly ``-w`` — **identical to**
+    :func:`_progress_twosided` at the same ``w`` — but it never reaches 0, so it
+    has **no floor kink** for a zero-mean jitter to leak through. ``w0p5`` and
+    ``w0p3333`` buy their later floor by charging over-travel at half or a third
+    of the rate; this family does not.
+
+    ⛔ AND IT IS CONVEX ON THE OVER SIDE, WHICH IS THE PRICE. A convex score
+    under zero-mean noise is biased UP by Jensen, so this family cannot SEPARATE
+    a zero-mean along-track jitter in the correct direction — it can only be
+    n.s. or wrong. MEASURED, and the measurement is why it is not the default;
+    see ``…/incoming/2026-07-28-egoprogress-complete/EGOPROGRESS_COMPLETE.md``.
+
+    Strict refinement: ``torch.where(r > 1, tail, clamp_v1(r))`` returns the
+    published value BIT-identically for every ``r <= 1``."""
+    def _f(ratio):
+        base = _progress_clamp_v1(ratio)
+        over = (ratio - 1.0).clamp_min(0.0)
+        tail = 1.0 / (1.0 + float(weight) * over)
+        return torch.where(ratio > 1.0, tail, base)
+    return _f
+
+
+def _progress_exp(weight):
+    """``exp(-w * max(r - 1, 0))`` on the over side; ``clamp_v1`` below.
+
+    Same charge rate ``-w`` at ``r = 1+`` as :func:`_progress_twosided` and
+    :func:`_progress_hyperbolic`, decays faster than the hyperbolic one and,
+    like it, never floors — and is convex on the over side for the same reason.
+    Included so the never-flooring class is represented by more than one
+    member: C47's amendment is that a shape must be judged against the DENSITY,
+    and two decay rates bracket it."""
+    def _f(ratio):
+        base = _progress_clamp_v1(ratio)
+        over = (ratio - 1.0).clamp_min(0.0)
+        tail = torch.exp(-float(weight) * over)
+        return torch.where(ratio > 1.0, tail, base)
+    return _f
+
+
+def _progress_sqrtlin(weight):
+    """``sqrt(max(1 - w * max(r - 1, 0), 0))`` — ⭐ THE ONLY **CONCAVE** MEMBER.
+
+    Floors at exactly the same ``r = 1 + 1/w`` as :func:`_progress_twosided`,
+    but approaches that floor with an increasing charge rate instead of a
+    constant one. Concavity is the ONLY property that can make a zero-mean
+    perturbation cost something: for a linear term ``E[g(r + d)] = g(r)``
+    identically when ``E[d] = 0``, so a linear term can never separate a
+    zero-mean cell — it can only be n.s.
+
+    ⚠️ Its rate at ``r = 1+`` is ``w/2``, i.e. HALF the linear family's, which
+    is the trade this family makes: it charges small over-travel less and large
+    over-travel more."""
+    def _f(ratio):
+        base = _progress_clamp_v1(ratio)
+        over = (ratio - 1.0).clamp_min(0.0)
+        tail = torch.sqrt((1.0 - float(weight) * over).clamp_min(0.0))
+        return torch.where(ratio > 1.0, tail, base)
+    return _f
+
+
+#: ⛔⛔ THE UNDER SIDE (``r <= 0``) CANNOT BE REPAIRED BY A STRICT REFINEMENT,
+#: AND THIS IS A PROOF, NOT A PREFERENCE. Any bounded ``g: R -> [0, 1]`` that
+#: agrees with ``clamp_v1`` on ``[0, 1]`` has ``g(0) = 0``; combined with
+#: ``g >= 0`` and monotonicity it is forced to ``g == 0`` on ``(-inf, 0]``, i.e.
+#: it IS the defect. Charging a plan for reversing FURTHER therefore requires
+#: ``g(0) = p > 0`` — a RANGE BUDGET with a free parameter, structurally
+#: identical to :data:`RECOVERY_HOLD_ANCHOR`.
+#:
+#: ⛔ AND THAT BUDGET PAYS A PLAN THAT DOES NOT MOVE. ``stand_still`` sits at
+#: ``r = 0`` on 100 % of its rows and would rise ``0.0000 -> p`` for free. This
+#: programme has already been burned by exactly that trade once: the naive
+#: ``v0``-based recovery denominator scored the BLIND arm **+0.597 above the
+#: sighted one** because a planner that barely moves has a small cross-track
+#: error. *Standing still is not progress.* ⇒ the budget is NAMED, PRICED and
+#: REFUSED rather than shipped; the measured price is in
+#: ``…/incoming/2026-07-28-egoprogress-complete/raw/under_fix.json``. Pinned by
+#: ``test_the_under_side_range_budget_PAYS_STANDING_STILL``.
+PROGRESS_UNDER_FLOOR_IS_UNFIXABLE = (
+    "A bounded score agreeing with clamp_v1 on [0,1] is forced to 0 on "
+    "(-inf, 0]: a plan reversing 1 m and a plan reversing 10 m MUST score the "
+    "same. The only escape is a range budget g(0) = p > 0, which pays "
+    "stand_still p for not moving. REFUSED — measured, not argued.")
+
+
 #: name -> ratio-to-score function. Every published number names its key.
 PROGRESS_TERMS = {
     "clamp_v1": _progress_clamp_v1,
@@ -217,7 +307,48 @@ PROGRESS_TERMS = {
     "twosided_asym_w1p5": _progress_twosided(1.5),
     "twosided_asym_w2": _progress_twosided(2.0),
     "twosided_asym_w3": _progress_twosided(3.0),
+    # ⭐ ADDED 2026-07-28 by the ego_progress over-side repair. Every one of
+    # these is a STRICT REFINEMENT (bit-identical to clamp_v1 for r <= 1) and
+    # every one is a CANDIDATE, not a default — the acceptance grid is
+    # published in `…/2026-07-28-egoprogress-complete/raw/inject_over.json`.
+    # The never-flooring pair answer "move the floor without halving the rate";
+    # the sqrtlin pair are the only CONCAVE members and are therefore the only
+    # ones that can charge a ZERO-MEAN jitter at all.
+    "hyp_w1": _progress_hyperbolic(1.0),
+    "hyp_w0p5": _progress_hyperbolic(0.5),
+    "hyp_w2": _progress_hyperbolic(2.0),
+    "exp_w1": _progress_exp(1.0),
+    "exp_w0p5": _progress_exp(0.5),
+    "sqrtlin_w1": _progress_sqrtlin(1.0),
+    "sqrtlin_w0p5": _progress_sqrtlin(0.5),
+    "sqrtlin_w0p3333": _progress_sqrtlin(1.0 / 3.0),
+    "sqrtlin_w0p25": _progress_sqrtlin(0.25),
 }
+
+#: ⛔⛔ THE TRICHOTOMY — why the over-side zero-mean cell is a TRADE and not a
+#: search. For any bounded strict refinement ``g`` (``g = clamp_v1`` on
+#: ``[0, 1]``) and a zero-mean along-track perturbation:
+#:
+#:  * **CONVEX tail** (the only way never to floor) ⇒ Jensen makes
+#:    ``E[g(r + d)] > g(r)``: the jitter is **REWARDED**. ``hyp_*`` and ``exp_*``.
+#:  * **LINEAR tail** ⇒ ``E[g(r + d)] = g(r)`` **exactly**, away from the floor:
+#:    the jitter costs **NOTHING** and the cell can only be n.s., never
+#:    separated-correct. ``twosided_*``.
+#:  * **CONCAVE tail** ⇒ the jitter is **CHARGED** — but concavity with
+#:    ``g(1) = 1`` and ``g'(1+) = -w`` forces ``g(r) <= 1 - w(r - 1)``, so the
+#:    term reaches 0 no later than ``r = 1 + 1/w`` and that floor is itself a
+#:    convex kink that rewards the same jitter beyond it. ``sqrtlin_*``.
+#:
+#: ⇒ **a concave term whose charge rate at ``r = 1+`` is ``>= 1`` MUST floor by
+#: ``r = 2``**, i.e. no shape can simultaneously (a) charge over-travel at the
+#: published rate, (b) stay concave, and (c) put its floor beyond the density.
+#: The frontier is ``rate(1+) <= 1 / (R - 1)`` for a floor at ``R``. Pinned by
+#: ``test_the_over_side_trichotomy_is_arithmetic_not_a_preference``.
+PROGRESS_OVER_SIDE_TRICHOTOMY = (
+    "convex tail -> zero-mean jitter REWARDED (Jensen); linear tail -> costs "
+    "EXACTLY nothing; concave tail -> charged, but floors by r = 1 + 1/w and "
+    "the floor kink rewards it again. A concave term with rate >= 1 at r = 1+ "
+    "floors by r = 2. The over-side repair is a TRADE, not a search.")
 
 
 def progress_from_ratio(ratio, progress_term=PROGRESS_TERM_DEFAULT):
@@ -230,6 +361,49 @@ def progress_from_ratio(ratio, progress_term=PROGRESS_TERM_DEFAULT):
             f"id. Every PSS number published before 2026-07-28 is "
             f"{PROGRESS_TERM_PUBLISHED!r}.")
     return PROGRESS_TERMS[progress_term](ratio)
+
+
+#: the human 2 s chord below which ``ego_progress`` is undefined. It is the
+#: PUBLISHED constant, lifted out of :func:`score_windows` so the per-step
+#: resolution can reuse it VERBATIM rather than introduce a second threshold.
+PROGRESS_HUMAN_MIN_M = 0.5
+
+
+def progress_ratios_per_step(pw):
+    """⭐ THE RESOLUTION PRIMITIVE — ``ego_progress`` at every step, not just the last.
+
+    :func:`score_windows` computes ``ego_progress`` from the **terminal** step
+    alone (``x[:, -1]`` over the human's 2 s chord), so it is **one number per
+    row**, ``n_sub = 1`` — the property that made ``lat_heading`` saturate on
+    84 % of an arm's rows and that a 20-step mean fixed with **no free
+    parameter**. The identical expression exists at every step here: the plan's
+    along-track distance at step ``k`` over the human's chord to step ``k``.
+
+    Returns ``(r_steps [n, H], step_defined [n, H], row_defined [n])`` where
+
+    * ``step_defined`` uses :data:`PROGRESS_HUMAN_MIN_M` — the published
+      constant, verbatim, so the resolution change introduces NO parameter;
+    * ``row_defined`` is EXACTLY the published row mask (the human's **2 s**
+      chord above the same constant), so definedness is bit-preserved and a
+      resolution change can never silently re-select rows.
+
+    ⚠️ **READ THIS BEFORE USING IT AS A FIX.** ``human_k`` is small at small
+    ``k``, so a constant along-track offset ``e`` enters step ``k`` as
+    ``e / human_k`` and EXPLODES at the first steps — the structural twin of the
+    step-0 plan tangent that destroyed the plain-mean ``lat_heading``
+    candidate. MEASURED consequence in
+    ``…/incoming/2026-07-28-egoprogress-complete/EGOPROGRESS_COMPLETE.md``; the
+    primitive is published because the audit needs it, not because the mean
+    resolution is recommended."""
+    x, _y, ref_x, ref_y = _cross_and_along(pw)
+    H = x.shape[1]
+    dx = ref_x[:, 1:H + 1] - ref_x[:, :1]
+    dy = ref_y[:, 1:H + 1] - ref_y[:, :1]
+    human_k = torch.sqrt(dx ** 2 + dy ** 2)                    # [n, H]
+    r = x / human_k.clamp_min(1e-3)
+    step_def = human_k > PROGRESS_HUMAN_MIN_M
+    row_def = human_k[:, -1] > PROGRESS_HUMAN_MIN_M
+    return r, step_def, row_def
 
 
 # --------------------------------------------------------------------------- #
