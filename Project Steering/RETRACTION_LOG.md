@@ -686,3 +686,21 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   published `@clamp_v1` composites reproduce at max|diff| = 0.000000.**
   ⇒ **Validate any threshold against the ground truth before it carries weight.** If the humans fail
   it, it is not measuring what you named it.
+- **C47 — "NEVER SATURATES" IS NOT THE FIX; A SOFT FLOOR IS STILL A FLOOR** *(new class, added
+  2026-07-28)* ⇒ **replacing a hard clamp with a smooth unbounded form can score WORSE than the defect
+  it replaces, because what matters is not whether the term saturates but whether its CHARGE RATE
+  COLLAPSES WHERE THE DATA ACTUALLY LIVES.** MEASURED while fixing `recovery`: the intuitive
+  unsaturating share form `xt_hold/(xt_hold + xt_end)` **floors on 0.0000 of rows — and scored 0/8 on
+  the acceptance test.** Its charge rate decays like **r⁻²** while the **median row sits at r = 1.18**,
+  so it **rewards a near-perfect row 4.3× harder than it charges a typical one.**
+  ⚠️ **And the parameter that fixed the sibling term could not be ported.** An even split (`q = 0.5`) —
+  *verbatim the argument that fixed `ego_progress`* — scored **7/8**, because **`recovery`'s ratio tail
+  is much heavier**. ⇒ **A fix that worked on one bounded term is a hypothesis about the next one, not
+  a solution.**
+  ⇒ **Standing consequence: choose the shape against the DENSITY OF THE DATA, not against the
+  algebra** — and prove it with an injection suite the candidate can fail. Two of three candidates here
+  were refuted by their own acceptance test, which is the only reason the third is trustworthy.
+  ⭐ **Also established, and shipped as a proof-test: a strict refinement was IMPOSSIBLE.** Any bounded
+  `g` agreeing with `1 − r` on `[0, 1]` must be constant above 1 — **i.e. it IS the defect.** So the
+  choice was necessarily a range-budget with a free parameter, and pretending otherwise would have
+  hidden a judgement call inside an apparently mechanical fix.

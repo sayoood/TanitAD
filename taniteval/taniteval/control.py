@@ -85,7 +85,7 @@ __all__ = [
     "T_TOL_S", "D_TOL_M", "S_REF_M", "PSI_TOL_RAD", "V_MIN_MPS",
     "HUMAN_MIN_M", "S_MIN_M", "signed_xte",
     "TOL_SENSITIVITY", "AXES", "AXIS_META", "CONTROL_WEIGHTS",
-    "ZERO_MEAN_CONTROLS", "CONTROLS", "LADDERS",
+    "ZERO_MEAN_CONTROLS", "CONTROLS", "LADDERS", "BOUNDED_AXES",
     "COMFORT_STATUS", "MISSING_GATES",
     "AxisNotDemonstrated",
     "residuals", "axes", "axis_summary", "apply_control", "ladder_levels",
@@ -212,9 +212,19 @@ AXIS_META = {
     "recovery": {
         "kind": "LATERAL (error recovery)", "higher_is_better": True,
         "unit": "score [0,1]", "raw": "cross_track_end_m", "raw_unit": "m",
-        "two_sided": False,
+        # ⛔ WAS `False`, AND THAT WAS THE BUG'S FINGERPRINT. The ratio domain
+        # is two-sided (r < 1 recovers, r > 1 DIVERGES) and only the published
+        # `clamp_v1` term was one-sided about it — the term, not the axis. With
+        # `RECOVERY_TERM_DEFAULT` the axis charges both regions, so it must be
+        # held to the BOTH-SIDES admission rule like every other axis.
+        "two_sided": True,
         "what": "IMPORTED from pseudosim.score_windows, not reimplemented. The "
-                "error-recovery signal pseudo-simulation exists to produce."},
+                "error-recovery signal pseudo-simulation exists to produce. "
+                "⛔ VERSIONED (2026-07-28, C45): the published `clamp_v1` form "
+                "max(1 - r, 0) is FLOORED on 55.65-92.19 % of defined rows and "
+                "PAID for injected lateral degradation (+0.0303 to +0.0747 "
+                "SEPARATED, 8/8 injections, both arms). Quote the recovery "
+                "term with the value."},
 }
 
 #: ⭐ PROPOSED weights for a control-aware composite. NOT applied to
@@ -390,7 +400,8 @@ def residuals(pw, *, dt=DT) -> dict:
     }
 
 
-def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT) -> dict:
+def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT,
+         progress_term=None, recovery_term=None) -> dict:
     """The ranked axes + their raw signed diagnostics, per (window, grid point).
 
     Every returned array is ``[n]``, NaN where the row is masked out, so it
@@ -419,7 +430,9 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT) -> dict
     lat_track_flat = np.clip(1.0 - np.abs(xte) / d_tol, 0.0, 1.0).mean(1)
     lat_heading = np.clip(1.0 - np.abs(r["heading_err_rad"]) / psi_tol, 0.0, 1.0)
     # ---- imported, never reimplemented ------------------------------------ #
-    sc = _ps.score_windows(pw, dt=dt)
+    sc = _ps.score_windows(
+        pw, dt=dt, recovery_term=recovery_term,
+        **({} if progress_term is None else {"progress_term": progress_term}))
 
     out = {
         # ranked axes
@@ -428,6 +441,7 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT) -> dict
         "lat_heading": nanl(lat_heading),
         "recovery": sc["recovery"],
         "ego_progress": sc["ego_progress"],
+        "recovery_raw_ratio": sc["recovery_raw_ratio"],
         # raw signed diagnostics, in physical units
         "lon_time_err_s": nan(t_err[:, -1]),
         "lon_time_rmse_s": nan(np.sqrt((t_err ** 2).mean(1))),
@@ -455,22 +469,40 @@ def axes(pw, *, t_tol=None, d_tol=None, psi_tol=None, s_ref=None, dt=DT) -> dict
                                   "TOL_SENSITIVITY"},
         "_row_mask_rule": r["_row_mask_rule"],
         "_lat_mask_rule": r["_lat_mask_rule"],
+        "_progress_term": sc["_progress_term"],
+        "_recovery_term": sc["_recovery_term"],
     }
     return out
 
 
+#: the axes whose value is a BOUNDED score in [0, 1]; every one of them must
+#: publish its floor/ceiling fraction (C45). The raw twins are unbounded
+#: physical quantities and saturation is meaningless for them.
+BOUNDED_AXES = ("lon_track", "lat_track", "lat_heading", "recovery",
+                "ego_progress", "lat_track_flat")
+
+
 def axis_summary(a, eid, *, names=AXES, n_boot=None, seed=0) -> dict:
-    """Episode-cluster CI + tail statistics for each axis and its raw twin."""
+    """Episode-cluster CI + tail statistics for each axis and its raw twin.
+
+    ⚠️ Every BOUNDED axis also carries :func:`pseudosim.saturation` — C45's
+    standing consequence. `discriminative_range` computed the floor fraction for
+    its whole life and never surfaced it beside a level, which is how a term
+    floored on 55-92 % of its rows was published 20 times without anyone seeing
+    it."""
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
     out = {}
     for k in list(names) + ["lon_time_err_s", "lon_end_err_m",
                             "lon_abs_end_err_m", "lon_speed_err_mps",
                             "lat_xte_end_m", "lat_xte_peak_m", "lat_bias_m",
-                            "lat_heading_err_rad", "ego_progress"]:
+                            "lat_heading_err_rad", "ego_progress",
+                            "recovery_raw_ratio"]:
         v = np.asarray(a[k], dtype=np.float64)
         fin = np.isfinite(v)
         node = {"defined_frac": round(float(fin.mean()), 6),
                 "n_defined": int(fin.sum())}
+        if k in BOUNDED_AXES:
+            node["saturation"] = _ps.saturation(v)
         if fin.sum() >= 2 and len(set(np.asarray(eid)[fin])) >= 2:
             node["ci"] = _ci.episode_cluster_bootstrap(
                 v[fin], list(np.asarray(eid)[fin]), n_boot=n_boot, seed=seed)
@@ -688,7 +720,8 @@ def apply_control(pw, control, level, *, seed=0):
 def dynamic_range(pw, eid, *, control, axis, t_tol=None, d_tol=None,
                   psi_tol=None, s_ref=None, n_boot=None, seed=0, levels=None,
                   also=("ego_progress", "recovery", "lat_bias_m"),
-                  composite_term=_ps.PROGRESS_TERM_DEFAULT) -> dict:
+                  composite_term=_ps.PROGRESS_TERM_DEFAULT,
+                  recovery_term=None) -> dict:
     """Inject a controlled degradation and MEASURE whether ``axis`` separates.
 
     Returns, for each rung of the ladder:
@@ -721,7 +754,8 @@ def dynamic_range(pw, eid, *, control, axis, t_tol=None, d_tol=None,
     eid = np.asarray([str(x) for x in eid])
 
     def _score(p):
-        a = axes(p, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref)
+        a = axes(p, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref,
+                 recovery_term=recovery_term)
         sc = {k: np.asarray(a[k], float) for k in (axis,) + tuple(also)}
         comps = {"ego_progress": np.asarray(a["ego_progress"], float),
                  "recovery": np.asarray(a["recovery"], float)}
@@ -1029,14 +1063,18 @@ MISSING_GATES = {
 # THE BLOCK                                                                    #
 # =========================================================================== #
 def block(pw, *, arm="unknown", eid=None, t_tol=None, d_tol=None, psi_tol=None,
-          s_ref=None, n_boot=None, seed=0, sensitivity=False) -> dict:
+          s_ref=None, n_boot=None, seed=0, sensitivity=False,
+          recovery_term=None) -> dict:
     """Full control block for one arm's pseudo-simulation dump."""
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
     eid = list(pw["eid"]) if eid is None else list(eid)
-    a = axes(pw, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref)
+    a = axes(pw, t_tol=t_tol, d_tol=d_tol, psi_tol=psi_tol, s_ref=s_ref,
+             recovery_term=recovery_term)
     out = {
         "block": BLOCK, "version": VERSION, "arm": arm,
         "suite_id": a["_suite_id"], "tolerances": a["_tolerances"],
+        "recovery_term": a["_recovery_term"],
+        "progress_term": a["_progress_term"],
         "axis_meta": AXIS_META,
         "n_rows": int(len(eid)), "n_episodes": int(len(set(eid))),
         "row_mask_rule": a["_row_mask_rule"],

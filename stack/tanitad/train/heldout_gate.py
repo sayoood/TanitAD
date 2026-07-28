@@ -92,6 +92,7 @@ __all__ = [
     "HeldoutGateConfig", "HeldoutGate", "DeployableSurfacePlanner",
     "WindowAlignmentError", "GateNotUsableError", "NonDensePlanError",
     "probe_grid", "PRIMARY_NAME", "PRIMARY_RATIONALE", "REFUSED_PRIMARY",
+    "PROGRESS_TERM", "RECOVERY_TERM",
     "GOAL_OPTION_DEFAULT", "GOAL_OPTION_PROVENANCE",
 ]
 
@@ -102,12 +103,30 @@ __all__ = [
 #: of the same axis. A v5 run gated on it cannot see a longitudinal lever.
 #: Set to ``"clamp_v1"`` to reproduce a pre-2026-07-28 gate exactly.
 PROGRESS_TERM = "twosided_v2"
-#: The primary the gate stops on. Named — INCLUDING the progress term — so it can
+#: ⛔⛔ THE RECOVERY TERM THE GATE SCORES UNDER. VERSIONED (2026-07-28, C45):
+#: BOTH weight-5.0 terms were one-sidedly clamped, and fixing ``ego_progress``
+#: left its twin live. The published ``clamp_v1`` recovery term is FLOORED on
+#: **55.65-92.19 %** of defined rows, so an injected lateral degradation RAISED
+#: the composite — **+0.0303 to +0.0747, SEPARATED, 8 of 8 injections, on both
+#: arms tested**, against a published best-arm gap of only **-0.0090**.
+#: ⇒ a v5 gate run under it is gated on a metric that PAYS for the failure mode
+#: it exists to catch. Set to ``"clamp_v1"`` to reproduce a pre-2026-07-28 gate.
+RECOVERY_TERM = "twosided_v2"
+#: The primary the gate stops on. Named — INCLUDING BOTH terms — so it can
 #: never be quietly swapped OR silently redefined under a stable name.
-PRIMARY_NAME = f"pseudosim_composite_PSS_recovery_progress@{PROGRESS_TERM}"
+#: ⚠️ The ``+rec_`` suffix mirrors ``pseudosim.metric_id``: it appears only when
+#: the recovery term is not the published one, so every id published through
+#: 2026-07-28 keeps its exact string.
+PRIMARY_NAME = ("pseudosim_composite_PSS_recovery_progress@" + PROGRESS_TERM
+                + ("" if RECOVERY_TERM == "clamp_v1"
+                   else f"+rec_{RECOVERY_TERM}"))
 #: What every PSS number published before 2026-07-28 was computed under.
 PRIMARY_NAME_PUBLISHED_THROUGH_20260727 = (
     "pseudosim_composite_PSS_recovery_progress@clamp_v1")
+#: What the 2026-07-28 progress-term repair produced, BEFORE the recovery repair.
+#: Kept because it names a real, published, 24-hour-old metric id.
+PRIMARY_NAME_PUBLISHED_20260728_PROGRESS_ONLY = (
+    "pseudosim_composite_PSS_recovery_progress@twosided_v2")
 PRIMARY_RATIONALE = (
     "MEASURED: the ADE-optimal pick collides 4.7x more often than the rule-"
     "optimal pick (3.36 % vs 0.71 %, separated). PUBLISHED: L2/ADE vs closed-"
@@ -341,6 +360,10 @@ class HeldoutGateConfig:
     #: ``"clamp_v1"`` only to reproduce a pre-2026-07-28 gate; that term cannot
     #: see over-travel and therefore cannot see a longitudinal lever.
     progress_term: str = PROGRESS_TERM
+    #: ⛔ the VERSIONED recovery term (see :data:`RECOVERY_TERM`). Pin it to
+    #: ``"clamp_v1"`` only to reproduce a pre-2026-07-28 gate; that term is
+    #: floored on the majority of rows and PAYS for lateral degradation.
+    recovery_term: str = RECOVERY_TERM
     #: ⭐ WHAT GOAL STATE THE PROBE CONDITIONS ON — see :data:`GOAL_OPTION_DEFAULT`.
     #: One of :data:`tanitad.train.heldout_goal.CANDIDATES` (plus the priced trap
     #: and the two channel-isolation diagnostics). ``--heldout-goal`` on the
@@ -583,7 +606,8 @@ class HeldoutGate:
         import numpy as np
         ps, _ = _taniteval()
         term = getattr(self.cfg, "progress_term", PROGRESS_TERM)
-        sc = ps.score_windows(pw, progress_term=term)
+        rterm = getattr(self.cfg, "recovery_term", RECOVERY_TERM)
+        sc = ps.score_windows(pw, progress_term=term, recovery_term=rterm)
         comps = {k: sc[k] for k in ("ego_progress", "recovery", "comfort")}
         comps["no_collision"] = None
         comps["ttc"] = None
@@ -591,7 +615,7 @@ class HeldoutGate:
             ranges = ps.discriminative_range(comps)
             try:
                 comp = ps.composite(comps, ranges, weights=self.cfg.weights,
-                                    progress_term=term)
+                                    progress_term=term, recovery_term=rterm)
             except ps.VacuousMetric as exc:
                 raise GateNotUsableError(
                     f"the FIRST probe cannot form a composite: {exc} The gate "
@@ -603,8 +627,15 @@ class HeldoutGate:
             # ⚠️ PINNED: re-deriving admissibility per probe would let the metric
             # change definition mid-run and compare two different composites.
             comp = ps.composite(comps, self._pinned_ranges,
-                                weights=self.cfg.weights, progress_term=term)
+                                weights=self.cfg.weights, progress_term=term,
+                                recovery_term=rterm)
         node = {"metric_id": comp.get("name"), "progress_term": term,
+                "recovery_term": rterm,
+                # ⚠️ C45: the gate's own primary is a mean of two BOUNDED terms;
+                # its saturation ships with every probe record, not only in the
+                # panel. A probe that stops a GPU-week must show whether the
+                # term that stopped it had any gradient left.
+                "component_saturation": comp.get("component_saturation"),
                 "grid": pw.get("grid"), "traffic_mode": pw.get("traffic_mode"),
                 "_estimator": f"paired episode-cluster bootstrap "
                               f"(B={self.cfg.n_boot}, unit = held-out episode)"}

@@ -1,0 +1,3479 @@
+{
+  "_experiment": "FIX THE SECOND ONE-SIDED CLAMP: the `recovery` term (C45). 0 GPU-h.",
+  "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+  "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+  "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+  "_import_provenance_md5": {
+    "taniteval.ci": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+      "md5": "c92618a02b36f8191a581fb74a491a8d"
+    },
+    "taniteval.control": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+      "md5": "db780419557165ffa866366e95586d55"
+    },
+    "taniteval.pseudosim": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+      "md5": "c3ca29ef5488d52411c2bbb59c8a0c0e"
+    }
+  },
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "missing_gates": {
+    "no_collision": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric.",
+    "no_drivable_area": "IMPOSSIBLE, not merely missing. PhysicalAI-AV has no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal \u2014 the card says verbatim 'we do not include open maps data', and `obstacle.offline`'s enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. Settled at five independent probes. `egomotion` also carries no lat/lon/GNSS, so OSM map-matching on our traces is impossible. \u21d2 DAC / lane-keeping / driving-direction / traffic-light compliance cannot be computed here and are NOT faked.",
+    "_not_a_driving_score": "\u26d4 With no collision gate and no drivable-area term, NOTHING computed on this surface is a Driving Score and none of it may be compared to a PDMS number. It scores PROGRESS, RECOVERY and CONTROL.",
+    "_what_would_unblock_the_collision_gate": "`obstacle.offline` covers 97.4438 % of the corpus with boxes in the rig frame. TWO blockers, both mechanical: (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids \u2014 so episode->clip identity is not resolvable from the cache alone; (b) the matching chunks are not downloaded. Neither is a research problem."
+  },
+  "recovery_term_under_test": "twosided_v2",
+  "recovery_term_published": "clamp_v1",
+  "recovery_terms_available": [
+    "clamp_v1",
+    "lin_q0",
+    "lin_q0p25",
+    "lin_q0p5",
+    "lin_q0p6667",
+    "lin_q0p75",
+    "share_q0p25",
+    "share_q0p5",
+    "share_q0p6667",
+    "share_q0p75",
+    "twosided_v2"
+  ],
+  "arm_sources": {
+    "cv_holdv0": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_cv_holdv0.npz",
+    "nospeed_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_nospeed_tactical_oracle.npz",
+    "refc_base_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_base_produced.npz",
+    "refc_small_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_small_produced.npz",
+    "refc_xl_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_xl_produced.npz",
+    "stand_still": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_stand_still.npz",
+    "v1_tactical_follow": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_follow.npz",
+    "v1_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_oracle.npz",
+    "v4_blind": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_blind.npz",
+    "v4_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_oracle.npz",
+    "oracle_lon_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_oracle_lon_straight.npz",
+    "v1_ego_double": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_double.npz",
+    "v1_ego_half": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_half.npz",
+    "v1_ego_oracle_lon": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_oracle_lon.npz",
+    "v1_ego_v0": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_v0.npz",
+    "v1_lat_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_lat_straight.npz",
+    "refc_base_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0off.npz",
+    "refc_base_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0on.npz",
+    "refc_xl_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0off.npz",
+    "refc_xl_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0on.npz"
+  },
+  "row_identity": {
+    "cv_holdv0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "nospeed_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_small_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "stand_still": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_blind": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "oracle_lon_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_double": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_half": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_oracle_lon": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_v0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_lat_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "arms_refused_on_row_identity": {},
+  "reference_arm": "cv_holdv0",
+  "probes_excluded": [
+    "stand_still",
+    "v1_ego_half",
+    "v1_ego_double",
+    "oracle_lon_straight"
+  ],
+  "oracles_excluded_from_realisable_ranking": [
+    "v1_ego_oracle_lon",
+    "v4_oracle",
+    "v1_tactical_oracle",
+    "nospeed_tactical_oracle",
+    "oracle_lon_straight"
+  ],
+  "human_replay_max_residual_m": 1.52587890625e-05,
+  "human_replay_votes_on_the_gate": false,
+  "selected_frac_note": "selected_frac = 1.000 for every arm BY CONSTRUCTION: there is no selection step on this surface.",
+  "injections": {
+    "_selection_rule_PRE_REGISTERED": {
+      "R1": "DISQUALIFY any shape for which the 8 injected lateral degradations are not ALL separated in the CORRECT (negative) direction on BOTH real arms. A shape failing this does not fix the defect.",
+      "R2": "DISQUALIFY any shape whose recovery FLOOR fraction is >= 0.50 on any scorable arm. C45: 'a term saturating on the majority of rows is not a metric; it is a constant with noise.'",
+      "R3": "Among survivors PREFER the LINEAR family \u2014 it is affine-equivalent to the published term on r <= 1, so no pair of under-recovering rows changes order and the published value stays exactly invertible. Within it prefer the SMALLEST q.",
+      "R4": "If no LINEAR member survives, take the SHARE family at q = 0.5 \u2014 the equal-budget, parameter-free member (xt_hold / (xt_hold + xt_end)).",
+      "_why_a_rule_at_all": "The `w` decision published its sensitivity instead of choosing on the ranking it liked. A shape chosen after seeing the panel is a shape fitted to the panel.",
+      "_impossibility": "\u26d4 A STRICT REFINEMENT IS PROVABLY IMPOSSIBLE, which is why this fix cannot simply copy `twosided_v2`. Any g: [0, inf) -> [0, 1] agreeing with the published 1 - r on [0, 1] has g(1) = 0 and, being bounded below by 0 and non-increasing, must be CONSTANT on [1, inf) \u2014 i.e. it IS the defect. The published term spent its entire range on the half of the domain where the plan beats hold. \u21d2 the fix is a RANGE-BUDGET choice, not a slope choice, and q is that budget."
+    },
+    "_read": "delta > 0 means the DEGRADED plan scores HIGHER (the defect). PASS requires delta < 0 AND separated, on all 8.",
+    "_injections": [
+      "lat_shift(+2)",
+      "lat_shift(-2)",
+      "lat_jitter(+1)",
+      "yaw_bias(+5)"
+    ],
+    "_arms": [
+      "cv_holdv0",
+      "v1_tactical_follow"
+    ],
+    "n_boot": 2000,
+    "charge_rate": {
+      "_what": "|dg/dr|, the rate at which a shape charges one more unit of remaining error, at the ratios the panel occupies.",
+      "panel_ratio_median": 1.1813,
+      "panel_ratio_p90": 1.7868,
+      "panel_ratio_frac_gt_1": 0.7541,
+      "shapes": {
+        "clamp_v1": {
+          "slope_at_r0": 1.0,
+          "slope_at_r0p5": 1.0,
+          "slope_at_r1": 0.5,
+          "slope_at_r2": 0.0,
+          "slope_at_r3": 0.0,
+          "row_weighted_mean_slope": 0.2451,
+          "reward_bias_near_perfect_over_median": 999999999999.861
+        },
+        "lin_q0p25": {
+          "slope_at_r0": 0.75,
+          "slope_at_r0p5": 0.75,
+          "slope_at_r1": 0.75,
+          "slope_at_r2": 0.0,
+          "slope_at_r3": 0.0,
+          "row_weighted_mean_slope": 0.4865,
+          "reward_bias_near_perfect_over_median": 1.0
+        },
+        "lin_q0p5": {
+          "slope_at_r0": 0.5,
+          "slope_at_r0p5": 0.5,
+          "slope_at_r1": 0.5,
+          "slope_at_r2": 0.25,
+          "slope_at_r3": 0.0,
+          "row_weighted_mean_slope": 0.4611,
+          "reward_bias_near_perfect_over_median": 1.0
+        },
+        "lin_q0p6667": {
+          "slope_at_r0": 0.3333,
+          "slope_at_r0p5": 0.3333,
+          "slope_at_r1": 0.3333,
+          "slope_at_r2": 0.3333,
+          "slope_at_r3": 0.1667,
+          "row_weighted_mean_slope": 0.3217,
+          "reward_bias_near_perfect_over_median": 1.0
+        },
+        "lin_q0p75": {
+          "slope_at_r0": 0.25,
+          "slope_at_r0p5": 0.25,
+          "slope_at_r1": 0.25,
+          "slope_at_r2": 0.25,
+          "slope_at_r3": 0.25,
+          "row_weighted_mean_slope": 0.2452,
+          "reward_bias_near_perfect_over_median": 1.0
+        },
+        "share_q0p25": {
+          "slope_at_r0": 2.9991,
+          "slope_at_r0p5": 0.48,
+          "slope_at_r1": 0.1875,
+          "slope_at_r2": 0.0612,
+          "slope_at_r3": 0.03,
+          "row_weighted_mean_slope": 0.1929,
+          "reward_bias_near_perfect_over_median": 15.613
+        },
+        "share_q0p5": {
+          "slope_at_r0": 0.9999,
+          "slope_at_r0p5": 0.4444,
+          "slope_at_r1": 0.25,
+          "slope_at_r2": 0.1111,
+          "slope_at_r3": 0.0625,
+          "row_weighted_mean_slope": 0.2251,
+          "reward_bias_near_perfect_over_median": 4.316
+        },
+        "share_q0p6667": {
+          "slope_at_r0": 0.5,
+          "slope_at_r0p5": 0.32,
+          "slope_at_r1": 0.2222,
+          "slope_at_r2": 0.125,
+          "slope_at_r3": 0.08,
+          "row_weighted_mean_slope": 0.1996,
+          "reward_bias_near_perfect_over_median": 2.408
+        },
+        "share_q0p75": {
+          "slope_at_r0": 0.3333,
+          "slope_at_r0p5": 0.2449,
+          "slope_at_r1": 0.1875,
+          "slope_at_r2": 0.12,
+          "slope_at_r3": 0.0833,
+          "row_weighted_mean_slope": 0.1705,
+          "reward_bias_near_perfect_over_median": 1.879
+        }
+      }
+    },
+    "shapes": {
+      "clamp_v1": {
+        "n_correct": 0,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.1379,
+              "lo": 0.1127,
+              "hi": 0.1637,
+              "ci95": 0.0255,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0581,
+              "lo": 0.0473,
+              "hi": 0.0691,
+              "ci95": 0.0109,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.1189,
+              "lo": 0.0919,
+              "hi": 0.1472,
+              "ci95": 0.0277,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0501,
+              "lo": 0.0386,
+              "hi": 0.062,
+              "ci95": 0.0117,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0717,
+              "lo": 0.0568,
+              "hi": 0.0871,
+              "ci95": 0.0151,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0303,
+              "lo": 0.024,
+              "hi": 0.037,
+              "ci95": 0.0065,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.1784,
+              "lo": 0.1478,
+              "hi": 0.2076,
+              "ci95": 0.0299,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0747,
+              "lo": 0.0618,
+              "hi": 0.0872,
+              "ci95": 0.0127,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.119,
+              "lo": 0.0955,
+              "hi": 0.1412,
+              "ci95": 0.0229,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0513,
+              "lo": 0.0409,
+              "hi": 0.061,
+              "ci95": 0.0101,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.1137,
+              "lo": 0.0858,
+              "hi": 0.1425,
+              "ci95": 0.0283,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0478,
+              "lo": 0.0346,
+              "hi": 0.0607,
+              "ci95": 0.0131,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0475,
+              "lo": 0.037,
+              "hi": 0.058,
+              "ci95": 0.0105,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0205,
+              "lo": 0.0154,
+              "hi": 0.0255,
+              "ci95": 0.005,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.1614,
+              "lo": 0.135,
+              "hi": 0.1869,
+              "ci95": 0.0259,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0707,
+              "lo": 0.0594,
+              "hi": 0.0818,
+              "ci95": 0.0112,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "lin_q0p25": {
+        "n_correct": 0,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.0313,
+              "lo": 0.016,
+              "hi": 0.0459,
+              "ci95": 0.015,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0128,
+              "lo": 0.0059,
+              "hi": 0.0193,
+              "ci95": 0.0067,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.0161,
+              "lo": -0.0006,
+              "hi": 0.0323,
+              "ci95": 0.0165,
+              "p_delta_gt0": 0.9685,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0064,
+              "lo": -0.0009,
+              "hi": 0.0133,
+              "ci95": 0.0071,
+              "p_delta_gt0": 0.9575,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0168,
+              "lo": 0.0107,
+              "hi": 0.0233,
+              "ci95": 0.0063,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0069,
+              "lo": 0.0042,
+              "hi": 0.0096,
+              "ci95": 0.0027,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0655,
+              "lo": 0.0526,
+              "hi": 0.0771,
+              "ci95": 0.0122,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0267,
+              "lo": 0.0212,
+              "hi": 0.0316,
+              "ci95": 0.0052,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.0524,
+              "lo": 0.0298,
+              "hi": 0.0742,
+              "ci95": 0.0222,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0219,
+              "lo": 0.0115,
+              "hi": 0.0316,
+              "ci95": 0.0101,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.0491,
+              "lo": 0.0221,
+              "hi": 0.0746,
+              "ci95": 0.0263,
+              "p_delta_gt0": 0.9995,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0193,
+              "lo": 0.0063,
+              "hi": 0.0311,
+              "ci95": 0.0124,
+              "p_delta_gt0": 0.997,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0202,
+              "lo": 0.0098,
+              "hi": 0.0301,
+              "ci95": 0.0101,
+              "p_delta_gt0": 0.9995,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0082,
+              "lo": 0.0028,
+              "hi": 0.0132,
+              "ci95": 0.0052,
+              "p_delta_gt0": 0.9965,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0915,
+              "lo": 0.075,
+              "hi": 0.1078,
+              "ci95": 0.0164,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0404,
+              "lo": 0.0331,
+              "hi": 0.0476,
+              "ci95": 0.0073,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "lin_q0p5": {
+        "n_correct": 7,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.05,
+              "lo": -0.0725,
+              "hi": -0.0273,
+              "ci95": 0.0226,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0218,
+              "lo": -0.0316,
+              "hi": -0.0118,
+              "ci95": 0.0099,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0624,
+              "lo": -0.0887,
+              "hi": -0.0373,
+              "ci95": 0.0257,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.027,
+              "lo": -0.0384,
+              "hi": -0.0163,
+              "ci95": 0.0111,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0132,
+              "lo": -0.0206,
+              "hi": -0.006,
+              "ci95": 0.0073,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0061,
+              "lo": -0.0095,
+              "hi": -0.0028,
+              "ci95": 0.0033,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0204,
+              "lo": -0.0282,
+              "hi": -0.0122,
+              "ci95": 0.008,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0098,
+              "lo": -0.0132,
+              "hi": -0.0061,
+              "ci95": 0.0035,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.04,
+              "lo": -0.0647,
+              "hi": -0.0168,
+              "ci95": 0.0239,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0187,
+              "lo": -0.0306,
+              "hi": -0.008,
+              "ci95": 0.0113,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0451,
+              "lo": -0.0689,
+              "hi": -0.0246,
+              "ci95": 0.0221,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0225,
+              "lo": -0.0356,
+              "hi": -0.0115,
+              "ci95": 0.012,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0122,
+              "lo": -0.0234,
+              "hi": -0.0032,
+              "ci95": 0.0101,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0063,
+              "lo": -0.0127,
+              "hi": -0.0016,
+              "ci95": 0.0056,
+              "p_delta_gt0": 0.0005,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0109,
+              "lo": -0.0198,
+              "hi": -0.0032,
+              "ci95": 0.0083,
+              "p_delta_gt0": 0.0025,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0036,
+              "lo": -0.0075,
+              "hi": 0.0002,
+              "ci95": 0.0038,
+              "p_delta_gt0": 0.0305,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "lin_q0p6667": {
+        "n_correct": 8,
+        "n_total": 8,
+        "ALL_8_CORRECT": true,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0633,
+              "lo": -0.0922,
+              "hi": -0.0345,
+              "ci95": 0.0289,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0276,
+              "lo": -0.0401,
+              "hi": -0.0151,
+              "ci95": 0.0125,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0784,
+              "lo": -0.1117,
+              "hi": -0.0468,
+              "ci95": 0.0325,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0339,
+              "lo": -0.0481,
+              "hi": -0.0205,
+              "ci95": 0.0138,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0179,
+              "lo": -0.0267,
+              "hi": -0.0097,
+              "ci95": 0.0085,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0082,
+              "lo": -0.0122,
+              "hi": -0.0044,
+              "ci95": 0.0039,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0267,
+              "lo": -0.0373,
+              "hi": -0.0156,
+              "ci95": 0.0109,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0124,
+              "lo": -0.0171,
+              "hi": -0.0075,
+              "ci95": 0.0048,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0641,
+              "lo": -0.0947,
+              "hi": -0.036,
+              "ci95": 0.0293,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0296,
+              "lo": -0.0443,
+              "hi": -0.0162,
+              "ci95": 0.0141,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0706,
+              "lo": -0.0988,
+              "hi": -0.0461,
+              "ci95": 0.0264,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0344,
+              "lo": -0.0498,
+              "hi": -0.0214,
+              "ci95": 0.0142,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0195,
+              "lo": -0.0314,
+              "hi": -0.0098,
+              "ci95": 0.0108,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0099,
+              "lo": -0.0168,
+              "hi": -0.0044,
+              "ci95": 0.0062,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0281,
+              "lo": -0.0361,
+              "hi": -0.0209,
+              "ci95": 0.0076,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0111,
+              "lo": -0.0145,
+              "hi": -0.0079,
+              "ci95": 0.0033,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "lin_q0p75": {
+        "n_correct": 8,
+        "n_total": 8,
+        "ALL_8_CORRECT": true,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0568,
+              "lo": -0.0848,
+              "hi": -0.0291,
+              "ci95": 0.0279,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0249,
+              "lo": -0.0371,
+              "hi": -0.0127,
+              "ci95": 0.0122,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0757,
+              "lo": -0.1092,
+              "hi": -0.0445,
+              "ci95": 0.0324,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0329,
+              "lo": -0.0472,
+              "hi": -0.0194,
+              "ci95": 0.0139,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0167,
+              "lo": -0.0253,
+              "hi": -0.0089,
+              "ci95": 0.0082,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0076,
+              "lo": -0.0116,
+              "hi": -0.0041,
+              "ci95": 0.0038,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0195,
+              "lo": -0.0293,
+              "hi": -0.0091,
+              "ci95": 0.0101,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0094,
+              "lo": -0.0138,
+              "hi": -0.0049,
+              "ci95": 0.0045,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.063,
+              "lo": -0.095,
+              "hi": -0.0345,
+              "ci95": 0.0302,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0294,
+              "lo": -0.0447,
+              "hi": -0.0156,
+              "ci95": 0.0145,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0682,
+              "lo": -0.0964,
+              "hi": -0.044,
+              "ci95": 0.0262,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0336,
+              "lo": -0.0496,
+              "hi": -0.0205,
+              "ci95": 0.0146,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0192,
+              "lo": -0.0304,
+              "hi": -0.0097,
+              "ci95": 0.0104,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0098,
+              "lo": -0.0164,
+              "hi": -0.0044,
+              "ci95": 0.006,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": -0.0231,
+              "lo": -0.0297,
+              "hi": -0.0169,
+              "ci95": 0.0064,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.009,
+              "lo": -0.0117,
+              "hi": -0.0064,
+              "ci95": 0.0027,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "share_q0p25": {
+        "n_correct": 0,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.0286,
+              "lo": 0.0162,
+              "hi": 0.0405,
+              "ci95": 0.0121,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0117,
+              "lo": 0.0062,
+              "hi": 0.0169,
+              "ci95": 0.0053,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.0187,
+              "lo": 0.0057,
+              "hi": 0.0316,
+              "ci95": 0.013,
+              "p_delta_gt0": 0.995,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0075,
+              "lo": 0.0019,
+              "hi": 0.0131,
+              "ci95": 0.0056,
+              "p_delta_gt0": 0.994,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0151,
+              "lo": 0.0109,
+              "hi": 0.0195,
+              "ci95": 0.0043,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0062,
+              "lo": 0.0044,
+              "hi": 0.008,
+              "ci95": 0.0018,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0442,
+              "lo": 0.0344,
+              "hi": 0.0523,
+              "ci95": 0.009,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0176,
+              "lo": 0.0135,
+              "hi": 0.0211,
+              "ci95": 0.0038,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.0218,
+              "lo": 0.0078,
+              "hi": 0.0341,
+              "ci95": 0.0131,
+              "p_delta_gt0": 0.998,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0089,
+              "lo": 0.0025,
+              "hi": 0.0146,
+              "ci95": 0.006,
+              "p_delta_gt0": 0.996,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": 0.0187,
+              "lo": 0.0041,
+              "hi": 0.0323,
+              "ci95": 0.0141,
+              "p_delta_gt0": 0.9945,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0064,
+              "lo": -0.0011,
+              "hi": 0.0132,
+              "ci95": 0.0071,
+              "p_delta_gt0": 0.9495,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0085,
+              "lo": 0.0035,
+              "hi": 0.0133,
+              "ci95": 0.0049,
+              "p_delta_gt0": 0.999,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.0032,
+              "lo": 0.0005,
+              "hi": 0.0057,
+              "ci95": 0.0026,
+              "p_delta_gt0": 0.9875,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0454,
+              "lo": 0.0371,
+              "hi": 0.0538,
+              "ci95": 0.0083,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0206,
+              "lo": 0.0169,
+              "hi": 0.0242,
+              "ci95": 0.0036,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "share_q0p5": {
+        "n_correct": 0,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": 0.0021,
+              "lo": -0.0132,
+              "hi": 0.0167,
+              "ci95": 0.0149,
+              "p_delta_gt0": 0.621,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0003,
+              "lo": -0.0065,
+              "hi": 0.0068,
+              "ci95": 0.0066,
+              "p_delta_gt0": 0.5515,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0112,
+              "lo": -0.0294,
+              "hi": 0.0055,
+              "ci95": 0.0175,
+              "p_delta_gt0": 0.0935,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0053,
+              "lo": -0.0132,
+              "hi": 0.0018,
+              "ci95": 0.0075,
+              "p_delta_gt0": 0.071,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0054,
+              "lo": 0.0016,
+              "hi": 0.0092,
+              "ci95": 0.0038,
+              "p_delta_gt0": 0.9935,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": 0.002,
+              "lo": 0.0002,
+              "hi": 0.0037,
+              "ci95": 0.0017,
+              "p_delta_gt0": 0.986,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0265,
+              "lo": 0.0182,
+              "hi": 0.0333,
+              "ci95": 0.0076,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0101,
+              "lo": 0.0066,
+              "hi": 0.013,
+              "ci95": 0.0032,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0015,
+              "lo": -0.02,
+              "hi": 0.0144,
+              "ci95": 0.0172,
+              "p_delta_gt0": 0.4435,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0017,
+              "lo": -0.0108,
+              "hi": 0.0061,
+              "ci95": 0.0084,
+              "p_delta_gt0": 0.36,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0052,
+              "lo": -0.0228,
+              "hi": 0.0104,
+              "ci95": 0.0166,
+              "p_delta_gt0": 0.276,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0047,
+              "lo": -0.0142,
+              "hi": 0.0036,
+              "ci95": 0.0089,
+              "p_delta_gt0": 0.1595,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": 0.0011,
+              "lo": -0.0059,
+              "hi": 0.0068,
+              "ci95": 0.0063,
+              "p_delta_gt0": 0.6545,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0003,
+              "lo": -0.0041,
+              "hi": 0.0029,
+              "ci95": 0.0035,
+              "p_delta_gt0": 0.465,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0269,
+              "lo": 0.0195,
+              "hi": 0.0341,
+              "ci95": 0.0073,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0126,
+              "lo": 0.0094,
+              "hi": 0.0155,
+              "ci95": 0.0031,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "share_q0p6667": {
+        "n_correct": 3,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0149,
+              "lo": -0.0312,
+              "hi": 0.0009,
+              "ci95": 0.0161,
+              "p_delta_gt0": 0.032,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.007,
+              "lo": -0.0142,
+              "hi": 0.0,
+              "ci95": 0.0071,
+              "p_delta_gt0": 0.0255,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0288,
+              "lo": -0.0488,
+              "hi": -0.0105,
+              "ci95": 0.0191,
+              "p_delta_gt0": 0.001,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0128,
+              "lo": -0.0215,
+              "hi": -0.005,
+              "ci95": 0.0082,
+              "p_delta_gt0": 0.001,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0018,
+              "lo": -0.0062,
+              "hi": 0.002,
+              "ci95": 0.0041,
+              "p_delta_gt0": 0.1995,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0011,
+              "lo": -0.0031,
+              "hi": 0.0007,
+              "ci95": 0.0019,
+              "p_delta_gt0": 0.1115,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0095,
+              "lo": 0.0029,
+              "hi": 0.0153,
+              "ci95": 0.0062,
+              "p_delta_gt0": 0.9995,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.00292,
+              "lo": 1e-05,
+              "hi": 0.00545,
+              "ci95": 0.00272,
+              "p_delta_gt0": 0.9765,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0175,
+              "lo": -0.0366,
+              "hi": -0.0008,
+              "ci95": 0.0179,
+              "p_delta_gt0": 0.019,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0089,
+              "lo": -0.0184,
+              "hi": -0.0006,
+              "ci95": 0.0089,
+              "p_delta_gt0": 0.016,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0211,
+              "lo": -0.0387,
+              "hi": -0.0057,
+              "ci95": 0.0165,
+              "p_delta_gt0": 0.0025,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0118,
+              "lo": -0.0217,
+              "hi": -0.0035,
+              "ci95": 0.0091,
+              "p_delta_gt0": 0.0005,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0044,
+              "lo": -0.0114,
+              "hi": 0.0013,
+              "ci95": 0.0063,
+              "p_delta_gt0": 0.0745,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0027,
+              "lo": -0.0068,
+              "hi": 0.0004,
+              "ci95": 0.0036,
+              "p_delta_gt0": 0.0545,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0096,
+              "lo": 0.004,
+              "hi": 0.0147,
+              "ci95": 0.0054,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.0051,
+              "lo": 0.0027,
+              "hi": 0.0073,
+              "ci95": 0.0023,
+              "p_delta_gt0": 1.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      },
+      "share_q0p75": {
+        "n_correct": 6,
+        "n_total": 8,
+        "ALL_8_CORRECT": false,
+        "cells": {
+          "cv_holdv0|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0202,
+              "lo": -0.0361,
+              "hi": -0.0049,
+              "ci95": 0.0156,
+              "p_delta_gt0": 0.0055,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0092,
+              "lo": -0.0163,
+              "hi": -0.0024,
+              "ci95": 0.0069,
+              "p_delta_gt0": 0.0055,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.0337,
+              "lo": -0.0532,
+              "hi": -0.016,
+              "ci95": 0.0186,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13081,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0008,
+              "lo": -0.0018,
+              "hi": 0.0001,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.041,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.015,
+              "lo": -0.0235,
+              "hi": -0.0073,
+              "ci95": 0.0081,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15464,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "cv_holdv0|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0044,
+              "lo": -0.0087,
+              "hi": -0.0007,
+              "ci95": 0.004,
+              "p_delta_gt0": 0.009,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13100,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00025,
+              "lo": -0.00048,
+              "hi": -1e-05,
+              "ci95": 0.00023,
+              "p_delta_gt0": 0.02,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0022,
+              "lo": -0.0042,
+              "hi": -0.0005,
+              "ci95": 0.0019,
+              "p_delta_gt0": 0.0035,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15474,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "cv_holdv0|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0026,
+              "lo": -0.0033,
+              "hi": 0.0079,
+              "ci95": 0.0056,
+              "p_delta_gt0": 0.8105,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13110,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.0021,
+              "lo": -0.0026,
+              "hi": -0.0016,
+              "ci95": 0.0005,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0,
+              "lo": -0.0026,
+              "hi": 0.0024,
+              "ci95": 0.0025,
+              "p_delta_gt0": 0.5185,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15478,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(+2)": {
+            "recovery": {
+              "delta": -0.0228,
+              "lo": -0.0408,
+              "hi": -0.0066,
+              "ci95": 0.0171,
+              "p_delta_gt0": 0.002,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0004,
+              "lo": -0.0006,
+              "hi": 0.0014,
+              "ci95": 0.001,
+              "p_delta_gt0": 0.788,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0112,
+              "lo": -0.0204,
+              "hi": -0.0032,
+              "ci95": 0.0086,
+              "p_delta_gt0": 0.0025,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15686,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_shift(-2)": {
+            "recovery": {
+              "delta": -0.026,
+              "lo": -0.0431,
+              "hi": -0.0115,
+              "ci95": 0.0158,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13455,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.001,
+              "lo": -0.0019,
+              "hi": -0.0001,
+              "ci95": 0.0009,
+              "p_delta_gt0": 0.0185,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": -0.0139,
+              "lo": -0.0236,
+              "hi": -0.006,
+              "ci95": 0.0088,
+              "p_delta_gt0": 0.0,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": false
+          },
+          "v1_tactical_follow|lat_jitter(+1)": {
+            "recovery": {
+              "delta": -0.0063,
+              "lo": -0.0129,
+              "hi": -0.001,
+              "ci95": 0.0059,
+              "p_delta_gt0": 0.0065,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": -0.00018,
+              "lo": -0.00036,
+              "hi": -3e-05,
+              "ci95": 0.00017,
+              "p_delta_gt0": 0.0075,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "PSS_composite": {
+              "delta": -0.0036,
+              "lo": -0.0074,
+              "hi": -0.0006,
+              "ci95": 0.0034,
+              "p_delta_gt0": 0.005,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15697,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "CORRECT_DIRECTION": true,
+            "zero_mean_control": true
+          },
+          "v1_tactical_follow|yaw_bias(+5)": {
+            "recovery": {
+              "delta": 0.0023,
+              "lo": -0.0023,
+              "hi": 0.0064,
+              "ci95": 0.0043,
+              "p_delta_gt0": 0.8465,
+              "separated": false,
+              "reducer": "mean",
+              "n_windows": 13456,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "ego_progress": {
+              "delta": 0.0016,
+              "lo": 0.0002,
+              "hi": 0.0032,
+              "ci95": 0.0015,
+              "p_delta_gt0": 0.988,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15442,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap"
+            },
+            "PSS_composite": {
+              "delta": 0.00194,
+              "lo": 1e-05,
+              "hi": 0.00373,
+              "ci95": 0.00186,
+              "p_delta_gt0": 0.9755,
+              "separated": true,
+              "reducer": "mean",
+              "n_windows": 15698,
+              "n_episodes": 40,
+              "n_boot": 2000,
+              "estimator": "paired_episode_cluster_bootstrap",
+              "display_dp": 5,
+              "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+            },
+            "CORRECT_DIRECTION": false,
+            "zero_mean_control": false
+          }
+        }
+      }
+    }
+  }
+}

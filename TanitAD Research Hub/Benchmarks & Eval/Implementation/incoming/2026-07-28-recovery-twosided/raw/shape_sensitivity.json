@@ -1,0 +1,1861 @@
+{
+  "_experiment": "FIX THE SECOND ONE-SIDED CLAMP: the `recovery` term (C45). 0 GPU-h.",
+  "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+  "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+  "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+  "_import_provenance_md5": {
+    "taniteval.ci": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+      "md5": "c92618a02b36f8191a581fb74a491a8d"
+    },
+    "taniteval.control": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+      "md5": "db780419557165ffa866366e95586d55"
+    },
+    "taniteval.pseudosim": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+      "md5": "c3ca29ef5488d52411c2bbb59c8a0c0e"
+    }
+  },
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "missing_gates": {
+    "no_collision": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric.",
+    "no_drivable_area": "IMPOSSIBLE, not merely missing. PhysicalAI-AV has no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal \u2014 the card says verbatim 'we do not include open maps data', and `obstacle.offline`'s enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. Settled at five independent probes. `egomotion` also carries no lat/lon/GNSS, so OSM map-matching on our traces is impossible. \u21d2 DAC / lane-keeping / driving-direction / traffic-light compliance cannot be computed here and are NOT faked.",
+    "_not_a_driving_score": "\u26d4 With no collision gate and no drivable-area term, NOTHING computed on this surface is a Driving Score and none of it may be compared to a PDMS number. It scores PROGRESS, RECOVERY and CONTROL.",
+    "_what_would_unblock_the_collision_gate": "`obstacle.offline` covers 97.4438 % of the corpus with boxes in the rig frame. TWO blockers, both mechanical: (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids \u2014 so episode->clip identity is not resolvable from the cache alone; (b) the matching chunks are not downloaded. Neither is a research problem."
+  },
+  "recovery_term_under_test": "twosided_v2",
+  "recovery_term_published": "clamp_v1",
+  "recovery_terms_available": [
+    "clamp_v1",
+    "lin_q0",
+    "lin_q0p25",
+    "lin_q0p5",
+    "lin_q0p6667",
+    "lin_q0p75",
+    "share_q0p25",
+    "share_q0p5",
+    "share_q0p6667",
+    "share_q0p75",
+    "twosided_v2"
+  ],
+  "arm_sources": {
+    "cv_holdv0": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_cv_holdv0.npz",
+    "nospeed_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_nospeed_tactical_oracle.npz",
+    "refc_base_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_base_produced.npz",
+    "refc_small_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_small_produced.npz",
+    "refc_xl_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_xl_produced.npz",
+    "stand_still": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_stand_still.npz",
+    "v1_tactical_follow": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_follow.npz",
+    "v1_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_oracle.npz",
+    "v4_blind": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_blind.npz",
+    "v4_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_oracle.npz",
+    "oracle_lon_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_oracle_lon_straight.npz",
+    "v1_ego_double": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_double.npz",
+    "v1_ego_half": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_half.npz",
+    "v1_ego_oracle_lon": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_oracle_lon.npz",
+    "v1_ego_v0": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_v0.npz",
+    "v1_lat_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_lat_straight.npz",
+    "refc_base_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0off.npz",
+    "refc_base_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0on.npz",
+    "refc_xl_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0off.npz",
+    "refc_xl_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0on.npz"
+  },
+  "row_identity": {
+    "cv_holdv0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "nospeed_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_small_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "stand_still": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_blind": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "oracle_lon_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_double": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_half": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_oracle_lon": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_v0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_lat_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "arms_refused_on_row_identity": {},
+  "reference_arm": "cv_holdv0",
+  "probes_excluded": [
+    "stand_still",
+    "v1_ego_half",
+    "v1_ego_double",
+    "oracle_lon_straight"
+  ],
+  "oracles_excluded_from_realisable_ranking": [
+    "v1_ego_oracle_lon",
+    "v4_oracle",
+    "v1_tactical_oracle",
+    "nospeed_tactical_oracle",
+    "oracle_lon_straight"
+  ],
+  "human_replay_max_residual_m": 1.52587890625e-05,
+  "human_replay_votes_on_the_gate": false,
+  "selected_frac_note": "selected_frac = 1.000 for every arm BY CONSTRUCTION: there is no selection step on this surface.",
+  "shape_sensitivity": {
+    "_read": "q = the score a plan that recovers NOTHING receives. q = 0 (clamp_v1) is the published, defective term. Two FAMILIES at the same anchors: `lin` is affine-equivalent to the published term on r <= 1 but still floors at r = 1/(1-q); `share` never saturates but re-spaces the under-side.",
+    "shapes": {
+      "clamp_v1": {
+        "metric_id": "PSS_recovery_progress@twosided_v2",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.5492
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.5403
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.5259
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.5259
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.5228
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.5228
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.5202
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.4724
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.4591
+          },
+          {
+            "rank": 10,
+            "arm": "v1_tactical_follow",
+            "value": 0.4242
+          },
+          {
+            "rank": 11,
+            "arm": "v1_lat_straight",
+            "value": 0.4209
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.3322
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.5943,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.5492,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v1_ego_v0",
+            "value": 0.5403,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v4_oracle",
+            "value": 0.5362,
+            "oracle": true
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.5259,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.5259,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.5228,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.5228,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.5202,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.4724,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.4591,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.4305,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_tactical_follow",
+            "value": 0.4242,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_lat_straight",
+            "value": 0.4209,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.4179,
+            "oracle": true
+          },
+          {
+            "rank": 17,
+            "arm": "v4_blind",
+            "value": 0.3322,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.921858,
+        "levels": {
+          "cv_holdv0": 0.5492,
+          "nospeed_tactical_oracle": 0.4179,
+          "refc_base_produced": 0.5228,
+          "refc_small_produced": 0.5202,
+          "refc_xl_produced": 0.5259,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.4242,
+          "v1_tactical_oracle": 0.4305,
+          "v4_blind": 0.3322,
+          "v4_oracle": 0.5362,
+          "oracle_lon_straight": 0.6032,
+          "v1_ego_double": 0.0954,
+          "v1_ego_half": 0.31,
+          "v1_ego_oracle_lon": 0.5943,
+          "v1_ego_v0": 0.5403,
+          "v1_lat_straight": 0.4209,
+          "refc_base_v0off": 0.4591,
+          "refc_base_v0on": 0.5228,
+          "refc_xl_v0off": 0.4724,
+          "refc_xl_v0on": 0.5259
+        }
+      },
+      "lin_q0p25": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_lin_q0p25",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.6197
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.5954
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.5441
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.5441
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.5424
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.5424
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.5403
+          },
+          {
+            "rank": 8,
+            "arm": "v1_lat_straight",
+            "value": 0.4973
+          },
+          {
+            "rank": 9,
+            "arm": "refc_xl_v0off",
+            "value": 0.4921
+          },
+          {
+            "rank": 10,
+            "arm": "v1_tactical_follow",
+            "value": 0.4815
+          },
+          {
+            "rank": 11,
+            "arm": "refc_base_v0off",
+            "value": 0.4793
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.372
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.6496,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.6197,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v1_ego_v0",
+            "value": 0.5954,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v4_oracle",
+            "value": 0.5911,
+            "oracle": true
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.5441,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.5441,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.5424,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.5424,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.5403,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "v1_lat_straight",
+            "value": 0.4973,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_xl_v0off",
+            "value": 0.4921,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.4869,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_tactical_follow",
+            "value": 0.4815,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "refc_base_v0off",
+            "value": 0.4793,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.4739,
+            "oracle": true
+          },
+          {
+            "rank": 17,
+            "arm": "v4_blind",
+            "value": 0.372,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.588374,
+        "levels": {
+          "cv_holdv0": 0.6197,
+          "nospeed_tactical_oracle": 0.4739,
+          "refc_base_produced": 0.5424,
+          "refc_small_produced": 0.5403,
+          "refc_xl_produced": 0.5441,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.4815,
+          "v1_tactical_oracle": 0.4869,
+          "v4_blind": 0.372,
+          "v4_oracle": 0.5911,
+          "oracle_lon_straight": 0.6739,
+          "v1_ego_double": 0.1474,
+          "v1_ego_half": 0.364,
+          "v1_ego_oracle_lon": 0.6496,
+          "v1_ego_v0": 0.5954,
+          "v1_lat_straight": 0.4973,
+          "refc_base_v0off": 0.4793,
+          "refc_base_v0on": 0.5424,
+          "refc_xl_v0off": 0.4921,
+          "refc_xl_v0on": 0.5441
+        }
+      },
+      "lin_q0p5": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_lin_q0p5",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.7066
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.6897
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.6528
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.6528
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.6489
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.6489
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.645
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.5993
+          },
+          {
+            "rank": 9,
+            "arm": "v1_lat_straight",
+            "value": 0.5898
+          },
+          {
+            "rank": 10,
+            "arm": "refc_base_v0off",
+            "value": 0.5835
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.5793
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.4288
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.7448,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.7066,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v4_oracle",
+            "value": 0.6934,
+            "oracle": true
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.6897,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.6528,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.6528,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.6489,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.6489,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.645,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.5993,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "v1_lat_straight",
+            "value": 0.5898,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.5836,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "refc_base_v0off",
+            "value": 0.5835,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.5793,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.5716,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.4288,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.137165,
+        "levels": {
+          "cv_holdv0": 0.7066,
+          "nospeed_tactical_oracle": 0.5716,
+          "refc_base_produced": 0.6489,
+          "refc_small_produced": 0.645,
+          "refc_xl_produced": 0.6528,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.5793,
+          "v1_tactical_oracle": 0.5836,
+          "v4_blind": 0.4288,
+          "v4_oracle": 0.6934,
+          "oracle_lon_straight": 0.7613,
+          "v1_ego_double": 0.2385,
+          "v1_ego_half": 0.447,
+          "v1_ego_oracle_lon": 0.7448,
+          "v1_ego_v0": 0.6897,
+          "v1_lat_straight": 0.5898,
+          "refc_base_v0off": 0.5835,
+          "refc_base_v0on": 0.6489,
+          "refc_xl_v0off": 0.5993,
+          "refc_xl_v0on": 0.6528
+        }
+      },
+      "lin_q0p6667": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_lin_q0p6667",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.7721
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.7645
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.7452
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.7452
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.7411
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.7411
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.737
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.6889
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.6726
+          },
+          {
+            "rank": 10,
+            "arm": "v1_lat_straight",
+            "value": 0.659
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.6563
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.4742
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.8205,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "v4_oracle",
+            "value": 0.7727,
+            "oracle": true
+          },
+          {
+            "rank": 4,
+            "arm": "cv_holdv0",
+            "value": 0.7721,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.7645,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.7452,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.7452,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.7411,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.7411,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.737,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.6889,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.6726,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.6606,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_lat_straight",
+            "value": 0.659,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.6563,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.6491,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.4742,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.083279,
+        "levels": {
+          "cv_holdv0": 0.7721,
+          "nospeed_tactical_oracle": 0.6491,
+          "refc_base_produced": 0.7411,
+          "refc_small_produced": 0.737,
+          "refc_xl_produced": 0.7452,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.6563,
+          "v1_tactical_oracle": 0.6606,
+          "v4_blind": 0.4742,
+          "v4_oracle": 0.7727,
+          "oracle_lon_straight": 0.8277,
+          "v1_ego_double": 0.3132,
+          "v1_ego_half": 0.5115,
+          "v1_ego_oracle_lon": 0.8205,
+          "v1_ego_v0": 0.7645,
+          "v1_lat_straight": 0.659,
+          "refc_base_v0off": 0.6726,
+          "refc_base_v0on": 0.7411,
+          "refc_xl_v0off": 0.6889,
+          "refc_xl_v0on": 0.7452
+        }
+      },
+      "lin_q0p75": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_lin_q0p75",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.8087
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.805
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.7932
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.7932
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.7889
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.7889
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.7848
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.7358
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.7193
+          },
+          {
+            "rank": 10,
+            "arm": "v1_tactical_follow",
+            "value": 0.6975
+          },
+          {
+            "rank": 11,
+            "arm": "v1_lat_straight",
+            "value": 0.6972
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.5
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.8611,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "v4_oracle",
+            "value": 0.8143,
+            "oracle": true
+          },
+          {
+            "rank": 4,
+            "arm": "cv_holdv0",
+            "value": 0.8087,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.805,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.7932,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.7932,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.7889,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.7889,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.7848,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.7358,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.7193,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.7018,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_tactical_follow",
+            "value": 0.6975,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_lat_straight",
+            "value": 0.6972,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.6906,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.5,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.053233,
+        "levels": {
+          "cv_holdv0": 0.8087,
+          "nospeed_tactical_oracle": 0.6906,
+          "refc_base_produced": 0.7889,
+          "refc_small_produced": 0.7848,
+          "refc_xl_produced": 0.7932,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.6975,
+          "v1_tactical_oracle": 0.7018,
+          "v4_blind": 0.5,
+          "v4_oracle": 0.8143,
+          "oracle_lon_straight": 0.865,
+          "v1_ego_double": 0.3548,
+          "v1_ego_half": 0.548,
+          "v1_ego_oracle_lon": 0.8611,
+          "v1_ego_v0": 0.805,
+          "v1_lat_straight": 0.6972,
+          "refc_base_v0off": 0.7193,
+          "refc_base_v0on": 0.7889,
+          "refc_xl_v0off": 0.7358,
+          "refc_xl_v0on": 0.7932
+        }
+      },
+      "share_q0p25": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_share_q0p25",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.6223
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.6146
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.603
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.603
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.5992
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.5992
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.5958
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.5472
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.5328
+          },
+          {
+            "rank": 10,
+            "arm": "v1_lat_straight",
+            "value": 0.4996
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.4985
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.3738
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.6677,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.6223,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v1_ego_v0",
+            "value": 0.6146,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v4_oracle",
+            "value": 0.6137,
+            "oracle": true
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.603,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.603,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.5992,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.5992,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.5958,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.5472,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.5328,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.5036,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_lat_straight",
+            "value": 0.4996,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.4985,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.4917,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.3738,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.0,
+        "levels": {
+          "cv_holdv0": 0.6223,
+          "nospeed_tactical_oracle": 0.4917,
+          "refc_base_produced": 0.5992,
+          "refc_small_produced": 0.5958,
+          "refc_xl_produced": 0.603,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.4985,
+          "v1_tactical_oracle": 0.5036,
+          "v4_blind": 0.3738,
+          "v4_oracle": 0.6137,
+          "oracle_lon_straight": 0.6762,
+          "v1_ego_double": 0.1673,
+          "v1_ego_half": 0.3762,
+          "v1_ego_oracle_lon": 0.6677,
+          "v1_ego_v0": 0.6146,
+          "v1_lat_straight": 0.4996,
+          "refc_base_v0off": 0.5328,
+          "refc_base_v0on": 0.5992,
+          "refc_xl_v0off": 0.5472,
+          "refc_xl_v0on": 0.603
+        }
+      },
+      "share_q0p5": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_share_q0p5",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.7209
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.7129
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.6987
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.6987
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.6947
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.6947
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.6913
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.6426
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.6274
+          },
+          {
+            "rank": 10,
+            "arm": "v1_lat_straight",
+            "value": 0.6029
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.6007
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.4417
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.7671,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.7209,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v4_oracle",
+            "value": 0.7158,
+            "oracle": true
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.7129,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.6987,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.6987,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.6947,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.6947,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.6913,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.6426,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.6274,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.6056,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_lat_straight",
+            "value": 0.6029,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.6007,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.594,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.4417,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.0,
+        "levels": {
+          "cv_holdv0": 0.7209,
+          "nospeed_tactical_oracle": 0.594,
+          "refc_base_produced": 0.6947,
+          "refc_small_produced": 0.6913,
+          "refc_xl_produced": 0.6987,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.6007,
+          "v1_tactical_oracle": 0.6056,
+          "v4_blind": 0.4417,
+          "v4_oracle": 0.7158,
+          "oracle_lon_straight": 0.7758,
+          "v1_ego_double": 0.265,
+          "v1_ego_half": 0.4693,
+          "v1_ego_oracle_lon": 0.7671,
+          "v1_ego_v0": 0.7129,
+          "v1_lat_straight": 0.6029,
+          "refc_base_v0off": 0.6274,
+          "refc_base_v0on": 0.6947,
+          "refc_xl_v0off": 0.6426,
+          "refc_xl_v0on": 0.6987
+        }
+      },
+      "share_q0p6667": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_share_q0p6667",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.788
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.7813
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.7702
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.7702
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.766
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.766
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.7625
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.7133
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.6975
+          },
+          {
+            "rank": 10,
+            "arm": "v1_lat_straight",
+            "value": 0.6729
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.671
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.4878
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.8358,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "cv_holdv0",
+            "value": 0.788,
+            "oracle": false
+          },
+          {
+            "rank": 4,
+            "arm": "v4_oracle",
+            "value": 0.7866,
+            "oracle": true
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.7813,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.7702,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.7702,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.766,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.766,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.7625,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.7133,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.6975,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.6757,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_lat_straight",
+            "value": 0.6729,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.671,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.6645,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.4878,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.0,
+        "levels": {
+          "cv_holdv0": 0.788,
+          "nospeed_tactical_oracle": 0.6645,
+          "refc_base_produced": 0.766,
+          "refc_small_produced": 0.7625,
+          "refc_xl_produced": 0.7702,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.671,
+          "v1_tactical_oracle": 0.6757,
+          "v4_blind": 0.4878,
+          "v4_oracle": 0.7866,
+          "oracle_lon_straight": 0.8434,
+          "v1_ego_double": 0.3334,
+          "v1_ego_half": 0.5346,
+          "v1_ego_oracle_lon": 0.8358,
+          "v1_ego_v0": 0.7813,
+          "v1_lat_straight": 0.6729,
+          "refc_base_v0off": 0.6975,
+          "refc_base_v0on": 0.766,
+          "refc_xl_v0off": 0.7133,
+          "refc_xl_v0on": 0.7702
+        }
+      },
+      "share_q0p75": {
+        "metric_id": "PSS_recovery_progress@twosided_v2+rec_share_q0p75",
+        "ranking_realisable": [
+          {
+            "rank": 1,
+            "arm": "cv_holdv0",
+            "value": 0.8228
+          },
+          {
+            "rank": 2,
+            "arm": "v1_ego_v0",
+            "value": 0.8172
+          },
+          {
+            "rank": 3,
+            "arm": "refc_xl_produced",
+            "value": 0.809
+          },
+          {
+            "rank": 4,
+            "arm": "refc_xl_v0on",
+            "value": 0.809
+          },
+          {
+            "rank": 5,
+            "arm": "refc_base_produced",
+            "value": 0.8046
+          },
+          {
+            "rank": 6,
+            "arm": "refc_base_v0on",
+            "value": 0.8046
+          },
+          {
+            "rank": 7,
+            "arm": "refc_small_produced",
+            "value": 0.8011
+          },
+          {
+            "rank": 8,
+            "arm": "refc_xl_v0off",
+            "value": 0.7516
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0off",
+            "value": 0.7355
+          },
+          {
+            "rank": 10,
+            "arm": "v1_lat_straight",
+            "value": 0.7089
+          },
+          {
+            "rank": 11,
+            "arm": "v1_tactical_follow",
+            "value": 0.7075
+          },
+          {
+            "rank": 12,
+            "arm": "v4_blind",
+            "value": 0.5119
+          }
+        ],
+        "ranking_all_non_probe": [
+          {
+            "rank": 2,
+            "arm": "v1_ego_oracle_lon",
+            "value": 0.8716,
+            "oracle": true
+          },
+          {
+            "rank": 3,
+            "arm": "v4_oracle",
+            "value": 0.8234,
+            "oracle": true
+          },
+          {
+            "rank": 4,
+            "arm": "cv_holdv0",
+            "value": 0.8228,
+            "oracle": false
+          },
+          {
+            "rank": 5,
+            "arm": "v1_ego_v0",
+            "value": 0.8172,
+            "oracle": false
+          },
+          {
+            "rank": 6,
+            "arm": "refc_xl_produced",
+            "value": 0.809,
+            "oracle": false
+          },
+          {
+            "rank": 7,
+            "arm": "refc_xl_v0on",
+            "value": 0.809,
+            "oracle": false
+          },
+          {
+            "rank": 8,
+            "arm": "refc_base_produced",
+            "value": 0.8046,
+            "oracle": false
+          },
+          {
+            "rank": 9,
+            "arm": "refc_base_v0on",
+            "value": 0.8046,
+            "oracle": false
+          },
+          {
+            "rank": 10,
+            "arm": "refc_small_produced",
+            "value": 0.8011,
+            "oracle": false
+          },
+          {
+            "rank": 11,
+            "arm": "refc_xl_v0off",
+            "value": 0.7516,
+            "oracle": false
+          },
+          {
+            "rank": 12,
+            "arm": "refc_base_v0off",
+            "value": 0.7355,
+            "oracle": false
+          },
+          {
+            "rank": 13,
+            "arm": "v1_tactical_oracle",
+            "value": 0.7121,
+            "oracle": true
+          },
+          {
+            "rank": 14,
+            "arm": "v1_lat_straight",
+            "value": 0.7089,
+            "oracle": false
+          },
+          {
+            "rank": 15,
+            "arm": "v1_tactical_follow",
+            "value": 0.7075,
+            "oracle": false
+          },
+          {
+            "rank": 16,
+            "arm": "nospeed_tactical_oracle",
+            "value": 0.7011,
+            "oracle": true
+          },
+          {
+            "rank": 18,
+            "arm": "v4_blind",
+            "value": 0.5119,
+            "oracle": false
+          }
+        ],
+        "recovery_floor_frac_max": 0.0,
+        "levels": {
+          "cv_holdv0": 0.8228,
+          "nospeed_tactical_oracle": 0.7011,
+          "refc_base_produced": 0.8046,
+          "refc_small_produced": 0.8011,
+          "refc_xl_produced": 0.809,
+          "stand_still": 0.0,
+          "v1_tactical_follow": 0.7075,
+          "v1_tactical_oracle": 0.7121,
+          "v4_blind": 0.5119,
+          "v4_oracle": 0.8234,
+          "oracle_lon_straight": 0.8783,
+          "v1_ego_double": 0.3695,
+          "v1_ego_half": 0.5693,
+          "v1_ego_oracle_lon": 0.8716,
+          "v1_ego_v0": 0.8172,
+          "v1_lat_straight": 0.7089,
+          "refc_base_v0off": 0.7355,
+          "refc_base_v0on": 0.8046,
+          "refc_xl_v0off": 0.7516,
+          "refc_xl_v0on": 0.809
+        }
+      }
+    },
+    "ROBUSTNESS": {
+      "rank1_realisable_per_shape": {
+        "clamp_v1": "cv_holdv0",
+        "lin_q0p25": "cv_holdv0",
+        "lin_q0p5": "cv_holdv0",
+        "lin_q0p6667": "cv_holdv0",
+        "lin_q0p75": "cv_holdv0",
+        "share_q0p25": "cv_holdv0",
+        "share_q0p5": "cv_holdv0",
+        "share_q0p6667": "cv_holdv0",
+        "share_q0p75": "cv_holdv0"
+      },
+      "rank1_is_the_same_under_every_shape": true,
+      "full_order_identical_under_every_shape": false
+    }
+  }
+}

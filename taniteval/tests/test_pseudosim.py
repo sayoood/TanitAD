@@ -228,8 +228,17 @@ def test_composite_is_not_called_a_driving_score():
         # `clamp_v1` term and the two-sided `twosided_v2` term are DIFFERENT
         # METRICS and a stable name over a changed definition is the exact
         # failure class this versioning exists to prevent.
-        assert comp["name"] == "PSS_recovery_progress@twosided_v2"
+        # ⛔ AND THE RECOVERY TERM TOO (2026-07-28, C45). BOTH weight-5.0 terms
+        # were one-sidedly clamped; naming only one of them would leave the
+        # other free to be redefined silently, which is what happened.
+        assert comp["name"] == ("PSS_recovery_progress@twosided_v2"
+                                "+rec_twosided_v2")
         assert comp["progress_term"] == PS.PROGRESS_TERM_DEFAULT
+        assert comp["recovery_term"] == PS.RECOVERY_TERM_DEFAULT
+        # ⭐ and the PUBLISHED id is still exactly emittable, unchanged, so no
+        # pre-2026-07-28 pin or report stops resolving.
+        assert (PS.metric_id("clamp_v1", "clamp_v1")
+                == "PSS_recovery_progress@clamp_v1")
         assert "Driving Score" in comp["_not_a_driving_score"]
 
 
@@ -266,14 +275,41 @@ def test_recovery_separates_a_recovering_planner_from_a_drifting_one():
                        -np.sin(dpsi) * rx + np.cos(dpsi) * ry],
                       -1)[None].expand(n, -1, -1)
 
-    s_hold = PS.score_windows(_pw(hold.clone()))
-    s_rec = PS.score_windows(_pw(rec.clone()))
-    rc_hold = float(np.nanmean(s_hold["recovery"]))
-    rc_rec = float(np.nanmean(s_rec["recovery"]))
-    assert np.isfinite(rc_hold) and np.isfinite(rc_rec)
-    assert rc_hold < 0.05, f"a non-recovering plan scored {rc_hold}"
-    assert rc_rec > 0.95, f"a fully recovering plan scored {rc_rec}"
-    assert rc_rec - rc_hold > 0.9        # the component ORDERS them
+    # ⚠️ UPDATED 2026-07-28 (C45) — the ORDERING guarantee this test was written
+    # for is unchanged and is now asserted under BOTH terms. What moved is the
+    # LEVEL a non-recovering plan receives: `clamp_v1` gave it 0 (which is the
+    # defect — it also gives 0 to a plan three times worse), the two-sided term
+    # gives it exactly the hold anchor q, leaving budget below it to charge
+    # divergence. The published 0-for-hold value is still pinned, under its own
+    # term, so the old behaviour stays observable rather than merely described.
+    for term, hold_max, rec_min in (("clamp_v1", 0.05, 0.95),
+                                    (PS.RECOVERY_TERM_DEFAULT, 0.70, 0.95)):
+        s_hold = PS.score_windows(_pw(hold.clone()), recovery_term=term)
+        s_rec = PS.score_windows(_pw(rec.clone()), recovery_term=term)
+        rc_hold = float(np.nanmean(s_hold["recovery"]))
+        rc_rec = float(np.nanmean(s_rec["recovery"]))
+        assert np.isfinite(rc_hold) and np.isfinite(rc_rec)
+        assert rc_hold < hold_max, f"[{term}] a non-recovering plan scored {rc_hold}"
+        assert rc_rec > rec_min, f"[{term}] a fully recovering plan scored {rc_rec}"
+        assert rc_rec > rc_hold + 0.2      # the component ORDERS them
+    # ⭐ the hold plan lands on the HOLD ANCHOR by construction (ratio = 1)
+    assert abs(float(np.nanmean(PS.score_windows(
+        _pw(hold.clone()))["recovery"])) - PS.RECOVERY_HOLD_ANCHOR_GRID[3]) < 0.02
+    # ⛔ AND THE DEFECT ITSELF, pinned in the failing direction: under the
+    # PUBLISHED term a plan that ends THREE TIMES further off than doing
+    # nothing is scored IDENTICALLY to one that merely fails to recover.
+    worse = torch.stack([np.cos(dpsi) * (v0 * t), 3.0 * (v0 * t) * np.sin(dpsi)
+                         + 0.0 * t], -1)[None].expand(n, -1, -1)
+    rc_pub_hold = PS.score_windows(_pw(hold.clone()),
+                                   recovery_term="clamp_v1")["recovery"]
+    rc_pub_worse = PS.score_windows(_pw(worse.clone()),
+                                    recovery_term="clamp_v1")["recovery"]
+    assert float(np.nanmean(rc_pub_hold)) == float(np.nanmean(rc_pub_worse)) == 0.0
+    rc_new_worse = PS.score_windows(_pw(worse.clone()))["recovery"]
+    assert float(np.nanmean(rc_new_worse)) < float(np.nanmean(
+        PS.score_windows(_pw(hold.clone()))["recovery"])), (
+        "the two-sided term must charge a diverging plan MORE than a "
+        "non-recovering one — that is the whole point of C45")
 
 
 def test_recovery_is_not_gameable_by_standing_still():
@@ -311,7 +347,20 @@ def test_recovery_is_defined_and_low_for_a_drifting_model_planner():
     rc = PS.score_windows(pw)["recovery"]
     fin = rc[np.isfinite(rc)]
     assert fin.size > 0, "recovery must be defined at perturbed grid points"
-    assert float(np.nanmean(fin)) < 0.5
+    # ⚠️ UPDATED 2026-07-28 (C45). The original bar — "a drifting planner scores
+    # LOW" — is preserved verbatim under the term it was written for. Under the
+    # two-sided term "low" is relative to the HOLD ANCHOR, not to 0, because a
+    # plan that merely fails to recover now scores q rather than 0 and the range
+    # below q is reserved for plans that actually diverge.
+    pub = PS.score_windows(pw, recovery_term="clamp_v1")["recovery"]
+    assert float(np.nanmean(pub[np.isfinite(pub)])) < 0.5
+    assert float(np.nanmean(fin)) < 0.95, (
+        "a drifting planner must not approach the score of one that lands on "
+        "the logged path")
+    # ⭐ and the two terms must actually DISAGREE here — otherwise the
+    # versioning is decorative on the very rows it was introduced for.
+    assert abs(float(np.nanmean(fin))
+               - float(np.nanmean(pub[np.isfinite(pub)]))) > 0.05
 
 
 def test_recovery_is_undefined_at_the_unperturbed_point_by_construction():

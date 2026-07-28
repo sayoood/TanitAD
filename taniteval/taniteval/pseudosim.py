@@ -113,6 +113,10 @@ __all__ = [
     "CEIL_FRAC_MAX", "FLOOR_FRAC_MAX", "RANGE_MIN",
     "PROGRESS_TERMS", "PROGRESS_TERM_DEFAULT", "PROGRESS_TERM_PUBLISHED",
     "progress_from_ratio", "metric_id", "UnknownProgressTerm",
+    "RECOVERY_TERMS", "RECOVERY_TERM_DEFAULT", "RECOVERY_TERM_PUBLISHED",
+    "RECOVERY_TERM_DEFAULT_TARGET", "RECOVERY_TERM_ALIASES",
+    "RECOVERY_HOLD_ANCHOR", "RECOVERY_HOLD_ANCHOR_GRID",
+    "recovery_from_ratio", "UnknownRecoveryTerm", "saturation",
     # projection-aware re-render, re-exported so a caller of pseudosim never
     # has to reach into clhorizon to state its geometry.
     "LEGACY_WARP", "WarpFrameRefused", "assert_warp_frame", "warp_frames",
@@ -219,11 +223,251 @@ def progress_from_ratio(ratio, progress_term=PROGRESS_TERM_DEFAULT):
     return PROGRESS_TERMS[progress_term](ratio)
 
 
-def metric_id(progress_term=PROGRESS_TERM_DEFAULT) -> str:
-    """The quotable name. ⛔ Quote THIS, never a bare ``PSS``."""
+# --------------------------------------------------------------------------- #
+# ⛔⛔ THE RECOVERY TERM IS VERSIONED TOO — THE SECOND ONE-SIDED CLAMP (C45)     #
+# --------------------------------------------------------------------------- #
+#: ``clamp_v1`` is ``clamp(1 - r, 0, 1)`` with ``r = |xt_end| / |xt_hold|``.
+#:
+#: ⛔ IT IS FLOORED ON THE MAJORITY OF EVERY ARM'S ROWS. MEASURED on the
+#: 2026-07-27 panel: **55.65 % (`cv_holdv0`) … 92.19 % (`refc_xl_produced`)** of
+#: DEFINED rows sit at exactly 0, the **median unclamped ratio exceeds 1.0 for
+#: every arm**, and the ratio reaches **34.1**. A row already past the floor
+#: cannot be charged more, so an injected degradation that helps a MINORITY of
+#: rows RAISES the mean. MEASURED consequence on ``cv_holdv0``: a **2 m constant
+#: lateral offset** moves ``PSS@twosided_v2`` **+0.0581 [+0.0473, +0.0691]
+#: SEPARATED**, a 5 deg heading error **+0.0747**, and a **ZERO-MEAN** jitter
+#: (sigma = 1 m, which cannot re-centre a bias) **+0.0303 SEPARATED**. 8 of 8
+#: injections separated in the WRONG direction, on both arms tested — against a
+#: published `cv_holdv0`-vs-best-learned-arm gap of only **-0.0090**.
+#: ⇒ **the primary paid for the failure it exists to catch.** Class C45.
+#:
+#: ⚠️ NOTE THE ASYMMETRY WITH ``clamp_v1``'s PROGRESS TWIN: here the CEILING
+#: clamp is provably never active (``r >= 0`` by construction, since both terms
+#: are absolute values, so ``1 - r <= 1`` always). ``clamp(1-r, 0, 1)`` IS
+#: ``max(1-r, 0)``. Only the floor binds, and the floor is the whole defect.
+RECOVERY_TERM_PUBLISHED = "clamp_v1"
+
+#: ⭐ THE PARAMETER, AND IT IS THE ONLY ONE: ``q = the score a plan that recovers
+#: NOTHING receives`` — i.e. the value of the term at ``r = 1``, where the plan
+#: ends exactly as far off the logged path as not steering would have put it.
+#:
+#: ⛔ A STRICT REFINEMENT IS PROVABLY IMPOSSIBLE HERE, and that is why this fix
+#: does not simply copy ``twosided_v2``'s shape. ``twosided_v2`` could subtract
+#: an over-travel charge from ``clamp_v1`` because ``clamp_v1(r) = 1`` at
+#: ``r = 1`` left a whole unit of range underneath it. ``recovery``'s published
+#: term is already **at 0** at ``r = 1``: it has spent its entire range on the
+#: half of the domain where the plan is better than hold. Formally — any
+#: ``g: [0, inf) -> [0, 1]`` that agrees with ``1 - r`` on ``[0, 1]`` has
+#: ``g(1) = 0`` and must therefore be CONSTANT on ``[1, inf)``, i.e. it is the
+#: defect. ⇒ **the fix is not a slope choice, it is a RANGE-BUDGET choice**, and
+#: ``q`` is that budget: the under-side ``r in [0, 1]`` gets ``[q, 1]`` and the
+#: divergence side ``r > 1`` gets ``[0, q]``.
+#:  * ``q = 0``   -> the published term. All budget on recovery, none on
+#:                  divergence. This is the defect, exactly.
+#:  * ``q = 0.5`` -> EVEN SPLIT — the minimum-assumption point, the same role
+#:                  ``OVER_TRAVEL_WEIGHT = 1.0`` plays for the progress term.
+#:  * ``q -> 1``  -> almost all budget on divergence; the under-side collapses
+#:                  into a narrow band and stops discriminating.
+#: ⚠️ THERE IS NO "OVER-RECOVERY" SIDE TO BE ASYMMETRIC ABOUT. ``r >= 0``
+#: identically, so the domain has exactly two regions (recovering, diverging)
+#: and ``q`` is the only asymmetry there is. Its sensitivity is PUBLISHED
+#: (``RECOVERY_HOLD_ANCHOR_GRID``), not chosen — see ``…/incoming/
+#: 2026-07-28-recovery-twosided/RECOVERY_TWOSIDED.md`` §5.
+RECOVERY_HOLD_ANCHOR = 0.5
+#: the pre-registered sensitivity grid on ``q``. Every ranking is republished at
+#: every point of it, for the same reason ``w`` was swept.
+RECOVERY_HOLD_ANCHOR_GRID = (0.0, 0.25, 0.5, 2.0 / 3.0, 0.75)
+
+
+class UnknownRecoveryTerm(ValueError):
+    """A recovery-term name that is not in :data:`RECOVERY_TERMS`.
+
+    Never falls back to a default, for the identical reason
+    :class:`UnknownProgressTerm` does not."""
+
+
+def _recovery_clamp_v1(ratio):
+    """⛔ THE PUBLISHED (FLOORED) TERM. Kept exactly, forever, for reproduction."""
+    return (1.0 - ratio).clamp(0.0, 1.0)
+
+
+def _recovery_linear(q):
+    """``clamp(1 - (1 - q) * r, 0, 1)`` — the LINEAR BUDGET family.
+
+    ⭐ **Affine-equivalent to the published term on the whole domain the
+    published term handled correctly**: for ``r <= 1``,
+    ``g(r) = q + (1 - q) * clamp_v1(r)``, a strictly increasing affine map of
+    the published value. Therefore
+
+      * no pair of under-recovering rows changes order, ever;
+      * the published value is EXACTLY recoverable: ``clamp_v1 = (g - q)/(1-q)``
+        wherever ``g >= q``;
+      * ``q = 0`` reproduces ``clamp_v1`` BIT-identically (the expression
+        collapses to ``clamp(1 - r, 0, 1)``, the published line verbatim).
+
+    That is the closest attainable analogue of ``twosided_v2``'s strict
+    refinement, and the impossibility argument above says it is the closest
+    ANY bounded term can get.
+
+    ⭐ Its charge rate is a CONSTANT ``1 - q`` across its whole live range,
+    which is the property that actually fixes the defect — see
+    :func:`_recovery_share` for the shape that never saturates and still fails.
+
+    ⚠️ It still FLOORS, at ``r = 1/(1-q)`` (``q = 2/3`` -> ``r = 3``). MEASURED
+    over the 16 non-probe arms at the shipped ``q = 2/3``: **1.40 %
+    (`v4_oracle`) to 8.33 % (`v4_blind`)** of defined rows, against the
+    published term's 55.65-92.19 %. That is not zero and it is published beside
+    every value the term produces; see :func:`saturation`."""
+    def _f(ratio):
+        return (1.0 - float(1.0 - q) * ratio).clamp(0.0, 1.0)
+    return _f
+
+
+def _recovery_share(q):
+    """``q / (q + (1 - q) * r)`` — the SHARE family. It CANNOT saturate…
+
+    ⛔⛔ **…AND IT FAILS THE ACCEPTANCE TEST ANYWAY. THIS WAS MY PROVISIONAL
+    DEFAULT AND THE MEASUREMENT REFUTED IT, 0 of 8.** At ``q = 0.5`` it is
+    exactly ``|xt_hold| / (|xt_hold| + |xt_end|)`` — the share of the total
+    error attributable to the hold baseline — it never floors on ANY row of ANY
+    arm (floor fraction **0.0000**, against ``lin_q0p5``'s 0.0482-0.1372), and
+    it STILL pays for injected lateral degradation on **8 of 8** injections.
+    ``share_q0p25`` 0/8, ``share_q0p6667`` 2/8, ``share_q0p75`` 6/8.
+
+    ⇒ ⭐ **"NEVER SATURATES" IS NOT THE PROPERTY THAT FIXES A SATURATING METRIC.
+    THE PROPERTY IS THAT THE CHARGE RATE MUST NOT COLLAPSE WHERE THE DATA
+    LIVES.** ``|dg/dr| = q(1-q)/(q + (1-q)r)^2`` decays like ``r^-2``: at
+    ``q = 0.5`` it is **1.00 at r = 0, 0.25 at r = 1 and 0.0625 at r = 3**,
+    while the linear family charges a **constant 0.5** across its whole live
+    range. The MEDIAN ratio on every arm is **>= 1.004**, so the share form
+    charges the typical row at a quarter of the rate at which it rewards a row
+    that is already nearly perfect — and an injection that pushes a few near-
+    zero rows closer to zero then outweighs the many rows it pushes further
+    out. **A soft floor is still a floor.**
+
+    ⚠️ It is also NOT affine in the published term (it agrees with ``1 - r``
+    only to first order at ``r = 0``), so unlike :func:`_recovery_linear` it
+    re-spaces the under-side.
+
+    Kept, published and swept **because it fails** — the rejection is checkable,
+    and the reason it fails is the actual finding. Pinned by
+    ``test_the_UNSATURATING_share_family_still_pays_for_lateral_degradation``.
+
+    ⛔ ``q = 0`` is degenerate here (the score collapses to 0 for every ``r > 0``)
+    and is refused rather than silently emitted."""
+    if not 0.0 < q < 1.0:
+        raise ValueError(
+            f"share family needs 0 < q < 1; got {q}. q = 0 collapses the score "
+            f"to 0 for every r > 0 (a metric that cannot fail upward), and "
+            f"q = 1 collapses it to 1.")
+
+    def _f(ratio):
+        return (q / (q + float(1.0 - q) * ratio.clamp_min(0.0))).clamp(0.0, 1.0)
+    return _f
+
+
+def _q_tag(q):
+    return "q" + f"{float(q):.4g}".replace(".", "p")
+
+
+#: ⭐ THE PRE-REGISTERED SELECTION RULE, written down BEFORE any panel number was
+#: computed (``…/2026-07-28-recovery-twosided/code/run_recovery_twosided.py``
+#: banks it in ``injections.json`` before the sweep runs):
+#:
+#:  R1 DISQUALIFY any shape for which the 8 injected lateral degradations are not
+#:     ALL separated in the CORRECT (negative) direction on BOTH real arms. A
+#:     shape that fails this does not fix the defect and is not a candidate.
+#:  R2 DISQUALIFY any shape whose recovery FLOOR fraction is >= 0.50 on any
+#:     scorable arm. C45: "a term saturating on the majority of rows is not a
+#:     metric; it is a constant with noise."
+#:  R3 Among survivors PREFER the LINEAR family — it is affine-equivalent to the
+#:     published term on r <= 1, so the under-side ordering is untouched and the
+#:     published value stays exactly invertible. Within it prefer the SMALLEST q
+#:     (minimum departure from the published term).
+#:  R4 If no linear member survives, take the SHARE family at q = 0.5 — the
+#:     equal-budget, parameter-free member.
+RECOVERY_TERMS = {
+    "clamp_v1": _recovery_clamp_v1,
+    **{f"lin_{_q_tag(_q)}": _recovery_linear(_q)
+       for _q in RECOVERY_HOLD_ANCHOR_GRID},
+    **{f"share_{_q_tag(_q)}": _recovery_share(_q)
+       for _q in RECOVERY_HOLD_ANCHOR_GRID if _q > 0.0},
+}
+#: ⭐ the shipped default is an ALIAS onto a swept family member, and which one
+#: is PINNED by a test — so the shape can never drift without the test failing.
+#:
+#: MEASURED OUTCOME OF THE PRE-REGISTERED RULE (20 arms, 15,981 rows, B = 2000,
+#: paired episode-cluster bootstrap over the 40 val episodes):
+#:   R1 all-8-separated-correct: ``lin_q0p6667`` ✅ 8/8 · ``lin_q0p75`` ✅ 8/8 ·
+#:      ⛔ ``clamp_v1`` 0/8 · ``lin_q0p25`` 0/8 · ``share_q0p25`` 0/8 ·
+#:      ``share_q0p5`` 0/8 · ``share_q0p6667`` 3/8 · ``share_q0p75`` 6/8 ·
+#:      ⚠️ ``lin_q0p5`` **7/8** — its 8th cell is CORRECT IN SIGN but n.s.
+#:      (``v1_tactical_follow`` x ``yaw_bias(+5 deg)``: -0.0036 [-0.0075,
+#:      +0.0002], stable at 5 seeds). Not broken, under-powered — and R1 says
+#:      SEPARATED, so it is disqualified rather than argued in.
+#:   R2 max floor fraction over non-probe arms: ``clamp_v1`` 0.9219 ⛔ ·
+#:      ``lin_q0p25`` 0.5884 ⛔ · ``lin_q0p5`` 0.1372 ✅ · ``lin_q0p6667``
+#:      **0.0833** ✅ · ``lin_q0p75`` 0.0532 ✅ · every ``share`` 0.0000 ✅
+#:   R3 prefer LINEAR, smallest surviving q  ⇒  **lin_q0p6667** (q = 2/3)
+#:
+#: ⭐ ``lin_q0p6667(r) = clamp(1 - r/3, 0, 1)``: the score reaches 0 at three
+#: times the hold error, so the divergence half gets 2/3 of the range and the
+#: recovery half 1/3.
+#:
+#: ⚠️⚠️ **THE MINIMUM-ASSUMPTION EVEN SPLIT (q = 0.5) IS THE DIRECT ANALOGUE OF
+#: ``OVER_TRAVEL_WEIGHT = 1.0`` AND IT FAILS ITS OWN ACCEPTANCE TEST HERE.**
+#: ``lin_q0p5(r) = clamp(1 - r/2, 0, 1) = (clamp(1 - r, -1, +1) + 1)/2`` charges
+#: divergence at exactly the rate it credits recovery — the same argument that
+#: fixed ``ego_progress`` — but ``recovery``'s ratio distribution has a far
+#: heavier tail than the progress ratio's (median >= 1.004 on EVERY arm, p99
+#: 3.3-11.1, max 34.1), so a floor at r = 2 still leaves 4.8-13.7 % of rows
+#: uncharged and one injection cell fails to separate. ⇒ **the sibling term's
+#: parameter cannot be ported; it has to be re-derived against this term's own
+#: tail, and the acceptance test — not the analogy — decides.**
+RECOVERY_TERM_DEFAULT_TARGET = "lin_q0p6667"
+RECOVERY_TERM_DEFAULT = "twosided_v2"
+RECOVERY_TERMS[RECOVERY_TERM_DEFAULT] = RECOVERY_TERMS[
+    RECOVERY_TERM_DEFAULT_TARGET]
+#: ``lin_q0`` and ``clamp_v1`` are the SAME FUNCTION. Both names are kept: the
+#: first says where the published term sits in the family, the second is what
+#: every pre-2026-07-28 number was computed under and is what must be quoted.
+RECOVERY_TERM_ALIASES = {RECOVERY_TERM_DEFAULT: RECOVERY_TERM_DEFAULT_TARGET,
+                         "lin_q0": RECOVERY_TERM_PUBLISHED}
+
+
+def recovery_from_ratio(ratio, recovery_term=None):
+    """``ratio = |xt_end| / |xt_hold|`` -> the ``recovery`` sub-score.
+
+    ``ratio = 0`` is a plan that lands on the logged path, ``1`` is a plan
+    exactly as far off as not steering at all, ``> 1`` is a plan that ends
+    FURTHER off than doing nothing."""
+    term = RECOVERY_TERM_DEFAULT if recovery_term is None else recovery_term
+    if term not in RECOVERY_TERMS:
+        raise UnknownRecoveryTerm(
+            f"unknown recovery_term {term!r}; known: {sorted(RECOVERY_TERMS)}. "
+            f"Refusing to fall back to a default — a typo must not silently "
+            f"produce a number under the wrong metric id. Every PSS number "
+            f"published before 2026-07-28 is "
+            f"{RECOVERY_TERM_PUBLISHED!r}.")
+    return RECOVERY_TERMS[term](ratio)
+
+
+def metric_id(progress_term=PROGRESS_TERM_DEFAULT, recovery_term=None) -> str:
+    """The quotable name. ⛔ Quote THIS, never a bare ``PSS``.
+
+    ⚠️ The recovery suffix is appended ONLY when the recovery term is not the
+    published one, so every id published through 2026-07-28 keeps its exact
+    string and no pin, log line or report has to be rewritten to still resolve.
+    A NON-published recovery term is always visible in the name."""
     if progress_term not in PROGRESS_TERMS:
         raise UnknownProgressTerm(f"unknown progress_term {progress_term!r}")
-    return f"PSS_recovery_progress@{progress_term}"
+    rec = RECOVERY_TERM_PUBLISHED if recovery_term is None else recovery_term
+    if rec not in RECOVERY_TERMS:
+        raise UnknownRecoveryTerm(f"unknown recovery_term {rec!r}")
+    base = f"PSS_recovery_progress@{progress_term}"
+    if rec == RECOVERY_TERM_PUBLISHED:
+        return base
+    return f"{base}+rec_{rec}"
 
 # --------------------------------------------------------------------------- #
 # provenance strings that must ride along with every number                    #
@@ -642,7 +886,8 @@ def _cross_and_along(pw):
 
 
 def score_windows(pw, *, comfort_limits=None, dt=DT,
-                  progress_term=PROGRESS_TERM_DEFAULT) -> dict:
+                  progress_term=PROGRESS_TERM_DEFAULT,
+                  recovery_term=None) -> dict:
     """Per-(window, grid point) sub-scores. Pure arithmetic — **no GPU**.
 
     Components, each map-free and each with its discriminative range MEASURED
@@ -663,11 +908,23 @@ def score_windows(pw, *, comfort_limits=None, dt=DT,
                       now ``twosided_v2``; the old value stays computable and is
                       identified in the composite's ``name``.
     ``recovery``      does the plan converge back to the logged path from the
-                      perturbed state? ``1 - |xt_end| / |xt_hold_matched|``
-                      clipped to [0, 1]. **This is the error-recovery signal
-                      pseudo-simulation exists to produce and that open-loop ADE
-                      provably does not measure.** Undefined (NaN) at the
-                      unperturbed grid point, by construction.
+                      perturbed state? A VERSIONED function of
+                      ``r = |xt_end| / |xt_hold_matched|`` (:data:`RECOVERY_TERMS`).
+                      **This is the error-recovery signal pseudo-simulation
+                      exists to produce and that open-loop ADE provably does not
+                      measure.** Undefined (NaN) at the unperturbed grid point,
+                      by construction.
+
+                      ⛔ The published term ``clamp_v1`` is ONE-SIDED: it is
+                      ``max(1 - r, 0)``, so it charges NOTHING for any ``r > 1``
+                      — a plan that ends FURTHER off the path than not steering
+                      at all. MEASURED: **55.65-92.19 %** of defined rows sit on
+                      that floor and the MEDIAN ratio exceeds 1.0 for every arm,
+                      so an injected lateral degradation that helps a minority
+                      of rows RAISED the composite by **+0.0303 to +0.0747,
+                      SEPARATED, 8 of 8 injections, both arms** (C45). The
+                      default is now ``twosided_v2``; the old value stays
+                      computable and is identified in the composite's ``name``.
 
                       ⚠️ ``xt_hold_matched`` is computed from **the plan's OWN
                       along-track distance** — ``|dlat + s_along * tan(dpsi)|`` —
@@ -710,7 +967,10 @@ def score_windows(pw, *, comfort_limits=None, dt=DT,
     # 0.597 ABOVE the sighted one on the 2026-07-27 smoke).
     s_along = x[:, -1].clamp_min(0.0)
     xt_hold = (pw["pt_dlat"] + s_along * torch.tan(dpsi)).abs()
-    rc = (1.0 - xt_end / xt_hold.clamp_min(1e-6)).clamp(0.0, 1.0)
+    # ⛔ THE RATIO IS NOW EMITTED, because the FLOORED HALF OF ITS DOMAIN IS THE
+    # DEFECT (C45) and a term's saturation cannot be audited from the score.
+    rc_ratio = xt_end / xt_hold.clamp_min(1e-6)
+    rc = recovery_from_ratio(rc_ratio, recovery_term)
     rc = torch.where(xt_hold > 0.10, rc, torch.full_like(rc, float("nan")))
     # the naive denominator, kept only as a diagnostic so the defect stays visible
     xt_hold_v0 = (pw["pt_dlat"]
@@ -739,6 +999,16 @@ def score_windows(pw, *, comfort_limits=None, dt=DT,
             "was computed under; it charges nothing for over-travel. "
             "twosided_v2 = clamp(1-|1-r|,0,1), identical to clamp_v1 for r<=1."),
         "recovery": rc.numpy(),
+        "recovery_raw_ratio": rc_ratio.numpy(),
+        "_recovery_term": (RECOVERY_TERM_DEFAULT if recovery_term is None
+                           else recovery_term),
+        "_recovery_term_note": (
+            "clamp_v1 = clamp(1-r,0,1) with r = |xt_end|/|xt_hold| — the term "
+            "EVERY pre-2026-07-28 PSS number was computed under. It is FLOORED "
+            "on 55.65-92.19 % of DEFINED rows (C45), so it charges nothing for "
+            "any further divergence and an injected lateral degradation RAISES "
+            "the mean. The floor fraction is emitted beside every value; see "
+            "`saturation`."),
         "cross_track_end_m": xt_end.numpy(),
         "cross_track_hold_matched_m": xt_hold.numpy(),
         "along_track_end_m": s_along.numpy(),
@@ -756,6 +1026,53 @@ def score_windows(pw, *, comfort_limits=None, dt=DT,
                       "Traffic-Light Compliance are therefore IMPOSSIBLE here "
                       "and are not faked."),
     }
+
+
+#: ⚠️ C45's STANDING CONSEQUENCE, as a threshold: a bounded score saturated on
+#: at least half its defined rows is reported with an explicit warning wherever
+#: it is published. This is NOT the gate (:data:`FLOOR_FRAC_MAX` = 0.95 is); it
+#: is the visibility rule, because ``discriminative_range`` COMPUTED the floor
+#: fraction for its whole life and never surfaced it beside a score.
+SATURATION_WARN_FRAC = 0.50
+
+
+def saturation(arr, *, floor=1e-3, ceil=0.999,
+               warn_frac=SATURATION_WARN_FRAC) -> dict:
+    """⚠️ REPORT THIS BESIDE EVERY BOUNDED SCORE. C45's standing consequence.
+
+    *"For every bounded term, report the FLOOR/CEILING FRACTION beside the
+    score."* The floor fraction of ``recovery`` was computable from day one —
+    :func:`discriminative_range` calculated it and threw it away — and it is the
+    single statistic that would have shown, without any injection experiment,
+    that the term could not charge a majority of its own rows.
+
+    A term at its floor on ``f`` of rows has **zero gradient on ``f`` of the
+    data**: it is a constant with noise there, and any perturbation that moves
+    the remaining ``1 - f`` in the good direction moves the mean the wrong way.
+    """
+    a = np.asarray(arr, dtype=float)
+    fin = a[np.isfinite(a)]
+    if fin.size == 0:
+        return {"n_defined": 0, "defined_frac": 0.0,
+                "floor_frac_le_0p001": None, "ceiling_frac_ge_0p999": None,
+                "saturated_frac": None, "SATURATION_WARNING": "no finite values"}
+    fl = float((fin <= floor).mean())
+    ce = float((fin >= ceil).mean())
+    node = {"n_defined": int(fin.size),
+            "defined_frac": round(float(np.isfinite(a).mean()), 6),
+            "floor_frac_le_0p001": round(fl, 6),
+            "ceiling_frac_ge_0p999": round(ce, 6),
+            "saturated_frac": round(fl + ce, 6),
+            "SATURATION_WARNING": None}
+    if max(fl, ce) >= warn_frac:
+        where = "FLOOR" if fl >= ce else "CEILING"
+        node["SATURATION_WARNING"] = (
+            f"⛔ {max(fl, ce):.2%} of defined rows sit at this term's {where}. "
+            f"On those rows the term has ZERO GRADIENT: it cannot charge a "
+            f"further degradation, so an injection that helps a minority can "
+            f"move the mean the WRONG WAY. This is class C45; do not quote the "
+            f"level without this fraction.")
+    return node
 
 
 def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
@@ -787,6 +1104,12 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
                          "on 54.75-92.18 % of its DEFINED rows across the "
                          "2026-07-27 panel.")}}
     for name, arr in scores.items():
+        # ``composite`` reads `_progress_term` / `_recovery_term` out of the
+        # SAME dict, so a caller that hands the whole `score_windows` result
+        # here would otherwise crash on a metric-id string. Provenance keys are
+        # not components; skip them rather than making every caller filter.
+        if name.startswith("_"):
+            continue
         if arr is None:
             out[name] = {"admissible": False, "reason": "NOT COMPUTABLE",
                          "detail": COLLISION_UNAVAILABLE_REASON}
@@ -811,6 +1134,10 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
             "ceiling_frac_ge_0p999": round(ceil, 6),
             "floor_frac_le_0p001": round(floor, 6),
             "observed_range": round(rng, 6),
+            # ⚠️ C45: the saturation node travels WITH the score, always. The
+            # floor fraction was computed here and discarded for this gate's
+            # whole life; it is now emitted whether or not it gates.
+            "saturation": saturation(a),
         }
         node["admissible"] = bool(ceil < ceil_frac_max
                                   and floor < floor_frac_max
@@ -838,7 +1165,7 @@ def discriminative_range(scores, *, by_arm=None, ceil_frac_max=CEIL_FRAC_MAX,
 
 
 def composite(scores, ranges, *, weights=None, gates=("no_collision",),
-              progress_term=None) -> dict:
+              progress_term=None, recovery_term=None) -> dict:
     """PDM-shaped composite over the **admissible** components only.
 
     ``PDMS = (prod gate_m) x (sum w_x s_x / sum w_x)``. Here every multiplicative
@@ -857,6 +1184,12 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",),
     # composite is exactly the silent-redefinition failure being fixed.
     term = (progress_term if progress_term is not None
             else scores.get("_progress_term", PROGRESS_TERM_DEFAULT))
+    # ⚠️ SAME RULE FOR THE RECOVERY TERM, and the fallback is the PUBLISHED one,
+    # not the default: a caller that hands in a raw dict of arrays with no
+    # `_recovery_term` key is reproducing a pre-2026-07-28 number, and naming it
+    # after the NEW term would be exactly the silent redefinition being fixed.
+    rterm = (recovery_term if recovery_term is not None
+             else scores.get("_recovery_term", RECOVERY_TERM_PUBLISHED))
     w = dict(COMPONENT_WEIGHTS if weights is None else weights)
     admitted, dropped, zeroed = {}, {}, {}
     for name, wt in w.items():
@@ -888,13 +1221,30 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",),
                       "reason": None if scores.get(g) is not None
                       else COLLISION_UNAVAILABLE_REASON} for g in gates}
     return {
-        "name": metric_id(term),
+        "name": metric_id(term, rterm),
         "progress_term": term,
+        "recovery_term": rterm,
         "_progress_term_warning": (
             "⛔ QUOTE THE VERSIONED NAME. Every PSS number published before "
             f"2026-07-28 is {PROGRESS_TERM_PUBLISHED!r} — a ONE-SIDED term that "
             "charges nothing for over-travel. Two values under different terms "
             "are DIFFERENT METRICS and must never be compared."),
+        "_recovery_term_warning": (
+            "⛔ BOTH weight-5.0 terms were one-sidedly clamped. Every PSS "
+            f"number published through 2026-07-28 also used recovery "
+            f"{RECOVERY_TERM_PUBLISHED!r}, which is FLOORED on 55.65-92.19 % of "
+            "defined rows and therefore PAID for injected lateral degradation "
+            "(+0.0303 to +0.0747 SEPARATED, 8/8 injections, both arms — C45). "
+            "The recovery term is part of the metric id whenever it is not the "
+            "published one."),
+        "component_saturation": {
+            k: saturation(scores[k]) for k in admitted
+            if scores.get(k) is not None},
+        "_component_saturation_note": (
+            "⚠️ C45 STANDING CONSEQUENCE: the floor/ceiling fraction ships "
+            "beside every bounded term, permanently. A term at its floor on "
+            "most rows has zero gradient there and can be moved the WRONG WAY "
+            "by a degradation."),
         "_not_a_driving_score": (
             "There is NO collision gate in this composite because the cuboids "
             "are not available (see gates.reason). PDMS-shaped, but it scores "
@@ -924,14 +1274,17 @@ def _boot(x, eid, n_boot, seed):
 
 
 def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
-         by_arm_scores=None, progress_term=PROGRESS_TERM_DEFAULT) -> dict:
+         by_arm_scores=None, progress_term=PROGRESS_TERM_DEFAULT,
+         recovery_term=None) -> dict:
     """The full result node for one arm: sub-scores, ranges, composite, CIs.
 
     Every node carries ``traffic_mode``, the envelope proof, the estimator and
     the refused estimator. Nothing here can be quoted without them.
     """
     n_boot = _ci.DEFAULT_N_BOOT if n_boot is None else int(n_boot)
-    sc = score_windows(pw, progress_term=progress_term)
+    sc = score_windows(pw, progress_term=progress_term,
+                       recovery_term=recovery_term)
+    rterm = sc["_recovery_term"]
     eid = list(pw["eid"])
     comps = {k: sc[k] for k in ("ego_progress", "recovery", "comfort")}
     comps["no_collision"] = None
@@ -940,8 +1293,9 @@ def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
 
     node = {
         "arm": arm,
-        "metric_id": metric_id(progress_term),
+        "metric_id": metric_id(progress_term, rterm),
         "progress_term": progress_term,
+        "recovery_term": rterm,
         "ego_input": pw.get("ego_input"),
         "protocol": PROTOCOL,
         "traffic_mode": TRAFFIC_MODE_LOG_REPLAY,
@@ -963,13 +1317,17 @@ def emit(pw, *, arm="unknown", n_boot=None, seed=0, weights=None,
     }
     for k, v in comps.items():
         node["components"][k] = (
+            # ⚠️ C45: `saturation` rides beside EVERY bounded component level,
+            # not only inside the gate node. A level quoted without it is not
+            # quotable.
             {"ci": _boot(v, eid, n_boot, seed),
+             "saturation": saturation(v),
              "admissible": ranges[k].get("admissible")} if v is not None
             else {"ci": None, "admissible": False,
                   "reason": COLLISION_UNAVAILABLE_REASON})
     try:
         comp = composite(comps, ranges, weights=weights,
-                         progress_term=progress_term)
+                         progress_term=progress_term, recovery_term=rterm)
         val = comp.pop("value")
         comp["ci"] = _boot(val, eid, n_boot, seed)
         # the weighted-vs-unweighted disagreement check

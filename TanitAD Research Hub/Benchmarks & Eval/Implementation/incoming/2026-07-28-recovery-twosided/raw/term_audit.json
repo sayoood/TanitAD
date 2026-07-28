@@ -1,0 +1,438 @@
+{
+  "_experiment": "FIX THE SECOND ONE-SIDED CLAMP: the `recovery` term (C45). 0 GPU-h.",
+  "_evidence_class": "MEASURED (ours; artifact = these JSONs + pw_*.npz)",
+  "_protocol": "PSEUDO-SIMULATION. Perturbed observation states are PRE-GENERATED on a bounded grid and the planner is evaluated ONCE from each. There is no sequential rollout, so deviation is CHOSEN, not accumulated, and cannot leave the validated envelope. Re-implemented from the published protocol (NAVSIM v2 / arXiv 2506.04218, CoRL 2025) on OUR data and OUR warp; no NAVSIM code or data is vendored.",
+  "_estimator": "taniteval.ci.episode_cluster_bootstrap / paired form (B=2000, unit = val episode)",
+  "_refused_estimator": "overlapping_holdout_se \u2014 it biases the POINT ESTIMATE as well as the interval",
+  "_gate": "PANEL-WIDE. The per-arm gate is REFUSED, not offered.",
+  "_import_provenance_md5": {
+    "taniteval.ci": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\ci.py",
+      "md5": "c92618a02b36f8191a581fb74a491a8d"
+    },
+    "taniteval.control": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\control.py",
+      "md5": "db780419557165ffa866366e95586d55"
+    },
+    "taniteval.pseudosim": {
+      "file": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\taniteval\\pseudosim.py",
+      "md5": "14dda5cd0dfcd1ea1b3d67a499fac0f1"
+    }
+  },
+  "traffic_mode": "log_replay_nonreactive",
+  "traffic_mode_note": "Other agents are LOGGED TRACKS REPLAYED WITHOUT REACTION. Our AlpaSim `trafficsim` is disabled (`skip: true`), i.e. literal replay \u2014 so EVERY published TanitAD closed-loop number, not just this one, ran against non-reactive traffic. Paired arm-vs-arm comparisons remain valid; absolute safety numbers are optimistic. NAVSIM v2 (the protocol being reproduced) also uses non-reactive rule-based agents on road centrelines, and our own CAT-K reactivity probe measured NOT REACTIVE (155 agents displaced 0.0044 m when a lead car braked to a dead stop). Reactive traffic is therefore NOT a precondition for this protocol.",
+  "missing_gates": {
+    "no_collision": "NOT COMPUTABLE on the 40-episode val cache. The cache carries only {frames_u8, actions, poses, maneuvers, episode_id} \u2014 no agent cuboids. `obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' on 100 %) would supply them, but (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids, so episode->clip identity is not resolvable from the cache alone, and (b) the matching obstacle.offline chunks are not downloaded. A constant is NOT emitted in its place: a metric that cannot fail is not a metric.",
+    "no_drivable_area": "IMPOSSIBLE, not merely missing. PhysicalAI-AV has no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal \u2014 the card says verbatim 'we do not include open maps data', and `obstacle.offline`'s enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. Settled at five independent probes. `egomotion` also carries no lat/lon/GNSS, so OSM map-matching on our traces is impossible. \u21d2 DAC / lane-keeping / driving-direction / traffic-light compliance cannot be computed here and are NOT faked.",
+    "_not_a_driving_score": "\u26d4 With no collision gate and no drivable-area term, NOTHING computed on this surface is a Driving Score and none of it may be compared to a PDMS number. It scores PROGRESS, RECOVERY and CONTROL.",
+    "_what_would_unblock_the_collision_gate": "`obstacle.offline` covers 97.4438 % of the corpus with boxes in the rig frame. TWO blockers, both mechanical: (a) the cached `episode_id` is int.from_bytes(clip_id[:4]) and COLLIDES \u2014 242 clip_index rows map onto the 40 val episode_ids \u2014 so episode->clip identity is not resolvable from the cache alone; (b) the matching chunks are not downloaded. Neither is a research problem."
+  },
+  "recovery_term_under_test": "twosided_v2",
+  "recovery_term_published": "clamp_v1",
+  "recovery_terms_available": [
+    "clamp_v1",
+    "lin_q0",
+    "lin_q0p25",
+    "lin_q0p5",
+    "lin_q0p6667",
+    "lin_q0p75",
+    "share_q0p25",
+    "share_q0p5",
+    "share_q0p6667",
+    "share_q0p75",
+    "twosided_v2"
+  ],
+  "arm_sources": {
+    "cv_holdv0": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_cv_holdv0.npz",
+    "nospeed_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_nospeed_tactical_oracle.npz",
+    "refc_base_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_base_produced.npz",
+    "refc_small_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_small_produced.npz",
+    "refc_xl_produced": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_refc_xl_produced.npz",
+    "stand_still": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_stand_still.npz",
+    "v1_tactical_follow": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_follow.npz",
+    "v1_tactical_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v1_tactical_oracle.npz",
+    "v4_blind": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_blind.npz",
+    "v4_oracle": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-27-pseudosim-arm-panel\\artifacts\\pw_v4_oracle.npz",
+    "oracle_lon_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_oracle_lon_straight.npz",
+    "v1_ego_double": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_double.npz",
+    "v1_ego_half": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_half.npz",
+    "v1_ego_oracle_lon": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_oracle_lon.npz",
+    "v1_ego_v0": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_ego_v0.npz",
+    "v1_lat_straight": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\pw\\pw_v1_lat_straight.npz",
+    "refc_base_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0off.npz",
+    "refc_base_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_base_v0on.npz",
+    "refc_xl_v0off": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0off.npz",
+    "refc_xl_v0on": "TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-28-tactical-action-input\\artifacts\\blockA\\pw_refc_xl_v0on.npz"
+  },
+  "row_identity": {
+    "cv_holdv0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "nospeed_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_small_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_produced": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "stand_still": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_follow": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_tactical_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_blind": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v4_oracle": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "oracle_lon_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_double": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_half": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_oracle_lon": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_ego_v0": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "v1_lat_straight": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_base_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0off": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    },
+    "refc_xl_v0on": {
+      "n_rows": 15981,
+      "identical_to_reference": true
+    }
+  },
+  "arms_refused_on_row_identity": {},
+  "reference_arm": "cv_holdv0",
+  "probes_excluded": [
+    "stand_still",
+    "v1_ego_half",
+    "v1_ego_double",
+    "oracle_lon_straight"
+  ],
+  "oracles_excluded_from_realisable_ranking": [
+    "v1_ego_oracle_lon",
+    "v4_oracle",
+    "v1_tactical_oracle",
+    "nospeed_tactical_oracle",
+    "oracle_lon_straight"
+  ],
+  "human_replay_max_residual_m": 1.52587890625e-05,
+  "human_replay_votes_on_the_gate": false,
+  "selected_frac_note": "selected_frac = 1.000 for every arm BY CONSTRUCTION: there is no selection step on this surface.",
+  "term_audit": {
+    "_rule": "Two of two audited terms were one-sidedly clamped. A term is AT RISK iff it clamps an unbounded quantity AND a non-trivial fraction of rows lands on the clamped side. `comfort` is audited despite carrying weight 0.0 \u2014 it is still MEASURED, and a saturating diagnostic misleads exactly as a saturating score does.",
+    "_reference_arm": "cv_holdv0",
+    "_detection_heuristic": "grep any metric for a one-sided clamp/max/min and ENUMERATE what lives in the zero-gradient half before adopting it (C45's own).",
+    "terms": {
+      "ego_progress@clamp_v1": {
+        "expr": "clamp(r, 0, 1), r = plan_along / human_along",
+        "clamped_sides": "BOTH (floor at r<=0, ceiling at r>=1)",
+        "status": "\u26d4 FIXED 2026-07-28 by twosided_v2 (ceiling side)",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15442,
+          "defined_frac": 0.966272,
+          "floor_frac_le_0p001": 0.004986,
+          "ceiling_frac_ge_0p999": 0.269007,
+          "saturated_frac": 0.273993,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.31777,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.004986,
+          "nospeed_tactical_oracle": 0.00136,
+          "refc_base_produced": 0.001684,
+          "refc_small_produced": 0.001684,
+          "refc_xl_produced": 0.000518,
+          "v1_tactical_follow": 0.000648,
+          "v1_tactical_oracle": 0.000648,
+          "v4_blind": 0.31777,
+          "v4_oracle": 0.000712,
+          "v1_ego_oracle_lon": 0.000842,
+          "v1_ego_v0": 0.005893,
+          "v1_lat_straight": 0.0,
+          "refc_base_v0off": 0.004145,
+          "refc_base_v0on": 0.001684,
+          "refc_xl_v0off": 0.000712,
+          "refc_xl_v0on": 0.000518
+        },
+        "ONE_SIDED_RISK": false
+      },
+      "ego_progress@twosided_v2": {
+        "expr": "clamp(clamp_v1(r) - w*max(r-1,0), 0, 1), w = 1",
+        "clamped_sides": "FLOOR at r>=2 \u2014 \u26a0\ufe0f STILL ONE-SIDED ABOVE r = 2",
+        "status": "audited here",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15442,
+          "defined_frac": 0.966272,
+          "floor_frac_le_0p001": 0.014053,
+          "ceiling_frac_ge_0p999": 0.011721,
+          "saturated_frac": 0.025774,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.32703,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.014053,
+          "nospeed_tactical_oracle": 0.078099,
+          "refc_base_produced": 0.011397,
+          "refc_small_produced": 0.012304,
+          "refc_xl_produced": 0.009325,
+          "v1_tactical_follow": 0.080495,
+          "v1_tactical_oracle": 0.07499,
+          "v4_blind": 0.32703,
+          "v4_oracle": 0.011721,
+          "v1_ego_oracle_lon": 0.000842,
+          "v1_ego_v0": 0.0147,
+          "v1_lat_straight": 0.082243,
+          "refc_base_v0off": 0.017355,
+          "refc_base_v0on": 0.011397,
+          "refc_xl_v0off": 0.015542,
+          "refc_xl_v0on": 0.009325
+        },
+        "ONE_SIDED_RISK": false
+      },
+      "recovery@clamp_v1": {
+        "expr": "clamp(1 - r, 0, 1), r = |xt_end| / |xt_hold|",
+        "clamped_sides": "FLOOR at r>=1 (the ceiling is never active: r>=0)",
+        "status": "\u26d4 THE DEFECT \u2014 C45",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 13110,
+          "defined_frac": 0.820349,
+          "floor_frac_le_0p001": 0.556522,
+          "ceiling_frac_ge_0p999": 0.000153,
+          "saturated_frac": 0.556674,
+          "SATURATION_WARNING": "\u26d4 55.65% of defined rows sit at this term's FLOOR. On those rows the term has ZERO GRADIENT: it cannot charge a further degradation, so an injection that helps a minority can move the mean the WRONG WAY. This is class C45; do not quote the level without this fraction."
+        },
+        "floor_frac_max_over_panel": 0.921858,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.556522,
+          "nospeed_tactical_oracle": 0.698778,
+          "refc_base_produced": 0.916035,
+          "refc_small_produced": 0.91182,
+          "refc_xl_produced": 0.921858,
+          "v1_tactical_follow": 0.697274,
+          "v1_tactical_oracle": 0.69221,
+          "v4_blind": 0.557914,
+          "v4_oracle": 0.755584,
+          "v1_ego_oracle_lon": 0.717282,
+          "v1_ego_v0": 0.728661,
+          "v1_lat_straight": 0.563503,
+          "refc_base_v0off": 0.89932,
+          "refc_base_v0on": 0.915959,
+          "refc_xl_v0off": 0.900843,
+          "refc_xl_v0on": 0.921858
+        },
+        "ONE_SIDED_RISK": true
+      },
+      "recovery@twosided_v2": {
+        "expr": "see RECOVERY_TERMS",
+        "clamped_sides": "FLOOR at r >= 1/(1-q)",
+        "status": "the fix",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 13110,
+          "defined_frac": 0.820349,
+          "floor_frac_le_0p001": 0.067277,
+          "ceiling_frac_ge_0p999": 0.000153,
+          "saturated_frac": 0.067429,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.083279,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.067277,
+          "nospeed_tactical_oracle": 0.01977,
+          "refc_base_produced": 0.016839,
+          "refc_small_produced": 0.018728,
+          "refc_xl_produced": 0.017508,
+          "v1_tactical_follow": 0.019389,
+          "v1_tactical_oracle": 0.020217,
+          "v4_blind": 0.083279,
+          "v4_oracle": 0.014043,
+          "v1_ego_oracle_lon": 0.021052,
+          "v1_ego_v0": 0.034433,
+          "v1_lat_straight": 0.0503,
+          "refc_base_v0off": 0.024692,
+          "refc_base_v0on": 0.016839,
+          "refc_xl_v0off": 0.023782,
+          "refc_xl_v0on": 0.017508
+        },
+        "ONE_SIDED_RISK": false
+      },
+      "comfort": {
+        "expr": "AND of four bounds \u2014 a BINARY indicator, not a score",
+        "clamped_sides": "\u26d4 NOT A CLAMP AT ALL: it is {0,1}-valued, so it is 100 % saturated BY CONSTRUCTION on every row. Its 'range' is an artefact of averaging.",
+        "status": "weight 0.0 (C46) \u2014 still MEASURED, so still audited",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15981,
+          "defined_frac": 1.0,
+          "floor_frac_le_0p001": 0.0,
+          "ceiling_frac_ge_0p999": 1.0,
+          "saturated_frac": 1.0,
+          "SATURATION_WARNING": "\u26d4 100.00% of defined rows sit at this term's CEILING. On those rows the term has ZERO GRADIENT: it cannot charge a further degradation, so an injection that helps a minority can move the mean the WRONG WAY. This is class C45; do not quote the level without this fraction."
+        },
+        "floor_frac_max_over_panel": 1.0,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.0,
+          "nospeed_tactical_oracle": 0.999312,
+          "refc_base_produced": 0.991803,
+          "refc_small_produced": 0.997309,
+          "refc_xl_produced": 0.994619,
+          "v1_tactical_follow": 0.999625,
+          "v1_tactical_oracle": 0.999625,
+          "v4_blind": 1.0,
+          "v4_oracle": 1.0,
+          "v1_ego_oracle_lon": 0.754709,
+          "v1_ego_v0": 0.711783,
+          "v1_lat_straight": 0.990113,
+          "refc_base_v0off": 0.996433,
+          "refc_base_v0on": 0.991803,
+          "refc_xl_v0off": 0.994994,
+          "refc_xl_v0on": 0.994681
+        },
+        "ONE_SIDED_RISK": true
+      },
+      "lon_track": {
+        "expr": "mean_k clamp(1 - |t_err_k| / T_TOL, 0, 1)",
+        "clamped_sides": "FLOOR per-step at |t_err| >= T_TOL; the MEAN over 20 steps is what is scored, so row-level saturation needs all 20 steps clamped",
+        "status": "audited here",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15442,
+          "defined_frac": 0.966272,
+          "floor_frac_le_0p001": 0.0,
+          "ceiling_frac_ge_0p999": 6.5e-05,
+          "saturated_frac": 6.5e-05,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.002914,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.0,
+          "nospeed_tactical_oracle": 0.002655,
+          "refc_base_produced": 0.0,
+          "refc_small_produced": 0.0,
+          "refc_xl_produced": 0.0,
+          "v1_tactical_follow": 0.002914,
+          "v1_tactical_oracle": 0.002137,
+          "v4_blind": 0.0,
+          "v4_oracle": 0.0,
+          "v1_ego_oracle_lon": 0.0,
+          "v1_ego_v0": 0.0,
+          "v1_lat_straight": 0.002914,
+          "refc_base_v0off": 0.0,
+          "refc_base_v0on": 0.0,
+          "refc_xl_v0off": 0.0,
+          "refc_xl_v0on": 0.0
+        },
+        "ONE_SIDED_RISK": false
+      },
+      "lat_track": {
+        "expr": "mean_k clamp(1 - |XTE_k| / corridor(s_k), 0, 1)",
+        "clamped_sides": "FLOOR per-step; mean over 20 steps",
+        "status": "audited here",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15092,
+          "defined_frac": 0.944371,
+          "floor_frac_le_0p001": 0.074609,
+          "ceiling_frac_ge_0p999": 0.000795,
+          "saturated_frac": 0.075404,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.094744,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.074609,
+          "nospeed_tactical_oracle": 0.081467,
+          "refc_base_produced": 0.093663,
+          "refc_small_produced": 0.094135,
+          "refc_xl_produced": 0.094744,
+          "v1_tactical_follow": 0.079205,
+          "v1_tactical_oracle": 0.076793,
+          "v4_blind": 0.078876,
+          "v4_oracle": 0.071303,
+          "v1_ego_oracle_lon": 0.082686,
+          "v1_ego_v0": 0.082229,
+          "v1_lat_straight": 0.07601,
+          "refc_base_v0off": 0.070712,
+          "refc_base_v0on": 0.093663,
+          "refc_xl_v0off": 0.073276,
+          "refc_xl_v0on": 0.094744
+        },
+        "ONE_SIDED_RISK": false
+      },
+      "lat_heading": {
+        "expr": "clamp(1 - |dpsi| / PSI_TOL, 0, 1) \u2014 a SINGLE value, not a mean, so it saturates at the ROW level",
+        "clamped_sides": "FLOOR at |dpsi| >= PSI_TOL",
+        "status": "\u26a0\ufe0f audited here \u2014 see verdict",
+        "saturation_on_cv_holdv0": {
+          "n_defined": 15092,
+          "defined_frac": 0.944371,
+          "floor_frac_le_0p001": 0.363835,
+          "ceiling_frac_ge_0p999": 0.002253,
+          "saturated_frac": 0.366088,
+          "SATURATION_WARNING": null
+        },
+        "floor_frac_max_over_panel": 0.842896,
+        "floor_frac_per_arm": {
+          "cv_holdv0": 0.363835,
+          "nospeed_tactical_oracle": 0.372978,
+          "refc_base_produced": 0.505237,
+          "refc_small_produced": 0.499868,
+          "refc_xl_produced": 0.505942,
+          "v1_tactical_follow": 0.374967,
+          "v1_tactical_oracle": 0.374576,
+          "v4_blind": 0.842896,
+          "v4_oracle": 0.436362,
+          "v1_ego_oracle_lon": 0.375708,
+          "v1_ego_v0": 0.367016,
+          "v1_lat_straight": 0.360887,
+          "refc_base_v0off": 0.508721,
+          "refc_base_v0on": 0.505237,
+          "refc_xl_v0off": 0.512468,
+          "refc_xl_v0on": 0.506008
+        },
+        "ONE_SIDED_RISK": true
+      }
+    }
+  }
+}
