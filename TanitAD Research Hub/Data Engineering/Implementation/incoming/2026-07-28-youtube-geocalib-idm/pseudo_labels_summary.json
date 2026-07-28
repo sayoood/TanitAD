@@ -1,0 +1,33 @@
+{
+ "meta": {
+  "experiment": "youtube_idm_pilot_pseudo_label",
+  "date": "2026-07-28T09:51:12Z",
+  "ckpt": "/workspace/tmp/idm/ckpt.pt",
+  "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+  "ckpt_step": 29999,
+  "state_dim": 2048,
+  "labeler": "v1 + IDMHead{parity rigA[:60]+rigB[:60]+comma[:40]}",
+  "primary_channels": [
+   "speed",
+   "long_traj"
+  ],
+  "caveated": [
+   "yaw_rate"
+  ],
+  "dropped": [
+   "long_accel",
+   "steer"
+  ],
+  "n_clips_labeled": 20
+ },
+ "speed_sanity": {
+  "n_windows_total": 2240,
+  "speed_mean_mps": 14.212,
+  "speed_std_mps": 5.815,
+  "speed_min_mps": -0.19,
+  "speed_max_mps": 29.443,
+  "frac_in_plausible_0_45_mps": 1.0,
+  "note": "GT-free check. speeds should sit in a road-plausible band and not collapse to a constant; a real speedometer-overlay clip is the only direct GT (see spot_check_speed.py)."
+ },
+ "per_clip": "<list[20] omitted>"
+}
