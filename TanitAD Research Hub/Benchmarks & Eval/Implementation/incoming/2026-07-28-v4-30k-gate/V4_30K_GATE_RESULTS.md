@@ -141,6 +141,57 @@ earlier refusal is now resolved, not worked around.
    side; it is **symmetric scatter about the oracle's own line**. Mechanistically that points at a
    noisy goal estimate rather than a mis-calibrated one, which is a different repair.
 
+### 1.5 ⭐⭐ WHY the produced goal is weak — the goal head measured directly
+
+⚠️ **REPORTING FAILURE, DISCLOSED: this block was already inside `raw_v4fs-30k-produced.json`
+(`goal_agreement_vs_oracle`) when I published §1.3–1.4, and I did not read it.** Same class as the
+`peak_xte` failure earlier this week: the artifact carried the mechanism and I reported only the
+outcome. It is measured on the **same 881 windows** as every number above.
+
+**Route head — NEAR-COLLAPSE.** Confusion matrix (oracle rows × produced cols) sums to 881; the
+**predicted-column** totals are **75 / 793 / 13 / 0 / 0**:
+
+| quantity | value |
+|---|---|
+| predicts **"straight"** | **793 / 881 = 90.0 % of all windows** |
+| exact agreement | **0.5085** |
+| always-straight majority baseline | 394 / 881 = **0.4472** |
+| **margin over majority** | **+6.1 points** |
+| `ROUTE_UNKNOWN` (class 3) | occurs **154** times, predicted **0** times |
+
+⇒ **This is the SAME pathology as the VOID secondary `nonav_route_beats_majority`** (which fails
+because the route target is a lookup of the route input), now measured on the *goal* head and *not*
+void: **a near-constant "straight" predictor that clears majority by 6 points.**
+
+**Speed-target band:** exact **0.1725**, within-1 **0.3837** (23 bands).
+
+**Goal scalars — R² against the kinematic label the head was TRAINED on:**
+
+| scalar | R² | RMSE | n | pred mean | true mean |
+|---|---|---|---|---|---|
+| `tspeed_5s` | **0.7635** | **4.4545 m/s** | 721 | 13.6174 | 12.8224 |
+| `curv_3s` | 0.4466 | 0.0067 | 584 | 0.0005 | 0.0006 |
+| `ttm` | 0.3829 | 3.1969 | 283 | 3.8391 | 3.6495 |
+| `curv_5s` | 0.3142 | 0.0123 | 625 | 0.0008 | 0.0017 |
+
+**`tspeed_5s` is the BEST of the four and still carries 4.45 m/s RMSE (~16 km/h).** Every curvature
+and time-to-manoeuvre channel sits at **R² 0.31–0.45**.
+
+⭐ **This is the mechanism behind §1.3's oracle-dependence, and it REFINES §1.4's reading.** At the
+*trajectory* level both signed components overlapped zero, which I read as "noisy, not
+mis-calibrated". At the *goal* level the picture is not purely noise:
+- the route head has **collapsed toward a constant**, which is structure, not scatter;
+- `tspeed_5s` over-predicts by **+0.795 m/s** in the mean — a bias, though **small against its own
+  4.45 m/s RMSE**, so that channel is still noise-dominated.
+⇒ **"noise-dominated" survives for the speed channel; "no directional bias" does NOT generalise to
+the route channel.** Goal-level structure need not appear as trajectory-level signed bias, because a
+collapsed route mostly removes *turn* commands whose trajectory errors are near-symmetric about the
+straight line.
+
+⇒ **The binding constraint is the GOAL PRODUCER, and specifically its route head.** That is a
+different work item from the planner, and it is cheap to attack: the head is 8.4 M params on a
+frozen trunk.
+
 ## 2. Co-primary — **NOT RUN**
 
 `corridor_departure_rate` @ K=185 (18.5 s), 1.75 m corridor. The card marks it
