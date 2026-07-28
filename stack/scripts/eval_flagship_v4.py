@@ -458,7 +458,34 @@ def load_v4_from_ck(ck: dict, device, head_config_path=None,
               "loaded a trained anchors file (check config.json "
               "args.anchors_dense) this will NOT reproduce its numbers.",
               flush=True)
-    head.load_state_dict(ck["head"])                      # STRICT
+    # STRICT — with ONE narrowly-scoped exemption, and it is not a loosening.
+    #
+    # `vision_rank_proj.basis_loaded` (models/vision_rank.py:155) is a scalar bool
+    # BUFFER registered after the v4 from-scratch arm was trained. It records whether
+    # a PCA basis was seeded; `VisionRankProj.forward` reads ONLY `is_raw`, `mu` and
+    # `proj`, so this flag CANNOT move a computed value. A 30k checkpoint that predates
+    # the buffer is therefore load-compatible in every way that affects a number, and
+    # refusing it would strand a completed arm on a provenance flag.
+    #
+    # ⛔ This must never become a general `strict=False`. That would silently accept a
+    # genuine architecture mismatch — exactly the failure this gate exists to catch, and
+    # exactly what happened upstream of here: with no `--head-config` the loader fell
+    # back to CURRENT defaults and the head arrived with five imagination tensors the
+    # checkpoint never had. Anything missing or unexpected outside the inert set below
+    # still raises.
+    _INERT_BUFFERS = {"vision_rank_proj.basis_loaded"}
+    _missing, _unexpected = head.load_state_dict(ck["head"], strict=False)
+    _hard_missing = [k for k in _missing if k not in _INERT_BUFFERS]
+    if _hard_missing or _unexpected:
+        raise RuntimeError(
+            "FlagshipV4Head state_dict does not match this checkpoint. "
+            f"missing={_hard_missing} unexpected={list(_unexpected)}. "
+            "If the missing keys are imagination/vision-rank tensors, the head was "
+            "built from CURRENT defaults because no sibling config.json was found — "
+            "pass --head-config <the run's config.json>.")
+    for _k in _missing:
+        print(f"[v4-eval] inert buffer absent from checkpoint (pre-dates it, reads "
+              f"nothing in forward): {_k}", flush=True)
     head = head.to(device).eval()
     for p in head.parameters():
         p.requires_grad_(False)
