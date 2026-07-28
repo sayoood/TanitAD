@@ -74,8 +74,22 @@ across the horizon (+0.0377 @0.5 s → +0.4148 @2 s), every horizon SEPARATED.
 [+0.0061, +0.0533]** — **BOTH separated (C57 retracts my "ONLY longitudinal")**; asymmetry 15.5×.
 **Both SIGNED components overlap zero** ⇒ the producer adds error **magnitude without directional
 bias** — a **noisy** goal estimate, not a **mis-calibrated** one. Different repairs.
-⭐⭐ **THE MECHANISM, and it names the next work item (task #43): THE GOAL HEAD'S ROUTE CHANNEL IS
-THE BINDING CONSTRAINT — NOT THE PLANNER.** Per-class recall on the judgeable route classes:
+⛔⛔ **ROUTE IS RETIRED AS THE HEADLINE GOAL-SIDE ITEM (2026-07-29, pre-registered OUTCOME B).**
+The threshold fix is **REAL AND INERT**: balanced route accuracy **0.4242 → 0.5493**, right-turn
+recall **0.041 → 0.289**, `route_exact` 0.5085 → 0.5664 — and paired **`ade_0_2s` +0.0022
+[−0.0008, +0.0055], NOT separated**. ⭐ **A PRECISE null, not an underpowered one:** the interval
+bounds any ADE effect at **±0.0055** against a **0.2140** oracle-vs-produced gap ⇒ route
+recalibration explains **≤ 2.6 %** of it. **The head is essentially insensitive to the route
+channel.** *(`…/incoming/2026-07-29-route-threshold-sweep/` — PREREG `3faab6c`, RESULT `ea12863`.)*
+⭐ **PROMOTED INSTEAD: THE SPEED CHANNEL.** The gap is longitudinal (paired `long_abs_2s` **+0.4260**
+vs `lat_abs_2s` **+0.0274**) and the surviving suspects are **`vt_band` exact 0.1725** (within-1
+0.3837 over 23 bands) and **`tspeed_5s` RMSE 4.4545 m/s (~16 km/h)** — matching the standing
+longitudinal-blindness finding and the harness's own `tracks speed > CV: False`.
+⚙️ `--route-thr` now exists (`goal_modes.set_route_thr`), **default UNCHANGED at tanh(1.0)** so no
+published number moves; an override prints a loud warning.
+
+⭐ **The superseded framing, kept because the mechanism is still correct: THE GOAL HEAD'S ROUTE
+CHANNEL COLLAPSES — but it is NOT the binding constraint.** Per-class recall on the judgeable route classes:
 **straight 394/394 = 100 % · left 49/212 = 23.1 % · RIGHT 5/121 = 4.1 %.** It answers "straight" for
 essentially every turn it is shown (91.5 % of judgeable windows). `vt_band` exact **0.1725** /
 within-1 0.3837. ⇒ **~8.4 M params on a frozen trunk is the cheap lever**, against a 286 M model.
