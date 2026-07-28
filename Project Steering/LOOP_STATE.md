@@ -61,11 +61,22 @@ diagnostic; co-primary is **REPORT_ONLY this gate**; `nonav_route_beats_majority
 **LANE CHANGE** (153 held-out clusters) and **INTERSECTION** (264) are both **A−**: the image arm is
 above chance (ΔAP **+0.01987 [+0.01141, +0.02901]** AUROC 0.703 · **+0.04894 [+0.03735, +0.06277]**
 AUROC 0.769) and **anticipation is demonstrated** at median lead **1.4 s / 2.0 s**.
-⛔ **BUT VISION ADDS NOTHING OVER EGO STATE:** `head_ego` CV-AP **0.0697** beats every image-containing
-arm (img+ego 0.0525, img-only 0.0376; shuffled control 0.0166, privileged ceiling 0.1838).
-⇒ **A sensor-request policy conditioned on FRONT-CAMERA situation classification has no measured
-signal to stand on.** The situations are predictable — from ego dynamics. **ROUNDABOUT UNPOWERED**
-(26 clusters), which is why the PI deferred it.
+⛔⛔ **MY EARLIER FRAMING HERE WAS WRONG AND IS RETRACTED (C60, PI-raised).** I wrote "vision adds
+nothing over ego state ⇒ a camera-conditioned sensor-request policy has no signal to stand on".
+**The measurement holds** (`head_ego` CV-AP **0.0697** beats every image arm — img+ego 0.0525,
+img-only 0.0376; shuffled control 0.0166, privileged ceiling 0.1838) — **the inference did not.**
+⭐ **On LOGGED HUMAN data the ego trace encodes the HUMAN's already-executed reaction to a scene the
+human already perceived.** An AV must PRODUCE that reaction, so the ego baseline is **optimistic by
+construction and does not exist in the same form at deployment.** Beating it is the wrong bar.
+✅ **THE DEPLOYABLE CLAIM, which needs no ego comparison: the image arm is ABOVE CHANCE and
+SEPARATED** — lane change ΔAP **+0.01987 [+0.01141, +0.02901]** (AUROC 0.703) · intersection
+**+0.04894 [+0.03735, +0.06277]** (AUROC 0.769) · anticipation **1.4 s / 2.0 s** median lead.
+⚠️ **Next, per the PI's framing:** *"behind a slower vehicle"* is **object-level**, but the input is
+a 2048-d `SpatialGridReadout` scene summary — **not a detection**. `obstacle.offline` (3D agent
+tracks on **97.44 %** of the corpus) is the untouched substrate for a lead-vehicle / closing-speed
+feature. And the discipline for the next pre-registration: **future ego motion is legitimate for
+GENERATING and VALIDATING labels, illegitimate as an INPUT.**
+**ROUNDABOUT UNPOWERED** (26 clusters), which is why the PI deferred it.
 ⚠️ **REMAINING BUILD:** the labeler lives in `incoming/`, not in `stack/`. Promoting it to tested
 production code is what "implement the situation classification" still requires.
 
