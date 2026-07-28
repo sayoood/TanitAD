@@ -922,3 +922,26 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   goal estimate rather than a **mis-calibrated** one, and those need different repairs.
   ⇒ **Before writing ONLY / no effect / unchanged about a measured quantity, compute its interval.
   If it was not worth an interval, it is not worth a claim.**
+- **C58 — A STRUCTURAL ZERO READ AS AN EMPIRICAL ZERO** *(new class, added 2026-07-29)*
+  ⇒ **a count of zero produced by a MASK is not evidence about the model. Before calling a zero a
+  defect, check whether the training objective could ever have produced a non-zero.**
+  RETRACTED: *"`ROUTE_UNKNOWN` (class 3) occurs 154 times and is predicted **0** times"*, published
+  in `V4_30K_GATE_RESULTS.md` §1.5 as a symptom of goal-head collapse.
+  **It is the intended behaviour.** `v4_curriculum.py:40`: `IGNORE_INDEX = -100` is *"the masked
+  target sentinel — the labeler writes this for every window whose LAT/LON/DIST/route mode is
+  `unknown`; `F.cross_entropy` **skips it**"*; `goal_modes.py` declares
+  `N_ROUTE_CLASSES = 4  # left/straight/right + the v2.1 UNKNOWN sentinel`, `ROUTE_DROPPED = 4`.
+  **The head receives no gradient for UNKNOWN and structurally cannot emit it.**
+  **Second-order consequence, worth as much as the retraction:** the harness's
+  `route_exact_agreement` = **448/881** carries those masked rows **in its denominator**, so the
+  headline accuracy and the majority baseline were both understated. On the judgeable classes
+  (left/straight/right, n=**727**): accuracy **0.6162** vs majority **0.5420**, margin **+7.4 pts**
+  (not +6.1). ⇒ **an ignore_index silently changes what a reported ratio means; check the
+  denominator whenever a metric coexists with a mask.**
+  ⭐ **The underlying finding SURVIVED and got sharper** — which is the test of whether a retraction
+  was about framing or about substance. Per-class recall: straight **394/394 = 100 %**, left
+  **49/212 = 23.1 %**, **right 5/121 = 4.1 %**. *"Near-blind to RIGHT turns specifically"* is both
+  more accurate and more actionable than *"90 % straight"*, and it points the repair at turn recall
+  / class imbalance rather than at the planner.
+  ⚠️ **Neighbour of C57, distinct mechanism.** C57: a quantity whose interval was never computed.
+  C58: a quantity that *could not have been non-zero*. Both end in an unearned claim about zero.
