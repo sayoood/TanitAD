@@ -74,6 +74,19 @@ across the horizon (+0.0377 @0.5 s → +0.4148 @2 s), every horizon SEPARATED.
 [+0.0061, +0.0533]** — **BOTH separated (C57 retracts my "ONLY longitudinal")**; asymmetry 15.5×.
 **Both SIGNED components overlap zero** ⇒ the producer adds error **magnitude without directional
 bias** — a **noisy** goal estimate, not a **mis-calibrated** one. Different repairs.
+⭐⭐ **THE MECHANISM, and it names the next work item (task #43): THE GOAL HEAD'S ROUTE CHANNEL IS
+THE BINDING CONSTRAINT — NOT THE PLANNER.** Per-class recall on the judgeable route classes:
+**straight 394/394 = 100 % · left 49/212 = 23.1 % · RIGHT 5/121 = 4.1 %.** It answers "straight" for
+essentially every turn it is shown (91.5 % of judgeable windows). `vt_band` exact **0.1725** /
+within-1 0.3837. ⇒ **~8.4 M params on a frozen trunk is the cheap lever**, against a 286 M model.
+⛔ **Two corrections to my own first write-up, both logged:** **C58** — I reported `ROUTE_UNKNOWN`
+"predicted 0 times" as a defect; it is **masked out of the CE** (`v4_curriculum.py:40`,
+`IGNORE_INDEX=-100`) so the head **cannot** emit it, and the harness's `route_exact_agreement`
+**448/881 carries masked rows in the denominator** (judgeable-727: acc **0.6162**, majority
+**0.5420**, margin **+7.4 pts**). And **"`tspeed_5s` is best of the four" is WITHDRAWN** — each
+scalar has its **own** mask so the four R² sit on different populations (coverage of the 881 ADE
+windows: tspeed 81.8 % · curv_5s 70.9 % · curv_3s 66.3 % · **ttm 32.1 %**). ✅ `route_n`/`vt_band_n`
+are unmasked (`o.numel()`), so vt_band's figures are clean.
 **Secondaries 3 PASS / 2 FAIL / 2 UNPRODUCIBLE / 1 VOID:** FAIL `wm_canary` **1.1409** vs ≤0.55 ·
 FAIL `miss_at_2m` **0.2123** vs ≤0.10 · PASS `oracle_in_fan` 0.2330, `seam_norm_ratio_max` 0.1208,
 `encoder_touching_levers` 2 · VOID `nonav_route` → **INSTRUMENT-FAIL, never MODEL-FAIL**.
