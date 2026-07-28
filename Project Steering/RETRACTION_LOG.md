@@ -870,3 +870,33 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   ⇒ **Before turning a measured asymmetry into a training prescription, ask what manipulation produced
   it — interpolation, ablation, or training — and require the prescription to be tested under the
   manipulation it will actually be used in.**
+- **C56 — AN OPERATIONAL IMPOSSIBILITY INFERRED FROM ONE BLOCKED *METHOD*, GENERALISED TO THE
+  *CAPABILITY*** *(new class, added 2026-07-28)* ⇒ **"we cannot do X" earned by one failed technique
+  is a statement about the technique, not about X — and when it hardens into a standing rule it
+  silently taxes every future operation.**
+  RETRACTED: **"pods cannot SSH each other"** — a `CLAUDE.md` trap, repeated verbatim in
+  `E1B_RESULTS.md:431`, `VAL_CEILING_AND_S3_DECISION_GRADE.md:165`, and the R6 chief-scientist
+  review, which forced every multi-GB move onto either the **~1 MB/s dev-box relay** or the HF
+  fast-path.
+  **MEASURED 2026-07-28: pod→pod direct SSH runs at 42 MB/s CROSS-DATACENTER** (US-TX-1 →
+  ca-mtl-1): `flagship-v2corpus-30k/ckpt.pt`, **3,415,808,330 B in 77 s**, size-exact.
+  **42× the relay**, and independent of HF.
+  **Root cause:** the original blocker was that **copying a private key between pods is
+  classifier-blocked** — which is correct and should stay blocked. From that single blocked method
+  I concluded the *capability* was absent, and never probed the standard alternative: **generate a
+  keypair ON the destination and authorise its PUBLIC key on the source.** No secret ever moves, so
+  nothing is blocked. A second contributor: the RunPod **proxy** (`ssh.runpod.io`) really cannot
+  transfer files (sftp → `subsystem request failed on channel 0`; `scp -O` → exit 2), and I had
+  generalised that true limitation of the proxy into a false one about pods. The **direct** mapping
+  (`$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22`) was never tried.
+  **Cost, measured, not estimated:** a 22 GB pod3→pod1 move at **1.38 MB/s (~2 h)**; a 66 GB move
+  written off in-doc as *"18 h — unusable"*; and R6 lists this constraint as **simultaneously
+  blocking the formal 8-metric gate, a REF-C arm, and checkpoint backup** while HF sat 403.
+  ⚠️ **This is the SAME class as Operating-Standard rule #2** ("absence found at ONE location is not
+  absence") — applied to a *capability* rather than a file. The rule existed; I did not think to
+  apply it to an ops constraint, only to files and features.
+  ⚠️ **Scope, stated honestly:** proven for **this pod pair**. It does not prove every pod exposes a
+  direct port 22, and 42 MB/s is a *cross-DC* figure — same-DC should be faster, unmeasured.
+  ⇒ **Before recording an ops impossibility as a standing rule, name the METHOD that failed and
+  probe one alternative method. A capability claim needs a second probe exactly like an absence
+  claim does.**

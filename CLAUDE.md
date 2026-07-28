@@ -67,8 +67,22 @@ Every subagent brief MUST carry the preamble in
   quota. Use a real `dd` write test. A full quota killed the flagship mid-checkpoint.
 - **`step_s` in trainer logs is ACCUMULATED over `--log-every`** (÷50), not per-step. This has
   caused false "training is 430 s/step" alarms.
-- **Moving multi-GB files between pods:** pods cannot SSH each other, and the dev-box relay is
-  ~1 MB/s. Push → HF from the source pod (~118 MB/s), then pull. Verify md5.
+- **Moving multi-GB files between pods: POD→POD DIRECT SSH WORKS — the long-standing "pods cannot
+  SSH each other" is RETRACTED (C56).** MEASURED 2026-07-28: **42 MB/s cross-datacenter**
+  (US-TX-1 → ca-mtl-1), 3,415,808,330 B in 77 s — **42× the ~1 MB/s dev-box relay**, and it does
+  not depend on HF (which has been 403-storage-full for days). Recipe:
+  1. `ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519` **on the DESTINATION**;
+  2. append that pod's **PUBLIC** key to the SOURCE's `~/.ssh/authorized_keys`
+     (⛔ never copy a private key — that is correctly classifier-blocked, and you never need to);
+  3. connect to the source's **direct** mapping — `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22`, read
+     from the source's own env.
+  ⚠️ **Use the DIRECT port, not the `ssh.runpod.io` proxy.** The proxy genuinely cannot move files
+  (sftp → `subsystem request failed on channel 0`; `scp -O` → exit 2); it serves an interactive
+  shell only. *That* is the true limitation the old rule had generalised into "pods cannot SSH".
+  ⚠️ **A nested `ssh` inside a piped script EATS THE REST OF THE SCRIPT'S STDIN** — the tail silently
+  never runs and looks like a hang or a truncated log. Always `ssh -n` (or `< /dev/null`) inside
+  a heredoc/pipe. This cost two debugging rounds here.
+  HF push/pull (~118 MB/s) remains the fastest path **when HF has quota**; verify md5 either way.
 - **A RunPod volume resize stops the pod and reassigns its SSH port** (`Connection refused`, not
   `timed out`). The working key is `~/.ssh/tanitad_pod`, not the console's `id_ed25519`.
 - **`torch` spawns ~113 threads PER PROCESS, and concurrent eval arms then make NO PROGRESS —
