@@ -900,3 +900,25 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   ⇒ **Before recording an ops impossibility as a standing rule, name the METHOD that failed and
   probe one alternative method. A capability claim needs a second probe exactly like an absence
   claim does.**
+- **C57 — A DESCRIPTIVE GAP BETWEEN TWO UNPAIRED NUMBERS READ AS A TEST THAT THE SMALLER IS ZERO**
+  *(new class, added 2026-07-28)* ⇒ **"large vs tiny" is a description; "tiny vs zero" is a
+  hypothesis test, and only the second licenses the word ONLY.**
+  RETRACTED: *"the goal producer damages ONLY the longitudinal axis"*, published in
+  `V4_30K_GATE_RESULTS.md` §1.1 off the unpaired per-arm means (along +0.4260 vs cross +0.0273).
+  **MEASURED, paired episode-cluster bootstrap** (B=2000, same 881 windows / 40 episodes,
+  `driving.frenet()` at 2 s, self-checked to **d = 0.0000** against `driving.py`'s own output):
+  `long_abs_2s_m` **+0.4260 [+0.3227, +0.5420]** and `lat_abs_2s_m` **+0.0274 [+0.0061, +0.0533]** —
+  **BOTH SEPARATED.** The asymmetry is real and large (**15.5×**); the word **ONLY** is not.
+  **Root cause:** I had two single-arm columns, differenced them by eye, and treated the small
+  difference as indistinguishable from zero. Nothing in that procedure is a test — no interval was
+  ever computed for the small quantity. The paired machinery the program already mandates was
+  available and cheap (no GPU, it reads persisted windows), and I simply did not apply it to the
+  axis I had already decided was uninteresting.
+  ⚠️ **This is the same family as "never quote an interval without its estimator", one step
+  earlier: here there was no interval at all, and its absence was silently read as a result.**
+  ⭐ **The correction carries new information rather than just a hedge:** the paired test also shows
+  **both SIGNED components overlap zero**, so the producer adds error *magnitude* without a
+  *directional* bias — symmetric scatter, not early braking or a drift. That points at a **noisy**
+  goal estimate rather than a **mis-calibrated** one, and those need different repairs.
+  ⇒ **Before writing ONLY / no effect / unchanged about a measured quantity, compute its interval.
+  If it was not worth an interval, it is not worth a claim.**
