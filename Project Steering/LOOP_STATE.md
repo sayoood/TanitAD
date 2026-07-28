@@ -56,6 +56,40 @@ reference only**. Same-surface planning bar is **0.4907** (881 windows / 40 eps)
 the checkpoint existed**. Escalation #4 (multiplicity) is therefore CLOSED. Primary is DEMOTED to
 diagnostic; co-primary is **REPORT_ONLY this gate**; `nonav_route_beats_majority` **VOID → INSTRUMENT-FAIL**.
 
+### ✅ THE 30k GATE RAN (2026-07-28 ~19:1x UTC) — **NO-VERDICT by protocol.** Full results:
+`…/Benchmarks & Eval/…/incoming/2026-07-28-v4-30k-gate/V4_30K_GATE_RESULTS.md`
+
+**Estimator throughout: episode-cluster bootstrap, n = 881 windows / 40 episodes**, horizon 2 s.
+MODE A ran FIRST per O-03 and PASSED (v1 → **0.42148**, Δ −0.0056 vs the full-set 0.4271,
+tolerance 0.05). ⚠️ The v4 canary run prints *"HARNESS NOT VALIDATED"* — that message compares **any**
+canary run to **v1's** reference and is a **category confusion on a v4 arm**, not a harness failure.
+
+⭐⭐ **THE RESULT THAT MATTERS — paired vs the constant-velocity floor, same windows:**
+**produced (deployable) +0.0186 [−0.1711, +0.1940] OVERLAPS 0** · oracle −0.1954 [−0.3713, −0.0418]
+SEPARATED. ⇒ **the arm's entire measured advantage over constant velocity depends on being handed an
+ORACLE goal.** Stated precisely: *indistinguishable*, **not** "proven no better" (wide CI, 40 eps).
+Paired Δ(produced−oracle) `ade_0_2s` **+0.2140 [+0.1602, +0.2759]**, and the cost **COMPOUNDS ~11×**
+across the horizon (+0.0377 @0.5 s → +0.4148 @2 s), every horizon SEPARATED.
+⭐ Paired Frenet: `long_abs_2s` **+0.4260 [+0.3227, +0.5420]** · `lat_abs_2s` **+0.0274
+[+0.0061, +0.0533]** — **BOTH separated (C57 retracts my "ONLY longitudinal")**; asymmetry 15.5×.
+**Both SIGNED components overlap zero** ⇒ the producer adds error **magnitude without directional
+bias** — a **noisy** goal estimate, not a **mis-calibrated** one. Different repairs.
+**Secondaries 3 PASS / 2 FAIL / 2 UNPRODUCIBLE / 1 VOID:** FAIL `wm_canary` **1.1409** vs ≤0.55 ·
+FAIL `miss_at_2m` **0.2123** vs ≤0.10 · PASS `oracle_in_fan` 0.2330, `seam_norm_ratio_max` 0.1208,
+`encoder_touching_levers` 2 · VOID `nonav_route` → **INSTRUMENT-FAIL, never MODEL-FAIL**.
+⛔ **CANNOT BE COMPLETED AUTONOMOUSLY (task #42):** `speed_benefit` is **unrecoverable from this
+arm's log** (the `g_op_fwd_ade_m` fix did not ride the launch) and `deploy_tick` has **no v4 panel
+and no owner**. Co-primary NOT run (no v4 closed-loop driver exists; it is REPORT_ONLY anyway).
+⚠️ Bounding caveats: **frame UNVERIFIED** (ckpt carries no geometry block) · val parity is
+**COUNT-ONLY** (600/600 present, no uid digest committed).
+⚠️ **B4 TRAP FIRED AND BIT TWICE:** `eval_flagship_v4` imports `taniteval` **non-fatally** → first
+run exited 0 with the primary silently null; **AND** the JSON's
+`cross_check…driving_py_from_persisted_windows` stays `null` **even when driving DID run** — the real
+result is in the `driving` block / `[driving]` log line. **I concluded the primary was missing from
+that field alone and cried wolf.**
+⚠️ **`--head-config` IS MANDATORY for old ckpts.** Without it the loader builds the head from CURRENT
+defaults and STRICT-load dies on 5 keys; this arm's own config says `"cond_imagination": false`.
+
 🔴 **BLOCKED ON ONE THING: moving 7 GB of checkpoints pod3 → pod2.**
 ⛔ **C56 HAS A MEASURED LIMIT: pod→pod direct works CROSS-datacenter, NOT same-datacenter.** pod2→pod3
 is `Connection refused` on the public mapping (no hairpin NAT) and their private subnets are disjoint
