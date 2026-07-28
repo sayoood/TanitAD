@@ -178,8 +178,36 @@ framings, so neither can be quoted without the other:
 | left | 212 | 49 | **23.1 %** |
 | **right** | 121 | 5 | **4.1 %** |
 
-⇒ **The head answers "straight" for essentially every turn it is shown, and is near-blind to RIGHT
-turns specifically (4.1 %).** ⇒ **This is the SAME pathology as the VOID secondary
+### ⭐⭐ PRECISION changes the diagnosis: this is a THRESHOLD problem, not an information problem
+
+Recall alone says the head is blind. **Precision says it is not** — it says the head *knows* and will
+not commit. Derived from the same confusion matrix, restricted to the judgeable rows (predictions
+over those rows total 54 / 665 / 8):
+
+| class | n | recall | **precision** | 95 % Wilson | pred n |
+|---|---|---|---|---|---|
+| **left** | 212 | 0.2311 | **0.9074** | **[0.801, 0.960]** | 54 |
+| straight | 394 | 1.0000 | 0.5925 | [0.555, 0.629] | 665 |
+| right | 121 | 0.0413 | 0.6250 | **[0.306, 0.863]** | **8** |
+
+⭐ **When the head commits to "left" it is right 90.7 % of the time — it just almost never commits.**
+High precision + low recall on a minority class is the signature of a **decision threshold collapsed
+onto the majority prior**, not of missing features. Under plain 0-1 loss on a 54/29/17 prior, always
+answering the mode is close to optimal, and an unweighted CE rewards exactly that.
+⚠️ **RIGHT's 0.6250 rests on n = 8 — Wilson [0.306, 0.863] spans almost the whole range. It is NOT
+evidence of anything** and must not be reported alongside left's number as if comparable.
+
+**Balanced accuracy (mean per-class recall) = 0.4242 vs 0.3333 chance = +9.1 points.** This is the
+honest headline: plain accuracy (0.6162) *rewards* the collapse, balanced accuracy does not.
+
+⇒ **CONSEQUENCE FOR THE FIX (changes task #43's design): try INFERENCE-TIME prior/threshold
+correction FIRST — it costs no training at all.** Only if that fails to move balanced accuracy is a
+class-balanced or focal retrain indicated. ⚠️ **The threshold sweep needs the route LOGITS, and the
+persisted windows carry only the argmax**, so it needs one eval re-run with logit capture — still far
+cheaper than a retrain.
+
+⇒ **The head answers "straight" for essentially every turn it is shown, and its RIGHT recall is
+4.1 %.** ⇒ **This is the SAME pathology as the VOID secondary
 `nonav_route_beats_majority`** (which fails because the route target is a lookup of the route input),
 now measured on the *goal* head where it is **not** void: **a near-constant "straight" predictor.**
 The collapse finding is unchanged by the correction — **it is slightly stronger** (91.5 % vs 90.0 %).
