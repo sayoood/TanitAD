@@ -845,3 +845,28 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   slowdown, a phantom broken pipeline), and one of those triggered a kill that left a raw video on
   disk (C53). **An inference error that manufactures an incident is not a rounding error.**
   ⇒ **Never quote an elapsed time that is not the difference of two observed clock readings.**
+- **C55 — A DECOMPOSITION MEASURED UNDER ONE MANIPULATION READ AS A PRESCRIPTION FOR ANOTHER**
+  *(new class, added 2026-07-28)* ⇒ **an asymmetry observed while MOVING BETWEEN two trained models is
+  not a statement about what to TRAIN ON, and treating it as one costs a full arm.**
+  RETRACTED: the inference that launched E1f — that because E1d measured junction recovery as *cheap
+  and monotone* and overall-corridor recovery as *expensive and barrier-crossing* under α-interpolation,
+  the expensive half must be **dragging down** the cheap one, so restricting supervision to junctions
+  would isolate the good part.
+  MEASURED, it does the opposite. Best `dep_junction`: **E1c (full buffer, 3,537 records) −0.4982** at
+  open-loop +0.2026, versus **E1f (junction-only, 733 records) −0.2108** at +0.0555. **Training on
+  junctions alone HALVES junction recovery.** Had the overall half been interfering, removal should
+  have left junction recovery at least equal; instead E1f delivers **42 % of the junction gain at 27 %
+  of the open-loop cost, and zero overall-corridor gain** — more efficient per unit cost, strictly
+  smaller in absolute terms. A scaled-down arm, not a targeted one.
+  ⚠️ **The decomposition itself was not wrong** — E1d's α-frontier is reproduced and stands. What was
+  wrong is the *transfer*: E1d characterised the geometry of a **path between two models trained on
+  everything**, and that says nothing about the loss surface reached by training on a subset.
+  ⭐ **The pre-registration is what limited the damage.** Outcome C was named in advance — "P2 improves
+  while P1 degrades" — so the result was read as the pre-committed reading rather than argued into a
+  win, and the ~2 GPU-h arm returned a clean refutation instead of an ambiguity.
+  ⚠️ **Honest residual, stated not resolved:** the junction subset spans **102 episodes vs 362**, so
+  this arm cannot separate "junction-only is the wrong target" from "733 records is too little". The
+  refutation is of the *interference* hypothesis, not of junction supervision in general.
+  ⇒ **Before turning a measured asymmetry into a training prescription, ask what manipulation produced
+  it — interpolation, ablation, or training — and require the prescription to be tested under the
+  manipulation it will actually be used in.**

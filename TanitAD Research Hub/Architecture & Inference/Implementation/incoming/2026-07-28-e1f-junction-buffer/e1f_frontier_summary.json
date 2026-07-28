@@ -1,0 +1,154 @@
+{
+ "_experiment": "E1c frontier: held-out-gated closed-loop SFT",
+ "_estimator": "paired_episode_cluster_bootstrap / episode_cluster_bootstrap (taniteval/ci.py), B=2000, resampling the held-out EPISODES. overlapping_holdout_se is used NOWHERE.",
+ "_prereg": "PRE_REGISTRATION_E1C.md \u00a74 \u2014 a checkpoint is a SUCCESS POINT iff P1 & P2 (corridor-departure@K185 overall AND junction, paired, CI-separated LOWER) and Ga/Gb1/Gb2/Gc all hold on HELD-OUT data.",
+ "val_dir": "/workspace/v4run/valcache/physicalai-val-heldout-79d4e3d2d4c6",
+ "n_episodes": 44,
+ "corridor_halfwidth_m": 1.75,
+ "junction_deg": 10.0,
+ "stride": 8,
+ "base_ckpt": "/workspace/experiments/refc-diffusion-base-v21-30k/ckpt.pt",
+ "ft_dir": "/workspace/e1f/refc-base-e1f-junction",
+ "M_frontier_points": 5,
+ "bonferroni_alpha": 0.002777777777777778,
+ "base_step": 29999,
+ "base_reproduction_check": {
+  "_what": "E1a/E1b reported these exact base figures; the base arm is re-rolled here as a control.",
+  "K185_n_windows": 43,
+  "K185_n_junction_windows": 6,
+  "K185_overall_dep": 0.587681,
+  "K185_junction_dep": 0.841441,
+  "K185_peak_xte": 38.944473,
+  "K185_ood_peak": 1.266394,
+  "K20_overall_dep": 0.005326,
+  "openloop_ade2s": 0.474666,
+  "openloop_anchor_acc": 0.681489,
+  "openloop_anchor_traj_l1": 0.177492,
+  "e1b_reference": {
+   "K185_overall_dep": 0.5877,
+   "K185_junction_dep": 0.8414,
+   "K185_peak_xte": 38.9445,
+   "K185_ood_peak": 1.2664,
+   "K20_overall_dep": 0.0053,
+   "openloop_ade2s": 0.4747,
+   "openloop_anchor_acc": 0.6815,
+   "openloop_anchor_traj_l1": 0.1775
+  }
+ },
+ "wall_s": 2355.8,
+ "VERDICT": {
+  "verdict": "BOUND",
+  "winner_step": null,
+  "text": "BOUND: NO checkpoint on the 4-point frontier satisfies all six pre-registered conditions. Primary (P1 and P2, corridor-departure@K185 CI-separated LOWER on overall AND junction) fired at 0/4 points; the held-out guardrails (Ga, Gb1, Gb2, Gc) held at 0/4; the intersection is EMPTY \u2014 the primary never fired. Per PRE_REGISTRATION_E1C \u00a74.2 this means the closed-loop / open-loop trade is REAL and not an artifact of the guard.",
+  "n_points": 4,
+  "n_primary_ok": 0,
+  "n_guardrails_ok": 0,
+  "n_success_points": 0,
+  "primary_ok_steps": [],
+  "guardrails_ok_steps": []
+ },
+ "FRONTIER_TABLE": [
+  {
+   "step": 1000,
+   "dep_overall_delta": 0.0025,
+   "dep_junction_delta": -0.127,
+   "openloop_ade2s_delta": 0.0705,
+   "openloop_ade2s_ci": [
+    0.0418,
+    0.1028
+   ],
+   "ood_peak_ft": 1.2663,
+   "P1": false,
+   "P2": false,
+   "Ga": false,
+   "Gb1": false,
+   "Gb2": false,
+   "Gc": true,
+   "SUCCESS_POINT": false,
+   "multiplicity_robust": false,
+   "noninferior_0p05": false,
+   "failed": [
+    "Ga_openloop_ade2s_ok",
+    "Gb1_anchor_acc_ok",
+    "Gb2_anchor_traj_l1_ok",
+    "P1_dep_overall_separated_lower",
+    "P2_dep_junction_separated_lower"
+   ]
+  },
+  {
+   "step": 2000,
+   "dep_overall_delta": 0.0576,
+   "dep_junction_delta": -0.1459,
+   "openloop_ade2s_delta": 0.0466,
+   "openloop_ade2s_ci": [
+    0.0205,
+    0.0771
+   ],
+   "ood_peak_ft": 1.2621,
+   "P1": false,
+   "P2": true,
+   "Ga": false,
+   "Gb1": true,
+   "Gb2": false,
+   "Gc": true,
+   "SUCCESS_POINT": false,
+   "multiplicity_robust": false,
+   "noninferior_0p05": false,
+   "failed": [
+    "Ga_openloop_ade2s_ok",
+    "Gb2_anchor_traj_l1_ok",
+    "P1_dep_overall_separated_lower"
+   ]
+  },
+  {
+   "step": 3000,
+   "dep_overall_delta": -0.0302,
+   "dep_junction_delta": -0.1568,
+   "openloop_ade2s_delta": 0.0564,
+   "openloop_ade2s_ci": [
+    0.0198,
+    0.1038
+   ],
+   "ood_peak_ft": 1.2609,
+   "P1": false,
+   "P2": true,
+   "Ga": false,
+   "Gb1": true,
+   "Gb2": false,
+   "Gc": true,
+   "SUCCESS_POINT": false,
+   "multiplicity_robust": false,
+   "noninferior_0p05": false,
+   "failed": [
+    "Ga_openloop_ade2s_ok",
+    "Gb2_anchor_traj_l1_ok",
+    "P1_dep_overall_separated_lower"
+   ]
+  },
+  {
+   "step": 4000,
+   "dep_overall_delta": 0.0004,
+   "dep_junction_delta": -0.2108,
+   "openloop_ade2s_delta": 0.0555,
+   "openloop_ade2s_ci": [
+    0.0227,
+    0.099
+   ],
+   "ood_peak_ft": 1.266,
+   "P1": false,
+   "P2": true,
+   "Ga": false,
+   "Gb1": true,
+   "Gb2": false,
+   "Gc": true,
+   "SUCCESS_POINT": false,
+   "multiplicity_robust": false,
+   "noninferior_0p05": false,
+   "failed": [
+    "Ga_openloop_ade2s_ok",
+    "Gb2_anchor_traj_l1_ok",
+    "P1_dep_overall_separated_lower"
+   ]
+  }
+ ]
+}
