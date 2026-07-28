@@ -37,9 +37,13 @@ paired delta** — the paired episode-cluster bootstrap between the two modes wa
 | oracle | **1.0389** | 0.5242 | **1.98×** |
 | produced | **1.4649** | 0.5515 | **2.66×** |
 
-⇒ **The error is LONGITUDINAL-dominated, and the goal producer damages ONLY the longitudinal axis**
-(along +0.4260, cross +0.0273). This is consistent with the program's standing
-longitudinal-blindness finding and is the sharpest thing in this gate.
+⇒ **The error is LONGITUDINAL-dominated.** This is consistent with the program's standing
+longitudinal-blindness finding.
+
+⛔ **I FIRST WROTE "the goal producer damages ONLY the longitudinal axis". THE PAIRED TEST REFUTES
+THE "ONLY" — see §1.4.** Both axes are separated; the lateral damage is real and merely **15.5×
+smaller**. An unpaired eyeball of two column differences (+0.4260 vs +0.0273) is not a test of
+whether the small one is zero, and I treated it as one.
 
 ⚠️ **THESE ARE NOT THE SAME AGGREGATION AS THE `ade_0_2s` COLUMN ABOVE — settled in code
 2026-07-28, because "along 1.0389 > ADE 0.6423" reads as impossible until you know why.**
@@ -110,6 +114,32 @@ frame in which "along-track" and "cross-track" mean what the words say) **and** 
 (I averaged over the window; `driving.py` reports **at 2 s**). ⇒ **`driving.py`'s numbers are the
 correct ones and mine were not a competing estimate, just a different quantity.** A corrected paired
 decomposition would need `frenet()` applied per window — worth doing, not done here.
+
+### 1.4 ⭐ PAIRED Frenet decomposition — completes §1.3's withheld block, and REFUTES an "only"
+
+Same 881 windows / 40 episodes, **paired** episode-cluster bootstrap (B=2000, seed 0). The quantity
+is `driving.frenet()` at the 2 s waypoint — **`driving.py`'s own function**, reproducing
+`long_abs_2s_m = al[:, -1].abs()` / `lat_abs_2s_m = cr[:, -1].abs()` (`driving.py:327`, `:335`).
+**Self-check: d = 0.0000 against driving.py's printed values on both arms and both axes** — the
+earlier refusal is now resolved, not worked around.
+
+| metric | produced | oracle | **Δ (produced − oracle)** | CI95 | |
+|---|---|---|---|---|---|
+| `long_abs_2s_m` | 1.4649 | 1.0389 | **+0.4260** | [+0.3227, +0.5420] | **SEPARATED** |
+| `lat_abs_2s_m` | 0.5515 | 0.5242 | **+0.0274** | [+0.0061, +0.0533] | **SEPARATED** |
+| `long_signed_2s_m` | 0.1558 | 0.1206 | +0.0351 | [−0.1415, +0.2098] | overlaps 0 |
+| `lat_signed_2s_m` | −0.0161 | −0.0047 | −0.0114 | [−0.0571, +0.0320] | overlaps 0 |
+
+**Two findings, and the first corrects me:**
+
+1. ⛔ **"ONLY the longitudinal axis" is WRONG.** Both magnitudes are separated. The producer's
+   damage is **15.5× larger longitudinally** (+0.4260 vs +0.0274) — a strong asymmetry, but the
+   lateral harm is real, not zero. **An unpaired look at two column differences cannot decide
+   whether the small one is zero, and I used it as if it could.**
+2. ⭐ **BOTH SIGNED components overlap zero.** The goal producer adds error **magnitude without a
+   directional bias** — it is not systematically braking early, running late, or drifting to one
+   side; it is **symmetric scatter about the oracle's own line**. Mechanistically that points at a
+   noisy goal estimate rather than a mis-calibrated one, which is a different repair.
 
 ## 2. Co-primary — **NOT RUN**
 
