@@ -56,6 +56,26 @@ reference only**. Same-surface planning bar is **0.4907** (881 windows / 40 eps)
 the checkpoint existed**. Escalation #4 (multiplicity) is therefore CLOSED. Primary is DEMOTED to
 diagnostic; co-primary is **REPORT_ONLY this gate**; `nonav_route_beats_majority` **VOID → INSTRUMENT-FAIL**.
 
+### ⭐ SITUATION CLASSIFICATION IS BUILT AND MEASURED — and it is a NEGATIVE for the MoE camera plan
+`…/incoming/2026-07-26-situation-classifier/` (**NOT** under `h2-sensor-attention/` — see **C59**).
+**LANE CHANGE** (153 held-out clusters) and **INTERSECTION** (264) are both **A−**: the image arm is
+above chance (ΔAP **+0.01987 [+0.01141, +0.02901]** AUROC 0.703 · **+0.04894 [+0.03735, +0.06277]**
+AUROC 0.769) and **anticipation is demonstrated** at median lead **1.4 s / 2.0 s**.
+⛔ **BUT VISION ADDS NOTHING OVER EGO STATE:** `head_ego` CV-AP **0.0697** beats every image-containing
+arm (img+ego 0.0525, img-only 0.0376; shuffled control 0.0166, privileged ceiling 0.1838).
+⇒ **A sensor-request policy conditioned on FRONT-CAMERA situation classification has no measured
+signal to stand on.** The situations are predictable — from ego dynamics. **ROUNDABOUT UNPOWERED**
+(26 clusters), which is why the PI deferred it.
+⚠️ **REMAINING BUILD:** the labeler lives in `incoming/`, not in `stack/`. Promoting it to tested
+production code is what "implement the situation classification" still requires.
+
+### 🟢 TWO RUNS LIVE (2026-07-29)
+- **v5 176×624** on **pod2** — step 300+, 13.75 s/step, GPU 100 %, `eff_batch 64`. ~4.8 d.
+- **v2corpus 50 h** on **newpod** — **RESUMED at step 24001** → 30,000 (~16 h). Command copied
+  VERBATIM from the original run manifest, only paths repointed. Corpus
+  `physicalai-v2bal-4b7eeeac222d` (9,000 clips / **49.742 h**) — ⚠️ **NOT the parity corpus**, so its
+  comparison against v1 is a *corpus* contrast, not a cross-arm parity comparison.
+
 ### ✅ THE 30k GATE RAN (2026-07-28 ~19:1x UTC) — **NO-VERDICT by protocol.** Full results:
 `…/Benchmarks & Eval/…/incoming/2026-07-28-v4-30k-gate/V4_30K_GATE_RESULTS.md`
 
