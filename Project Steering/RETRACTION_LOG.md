@@ -797,3 +797,25 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   and monotone, overall-corridor recovery is expensive and barrier-crossing).
   ⇒ **Before importing a method, write down what it assumes and price the probe that tests the
   assumption.** A pre-registered cheap probe turns an unchecked precondition into a measurement.
+- **C53 — A WORKLOAD PRICED BY ITS NAME, NOT BY ITS STAGES** *(new class, added 2026-07-28)* ⇒
+  **"download" named the cheapest stage of a pipeline whose expensive stage was CPU-bound, and the
+  name is what I costed.** RETRACTED: my own judgement that running a small YouTube harvest on pod3
+  "is network/disk, light" and therefore safe alongside a training job.
+  MEASURED: the harvest ran at **477–483 % CPU (≈5 cores)**, load average **24.39**, and starved the
+  trainer's four `pt_data_worker` processes. `e1c_clsft` step rate:
+  **1.0 s/step measured over a clean 150-step window after the harvest was killed, versus a 5.64
+  s/step cumulative average while it ran.** *(Honest bound: the 5.64 is a cumulative average that
+  includes process startup, so the contention cost is **at least ~4×**; 5.6× is the upper reading.)*
+  The expensive stage was never the network — it was **decode + face/plate/body Haar cascades over
+  every FULL-RES frame**, which the pipeline's own docstring describes and I had read.
+  ⚠️ **The aggravating detail: I quoted the rule while breaking it.** I wrote "pod3 is training
+  E1e-A — never add GPU load to a training pod" in the same message, reasoned that a download is not
+  GPU load, and stopped there — as if GPU were the only contended resource. **CPU and dataloader
+  workers are contended resources too, and the rule's purpose is throughput, not a specific device.**
+  ⭐ **AND KILLING IT CREATED A SECOND, WORSE PROBLEM:** the pipeline deletes the source mp4
+  *after* decode, so terminating it mid-decode **left a raw 137 MB YouTube video on disk** —
+  a privacy-protocol violation manufactured by the remedy. Found by probing for it explicitly
+  (`find -name "*.mp4"`) rather than assuming the kill was clean; deleted, verified 0 media files
+  remaining, directory down to 1.5 KB.
+  ⇒ **Price a job by its STAGES on the contended resource, not by the verb in its name — and when
+  you kill a pipeline mid-flight, audit what its deferred cleanup never got to run.**
