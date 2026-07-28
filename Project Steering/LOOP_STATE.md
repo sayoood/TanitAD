@@ -10,6 +10,37 @@ Update this file instead; keep it short and dated.
 
 
 
+## 🔴🔴 2026-07-28 ~04:10 UTC — **POD1 AND POD2 ARE BOTH UNREACHABLE. PI ACTION REQUIRED.**
+
+**MEASURED, and the two failures are DIFFERENT — do not treat them as one outage:**
+
+| pod | alias target | TCP | ICMP | reading |
+|---|---|---|---|---|
+| **pod1** | `38.147.83.15:30107` | ❌ refused | ✅ **ping OK** | host is UP, **nothing listening on the port** ⇒ the documented RunPod signature: *a volume resize stops the pod and reassigns its SSH port* |
+| **pod2** | `69.30.85.75:22022` | ❌ refused | ❌ ping fails | **host unreachable entirely** — stopped, or IP reassigned |
+
+pod3 and tanitad-eval answered **in the same minute**, and `ssh -G` resolves both failing aliases
+correctly, so this is **NOT** a local SSH-config or network fault. *(The error string
+`Connection to UNKNOWN port -1` is OpenSSH's phrasing for a failed banner exchange — it is NOT
+evidence of a config problem, and reading it as one wastes the iteration.)*
+
+**⛔ I CANNOT SELF-RECOVER.** New ports/IPs come only from the RunPod console; `Keys.txt` holds an HF
+token and **no RunPod credential** (checked by label, values never read). **This is a blocking PI
+action:** restart/inspect both pods, then publish the new `Host` ports into `~/.ssh/config`.
+
+**WHAT IS AT RISK (and what is not):**
+- **pod1 — `flagship-v2corpus-30k` at step 23,850/30,000 (79.5 %), ~2.9 GPU-days in.** Volume-resident
+  ckpts survive a stop: `ckpt.pt`, `ckpt_step20000.pt`, `ckpt_step15000.pt`, `ckpt_step5000.pt`. The
+  supervisor auto-resumes from `ckpt.pt`, so the expected loss is the steps since the last save, not
+  the run. ⚠️ **Verify `restarts:` and the resumed step on reconnect — do not assume it resumed.**
+- **pod2 — arm B of the PI's geometry validation**, restarted 02:31 UTC and only ~100 steps in;
+  `chain2.sh` (B → C → evalchain) will need relaunching. **Arm A's results are already banked and
+  safe** (`pw_A_old.npz`, `pw_A_old_blind.npz` on the pod volume — ⚠️ **single-disk, not yet pulled**).
+- **NOT at risk:** E1c/E1d live on pod3 and their summaries are committed to the repo.
+
+**Do NOT** re-run arm A on reconnect — it completed `rc=0` and raising `seam_fail` is a proven no-op
+for it (`test_seam_fail_is_a_pure_guard_and_changes_no_computed_value`).
+
 ## ⛔ RETIRED QUESTIONS — the drumbeat prompt still asks these; they are ANSWERED
 
 The `/loop` and cron prompts are frozen text from an earlier phase. **Do not spend an iteration re-investigating any of the following.** Each has been measured and closed; if a future probe contradicts one, that is a new finding and should be reported as such.
