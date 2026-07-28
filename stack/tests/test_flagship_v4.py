@@ -344,14 +344,84 @@ def test_a_trained_graft_actually_moves_the_ranking():
 
 
 # ------------------------------------------------------- (c) the norm clamp --
-def test_seam_clamp_fails_loud_above_the_fail_ratio():
+def test_seam_clamp_fails_loud_on_SUSTAINED_saturation():
+    """The guard still kills a genuine runaway — but only a SUSTAINED one.
+
+    Redesigned 2026-07-28 (C51): the trigger is a POPULATION condition over TIME
+    (mean ratio > seam_fail AND bound_frac > seam_fail_frac, held for
+    seam_fail_patience consecutive steps), not `ratio.max()` on one batch.
+    """
     cfg = _small()
+    cfg.seam_fail_patience = 3                   # short, so the test is fast
     head = FlagshipV4Head(cfg).eval()
     b = _batch(cfg)
     with torch.no_grad():                        # make a graft swamp the base score
         head.lat_to_anchor.weight.fill_(50.0)
-    with pytest.raises(RuntimeError, match="fail-loud"):
+
+    # it must NOT fire before patience is reached ...
+    for i in range(cfg.seam_fail_patience - 1):
+        out = _run(head, b)
+        assert out["telemetry"]["seam_sat_steps"] == i + 1
+    # ... and must fire once it is
+    with pytest.raises(RuntimeError, match="SATURATED"):
         _run(head, b)
+
+
+def test_a_MINORITY_of_saturated_samples_can_NEVER_kill_the_run():
+    """⭐ THE C51 REGRESSION PIN — the defect that cost the PI's geometry
+    validation both wide arms.
+
+    The old rule fired on `ratio.max()`, so ONE sample out of 64 could end a
+    multi-GPU-hour run. The fix makes the batch FRACTION a REQUIRED CONJUNCT, so
+    no minority can trigger a kill however extreme it is.
+
+    ⚠️ Note on what is and is not driven here: the per-sample ratio is a function
+    of the decoder's own output, so a *literal* one-of-N outlier cannot be dialled
+    in from the outside. What IS decisive — and is what the fix turns on — is that
+    the fraction gate is a real conjunct rather than decoration. So this drives a
+    batch with an ENORMOUS mean ratio (~10^3, far past `seam_fail`) while the
+    fraction requirement is unreachable, and asserts the guard stays silent and
+    the counter never accumulates. If the fraction gate were dropped or ORed, this
+    test fires immediately.
+    """
+    cfg = _small()
+    cfg.seam_fail_frac = 1.01                    # unreachable: no batch is >100 %
+    cfg.seam_fail_patience = 3
+    head = FlagshipV4Head(cfg).eval()
+    b = _batch(cfg)
+    with torch.no_grad():
+        head.lat_to_anchor.weight.fill_(50.0)    # mean ratio far above seam_fail
+
+    for _ in range(cfg.seam_fail_patience + 5):  # well past the old kill point
+        t = _run(head, b)["telemetry"]           # must NOT raise
+        assert t["seam_norm_ratio_preclamp_mean"] > cfg.seam_fail, (
+            "fixture is vacuous — the mean must exceed seam_fail, or this test "
+            "proves nothing about the conjunct")
+        assert t["seam_sat_steps"] == 0, (
+            "the counter accumulated while the POPULATION condition was unmet — "
+            "the fraction gate is not a real conjunct, i.e. C51 has returned")
+
+
+def test_the_saturation_counter_RESETS_on_a_healthy_step():
+    """A transient spike must never accumulate into a kill across gaps."""
+    cfg = _small()
+    cfg.seam_fail_patience = 3
+    head = FlagshipV4Head(cfg).eval()
+    b = _batch(cfg)
+
+    with torch.no_grad():
+        head.lat_to_anchor.weight.fill_(50.0)    # saturating
+    assert _run(head, b)["telemetry"]["seam_sat_steps"] == 1
+    assert _run(head, b)["telemetry"]["seam_sat_steps"] == 2
+
+    with torch.no_grad():
+        head.lat_to_anchor.weight.zero_()        # healthy again
+    assert _run(head, b)["telemetry"]["seam_sat_steps"] == 0, "counter did not reset"
+
+    with torch.no_grad():
+        head.lat_to_anchor.weight.fill_(50.0)    # saturating again
+    # must start counting from 1, NOT resume at 3 and fire immediately
+    assert _run(head, b)["telemetry"]["seam_sat_steps"] == 1
 
 
 def test_seam_clamp_rescales_in_graph_below_the_fail_ratio():
@@ -394,26 +464,31 @@ def test_seam_fail_is_a_pure_guard_and_changes_no_computed_value():
     ⚠️ It is NOT a claim the guard is worthless — it is a claim the guard is a
     REPORTING threshold wearing a kill switch's clothes.
     """
-    FILL = 50.0                                   # as the fail-loud test above
+    FILL = 50.0                                   # as the saturation test above
 
-    def _built(seam_fail: float):
+    def _built(seam_fail: float, patience: int = 1):
         torch.manual_seed(0)                      # identical init...
         cfg = _small()
         cfg.seam_fail = seam_fail
+        cfg.seam_fail_patience = patience         # 1 => decide on this single step
         head = FlagshipV4Head(cfg).eval()
         with torch.no_grad():
             head.lat_to_anchor.weight.fill_(FILL)
         torch.manual_seed(1)                      # ...and an identical batch
         return head, _batch(cfg)
 
-    # (1) measure the pre-clamp ratio with the guard effectively off
+    # (1) measure the pre-clamp MEAN ratio with the guard effectively off.
+    #     (C51: the trigger is the MEAN over the batch, no longer the max.)
     head_off, b_off = _built(1.0e9)
     torch.manual_seed(2)                          # the decoder is STOCHASTIC
     out_off = _run(head_off, b_off)
-    r = out_off["telemetry"]["seam_norm_ratio_preclamp_max"]
+    r = out_off["telemetry"]["seam_norm_ratio_preclamp_mean"]
     assert r > _small().seam_fail, (
         f"the fixture must exceed the SHIPPED default {_small().seam_fail} for "
         f"this test to be decision-relevant (got {r})")
+    assert out_off["telemetry"]["seam_clamp_bound_frac"] > _small().seam_fail_frac, (
+        "the fixture must also saturate the POPULATION, or part (3) would be "
+        "testing the wrong branch of the new guard")
 
     # (2) a threshold just above the observed ratio: no raise, and every tensor
     #     must be bit-identical to the guard-off run
@@ -429,7 +504,7 @@ def test_seam_fail_is_a_pure_guard_and_changes_no_computed_value():
     # (3) just below it: the one and only thing the threshold changes
     head_bad, b_bad = _built(r * 0.99)
     torch.manual_seed(2)
-    with pytest.raises(RuntimeError, match="fail-loud"):
+    with pytest.raises(RuntimeError, match="SATURATED"):
         _run(head_bad, b_bad)
 
 

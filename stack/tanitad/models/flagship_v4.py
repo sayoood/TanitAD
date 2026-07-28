@@ -102,7 +102,20 @@ class V4Config(V15Config):
                                             # tactical instance ② does NOT (§3.1)
     factor_hidden: int = 128                # per-head MLP hidden (a §14.4 O-12 knob)
     seam_clamp: float = 1.0                 # rescale the graft in-graph at this ratio
-    seam_fail: float = 1.5                  # fail loud above this pre-clamp ratio
+    # ⭐ FAIL-LOUD REDESIGNED 2026-07-28 (C51). The old rule fired on
+    # `ratio.max()` — ONE sample of 64 could kill a run — and its message named a
+    # "code fault" that is IMPOSSIBLE BY CONSTRUCTION, since the clamp below
+    # cannot fail to bound the ratio. MEASURED cost: the PI's geometry validation
+    # lost BOTH wide arms (pre-clamp 1.760 and 1.511) at ~step 350, on arms that
+    # were training AT OR BELOW the 51.4° control on every loss term — and `C_v5`
+    # tripped it at the LOWEST total/wm/plan_ade of its entire run.
+    # The pathology actually worth killing for is SUSTAINED SATURATION: when the
+    # graft is clamped for most of the batch across many steps, λ is a no-op there
+    # and the prior-strength axis is unreadable. That is a POPULATION condition
+    # over TIME, so all three of these must hold together before it raises.
+    seam_fail: float = 1.5                  # ceiling on the batch MEAN ratio (was: max)
+    seam_fail_frac: float = 0.75            # ...AND this share of the batch at the clamp
+    seam_fail_patience: int = 50            # ...AND both sustained this many consecutive steps
 
     # --- PRIOR STRENGTH (E-H2): the two knobs that were hard-wired -----------
     # The class->anchor grafts are a norm-capped product-of-experts PRIOR added
@@ -230,13 +243,35 @@ class FlagshipV4Head(FlagshipV15Head):
                 for k, g in (("lat", g_lat), ("lon", g_lon), ("dist", g_dist))}
         ratio = graft.norm(dim=-1) / base                        # [B]
         pre_max = float(ratio.max().detach())
-        if pre_max > self.cfg.seam_fail:
+        pre_mean = float(ratio.mean().detach())
+        bound_frac = float(
+            (ratio > self.cfg.seam_clamp).to(ratio.dtype).mean().detach())
+        # ⭐ SUSTAINED-SATURATION guard (C51). Population, not a batch max; over
+        # time, not a single step. The counter resets the moment the condition
+        # breaks, so a transient spike can never accumulate into a kill. It is a
+        # plain attribute (not a buffer) on purpose: it must not enter state_dict
+        # and change checkpoint compatibility.
+        saturated = (pre_mean > self.cfg.seam_fail
+                     and bound_frac > self.cfg.seam_fail_frac)
+        n_sat = (getattr(self, "_seam_sat_steps", 0) + 1) if saturated else 0
+        self._seam_sat_steps = n_sat
+        if n_sat >= self.cfg.seam_fail_patience:
+            self._seam_sat_steps = 0          # so a caught error is recoverable
             raise RuntimeError(
-                f"factorised-selection seam norm ratio {pre_max:.3f} > "
-                f"{self.cfg.seam_fail} (fail-loud): a graft is swamping the base "
-                f"score — the in-graph clamp is not holding, i.e. a code fault. "
-                f"(graft_lambda={lam}, graft_tau={tau}: a PRIOR-STRENGTH sweep "
-                f"must raise seam_fail explicitly and record that it did.)")
+                f"factorised-selection seam SATURATED: mean pre-clamp ratio "
+                f"{pre_mean:.3f} > {self.cfg.seam_fail} AND {bound_frac:.1%} of "
+                f"the batch at/above the clamp (> {self.cfg.seam_fail_frac:.0%}), "
+                f"sustained {n_sat} consecutive steps "
+                f"(>= {self.cfg.seam_fail_patience}). "
+                f"⚠️ THE IN-GRAPH CLAMP IS HOLDING — it cannot fail by "
+                f"construction — so this is NOT a code fault. It is a "
+                f"TRAINING-DYNAMICS condition: above the clamp λ is a NO-OP, so "
+                f"the prior-strength axis is unreadable here and a λ sweep read "
+                f"in this regime would show SATURATION, not a finding. "
+                f"(graft_lambda={lam}, graft_tau={tau}.) A genuine prior-strength "
+                f"sweep must raise --seam-fail / seam_fail_frac explicitly and "
+                f"record that it did; the per-step values are now in "
+                f"train_log.jsonl, so inspect the trend before changing either.")
         # rescale in-graph so the EFFECTIVE ratio never exceeds seam_clamp
         scale = self.cfg.seam_clamp / ratio.clamp_min(self.cfg.seam_clamp)  # <=1
         graft = graft * scale[:, None]
@@ -246,10 +281,12 @@ class FlagshipV4Head(FlagshipV15Head):
         # sweep read without these two keys shows a flat axis that is saturation,
         # not a finding. `preclamp_mean` is the axis's true position; `bound_frac`
         # is the share of the batch for which λ has already stopped mattering.
-        tele["seam_norm_ratio_preclamp_mean"] = round(
-            float(ratio.mean().detach()), 4)
-        tele["seam_clamp_bound_frac"] = round(
-            float((ratio > self.cfg.seam_clamp).to(ratio.dtype).mean().detach()), 4)
+        tele["seam_norm_ratio_preclamp_mean"] = round(pre_mean, 4)
+        tele["seam_clamp_bound_frac"] = round(bound_frac, 4)
+        # How close the sustained-saturation guard is to firing, as DATA. Before
+        # C51 the guard's only output channel was a fatal exception, so nobody
+        # could see it coming; this makes the approach visible in train_log.jsonl.
+        tele["seam_sat_steps"] = n_sat
         return refined + graft, tele
 
     # -------------------------------------------------------------- forward --

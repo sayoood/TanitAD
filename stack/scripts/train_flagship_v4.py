@@ -1774,11 +1774,13 @@ def build_parser() -> argparse.ArgumentParser:
     # P5b: learned null row is the default; the zero-fill is X15 (ablation only)
     ap.add_argument("--seam-fail", dest="seam_fail", type=float,
                     default=V4Config.seam_fail,
-                    help="fail-loud threshold on the PRE-CLAMP factorised-seam norm "
-                         "ratio (V4Config.seam_fail, default 1.5). Raising it does "
-                         "NOT weaken the graft bound — seam_clamp (1.0) still "
-                         "rescales in-graph — it only stops a batch-MAX outlier "
-                         "from killing the run. Recorded in config.json.")
+                    help="ceiling on the batch-MEAN pre-clamp factorised-seam norm "
+                         "ratio (V4Config.seam_fail, default 1.5). Since C51 the "
+                         "guard fires only when this AND seam_fail_frac (0.75 of "
+                         "the batch at the clamp) hold for seam_fail_patience (50) "
+                         "consecutive steps — a batch MAX can no longer kill a run. "
+                         "Raising it does NOT weaken the graft bound: seam_clamp "
+                         "(1.0) still rescales in-graph. Recorded in config.json.")
     ap.add_argument("--ego-null-row", dest="ego_null_row", action="store_true", default=True)
     ap.add_argument("--ego-zero-fill", dest="ego_null_row", action="store_false",
                     help="X15 — the v3enc zero-fill bug; ablation ONLY, never a shipping run")
