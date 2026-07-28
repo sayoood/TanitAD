@@ -55,6 +55,45 @@ The harness's own summary for both arms: **`win lives: lateral only`.**
 *"0.4271 IS NOT A PLANNING BAR AND MUST NOT BE USED AS ONE."* The same-surface planning reference is
 **0.4907** (881 windows / 40 episodes).
 
+### 1.3 ⭐⭐ PAIRED episode-cluster bootstrap — added 2026-07-28, and it CHANGES THE READING
+
+§1 left the +0.2140 without an interval. It has one now. **Paired** (`taniteval.ci`, B=2000,
+seed 0), same arm, **same 881 windows / 40 episodes**, refused unless the eid sequence *and* the
+ground truth are identical — both verified. Quadrature over §1's two intervals would have been
+**invalid**, not merely weaker, because the arms are not independent.
+
+| metric | produced | oracle | **Δ (produced − oracle)** | CI95 | |
+|---|---|---|---|---|---|
+| `ade_0_2s` | 0.8563 | 0.6423 | **+0.2140** | [+0.1602, +0.2759] | **SEPARATED** |
+| de@0.5 s | 0.1533 | 0.1155 | +0.0377 | [+0.0272, +0.0492] | SEPARATED |
+| de@1 s | 0.4929 | 0.3635 | +0.1294 | [+0.0952, +0.1701] | SEPARATED |
+| de@1.5 s | 1.0411 | 0.7672 | +0.2739 | [+0.2039, +0.3555] | SEPARATED |
+| **fde@2 s** | 1.7378 | 1.3230 | **+0.4148** | [+0.3099, +0.5344] | SEPARATED |
+
+**The goal producer's cost COMPOUNDS: ~11× from 0.5 s to 2 s** (+0.0377 → +0.4148).
+
+#### ⭐⭐ Against the constant-velocity floor — the single most decision-relevant number here
+
+| arm | ADE | CV floor | **Δ vs CV** | CI95 | |
+|---|---|---|---|---|---|
+| **produced** (deployable) | 0.8563 | 0.8377 | **+0.0186** | **[−0.1711, +0.1940]** | **overlaps 0** |
+| oracle (upper bound) | 0.6423 | 0.8377 | **−0.1954** | [−0.3713, −0.0418] | SEPARATED, better |
+
+⇒ **THE ARM'S ENTIRE MEASURED ADVANTAGE OVER CONSTANT VELOCITY DEPENDS ON BEING HANDED AN ORACLE
+GOAL.** With the goal it can actually produce, it is **statistically indistinguishable from doing
+nothing** — nominally worse, CI straddling zero. This is consistent with, and much sharper than,
+the harness's own `tracks speed > CV: False` and `win lives: lateral only`.
+⚠️ Stated precisely: *indistinguishable*, **not** "proven no better" — the CI is wide
+([−0.171, +0.194]) on 40 episodes, so a real effect either way is not excluded.
+
+⚠️ **The lateral/longitudinal split is NOT quoted in this paired block, deliberately.** A
+self-check was built in: reproduce `taniteval.driving`'s own along/cross before quoting mine. ADE
+matched to **d = 0.0000** on both arms, but my ego-frame |Δx|/|Δy| gave along **0.5159** where
+driving reports **1.0389** (and cross 0.2389 vs 0.5242) — a different definition, ~2×, not a clean
+factor. **The guard fired and the decomposition was withheld.** §1.1's decomposition stands because
+it is `driving.py`'s own output; only my re-derivation is refused. Reconciling the two definitions
+is open work.
+
 ## 2. Co-primary — **NOT RUN**
 
 `corridor_departure_rate` @ K=185 (18.5 s), 1.75 m corridor. The card marks it
