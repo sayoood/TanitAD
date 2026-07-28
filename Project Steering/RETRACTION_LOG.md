@@ -819,3 +819,29 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   remaining, directory down to 1.5 KB.
   ⇒ **Price a job by its STAGES on the contended resource, not by the verb in its name — and when
   you kill a pipeline mid-flight, audit what its deferred cleanup never got to run.**
+  ⚠️ **CORRECTION 2026-07-28 (see C54): C53's measured claims all stand** — 477–483 % CPU, load 24.39,
+  1.0 s/step clean vs 5.64 s/step cumulative under contention, and the raw 137 MB mp4 left on disk.
+  **But its "0 clips were produced" implied the harvest had had time to produce some. It had not:**
+  `ps` shows that run lived ~6 minutes and was still decoding its FIRST video. The contention finding
+  is unaffected; the insinuation that the harvest was also failing to work is withdrawn.
+- **C54 — ELAPSED TIME INFERRED AGAINST A CLOCK I NEVER RECORDED** *(new class, added 2026-07-28)* ⇒
+  **a duration computed from "when I think I last looked" is not a measurement, and I produced four
+  false claims from it in one session — every one contradicted by the first direct check.**
+  MEASURED instances, all mine:
+  1. *"E1e-A has slowed to 4.4 s/step"* — derived by differencing step 2225 against step 1775 using my
+     own recollection of when I read the earlier value. A 240 s window measured **1.2 s/step**. There
+     was no slowdown.
+  2. *"1.0 s/step is the recovered rate"* — measured in a 150 s window immediately after killing a
+     competing job, i.e. during a **dataloader catch-up burst**. Later windows put steady state at
+     1.0–1.2; the burst was real but was not the steady state I called it.
+  3. *"The harvest has run ~35 min and produced 0 clips"* — its own `ps` elapsed was **~6 min**.
+  4. *"The second harvest has run ~27 min with 0 clips — that's a pattern, not bad luck"* — the pod
+     clock said **310 s**. It had downloaded one 138 MB video and was decoding it. Normal progress.
+  ⭐ **The tell is identical every time: I compared a log timestamp against an assumed "now".** The
+  cure is mechanical and costs one extra field — **read the remote clock (`date -u`) and the process's
+  own `etimes`/`lstart` in the same probe that reads the log**, and quote only differences between two
+  values I actually observed.
+  ⚠️ **Why this is worth a class rather than a shrug: two of the four became alarms** (a phantom
+  slowdown, a phantom broken pipeline), and one of those triggered a kill that left a raw video on
+  disk (C53). **An inference error that manufactures an incident is not a rounding error.**
+  ⇒ **Never quote an elapsed time that is not the difference of two observed clock readings.**
