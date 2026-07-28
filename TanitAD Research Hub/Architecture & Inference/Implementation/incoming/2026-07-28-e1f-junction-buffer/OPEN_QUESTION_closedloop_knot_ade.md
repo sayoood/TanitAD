@@ -1,4 +1,52 @@
-# 🔵 OPEN INSTRUMENT QUESTION — the closed-loop knot-ADE may be confounded by ego-state divergence
+# ✅ RESOLVED (same day) — the confound does NOT exist, and the reading CHARACTERISES the closed-loop gain
+
+**Raised and resolved 2026-07-28**, by code read, no GPU. **The question below was answered: the
+frame confound I feared is absent on two independent counts, so §1's numbers stand.** The original
+question is preserved verbatim beneath the resolution, because a question whose reasoning is erased
+cannot be audited.
+
+## ✅ RESOLUTION (MEASURED, `/workspace/e1b/e1a_horizon.py:237-269` + `driving_diagnostic.py:92-97`)
+
+```
+:237  oyaw = poses[last, 2]                 :238  oxy = poses[last, :2]
+:239  ex = poses[last,0].clone(); ey = poses[last,1].clone()
+:240  eyaw = poses[last,2].clone(); ev = poses[last,3].clone()
+:267  wdx = ex - oxy[:,0];  wdy = ey - oxy[:,1]
+gt_ego_waypoints:  p0 = poses[last,:2],  yaw0 = poses[last,2]
+```
+
+1. **Same origin AND same rotation.** Prediction and ground truth are both displacements from
+   `poses[last,:2]`, both rotated by `poses[last,2]`. The frames are *identical by construction*, not
+   merely similar — so drift cannot misalign them.
+2. **Every window's rollout is RE-INITIALISED at the recorded pose** (`:239-240`). Both arms therefore
+   start each window from an identical state. **My "the arms are at different ego states" concern was
+   simply wrong** — that would apply to a single continuous rollout, not to this per-window design.
+
+⇒ **The confound is absent. §1's numbers are quotable.**
+
+## ⭐ AND THE HORIZON MISMATCH IS WHAT RECONCILES IT
+
+`WP_STEPS = (5,10,15,20)` @10 Hz ⇒ the knot-ADE covers **0.5–2.0 s**.
+Corridor departure is measured over **K = 185 ≈ 18.5 s**.
+
+**These are different horizons, and that dissolves the apparent contradiction.** The fine-tuned arms
+deviate *more* from the expert's actual path in the **first two seconds** — and the excess is
+**lateral** — while departing the 1.75 m corridor *far less* over the **full 18.5 s**.
+
+⇒ **The closed-loop gain is not "the arms became more expert-like".** It is: **they take a slightly
+different early line and are dramatically more stable over the long horizon.** For E1c that is
++0.2154 m of extra lateral deviation at ≤2 s bought against −0.4407 in 18.5 s departure rate.
+
+**This CHARACTERISES the gain; it does not undermine it.** Nothing in E1c/E1d/E1e/E1f changes, and the
+departure-rate verdicts were never in question.
+
+⚠️ **Residual, stated:** whether the early lateral deviation is *desirable* (a recovery-oriented line)
+or merely *tolerated* is not established here. That is a behavioural question needing trajectory
+inspection, not another statistic.
+
+---
+
+# 🔵 THE ORIGINAL QUESTION, PRESERVED AS RAISED
 
 **Raised 2026-07-28.** **This is NOT a finding. It is a question with numbers attached and a named
 resolution path.** No conclusion is drawn and nothing in the E1 chain's verdicts changes.
