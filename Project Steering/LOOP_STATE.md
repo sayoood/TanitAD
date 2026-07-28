@@ -28,8 +28,43 @@ finished `rc=0` — **~4 h to re-run**; PI decides whether it is needed.
 keygen on the DESTINATION, append its **PUBLIC** key to the source's `authorized_keys`, connect to the
 source's **direct** `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22` (**not** the proxy, which cannot move
 files). ⇒ **the ~1 MB/s relay and the HF-403 no longer block any multi-GB move.**
-⚠️ **BOTH pod2 and pod3 were 91 commits behind at `0f93b98`.** pod2 is **synced and verified by a real
-import**; **pod3 IS STILL STALE — sync before its next launch** (task #39).
+✅ **BOTH pod2 AND pod3 were 91 commits behind at `0f93b98`; BOTH ARE NOW SYNCED** and verified by a
+real `import` (`seam_fail_frac=0.75`, `seam_fail_patience=50`), not by `git log`. *(pod3's
+`/workspace/TanitAD-main` has no `.git` — it is a zip download; `/workspace/TanitAD` is authoritative.)*
+
+### 🔴 THE 30k FLAGSHIP GATE — every input located, ONE step blocked (2026-07-28 ~18:4x UTC)
+
+⭐ **`flagship-v4-30k` IS NOT LOST.** I briefly concluded it was, because pod2's `/workspace/experiments`
+is empty. **It is on pod3 at `/workspace/v4instr/v4fs_ckpt.pt` — step 29,999, 3,243,109,310 B, parity
+`e438721ae894` / `f09e44db`.** ⛔ **My search was `*flagship-v4*`; the file is named `v4fs_*`, which
+that glob CANNOT match** — the same one-name-absence error as `anchors*.pt` vs
+`flagship_v4_anchors_dense.pt` earlier the same day. **Search by content, not by one name.**
+
+⭐⭐ **THE GATE MUST RUN ON pod2, NOT pod3 — and this is the fact that was hardest to find:**
+`physicalai-val-0c5f7dac3b11` (the canonical parity val, **600 eps, `DONE`, 66 GB**) lives ONLY at
+`pod2:/workspace/data/physicalai_phase0/_epcache/`. **pod2 also has `comma2k19` (83 G)** ⇒ the
+`--data realmix` resume is far less blocked than I priced it. On pod3 there is **no usable val**:
+`f1b378` is a **code-level refusal** (`parity.py:24`, 78.5 % of its episodes are IN the parity train
+set) and `s3parity/views/…0c5f7dac…` is **poses-only, 4,385 B/episode — no frames**.
+⚠️ **I nearly ran MODE A on the 44-ep E1 held-out.** The harness warned: *"NON-PARITY val corpus …
+Results off it are NOT cross-arm comparable"*, **44 eps / 7,511 windows vs the canonical 40 eps /
+881 windows** — it WARNS AND PROCEEDS, so a non-comparable number would have come out. Run killed.
+⚠️ **`0.4271` is `wm_fidelity_ade_2s`** (the WM handed TRUE future actions). Registry §1.2: *"IS NOT A
+PLANNING BAR AND MUST NOT BE USED AS ONE."* The card uses it correctly — as the **MODE A harness
+reference only**. Same-surface planning bar is **0.4907** (881 windows / 40 eps).
+✅ Card `flagship-v4-30k.card.json` EXISTS, `gate_step: 30000`, **registered at step 29,650 — before
+the checkpoint existed**. Escalation #4 (multiplicity) is therefore CLOSED. Primary is DEMOTED to
+diagnostic; co-primary is **REPORT_ONLY this gate**; `nonav_route_beats_majority` **VOID → INSTRUMENT-FAIL**.
+
+🔴 **BLOCKED ON ONE THING: moving 7 GB of checkpoints pod3 → pod2.**
+⛔ **C56 HAS A MEASURED LIMIT: pod→pod direct works CROSS-datacenter, NOT same-datacenter.** pod2→pod3
+is `Connection refused` on the public mapping (no hairpin NAT) and their private subnets are disjoint
+(**pod3 `172.16.96.2`, pod2 `192.168.0.2`**). The 42 MB/s figure was US-TX-1 → ca-mtl-1.
+**Dev-box relay MEASURED at 5 MB/s** (not the inherited ~1 MB/s) ⇒ 7 GB ≈ 48 min round-trip — viable
+but slow. **Fast path = HF (~118 MB/s), and HF IS REACHABLE** (token OK, user `Sayood`, 17 repos).
+🔴 **The HF push was BLOCKED BY THE AUTO-MODE CLASSIFIER. I did not route around it — Sayed must
+grant it or approve the 48-min relay.** There is **no** `flagship-v4-fromscratch` repo, so that
+completed 30k arm is still SINGLE-DISK.
 ⭐ **THE SEAM GUARD IS FIXED PROPERLY (C51 closed), not raised** — the `seam_fail 8.0` workaround is
 RETIRED. Trigger is now POPULATION-over-TIME: batch **MEAN** ratio > 1.5 **AND** ≥75 % of the batch at
 the clamp **AND** 50 consecutive steps; counter resets on any healthy step; `seam_clamp` untouched, so
