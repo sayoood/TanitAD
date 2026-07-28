@@ -83,6 +83,32 @@ reduction (0.5877 → 0.147) and the E1d barrier finding are **not** leak artifa
 sensor-level, including partial containment**.
 
 ⚠️ **Scope, stated rather than implied:** this verifies `heldout-79d4e3d2d4c6` against
-`physicalai-train-e438721ae894` **only**. It says nothing about any other split, and nothing about
-REF-C base's own pre-training corpus, whose overlap with this split remains **unmeasured** — the
-same gap that made C49 (a confound assumed symmetric) a retraction.
+`physicalai-train-e438721ae894` **only**. It says nothing about any other split.
+
+### 6.1 ⭐ The C49-class gap is CLOSED, not merely flagged *(added 2026-07-28, same day)*
+
+The paragraph above originally ended *"…and nothing about REF-C base's own pre-training corpus,
+whose overlap with this split remains **unmeasured** — the same gap that made C49 a retraction."*
+**That caveat was correct to raise and is now discharged by measurement rather than by argument.**
+
+`refc-diffusion-base-v21-30k/config.json` records its training data as:
+
+```
+data: {'cache_dir': '/workspace/pai_epcache/physicalai-train-e438721ae894',
+       'n_episodes': 2376, 'n_windows': 406099}
+```
+
+That is **the identical path and the identical 2,376 episodes** this probe intersected against —
+`sets.TRAIN.path` in the artifact reads `/workspace/pai_epcache/physicalai-train-e438721ae894`,
+character-for-character the same string, with the same `n = 2376`.
+
+⇒ **REF-C base's own pre-training corpus IS the corpus measured here, and its content overlap with
+the held-out 44 is 0 — including 0 shared frames.** So the E1 chain's guarantee is the *strong* one
+C49 demands: not "clean against some parity split", but **clean against the base arm's actual
+training data**, verified at the sensor level.
+
+⚠️ **What C49 warned about still applies elsewhere.** C49's lesson is that symmetry of a confound is
+an empirical claim; here the claim was checked and the confound is absent *for this arm on this
+split*. It does **not** transfer to any other arm or split — REF-A, REF-B and the flagship arms were
+trained on the same parity corpus but are evaluated on **different** splits, each of which needs its
+own content check before its "held-out" label is trusted.
