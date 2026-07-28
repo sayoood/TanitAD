@@ -74,3 +74,35 @@ worth buying.**
 
 `code/imag_sweep.sh` (reuses the harness's own `--canary-only` path; only K varies) ·
 `raw_imag_K10.json` · `raw_imag_K20.json` · pre-registration `eb27a36`.
+
+## 7. ⭐⭐ FIVE IN-RANGE POINTS — the decay ACCELERATES; it is not one power law
+
+Run 2026-07-29 on pod3, v1, **all n = 881 windows / 40 episodes**, identical harness, only K varies.
+No model change was needed — this stays inside the trained horizon.
+
+| horizon | K | ADE | local exponent d(ln ADE)/d(ln t) |
+|---|---|---|---|
+| 0.4 s | 4 | **0.04056** | — |
+| 0.8 s | 8 | **0.08286** | **1.03** |
+| 1.2 s | 12 | **0.16068** | **1.63** |
+| 1.6 s | 16 | **0.27528** | **1.87** |
+| 2.0 s | 20 | **0.42148** | **1.91** |
+
+**Global OLS power-law exponent over 0.4–2.0 s: 1.456.** ⛔ **That single number hides the
+result.** The LOCAL exponent climbs monotonically **1.03 → 1.63 → 1.87 → 1.91**:
+imagination begins as near-**LINEAR** error growth — clean integration of a good one-step model — and
+becomes near-**QUADRATIC** by 2 s, the signature of compounding.
+
+✅ **This vindicates the earlier two-point reading without inheriting its error.** The 1.91 slope
+measured from 1 s→2 s reproduces exactly (1.909 over 1.6→2.0 s). It was the **local rate at the
+far end**, not the law — quoting it as the law would have overstated short-horizon decay by ~2×.
+
+⚠️ **THE ACCELERATION IS THE DECISION-RELEVANT PART.** The exponent is **still rising at the 2 s
+boundary**, so extrapolating past 2 s with any of these constants — the global 1.456 least of all —
+**understates** the true error. Combined with §3.2 (the >2 s bound is an `index_select` limit in the
+predictor's horizon embedding, i.e. architectural), the picture is: **this world model cannot imagine
+past 2 s, and the error it accumulates approaching 2 s grows faster the further it goes.** A
+strategic planner cannot buy horizon here cheaply — not by asking, and not by extrapolating.
+
+⚠️ Honest bound: 5 points, one arm (v1), one corpus, expert-future actions. It characterises **this**
+world model's imagination, not imagination in general.
