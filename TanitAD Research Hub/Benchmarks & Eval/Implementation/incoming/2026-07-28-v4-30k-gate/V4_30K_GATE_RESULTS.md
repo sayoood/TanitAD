@@ -41,6 +41,16 @@ paired delta** — the paired episode-cluster bootstrap between the two modes wa
 (along +0.4260, cross +0.0273). This is consistent with the program's standing
 longitudinal-blindness finding and is the sharpest thing in this gate.
 
+⚠️ **THESE ARE NOT THE SAME AGGREGATION AS THE `ade_0_2s` COLUMN ABOVE — settled in code
+2026-07-28, because "along 1.0389 > ADE 0.6423" reads as impossible until you know why.**
+`driving.py:201 frenet()`: the split is taken **on the GT TANGENT (Frenet) frame** — *"along + =
+pred is AHEAD of GT along the path; cross + = pred is LEFT; orthonormal basis ⇒
+along² + cross² == ‖pred−gt‖² exactly"* — and the reported fields are **`long_abs_2s_m` /
+`lat_abs_2s_m`, i.e. AT the 2 s horizon**, whereas `ade_0_2s` is **averaged over 0–2 s**.
+**Consistency check passes:** √(1.0389² + 0.5242²) = **1.1637**, which sits below `fde@2s`
+**1.3230** in exactly the direction Jensen requires (mean-of-norms ≥ norm-of-means). ⇒ compare
+along/cross against **fde@2s**, never against `ade_0_2s`.
+
 ### 1.2 ⭐ It does not beat constant velocity on speed
 
 | goal mode | speed MAE | hold-v0 (CV) | `tracks speed > CV` |
@@ -91,8 +101,15 @@ self-check was built in: reproduce `taniteval.driving`'s own along/cross before 
 matched to **d = 0.0000** on both arms, but my ego-frame |Δx|/|Δy| gave along **0.5159** where
 driving reports **1.0389** (and cross 0.2389 vs 0.5242) — a different definition, ~2×, not a clean
 factor. **The guard fired and the decomposition was withheld.** §1.1's decomposition stands because
-it is `driving.py`'s own output; only my re-derivation is refused. Reconciling the two definitions
-is open work.
+it is `driving.py`'s own output; only my re-derivation was refused.
+
+✅ **RECONCILED the same day (see §1.1's warning).** My version was wrong in **two** ways at once,
+which is why the ratio looked arbitrary rather than like a clean factor: wrong **frame** (I used the
+ego frame; `driving.py` uses the **GT-tangent Frenet** frame, which rotates with the path — the only
+frame in which "along-track" and "cross-track" mean what the words say) **and** wrong **aggregation**
+(I averaged over the window; `driving.py` reports **at 2 s**). ⇒ **`driving.py`'s numbers are the
+correct ones and mine were not a competing estimate, just a different quantity.** A corrected paired
+decomposition would need `frenet()` applied per window — worth doing, not done here.
 
 ## 2. Co-primary — **NOT RUN**
 
