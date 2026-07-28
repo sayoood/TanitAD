@@ -200,11 +200,44 @@ evidence of anything** and must not be reported alongside left's number as if co
 **Balanced accuracy (mean per-class recall) = 0.4242 vs 0.3333 chance = +9.1 points.** This is the
 honest headline: plain accuracy (0.6162) *rewards* the collapse, balanced accuracy does not.
 
-⇒ **CONSEQUENCE FOR THE FIX (changes task #43's design): try INFERENCE-TIME prior/threshold
-correction FIRST — it costs no training at all.** Only if that fails to move balanced accuracy is a
-class-balanced or focal retrain indicated. ⚠️ **The threshold sweep needs the route LOGITS, and the
-persisted windows carry only the argmax**, so it needs one eval re-run with logit capture — still far
-cheaper than a retrain.
+### ⭐⭐⭐ THE MECHANISM IS ARITHMETIC, NOT A TRAINING PATHOLOGY — and there is NO route classifier
+
+⛔ **I proposed "class-balanced or focal loss on the route channel". THAT CHANNEL DOES NOT EXIST.**
+Read in `scripts/goal_modes.py:133-166` (`scalars_to_goal`) — the produced route is a **hard threshold
+on ONE regressed scalar**:
+
+```python
+graded = torch.tanh(curv_5s / rl.CURV_TURN_PER_M)   # CURV_TURN_PER_M = 1/60 m ≈ 0.01667 /m
+thr    = tanh(1.0)                                   # 0.76159…  (the value the artifact records)
+route  = STRAIGHT
+route  = where(graded >=  thr, LEFT,  route)
+route  = where(graded <= -thr, RIGHT, route)
+```
+
+**There is no route classifier and no route cross-entropy in the produced path at all** — the gate's
+own VOID note says so in as many words (*"no ROUTE classifier exists yet (P6 strategic planner not
+landed)"*), and I quoted that note without connecting it to my own proposed remedy.
+
+**THE COLLAPSE FALLS OUT OF THE ARITHMETIC:**
+- the class fires only when **|curv_5s| ≥ 0.01667 /m** (a 60 m-radius turn);
+- `curv_5s` is the **WORST-fit** of the four scalars: **R² 0.3142**, **RMSE 0.0123 /m**;
+- the threshold therefore sits at only **≈1.36× the predictor's own RMSE**;
+- and a regressor at R² 0.31 **shrinks predicted magnitudes toward the mean** by roughly
+  **ρ = √0.3142 ≈ 0.56**.
+
+⇒ **A turn must be ≈1/0.56 = 1.78× SHARPER than the label's own definition before the threshold
+fires — a ~34 m radius instead of 60 m.** Everything gentler is silently rounded to STRAIGHT. This
+explains **both** halves of §1.5 exactly: high precision (when the shrunk estimate clears the bar the
+true curvature is almost certainly large) and low recall (it rarely clears it).
+
+⇒ **REVISED FIX, cheaper again and one line: LOWER THE THRESHOLD.** Shrinkage-correcting gives
+`thr ≈ tanh(0.56) ≈ 0.508` in place of `tanh(1.0) = 0.762`. ⚠️ That is a **principled starting point
+for a sweep, not a derived optimum** — it assumes an approximately least-squares regressor and that
+R² measured on `curv_5s`'s own masked subset (625 windows, §1.5) transfers.
+⚠️ **And the prerequisite is smaller than I said: NOT logits.** `GoalAgreement` already accumulates
+the per-window predicted scalars in `_sc_pred` / `_sc_true` / `_sc_mask` and throws them away after
+summarising. **Dumping those three tensors once makes the entire threshold sweep FREE and OFFLINE** —
+no repeated eval runs, no GPU.
 
 ⇒ **The head answers "straight" for essentially every turn it is shown, and its RIGHT recall is
 4.1 %.** ⇒ **This is the SAME pathology as the VOID secondary
