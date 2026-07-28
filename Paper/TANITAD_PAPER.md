@@ -732,8 +732,18 @@ matters less than data scale; this refines, and does not overturn, §7.1's REF-A
 > defect: 3.194 is a partly-in-sample number, so **"I-JEPA beats DINOv2" is an overfit-regime ranking
 > with data binding, not a feature-quality verdict.** The DINOv2 control arm
 > (`refa-dino320-4brain-speed-15k`) is matched on episodes but the leak is not symmetric evidence — it
-> inflates whichever arm saw the val. **The claim is withdrawn pending re-evaluation on the clean
-> `f1b378` val (pod3 gates); until then it must not be quoted in either direction.** *(This does not
+> inflates whichever arm saw the val. **The claim is withdrawn pending re-evaluation on a clean split;
+> until then it must not be quoted in either direction.**
+>
+> ⛔ **THE REMEDY THIS PARAGRAPH USED TO PRESCRIBE WAS THE DISEASE — corrected 2026-07-28 (C48).** It
+> read *"pending re-evaluation on the clean `f1b378` val (pod3 gates)"*. **`f1b378` is not clean: 62 of
+> its 80 episodes (77.5 %) are bit-identical to parity-train episodes** by content (sha256 of raw
+> `poses` and `frames_u8`). ⚠️ **This paper already said so 200 lines earlier** — §5 records the
+> 78 % overlap AND that the harness *"refuses it in code"* — so the same document both **refused** the
+> split and **prescribed** it. §5 also already names the answer: the **clean 40-episode split**,
+> `physicalai-val-0c5f7dac3b11` (0/40 and 0/600 by content). The quoted `registry.py` sentence above is
+> left verbatim **because it is a quote of the defective source**; that source is fixed separately.
+> *(This does not
 > touch §7.1's REF-A finding, which rests on the canonical-corpus `refa-dynin-30k` / `refa-dinov2` arms
 > — 3.0471 and 2.1675 full-set, both clean.)*
 

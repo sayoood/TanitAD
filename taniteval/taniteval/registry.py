@@ -83,8 +83,18 @@ MODELS = [
          hf="Sayood/tanitad-refa-ijepa-4b", anti_collapse="frozen encoder",
          train_ids="/root/taniteval/train_ids_320.txt",
          note="320-ep variant; 7k ckpt (beats its own 15k = overfit). "
-              "Canonical val 80% LEAKED into its train set -> guard excludes; "
-              "clean number lives on the f1b378 val (pod3 gates)."),
+              "Canonical val 80% LEAKED into its train set -> guard excludes. "
+              # CORRECTED 2026-07-28 (C48): this used to read "clean number
+              # lives on the f1b378 val (pod3 gates)" -- prescribing the LEAKED
+              # split as the cure for a leak. f1b378 is 77.5% leaked (62 of 80
+              # episodes bit-identical to parity-train, by sha256 of raw poses
+              # AND frames_u8). It is hard-refused in code since 07-23
+              # (data.list_val_episodes(..., allow_leaky=False) raises), so the
+              # old instruction named a split the harness itself rejects.
+              # This string was quoted verbatim into MODEL_REGISTRY §2.2 and
+              # Paper §7.2, which is how one wrong note became four.
+              "Clean re-evaluation must use physicalai-val-0c5f7dac3b11 "
+              "(0/40 and 0/600 overlap by content); NOT f1b378."),
     dict(key="refa-dynin", name="REF-A dyn-in 4B (snapshot)", family="TanitAD",
          arch="refa-plus", ckpt="/root/models/refa-dynin-snap/ckpt.pt",
          config="flagship4b", d_dino=768, adapter="temporal",

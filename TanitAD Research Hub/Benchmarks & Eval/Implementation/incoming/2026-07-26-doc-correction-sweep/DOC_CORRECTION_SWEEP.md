@@ -258,6 +258,18 @@ claim in both directions** pending re-evaluation on the clean `f1b378` val; plus
 v0.3. Explicitly scoped: this does **not** touch §7.1's REF-A finding, which rests on the clean canonical
 arms (`refa-dynin-30k` 3.0471, `refa-dinov2` 2.1675).
 
+> ⛔ **CORRECTION 2026-07-28 (C48) — the remedy above named the disease.** The superseded wording is
+> kept verbatim, with its date, because a sweep whose history is erased cannot be audited. **`f1b378`
+> is not the clean val: 62 of its 80 episodes (77.5 %) are bit-identical to parity-train** by content
+> (sha256 of raw `poses` **and** `frames_u8`), and it has been **hard-refused in code since 07-23**
+> (`data.list_val_episodes(..., allow_leaky=False)` raises) — so this sweep prescribed a split the
+> harness itself rejects. The clean target is **`physicalai-val-0c5f7dac3b11`** (0/40 and 0/600 by
+> content). ⚠️ **This sweep inherited the phrase from `taniteval/registry.py`'s `note=` field rather
+> than checking the artifact** — the same one-line source also propagated into `MODEL_REGISTRY §2.2`
+> and `Paper/TANITAD_PAPER.md` §7.2, which is how ONE wrong note became FOUR documents. All four are
+> now corrected; the registry source was fixed at `registry.py:85-97`. ⇒ **When a document names a
+> specific artifact as the fix, verify the artifact, not the sentence.**
+
 ---
 
 ## Out-of-brief finding, surfaced by the extended linter — a retraction from *today* standing in the paper
