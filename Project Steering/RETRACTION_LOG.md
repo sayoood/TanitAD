@@ -974,3 +974,33 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
   MoE camera plan — the situations are anticipatable, but **from ego dynamics, not from the camera**.
   A sensor-request policy conditioned on front-camera situation classification has no measured
   signal to stand on today. That changes what to build, and I nearly left it unsaid.
+- **C60 — A BASELINE THAT IS OPTIMISTIC BY CONSTRUCTION, REPORTED AS IF IT WERE DEPLOYABLE**
+  *(new class, added 2026-07-29 — raised by the PI, who was right)*
+  ⇒ **on LOGGED HUMAN data, ego kinematics encode the human driver's already-executed reaction to a
+  scene the human already perceived. Using them as a baseline input measures "can I detect that a
+  human started reacting" — which is NOT the task an autonomous system faces, because the AV must
+  PRODUCE that reaction.**
+  RETRACTED: my statement that **"the front camera adds no value for situation classification"**,
+  and the framing *"vision adds nothing over ego state"* as a program-steering conclusion.
+  **What is actually measured stands:** `head_ego` CV-AP **0.0697** does beat every image arm
+  (img+ego 0.0525, img-only 0.0376), lane change ΔAP vs ego **−0.04361 [−0.07252, −0.01914]** and
+  intersection **−0.02742 [−0.04895, −0.00620]**, both separated. **The measurement is not in
+  dispute; the INFERENCE from it was.**
+  **Why the inference was wrong:** the ego arm's advantage is partly a proxy for the *human's*
+  perception, baked into the speed trace by the driver's anticipation. An AV following its own
+  policy has no such trace unless its own perception created it. ⇒ the ego baseline is **not
+  available in the same form at deployment**, so beating it is the wrong bar for the camera.
+  **The deployable-relevant result was measured and should be the headline instead:** the image arm
+  is **above chance and separated** — lane change ΔAP **+0.01987 [+0.01141, +0.02901]** (AUROC
+  0.703), intersection **+0.04894 [+0.03735, +0.06277]** (AUROC 0.769) — with anticipation at
+  **1.4 s / 2.0 s** median lead. That claim needs no ego comparison at all.
+  ⚠️ **Two gaps the PI's framing exposes, neither of which the study covers:**
+  1. *"Behind a slower vehicle"* is **object-level**; the classifier input is a 2048-d
+     `SpatialGridReadout` scene summary, not a detection. `obstacle.offline` (3D agent tracks on
+     **97.44 %** of the corpus) is the untouched substrate for a lead-vehicle / closing-speed feature.
+  2. The PI's own discipline is the fix and should be written into the next pre-registration:
+     **future ego motion is legitimate for GENERATING and VALIDATING labels, and illegitimate as an
+     INPUT.** The study honours this for labels (privileged geometry) but then admits ego kinematics
+     as an input arm — which is exactly where the comparison tilts.
+  ⇒ **Before reporting "X beats the camera", ask whether X EXISTS in the same form at inference. A
+  baseline built from a human's behaviour is not a baseline an autonomous system can stand on.**
