@@ -48,9 +48,11 @@ already encodes the human driver's *already-executed* reaction to the situation,
 available in that form at inference. So `head_ego` is **not** a deployable baseline — it is an upper
 bound contaminated by hindsight. ⛔ **Do not conclude "ego beats camera, so drop the camera."**
 
-⚠️ The camera+ego degradation is worth a follow-up: with ego present, the optimiser has a shortcut
-and the vision pathway is under-trained. A fair camera-vs-ego contrast needs ego features that are
-**causally available at inference** (e.g. ego state at t only, no future-derived terms).
+⚠️ The camera+ego degradation is worth a follow-up. **See the ridge section below** — under a linear
+probe the camera nearly matches ego (0.836 of it) where the neural head puts it at 0.549, which bears
+directly on whether this is an optimisation shortcut or a representation limit. **Both readings
+remain open; neither is established.** A fair camera-vs-ego contrast also needs ego features that are
+**causally available at inference** (ego state at t only, no future-derived terms).
 
 ## ⛔ Scope limits
 
@@ -65,18 +67,64 @@ and the vision pathway is under-trained. A fair camera-vs-ego contrast needs ego
   0.0166). Gen-1 scored **three** situations with a **different detector generation**. Compare within
   this table only.
 
-## ⚠️ The ridge stage did not run — and no summary JSON exists
+## ⭐ THE RIDGE BASELINES — and they change the reading
 
-`sc_train_v2.py` exited `rc=1` after all six neural heads finished, at
+**Re-run completed `rc=0` at 03:33 UTC** after the width fix (below). Closed-form ridge on ±1
+targets, standardised on train rows — *"no optimiser to blame."*
+
+| ridge | params | **CV-AP** | ÷ ridge null |
+|---|---|---|---|
+| ridge_img_ego | 153 | **0.06279** | 3.13× |
+| **ridge_ego** | 25 | **0.05408** | 2.70× |
+| ⭐ **ridge_img** (camera only) | 129 | **0.04522** | **2.26×** |
+| ridge_img_shuf (control) | 129 | **0.02005** | — |
+
+⭐⭐ **THE EGO ADVANTAGE IS LARGELY A CAPACITY ADVANTAGE, NOT AN INFORMATION ADVANTAGE.**
+
+| regime | camera | ego | **camera / ego** |
+|---|---|---|---|
+| **linear (ridge)** | 0.04522 | 0.05408 | **0.836** |
+| **neural (attn head)** | 0.04869 | 0.08858 | **0.549** |
+
+Under a **linear** probe the two channels carry **comparable** predictive information (2.26× vs
+2.70× their null). The large ego lead appears **only when the model has capacity to exploit it** —
+ego gains **+64 %** going linear → neural (0.05408 → 0.08858) while camera gains **+8 %**
+(0.04522 → 0.04869).
+
+This **supports the shortcut hypothesis** flagged below: with ego present the optimiser has an easy
+route and the vision pathway is under-trained. It is *not* that the camera lacks the information.
+
+⚠️ **HYPOTHESIS, not established.** An equally consistent reading is that our image features
+(frozen, PCA-reduced to r=16/64) are simply harder for a small attention head to exploit than a 25-
+parameter ego vector — a *representation* limit rather than an optimisation shortcut. Discriminating
+them needs a camera-only head with matched capacity/compute, or an ego-dropout schedule. **Neither
+was run.** Do not cite "the vision pathway is under-trained" as a finding.
+
+⭐ Independent confirmation worth noting: **camera-only clears its null in a completely different
+model class** — 2.26× under closed-form linear ridge, 2.1× under the attention head. The camera
+result does not depend on the optimiser.
+
+## ⚠️ The ridge stage originally failed — a FIFTH hardcoded situation count
+
+The FIRST pass exited `rc=1` after all six neural heads finished, at
 `ridge_fit_predict`: `ValueError: shape mismatch: value array of shape (26130,3) could not be
 broadcast to indexing result of shape (26130,2)`. **Another hardcoded `3`**, in the ridge path this
 time — the same class as the `torch.full((3,))` that my earlier sweep missed, because I generalised
 `n_out`, `range(3)` and two array shapes but never enumerated *every* literal.
 
-⇒ Consequences: **no `train_summary.json` was written**, so the numbers above come from the log
-lines, and the linear-ridge baselines are absent. The six neural heads are the primary result and are
-unaffected. Fix is one more `len(SITS)` substitution; it is a **secondary baseline** and was
-deliberately not given priority over E-CR when pod3 freed.
+✅ **FIXED and re-run 2026-07-29 03:05–03:33 UTC (`rc=0`)** — the ridge table above is from that pass.
+
+⚠️ **THE PATTERN MATTERS MORE THAN THE FIX.** This was the **FIFTH distinct spelling** of the same
+hardcoded situation count, each found only after the previous fix:
+`n_out=3` · `range(3)` · `(N,3)` array shapes · `torch.full((3,))` · `torch.zeros(N, 3)`.
+The last one survived every sweep because it is a **two-argument** form, not a tuple. Enumerating
+spellings does not converge — each sweep only covers what you have already seen. `sc_train_v2.py`
+now carries a **width assertion** (`out/ytr/vtr` must all equal `len(SITS)`) whose message names all
+five, so the next reader changes the strategy rather than fixing a sixth. A full-spelling sweep of
+the file now returns nothing.
+
+⚠️ **No `train_summary.json` is written even on success** — all numbers here come from the log
+lines, banked verbatim as `cv_log_lines.txt`.
 
 ## Deliverable manifest
 
