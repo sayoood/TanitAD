@@ -47,6 +47,33 @@ re-verify by import before EVERY launch.** (This block previously claimed pod2+p
 `…/incoming/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md` (`377cf1e`) + raw JSON.
 Pre-registrations: `Project Steering/PREREG_deep_research_2026-07-29.md` (`bf840af`).
 
+## 🔴 PI DECISION OWED — v5's HELD-OUT GATE IS RUNNING ON AN UNCHOSEN PLACEHOLDER
+
+**Surfaced 2026-07-29 06:46 UTC from v5's own launch banner** (`/workspace/v5d_run.log`), verbatim:
+
+> `[heldout-gate] goal='dropped' — vt_band=VT_DROPPED(23), route=ROUTE_DROPPED(4),`
+> `route_graded=0.0. The probe measures the deployed NO-GOAL surface…`
+> `[heldout-gate] ⚠️ default 'dropped' chosen by the vtband-WIRING stream 2026-07-27,`
+> `PENDING THE PI's OVERRIDE — VTBAND_DECISION.md priced the options and deliberately did not`
+> `choose. Override with --heldout-goal {band0,produced}; nothing else changes.`
+
+⚠️ **WHY THIS IS URGENT, NOT COSMETIC.** The gate runs `every 2000 steps … patience=2`, so **it can
+STOP a 4.6-day run.** v5 is currently being judged on a surface (`goal='dropped'`, longitudinal
+selection term masked OFF via `vt_keep=False`) that `VTBAND_DECISION.md` **deliberately declined to
+choose** — the wiring stream set a default so the code would run, not because it was the right probe.
+
+⇒ **If the PI's answer is `band0` or `produced`, the decision must land BEFORE step 2000** (~09:30
+UTC), because that is the first gate firing and `patience=2` means two bad readings end the run.
+Changing it later means the early gate history was measured on a different surface.
+**`--heldout-goal {band0,produced}` — nothing else changes.**
+
+⚠️ **This was MISSING from the 2026-07-29 07:57 program report.** It is a live decision owed,
+governing an in-flight run, and it was not in §6. Added here so the next iteration surfaces it.
+
+✅ **Parity re-verified on the RESUMED run** (same banner): train **2400 clips**
+sha256 `e61a04553df5…`, val **600 clips** `0b176d2e5cb4…`, both matching the committed manifest.
+✅ `[resume] step 1001 lam_mult=1.0 heldout_worse_streak=0` — clean checkpoint resume confirmed.
+
 ## 🔴 C65 — v5 DIED at step 2000 and was RECOVERED. ⚠️ THE FIX IS NOT YET PROVEN.
 
 **2026-07-29.** v5 trained cleanly 21:20→05:03 and died at **step 2000**, the **first firing** of
