@@ -13,9 +13,9 @@ Strike items through when done, with the commit.
 
 | # | item | why it matters |
 |---|---|---|
-| A1 | **Build the emitters** for the 30k gate (PI: *"build the emitters"*, task #42) | the gate returned NO-VERDICT for lack of them |
-| A2 | **Wire the NC safety gate** with `filter_m(agent,human)=1.0 if m(human)==0 else m(agent)` — ⛔ **NOT PDMS-v1**, which over-penalises | our only multiplicative safety gate is empty; the join blocker is retracted, only a chunk download remains |
-| A3 | **C64 option B** — build the clean v2-line val from the 9,987 unselected clips, stratified to match the v2 TRAIN distribution, emit the exclusion proof **even when zero** | PI said do both A and B; B is 0-GPU and needed before any further v2-line training |
+| ~~A1~~ | ~~Build the emitters~~ ✅ **AUDITED `1ad18ea`/`9e09b54` — NEITHER needs writing.** #2 needs an **EVAL** (re-emit `g_op_fwd_ade_m` from the checkpoint, needs a free GPU); #7 needs **ONE ARCH BRANCH** in `efficiency.build_case` (a SPEC question — its own scoped task) |
+| ~~A2~~ | ~~Wire the NC gate with filter_m~~ ✅ **CONTRACT RECORDED `8d4a138`** — `filter_m` appeared NOWHERE in pseudosim (grep=0), so the gate would have shipped PDMS-v1 and over-penalised every arm. Contract now surfaced in `composite()` output; denominator 16 is a live tripwire (12 = not EPDMS). ⛔ Still NOT applied — needs a human-reference rollout + the chunk download |
+| A3 | **C64 option B** — build the clean v2-line val | 🔵 **FEASIBILITY MEASURED `fe400f0`**: junction is binding — needs 368, remainder holds 2,491 = **6.77× headroom**. ⚠️ remainder is the RESIDUE (junction 0.6134→0.2494), so matching OVERSAMPLES scarce strata. ⛔ `stopped`/`city`/`hw` are not clean 0/1 and **`lk` is NOT a rate** — establish column semantics before any selector |
 | A4 | **Re-verify the factorised path × velocity vocabulary** (refuted 0-3 in the survey) | maps 1:1 onto our LAT+LON softmax mechanism and the 88.7 % longitudinal gap — the single most valuable re-verification target |
 | A5 | **Confirm C64 at clip_id granularity** — replay `discover_r0_clips` on pod2's raw root | deferred only while pod2 trains; the number that voids an experiment should be exact |
 | A6 | **Reconcile pod2's tree** — 317 modified tracked files, untracked `taniteval`, **untracked running trainer on one disk** | ⛔ **after v5 finishes, never during an incident** |
