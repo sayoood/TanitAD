@@ -138,7 +138,12 @@ lines, banked verbatim as `cv_log_lines.txt`.
 | log | `pod3:/workspace/sitclf/v2b_train.log` |
 | emitter + detectors (IN REPO) | `stack/scripts/emit_situation_labels.py`, `stack/tanitad/data/situations.py`, `stack/tests/test_situations.py` |
 
-⚠️ **The heads and label bundles are POD-ONLY.** They are reproducible from the in-repo emitter plus
+✅ **PIPELINE FULLY BANKED 2026-07-29** — `gen1_sc_features.py` (114 lines, the extractor that
+produced the 2,377 clip feature files everything downstream reads) and `gen1_sc_train.py` (396, the
+3-situation ancestor that produced the gen-1 reference numbers) are now here too, AST-verified on
+transfer. Nothing in the chain is single-disk except the DERIVED artifacts below.
+
+⚠️ **The trained heads and label bundles remain POD-ONLY.** They are reproducible from the in-repo emitter plus
 the parity cache, so this is a rebuild cost rather than a loss — but it is single-disk and should be
 pulled or re-pushed if any of it becomes load-bearing.
 
