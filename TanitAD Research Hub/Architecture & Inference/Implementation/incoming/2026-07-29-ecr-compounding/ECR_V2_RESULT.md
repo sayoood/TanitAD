@@ -1,7 +1,7 @@
 # ⭐ E-CR v2 — C61 RESOLVED: the imagination decay is COMPOUNDING, not task difficulty
 
-**MEASURED 2026-07-29, v1 `flagship4b-speedjerk-30k` step 29,999, `val40cache`, 881 windows /
-40 episodes** — the canonical parity surface. Artifacts: `ecr_v2.py`, `ecr_v2_ci.py`,
+**MEASURED 2026-07-29, v1 `flagship4b-speedjerk-30k` step 29,999, `val40cache`, 488 windows /
+40 episodes** — a subset of the canonical surface, see the window-count caveat below. Artifacts: `ecr_v2.py`, `ecr_v2_ci.py`,
 `ecr_v2.json`, `ecr_v2_ci.json`, `ecr_v2_arrays.npz` (pod3 `/workspace/`).
 
 **Pre-registration:** `Project Steering/PREREG_deep_research_2026-07-29.md`.
@@ -67,6 +67,26 @@ from feeding predictions forward.
   denominator is near a noise floor (0.0073). Quote the **direction and separation**, not the number
   as if it were an effect size in the world.
 
+## ⚠️ WINDOW COUNT — 488, not the canonical 881, and the loss is NOT random
+
+The canonical 40-episode surface carries **881** windows. This run scored **488 (55.4 %)**.
+I first wrote "881" into this document from the canonical figure rather than from the artifact;
+`ecr_v2_ci.json` says 488. **Read the artifact, not the number you expect.**
+
+**Cause — a defect in my driver, not in the data.** Teacher forcing needs the true future latents for
+all K=20 steps, which the driver gathers from the windows starting 1…20 frames later. When any window
+in a batch lacks a full future — i.e. sits within 20 frames of its episode end — the driver executes
+`continue` and **discards the ENTIRE BATCH of 8**, not just the offending window.
+
+⇒ **The dropped windows are systematically END-OF-EPISODE**, plus up to 7 innocent neighbours each
+time. That is a non-random exclusion and must travel with the number.
+
+**Does it change the verdict? No.** All four horizons separate with `p_delta_gt0 = 1.0` and CIs far
+from zero, and the estimator's unit is the **episode** — all 40 clusters are represented. But:
+1. ⛔ **Do not describe this as "the canonical 881-window surface."** It is a 488-window subset.
+2. **Fix before any follow-up run:** drop offending windows individually instead of the whole batch.
+   That should recover most of the 393 and remove the end-of-episode skew.
+
 ## Why v2 and not v1
 
 E-CR v1 built CR on **decoded displacement** and returned CR < 1 — outside both registered outcomes.
@@ -83,7 +103,7 @@ next output, even though it lands closer to "stay put" (`cos(z_hat, z_last_ctx) 
 
 | claim | class |
 |---|---|
-| the CR table + intervals | **MEASURED (ours)** — 881 windows / 40 eps, paired episode-cluster bootstrap B=2000 |
+| the CR table + intervals | **MEASURED (ours)** — **488** windows / 40 eps, paired episode-cluster bootstrap B=2000 |
 | teacher-forced arm is flat in k | **MEASURED** |
 | H-COMPOUND | **MEASURED**, per the pre-registered decision rule |
 | rollout-recovery training will help | **HYPOTHESIS** — indicated by the mechanism, not yet tested here |
