@@ -57,6 +57,17 @@ inflation is one-sided, so it would *manufacture* a "more data helps" result.
    clip_ids (via `discover_r0_clips → sorted → split_clips(val_frac=0.2, seed=0)`) and re-intersect.
    The base-rate argument above makes a reversal unlikely, but the number that voids an experiment
    should be exact.
+
+   ⭐ **THE RAW r0 ROOT IS ON pod2** — `/workspace/data/physicalai_phase0/` with `camera/`,
+   `labels/`, `calibration/` (found on a SECOND probe; pod3 and newpod carry only caches). The
+   canonical val cache `_epcache/physicalai-val-0c5f7dac3b11/` is there too, but it holds only
+   `ep_*.pt` + `DONE` — **no clip manifest**, so clip_ids require replaying the discovery walk.
+
+   ⛔ **NOT RUN, DELIBERATELY.** pod2 is training v5, and `discover_r0_clips` walks the camera tree
+   over MooseFS — an unbounded-cost IO load on a training pod, spent to refine a result the base-rate
+   argument already settles. **Run it when pod2 is free, or from a pod that is not training.**
+   *(CLAUDE.md: never add load to a pod that is training. The cheap-looking alternative — reading all
+   600 val `ep_*.pt` for their episode_ids — is ~66 GB of tensor loads and is worse, not better.)*
 2. **Re-score v1 on the 19 leak-free episodes** so both arms share a surface.
 3. Run the contrast per the prereg, with **`leak_free_n = 19` in the headline**, not a footnote.
 4. ⭐ **Consider whether the honest answer is to rebuild a clean val for the v2 line.** The v2 corpus
