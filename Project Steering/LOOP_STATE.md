@@ -63,9 +63,36 @@ selection term masked OFF via `vt_keep=False`) that `VTBAND_DECISION.md` **delib
 choose** — the wiring stream set a default so the code would run, not because it was the right probe.
 
 ⇒ **If the PI's answer is `band0` or `produced`, the decision must land BEFORE step 2000** (~09:30
-UTC), because that is the first gate firing and `patience=2` means two bad readings end the run.
-Changing it later means the early gate history was measured on a different surface.
-**`--heldout-goal {band0,produced}` — nothing else changes.**
+UTC). **`--heldout-goal {band0,produced}` — nothing else changes.**
+
+### ⚠️ CORRECTED 07:24 UTC — WHY the deadline binds. I first stated this wrong.
+
+I originally justified the deadline as *"`patience=2` means two bad readings end the run"*, implying
+v5 could be **stopped** around 09:30. **That is not what the code does.** Read from
+`heldout_gate.py:52-66`:
+
+1. **The FIRST probe becomes the INCUMBENT** — *"1. The first probe becomes the incumbent."*
+   ⇒ **it CANNOT stop the run.**
+2. `separated_worse` = paired CI excludes zero **and** delta < 0 (composite is higher-is-better).
+3. **Two CONSECUTIVE `separated_worse` probes stop the run** ⇒ earliest possible stop is
+   **step 6000** (2000 = incumbent, 4000 = first, 6000 = second) ≈ **19 h away** at 13.8 s/step.
+4. The incumbent advances **only on a SEPARATED improvement** — *"a point estimate that merely
+   drifted up must not become the bar."*
+
+⭐ **THE REAL REASON THE DEADLINE BINDS — and it is stronger than the stop risk:**
+> *"⚠️ **The admitted component set is PINNED at the first probe.** `discriminative_range` decides
+> admissibility from the observed data, so re-deriving it every probe would let the composite
+> silently change definition mid-run and compare two different metrics. That is the forking-paths
+> failure `GATE_PROTOCOL` §0.3 forbids."*
+
+⇒ **Step 2000 pins BOTH the incumbent bar AND the metric's own definition for the whole run.**
+Switching `--heldout-goal` afterwards would compare later probes against an incumbent measured on a
+**different surface**, with a component set admitted from **different data**. That is not merely
+awkward — it is the forking-paths defect the protocol exists to prevent.
+
+✅ **Good news that follows:** there is **no risk of v5 being stopped at 09:30.** The first probe only
+establishes the bar. If the decision arrives late, the honest remedy is to **restart the gate history
+from a chosen surface**, not to switch mid-run.
 
 ### ⭐ THE OPTIONS, ALREADY PRICED — decide from this, not from the 471-line doc
 
