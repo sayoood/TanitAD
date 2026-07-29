@@ -23,7 +23,7 @@ Artifact: `v2bal_val40_leak_check.json`.
 `episode_id = int.from_bytes(clip_id[:4])` collides (9,000 clips → 8,391 distinct ids), so an
 intersection *can* raise false positives. The base rate settles it:
 
-- v2bal selected **9,000 of the 18,731-clip pool = 48.0 %**.
+- v2bal selected **9,000 of the 18,987-clip scored pool = 47.4 %**. *(CORRECTED 2026-07-29: the pool was first quoted as 18,731 from V2_CORPUS_DESIGN.md’s “18,731 moving clips”; the scored parquet has 18,987. The argument is unaffected — 47.4 % still agrees with 52.5 %.)*
 - Observed overlap: **21 / 40 = 52.5 %**.
 
 **These agree.** That is precisely the overlap expected when the validation episodes live in the same
