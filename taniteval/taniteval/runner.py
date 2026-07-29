@@ -441,6 +441,10 @@ def main():
                                                     default=40)
     c = sub.add_parser("ab"); c.add_argument("--a", required=True)
     c.add_argument("--b", required=True)
+    # E-CR (2026-07-29): resolves C61 — see taniteval.compounding + PREREG.
+    ec = sub.add_parser("ecr"); ec.add_argument("--model", required=True)
+    ec.add_argument("--episodes", type=int, default=40)
+    ec.add_argument("--k-max", type=int, default=20)
     im = sub.add_parser("imagination"); im.add_argument("--model", required=True)
     im.add_argument("--episodes", type=int, default=12)
     ima = sub.add_parser("imag-all"); ima.add_argument("--episodes", type=int,
@@ -509,6 +513,8 @@ def main():
                       f"{type(e).__name__}: {str(e)[:140]}", flush=True)
     elif a.cmd == "ab":
         run_ab(a.a, a.b)
+    elif a.cmd == "ecr":
+        run_compounding(a.model, episodes=a.episodes, k_max=a.k_max)
     elif a.cmd == "imagination":
         run_imagination(a.model, a.episodes)
     elif a.cmd == "imag-all":
