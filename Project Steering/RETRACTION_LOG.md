@@ -1088,3 +1088,58 @@ available, and 510 MB/s disk. Provisioning started 2026-07-29 01:09 UTC.
 START of each iteration and probe EVERY alias — never from memory of "the pods we are using".**
 A pod that is doing nothing is exactly the pod least likely to be in working memory, and exactly the
 one whose idleness costs most.
+
+---
+
+## C63 — 2026-07-29 — importing an instrument without checking OUR architecture meets its PRECONDITION
+
+**Root-cause class: TRANSFERRING A PUBLISHED METRIC WITHOUT TESTING ITS ASSUMPTIONS ON OUR STACK.**
+(Adjacent to C61, which this was supposed to fix. C61 was "reported a mechanism the measurement
+could not support"; C63 is "built the fix on an assumption I never measured".)
+
+**RETRACTED.** E-CR (`PREREG_deep_research_2026-07-29.md`) pre-registered SkyJEPA's
+`CR_k = e_rollout / e_teacher-forced` as the control that resolves C61, and I implemented it on
+DECODED DISPLACEMENT — the same surface as our published ADE. **CR on that surface is
+MIS-SPECIFIED for this architecture, and the first values it produced (0.729 / 0.632 / 0.659 /
+0.755) are an artifact.** They must not be cited as evidence about compounding.
+
+**THE PRECONDITION CR NEEDS.** `CR_k` assumes the rollout and teacher-forced arms are
+**exchangeable inputs to the same decoder**. Ours are not.
+
+**MEASURED, three arms, same readout, same windows** (v1 step 29,999, 48 windows / 4 eps):
+`A (z_hat,z_hat)` = 0.0449/0.0858/0.2917/0.5325 · `B (z_true,z_hat)` = 0.0616/0.1358/0.4424/0.7058 ·
+⛔ `C (z_true,z_true)` = **1.5145/2.9449/5.4684/6.7631** at k=4/8/16/20.
+**Arm C contains NO PREDICTION — only ground truth — and is 12–34× WORSE than the model's own
+recursive rollout.** A general latent-pair decoder would score it near zero.
+
+**WHY.** `cos(z_hat, z_true_next) = 0.98377` but `cos(z_hat, z_last_ctx) = 0.99872`, and
+`cos(z_true_next, z_last_ctx) = 0.97980`. Consecutive latents are 0.98–0.999 similar: one frame of
+motion is a TINY vector against the embedding magnitude, so the readout extracts displacement from a
+tiny difference and is exquisitely sensitive to that difference's distribution.
+`z_hat − z_last_ctx` lies on the predictor's learned manifold (the readout's training domain);
+`z_true − z_last_ctx` is dominated by real frame content the predictor deliberately does not model.
+⭐ **The 1-step prediction is closer to "stay put" than to the true next latent** — the predictor is
+not trying to reproduce the encoder's output; it emits a state the READOUT can decode.
+
+**WHAT I SHOULD HAVE DONE FIRST.** Run arm C — a two-true-latent decode — **before** building the
+teacher-forced arm. It costs one batch, needs no new code path, and would have falsified the design
+in minutes instead of after a full driver, two debug rounds and a smoke run.
+⇒ **RULE: when importing an external metric, measure its precondition on our stack FIRST, as its own
+pre-registered step.** "The published instrument is sound" says nothing about whether our
+architecture satisfies it.
+
+**ALSO NOTED — the pre-registration was incomplete.** It registered CR ≈ 1 (H-TASK) and CR > 1
+(H-COMPOUND). **The observed result fell outside BOTH.** A pre-registration that cannot express
+"the instrument is invalid here" will pressure the next reader to force an out-of-range result into
+the nearest registered box. Future preregs must carry an explicit INSTRUMENT-FAIL branch — the same
+lesson GATE_PROTOCOL §0.7 already encodes for `nonav_route_beats_majority`.
+
+**REDESIGN (E-CR v2), not yet run:** move CR onto **latent error**,
+`e_k = 1 − cos(z_hat_k, z_true_k)`, comparing the predictor's own outputs against the encoder's with
+**no decoder in the path**. ⚠️ It answers the world-model question but no longer speaks in metres;
+the link from latent error to ADE runs through the readout we have just shown is domain-sensitive.
+**Do not convert one into the other.**
+
+**STILL IN FORCE:** C61's retraction stands; the 1.03 → 1.91 exponent rise may not justify an
+architecture change; **E-ROLL, rollout-recovery training and the Koopman lever remain BLOCKED** —
+now because E-CR has produced NO admissible number, not because it came back flat.
