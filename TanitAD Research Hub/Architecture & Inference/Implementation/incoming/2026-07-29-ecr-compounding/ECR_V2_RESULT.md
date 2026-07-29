@@ -1,6 +1,6 @@
 # ⭐ E-CR v2 — C61 RESOLVED: the imagination decay is COMPOUNDING, not task difficulty
 
-**MEASURED 2026-07-29, v1 `flagship4b-speedjerk-30k` step 29,999, `val40cache`, 488 windows /
+**MEASURED 2026-07-29, v1 `flagship4b-speedjerk-30k` step 29,999, `val40cache`, **761 windows** /
 40 episodes** — a subset of the canonical surface, see the window-count caveat below. Artifacts: `ecr_v2.py`, `ecr_v2_ci.py`,
 `ecr_v2.json`, `ecr_v2_ci.json`, `ecr_v2_arrays.npz` (pod3 `/workspace/`).
 
@@ -9,19 +9,27 @@
 the **DIFFERENCE** `e_rollout − e_teacher_forced`. ⛔ **No CI on the RATIO is computed and none may
 be quoted.**
 
-## The result
+## The result — PRIMARY, 761 windows / 40 episodes
 
 `e_k = 1 − cos(z_hat_k, z_true_k)` — latent error, **no decoder in the path** (that decoder was the
-C63 confound).
+C63 confound). Artifacts `ecr_v2_full.json` / `ecr_v2_full_ci.json`.
 
 | k | horizon | `e_rollout` | `e_teacher_forced` | **CR** | Δ (roll − tf) | CI95 | separated |
 |---|---|---|---|---|---|---|---|
-| 4 | 0.4 s | 0.025924 | **0.007235** | **3.58** | +0.0187 | [0.0142, 0.0242] | ✅ |
-| 8 | 0.8 s | 0.106293 | **0.007790** | **13.64** | +0.0985 | [0.0602, 0.1443] | ✅ |
-| 16 | 1.6 s | 0.496283 | **0.007700** | **64.45** | +0.4886 | [0.3848, 0.5945] | ✅ |
-| 20 | 2.0 s | 0.570082 | **0.007327** | **77.81** | +0.5628 | [0.4613, 0.6665] | ✅ |
+| 4 | 0.4 s | 0.025194 | **0.007189** | **3.50** | +0.0180 | [0.0143, 0.0222] | ✅ |
+| 8 | 0.8 s | 0.123405 | **0.008140** | **15.16** | +0.1153 | [0.0696, 0.1654] | ✅ |
+| 16 | 1.6 s | 0.514255 | **0.008009** | **64.21** | +0.5062 | [0.4029, 0.6096] | ✅ |
+| 20 | 2.0 s | 0.583723 | **0.007227** | **80.77** | +0.5765 | [0.4752, 0.6735] | ✅ |
 
 `p_delta_gt0 = 1.0` at every horizon.
+
+### ⭐ It REPLICATES — the first run's window defect did not drive the result
+
+The first run (488 windows, before the keep-mask fix below) gave CR **3.58 / 13.64 / 64.45 / 77.81**;
+this one, on a **56 % larger and differently-skewed** window set, gives **3.50 / 15.16 / 64.21 /
+80.77**. Same direction, same order of magnitude, all four separated in both. **The verdict does not
+depend on which windows survived**, which is the check that matters after a non-random exclusion is
+found. Artifacts for the first run are kept as `ecr_v2.json` / `ecr_v2_ci.json`.
 
 ## ⭐ The load-bearing observation: the teacher-forced arm is FLAT
 
@@ -81,11 +89,19 @@ in a batch lacks a full future — i.e. sits within 20 frames of its episode end
 ⇒ **The dropped windows are systematically END-OF-EPISODE**, plus up to 7 innocent neighbours each
 time. That is a non-random exclusion and must travel with the number.
 
-**Does it change the verdict? No.** All four horizons separate with `p_delta_gt0 = 1.0` and CIs far
-from zero, and the estimator's unit is the **episode** — all 40 clusters are represented. But:
-1. ⛔ **Do not describe this as "the canonical 881-window surface."** It is a 488-window subset.
-2. **Fix before any follow-up run:** drop offending windows individually instead of the whole batch.
-   That should recover most of the 393 and remove the end-of-episode skew.
+**Does it change the verdict? No — and this was then TESTED rather than asserted.**
+
+✅ **FIXED 2026-07-29 03:0x** — per-window keep-mask instead of discarding the batch. The re-run
+selects **761 / 881 windows (86.4 %)**, recovering **273**. The residual 120 genuinely lack a 20-step
+future (they sit within 20 frames of an episode end) — that is a **legitimate exclusion inherent to
+the measurement**, not a defect, and it cannot be removed without shortening K.
+
+⭐ **The re-run REPLICATES the verdict** (see the primary table above): CR 3.50 / 15.16 / 64.21 /
+80.77 against the first run's 3.58 / 13.64 / 64.45 / 77.81, all separated in both. So the
+end-of-episode skew was **not** driving the result.
+
+⛔ Even at 761 windows, **do not call this "the canonical 881-window surface."** It is 86.4 % of it,
+and the missing 6 % is structurally end-of-episode.
 
 ## Why v2 and not v1
 
@@ -103,7 +119,7 @@ next output, even though it lands closer to "stay put" (`cos(z_hat, z_last_ctx) 
 
 | claim | class |
 |---|---|
-| the CR table + intervals | **MEASURED (ours)** — **488** windows / 40 eps, paired episode-cluster bootstrap B=2000 |
+| the CR table + intervals | **MEASURED (ours)** — **761** windows (86.4 % of 881; replicated on a 488-window subset) / 40 eps, paired episode-cluster bootstrap B=2000 |
 | teacher-forced arm is flat in k | **MEASURED** |
 | H-COMPOUND | **MEASURED**, per the pre-registered decision rule |
 | rollout-recovery training will help | **HYPOTHESIS** — indicated by the mechanism, not yet tested here |

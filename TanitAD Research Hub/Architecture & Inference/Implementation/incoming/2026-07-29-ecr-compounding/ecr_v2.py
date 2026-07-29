@@ -35,16 +35,24 @@ for b0 in range(0,len(sel),BATCH):
     pl=torch.stack([x["pose_last"] for x in items]).to(dev).float()
     vch=(pl[:,3]/SPEED_SCALE)[:,None,None]
     aw=torch.cat([aw2,vch.expand(-1,aw2.shape[1],-1)],-1); fa=torch.cat([fa2,vch.expand(-1,fa2.shape[1],-1)],-1)
-    futf=[];ok=True
-    for (e,t) in ets:
-        sq=[]
+    # C63-followup FIX: drop offending windows INDIVIDUALLY. The previous version hit
+    # `continue` and discarded the ENTIRE BATCH of 8 whenever any one window lacked a
+    # full K-step future, which threw away 393/881 windows and skewed the retained set
+    # systematically toward episode STARTS. Keep-mask instead.
+    futf=[];keep=[]
+    for bi,(e,t) in enumerate(ets):
+        sq=[];okw=True
         for j in range(K):
             kk=pos.get((e,t+j+1))
-            if kk is None: ok=False;break
+            if kk is None: okw=False;break
             sq.append(ds[kk]["frames"][-1])
-        if not ok: break
-        futf.append(torch.stack(sq))
-    if not ok: continue
+        if okw:
+            futf.append(torch.stack(sq)); keep.append(bi)
+    if not futf: continue
+    if len(keep)!=len(ets):
+        km=torch.tensor(keep,device=dev)
+        fr=fr[km]; aw=aw[km]; fa=fa[km]; pl=pl[km]
+        ets=[ets[i] for i in keep]
     fut=torch.stack(futf).to(dev)
     with torch.autocast("cuda",dtype=torch.bfloat16,enabled=True):
         st=world.encode_window(fr); Bn=fut.shape[0]
