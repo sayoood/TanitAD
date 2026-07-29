@@ -47,6 +47,49 @@ re-verify by import before EVERY launch.** (This block previously claimed pod2+p
 `…/incoming/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md` (`377cf1e`) + raw JSON.
 Pre-registrations: `Project Steering/PREREG_deep_research_2026-07-29.md` (`bf840af`).
 
+## 🔴 C65 — v5 DIED at step 2000 and was RECOVERED. ⚠️ THE FIX IS NOT YET PROVEN.
+
+**2026-07-29.** v5 trained cleanly 21:20→05:03 and died at **step 2000**, the **first firing** of
+`--heldout-gate --heldout-every 2000`:
+`heldout_gate.py:610 → score_windows(…, recovery_term=…)` → `TypeError: unexpected keyword argument`.
+
+**MIXED TREE — the stale half sat on a path that only runs LATER:**
+| file | mtime | |
+|---|---|---|
+| `train_flagship_v4.py`, `heldout_gate.py` | Jul 28 17:10 | scp'd at launch, **untracked** |
+| `taniteval/taniteval/pseudosim.py` | **Jul 27 18:22** | **stale** — and `?? taniteval/`, the whole tree is **untracked** |
+
+pod2 HEAD = `0f93b98`, **363 commits behind**. ⚠️ **LOOP_STATE previously claimed pod2 AND pod3 were
+synced — it was wrong for BOTH.** ⚠️ **A git sync would NOT have fixed it**: `taniteval` on pod2 is
+outside version control, so every "sync the pod" instinct targets the checkout and misses the offender.
+
+✅ **Geometry was NOT affected** — config carries `176×624` and `117.0`, so the 8 h trained at the
+approved geometry. Stopped, not voided. *(`37ccfea` records a stale import once yielding HFOV 120.0
+silently — that did not happen here.)*
+
+✅ **FIX (one line, verified BY IMPORT before launching):** pod2 already had a CURRENT taniteval at
+**`/workspace/tev/taniteval`** (Jul 28 19:14). `run_v5c.sh` set `PYTHONPATH=/workspace/TanitAD/stack`
+only. **`run_v5d.sh` adds `:/workspace/tev/taniteval`.** Relaunched **05:48:48Z**; auto-resumed from
+`ckpt.pt` @1000 ⇒ **~3.6 h lost, not 8 h**.
+
+⚠️⚠️ **THE FIX IS UNVERIFIED UNTIL v5 PASSES STEP 2000.** At 06:22 it is at **1150**, stderr empty.
+⛔ **Do NOT read "the run is up" as "the fix works"** — that is the same error as reading "a run that
+starts" for "a run that is correctly wired", which is what C65 is about.
+
+⛔ **A `git reset --hard origin/main` was attempted FIRST and CORRECTLY BLOCKED by the classifier.**
+pod2 carries **317 modified tracked files** plus the two **untracked** trainer files the run actually
+used — the reset would have **destroyed the trainer that produced the 8 hours**. The narrow
+PYTHONPATH fix is strictly better.
+
+✅ **PREVENTIVE CHECK (MEASURED):** v2corpus on newpod is **NOT exposed** — `taniteval` is not
+importable there, `/workspace/TanitAD` is not a git repo on that host, and the command has **no
+`--heldout` flags**.
+
+**RULES:** (1) **verify the ENTIRE import surface before a long launch** — a gate at `--heldout-every
+2000` leaves its imports unexercised for hours; (2) **"sync the pod" is not one action** — enumerate
+every `PYTHONPATH` root, the offender may be outside git; (3) **prefer the narrowest fix a real
+import can verify** over a wholesale reset.
+
 ## ⭐⭐ C61 IS RESOLVED — THE IMAGINATION DECAY IS **COMPOUNDING**, NOT TASK DIFFICULTY
 
 **E-CR v2, MEASURED 2026-07-29** (v1 step 29,999, 488 windows / **40 episode clusters**, **PAIRED
