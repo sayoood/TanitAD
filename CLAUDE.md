@@ -199,3 +199,28 @@ cost three agents' work.
   cross-arm comparability and must be refused.
 - **Never add GPU/RAM load to a pod that is training**, and never eval on a training pod.
 - Full suite lives at `stack/` — `pytest -q` must stay green before any commit.
+
+## ⛔ NEVER IDLE — a report is not work (Sayed, 2026-07-29, flagged THREE times)
+
+**The failure pattern:** check the fleet → find the top item blocked (pod down, checkpoint not
+ready, PI decision pending) → write a well-organised report about being blocked → re-arm the loop.
+**The report feels like output. It is not.** Twice in one session a turn ended with *"next step is
+implementing X"* and no implementation followed.
+
+**The root cause:** treating the priority list as a **queue** — top item blocked ⇒ wait. It is a
+**PRIORITY ORDER, NOT A DEPENDENCY CHAIN.** Item 1 being blocked says nothing about items 2–12.
+
+**The rule:**
+1. ⛔ **Never end a turn having only reported.** If the top item is blocked, **drop to the next
+   UNBLOCKED item and execute it in the same turn.**
+2. **`Project Steering/BACKLOG.md` is the live pull-list.** When the headline work is gated, pull
+   from it. **Gated ≠ idle.**
+3. **"Blocked on the PI" blocks ONE item, not the programme.** There are always 0-GPU items:
+   implementation, banking stranded artifacts, pre-registrations, instrument fixes, doc corrections,
+   re-verification of refuted-but-load-bearing claims.
+4. A progress report is the **last 10 % of a turn**, never the whole turn.
+5. ⚠️ **Long heartbeats are for GENUINELY gated states only.** Do not use a long heartbeat to make
+   idling look deliberate.
+
+*(Same class as "A report is not a launch": when an agent files, refill the pod in the SAME turn
+before writing the summary.)*
