@@ -104,6 +104,7 @@ from taniteval.ood import ENV_LAT_MAX, ENV_YAW_MAX
 __all__ = [
     "TRAFFIC_MODE_LOG_REPLAY", "TRAFFIC_MODE_NOTE", "PROTOCOL",
     "LATERAL_REFUSAL", "COLLISION_UNAVAILABLE_REASON",
+    "COLLISION_JOIN_RETRACTION",
     "EnvelopeViolation", "LateralAxisRefused", "VacuousMetric",
     "GridSpec", "default_grid", "assert_grid_in_envelope",
     "proximity_weights", "pseudo_evaluate", "score_windows",
@@ -691,12 +692,37 @@ COLLISION_UNAVAILABLE_REASON = (
     "NOT COMPUTABLE on the 40-episode val cache. The cache carries only "
     "{frames_u8, actions, poses, maneuvers, episode_id} — no agent cuboids. "
     "`obstacle.offline` (97.4438 % corpus coverage, boxes reference_frame='rig' "
-    "on 100 %) would supply them, but (a) the cached `episode_id` is "
-    "int.from_bytes(clip_id[:4]) and COLLIDES — 242 clip_index rows map onto the "
-    "40 val episode_ids, so episode->clip identity is not resolvable from the "
-    "cache alone, and (b) the matching obstacle.offline chunks are not "
-    "downloaded. A constant is NOT emitted in its place: a metric that cannot "
-    "fail is not a metric.")
+    "on 100 %) would supply them. THE ONE REMAINING BLOCKER IS A FILE TRANSFER: "
+    "the matching obstacle.offline chunks are not downloaded. A constant is NOT "
+    "emitted in its place: a metric that cannot fail is not a metric.")
+
+#: ⛔⛔ RETRACTED CLAUSE, 2026-07-29 — READ THIS BEFORE RE-ADDING A JOIN BLOCKER.
+#: :data:`COLLISION_UNAVAILABLE_REASON` used to carry a SECOND blocker: that the cached
+#: ``episode_id = int.from_bytes(clip_id[:4])`` COLLIDES (242 clip_index rows onto the 40 val
+#: episode_ids) and therefore *"episode->clip identity is not resolvable from the cache alone"*.
+#:
+#: **THE COLLISION IS REAL. THE CONCLUSION WAS NOT.** Three later agents independently PROVED the
+#: join by replaying the cache's own recipe — ``discover_r0_clips -> sorted(clip_id) ->
+#: split_clips(val_frac=0.2, seed=0)`` — reproducing **600/600 val**, **2376/2376 train** and
+#: **40/40 eval-pod** episode_ids, with committed ``join_proof.json`` artifacts under
+#: ``…/incoming/2026-07-26-h2-classifier/artifacts/`` and ``…/2026-07-26-situation-classifier/``.
+#: The collision (2376 episodes -> 2342 distinct ids, 34 collisions) resolves BY CONSTRUCTION once
+#: the candidate set is restricted to the parity clip list, which is exactly what those agents did.
+#: Independently re-checked 2026-07-29: pseudosim's own 40-episode cache carries **40 episodes with
+#: 40 DISTINCT episode_ids, zero missing** — there is no ambiguity on the cache side to resolve.
+#:
+#: ROOT-CAUSE CLASS: a blocker written down once, never re-probed, while the fix landed in a sibling
+#: directory. It is the same class as C59, and it kept the programme's ONLY multiplicative safety
+#: gate empty for longer than the data justified. ⇒ **When you write an "X is impossible" into a
+#: refusal string, date it and name what would falsify it.**
+#:
+#: ⚠️ The refusal itself was RIGHT and stays: with no cuboids there is no collision gate, and this
+#: module correctly refuses to emit a constant rather than manufacture a Driving Score. Only the
+#: *stated reason* was overtaken by evidence.
+COLLISION_JOIN_RETRACTION = (
+    "The episode->clip join is PROVEN (600/600 val, 2376/2376 train, 40/40 eval-pod via "
+    "discover_r0_clips -> sorted -> split_clips(val_frac=0.2, seed=0)); the id collision resolves "
+    "once candidates are restricted to the parity clip list. Do NOT re-add it as a blocker.")
 
 # --------------------------------------------------------------------------- #
 # the discriminative-range gate (BOOST M8 / C13 applied to METRICS)             #
