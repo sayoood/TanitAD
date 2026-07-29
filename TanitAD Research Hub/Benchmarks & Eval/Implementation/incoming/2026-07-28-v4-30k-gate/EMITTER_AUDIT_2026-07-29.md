@@ -57,9 +57,32 @@ The PI chose *"build the emitters"* from the three options in `V4_30K_GATE_RESUL
 2. **Accept #2 as unproducible for this arm** and adjudicate on the measured secondaries.
 3. ⛔ **NOT: re-run the 30 k training with the log-fix** — 4 GPU-days to recover one secondary.
 
-⚠️ **Secondary #7 `deploy_tick_p99_ms` is a genuinely different case** — `V4_30K_GATE_RESULTS.md:311`
-says *"NO v4-AWARE PANEL (`efficiency.py` has zero v4 awareness)"*. **That one may really need
-building**, and was NOT audited here. ⛔ Do not generalise this finding to #7.
+## ⭐ SECONDARY #7 — AUDITED 2026-07-29 09:0x UTC. ITS EMITTER EXISTS TOO.
+
+`V4_30K_GATE_RESULTS.md:311` says *"NO v4-AWARE PANEL (`efficiency.py` has zero v4 awareness)"*.
+**MEASURED — the EMITTER is not the gap:**
+
+- **`gate_emitters.deploy_tick_from_eff_json()` EXISTS** (line 117) with a testable logic core
+  (`deploy_tick_from_eff_json_dict`), and reads *"the composed deployed tick's p99, NOT the eager
+  baseline (which is the un-optimised ~100 ms tick, not deployed)"*.
+- **It is PINNED by two tests** in `stack/tests/test_gate_emitters.py:89-101`, including
+  `test_deploy_tick_rejects_a_fast_but_WRONG_lever` — i.e. it already refuses a lever that is fast
+  but incorrect.
+- **`efficiency.py` already computes `p99_ms`** (line 158).
+
+⛔ **THE REAL GAP IS AN ARCH BRANCH, NOT AN EMITTER.** `efficiency.build_case()` dispatches on
+`entry["arch"]` and handles exactly:
+`flagship-worldmodel` · `flagship-worldmodel-v2` · `refa-plus` (line 321) · `refc` (352) ·
+`refb` (412). **There is no v4 branch**, so no LEVER PANEL can be produced for a v4 arm — and the
+emitter consumes a lever panel.
+
+⇒ **Corrected verdict for #7: BUILD THE ARCH BRANCH in `efficiency.build_case`, not an emitter.**
+That is a real, bounded piece of work (a `plan_step` + stage callables for the v4 head), and it is
+the ONLY one of the two secondaries that needs code.
+
+⚠️ **NOT ATTEMPTED HERE.** Writing a v4 branch requires deciding what the *deployed tick* means for
+a v4 arm (which stages compose the tick, and which levers are admissible), and that is a
+specification question, not a typing exercise. It should be its own scoped task.
 
 ## Root-cause class
 
