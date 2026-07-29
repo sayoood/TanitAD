@@ -67,6 +67,32 @@ UTC), because that is the first gate firing and `patience=2` means two bad readi
 Changing it later means the early gate history was measured on a different surface.
 **`--heldout-goal {band0,produced}` — nothing else changes.**
 
+### ⭐ THE OPTIONS, ALREADY PRICED — decide from this, not from the 471-line doc
+
+All MEASURED, **paired episode-cluster bootstrap vs `dropped`, B=2000**
+(`…/2026-07-27-vtband-decision/VTBAND_DECISION.md` §0):
+
+| option | probe | Δ vs `dropped` (paired) | along-track vs **human** | what it measures |
+|---|---|---|---|---|
+| **`dropped`** ← running now | **0.6383** | — (reference) | 0.9913 | the deployed **no-goal** surface; longitudinal selection **masked OFF** |
+| **`produced`** | **0.6228** | **−0.0154 [−0.0222, −0.0083]** sep | ⭐ **1.0063** | the **DEPLOYABLE** surface — `goal_head` on the encoded window, **no future, no label**. ⚠️ needs a signature change (§3) |
+| **`band0`** | 0.5761 | −0.0621 [−0.0878, −0.0371] sep | 0.8463 | ⛔ tells the planner *"target speed = `v_stop`"* on **every** window ⇒ **it BRAKES the probe** (24.83 m vs 27.30 m, **−9.1 %**). 93 % of the penalty is the VTARGET channel alone |
+| `oracle` | — | — | — | ⛔ **REFUSED, not unimplemented** — the gate rotates the ego ±8° but the label is minted from the **unperturbed** future poses |
+| `zeros_naive` | 0.5685 | −0.0697 | 0.8351 | ⛔ **A TRAP** — the "conservative" patch also zeroes `vt_speed`, so the selector chases `(v0 − 5 m/s)` |
+
+⭐ **The real choice is `dropped` vs `produced`.** `band0` is not a neutral placeholder — it is an
+active braking instruction. **`produced` probes 0.0154 lower than `dropped` but is the only option
+that measures what will actually SHIP**, and its along-track ratio (**1.0063**) is the closest to
+human of any option. `dropped` measures a surface the deployed model will never run in.
+
+*(Also MEASURED: `band0`'s route error is **inert** on this checkpoint — `band0_route_only`
+Δ +0.0006 [−0.0010, +0.0024] **NOT separated** — so all of `band0`'s damage is longitudinal.
+Consistent with the trained gates: `vt_gate 0.3836` is **3.0×** `rt_gate 0.1299`.)*
+
+⛔ **I am NOT choosing this.** `VTBAND_DECISION.md` priced it and deliberately left it to the PI, and
+the trade — a slightly lower probe for a surface that actually deploys — is a judgement about what
+v5 should be judged ON, not a technical gap.
+
 ⚠️ **This was MISSING from the 2026-07-29 07:57 program report.** It is a live decision owed,
 governing an in-flight run, and it was not in §6. Added here so the next iteration surfaces it.
 
