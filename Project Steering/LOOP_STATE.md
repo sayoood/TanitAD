@@ -47,7 +47,58 @@ re-verify by import before EVERY launch.** (This block previously claimed pod2+p
 `…/incoming/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md` (`377cf1e`) + raw JSON.
 Pre-registrations: `Project Steering/PREREG_deep_research_2026-07-29.md` (`bf840af`).
 
-## 🔴 PI DECISION OWED — v5's HELD-OUT GATE IS RUNNING ON AN UNCHOSEN PLACEHOLDER
+## ✅ PI DECISIONS — 2026-07-29 (four answered, one explained)
+
+| # | decision | **PI's answer** | status |
+|---|---|---|---|
+| 1 | v5 `--heldout-goal` | ⭐ **`dropped`** | ✅ **NO ACTION NEEDED** — v5 is already running on `dropped`. The placeholder is now a **CHOICE**. Do not change it. |
+| 2 | pod1 console stop/start | *explained, still pending* | ⛔ **STILL BLOCKED** — see below |
+| 3 | `main` fast-forward | ⭐ **approved** | ✅ **DONE** — `6a99f98 → 588d266`, 37 commits, no force, `origin/main` verified an ancestor first |
+| 4 | C64 v2corpus comparison | ⭐ **BOTH option A AND option B**, for comparison | 🔵 queued — A when v2corpus hits 30k; B is 0-GPU and can start any time |
+| 5 | #42 the 30k gate NO-VERDICT | ⭐ **build the emitters** | 🔵 queued |
+
+⚠️ **On #1 — `dropped` is now the CHOSEN surface, not a default.** The gate's first probe at step 2000
+pins the incumbent AND the component set on it, which is now correct rather than accidental.
+`VTBAND_DECISION.md` recorded that `dropped` measures the deployed **no-goal** surface with the
+longitudinal selection term masked off (`vt_keep=False`), probe **0.6383**, along-track vs human
+**0.9913**. ⇒ **v5 will be judged on the no-goal surface. `produced` (probe 0.6228, along-track
+1.0063, the deployable surface) was NOT chosen — do not quietly substitute it later.**
+
+⚠️ **On #4 — A and B answer DIFFERENT questions and must be reported separately.**
+**A** (19 leak-free episodes) is the *only* one that speaks to *"did the 50 h corpus beat the 13 h
+parity corpus"*. **B** (clean v2-line val from the 9,987 unselected clips) is an **internal baseline
+for the v2 generation** and ⛔ **cannot be placed beside v1's 0.4271**. ⛔ **Per-corpus, never
+pooled** — do not average or combine them into a single verdict.
+
+---
+
+## 🔴 pod1 — WHAT IS ACTUALLY WRONG (explained for the PI, 2026-07-29)
+
+**The hardware is fine and the driver is fine.** `/proc/driver/nvidia/gpus` lists **all eight RTX
+A6000s** by name and the NVIDIA kernel module (550.127.08) is loaded.
+
+**The container cannot reach them.** Programs talk to GPUs through device files at
+`/dev/nvidia0`, `/dev/nvidia1`, … On pod1 that is **empty** — `ls -l /dev/nvidia*` → `total 0`. So
+`nvidia-smi` and PyTorch both report "no GPU" even though the hardware is present and healthy.
+
+⛔ **NOT FIXABLE OVER SSH.** Creating those nodes needs **`CAP_MKNOD`** *plus* a device-cgroup
+allowance the container does not have. RunPod attaches them **at container creation**; ours started
+without them. There is no command I can run that fixes this.
+
+✅ **THE FIX: stop the pod, then start it, from the RunPod web console.** That recreates the
+container and re-attaches the devices. **`/workspace` persists — nothing is lost.**
+
+✅ **The OTHER half is already repaired.** The CUDA userspace was missing entirely; my first install
+pulled **550.163.01** against a **550.127.08** kernel driver, which still failed (NVIDIA requires an
+exact match). It is now pinned to `libnvidia-compute-550=550.127.08-0ubuntu1` +
+`nvidia-utils-550=550.127.08-0ubuntu1`. ⇒ **the moment the device files appear it should just work.**
+
+⭐ **This is the sole blocker on ROLLOUT-RECOVERY TRAINING**, which E-CR identified as the
+highest-value change available to the programme.
+
+---
+
+## ✅ RESOLVED — v5's held-out gate surface (was: an unchosen placeholder)
 
 **Surfaced 2026-07-29 06:46 UTC from v5's own launch banner** (`/workspace/v5d_run.log`), verbatim:
 
