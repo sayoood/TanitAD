@@ -36,6 +36,35 @@ parquet has **18,987** rows. The selection fraction is therefore **9,000 / 18,98
 overlap, which is the point that argument turns on — but the figure should be right wherever it is
 repeated.
 
+## ⭐ FEASIBILITY — MEASURED 2026-07-29 08:1x UTC (`v2_clean_val_feasibility.json`)
+
+**The concern this plan raised qualitatively is now QUANTIFIED — and it is large.**
+
+| feature | v2 **TRAIN** | **REMAINDER** |
+|---|---|---|
+| `junction` | **0.6134** | **0.2494** |
+| `mean_v` | 10.18 | **13.56** |
+| `stop_frac` | 0.0823 | **0.0376** |
+| `cum_head` | 78.33 | **31.92** |
+
+⇒ **The remainder is the RESIDUE of a manoeuvre-balanced selection**: 2.5× less junction-heavy,
+faster, less stopping, 2.5× less heading change. **A UNIFORM draw from it would produce a val set
+nothing like the train distribution** — which is precisely why step 2 below says *stratify*.
+
+✅ **VERDICT: FEASIBLE.** `junction` is the binding stratum — a 600-clip val needs **368** junction
+clips and the remainder holds **2,491**: **6.77× headroom.**
+
+⚠️ **THE COST, and it must be reported per-stratum, never as a total N.** Matching **oversamples the
+scarce strata**, so the effective *independent* sample shrinks on exactly the manoeuvres that matter
+most. A 600-clip val whose junction rows are drawn from a 6.77×-thin pool is **not** 600 independent
+junction observations.
+
+⛔ **UNRESOLVED — do NOT feed these to a selector yet.** `stopped`, `city` and `hw` are not clean
+0/1 columns in `v2_pool_scored.parquet`, and **`lk` is not a rate at all** (train mean **80.55**,
+remainder **120.24** — a count-like column). My first pass computed `needed_in_val = 48330` for it,
+which is **nonsense arithmetic on a misread column**. **Each column needs its semantics established
+before it becomes a stratification axis.**
+
 ## Design of the split
 
 1. **Draw from the remainder only.** Candidate set = `pool.clip_id − selection.clip_id` (9,987).

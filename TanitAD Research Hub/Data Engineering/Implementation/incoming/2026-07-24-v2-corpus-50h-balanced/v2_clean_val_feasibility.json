@@ -1,0 +1,40 @@
+{
+ "remainder_clips": 9987,
+ "target_val_size": 600,
+ "feasibility": {
+  "junction": {
+   "train_rate": 0.6134,
+   "remainder_rate": 0.2494,
+   "needed_in_val": 368,
+   "available_in_remainder": 2491,
+   "feasible": true,
+   "headroom_x": 6.77
+  },
+  "stopped": {
+   "train_rate": 0.0974,
+   "remainder_rate": 0.0473,
+   "needed_in_val": 58,
+   "available_in_remainder": null
+  },
+  "city": {
+   "train_rate": 0.5226,
+   "remainder_rate": 0.4983,
+   "needed_in_val": 314,
+   "available_in_remainder": null
+  },
+  "hw": {
+   "train_rate": 0.38,
+   "remainder_rate": 0.4544,
+   "needed_in_val": 228,
+   "available_in_remainder": null
+  },
+  "lk": {
+   "train_rate": 80.5497,
+   "remainder_rate": 120.2449,
+   "needed_in_val": 48330,
+   "available_in_remainder": null
+  }
+ },
+ "verdict": "FEASIBLE \u2014 a 600-clip distribution-matched val can be drawn from the remainder",
+ "caveat": "The remainder is the RESIDUE of a manoeuvre-balanced selection, so it is systematically POORER in junctions/turns/stops than the train set it must mirror. Matching therefore OVERSAMPLES the scarce strata, which SHRINKS the effective independent sample on exactly the manoeuvres that matter most. Report the per-stratum headroom, never just the total N."
+}
