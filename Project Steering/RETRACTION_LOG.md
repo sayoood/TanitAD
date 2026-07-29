@@ -1244,3 +1244,15 @@ hours. **The block prevented a real loss.** The minimal PYTHONPATH fix is strict
    independently — the offender here was outside git entirely.
 3. ⇒ **Prefer the narrowest fix that a real import can verify** over a wholesale reset. The reset was
    more destructive AND would not have been verifiable without re-running everything.
+
+**STATUS 2026-07-29 06:01 UTC — ⚠️ THE FIX IS NOT YET PROVEN.** v5 resumed from `ckpt.pt` and is at
+step **1050**, climbing, stderr empty. **The gate fires at 2000**, so the fix stays unverified until
+it passes that point (~950 steps ≈ 3.5 h at 13.1 s/step). *(The "step 2000" visible minutes after
+relaunch was the OLD log line from before the crash, not the resumed run. Reading "the run is up" as
+"the fix works" would be the same error as reading "a run that starts" for "a run that is correctly
+wired" — which is the entire subject of this retraction.)*
+
+**PREVENTIVE CHECK — rule 1 applied to the other live run, not left as a maxim.** v2corpus on newpod
+is **NOT exposed to this class**: `taniteval` is not importable there at all, `/workspace/TanitAD` is
+not a git repo on that host, and the v2corpus command carries **no `--heldout` flags**. Different
+trainer path entirely; the mixed-tree defect cannot reach it. **MEASURED, not assumed.**
