@@ -136,7 +136,55 @@ removes one candidate and makes **augmentation a LESS promising fix**; (4) **no 
 4. **0 GPU, still open** — the STALE `obstacle.offline` episode→clip join in `pseudosim.py`.
 5. *Secondary:* the sitclf ridge stage died on another hardcoded `3` in `ridge_fit_predict`
    (shape `(N,3)` vs `(N,2)`) — one more `len(SITS)` substitution. Only if a GPU is otherwise idle.
-6. **v2corpus → v1 when it finishes — a CORPUS contrast, NOT a parity comparison.**
+6. 🔴 **v2corpus → v1 — READ C64 FIRST. THE SURFACE IS CONTAMINATED.**
+
+## 🔴🔴 C64 — v2corpus WAS TRAINED ON 21 OF THE 40 VALIDATION EPISODES
+
+**MEASURED 2026-07-29 04:2x UTC with the arm still at step 25,900/30,000 — before the checkpoint
+existed and before any comparison number was computed.** Artifacts:
+`…/2026-07-24-v2-corpus-50h-balanced/V2BAL_LEAK_FINDING.md` + `v2bal_val40_leak_check.json` (`af78e86`).
+
+| | |
+|---|---|
+| v2bal selection | 9,000 clips → 8,391 distinct `episode_id` |
+| ⚠️ **val40 episodes inside v2corpus TRAIN** | **21 of 40 (52.5 %)** |
+| **leak-free val episodes** | **19** (harness bar ≥ 8) |
+
+**STRUCTURAL, NOT A COLLISION ARTIFACT.** `episode_id` collides, so the intersection *could* be false
+positives — the base rate settles it: v2bal took **9,000 of an 18,731-clip pool = 48.0 %**, and the
+overlap is **52.5 %**. Those agree. A collision artifact is a small excess over a near-zero true
+rate; it does not land on the selection fraction. ⇒ **the selection drew from the whole pool without
+excluding the incumbent val episodes.**
+
+⛔ **DO NOT SCORE v2corpus ON THE FULL 40-EPISODE SURFACE.** It would be scored on its own training
+data for half the episodes, and the inflation is **ONE-SIDED** — it would **MANUFACTURE a "more data
+helps" result** for the corpus whose purpose is to justify more corpus investment.
+
+**The contrast is NOT void but is materially changed. All three of these travel with any result:**
+1. ⚠️ **19 clusters ≠ 40 clusters.** The paired episode-cluster bootstrap resamples EPISODES, so the
+   CI widens substantially. **A tie on 19 is NOT equivalent evidence to a tie on 40.**
+2. ⚠️ **The 19 survivors are NOT a random subsample** — they are what a manoeuvre-balanced selection
+   left behind, so they may skew toward **lane-keeping**, i.e. *against* the v2 arm.
+3. ⛔ **v1's published 0.4271 is a 40-episode number and is NOT the comparator here.**
+   **v1 must be RE-SCORED on the same 19 episodes** or the contrast spans two different surfaces.
+
+**REQUIRED NEXT STEP (0 GPU):** confirm the intersection at **clip_id** granularity (the current
+check is at `episode_id`). The base-rate argument makes a reversal unlikely, but **the number that
+voids an experiment should be exact.**
+
+⭐ **PI JUDGEMENT WANTED:** the honest answer may be that **comparing v2corpus on v1's surface is the
+wrong experiment**. The v2 corpus was always intended as the base for the *next* generation; it needs
+a validation split disjoint from its own selection.
+
+**Root-cause class: A MISSING CONSTRAINT IN A BUILD SPEC** — not a coding error, and not a stale
+claim. Nothing was asserted and later falsified; the constraint was never stated, so nothing could
+enforce it. ⇒ **RULE: any corpus re-selection MUST take the incumbent validation episode list as an
+explicit EXCLUSION INPUT and MUST emit the intersection count as a build artifact.** Had the July
+build printed `val_overlap = 21`, this was visible then.
+
+⭐ **What caught it:** `PREREG_v2corpus_vs_v1.md`, written ~20 minutes earlier while the outcome was
+unknown, registered this check as a **mandatory FIRST step**. The pre-registration did not merely
+record a hypothesis — **it forced a check a results-first workflow would have skipped.**
 2. **0 GPU — the `obstacle.offline` join in `pseudosim.py` is blocked by a STALE ABSENCE-CLAIM.**
    The file says episode→clip identity *"is not resolvable from the cache alone"*; three later agents
    **proved** it (`600/600` val, `2376/2376` train, `40/40` eval-pod) by replaying
