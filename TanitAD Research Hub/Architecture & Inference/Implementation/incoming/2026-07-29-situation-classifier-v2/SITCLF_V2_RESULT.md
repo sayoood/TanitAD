@@ -91,8 +91,10 @@ Under a **linear** probe the two channels carry **comparable** predictive inform
 ego gains **+64 %** going linear → neural (0.05408 → 0.08858) while camera gains **+8 %**
 (0.04522 → 0.04869).
 
-This **supports the shortcut hypothesis** flagged below: with ego present the optimiser has an easy
-route and the vision pathway is under-trained. It is *not* that the camera lacks the information.
+This is **consistent with** the shortcut hypothesis — with ego present the optimiser may take an easy
+route and leave the vision pathway under-trained — but it does not establish it. What the linear
+result *does* pin down is narrower and worth stating exactly: **the camera's information content is
+not the limiting factor at 129 linear parameters.**
 
 ⚠️ **HYPOTHESIS, not established.** An equally consistent reading is that our image features
 (frozen, PCA-reduced to r=16/64) are simply harder for a small attention head to exploit than a 25-
