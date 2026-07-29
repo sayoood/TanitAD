@@ -98,8 +98,45 @@ in minutes. **RULE: measure an imported metric's precondition FIRST, as its own 
 Also: the prereg had **no INSTRUMENT-FAIL branch**, so an out-of-range result had nowhere to go —
 future preregs must carry one (the lesson GATE_PROTOCOL §0.7 already encodes).
 
-**Next work, in order (all on existing checkpoints, none is a retrain):**
-1. ✅ **E-CR — DONE, H-COMPOUND.** Full-window re-run in flight to remove the end-of-episode skew.
+## ✅ E-DPSI — DONE. NO heading shortcut below 12°. A pre-registered NULL.
+
+**MEASURED 2026-07-29** (`v4fs_ckpt.pt` step 29,999 with `head`+`goal_head`, `val40cache`, **881
+windows × 7 offsets**, 40 eps). Full result: `…/incoming/2026-07-29-edpsi-speed-shortcut/` (`e2d29e7`).
+
+| dψ° | −12 | −8 | −4 | **0** | +4 | +8 | +12 |
+|---|---|---|---|---|---|---|---|
+| `tspeed_5s` mean | 11.500 | 12.143 | 12.779 | **13.633** | 13.376 | 12.460 | 11.920 |
+| Δ vs 0 | −2.133 | −1.490 | −0.855 | — | −0.258 | −1.173 | −1.713 |
+
+**Peaks at 0, falls smoothly and near-symmetrically both ways. NO discontinuity anywhere** —
+2.13 m/s over 12°, ≈0.18 m/s per degree. The pre-registered shortcut signature is a **STEP**; there
+is none. ⇒ strengthens the **estimation/scale** reading (consistent with the IDM monocular-scale
+limit) and closes the shortcut hypothesis cheaply. The smooth decline is a benign scene response
+(rotating the camera shows more kerb/sky, less road ahead).
+
+⛔ **FOUR THINGS THIS DOES NOT SAY:** (1) **NOT "we are clean"** — our envelope is **|dψ| ≤ 12°** vs
+PlanT's **10–15°** onset, so we cover the **LOWER EDGE ONLY** and the 12–15° band is *unmeasurable on
+this instrument*; (2) it does **NOT contradict PlanT**, whose CARLA scripted-expert root cause is
+absent from human logs **by construction**; (3) it does **NOT close the 88.7 % longitudinal gap** — it
+removes one candidate and makes **augmentation a LESS promising fix**; (4) **no intervals computed**
+(arrays saved for a paired bootstrap if a close call ever needs one).
+⚠️ Flagged **HYPOTHESIS only**: a mild ±4° asymmetry (+4 loses 0.258 m/s vs −4 losing 0.855, median
+*rises* at +4). Right-hand-traffic geometry or noise — not cited without its own test.
+
+---
+
+**Next work, in order:**
+1. ✅ **E-CR — DONE, H-COMPOUND** (761-window re-run replicated the 488-window verdict).
+2. ✅ **E-DPSI — DONE, NULL below 12°.**
+3. 🔴 **ROLLOUT-RECOVERY TRAINING — the INDICATED fix and the highest-value change available**
+   (HorizonDrive: train on prediction-corrupted histories). ⛔ **It is a TRAINING RUN and there is no
+   free GPU**: newpod and pod2 are training, and **pod1's 8× A6000 needs the PI's console
+   stop/start** (userspace pinned to 550.127.08; `/dev/nvidia*` empty; **NOT fixable over SSH**).
+   ⛔ Never start it on a pod that is training.
+4. **0 GPU, still open** — the STALE `obstacle.offline` episode→clip join in `pseudosim.py`.
+5. *Secondary:* the sitclf ridge stage died on another hardcoded `3` in `ridge_fit_predict`
+   (shape `(N,3)` vs `(N,2)`) — one more `len(SITS)` substitution. Only if a GPU is otherwise idle.
+6. **v2corpus → v1 when it finishes — a CORPUS contrast, NOT a parity comparison.**
 2. **0 GPU — the `obstacle.offline` join in `pseudosim.py` is blocked by a STALE ABSENCE-CLAIM.**
    The file says episode→clip identity *"is not resolvable from the cache alone"*; three later agents
    **proved** it (`600/600` val, `2376/2376` train, `40/40` eval-pod) by replaying
