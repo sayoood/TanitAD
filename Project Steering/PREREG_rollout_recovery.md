@@ -178,3 +178,41 @@ excluding zero at k=16 and k=20.**
 
 **Length:** set from a MEASURED `step_s` over the first 200 steps of RR-20, not assumed. Both arms
 run the SAME number of steps — ⛔ an unequal-length comparison is not a comparison.
+
+---
+
+## §R3 — MEASURED COST, and a correction to my own first reading
+
+**MEASURED 2026-07-29 08:24 UTC, RR-20 on pod3 (A40), batch 8 × accum 8 = eff 64:**
+
+| | |
+|---|---|
+| `step_s` at step 30,025 | **433.6** |
+| `step_s` at step 30,050 | **431.9** |
+| ⇒ **per-step** | **433.6 / 25 = 17.3 s/step** (log-every 25), consistent across both windows |
+| vs v1 (`rollout_k=4`, same eff batch 64) | ~13 s/step ⇒ **≈1.33× slower** |
+| **2,000 steps** | **≈ 9.6 h** |
+
+⚠️ **CORRECTION — I FIRST REPORTED "20.2 s/step" AND THAT WAS A MISREAD.** 20.2 was the value on the
+**first** log line (accumulated over ~1 step), and I treated it as per-step.
+**`step_s` is ACCUMULATED over `--log-every`** — CLAUDE.md documents this exact trap
+(*"step_s in trainer logs is ACCUMULATED over --log-every (÷50), not per-step. This has caused false
+'430 s/step' alarms."*). I made the same error **inverted**: reading an accumulated value as
+per-step, and getting a plausible answer only because it was the first line. ⇒ **Read step_s from a
+STEADY-STATE line and divide by log-every. Never from the first line.**
+
+## §R4 — RR-CTL runs on the SAME POD, SEQUENTIALLY (design decision, registered)
+
+RR-CTL (`--rollout-k 4`) will run on **pod3 after RR-20 finishes**, not concurrently on `eval`.
+
+**Why sequential is better science here, not just a scheduling convenience:**
+1. **Same GPU, same host, same caches** ⇒ removes hardware and data-path as confounds. Two A40s are
+   not guaranteed identical under load.
+2. `eval` is **bare** — provisioning it (4.4 GB val + caches) would introduce a *different* data path
+   for the control arm, which is exactly the confound the matched design exists to remove.
+3. `eval` stays **FREE for C64 option A** when v2corpus lands (~9 h).
+
+⚠️ **Both arms MUST run the same step count.** An unequal-length comparison is not a comparison.
+⚠️ **Sequential means the arms are separated in time, not in configuration** — record the wall-clock
+of each, and if anything on the pod changes between them (a sync, a reboot), the pair is broken and
+must be re-run.
