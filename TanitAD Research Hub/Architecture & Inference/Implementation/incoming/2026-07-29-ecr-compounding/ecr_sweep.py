@@ -1,6 +1,3 @@
-
-
-
 """E-CR — CR_k = e_rollout / e_teacher-forced. Resolves C61.
 
 Mirrors train_flagship_v4.canary_rollout EXACTLY (same loader, same ds, same actions,

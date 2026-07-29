@@ -1,11 +1,3 @@
-Pseudo-terminal will not be allocated because stdin is not a terminal.
-Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.8.0-65-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
-
-
 """Is z_hat even TRYING to be z_true? If not, teacher forcing is meaningless here."""
 import sys, glob, torch
 sys.path.insert(0,"/workspace/TanitAD/stack"); sys.path.insert(0,"/workspace/TanitAD/stack/scripts")

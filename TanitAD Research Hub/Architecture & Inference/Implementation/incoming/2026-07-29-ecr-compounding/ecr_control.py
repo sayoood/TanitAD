@@ -1,11 +1,3 @@
-Pseudo-terminal will not be allocated because stdin is not a terminal.
-Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.8.0-65-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
-
-
 """E-CR DISCRIMINATING CONTROL — is CR<1 a readout input-distribution artifact?
 
 Three arms decoded by the SAME grounding.step["op"], on the SAME windows:
