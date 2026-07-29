@@ -207,6 +207,78 @@ def run_one(key, episodes=40, device="cuda"):
     return res
 
 
+def run_compounding(key, episodes=40, device="cuda", k_max=20,
+                    report_k=(4, 8, 16, 20)):
+    """E-CR — does imagination COMPOUND, or does the task just get harder? (resolves C61)
+
+    Scores the SAME windows twice, recursive rollout vs teacher-forced, and reports
+    ``CR_k = e_rollout / e_teacher-forced`` per :mod:`taniteval.compounding`.
+
+    ⚠️ **The decision predicate is the PAIRED bootstrap on the DIFFERENCE, not a CI on the ratio.**
+    ``paired_episode_cluster_bootstrap`` returns an interval on ``mean(a) − mean(b)``; a ratio CI is
+    a different estimator we have not validated. The two agree on the only question the
+    pre-registration asks — *is there any compounding at all* — because ``CR > 1 ⟺ difference > 0``.
+    So ``separated`` (CI excludes 0) IS the H-TASK/H-COMPOUND decision, and the ratio is reported as
+    a point estimate for magnitude only. ⛔ Do not quote a CI *on CR*; none is computed.
+
+    Pre-registered outcomes: ``Project Steering/PREREG_deep_research_2026-07-29.md``.
+    """
+    from taniteval import ci as _ci
+    from taniteval import compounding
+    e = _entry(key)
+    L = loaders.load(e, device)
+    if not L["traj_capable"]:
+        print(f"[ecr] {key}: not rollout-capable (planner) — skip", flush=True)
+        return None
+    # ⚠️ the canonical 40-episode parity val set. Anything that re-selects episodes breaks
+    # cross-arm comparability and must be refused (CLAUDE.md — parity is sacred).
+    files = data.list_val_episodes(VAL, 40)
+    if e.get("train_ids"):                              # reuse the leakage guard
+        from tanitad.data.mixing import load_episode
+        tid = set(Path(e["train_ids"]).read_text().split())
+        files = [f for f in files
+                 if str(load_episode(str(f), mmap=True).episode_id) not in tid]
+    files = files[:episodes]
+    eps = (data.load_frames(files) if L["feed"] == "frames"
+           else data.load_features(files, L["feed"], device))
+    res = compounding.run(L["model"], L["step_readout"], eps, device,
+                          k_max=k_max, report_k=report_k,
+                          speed_input=bool(e.get("speed_input")),
+                          yaw_input=bool(e.get("yaw_input")),
+                          dyn_input=bool(e.get("dyn_input")))
+    arr = res.pop("_arrays")
+    eid = arr["episode"].numpy()
+    for k in report_k:
+        if k > arr["rollout_accum"].shape[1]:
+            continue
+        band = _ci.paired_episode_cluster_bootstrap(
+            arr["rollout_accum"][:, k - 1].numpy(),
+            arr["tf_accum"][:, k - 1].numpy(), eid)
+        res["CR"][f"k{k}"]["paired_delta_rollout_minus_tf"] = {
+            "delta": round(band["delta"], 5), "lo": round(band["lo"], 5),
+            "hi": round(band["hi"], 5), "separated": bool(band["separated"]),
+            "estimator": "paired episode-cluster bootstrap (taniteval.ci)"}
+    res["model"] = {k: e.get(k) for k in ("key", "name", "arch", "encoder")}
+    res["ckpt_step"] = L["step"]
+    RES.mkdir(parents=True, exist_ok=True)
+    (RES / f"ecr_{key}.json").write_text(json.dumps(res, indent=2))
+    for k in report_k:
+        c = res["CR"].get(f"k{k}")
+        if not c:
+            continue
+        d = c.get("paired_delta_rollout_minus_tf", {})
+        print(f"[ecr] {key} k={k}: e_roll={c['e_rollout']:.5f} "
+              f"e_tf={c['e_teacher_forced']:.5f} CR={c['CR']:.4f} "
+              f"ER={c['ER']:.5f} | Δ={d.get('delta'):+.5f} "
+              f"[{d.get('lo'):.5f},{d.get('hi'):.5f}] "
+              f"{'SEPARATED' if d.get('separated') else 'covers 0 — UNDERPOWERED'}",
+              flush=True)
+    print(f"[ecr] {key}: n_windows={res['n_windows']} "
+          f"n_episodes={res['n_episodes']} — read _prereg before interpreting",
+          flush=True)
+    return res
+
+
 def run_imagination(key, episodes=12, device="cuda"):
     """Imagination panel: isolate the vision/imagination contribution of a
     world-model arm (vision x action ablation + latent fidelity)."""
