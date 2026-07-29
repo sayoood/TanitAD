@@ -1,8 +1,8 @@
 # ⭐ E-CR v2 — C61 RESOLVED: the imagination decay is COMPOUNDING, not task difficulty
 
 **MEASURED 2026-07-29, v1 `flagship4b-speedjerk-30k` step 29,999, `val40cache`, **761 windows** /
-40 episodes** — a subset of the canonical surface, see the window-count caveat below. Artifacts: `ecr_v2.py`, `ecr_v2_ci.py`,
-`ecr_v2.json`, `ecr_v2_ci.json`, `ecr_v2_arrays.npz` (pod3 `/workspace/`).
+40 episodes** — 86.4 % of the canonical surface; see the window-count section. Artifacts: `ecr_v2.py`, `ecr_v2_ci.py`,
+`ecr_v2_full.json` / `ecr_v2_full_ci.json` (PRIMARY, 761 win) and `ecr_v2.json` / `ecr_v2_ci.json` (first run, 488 win); arrays on pod3 `/workspace/`.
 
 **Pre-registration:** `Project Steering/PREREG_deep_research_2026-07-29.md`.
 **Estimator:** **PAIRED episode-cluster bootstrap** (`taniteval/ci.py`, B = 2000). The interval is on
@@ -33,7 +33,7 @@ found. Artifacts for the first run are kept as `ecr_v2.json` / `ecr_v2_ci.json`.
 
 ## ⭐ The load-bearing observation: the teacher-forced arm is FLAT
 
-**`e_teacher_forced` = 0.00724 / 0.00779 / 0.00770 / 0.00733 across k = 4 → 20.** A prediction made
+**`e_teacher_forced` = 0.00719 / 0.00814 / 0.00801 / 0.00723 across k = 4 → 20** (761-window run; the 488-window run gave 0.00724 / 0.00779 / 0.00770 / 0.00733 — same flat profile). A prediction made
 one step from **truth** is just as accurate at 2.0 s into the episode as at 0.4 s.
 
 ⇒ **THE TASK DOES NOT GET HARDER WITH HORIZON.** Every bit of the growth in the rollout arm comes
@@ -47,7 +47,7 @@ from feeding predictions forward.
 | **CR rising super-linearly, CI excluding** ⇒ **H-COMPOUND** | ✅ **THIS ONE** |
 | rising but CI covers ⇒ UNDERPOWERED | ❌ (CI excludes at all four k) |
 
-⭐ **H-COMPOUND CONFIRMED. H-TASK FALSIFIED.** CR rises **3.58 → 77.81** over 0.4 → 2.0 s.
+⭐ **H-COMPOUND CONFIRMED. H-TASK FALSIFIED.** CR rises **3.50 → 80.77** over 0.4 → 2.0 s (761 windows; 3.58 → 77.81 on the 488-window run).
 
 ## What this unblocks — and what it does NOT
 
@@ -71,8 +71,8 @@ from feeding predictions forward.
   `step_readout`, which C63 measured to be non-linear and domain-sensitive
   (a two-true-latent decode scored **6.76 m** at 2 s vs the rollout's 0.53 m). **Do not convert
   latent error into trajectory error, in either direction.**
-- **CR's magnitude is not a physical quantity.** 77.81 is a ratio of cosine distances whose
-  denominator is near a noise floor (0.0073). Quote the **direction and separation**, not the number
+- **CR's magnitude is not a physical quantity.** 80.77 is a ratio of cosine distances whose
+  denominator is near a noise floor (0.0072). Quote the **direction and separation**, not the number
   as if it were an effect size in the world.
 
 ## ⚠️ WINDOW COUNT — 488, not the canonical 881, and the loss is NOT random
