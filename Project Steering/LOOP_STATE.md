@@ -4,7 +4,84 @@
 moved was costing a re-derivation every 30 minutes and shipped stale instructions twice in one day.
 Update this file instead; keep it short and dated.
 
-`LAST_UPDATED: 2026-07-28 18:2x UTC (20:2x Berlin). 🔵 AUTONOMOUS.
+`LAST_UPDATED: 2026-07-29 00:5x UTC (02:5x Berlin). 🔵 AUTONOMOUS.
+
+## ⭐ CURRENT STATE — 2026-07-29 ~00:50 UTC (everything below this block is OLDER; read this first)
+
+### Fleet — 3 pods working, 1 blocked on the PI
+| pod | job | state |
+|---|---|---|
+| **newpod** `69.30.85.48:22192` | **v2corpus 30k** | step **24,650**, loss 4.194, **10.2 s/step**, 9 procs → **~15 h to 30k** |
+| **pod2** | **v5 176×624 @ 117°** | step **850**, `total` 55.79 → **12.85**, `gnorm_trunk` 95.3 → **50.0** (settling), **13.15 s/step** → **~4.6 days total** |
+| **pod3** | **situation-classifier v2** | emit ~2300/2376 on the **parity** corpus, then 5-fold GPU training |
+| **pod1** `tanitad-pod` | **IDLE — 8× RTX A6000** | ⛔ **PI ACTION REQUIRED** (below) |
+
+⚠️ **v5 had NO checkpoint at step 850.** First one is due at **step 1,000**. Until it lands a death
+costs the full ~3 h from zero. **Check `ls /workspace/experiments/flagship-v5-w120-30k/` for `ckpt.pt`
+before anything else.**
+
+### ⭐⭐ pod1 IS NOT A CPU POD — it has EIGHT RTX A6000s, and the fix needs the PI's console
+**RETRACTED within one iteration: I first reported "no GPU" from a single empty `nvidia-smi`.**
+`/proc/driver/nvidia/gpus` enumerates **8× NVIDIA RTX A6000**, driver **550.127.08** live in the
+kernel. Two things were wrong in the container, one fixed and one not:
+1. ✅ **FIXED** — the CUDA userspace was missing entirely. Installing 550.163.01 still failed
+   (NVIDIA requires an EXACT kernel/userspace match); **pinned to `libnvidia-compute-550=550.127.08-0ubuntu1`
+   + `nvidia-utils-550=550.127.08-0ubuntu1`**, which IS in the NVIDIA CUDA repo.
+2. ⛔ **NOT FIXABLE OVER SSH** — `ls -l /dev/nvidia*` returns **`total 0`**. No device nodes at all:
+   the container was created **without the GPUs mapped**. `mknod` needs CAP_MKNOD *and* a device-cgroup
+   allowance the container does not have. **A stop/start from the RunPod console re-injects them.**
+   The userspace is already correct, so it should come up working immediately after.
+⇒ **This is the single largest capacity unlock available: 3 A40s → 3 A40s + 8 A6000s.**
+
+### ⛔ pod3 DRIFTED BACK to `0f93b98` — task #39 "synced" was WRONG
+Found stale again 2026-07-29 and re-synced to `6a99f98`, **verified by a real import**
+(`situations OK HZ=10.0 LEAD_S=3.0`), not by `git log`. ⇒ **Treat "the pod is synced" as perishable:
+re-verify by import before EVERY launch.** (This block previously claimed pod2+pod3 were both synced.)
+
+### ⭐ DEEP RESEARCH LANDED — 215 agents, 12.9 M tokens, 3-vote adversarial verification
+`…/incoming/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md` (`377cf1e`) + raw JSON.
+Pre-registrations: `Project Steering/PREREG_deep_research_2026-07-29.md` (`bf840af`).
+
+⭐ **C61 — OUR OWN IMAGINATION HEADLINE IS CONFOUNDED.** The 2026-07-29 sweep was reported as
+*"decay accelerates"* from a local exponent rising 1.03 → 1.91. **The ADE table stands; the
+interpretation does not.** ADE-vs-horizon cannot separate *"predicting 2 s ahead is intrinsically
+harder"* from *"our rollout compounds its own error"*. The missing control is a **teacher-forced arm
+at matched steps** (SkyJEPA `CR_k = e_rollout / e_TF`). ⛔ **Do not use the exponent rise to justify
+an architecture change until E-CR reports.**
+
+**Next work, in order (all on existing checkpoints, none is a retrain):**
+1. **E-CR** — 0–6 GPU-h. Flat `CR_k` **FALSIFIES** accelerating-decay and **BLOCKS** E-ROLL,
+   rollout-recovery training and the Koopman lever. Rising-but-CI-covers-1 ⇒ report **underpowered**.
+2. **0 GPU — the `obstacle.offline` join in `pseudosim.py` is blocked by a STALE ABSENCE-CLAIM.**
+   The file says episode→clip identity *"is not resolvable from the cache alone"*; three later agents
+   **proved** it (`600/600` val, `2376/2376` train, `40/40` eval-pod) by replaying
+   `discover_r0_clips → sorted → split_clips(val_frac=0.2, seed=0)`. Our **only safety gate** is empty
+   because of this. Wire the NC gate with **`filter_m(agent,human) = 1.0 if m(human)==0 else m(agent)`**
+   — NOT PDMS-v1, which over-penalises.
+3. **E-DPSI** — ~0.3 GPU-day. Does our target-speed head key on HEADING? `pseudosim`'s `dyaw` axis is
+   an **exact** camera rotation (`max|dH| = 0.000e+00`) on bit-identical real footage, so a positive is
+   unambiguous. ⛔ Envelope is **|dψ| ≤ 12°** vs PlanT's 10–15° onset: **a null inside 12° means
+   "no shortcut below 12°", NEVER "we are clean".**
+4. **0 GPU** — rename the headline to `wm_fidelity_ade_2s` in `MODEL_REGISTRY.md`, CV floor co-located.
+
+⚠️ **PROTOCOL NOW IN FORCE:** open-loop fidelity and closed-loop success are **SEPARATE decision
+inputs**. A closed-loop gain with **flat `CR_k` is an EXECUTOR gain** and may **not** be quoted as
+world-model progress. *(MoP-JEPA: 10 % false edges, replanning lifts success 0.40 → 1.00.)*
+
+⚠️ **COVERAGE GAPS ARE PART OF THE RESULT.** Report 1: **5 of 8** areas returned ZERO admissible
+evidence. Report 2: **4 of 6**. Genie 3, DreamerV4 and Cosmos appear in **no** surviving claim.
+Refuted **0-3** and **NOT usable as decision inputs**: the factorised path×velocity vocabulary (the
+most valuable re-verification target — it maps 1:1 onto our LAT+LON softmax mechanism), anchored-
+vocabulary scaling, World4Drive, Alpamayo edge latency. **Frozen-vs-trained: all 7 candidates refuted
+in BOTH directions** ⇒ our own measurement stands **unchallenged AND uncorroborated**; any sentence
+implying external support would be an INHERITED claim deciding a GPU-day.
+
+### ⛔ `git push origin HEAD:main` IS CLASSIFIER-BLOCKED
+Safety was verified first (`origin/main` IS an ancestor of HEAD, 0 commits lost). **Do not work
+around it** — push the branch, report the block, let the PI merge.
+
+---
+
 ✅✅ **FLEET OUTAGE RESOLVED — IT WAS NEVER AN OUTAGE.** The migration split the fleet across **TWO
 datacenters** and reassigned ports; I was probing ca-mtl-1 endpoints for pods that had moved to
 **US-TX-1**. **`~/.ssh/config` is now corrected and all four aliases resolve** —
