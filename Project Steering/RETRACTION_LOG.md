@@ -1143,3 +1143,47 @@ the link from latent error to ADE runs through the readout we have just shown is
 **STILL IN FORCE:** C61's retraction stands; the 1.03 → 1.91 exponent rise may not justify an
 architecture change; **E-ROLL, rollout-recovery training and the Koopman lever remain BLOCKED** —
 now because E-CR has produced NO admissible number, not because it came back flat.
+
+---
+
+## C64 — 2026-07-29 — a corpus re-selection that did not inherit the previous generation's VAL EXCLUSION
+
+**Root-cause class: A MISSING CONSTRAINT IN A BUILD SPEC, not a coding error.**
+(Distinct from C59/C63, which are stale-claim classes. Nothing here was ever asserted and later
+falsified — the constraint was simply never stated, so nothing could enforce it.)
+
+**FOUND BEFORE ANY NUMBER WAS PUBLISHED.** The v2corpus arm was at step 25,900 / 30,000 when the
+pre-registered void check ran. **21 of the 40 canonical validation episodes are inside
+`physicalai-v2bal-4b7eeeac222d`, v2corpus's TRAINING corpus** — 52.5 % of the surface the comparison
+was going to be scored on. Artifacts: `…/2026-07-24-v2-corpus-50h-balanced/V2BAL_LEAK_FINDING.md`
+and `v2bal_val40_leak_check.json`.
+
+**WHY IT IS STRUCTURAL AND NOT A COLLISION ARTIFACT.** `episode_id = int.from_bytes(clip_id[:4])`
+collides (9,000 clips → 8,391 distinct ids), so the intersection *could* have been false positives.
+The base rate settles it: v2bal selected **9,000 of an 18,731-clip pool = 48.0 %**, and the observed
+overlap is **21/40 = 52.5 %**. Those agree. A collision artifact would sit as a small excess on top
+of a near-zero true rate, not land on the selection fraction itself. ⇒ **the selection simply drew
+from the whole pool without excluding the incumbent val episodes.**
+
+**HOW IT NEARLY COST A WRONG PROGRAMME CONCLUSION.** Scoring v2corpus on the full 40-episode surface
+would have measured it on its own training data for half the episodes. The inflation is **one-sided**
+— it would have **manufactured a "more data helps" result** for a corpus whose whole purpose is to
+justify further corpus investment. That is the most expensive possible direction for a silent bias.
+
+**WHAT SAVED IT.** The void check existed only because `PREREG_v2corpus_vs_v1.md` registered it as a
+**mandatory first step**, written ~20 minutes earlier while the outcome was still unknown. The
+pre-registration did not merely record a hypothesis — **it forced a check that a results-first
+workflow would have skipped**, and it fired 12 hours before the checkpoint landed.
+
+**RULE ADOPTED.** ⇒ **Any corpus re-selection MUST take the incumbent validation episode list as an
+explicit EXCLUSION INPUT, and MUST emit the intersection count as a build artifact.** Had the v2
+build printed `val_overlap = 21`, this was visible in July rather than on the eve of the comparison.
+
+**STATUS — the contrast is NOT void, but it is materially changed:**
+19 leak-free episodes remain (harness bar ≥ 8). ⚠️ **19 clusters gives a much wider paired
+episode-cluster bootstrap interval than 40 — a tie on 19 is NOT equivalent evidence to a tie on 40.**
+⚠️ The survivors are **not a random subsample**: they are what a manoeuvre-balanced selection left
+behind, so they may skew toward lane-keeping — *against* the v2 arm — and that must travel with any
+result. ⛔ **v1's published 0.4271 is a 40-episode number and is NOT the comparator on this surface;
+v1 must be re-scored on the same 19.** Step 1 remains confirming the intersection at **clip_id**
+granularity, because the number that voids an experiment should be exact.
