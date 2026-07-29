@@ -8,12 +8,17 @@ Update this file instead; keep it short and dated.
 
 ## ⭐ CURRENT STATE — 2026-07-29 ~00:50 UTC (everything below this block is OLDER; read this first)
 
-### Fleet — 3 pods working, 1 blocked on the PI
+### Fleet — **FOUR A40s** + pod1's 8x A6000 blocked
+⛔ **ENUMERATE FROM `~/.ssh/config`, NEVER FROM MEMORY — see C62.** On 2026-07-29 I reported the
+fleet as "three working pods" for a whole session because I re-probed the pods I was *working on*
+instead of the list the drumbeat names verbatim (`pod2/pod1/pod3/**eval**`). **`tanitad-eval` sat
+idle the entire time.** A probe that succeeds over an incomplete list looks exactly like a complete one.
 | pod | job | state |
 |---|---|---|
 | **newpod** `69.30.85.48:22192` | **v2corpus 30k** | step **24,650**, loss 4.194, **10.2 s/step**, 9 procs → **~15 h to 30k** |
 | **pod2** | **v5 176×624 @ 117°** | step **850**, `total` 55.79 → **12.85**, `gnorm_trunk` 95.3 → **50.0** (settling), **13.15 s/step** → **~4.6 days total** |
 | **pod3** | **situation-classifier v2** | emit ~2300/2376 on the **parity** corpus, then 5-fold GPU training |
+| ⭐ **eval** `69.30.85.106:22073` | **BARE — being provisioned** | A40, **idle ALL SESSION**. `/workspace` was EMPTY: no repo, no venv, no caches. Has system `torch 2.8.0+cu128`, CUDA OK, 510 MB/s disk. Clone started 01:09 UTC. ⭐ **This is the natural home for E-CR and E-DPSI — the only free A40.** |
 | **pod1** `tanitad-pod` | **IDLE — 8× RTX A6000** | ⛔ **PI ACTION REQUIRED** (below) |
 
 ⚠️ **v5 had NO checkpoint at step 850.** First one is due at **step 1,000**. Until it lands a death

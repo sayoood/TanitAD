@@ -1049,3 +1049,42 @@ CR_k rising super-linearly ⇒ (b), rollout-recovery training indicated.
 **SECOND-ORDER LESSON.** The confound was found by a literature survey, not by our own review — the
 same class as C57–C60. A control that a published instrument treats as mandatory is worth probing
 for **before** a result is written up, not after.
+
+---
+
+## C62 — 2026-07-29 — probing the fleet I REMEMBERED instead of the fleet the INSTRUCTION NAMED
+
+**Root-cause class: SUBSTITUTING WORKING MEMORY FOR THE STATED ENUMERATION.**
+(Distinct from C59's "searched by one name". Here the correct name was *supplied to me, verbatim,
+every iteration* — and I never used it.)
+
+**RETRACTED.** Across every fleet report on 2026-07-29 I stated the fleet as **three working GPU pods
++ pod1 blocked**. The PI corrected it: **there are four.** `tanitad-eval` is a **fourth A40**, and it
+was **idle the entire session** — 0 % GPU, 0 MiB, zero python processes.
+
+**HOW IT HAPPENED.** The AUTONOMOUS DRUMBEAT prompt says, in its own step (1), *"check the fleet
+(**pod2/pod1/pod3/eval**)"*. `LOOP_STATE.md` likewise lists **four** corrected aliases plus the new
+pod: `tanitad-pod` · `tanitad-pod2` · `tanitad-pod3` · **`tanitad-eval` 69.30.85.106:22073** ·
+newpod `69.30.85.48:22192`. **I probed pod / pod2 / pod3 / newpod every iteration and `eval` zero
+times** — I had built a mental fleet list from the pods I happened to be working on, and then
+re-probed *that list* while believing I was checking the fleet.
+
+**WHY IT SURVIVED SO LONG.** Every iteration my probe *succeeded* on 4 hosts and returned coherent
+results, so there was no error to notice. **A complete-looking answer over an incomplete enumeration
+is indistinguishable from a complete answer** — nothing in the output can reveal the missing row.
+This is why the check must be against the WRITTEN list, not against whether the probe looked healthy.
+
+**COST.** One A40 idle for the whole session, while I twice reported "pod3 idling is on me" and
+"never idle" — the corrective attention went to the pod I could see. Also: **I wrote the LOOP_STATE
+fleet table this session and it too listed only four rows.** A stale-fleet error copied *into* the
+file whose job is to prevent stale state.
+
+**CORRECTION IN FORCE.** The fleet is **FOUR A40s** (`newpod`, `pod2`, `pod3`, **`eval`**) **plus
+`pod1` = 8× RTX A6000 blocked on missing `/dev/nvidia*`**. `tanitad-eval` was found **BARE** —
+`/workspace` empty, no repo, no venv, no caches — but with system `torch 2.8.0+cu128`, CUDA
+available, and 510 MB/s disk. Provisioning started 2026-07-29 01:09 UTC.
+
+**RULE ADOPTED.** ⛔ **Enumerate the fleet from `~/.ssh/config` (or the drumbeat's own list) at the
+START of each iteration and probe EVERY alias — never from memory of "the pods we are using".**
+A pod that is doing nothing is exactly the pod least likely to be in working memory, and exactly the
+one whose idleness costs most.
