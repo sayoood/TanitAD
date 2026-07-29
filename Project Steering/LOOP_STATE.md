@@ -47,16 +47,59 @@ re-verify by import before EVERY launch.** (This block previously claimed pod2+p
 `…/incoming/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md` (`377cf1e`) + raw JSON.
 Pre-registrations: `Project Steering/PREREG_deep_research_2026-07-29.md` (`bf840af`).
 
-⭐ **C61 — OUR OWN IMAGINATION HEADLINE IS CONFOUNDED.** The 2026-07-29 sweep was reported as
-*"decay accelerates"* from a local exponent rising 1.03 → 1.91. **The ADE table stands; the
-interpretation does not.** ADE-vs-horizon cannot separate *"predicting 2 s ahead is intrinsically
-harder"* from *"our rollout compounds its own error"*. The missing control is a **teacher-forced arm
-at matched steps** (SkyJEPA `CR_k = e_rollout / e_TF`). ⛔ **Do not use the exponent rise to justify
-an architecture change until E-CR reports.**
+## ⭐⭐ C61 IS RESOLVED — THE IMAGINATION DECAY IS **COMPOUNDING**, NOT TASK DIFFICULTY
+
+**E-CR v2, MEASURED 2026-07-29** (v1 step 29,999, 488 windows / **40 episode clusters**, **PAIRED
+episode-cluster bootstrap B=2000**, interval on the **DIFFERENCE**; ⛔ no CI on the ratio exists).
+Metric `e_k = 1 − cos(z_hat_k, z_true_k)` — **latent error, NO decoder in the path**.
+Full result: `…/incoming/2026-07-29-ecr-compounding/ECR_V2_RESULT.md` (`8aecfb4`, `c840c96`).
+
+| k | `e_rollout` | `e_teacher_forced` | **CR** | Δ | CI95 | sep |
+|---|---|---|---|---|---|---|
+| 4 | 0.025924 | **0.007235** | **3.58** | +0.0187 | [0.0142, 0.0242] | ✅ |
+| 8 | 0.106293 | **0.007790** | **13.64** | +0.0985 | [0.0602, 0.1443] | ✅ |
+| 16 | 0.496283 | **0.007700** | **64.45** | +0.4886 | [0.3848, 0.5945] | ✅ |
+| 20 | 0.570082 | **0.007327** | **77.81** | +0.5628 | [0.4613, 0.6665] | ✅ |
+
+⭐ **THE LOAD-BEARING FACT: the teacher-forced arm is FLAT** (0.00724 / 0.00779 / 0.00770 / 0.00733).
+One step from **truth** is as accurate at 2.0 s as at 0.4 s ⇒ **the task does NOT get harder with
+horizon; all the growth is the model eating its own output.** `p_delta_gt0 = 1.0` at every k.
+**H-COMPOUND CONFIRMED · H-TASK FALSIFIED**, per the pre-registered rule.
+
+⇒ **UNBLOCKED:** ⭐ **rollout-recovery training** (HorizonDrive's mechanism — train on
+prediction-corrupted histories) is now the **indicated fix and the highest-value training change
+available**; **E-ROLL**'s expected divergence is now *explained*; the **Koopman lever** becomes a
+legitimate SECOND experiment (after rollout-recovery, reporting CR **and** speed R² jointly).
+
+⛔ **THREE THINGS THIS DOES NOT ESTABLISH — do not infer them later:**
+1. It does **NOT** restore the retracted *"decay accelerates"* wording. C61 retracted a claim the
+   then-available measurement could not support; that retraction was correct **on its own terms**.
+   This is a NEW measurement on a DIFFERENT surface that happens to agree. **The C61 lesson stands.**
+2. It says **NOTHING IN METRES.** `1 − cos` is latent error; the bridge to ADE runs through
+   `step_readout`, which **C63** measured to be domain-sensitive (a two-true-latent decode scored
+   **6.76 m** at 2 s vs the rollout's 0.53 m). **Never convert between them.**
+3. **77.81 is not an effect size** — a ratio of cosine distances whose denominator sits near a noise
+   floor. Quote **direction and separation**, never the magnitude.
+
+⚠️ **488 windows, not the canonical 881 — and the loss is NOT random.** The driver dropped the whole
+batch of 8 whenever one window sat within 20 frames of its episode end ⇒ systematically
+end-of-episode. Verdict unaffected (all 40 clusters present, CIs far from zero) but **it may not be
+called "the canonical 881-window surface"**. Fixed 2026-07-29 03:0x (per-window keep-mask); full re-run
+in flight → `pod3:/workspace/ecr_v2_full.json`.
+
+⛔ **C63 — E-CR v1 WAS MIS-SPECIFIED AND ITS NUMBERS ARE AN ARTIFACT.** v1 built CR on **decoded
+displacement** and returned CR<1 (0.729/0.632/0.659/0.755), outside BOTH registered outcomes. The
+three-arm control: `A (z_hat,z_hat)` 0.0449→0.5325 · `B (z_true,z_hat)` 0.0616→0.7058 ·
+⛔ `C (z_true,z_true)` **1.5145→6.7631** — arm C has **NO PREDICTION AT ALL** and is **12–34× worse**
+than the model's own rollout. ⇒ `step_readout` is tuned to the predictor's output distribution; any
+arm fed true latents leaves its domain. **Root-cause class: importing a published metric without
+measuring its precondition on our stack.** Arm C costs ONE BATCH and would have falsified the design
+in minutes. **RULE: measure an imported metric's precondition FIRST, as its own pre-registered step.**
+Also: the prereg had **no INSTRUMENT-FAIL branch**, so an out-of-range result had nowhere to go —
+future preregs must carry one (the lesson GATE_PROTOCOL §0.7 already encodes).
 
 **Next work, in order (all on existing checkpoints, none is a retrain):**
-1. **E-CR** — 0–6 GPU-h. Flat `CR_k` **FALSIFIES** accelerating-decay and **BLOCKS** E-ROLL,
-   rollout-recovery training and the Koopman lever. Rising-but-CI-covers-1 ⇒ report **underpowered**.
+1. ✅ **E-CR — DONE, H-COMPOUND.** Full-window re-run in flight to remove the end-of-episode skew.
 2. **0 GPU — the `obstacle.offline` join in `pseudosim.py` is blocked by a STALE ABSENCE-CLAIM.**
    The file says episode→clip identity *"is not resolvable from the cache alone"*; three later agents
    **proved** it (`600/600` val, `2376/2376` train, `40/40` eval-pod) by replaying
