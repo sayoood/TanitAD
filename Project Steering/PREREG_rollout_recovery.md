@@ -137,3 +137,44 @@ finishes (~10 h) — that is why this goes on pod3 and not on both.
 | E-CR's CR table motivating this | **MEASURED (ours)**, paired episode-cluster bootstrap |
 | HorizonDrive's rollout-recovery mechanism | **PUBLISHED** (arXiv 2605.11596) — ⚠️ its ~20 s horizon is in a **pixel-reconstructive VAE latent** scored with video metrics; **the mechanism transfers, the number does not** |
 | that rollout-recovery will reduce our CR | **HYPOTHESIS** — this experiment is the test |
+
+---
+
+## §R2 — DESIGN FIX 2026-07-29 07:5x UTC: the control changes, not the treatment
+
+**MEASURED — v1's exact trainer is NOT recoverable from the fleet.** HEAD's
+`train_flagship4b.py` has **no `--jerk-weight` and no `--aux-accel`** (its own `--help`), while
+`MODEL_REGISTRY.md:172` lists v1's flags as `--speed-input --jerk-weight 0.02 --aux-accel`,
+`rollout_k=4`. A fleet-wide search found only `pod2:/workspace/speed_input/stack/scripts/
+train_flagship4b.py` (Jul 14, 421 lines) — it carries `--jerk-weight` and `--rollout-k` but
+**still no `--aux-accel`**. ⇒ **No trainer on the fleet reproduces v1's launch.** The registry
+already warned this at `:177` (*"trained with a pod-side trainer that was never committed"*).
+
+⛔ **Therefore "fine-tune v1 with exactly one flag different" IS NOT ACHIEVABLE.** A fine-tune from
+HEAD would differ in **three** ways — `rollout_k` (intended) plus losing `jerk_weight=0.02` and
+`aux_accel` (unintended) — and any CR change could be attributed to the missing loss terms.
+
+### ⭐ THE FIX: make the CONTROL a matched fine-tune, not v1 itself
+
+| arm | start | trainer | `rollout_k` |
+|---|---|---|---|
+| **RR-CTL** (control) | v1 ckpt step 29,999 | HEAD `train_flagship4b.py` | **4** (v1's value) |
+| **RR-20** (treatment) | v1 ckpt step 29,999 | HEAD `train_flagship4b.py` | **20** (matched to the evaluated horizon) |
+
+⇒ **The jerk/aux difference is COMMON TO BOTH ARMS AND CANCELS.** The only difference between
+RR-CTL and RR-20 is `rollout_k`, which is precisely what the primary endpoint tests.
+
+⛔ **CONSEQUENCE THAT MUST TRAVEL:** the comparison is **RR-20 vs RR-CTL**, ⛔ **NOT RR-20 vs v1**.
+v1's published CR (3.50 / 15.16 / 64.21 / 80.77) is a **different training configuration** and may
+**not** be used as the control for this experiment. It remains the reference for *why* the
+experiment exists, not the arm it is measured against.
+
+⚠️ **Both arms lose `jerk_weight` and `aux_accel` relative to v1.** Neither is a deployable
+successor to v1; this is a **mechanism test**, and its checkpoints must not be promoted.
+
+**PRIMARY unchanged:** `CR_k` at k=4/8/16/20, paired episode-cluster bootstrap, interval on the
+DIFFERENCE, same 40-episode surface. **Success = RR-20's CR is lower than RR-CTL's with the CI
+excluding zero at k=16 and k=20.**
+
+**Length:** set from a MEASURED `step_s` over the first 200 steps of RR-20, not assumed. Both arms
+run the SAME number of steps — ⛔ an unequal-length comparison is not a comparison.
