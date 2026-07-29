@@ -1,5 +1,66 @@
 # PRE-REGISTRATION — rollout-recovery training (the fix E-CR indicated)
 
+> ## ⛔⛔ REVISED 2026-07-29 07:5x UTC — THE ORIGINAL EXPERIMENT WAS WRONG. READ THIS FIRST.
+>
+> **I registered "implement rollout-recovery". IT IS ALREADY IMPLEMENTED, AND v1 ALREADY USED IT.**
+>
+> **MEASURED, `train_worldmodel.py:58` — `_rollout_loss` IS the HorizonDrive mechanism, verbatim:**
+> *"Recursive K-step rollout: feed the 1-step prediction back into the window and predict again."*
+> ```python
+> z_hat = model.predictor(win_s, win_a)[1]
+> loss  = loss + (z_hat - fut_states[:, idx_of[j-1]]).pow(2).mean()
+> win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)   # ← prediction fed back
+> ```
+> It is gated on `K = cfg.train.rollout_k`, `if K > 1`.
+>
+> **MEASURED, `MODEL_REGISTRY.md:172,176` (the authoritative source for training args):**
+> v1 `flagship4b-speedjerk-30k` trained with **`--rollout-k 4`**.
+>
+> ⇒ ⭐ **ROLLOUT-RECOVERY AT K=4 DID NOT PREVENT THE COMPOUNDING.** E-CR measured CR
+> **3.50 / 15.16 / 64.21 / 80.77** at k=4/8/16/20 on that very arm.
+>
+> **Two facts fall straight out, and they reframe the question:**
+> 1. **K=4 covers 0.4 s of a 2.0 s evaluated horizon** — the model practises recovery over 4 steps
+>    and is then measured over 20, **5× beyond anything it ever trained on**.
+> 2. **CR is already 3.50 AT k=4 ITSELF** — so K=4 recovery does not even fix K=4.
+>
+> ⇒ **The question is NOT "does rollout-recovery work" but "does rollout_k MATCHED TO THE EVALUATED
+> HORIZON reduce CR?"** The revised design is §R below. ⛔ **I nearly spent ~4 GPU-days
+> re-implementing a mechanism that ships in the repo** — the same class as C63 (building on an
+> assumption never checked), caught this time *before* the GPU cost rather than after.
+>
+> ⛔ **AND THE FREE ANSWER IS NOT AVAILABLE.** `flagship4b-v2-30k` does run `rollout_k=12`, but it is
+> **ABANDONED at step 7,800** (v1 is 29,999) and `--v2` enables **ten levers at once**
+> (`ego_to_planners`, `fa_dropout 0.30`, `goal_decode`, `nav_dropout 0.5`, anchored tactical decoder…).
+> Comparing its CR to v1's would confound `rollout_k` with **nine other changes and with training
+> length**. It is not a control.
+>
+> ## §R — THE REVISED EXPERIMENT (supersedes the arms table below)
+>
+> **RR-FT: fine-tune v1's checkpoint with `rollout_k` RAISED TO MATCH THE EVALUATED HORIZON.**
+>
+> | | |
+> |---|---|
+> | **start** | v1 `flagship4b-speedjerk-30k` step 29,999 — **fine-tune, NOT from scratch** (registered per confound 1) |
+> | **change** | `--rollout-k 20` (matching E-CR's k=20). **EXACTLY ONE FLAG DIFFERS from v1.** |
+> | **length** | ~3–5 k steps, **not 30 k** — this tests the mechanism, it does not produce a deployable arm |
+> | **hardware** | **ONE A40 (pod3)**, per the PI's *"use just one gpu"*. eval stays free for C64-A |
+> | **cost** | ⚠️ **ESTIMATED, not measured** — the rollout loss is **20 sequential predictor calls per step** vs v1's 4, so step time will rise **materially**. Measure `step_s` over the first 200 steps and **report the real figure before committing to the full 5 k.** |
+>
+> **PRIMARY unchanged: CR_k at k=4/8/16/20**, paired episode-cluster bootstrap, interval on the
+> DIFFERENCE, same 40-episode surface. **Success = CR falls with CI excluding 0 at k=16 and k=20.**
+>
+> **New outcome registered, because it is now the most likely one:**
+> | outcome | reading |
+> |---|---|
+> | **CR falls at k≤20 but the run is much slower** | the fix works but costs compute — report the **step-time ratio** alongside, so the trade is visible |
+> | **CR unchanged at K=20** | ⭐ **compounding is NOT trainable away by horizon-matched recovery** — a strong, publishable negative that would redirect effort to the architectural levers (spectral/Koopman) rather than the training schedule |
+> | **CR falls only at k≤4** | recovery generalises no further than it trains — argues for K = the deployed horizon, always |
+>
+> ⚠️ **A fine-tune is NOT the same experiment as a from-scratch arm** and its result may not be
+> quoted as if it were. If RR-FT is positive, the from-scratch confirmation is a separate,
+> separately-registered run.
+
 **Written 2026-07-29 07:3x UTC, BEFORE any code was changed and before the run exists.**
 Both outcomes committed. PI authorisation: *"use just one gpu"* (2026-07-29) — proceed on a single
 A40 rather than wait for pod1's 8× A6000.
