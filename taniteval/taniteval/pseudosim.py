@@ -1572,8 +1572,49 @@ def composite(scores, ranges, *, weights=None, gates=("no_collision",),
     gate_state = {g: {"available": scores.get(g) is not None,
                       "reason": None if scores.get(g) is not None
                       else COLLISION_UNAVAILABLE_REASON} for g in gates}
+    # ⭐⭐ THE NAVSIM `filter_m` SEMANTICS — implemented BEFORE the gate goes live,
+    # because the "obvious" implementation is WRONG and would over-penalise every arm.
+    #
+    # EPDMS (NAVSIM v2 devkit, docs/metrics.md on `main`, MEASURED 2026-07-29 by fetching
+    # the devkit twice) is NOT `(prod gate) x (weighted mean)` over the agent's own scores:
+    #
+    #     EPDMS = (prod_{m in NC,DAC,DDC,TLC} filter_m) x (sum_m w_m filter_m / sum_m w_m)
+    #     filter_m(agent, human) = 1.0  if m(human) == 0  else  m(agent)
+    #
+    # ⇒ **AN AGENT'S ZERO DOES NOT ZERO THE SCORE ON SCENES THE HUMAN REFERENCE ALSO FAILS.**
+    # Implementing from the plain formula yields PDMS-v1 semantics and OVER-PENALISES arms.
+    # Third-party arithmetic corroborates the weight set: an EPDMS denominator of 16
+    # (=5+5+2+2+2) vs PDMS-v1's 12 (=5+5+2) is consistent only with these weights.
+    #
+    # ⛔ NOT YET ACTIVE — `human_scores` is None until the `obstacle.offline` chunks land and
+    # a HUMAN-REFERENCE rollout exists. This records the contract so the gate cannot be wired
+    # with the naive semantics by someone reading only the headline formula.
+    # ⚠️ A lane graph is NECESSARY BUT NOT SUFFICIENT for full EPDMS: it also needs the
+    # two-stage pseudo-closed-loop protocol, reactive background traffic, traffic-light state,
+    # and the human-reference rollout this filter consumes.
+    filter_m_contract = {
+        "rule": "filter_m(agent, human) = 1.0 if m(human) == 0 else m(agent)",
+        "applies_to": "BOTH the multiplicative gates AND the weighted-average terms",
+        "weights_epdms": {"ego_progress": 5, "ttc": 5, "lane_keeping": 2,
+                          "history_comfort": 2, "extended_comfort": 2},
+        "gates_epdms": ["no_collision", "drivable_area", "driving_direction",
+                        "traffic_light"],
+        "denominator_check": "sum(weights) == 16; PDMS-v1 is 12 — a 12 here means the "
+                             "extended terms were dropped and the metric is NOT EPDMS",
+        "status": "CONTRACT ONLY — no human-reference rollout exists yet, so this is NOT "
+                  "applied. Wiring the collision gate WITHOUT it reproduces PDMS-v1 and "
+                  "over-penalises every arm.",
+        "source": "NAVSIM v2 devkit docs/metrics.md (PUBLISHED, primary, fetched twice); "
+                  "see …/2026-07-29-deep-research-sota/DEEP_RESEARCH_2026-07-29.md §9.3",
+        "lane_graph_note": "NECESSARY BUT NOT SUFFICIENT — also requires the two-stage "
+                           "pseudo-closed-loop protocol, reactive traffic, traffic-light "
+                           "state, and a human-reference rollout.",
+        "lk_caveat": "NAVSIM disables Lane Keeping on intersections, where centreline "
+                     "annotations often do not match the actual lane markings.",
+    }
     return {
         "name": metric_id(term, rterm),
+        "filter_m_contract": filter_m_contract,
         "progress_term": term,
         "recovery_term": rterm,
         "_progress_term_warning": (
