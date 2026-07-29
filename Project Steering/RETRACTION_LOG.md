@@ -1004,3 +1004,48 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
      as an input arm — which is exactly where the comparison tilts.
   ⇒ **Before reporting "X beats the camera", ask whether X EXISTS in the same form at inference. A
   baseline built from a human's behaviour is not a baseline an autonomous system can stand on.**
+
+---
+
+## C61 — 2026-07-29 — quoting a decay SHAPE from an instrument that cannot separate the two causes
+
+**Root-cause class: REPORTING A MECHANISM WHEN THE MEASUREMENT ONLY SUPPORTS A MAGNITUDE.**
+(Sibling of the learning-exponent rule in `CLAUDE.md`: an exponent without its discriminating
+control is not admissible — here the missing control is not the fit window, it is the *baseline*.)
+
+**RETRACTED.** On 2026-07-29 I reported the pure-imagination sweep (v1, K=4/8/12/16/20, n=881 each)
+as showing that **"decay ACCELERATES — near-linear early, near-quadratic by 2 s"**, from a local
+exponent rising **1.03 → 1.63 → 1.87 → 1.91** (global OLS 1.456). The *numbers* stand and are
+MEASURED. **The interpretation does not.**
+
+**WHY IT IS WRONG.** ADE-vs-horizon confounds two distinct hypotheses that the sweep cannot separate:
+- **(a)** predicting 2 s ahead is intrinsically harder than 0.4 s ahead → the acceleration is
+  **task difficulty**, and no architecture change is justified;
+- **(b)** the rollout compounds its own error → **compounding is real**, and the indicated fix is
+  rollout-recovery *training*, not a larger horizon.
+
+Every number I reported is equally consistent with both. I named a mechanism ("the rollout degrades
+faster and faster") when the instrument measures only an envelope.
+
+**WHAT WAS MISSING.** A **teacher-forced arm at the same steps** — i.e. SkyJEPA's compounding ratio
+`CR_k = e_k,rollout / e_k,teacher-forced` (arXiv 2606.23444, verified 3-0), with the per-step growth
+term `ER_k = E[e_k − e_{k−1}]`. Without the teacher-forced denominator there is no way to tell
+"the task got harder" from "we compounded".
+
+**BLAST RADIUS.** Anywhere the phrase "decay accelerates" / "accelerating decay" was used to argue
+that the 2 s horizon cap is a *model* limitation:
+`…/incoming/2026-07-29-imagination-horizon/IMAGINATION_HORIZON.md` §7, commit `6a99f98`, and the
+chat reports of 2026-07-29. **The ADE table itself needs no correction.**
+
+**CORRECTION IN FORCE.** Quote the sweep as *"ADE grows super-linearly with horizon over 0.4–2.0 s;
+whether that is task difficulty or rollout compounding is UNRESOLVED pending CR_k"*. ⛔ Do not use
+the exponent rise to justify an architecture change until E-CR reports.
+
+**FIX, PRE-REGISTERED, ~0–6 GPU-h**: add a teacher-forced arm to `taniteval/taniteval/imagination.py`;
+re-score the SAME 40 val episodes both ways; report CR_k/ER_k at k=4/8/16/20 with the **paired
+episode-cluster bootstrap**. CR_k flat near 1 ⇒ (a), narrative FALSIFIED, no architecture change.
+CR_k rising super-linearly ⇒ (b), rollout-recovery training indicated.
+
+**SECOND-ORDER LESSON.** The confound was found by a literature survey, not by our own review — the
+same class as C57–C60. A control that a published instrument treats as mandatory is worth probing
+for **before** a result is written up, not after.
