@@ -1256,3 +1256,24 @@ wired" — which is the entire subject of this retraction.)*
 is **NOT exposed to this class**: `taniteval` is not importable there at all, `/workspace/TanitAD` is
 not a git repo on that host, and the v2corpus command carries **no `--heldout` flags**. Different
 trainer path entirely; the mixed-tree defect cannot reach it. **MEASURED, not assumed.**
+
+### ⚠️ STANDING HAZARD — pod2's tree is in a state no runbook covers
+
+Recording this because it survived the incident unchanged and is the *precondition* for a worse one:
+
+- **317 modified tracked files** under `/workspace/TanitAD`.
+- `taniteval/` is **entirely untracked** — outside version control, invisible to every sync recipe.
+- ⚠️ **The trainer that is running RIGHT NOW is itself untracked** (`train_flagship_v4.py` and
+  `heldout_gate.py`, both `??`). It exists on exactly one disk.
+
+⇒ **pod2 is one careless `git` command away from losing the v5 trainer.** A `git clean -fd`, a
+`checkout .`, or the `reset --hard` the classifier blocked would each delete it. The recovery this
+session worked *because* nothing was reset — not because the tree is sound.
+
+⛔ **Do NOT reconcile this during an incident.** The correct time is **after v5 finishes**, as a
+deliberate operation: copy the untracked trainer files off first, diff the 317 modifications to
+separate real work from drift, then decide what to commit and what to discard. Attempting it while a
+4.6-day run is in flight trades a known-working state for an unknown one under time pressure.
+
+*(This is the same shape as the stranding rule — "an artifact on one disk is NOT done" — but applied
+to the tooling rather than the results, which is why it went unnoticed for so long.)*
