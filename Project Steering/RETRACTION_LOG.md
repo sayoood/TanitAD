@@ -1277,3 +1277,62 @@ separate real work from drift, then decide what to commit and what to discard. A
 
 *(This is the same shape as the stranding rule — "an artifact on one disk is NOT done" — but applied
 to the tooling rather than the results, which is why it went unnoticed for so long.)*
+
+---
+
+## C66 — 2026-07-29 — MY C65 FIX DID NOT WORK, and "verified by import" verified the wrong thing
+
+**Root-cause class: VERIFYING A FIX THROUGH A PATH THE FAILING CODE DOES NOT USE.**
+(C65's own rule said *"verify the entire import surface before a long launch"*. I did verify an
+import — **just not the one the gate performs.**)
+
+**WHAT HAPPENED.** v5 was relaunched 05:48 with `PYTHONPATH=…/stack:/workspace/tev/taniteval`.
+At **09:21** it reached step 2000 and died with the **byte-identical** error:
+`TypeError: score_windows() got an unexpected keyword argument 'recovery_term'`.
+**A second ~3.5 h burned on the same 1000→2000 stretch (~7 h total).**
+
+⛔ **WHY THE FIX WAS DEFEATED — `heldout_gate._taniteval()` IGNORES `PYTHONPATH`:**
+```python
+def _taniteval():                                   # heldout_gate.py:196
+    repo = Path(__file__).resolve().parents[3]      # -> /workspace/TanitAD
+    for p in (repo / "taniteval", repo / "stack"):
+        if p.is_dir() and s not in sys.path:
+            sys.path.insert(0, s)                   # ← POSITION 0 BEATS PYTHONPATH
+```
+It derives the repo from **its own file location** and force-inserts `/workspace/TanitAD/taniteval`
+— the **stale Jul-27 tree** — at the **front** of `sys.path`. My `PYTHONPATH` entry was never
+consulted. **The environment cannot fix a path the code hard-derives.**
+
+⚠️ **AND MY VERIFICATION WAS VACUOUS.** I ran a bare `import taniteval.pseudosim` under the new
+`PYTHONPATH` and saw the Jul-28 file — true, and **irrelevant**, because a plain import is not what
+the gate does. I never called `_taniteval()` itself. **A fix verified through a different code path
+than the failure is not verified.**
+
+**THE ACTUAL FIX.** Replace the tree **at the path the resolver forces**. The two trees are not
+interchangeable file-for-file — current has **46** modules, stale **43**, and `pseudosim.py` is
+94,413 B vs 48,548 B — so swapping one file could break imports the newer file needs.
+- `mv /workspace/TanitAD/taniteval → taniteval.stale-20260729-C65` (**PRESERVED, not deleted**)
+- `cp -a /workspace/tev/taniteval → /workspace/TanitAD/taniteval`
+- `taniteval/` on pod2 is **untracked**, so no git state was disturbed.
+
+✅ **VERIFIED THROUGH THE FAILING PATH THIS TIME — two checks, not one:**
+1. **The resolver:** `hg._taniteval()` → `/workspace/TanitAD/taniteval/taniteval/pseudosim.py`,
+   `score_windows` signature **contains `recovery_term`**.
+2. ⭐ **The CALL SITE:** invoked `ps.score_windows(pw, progress_term=term, recovery_term=rterm)`
+   with `term/rterm` read from `heldout_gate` itself. **The `TypeError` is GONE** — it now fails with
+   `KeyError: 'traj'`, which is my synthetic `pw` lacking a real trajectory field. **Reaching the
+   inside of the function is the proof.**
+
+**RULES ADOPTED.**
+1. ⇒ **Verify a fix by exercising THE FAILING CALL SITE, not an analogue.** "The import resolves" is
+   not "the gate's import resolves"; "the module loads" is not "the function accepts these kwargs".
+2. ⇒ **Suspect hard-derived paths before blaming the environment.** `Path(__file__).parents[N]` and
+   `sys.path.insert(0, …)` silently outrank `PYTHONPATH`. **Grep for them before assuming an env var
+   will land.**
+3. ⇒ **When a fix fails, re-diagnose from zero.** I re-applied the same class of fix (a path change)
+   rather than asking *why* the path change had not taken. The second failure was avoidable.
+
+⚠️ **STILL UNPROVEN IN PRODUCTION.** v5 relaunched **09:23:17Z**, resumed from `ckpt.pt` @1000,
+running 5 procs / GPU 100 % / stderr empty. **The gate fires again at step 2000 (~3.5 h).** The
+call-site test raises confidence sharply but is **not** the production probe. ⛔ Do not record C66 as
+closed until step 2000 is passed.
