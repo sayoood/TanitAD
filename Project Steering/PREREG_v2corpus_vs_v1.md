@@ -84,3 +84,83 @@ carries the canonical val. ⛔ Do not run it on a pod that is training.
 | v1's 0.4271 / 0.4108 | **MEASURED**, registry §1.2a |
 | the epoch counts (4.73 vs ~1.25) | **MEASURED / ESTIMATED** — 4.73 is from the corpus profile; the v2 figure is derived from clip count and must be recomputed from the actual v2 window count before quoting |
 | everything about the outcome | **UNKNOWN — the run is at step 25,750 and no comparison has been computed** |
+
+
+---
+
+## AMENDMENT 2026-08-01 — ⛔ THIS IS NOT A CORPUS CONTRAST. IT IS CORPUS **+ THE ENTIRE `--v2` LEVER PACK**.
+
+**Found while preparing the eval, BEFORE any number existed** — the same mandatory pre-flight check
+that caught C64. The pre-registration above registers the **epoch** confound and the
+**size-vs-balance** confound, and licenses the claim *"the v2 corpus, which differs in both size and
+balance, produced X."* **That claim is still too strong**, because the two arms differ by far more
+than the corpus.
+
+### MEASURED — the two exact commands
+
+| | v1 `flagship4b-speedjerk-30k` | v2corpus `flagship-v2corpus-30k` |
+|---|---|---|
+| source | `MODEL_REGISTRY.md` §1.2 "Exact command" | `newpod:/workspace/run_v2corpus.sh` line 24-30 |
+| corpus | parity `physicalai-train-e438721ae894` (2,376 eps, ~13 h) | `physicalai-v2bal-4b7eeeac222d` (9,000 clips, 49.742 h) |
+| **`--v2`** | ⛔ **ABSENT** | ✅ **PRESENT** |
+| `--rollout-k` | **4** (explicit) | **not passed** |
+| `--speed-input` | explicit | implied by `--v2` |
+| `--jerk-weight 0.02` | explicit | included in the `--v2` pack |
+| `--aux-accel` | explicit | ⚠️ **not listed in the `--v2` pack — unresolved** |
+
+### What `--v2` actually turns on
+
+`stack/scripts/train_flagship4b.py:651-656` documents the pack verbatim:
+*ego->planners + ego-dropout 0.25 + fa-dropout 0.3 + goal-decode + nav-dropout 0.5 + jerk 0.02 +
+gated-intent + anchor-tactical + speed-input; defaults rollout-k to 12 if unset.*
+
+Plus, in the same configuration block:
+
+- `:302-303` — `if args.v2 and args.rollout_k is None: cfg.train.rollout_k = 12`
+  => **v2corpus trained at rollout_k 12, v1 at rollout_k 4.**
+- `:285` — `cfg.v2_invdyn_gradscale = 0.25` (default 1.0)
+- `cfg.v2_labels` — the v2 LABEL gate, not overridden (`--no-labels-v2` absent)
+
+### Why this matters more than the confounds already registered
+
+⭐ **`rollout_k` is not a neutral knob here — it is the exact quantity E-CR just proved matters.**
+E-CR returned **H-COMPOUND** (CR 3.50 -> 80.77, teacher-forced arm flat), and the whole RR-20 /
+RR-CTL experiment now running exists to measure what changing rollout_k does. v2corpus has
+**k=12 vs v1's k=4** baked in. So a v2corpus-vs-v1 delta partly measures the *same lever*
+RR-20/RR-CTL is measuring in isolation — on a different corpus, with eight other levers moving.
+
+### ⛔ REVISED admissible claim
+
+**Not** *"the v2 corpus produced X"*. The only admissible statement is:
+
+> *"The v2-line arm — which differs from v1 in corpus (3.8x data, manoeuvre-balanced), in
+> `rollout_k` (12 vs 4), and in the whole `--v2` lever pack (ego-dropout, fa-dropout, goal-decode,
+> nav-dropout, gated-intent, anchor-tactical, invdyn-gradscale 0.25, v2 labels) — produced X."*
+
+⛔ **No outcome of this experiment can validate or refute "corpus work is a lever."** The outcome
+row in the table above that reads *"Corpus work is validated as a lever"* is **hereby struck** —
+it was never separable, and a positive result would be attributed to the corpus purely by
+association.
+
+### What would make it a real corpus contrast
+
+A **lever-matched** control: the v2bal corpus trained with **v1's flags** (`--speed-input
+--jerk-weight 0.02 --aux-accel --rollout-k 4`, no `--v2`), or equivalently v1's corpus trained with
+`--v2`. Either isolates one axis. Neither exists today. ⇒ **that arm is the experiment that
+answers the corpus question**, and it should be costed before more v2-line training.
+
+### Status of the other constraints — UNCHANGED and still binding
+
+- **C64 still binds**: 21 of the 40 canonical val episodes are inside v2corpus's training corpus.
+  Headline on the **19 leak-free** episodes, `leak_free_n = 19`, **v1 re-scored there**.
+- Estimator: **paired episode-cluster bootstrap** (`taniteval/ci.py`). Never `overlapping_holdout_se`.
+- `wm_fidelity_ade_2s` is **fidelity, not a planning bar**.
+
+### Evidence class
+
+| claim | class |
+|---|---|
+| both exact commands, flag by flag | **MEASURED (ours)** — registry §1.2 + the launcher read off the pod 2026-08-01 |
+| `--v2` sets `rollout_k = 12` | **MEASURED** — `train_flagship4b.py:302-303`, read directly |
+| the lever list | **MEASURED** — the `--v2` help string, `:651-656` |
+| `--aux-accel` parity between the arms | ⛔ **UNRESOLVED** — not in the `--v2` help text; must be settled before the write-up |
