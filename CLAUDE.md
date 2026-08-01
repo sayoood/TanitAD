@@ -224,3 +224,37 @@ implementing X"* and no implementation followed.
 
 *(Same class as "A report is not a launch": when an agent files, refill the pod in the SAME turn
 before writing the summary.)*
+
+
+## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
+
+**Sayed, verbatim, after asking repeatedly:** *"Despite I told you many times, don't consider only
+ADE at the different horizons, you are still doing this and ignoring the other metrics I requested.
+So we will make it now very formal: I want you to ADD (not replace) ... Any future eval must include
+these metrics and this is binding."*
+
+**ADE stays. These are ADDED to it. An eval that reports ADE alone is INCOMPLETE and must not be
+presented as a result.**
+
+| family | must report | why it is not optional |
+|---|---|---|
+| **LONGITUDINAL** | target-speed accuracy **and distance-keeping** (headway / time-gap / TTC to the lead agent) | 88.7 % of our oracle gap is longitudinal. ADE hides it — an arm can win ADE while setting the wrong speed. |
+| **LATERAL** | heading error, **curvature error, yaw-rate error**, cross-track | "lateral is fine" has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up. |
+| **TACTICAL** | manoeuvre-decision quality **and tactical goal-setting** (selected vs executed manoeuvre, confusion over the classes, goal/anchor selection) | the 5-way softmax that MIXES lat+lon is our single largest known defect; a scalar ADE cannot see a decision error. |
+| **STRATEGIC** | strategic decision + goal/route setting quality | the hierarchy is the programme's thesis. If we never measure the strategic level we cannot claim it works. |
+
+**Rules that travel with them:**
+
+1. **Per-family, never pooled into one score.** A single composite hides exactly the trade-off we
+   are trying to see.
+2. Each family carries its **estimator** (paired episode-cluster bootstrap) and its **CI**, on the
+   same windows as the ADE it accompanies.
+3. **A missing metric is a work item, not an excuse.** If a family has no instrument, implement it —
+   do not report the eval as complete with the family absent.
+4. ⛔ **Never present a horizon sweep of ADE as "the result".** It is one row of four families.
+5. Where a family genuinely cannot be computed (no lead agent in frame, no route label), say so
+   **per family with the reason and the n**, rather than silently dropping it.
+
+*(Root cause this rule exists: ADE is the cheapest number to produce and the easiest to compare, so
+it crowded out the metrics that actually decide whether the car drives well. Three separate reports
+went out with ADE-only tables after this was requested.)*
