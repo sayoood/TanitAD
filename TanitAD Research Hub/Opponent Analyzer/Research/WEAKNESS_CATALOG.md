@@ -5,10 +5,44 @@
 > status** (with the Thursday Benchmarks&Eval agent), **training-data recipe** (H6 pipeline).
 > An entry with no counter is marked `no-counter-yet` (a strategy gap for the Orchestrator).
 > Created 2026-07-17 (v1). Newest / highest-priority first.
-> Last delta: **run #4 (narrative 2026-08-07; real wall-clock 2026-07-20)** — new **W-10**; **W-09 now
-> cross-operator** (Zoox smoke recall); W-04 gains a second operator; W-08 → first MEASURED number.
+> Last delta: **run #5 (2026-08-02 — real date; the narrative clock is RETIRED, see STATE.md)** — new
+> **W-11** (missing exposure denominator); **W-09 escalates from regulator letter to draft STATUTE** and
+> its deadline **lapsed with no public fix while the field kept scaling**; **W-05 wedge re-verified open**
+> (Alpamayo 2 Super still publishes no params-vs-benchmark table); **W-10 gains a second instance**;
+> **W-08 gets its second measurement — and this one is decisive.**
 
 ---
+
+## W-11 — No exposure denominator: safety claims that cannot be falsified  ★ (new, run #5)
+
+- **Mechanism (INFER):** the field reports **incident counts without exposure**. Operators publish crash
+  and disengagement *numerators* but not the miles, hours or trips that would turn them into a **rate**,
+  and there is no agreed standard for which incidents must be reported at all. The consequence is
+  structural, not rhetorical: **no external party can compute or refute a safety claim**, and the
+  reporting asymmetry runs the wrong way — AV operators log many minor events that human drivers never
+  report, so the raw counts flatter neither side honestly. A field whose headline claims are
+  unfalsifiable rewards narrative over measurement, which is precisely the ground we want to fight on.
+- **Evidence (FACT):** the **Insurance Institute for Highway Safety**, quoted 2026-07-31: most AV
+  companies **"don't report how many miles their autonomous vehicles drove, which makes it impossible to
+  calculate a crash rate,"** and there is **no clear standard for which incidents must be reported**;
+  AV firms report **many more minor incidents** than human drivers, who report mainly damage/injury
+  crashes. Reported in the coverage of the Zoox commercial exemption.
+  — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- **Evidence (FACT, converging):** the **CA DMV is retiring the disengagement metric** (see W-07), i.e.
+  the one published denominator-bearing series in the field is being withdrawn rather than fixed.
+  — https://www.dmv.ca.gov/portal/vehicle-industry-services/autonomous-vehicles/disengagement-reports/
+- **TanitAD counter — this is the weakness where we are *already* strongest (H0, and P8 as method):**
+  every number this program publishes carries its **denominator, its estimator and its evidence class**:
+  n=881 windows over 40 held-out episodes; a **pre-registered gate card with both outcomes committed
+  before the run**; the **episode-cluster bootstrap** as the decision-grade interval (and a written
+  retraction of the `overlapping_holdout_se` block that biased point estimates by −6.7 %…+11.7 %); an
+  **honest kinematic floor** (best-of-3 CV/CTRV) as the denominator for every capability claim; and an
+  append-only `RETRACTION_LOG.md` keyed by root-cause class. **The counter is not a feature, it is the
+  operating standard** — which means it is also the cheapest moat to *demonstrate* and the easiest to
+  lose by one loose sentence.
+- **Scenario-spec status:** n/a — non-scenario (narrative/measurement). **Story beat** for the vision
+  deck and the paper's evaluation section; pairs with W-07.
+- **Training-data recipe (H6):** n/a.
 
 ## W-10 — Fleet-scale mission / energy / network-disruption blindness  ★ headline (new, run #4)
 
@@ -27,6 +61,12 @@
   — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/
   , https://abc7news.com/post/waymo-fleet-clogs-presidio-july-4-fireworks-leaving-vehicles-stranded-towed/
   (Prior family evidence: Cruise mass stall, SF June 2022, ~20 vehicles.)
+- **Run-#5 delta — a SECOND large-N instance, different trigger (FACT):** a **December power outage left
+  dozens of Waymo vehicles stranded**, reported alongside the July 4 event in the same coverage. Two
+  independent triggers (a crowd-egress/road-closure event and a grid failure) producing the same terminal
+  state moves this from "one bad night" toward a **repeatable class**, and the second trigger is
+  *infrastructure*, not traffic — nothing in a per-vehicle driving benchmark can surface it.
+  — https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
 - **TanitAD counter — PARTIAL, honestly `no-counter-yet` for the fleet dimension:** our **strategic
   brain** (H1 hierarchy) is the only layer in our architecture that *could* own mission-scale
   feasibility — route/energy/closure memory and re-planning — and the hierarchical design intends it.
@@ -69,6 +109,26 @@
 - **Run-#4 correction (FACT, P8):** the end-of-July deadline is for companies to **present fixes in
   meetings**, **not** to have fixes deployed. Do not overstate it in the vision deck.
   — https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
+- **Run-#5 delta — THE DEADLINE LAPSED, AND THE FIELD SCALED ANYWAY (FACT):** the NHTSA deadline expired
+  **2026-07-30 with no public resolution**. On that same day NHTSA **granted Zoox a commercial exemption**
+  to charge for rides in a vehicle with **no steering wheel, no pedals and no driver's seat** — the first
+  such US authorization for a purpose-built AV — for **up to 2,500 vehicles over two years** (published in
+  the Federal Register **2026-07-31**). Read plainly: **the regulator's capability finding and the
+  regulator's market authorization are running on independent tracks.** Do not narrate this as "the
+  regulator is closing in"; narrate it as **the weakness is documented, unfixed, and no longer a barrier
+  to scale** — which raises, not lowers, the value of being the stack that can *demonstrate* the
+  capability. — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- **Run-#5 delta — ESCALATION FROM LETTER TO DRAFT STATUTE (FACT):** Rep. **Kevin Mullin (D-Calif.)**
+  introduced the **"AV Emergency Response Coordination Act"** (week of **2026-07-28**): mandatory
+  emergency protocols for first responders, a **24-hour hotline** for public officials,
+  **NHTSA-developed minimum standards**, and — the operationally significant one — **authority for cities
+  to geofence AVs during emergencies**. SF Fire Chief **Dean Crispen** cites robotaxis blocking fire
+  stations and ambulance facilities; Mayor **Daniel Lurie**: residents must trust that "our police and
+  fire departments can reach them in an emergency." **INFER:** a *geofencing* remedy is an admission that
+  the in-vehicle capability is not expected soon — it routes around the stack rather than fixing it. A
+  vehicle that can **detect and clear an emergency corridor on its own** is therefore worth more than the
+  compliance checkbox, and that is exactly what SC-06 measures.
+  — https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
 - **TanitAD counter:** **H15** imagines the emergency-scene actors + hazard field (flares/cones/personnel)
   before classification; **H11** self-monitoring flags the non-nominal scene as OOD → **A9 fallback**
   degrades to yield / clear-the-corridor rather than rule-literal continuation; **H9** exception-handling
@@ -189,6 +249,17 @@
   hard on Orin/Thor-class compute, poor compute-normalized efficacy.
 - **Evidence (FACT):** Alpamayo 2 Super = **32 B VLA**; Wayve GAIA-3 = **15 B** (offline eval); both
   scale-first. — https://nvidianews.nvidia.com/news/alpamayo-autonomous-vehicle-development , https://wayve.ai/thinking/gaia-3/
+- **Run-#5 re-verification — THE WEDGE IS STILL OPEN, checked at the primary source (FACT):** NVIDIA's
+  own Alpamayo 2 technical post (launched **GTC Taipei 2026-06-01**; weights "summer 2026") states a
+  **32 B VLM backbone, "3× the number of parameters as prior Alpamayo models"** and claims
+  "state-of-the-art performance in multiple aspects" — **with no benchmark table, no latency figure and
+  no compute number of any kind, and no Nano tier reported at all.** This is the third consecutive run
+  the check has come back the same way, and it is now checked against NVIDIA's own text rather than
+  press coverage. **A 3× parameter increase announced with zero compute-normalized evidence is the
+  cleanest possible statement of the gap CNCE exists to fill.** New companion releases to track:
+  **AlpaGym** (open-source high-throughput **closed-loop RL** framework, GRPO, single-GPU→multi-node) and
+  quantization scripts "coming soon" — the quantization work is the first sign NVIDIA itself expects the
+  32 B number to be a deployment problem. — https://huggingface.co/blog/nvidia/nvidia-alpamayo-2
 - **TanitAD counter:** **H1/H3/H5** (hierarchical ~261 M model, data-efficient, real-time on Orin) proven
   by **CNCE** (compute-normalized causal efficacy). Our ~261 M-on-Orin vs 32 B-on-car is the wedge.
 - **Scenario-spec status:** metric-only (CNCE) — no scenario needed. **Recommendation:** competitor param
@@ -214,6 +285,9 @@
   "safety-relevant event" metrics. — https://www.dmv.ca.gov/portal/vehicle-industry-services/autonomous-vehicles/disengagement-reports/
 - **TanitAD counter:** **H0 / narrative** + our closed-loop, regulation-native custom metrics
   (LAL/TMS/OKRI/CNCE/LOPS) designed from day one (Benchmarks&Eval, D-007).
+- **Run-#5 delta:** the deeper version of this weakness now has its own entry — **W-11**, the missing
+  **exposure denominator** (IIHS, 2026-07-31). W-07 = the published metric is gameable; W-11 = for most
+  operators there is no publishable rate at all. Quote them together or not at all.
 - **Scenario-spec status:** n/a. **Story beat** for the vision deck / Orchestrator.
 - **Training-data recipe (H6):** n/a.
 
@@ -259,6 +333,50 @@
 ---
 
 ### Watch-list (not yet weaknesses — competitive-narrative risks)
+
+- **⚠ Orbis 2 — "A Hierarchical World Model for Driving" (arXiv 2607.15898, 2026-07-17, Mittal /
+  Mousakhan / Galesso / Farid / Dienert / Sahay / **Thomas Brox**, LMB Freiburg) — FACT. ★★ THE SHARPEST
+  DIFFERENTIATION RISK NOW, AHEAD OF HWM.** Two-level hierarchy: a **high-level predictor that forecasts
+  coarse scene structure over extended temporal horizons** + a **low-level generator producing detailed
+  predictions conditioned on the high-level output**; evaluated on a standard driving-world-model suite
+  with **steering responsiveness on counterfactual scenarios**. **Why it outranks HWM:** HWM's
+  planning-time hierarchy was on manipulation/maze; **Orbis 2 is hierarchy in DRIVING, from a top-tier
+  vision group.** "A hierarchical world model for driving" is, verbatim, the sentence our H1 story opens
+  with.
+  **What is still ours (INFER, from the abstract — needs the Architecture deep-read to confirm):** the
+  hierarchy is **representational/temporal, not planning-time** — two abstraction levels of *prediction*,
+  with **no planner selecting over imagined futures in the loop**; **no parameter count and no compute
+  figure published**; **no self-monitoring / OOD guarantee**. So our four-way combination
+  (planning-time hierarchy **×** in-loop imagination **×** self-monitoring **×** a published
+  compute-normalized number, **on driving**) is still unoccupied — but it is now being squeezed from two
+  sides at once: **HWM owns planning-time hierarchy off-driving; Orbis 2 owns hierarchy on-driving.**
+  ⇒ **The differentiator is no longer "hierarchy". It is "hierarchy that a planner USES, with a number
+  attached."** Every deck sentence that says "hierarchical world model" without those qualifiers is now
+  a claim two published papers can answer. **Architecture & Inference deep-read: top priority, ahead of
+  SGDrive; confirm planning-time vs representation-only and hunt for a param count.**
+  — https://arxiv.org/abs/2607.15898
+- **⚠ CheckVLA — "Execution-Time Verification with an Action-Conditioned World Model" (arXiv 2607.26789,
+  2026-07-29) — FACT/INFER.** Uses an action-conditioned world model to **verify policy execution at run
+  time and replan when deviations exceed a threshold**. That is the mechanism of **our H11 self-monitoring
+  + A9 fallback**, published (on VLA/robotics, not driving). Together with Orbis 2 this erodes **two** of
+  the four moat pillars in one fortnight. **Not yet a driving result and no guarantee claimed** — the
+  "with guarantees" half of H11 is still ours. Watch for a driving instantiation.
+  — https://arxiv.org/abs/2607.26789
+- **Field scan, run #5 (FACT) — the latent-WM literature is now working on our exact instruments.**
+  From the recency-first listing scan (D-028), all late-July 2026: **Temporally Centered SIGReg**
+  (2607.26924 — SIGReg applied to temporally centred residuals to stop representation aliasing across
+  tasks; **SigReg is our own anti-collapse method**, so this is a direct read for the stack);
+  **"What Can Latent World Models Know? Physical Parameter Identifiability"** (2607.27017 — a
+  certificate-gated protocol for *which physical quantities enter the latent*, i.e. a principled version
+  of our speed-decodability probes); **ODEWorld** (2607.27924 — continuous latent velocity fields,
+  explicitly targeting "representation collapse in latent world models"); **Temporal-Distance JEPA**
+  (2607.25337 — directed temporal cost for plan-aware JEPA representations without test-time search);
+  **DriftWorld** (2607.15065 — single-forward-pass rollouts at **30+ fps, 17× faster than diffusion**)
+  and **GigaWorld-Policy-0.5** (2607.13960 — action-only inference, **85 ms** latency) on the efficiency
+  axis; driving-specific **GeoWorldAD** (2607.17521) and **M⁴World** (2607.14005, multi-view+LiDAR,
+  minute-long streaming). **Seam routing (D-028):** SIGReg + identifiability + ODEWorld → Architecture &
+  Inference; DriftWorld + GigaWorld latency → Production & Optimization; nothing here is a benchmark
+  release, so Benchmarks & Eval takes none of it.
 - **HWM — "Hierarchical Planning with Latent World Models" (arXiv 2604.03208, run #4, FACT) ★ the
   sharpest differentiation risk to date.** Deep-read this run. Learns world models at **multiple
   temporal scales in a shared latent space**; the long-horizon model's predictions become **subgoals

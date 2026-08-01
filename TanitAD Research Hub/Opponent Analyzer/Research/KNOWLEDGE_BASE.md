@@ -4,6 +4,101 @@
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
 
+> **Dating note (run #5):** the discipline's *narrative clock* is **retired**. Entries from run #5 on
+> carry the **real** date. Rows dated 2026-07-24 / 07-31 / 08-07 were written on narrative dates by runs
+> #2/#3/#4 whose real wall-clock was 2026-07-09 / 07-17 / 07-20 — so a run-#5 row dated **2026-08-02**
+> is NEWER than a run-#4 row dated 2026-08-07. **Order by run number.**
+
+- [2026-08-02 · run #5] [TanitAD / eval pod] **MEASURED — SC-13 RESOLVED, and the open-loop probe is
+  RETIRED.** flagship v1, 40-ep PhysicalAI val, **stride 1 → 6,444 anchors, n=44 BRAKE_FAR over 15
+  episodes**. Run #4 **reproduced to three decimals** on the recoverable stride-2 subset. Speed-matched:
+  held **0.736** · frozen **0.723** · blind **0.672** · shuffled **0.634** · reactive **0.455**.
+  **F-A (volume) did NOT fire** — `held − reactive` **+0.281**, episode-cluster CI [+0.009, +0.562] ⇒
+  run #4's positive was **not** noise. **But the survival condition FAILS:** `held − blind` and
+  `held − shuffled` CIs **include 0** ⇒ **vision attribution not established.** **The decomposition is
+  the finding: ≈64 % of the gap survives with the scene DESTROYED** (a real window from a *different
+  episode*), ≈32 % is the correct **static** scene, ≈5 % is motion ⇒ **a static-frame + ego-kinematic
+  property, NOT a rolled-forward consequence.** ⚠️ On run #4's **anchor-level** bootstrap this would
+  have read "confirmed"; the **episode-cluster** estimator flips it (44 events, 15 episodes) — same
+  class as the `overlapping_holdout_se` retraction, caught pre-publication — impact: **H15 open-loop
+  form weakened further; the closed loop is now the only remaining test**; the `D = CV_fwd − pred_fwd`
+  monitor recommendation **survives with a rewritten rationale** (real vs a naive decel floor, but not
+  vision-driven, and unproven vs a plain ego feature) — see `2026-08-02-opponent-sweep-run5.md` §1,
+  substrate banked at `Implementation/sc13-real-probe/results/sc13_v1_stride1_windows.pt`
+- [2026-08-02 · run #5] [TanitAD / intake] **MEASURED — the scenario pipeline is stalled, not slow.**
+  `ls stack/tanitad/eval/scenarios/` contains only `work_zone_phantom.py` + `traffic_light.py`.
+  **SC-04 (11 tests, run #2), SC-13 (14, run #3) and SC-06 (16, run #4) are all still in
+  `Implementation/incoming/` with UNFILLED orchestrator-verdict blocks** — oldest for three runs. All
+  three **re-verified green today: 41/41** (py3.13.5, numpy 2.5.1, CPU, <0.15 s each) — impact: **H6
+  DoA corrected 45 % → 35 %**; the binding blocker on H6 is **intake triage, not the renderer**; and it
+  re-weights my own backlog toward measurement over authoring a fifth package into a stalled queue
+- [2026-08-02 · run #5] [Momenta/KBA] **FACT — and it RETRACTS one of our own inferences.** Momenta won a
+  **Germany-wide Level-4 testing approval from the KBA** (**2026-07-29**), says it is the **first Chinese
+  firm** to hold one, underpinning its **Munich** robotaxi plan; **Uber increased its stake** the same
+  week; it also confirmed **robovans in Suzhou** (07-27). ⛔ This **falsifies run #3's INFER** that "EU
+  political resistance to Chinese key-tech" was an EU-market-access weakness for Momenta/Pony we could
+  turn into a wedge — impact: **delete that framing from every deck**; root-cause class *single-source
+  geopolitical INFER promoted to a market-structure conclusion* → `RETRACTION_LOG.md` — https://cnevpost.com/2026/07/29/momenta-cleared-test-robotaxis-across-germany/
+- [2026-08-02 · run #5] [Zoox/NHTSA] FACT — **the regulatory bottleneck came off while the capability gap
+  stayed open.** NHTSA **granted Zoox a commercial exemption 2026-07-30** (Federal Register **07-31**) to
+  **charge for rides** with **no steering wheel/pedals/driver's seat** — the **first US authorization of
+  its kind for a purpose-built AV** — **up to 2,500 vehicles over two years**; **the same day** the NHTSA
+  first-responder deadline **expired with no public resolution**, and six weeks after Zoox's own smoke
+  recall — impact: **W-09 strategic read inverts.** Our story may **not** be "the regulator will stop
+  them"; it must be "**the capability is worth more than the exemption**", proven on SC-06/SC-13 — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- [2026-08-02 · run #5] [US Congress/NHTSA] FACT — **W-09 escalates from regulator letter to draft
+  statute**: Rep. **Kevin Mullin (D-Calif.)** introduced the **"AV Emergency Response Coordination Act"**
+  (week of **2026-07-28**) — first-responder protocols, **24 h hotline**, NHTSA **minimum standards**,
+  and **city authority to geofence AVs during emergencies**. Same coverage adds a **second** fleet-stall
+  instance (a **December power outage stranded dozens of Waymos**) — impact: **W-09 + W-10**; **INFER:**
+  a *geofencing* remedy concedes the in-vehicle capability is not expected soon, which is precisely the
+  gap SC-06 measures — https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
+- [2026-08-02 · run #5] [arXiv/LMB Freiburg] **FACT/INFER — ★ the sharpest differentiation risk to date,
+  ahead of HWM: `Orbis 2: A Hierarchical World Model for Driving`** (**2607.15898**, 2026-07-17, Mittal
+  et al., **Brox** group). Two-level: **high-level predictor of coarse scene structure over extended
+  horizons** + **low-level generator conditioned on it**; standard driving-WM suite + counterfactual
+  steering-responsiveness. HWM was hierarchy off-driving; **this is hierarchy ON driving.** Still ours
+  (INFER, abstract-level): **representation/temporal hierarchy, not planning-time — no planner selecting
+  over imagined futures**; **no params, no compute figure, no self-monitoring** — impact: **H1 must never
+  again be pitched as "hierarchy"; the claim is "hierarchy a planner USES, with a number attached."**
+  Architecture deep-read **top priority, ahead of SGDrive** — https://arxiv.org/abs/2607.15898
+- [2026-08-02 · run #5] [arXiv] FACT/INFER — **our second moat pillar is also being published**:
+  **CheckVLA** (**2607.26789**, 07-29) uses an **action-conditioned world model to verify execution at
+  run time and replan on deviation** — the mechanism of **H11 self-monitoring + A9 fallback**, on
+  VLA/robotics rather than driving and **without a guarantee claim**. Field scan also shows the
+  literature working on our own instruments: **Temporally Centered SIGReg** (2607.26924 — *our*
+  anti-collapse method), **latent-WM physical-parameter identifiability** (2607.27017 — a principled
+  form of our speed-decodability probe), **ODEWorld** (2607.27924, representation collapse),
+  **Temporal-Distance JEPA** (2607.25337), and on efficiency **DriftWorld** (2607.15065, 30+ fps, 17×
+  faster than diffusion) + **GigaWorld-Policy-0.5** (2607.13960, **85 ms**) — impact: H11/H1 narrative;
+  seam routing → Architecture (SIGReg, identifiability, ODEWorld), Production & Opt (DriftWorld,
+  GigaWorld) — https://arxiv.org/abs/2607.26789
+- [2026-08-02 · run #5] [NVIDIA, primary source] FACT — **W-05 wedge re-verified OPEN, third consecutive
+  run, this time from NVIDIA's own technical post rather than press:** Alpamayo 2 Super = **32 B VLM
+  backbone, "3× the parameters of prior Alpamayo models"**, +360° surround, +Meta-Action, claiming
+  "state-of-the-art … reasoning quality, trajectory accuracy, alignment" — **no benchmark table, no
+  latency, no compute number, no Nano tier**; weights "**summer 2026**". Also **quantization scripts
+  "coming soon"** and **AlpaGym** released — an open-source high-throughput **closed-loop RL** framework
+  (GRPO, stated **single-GPU → multi-node**). ⚠️ **AlpaGym is NOT new to this program** — Tools & DevEnv
+  logged *"AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM)"* on **2026-07-06** (`PROJECT_STATE.md` §5);
+  what is new is the release + the **single-GPU** claim, which **contradicts the 40–60 GB figure on
+  record** and makes it re-testable on our **A40 48 GB** — impact: **CNCE wedge intact**; **INFER:**
+  shipping quantization tooling with a 3× param jump concedes the deployment problem in engineering but
+  not in the benchmark table; **Tools & DevEnv: re-check the VRAM figure before further spend on a
+  graphics-capable host** (AlpaSim = eval-pod NO-GO, CARLA pixels host-blocked) — https://huggingface.co/blog/nvidia/nvidia-alpamayo-2
+- [2026-08-02 · run #5] [IIHS / Fortune] FACT — **new W-11: the field has no exposure denominator.** Per
+  the **Insurance Institute for Highway Safety**, most AV operators **"don't report how many miles their
+  autonomous vehicles drove, which makes it impossible to calculate a crash rate,"** and there is **no
+  standard for which incidents must be reported**; AV firms log many more minor events than human
+  drivers do — impact: **W-11 (new)**, pairs with W-07 (CA DMV retiring disengagements). This is the
+  weakness where our **published denominators + pre-registered gates + episode-cluster intervals +
+  retraction log** are already the counter (H0) — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- [2026-08-02 · run #5] [Waymo/Pony, economics] FACT/CLAIM — W-06 refresh: Waymo ~**3,700** I-PACE
+  (Feb'26), ~**500 k** paid rides/week (May'26, 2× Apr'25), ~**$355 M** annualized revenue (Feb'26 —
+  **CLAIM**, Sacra third-party estimate, not a filing), ~**$15–17**/ride, ~**20** trips/vehicle/day.
+  **Pony.ai Q2'26 is NOT out** — it reports **2026-08-18**, so no Q2 delta exists to quote — impact:
+  W-06 is not only a Chinese-operator story (~$96 k/vehicle/yr gross against a multi-sensor,
+  map-maintained, remote-assisted stack); re-check Pony after 08-18 — https://sacra.com/c/waymo/
 - [2026-08-07 · run #4, real 2026-07-20] [Zoox/NHTSA] FACT — **Zoox recalled 105 vehicles** (NHTSA
   notified **2026-07-08**, public **2026-07-17**): on **2026-06-20** a Las Vegas robotaxi **drove into
   thick smoke from an active fire**, **failed to recognize the smoke**, then **suddenly braked, tried

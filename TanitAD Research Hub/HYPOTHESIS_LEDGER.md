@@ -89,7 +89,7 @@ audit assigned DoA to the parent only.
 | **H4a** | **Frozen encoder + supervised regression** | **Confirmed (neg)** | ≈95% *(parent H4 = 85%)* | MEASURED | `taniteval/results/eff_refa-dynin-30k.json` + `driving_refa-dynin-30k.json` — **2.9196**, monotone 5k→30k (3.755→2.920: a capability ceiling, not overfitting) | closed; reopening requires a new mechanism, not a re-run | `RETIRE` (stop relitigating) | 2026-07-18 | Architecture & Inference *(frozen ledger wrongly owned this to Data Engineering)* |
 | **H4b** | **Frozen encoder + feature-prediction + planning** | **Open — and reads POSITIVE** | ≈35% *(parent H4 = 85%)* | MEASURED | `.../incoming/2026-07-23-frozen-wm-learned-planner/artifacts/results.json` — 3.77 M planner backprop-through-frozen-WM = **0.5989**; static decode off the *same* latent = **3.649 m** ⇒ the ceiling is **static decode, not freezing** | falsifier = a frozen+dynamics path cannot be pushed below the ~0.60 m aleatoric wall (H28) **and** cannot beat the trained-encoder arm on data-efficiency | **`SPLIT` (done) → keep OPEN**; the real v3 question | 2026-07-23 | Architecture & Inference |
 | **H5** | Efficient inference transfer / CNCE moat | Confirmed (deployed arm) | 80% | MEASURED | `taniteval/results/eff_flagship-30k.json` — CNCE median **210,551**; planning tick **18.75 ms p50** composed, 10 Hz at p99. ⚠️ the "11.16 ms" figure is **RETRACTED** (RETRACTION_LOG C1/C6) | tick budget met; falsifier = fails the Orin/Thor envelope on real silicon | `RETIRE` from active work | 2026-07-24 | Architecture & Inference |
-| **H6** | Opponent weak-spot corpus | Partially | 45% | MEASURED (oracle) / **untested on our model** | `Opponent Analyzer/SCENARIO_DATABASE.md` — 4 scenarios shipped (Stop-Arm, Work-Zone Phantom, Stationary-Lead, SC-14) — **design-oracle only** | model-side number is **renderer-gated** (T4-15); falsifier = our model matches the incumbent failure rate on our own scenarios | `FIX` (gated on the renderer owner) | 2026-07-24 | Opponent Analyzer |
+| **H6** | Opponent weak-spot corpus | Partially | **35%** *(was 45% — corrected 2026-08-02, see evidence)* | MEASURED (oracle) / **untested on our model** | ⚠️ **"4 scenarios shipped" was true of AUTHORSHIP, not of the stack.** VERIFIED 2026-08-02 by `ls stack/tanitad/eval/scenarios/` → only `work_zone_phantom.py` + `traffic_light.py`. **SC-04 Stop-Arm (11 tests, run #2), SC-13 Stationary-Lead (14, run #3) and SC-06 Emergency-Scene (16, run #4) are ALL still in `Opponent Analyzer/Implementation/incoming/` with UNFILLED orchestrator-verdict blocks.** Separately, SC-13 is the one entry with a real-data number and it is **NEGATIVE** (run #4 falsifier fired; run #5 §1 resolves it) | model-side number is **renderer-gated** (T4-15) **AND now intake-gated**; falsifier = our model matches the incumbent failure rate on our own scenarios | `FIX` — **the binding blocker is intake triage, not the renderer** | **2026-08-02** | Opponent Analyzer |
 | **H7** | **1000× data via IDM + focal canonicalization (C2)** | **Partially — the slope is UNMEASURED** | 35% | MEASURED (**DIRECTIONAL**) | `.../incoming/2026-07-24-idm-pipeline-derisk/results_idm_pipeline_derisk.json` (pseudo-label ≈96 % of real-label value, 8 seeds) + `Benchmarks & Eval/.../incoming/2026-07-24-youtube-idm-pilot/` (80-clip pilot ≈**92 % of ceiling**). ⚠️ 80 clips / 3 seeds / unknown intrinsics, yaw ≈ 0 | **the C2 data-efficiency slope itself is `untested`**; falsifier = matched-param slope vs a supervised baseline shows no advantage | **`MEASURE` — top priority after cooldown** (≥300 clips, ≥4 seeds, GeoCalib intrinsics) | 2026-07-25 | Data Engineering |
 | **H8** | MoE beyond sensors | **PARKED** | 5% | — | **untested** — prio-2, interface ready | — | `PARK` → §3 | **never** | Architecture & Inference |
 | **H9** | Inherent rule compliance / hard barriers | Partially | 40% | MEASURED (oracle) / **untested on our model** | `Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/traffic_light_oracle_results.json` — SC-14 TLC design oracle **rule_barrier 1.0 vs soft_prior 0.0** | violation-rate metric; model-side renderer-gated. **Traffic-light handling (a specific PI ask) lives here** | `FIX` + `MEASURE` | 2026-07-24 | Benchmarks & Eval |
@@ -306,6 +306,34 @@ The full divergence inventory between the two ledgers is in
 >
 > The diary is preserved verbatim below. **Nothing in it may be quoted as a current status.**
 
+- **2026-08-02 (real date; the Opponent Analyzer's narrative clock is RETIRED from run #5 on):**
+  Opponent Analyzer (run #5) — **SC-13 RESOLVED; the open-loop anticipation probe is RETIRED. No H15
+  status change, and the evidence moves further against the open-loop form of the claim.**
+  `sc13_probe_v5.py`, eval-pod A40, flagship v1 (step 30000), 40-ep PhysicalAI val, **stride 1 → 6,444
+  anchors, n=44 BRAKE_FAR events over 15 episodes**, 1,097 s. Adds what run #4 lacked: real-statistics
+  vision controls (**`shuffled`** = a real window from a *different episode*, **`frozen`** = own last
+  frame ×8) and **episode-cluster** bootstrap intervals. **Run #4 reproduced to three decimals** on the
+  recoverable stride-2 subset (held 0.723 / blind 0.653 / reactive 0.434 / informed 0.680 / gt_oracle
+  0.633), which also proves the re-provisioned pod's `v1_modelonly.pt` is the same checkpoint.
+  **Speed-matched AUROC (stride 1):** held **0.736** · frozen **0.723** · blind **0.672** · shuffled
+  **0.634** · gt_oracle 0.620 · reactive **0.455**. **Pre-registered falsifier F-A (volume) did NOT
+  fire** — `held − reactive` **+0.281**, ep-cluster CI **[+0.009, +0.562]**, unchanged from stride 2's
+  +0.289 at twice the events ⇒ run #4's in-domain positive was **not** small-n noise. **But the
+  SURVIVAL condition is NOT met:** `held − blind` +0.064 CI **[−0.019, +0.162]** and `held − shuffled`
+  +0.102 CI **[−0.011, +0.245]** both include 0 ⇒ **vision attribution NOT established.**
+  ⚠️ **Instrument note that decides the verdict:** on run #4's **anchor-level** bootstrap both
+  differences EXCLUDE 0 and this entry would have read "confirmed"; the **episode-cluster** estimator
+  says otherwise (44 events live in 15 episodes). Same class as the `overlapping_holdout_se` retraction
+  in `CLAUDE.md` — caught **before** publication this time.
+  **The decomposition is the real finding:** of the +0.281 over the reactive floor, **≈64 % survives
+  with the scene DESTROYED**, ≈32 % is the correct **static** scene, ≈5 % is scene motion
+  (`held − frozen` +0.013, CI [−0.024, +0.050]) ⇒ **a static-frame + ego-kinematic property, not a
+  rolled-forward consequence.** Vision still matters for accuracy (2 s ADE held 1.186 m vs shuffled
+  1.321 vs CV 1.743), just not for this detector. **Consequence: the only remaining test of the H15
+  claim is the closed loop**; further open-loop SC-13 probing is retired.
+  Also: **H6 row corrected** — "4 scenarios shipped" was true of authorship only; 3 of 4 packages
+  (41/41 tests re-verified green 2026-08-02) are still unintegrated in `incoming/` with unfilled
+  verdict blocks. See `Opponent Analyzer/Research/2026-08-02-opponent-sweep-run5.md` §1 and §5.1.
 - 2026-08-07 (real wall-clock 2026-07-20): Opponent Analyzer (Fri, run #4) — **H15's first REAL-DATA
   test, and the pre-registered falsifier FIRED on replication (negative result, P8; no status change).**
   Protocol: flagship-30k on the eval-pod A40, **future actions withheld**, a genuine speed confound

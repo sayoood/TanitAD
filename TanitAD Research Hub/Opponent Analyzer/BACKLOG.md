@@ -28,7 +28,51 @@ measured on OUR checkpoints. That changes now; the eval pod + TanitEval give you
 Joint duty (D-020 §5): you own `SCENARIO_DATABASE.md` scenario entries + opponent evidence;
 DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + excellence rows.
 
-## P0 — next run (run #5) — set by the run-#4 results
+## P0 — next run (run #6) — set by the run-#5 results
+
+> **Two structural facts reshape this list.** (1) **SC-13's open-loop probe is retired** (run #5 §1):
+> the effect is real but ≈64 % scene-independent and ≈95 % motion-independent, so no further open-loop
+> anchor-count work can answer H15. (2) **The intake queue is stalled** — 3 packages / 41 green tests
+> unintegrated, oldest three runs old (§5.1). **Authoring a fifth scenario package into that queue would
+> be adding to a buffer, not shipping.** So run #6 is weighted toward *measurement that needs no intake*
+> and toward *unblocking*, not toward new scenario authoring.
+
+1. **UNBLOCK THE QUEUE — the highest-value item, and it is not research.** Pursue a verdict on
+   SC-04 / SC-13 / SC-06 (`defer` is an acceptable verdict; silence is not). Do not re-author. If still
+   unanswered at run #6, escalate to Sayed directly rather than writing it in a fourth document —
+   `Opponent Analyzer` deliverables are the H6 evidence path and H6 is currently blocked on triage, not
+   on the renderer. **Falsifier for my own framing:** if the orchestrator's answer is "these are
+   deferred because closed-loop scoring is not available", then the scenario-authoring stream should be
+   **paused entirely** until the harness exists — which would be a correct and useful answer.
+2. **THE CLOSED-LOOP HARNESS QUESTION — now the only remaining test of H15 (with Tools & DevEnv).**
+   Concretely: **re-check AlpaGym's real VRAM footprint** against the on-record "40–60 GB Phase-1 cloud"
+   figure (`PROJECT_STATE.md` §5, 2026-07-06). NVIDIA now states single-GPU→multi-node scaling; if the
+   floor really is below 48 GB, our existing A40 is a closed-loop host and the CARLA/AlpaSim wall is
+   cheaper to cross than assumed. Deliverable: a measured VRAM/throughput number, not a reading of the
+   docs. **Falsifier:** it needs >48 GB or a graphics-capable container ⇒ the wall stands, and the
+   graphics-host ask goes back to Sayed with a price.
+3. **Port the (retired-for-SC-13) probe to the other arms as an ENCODER read, not an anticipation
+   read.** ~6 min/arm on the eval pod, and the substrate machinery already exists. The question is no
+   longer "does it anticipate" but **"how does the scene-dependent fraction vary across encoders?"** —
+   run #5 measured 64 % scene-independent for flagship v1; the same decomposition on **v2corpus**
+   (already staged on the pod), REF-B v2 and REF-C-XL is a cheap, novel cross-encoder number that feeds
+   **H4/H26**. **Falsifier:** the scene-dependent fraction is flat across encoders ⇒ it is a property of
+   the `D = CV_fwd − pred_fwd` construction, not of any encoder, and the whole probe family retires.
+4. **Complete the Waabi profile** (run #5 added a deliberately thin stub). Simulation-first, ~$1 B
+   raised, trucks + robotaxi — the most architecturally adjacent unprofiled player, and the closest
+   public analogue to our own data-efficiency thesis. Check: param/compute disclosure (W-05/CNCE), and
+   whether **Waabi World is used in-loop or as an offline data factory** (the same question that
+   separates us from Wayve's GAIA).
+5. **W-10 scenario slice — still unauthored, still `no-counter-yet`, and the run-#4 request to the
+   Orchestrator is unanswered for a second run.** Do not author until item 1 returns a verdict; instead
+   re-raise the scope-or-defer decision. W-10 now has **two** instances with different triggers (July 4
+   crowd egress; a December power outage).
+6. **Deltas sweep.** Named checkpoints for run #6: **Pony.ai Q2 results (2026-08-18)** — the one dated
+   item in the window; whether **Alpamayo 2 Super weights ship** with a params-vs-benchmark table (the
+   W-05 wedge, open three runs); the **AV Emergency Response Coordination Act**'s progress; any
+   post-exemption Zoox incident; new recalls.
+
+## P0 — earlier (run #5) — status: EXECUTED, see `Research/2026-08-02-opponent-sweep-run5.md`
 
 1. **RESOLVE THE SC-13 CONTRADICTION — the single highest-value item.** Run #4 measured an in-domain
    positive (PhysicalAI: `held` 0.723 vs reactive 0.434, n=23) that **failed to replicate** on
@@ -114,6 +158,19 @@ DataEng owns the data-source rows; Benchmarks & Eval owns the metric hooks + exc
    which TanitAD gates cover them, where coverage is zero (those become new scenario items).
 
 ## Done / retired
+- (**run #5, 2026-08-02**) **P0.1+P0.2+P0.3 EXECUTED IN ONE PROBE — SC-13 RESOLVED, open-loop probe
+  RETIRED.** stride 1 → **6,444 anchors, n=44 events / 15 episodes**; run #4 **reproduced to three
+  decimals** on the recoverable stride-2 subset; two new real-statistics vision controls (`shuffled` =
+  different episode, `frozen` = own last frame ×8) + **episode-cluster** intervals. **F-A (volume) did
+  NOT fire** (`held − reactive` **+0.281**, ep-CI [+0.009, +0.562]) ⇒ run #4's positive was not noise;
+  **survival condition NOT met** (`held − blind`, `held − shuffled` CIs include 0) ⇒ vision attribution
+  not established. **≈64 % of the gap survives with the scene destroyed, ≈5 % is motion** ⇒ static-frame
+  + ego-kinematic, not a rolled-forward consequence. **Retired:** further open-loop SC-13 probing; the
+  in-domain-volume item (answered) and the competence-control item (moot — the effect is not
+  vision-attributed on the corpus where the model IS competent, so a corpus where it is competent adds
+  nothing). Also this run: **new W-11**, **Momenta retraction**, **Orbis 2** (hierarchy-on-driving)
+  displaces HWM as top differentiation risk, **W-05 wedge re-verified at NVIDIA's own text**, and the
+  **intake stall measured** (41/41 tests green, 3 packages unintegrated).
 - (run #4, narrative 2026-08-07 / real 2026-07-20) **P0.1 EXECUTED — SC-13 measured on flagship-30k,
   result NEGATIVE** (eval pod A40, actions withheld, speed confound controlled two ways): in-domain
   PhysicalAI (3,241 anchors, n=23) anticipation of braking 2–3 s out at **AUROC 0.72–0.74** vs reactive

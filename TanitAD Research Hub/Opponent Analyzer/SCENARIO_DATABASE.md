@@ -133,6 +133,21 @@ public claim candidate.
   Administrator Morrison: a **"functional insufficiency"**; **"Emergency scenes are not rare or extreme
   edge cases."** (Prior evidence: Cruise–fire-truck collision, SF Aug 2023; SFFD obstruction complaints.)
   — https://techcrunch.com/2026/07/08/feds-demand-autonomous-vehicle-companies-stop-interfering-with-first-responders/
+- **Opponent evidence (FACT — run #5, 2026-08-02): the deadline LAPSED and the field scaled anyway.**
+  The end-of-July NHTSA deadline **expired 2026-07-30 with no public resolution**; on that same day
+  NHTSA **granted Zoox a commercial exemption** for **paid rides in up to 2,500 no-steering-wheel
+  vehicles over two years** (Federal Register 07-31) — six weeks after Zoox's own smoke recall. In
+  parallel the pressure moved to the legislature: the **"AV Emergency Response Coordination Act"**
+  (Rep. Kevin Mullin, week of 07-28) proposes responder protocols, a 24 h hotline, NHTSA minimum
+  standards and **city authority to geofence AVs during emergencies**.
+  — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+  , https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
+  **INFER — this RAISES SC-06's value and changes its argument.** A *geofencing* remedy concedes that
+  nobody expects the in-vehicle capability soon, and an exemption granted over an unfixed failure shows
+  the capability is not a gate on scale. So SC-06 may no longer be pitched as "the regulator will force
+  this"; it is pitched as **a capability worth more than the exemption**, which is a stronger claim and
+  a harder one — it has to be demonstrated, not cited. **The blocking condition from run #4 stands
+  unchanged: SC-06 must not be scored until SC-05's OOD detector clears its own bar.**
 - **Description:** active emergency vehicle / scene (siren/lights, flares, cones, personnel, contra-flow
   or intersection takeover); correct behavior is early yield + **clearing the corridor**, including
   rule-exceptions (mount curb line, pass red, hold clear of the scene).
@@ -311,6 +326,36 @@ public claim candidate.
   CV** on the target corpus — if anticipation appears exactly when the model beats CV, the signal is a
   competence artefact, not a capability. Full protocol/caveats:
   `Research/2026-08-07-opponent-sweep-w5.md` §1; archived at `Implementation/sc13-real-probe/`.
+- **Status → `live-measured — anticipation signal CONFIRMED over the reactive floor; VISION ATTRIBUTION
+  NOT ESTABLISHED` (run #5, 2026-08-02). THE OPEN-LOOP PROBE IS RETIRED.**
+  `sc13_probe_v5.py`, eval-pod A40, flagship v1 (step 30000), same 40-ep PhysicalAI val, **stride 1 →
+  6,444 anchors**, **n=44 BRAKE_FAR events over 15 episodes** (run #4 had 23), 1,097 s. Two additions
+  run #4 lacked: real-statistics vision controls (**`shuffled`** = a real window from a *different
+  episode*; **`frozen`** = this anchor's own last real frame ×8) and **episode-cluster** bootstraps.
+  **Replication passed exactly** — re-deriving run #4's stride-2 anchor subset reproduces it to three
+  decimals (held 0.723, blind 0.653, reactive 0.434, informed 0.680, gt_oracle 0.633).
+  **Speed-matched AUROC, stride 1:** held **0.736** · frozen **0.723** · blind **0.672** · shuffled
+  **0.634** · gt_oracle 0.620 · reactive **0.455**.
+  **Pre-registered verdict:** **F-A (volume) did NOT fire** — `held − reactive` = **+0.281**
+  (ep-cluster CI **[+0.009, +0.562]**, excludes 0), essentially unchanged from stride 2's +0.289 at 2×
+  the events ⇒ **run #4's positive was NOT small-n noise.** **But the SURVIVAL condition is NOT met:**
+  `held − blind` +0.064 (CI **[−0.019, +0.162]**) and `held − shuffled` +0.102 (CI **[−0.011, +0.245]**)
+  **both include 0** on the decision-grade estimator. *(On run #4's anchor-level bootstrap both would
+  have excluded 0 — the estimator changes the verdict; same class as the `overlapping_holdout_se`
+  retraction, caught pre-publication.)*
+  **What the controls revealed — the decomposition is the finding:** of the +0.281 over the reactive
+  floor, **≈64 % survives with the scene DESTROYED** (`shuffled`, a different episode's window, still
+  scores 0.634), **≈32 %** comes from the correct **static** scene, and **≈5 %** from scene motion
+  (`held − frozen` = +0.013, CI [−0.024, +0.050]). ⇒ **the signal is a static-frame + ego-kinematic
+  property, not a rolled-forward consequence** — the opposite of the mechanism this entry was built to
+  argue. Vision still matters for *accuracy* (2 s ADE held 1.186 m vs shuffled 1.321 vs CV 1.743); it is
+  not what makes this detector work.
+  **Decision: no further open-loop SC-13 probing.** Two runs with progressively stronger controls have
+  answered what this instrument can answer. The remaining test for the H15 claim is the **closed loop**.
+  Artifacts (banked in-repo incl. the raw substrate, so a pod re-provision cannot lose them):
+  `Implementation/sc13-real-probe/{sc13_probe_v5.py, sc13_analyse_v5.py,
+  results/sc13_v1_stride1_analysis_{all,stride2}.json, results/sc13_v1_stride1_windows.pt}`;
+  narrative `Research/2026-08-02-opponent-sweep-run5.md` §1.
   The oracle contrast below stands as authored and remains **oracle-only, now unsupported**:
 - **Design-oracle status (run #3, narrative 2026-07-31 / real 2026-07-17)** — intake pkg
   `Implementation/incoming/2026-07-31-stationary-lead-scenario/` (`stationary_lead.py` + telemetry oracle,
@@ -366,7 +411,7 @@ a **non-nominal-scene OOD flag** — the Zoox smoke case is literally both at on
 | SC-01 | oracle-tested | 0 closure incursions over scenario suite (closed-loop) | — |
 | SC-04 | spec-drafted | violation rate exactly 0 (closed-loop) + full stop before line | — |
 | SC-05 | data-sourced | D8 AUROC > 0.85 + monotone speed-vs-σ | — |
-| SC-13 | **live-measured — falsifier fired** | collisions == 0 + braking-onset lead time > detection baseline (real segments) | **NO** — in-domain positive (0.72 vs 0.43 reactive, n=23) **did not replicate** on comma2k19 (0.54–0.61, indistinguishable from vision-blind and reactive, n=45); collision-rate bar oracle-only and now unsupported |
+| SC-13 | **live-measured — signal confirmed, vision attribution NOT established; open-loop probe RETIRED** | collisions == 0 + braking-onset lead time > detection baseline (real segments) | **NO** — run #5 (n=44/15 eps, stride 1): `held − reactive` **+0.281** ep-cluster CI [+0.009, +0.562] ✅, but `held − blind` [−0.019, +0.162] and `held − shuffled` [−0.011, +0.245] ❌ include 0; **≈64 % of the gap survives with the scene destroyed**, ≈5 % is motion. Collision-rate bar oracle-only and unsupported. Remaining test = closed loop |
 | SC-06 | **spec-drafted** | 0 corridor incursions + 0 s blockage + non-nominal-scene detected before the boundary | — **blocked**: depends on the SC-05 OOD detector, which has not cleared its own bar |
 | SC-08 | catalogued (FACT-upgraded) | well-placed stop before feasibility is lost; blockage time | — (fleet dimension `no-counter-yet`, W-10) |
 | SC-02…SC-03, SC-07, SC-09…SC-12, SC-14 | catalogued | per-entry bars set at spec time | — |

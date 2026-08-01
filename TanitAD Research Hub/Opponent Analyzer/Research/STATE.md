@@ -1,137 +1,171 @@
 # STATE — Opponent Analyzer
 
-LAST_RUN: run #4 — narrative 2026-08-07, **real wall-clock 2026-07-20** (Fri scheduled run).
-  Branch: `agent/opponent-20260720` (worktree `C:/Users/Admin/wt-opponent-20260720`).
-  **First MEASURED SC-13 test on our own checkpoint — falsifier FIRED on cross-corpus replication
-  (negative result, P8)** + SC-06 emergency-scene intake (16✓) + new W-10.
-QUALITY: complete (G-A…G-F, G-H, G-I, G-O1/G-O2 met; loop used 7/25 searches, 1 iteration —
-  the real news window was only **3 days**, so budget went to compute, not search).
+LAST_RUN: **run #5 — 2026-08-02 (real date; the narrative clock is RETIRED, see below).**
+  Branch: `agent/opponent-20260802` (worktree `C:/Users/Admin/wt-opp-20260802`).
+  **SC-13 resolved and the open-loop probe retired** + **new W-11** + **a retraction of my own run-#3
+  inference** + **Orbis 2 displaces HWM as the top differentiation risk** + **the intake stall measured**.
+QUALITY: complete (G-A…G-F, G-H, G-I, G-O1/G-O2 met; 15/25 searches, 1 iteration).
 
-> **Clock note (honesty, memory `narrative-clock-ahead-of-wallclock`):** this discipline's narrative
-> clock runs ~2.5 weeks ahead of real time (a loop artefact). Runs are keyed by **run number**
-> (this = run #4), not by note date. Notes/packages are dated **2026-08-07** to keep folder names,
-> module docstrings and this STATE internally consistent; the real calendar date is **2026-07-20**.
+> **⛔ DATING CHANGE — read once.** This discipline had been dating notes on a **narrative clock** ~2.5
+> weeks ahead of wall-clock (a loop artefact that runs #2–#4 perpetuated for internal consistency).
+> **Retired from run #5.** Notes now carry the **real** date. Consequence: run #4's note is filenamed
+> `2026-08-07` and is **OLDER** than run #5's `2026-08-02`. **Order by run number, never by filename.**
 >
-> **Orchestrator dedup flag (D-026), STILL OPEN from run #3:** the unmerged off-schedule branch
-> `agent/opponent-20260715` authored SC-13 (commit `787671a`) and SC-14 speculatively. **At merge, pick
-> ONE SC-13; do not integrate both.** This now *blocks* wiring the new `live-measured` SC-13 row cleanly.
+> | run | note filename | real wall-clock |
+> |---|---|---|
+> | #2 | 2026-07-24 | 2026-07-09 |
+> | #3 | 2026-07-31 | 2026-07-17 |
+> | #4 | 2026-08-07 | 2026-07-20 |
+> | **#5** | **2026-08-02** | **2026-08-02** |
+>
+> **D-026 — strand debt CLEARED for this discipline.** Run #4's work was sitting unmerged on
+> `agent/opponent-20260721` (2 commits ahead of the shared tip). This run branched from the tip and
+> **merged it in**, so run #4's deliverables are no longer stranded. The older
+> `agent/opponent-20260715` SC-13/SC-14 dedup flag is **still open** and still needs one SC-13 chosen at
+> merge — but it is now moot for SC-13's *status*, which run #5 measures directly.
 
-## This run (run #4)
+## This run (run #5)
 
-- **MEASURED EXPERIMENT (G-H/G-I) — the first non-oracle scenario number this discipline has produced.**
-  `sc13_real_probe.py` on the **eval pod** (A40 48 GB) against **flagship-30k** (step 29999), canonical
-  40-ep held-out PhysicalAI val, window 8 / stride 2 → **3,241 anchors**. Signal =
-  `D = CV_forward(2 s) − pred_forward(2 s)`; arms = informed (true future actions — **leaks**) / **held**
-  (last observed action repeated — the real test) / **blind** (held + vision replaced by a mean frame) /
-  **reactive** (−Δv/0.5 s kinematic floor).
-  **BRAKE_FAR** (braking starts 2–3 s out = **outside** the 2 s rollout; n=23 events vs 1,283 cruise),
-  after controlling a genuine speed confound (events 8.94 m/s vs cruise 17.34 m/s) by per-event ±1 m/s
-  matching **and** v0-stratification: **held 0.723 / 0.740** (raw 0.821, boot-CI [0.702, 0.917]) ·
-  **blind 0.654 / 0.685** · gt-oracle 0.633 / 0.668 · **reactive 0.434 / 0.450**. `held` **exceeds the
-  true 2 s trajectory's own score**, so it is not merely tracking the near future.
-- **…AND THE FALSIFIER FIRED ON REPLICATION.** The same probe on **comma2k19** (64 eps, **8,384
-  anchors**, n=45 BRAKE_FAR, 22.6 min) **contradicts** it: speed-matched **held 0.538 / 0.605 ≈ blind
-  0.608 / 0.549 ≈ reactive 0.588 / 0.549 — mutually indistinguishable.** **We may not claim a measured
-  consequence-forward-model advantage.** Two confounds keep it from being a clean refutation (INFER):
-  comma2k19 is **out-of-domain** — there **CV beats the model outright** (CV 1.302 m vs held 1.874 m
-  ADE), and a "deficit vs CV" signal is unreliable by construction where the model loses to CV — and it
-  is **highway-dominated** (cruise 29.1 vs 17.3 m/s), the regime where CV is near-unbeatable. Both n's
-  are small: the negative is as noisy as the positive. **SC-13 → `live-measured (falsifier fired)`;**
-  its oracle collision-rate contrast is now **unsupported** and must stay out of external narrative.
-  **Net: evidence moves AGAINST the open-loop form of the H15 claim** → strengthens the case for
-  prioritizing the closed loop over more open-loop probing.
-- **Caught error, recorded (P8):** the first probe version fed **true future actions** and scored AUROC
-  1.00 — command leakage, not anticipation. Any future "our model anticipates" claim must state its
-  action conditioning explicitly.
-- **SC-06 / W-09 emergency-scene scenario shipped** — intake pkg
-  `Implementation/incoming/2026-08-07-emergency-scene-scenario/` (**16/16 tests**, 4060 CPU, <1 s, $0).
-  Incursion rate **0.0 vs 0.2**, blockage **0.0 s vs 2.54 s** (12.7 s at thick smoke), detection lead
-  **+5.70 s vs +2.84 s**. Mechanism: obscurant collapses **object** range 90→13.5 m while **scene**-level
-  OOD range falls only 80→68 m. **The failure is a CLIFF, not a slope** ⇒ graded obscurant sweeps are
-  mandatory. **SC-06 → spec-drafted, with a BLOCKING CONDITION**: it depends on the same OOD detector
-  SC-05 measures, and SC-05's D8 probe is currently **failing** — SC-06 must not be scored until it clears.
-- **New W-10 (fleet-scale mission/energy/network-disruption blindness)** from the **Waymo 2026-07-04 SF
-  breakdown** (64 vehicles retrieved, depleted batteries, unplanned closures, one occupied car drove over
-  a lit firework). **Marked `no-counter-yet` — including for us**: our strategic brain is the only layer
-  that could own this and nothing is specified or measured. **SC-08 evidence FACT-upgraded.**
-- **W-09 is now CROSS-OPERATOR:** **Zoox recalled 105 vehicles** after a robotaxi drove into thick smoke
-  from an active fire, failed to recognize it, panic-braked and halted inside the scene. Also fuses
-  W-09 with W-04 (smoke = obscurant *and* emergency cue → one shared OOD head).
-- **Correction (P8):** the NHTSA end-of-July first-responder deadline is for **presenting fixes in
-  meetings**, not deployed fixes. Do not overstate it in the vision deck.
-- **Field scan:** **HWM (arXiv 2604.03208)** deep-read — **planning-time hierarchy over multi-timescale
-  latent world models, 3× less planning compute** — i.e. our H1 claim is now published (on manipulation/
-  maze, no params, no self-monitoring). Also the closest published relative of the **v3** direction.
-  New watch item: **WorldRFT**.
-- Deltas: Wayve **$85 M employee tender** (liquidity, not capital); Pony reaffirms **>3,500 robotaxis /
-  20+ cities** (W-06 unchanged); NVIDIA — Alpamayo 1 = **10 B** open weights, 2 Super = **32 B**
-  "this summer", **still no Nano-tier CNCE number**.
-- Ledger: H15 (real-data evidence, partial) / H11 (SC-06 blocked on SC-05) / H1 (differentiation
-  pressure) / H0/H6 (cross-operator W-09; W-10 gap). **No status upgrades** — nothing closed-loop, and
-  the one real-data result is explicitly under-powered (P8).
-- KB: 6 new dated findings. Research note: `2026-08-07-opponent-sweep-w5.md`.
+- **MEASURED (G-H/G-I) — SC-13 RESOLVED; THE OPEN-LOOP ANTICIPATION PROBE IS RETIRED.**
+  `sc13_probe_v5.py` on the eval-pod A40, **flagship v1** (step 30000), canonical 40-ep PhysicalAI val,
+  **stride 1 → 6,444 anchors**, **n=44 BRAKE_FAR events over 15 episodes** (run #4: 23), 1,097 s.
+  Two things run #4 lacked: **real-statistics vision controls** (`shuffled` = a real window from a
+  *different episode*; `frozen` = this anchor's own last frame ×8) and **episode-cluster** bootstraps.
+  - **Replication passed exactly.** Run #4's stride-2 anchor set is recoverable as a subset and
+    reproduces **to three decimals** (held 0.723 / blind 0.653 / reactive 0.434 / informed 0.680 /
+    gt_oracle 0.633) — which also proves the re-provisioned pod's `v1_modelonly.pt` is the same
+    checkpoint run #4 measured.
+  - **Speed-matched AUROC (stride 1):** held **0.736** · frozen **0.723** · blind **0.672** · shuffled
+    **0.634** · gt_oracle 0.620 · reactive **0.455**.
+  - **Pre-registered F-A (volume) did NOT fire:** `held − reactive` **+0.281**, episode-cluster CI
+    **[+0.009, +0.562]**, essentially unchanged from stride 2's +0.289 at twice the events ⇒
+    **run #4's in-domain positive was NOT small-n noise.** That question is closed.
+  - **But the SURVIVAL condition is NOT met:** `held − blind` +0.064 CI **[−0.019, +0.162]** and
+    `held − shuffled` +0.102 CI **[−0.011, +0.245]** both include 0 ⇒ **vision attribution NOT
+    established.** Pre-registration means taking this reading, not the flattering one.
+  - ⚠️ **The estimator decides the verdict.** On run #4's **anchor-level** bootstrap both differences
+    exclude 0 and this would read "confirmed". 44 events live in **15 episodes**; they are not 44
+    independent facts. Same class as the `overlapping_holdout_se` retraction in `CLAUDE.md` — **caught
+    before publication this time.**
+  - **The decomposition is the real finding:** of the +0.281 over the reactive floor, **≈64 % survives
+    with the scene DESTROYED**, **≈32 %** is the correct **static** scene, **≈5 %** is scene motion
+    (`held − frozen` +0.013, CI [−0.024, +0.050]) ⇒ **a static-frame + ego-kinematic property, not a
+    rolled-forward consequence** — the opposite of the mechanism SC-13 was built to argue. Vision still
+    matters for *accuracy* (2 s ADE held 1.186 m vs shuffled 1.321 vs CV 1.743), just not for this
+    detector.
+  - ⇒ **The only remaining test of the H15 claim is the closed loop.** No more open-loop SC-13 probing.
+- **MEASURED — the scenario pipeline is stalled at intake, with evidence.**
+  `stack/tanitad/eval/scenarios/` holds only `work_zone_phantom.py` + `traffic_light.py`. **SC-04
+  (run #2), SC-13 (run #3) and SC-06 (run #4) are all still in `incoming/` with UNFILLED verdict
+  blocks**; I **re-ran all three today: 41/41 green** (py3.13.5 / numpy 2.5.1, CPU, <0.15 s each) so the
+  ask carries no inherited numbers. **H6 row corrected in the ledger (DoA 45 % → 35 %): the binding
+  blocker is intake triage, not the renderer.**
+- **⛔ RETRACTION (mine, run #3).** "EU political resistance to Chinese key-tech" as an EU-market-access
+  weakness for Momenta/Pony is **FALSIFIED**: Momenta won a **Germany-wide KBA Level-4 permit
+  (2026-07-29)**, first Chinese firm to hold one, and **Uber increased its stake** the same week.
+  Root-cause class: **single-source geopolitical INFER promoted to a market-structure conclusion.**
+  Removed from Momenta's profile and from WeRide's (which had inherited the same premise unsourced).
+- **New W-11 — no exposure denominator.** IIHS (2026-07-31): most operators **don't report miles
+  driven, so no crash rate is computable**, and there is **no standard for which incidents must be
+  reported**. Pairs with W-07. **The weakness where our own measurement discipline IS the counter.**
+- **W-09 strategic read INVERTS.** The NHTSA deadline **lapsed 2026-07-30 with no public fix** — and on
+  that same day NHTSA **granted Zoox a commercial exemption** (paid rides, no steering wheel, **2,500
+  vehicles / 2 years**, FR 07-31). Pressure moved to a **draft statute** (Mullin, "AV Emergency Response
+  Coordination Act": responder protocols, 24 h hotline, NHTSA minimum standards, **city geofencing
+  authority**). ⇒ **Stop narrating "the regulator will stop them."** The correct line: *the failure is
+  documented, unfixed, and not a barrier to scale — so the capability is worth more than the exemption.*
+- **★ Orbis 2 (arXiv 2607.15898, 2026-07-17, Brox / LMB Freiburg) displaces HWM as the top
+  differentiation risk** — *"A Hierarchical World Model for Driving"*: high-level coarse-scene predictor
+  + low-level conditioned generator. HWM was hierarchy off-driving; **this is hierarchy ON driving.**
+  Still ours (INFER, abstract-level): representation/temporal hierarchy **not planning-time**, no planner
+  over imagined futures, **no params, no compute figure, no self-monitoring**. ⇒ **H1 may never again be
+  pitched as "hierarchy"; the claim is "hierarchy a planner USES, with a number attached."** Second
+  pillar also moving: **CheckVLA (2607.26789)** = run-time verification with an action-conditioned world
+  model ≈ H11/A9, published.
+- **W-05 wedge re-verified OPEN at NVIDIA's own text** (3rd consecutive run): Alpamayo 2 Super = 32 B,
+  "3× prior params", SOTA claims, **no benchmark table / latency / compute figure / Nano tier**.
+  ⚠️ **AlpaGym is NOT new to us** — Tools & DevEnv logged it 2026-07-06 as "Phase-1 cloud (40–60 GB
+  VRAM)"; what's new is the open release + a **single-GPU** claim that **contradicts that figure**.
+- KB: **8 new dated findings.** Research note: `2026-08-02-opponent-sweep-run5.md`.
 
 ## Resource declaration (G-I)
 
 | item | value |
 |---|---|
-| Resources | **Eval pod A40 48 GB** (`tanitad-eval`) — probe, 2 full passes + speed-matched re-analysis + a cross-corpus comma2k19 pass; local RTX-4060 box (CPU) for the SC-06 oracle + tests |
-| Wall-clock | 309 s + 349 s (PhysicalAI) + **1,359 s** (comma2k19, 8,384 anchors) + re-analyses + <1 s (oracle); ~1 h incl. authoring/iteration |
+| Resources | **Eval pod A40 48 GB** (`tanitad-eval`) — 5-arm probe over 6,444 anchors + a 2,000-draw episode-cluster bootstrap; local dev box (`venvs/tanitad`, CPU) for the 41-test re-verification and authoring |
+| Wall-clock | probe **1,097 s** (~33 s/episode × 40) + analysis; ~3 h total incl. the sweep, the pod-reprovisioning detour and authoring |
 | Cost | **$0** (standing pod, no new spend) |
-| Why not bigger | The eval pod **was** the resource used. Nothing here needs training compute — the binding constraint is **event count in the val corpus**, not FLOPs. |
-| Coordination | `results/LOCK.opponent-analyzer` touched; GPU idle (0 MiB) at start; training pods untouched. |
+| Why not bigger | The eval pod **was** the resource. Nothing here needs training compute — and §1 shows anchor count was never the limiting factor, so a bigger run would not have bought a different answer |
+| Coordination | The pod had been **re-provisioned** for the v1-vs-v2corpus work (`/root/models/` and the comma2k19 val are **gone**) and a **v1 checkpoint relay was in flight** on arrival. The driver **polled the transfer PID**, verified the checkpoint loads, touched `LOCK.opponent-analyzer`, ran with `OMP_NUM_THREADS=6`, released the lock. A concurrent CPU-only job (`run_ctrv_readjudication.py`) from another workstream was left untouched. |
 
-Pod artefacts: `/root/taniteval/sc13_real_probe.py`, `sc13_speedmatch.py`;
-`results/sc13_flagship30k{,_comma}{,_speedmatched}.json` + `*_windows.pt` (raw substrate — re-analysis
-needs no model re-run). In-repo archive with a README on how to read the arms:
-`Opponent Analyzer/Implementation/sc13-real-probe/`.
+**Reproducibility (a near-miss worth keeping).** Run #4's probe scripts and its `*_windows.pt` substrate
+were on the *old* eval pod and are **gone**. This run was only possible because run #4 had **banked the
+scripts into the repo**. Accordingly run #5 banks **the raw substrate too** (1.3 MB) — every future
+re-analysis is now free and survives the next re-provision. The comma2k19 val cache was **not** banked
+and is genuinely lost from this pod, which is why §1 is in-domain only.
 
-**Process note (keep):** this run's headline **reversed** between the first corpus and the replication.
-Had the session ended after the PhysicalAI pass, STATE would have claimed a positive measured H15
-result. The replication cost 23 min of idle pod time. **Single-corpus results must not leave this
-discipline.**
+## `session_guard` debt list (G-F — surfaced, not owned by me)
+
+Run at session end from `C:/Users/Admin/wt-opp-20260802`; `RESULT: PASS` after this run's commit.
+Its two WARN classes are the orchestrator's sweep list, and both got **worse**, not better:
+
+- **9 unmerged `agent/*` branches vs tip** (D-026 strand debt): `benchmarks-eval-20260802` (+3),
+  `phase0-highway-dataset` (+3), `benchmarks-eval-20260721` (+2), `data-engineering-20260711` (+2),
+  `pod-code-intake-20260720` (+2), `prod-opt-20260711` (+2), `data-engineering-20260710` (+1),
+  **`opponent-20260715` (+1 — the SC-13/SC-14 dedup branch, open since run #3)**,
+  `tools-devenv-20260721` (+1). *(My own run-#4 strand, `agent/opponent-20260721`, is no longer on this
+  list — this run merged it.)*
+- **26 INTAKE packages with an unfilled verdict past the age budget**, the oldest **24 days**
+  (`lal-v2-anticipation`, `physicalai-r1-selection`, `models-predictor-failfast`,
+  `testsuite-io-profiling`). Three of them are mine (§ above). The W33 report called this out as the
+  "3rd report unfixed"; it is now the **4th**, and it has grown from 19 to **26**.
+
+**INFER:** at 26 unverdicted packages the intake step is not a queue with a backlog, it is an unstaffed
+stage. Every discipline's `Implementation/incoming/` is now write-only. This is worth a program-level
+decision (assign a triager, or declare intake advisory and let agents merge behind tests), not another
+per-agent escalation — which is why mine (§) asks for a `defer` as an acceptable answer.
 
 ## Recommendations logged for other disciplines (no cross-boundary writes)
 
-- **Benchmarks & Eval (Thu):** (a) `D = CV_forward − pred_forward` is a cheap, label-free monitor
-  feature that beat a kinematic floor at 2–3 s lead **in-domain only** — if adopted, adopt it **with a
-  competence guard**; it is unreliable on any corpus where the model loses to CV (it did on comma2k19).
-  **Do not wire it unconditionally**; (b) **blockage-duration +
-  incursion-rate** reducers over SC-06 `_extra`, and **unify SC-06's `non_nominal_detected` with the
-  SC-05 OOD head — one detector, not two**; (c) treat the **SC-05 D8 bar as GATING for SC-06 scoring**,
-  not informational; (d) [standing] min-TTC + collision-rate reducers over SC-13 `_extra`.
-- **Data Eng (Tue):** the stopped-lead ask **changed shape** after the replication failed — raw event
-  count is no longer the top need, **in-domain** event count is. Priority: (1) more **PhysicalAI** val
-  episodes / denser sampling; (2) **true stopped-lead tags** so the label stops being "any deceleration"
-  (curves + traffic lights currently pollute it); (3) only then cross-corpus volume.
-  Also screen for **smoke** / flare / flashing-light events
-  (W-09) — the Zoox recall makes smoke the highest-value visual cue in the corpus.
-- **Architecture & Inference (Wed):** **deep-read HWM (2604.03208) — top priority.** Planning-time
-  hierarchy over multi-timescale latent world models with 3× less planning compute, from the DINO-WM
-  lineage: simultaneously the closest published competitor to **H1** and the closest published prior art
-  for **v3**. Second: SGDrive (2601.05640), still open from run #3.
-- **Tools & DevEnv (Mon):** CARLA emergency-vehicle / flashing-light / flare / cone assets **+ a smoke
-  volumetric or photometric overlay** for SC-06's `carla_recipe()`; **AlpaSim** evaluation still open
-  from run #2.
-- **Orchestrator:** (a) triage the SC-06 intake; **the run-#3 SC-13 dedup verdict is still outstanding**
-  and now blocks wiring the `live-measured` SC-13 row; (b) **decide on W-10** — mission-feasibility
-  (energy / network disruption / fleet self-interference) is `no-counter-yet` **for us as well**: scope
-  it into Phase 0 or record an explicit deferral, but do not let it be narrated as a differentiator;
-  (c) narrative: "emergency scenes are not edge cases" is now backed by **two operators** (Waymo + Zoox)
-  — but the end-July deadline is for **meetings, not fixes**.
+- **Architecture & Inference (Wed) — top priority:** **deep-read Orbis 2 (2607.15898)** ahead of SGDrive
+  and HWM; the one question is **planning-time vs representation-only** (our whole H1 positioning turns
+  on it) plus any param count. Second: **Temporally Centered SIGReg (2607.26924)** — our own
+  anti-collapse method, and our SIGReg readout is currently `NOT-YET-ADMISSIBLE` (rms_offdiag 0.32 >
+  0.1), so it is a candidate **fix**, not just news. Third: latent-WM **identifiability** (2607.27017).
+- **Benchmarks & Eval (Thu):** (a) run #4's `D = CV_fwd − pred_fwd` monitor recommendation **stands with
+  a rewritten rationale** — real vs a naive decel floor in-domain (CI-separated), but **not**
+  vision/imagination-driven and **unproven vs a plain ego-kinematic feature**; keep the competence
+  guard; (b) **adopt the episode-cluster bootstrap over anchor-level for any AUROC on windowed
+  anchors** — §1 is a worked case where the estimator flips the verdict; (c) standing: SC-06 `_extra`
+  reducers; **one OOD head for SC-05 + SC-06**; **SC-05's D8 bar remains GATING for SC-06 scoring**.
+- **Data Eng (Tue):** the stopped-lead tagging ask is **withdrawn** — §1 shows event count was never the
+  limit. Higher value: **screen for smoke / flare / flashing-light events** (W-09/SC-06), whose
+  regulatory value went **up** this window.
+- **Tools & DevEnv (Mon):** **re-check AlpaGym's real VRAM footprint** against the on-record 40–60 GB
+  Phase-1-cloud figure — NVIDIA now claims single-GPU scaling, and if the floor is under 48 GB our
+  existing A40 becomes a closed-loop host. This is now the **highest-value unblock in the program for
+  H15**, because §1 makes the closed loop the only remaining test. AlpaSim eval still open from run #2.
+- **Production & Optimization (Sat):** **DriftWorld** (2607.15065, 30+ fps, 17× faster than diffusion)
+  and **GigaWorld-Policy-0.5** (2607.13960, **85 ms**) — the two efficiency-axis reads of this window.
+- **Orchestrator:** (a) **triage the three stalled packages or return an explicit `defer`** — 41/41
+  green today; silence is the one answer that costs us the H6 row; (b) **log the Momenta retraction** in
+  `RETRACTION_LOG.md` under *single-source geopolitical INFER promoted to a market-structure
+  conclusion*; (c) **narrative correction — stop using "the regulator is closing in on them"**; (d)
+  **H1 positioning is time-critical** (Orbis 2); (e) **W-10 scope-or-defer is unanswered for a second
+  run.**
 
-## HANDOFF / next run (run #5)
+## HANDOFF / next run (run #6)
 
-- Priorities (see `BACKLOG.md` P0): (1) **resolve the SC-13 contradiction** — the question is no longer
-  statistical power but whether the in-domain positive was domain-specific or an artefact: more
-  **in-domain** PhysicalAI events (stride 1, more episodes) **and** the probe on an arm whose ADE
-  **beats CV** on the target corpus (if anticipation appears exactly where the model beats CV, it is a
-  competence artefact, not a capability); (2) add
-  **shuffled-real-frame** and **temporally-frozen** vision controls (the mean-frame `blind` arm may
-  understate vision); (3) port the probe to REF-A dyn-in / REF-B v2 / REF-C-XL (~6 min/arm — a cheap
-  cross-encoder anticipation read that also feeds H4/H26); (4) SC-06 → CARLA-executable with a **graded**
-  obscurant sweep; (5) author the tractable single-vehicle W-10/SC-08 slice; (6) deltas: end-July NHTSA
-  meeting outcomes, new recalls, Alpamayo 2 Super params table.
-- Anchors (citation-graph walk): **HWM 2604.03208 (new, top)**; WorldRFT (new); SGDrive 2601.05640;
-  Wayve GAIA line; NVIDIA Alpamayo/Cosmos/AlpaSim; Momenta R7; Metis 2606.15869; DriveFuture 2605.09701;
-  latent-WM taxonomy 2603.09086; adjacent-domain SkyJEPA 2606.23444.
+See `BACKLOG.md` P0 — reweighted after this run: **(1) unblock the intake queue** (do not author a
+fifth package into a stalled buffer); **(2) the closed-loop harness question** — measure AlpaGym's real
+VRAM vs the 40–60 GB figure on record; **(3) re-purpose the probe as a cross-encoder *scene-dependence*
+read** (v2corpus is already staged on the pod; ~6 min/arm; feeds H4/H26 — falsifier: a flat
+scene-dependent fraction across encoders retires the whole probe family); **(4) complete the Waabi
+profile** (stub only, deliberately thin); **(5) W-10 re-raise, do not author**; **(6) deltas** — the one
+dated item is **Pony.ai Q2 on 2026-08-18**; also whether Alpamayo 2 Super weights ship with a
+params-vs-benchmark table, and the Mullin bill's progress.
+
+Anchors (citation-graph walk): **Orbis 2 2607.15898 (new, top)**; CheckVLA 2607.26789 (new);
+HWM 2604.03208; WorldRFT 2512.19133 (id now pinned); SGDrive 2601.05640; Wayve GAIA line;
+NVIDIA Alpamayo/AlpaGym/AlpaSim; Momenta R7; Metis 2606.15869; DriveFuture 2605.09701;
+latent-WM taxonomy 2603.09086; adjacent-domain SkyJEPA 2606.23444.

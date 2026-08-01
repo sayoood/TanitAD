@@ -2,8 +2,13 @@
 
 > One page per opponent. Updated **deltas only** by the Opponent Analyzer agent; each keeps a
 > **"What would beat them"** section current. Labels: FACT / CLAIM / INFER (G-O1).
-> Created 2026-07-17 (v1). Last sweep: **run #3, narrative 2026-07-31 (real wall-clock 2026-07-17)** —
-> deltas tagged **Δ 07-31**; prior **Δ 07-24** kept for history.
+> Created 2026-07-17 (v1). Last sweep: **run #5, 2026-08-02 (real date — the discipline's narrative
+> clock is retired, see STATE.md)** — deltas tagged **Δ run #5 / 2026-08-02**. Earlier tags **Δ 08-07**
+> (= run #4, real 2026-07-20), **Δ 07-31** (= run #3, real 2026-07-17) and **Δ 07-24** are narrative-clock
+> dates kept verbatim for history; **order them by run number, not by date**.
+>
+> ⛔ **Run #5 contains a RETRACTION** (Momenta / "EU market-access weakness"). Read that entry before
+> reusing any geopolitical framing.
 
 ---
 
@@ -56,6 +61,20 @@
   evidence from a 2022 Cruise anecdote to a fresh large-N FACT. **Correction (P8):** the NHTSA
   first-responder deadline is for **presenting fixes in meetings**, not deployed fixes.
   — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/ , https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
+- **Δ run #5 / 2026-08-02 (FACT) — the pressure moves from regulator to legislature:** Rep. **Kevin
+  Mullin (D-Calif.)** introduced the **"AV Emergency Response Coordination Act"** (week of 2026-07-28) —
+  first-responder protocols, a **24 h hotline** for public officials, NHTSA **minimum standards**, and
+  **city authority to geofence AVs during emergencies**. SF Fire Chief **Dean Crispen** cites robotaxis
+  blocking fire stations and ambulance facilities. Same coverage adds a **second** fleet-scale stall: a
+  **December power outage stranded dozens of Waymo vehicles** (→ W-10 is now two instances, two
+  different triggers). — https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
+- **Δ run #5 / 2026-08-02 (FACT/CLAIM) — the economics, for the W-06 contrast:** ~**3,700** Jaguar I-PACE
+  (Feb 2026); ~**500,000 paid autonomous rides/week** (May 2026, up from 250 k in Apr 2025); **~$355 M
+  annualized revenue** (Feb 2026, Sacra estimate — **CLAIM**, third-party modelling, not a Waymo filing);
+  ~**$15–17** average fare, ~**20 trips/vehicle/day**. **INFER:** at ~$355 M/yr against Alphabet-scale
+  capital and a 3,700-vehicle fleet, the revenue *per vehicle* (~$96 k/yr gross) is real but thin against
+  a multi-sensor, map-maintained, remote-assisted stack — W-06 is not only a Chinese-operator story.
+  — https://sacra.com/c/waymo/
 - **Strengths (INFER):** scale, safety-engineering process, war chest, brand.
 - **Exploitable weaknesses:** **construction/work-zone brittleness** (W-01, headline), **occlusion/VRU
   anticipation** (W-02), **rule-compliance edges** (W-03), **emergency-scene interference** (W-09),
@@ -102,10 +121,33 @@
 - **Δ 07-31 (FACT):** the reason for Uber's Munich switch is now explicit — **EU political resistance to
   sensitive Chinese key-tech** blocked the Momenta plan. Confirms an **EU-market-access weakness** for
   Momenta (and Pony) that our **Western/EU-clean data + compliance posture** turns into a wedge.
+- **⛔ Δ run #5 / 2026-08-02 — RETRACTION: the "EU-market-access weakness" INFER above is FALSIFIED.**
+  On **2026-07-29** Momenta received a **Germany-wide Level-4 testing approval from the KBA**
+  (Kraftfahrt-Bundesamt) — cleared for urban autonomous operation **across the whole country**, and it
+  says it is the **first Chinese firm** to hold such an authorization. It underpins the **Munich**
+  robotaxi deployment. In the same week **Uber increased its stake** in Momenta. Two of the three planks
+  of the 07-31 read collapse: the EU did not block Momenta on key-tech grounds, and Uber did not walk
+  away. **Do not reuse "EU market access is a Chinese-vendor weakness" in any deck.**
+  — https://cnevpost.com/2026/07/29/momenta-cleared-test-robotaxis-across-germany/
+  , https://cleantechnica.com/2026/07/29/momenta-to-test-robotaxis-across-germany-uber-invests-more/
+  **Root-cause class (for RETRACTION_LOG): single-source geopolitical INFER promoted to a market-structure
+  conclusion.** One vendor-switch datum was read as a policy regime. The switch was real; the *reason*
+  was inferred, never sourced to a regulator or to either company, and it was then reused as a standing
+  wedge. **Rule reinforced (Operating Standard #2): an inference about *why* a competitor lost a deal
+  needs a second, independent probe before it becomes a strategic asset — and a competitor's regulatory
+  posture must be re-checked at the regulator, not at the press.**
+- **Δ run #5 / 2026-08-02 (FACT) — platform breadth:** Momenta confirmed it is running **robovans in
+  Suzhou** for delivery (2026-07-27), extending its world-model platform across **robotaxi + robovan +
+  robotruck**. **INFER:** this is the same "one platform, many form factors" story we tell about a
+  hierarchy that separates strategic/tactical/operative — from a company with a chip, an OEM channel and
+  a listing. Breadth is no longer a differentiator; the *safety case* and the *compute envelope* are.
+  — https://cnevpost.com/2026/07/27/momenta-confirms-robovan-entry/
 - **Exploitable weaknesses:** **strategy split** now locked by public-market scrutiny; opaque safety case;
-  geopolitics; R7 is a *generative RL* WM (compute/data-heavy) with no hierarchy/self-monitoring claim.
+  R7 is a *generative RL* WM (compute/data-heavy) with no hierarchy/self-monitoring claim. **Geopolitics
+  is REMOVED from this list** — the Germany-wide permit is direct evidence against it.
 - **What would beat them:** a single coherent efficiency+safety thesis (vs their L2++/L4 straddle) with a
-  transparent, regulation-native safety case (H9/H11).
+  transparent, regulation-native safety case (H9/H11). Now with **less** room to lean on market access:
+  they are inside the EU with a national-scale permit, so the contest is technical, not political.
 
 ## Autobrains  (Israel · L2+/ADAS · "Liquid AI")  ⚠ narrative overlap
 - **Approach (FACT):** liquid neural networks + **modular agentic AI**, marketed as **edge-cases with less
@@ -147,6 +189,23 @@
   Nano-tier compute-normalized number** — our CNCE wedge stays open. **Watch item:** if the 2-Super
   release lands with a params-vs-benchmark table, the W-05 wedge narrows and we should publish our CNCE
   contrast first. — https://www.nvidia.com/en-us/solutions/autonomous-vehicles/alpamayo/
+- **Δ run #5 / 2026-08-02 (FACT) — checked at NVIDIA's own text, not press:** the Alpamayo 2 technical
+  post (launch **GTC Taipei 2026-06-01**) describes a **32 B VLM backbone, "3× the number of parameters
+  as prior Alpamayo models"**, adds **full 360° surround perception** and **Meta-Action** outputs, and
+  claims "state-of-the-art performance in multiple aspects including reasoning quality, trajectory
+  accuracy, alignment" — **with no benchmark table, no latency number, no compute figure, and no Nano
+  tier reported.** Weights/inference code "**coming summer 2026**". **W-05 wedge re-verified OPEN at the
+  primary source** (third consecutive run). Two new companion assets: **AlpaGym**, an open-source
+  high-throughput **closed-loop RL** framework (GRPO, default reward functions, single-GPU→multi-node,
+  "release before mid-June"), and **quantization scripts "coming soon"** — **INFER:** shipping
+  quantization tooling alongside a 3× parameter jump is NVIDIA conceding the deployment-cost problem in
+  engineering while not conceding it in the benchmark table. **AlpaGym is the actionable item — but it
+  is NOT new to us:** Tools & DevEnv logged *"AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM)"* on
+  **2026-07-06** (`PROJECT_STATE.md` §5). What changed is that it is **released, open-source, GRPO-based,
+  and stated to scale from a SINGLE GPU** — which contradicts the 40–60 GB figure on record and makes it
+  re-testable on the **A40 48 GB we already have**. Relevant because AlpaSim was a NO-GO on the eval pod
+  and CARLA pixels are host-blocked → **Tools & DevEnv: re-check the VRAM figure before any further
+  spend on a graphics-capable host.** — https://huggingface.co/blog/nvidia/nvidia-alpamayo-2
 - **Exploitable weaknesses:** 10–32 B/vehicle = anti-efficiency (W-05); Chain-of-Causation is *post-hoc*
   interpretability vs our *inherent* fallback + self-monitoring.
 - **What would beat them (as a narrative):** ~261 M-on-Orin at comparable causal efficacy (CNCE), inherent
@@ -202,6 +261,15 @@
   smoke**, then **suddenly braked, tried to turn, and halted** — inside the scene. The trace is the
   documented failure mode in one line: *drove in → failed to recognize → panic brake → stopped in the
   way.* — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
+- **Δ run #5 / 2026-08-02 (FACT) — THE REGULATORY BOTTLENECK IS GONE, AND THE CAPABILITY GAP IS NOT.**
+  NHTSA **granted the commercial exemption on 2026-07-30** (Federal Register **2026-07-31**): Zoox may
+  **charge for rides** in a vehicle with **no steering wheel, no pedals, no driver's seat** — the **first
+  such US authorization for a purpose-built AV** — for **up to 2,500 vehicles over two years**. It landed
+  **the same day** the NHTSA first-responder deadline expired **with no public resolution**, and **six
+  weeks after** Zoox's own smoke recall. **INFER, and it is the strategic read of this whole run:** the
+  gate on scaling is not the unfixed capability. Our thesis cannot be "the regulator will stop them" —
+  it has to be that **the capability itself is worth more than the exemption**, demonstrated on the
+  scenarios where they are documented to fail. — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
 - **Exploitable weaknesses:** compute-heavy multi-sensor stack (W-05); **degraded-visibility /
   obscurant response (W-04) and emergency-scene interference (W-09) — now FACT-documented at recall
   grade**, which makes Zoox the **second operator** in the W-09 class and turns it from a company story
@@ -217,9 +285,30 @@
 - **Approach (FACT):** multi-sensor L4 robotaxi; heavy **Middle-East** footprint via Uber.
 - **Business (FACT):** fully-driverless fare-charging via Uber in **Dubai (2026-03-31)**, plus Abu
   Dhabi/Riyadh; **1,200+ vehicle Middle-East commitment** by ~2027.
-- **Exploitable weaknesses (INFER):** same W-05/W-06 (compute-heavy, thin economics); geopolitics limits
-  Western data/market access (shared with Pony/Momenta).
-- **What would beat them:** data-efficiency + cost-per-vehicle (H3/H7); Western/EU-clean posture.
+- **Exploitable weaknesses (INFER):** same W-05/W-06 (compute-heavy, thin economics). ⛔ **The clause
+  "geopolitics limits Western data/market access (shared with Pony/Momenta)" is WITHDRAWN (run #5)** —
+  Momenta's Germany-wide KBA L4 permit (2026-07-29) is direct counter-evidence to the shared premise.
+  It was never separately sourced for WeRide; it was inherited from the same single-source INFER that
+  §2.2 of the run-#5 note retracts. **Do not restate it without a WeRide-specific regulator source.**
+- **What would beat them:** data-efficiency + cost-per-vehicle (H3/H7). *(The "Western/EU-clean posture"
+  half of this line is withdrawn with the clause above — it rested on the same retracted premise.)*
+
+## Waabi  (Canada/US · simulation-first L4 · trucks + robotaxi)  — emerging player (new run #5, PARTIAL)
+> ⚠️ **Stub, deliberately thin.** Surfaced late in run #5's sweep from a single search pass; sourcing is
+> **one step short** of the bar the other profiles meet. Completing it is a run-#6 backlog item. Do not
+> quote this entry in a deck until it carries per-fact primary links.
+- **Business (FACT/CLAIM):** raised **~$1 B**, including a **$750 M Series C co-led by Khosla Ventures
+  and G2 Venture Partners**, for self-driving **trucks** and robotaxis. Amount and co-leads are FACT
+  from reporting; the split and current valuation are unverified here.
+  — https://www.barchart.com/story/news/37268532/waabi-secures-us1-billion-in-funding-as-it-pushes-self-driving-trucks-robotaxis
+- **Why it matters to us (INFER):** Waabi is the most **architecturally adjacent** unprofiled player —
+  a **simulation-first** thesis ("Waabi World" generative simulator) that claims capability from
+  *simulated* rather than fleet-scale real miles. That is the closest public analogue to our own
+  data-efficiency argument (H3/H7), and it targets the same weakness (W-06) we attack. Trucks-first also
+  sidesteps the urban emergency-scene surface (W-09) that dominates the robotaxi field.
+- **What to check next run:** parameter counts / compute disclosure (W-05, CNCE comparability); whether
+  Waabi World is used **in the loop** or only as a data/eval factory (the same question that separates
+  us from Wayve's GAIA); any published sim-to-real transfer number.
 
 ## Nuro  (US · L4 stack supplier · Uber+Lucid)  — emerging player (new 2026-07-31)
 - **Approach (FACT):** shifted from delivery pods to **licensing its L4 driver**; supplies the stack for
