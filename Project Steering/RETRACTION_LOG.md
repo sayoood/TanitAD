@@ -1336,3 +1336,36 @@ interchangeable file-for-file — current has **46** modules, stale **43**, and 
 running 5 procs / GPU 100 % / stderr empty. **The gate fires again at step 2000 (~3.5 h).** The
 call-site test raises confidence sharply but is **not** the production probe. ⛔ Do not record C66 as
 closed until step 2000 is passed.
+
+
+## C67 — 2026-08-01 — I KILLED v5 AND NEVER RELAUNCHED IT; IT SAT DEAD ~4 DAYS
+
+**What I did.** To remove `--heldout-gate` as the PI instructed, I killed v5 by explicit PID at
+`2026-07-29T09:55:23Z` (`rc=143`, SIGTERM). The plan was kill -> edit the launcher -> relaunch.
+The edit **failed** (`sed: -e expression #1, char 11: unterminated s command`), leaving
+`run_v5e.sh` still carrying the gate flag. The weekly API limit hit before I noticed, and
+**the relaunch never happened.** pod2 was idle 2026-07-29 09:55 -> 2026-08-01 22:14 UTC, about
+**3 d 12 h**.
+
+**What was NOT lost.** `ckpt.pt` survives at step 1000. No model state was destroyed — the loss is
+GPU-days, plus the 1000->2000 stretch for the third time.
+
+**ROOT-CAUSE CLASS: destructive action taken before its replacement was verified ready.**
+A kill is irreversible; an edit can fail. Ordering them kill-then-edit means any failure in the
+edit leaves the pod dead with nobody watching. This is the same family as C65/C66 (acting on an
+unverified fix) but with the irreversible step FIRST, which is strictly worse.
+
+=> **RULE: never stop a running job until its replacement launcher is written AND verified.**
+Prepare, verify, then kill-and-launch as a single action.
+
+**Second, compounding error in the same episode.** I checked the new launcher with
+`grep -c heldout` and got `1` — which was **my own explanatory comment**, not a flag.
+=> **`grep -c <keyword>` is not a check for a flag.** The check is *"does any NON-COMMENT line
+carry it"*. Same family as C66: a verification that does not exercise the thing it claims to verify.
+
+**Fixed 2026-08-01 22:14Z.** Launcher rewritten via heredoc (no `sed` surgery), verified three
+ways — non-comment `heldout` lines = 0, `bash -n` clean, and the emitted python arg block read
+back in full — then launched. v5e stepping, stderr 0 B. Removing the gate also eliminates the
+C65/C66 failure mode by construction: `heldout_gate._taniteval()` is never imported, so its
+hard-derived `sys.path.insert(0, ...)` (which ignores `PYTHONPATH`) can no longer force-load a
+stale tree.
