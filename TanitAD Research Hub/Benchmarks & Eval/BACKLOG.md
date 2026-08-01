@@ -2,6 +2,29 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## P0 — 2026-08-02 (this run's findings drive these; they outrank everything below)
+
+1. ⭐ **Land the CTRV floor** — intake `2026-08-02-ctrv-floor` (patch + 11 tests, `git apply --check`
+   clean at `4978a82`, validated end-to-end on the eval pod). Until it lands, **every new gate run
+   still publishes CV-only verdicts**, and 12 arms "beat a floor" that 6 actually beat. Orchestrator
+   triage; zero extra compute; rollback is `git apply -R`.
+2. ⭐ **Re-run the v4 30k gate and the v5 held-out gate with three floors** before either
+   `sustained_turn +1.2416 favours model` or `where_the_win_lives = "lateral only"` is quoted again
+   (`incoming/2026-07-28-v4-30k-gate`). Expected: the direction holds, the magnitude falls ~5×.
+   Falsifier: a stratum verdict flips to `floor` → that arm's lateral claim is withdrawn, not softened.
+3. **Escalated, not fixable here:** `PROJECT_STATE` / `MODEL_REGISTRY` §0.3's *"first arm below EVERY
+   trivial bar"* needs restating as a point-estimate claim (paired vs CTRV is a **tie**), and three
+   window dumps carry a divergent `eid` encoding (`v4.1-10k`, `v4.2-step4000`, `v16-ab-ft`) that will
+   mis-join any cross-arm key. Track until the orchestrator answers.
+4. **Midpoint-corrected CTRV as a STRONGER floor** (measured half-step bias 0.3044 m on a perfect
+   1 rad arc). Every margin published on 2026-08-02 is a lower bound on the artifact. Cheap: it is a
+   one-line rotation in `ctrv_waypoints`; the decision is whether the program wants a floor stronger
+   than its own historical CTRV. Falsifier: correction changes no verdict → keep the simpler form.
+5. **High-speed lateral, not just longitudinal** (feeds the v2.1/v3 lever below). At `speed_top10pct`
+   CTRV ADE is **0.0986 m** vs the model's **0.7159**, and \|cross\|/heading/crosstrack all flip to
+   `floor`. The lever as written up-weights the *along-track* term only. Measure first: does the
+   top-decile lateral loss survive on v4/v5, or is it a v1 artifact?
+
 ## v2.1 / v3 LEVER — flagship high-speed longitudinal fix (Sayed 2026-07-18, deferred from v2)
 The `taniteval/pathspeed.py` decoupled long/lat panel found flagship-30k's high-speed loss to CTRV is
 **LONGITUDINAL, not lateral**: 89% of the 2s sq-error is along-track; at high speed the model

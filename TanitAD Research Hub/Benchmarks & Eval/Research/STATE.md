@@ -1,9 +1,65 @@
 # STATE — Benchmarks & Eval
 
-LAST_RUN: 2026-07-17 (Thursday scheduled) — open-loop L2 + ego-status shortcut ceiling; branch `agent/benchmarks-eval-20260717` (worktree off bench tip e8fca8e, D-026, off-Drive)
-QUALITY: full (1 measured experiment with held-out numbers; new metric ships with 8 analytic tests; $0, dev-box CPU, no pod touched)
+LAST_RUN: 2026-08-02 (Thursday scheduled, fired Sun 02 Aug) — **E-CTRV: the canonical driving gate's floor cannot turn**; branch `agent/benchmarks-eval-20260802`
+QUALITY: full (1 pre-registered measured experiment, 25 arms on the canonical val; the new floor ships with 11 analytic-ground-truth tests; the proposed patch is validated end-to-end, not just proposed)
+RESOURCE (G-I): **eval pod `tanitad-eval` (A40) — CPU-only, 372.9 s sweep + ~90 s patch validation**, $0 marginal (standing pod), GPU untouched, no checkpoint loaded, no training pod touched. Dev-box 4060 not needed (the experiment is per-window arithmetic over banked dumps); the eval pod was used anyway because the 881-window val cache and all 27 arm dumps live there — the bigger resource WAS the right one, and it had been idle. 3 web searches of the 25-search budget.
 
-## Latest run (2026-07-17) — the denominator in leaderboard-comparable units (G1 advanced)
+## Latest run (2026-08-02) — the floor that cannot turn (G1 met on the measurement half)
+
+**`taniteval/driving.py:304` is `FLOORS = ("cv", "holdv0")` — both straight lines.** CTRV is admissible
+under the identical information budget, is **already computed on every window** by
+`driving_diagnostic.baseline_waypoints` and **discarded** by `rollout.collect`, and it is the *dominant*
+floor. Pre-registered before the driver ran (`PREREGISTRATION.md`, both outcomes + an INSTRUMENT-FAIL
+branch). Deliverable: intake `Implementation/incoming/2026-08-02-ctrv-floor/` (module + 11 tests +
+driver + validated patch + 1.3 MB raw) + note `Research/2026-08-02-ctrv-floor-readjudication.md`.
+
+- **F1 (the floor).** Canonical 881 windows / 40 episodes: CTRV **0.5265 m** (gated) / 0.5230 (ungated)
+  vs CV **0.8377** and hold-v0 **0.7876**; paired **CTRV−CV +0.3113 [0.167, 0.484] separated**;
+  CTRV wins **423/881** windows (CV 156, hold-v0 302). *(best-of-3 = 0.4820 and is an **ORACLE**.)*
+- **F2 (the blast radius).** **16 of 25 banked arms' headline verdicts move.** 12 arms "beat the trivial
+  floor" under CV; **6** under CTRV; best surviving margin in the fleet **+0.0890 m**; 7 arms flip to
+  *losing*. ⭐ **flagship-v1 @30k: vs CV +0.4106 separated → vs CTRV +0.0993 [−0.026, +0.220] TIE.**
+- **F3 (pre-registered verdict: H-REAL — I registered the wrong prediction).** All three registered flip
+  criteria HELD: `sustained_turn` ADE **+0.3398 [0.153, 0.550] still favours model**, `curv_sharp`
+  heading **+7.69°**, overall \|cross\| **+0.1372**. But the **magnitudes collapse 3.2–6.3×** ⇒
+  `where_the_win_lives = "lateral only"` survives as a *direction* and may never again be quoted with a
+  CV-derived magnitude.
+- **F4 (what CV structurally could not show).** At `speed_top10pct` (n=89) **CTRV ADE 0.0986 vs model
+  0.7159 (7.3×)** and \|cross\|/heading/crosstrack all flip tie→**floor**; `speed_high` (n=294) ADE
+  flips tie→floor (−0.2154 [−0.386, −0.030]). The high-speed weakness is **not only longitudinal** —
+  a straight-line floor cannot expose a lateral loss on a locally-arc road. *(Exploratory, NOT
+  pre-registered; reported as hypothesis-generating.)*
+- **F5 (instrument).** Alignment measured, not assumed (C63): rebuilt `cv`/`gt` are **bit-exact
+  (0.0)** against the persisted tensors on **25 of 27** dumps; the two 88-window smoke partials are
+  refused. Found: **three dumps (`flagship-v4.1-10k`, `v4.2-step4000`, `v16-ab-ft`) use a different
+  `eid` encoding** (packed string uid) with bit-identical tensors — a literal-equality check refuses
+  three provably-aligned arms, and any cross-arm join keyed on `eid` will mis-join them.
+- **Increment readiness: VALIDATED** (D-029). `proposed_ctrv_floor.patch` is `git apply --check` clean
+  at `4978a82` **and** was applied to a throwaway copy on the pod and run: legacy dump still scores with
+  `floors_missing=['ctrv']` and an unchanged ADE; backfilled dump scores three floors with
+  `ctrv_ade=0.523`, `vs_ctrv +0.0959 [−0.0283, 0.2177] separated=False`. Gap to *production*: orchestrator
+  triage into `taniteval`, plus a one-time regression-golden refresh for rows that pin `floor_values`.
+- **Published anchor (G-B1):** the nuScenes `PhysicsOracle` is a best-of-**four** including **two
+  yaw-rate models**; ours was a best-of-two with both removed. It also corrects our own labelling —
+  best-of-N is an **oracle** (privileged), never a competitor.
+
+### ⛔ Escalations (Project Steering — NOT editable by this agent)
+1. **`PROJECT_STATE` / `MODEL_REGISTRY` §0.3: "the FIRST arm below EVERY trivial bar"** is a
+   point-estimate claim (0.4271 < 0.5265 holds); under the program's own paired estimator it is a
+   **tie**. Needs restating, not deleting.
+2. **The v4 30k gate's `sustained_turn +1.2416 favours model` and `where_the_win_lives = "lateral
+   only"`** were computed against the two-floor family — re-run with the third floor before quoting.
+3. **The `eid` encoding split** (F5) — one-line normalisation at write time in `rollout.collect`.
+
+### ⚠️ Housekeeping debt found this run
+This STATE was **16 days stale** (LAST_RUN 2026-07-17) while the autonomous loop banked **~15 intake
+packages under this discipline's `Implementation/incoming/`** (2026-07-22 → 2026-07-29: v4-30k-gate,
+speed-channel, parity-leak-check, closedloop-control-suite, egoprogress, bounded-terms, recovery-twosided,
+jack-blast-radius, …). Those are real Benchmarks & Eval deliverables that this file never recorded. The
+2026-07-17 block below is retained verbatim as history; **the 2026-07-21 LEADERBOARD rewrite and the
+2026-07-25 `overlapping_holdout_se` blast-radius work are the two things a reader must not miss.**
+
+## Prior run (2026-07-17) — the denominator in leaderboard-comparable units (G1 advanced)
 
 Continued the #1 program-risk work (single-camera driving gap) — took the denominator from our internal
 camera-frame/floor units into **community-comparable nuScenes-style open-loop L2** (metric-BEV ego frame).

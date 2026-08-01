@@ -1,0 +1,143 @@
+--- a/taniteval/taniteval/rollout.py
++++ b/taniteval/taniteval/rollout.py
+@@ -121,9 +121,9 @@
+     because WM fidelity is a legitimate diagnostic — it just may not be quoted
+     as driving or as hierarchy."""
+     from taniteval import hierarchy_guard as _hg
+     _trace = _hg.HierarchyTrace(model)
+-    S_wp, GT, CV, EID, SPD, HDG = [], [], [], [], [], []
++    S_wp, GT, CV, CT, EID, SPD, HDG = [], [], [], [], [], [], []
+     S_dense, GT_dense = [], []
+     dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
+     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
+     with _trace:                      # PC2 seam counters over the SCORED pass
+@@ -157,10 +157,17 @@
+                 S_dense.append(wp_full.cpu().float())
+                 GT.append(gt_ego_waypoints(ep.poses, last))
+                 GT_dense.append(gt_ego_waypoints(ep.poses, last,
+                                                  wp_steps=dense_steps))
+-                CV.append(
+-                    baseline_waypoints(ep.poses, last)["constant_velocity"])
++                _bl = baseline_waypoints(ep.poses, last)
++                CV.append(_bl["constant_velocity"])
++                # CTRV — already computed by baseline_waypoints and, until
++                # 2026-08-02, discarded here. It is the DOMINANT trivial floor
++                # on the canonical val (423/881 windows, ADE 0.5265 vs CV
++                # 0.8377) and the only one that can turn, so a floor family
++                # without it cannot judge any lateral claim. Zero extra
++                # compute: the tensor exists, it was being thrown away.
++                CT.append(_bl["constant_yaw_rate"])
+                 EID.extend([ep.episode_id] * len(ch))
+                 SPD.append(ep.poses[last, 3])
+                 HDG.append(net_heading_change_deg(ep.poses, last))
+     # PC2 record. NON-strict: this block is a legitimate WM-fidelity diagnostic
+@@ -176,9 +183,10 @@
+                             and _pc2["decision_surface"]["actions_are_chosen"])
+     _pc2["honest_metric_name"] = "wm_fidelity_ade_2s"
+     return {"pc2": _pc2,
+             "pred": torch.cat(S_wp), "gt": torch.cat(GT).float(),
+-            "cv": torch.cat(CV).float(), "eid": EID,
++            "cv": torch.cat(CV).float(),
++            "ctrv": torch.cat(CT).float(), "eid": EID,
+             "speed": torch.cat(SPD).float(),
+             "head_deg": torch.cat(HDG).float(),
+             "wp_steps": list(WP_STEPS),
+             # --- dense 10 Hz path (tier-1 behavioural metrics) -------------- #
+--- a/taniteval/taniteval/driving.py
++++ b/taniteval/taniteval/driving.py
+@@ -300,12 +300,22 @@
+     t = torch.arange(1, n + 1, dtype=torch.float32) * DT_WP
+     return torch.stack([v0[:, None] * t[None, :], torch.zeros(len(v0), n)], -1)
+ 
+ 
+-FLOORS = ("cv", "holdv0")
++#: ⚠️ ``cv`` and ``holdv0`` are BOTH straight lines. Until 2026-08-02 they
++#: were the whole family, so every lateral / turn verdict this block emitted
++#: was measured against predictors structurally unable to turn. MEASURED
++#: (…/incoming/2026-08-02-ctrv-floor): adding CTRV moves 16 of 25 banked
++#: arms' headline verdicts and shrinks flagship-v1's sustained-turn margin
++#: 5.3x (+1.8063 -> +0.3398, still separated). The nuScenes PhysicsOracle is
++#: a best-of-FOUR including two yaw-rate models; ours was a best-of-two with
++#: both removed.
++FLOORS = ("cv", "holdv0", "ctrv")
+ FLOOR_DESC = {
+     "cv": "constant velocity (persisted by rollout.collect)",
+     "holdv0": "hold-v0: go straight at the observed entry speed",
++    "ctrv": "constant turn rate + velocity (persisted by rollout.collect "
++            "since 2026-08-02; absent from pre-2026-08-02 window dumps)",
+ }
+ 
+ 
+ # ========================================================================== #
+@@ -544,8 +554,15 @@
+     eid, v0 = list(win["eid"]), win["speed"].float()
+     hv = hold_v0(v0, n=pred.shape[1])
+     pw = {"model": per_window(pred, gt), "cv": per_window(cv, gt),
+           "holdv0": per_window(hv, gt)}
++    # Legacy dumps (every windows_*.pt written before 2026-08-02) carry no
++    # `ctrv`. Degrade to the two-floor family rather than crash — but say so
++    # in the block, so a two-floor row can never be mistaken for a
++    # three-floor one. Backfill: …/incoming/2026-08-02-ctrv-floor.
++    if win.get("ctrv") is not None:
++        pw["ctrv"] = per_window(win["ctrv"].float(), gt)
++    floors = tuple(f for f in FLOORS if f in pw)
+     draws = _Draws(eid, n_boot=n_boot, seed=seed)
+ 
+     out = {
+         "block": BLOCK, "version": VERSION, "spec": SPEC,
+@@ -582,9 +599,10 @@
+             "stop_v_ms": STOP_V_MS, "moving_v_ms": MOVING_V_MS,
+             "sustained_turn_deg": SUSTAINED_TURN_DEG,
+             "heading_exceed_deg": HEADING_EXCEED_DEG,
+             "min_n_stratum": MIN_N_STRATUM},
+-        "floors": {f: FLOOR_DESC[f] for f in FLOORS},
++        "floors": {f: FLOOR_DESC[f] for f in floors},
++        "floors_missing": [f for f in FLOORS if f not in floors],
+         "refused": {
+             "headway_ttc_distance_keeping":
+                 "no lead-agent state exists (lead_state is a None stub)",
+             "vtarget_referenced_speed_at_2s":
+@@ -616,9 +634,9 @@
+     out["floor_values"] = {
+         f: {k: {"value": round(float(_reducer(REDUCE.get(k, "mean"))(
+             np.asarray(pw[f][k], dtype=float))), 4),
+             "reducer": REDUCE.get(k, "mean")} for k in HEADLINE}
+-        for f in FLOORS}
++        for f in floors}
+ 
+     # RMSE forms (the registry quotes RMSE, not MAE, for long/lat)
+     lsq = float(pw["model"]["long_sq_2s"].mean())
+     csq = float(pw["model"]["lat_sq_2s"].mean())
+@@ -628,9 +646,9 @@
+ 
+     # ---- the decisive test: WHERE does the win live? ---------------------- #
+     out["vs_floor_paired"] = {
+         f: {k: _paired(pw[f][k], pw["model"][k], draws, REDUCE.get(k, "mean"))
+-            for k in PAIRED} for f in FLOORS}
++            for k in PAIRED} for f in floors}
+ 
+     # ---- L1 CRUISE-QUALITY / L2 TRANSIENT-RESPONSE ------------------------ #
+     reg = regimes(gt, v0)
+     out["longitudinal_regime"] = {}
+@@ -642,9 +660,9 @@
+         row = {"n": int(m.sum()),
+                "metric": "L1 CRUISE-QUALITY" if r == "steady"
+                else "L2 TRANSIENT-RESPONSE",
+                "low_confidence": bool(int(m.sum()) < MIN_N_STRATUM)}
+-        for f in ("model",) + FLOORS:
++        for f in ("model",) + floors:
+             row[f"{f}_ade"] = round(float(pw[f]["ade_0_2s"][idx].mean()), 4)
+             row[f"{f}_speed_mae"] = round(
+                 float(pw[f]["speed_mae_mps"][idx].mean()), 4)
+         row["vs_holdv0_speed_mae_paired"] = _paired(
+@@ -723,9 +741,9 @@
+         row = {"n": n, "frac": round(n / max(1, len(eid)), 4),
+                "low_confidence": bool(n < MIN_N_STRATUM)}
+         if n:
+             idx, sd = _sub_draws(eid, m, n_boot, seed)
+-            for f in ("model",) + FLOORS:
++            for f in ("model",) + floors:
+                 row[f"{f}_ade"] = round(float(pw[f]["ade_0_2s"][idx].mean()), 4)
+                 row[f"{f}_speed_mae"] = round(
+                     float(pw[f]["speed_mae_mps"][idx].mean()), 4)
+             if n >= 2:

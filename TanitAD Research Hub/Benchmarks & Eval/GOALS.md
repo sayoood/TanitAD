@@ -6,6 +6,19 @@ measured step; a goal with no movement for two runs is escalated in STATE. Newes
 ## G1 — Give the single-camera driving-capability gap an honest, standardized denominator
 **Target:** the D1 gate reports `skill_score` = model_ADE ÷ per-stratum best-of-3 kinematic floor
 (not a single CV scalar), with a first *model-relative* skill_score on a real checkpoint. **Deadline: W33.**
+- **2026-08-02 (this run): ✅ MET on the measurement half; the code half is one patch from done.**
+  The missing *model-relative* number exists: on the canonical 881-window/40-episode val, **25 banked
+  arms** are now scored against a **third floor (CTRV)** with the paired episode-cluster estimator —
+  floor **0.5265 m** (CV 0.8377 / hold-v0 0.7876), CTRV wins **423/881**, **16 of 25 headline verdicts
+  move**, and **flagship-v1's "beats the trivial floor" becomes a TIE** (+0.0993 [−0.026, +0.220]).
+  Per-stratum skill is reported directly as paired deltas, which is strictly more informative than a
+  ratio (a ratio has no interval — the C61/E-CR lesson). Alignment verified **bit-exact** on 25/27
+  dumps. Deliverable: `Implementation/incoming/2026-08-02-ctrv-floor/` (patch + 11 tests + 1.3 MB raw),
+  LEADERBOARD §0/§1b rewritten from INHERITED to MEASURED.
+  **Remaining gap to full closure:** the two-line patch must be triaged into `taniteval` so the gate
+  emits three floors *by default* — until then every new gate run still publishes CV-only verdicts.
+  **New sub-goal G1b (deadline W36):** no gate verdict on a turn/lateral stratum is quotable without
+  its CTRV column.
 - **2026-07-17 (this run):** ✅ **Advanced.** Put the denominator in **leaderboard-comparable units.**
   Built + tested (8 tests) the nuScenes-style open-loop L2 protocol (metric-BEV ego frame, both averaging
   conventions) + the **no-vision ego-status shortcut** (AD-MLP repro). Measured on 7 920 comma-hwy val

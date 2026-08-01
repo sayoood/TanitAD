@@ -3,6 +3,40 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-02] [this run / measured] ⭐ **THE CANONICAL DRIVING GATE'S FLOOR CANNOT TURN.**
+  `taniteval/driving.py:304` is `FLOORS = ("cv", "holdv0")` — both straight lines — while CTRV, same
+  information budget, is **already computed on every window by `driving_diagnostic.baseline_waypoints`
+  and discarded by `rollout.collect`**. On the canonical 881-window/40-ep val, CTRV is the DOMINANT
+  floor: ADE **0.5265** (gated) vs CV 0.8377 / hold-v0 0.7876; paired **+0.3113 [0.167, 0.484]
+  separated**; wins **423/881** windows (CV 156, hold-v0 302) — impact: every lateral/turn verdict,
+  D1 gate, LEADERBOARD §0/§1b — `../Implementation/incoming/2026-08-02-ctrv-floor/`
+- [2026-08-02] [this run / measured] **16 of 25 banked arms' headline verdicts move when CTRV is the
+  floor.** 12 arms beat the floor under CV; **6** under CTRV, best surviving margin **+0.0890 m**.
+  ⭐ **flagship-v1 @30k: vs CV +0.4106 separated → vs CTRV +0.0993 [−0.026, +0.220] NOT separated** ⇒
+  "the FIRST arm below EVERY trivial bar" is a **point-estimate** claim, a **tie** under the program's
+  own paired estimator. Escalated (PROJECT_STATE/MODEL_REGISTRY not agent-editable) — impact: the
+  program's central capability claim — same intake.
+- [2026-08-02] [this run / measured] **The lateral win is REAL but ~5× smaller than published.**
+  Pre-registered criteria all held for flagship-v1: `sustained_turn` ADE +1.8063 → **+0.3398 [0.153,
+  0.550] still separated, favours model**; sharp-curvature heading +24.93° → **+7.69°**; overall
+  \|cross\| +0.7720 → **+0.1372**. ⇒ `where_the_win_lives = "lateral only"` survives as a DIRECTION and
+  may never again be quoted with a CV-derived magnitude — impact: H15 / v4-v5 gate narrative — same intake.
+- [2026-08-02] [this run / measured] **At the top speed decile CTRV beats the model LATERALLY, not just
+  longitudinally** (n=89: CTRV ADE **0.0986** vs model **0.7159**, 7.3×; \|cross\|, heading and
+  crosstrack all flip tie→floor; `speed_high` n=294 ADE flips tie→floor −0.2154 [−0.386, −0.030]). The
+  high-speed weakness was framed as purely longitudinal because a straight-line floor cannot expose a
+  lateral one on a locally-arc road — impact: v2.1/v3 high-speed lever, `memory/flagship-longitudinal-lever` — same intake.
+- [2026-08-02] [nuScenes devkit / published] **The community physics floor is a best-of-FOUR including
+  two yaw-rate models** — `PhysicsOracle` = {const-velocity+yaw, **const-velocity+yaw-rate (CTRV)**,
+  const-accel+yaw, **const-accel+yaw-rate**}, best-per-sample vs GT. Ours was a best-of-two with both
+  yaw-rate members removed. Also fixes our own labelling: **best-of-N is an ORACLE (privileged), never a
+  competitor** — impact: G-B1 leaderboard hygiene / floor design —
+  https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/prediction/README.md
+- [2026-08-02] [this run / measured] **Three banked window dumps use a DIFFERENT `eid` encoding.**
+  `windows_flagship-v4.1-10k / v4.2-step4000 / v16-ab-ft` label the same 40 episodes with the packed
+  string uid (`808464434`, …) where all others use `0..39`, with **bit-identical** `gt`/`cv`/`speed`.
+  Any cross-arm join keyed on `eid` mis-joins these three; a literal-equality alignment check refuses
+  three provably-aligned arms (compare the PARTITION instead) — impact: harness hygiene — same intake.
 - [2026-07-17] [this run / measured] **The ego-status shortcut ceiling on OUR data = avg L2 0.66 m
   (comma-hwy, metric-BEV, held-out by clip).** A no-vision ~20-param ridge from ego-status history scores
   0.144/0.552/1.256 m @1/2/3s — statistically tied with CTRV (0.656) — the AD-MLP shortcut (2312.03031)

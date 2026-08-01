@@ -36,19 +36,83 @@ to emit it.
 **floor** means the trivial baseline beat the model. Six arms are CI-separated *against themselves*
 on speed MAE; a sep/tie rendering would have printed those as wins.
 
-**FLOORS** on the same 881 windows (MEASURED, `taniteval/results/driving_flagship-30k.json`):
+**FLOORS** on the same 881 windows (MEASURED; rows 1–2 `taniteval/results/driving_flagship-30k.json`,
+rows 3–4 **recomputed 2026-08-02** on these exact windows —
+`…/incoming/2026-08-02-ctrv-floor/raw/ctrv_readjudication.json`):
 
-| floor | ADE@2s m | FDE@2s m | miss@2m | speed MAE m/s | \|along\| m | \|cross\| m | heading° | κ-sign |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **constant velocity (CV)** | **0.8377** | 1.7406 | 0.3042 | 0.4678 | 1.0955 | 1.0089 | 6.623 | 0.6103 |
-| **hold-v0** (straight at entry speed) | **0.7876** | 1.6521 | 0.2917 | 0.4818 | 1.1040 | 0.9137 | 6.344 | 0.5119 |
-| best-of-3 kinematic (CV/CTRV/go-straight) | *0.5005* | — | — | — | — | — | — | — |
-| CTRV oracle | *0.523* | — | — | — | — | — | — | — |
-| no-vision ego-status ceiling (AD-MLP repro) | *0.5735* | — | — | — | — | — | — | — |
+| floor | ADE@2s m | FDE@2s m | miss@2m | speed MAE m/s | \|along\| m | \|cross\| m | heading° | κ-sign | wins/881 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| constant velocity (CV) | 0.8377 | 1.7406 | 0.3042 | 0.4678 | 1.0955 | 1.0089 | 6.623 | 0.6103 | 156 |
+| hold-v0 (straight at entry speed) | 0.7876 | 1.6521 | 0.2917 | 0.4818 | 1.1040 | 0.9137 | 6.344 | 0.5119 | 302 |
+| ⭐ **CTRV, speed-gated 2 m/s** | **0.5265** | **1.1272** | **0.1896** | 0.4682 | 0.9382 | **0.3741** | **3.679** | — | **423** |
+| CTRV, ungated | 0.5230 | 1.1194 | 0.1896 | 0.4683 | 0.9347 | 0.3667 | 3.333 | — | — |
+| *best-of-3 **ORACLE*** (privileged per-window min) | *0.4820* | — | — | — | — | — | — | — | — |
+| no-vision ego-status ceiling (AD-MLP repro) | *0.5735* | — | — | — | — | — | — | — | — |
+
+⭐ **CTRV IS THE FLOOR, and it was missing from the gate.** `taniteval/driving.py:304` scores every arm
+against `FLOORS = ("cv", "holdv0")` — **both straight lines**. CTRV is admissible under the identical
+information budget (`poses[last]`, `poses[last-1]`, no future), is **already computed on every window**
+by `driving_diagnostic.baseline_waypoints` and discarded by `rollout.collect`, and it beats both
+incumbents: paired **CTRV − CV = +0.3113 m [0.1674, 0.4844] separated**, **CTRV − hold-v0 = +0.2611 m
+[0.1419, 0.4061] separated**. It wins **423 of 881 windows** outright (CV 156, hold-v0 302).
+⇒ **every lateral / turn / curvature verdict published against the two-floor family carries a
+CV-derived magnitude that is ~5× too generous** — see §1b. Fix proposed:
+`…/incoming/2026-08-02-ctrv-floor` (patch + 11 tests, validated end-to-end).
 
 *hold-v0 is the strongest trivial **longitudinal** floor and the one VTARGET provably loses to at 2 s
-(MAE 1.65 vs 0.475, MODEL_REGISTRY §4.1). CV and hold-v0 are both straight lines, so they are also the
-honest "no lateral skill" bar. Rows 3–5 are from MODEL_REGISTRY §0.3/§6; rows 1–2 are recomputed here.*
+(MAE 1.65 vs 0.475, MODEL_REGISTRY §4.1). The previous rows "best-of-3 0.5005 / CTRV oracle 0.523" were
+INHERITED from MODEL_REGISTRY §0.3 on a **different corpus, with no interval**; they are superseded by
+the recomputed rows above. **best-of-N is an ORACLE** — it picks the winner per window using the ground
+truth, exactly like the nuScenes `PhysicsOracle`. It is a reference, never a competitor.*
+
+### 1b. Floor re-adjudication — 25 banked arms rescored against CTRV (2026-08-02, MEASURED)
+
+Paired episode-cluster bootstrap, B = 2000, same 881 windows, orientation `floor − model`.
+Alignment verified **bit-exact** (`max_abs_diff_cv = max_abs_diff_gt = 0.0`) on 25 of 27 dumps; the two
+88-window `refc-v12-smoke-*` partials are refused, not approximated.
+
+| verdict on `ade_0_2s`: vs CV → vs CTRV | n | arms |
+|---|---:|---|
+| beats floor → **beats floor** | 6 | `flagship-v16-ab-ft` (+0.0890), `refc-v12-k16reg` (+0.0688), `refc-v12` (+0.0639), `refc-v12-identity` / `refc-xl-30k` (+0.0550, **marginal, lo = +0.0001**), `refc-base-30k` (+0.0537) |
+| beats floor → **TIE** | 3 | ⭐ **`flagship-30k` (v1, deployed)**, `flagship-speed`, `refc-xl-live` |
+| beats floor → **LOSES to floor** | 3 | `refb-v2-30k`, `refb-v2-20k`, `refc-xl` |
+| tie → **LOSES to floor** | 4 | `refb`, `refb-10k`, `flagship-v4.1-10k`, `flagship-v4.2-step4000` |
+| loses → loses | 9 | REF-A family, `flagship-nospeed`, `flagship-v2-6k`, `flagship-v3enc-10k` |
+
+**16 of 25 verdicts move. 12 arms beat the trivial floor under CV; 6 do under CTRV, and the best
+surviving margin in the whole fleet is +0.0890 m.**
+
+⭐ **flagship-v1 @30k** — ADE 0.4271, vs CV **+0.4106 separated (favours model)**, vs CTRV
+**+0.0993 [−0.0258, +0.2204] NOT separated**. ⛔ **`PROJECT_STATE`'s "the FIRST arm below EVERY trivial
+bar" is a point-estimate statement** (0.4271 < 0.5265 is true); with the program's own decision-grade
+paired estimator it is a **tie** against a constant-turn-rate extrapolation. Escalated to the
+orchestrator — `PROJECT_STATE` / `MODEL_REGISTRY` are not editable by this agent.
+
+**Where the win survives (flagship-v1, pre-registered criteria — all three HELD, ~5× smaller):**
+
+| stratum / metric | n | model | CV | CTRV-g | vs CV | **vs CTRV** | shrink |
+|---|---:|---:|---:|---:|---|---|---:|
+| `sustained_turn` ADE | 142 | 0.5061 | 2.3124 | 0.8460 | +1.8063 model | **+0.3398 [0.153, 0.550] model** | 5.3× |
+| `sustained_turn` \|cross\| | 142 | 0.3462 | 3.9126 | 0.9156 | +3.5664 model | **+0.5694 [0.334, 0.804] model** | 6.3× |
+| `curv_sharp` heading° | 144 | 3.81 | 28.74 | 11.50 | +24.93 model | **+7.69 [4.75, 11.09] model** | 3.2× |
+| overall \|cross\| | 881 | 0.2369 | 1.0089 | 0.3741 | +0.7720 model | **+0.1372 [0.026, 0.252] model** | 5.6× |
+
+⇒ `verdict.where_the_win_lives = "lateral only"` **survives as a direction** and must never again be
+quoted with a CV-derived magnitude.
+
+**Where CTRV reveals a loss CV structurally could not** (flagship-v1; exploratory, not pre-registered):
+
+| scope | metric | n | vs CV | vs CTRV |
+|---|---|---:|---|---|
+| overall | `fde_2s` | 881 | +0.8330 model | **+0.2196 tie** |
+| overall | heading median° | 881 | tie | **floor** (−0.6456) |
+| `speed_high` | `ade_0_2s` | 294 | tie | **floor −0.2154 [−0.386, −0.030]** |
+| `speed_top10pct` | `ade_0_2s` | 89 | floor −0.4156 | **floor −0.6173 [−0.782, −0.459]** |
+| `speed_top10pct` | \|cross\| / heading° / crosstrack | 89 | tie / tie / tie | **floor / floor / floor** |
+
+⭐ At the top speed decile **CTRV's ADE is 0.0986 m and the model's is 0.7159 m — 7.3× worse — and the
+model now loses LATERALLY too.** The high-speed weakness has been framed as purely *longitudinal*
+because a straight-line floor cannot expose a lateral one on a road that is locally an arc.
 
 > ⚠ **Open-loop ⊥ closed-loop (standing footnote, G-B1).** arXiv 2605.00066 (Apr-2026, 15 methods):
 > ADE/FDE have **no reliable correlation** with closed-loop Driving Score. Our own evidence: flagship v1
