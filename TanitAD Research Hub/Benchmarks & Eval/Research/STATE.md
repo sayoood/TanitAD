@@ -51,6 +51,24 @@ driver + validated patch + 1.3 MB raw) + note `Research/2026-08-02-ctrv-floor-re
    only"`** were computed against the two-floor family — re-run with the third floor before quoting.
 3. **The `eid` encoding split** (F5) — one-line normalisation at write time in `rollout.collect`.
 
+### D-026 session guard — `RESULT: PASS` (after clearing one BLOCK)
+- ⛔ **It BLOCKED first on 138 uncommitted hub deliverables that are NOT mine:** the overlay **stills**
+  rendered alongside the 56 videos, which `4978a82` left untracked (`.gitignore` excludes `*.mp4` only,
+  so the PNGs were always meant to be tracked). 25.4 MB. Committed **separately** as `ea80d83` with its
+  own message rather than swept into `ee7020c` — CLAUDE.md's git-hygiene rule. Index verified to hold
+  those 138 PNGs and nothing else before committing.
+- **WARN — 10 unmerged `agent/*` branches vs tip** (`opponent-20260802` +4, `phase0-highway-dataset` +3,
+  `data-engineering-20260711` / `opponent-20260721` / `pod-code-intake-20260720` / `prod-opt-20260711`
+  +2 each, four more +1). Orchestrator merge debt.
+- **WARN — 26 INTAKE packages with no verdict past the age budget**, 8 of them **this discipline's**:
+  `2026-07-09-lal-v2-anticipation` (24 d), `2026-07-11-d1-gate-bootstrap` (22 d),
+  `2026-07-13-cosmos-robustness-first-pass` (20 d), `2026-07-15-baseline-floor` (18 d),
+  `2026-07-17-openloop-l2-egostatus-shortcut` (16 d), `2026-07-19-alpasim-closedloop-v1` (14 d),
+  `2026-07-23-gate1-clean-run` (10 d), `2026-07-23-v4-gate-emitters` (10 d).
+  ⚠️ **`2026-07-15-baseline-floor` is the direct antecedent of this run's finding** — it shipped the
+  best-of-3 floor including CTRV on 2026-07-15 and has sat untriaged for 18 days, which is why the
+  canonical gate still had a two-floor family on 2026-08-02. The cost of that queue is now measured.
+
 ### ⚠️ Housekeeping debt found this run
 This STATE was **16 days stale** (LAST_RUN 2026-07-17) while the autonomous loop banked **~15 intake
 packages under this discipline's `Implementation/incoming/`** (2026-07-22 → 2026-07-29: v4-30k-gate,
