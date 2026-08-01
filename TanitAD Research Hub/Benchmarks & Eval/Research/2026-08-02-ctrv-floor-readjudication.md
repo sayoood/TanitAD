@@ -173,7 +173,69 @@ honest reducer for heading (R5). Do not quote the 102.79°.
    forward-Euler and carries a measured **0.3044 m half-step bias on a perfect 1 rad arc**
    (`tests/test_ctrv_floor.py`) — so every margin above is a *lower bound* on the artifact.
 
-## 8. Evidence classes
+## 8. The four metric families — and the one that says the opposite of ADE
+
+⛔ **A binding rule landed MID-SESSION** (`CLAUDE.md`, Sayed, 2026-08-02, commit `4d0237a` at
+01:43 local, while this run was in flight): *every eval reports **LONGITUDINAL / LATERAL / TACTICAL /
+STRATEGIC**, added to ADE, per-family, never pooled; a family with no instrument is a work item, not
+an excuse.* This section complies — and applying the families **to the floors as well as the arm**
+turns out to be where the sharpest result of the whole run is.
+Artifact: `raw/four_families_vs_floors.json`; driver `run_four_families_vs_floors.py`.
+
+⚠️ **CADENCE.** `four_families` hardcodes `DT_S = 0.1` for the dense 10 Hz path; these banked dumps
+carry only the **sparse 4-waypoint view at 0.5 s**, so the driver sets `DT_S = 0.5` and records it.
+Not comparable to a dense-path run of the same module.
+
+### LONGITUDINAL (n = 881)
+
+| metric | flagship-30k | REF-C-XL-30k | CV | hold-v0 | CTRV-g | flagship vs CTRV |
+|---|---:|---:|---:|---:|---:|---|
+| `speed_mae_mps` | 0.4710 | 0.4545 | 0.4678 | 0.4818 | 0.4682 | −0.0027 [−0.128, +0.119] **tie** |
+| `speed_bias_mps` (+ = too fast) | **+0.1911** | +0.0209 | −0.0545 | −0.1340 | −0.0557 | −0.2468 [−0.347, −0.144] **floor** |
+| `along_mae_m` | 0.3936 | 0.4168 | 0.4401 | 0.4526 | 0.4499 | +0.0563 [−0.065, +0.174] **tie** |
+| `along_final_bias_m` | **+0.3375** | +0.0511 | +0.0347 | −0.1232 | −0.1107 | −0.4482 [−0.652, −0.238] **floor** |
+| `distance_keeping` (headway/TTC) | **UNAVAILABLE** — no lead-agent track in the episode cache; PhysicalAI-AV ships `obstacle.offline` (3D tracks on 97.44 % of the corpus) and our ingest does not read it. **A WORK ITEM, not a pass.** |
+
+### LATERAL (n = 881; heading/curvature computed over steps with `ds > 0.05 m` — 3 391 heading steps, 2 531 curvature steps, 133 excluded)
+
+| metric | flagship-30k | REF-C-XL-30k | CV | hold-v0 | CTRV-g | flagship vs CTRV |
+|---|---:|---:|---:|---:|---:|---|
+| ⭐ `curvature_mae_1pm` | **0.026969** | 0.012138 | 0.012221 | 0.012221 | **0.008967** | *point only — interval refused* |
+| `yaw_rate_mae_degps` | 1.8581 | 1.8216 | 3.6951 | 3.6951 | 2.2333 | *point only — interval refused* |
+| `heading_mae_deg` | 1.5032 | 1.1484 | 3.8265 | 3.5322 | 1.6213 | *point only — interval refused* |
+| `cross_mae_m` | **0.1152** | 0.1310 | 0.5259 | 0.4662 | 0.1604 | +0.0452 [+0.008, +0.084] **model** |
+| `cross_bias_m` (+ = left of human) | −0.0057 | −0.0000 | −0.0281 | −0.0118 | +0.0091 | +0.0148 [−0.018, +0.048] **tie** |
+
+⭐⭐ **THE RESULT THE BINDING RULE EXISTS TO CATCH.** On cross-track the flagship **beats** the CTRV
+floor (+0.0452, separated). On **curvature it is 3.0× WORSE than CTRV (0.026969 vs 0.008967) and 2.2×
+worse than the straight-line floors** — a floor whose curvature error is simply the ground truth's own
+curvature, because a straight line has none. **The path passes through roughly the right points while
+turning with the wrong shape** — precisely the "smooth but wrong" failure the rule names, invisible to
+ADE *and* to cross-track. REF-C-XL's curvature (0.012138) is **2.2× better than the flagship's** while
+its ADE is *worse* (0.4714 vs 0.4271) — an arm ordering that ADE alone inverts.
+
+### TACTICAL · STRATEGIC — **UNAVAILABLE on this surface, and that is a work item**
+
+Both report `UNAVAILABLE` with the reason and n, as the rule requires: the scored pass is a
+**world-model fidelity** rollout under the expert's true future actions (`rollout.collect`'s own
+`pc2` record: `actions_source="expert_future"`, `pc2_pass=False`), so it produces no decoded
+manoeuvre or route decision — `maneuver_pred/gt` and `route_pred/gt` are absent. Producing these two
+families needs a **hierarchy-traversing eval**, which does not exist yet. ⛔ **Neither family may be
+scored from this run, and their absence is not a pass.**
+
+### ⚠️ Three intervals REFUSED, on purpose
+
+`heading_mae_deg`, `yaw_rate_mae_degps` and `curvature_mae_1pm` are published as **point estimates
+only**. The module reduces them as a *pooled mean over all valid steps*; a per-window reimplementation
+(needed for a paired bootstrap) is a *mean of per-window means*, and the two differ by 7.6e-01 /
+5.9e-01 / 3.6e-02 on flagship-30k because validity varies per window. The driver measures that
+disagreement per metric and **refuses the interval above 1e-3** rather than publish a bootstrap of a
+statistic that is not the published one. Work item: a per-window reducer inside `four_families`
+itself. *(The first cut of this driver returned heading in **radians** and silently dropped curvature
+and yaw-rate by mis-keying `_seq_geometry` — the C63 failure mode exactly. The agreement check is what
+caught it; it is now part of the driver.)*
+
+## 9. Evidence classes
 
 | claim | class |
 |---|---|

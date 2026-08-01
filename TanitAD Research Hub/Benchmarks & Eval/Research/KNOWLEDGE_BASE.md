@@ -3,6 +3,31 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-02] [this run / measured] ⭐⭐ **CROSS-TRACK SAYS THE MODEL WINS; CURVATURE SAYS IT IS 3×
+  WORSE THAN THE TRIVIAL FLOOR.** Four-family panel (CLAUDE.md binding rule, landed mid-run) applied to
+  the arm **and every floor**, n=881: flagship-v1 `cross_mae_m` **0.1152** vs CTRV 0.1604 (+0.0452
+  [0.008, 0.084] separated, favours model) but `curvature_mae_1pm` **0.026969** vs CTRV **0.008967**
+  (3.0×) and vs the straight-line floors 0.012221 (2.2×). **The path hits roughly the right points with
+  the wrong SHAPE** — invisible to ADE and to cross-track. **REF-C-XL's curvature is 2.2× better than
+  the flagship's while its ADE is worse (0.4714 vs 0.4271) — ADE inverts the ordering.** Also
+  longitudinal: flagship `speed_bias` **+0.1911 m/s (too fast)** vs REF-C +0.0209; `along_final_bias`
+  **+0.3375 m** vs floors ≈−0.11 (separated, favours floor) — impact: the "lateral only" narrative,
+  arm selection, v2.1 lever — `../Implementation/incoming/2026-08-02-ctrv-floor/raw/four_families_vs_floors.json`
+- [2026-08-02] [this run / instrument] **TACTICAL and STRATEGIC are UNAVAILABLE on the canonical eval
+  surface, and that is a WORK ITEM.** `rollout.collect` is a world-model *fidelity* pass under the
+  expert's true future actions (`pc2_pass=False`, `actions_source="expert_future"`), so no manoeuvre or
+  route decision is decoded — `maneuver_pred/gt`, `route_pred/gt` are absent. Same for LONGITUDINAL
+  distance-keeping (headway/TTC): no lead-agent track is read, though `obstacle.offline` exists on
+  97.44 % of the corpus. ⇒ **two of the four binding families cannot be reported from any current eval**
+  — impact: H1b hierarchy claim, binding-rule compliance — same intake.
+- [2026-08-02] [this run / instrument] **A per-window reimplementation of a pooled-mean metric is NOT
+  the same statistic.** `four_families` reduces heading/yaw-rate/curvature as a pooled mean over valid
+  steps; a per-window form (needed for a paired bootstrap) is a mean-of-per-window-means and differs by
+  7.6e-01 / 5.9e-01 / 3.6e-02 on flagship-30k. The driver measures the disagreement per metric and
+  **refuses the interval above 1e-3** rather than bootstrap a different statistic than the one
+  published. *(Its first cut returned heading in RADIANS and silently dropped curvature and yaw-rate by
+  mis-keying `_seq_geometry` — the C63 failure mode; the agreement check is what caught it.)* — impact:
+  estimator hygiene / G-B1 — same intake.
 - [2026-08-02] [this run / measured] ⭐ **THE CANONICAL DRIVING GATE'S FLOOR CANNOT TURN.**
   `taniteval/driving.py:304` is `FLOORS = ("cv", "holdv0")` — both straight lines — while CTRV, same
   information budget, is **already computed on every window by `driving_diagnostic.baseline_waypoints`

@@ -114,6 +114,39 @@ quoted with a CV-derived magnitude.
 model now loses LATERALLY too.** The high-speed weakness has been framed as purely *longitudinal*
 because a straight-line floor cannot expose a lateral one on a road that is locally an arc.
 
+### 1c. The FOUR METRIC FAMILIES vs the floors (binding rule, CLAUDE.md 2026-08-02)
+
+Same 881 windows; point estimates from `taniteval/four_families.py` itself; paired episode-cluster
+bootstrap where a per-window form reproduces the module (see refusals below).
+⚠️ Sparse 4-waypoint cadence — the driver sets `DT_S = 0.5`; **not** comparable to a dense-10 Hz run.
+Artifact: `…/incoming/2026-08-02-ctrv-floor/raw/four_families_vs_floors.json`.
+
+| family / metric | flagship-30k | REF-C-XL-30k | CV | hold-v0 | **CTRV-g** | flagship vs CTRV |
+|---|---:|---:|---:|---:|---:|---|
+| **LONG** `speed_mae_mps` | 0.4710 | 0.4545 | 0.4678 | 0.4818 | 0.4682 | tie |
+| **LONG** `speed_bias_mps` *(+ = too fast)* | **+0.1911** | +0.0209 | −0.0545 | −0.1340 | −0.0557 | **floor** −0.2468 [−0.347, −0.144] |
+| **LONG** `along_final_bias_m` | **+0.3375** | +0.0511 | +0.0347 | −0.1232 | −0.1107 | **floor** −0.4482 [−0.652, −0.238] |
+| **LONG** distance-keeping (headway/TTC) | **UNAVAILABLE** — no lead-agent track is read from the episode cache (`obstacle.offline` exists on 97.44 % of the corpus). **A WORK ITEM.** |
+| ⭐ **LAT** `curvature_mae_1pm` | **0.026969** | 0.012138 | 0.012221 | 0.012221 | **0.008967** | *point only — interval refused* |
+| **LAT** `yaw_rate_mae_degps` | 1.8581 | 1.8216 | 3.6951 | 3.6951 | 2.2333 | *point only — interval refused* |
+| **LAT** `heading_mae_deg` | 1.5032 | 1.1484 | 3.8265 | 3.5322 | 1.6213 | *point only — interval refused* |
+| **LAT** `cross_mae_m` | **0.1152** | 0.1310 | 0.5259 | 0.4662 | 0.1604 | **model** +0.0452 [+0.008, +0.084] |
+| **TACTICAL** | **UNAVAILABLE** — the scored pass is a world-model FIDELITY rollout under the expert's true future actions (`pc2_pass=False`), so no manoeuvre decision is decoded. Needs a hierarchy-traversing eval. **A WORK ITEM.** |
+| **STRATEGIC** | **UNAVAILABLE** — same reason; no route decision is decoded. **A WORK ITEM.** |
+
+⭐⭐ **CROSS-TRACK AND CURVATURE DISAGREE, AND CURVATURE IS THE ONE THAT MATTERS HERE.** The flagship
+**beats** the CTRV floor on cross-track (+0.0452 separated) while its **curvature error is 3.0× worse
+than CTRV's and 2.2× worse than a straight line's**. The path goes through roughly the right points
+with the wrong *shape* — the "smooth but wrong" failure ADE and cross-track both hide. Note also that
+REF-C-XL's curvature is **2.2× better** than the flagship's while its ADE is worse (0.4714 vs 0.4271):
+**ADE inverts this ordering.**
+
+⚠️ **Three intervals REFUSED on purpose.** `heading` / `yaw_rate` / `curvature` are published as point
+estimates only: the module reduces them as a pooled mean over valid steps, a per-window form is a
+mean-of-per-window-means, and the two differ (7.6e-01 / 5.9e-01 / 3.6e-02 on flagship-30k). The driver
+measures the disagreement per metric and refuses the interval above 1e-3 rather than bootstrap a
+statistic that is not the published one. Work item: a per-window reducer inside `four_families`.
+
 > ⚠ **Open-loop ⊥ closed-loop (standing footnote, G-B1).** arXiv 2605.00066 (Apr-2026, 15 methods):
 > ADE/FDE have **no reliable correlation** with closed-loop Driving Score. Our own evidence: flagship v1
 > open-loop **0.4522 → closed-loop 1.685**, divergence >5 m on **22.2 %** of windows (MODEL_REGISTRY

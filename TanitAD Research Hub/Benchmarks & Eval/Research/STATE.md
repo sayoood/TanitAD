@@ -51,6 +51,30 @@ driver + validated patch + 1.3 MB raw) + note `Research/2026-08-02-ctrv-floor-re
    only"`** were computed against the two-floor family — re-run with the third floor before quoting.
 3. **The `eid` encoding split** (F5) — one-line normalisation at write time in `rollout.collect`.
 
+### ⛔ BINDING RULE LANDED MID-RUN — four families, complied with in the same turn
+`CLAUDE.md` gained *"EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE"* (Sayed, commit `4d0237a`,
+01:43 local) **while this run was in flight**. Complied before session end by applying
+`taniteval/four_families.py` to **the arm AND every floor** (`raw/four_families_vs_floors.json`,
+driver `run_four_families_vs_floors.py`) — which produced the sharpest number of the run:
+- ⭐⭐ **flagship-v1 BEATS the CTRV floor on cross-track (0.1152 vs 0.1604, +0.0452 [0.008, 0.084]
+  separated) while its CURVATURE error is 3.0× WORSE than CTRV (0.026969 vs 0.008967) and 2.2× worse
+  than a straight line.** The path hits roughly the right points with the **wrong shape** — exactly
+  the "smooth but wrong" failure the rule was written to catch, invisible to ADE and to cross-track.
+- **REF-C-XL's curvature is 2.2× better than the flagship's while its ADE is worse** (0.4714 vs
+  0.4271) ⇒ **ADE inverts the arm ordering** that the lateral family gives.
+- LONGITUDINAL: flagship `speed_bias` **+0.1911 m/s (too fast)** vs REF-C +0.0209; `along_final_bias`
+  **+0.3375 m** vs floors ≈ −0.11, separated, favours floor.
+- **TACTICAL and STRATEGIC are UNAVAILABLE with the reason and n** — the scored pass is a world-model
+  *fidelity* rollout under the expert's true future actions (`pc2_pass=False`), so no manoeuvre or
+  route decision is decoded. Same for LONGITUDINAL distance-keeping (no lead-agent track read, though
+  `obstacle.offline` covers 97.44 % of the corpus). ⛔ **Two of the four binding families cannot be
+  reported from ANY current eval. Work items, not passes.**
+- ⚠️ **Three intervals REFUSED on purpose** (heading / yaw-rate / curvature): the module's pooled-mean
+  reducer is not the per-window mean a paired bootstrap needs, and they differ by 7.6e-01 / 5.9e-01 /
+  3.6e-02. Point estimates published, intervals withheld. *(The driver's first cut returned heading in
+  RADIANS and silently dropped curvature and yaw-rate by mis-keying `_seq_geometry` — C63's failure
+  mode; the agreement check caught it and is now part of the driver.)*
+
 ### D-026 session guard — `RESULT: PASS` (after clearing one BLOCK)
 - ⛔ **It BLOCKED first on 138 uncommitted hub deliverables that are NOT mine:** the overlay **stills**
   rendered alongside the 56 videos, which `4978a82` left untracked (`.gitignore` excludes `*.mp4` only,
