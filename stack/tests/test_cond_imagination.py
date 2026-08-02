@@ -13,11 +13,19 @@ trained with ZERO imagination tokens. The fix exposes ``--cond-imagination`` and
    deliberate smoke/proof hard-wires stay, and their COUNT is pinned so a third one cannot
    creep back in unnoticed).
 """
+import sys
 from pathlib import Path
 
 import pytest
 import torch
 from torch import nn
+
+# `stack/scripts` has no __init__.py, so `scripts.*` only resolves when stack/ happens to be on
+# sys.path. Without this the module fails to COLLECT from the repo root — which reads as a broken
+# suite rather than a path issue, and CLAUDE.md requires `pytest -q` green before any commit.
+_STACK = Path(__file__).resolve().parents[1]
+if str(_STACK) not in sys.path:
+    sys.path.insert(0, str(_STACK))
 
 from scripts.train_flagship_v4 import (_imagination_inputs, _smoke_head_cfg)
 from tanitad.models.flagship_v4 import FlagshipV4Head

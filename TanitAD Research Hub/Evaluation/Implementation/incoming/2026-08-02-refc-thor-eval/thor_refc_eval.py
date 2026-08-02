@@ -64,12 +64,21 @@ def load_episodes():
             os.remove(m)          # a manifest built over corrupt clips must not be reused
     print(f"[val] quarantined {bad} corrupt clip(s)", flush=True)
 
+    # ⛔⛔ GEOMETRY. THE 2026-08-02 RUN WAS SCORED AT THE WRONG RASTER AND ITS NUMBERS ARE
+    # RETRACTED. It fed v2_subframe="176x624" (a 6x20 = 120-token map) to REF-C arms that were
+    # trained and canonically evaluated at 256 px SQUARE -> grid_shape (8,8) = 64 tokens
+    # (refc.py:214-218; MODEL_REGISTRY §4.1/§4.3).
+    #   - XL failed LOUDLY: `shape '[8,512,8,8]' invalid for input of size 491520`
+    #     (= 8 x 512 x 120), raised in imagination.py:100-102 because graft_imagination=True.
+    #   - base failed SILENTLY: it has graft_imagination=False, so nothing checks the grid, and
+    #     `feat_proj(fmap.flatten(2).transpose(1,2))` (refc.py:577) accepts ANY token count. It
+    #     cross-attended 120 tokens it had never seen. That is a silent instrument failure, not
+    #     a model result — and it is why speed_mae 3.06 m/s / yaw_rate_mae 22.6 deg/s came out
+    #     implausible for an arm whose registry ADE@2s is 0.4728.
+    # ⇒ Feed each arm ITS OWN trained raster, and ASSERT the token count. A wrong-geometry eval
+    #   must crash, never quietly produce a number.
     cfg = flagship4b_config()
-    ns = SimpleNamespace(frame_h=256, frame_w=640, frame_hfov=120.0,
-                         projection="cylindrical", v2_subframe="176x624", f_ref=None)
-    cf, tf = resolve_v2_frames(ns, cfg, label="refc_thor")
-    eps = build_v2_providers([VAL], lru_size=4,
-                             frame=(None if tf == cf else tf), verbose=False)
+    eps = build_v2_providers([VAL], lru_size=4, frame=None, verbose=False)
 
     # INTERFACE SHIM, not a data change: refc_eval.collect reads the raw-episode attribute
     # 'feats'; the v2 providers expose the identical raster under 'frames'. Aliasing lets the
@@ -108,6 +117,21 @@ for key, preset, ckpt in ARMS:
         model = model.cuda().eval()
         n_par = sum(p.numel() for p in model.parameters()) / 1e6
 
+        # ⛔ GEOMETRY GATE — the check whose ABSENCE produced the retracted numbers.
+        # REF-C-base has graft_imagination=False, so NOTHING inside the model validates the
+        # token count: feat_proj accepts any n and the arm scores silently on a raster it never
+        # saw. Assert the fed raster against the arm's own declared grid_shape BEFORE scoring.
+        gh, gw = rcfg.encoder.grid_shape
+        exp_hw = (gh * 32, gw * 32)                      # refc.py:214-218 patch stride
+        got_hw = tuple(eps[0].frames.shape[-2:])
+        if got_hw != exp_hw:
+            raise RuntimeError(
+                f"GEOMETRY MISMATCH for {key}: val raster is {got_hw} but the arm declares "
+                f"grid_shape {(gh, gw)} => it was trained at {exp_hw}. Scoring here is a SILENT "
+                f"instrument failure (base accepts any token count). Re-cache val at {exp_hw} "
+                f"or evaluate this arm on its canonical cache.")
+        print(f"[{key}] geometry OK: raster {got_hw} matches grid {(gh, gw)}", flush=True)
+
         win = refc_eval.collect(model, eps, "cuda", stride=8, batch=8,
                                 speed_input=True, mode="diffusion", nav_mode="produced")
         fam = FF.all_families(win)
@@ -115,8 +139,21 @@ for key, preset, ckpt in ARMS:
         results[key] = {
             "params_M": round(n_par, 2),
             "sd_missing": len(missing), "sd_unexpected": len(unexpected),
-            "route_input_exercised": win.get("route_input_exercised"),
-            "nav_note": win.get("nav_note"),
+            # ⛔ READ A REQUIRED STAMP WITH [], NEVER .get(). The provenance is NESTED under
+            # `nav_provenance` (refc_eval.py:177-190). The previous `win.get("route_input_exercised")`
+            # looked at TOP level, where the key has never existed, so dict.get() silently returned
+            # None — and a None from a BOOLEAN-valued field was misread as "the collector did not
+            # report provenance". The collector always reported it; the CALLER read the wrong path.
+            # A KeyError here is the correct behaviour: a missing required stamp must fail loudly.
+            "nav_provenance": {k: win["nav_provenance"][k] for k in
+                               ("nav_mode", "note", "fed_command_hist",
+                                "route_input_exercised", "is_oracle")},
+            "route_input_exercised": win["nav_provenance"]["route_input_exercised"],
+            "nav_note": win["nav_provenance"]["note"],
+            # ⚠️ `route_input_exercised` is (nav_mode != follow_constant) AND len(hist) > 1 — it
+            # conflates EXERCISED with VARIED. A route head that collapses to one class reports
+            # False even though the input genuinely was produced. Read the histogram, not the flag.
+            "fed_command_hist": win["nav_provenance"]["fed_command_hist"],
             "n_windows": int(torch.as_tensor(win["pred"]).shape[0]),
             "LONGITUDINAL": {k: lo[k] for k in
                              ("speed_mae_mps", "speed_bias_mps", "along_mae_m",

@@ -38,8 +38,26 @@ replication of the achievable ceiling on different silicon with a different leve
 | **TRT fp16** | **1.41e-3** | **1.80e-3** | 1.3× | ✅ **PASS** |
 | CUDA graph | **0.0** | **0.0** | — | ✅ bit-exact |
 
-⭐ **Error does not compound** — it grows 1.3–1.4× over 20 recursive steps, far below the 1 %
-threshold. fp16's 0.14 % is well inside anything a planner would notice.
+⛔ **DO NOT READ THIS AS "ERROR DOES NOT COMPOUND."** *(Corrected 2026-08-02 by adversarial
+verification; the earlier ⭐ headline here made exactly that claim and it is withdrawn.)*
+
+Every row above was measured on a **randomly-initialised model fed `torch.randn`** — no `torch.load`,
+no `load_state_dict`, in any of the five Thor scripts. **Quantisation error is a function of the
+TRAINED weight and activation distribution**; outlier channels are the entire difficulty, and a
+random network has none. A rel-err on noise says almost nothing about a rel-err on the flagship.
+
+🔴 **Our own programme measured the opposite on real weights.** Paper §7.10: the encoder's
+un-normalised post-pool `readout_head` collapses to cosine **0.566** under weight+activation INT8,
+and rolled out 20 steps on 880 held-out windows it costs **+0.0215 m ADE@2s — past the
+pre-registered 0.02 m falsifier — with the degradation ratio growing 27× from 0.5 s to 2 s.**
+That is compounding, on the model we actually ship.
+
+⚠️ The CUDA-graph "bit-exact, rel-err exactly 0.0" row is **near-tautological**: a *static*
+`torch.randn` input replayed through a graph must reproduce itself. The aliasing hazard the test
+exists to catch requires **varying** inputs across replays. **UNVERIFIED as a hazard test.**
+
+⇒ **Correct reading of the table: an ARCHITECTURE READ — the export/build path is numerically
+sound and the kernels do what they claim. It is NOT a deployment precision gate.**
 
 ⛔ **STILL REQUIRED BEFORE FLEET DEPLOYMENT:** this is a **numerics** gate on random weights. The
 **four-family accuracy gate on real windows with a trained checkpoint** (their 95.3 %

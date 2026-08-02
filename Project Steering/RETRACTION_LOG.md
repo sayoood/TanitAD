@@ -1369,3 +1369,76 @@ back in full — then launched. v5e stepping, stderr 0 B. Removing the gate also
 C65/C66 failure mode by construction: `heldout_gate._taniteval()` is never imported, so its
 hard-derived `sys.path.insert(0, ...)` (which ignores `PYTHONPATH`) can no longer force-load a
 stale tree.
+
+
+---
+
+## 2026-08-02 — FOUR retractions from ONE adversarial-verification pass (12 agents, 6 streams)
+
+⭐ **All four were found by adversarially verifying MY OWN reports, not by the runs that produced
+them.** Each report had passed my own review. The verification pass is now the load-bearing step,
+not a formality.
+
+### R-2026-08-02-a — REF-C's Thor four-family numbers: scored at the WRONG RASTER
+**Root-cause class: SILENT SHAPE ACCEPTANCE — a model that validates nothing, and an eval that
+assumed the model would.**
+
+REF-C trains at 256 px square -> `grid_shape (8,8)` = 64 tokens. The eval fed a 176x624 sub-frame
+= 120 tokens. **XL crashed loudly** (it has `graft_imagination=True`, which reshapes to the declared
+grid). **base returned numbers silently** (`graft_imagination=False`, and `feat_proj` accepts any
+token count). I read the crash as an XL-specific defect and the silent output as a valid result.
+**It was the reverse: the crash was the instrument working.**
+
+⇒ **RULE: assert the fed geometry against the checkpoint's declared shape before every scoring run.
+When two arms share a defect and only one crashes, the crash is the honest signal.**
+⇒ **RULE: an implausible magnitude IS the finding.** `speed_mae 3.06 m/s` for an arm with registry
+ADE@2s 0.4728 was in the published table; I caveated *n* and provenance instead.
+
+### R-2026-08-02-b — "the collector did not report route provenance": FALSE
+**Root-cause class: `.get()` CONVERTED A SCHEMA MISMATCH INTO A PLAUSIBLE `None`.**
+
+`refc_eval.py:177-190` always stamps `nav_provenance`. My caller read
+`win.get("route_input_exercised")` at **top level**, where the key has never existed. The tell was
+in the artifact: `nav_note: null` — a key that has never existed at top level under *any* mode.
+
+⇒ **RULE: read a required stamp with `[]`, never `.get()`. A `None` from a BOOLEAN-valued field is
+a read-path bug until proven otherwise — never evidence about the thing being measured.**
+⚠️ Second-order: `route_input_exercised` = `nav_mode != "follow_constant" and len(hist) > 1`
+conflates **exercised** with **varied**. Read `fed_command_hist`.
+
+### R-2026-08-02-c — v5_guard's strategic follow-rate was deflated by an INVISIBLE 4th CLASS
+**Root-cause class: CLASS-VOCABULARY MISMATCH between the label pipeline and the instrument, hidden
+by a histogram that nobody checked summed to n.**
+
+`v5_guard_5k.json` published `n_windows: 881` with `cmd_distribution {0:212, 1:394, 2:121}`.
+**212+394+121 = 727.** 154 windows (17.5 %) were route class **3 = `ROUTE_UNKNOWN`** (unjudgeable,
+`refb_labels.py:536`), which `classify_route` can **never** emit -> **deterministic misses in both
+arms**, folded into `follow_true`, `follow_shuffled` and the bootstrap. The `ROUTE_LIVE` verdict
+survives; the point estimate and CI were deflated ~1.21x. **The exact value is NOT recoverable from
+the JSON** (`run_guard` returns only aggregates) — a re-run is required.
+
+⇒ **RULE: any published class histogram MUST sum to the scored n, and the instrument must state
+what it excluded.** A silently dropped class looks exactly like a model failure.
+⇒ **RULE: never default an unjudgeable label to a real class** (`refb_labels.py:511` already said
+"NEVER DEFAULT TO STRAIGHT"); exclude it and report the count.
+
+### R-2026-08-02-d — the Thor "precision gate PASS / error does not compound"
+**Root-cause class: MEASURED ON A RANDOMLY-INITIALISED MODEL FED GAUSSIAN NOISE — the exact defect
+the paper's own §7.10 blockquote exists to prevent, repeated.**
+
+None of the five Thor scripts call `torch.load` or `load_state_dict`; inputs are `torch.randn`.
+- **Latency survives** — it is weight-independent. 272.56 -> 51.2 ms (5.33x), the K-sweep, batch
+  scaling, RSS and thermals remain admissible **as architecture reads**.
+- ⛔ **The precision gate does NOT survive.** Quantisation error is a function of the *trained*
+  weight/activation distribution; outlier channels are the whole difficulty and a random network
+  has none.
+- 🔴 **We measured the OPPOSITE on real weights.** Paper §7.10: post-pool `readout_head` collapses
+  to cosine 0.566 under W+A INT8, costing **+0.0215 m ADE@2s — past the pre-registered 0.02 m
+  falsifier — with degradation growing 27x from 0.5 s to 2 s.**
+- ⚠️ The CUDA-graph "bit-exact" row is near-tautological: a *static* input replayed through a graph
+  must reproduce itself. An aliasing test needs **varying** inputs. UNVERIFIED as a hazard test.
+
+⇒ **RULE: a precision/quantisation claim is inadmissible unless it was measured on TRAINED weights
+and REAL inputs.** Latency may use random weights; numerics may not.
+⇒ **RULE: state the five conditions (hardware, precision, corpus, n, WEIGHTS) or do not publish the
+number.** The paper already carries this rule in §7.10 and it was still repeated.

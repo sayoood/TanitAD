@@ -142,7 +142,24 @@ def run_guard(head, world, ds, device, episodes: int, batch: int = 16,
         rows["v_hi"].extend(mean_speed(out_hi["traj"].cpu()).tolist())
 
     T = {k: torch.tensor(v) for k, v in rows.items()}
+    n_all = T["cmd"].numel()
+
+    # ⛔ CLASS-VOCABULARY MASK. The label pipeline's route is 0..3, where
+    # 3 == refb_labels.ROUTE_UNKNOWN ("unjudgeable window", ~20 % of the corpus) — see
+    # v4_labels.py:264/364 and refb_labels.py:511-513,536. `classify_route` above emits ONLY
+    # 0/1/2, so a cmd==3 window can NEVER be matched: scoring it counts a DETERMINISTIC MISS
+    # against the model for a command the instrument cannot express.
+    # MEASURED 2026-08-02: the 5k run published n_windows 881 with a 3-class histogram summing
+    # to 727 — 154 windows (17.5 %) were silently deflating follow_true, follow_shuffled AND the
+    # bootstrap. Restricting to the in-vocabulary windows raises the delta ~1.21x.
+    # The correct handling is to EXCLUDE them, not to default them to straight (refb_labels.py:511
+    # "NEVER DEFAULT TO STRAIGHT"), and to report the excluded count so it is never invisible again.
+    jud = (T["cmd"] >= 0) & (T["cmd"] <= 2)
+    n_unjudgeable = int((~jud).sum())
+    T = {k: v[jud] for k, v in T.items()}
     n = T["cmd"].numel()
+    if n == 0:
+        raise RuntimeError("v5_guard: every window is route-UNKNOWN — nothing judgeable to score")
     follow_true = float((T["cls_true"] == T["cmd"]).float().mean())
     follow_shuf = float((T["cls_shuf"] == T["cmd_shuf"]).float().mean())
 
@@ -173,8 +190,11 @@ def run_guard(head, world, ds, device, episodes: int, batch: int = 16,
             "delta": round(follow_true - follow_shuf, 4),
             "delta_ci95": [round(lo_ci, 4), round(hi_ci, 4)],
             "estimator": "paired_episode_cluster_bootstrap_B2000",
+            # the histogram MUST sum to n_windows_scored, or a class is invisible (see the mask)
             "cmd_distribution": {str(c): int((T["cmd"] == c).sum())
                                  for c in (0, 1, 2)},
+            "n_unjudgeable_excluded": n_unjudgeable,
+            "n_collected": n_all,
             "note": "command-FOLLOWING sensitivity (collapse detector), not route "
                     "prediction skill; §0.7's void rule concerns the latter",
         },
