@@ -1270,3 +1270,19 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - NEXT: chain completes -> stock `driver=vavam` smoke (proves renderer+physics+runtime on Thor)
   -> TanitAD driver adapter (v1 from HF first, then REF-C) -> closed-loop scored with ALL FOUR
   FAMILIES -> long camera+BEV overlay videos.
+
+## 2026-08-02 14:55 UTC — ⭐⭐ THOR IS A WORKING COMPUTE NODE (proven, not assumed)
+
+- **MEASURED on thor6**: `tanitad-edge` has **torch 2.13.0+cu130, cuda_available True**, matmul
+  verified. `tanitad-train` torch still downloading behind it (serialized, one WiFi pipe).
+- ⭐⭐ **OUR REAL MODEL RUNS ON THOR SILICON**: TanitAD repo cloned (`~/TanitAD`, public GitHub,
+  carries todays pushes); `import tanitad` + `import taniteval.four_families` OK; a
+  **263.4M-param WorldModel** built and ran `encode_window` on the Blackwell GPU ->
+  `(1, 8, 2048)`. Verified by REAL IMPORT + REAL FORWARD, per C65/C66.
+- four_families.py present on Thor with all four families importable => the binding rule is
+  enforceable on Thor evals from day one.
+- Weight pull ARMED: `Sayood/tanitad-rollout-recovery` (PUBLIC => no gating stall) ->
+  `~/models/rollout-recovery` (RR-20, RR-CTL, refc-base-e1f-junction, ~3.2GB).
+- ⇒ Thor can now do open-loop four-family evals WITHOUT any pod, once val windows are present.
+  Remaining data gap: val episodes (eval pod stopped; pod2 busy training). AlpaSim path does NOT
+  need them — it downloads its own scenes.
