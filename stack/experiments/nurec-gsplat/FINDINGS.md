@@ -10,6 +10,37 @@ without the closed x86-only NRE binary.
 *Left: our gsplat render. Middle: NVIDIA's shipped `camera_front_wide_120fov.mp4` frame 0.
 Right: difference.*
 
+## ⛔ FIRST, A RETRACTION: PSNR IS NOT A VALID METRIC ON THIS CLIP
+
+**MEASURED 2026-08-03, negative control.** Our ONE render of frame 0 was scored against the correct
+reference frame **and against four wrong ones**. If the mapping were right and PSNR meaningful, the
+correct frame must win. It does not:
+
+| ref frame | PSNR (dB) | NCC | **grad-NCC** |
+|---|---|---|---|
+| **0 — CORRECT** | 16.758 | 0.704 | **0.2719** |
+| 60 (wrong) | 17.062 | 0.727 | 0.1436 |
+| 150 (wrong) | **17.457** ← *beats the correct frame* | 0.767 | 0.1737 |
+| 300 (wrong) | 16.756 | 0.708 | 0.1913 |
+| 450 (wrong) | 17.073 | **0.782** ← *beats it too* | 0.1163 |
+
+⛔ **PSNR ranks a WRONG frame first (150: 17.457 > 16.758), and so does plain NCC (450: 0.782 >
+0.704).** Every frame of this clip is a dark night street, so ~17 dB measures *"both images are
+dark"*, not *"the pose is right"*.
+
+⇒ **I retract the earlier framing of "PSNR 16.758 → 20.689 after colour fit" as evidence of render
+quality.** It is not evidence of anything on this clip. The affine-fit number is doubly inadmissible.
+
+✅ **What DOES validate the mapping: gradient-NCC.** It picks the correct frame —
+`argmax_grad_ncc = 0`, margin **0.0806** over the best wrong frame (0.2719 vs 0.1913, ~1.42×).
+Structure — edges, the lamp post, the road vanishing point — correlates with the right frame and not
+with the others. **That, plus the visual side-by-side, is the whole of the evidence that the payload
+decodes correctly.** It is enough to proceed; it is not a photometric result.
+
+⭐ **Transferable rule: on a low-dynamic-range corpus (night, fog, tunnel), pick the discriminating
+metric by running the negative control FIRST.** A metric that cannot tell the right frame from a
+wrong one cannot certify anything, however reasonable its value looks.
+
 ## The falsifier, and what it says
 
 The scene ships its own reference video, so a wrong mapping cannot hide behind a plausible-looking
@@ -57,8 +88,8 @@ scene reconstructs; photometric agreement is not yet established.*
 
 | # | step | note |
 |---|---|---|
-| 1 | Fix the colour transform (linear↔sRGB) and re-diff | the affine gain says this is most of the remaining error |
-| 2 | Composite the sky env cubemap (`--sky`) | removes the haze |
+| 1 | Apply the scene's **trained per-frame ISP** (exposure / vignetting / colour / CRF) | `render_probe.py:259` — the ~0.45 affine gain is most likely THIS, not linear-vs-sRGB. Find its parameters in the msgpack. |
+| 2 | ⛔ **Sky compositing MADE IT WORSE — do not just switch it on.** | MEASURED: `--sky` moves render mean **0.240 → 0.391** against a reference of **0.266**, and PSNR **16.76 → 15.32**. The env map overfills the ~49 % of pixels no gaussian covers (`mean_alpha` 0.5145). Gate the sky on depth/alpha, or the night sky gets painted bright. |
 | 3 | Investigate the magenta smear + black band | localised, not global |
 | 4 | Wrap as a `sensorsim.proto` gRPC service, **front camera only** | PI's explicit steer |
 | 5 | `alpasim_wizard … renderer=<ours> driver=<tanitad/refc/flagship-v1>` | adapters already exist |

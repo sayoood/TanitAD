@@ -1442,3 +1442,33 @@ None of the five Thor scripts call `torch.load` or `load_state_dict`; inputs are
 and REAL inputs.** Latency may use random weights; numerics may not.
 ⇒ **RULE: state the five conditions (hardware, precision, corpus, n, WEIGHTS) or do not publish the
 number.** The paper already carries this rule in §7.10 and it was still repeated.
+
+
+## 2026-08-03 — R-2026-08-03-a: PSNR was not a valid metric for the NuRec render check
+**Root-cause class: QUOTED A METRIC BEFORE CHECKING IT COULD DISCRIMINATE — on a corpus where it
+provably cannot.**
+
+I reported the first gsplat render of a NuRec scene as "PSNR 16.758 dB, 20.689 after affine colour
+fit". The negative control (our ONE render scored against the correct reference frame AND four wrong
+ones) shows those numbers certify nothing:
+
+| ref frame | PSNR | NCC | grad-NCC |
+|---|---|---|---|
+| **0 CORRECT** | 16.758 | 0.704 | **0.2719** |
+| 150 wrong | **17.457** | 0.767 | 0.1737 |
+| 450 wrong | 17.073 | **0.782** | 0.1163 |
+
+**A WRONG frame beats the correct one on PSNR (17.457 > 16.758) and on plain NCC (0.782 > 0.704).**
+Every frame of the clip is a dark night street, so ~17 dB measures "both images are dark".
+
+✅ **grad-NCC discriminates correctly** — argmax = frame 0, margin 0.0806 (0.2719 vs 0.1913, ~1.42x).
+The mapping IS validated; it is validated by STRUCTURE, not by photometry.
+
+⇒ **RULE: on a low-dynamic-range corpus (night, fog, tunnel, snow), run the negative control FIRST
+and let it CHOOSE the metric.** A metric that cannot separate the right frame from a wrong one cannot
+certify anything, no matter how reasonable its value looks. Same family as the 2026-08-02
+retractions: an instrument fed the wrong thing that did not complain.
+
+⚠️ Second finding the same pass: switching the sky env-map on made the render WORSE
+(mean 0.240 -> 0.391 vs reference 0.266; PSNR 16.76 -> 15.32) because it fills the ~49% of pixels no
+gaussian covers. "The obvious missing piece" is not automatically an improvement — measure it.
