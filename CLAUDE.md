@@ -225,6 +225,27 @@ implementing X"* and no implementation followed.
 *(Same class as "A report is not a launch": when an agent files, refill the pod in the SAME turn
 before writing the summary.)*
 
+### ⛔ THE RE-ARM IS NOT AN ACTION (Sayed, 2026-08-02, FOURTH flag)
+
+**The specific failure:** I ended a turn with a status report followed by `ScheduleWakeup`, and
+called that "continuing the loop". **Scheduling the next turn is not work in this turn.** It is the
+same idling the rule above forbids, wearing a timer.
+
+**Hard rules, mechanically checkable before ending any turn:**
+
+1. ⛔ **Never call `ScheduleWakeup` in a turn whose only outputs were a report, a probe, or a
+   commit of documentation.** The wakeup is admissible ONLY after something was *executed* —
+   code changed, a job launched, an artifact produced, a measurement taken.
+2. ⛔ **"I'll do X next iteration" is banned.** If X is unblocked, X happens in THIS turn. If X is
+   blocked, name the blocker and **execute the next unblocked item**, then report both.
+3. **A blocked headline item does not license a short turn.** `BACKLOG.md` exists precisely so a
+   gated turn still ships something. Gated ≠ idle.
+4. **Before ending a turn, ask: "what did I CHANGE?"** If the honest answer is "nothing — I looked
+   and I described", the turn is not finished.
+5. ⚠️ A **PI decision** blocks that ONE item. Provision, spend, and publish are the PI's; every
+   implementation, measurement, instrument fix and banked artifact around them is mine, and none of
+   them wait.
+
 
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 
