@@ -203,14 +203,46 @@ def _decision_family(win: dict, level: str, pred_key: str, gt_key: str,
     return out
 
 
-def tactical(win: dict) -> dict:
+def tactical(win: dict, hier: dict | None = None) -> dict:
     """Manoeuvre decision + tactical goal setting.
 
     ⭐ Why ``never_predicted`` is surfaced: our measured longitudinal failure is that the 5-way
     manoeuvre softmax MIXES lateral and longitudinal classes, and the arm emitted **0 of 881**
     'accelerate' decisions. An accuracy scalar hides a class the model never chooses; that list
     does not.
+
+    ``hier`` is a ``taniteval.hierarchy.run`` result. The hierarchy pass DOES traverse the brains,
+    so when it is supplied the family is populated from it instead of reporting UNAVAILABLE.
     """
+    if hier and not hier.get("skipped"):
+        cons = hier.get("consistency", {}) or {}
+        mvt = cons.get("maneuver_vs_trajectory", {}) or {}
+        seams = (hier.get("thesis_read", {}) or {}).get(
+            "A_conditioning_helps_conditioned_layer", {}) or {}
+        h18 = hier.get("h18_grounded_vs_ungrounded", {}) or {}
+        out = {
+            "status": "OK",
+            "source": "hierarchy.run",
+            # does the DECLARED manoeuvre match the trajectory actually driven?
+            "maneuver_vs_trajectory_kappa": mvt.get("kappa"),
+            "maneuver_vs_trajectory_agreement": mvt.get("agreement"),
+            # is the tactical layer's conditioning load-bearing at all?
+            "seams_beneficial_of_3": seams.get("n_of_3_seams_beneficial"),
+            "seam_verdict": seams.get("verdict"),
+            # H18: grounded operative rollout vs the ungrounded tactical head
+            "grounded_op_rollout_ade_2s": h18.get("grounded_op_rollout_ade_2s"),
+            "ungrounded_tactical_head_ade_2s": h18.get(
+                "ungrounded_tactical_head_ade_2s"),
+            "n_windows": hier.get("n_windows"),
+        }
+        # ⛔ κ near 0 means the declared manoeuvre and the driven path are unrelated — a decision
+        # error a scalar ADE cannot see. Surface it as a verdict, not a bare number.
+        k = mvt.get("kappa")
+        if isinstance(k, (int, float)):
+            out["maneuver_consistency_verdict"] = (
+                "DECORATIVE — declared manoeuvre is ~unrelated to the driven path" if k < 0.1
+                else "WEAK" if k < 0.4 else "SUBSTANTIAL")
+        return out
     try:
         from tanitad.refs.refb import MANEUVER_CLASSES as _MC
         classes = list(_MC)
@@ -219,13 +251,57 @@ def tactical(win: dict) -> dict:
     return _decision_family(win, "tactical", "maneuver_pred", "maneuver_gt", classes)
 
 
-def strategic(win: dict) -> dict:
+def strategic(win: dict, hier: dict | None = None) -> dict:
     """Strategic decision + route/goal setting.
 
     ⚠️ GATE_PROTOCOL §0.7: ``nonav_route_beats_majority`` is VOID BY CONSTRUCTION. If a strategic
     number looks impossible, adjudicate **INSTRUMENT-FAIL**, never MODEL-FAIL — a healthy arm has
-    already nearly died on that label bug.
+    already nearly died on that label bug. The void flag is carried in the output so no downstream
+    reader can quote that comparison as a model verdict.
     """
+    if hier and not hier.get("skipped"):
+        # ⚠️ VERIFIED key name, not guessed: hierarchy.py:857 stores the route block as
+        # "seam_nav_to_strategic". A wrong key here would return None for every strategic
+        # metric and read as "the model has no route skill" — a silent instrument failure.
+        r = hier.get("seam_nav_to_strategic") or {}
+        out = {
+            "status": "OK",
+            "source": "hierarchy.run",
+            # route/goal setting under three conditioning regimes
+            "route_acc_nav": r.get("route_acc_nav"),
+            "route_acc_follow": r.get("route_acc_follow"),
+            "route_acc_zeronav": r.get("route_acc_zeronav"),
+            # the two baselines any route number must be read against
+            "majority_straight_rate": r.get("majority_straight_rate"),
+            "chance_1_of_3": r.get("chance_1_of_3"),
+            "follow_pred_distribution": r.get("follow_pred_distribution"),
+            # paired contrasts (episode-cluster bootstrap inside hierarchy.py)
+            "delta_nav_vs_follow": r.get("delta_nav_vs_follow"),
+            "delta_nav_vs_zeronav": r.get("delta_nav_vs_zeronav"),
+            "n_valid": r.get("n_valid"),
+            "⛔_void_by_construction": (
+                "GATE_PROTOCOL §0.7 — `nonav_route_beats_majority` is VOID BY CONSTRUCTION. "
+                "If route accuracy looks impossible, adjudicate INSTRUMENT-FAIL, never "
+                "MODEL-FAIL. `route_skill_vs_majority` is NOT admissible as a model verdict."),
+        }
+        # ⛔ THE BASELINE COMPARISON MUST USE route_acc_FOLLOW, NOT route_acc_nav.
+        # `route_acc_nav` feeds the model the NAV COMMAND — the answer is an input, so a value
+        # near 1.0 measures COPYING, not route reasoning. (MEASURED 2026-08-02: v1 scores
+        # route_acc_nav = 1.0000 while its vision-only route_acc_follow = 0.9474, which is
+        # EXACTLY the majority-straight rate — i.e. it predicts "straight" always.)
+        # This mirrors hierarchy.py:658's own `vision_route_beats_majority`, margin included.
+        acc, maj = r.get("route_acc_follow"), r.get("majority_straight_rate")
+        if isinstance(acc, (int, float)) and isinstance(maj, (int, float)):
+            out["beats_majority_baseline"] = bool(acc > maj + 0.03)
+            out["_baseline_used"] = ("route_acc_follow (vision-only) vs majority_straight_rate, "
+                                     "margin 0.03 — route_acc_nav is PRIVILEGED and is reported "
+                                     "for reference only, never as the skill test")
+            out["_reading"] = (
+                "vision-only route accuracy does NOT beat always-predict-straight — the "
+                "strategic layer is not demonstrably doing route work"
+                if acc <= maj + 0.03 else
+                "vision-only route accuracy exceeds the majority baseline")
+        return out
     try:
         from tanitad.refs.refb import ROUTE_CLASSES as _RC
         classes = list(_RC)
@@ -234,11 +310,15 @@ def strategic(win: dict) -> dict:
     return _decision_family(win, "strategic", "route_pred", "route_gt", classes)
 
 
-def all_families(win: dict) -> dict:
+def all_families(win: dict, hier: dict | None = None) -> dict:
     """The full binding block for one arm. Attach to every eval result, beside ADE.
 
     ``win`` is a ``rollout.collect``/``refb_eval``/``refc_eval`` window dict; ``pred``/``gt`` are
-    required, the decision keys are optional and their absence is reported, not hidden.
+    required. ``hier`` is an optional ``taniteval.hierarchy.run`` result — supply it and the
+    TACTICAL and STRATEGIC families are populated instead of reporting UNAVAILABLE.
+
+    ⭐ Pass ``hier``. A fidelity pass alone cannot see a decision error, and the binding rule
+    treats an absent family as a work item rather than a pass.
     """
     pred = torch.as_tensor(win["pred"]).float()
     gt = torch.as_tensor(win["gt"]).float()
@@ -249,8 +329,8 @@ def all_families(win: dict) -> dict:
     fam = {
         "longitudinal": longitudinal(pred, gt),
         "lateral": lateral(pred, gt),
-        "tactical": tactical(win),
-        "strategic": strategic(win),
+        "tactical": tactical(win, hier),
+        "strategic": strategic(win, hier),
     }
     unavailable = [k for k, v in fam.items()
                    if isinstance(v, dict) and v.get("status") == "UNAVAILABLE"]
