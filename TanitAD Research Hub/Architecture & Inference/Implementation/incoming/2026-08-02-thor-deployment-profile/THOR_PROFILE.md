@@ -421,3 +421,77 @@ today.**
 | FP8 GEMM speedup 1.21x -> 1.97x across sizes | **MEASURED (ours)** |
 | NVFP4 format, ~4x vs BF16, DeepSeek-R1 within ~1 % | **PUBLISHED** (cited) — LLM workloads, **not** re-verified for our shapes |
 | "NVFP4 will underperform on the predictor" | **HYPOTHESIS** — strongly supported by the FP8 size curve and the bf16 regression, but NVFP4 itself is **not yet runnable** here |
+
+
+---
+
+# ADDENDUM 5 — TensorRT: the block is gone and it BEATS the free graph (2026-08-02)
+
+**The Production & Optimization stream's #1 latency item, blocked since 2026-07-18** with the note
+*"toolchain-blocked on the dev box (tensorrt missing) -> run when a pod is idle or tensorrt lands"*.
+TensorRT **10.13.3.9** installed on Thor; the block is gone.
+
+⚠️ First, a process failure worth logging: the apt install **completed at 15:59** and I kept polling
+`dpkg -l` mid-transaction, read "0 packages", and treated it as stalled for ~2 hours. **The
+completion line was in the log the whole time.** Root-cause class: polling a proxy signal instead of
+reading the artifact that owns the answer — the same class as C62.
+
+## The target: the PREDICTOR, not the encoder
+
+Today established that the roll is 71 % of the tick, is COMPUTE-bound (full-roll capture bought
+1.02x), and that precision alone LOSES there (bf16 0.86x). **Fusion is the one thing eager PyTorch
+cannot do**, and small-tensor many-op work is exactly what it targets.
+
+## Result — engine must beat the FREE CUDA graph to justify the toolchain (their bar)
+
+| configuration | per step | vs eager | vs CUDA graph |
+|---|---|---|---|
+| eager fp32 | 4.23 ms | 1.00x | — |
+| CUDA graph (free) | 3.42 ms | 1.24x | 1.00x |
+| **TRT fp32** | **1.994 ms** | 2.12x | **1.72x** |
+| ⭐ **TRT fp16** | **1.168 ms** | **3.62x** | ⭐ **2.93x** |
+
+✅ **The engine clears their bar by 2.93x.** Build cost is trivial: ONNX export 303 MB, fp16 engine
+**36 s** to build, 173.9 MB on disk (half the fp32 engine).
+
+⭐ ONNX exported clean at **opset 17** on the first attempt, corroborating their 2026-07-08 finding
+(*"no unexportable ops -- MHA/FiLM/causal-triu all fine"*) on new silicon and a newer torch.
+
+## ⭐⭐ The projected tick
+
+| | |
+|---|---|
+| roll20 at TRT-fp16 | 20 x 1.168 = **23.4 ms** (was 69.6 ms with the graph) |
+| **full tick** | **51.2 ms** = bf16 encoder 27.8 + roll 23.4 |
+| **vs the 272.56 ms fp32 baseline** | ⭐⭐ **5.33x** |
+| vs the 100 ms budget | ✅ **51 %** — roughly 2x headroom |
+
+⭐ **5.33x lands almost exactly on the A40 precedent's 5.35x** (138 -> 18.75 ms) — an independent
+replication of that stream's total achievable speedup, on different silicon, by a different lever
+mix. That the two agree this closely is a strong signal the ceiling is structural, not incidental.
+
+⭐ **And it flips the balance again**: with the roll at 23.4 ms, **the encoder (27.8 ms) is once
+more the larger stage**. The next TRT target is the encoder — where fp16 kernels + fusion may beat
+autocast.
+
+⚠️ **NOT YET VERIFIED and required before shipping**: engine-vs-eager numerical agreement. trtexec
+reports timing only; the four-family accuracy gate and their 95.3 % decision-agreement bar have
+NOT been run on engine outputs. **A 3.62x that changes decisions is not a 3.62x.**
+
+## Revised lever ranking
+
+| # | lever | expected |
+|---|---|---|
+| 1 | ⭐ **TRT engine on the ENCODER** | now the larger stage at 27.8 ms |
+| 2 | **Accuracy gate on the TRT-fp16 predictor** | ⛔ blocking for deployment, not optional |
+| 3 | K 20 -> 10 | still -23 ms at TRT speeds, still gated on four families |
+| 4 | INT8 / NVFP4 via ModelOpt | now plausible: TRT owns the block-scale path eager torch lacks |
+
+## Evidence class
+
+| claim | class |
+|---|---|
+| TRT 10.13.3.9; engines build; 1.994 / 1.168 ms medians | **MEASURED (ours)** -- `thor_trt.json`, trtexec 200 iters |
+| ONNX opset-17 export clean | **MEASURED (ours)** -- corroborates their 2026-07-08 result |
+| projected tick 51.2 ms / 5.33x | **MEASURED per-stage, PROJECTED in composition** -- levers composed to -2.6 % earlier today, but this exact combination is not yet run end-to-end |
+| engine numerical agreement | ⛔ **UNMEASURED** -- gating item #2 |

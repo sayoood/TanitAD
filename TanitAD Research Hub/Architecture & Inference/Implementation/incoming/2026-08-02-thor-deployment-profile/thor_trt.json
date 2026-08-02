@@ -1,0 +1,33 @@
+{
+ "device": "NVIDIA Thor",
+ "trt_version": "10.13.3.9",
+ "onnx_export": {
+  "ok": true,
+  "MB": 303.2
+ },
+ "build_fp32": {
+  "ok": true,
+  "build_s": 27.0,
+  "MB": 346.6,
+  "err": null
+ },
+ "build_fp16": {
+  "ok": true,
+  "build_s": 36.3,
+  "MB": 173.9,
+  "err": null
+ },
+ "trt_fp32_median_ms": 1.9939,
+ "trt_fp32_vs_cudagraph_x": 1.72,
+ "trt_fp32_vs_eager_x": 2.12,
+ "trt_fp16_median_ms": 1.16809,
+ "trt_fp16_vs_cudagraph_x": 2.93,
+ "trt_fp16_vs_eager_x": 3.62,
+ "baselines_ms": {
+  "eager_fp32": 4.23,
+  "cuda_graph": 3.42,
+  "note": "the engine must beat the FREE CUDA graph to justify the toolchain"
+ },
+ "projected_roll20_ms": 23.36,
+ "projected_tick_ms": 51.16
+}
