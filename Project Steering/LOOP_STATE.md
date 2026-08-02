@@ -1308,3 +1308,27 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - ⚠️ TARGET HAS MOVED: after bf16 the 20-step roll is **71%** of the remaining 98.63ms. Next
   levers: TRT engine; capture the WHOLE roll in ONE graph (removes 19 replay boundaries); INT8
   PTQ (⛔ accuracy must clear ALL FOUR FAMILIES); bf16 accuracy gate vs their 95.3% bar.
+
+## 2026-08-02 16:30 UTC — TRT VALIDATED (5.33x) + AlpaSim setup take-2 running
+
+- ⭐⭐ **TensorRT engine VALIDATED and the tick is 51.2 ms = 5.33x** (272.56 fp32 baseline), 51% of
+  the 100ms budget. Encoder 187.8->27.8 bf16 (6.76x); predictor 4.23->1.168 TRT-fp16 (3.62x, and
+  2.93x over the FREE CUDA graph = clears their toolchain bar).
+- ✅ **PRECISION GATE PASS** (single process, one model, export->build->compare): TRT fp32 rel
+  3.05e-4 -> 4.39e-4 over a 20-step roll; fp16 1.41e-3 -> 1.80e-3. Growth 1.3-1.4x => **error does
+  NOT compound**. CUDA graph bit-exact (0.0).
+- 🔴 **RETRACTION**: the inherited "ONNX parity-clean, MHA/FiLM/causal-triu all fine" (2026-07-08)
+  is FALSE on torch 2.13. opset17+MHA-fastpath exports a SILENTLY WRONG graph (rel 0.726); opset18
+  fails loudly on aten::_native_multi_head_attention. FIX =
+  `torch.backends.mha.set_fastpath_enabled(False)` -> rel 7.9e-7 both opsets. Class: a passing
+  check on an old toolchain re-asserted on a new one. ⇒ re-verify ONNX parity PER TORCH VERSION.
+- ⚠️ Own test bug logged: first gate "failed" identically at fp32 AND fp16 because it compared the
+  engine against a DIFFERENT random init. Identical error across precisions = wiring/test bug.
+- 📘 `Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md` — deploy procedure, 10 learnings, and
+  **O1-O14 experiment backlog each with its FALSIFIER** so the optimisation agent runs solo.
+- 🔵 AlpaSim setup TAKE 2 running (`~/alpasim_setup2.sh`): the first chain waited on a DONE marker
+  ALREADY written before it armed — waiting on a signal in the past. Take 2 removes the wait,
+  installs rust non-interactively (setup_local_env.sh PROMPTS for rustup = hang under nohup), then
+  sources it with stdin closed, then pulls VaVAM assets.
+- ⛔ STILL BLOCKING closed-loop videos: VaVAM assets + scene download, and REF-C MAINLINE weights
+  are on the STOPPED pod3 volume (only refc-base-e1f-junction is on HF).
