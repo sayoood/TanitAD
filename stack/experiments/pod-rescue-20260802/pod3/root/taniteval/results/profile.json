@@ -1,0 +1,187 @@
+{
+  "flagship": {
+    "meta": {
+      "name": "Flagship 4B (phase0)",
+      "arch": "flagship-worldmodel",
+      "encoder": "trained ViT-12 (9ch, 256px)",
+      "encoder_frozen": false,
+      "speed_input": false,
+      "action_dim": 2,
+      "step": 22000,
+      "hf": "Sayood/tanitad-flagship-4b-phase0",
+      "anti_collapse": "SigReg (free_dims=64)",
+      "note": "No speed-input \u2014 fails on straights/high-speed (speed-magnitude)."
+    },
+    "profile": {
+      "trained_params_m": 263.44,
+      "frozen_encoder_params_m": 0.0,
+      "total_inference_params_m": 263.44,
+      "by_component_m": {
+        "predictor": 91.361,
+        "encoder": 87.023,
+        "tactical_pred": 26.535,
+        "tactical_policy": 22.736,
+        "imagination": 22.056,
+        "strategic_policy": 8.385,
+        "inv_dyn": 5.247,
+        "readout": 0.098
+      },
+      "ckpt_mb": 3302.2,
+      "trained_mem_fp32_mb": 1053.8,
+      "trained_mem_fp16_mb": 526.9,
+      "infer_mem_fp16_mb": 526.9,
+      "dtypes_m": {
+        "torch.float32": 263.44
+      },
+      "step": 22000,
+      "aux_heads": [
+        "grounding"
+      ]
+    },
+    "gate": {
+      "ade@0.5s": 1.049,
+      "ade@1s": 1.619,
+      "ade@1.5s": 2.244,
+      "ade@2s": 2.918
+    }
+  },
+  "refa-dinov2": {
+    "meta": {
+      "name": "REF-A DINOv2 4B",
+      "arch": "refa-plus",
+      "encoder": "frozen DINOv2-B/14",
+      "encoder_frozen": true,
+      "speed_input": true,
+      "action_dim": 3,
+      "step": 29999,
+      "hf": "Sayood/tanitad-refa-dinov2-4b",
+      "anti_collapse": "frozen encoder",
+      "note": "Frozen DINOv2 metrically inert for ego-motion; learned action-integrator."
+    },
+    "profile": {
+      "trained_params_m": 154.46,
+      "frozen_encoder_params_m": 86.6,
+      "total_inference_params_m": 241.06,
+      "by_component_m": {
+        "predictor": 91.361,
+        "tactical_pred": 26.535,
+        "tactical_policy": 22.736,
+        "strategic_policy": 8.385,
+        "inv_dyn": 5.248,
+        "adapter": 0.197,
+        "standardizer": 0.002
+      },
+      "ckpt_mb": 1905.7,
+      "trained_mem_fp32_mb": 617.9,
+      "trained_mem_fp16_mb": 308.9,
+      "infer_mem_fp16_mb": 482.1,
+      "dtypes_m": {
+        "torch.float32": 154.46,
+        "torch.bool": 0.0
+      },
+      "step": 29999,
+      "aux_heads": [
+        "metric_invdyn",
+        "step_readout",
+        "aux_speed",
+        "aux_yaw",
+        "aux_accel"
+      ]
+    },
+    "gate": {
+      "ade@0.5s": 0.982,
+      "ade@1s": 1.378,
+      "ade@1.5s": 1.759,
+      "ade@2s": 2.136
+    }
+  },
+  "refa-ijepa": {
+    "meta": {
+      "name": "REF-A I-JEPA 4B",
+      "arch": "refa-plus",
+      "encoder": "frozen I-JEPA ViT-H/14",
+      "encoder_frozen": true,
+      "speed_input": true,
+      "action_dim": 3,
+      "step": 5000,
+      "hf": "Sayood/tanitad-refa-ijepa-4b",
+      "anti_collapse": "frozen encoder",
+      "note": "I-JEPA ~4-5x less metrically-inert than DINOv2 (encoder-ladder); training."
+    },
+    "profile": {
+      "trained_params_m": 154.6,
+      "frozen_encoder_params_m": 632.0,
+      "total_inference_params_m": 786.6,
+      "by_component_m": {
+        "predictor": 91.361,
+        "tactical_pred": 26.535,
+        "tactical_policy": 22.736,
+        "strategic_policy": 8.385,
+        "inv_dyn": 5.248,
+        "adapter": 0.328,
+        "standardizer": 0.003
+      },
+      "ckpt_mb": 1907.2,
+      "trained_mem_fp32_mb": 618.4,
+      "trained_mem_fp16_mb": 309.2,
+      "infer_mem_fp16_mb": 1573.2,
+      "dtypes_m": {
+        "torch.float32": 154.6,
+        "torch.bool": 0.0
+      },
+      "step": 7000,
+      "aux_heads": [
+        "metric_invdyn",
+        "step_readout",
+        "aux_speed",
+        "aux_yaw",
+        "aux_accel"
+      ]
+    },
+    "gate": {}
+  },
+  "refb": {
+    "meta": {
+      "name": "REF-B (speed)",
+      "arch": "refb",
+      "encoder": "trained ViT-25 (9ch, 256px)",
+      "encoder_frozen": false,
+      "speed_input": true,
+      "action_dim": 2,
+      "step": 5850,
+      "hf": "Sayood/tanitad-refb-speed",
+      "anti_collapse": "trained encoder",
+      "note": "Hierarchical planner (op-seq + maneuver/waypoint + command). Early (19%)."
+    },
+    "profile": {
+      "trained_params_m": 262.78,
+      "frozen_encoder_params_m": 0.0,
+      "total_inference_params_m": 262.78,
+      "by_component_m": {
+        "encoder": 179.165,
+        "operative": 46.485,
+        "tactical": 21.686,
+        "strategic": 8.385,
+        "inv_dyn": 5.247,
+        "confidence": 1.443,
+        "accel_head": 0.262,
+        "readout": 0.098,
+        "ood": 0.004,
+        "nav_emb": 0.001,
+        "speed_emb": 0.0
+      },
+      "ckpt_mb": 3153.9,
+      "trained_mem_fp32_mb": 1051.1,
+      "trained_mem_fp16_mb": 525.6,
+      "infer_mem_fp16_mb": 525.6,
+      "dtypes_m": {
+        "torch.float32": 262.77,
+        "torch.float64": 0.0,
+        "torch.bool": 0.0
+      },
+      "step": 6000,
+      "aux_heads": []
+    },
+    "gate": {}
+  }
+}

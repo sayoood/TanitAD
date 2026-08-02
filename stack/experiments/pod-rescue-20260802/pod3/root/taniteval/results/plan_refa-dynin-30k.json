@@ -1,0 +1,57 @@
+{
+  "n_windows": 441,
+  "strategic": {
+    "route_acc_follow": 0.675,
+    "route_acc_nav": 1.0,
+    "nav_reliance": 0.325,
+    "majority_route_base_rate": 0.675,
+    "route_skill_vs_chance": 0.0,
+    "n_route_valid": 120,
+    "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+    ]
+  },
+  "behavior_decodability": {
+    "maneuver_balanced_accuracy": 0.2248,
+    "chance_balacc": 0.2,
+    "beats_chance": true,
+    "decodability_vs_chance": 0.0248,
+    "maneuver_accuracy_raw": 0.2087,
+    "maneuver_majority_acc": 0.5986,
+    "macro_f1": 0.1622,
+    "n_windows": 441,
+    "n_seeds": 3,
+    "classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ],
+    "note": "maneuver NOT decodable above chance from the latent"
+  },
+  "tactical": {
+    "maneuver_acc": 0.6304,
+    "turn_recall": 0.6667,
+    "n_turns": 84,
+    "tactical_wp_ade_2s": 2.7389,
+    "goal_latent_cos": 0.8398,
+    "maneuver_classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ]
+  },
+  "verdict": "route ~ chance (base 0.675) \u00b7 route: leans on given command \u00b7 turns ok \u00b7 behavior ~ chance",
+  "model": {
+    "key": "refa-dynin-30k",
+    "name": "REF-A dyn-in 4B (30k FINAL)",
+    "arch": "refa-plus",
+    "encoder": "frozen DINOv2-B/14"
+  },
+  "ckpt_step": 29999
+}

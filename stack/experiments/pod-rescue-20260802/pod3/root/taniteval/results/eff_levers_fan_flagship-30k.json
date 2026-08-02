@@ -1,0 +1,334 @@
+{
+  "key": "flagship-30k",
+  "ckpt_step": 29999,
+  "env": {
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A40",
+    "capability": [
+      8,
+      6
+    ]
+  },
+  "question": "what does a K-candidate plan fan actually cost?",
+  "gpu_state_before": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 0.0,
+    "mem_used_mb": 1399.0,
+    "sm_clock_mhz": 1740.0,
+    "exclusive": true,
+    "temp_c": 36.0,
+    "power_w": 53.69,
+    "other_compute_detail": []
+  },
+  "protocol": {
+    "batches": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "iters": 50,
+    "warmup": 10,
+    "rollout_k": 20,
+    "window": 8
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "batches": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "by_batch": {
+      "1": {
+        "eager": {
+          "p50_ms": 111.2805,
+          "p99_ms": 120.9032,
+          "ms_per_candidate": 111.2805,
+          "naive_Kx_projection_ms": 111.2805,
+          "cheaper_than_naive_by": 1.0
+        },
+        "graph_rollout": {
+          "p50_ms": 56.9105,
+          "p99_ms": 57.0988,
+          "ms_per_candidate": 56.9105,
+          "naive_Kx_projection_ms": 56.9105,
+          "cheaper_than_naive_by": 1.0
+        },
+        "all_levers": {
+          "p50_ms": 18.7998,
+          "p99_ms": 21.4825,
+          "ms_per_candidate": 18.7998,
+          "naive_Kx_projection_ms": 18.7998,
+          "cheaper_than_naive_by": 1.0
+        },
+        "build_errors": {}
+      },
+      "2": {
+        "eager": {
+          "p50_ms": 128.6636,
+          "p99_ms": 132.8093,
+          "ms_per_candidate": 64.3318,
+          "naive_Kx_projection_ms": 222.561,
+          "cheaper_than_naive_by": 1.73
+        },
+        "graph_rollout": {
+          "p50_ms": 85.2664,
+          "p99_ms": 85.934,
+          "ms_per_candidate": 42.6332,
+          "naive_Kx_projection_ms": 113.821,
+          "cheaper_than_naive_by": 1.335
+        },
+        "all_levers": {
+          "p50_ms": 20.0202,
+          "p99_ms": 22.7302,
+          "ms_per_candidate": 10.0101,
+          "naive_Kx_projection_ms": 37.5996,
+          "cheaper_than_naive_by": 1.878
+        },
+        "build_errors": {}
+      },
+      "4": {
+        "eager": {
+          "p50_ms": 180.6818,
+          "p99_ms": 200.613,
+          "ms_per_candidate": 45.1705,
+          "naive_Kx_projection_ms": 445.122,
+          "cheaper_than_naive_by": 2.464
+        },
+        "graph_rollout": {
+          "p50_ms": 137.5277,
+          "p99_ms": 138.0982,
+          "ms_per_candidate": 34.3819,
+          "naive_Kx_projection_ms": 227.642,
+          "cheaper_than_naive_by": 1.655
+        },
+        "all_levers": {
+          "p50_ms": 22.0041,
+          "p99_ms": 22.5152,
+          "ms_per_candidate": 5.501,
+          "naive_Kx_projection_ms": 75.1992,
+          "cheaper_than_naive_by": 3.418
+        },
+        "build_errors": {}
+      },
+      "8": {
+        "eager": {
+          "p50_ms": 280.5159,
+          "p99_ms": 333.8676,
+          "ms_per_candidate": 35.0645,
+          "naive_Kx_projection_ms": 890.244,
+          "cheaper_than_naive_by": 3.174
+        },
+        "graph_rollout": {
+          "p50_ms": 251.6974,
+          "p99_ms": 252.7313,
+          "ms_per_candidate": 31.4622,
+          "naive_Kx_projection_ms": 455.284,
+          "cheaper_than_naive_by": 1.809
+        },
+        "all_levers": {
+          "p50_ms": 26.4542,
+          "p99_ms": 26.7964,
+          "ms_per_candidate": 3.3068,
+          "naive_Kx_projection_ms": 150.3984,
+          "cheaper_than_naive_by": 5.685
+        },
+        "build_errors": {}
+      },
+      "16": {
+        "eager": {
+          "p50_ms": 486.8918,
+          "p99_ms": 491.9222,
+          "ms_per_candidate": 30.4307,
+          "naive_Kx_projection_ms": 1780.488,
+          "cheaper_than_naive_by": 3.657
+        },
+        "graph_rollout": {
+          "p50_ms": 477.5371,
+          "p99_ms": 479.0819,
+          "ms_per_candidate": 29.8461,
+          "naive_Kx_projection_ms": 910.568,
+          "cheaper_than_naive_by": 1.907
+        },
+        "all_levers": {
+          "p50_ms": 41.1903,
+          "p99_ms": 41.9139,
+          "ms_per_candidate": 2.5744,
+          "naive_Kx_projection_ms": 300.7968,
+          "cheaper_than_naive_by": 7.303
+        },
+        "build_errors": {}
+      }
+    },
+    "ACCURACY": "not applicable \u2014 this is a planning-BUDGET measurement. Which candidate a planner selects, and whether selection improves driving, are separate questions the closed-loop harness owns."
+  },
+  "tf32": {
+    "precision": {
+      "precision": "tf32",
+      "autocast": null,
+      "matmul_allow_tf32": true,
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "batches": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "by_batch": {
+      "1": {
+        "eager": {
+          "p50_ms": 88.6787,
+          "p99_ms": 100.5534,
+          "ms_per_candidate": 88.6787,
+          "naive_Kx_projection_ms": 88.6787,
+          "cheaper_than_naive_by": 1.0
+        },
+        "graph_rollout": {
+          "p50_ms": 40.4429,
+          "p99_ms": 40.7198,
+          "ms_per_candidate": 40.4429,
+          "naive_Kx_projection_ms": 40.4429,
+          "cheaper_than_naive_by": 1.0
+        },
+        "all_levers": {
+          "p50_ms": 18.8,
+          "p99_ms": 21.3693,
+          "ms_per_candidate": 18.8,
+          "naive_Kx_projection_ms": 18.8,
+          "cheaper_than_naive_by": 1.0
+        },
+        "build_errors": {}
+      },
+      "2": {
+        "eager": {
+          "p50_ms": 102.4077,
+          "p99_ms": 122.4229,
+          "ms_per_candidate": 51.2039,
+          "naive_Kx_projection_ms": 177.3574,
+          "cheaper_than_naive_by": 1.732
+        },
+        "graph_rollout": {
+          "p50_ms": 54.9295,
+          "p99_ms": 55.1273,
+          "ms_per_candidate": 27.4647,
+          "naive_Kx_projection_ms": 80.8858,
+          "cheaper_than_naive_by": 1.473
+        },
+        "all_levers": {
+          "p50_ms": 20.0264,
+          "p99_ms": 22.201,
+          "ms_per_candidate": 10.0132,
+          "naive_Kx_projection_ms": 37.6,
+          "cheaper_than_naive_by": 1.878
+        },
+        "build_errors": {}
+      },
+      "4": {
+        "eager": {
+          "p50_ms": 124.913,
+          "p99_ms": 129.9129,
+          "ms_per_candidate": 31.2282,
+          "naive_Kx_projection_ms": 354.7148,
+          "cheaper_than_naive_by": 2.84
+        },
+        "graph_rollout": {
+          "p50_ms": 81.0364,
+          "p99_ms": 81.3054,
+          "ms_per_candidate": 20.2591,
+          "naive_Kx_projection_ms": 161.7716,
+          "cheaper_than_naive_by": 1.996
+        },
+        "all_levers": {
+          "p50_ms": 22.0068,
+          "p99_ms": 23.3939,
+          "ms_per_candidate": 5.5017,
+          "naive_Kx_projection_ms": 75.2,
+          "cheaper_than_naive_by": 3.417
+        },
+        "build_errors": {}
+      },
+      "8": {
+        "eager": {
+          "p50_ms": 180.319,
+          "p99_ms": 222.9255,
+          "ms_per_candidate": 22.5399,
+          "naive_Kx_projection_ms": 709.4296,
+          "cheaper_than_naive_by": 3.934
+        },
+        "graph_rollout": {
+          "p50_ms": 135.0555,
+          "p99_ms": 135.4299,
+          "ms_per_candidate": 16.8819,
+          "naive_Kx_projection_ms": 323.5432,
+          "cheaper_than_naive_by": 2.396
+        },
+        "all_levers": {
+          "p50_ms": 26.5027,
+          "p99_ms": 26.8362,
+          "ms_per_candidate": 3.3128,
+          "naive_Kx_projection_ms": 150.4,
+          "cheaper_than_naive_by": 5.675
+        },
+        "build_errors": {}
+      },
+      "16": {
+        "eager": {
+          "p50_ms": 285.6521,
+          "p99_ms": 304.0543,
+          "ms_per_candidate": 17.8533,
+          "naive_Kx_projection_ms": 1418.8592,
+          "cheaper_than_naive_by": 4.967
+        },
+        "graph_rollout": {
+          "p50_ms": 248.2529,
+          "p99_ms": 249.0052,
+          "ms_per_candidate": 15.5158,
+          "naive_Kx_projection_ms": 647.0864,
+          "cheaper_than_naive_by": 2.607
+        },
+        "all_levers": {
+          "p50_ms": 41.1286,
+          "p99_ms": 42.0253,
+          "ms_per_candidate": 2.5705,
+          "naive_Kx_projection_ms": 300.8,
+          "cheaper_than_naive_by": 7.314
+        },
+        "build_errors": {}
+      }
+    },
+    "ACCURACY": "not applicable \u2014 this is a planning-BUDGET measurement. Which candidate a planner selects, and whether selection improves driving, are separate questions the closed-loop harness owns."
+  },
+  "gpu_state_after": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 100.0,
+    "mem_used_mb": 3723.0,
+    "sm_clock_mhz": 1725.0,
+    "exclusive": true,
+    "temp_c": 72.0,
+    "power_w": 269.68,
+    "other_compute_detail": []
+  },
+  "contamination_check": {
+    "gpu_exclusive_before": true,
+    "gpu_exclusive_after": true,
+    "valid": true
+  }
+}

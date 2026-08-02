@@ -1,0 +1,333 @@
+{
+ "estimator": "repeated random 8-of-40 EPISODE held-out split (episode-cluster resampling of the probe)",
+ "n_splits": 200,
+ "seed": 0,
+ "gate_threshold": 0.55,
+ "base_grid": [
+  0.01,
+  0.1,
+  1.0,
+  10.0
+ ],
+ "extended_grid": [
+  0.001,
+  0.01,
+  0.1,
+  1.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0
+ ],
+ "source": "diagv2_<key>.pt cached z_t/speed/eid (the gate's own tensors)",
+ "models": {
+  "flagship-30k": {
+   "n_windows": 881,
+   "n_episodes": 40,
+   "latent_dim": 2048,
+   "gate_split": {
+    "r2": 0.861,
+    "lam": 1.0,
+    "n_held_eps": 8,
+    "lam_at_grid_max": false
+   },
+   "gate_split_extended_grid": {
+    "r2": 0.861,
+    "lam": 1.0
+   },
+   "gate_split_nested_lambda": {
+    "r2": 0.7707,
+    "lam": 0.01
+   },
+   "random_splits_base_grid": {
+    "n": 200,
+    "mean": 0.6849,
+    "sd": 0.2198,
+    "min": -0.864,
+    "p2.5": 0.0914,
+    "p25": 0.6499,
+    "median": 0.7449,
+    "p75": 0.8072,
+    "p97.5": 0.8892,
+    "max": 0.8938,
+    "frac_ge_gate": 0.85
+   },
+   "random_splits_extended_grid": {
+    "n": 200,
+    "mean": 0.6989,
+    "sd": 0.1974,
+    "min": -0.6735,
+    "p2.5": 0.0916,
+    "p25": 0.6701,
+    "median": 0.7504,
+    "p75": 0.808,
+    "p97.5": 0.8892,
+    "max": 0.8938,
+    "frac_ge_gate": 0.86
+   },
+   "random_splits_nested_lambda": {
+    "n": 200,
+    "mean": 0.5009,
+    "sd": 0.3193,
+    "min": -1.2305,
+    "p2.5": -0.4062,
+    "p25": 0.4073,
+    "median": 0.6025,
+    "p75": 0.7094,
+    "p97.5": 0.7988,
+    "max": 0.8215,
+    "frac_ge_gate": 0.6
+   },
+   "lambda_hist_base_grid": {
+    "0.01": 0,
+    "0.1": 1,
+    "1.0": 88,
+    "10.0": 111
+   },
+   "permutation_null_base_grid": {
+    "n": 50,
+    "mean": -0.8661,
+    "sd": 1.2745,
+    "min": -5.2312,
+    "p2.5": -4.4427,
+    "p25": -1.033,
+    "median": -0.4177,
+    "p75": -0.0958,
+    "p97.5": 0.1295,
+    "max": 0.3413,
+    "frac_ge_gate": 0.0
+   }
+  },
+  "flagship-speed": {
+   "n_windows": 881,
+   "n_episodes": 40,
+   "latent_dim": 2048,
+   "gate_split": {
+    "r2": 0.8578,
+    "lam": 1.0,
+    "n_held_eps": 8,
+    "lam_at_grid_max": false
+   },
+   "gate_split_extended_grid": {
+    "r2": 0.8578,
+    "lam": 1.0
+   },
+   "gate_split_nested_lambda": {
+    "r2": 0.7665,
+    "lam": 0.01
+   },
+   "random_splits_base_grid": {
+    "n": 200,
+    "mean": 0.6542,
+    "sd": 0.264,
+    "min": -1.3857,
+    "p2.5": -0.0592,
+    "p25": 0.6218,
+    "median": 0.7249,
+    "p75": 0.8006,
+    "p97.5": 0.881,
+    "max": 0.9071,
+    "frac_ge_gate": 0.815
+   },
+   "random_splits_extended_grid": {
+    "n": 200,
+    "mean": 0.6685,
+    "sd": 0.2374,
+    "min": -1.1054,
+    "p2.5": -0.0336,
+    "p25": 0.635,
+    "median": 0.7282,
+    "p75": 0.8006,
+    "p97.5": 0.881,
+    "max": 0.9071,
+    "frac_ge_gate": 0.835
+   },
+   "random_splits_nested_lambda": {
+    "n": 200,
+    "mean": 0.4833,
+    "sd": 0.3583,
+    "min": -1.8726,
+    "p2.5": -0.3728,
+    "p25": 0.391,
+    "median": 0.6082,
+    "p75": 0.6949,
+    "p97.5": 0.7949,
+    "max": 0.843,
+    "frac_ge_gate": 0.62
+   },
+   "lambda_hist_base_grid": {
+    "0.01": 1,
+    "0.1": 13,
+    "1.0": 45,
+    "10.0": 141
+   },
+   "permutation_null_base_grid": {
+    "n": 50,
+    "mean": -0.8659,
+    "sd": 1.2927,
+    "min": -5.2863,
+    "p2.5": -4.6515,
+    "p25": -1.0188,
+    "median": -0.4202,
+    "p75": -0.0927,
+    "p97.5": 0.1156,
+    "max": 0.3743,
+    "frac_ge_gate": 0.0
+   }
+  },
+  "flagship-v2-6k": {
+   "n_windows": 881,
+   "n_episodes": 40,
+   "latent_dim": 2048,
+   "gate_split": {
+    "r2": 0.2999,
+    "lam": 10.0,
+    "n_held_eps": 8,
+    "lam_at_grid_max": true
+   },
+   "gate_split_extended_grid": {
+    "r2": 0.2999,
+    "lam": 10.0
+   },
+   "gate_split_nested_lambda": {
+    "r2": -0.1015,
+    "lam": 0.001
+   },
+   "random_splits_base_grid": {
+    "n": 200,
+    "mean": -0.0848,
+    "sd": 0.7283,
+    "min": -4.3026,
+    "p2.5": -2.0588,
+    "p25": -0.2043,
+    "median": 0.1462,
+    "p75": 0.3208,
+    "p97.5": 0.5849,
+    "max": 0.6589,
+    "frac_ge_gate": 0.035
+   },
+   "random_splits_extended_grid": {
+    "n": 200,
+    "mean": 0.0897,
+    "sd": 0.4516,
+    "min": -3.4336,
+    "p2.5": -0.9065,
+    "p25": -0.0046,
+    "median": 0.187,
+    "p75": 0.344,
+    "p97.5": 0.5849,
+    "max": 0.6589,
+    "frac_ge_gate": 0.04
+   },
+   "random_splits_nested_lambda": {
+    "n": 200,
+    "mean": -0.6276,
+    "sd": 1.2596,
+    "min": -8.1903,
+    "p2.5": -4.0225,
+    "p25": -0.7731,
+    "median": -0.1889,
+    "p75": 0.0199,
+    "p97.5": 0.4065,
+    "max": 0.5776,
+    "frac_ge_gate": 0.01
+   },
+   "lambda_hist_base_grid": {
+    "0.01": 11,
+    "0.1": 10,
+    "1.0": 16,
+    "10.0": 163
+   },
+   "permutation_null_base_grid": {
+    "n": 50,
+    "mean": -0.9134,
+    "sd": 1.2679,
+    "min": -5.4913,
+    "p2.5": -4.2112,
+    "p25": -0.9355,
+    "median": -0.4726,
+    "p75": -0.1387,
+    "p97.5": 0.1589,
+    "max": 0.2505,
+    "frac_ge_gate": 0.0
+   }
+  },
+  "flagship-v3enc-10k": {
+   "n_windows": 881,
+   "n_episodes": 40,
+   "latent_dim": 2048,
+   "gate_split": {
+    "r2": 0.393,
+    "lam": 10.0,
+    "n_held_eps": 8,
+    "lam_at_grid_max": true
+   },
+   "gate_split_extended_grid": {
+    "r2": 0.393,
+    "lam": 10.0
+   },
+   "gate_split_nested_lambda": {
+    "r2": 0.3628,
+    "lam": 0.01
+   },
+   "random_splits_base_grid": {
+    "n": 200,
+    "mean": 0.334,
+    "sd": 0.3937,
+    "min": -1.7633,
+    "p2.5": -0.7799,
+    "p25": 0.2579,
+    "median": 0.4359,
+    "p75": 0.5373,
+    "p97.5": 0.7462,
+    "max": 0.8162,
+    "frac_ge_gate": 0.24
+   },
+   "random_splits_extended_grid": {
+    "n": 200,
+    "mean": 0.4102,
+    "sd": 0.3179,
+    "min": -1.7633,
+    "p2.5": -0.3604,
+    "p25": 0.3479,
+    "median": 0.4721,
+    "p75": 0.581,
+    "p97.5": 0.7539,
+    "max": 0.8162,
+    "frac_ge_gate": 0.295
+   },
+   "random_splits_nested_lambda": {
+    "n": 200,
+    "mean": 0.0328,
+    "sd": 0.5592,
+    "min": -3.107,
+    "p2.5": -1.4939,
+    "p25": -0.0589,
+    "median": 0.1551,
+    "p75": 0.3577,
+    "p97.5": 0.5944,
+    "max": 0.7144,
+    "frac_ge_gate": 0.035
+   },
+   "lambda_hist_base_grid": {
+    "0.01": 3,
+    "0.1": 10,
+    "1.0": 18,
+    "10.0": 169
+   },
+   "permutation_null_base_grid": {
+    "n": 50,
+    "mean": -1.1497,
+    "sd": 1.512,
+    "min": -7.9098,
+    "p2.5": -4.5946,
+    "p25": -1.3155,
+    "median": -0.5902,
+    "p75": -0.2732,
+    "p97.5": -0.0397,
+    "max": 0.1323,
+    "frac_ge_gate": 0.0
+   }
+  }
+ }
+}

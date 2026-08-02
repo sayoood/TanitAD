@@ -1,0 +1,233 @@
+{
+  "model": {
+    "key": "refa-ijepa",
+    "name": "REF-A I-JEPA 4B (best=7k)",
+    "arch": "refa-plus",
+    "encoder": "frozen I-JEPA ViT-H/14",
+    "speed_input": true
+  },
+  "ckpt_step": 7000,
+  "n_windows": 176,
+  "wall_s": 18.0,
+  "diagnostic": {
+    "n_windows": 176,
+    "n_episodes": 8,
+    "low_confidence": true,
+    "low_confidence_note": "few windows/episodes (<200 win or <8 ep) \u2014 the held-out ridge ceilings overfit and skill_score CIs are wide; treat as indicative",
+    "model_ade_0_2s": 3.062,
+    "model_l2": {
+      "cumulative_avg_0_2s": 3.062,
+      "endpoint_avg": 3.062,
+      "l2@1s": 2.535,
+      "l2@2s": 4.7185,
+      "ade@1s": 1.9963,
+      "ade@2s": 3.062
+    },
+    "kinematic_floor": {
+      "per_baseline_ade_0_2s": {
+        "constant_velocity": 1.4805,
+        "go_straight": 1.3545,
+        "constant_yaw_rate": 0.7382
+      },
+      "best_of_3_ade_0_2s": 0.7069,
+      "best_of_3_l2": {
+        "cumulative_avg_0_2s": 0.7069,
+        "endpoint_avg": 0.7069,
+        "l2@1s": 0.3774,
+        "l2@2s": 1.5053,
+        "ade@1s": 0.2394,
+        "ade@2s": 0.7069
+      },
+      "which_baseline_wins": {
+        "constant_velocity": 18,
+        "go_straight": 38,
+        "constant_yaw_rate": 120
+      },
+      "by_speed": {
+        "high": {
+          "ade_0_2s": 0.6396,
+          "n": 59
+        },
+        "low": {
+          "ade_0_2s": 0.8583,
+          "n": 59
+        },
+        "med": {
+          "ade_0_2s": 0.6214,
+          "n": 58
+        }
+      },
+      "by_curvature": {
+        "gentle": {
+          "ade_0_2s": 0.9969,
+          "n": 41
+        },
+        "sharp": {
+          "ade_0_2s": 0.9032,
+          "n": 51
+        },
+        "straight": {
+          "ade_0_2s": 0.4463,
+          "n": 84
+        }
+      },
+      "speed_tertile_thresholds_mps": [
+        5.762,
+        13.111
+      ],
+      "baselines_used": [
+        "constant_velocity",
+        "go_straight",
+        "constant_yaw_rate"
+      ]
+    },
+    "ego_status_ceiling": {
+      "held_out_ade_0_2s": 1.0966,
+      "l2": {
+        "cumulative_avg_0_2s": 1.0966,
+        "endpoint_avg": 1.0966,
+        "l2@1s": 0.6025,
+        "l2@2s": 2.304,
+        "ade@1s": 0.3859,
+        "ade@2s": 1.0966
+      },
+      "ridge_alpha": 1.0,
+      "fit_r2": 0.9645,
+      "ctrv_ade_0_2s": 0.7382,
+      "ridge_beats_ctrv": false,
+      "note": "learned ego-status readout does NOT beat CTRV \u2014 no learned shortcut over trivial kinematics; keep CTRV as the bar (falsifier)",
+      "input": "ego kinematic history only \u2014 NO pixels/latent (AD-MLP)"
+    },
+    "latent_ceiling": {
+      "held_out_ade_0_2s": 0.0166,
+      "l2": {
+        "cumulative_avg_0_2s": 0.0166,
+        "endpoint_avg": 0.0166,
+        "l2@1s": 0.012,
+        "l2@2s": 0.0291,
+        "ade@1s": 0.0088,
+        "ade@2s": 0.0166
+      },
+      "ridge_alpha": 1.0,
+      "fit_r2": 1.0,
+      "state_dim": 2048,
+      "note": "best linear readout of the frozen latent (upper bound on what the operative head could extract WITHOUT the action-privilege the grounded rollout enjoys)"
+    },
+    "open_loop_l2_both_conventions": {
+      "model": {
+        "cumulative_avg_0_2s": 3.062,
+        "endpoint_avg": 3.062,
+        "l2@1s": 2.535,
+        "l2@2s": 4.7185,
+        "ade@1s": 1.9963,
+        "ade@2s": 3.062
+      },
+      "floor_best_of_3": {
+        "cumulative_avg_0_2s": 0.7069,
+        "endpoint_avg": 0.7069,
+        "l2@1s": 0.3774,
+        "l2@2s": 1.5053,
+        "ade@1s": 0.2394,
+        "ade@2s": 0.7069
+      },
+      "ego_status_ceiling": {
+        "cumulative_avg_0_2s": 1.0966,
+        "endpoint_avg": 1.0966,
+        "l2@1s": 0.6025,
+        "l2@2s": 2.304,
+        "ade@1s": 0.3859,
+        "ade@2s": 1.0966
+      },
+      "latent_ceiling": {
+        "cumulative_avg_0_2s": 0.0166,
+        "endpoint_avg": 0.0166,
+        "l2@1s": 0.012,
+        "l2@2s": 0.0291,
+        "ade@1s": 0.0088,
+        "ade@2s": 0.0166
+      },
+      "convention_note": "cumulative = mean over waypoints<=T (ST-P3); endpoint = mean of per-horizon final errors"
+    },
+    "skill_score": {
+      "denominator_ceiling": "latent",
+      "by_speed": {
+        "high": {
+          "model_l2": 3.4271,
+          "floor_l2": 0.6396,
+          "skill_vs_floor": 5.358,
+          "n": 59,
+          "ceiling_l2": 0.0188,
+          "skill_vs_ceiling": 182.477
+        },
+        "low": {
+          "model_l2": 2.7416,
+          "floor_l2": 0.8583,
+          "skill_vs_floor": 3.194,
+          "n": 59,
+          "ceiling_l2": 0.0169,
+          "skill_vs_ceiling": 161.824
+        },
+        "med": {
+          "model_l2": 3.0165,
+          "floor_l2": 0.6214,
+          "skill_vs_floor": 4.854,
+          "n": 58,
+          "ceiling_l2": 0.014,
+          "skill_vs_ceiling": 215.954
+        }
+      },
+      "by_curvature": {
+        "gentle": {
+          "model_l2": 3.4978,
+          "floor_l2": 0.9969,
+          "skill_vs_floor": 3.509,
+          "n": 41,
+          "ceiling_l2": 0.0167,
+          "skill_vs_ceiling": 210.028
+        },
+        "sharp": {
+          "model_l2": 3.8318,
+          "floor_l2": 0.9032,
+          "skill_vs_floor": 4.242,
+          "n": 51,
+          "ceiling_l2": 0.0179,
+          "skill_vs_ceiling": 213.953
+        },
+        "straight": {
+          "model_l2": 2.3819,
+          "floor_l2": 0.4463,
+          "skill_vs_floor": 5.338,
+          "n": 84,
+          "ceiling_l2": 0.0157,
+          "skill_vs_ceiling": 151.391
+        }
+      }
+    },
+    "falsifiers": {
+      "ridge_ceiling_vs_ctrv": "learned ego-status readout does NOT beat CTRV \u2014 no learned shortcut over trivial kinematics; keep CTRV as the bar (falsifier)",
+      "skill_on_straights": {
+        "skill_vs_floor": 5.338,
+        "near_trivial_competitive": false,
+        "threshold": 3.0,
+        "note": "model clears the near-trivial bar on straights"
+      }
+    },
+    "protocol": {
+      "window": 8,
+      "stride": 8,
+      "wp_steps": [
+        5,
+        10,
+        15,
+        20
+      ],
+      "kfold": 5,
+      "ridge_alphas": [
+        1.0,
+        10.0,
+        100.0
+      ],
+      "action_privilege_caveat": "model rollout uses TRUE future actions; ceilings/floor do not \u2014 skill_vs_ceiling<1 does not imply the head beats a fair readout"
+    }
+  }
+}

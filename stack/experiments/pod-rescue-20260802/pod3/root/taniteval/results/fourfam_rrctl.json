@@ -1,0 +1,47 @@
+{
+  "longitudinal": {
+    "speed_mae_mps": 2.3122,
+    "speed_bias_mps": 0.9397,
+    "speed_rmse_mps": 3.3346,
+    "along_mae_m": 0.3892,
+    "along_bias_m": 0.132,
+    "along_final_bias_m": 0.3355,
+    "accel_mae_mps2": 18.8309,
+    "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+    },
+    "n_windows": 881
+  },
+  "lateral": {
+    "heading_mae_deg": 1.566,
+    "yaw_rate_mae_degps": 8.848,
+    "curvature_mae_1pm": 0.021798,
+    "curvature_bias_1pm": -0.017093,
+    "cross_mae_m": 0.1179,
+    "cross_bias_m": -0.0162,
+    "cross_final_mae_m": 0.2827,
+    "n_steps_heading": 3393,
+    "n_steps_curvature": 2532,
+    "excluded_below_min_ds": 131,
+    "min_ds_m": 0.05,
+    "n_windows": 881
+  },
+  "tactical": {
+    "status": "UNAVAILABLE",
+    "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0
+  },
+  "strategic": {
+    "status": "UNAVAILABLE",
+    "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0
+  },
+  "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_families_unavailable": [
+    "tactical",
+    "strategic"
+  ],
+  "_complete": false
+}

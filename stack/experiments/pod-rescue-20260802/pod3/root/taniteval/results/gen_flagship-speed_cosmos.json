@@ -1,0 +1,397 @@
+{
+  "n_windows": 80,
+  "n_episodes": 40,
+  "ood_corpus_status": {
+    "present": [
+      {
+        "dir": "/root/valdata/comma2k19-val-76b6e94a97a1",
+        "n_episodes": 64
+      },
+      {
+        "dir": "/root/valdata/cosmos-val-a7a8527ba14e",
+        "n_episodes": 46
+      },
+      {
+        "dir": "/root/valdata/physicalai-val-0c5f7dac3b11",
+        "n_episodes": 40
+      }
+    ],
+    "physicalai_val": "IN-DISTRIBUTION held-out episodes (flagship-30k trained on physicalai_phase0 epcache) \u2014 the val split is disjoint episodes, not a different corpus.",
+    "comma2k19": "ABSENT on the eval pod. Tooling exists (stack/scripts/extract_comma2k19.py) but no chunk zips / epcache are staged (/root/valdata has only physicalai; /workspace is empty). Enabling needs: download comma2k19 chunk zips -> extract -> convert to [T,9,256,256] epcache.",
+    "cosmos": "ABSENT on the eval pod. Tooling exists (stack/scripts/cosmos_pairs.py, cosmos_verify.py) but no generation shard / pixels are staged. Enabling needs a Cosmos shard + a clip->epcache converter.",
+    "true_ood_feasible_now": false,
+    "note": "Tests A-D + F run on the in-distribution held-out physicalai val (the anticipation/causal tests do not REQUIRE a new corpus \u2014 they test skill CTRV cannot have). Test E's true-OOD arm is data-blocked; the within-corpus novelty proxy runs instead."
+  },
+  "A_ctrv_divergence": {
+    "divergence_bins": [
+      {
+        "bin": 0,
+        "divergence_range_m": [
+          0.001,
+          0.19
+        ],
+        "n": 20,
+        "n_episodes": 16,
+        "median_divergence_m": 0.05,
+        "median_skill_vs_ctrv": 23.5876,
+        "frac_beats_ctrv": 0.0,
+        "advantage_over_ctrv_m": -0.939,
+        "advantage_ci95": [
+          -1.2833,
+          -0.6039
+        ]
+      },
+      {
+        "bin": 1,
+        "divergence_range_m": [
+          0.19,
+          0.273
+        ],
+        "n": 20,
+        "n_episodes": 18,
+        "median_divergence_m": 0.215,
+        "median_skill_vs_ctrv": 2.9017,
+        "frac_beats_ctrv": 0.05,
+        "advantage_over_ctrv_m": -0.5981,
+        "advantage_ci95": [
+          -0.7889,
+          -0.4314
+        ]
+      },
+      {
+        "bin": 2,
+        "divergence_range_m": [
+          0.273,
+          0.426
+        ],
+        "n": 20,
+        "n_episodes": 18,
+        "median_divergence_m": 0.351,
+        "median_skill_vs_ctrv": 2.6809,
+        "frac_beats_ctrv": 0.0,
+        "advantage_over_ctrv_m": -0.5107,
+        "advantage_ci95": [
+          -0.634,
+          -0.3993
+        ]
+      },
+      {
+        "bin": 3,
+        "divergence_range_m": [
+          0.426,
+          1.314
+        ],
+        "n": 20,
+        "n_episodes": 14,
+        "median_divergence_m": 0.525,
+        "median_skill_vs_ctrv": 1.1871,
+        "frac_beats_ctrv": 0.45,
+        "advantage_over_ctrv_m": 0.038,
+        "advantage_ci95": [
+          -0.1979,
+          0.2775
+        ]
+      }
+    ],
+    "overall_median_skill_vs_ctrv": 2.7401,
+    "overall_frac_beats_ctrv": 0.125,
+    "overall_advantage_m": -0.5025,
+    "skill_ratio_note": "per-window skill = model_L2/CTRV_L2; on low-divergence windows CTRV_L2->0 so the RATIO explodes (use frac_beats_ctrv + advantage_m as the robust reads; median skill is reported over mean for the same reason).",
+    "high_div_advantage_m": 0.038,
+    "high_div_beats_ctrv_frac": 0.45,
+    "low_div_advantage_m": -0.939,
+    "advantage_monotone_in_divergence": true,
+    "anticipation_verdict": "no CTRV-beating anticipation on high-divergence windows"
+  },
+  "B_vision_ablation": {
+    "per_bin": [
+      {
+        "bin": 0,
+        "n": 20,
+        "median_divergence_m": 0.05,
+        "advantage_real_m": -0.939,
+        "advantage_real_ci95": [
+          -1.2833,
+          -0.6039
+        ],
+        "advantage_mean_m": -2.8812,
+        "advantage_mean_ci95": [
+          -3.6158,
+          -2.1618
+        ],
+        "advantage_shuffle_m": -0.8671,
+        "advantage_shuffle_ci95": [
+          -1.1669,
+          -0.6018
+        ],
+        "vision_effect_m": 1.9421,
+        "vision_effect_ci95": [
+          1.4977,
+          2.3807
+        ],
+        "vision_effect_p_gt0": 1.0,
+        "collapses_without_vision": true
+      },
+      {
+        "bin": 1,
+        "n": 20,
+        "median_divergence_m": 0.215,
+        "advantage_real_m": -0.5981,
+        "advantage_real_ci95": [
+          -0.7889,
+          -0.4314
+        ],
+        "advantage_mean_m": -2.958,
+        "advantage_mean_ci95": [
+          -3.3687,
+          -2.4191
+        ],
+        "advantage_shuffle_m": -0.5264,
+        "advantage_shuffle_ci95": [
+          -0.6833,
+          -0.3736
+        ],
+        "vision_effect_m": 2.3599,
+        "vision_effect_ci95": [
+          1.8463,
+          2.7375
+        ],
+        "vision_effect_p_gt0": 1.0,
+        "collapses_without_vision": true
+      },
+      {
+        "bin": 2,
+        "n": 20,
+        "median_divergence_m": 0.351,
+        "advantage_real_m": -0.5107,
+        "advantage_real_ci95": [
+          -0.634,
+          -0.3993
+        ],
+        "advantage_mean_m": -2.8342,
+        "advantage_mean_ci95": [
+          -3.1619,
+          -2.5017
+        ],
+        "advantage_shuffle_m": -0.5211,
+        "advantage_shuffle_ci95": [
+          -0.6739,
+          -0.391
+        ],
+        "vision_effect_m": 2.3235,
+        "vision_effect_ci95": [
+          2.0194,
+          2.5946
+        ],
+        "vision_effect_p_gt0": 1.0,
+        "collapses_without_vision": true
+      },
+      {
+        "bin": 3,
+        "n": 20,
+        "median_divergence_m": 0.525,
+        "advantage_real_m": 0.038,
+        "advantage_real_ci95": [
+          -0.1979,
+          0.2775
+        ],
+        "advantage_mean_m": -1.8114,
+        "advantage_mean_ci95": [
+          -2.6421,
+          -0.902
+        ],
+        "advantage_shuffle_m": -0.061,
+        "advantage_shuffle_ci95": [
+          -0.3744,
+          0.2723
+        ],
+        "vision_effect_m": 1.8493,
+        "vision_effect_ci95": [
+          1.1421,
+          2.4862
+        ],
+        "vision_effect_p_gt0": 1.0,
+        "collapses_without_vision": true
+      }
+    ],
+    "headline": {
+      "high_div_advantage_with_vision_m": 0.038,
+      "high_div_advantage_without_vision_m": -1.8114,
+      "high_div_vision_effect_m": 1.8493,
+      "high_div_vision_effect_ci95": [
+        1.1421,
+        2.4862
+      ],
+      "anticipation_is_vision_based": true,
+      "verdict": "HEADLINE POSITIVE \u2014 on high-divergence windows the CTRV-beating advantage is vision-based (collapses when the scene is removed, CI-separated); the model READS upcoming physics from the scene"
+    }
+  },
+  "C_lead_time": {
+    "n_windows": 40,
+    "n_episodes": 30,
+    "mean_onset_step": 13.5,
+    "real": {
+      "commit_rate": 0.525,
+      "mean_lead_frames": 0.238,
+      "mean_lead_s": 0.024,
+      "lead_ci95_frames": [
+        -3.0,
+        3.41
+      ]
+    },
+    "mean": {
+      "commit_rate": 0.5,
+      "mean_lead_frames": 0.2,
+      "mean_lead_s": 0.02,
+      "lead_ci95_frames": [
+        -2.042,
+        2.4
+      ]
+    },
+    "vision_tied_lead": true,
+    "verdict": "positive vision-tied lead \u2014 the model commits to the maneuver earlier WITH vision than without ('sees what's coming')",
+    "caveat": "ACTION-PRIVILEGE CONFOUND: the operative rollout consumes the TRUE future actions, and before a maneuver the steering is still ~straight \u2014 so the lateral path tracks the given (pre-onset) actions rather than committing early from vision. The mean-ablation 'lead' is a collapse artifact (the vision-removed prediction is a fixed average path that curves toward the dataset-mean maneuver). Anticipation here shows up as HORIZON-ADE advantage over CTRV (tests A/B), not as early lateral commitment; treat this lead-time panel as non-informative for an action-grounded rollout."
+  },
+  "D_latent_decodability": {
+    "target": "upcoming_road_curvature_deg (net |heading change| of GT future path)",
+    "latent_probe_r2": 0.1931,
+    "latent_alpha": 100.0,
+    "ego_status_probe_r2": -0.0001,
+    "ego_alpha": 100.0,
+    "latent_minus_ego_r2": 0.1931,
+    "state_dim": 2048,
+    "ego_dim": 12,
+    "n_windows": 80,
+    "verdict": "latent encodes SCENE \u2014 upcoming curvature is decodable from the latent ABOVE an ego-kinematics-only probe (scene info beyond ego state)"
+  },
+  "E_ood_proxy": {
+    "note": "within-corpus novelty proxy \u2014 NOT a true unseen corpus; see ood_corpus_status for why comma2k19/Cosmos are unavailable",
+    "strata": [
+      {
+        "stratum": "all",
+        "n": 80,
+        "model_ade_m": 0.8472,
+        "ctrv_ade_m": 0.3448,
+        "cv_ade_m": 0.4704,
+        "median_skill_vs_ctrv": 2.7401,
+        "beats_ctrv_frac": 0.125,
+        "advantage_over_ctrv_m": -0.5025,
+        "advantage_ci95": [
+          -0.6724,
+          -0.3427
+        ],
+        "pred_shape_feasible_frac": 0.925,
+        "gt_shape_feasible_frac": 0.95,
+        "pred_smooth_frac": 0.225,
+        "pred_max_kappa_p95": 19.8986,
+        "pred_max_alat_p95": 3.7297
+      },
+      {
+        "stratum": "sharp_top10pct_curvature",
+        "n": 8,
+        "model_ade_m": 0.8918,
+        "ctrv_ade_m": 0.2666,
+        "cv_ade_m": 1.3072,
+        "median_skill_vs_ctrv": 2.8771,
+        "beats_ctrv_frac": 0.0,
+        "advantage_over_ctrv_m": -0.6252,
+        "advantage_ci95": [
+          -0.9019,
+          -0.3484
+        ],
+        "pred_shape_feasible_frac": 1.0,
+        "gt_shape_feasible_frac": 1.0,
+        "pred_smooth_frac": 0.0,
+        "pred_max_kappa_p95": 0.0167,
+        "pred_max_alat_p95": 5.8674
+      },
+      {
+        "stratum": "fast_top10pct_speed",
+        "n": 8,
+        "model_ade_m": 1.6285,
+        "ctrv_ade_m": 0.1345,
+        "cv_ade_m": 0.4099,
+        "median_skill_vs_ctrv": 30.826,
+        "beats_ctrv_frac": 0.0,
+        "advantage_over_ctrv_m": -1.494,
+        "advantage_ci95": [
+          -1.8262,
+          -1.2358
+        ],
+        "pred_shape_feasible_frac": 1.0,
+        "gt_shape_feasible_frac": 1.0,
+        "pred_smooth_frac": 0.0,
+        "pred_max_kappa_p95": 0.0025,
+        "pred_max_alat_p95": 2.7792
+      },
+      {
+        "stratum": "novel_sharp_or_fast",
+        "n": 16,
+        "model_ade_m": 1.2601,
+        "ctrv_ade_m": 0.2005,
+        "cv_ade_m": 0.8585,
+        "median_skill_vs_ctrv": 3.7991,
+        "beats_ctrv_frac": 0.0,
+        "advantage_over_ctrv_m": -1.0596,
+        "advantage_ci95": [
+          -1.437,
+          -0.7134
+        ],
+        "pred_shape_feasible_frac": 1.0,
+        "gt_shape_feasible_frac": 1.0,
+        "pred_smooth_frac": 0.0,
+        "pred_max_kappa_p95": 0.0159,
+        "pred_max_alat_p95": 5.4989
+      }
+    ],
+    "overall_pred_shape_feasible_frac": 0.925,
+    "overall_pred_smooth_frac": 0.225,
+    "feasibility_note": "shape-feasible = bounded curvature (<=0.5 1/m) + lateral accel (<=12 m/s^2) \u2014 the path a car could trace; smooth = bounded jerk + longitudinal accel (finite-difference-inflated by waypoint jitter, so reported separately).",
+    "curvature_p90_deg": 2.123,
+    "speed_p90_mps": 31.768,
+    "verdict": "mixed \u2014 see strata; advantage or shape-feasibility varies by novelty regime (sharp vs fast differ)"
+  },
+  "F_cosmos_counterfactual": {
+    "note": "proxy for a Cosmos scene-counterfactual \u2014 occlude a spatial sector of the input, dynamics (actions,v0) held fixed, measure the predicted-path shift (m). road>periphery => the model reads the road ahead to predict the path.",
+    "mean_path_shift_m": {
+      "road_ahead": 0.2962,
+      "periphery_left": 0.2506,
+      "periphery_right": 0.3343,
+      "sky_top": 0.1897
+    },
+    "n_windows": 24,
+    "n_episodes": 12,
+    "road_ahead_vs_periphery_ratio": 1.013,
+    "road_ahead_vs_sky_ratio": 1.561,
+    "reads_road_ahead": false,
+    "verdict": "no road>periphery asymmetry \u2014 the predicted path is not clearly conditioned on the road-ahead pixels here",
+    "cosmos_counterfactual_spec": {
+      "ideal": "insert/remove a scene element (obstacle, curve) with the ego DYNAMICS HELD FIXED, and show the prediction responds (slow/swerve) => zero-confound causal scene-understanding.",
+      "requires_data": [
+        "Cosmos-Drive-Dreams PIXELS on the eval pod (currently absent \u2014 /workspace is empty; cosmos_pairs.py can extract matched-weather PAIRS from a generation shard to /workspace/data/cosmos/pairs but no shard is staged).",
+        "paired clips differing in ONE scene element with matched ego-state, OR an inpainting/edit tool to remove/insert an obstacle while keeping frames otherwise identical."
+      ],
+      "requires_tooling": [
+        "a video->epcache converter producing [T,9,256,256] uint8 + poses (the physicalai epcache contract) for Cosmos clips;",
+        "an inpainting model (e.g. a diffusion eraser) for true insert/remove, OR use cosmos_pairs weather/scene pairs as natural counterfactuals."
+      ],
+      "feasible_now": "spatial-sector occlusion (implemented here) \u2014 the same causal logic (dynamics fixed, perturb the scene) on the physicalai pixels we already have."
+    }
+  },
+  "bottom_line": "no CTRV-beating anticipation on high-divergence windows || HEADLINE POSITIVE \u2014 on high-divergence windows the CTRV-beating advantage is vision-based (collapses when the scene is removed, CI-separated); the model READS upcoming physics from the scene || latent encodes SCENE \u2014 upcoming curvature is decodable from the latent ABOVE an ego-kinematics-only probe (scene info beyond ego state) || no road>periphery asymmetry \u2014 the predicted path is not clearly conditioned on the road-ahead pixels here",
+  "model": {
+    "key": "flagship-speed",
+    "name": "Flagship 4B (speed)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)",
+    "speed_input": true
+  },
+  "ckpt_step": 19000,
+  "wall_s": 29.8,
+  "corpus": {
+    "key": "cosmos",
+    "name": "Cosmos-Drive-Dreams synthetic (UNSEEN OOD, CC-BY-4.0)",
+    "kind": "ood_cross_corpus_synthetic",
+    "root": "/root/valdata/cosmos-val-a7a8527ba14e"
+  }
+}

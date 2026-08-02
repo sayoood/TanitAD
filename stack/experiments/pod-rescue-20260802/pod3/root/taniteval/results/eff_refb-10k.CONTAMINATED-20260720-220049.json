@@ -1,0 +1,210 @@
+{
+  "key": "refb-10k",
+  "model": {
+    "key": "refb-10k",
+    "name": "REF-B (speed) step-10k last",
+    "arch": "refb",
+    "encoder": "trained ViT-25 (9ch, 256px)",
+    "config_preset": null,
+    "mode": null
+  },
+  "ckpt_step": 10000,
+  "protocol": {
+    "batch": 1,
+    "window": 8,
+    "horizon_steps": 20,
+    "control_hz": 10.0,
+    "iters": 200,
+    "warmup": 30,
+    "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded",
+    "excluded": "host->device copy + uint8->float (reported separately as input_prep)"
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 1,
+      "util_pct": 99.0,
+      "mem_used_mb": 19422.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": false,
+      "temp_c": 71.0,
+      "power_w": 226.63,
+      "other_compute_detail": [
+        "1270125, 17874 MiB"
+      ]
+    },
+    "meta": {
+      "batch": 1,
+      "window": 8,
+      "input_shape": [
+        1,
+        8,
+        9,
+        256,
+        256
+      ],
+      "decode": "planner heads: encode window -> DIRECT per-horizon waypoint regression (no rollout, no anchor fan)",
+      "sequential_steps": 1,
+      "excludes_frozen_encoder": false
+    },
+    "params": {
+      "total_params": 262771870,
+      "total_params_m": 262.7719,
+      "model_params_m": 262.7719,
+      "buffers_m": 0.0041,
+      "by_module_m": {
+        "encoder": 179.1652,
+        "operative": 46.4847,
+        "tactical": 21.6855,
+        "strategic": 8.3845,
+        "inv_dyn": 5.247,
+        "confidence": 1.4433,
+        "accel_head": 0.2624,
+        "readout": 0.0984,
+        "nav_emb": 0.0005,
+        "speed_emb": 0.0003
+      },
+      "aux_m": {},
+      "aux_unique_m": {},
+      "double_counted_m": 0.0,
+      "unique_model_m": 262.7719,
+      "note": "measured at instantiation from live nn.Modules, DEDUPLICATED by tensor identity (step_readout is a submodule of grounding \u2014 counting both inflates the arm). Parameters only; buffers \u2014 e.g. REF-C's anchor vocabulary \u2014 counted separately."
+    },
+    "plan_step": {
+      "mean_ms": 122.9311,
+      "p50_ms": 123.2833,
+      "p95_ms": 125.9558,
+      "p99_ms": 131.8413,
+      "min_ms": 118.1818,
+      "max_ms": 136.7042,
+      "std_ms": 2.1085,
+      "iters": 200,
+      "warmup": 30
+    },
+    "memory": {
+      "peak_alloc_mb": 1162.0,
+      "peak_reserved_mb": 1268.8,
+      "weights_resident_mb": 1086.5,
+      "activation_mb": 75.5
+    },
+    "flops": {
+      "total_flops": 773538676480,
+      "gflops": 773.539,
+      "by_op_gflops": {
+        "addmm": 544.76,
+        "mm": 181.263,
+        "_scaled_dot_product_efficient_attention": 40.268,
+        "convolution": 7.248
+      },
+      "mha_fastpath_disabled_for_count": true,
+      "method": "torch.utils.flop_counter.FlopCounterMode (conv/matmul/sdpa; excludes elementwise+norm). MHA fast path disabled during the COUNT ONLY so attention is not silently dropped; timing keeps it."
+    },
+    "stages": {
+      "encode_window_8frames": {
+        "mean_ms": 118.3273,
+        "p50_ms": 117.976,
+        "p95_ms": 121.8093,
+        "p99_ms": 122.4144,
+        "min_ms": 113.7713,
+        "max_ms": 122.8723,
+        "std_ms": 1.945,
+        "iters": 100,
+        "warmup": 30
+      },
+      "encode_1frame": {
+        "mean_ms": 19.6133,
+        "p50_ms": 19.0795,
+        "p95_ms": 21.4253,
+        "p99_ms": 21.4753,
+        "min_ms": 16.4328,
+        "max_ms": 21.5221,
+        "std_ms": 1.2961,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "stage_shares": {
+      "encoder_pct": 96.3,
+      "encoder_ms": 118.3273,
+      "post_encoder_ms": 4.6038,
+      "post_encoder_pct": 3.7,
+      "encode_1frame_ms": 19.6133,
+      "cached_window_saving_ms": 98.714,
+      "plan_step_ms_if_encoder_cached": 24.2171,
+      "isolated_stage_sum_ms": 118.3273,
+      "isolated_stage_sum_pct_of_plan_step": 96.3,
+      "stage_sum_note": ">100% => the stages overlap CPU-launch with GPU-execute inside the full step (launch-bound); <100% => untimed glue. Treat shares as attribution, not an exact partition."
+    },
+    "input_prep": {
+      "mean_ms": 1.9527,
+      "p50_ms": 2.4298,
+      "p95_ms": 2.4928,
+      "p99_ms": 2.5001,
+      "min_ms": 0.4585,
+      "max_ms": 2.5001,
+      "std_ms": 0.8112,
+      "iters": 30,
+      "warmup": 5
+    },
+    "compute_efficiency": {
+      "achieved_tflops": 6.292,
+      "gflops_per_plan_step": 773.539,
+      "note": "GFLOPs / wall-clock. Low value => latency is bound by kernel launches / serialisation, not by arithmetic; more FLOPs at a HIGHER achieved rate can still be faster."
+    },
+    "realtime": {
+      "budget_ms_at_10hz": 100.0,
+      "headroom_ms_p50": -23.283,
+      "headroom_ms_p99": -31.841,
+      "budget_used_pct_p50": 123.28,
+      "budget_used_pct_p99": 131.84,
+      "max_control_rate_hz_p50": 8.1,
+      "max_control_rate_hz_p99": 7.6,
+      "meets_10hz_p99": false
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 1,
+      "util_pct": 100.0,
+      "mem_used_mb": 19420.0,
+      "sm_clock_mhz": 1695.0,
+      "exclusive": false,
+      "temp_c": 75.0,
+      "power_w": 294.17,
+      "other_compute_detail": [
+        "1270125, 17874 MiB"
+      ]
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": false,
+      "gpu_exclusive_after": false,
+      "valid": false,
+      "note": "False => another process shared the GPU; re-run, do not publish this row."
+    }
+  },
+  "cost_per_accuracy": {
+    "ade_0_2s_heldout": 0.8255,
+    "ade_ci95": 0.0992,
+    "ade_0_2s_full_set": 0.8372279405593872,
+    "plan_step_p50_ms": 123.2833,
+    "ms_per_metre_of_ade_beaten_vs_cv": null,
+    "note": "latency and ADE side by side \u2014 the deployment trade-off read; ADE from this arm's own results JSON"
+  },
+  "QUARANTINED": "GPU was NOT exclusive during ['fp32']; this file is quarantined and eff_refb-10k.json was left untouched. Re-run on an idle GPU."
+}

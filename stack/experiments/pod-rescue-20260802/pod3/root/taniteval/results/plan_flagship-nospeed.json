@@ -1,0 +1,57 @@
+{
+  "n_windows": 881,
+  "strategic": {
+    "route_acc_follow": 0.6708,
+    "route_acc_nav": 1.0,
+    "nav_reliance": 0.3292,
+    "majority_route_base_rate": 0.6708,
+    "route_skill_vs_chance": 0.0,
+    "n_route_valid": 240,
+    "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+    ]
+  },
+  "behavior_decodability": {
+    "maneuver_balanced_accuracy": 0.4644,
+    "chance_balacc": 0.2,
+    "beats_chance": true,
+    "decodability_vs_chance": 0.2644,
+    "maneuver_accuracy_raw": 0.3843,
+    "maneuver_majority_acc": 0.58,
+    "macro_f1": 0.3562,
+    "n_windows": 881,
+    "n_seeds": 3,
+    "classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ],
+    "note": "maneuver linearly decodable above chance (balanced-acc)"
+  },
+  "tactical": {
+    "maneuver_acc": 0.5346,
+    "turn_recall": 0.6387,
+    "n_turns": 191,
+    "tactical_wp_ade_2s": 3.4729,
+    "goal_latent_cos": 0.8683,
+    "maneuver_classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ]
+  },
+  "verdict": "route ~ chance (base 0.6708) \u00b7 route: leans on given command \u00b7 turns ok \u00b7 behavior decodable +0.26",
+  "model": {
+    "key": "flagship-nospeed",
+    "name": "Flagship 4B (no-speed, ref)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)"
+  },
+  "ckpt_step": 22000
+}

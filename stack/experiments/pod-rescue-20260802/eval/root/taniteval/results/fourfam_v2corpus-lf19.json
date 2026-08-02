@@ -1,0 +1,110 @@
+{
+  "longitudinal": {
+    "speed_mae_mps": 2.546,
+    "speed_bias_mps": -1.2601,
+    "speed_rmse_mps": 3.8671,
+    "along_mae_m": 0.4902,
+    "along_bias_m": -0.2434,
+    "along_final_bias_m": -0.5399,
+    "accel_mae_mps2": 14.7105,
+    "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+    },
+    "n_windows": 418
+  },
+  "lateral": {
+    "heading_mae_deg": 1.0716,
+    "yaw_rate_mae_degps": 7.8764,
+    "curvature_mae_1pm": 0.003125,
+    "curvature_bias_1pm": -0.000588,
+    "cross_mae_m": 0.1967,
+    "cross_bias_m": -0.0643,
+    "cross_final_mae_m": 0.4454,
+    "n_steps_heading": 1671,
+    "n_steps_curvature": 1253,
+    "excluded_below_min_ds": 1,
+    "min_ds_m": 0.05,
+    "n_windows": 418
+  },
+  "tactical": {
+    "status": "OK",
+    "source": "hierarchy.run",
+    "maneuver_vs_trajectory_kappa": 0.0072,
+    "maneuver_vs_trajectory_agreement": {
+      "mean": 0.0646,
+      "lo": 0.0167,
+      "hi": 0.1316,
+      "ci95": 0.0574,
+      "se": 0.03,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n": 418,
+      "separated_positive": true,
+      "separated": true
+    },
+    "seams_beneficial_of_3": 0,
+    "seam_verdict": "FALSIFIED \u2014 top-down conditioning does NOT measurably carry downstream performance at this checkpoint",
+    "grounded_op_rollout_ade_2s": 0.5747,
+    "ungrounded_tactical_head_ade_2s": 19.603,
+    "n_windows": 418,
+    "maneuver_consistency_verdict": "DECORATIVE \u2014 declared manoeuvre is ~unrelated to the driven path"
+  },
+  "strategic": {
+    "status": "OK",
+    "source": "hierarchy.run",
+    "route_acc_nav": 0.5351,
+    "route_acc_follow": 0.5088,
+    "route_acc_zeronav": 0.6228,
+    "majority_straight_rate": 0.9474,
+    "chance_1_of_3": 0.3333,
+    "follow_pred_distribution": {
+      "route_left": 55,
+      "route_straight": 57,
+      "route_right": 2
+    },
+    "delta_nav_vs_follow": {
+      "delta": 0.0263,
+      "lo": 0.0,
+      "hi": 0.0789,
+      "ci95": 0.0395,
+      "p_delta_gt0": 0.6365,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 0.0263,
+      "n": 114,
+      "separated_positive": false
+    },
+    "delta_nav_vs_zeronav": {
+      "delta": -0.0877,
+      "lo": -0.3246,
+      "hi": 0.1491,
+      "ci95": 0.2368,
+      "p_delta_gt0": 0.234,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": -0.0877,
+      "n": 114,
+      "separated_positive": false
+    },
+    "n_valid": 114,
+    "\u26d4_void_by_construction": "GATE_PROTOCOL \u00a70.7 \u2014 `nonav_route_beats_majority` is VOID BY CONSTRUCTION. If route accuracy looks impossible, adjudicate INSTRUMENT-FAIL, never MODEL-FAIL. `route_skill_vs_majority` is NOT admissible as a model verdict.",
+    "beats_majority_baseline": false,
+    "_reading": "route accuracy does NOT beat always-predict-straight \u2014 the strategic layer is not demonstrably doing route work"
+  },
+  "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_families_unavailable": [],
+  "_complete": false
+}

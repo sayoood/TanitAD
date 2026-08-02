@@ -1,0 +1,42 @@
+=== RR20 START Wed Jul 29 07:54:49 UTC 2026 ===
+=== RR20 EXIT Wed Jul 29 07:57:31 UTC 2026 rc=1 ===
+
+==============================================================================
+PARITY VIOLATION [cache-dirs/val] — corpus physicalai-val-f1b378f295ae
+==============================================================================
+  cache      : /workspace/pai_epcache/physicalai-val-f1b378f295ae
+  LEAKED SPLIT — this directory is not a valid held-out set:
+  78.5 % of its populated episodes are IN the parity train set (MEASURED 2026-07-25); the canonical CLEAN val is physicalai-val-0c5f7dac3b11
+
+  The canonical corpus is SACRED (CLAUDE.md §Invariants). A truncated or
+  re-selected episode set breaks cross-arm comparability INVISIBLY — every
+  number produced against it is void. Refusing to train.
+
+  Most common cause: the /workspace MooseFS quota filled mid-build. `df` does
+  NOT show that quota — verify with a real dd write test, not df.
+  Rebuild:  scripts/rebuild_pai_rolling.py --expect-key e438721ae894 --skip-idx …
+  Re-verify: scripts/pod_ops/compute_skipset.py   (hash + count verdict)
+  If (and only if) the cache is verified good and the manifest is stale, re-record
+  it with scripts/make_parity_manifest.py --record and commit the diff.
+==============================================================================
+=== RR20 START Wed Jul 29 07:59:19 UTC 2026 ===
+=== RR20 EXIT Wed Jul 29 08:02:05 UTC 2026 rc=1 ===
+Traceback (most recent call last):
+  File "/workspace/TanitAD/stack/scripts/train_flagship4b.py", line 763, in <module>
+    main()
+  File "/workspace/TanitAD/stack/scripts/train_flagship4b.py", line 759, in main
+    return train(args)
+           ^^^^^^^^^^^
+  File "/workspace/TanitAD/stack/scripts/train_flagship4b.py", line 476, in train
+    opt.load_state_dict(ck["opt"])
+  File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 53, in inner
+    return disable_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 929, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 934, in load_state_dict
+    raise ValueError(
+ValueError: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+=== RR20 START Wed Jul 29 08:03:26 UTC 2026 ===
+=== RR20 EXIT Wed Jul 29 17:35:10 UTC 2026 rc=0 ===

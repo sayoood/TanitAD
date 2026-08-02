@@ -1,0 +1,688 @@
+{
+  "n_windows": 418,
+  "n_episodes": 19,
+  "protocol": {
+    "cond_replaced": "FiLM conditioning tensor only; weights fixed",
+    "ci": "episode_cluster_bootstrap over the val EPISODES (taniteval/ci.py), B=2000, seed=0; PAIRED form for every conditioning contrast (same windows scored two ways). Migrated 2026-07-25 from overlapping_holdout_se \u2014 see legacy_overlapping_holdout_se.",
+    "primary_control": "mean (on-distribution); zero/none = full-removal refs",
+    "intent_conditioning": "follow-command hierarchy (deploy-realistic, no route cmd given)"
+  },
+  "estimator": {
+    "interval": "episode_cluster_bootstrap",
+    "delta": "paired_episode_cluster_bootstrap",
+    "n_boot": 2000,
+    "seed": 0,
+    "resampling_unit": "val episode",
+    "orientation": "every delta is oriented HELPS-POSITIVE: positive means the real upstream signal makes the downstream layer better",
+    "separation_predicate": "`separated_positive` (lo > 0) decides every load-bearing verdict \u2014 NOT the two-sided `separated`, which would promote a harmful seam. Both are emitted.",
+    "deprecated_and_refused": "overlapping_holdout_se",
+    "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged.",
+    "legacy_block": "legacy_overlapping_holdout_se"
+  },
+  "seam_nav_to_strategic": {
+    "route_acc_nav": 1.0,
+    "route_acc_follow": 0.9474,
+    "route_acc_zeronav": 0.1754,
+    "majority_straight_rate": 0.9474,
+    "chance_1_of_3": 0.3333,
+    "follow_pred_distribution": {
+      "route_left": 0,
+      "route_straight": 114,
+      "route_right": 0
+    },
+    "delta_nav_vs_follow": {
+      "delta": 0.0526,
+      "lo": 0.0,
+      "hi": 0.1579,
+      "ci95": 0.0789,
+      "p_delta_gt0": 0.6365,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 0.0526,
+      "n": 114,
+      "separated_positive": false
+    },
+    "delta_nav_vs_zeronav": {
+      "delta": 0.8246,
+      "lo": 0.6754,
+      "hi": 0.9561,
+      "ci95": 0.1404,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 0.8246,
+      "n": 114,
+      "separated_positive": true
+    },
+    "delta_follow_vs_zeronav": {
+      "delta": 0.7719,
+      "lo": 0.5612,
+      "hi": 0.9386,
+      "ci95": 0.1887,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 0.7719,
+      "n": 114,
+      "separated_positive": true
+    },
+    "route_skill_vs_majority": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 114,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 0.0,
+      "n": 114,
+      "separated_positive": false
+    },
+    "n_valid": 114,
+    "vision_route_beats_majority": false,
+    "route_skill": 0.0,
+    "route_skill_ci_separated": false,
+    "PC1_route_input_works": false,
+    "load_bearing": false,
+    "_note": "route target is derived from the SAME future heading as the nav command, so nav->route is load-bearing BY CONSTRUCTION (the command propagates to the route head). The genuine strategic-vision signal is whether route_acc_follow beats majority_straight_rate \u2014 if the follow head just predicts straight, it adds no vision."
+  },
+  "seam_ctx_to_tactical": {
+    "maneuver_acc": {
+      "real": 0.6746,
+      "mean_ctx": 0.6818,
+      "zero_ctx": 0.8134,
+      "delta_real_vs_mean": {
+        "delta": -0.0072,
+        "lo": -0.0766,
+        "hi": 0.0622,
+        "ci95": 0.0694,
+        "p_delta_gt0": 0.4035,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": -0.0072,
+        "n": 418,
+        "separated_positive": false
+      },
+      "delta_real_vs_zero": {
+        "delta": -0.1388,
+        "lo": -0.2344,
+        "hi": -0.0526,
+        "ci95": 0.0909,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": -0.1388,
+        "n": 418,
+        "separated_positive": false
+      }
+    },
+    "wp_ade_2s": {
+      "real": 3.3204,
+      "mean_ctx": 3.5293,
+      "zero_ctx": 9.5214,
+      "delta_real_vs_mean": {
+        "delta": 0.2089,
+        "lo": -0.0555,
+        "hi": 0.4996,
+        "ci95": 0.2776,
+        "p_delta_gt0": 0.9405,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": 0.2089,
+        "n": 418,
+        "separated_positive": false
+      },
+      "delta_real_vs_zero": {
+        "delta": 6.201,
+        "lo": 2.6902,
+        "hi": 10.281,
+        "ci95": 3.7954,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": 6.201,
+        "n": 418,
+        "separated_positive": true
+      }
+    },
+    "goal_latent_cos": {
+      "real": 0.8878,
+      "mean_ctx": 0.8914,
+      "zero_ctx": 0.8639,
+      "delta_real_vs_mean": {
+        "delta": -0.0036,
+        "lo": -0.0083,
+        "hi": 0.0008,
+        "ci95": 0.0045,
+        "p_delta_gt0": 0.057,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": -0.0036,
+        "n": 418,
+        "separated_positive": false
+      },
+      "delta_real_vs_zero": {
+        "delta": 0.0238,
+        "lo": 0.0114,
+        "hi": 0.0351,
+        "ci95": 0.0118,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "mean": 0.0238,
+        "n": 418,
+        "separated_positive": true
+      }
+    },
+    "load_bearing": false,
+    "content_matters": false
+  },
+  "seam_intent_to_operative": {
+    "_regime": "intent conditions the intent-FiLM of the multi-horizon JEPA latent prediction (horizons 1/2/4); the grounded pose rollout is intent-free by design (eval_grounded_rollout_4b) so it is NOT the seam's regime \u2014 see diagnostic below",
+    "latent_rel_err": {
+      "real": 5.9575,
+      "mean_intent": 5.861,
+      "zero_intent": 1.1517,
+      "none": 1.1311
+    },
+    "latent_cos": {
+      "real": 0.7374,
+      "mean_intent": 0.7436,
+      "zero_intent": 0.9775,
+      "none": 0.9782
+    },
+    "delta_rel_real_vs_mean": {
+      "delta": -0.0965,
+      "lo": -0.1772,
+      "hi": -0.024,
+      "ci95": 0.0766,
+      "p_delta_gt0": 0.003,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": -0.0965,
+      "n": 418,
+      "separated_positive": false
+    },
+    "delta_rel_real_vs_none": {
+      "delta": -4.8264,
+      "lo": -5.5389,
+      "hi": -4.2779,
+      "ci95": 0.6305,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": -4.8264,
+      "n": 418,
+      "separated_positive": false
+    },
+    "delta_cos_real_vs_mean": {
+      "delta": -0.0062,
+      "lo": -0.0112,
+      "hi": -0.0018,
+      "ci95": 0.0047,
+      "p_delta_gt0": 0.001,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": -0.0062,
+      "n": 418,
+      "separated_positive": false
+    },
+    "delta_cos_real_vs_none": {
+      "delta": -0.2408,
+      "lo": -0.248,
+      "hi": -0.2335,
+      "ci95": 0.0073,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": -0.2408,
+      "n": 418,
+      "separated_positive": false
+    },
+    "cond_norms": {
+      "action_emb": 31.9709,
+      "intent_proj": 34.217,
+      "_note": "norms in the predictor FiLM-cond space; intent_proj(intent) >= action_emb means the intent term SWAMPS the action signal it is added to -> corrupts the operative prediction"
+    },
+    "diagnostic_intent_in_grounded_rollout_OUT_OF_REGIME": {
+      "op_ade_2s_real": 10.1218,
+      "op_ade_2s_mean": 14.1861,
+      "op_ade_2s_zero": 0.3346,
+      "op_ade_2s_none_canonical": 0.3927,
+      "_note": "threading intent into the 20-step recursive grounded rollout (readout calibrated intent-free) is off-manifold; the ADE blow-up shows the intent FiLM DOES strongly perturb the operative predictor, but this is not how the seam is used"
+    },
+    "per_window_content_helps": false,
+    "helps_vs_none": false,
+    "harmful_if_engaged": true,
+    "load_bearing": false,
+    "deployed_operative_is_intent_free": true
+  },
+  "consistency": {
+    "maneuver_vs_trajectory": {
+      "agreement": {
+        "mean": 0.9258,
+        "lo": 0.8756,
+        "hi": 0.9665,
+        "ci95": 0.0455,
+        "se": 0.024,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 418,
+        "separated_positive": true,
+        "separated": true
+      },
+      "kappa": 0.253,
+      "agreement_turn_subset": {
+        "mean": 0.1622,
+        "lo": 0.0,
+        "hi": 0.3618,
+        "ci95": 0.1809,
+        "se": 0.1046,
+        "reducer": "mean",
+        "n_windows": 37,
+        "n_episodes": 9,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 37,
+        "separated_positive": false,
+        "separated": false
+      },
+      "kappa_turn_subset": -0.1898,
+      "n_turn_active": 37
+    },
+    "commanded_route_vs_maneuver": {
+      "agreement": {
+        "mean": 0.9139,
+        "lo": 0.8397,
+        "hi": 0.9689,
+        "ci95": 0.0646,
+        "se": 0.0331,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 418,
+        "separated_positive": true,
+        "separated": true
+      },
+      "kappa": -0.0208,
+      "agreement_turn_subset": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "mean",
+        "n_windows": 36,
+        "n_episodes": 8,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 36,
+        "separated_positive": false,
+        "separated": false
+      },
+      "kappa_turn_subset": -0.3091,
+      "n_turn_active": 36
+    },
+    "commanded_route_vs_trajectory": {
+      "agreement": {
+        "mean": 0.9593,
+        "lo": 0.8971,
+        "hi": 0.9953,
+        "ci95": 0.0491,
+        "se": 0.0282,
+        "reducer": "mean",
+        "n_windows": 418,
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 418,
+        "separated_positive": true,
+        "separated": true
+      },
+      "kappa": 0.0894,
+      "agreement_turn_subset": {
+        "mean": 0.0556,
+        "lo": 0.0,
+        "hi": 0.0732,
+        "ci95": 0.0366,
+        "se": 0.029,
+        "reducer": "mean",
+        "n_windows": 18,
+        "n_episodes": 4,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 18,
+        "separated_positive": false,
+        "separated": false
+      },
+      "kappa_turn_subset": -0.5,
+      "n_turn_active": 18
+    },
+    "follow_route_head_degenerate": {
+      "distribution": {
+        "route_left": 0,
+        "route_straight": 418,
+        "route_right": 0
+      },
+      "_note": "under follow (no route command) the strategic route head collapses to constant-straight -> carries no directional signal at deploy; use the commanded head for coherence"
+    },
+    "distributions": {
+      "route_follow": {
+        "route_left": 0,
+        "route_straight": 418,
+        "route_right": 0
+      },
+      "route_commanded": {
+        "route_left": 6,
+        "route_straight": 412,
+        "route_right": 0
+      },
+      "maneuver_dir": {
+        "route_left": 21,
+        "route_straight": 388,
+        "route_right": 9
+      },
+      "trajectory_dir": {
+        "route_left": 10,
+        "route_straight": 405,
+        "route_right": 3
+      },
+      "gt_dir": {
+        "route_left": 7,
+        "route_straight": 406,
+        "route_right": 5
+      }
+    },
+    "_note": "route is a 15-25 s heading; maneuver/trajectory are 2 s \u2014 some cross-timescale disagreement is CORRECT, not incoherence. maneuver_vs_trajectory is the same-timescale coherence test."
+  },
+  "h18_grounded_vs_ungrounded": {
+    "grounded_op_rollout_ade_2s": 0.3927,
+    "ungrounded_tactical_head_ade_2s": 3.3204,
+    "delta_ungrounded_minus_grounded": {
+      "delta": 2.9277,
+      "lo": 2.1566,
+      "hi": 3.6932,
+      "ci95": 0.7683,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 418,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "mean": 2.9277,
+      "n": 418,
+      "separated_positive": true
+    },
+    "grounded_wins": true
+  },
+  "verdict": "hierarchy 0/3 seams load-bearing \u00b7 nav->strat decorative by construction (route 1.0 cmd / 0.9474 follow vs 0.9474 majority; route_skill 0.0 [0.0,0.0] -> PC1 NOT MET) \u00b7 ctx->tactical decorative (vs-mean: man \u0394-0.0072, wp \u03940.2089, goal-cos \u0394-0.0036) \u00b7 intent->operative HARMFUL (cos vs-none \u0394-0.2408, per-window vs-mean \u0394-0.0062) \u00b7 coherence man~traj kappa=0.253 (agree 0.9258) \u00b7 H18 grounded BEATS ungrounded goal (0.3927 vs 3.3204 m)",
+  "thesis_read": {
+    "claim": "operative->tactical->strategic hierarchy with cross-layer alignment is efficient AND dominant",
+    "PC1_route_input_works": {
+      "route_skill": 0.0,
+      "route_skill_ci": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "separated": false,
+        "separated_positive": false,
+        "n_windows": 114,
+        "n_episodes": 19,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "majority_straight_rate": 0.9474,
+      "verdict": "NOT MET \u2014 no vision-derived route inference that is CI-separated from always-predict-straight",
+      "_spec": "Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/01_EXECUTION_PLAN.md Part A, A.2 PC1"
+    },
+    "A_conditioning_helps_conditioned_layer": {
+      "nav->strategic": "command echo only \u2014 load-bearing by construction, no scene-based route inference (follow==majority)",
+      "ctx->tactical": "decorative; best on-distribution effect goal-cos \u0394-0.0036 (maneuver & waypoint deltas not CI-separated)",
+      "intent->operative": "HARMFUL if engaged (real cos < intent-free); vs-none \u0394cos -0.2408, per-window vs-mean \u0394cos -0.0062; deployed operative rollout is intent-free",
+      "n_of_3_seams_beneficial": 0,
+      "verdict": "FALSIFIED \u2014 top-down conditioning does NOT measurably carry downstream performance at this checkpoint"
+    },
+    "B_layers_mutually_consistent": {
+      "maneuver_vs_trajectory_kappa": 0.253,
+      "verdict": "SUPPORTED \u2014 same-timescale tactical maneuver & operative trajectory cohere"
+    },
+    "C_grounding_dominant_H18": {
+      "grounded_ade_2s": 0.3927,
+      "ungrounded_head_ade_2s": 3.3204,
+      "verdict": "SUPPORTED \u2014 grounded readout beats the ungrounded head"
+    }
+  },
+  "legacy_overlapping_holdout_se": {
+    "_read": "DEPRECATED reproduction only. Every interval here is overlapping_holdout_se; the decision-grade numbers are in the blocks above. Never quote from this block.",
+    "_estimator": "overlapping_holdout_se",
+    "estimator_note": "episode-cluster bootstrap over the val EPISODES (paired form for every arm-vs-floor comparison). The legacy `heldout \u00b1 ci95` is `overlapping_holdout_se`, measured 1.28-2.06x too narrow across 10 arms (Project Steering/CI_RECOMPUTE_2026-07-20.json); it is refused by this block, not merely discouraged.",
+    "n_splits": 8,
+    "val_frac": 0.2,
+    "seam_nav_to_strategic": {
+      "delta_nav_vs_follow": {
+        "mean": 0.0,
+        "ci95": 0.0,
+        "n": 114,
+        "separated": false,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta_nav_vs_zeronav": {
+        "mean": 0.8681,
+        "ci95": 0.0922,
+        "n": 114,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta_follow_vs_zeronav": {
+        "mean": 0.8681,
+        "ci95": 0.0922,
+        "n": 114,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "seam_ctx_to_tactical": {
+      "maneuver_acc": {
+        "mean": 0.0019,
+        "ci95": 0.033,
+        "n": 418,
+        "separated": false,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "wp_ade_2s": {
+        "mean": 0.2288,
+        "ci95": 0.1883,
+        "n": 418,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "goal_latent_cos": {
+        "mean": -0.003,
+        "ci95": 0.004,
+        "n": 418,
+        "separated": false,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "seam_intent_to_operative": {
+      "delta_cos_real_vs_mean": {
+        "mean": -0.0035,
+        "ci95": 0.0018,
+        "n": 418,
+        "separated": false,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "delta_cos_real_vs_none": {
+        "mean": -0.2451,
+        "ci95": 0.0071,
+        "n": 418,
+        "separated": false,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "consistency": {
+      "maneuver_vs_trajectory_agreement": {
+        "mean": 0.9394,
+        "ci95": 0.0533,
+        "n": 418,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      },
+      "maneuver_vs_trajectory_agreement_turn_subset": {
+        "mean": 0.0469,
+        "ci95": 0.0419,
+        "n": 37,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "deprecated": true
+      }
+    },
+    "h18_grounded_vs_ungrounded": {
+      "mean": 3.1589,
+      "ci95": 0.515,
+      "n": 418,
+      "separated": true,
+      "estimator": "overlapping_holdout_se",
+      "deprecated": true
+    },
+    "ci_width_ratio_new_over_legacy": {
+      "_read": "new ci95 / legacy ci95, per seam. >1 = the deprecated interval was too narrow BY THAT FACTOR on this arm. The program figure is 1.28-2.06x across 10 arms; this row re-measures it here.",
+      "nav_delta_nav_vs_follow": null,
+      "ctx_maneuver_acc": 2.103,
+      "ctx_wp_ade_2s": 1.474,
+      "ctx_goal_latent_cos": 1.125,
+      "intent_cos_real_vs_mean": 2.611,
+      "intent_cos_real_vs_none": 1.028,
+      "h18_grounded_vs_ungrounded": 1.492,
+      "consistency_maneuver_vs_trajectory": 0.854
+    },
+    "verdict_flips_vs_legacy": {
+      "_read": "seams whose LOAD-BEARING verdict changes when the deprecated interval is replaced by the episode-cluster bootstrap. A flip is a CORRECTION, not a regression.",
+      "nav_to_strategic": {
+        "legacy_load_bearing": false,
+        "migrated_load_bearing": false,
+        "flipped": false
+      },
+      "ctx_to_tactical_maneuver_acc": {
+        "legacy_load_bearing": false,
+        "migrated_load_bearing": false,
+        "flipped": false
+      },
+      "ctx_to_tactical_goal_cos": {
+        "legacy_load_bearing": false,
+        "migrated_load_bearing": false,
+        "flipped": false
+      },
+      "intent_to_operative": {
+        "legacy_load_bearing": false,
+        "migrated_load_bearing": false,
+        "flipped": false
+      },
+      "h18_grounded_vs_ungrounded": {
+        "legacy_load_bearing": true,
+        "migrated_load_bearing": true,
+        "flipped": false
+      }
+    }
+  },
+  "pc2": {
+    "block": "taniteval.hierarchy_guard/pc2",
+    "version": "1.0.0",
+    "spec": "Project Steering/Reviews/2026-07-25-independent-chief-scientist-review/01_EXECUTION_PLAN.md Part A, PC2",
+    "counts": {
+      "strategic": 114,
+      "tactical": 114,
+      "operative_intent": 2432
+    },
+    "absent_modules": [],
+    "bypassed_seams": [],
+    "hierarchy_traversed": true,
+    "_read": "counts are FORWARD CALLS through each seam during the scored pass. `absent` = this architecture has no such module (structural); `bypassed` = it exists and the scored path never called it (a wiring defect). Traversal is necessary, NOT sufficient: it does not show the command CHANGED the trajectory (that is HP-3) and does not show the actions were CHOSEN (see assert_actions_are_chosen).",
+    "claim": "H26 seam ablations + H18 grounding dominance",
+    "asserted_block": "taniteval.hierarchy/run",
+    "required_seams": [
+      "strategic",
+      "tactical",
+      "operative_intent"
+    ],
+    "missing_seams": [],
+    "pc2_pass": true
+  },
+  "model": {
+    "key": "v1-lf19",
+    "name": "v1 30k",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)"
+  },
+  "ckpt_step": 30000
+}

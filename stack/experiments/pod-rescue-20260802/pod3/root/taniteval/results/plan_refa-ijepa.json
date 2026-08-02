@@ -1,0 +1,57 @@
+{
+  "n_windows": 176,
+  "strategic": {
+    "route_acc_follow": 0.4375,
+    "route_acc_nav": 1.0,
+    "nav_reliance": 0.5625,
+    "majority_route_base_rate": 0.4375,
+    "route_skill_vs_chance": 0.0,
+    "n_route_valid": 48,
+    "classes": [
+      "route_left",
+      "route_straight",
+      "route_right"
+    ]
+  },
+  "behavior_decodability": {
+    "maneuver_balanced_accuracy": 0.326,
+    "chance_balacc": 0.2,
+    "beats_chance": true,
+    "decodability_vs_chance": 0.126,
+    "maneuver_accuracy_raw": 0.3106,
+    "maneuver_majority_acc": 0.3523,
+    "macro_f1": 0.2345,
+    "n_windows": 176,
+    "n_seeds": 3,
+    "classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ],
+    "note": "maneuver linearly decodable above chance (balanced-acc)"
+  },
+  "tactical": {
+    "maneuver_acc": 0.6364,
+    "turn_recall": 0.725,
+    "n_turns": 80,
+    "tactical_wp_ade_2s": 3.6988,
+    "goal_latent_cos": 0.7598,
+    "maneuver_classes": [
+      "lane_keep",
+      "turn_left",
+      "turn_right",
+      "accelerate",
+      "brake_stop"
+    ]
+  },
+  "verdict": "route ~ chance (base 0.4375) \u00b7 route: leans on given command \u00b7 turns ok \u00b7 behavior decodable +0.13",
+  "model": {
+    "key": "refa-ijepa",
+    "name": "REF-A I-JEPA 4B (best=7k)",
+    "arch": "refa-plus",
+    "encoder": "frozen I-JEPA ViT-H/14"
+  },
+  "ckpt_step": 7000
+}

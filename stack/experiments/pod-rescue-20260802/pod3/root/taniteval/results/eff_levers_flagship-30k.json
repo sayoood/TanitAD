@@ -1,0 +1,2729 @@
+{
+  "key": "flagship-30k",
+  "model": {
+    "key": "flagship-30k",
+    "name": "Flagship 4B (speed, 30k FINAL)",
+    "arch": "flagship-worldmodel",
+    "encoder": "trained ViT-12 (9ch, 256px)",
+    "config_preset": null,
+    "mode": null
+  },
+  "ckpt_step": 29999,
+  "what": "inference LEVERS: measured optimisations of the plan tick (L1 CUDA graph / L2 encoder cache / L3 fp16 weights / L4 composition / L5 rollout-length latency)",
+  "baseline_artifact": "eff_flagship-30k.json (same protocol, same pod)",
+  "protocol": {
+    "batch": 1,
+    "window": 8,
+    "rollout_k": 20,
+    "control_hz": 10.0,
+    "iters": 200,
+    "warmup": 30,
+    "equiv_windows": 32,
+    "equiv_episodes": 2,
+    "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded \u2014 IDENTICAL to the baseline panel"
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 0.0,
+      "mem_used_mb": 3525.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 47.0,
+      "power_w": 113.47,
+      "other_compute_detail": []
+    },
+    "protocol": {
+      "batch": 1,
+      "window": 8,
+      "rollout_k": 20,
+      "iters": 200,
+      "warmup": 30,
+      "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded (identical to the baseline panel)"
+    },
+    "build_errors": {},
+    "levers": {
+      "eager": {
+        "meta": {
+          "lever": "\u2014",
+          "desc": "baseline: encode 8-frame window -> 20 eager sequential predictor steps -> SE(2)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 100.9479,
+          "p50_ms": 100.2907,
+          "p95_ms": 106.1398,
+          "p99_ms": 113.9819,
+          "min_ms": 94.4716,
+          "max_ms": 120.5424,
+          "std_ms": 3.2455,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0,
+          "p99": 1.0,
+          "saved_ms_p50": 0.0
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 100.29,
+          "budget_used_pct_p99": 113.98,
+          "max_control_rate_hz_p50": 10.0,
+          "max_control_rate_hz_p99": 8.8,
+          "meets_10hz_p99": false
+        }
+      },
+      "graph_step": {
+        "meta": {
+          "lever": "L1a",
+          "desc": "eager encode + 20 replays of a ONE-STEP CUDA graph (removes kernel-launch cost, keeps 19 CPU round-trips)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 57.2947,
+          "p50_ms": 57.3252,
+          "p95_ms": 57.5252,
+          "p99_ms": 57.63,
+          "min_ms": 56.713,
+          "max_ms": 58.0217,
+          "std_ms": 0.1847,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.7495,
+          "p99": 1.9778,
+          "saved_ms_p50": 42.9655
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 57.33,
+          "budget_used_pct_p99": 57.63,
+          "max_control_rate_hz_p50": 17.4,
+          "max_control_rate_hz_p99": 17.4,
+          "meets_10hz_p99": true
+        }
+      },
+      "graph_rollout": {
+        "meta": {
+          "lever": "L1b",
+          "desc": "eager encode + ONE CUDA graph spanning all 20 rollout steps (removes launch cost AND the CPU round-trips)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 57.1455,
+          "p50_ms": 57.1785,
+          "p95_ms": 57.3682,
+          "p99_ms": 57.4472,
+          "min_ms": 56.1304,
+          "max_ms": 57.5823,
+          "std_ms": 0.175,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.754,
+          "p99": 1.9841,
+          "saved_ms_p50": 43.1122
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 57.18,
+          "budget_used_pct_p99": 57.45,
+          "max_control_rate_hz_p50": 17.5,
+          "max_control_rate_hz_p99": 17.4,
+          "meets_10hz_p99": true
+        }
+      },
+      "graph_fulltick": {
+        "meta": {
+          "lever": "L1c",
+          "desc": "the WHOLE tick (encode 8 frames + 20-step rollout) as ONE CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 57.3158,
+          "p50_ms": 57.3365,
+          "p95_ms": 57.555,
+          "p99_ms": 57.6622,
+          "min_ms": 56.8947,
+          "max_ms": 57.9815,
+          "std_ms": 0.1619,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2915.9,
+          "activation_mb": 0.0,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.7492,
+          "p99": 1.9767,
+          "saved_ms_p50": 42.9542
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 57.34,
+          "budget_used_pct_p99": 57.66,
+          "max_control_rate_hz_p50": 17.4,
+          "max_control_rate_hz_p99": 17.3,
+          "meets_10hz_p99": true
+        }
+      },
+      "compile_rollout": {
+        "meta": {
+          "lever": "L1d",
+          "desc": "eager encode + torch.compile(mode='reduce-overhead') rollout (inductor + cudagraph trees; needs Triton)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 52.8932,
+          "p50_ms": 52.8921,
+          "p95_ms": 53.098,
+          "p99_ms": 53.1175,
+          "min_ms": 52.5767,
+          "max_ms": 53.1647,
+          "std_ms": 0.1279,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 3.815e-06,
+          "rel_err_max": 0.005776173,
+          "rel_err_max_vs_traj_scale": 1.55e-07,
+          "wp_shift_m_mean": 5.4e-07,
+          "wp_shift_m_max": 3.881e-06,
+          "wp_shift_m_at_2s_mean": 7.58e-07,
+          "cosine": 1.0,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292152,
+          "ade_0_2s_delta_m": 3e-08,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.8961,
+          "p99": 2.1458,
+          "saved_ms_p50": 47.3986
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 52.89,
+          "budget_used_pct_p99": 53.12,
+          "max_control_rate_hz_p50": 18.9,
+          "max_control_rate_hz_p99": 18.8,
+          "meets_10hz_p99": true
+        }
+      },
+      "compile_cudagraphs": {
+        "meta": {
+          "lever": "L1e",
+          "desc": "eager encode + torch.compile(backend='cudagraphs') rollout (Triton-free; the route that was 20x SLOWER on the Windows dev box)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 58.1876,
+          "p50_ms": 58.237,
+          "p95_ms": 58.446,
+          "p99_ms": 58.5393,
+          "min_ms": 57.7635,
+          "max_ms": 58.687,
+          "std_ms": 0.1943,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3655.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.7221,
+          "p99": 1.9471,
+          "saved_ms_p50": 42.0537
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 58.24,
+          "budget_used_pct_p99": 58.54,
+          "max_control_rate_hz_p50": 17.2,
+          "max_control_rate_hz_p99": 17.1,
+          "meets_10hz_p99": true
+        }
+      },
+      "enc_cache": {
+        "meta": {
+          "lever": "L2",
+          "desc": "encode ONE frame + rolling state cache (bookkeeping included) + eager rollout",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 94.8938,
+          "p50_ms": 95.1129,
+          "p95_ms": 100.4154,
+          "p99_ms": 102.6709,
+          "min_ms": 88.5602,
+          "max_ms": 113.5936,
+          "std_ms": 3.1768,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2925.3,
+          "activation_mb": 9.4,
+          "reserved_mb": 3590.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 1.907e-06,
+          "rel_err_max": 0.005294825,
+          "rel_err_max_vs_traj_scale": 7.7e-08,
+          "wp_shift_m_mean": 3.66e-07,
+          "wp_shift_m_max": 1.935e-06,
+          "wp_shift_m_at_2s_mean": 4.69e-07,
+          "cosine": 1.0,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.1929215,
+          "ade_0_2s_delta_m": 1.5e-08,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0544,
+          "p99": 1.1102,
+          "saved_ms_p50": 5.1778
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 95.11,
+          "budget_used_pct_p99": 102.67,
+          "max_control_rate_hz_p50": 10.5,
+          "max_control_rate_hz_p99": 9.7,
+          "meets_10hz_p99": false
+        }
+      },
+      "enc_cache_graph": {
+        "meta": {
+          "lever": "L4 = L1b+L2",
+          "desc": "cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 33.2708,
+          "p50_ms": 33.2669,
+          "p95_ms": 33.2869,
+          "p99_ms": 33.4195,
+          "min_ms": 33.2337,
+          "max_ms": 33.785,
+          "std_ms": 0.0454,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2925.3,
+          "activation_mb": 9.4,
+          "reserved_mb": 3590.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 1.907e-06,
+          "rel_err_max": 0.005294825,
+          "rel_err_max_vs_traj_scale": 7.7e-08,
+          "wp_shift_m_mean": 3.66e-07,
+          "wp_shift_m_max": 1.935e-06,
+          "wp_shift_m_at_2s_mean": 4.69e-07,
+          "cosine": 1.0,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.1929215,
+          "ade_0_2s_delta_m": 1.5e-08,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 3.0147,
+          "p99": 3.4106,
+          "saved_ms_p50": 67.0238
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 33.27,
+          "budget_used_pct_p99": 33.42,
+          "max_control_rate_hz_p50": 30.1,
+          "max_control_rate_hz_p99": 29.9,
+          "meets_10hz_p99": true
+        }
+      },
+      "drop_horizons": {
+        "meta": {
+          "lever": "L7",
+          "desc": "eager, predictor evaluates ONLY the k=1 head the rollout consumes (2 of 3 heads were computed and discarded 20x/tick)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 100.5232,
+          "p50_ms": 100.4669,
+          "p95_ms": 105.2218,
+          "p99_ms": 112.2647,
+          "min_ms": 93.5516,
+          "max_ms": 117.6804,
+          "std_ms": 3.2567,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3659.5,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 0.9982,
+          "p99": 1.0153,
+          "saved_ms_p50": -0.1762
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 100.47,
+          "budget_used_pct_p99": 112.26,
+          "max_control_rate_hz_p50": 10.0,
+          "max_control_rate_hz_p99": 8.9,
+          "meets_10hz_p99": false
+        }
+      },
+      "drop_horizons_graph": {
+        "meta": {
+          "lever": "L7+L1b",
+          "desc": "pruned heads + whole-rollout CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 56.5941,
+          "p50_ms": 56.6211,
+          "p95_ms": 56.8199,
+          "p99_ms": 56.9029,
+          "min_ms": 56.1914,
+          "max_ms": 56.9267,
+          "std_ms": 0.1581,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2992.2,
+          "activation_mb": 76.3,
+          "reserved_mb": 3659.5,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19292149,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.7713,
+          "p99": 2.0031,
+          "saved_ms_p50": 43.6696
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 56.62,
+          "budget_used_pct_p99": 56.9,
+          "max_control_rate_hz_p50": 17.7,
+          "max_control_rate_hz_p99": 17.6,
+          "meets_10hz_p99": true
+        }
+      },
+      "autocast16_eager": {
+        "meta": {
+          "lever": "L3-control",
+          "desc": "torch.autocast(float16) over the fp32-weight eager tick (per-op casts, weights stay fp32)",
+          "weights_dtype": "float32",
+          "autocast": "float16"
+        },
+        "tick": {
+          "mean_ms": 113.2948,
+          "p50_ms": 112.1427,
+          "p95_ms": 128.9099,
+          "p99_ms": 131.6392,
+          "min_ms": 104.8976,
+          "max_ms": 133.7064,
+          "std_ms": 6.538,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 3290.2,
+          "activation_mb": 374.4,
+          "reserved_mb": 3934.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.024080276,
+          "rel_err_max": 7.59253931,
+          "rel_err_max_vs_traj_scale": 0.000975357,
+          "wp_shift_m_mean": 0.003272237,
+          "wp_shift_m_max": 0.024106763,
+          "wp_shift_m_at_2s_mean": 0.006021201,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.1927827,
+          "ade_0_2s_delta_m": -0.000138789,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 0.8943,
+          "p99": 0.8659,
+          "saved_ms_p50": -11.852
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 112.14,
+          "budget_used_pct_p99": 131.64,
+          "max_control_rate_hz_p50": 8.9,
+          "max_control_rate_hz_p99": 7.6,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_eager": {
+        "meta": {
+          "lever": "L3",
+          "desc": "model.half() fp16 WEIGHTS end-to-end (incl. the SE(2) accumulate)",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 98.8259,
+          "p50_ms": 98.4667,
+          "p95_ms": 102.8191,
+          "p99_ms": 104.0321,
+          "min_ms": 93.4356,
+          "max_ms": 109.0349,
+          "std_ms": 2.3874,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2954.4,
+          "activation_mb": 38.5,
+          "reserved_mb": 3934.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.024080276,
+          "rel_err_max": 7.376895428,
+          "rel_err_max_vs_traj_scale": 0.000975357,
+          "wp_shift_m_mean": 0.003215955,
+          "wp_shift_m_max": 0.024106763,
+          "wp_shift_m_at_2s_mean": 0.005779027,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19246599,
+          "ade_0_2s_delta_m": -0.000455499,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0185,
+          "p99": 1.0956,
+          "saved_ms_p50": 1.824
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 98.47,
+          "budget_used_pct_p99": 104.03,
+          "max_control_rate_hz_p50": 10.2,
+          "max_control_rate_hz_p99": 9.6,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_fp32acc": {
+        "meta": {
+          "lever": "L3'",
+          "desc": "fp16 weights, fp32 SE(2) accumulate (isolates accumulator rounding from network error)",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 101.7682,
+          "p50_ms": 101.1662,
+          "p95_ms": 107.4954,
+          "p99_ms": 114.4603,
+          "min_ms": 95.8407,
+          "max_ms": 131.2813,
+          "std_ms": 4.0062,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2954.4,
+          "activation_mb": 38.5,
+          "reserved_mb": 3934.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.012653351,
+          "rel_err_max": 7.376895428,
+          "rel_err_max_vs_traj_scale": 0.000512516,
+          "wp_shift_m_mean": 0.002365567,
+          "wp_shift_m_max": 0.012655779,
+          "wp_shift_m_at_2s_mean": 0.003796233,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19304663,
+          "ade_0_2s_delta_m": 0.00012514,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 0.9913,
+          "p99": 0.9958,
+          "saved_ms_p50": -0.8755
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 101.17,
+          "budget_used_pct_p99": 114.46,
+          "max_control_rate_hz_p50": 9.9,
+          "max_control_rate_hz_p99": 8.7,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_graph_rollout": {
+        "meta": {
+          "lever": "L4 = L1b+L3",
+          "desc": "fp16 weights + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 24.7594,
+          "p50_ms": 24.7583,
+          "p95_ms": 24.776,
+          "p99_ms": 24.7833,
+          "min_ms": 24.7308,
+          "max_ms": 25.0704,
+          "std_ms": 0.0246,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2954.4,
+          "activation_mb": 38.5,
+          "reserved_mb": 3934.3,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.024080276,
+          "rel_err_max": 7.376895428,
+          "rel_err_max_vs_traj_scale": 0.000975357,
+          "wp_shift_m_mean": 0.003215955,
+          "wp_shift_m_max": 0.024106763,
+          "wp_shift_m_at_2s_mean": 0.005779027,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.19246599,
+          "ade_0_2s_delta_m": -0.000455499,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 4.0508,
+          "p99": 4.5991,
+          "saved_ms_p50": 75.5324
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 24.76,
+          "budget_used_pct_p99": 24.78,
+          "max_control_rate_hz_p50": 40.4,
+          "max_control_rate_hz_p99": 40.3,
+          "meets_10hz_p99": true
+        }
+      },
+      "fp16_enc_cache_graph": {
+        "meta": {
+          "lever": "L4 = L1b+L2+L3",
+          "desc": "ALL THREE composed: fp16 weights + cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 19.1962,
+          "p50_ms": 19.1811,
+          "p95_ms": 19.1866,
+          "p99_ms": 19.1886,
+          "min_ms": 19.1703,
+          "max_ms": 22.1747,
+          "std_ms": 0.2112,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2925.1,
+          "activation_mb": 9.2,
+          "reserved_mb": 3588.2,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.024080276,
+          "rel_err_max": 1.431287646,
+          "rel_err_max_vs_traj_scale": 0.000975357,
+          "wp_shift_m_mean": 0.003390733,
+          "wp_shift_m_max": 0.024080763,
+          "wp_shift_m_at_2s_mean": 0.006276972,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.1928556,
+          "ade_0_2s_delta_m": -6.5893e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 5.2286,
+          "p99": 5.9401,
+          "saved_ms_p50": 81.1096
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 19.18,
+          "budget_used_pct_p99": 19.19,
+          "max_control_rate_hz_p50": 52.1,
+          "max_control_rate_hz_p99": 52.1,
+          "meets_10hz_p99": true
+        }
+      },
+      "all_levers": {
+        "meta": {
+          "lever": "L1b+L2+L3+L7",
+          "desc": "EVERY lever composed: fp16 weights + pruned horizon heads + cached 1-frame encode + whole-rollout graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 18.7631,
+          "p50_ms": 18.7476,
+          "p95_ms": 18.7569,
+          "p99_ms": 18.7641,
+          "min_ms": 18.7367,
+          "max_ms": 21.493,
+          "std_ms": 0.1936,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2915.9,
+          "peak_alloc_mb": 2925.1,
+          "activation_mb": 9.2,
+          "reserved_mb": 3588.2,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.024080276,
+          "rel_err_max": 1.431287646,
+          "rel_err_max_vs_traj_scale": 0.000975357,
+          "wp_shift_m_mean": 0.003390733,
+          "wp_shift_m_max": 0.024080763,
+          "wp_shift_m_at_2s_mean": 0.006276972,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.19292149,
+          "ade_0_2s_variant": 0.1928556,
+          "ade_0_2s_delta_m": -6.5893e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 5.3495,
+          "p99": 6.0745,
+          "saved_ms_p50": 81.5431
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 18.75,
+          "budget_used_pct_p99": 18.76,
+          "max_control_rate_hz_p50": 53.3,
+          "max_control_rate_hz_p99": 53.3,
+          "meets_10hz_p99": true
+        }
+      }
+    },
+    "gpu_state_samples": [
+      {
+        "after": "eager",
+        "other_compute_procs": 0,
+        "util_pct": 61.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 56.0
+      },
+      {
+        "after": "graph_step",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 61.0
+      },
+      {
+        "after": "graph_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 65.0
+      },
+      {
+        "after": "graph_fulltick",
+        "other_compute_procs": 0,
+        "util_pct": 89.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 66.0
+      },
+      {
+        "after": "compile_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 69.0
+      },
+      {
+        "after": "compile_cudagraphs",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 66.0
+      },
+      {
+        "after": "enc_cache",
+        "other_compute_procs": 0,
+        "util_pct": 53.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 61.0
+      },
+      {
+        "after": "enc_cache_graph",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1680.0,
+        "temp_c": 65.0
+      },
+      {
+        "after": "drop_horizons",
+        "other_compute_procs": 0,
+        "util_pct": 58.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 62.0
+      },
+      {
+        "after": "drop_horizons_graph",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 64.0
+      },
+      {
+        "after": "autocast16_eager",
+        "other_compute_procs": 0,
+        "util_pct": 14.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 58.0
+      },
+      {
+        "after": "fp16_eager",
+        "other_compute_procs": 0,
+        "util_pct": 16.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 56.0
+      },
+      {
+        "after": "fp16_fp32acc",
+        "other_compute_procs": 0,
+        "util_pct": 29.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 55.0
+      },
+      {
+        "after": "fp16_graph_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 59.0
+      },
+      {
+        "after": "fp16_enc_cache_graph",
+        "other_compute_procs": 0,
+        "util_pct": 64.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 57.0
+      },
+      {
+        "after": "all_levers",
+        "other_compute_procs": 0,
+        "util_pct": 65.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 58.0
+      }
+    ],
+    "stages": {
+      "fp32_encode_window_8f": {
+        "mean_ms": 28.1332,
+        "p50_ms": 28.054,
+        "p95_ms": 28.6095,
+        "p99_ms": 29.0595,
+        "min_ms": 27.818,
+        "max_ms": 29.1604,
+        "std_ms": 0.2726,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_encode_1frame": {
+        "mean_ms": 4.742,
+        "p50_ms": 4.7408,
+        "p95_ms": 4.7548,
+        "p99_ms": 4.7707,
+        "min_ms": 4.7191,
+        "max_ms": 4.9107,
+        "std_ms": 0.0195,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_rollout_k20": {
+        "mean_ms": 95.0323,
+        "p50_ms": 91.8847,
+        "p95_ms": 110.9637,
+        "p99_ms": 164.6902,
+        "min_ms": 85.0496,
+        "max_ms": 166.2018,
+        "std_ms": 14.5974,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_predictor_1call": {
+        "mean_ms": 4.4267,
+        "p50_ms": 3.9939,
+        "p95_ms": 5.9605,
+        "p99_ms": 6.4431,
+        "min_ms": 3.8318,
+        "max_ms": 6.7193,
+        "std_ms": 0.7782,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_rollout_k20_pruned": {
+        "mean_ms": 90.1943,
+        "p50_ms": 89.8141,
+        "p95_ms": 94.3688,
+        "p99_ms": 96.6336,
+        "min_ms": 84.0913,
+        "max_ms": 98.2829,
+        "std_ms": 2.822,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_encode_window_8f": {
+        "mean_ms": 7.3804,
+        "p50_ms": 7.3525,
+        "p95_ms": 7.585,
+        "p99_ms": 7.6223,
+        "min_ms": 7.3377,
+        "max_ms": 7.6268,
+        "std_ms": 0.0767,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_encode_1frame": {
+        "mean_ms": 3.7719,
+        "p50_ms": 3.3803,
+        "p95_ms": 5.1483,
+        "p99_ms": 5.3084,
+        "min_ms": 3.2167,
+        "max_ms": 5.4538,
+        "std_ms": 0.6668,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_rollout_k20": {
+        "mean_ms": 94.0351,
+        "p50_ms": 93.6466,
+        "p95_ms": 99.2229,
+        "p99_ms": 102.4926,
+        "min_ms": 86.7761,
+        "max_ms": 105.9794,
+        "std_ms": 3.0752,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_predictor_1call": {
+        "mean_ms": 5.1597,
+        "p50_ms": 4.2675,
+        "p95_ms": 8.0405,
+        "p99_ms": 8.6723,
+        "min_ms": 3.9386,
+        "max_ms": 9.6241,
+        "std_ms": 1.5481,
+        "iters": 100,
+        "warmup": 30
+      },
+      "graph_rollout_k20": {
+        "mean_ms": 28.7289,
+        "p50_ms": 28.7276,
+        "p95_ms": 28.741,
+        "p99_ms": 28.7453,
+        "min_ms": 28.7082,
+        "max_ms": 28.8142,
+        "std_ms": 0.0113,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "orthogonality": {
+      "encoder_fp32_ms": 28.1332,
+      "encoder_fp16_ms": 7.3804,
+      "encoder_fp16_speedup": 3.8119,
+      "rollout_fp32_ms": 95.0323,
+      "rollout_fp16_ms": 94.0351,
+      "rollout_fp16_speedup": 1.0106,
+      "rollout_graph_ms": 28.7289,
+      "rollout_graph_speedup": 3.3079,
+      "claim": "2026-07-18 (RTX 4060): the encoder is COMPUTE-bound so precision helps it, and the predictor is LAUNCH-bound so only a CUDA graph helps it. This block is the A40 test of that claim: it holds iff encoder_fp16_speedup >> rollout_fp16_speedup and rollout_graph_speedup is large."
+    },
+    "cpu_roundtrip_cost": {
+      "graph_step_p50_ms": 57.3252,
+      "graph_rollout_p50_ms": 57.1785,
+      "delta_ms": 0.1467,
+      "per_step_ms": 0.0077,
+      "note": "both replay the SAME kernels; the only difference is that graph_step returns to the CPU 19 times. The delta is therefore the per-step CPU round-trip cost."
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 100.0,
+      "mem_used_mb": 4125.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 60.0,
+      "power_w": 239.61,
+      "other_compute_detail": []
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": true,
+      "gpu_exclusive_after": true,
+      "intrusions_mid_run": 0,
+      "valid": true,
+      "note": "False => another process shared the GPU at some point during the sweep; re-run, do not publish this row."
+    }
+  },
+  "tf32": {
+    "precision": {
+      "precision": "tf32",
+      "autocast": null,
+      "matmul_allow_tf32": true,
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "env": {
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu": "NVIDIA A40",
+      "capability": [
+        8,
+        6
+      ]
+    },
+    "gpu_state_before": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 0.0,
+      "mem_used_mb": 3609.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 50.0,
+      "power_w": 113.81,
+      "other_compute_detail": []
+    },
+    "protocol": {
+      "batch": 1,
+      "window": 8,
+      "rollout_k": 20,
+      "iters": 200,
+      "warmup": 30,
+      "timing": "per-iteration torch.cuda.Event, torch.cuda.synchronize() bracketed, warmup discarded (identical to the baseline panel)"
+    },
+    "build_errors": {},
+    "levers": {
+      "eager": {
+        "meta": {
+          "lever": "\u2014",
+          "desc": "baseline: encode 8-frame window -> 20 eager sequential predictor steps -> SE(2)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 94.7757,
+          "p50_ms": 94.4978,
+          "p95_ms": 100.1275,
+          "p99_ms": 102.4817,
+          "min_ms": 89.6427,
+          "max_ms": 106.1267,
+          "std_ms": 2.5998,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0,
+          "p99": 1.0,
+          "saved_ms_p50": 0.0
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 94.5,
+          "budget_used_pct_p99": 102.48,
+          "max_control_rate_hz_p50": 10.6,
+          "max_control_rate_hz_p99": 9.8,
+          "meets_10hz_p99": false
+        }
+      },
+      "graph_step": {
+        "meta": {
+          "lever": "L1a",
+          "desc": "eager encode + 20 replays of a ONE-STEP CUDA graph (removes kernel-launch cost, keeps 19 CPU round-trips)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 40.6267,
+          "p50_ms": 40.604,
+          "p95_ms": 40.7263,
+          "p99_ms": 40.7596,
+          "min_ms": 40.5474,
+          "max_ms": 40.9547,
+          "std_ms": 0.059,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.3273,
+          "p99": 2.5143,
+          "saved_ms_p50": 53.8938
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 40.6,
+          "budget_used_pct_p99": 40.76,
+          "max_control_rate_hz_p50": 24.6,
+          "max_control_rate_hz_p99": 24.5,
+          "meets_10hz_p99": true
+        }
+      },
+      "graph_rollout": {
+        "meta": {
+          "lever": "L1b",
+          "desc": "eager encode + ONE CUDA graph spanning all 20 rollout steps (removes launch cost AND the CPU round-trips)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 40.2874,
+          "p50_ms": 40.2611,
+          "p95_ms": 40.4118,
+          "p99_ms": 40.4875,
+          "min_ms": 40.1981,
+          "max_ms": 40.5138,
+          "std_ms": 0.0661,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.3471,
+          "p99": 2.5312,
+          "saved_ms_p50": 54.2367
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 40.26,
+          "budget_used_pct_p99": 40.49,
+          "max_control_rate_hz_p50": 24.8,
+          "max_control_rate_hz_p99": 24.7,
+          "meets_10hz_p99": true
+        }
+      },
+      "graph_fulltick": {
+        "meta": {
+          "lever": "L1c",
+          "desc": "the WHOLE tick (encode 8 frames + 20-step rollout) as ONE CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 40.1711,
+          "p50_ms": 40.1317,
+          "p95_ms": 40.3335,
+          "p99_ms": 40.3629,
+          "min_ms": 40.078,
+          "max_ms": 40.3753,
+          "std_ms": 0.0749,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2918.6,
+          "activation_mb": 0.0,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.3547,
+          "p99": 2.539,
+          "saved_ms_p50": 54.3661
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 40.13,
+          "budget_used_pct_p99": 40.36,
+          "max_control_rate_hz_p50": 24.9,
+          "max_control_rate_hz_p99": 24.8,
+          "meets_10hz_p99": true
+        }
+      },
+      "compile_rollout": {
+        "meta": {
+          "lever": "L1d",
+          "desc": "eager encode + torch.compile(mode='reduce-overhead') rollout (inductor + cudagraph trees; needs Triton)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 36.4359,
+          "p50_ms": 36.4162,
+          "p95_ms": 36.557,
+          "p99_ms": 36.5676,
+          "min_ms": 36.3312,
+          "max_ms": 36.6176,
+          "std_ms": 0.0697,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.000614166,
+          "rel_err_max": 0.011741173,
+          "rel_err_max_vs_traj_scale": 2.4877e-05,
+          "wp_shift_m_mean": 5.9514e-05,
+          "wp_shift_m_max": 0.000517246,
+          "wp_shift_m_at_2s_mean": 0.000100641,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928629,
+          "ade_0_2s_delta_m": -3.502e-06,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.5949,
+          "p99": 2.8025,
+          "saved_ms_p50": 58.0816
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 36.42,
+          "budget_used_pct_p99": 36.57,
+          "max_control_rate_hz_p50": 27.5,
+          "max_control_rate_hz_p99": 27.3,
+          "meets_10hz_p99": true
+        }
+      },
+      "compile_cudagraphs": {
+        "meta": {
+          "lever": "L1e",
+          "desc": "eager encode + torch.compile(backend='cudagraphs') rollout (Triton-free; the route that was 20x SLOWER on the Windows dev box)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 41.2006,
+          "p50_ms": 41.1609,
+          "p95_ms": 41.4102,
+          "p99_ms": 41.4268,
+          "min_ms": 41.0236,
+          "max_ms": 41.4425,
+          "std_ms": 0.0987,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3644.9,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.2958,
+          "p99": 2.4738,
+          "saved_ms_p50": 53.3369
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 41.16,
+          "budget_used_pct_p99": 41.43,
+          "max_control_rate_hz_p50": 24.3,
+          "max_control_rate_hz_p99": 24.1,
+          "meets_10hz_p99": true
+        }
+      },
+      "enc_cache": {
+        "meta": {
+          "lever": "L2",
+          "desc": "encode ONE frame + rolling state cache (bookkeeping included) + eager rollout",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 94.5335,
+          "p50_ms": 93.5956,
+          "p95_ms": 98.1836,
+          "p99_ms": 123.5212,
+          "min_ms": 88.7011,
+          "max_ms": 133.2827,
+          "std_ms": 4.9467,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2928.1,
+          "activation_mb": 9.4,
+          "reserved_mb": 3588.2,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.00104332,
+          "rel_err_max": 0.203021556,
+          "rel_err_max_vs_traj_scale": 4.2259e-05,
+          "wp_shift_m_mean": 0.00017734,
+          "wp_shift_m_max": 0.000902798,
+          "wp_shift_m_at_2s_mean": 0.000272895,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.19290774,
+          "ade_0_2s_delta_m": 4.1336e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0096,
+          "p99": 0.8297,
+          "saved_ms_p50": 0.9022
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 93.6,
+          "budget_used_pct_p99": 123.52,
+          "max_control_rate_hz_p50": 10.7,
+          "max_control_rate_hz_p99": 8.1,
+          "meets_10hz_p99": false
+        }
+      },
+      "enc_cache_graph": {
+        "meta": {
+          "lever": "L4 = L1b+L2",
+          "desc": "cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 28.1847,
+          "p50_ms": 28.1612,
+          "p95_ms": 28.1681,
+          "p99_ms": 28.1719,
+          "min_ms": 28.1519,
+          "max_ms": 32.8815,
+          "std_ms": 0.333,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2928.1,
+          "activation_mb": 9.4,
+          "reserved_mb": 3588.2,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.00104332,
+          "rel_err_max": 0.203021556,
+          "rel_err_max_vs_traj_scale": 4.2259e-05,
+          "wp_shift_m_mean": 0.00017734,
+          "wp_shift_m_max": 0.000902798,
+          "wp_shift_m_at_2s_mean": 0.000272895,
+          "cosine": 1.000000119,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.19290774,
+          "ade_0_2s_delta_m": 4.1336e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 3.3556,
+          "p99": 3.6377,
+          "saved_ms_p50": 66.3366
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 28.16,
+          "budget_used_pct_p99": 28.17,
+          "max_control_rate_hz_p50": 35.5,
+          "max_control_rate_hz_p99": 35.5,
+          "meets_10hz_p99": true
+        }
+      },
+      "drop_horizons": {
+        "meta": {
+          "lever": "L7",
+          "desc": "eager, predictor evaluates ONLY the k=1 head the rollout consumes (2 of 3 heads were computed and discarded 20x/tick)",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 94.8338,
+          "p50_ms": 94.4037,
+          "p95_ms": 99.9549,
+          "p99_ms": 122.5586,
+          "min_ms": 87.9767,
+          "max_ms": 126.2212,
+          "std_ms": 5.1909,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3649.0,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.001,
+          "p99": 0.8362,
+          "saved_ms_p50": 0.0941
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 94.4,
+          "budget_used_pct_p99": 122.56,
+          "max_control_rate_hz_p50": 10.6,
+          "max_control_rate_hz_p99": 8.2,
+          "meets_10hz_p99": false
+        }
+      },
+      "drop_horizons_graph": {
+        "meta": {
+          "lever": "L7+L1b",
+          "desc": "pruned heads + whole-rollout CUDA graph",
+          "weights_dtype": "float32"
+        },
+        "tick": {
+          "mean_ms": 39.5492,
+          "p50_ms": 39.5063,
+          "p95_ms": 39.711,
+          "p99_ms": 39.7211,
+          "min_ms": 39.4326,
+          "max_ms": 39.7228,
+          "std_ms": 0.0846,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2994.9,
+          "activation_mb": 76.3,
+          "reserved_mb": 3649.0,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.0,
+          "rel_err_max": 0.0,
+          "rel_err_max_vs_traj_scale": 0.0,
+          "wp_shift_m_mean": 0.0,
+          "wp_shift_m_max": 0.0,
+          "wp_shift_m_at_2s_mean": 0.0,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928664,
+          "ade_0_2s_delta_m": 0.0,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 2.392,
+          "p99": 2.58,
+          "saved_ms_p50": 54.9915
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 39.51,
+          "budget_used_pct_p99": 39.72,
+          "max_control_rate_hz_p50": 25.3,
+          "max_control_rate_hz_p99": 25.2,
+          "meets_10hz_p99": true
+        }
+      },
+      "autocast16_eager": {
+        "meta": {
+          "lever": "L3-control",
+          "desc": "torch.autocast(float16) over the fp32-weight eager tick (per-op casts, weights stay fp32)",
+          "weights_dtype": "float32",
+          "autocast": "float16"
+        },
+        "tick": {
+          "mean_ms": 107.7006,
+          "p50_ms": 106.9443,
+          "p95_ms": 111.3231,
+          "p99_ms": 114.4385,
+          "min_ms": 105.4716,
+          "max_ms": 127.5774,
+          "std_ms": 2.1727,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 3293.7,
+          "activation_mb": 375.0,
+          "reserved_mb": 3909.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.023790359,
+          "rel_err_max": 5.649804592,
+          "rel_err_max_vs_traj_scale": 0.000963621,
+          "wp_shift_m_mean": 0.00330596,
+          "wp_shift_m_max": 0.023818288,
+          "wp_shift_m_at_2s_mean": 0.0061185,
+          "cosine": 0.99999994,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1927827,
+          "ade_0_2s_delta_m": -8.37e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 0.8836,
+          "p99": 0.8955,
+          "saved_ms_p50": -12.4465
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 106.94,
+          "budget_used_pct_p99": 114.44,
+          "max_control_rate_hz_p50": 9.4,
+          "max_control_rate_hz_p99": 8.7,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_eager": {
+        "meta": {
+          "lever": "L3",
+          "desc": "model.half() fp16 WEIGHTS end-to-end (incl. the SE(2) accumulate)",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 93.478,
+          "p50_ms": 91.1061,
+          "p95_ms": 106.0332,
+          "p99_ms": 113.4229,
+          "min_ms": 86.6412,
+          "max_ms": 120.6303,
+          "std_ms": 5.9252,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2957.2,
+          "activation_mb": 38.5,
+          "reserved_mb": 3909.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.023790359,
+          "rel_err_max": 5.497708321,
+          "rel_err_max_vs_traj_scale": 0.000963621,
+          "wp_shift_m_mean": 0.003238541,
+          "wp_shift_m_max": 0.023818288,
+          "wp_shift_m_at_2s_mean": 0.005842818,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.19246599,
+          "ade_0_2s_delta_m": -0.000400409,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.0372,
+          "p99": 0.9035,
+          "saved_ms_p50": 3.3917
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 91.11,
+          "budget_used_pct_p99": 113.42,
+          "max_control_rate_hz_p50": 11.0,
+          "max_control_rate_hz_p99": 8.8,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_fp32acc": {
+        "meta": {
+          "lever": "L3'",
+          "desc": "fp16 weights, fp32 SE(2) accumulate (isolates accumulator rounding from network error)",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 91.6012,
+          "p50_ms": 91.2127,
+          "p95_ms": 93.6575,
+          "p99_ms": 101.7024,
+          "min_ms": 87.97,
+          "max_ms": 126.2854,
+          "std_ms": 3.2063,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2957.2,
+          "activation_mb": 38.5,
+          "reserved_mb": 3909.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.012809753,
+          "rel_err_max": 5.497708321,
+          "rel_err_max_vs_traj_scale": 0.000518855,
+          "wp_shift_m_mean": 0.002366808,
+          "wp_shift_m_max": 0.012809783,
+          "wp_shift_m_at_2s_mean": 0.003786946,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.19304663,
+          "ade_0_2s_delta_m": 0.00018023,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 1.036,
+          "p99": 1.0077,
+          "saved_ms_p50": 3.2851
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 91.21,
+          "budget_used_pct_p99": 101.7,
+          "max_control_rate_hz_p50": 11.0,
+          "max_control_rate_hz_p99": 9.8,
+          "meets_10hz_p99": false
+        }
+      },
+      "fp16_graph_rollout": {
+        "meta": {
+          "lever": "L4 = L1b+L3",
+          "desc": "fp16 weights + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 24.7466,
+          "p50_ms": 24.7465,
+          "p95_ms": 24.764,
+          "p99_ms": 24.7713,
+          "min_ms": 24.7095,
+          "max_ms": 24.8954,
+          "std_ms": 0.0159,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2957.2,
+          "activation_mb": 38.5,
+          "reserved_mb": 3909.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.023790359,
+          "rel_err_max": 5.497708321,
+          "rel_err_max_vs_traj_scale": 0.000963621,
+          "wp_shift_m_mean": 0.003238541,
+          "wp_shift_m_max": 0.023818288,
+          "wp_shift_m_at_2s_mean": 0.005842818,
+          "cosine": 0.999999881,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.19246599,
+          "ade_0_2s_delta_m": -0.000400409,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 3.8186,
+          "p99": 4.1371,
+          "saved_ms_p50": 69.7513
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 24.75,
+          "budget_used_pct_p99": 24.77,
+          "max_control_rate_hz_p50": 40.4,
+          "max_control_rate_hz_p99": 40.4,
+          "meets_10hz_p99": true
+        }
+      },
+      "fp16_enc_cache_graph": {
+        "meta": {
+          "lever": "L4 = L1b+L2+L3",
+          "desc": "ALL THREE composed: fp16 weights + cached 1-frame encode + whole-rollout CUDA graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 19.1846,
+          "p50_ms": 19.1693,
+          "p95_ms": 19.1984,
+          "p99_ms": 19.2404,
+          "min_ms": 19.1588,
+          "max_ms": 21.8256,
+          "std_ms": 0.1876,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2927.8,
+          "activation_mb": 9.2,
+          "reserved_mb": 3586.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.023790359,
+          "rel_err_max": 1.304192781,
+          "rel_err_max_vs_traj_scale": 0.000963621,
+          "wp_shift_m_mean": 0.00340939,
+          "wp_shift_m_max": 0.023791013,
+          "wp_shift_m_at_2s_mean": 0.006344147,
+          "cosine": 0.999999821,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928556,
+          "ade_0_2s_delta_m": -1.0803e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 4.9296,
+          "p99": 5.3264,
+          "saved_ms_p50": 75.3285
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 19.17,
+          "budget_used_pct_p99": 19.24,
+          "max_control_rate_hz_p50": 52.2,
+          "max_control_rate_hz_p99": 52.0,
+          "meets_10hz_p99": true
+        }
+      },
+      "all_levers": {
+        "meta": {
+          "lever": "L1b+L2+L3+L7",
+          "desc": "EVERY lever composed: fp16 weights + pruned horizon heads + cached 1-frame encode + whole-rollout graph",
+          "weights_dtype": "float16"
+        },
+        "tick": {
+          "mean_ms": 18.7727,
+          "p50_ms": 18.7567,
+          "p95_ms": 18.7906,
+          "p99_ms": 18.8203,
+          "min_ms": 18.7428,
+          "max_ms": 21.3716,
+          "std_ms": 0.1847,
+          "iters": 200,
+          "warmup": 30
+        },
+        "memory": {
+          "resident_mb": 2918.6,
+          "peak_alloc_mb": 2927.8,
+          "activation_mb": 9.2,
+          "reserved_mb": 3586.1,
+          "note": "resident_mb includes every model/graph pool ALIVE in this process (the sweep holds several at once) \u2014 it is not the footprint of a single-variant deployment."
+        },
+        "equivalence": {
+          "n_windows": 32,
+          "max_abs_dev_m": 0.023790359,
+          "rel_err_max": 1.304192781,
+          "rel_err_max_vs_traj_scale": 0.000963621,
+          "wp_shift_m_mean": 0.00340939,
+          "wp_shift_m_max": 0.023791013,
+          "wp_shift_m_at_2s_mean": 0.006344147,
+          "cosine": 0.999999821,
+          "ade_0_2s_reference": 0.1928664,
+          "ade_0_2s_variant": 0.1928556,
+          "ade_0_2s_delta_m": -1.0803e-05,
+          "finite": true,
+          "note": "reference = the eager lever of THIS sweep, same precision flags, same windows. ADE here is over these windows only \u2014 it is an equivalence check, NOT the canonical 40-episode heldout number (that is the accuracy harness's job)."
+        },
+        "speedup_vs_eager": {
+          "p50": 5.0381,
+          "p99": 5.4453,
+          "saved_ms_p50": 75.7411
+        },
+        "realtime": {
+          "budget_ms_at_10hz": 100.0,
+          "budget_used_pct_p50": 18.76,
+          "budget_used_pct_p99": 18.82,
+          "max_control_rate_hz_p50": 53.3,
+          "max_control_rate_hz_p99": 53.1,
+          "meets_10hz_p99": true
+        }
+      }
+    },
+    "gpu_state_samples": [
+      {
+        "after": "eager",
+        "other_compute_procs": 0,
+        "util_pct": 47.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 55.0
+      },
+      {
+        "after": "graph_step",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 62.0
+      },
+      {
+        "after": "graph_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 61.0
+      },
+      {
+        "after": "graph_fulltick",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 64.0
+      },
+      {
+        "after": "compile_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 99.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 65.0
+      },
+      {
+        "after": "compile_cudagraphs",
+        "other_compute_procs": 0,
+        "util_pct": 50.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 66.0
+      },
+      {
+        "after": "enc_cache",
+        "other_compute_procs": 0,
+        "util_pct": 0.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 58.0
+      },
+      {
+        "after": "enc_cache_graph",
+        "other_compute_procs": 0,
+        "util_pct": 93.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 62.0
+      },
+      {
+        "after": "drop_horizons",
+        "other_compute_procs": 0,
+        "util_pct": 54.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 59.0
+      },
+      {
+        "after": "drop_horizons_graph",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1725.0,
+        "temp_c": 64.0
+      },
+      {
+        "after": "autocast16_eager",
+        "other_compute_procs": 0,
+        "util_pct": 41.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 58.0
+      },
+      {
+        "after": "fp16_eager",
+        "other_compute_procs": 0,
+        "util_pct": 19.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 56.0
+      },
+      {
+        "after": "fp16_fp32acc",
+        "other_compute_procs": 0,
+        "util_pct": 32.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 55.0
+      },
+      {
+        "after": "fp16_graph_rollout",
+        "other_compute_procs": 0,
+        "util_pct": 100.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 57.0
+      },
+      {
+        "after": "fp16_enc_cache_graph",
+        "other_compute_procs": 0,
+        "util_pct": 68.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 56.0
+      },
+      {
+        "after": "all_levers",
+        "other_compute_procs": 0,
+        "util_pct": 64.0,
+        "sm_clock_mhz": 1740.0,
+        "temp_c": 57.0
+      }
+    ],
+    "stages": {
+      "fp32_encode_window_8f": {
+        "mean_ms": 15.2621,
+        "p50_ms": 15.2579,
+        "p95_ms": 15.3502,
+        "p99_ms": 15.3811,
+        "min_ms": 15.1321,
+        "max_ms": 15.4775,
+        "std_ms": 0.0489,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_encode_1frame": {
+        "mean_ms": 3.2132,
+        "p50_ms": 3.1191,
+        "p95_ms": 3.7308,
+        "p99_ms": 4.4233,
+        "min_ms": 3.073,
+        "max_ms": 7.3133,
+        "std_ms": 0.465,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_rollout_k20": {
+        "mean_ms": 88.0503,
+        "p50_ms": 87.3935,
+        "p95_ms": 91.2972,
+        "p99_ms": 104.6503,
+        "min_ms": 83.394,
+        "max_ms": 124.1004,
+        "std_ms": 4.4246,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_predictor_1call": {
+        "mean_ms": 4.1327,
+        "p50_ms": 4.0009,
+        "p95_ms": 5.106,
+        "p99_ms": 5.7223,
+        "min_ms": 3.9074,
+        "max_ms": 5.758,
+        "std_ms": 0.3862,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp32_rollout_k20_pruned": {
+        "mean_ms": 86.0677,
+        "p50_ms": 86.2672,
+        "p95_ms": 87.7017,
+        "p99_ms": 89.8027,
+        "min_ms": 82.5386,
+        "max_ms": 89.941,
+        "std_ms": 1.3182,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_encode_window_8f": {
+        "mean_ms": 7.3797,
+        "p50_ms": 7.3503,
+        "p95_ms": 7.6575,
+        "p99_ms": 7.7148,
+        "min_ms": 7.3042,
+        "max_ms": 7.7247,
+        "std_ms": 0.1076,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_encode_1frame": {
+        "mean_ms": 3.4969,
+        "p50_ms": 3.3408,
+        "p95_ms": 4.0502,
+        "p99_ms": 7.221,
+        "min_ms": 3.2495,
+        "max_ms": 7.4597,
+        "std_ms": 0.6797,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_rollout_k20": {
+        "mean_ms": 90.7682,
+        "p50_ms": 90.8336,
+        "p95_ms": 92.9607,
+        "p99_ms": 98.1631,
+        "min_ms": 85.6236,
+        "max_ms": 98.4109,
+        "std_ms": 1.9457,
+        "iters": 100,
+        "warmup": 30
+      },
+      "fp16_predictor_1call": {
+        "mean_ms": 4.3422,
+        "p50_ms": 4.0396,
+        "p95_ms": 5.9393,
+        "p99_ms": 8.1375,
+        "min_ms": 3.9691,
+        "max_ms": 8.3542,
+        "std_ms": 0.8316,
+        "iters": 100,
+        "warmup": 30
+      },
+      "graph_rollout_k20": {
+        "mean_ms": 25.4335,
+        "p50_ms": 25.4318,
+        "p95_ms": 25.4379,
+        "p99_ms": 25.443,
+        "min_ms": 25.4227,
+        "max_ms": 25.5813,
+        "std_ms": 0.0154,
+        "iters": 100,
+        "warmup": 30
+      }
+    },
+    "orthogonality": {
+      "encoder_fp32_ms": 15.2621,
+      "encoder_fp16_ms": 7.3797,
+      "encoder_fp16_speedup": 2.0681,
+      "rollout_fp32_ms": 88.0503,
+      "rollout_fp16_ms": 90.7682,
+      "rollout_fp16_speedup": 0.9701,
+      "rollout_graph_ms": 25.4335,
+      "rollout_graph_speedup": 3.462,
+      "claim": "2026-07-18 (RTX 4060): the encoder is COMPUTE-bound so precision helps it, and the predictor is LAUNCH-bound so only a CUDA graph helps it. This block is the A40 test of that claim: it holds iff encoder_fp16_speedup >> rollout_fp16_speedup and rollout_graph_speedup is large."
+    },
+    "cpu_roundtrip_cost": {
+      "graph_step_p50_ms": 40.604,
+      "graph_rollout_p50_ms": 40.2611,
+      "delta_ms": 0.3429,
+      "per_step_ms": 0.018,
+      "note": "both replay the SAME kernels; the only difference is that graph_step returns to the CPU 19 times. The delta is therefore the per-step CPU round-trip cost."
+    },
+    "gpu_state_after": {
+      "name": "NVIDIA A40",
+      "other_compute_procs": 0,
+      "util_pct": 100.0,
+      "mem_used_mb": 4157.0,
+      "sm_clock_mhz": 1740.0,
+      "exclusive": true,
+      "temp_c": 58.0,
+      "power_w": 217.96,
+      "other_compute_detail": []
+    },
+    "contamination_check": {
+      "gpu_exclusive_before": true,
+      "gpu_exclusive_after": true,
+      "intrusions_mid_run": 0,
+      "valid": true,
+      "note": "False => another process shared the GPU at some point during the sweep; re-run, do not publish this row."
+    }
+  },
+  "rollout_k_latency": {
+    "fp32": {
+      "precision": {
+        "precision": "fp32",
+        "autocast": null,
+        "matmul_allow_tf32": false,
+        "cudnn_allow_tf32": false,
+        "cudnn_benchmark": true,
+        "weights_dtype": "float32"
+      },
+      "ks": [
+        20,
+        10,
+        5
+      ],
+      "by_variant": {
+        "eager": {
+          "20": {
+            "mean_ms": 99.9965,
+            "p50_ms": 99.7438,
+            "p95_ms": 102.4385,
+            "p99_ms": 110.9781,
+            "min_ms": 95.9217,
+            "max_ms": 111.6584,
+            "std_ms": 2.1745,
+            "iters": 200,
+            "warmup": 30
+          },
+          "10": {
+            "mean_ms": 57.3871,
+            "p50_ms": 56.9415,
+            "p95_ms": 61.4328,
+            "p99_ms": 63.2037,
+            "min_ms": 54.5316,
+            "max_ms": 71.5073,
+            "std_ms": 2.3881,
+            "iters": 200,
+            "warmup": 30
+          },
+          "5": {
+            "mean_ms": 36.8713,
+            "p50_ms": 36.8104,
+            "p95_ms": 37.0669,
+            "p99_ms": 38.4843,
+            "min_ms": 36.5457,
+            "max_ms": 41.0241,
+            "std_ms": 0.3933,
+            "iters": 200,
+            "warmup": 30
+          },
+          "_saved_ms_p50_vs_k20": {
+            "20": 0.0,
+            "10": 42.8023,
+            "5": 62.9334
+          }
+        },
+        "graph_rollout": {
+          "20": {
+            "mean_ms": 57.2198,
+            "p50_ms": 57.2476,
+            "p95_ms": 57.4929,
+            "p99_ms": 57.635,
+            "min_ms": 56.7895,
+            "max_ms": 57.6651,
+            "std_ms": 0.1796,
+            "iters": 200,
+            "warmup": 30
+          },
+          "10": {
+            "mean_ms": 42.7473,
+            "p50_ms": 42.7792,
+            "p95_ms": 43.0372,
+            "p99_ms": 43.0903,
+            "min_ms": 42.3076,
+            "max_ms": 43.1382,
+            "std_ms": 0.2108,
+            "iters": 200,
+            "warmup": 30
+          },
+          "5": {
+            "mean_ms": 35.6187,
+            "p50_ms": 35.6038,
+            "p95_ms": 35.851,
+            "p99_ms": 35.9195,
+            "min_ms": 35.3463,
+            "max_ms": 35.9574,
+            "std_ms": 0.1233,
+            "iters": 200,
+            "warmup": 30
+          },
+          "_saved_ms_p50_vs_k20": {
+            "20": 0.0,
+            "10": 14.4684,
+            "5": 21.6438
+          }
+        }
+      },
+      "ACCURACY": "UNMEASURED \u2014 shortening the rollout changes WHAT THE MODEL PREDICTS; only the latency side is measured here. Evaluating the accuracy cost needs the canonical harness. Do not read an accuracy verdict from this block."
+    },
+    "tf32": {
+      "precision": {
+        "precision": "tf32",
+        "autocast": null,
+        "matmul_allow_tf32": true,
+        "cudnn_allow_tf32": true,
+        "cudnn_benchmark": true,
+        "weights_dtype": "float32"
+      },
+      "ks": [
+        20,
+        10,
+        5
+      ],
+      "by_variant": {
+        "eager": {
+          "20": {
+            "mean_ms": 94.3495,
+            "p50_ms": 93.6791,
+            "p95_ms": 99.9278,
+            "p99_ms": 104.0411,
+            "min_ms": 89.592,
+            "max_ms": 104.679,
+            "std_ms": 2.9274,
+            "iters": 200,
+            "warmup": 30
+          },
+          "10": {
+            "mean_ms": 49.1605,
+            "p50_ms": 48.8621,
+            "p95_ms": 54.5469,
+            "p99_ms": 57.775,
+            "min_ms": 45.558,
+            "max_ms": 59.6792,
+            "std_ms": 2.7703,
+            "iters": 200,
+            "warmup": 30
+          },
+          "5": {
+            "mean_ms": 26.5527,
+            "p50_ms": 25.8419,
+            "p95_ms": 30.7916,
+            "p99_ms": 33.3972,
+            "min_ms": 23.9559,
+            "max_ms": 39.0485,
+            "std_ms": 2.2774,
+            "iters": 200,
+            "warmup": 30
+          },
+          "_saved_ms_p50_vs_k20": {
+            "20": 0.0,
+            "10": 44.817,
+            "5": 67.8372
+          }
+        },
+        "graph_rollout": {
+          "20": {
+            "mean_ms": 40.4231,
+            "p50_ms": 40.41,
+            "p95_ms": 40.682,
+            "p99_ms": 40.7553,
+            "min_ms": 40.2556,
+            "max_ms": 40.771,
+            "std_ms": 0.1197,
+            "iters": 200,
+            "warmup": 30
+          },
+          "10": {
+            "mean_ms": 27.8202,
+            "p50_ms": 27.8167,
+            "p95_ms": 27.9364,
+            "p99_ms": 27.9551,
+            "min_ms": 27.6917,
+            "max_ms": 27.9876,
+            "std_ms": 0.0682,
+            "iters": 200,
+            "warmup": 30
+          },
+          "5": {
+            "mean_ms": 21.5313,
+            "p50_ms": 21.5139,
+            "p95_ms": 21.7241,
+            "p99_ms": 21.734,
+            "min_ms": 21.3076,
+            "max_ms": 21.7392,
+            "std_ms": 0.1283,
+            "iters": 200,
+            "warmup": 30
+          },
+          "_saved_ms_p50_vs_k20": {
+            "20": 0.0,
+            "10": 12.5933,
+            "5": 18.8961
+          }
+        }
+      },
+      "ACCURACY": "UNMEASURED \u2014 shortening the rollout changes WHAT THE MODEL PREDICTS; only the latency side is measured here. Evaluating the accuracy cost needs the canonical harness. Do not read an accuracy verdict from this block."
+    }
+  },
+  "strided_head_latency": {
+    "fp32": {
+      "precision": {
+        "precision": "fp32",
+        "autocast": null,
+        "matmul_allow_tf32": false,
+        "cudnn_allow_tf32": false,
+        "cudnn_benchmark": true,
+        "weights_dtype": "float32"
+      },
+      "horizons_available": [
+        1,
+        2,
+        4
+      ],
+      "k_total": 20,
+      "by_head": {
+        "head_k1": {
+          "predictor_calls": 20,
+          "head": 1,
+          "eager": {
+            "mean_ms": 99.1105,
+            "p50_ms": 98.5565,
+            "p95_ms": 103.562,
+            "p99_ms": 115.5563,
+            "min_ms": 94.1099,
+            "max_ms": 122.1163,
+            "std_ms": 3.592,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 57.4953,
+            "p50_ms": 57.5298,
+            "p95_ms": 57.7314,
+            "p99_ms": 57.7766,
+            "min_ms": 56.8771,
+            "max_ms": 57.8531,
+            "std_ms": 0.1706,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 1.0
+        },
+        "head_k2": {
+          "predictor_calls": 10,
+          "head": 2,
+          "eager": {
+            "mean_ms": 58.5723,
+            "p50_ms": 58.3564,
+            "p95_ms": 62.5134,
+            "p99_ms": 67.2845,
+            "min_ms": 55.2756,
+            "max_ms": 80.3194,
+            "std_ms": 2.8245,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 42.845,
+            "p50_ms": 42.8837,
+            "p95_ms": 43.1708,
+            "p99_ms": 43.2066,
+            "min_ms": 42.4463,
+            "max_ms": 43.4388,
+            "std_ms": 0.2116,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 1.6889
+        },
+        "head_k4": {
+          "predictor_calls": 5,
+          "head": 4,
+          "eager": {
+            "mean_ms": 36.9396,
+            "p50_ms": 36.9249,
+            "p95_ms": 37.1443,
+            "p99_ms": 37.2124,
+            "min_ms": 36.6754,
+            "max_ms": 37.2964,
+            "std_ms": 0.1201,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 35.7104,
+            "p50_ms": 35.6876,
+            "p95_ms": 35.9215,
+            "p99_ms": 35.9956,
+            "min_ms": 35.4251,
+            "max_ms": 36.037,
+            "std_ms": 0.1263,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 2.6691
+        }
+      },
+      "ACCURACY": "UNMEASURED and NOT CLAIMABLE. The k=2/k=4 heads are already trained and present in the deployed checkpoint, so a strided roll reaches the SAME 2 s horizon in fewer predictor calls WITHOUT retraining the predictor \u2014 but the step readout was calibrated on 0.1 s transitions and here decodes 0.2 s / 0.4 s ones, so the decoded trajectory is not valid until the readout is recalibrated against a FROZEN predictor. This block supplies the latency side only and states that dependency; no equivalence is reported because the output is not expected to match."
+    },
+    "tf32": {
+      "precision": {
+        "precision": "tf32",
+        "autocast": null,
+        "matmul_allow_tf32": true,
+        "cudnn_allow_tf32": true,
+        "cudnn_benchmark": true,
+        "weights_dtype": "float32"
+      },
+      "horizons_available": [
+        1,
+        2,
+        4
+      ],
+      "k_total": 20,
+      "by_head": {
+        "head_k1": {
+          "predictor_calls": 20,
+          "head": 1,
+          "eager": {
+            "mean_ms": 94.8139,
+            "p50_ms": 94.1487,
+            "p95_ms": 101.4684,
+            "p99_ms": 106.7275,
+            "min_ms": 88.3764,
+            "max_ms": 119.4272,
+            "std_ms": 4.014,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 40.4235,
+            "p50_ms": 40.4172,
+            "p95_ms": 40.6692,
+            "p99_ms": 40.7022,
+            "min_ms": 40.2578,
+            "max_ms": 40.7142,
+            "std_ms": 0.118,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 1.0
+        },
+        "head_k2": {
+          "predictor_calls": 10,
+          "head": 2,
+          "eager": {
+            "mean_ms": 49.4282,
+            "p50_ms": 49.1185,
+            "p95_ms": 53.4331,
+            "p99_ms": 56.7326,
+            "min_ms": 45.5644,
+            "max_ms": 66.7487,
+            "std_ms": 2.7035,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 27.8026,
+            "p50_ms": 27.8108,
+            "p95_ms": 27.912,
+            "p99_ms": 27.9646,
+            "min_ms": 27.6839,
+            "max_ms": 28.0192,
+            "std_ms": 0.0714,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 1.9168
+        },
+        "head_k4": {
+          "predictor_calls": 5,
+          "head": 4,
+          "eager": {
+            "mean_ms": 27.1463,
+            "p50_ms": 26.5356,
+            "p95_ms": 31.2026,
+            "p99_ms": 32.2826,
+            "min_ms": 24.3736,
+            "max_ms": 34.6518,
+            "std_ms": 2.1008,
+            "iters": 200,
+            "warmup": 30
+          },
+          "graphed": {
+            "mean_ms": 21.5498,
+            "p50_ms": 21.5268,
+            "p95_ms": 21.7241,
+            "p99_ms": 21.746,
+            "min_ms": 21.3477,
+            "max_ms": 21.7643,
+            "std_ms": 0.1231,
+            "iters": 200,
+            "warmup": 30
+          },
+          "speedup_vs_head_k1_eager": 3.548
+        }
+      },
+      "ACCURACY": "UNMEASURED and NOT CLAIMABLE. The k=2/k=4 heads are already trained and present in the deployed checkpoint, so a strided roll reaches the SAME 2 s horizon in fewer predictor calls WITHOUT retraining the predictor \u2014 but the step readout was calibrated on 0.1 s transitions and here decodes 0.2 s / 0.4 s ones, so the decoded trajectory is not valid until the readout is recalibrated against a FROZEN predictor. This block supplies the latency side only and states that dependency; no equivalence is reported because the output is not expected to match."
+    }
+  }
+}

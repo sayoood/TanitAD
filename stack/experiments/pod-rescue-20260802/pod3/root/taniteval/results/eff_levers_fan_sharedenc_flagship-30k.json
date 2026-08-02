@@ -1,0 +1,225 @@
+{
+  "key": "flagship-30k",
+  "ckpt_step": 29999,
+  "env": {
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A40",
+    "capability": [
+      8,
+      6
+    ]
+  },
+  "question": "what does a K-candidate plan fan actually cost?",
+  "gpu_state_before": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 6.0,
+    "mem_used_mb": 1399.0,
+    "sm_clock_mhz": 1740.0,
+    "exclusive": true,
+    "temp_c": 37.0,
+    "power_w": 72.96,
+    "other_compute_detail": []
+  },
+  "protocol": {
+    "batches": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "iters": 50,
+    "warmup": 10,
+    "rollout_k": 20,
+    "window": 8,
+    "variants": [
+      "eager",
+      "all_levers",
+      "fan_shared_encoder"
+    ]
+  },
+  "fp32": {
+    "precision": {
+      "precision": "fp32",
+      "autocast": null,
+      "matmul_allow_tf32": false,
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": true,
+      "weights_dtype": "float32"
+    },
+    "batches": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "by_batch": {
+      "1": {
+        "eager": {
+          "p50_ms": 95.1648,
+          "p99_ms": 110.0871,
+          "ms_per_candidate": 95.1648,
+          "naive_Kx_projection_ms": 95.1648,
+          "cheaper_than_naive_by": 1.0
+        },
+        "all_levers": {
+          "p50_ms": 18.7764,
+          "p99_ms": 21.6334,
+          "ms_per_candidate": 18.7764,
+          "naive_Kx_projection_ms": 18.7764,
+          "cheaper_than_naive_by": 1.0
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 18.7754,
+          "p99_ms": 21.9569,
+          "ms_per_candidate": 18.7754,
+          "naive_Kx_projection_ms": 18.7754,
+          "cheaper_than_naive_by": 1.0
+        },
+        "build_errors": {}
+      },
+      "2": {
+        "eager": {
+          "p50_ms": 124.2939,
+          "p99_ms": 141.5507,
+          "ms_per_candidate": 62.1469,
+          "naive_Kx_projection_ms": 190.3296,
+          "cheaper_than_naive_by": 1.531
+        },
+        "all_levers": {
+          "p50_ms": 20.0317,
+          "p99_ms": 21.9971,
+          "ms_per_candidate": 10.0159,
+          "naive_Kx_projection_ms": 37.5528,
+          "cheaper_than_naive_by": 1.875
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 19.3733,
+          "p99_ms": 21.9252,
+          "ms_per_candidate": 9.6867,
+          "naive_Kx_projection_ms": 37.5508,
+          "cheaper_than_naive_by": 1.938
+        },
+        "build_errors": {}
+      },
+      "4": {
+        "eager": {
+          "p50_ms": 171.0074,
+          "p99_ms": 181.1501,
+          "ms_per_candidate": 42.7518,
+          "naive_Kx_projection_ms": 380.6592,
+          "cheaper_than_naive_by": 2.226
+        },
+        "all_levers": {
+          "p50_ms": 21.9574,
+          "p99_ms": 22.7047,
+          "ms_per_candidate": 5.4893,
+          "naive_Kx_projection_ms": 75.1056,
+          "cheaper_than_naive_by": 3.421
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 19.5844,
+          "p99_ms": 22.1076,
+          "ms_per_candidate": 4.8961,
+          "naive_Kx_projection_ms": 75.1016,
+          "cheaper_than_naive_by": 3.835
+        },
+        "build_errors": {}
+      },
+      "8": {
+        "eager": {
+          "p50_ms": 282.6858,
+          "p99_ms": 301.9531,
+          "ms_per_candidate": 35.3357,
+          "naive_Kx_projection_ms": 761.3184,
+          "cheaper_than_naive_by": 2.693
+        },
+        "all_levers": {
+          "p50_ms": 26.4574,
+          "p99_ms": 26.8292,
+          "ms_per_candidate": 3.3072,
+          "naive_Kx_projection_ms": 150.2112,
+          "cheaper_than_naive_by": 5.677
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 20.8235,
+          "p99_ms": 23.7156,
+          "ms_per_candidate": 2.6029,
+          "naive_Kx_projection_ms": 150.2032,
+          "cheaper_than_naive_by": 7.213
+        },
+        "build_errors": {}
+      },
+      "16": {
+        "eager": {
+          "p50_ms": 486.7193,
+          "p99_ms": 519.6014,
+          "ms_per_candidate": 30.42,
+          "naive_Kx_projection_ms": 1522.6368,
+          "cheaper_than_naive_by": 3.128
+        },
+        "all_levers": {
+          "p50_ms": 41.0343,
+          "p99_ms": 41.8254,
+          "ms_per_candidate": 2.5646,
+          "naive_Kx_projection_ms": 300.4224,
+          "cheaper_than_naive_by": 7.321
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 28.6533,
+          "p99_ms": 31.7227,
+          "ms_per_candidate": 1.7908,
+          "naive_Kx_projection_ms": 300.4064,
+          "cheaper_than_naive_by": 10.484
+        },
+        "build_errors": {}
+      },
+      "32": {
+        "eager": {
+          "p50_ms": 924.5919,
+          "p99_ms": 927.8733,
+          "ms_per_candidate": 28.8935,
+          "naive_Kx_projection_ms": 3045.2736,
+          "cheaper_than_naive_by": 3.294
+        },
+        "all_levers": {
+          "p50_ms": 55.2681,
+          "p99_ms": 55.6184,
+          "ms_per_candidate": 1.7271,
+          "naive_Kx_projection_ms": 600.8448,
+          "cheaper_than_naive_by": 10.871
+        },
+        "fan_shared_encoder": {
+          "p50_ms": 28.4074,
+          "p99_ms": 30.554,
+          "ms_per_candidate": 0.8877,
+          "naive_Kx_projection_ms": 600.8128,
+          "cheaper_than_naive_by": 21.15
+        },
+        "build_errors": {}
+      }
+    },
+    "ACCURACY": "not applicable \u2014 this is a planning-BUDGET measurement. Which candidate a planner selects, and whether selection improves driving, are separate questions the closed-loop harness owns."
+  },
+  "gpu_state_after": {
+    "name": "NVIDIA A40",
+    "other_compute_procs": 0,
+    "util_pct": 100.0,
+    "mem_used_mb": 4663.0,
+    "sm_clock_mhz": 1725.0,
+    "exclusive": true,
+    "temp_c": 75.0,
+    "power_w": 283.23,
+    "other_compute_detail": []
+  },
+  "contamination_check": {
+    "gpu_exclusive_before": true,
+    "gpu_exclusive_after": true,
+    "valid": true
+  }
+}

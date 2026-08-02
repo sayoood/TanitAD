@@ -1,0 +1,281 @@
+{
+  "n_windows": 881,
+  "protocol": {
+    "cond_replaced": "FiLM conditioning tensor only; weights fixed",
+    "ci": "8-split episode-disjoint jackknife (bench.py protocol)",
+    "primary_control": "mean (on-distribution); zero/none = full-removal refs",
+    "intent_conditioning": "follow-command hierarchy (deploy-realistic, no route cmd given)"
+  },
+  "seam_nav_to_strategic": {
+    "route_acc_nav": 1.0,
+    "route_acc_follow": 0.6708,
+    "route_acc_zeronav": 0.1083,
+    "majority_straight_rate": 0.6708,
+    "chance_1_of_3": 0.3333,
+    "follow_pred_distribution": {
+      "route_left": 0,
+      "route_straight": 240,
+      "route_right": 0
+    },
+    "delta_nav_vs_follow": {
+      "mean": 0.349,
+      "ci95": 0.097,
+      "n": 240,
+      "separated": true
+    },
+    "delta_nav_vs_zeronav": {
+      "mean": 0.8724,
+      "ci95": 0.047,
+      "n": 240,
+      "separated": true
+    },
+    "delta_follow_vs_zeronav": {
+      "mean": 0.5234,
+      "ci95": 0.1154,
+      "n": 240,
+      "separated": true
+    },
+    "n_valid": 240,
+    "vision_route_beats_majority": false,
+    "load_bearing": true,
+    "_note": "route target is derived from the SAME future heading as the nav command, so nav->route is load-bearing BY CONSTRUCTION (the command propagates to the route head). The genuine strategic-vision signal is whether route_acc_follow beats majority_straight_rate \u2014 if the follow head just predicts straight, it adds no vision."
+  },
+  "seam_ctx_to_tactical": {
+    "maneuver_acc": {
+      "real": 0.5573,
+      "mean_ctx": 0.5755,
+      "zero_ctx": 0.5823,
+      "delta_real_vs_mean": {
+        "mean": -0.0297,
+        "ci95": 0.0228,
+        "n": 881,
+        "separated": false
+      },
+      "delta_real_vs_zero": {
+        "mean": -0.0403,
+        "ci95": 0.0266,
+        "n": 881,
+        "separated": false
+      }
+    },
+    "wp_ade_2s": {
+      "real": 2.8724,
+      "mean_ctx": 2.9537,
+      "zero_ctx": 2.9982,
+      "delta_real_vs_mean": {
+        "mean": -0.0212,
+        "ci95": 0.0904,
+        "n": 881,
+        "separated": false
+      },
+      "delta_real_vs_zero": {
+        "mean": -0.0188,
+        "ci95": 0.0918,
+        "n": 881,
+        "separated": false
+      }
+    },
+    "goal_latent_cos": {
+      "real": 0.7574,
+      "mean_ctx": 0.7397,
+      "zero_ctx": 0.739,
+      "delta_real_vs_mean": {
+        "mean": 0.0156,
+        "ci95": 0.0024,
+        "n": 881,
+        "separated": true
+      },
+      "delta_real_vs_zero": {
+        "mean": 0.0163,
+        "ci95": 0.0017,
+        "n": 881,
+        "separated": true
+      }
+    },
+    "load_bearing": true,
+    "content_matters": true
+  },
+  "seam_intent_to_operative": {
+    "_regime": "intent conditions the intent-FiLM of the multi-horizon JEPA latent prediction (horizons 1/2/4); the grounded pose rollout is intent-free by design (eval_grounded_rollout_4b) so it is NOT the seam's regime \u2014 see diagnostic below",
+    "latent_rel_err": {
+      "real": 1.4534,
+      "mean_intent": 1.4538,
+      "zero_intent": 2.8648,
+      "none": 2.8718
+    },
+    "latent_cos": {
+      "real": 0.9247,
+      "mean_intent": 0.9247,
+      "zero_intent": 0.778,
+      "none": 0.7773
+    },
+    "delta_rel_real_vs_mean": {
+      "mean": 0.0006,
+      "ci95": 0.0002,
+      "n": 881,
+      "separated": true
+    },
+    "delta_rel_real_vs_none": {
+      "mean": 1.409,
+      "ci95": 0.0998,
+      "n": 881,
+      "separated": true
+    },
+    "delta_cos_real_vs_mean": {
+      "mean": 0.0,
+      "ci95": 0.0,
+      "n": 881,
+      "separated": true
+    },
+    "delta_cos_real_vs_none": {
+      "mean": 0.1391,
+      "ci95": 0.0031,
+      "n": 881,
+      "separated": true
+    },
+    "cond_norms": {
+      "action_emb": 11.5203,
+      "intent_proj": 2367.5272,
+      "_note": "norms in the predictor FiLM-cond space; intent_proj(intent) >= action_emb means the intent term SWAMPS the action signal it is added to -> corrupts the operative prediction"
+    },
+    "diagnostic_intent_in_grounded_rollout_OUT_OF_REGIME": {
+      "op_ade_2s_real": 11.0163,
+      "op_ade_2s_mean": 11.0134,
+      "op_ade_2s_zero": 3.8488,
+      "op_ade_2s_none_canonical": 3.8317,
+      "_note": "threading intent into the 20-step recursive grounded rollout (readout calibrated intent-free) is off-manifold; the ADE blow-up shows the intent FiLM DOES strongly perturb the operative predictor, but this is not how the seam is used"
+    },
+    "per_window_content_helps": false,
+    "helps_vs_none": true,
+    "harmful_if_engaged": false,
+    "load_bearing": false,
+    "deployed_operative_is_intent_free": true
+  },
+  "consistency": {
+    "maneuver_vs_trajectory": {
+      "agreement": {
+        "mean": 0.374,
+        "ci95": 0.0422,
+        "n": 881,
+        "separated": true
+      },
+      "kappa": 0.0217,
+      "agreement_turn_subset": {
+        "mean": 0.1764,
+        "ci95": 0.0428,
+        "n": 665,
+        "separated": true
+      },
+      "kappa_turn_subset": -0.1074,
+      "n_turn_active": 665
+    },
+    "commanded_route_vs_maneuver": {
+      "agreement": {
+        "mean": 0.7103,
+        "ci95": 0.0715,
+        "n": 881,
+        "separated": true
+      },
+      "kappa": 0.107,
+      "agreement_turn_subset": {
+        "mean": 0.0623,
+        "ci95": 0.0486,
+        "n": 251,
+        "separated": true
+      },
+      "kappa_turn_subset": -0.2273,
+      "n_turn_active": 251
+    },
+    "commanded_route_vs_trajectory": {
+      "agreement": {
+        "mean": 0.2748,
+        "ci95": 0.0413,
+        "n": 881,
+        "separated": true
+      },
+      "kappa": -0.0483,
+      "agreement_turn_subset": {
+        "mean": 0.0263,
+        "ci95": 0.0155,
+        "n": 631,
+        "separated": true
+      },
+      "kappa_turn_subset": -0.1146,
+      "n_turn_active": 631
+    },
+    "follow_route_head_degenerate": {
+      "distribution": {
+        "route_left": 0,
+        "route_straight": 881,
+        "route_right": 0
+      },
+      "_note": "under follow (no route command) the strategic route head collapses to constant-straight -> carries no directional signal at deploy; use the commanded head for coherence"
+    },
+    "distributions": {
+      "route_follow": {
+        "route_left": 0,
+        "route_straight": 881,
+        "route_right": 0
+      },
+      "route_commanded": {
+        "route_left": 54,
+        "route_straight": 802,
+        "route_right": 25
+      },
+      "maneuver_dir": {
+        "route_left": 107,
+        "route_straight": 672,
+        "route_right": 102
+      },
+      "trajectory_dir": {
+        "route_left": 537,
+        "route_straight": 294,
+        "route_right": 50
+      },
+      "gt_dir": {
+        "route_left": 117,
+        "route_straight": 690,
+        "route_right": 74
+      }
+    },
+    "_note": "route is a 15-25 s heading; maneuver/trajectory are 2 s \u2014 some cross-timescale disagreement is CORRECT, not incoherence. maneuver_vs_trajectory is the same-timescale coherence test."
+  },
+  "h18_grounded_vs_ungrounded": {
+    "grounded_op_rollout_ade_2s": 3.8317,
+    "ungrounded_tactical_head_ade_2s": 2.8724,
+    "delta_ungrounded_minus_grounded": {
+      "mean": -0.813,
+      "ci95": 0.3502,
+      "n": 881,
+      "separated": false
+    },
+    "grounded_wins": false
+  },
+  "verdict": "hierarchy 2/3 seams load-bearing \u00b7 nav->strat LOAD-BEARING by construction (route 1.0 cmd / 0.6708 follow vs 0.6708 majority; vision route NONE) \u00b7 ctx->tactical LOAD-BEARING (vs-mean: man \u0394-0.0297, wp \u0394-0.0212, goal-cos \u03940.0156) \u00b7 intent->operative decorative (cos vs-none \u03940.1391, per-window vs-mean \u03940.0) \u00b7 coherence man~traj kappa=0.0217 (agree 0.374) \u00b7 H18 grounded <= ungrounded goal (3.8317 vs 2.8724 m)",
+  "thesis_read": {
+    "claim": "operative->tactical->strategic hierarchy with cross-layer alignment is efficient AND dominant",
+    "A_conditioning_helps_conditioned_layer": {
+      "nav->strategic": "command echo only \u2014 load-bearing by construction, no scene-based route inference (follow==majority)",
+      "ctx->tactical": "load-bearing; best on-distribution effect goal-cos \u03940.0156 (maneuver & waypoint deltas not CI-separated)",
+      "intent->operative": "helps only as a co-adapted offset (real>none but real~=mean); vs-none \u0394cos 0.1391, per-window vs-mean \u0394cos 0.0; deployed operative rollout is intent-free",
+      "n_of_3_seams_beneficial": 1,
+      "verdict": "FALSIFIED \u2014 top-down conditioning does NOT measurably carry downstream performance at this checkpoint"
+    },
+    "B_layers_mutually_consistent": {
+      "maneuver_vs_trajectory_kappa": 0.0217,
+      "verdict": "WEAK \u2014 same-timescale tactical maneuver & operative trajectory do not clearly cohere"
+    },
+    "C_grounding_dominant_H18": {
+      "grounded_ade_2s": 3.8317,
+      "ungrounded_head_ade_2s": 2.8724,
+      "verdict": "NOT SHOWN"
+    }
+  },
+  "model": {
+    "key": "refa-dynin",
+    "name": "REF-A dyn-in 4B (snapshot)",
+    "arch": "refa-plus",
+    "encoder": "frozen DINOv2-B/14"
+  },
+  "ckpt_step": 5000
+}

@@ -1,0 +1,110 @@
+{
+  "key": "refc-v10",
+  "n_windows": 881,
+  "n_anchors": 256,
+  "confidence_sharpness": {
+    "top1_prob_mean": 0.6537,
+    "top1_prob_median": 0.6398,
+    "top1_prob_p10": 0.3881,
+    "top1_minus_top2_logit": 1.556,
+    "entropy_nats": 0.9681,
+    "n_modes_gt_1pct": 4.64
+  },
+  "rank_signal": {
+    "spearman_cost_vs_ade": 0.8807,
+    "spearman_cost_vp_vs_ade": 0.8233,
+    "spearman_negconf_vs_ade": 0.9071,
+    "oracle_pct_rank_under_cost": 0.0657,
+    "oracle_pct_rank_under_negconf": 0.0544,
+    "selected_pct_rank_under_cost": 0.0609,
+    "note": "pct rank 0 = ranked first (best); 0.5 = chance"
+  },
+  "oracle_min_of_K": {
+    "1": 13.9231,
+    "2": 8.2491,
+    "4": 4.6418,
+    "8": 2.6335,
+    "16": 1.4864,
+    "32": 0.8644,
+    "64": 0.521,
+    "128": 0.3248,
+    "256": 0.2245
+  },
+  "oracle_within_topK_conf": {
+    "1": 0.4714,
+    "2": 0.3421,
+    "4": 0.2506,
+    "8": 0.2026,
+    "16": 0.1819,
+    "32": 0.1713,
+    "64": 0.1679,
+    "128": 0.1651,
+    "256": 0.164
+  },
+  "gt_informed_ceilings": {
+    "baseline_ade": 0.4714,
+    "oracle_full_ade": 0.164,
+    "longitudinal_only_ranker_ade": 0.3669,
+    "lateral_only_ranker_ade": 1.5199,
+    "gt_speed_matched_ranker_ade": 1.1236,
+    "note": "ALL of these read the ground truth \u2014 they are unreachable ceilings, reported to say WHICH information a GT-free ranker would have to recover"
+  },
+  "error_decomposition": {
+    "selected_along": 0.4202,
+    "selected_cross": 0.1197,
+    "oracle_along": 0.1176,
+    "oracle_cross": 0.0865
+  },
+  "vtarget_quality": {
+    "corr_vtarget_vs_gt_mean_speed": 0.9567,
+    "corr_v0_vs_gt_mean_speed": 0.9971,
+    "mae_vtarget_vs_gt_mean_speed": 1.6514,
+    "mae_v0_vs_gt_mean_speed": 0.4751,
+    "note": "VTARGET is a 10-20 s free-flow SET-SPEED, not a 2 s mean speed; this quantifies how far apart the two are on this val"
+  },
+  "topK_reference": {
+    "1": {
+      "oracle": 0.4714,
+      "chance_mean": 0.4714,
+      "anti_oracle": 0.4714,
+      "cost_pick": 0.4714,
+      "conf_pick": 0.4714
+    },
+    "2": {
+      "oracle": 0.3421,
+      "chance_mean": 0.5638,
+      "anti_oracle": 0.7855,
+      "cost_pick": 0.4862,
+      "conf_pick": 0.4714
+    },
+    "4": {
+      "oracle": 0.2506,
+      "chance_mean": 0.7444,
+      "anti_oracle": 1.3293,
+      "cost_pick": 0.628,
+      "conf_pick": 0.4714
+    },
+    "8": {
+      "oracle": 0.2026,
+      "chance_mean": 1.0336,
+      "anti_oracle": 2.2789,
+      "cost_pick": 0.7836,
+      "conf_pick": 0.4714
+    },
+    "16": {
+      "oracle": 0.1819,
+      "chance_mean": 1.5257,
+      "anti_oracle": 4.3074,
+      "cost_pick": 0.9235,
+      "conf_pick": 0.4714
+    },
+    "32": {
+      "oracle": 0.1713,
+      "chance_mean": 2.5033,
+      "anti_oracle": 8.3635,
+      "cost_pick": 0.9755,
+      "conf_pick": 0.4714
+    }
+  },
+  "topK_reference_note": "cost_pick vs chance_mean is the ONLY fair read on whether the cost carries selection signal at the top of the confidence ranking; conf_pick is the deployed baseline (always the top-1)."
+}
