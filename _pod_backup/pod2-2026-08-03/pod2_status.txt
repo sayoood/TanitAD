@@ -1,0 +1,380 @@
+ M stack/pyproject.toml
+ M stack/scripts/build_pai_cache.py
+ M stack/scripts/carla_work_zone.py
+ M stack/scripts/cosmos_pairs.py
+ M stack/scripts/cosmos_verify.py
+ M stack/scripts/d1_probe_capacity.py
+ M stack/scripts/d3_decompose.py
+ M stack/scripts/d8_preview.py
+ M stack/scripts/dino_precompute.py
+ M stack/scripts/driving_diagnostic.py
+ M stack/scripts/eval_behavior.py
+ M stack/scripts/eval_grounded_rollout_4b.py
+ M stack/scripts/evaluate_checkpoint.py
+ M stack/scripts/extract_comma2k19.py
+ M stack/scripts/finetune_traj.py
+ M stack/scripts/geom_sanity.py
+ M stack/scripts/latency_cnce_baseline.py
+ M stack/scripts/pai_calib_probe.py
+ M stack/scripts/physicalai_r0.py
+ M stack/scripts/refa_probe.py
+ M stack/scripts/refa_train.py
+ M stack/scripts/refa_train4b.py
+ M stack/scripts/refb_labels.py
+ M stack/scripts/refb_train.py
+ M stack/scripts/replay_app.py
+ M stack/scripts/resim_app.py
+ M stack/scripts/resolution_probe.py
+ M stack/scripts/run_spectral.py
+ M stack/scripts/scena_app.py
+ M stack/scripts/scenario_suite_dryrun.py
+ M stack/scripts/train_flagship4b.py
+ M stack/scripts/validate_geometry.py
+ M stack/scripts/visualize_episode.py
+ M stack/scripts/viz_trajectory_fan.py
+ M stack/tanitad/__init__.py
+ M stack/tanitad/config.py
+ M stack/tanitad/data/__init__.py
+ M stack/tanitad/data/_contract.py
+ M stack/tanitad/data/calib.py
+ M stack/tanitad/data/comma2k19.py
+ M stack/tanitad/data/cosmos_drive.py
+ M stack/tanitad/data/epcache.py
+ M stack/tanitad/data/metadrive_env.py
+ M stack/tanitad/data/metadrive_frontcam.py
+ M stack/tanitad/data/mixing.py
+ M stack/tanitad/data/physicalai.py
+ M stack/tanitad/data/stats.py
+ M stack/tanitad/data/toy_driving.py
+ M stack/tanitad/eval/__init__.py
+ M stack/tanitad/eval/bakeoff.py
+ M stack/tanitad/eval/gates.py
+ M stack/tanitad/eval/metrics.py
+ M stack/tanitad/eval/scenarios/__init__.py
+ M stack/tanitad/eval/scenarios/work_zone_phantom.py
+ M stack/tanitad/eval/spectral.py
+ M stack/tanitad/instruments/__init__.py
+ M stack/tanitad/instruments/checks.py
+ M stack/tanitad/instruments/numerics.py
+ M stack/tanitad/keys.py
+ M stack/tanitad/models/__init__.py
+ M stack/tanitad/models/encoder.py
+ M stack/tanitad/models/fourbrain.py
+ M stack/tanitad/models/imagination.py
+ M stack/tanitad/models/inverse_dynamics.py
+ M stack/tanitad/models/kinematic.py
+ M stack/tanitad/models/metric_dynamics.py
+ M stack/tanitad/models/predictor.py
+ M stack/tanitad/models/readout.py
+ M stack/tanitad/models/sigreg.py
+ M stack/tanitad/models/traj_head.py
+ M stack/tanitad/refs/__init__.py
+ M stack/tanitad/refs/refa.py
+ M stack/tanitad/refs/refb.py
+ M stack/tanitad/replay/README.md
+ M stack/tanitad/replay/TUTORIAL.md
+ M stack/tanitad/replay/__init__.py
+ M stack/tanitad/replay/arms.py
+ M stack/tanitad/replay/engine.py
+ M stack/tanitad/replay/rr_log.py
+ M stack/tanitad/replay/stats.py
+ M stack/tanitad/resim/README.md
+ M stack/tanitad/resim/__init__.py
+ M stack/tanitad/resim/export.py
+ M stack/tanitad/resim/static/app.js
+ M stack/tanitad/resim/static/index.html
+ M stack/tanitad/resim/static/style.css
+ M stack/tanitad/scena/README.md
+ M stack/tanitad/scena/__init__.py
+ M stack/tanitad/scena/parse.py
+ M stack/tanitad/scena/static/app.js
+ M stack/tanitad/scena/static/index.html
+ M stack/tanitad/scena/static/style.css
+ M stack/tanitad/scena/vector.py
+ M stack/tanitad/train/flagship_losses.py
+ M stack/tanitad/train/train_worldmodel.py
+ M stack/tests/test_bakeoff.py
+ M stack/tests/test_calib.py
+ M stack/tests/test_comma2k19.py
+ M stack/tests/test_comma2k19_contract.py
+ M stack/tests/test_cosmos_drive.py
+ M stack/tests/test_cosmos_pairs.py
+ M stack/tests/test_d8_preview.py
+ M stack/tests/test_driving_diagnostic.py
+ M stack/tests/test_epcache.py
+ M stack/tests/test_epcache_key.py
+ M stack/tests/test_eval_behavior.py
+ M stack/tests/test_evaluate_checkpoint.py
+ M stack/tests/test_flagship4b.py
+ M stack/tests/test_gates.py
+ M stack/tests/test_imagination.py
+ M stack/tests/test_instruments.py
+ M stack/tests/test_keys.py
+ M stack/tests/test_kstep_rollout.py
+ M stack/tests/test_lal_v2.py
+ M stack/tests/test_metadrive_env.py
+ M stack/tests/test_metadrive_frontcam.py
+ M stack/tests/test_metric_dynamics.py
+ M stack/tests/test_metrics.py
+ M stack/tests/test_mixing.py
+ M stack/tests/test_physicalai.py
+ M stack/tests/test_physicalai_rig.py
+ M stack/tests/test_physicalai_signals.py
+ M stack/tests/test_refa.py
+ M stack/tests/test_refa4b.py
+ M stack/tests/test_refa_flagship_parity.py
+ M stack/tests/test_refa_grounding.py
+ M stack/tests/test_refb.py
+ M stack/tests/test_replay.py
+ M stack/tests/test_resim.py
+ M stack/tests/test_save_episode_validate.py
+ M stack/tests/test_scena.py
+ M stack/tests/test_scenario_suite_wiring.py
+ M stack/tests/test_sigreg.py
+ M stack/tests/test_smoke_train.py
+ M stack/tests/test_spectral_sizing.py
+ M stack/tests/test_stats.py
+ M stack/tests/test_toy_data.py
+ M stack/tests/test_work_zone_phantom.py
+?? "TanitAD Research Hub/Opponent Analyzer/.scena_cache/"
+?? stack/docs/
+?? stack/experiments/p0-arm-compare-smoke/
+?? stack/experiments/refb-v2/
+?? stack/experiments/reset-speed4b/
+?? stack/scripts/.gitattributes
+?? stack/scripts/build_refc_anchors.py
+?? stack/scripts/build_tanitdataset.py
+?? stack/scripts/compare_arms.py
+?? stack/scripts/eval_flagship_v15.py
+?? stack/scripts/eval_flagship_v16.py
+?? stack/scripts/eval_flagship_v4.py
+?? stack/scripts/eval_grounded_rollout_4b_speed.py
+?? stack/scripts/eval_metric_rollout.py
+?? stack/scripts/flagship_phase0.run.env
+?? stack/scripts/flagship_v4_data.py
+?? stack/scripts/gate_emitters.py
+?? stack/scripts/goal_modes.py
+?? stack/scripts/goal_provenance.py
+?? stack/scripts/gpu_lock.sh
+?? stack/scripts/idm_head.py
+?? stack/scripts/ingest_nuscenes.py
+?? stack/scripts/install_pre_start_hook.sh
+?? stack/scripts/label_v3_audit.py
+?? stack/scripts/lake_byteproof.py
+?? stack/scripts/lake_ingest.py
+?? stack/scripts/lead_state_gate.py
+?? stack/scripts/lead_state_gate_posthoc.py
+?? stack/scripts/make_parity_manifest.py
+?? stack/scripts/pai_build.run.env
+?? stack/scripts/parity_skipset.sh
+?? stack/scripts/pod2_ops_daemon.sh
+?? stack/scripts/pod_boot_hook.sh
+?? stack/scripts/pod_git_drift.py
+?? stack/scripts/pod_ops/
+?? stack/scripts/reap_built_mp4s.sh
+?? stack/scripts/rebuild_pai_rolling.py
+?? stack/scripts/refc_train.py
+?? stack/scripts/refc_v12_cache.py
+?? stack/scripts/refc_v12_eval.py
+?? stack/scripts/refc_v12_train.py
+?? stack/scripts/register_v2_sibling.py
+?? stack/scripts/rig_band_scan.py
+?? stack/scripts/route_label_audit.py
+?? stack/scripts/run_branchb_transfer.py
+?? stack/scripts/run_camcond_ablation.py
+?? stack/scripts/run_gate.py
+?? stack/scripts/run_idm_downstream_ablation.py
+?? stack/scripts/run_idm_ft.py
+?? stack/scripts/run_idm_parity_validation.py
+?? stack/scripts/run_idm_pipeline_derisk.py
+?? stack/scripts/run_idm_proof.py
+?? stack/scripts/run_v1_encoder_char.py
+?? stack/scripts/slice_v2_cache.py
+?? stack/scripts/supervise_run.sh
+?? stack/scripts/train_dynamics_encoder.py
+?? stack/scripts/train_flagship4b.py.bak-jerkaccel
+?? stack/scripts/train_flagship_v15.py
+?? stack/scripts/train_flagship_v16.py
+?? stack/scripts/train_flagship_v4.py
+?? stack/scripts/train_flagship_v4.py.pre-fromscratch-bak.20260723-214306
+?? stack/scripts/train_flagship_v4.py.v41bak
+?? stack/scripts/v15_prep.py
+?? stack/scripts/v2_compressed.py
+?? stack/scripts/v4_labels.py
+?? stack/scripts/v4_param_budget.py
+?? stack/scripts/v5_guard.py
+?? stack/scripts/validate_data.py
+?? stack/scripts/validate_refb_labels.py
+?? stack/scripts/vlm_compare_score.py
+?? stack/scripts/vlm_kin_crossval.py
+?? stack/scripts/vlm_labels_to_lake.py
+?? stack/scripts/vlm_model_compare.py
+?? stack/scripts/vlm_route_labels.py
+?? stack/scripts/vlm_semantic_labels.py
+?? stack/scripts/vlm_semantic_score.py
+?? stack/scripts/watch_gates.py
+?? stack/tanitad/data/argoverse2.py
+?? stack/tanitad/data/l2d.py
+?? stack/tanitad/data/nuscenes.py
+?? stack/tanitad/data/parity.py
+?? stack/tanitad/data/parity_manifest.json
+?? stack/tanitad/data/v2_dataset.py
+?? stack/tanitad/ego_plan.py
+?? stack/tanitad/eval/ckpt_compat.py
+?? stack/tanitad/eval/scenarios/registry.py
+?? stack/tanitad/eval/scenarios/traffic_light.py
+?? stack/tanitad/eval/speed_benefit.py
+?? stack/tanitad/geometry.py
+?? stack/tanitad/lake/
+?? stack/tanitad/models/dynamics_encoder.py
+?? stack/tanitad/models/flagship_v15.py
+?? stack/tanitad/models/flagship_v4.py
+?? stack/tanitad/models/readout_selection.py
+?? stack/tanitad/models/refc_rescorer.py
+?? stack/tanitad/models/strategic_goal.py
+?? stack/tanitad/models/vision_rank.py
+?? stack/tanitad/models/wm_reference_select.py
+?? stack/tanitad/refs/refc.py
+?? stack/tanitad/resim/sample.py
+?? stack/tanitad/train/ckpt_io.py
+?? stack/tanitad/train/decorr.py
+?? stack/tanitad/train/flagship_losses.py.bak-jerkaccel
+?? stack/tanitad/train/heldout_gate.py
+?? stack/tanitad/train/heldout_goal.py
+?? stack/tanitad/train/v4_curriculum.py
+?? stack/tanitad/train/v4_curriculum.py.v41bak
+?? stack/tests/test_accum_effective_batch.py
+?? stack/tests/test_anchor_tactical.py
+?? stack/tests/test_argoverse2.py
+?? stack/tests/test_build_refc_anchors_v4.py
+?? stack/tests/test_calib_r1.py
+?? stack/tests/test_ckpt_io.py
+?? stack/tests/test_comma_heading_regime.py
+?? stack/tests/test_compare_arms.py
+?? stack/tests/test_decode_mp4_real.py
+?? stack/tests/test_dlr_opendrive_registry.py
+?? stack/tests/test_dynamics_encoder.py
+?? stack/tests/test_ego_plan.py
+?? stack/tests/test_eval_flagship_v4_select_rule.py
+?? stack/tests/test_eval_speed_ckpt.py
+?? stack/tests/test_eval_v2_frame.py
+?? stack/tests/test_flagship_v15.py
+?? stack/tests/test_flagship_v4.py
+?? stack/tests/test_gate_emitters.py
+?? stack/tests/test_gated_intent.py
+?? stack/tests/test_geometry_configurable.py
+?? stack/tests/test_heldout_gate.py
+?? stack/tests/test_heldout_gate_goal_wiring.py
+?? stack/tests/test_heldout_gate_real_head.py
+?? stack/tests/test_idm_head.py
+?? stack/tests/test_invdyn_gradscale.py
+?? stack/tests/test_kinematic_nan.py
+?? stack/tests/test_l2d.py
+?? stack/tests/test_labels_v21_wiring.py
+?? stack/tests/test_labels_v2_wiring.py
+?? stack/tests/test_lake.py
+?? stack/tests/test_lake_curation.py
+?? stack/tests/test_lake_enrich.py
+?? stack/tests/test_lake_filtering.py
+?? stack/tests/test_lake_vocab.py
+?? stack/tests/test_no_frame_shadowing_repo_wide.py
+?? stack/tests/test_nuscenes.py
+?? stack/tests/test_parity_manifest.py
+?? stack/tests/test_pod_git_drift.py
+?? stack/tests/test_preflight_parity.py
+?? stack/tests/test_preflight_paths.py
+?? stack/tests/test_readout_selection.py
+?? stack/tests/test_refb_labels_v2.py
+?? stack/tests/test_refb_labels_v21.py
+?? stack/tests/test_refb_labels_v3.py
+?? stack/tests/test_refc.py
+?? stack/tests/test_refc_labels_v3_wiring.py
+?? stack/tests/test_refc_rescorer.py
+?? stack/tests/test_rig_clean_fix.py
+?? stack/tests/test_run_gate_card_render.py
+?? stack/tests/test_run_gate_corridor.py
+?? stack/tests/test_run_gate_eval_metric.py
+?? stack/tests/test_run_gate_reached_at.py
+?? stack/tests/test_speed_input.py
+?? stack/tests/test_tlc_metric.py
+?? stack/tests/test_traffic_light_scenario.py
+?? stack/tests/test_train_flagship_v4.py
+?? stack/tests/test_v2_compressed_real.py
+?? stack/tests/test_v2_dataset.py
+?? stack/tests/test_v2_parity.py
+?? stack/tests/test_v4_curriculum.py
+?? stack/tests/test_v4_labels.py
+?? stack/tests/test_v4_legacy_checkpoint_load.py
+?? stack/tests/test_v5_frame_wiring.py
+?? stack/tests/test_v5_trainer_v2_val.py
+?? stack/tests/test_val_parity_evaluators.py
+?? stack/tests/test_vision_levers.py
+?? stack/tests/test_vision_rank.py
+?? stack/tests/test_vlm_semantic.py
+?? stack/tests/test_vtband_options.py
+?? stack/tests/test_wheelbase_regime.py
+?? stack/tests/test_wm_reference_select.py
+?? stack/tests/test_yaw_admissibility.py
+?? taniteval.stale-20260729-C65/
+?? taniteval/
+---UNTRACKED---
+TanitAD Research Hub/Opponent Analyzer/.scena_cache/scenarios.json
+TanitAD Research Hub/Opponent Analyzer/.scena_cache/vectors.npz
+stack/docs/phase0_go_criteria.md
+stack/experiments/p0-arm-compare-smoke/NOTE.md
+stack/experiments/p0-arm-compare-smoke/arm_compare.json
+stack/experiments/p0-arm-compare-smoke/arm_compare.md
+stack/experiments/refb-v2/launch_v2.sh
+stack/experiments/refb-v2/refb_train_v2.py
+stack/experiments/refb-v2/refb_train_v3.py
+stack/experiments/refb-v2/refb_train_v4.py
+stack/experiments/refb-v2/refb_v3.py
+stack/experiments/refb-v2/refb_v4.py
+stack/experiments/refb-v2/smoke_v2.py
+stack/experiments/reset-speed4b/README.md
+stack/experiments/reset-speed4b/build_ascii.py
+stack/experiments/reset-speed4b/build_svg_gallery.py
+stack/experiments/reset-speed4b/eval_grounded_rollout_4b_speed.py
+stack/experiments/reset-speed4b/eval_refa4b_grounded.py
+stack/experiments/reset-speed4b/flagship_5k_gate.json
+stack/experiments/reset-speed4b/refa4b_gate_30k.json
+stack/experiments/reset-speed4b/refa_plus.py
+stack/experiments/reset-speed4b/refa_train_plus.py
+stack/experiments/reset-speed4b/render_arm.py
+stack/experiments/reset-speed4b/smoke_dynin.py
+stack/scripts/.gitattributes
+stack/scripts/build_refc_anchors.py
+stack/scripts/build_tanitdataset.py
+stack/scripts/compare_arms.py
+stack/scripts/eval_flagship_v15.py
+stack/scripts/eval_flagship_v16.py
+stack/scripts/eval_flagship_v4.py
+stack/scripts/eval_grounded_rollout_4b_speed.py
+stack/scripts/eval_metric_rollout.py
+stack/scripts/flagship_phase0.run.env
+stack/scripts/flagship_v4_data.py
+stack/scripts/gate_emitters.py
+stack/scripts/goal_modes.py
+stack/scripts/goal_provenance.py
+stack/scripts/gpu_lock.sh
+stack/scripts/idm_head.py
+stack/scripts/ingest_nuscenes.py
+stack/scripts/install_pre_start_hook.sh
+stack/scripts/label_v3_audit.py
+stack/scripts/lake_byteproof.py
+stack/scripts/lake_ingest.py
+stack/scripts/lead_state_gate.py
+stack/scripts/lead_state_gate_posthoc.py
+stack/scripts/make_parity_manifest.py
+stack/scripts/pai_build.run.env
+stack/scripts/parity_skipset.sh
+stack/scripts/pod2_ops_daemon.sh
+stack/scripts/pod_boot_hook.sh
+stack/scripts/pod_git_drift.py
+stack/scripts/pod_ops/cache_guard.py
+stack/scripts/pod_ops/cache_guard_v2.sh
+stack/scripts/pod_ops/compute_skipset.py
+stack/scripts/pod_ops/exactfill2.py
+stack/scripts/pod_ops/fetch_ego.py
+stack/scripts/pod_ops/horizon_probe.py
+stack/scripts/pod_ops/launch_refc.sh
