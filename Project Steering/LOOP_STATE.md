@@ -1224,3 +1224,27 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
   RR-20 trade, sitclf label defect, v5->v5f incl. guard + 1.01x) + changelog v0.7. Queue items
   1,3,4,5 were already closed => the drumbeat queue is now: Thor torch verify -> v5f gate@2000
   (~20:15 UTC) -> 5k four-family milestone -> v1arch milestones.
+
+## 2026-08-02 14:5x UTC — LABEL AUDIT PASSED + ALPASIM LANDED ON THOR (PI directive)
+
+- ⭐ **v5f TRAIN-label audit (MEASURED, 240 windows / 24 eps, CPU-only nice-19, RAM untouched
+  23/503 GB, v5f unaffected)**: STRATEGIC route_target {L15, S219, R6} + route_graded 84.6%
+  nonzero + vt_band spread over bands 10-23 + vt_speed 99.6% nonzero; TACTICAL maneuver_label all
+  5 classes {138,26,23,24,29} + factorised lat/lon/dist present with IGNORE masking. Labels
+  INCLUDED and PLAUSIBLE. ⚠️ two flags: nav_valid only 23.75% (sparse nav commands) and the
+  24-ep train sample is far straighter than the val guard read (91% vs 54% straight) — episode
+  variance, watch at the 5k milestone. Artifact: pod2:/workspace/v5f_label_audit.json.
+- ⭐ **AlpaSim**: source = github.com/NVlabs/alpasim (NVlabs, open-source, microservices:
+  renderer/physics/runtime/controller/DRIVER/traffic). CLONED to thor:~/alpasim. Local run =
+  **Docker Compose** (docs/TUTORIAL.md); data = **ASL log format** (docs/DATA_PIPELINE.md); our
+  models integrate as a custom DRIVER policy (supported: Alpamayo-R1/1.5, VaVAM, Transfuser).
+- ⛔ BLOCKERS: (1) `docker` needs sudo on Thor — PI must run `sudo usermod -aG docker nvidia`
+  (+ ideally `sudo apt install python3.12-venv`); sudo-over-ssh is password-gated (C-class:
+  my earlier apt "installs" silently failed — verified only this session). (2) REF-C mainline
+  weights are on STOPPED pod3 volume — either PI starts pod3 ~10 min for a push, or first
+  closed-loop uses `refc-base-e1f-junction` from HF `Sayood/tanitad-rollout-recovery`.
+  (3) edge torch still downloading (PID 37036, WiFi pace).
+- PLAN (banked): torch lands -> read TUTORIAL+DATA_PIPELINE -> ASL-convert a val episode ->
+  compose up (post-docker-fix) -> TanitAD driver adapter (v1 first, then REF-C) -> closed-loop
+  runs scored with ALL FOUR FAMILIES via four_families.py (binding rule applies in closed loop
+  too) -> LONG videos with camera overlay + BEV per the viz standard.
