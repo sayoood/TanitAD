@@ -3,6 +3,30 @@
 Prioritized roadmap (D-020 §3/§4). Each run: one module-cluster compliance review + ≥1 measured
 optimization experiment. G-P2: accuracy delta next to every speed delta.
 
+## ⭐ P0 — THOR DIRECTIVE 2026-08-02 (supersedes the 2026-07-17 ordering below)
+
+Thor is deployed and the orchestrator handed this stream the O1–O14 backlog
+(`THOR_DEPLOYMENT_RUNBOOK.md` §6). **The ordered, falsifiable execution plan is
+`THOR_OPTIMISATION_PLAN.md`** — read it first; this list is its index.
+
+| item | plan ref | state | one-line why |
+|---|---|---|---|
+| **A1** ONNX export-parity re-verify @torch 2.11 + permanent export guard | §3 Tier A | 🔵 **next, 0 deps** | the MHA fastpath bug retracts our own 2026-07-08 claim on 2.13; **unverified on 2.11**, where the claim was made. 4060, ~90 min, $0 |
+| **A2** compliance review #4 — `taniteval/` + `tanitad/eval/` | §3 Tier A | 🔵 next | the only unreviewed cluster that **decides every deployment gate**, and the four families are now binding. C63 class |
+| **A3** arm the Thor job cards | §3 Tier A | 🔵 next | power-on → results with no authoring latency |
+| **B1** ⭐ **complete decision tick** (absorbs O3 + **O9**) | §3 Tier B | ⛔ Thor offline | ⭐⭐ the measured tick rolls **1** candidate; the deployed selector loops over **9** (`config.py:95`, `fourbrain.py:571`). Serialised ⇒ ~238 ms (2.4× over budget); batched ⇒ ~53 ms. **The engine is built at batch 1 and needs a batch-9/dynamic profile.** Largest open uncertainty in the deployment |
+| **B0** val-window cache built ON Thor from HF | §3 Tier B | ⛔ Thor offline | O1 silently carries a pod dependency; this removes it (880 GB free, public HF weights). Parity-sha verified or refuse |
+| **B2** ⭐ **bf16-vs-fp16 encoder DECISION-agreement** | §3 Tier B | ⛔ Thor offline | the 6.76× lever rests on rel-err 0.0059 on **random weights**, at a precision our own decision-space measurement **rejected** (bf16 → 67.2 % agreement, 47.7 cm). Fails ⇒ O2 becomes P0 and the 51.2 ms is void |
+| **B3** = **O1** four-family gate on the TRT-fp16 engine | §3 Tier B | ⛔ needs B0 + B2's instrument check | paired episode-cluster bootstrap, per-family, never pooled |
+| **O2** TRT encoder engine | §3 Tier C | P0-if-B2-fails, else P1 | the fallback that saves the encoder win |
+| **O7** `nvpmodel` power modes | §3 Tier C | P1, parallel-safe | ~2 W / 61.9 °C — envelope unexplored, no accuracy dependency |
+| **O5** INT8 PTQ | §3 Tier C | P1, gated on B3 | unreadable without a working four-family gate |
+| **O4** K 20→10 | §3 Tier C | **DEMOTED** | ⛔ the runbook's "−23 ms at TRT speed" is **wrong ~2×**: the ksweep is *eager* (4.1–4.3 ms/step); at TRT-fp16 the cut saves **11.7 ms**. 23.36 ms is the whole K20 TRT roll |
+| **O8** one engine for the whole roll | §3 Tier C | ⛔ **CLOSED** | measured **1.02×** vs per-step — its own falsifier (<1.1×) fires |
+| **O6** NVFP4 · **O14** 2:4 sparsity | §3 Tier C | P2, re-price after B1 | our tensors sit on the wrong end of the size curve (FP8: 1.21× at 8×2048 vs 1.97× at 4096³) — but a batch-9 fan is a bigger GEMM |
+| **O10–O13** resolution / multi-cam / Orin / DLA | §3 Tier C | P2 | downstream of a known tick + a working gate |
+| **P1.4a** local TRT toolchain (below) | §3 Tier C | **DOWNGRADED** | Thor *is* the TRT box now; the dev-box install left the critical path |
+
 ## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
 
 Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. Review verdict: your fp16 latency (A),

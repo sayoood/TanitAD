@@ -19,6 +19,38 @@ compatibility (ONNX/TRT).
 | numerics-safety class (cross-cutting) | **2026-07-18** | 0 open (class closed) | run #4 grep-sweep of all learned/data `exp`/`log`/`div` sites → every one guarded (clamp / count-gate / neg-exponent); shipped **11-test regression guard** intake `2026-07-18-numerics-safety-sweep` (test-only → `stack/tests/test_numerics_safety.py`, all green) |
 | `stack/scripts/` + training loop | **2026-07-18** (part) | 1 fixed (intake), 3 logged | **review #3 (run #5):** resume-write path **atomic in every trainer** (`tmp→.replace`: `train_worldmodel.py:354`, `train_flagship4b.py:326`, `refc_train.py:136`, `refb_train.py:346`, `refa_train4b.py:303`). **LIVE BUG found + fixed:** the milestone archive is **non-atomic** in all 3 pod trainers (`train_flagship4b.py:337`, `refb_train.py:358`, `refa_train_plus.py:540`) — `shutil.copy2` guarded by `not arch.exists()` → a kill mid-copy leaves a truncated-but-existing `ckpt_step{m}.pt` the guard adopts forever → gate protocol loads a corrupt milestone. Intake `2026-07-18-atomic-milestone-archive` (`.partial`→`os.replace`, 4 tests, failing-then-passing). Logged for next run: log-hygiene (`/workspace` swallow-on-death vs `/tmp`), quota-preflight before copy (Errno122), `epcache` DONE-marker + short-episode-drop counter |
 
+## ⭐ Thor deployment status (2026-08-02) — plan: `THOR_OPTIMISATION_PLAN.md`
+
+- ⛔ **"Target hardware (Orin/Thor) not in-house" is RETRACTED.** A **Jetson Thor** (Blackwell
+  sm_110, aarch64, L4T R38.4.0, torch 2.13.0+cu130, **TensorRT 10.13.3.9**, 122 GB unified) joined
+  the fleet 2026-08-02 as `tanitad-thor`. It is now the TRT box; the dev-box `tensorrt` install
+  (P1.4a) has left the critical path.
+- **MEASURED on Thor** (Architecture & Inference, `…/incoming/2026-08-02-thor-deployment-profile/`):
+  tick fp32 eager **272.56 ms** → bf16 encoder + CUDA-graph predictor **98.63 ms (2.76×)**;
+  encoder 187.8 → **27.8 ms** bf16 (6.76×); predictor 4.23 → **1.168 ms** TRT-fp16 (3.62×);
+  projected tick **≈51.2 ms (5.33×)**. TRT numerics gate PASS (fp16 rel-err 1.41e-3 @1 step,
+  1.80e-3 after a 20-step roll — **no compounding**).
+- ⚠️ **COVERAGE CAVEAT — the 51.2 ms is `encode_window` + ONE candidate roll.** The deployed
+  `TacticalSelector.select` loops over **9 maneuvers** (`config.py:95`, `fourbrain.py:571`) and then
+  decodes/scores each. Serialised through the batch-1 engine that is ~238 ms (2.4× over budget);
+  batched it should be ~53 ms (on the 4060 a batch-9 `imagine` cost **0.93×** of batch-1). ⛔ **Do
+  not quote 51.2 ms as "the decision tick" until B1 measures the complete path.** The shipped
+  `predictor_fp16.plan` is **batch-1 static** and needs a batch-9/dynamic optimization profile.
+- ⚠️ **PRECISION CONFLICT, unresolved.** Thor deploys **bf16** on the encoder on a **numerics**
+  rel-err (0.0059) measured on **random weights**. Our standing policy — measured twice on the 4060
+  in **decision space** — is **fp16, never bf16** (bf16: agreement 67.2 %, wp-shift 47.7 cm mean /
+  3.58 m max). Different geometry (176×624 vs 256×256) and checkpoint, so neither transfers: the
+  bf16 decision-agreement gate on Thor is P0 (plan §3 B2). If bf16 fails the 95.3 % bar, the 6.76×
+  must be re-earned via a TRT-fp16 encoder engine (O2) and the 51.2 ms projection is void.
+- 🔴 **ONNX parity is RETRACTED for torch 2.13 and UNVERIFIED for our own 2.11.** `nn.MultiheadAttention`
+  fuses to `aten::_native_multi_head_attention`, which **opset 18 rejects loudly and opset 17 exports
+  as a wrong graph with no error** (rel-err 0.726). Fix: `torch.backends.mha.set_fastpath_enabled(False)`
+  before any export (costs 5.1e-7 in eager). ⇒ **ONNX parity must be re-verified per torch version,
+  never inherited** — the 2026-07-08 "no unexportable ops" row below is admissible only for 2.11, and
+  plan item A1 tests even that.
+- ⛔ **Thor was OFFLINE at 2026-08-02 (this run)** — `ssh` timeout, ICMP fail, TCP 22/80 fail from the
+  same subnet. Tier B of the plan is armed and waiting on a power-on.
+
 ## Deployment blockers (live list)
 
 - ~~No batch-1 latency baseline~~ **MEASURED 2026-07-08** (`stack/scripts/latency_cnce_baseline.py`,
@@ -82,7 +114,9 @@ compatibility (ONNX/TRT).
 - INT8 on ViT: native TensorRT is a known trap — OwLite/ModelOpt route confirmed (Phase 1). ModelOpt
   PTQ = in-place + calibration dataloader, QDQ nodes; keep the ViT tower FP16, quantize predictor/
   heads first, accuracy metric = probe-fit delta.
-- Target hardware (Orin/Thor) not in-house; RTX 4060 is the declared latency proxy (I8).
+- ~~Target hardware (Orin/Thor) not in-house~~ **RETRACTED 2026-08-02 — a Jetson Thor is in-house**
+  (see the Thor block above). The 4060 remains the *proxy* for quick local turns, but deployment
+  numbers now come from the target itself. Orin-class remains un-owned (backlog O12).
 - **Export ops gotcha (Windows dev machine):** the dynamo exporter prints emoji progress and crashes
   with `UnicodeEncodeError` under cp1252 — run exports with `PYTHONUTF8=1` / `PYTHONIOENCODING=utf-8`.
 - Export-time deps (`onnx`, `onnxruntime`, `onnxscript`) are dev-only — must NOT enter the
@@ -92,6 +126,7 @@ compatibility (ONNX/TRT).
 
 | Stage | Status | Detail |
 |---|---|---|
-| ONNX (encoder+predictor) | **DONE 2026-07-08** | opset 17 (legacy) & 18 (dynamo); static [1,9,256,256] + [1,8,2048]/[1,8,2]; parity 8.8e-6 / 1.2e-5; no plugins needed |
-| TensorRT fp16 | **toolchain-blocked** (P1.4a) | `import tensorrt`→missing, ORT CPU-only. **fp16 precursor MEASURED 2026-07-09**: fp16 decision-safe (agreement 95.3 %, wp-shift 3.9 cm), bf16 NOT (67.2 %, 47.7 cm). Acceptance bar pre-registered. Install `tensorrt`+`onnxruntime-gpu` or build on idle pod |
+| ONNX (encoder+predictor) | **torch-2.11 only; RETRACTED for 2.13** | 2026-07-08 @torch 2.11: opset 17 (legacy) & 18 (dynamo); static [1,9,256,256] + [1,8,2048]/[1,8,2]; parity 8.8e-6 / 1.2e-5. ⛔ **@torch 2.13 the same export is silently wrong (rel-err 0.726) unless `torch.backends.mha.set_fastpath_enabled(False)`**; opset 18 fails loudly. **Per-torch-version re-verification is mandatory** — plan A1 tests whether 2.11 was a shape-dependent near-miss |
+| TensorRT fp16 (predictor) | ⭐ **BUILT + numerics-gated on Thor 2026-08-02** | TRT 10.13.3.9, build 36 s / 174 MB; **1.168 ms (3.62× eager, 2.93× over the free CUDA graph)**; rel-err 1.41e-3 @1 step → 1.80e-3 @20 steps (no compounding). ⛔ **batch-1 static** — a 9-candidate fan needs a rebuild with a batch-9/dynamic profile (plan B1). ⛔ the **four-family accuracy gate on real windows has NOT run** (plan B3) |
+| TensorRT fp16 (encoder) | **not started** (O2) | becomes P0 if the bf16 decision-agreement gate (plan B2) rejects bf16 |
 | Quantization (OwLite/ModelOpt) | not started | Phase 1; ModelOpt PTQ (calib loader + QDQ); ViT tower FP16; accuracy metric = probe-fit delta |
