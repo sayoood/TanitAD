@@ -262,3 +262,77 @@ platforms. Every remaining gain must come from **kernel-level work**:
 | "the roll is compute-bound" | **MEASURED** — inferred from the 1.02× ceiling on launch-overhead removal |
 | "small tensors defeat autocast on this predictor" | **HYPOTHESIS** — consistent with the measurement and with tensor shape, not independently profiled at kernel level |
 | TensorRT will help the predictor | **HYPOTHESIS** — lever #1 exists to test it |
+
+---
+
+# ADDENDUM 3 — the K cost curve, and power/thermal (2026-08-02)
+
+## A. What shortening the imagination roll would buy — the LATENCY half only
+
+⛔ **This is deliberately half an answer.** `K` is an ARCHITECTURE parameter: the planner reads
+imagination at horizons **[5, 10, 15, 20]** and the anchors live at 20 steps. Cutting K without a
+four-family measurement trades an unknown in decision quality for milliseconds — precisely what
+the binding rule forbids. This prices the trade; it does not authorise it.
+
+| K | roll | **full tick** (bf16 enc + roll) | vs 100 ms budget | saved vs K=20 |
+|---|---|---|---|---|
+| 4 | 17.2 ms | **45.0 ms** | 45 % | **64.9 ms** |
+| 8 | 33.5 ms | **61.3 ms** | 61 % | 48.7 ms |
+| **10** | 41.3 ms | **69.1 ms** | 69 % | **40.9 ms** |
+| 12 | 49.6 ms | 77.4 ms | 77 % | 32.6 ms |
+| 16 | 65.9 ms | 93.7 ms | 94 % | 16.2 ms |
+| **20** (current) | 82.2 ms | **110.0 ms** | ⛔ 110 % | — |
+
+⭐ **The roll is EXACTLY LINEAR in K**: 4.308 ms/step at K=4 vs **4.107 ms/step at K=20** (−4.7 %).
+Compute-bound, confirmed a third independent way. ⇒ **the latency half of the K question is now
+settled by arithmetic** — every step costs ~4.1 ms, so any K can be priced without re-measuring.
+
+⚠️ **And it exposes something the earlier tick number hid.** This unoptimised-roll measurement puts
+the K=20 tick at **110 ms — over budget**. The 97.05 ms figure in Addendum 2 depends on the
+full-roll CUDA graph (69.25 ms). ⇒ **the graph is not a nice-to-have; without it K=20 does not
+fit**, and the margin at K=20 is thin either way.
+
+⭐ **K=10 would put the tick at 69.1 ms even WITHOUT the graph** — a 41 ms saving, the single
+largest remaining lever, and it costs no kernel engineering at all. **It is an accuracy question,
+not an engineering one.** The measurement that decides it: score the arm at K∈{10,20} on the four
+families, paired episode-cluster bootstrap. If tactical/strategic quality is flat, K=10 is free
+real estate.
+
+## B. Power and thermal under sustained load
+
+**MEASURED** from `tegrastats` across the profiling session (1,157 samples @ 2 s ≈ 39 min):
+
+| | |
+|---|---|
+| GPU power | **1,976 mW** steady under load |
+| junction temp | **~61.3 → 61.9 °C** — a ~0.6 °C drift across the whole session |
+| RAM | 12,518 → 11,014 MB of 125,772 MB |
+
+✅ **Thermally uncommitted.** ~62 °C junction on a board rated far higher, and a **sub-1 °C** drift
+over 39 minutes — which independently corroborates the 180 s no-throttle result (Addendum 1) on a
+much longer window. ⭐ **~2 W for the GPU** at full inference load is an *automotive-plausible*
+power envelope, and it means the thermal headroom for a **higher-power mode** (`nvpmodel`) is
+entirely unexplored — a possible free speedup that costs nothing but a config change.
+
+## C. Consolidated lever table (all measured today)
+
+| lever | stage | result | ship? |
+|---|---|---|---|
+| bf16 autocast | encoder | **6.76×** | ✅ yes |
+| bf16/fp16 autocast | predictor roll | **0.86× / 0.90×** | ⛔ **no — slower** |
+| CUDA graph, per-step | predictor | 1.24×, bit-exact | ✅ yes |
+| CUDA graph, whole roll | roll | 1.02× over per-step | ✅ yes (and **required** at K=20) |
+| `torch.compile` | either | fails, 2 platforms | ⛔ no |
+| batching | encoder | ~2 % | ⛔ no |
+| **K 20 → 10** | roll | **−41 ms** | ⚠️ **needs a four-family accuracy gate** |
+| TensorRT | both | not yet installed | 🔵 pending |
+| higher `nvpmodel` | whole board | unexplored, ~62 °C headroom | 🔵 pending |
+
+## Evidence class (addendum 3)
+
+| claim | class |
+|---|---|
+| K-sweep timings, linearity 4.31 → 4.11 ms/step | **MEASURED (ours)** — `thor_ksweep.json` |
+| GPU 1976 mW, tj ~61.3–61.9 °C, 39 min | **MEASURED (ours)** — `tegrastats.log`, 1,157 samples |
+| "K=10 halves the dominant stage" | **MEASURED** (latency) — ⛔ accuracy consequence **UNMEASURED** |
+| "nvpmodel headroom exists" | **HYPOTHESIS** — inferred from thermals, not tested |
