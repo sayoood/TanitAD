@@ -1332,3 +1332,21 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
   sources it with stdin closed, then pulls VaVAM assets.
 - ⛔ STILL BLOCKING closed-loop videos: VaVAM assets + scene download, and REF-C MAINLINE weights
   are on the STOPPED pod3 volume (only refc-base-e1f-junction is on HF).
+
+## 2026-08-02 17:40 UTC — ⭐ THOR EVAL PATH PROVEN ON REAL VAL DATA
+
+- ✅ **The four-family pipeline runs end-to-end on Thor**: 10 providers -> **1,716 windows**;
+  identity check (pred==gt) gives EXACTLY zero error; perturbation moves LON 5.40 / cross 0.392 /
+  curv 2.056 as expected. `_families_unavailable = [tactical, strategic]` (needs a
+  hierarchy-traversing pass — a WORK ITEM, not a pass).
+- Fixed en route: torchvision was missing in tanitad-edge (v2_dataset imports it) -> installed
+  0.28.0+cu130.
+- ⚠️ **THE VAL RELAY LIED TWICE.** First single-shot tar: exit 0, delivered **10 of 40** clips.
+  Then 2 of those 10 were **TRUNCATED** and only revealed themselves as
+  `PytorchStreamReader ... failed finding central directory` when torch tried to load them.
+  ⇒ **file COUNT is not integrity; a transferred file must be LOADED to be verified.** Removed the
+  2 corrupt clips; the self-healing chunked relay re-fetches them.
+- ⭐ val data is on Thor and the eval path is proven => the FOUR-FAMILY PANEL no longer depends on
+  any pod. REF-C base (1.25GB) + XL (2.0GB) also landed from HF.
+- NEXT: complete the 40-clip relay -> four families on v1arch@5k, RR-20 vs RR-CTL, REF-C base/xl;
+  then O1 (the blocking accuracy gate on the TRT engine).
