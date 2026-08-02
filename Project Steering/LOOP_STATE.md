@@ -1208,3 +1208,12 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - PI intent: inference, EVAL, optimization, eventually training. First uses: offline v5f gate
   evals + four-family milestone panels (frees pods to train only); Orin/Thor deployment stream.
 - NEXT on Thor: torch install -> pull v1_modelonly + val19 windows -> four-family panel dry run.
+
+## 2026-08-02 14:4x UTC — THOR TWO-VENV RULE (PI) + venvs CREATED
+
+- PI rule: **two separate venvs on the Thor** — `~/venvs/tanitad-edge` (use case 1: optimized
+  inference, open-loop, closed-loop via **AlpaSim first**, deployment optimization) and
+  `~/venvs/tanitad-train` (use case 2: training). ✅ BOTH CREATED, Python 3.12.3, pip upgraded.
+- Every Thor command names its venv python explicitly; system env stays untouched; torch = NVIDIA
+  JetPack/aarch64 wheel only. NEXT on Thor: torch into tanitad-edge first (eval is the near-term
+  use), then val windows + v1/v5 ckpts -> four-family panel dry run.
