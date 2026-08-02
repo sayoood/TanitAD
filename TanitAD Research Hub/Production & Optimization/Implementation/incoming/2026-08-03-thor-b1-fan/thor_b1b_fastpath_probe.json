@@ -1,0 +1,59 @@
+{
+ "purpose": "probe the MHA-fastpath mechanism at a 2nd location + 2nd opset",
+ "mha_module_census": {
+  "predictor": 10,
+  "encoder": 12,
+  "whole_model": 41
+ },
+ "probes": {
+  "predictor_op17_fastpathON": {
+   "opset": 17,
+   "fastpath": true,
+   "export_ok": true,
+   "n_nodes": 1223,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager": 4.32e-07
+  },
+  "predictor_op17_fastpathOFF": {
+   "opset": 17,
+   "fastpath": false,
+   "export_ok": true,
+   "n_nodes": 1223,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager": 4.41e-07
+  },
+  "predictor_op18_fastpathON": {
+   "opset": 18,
+   "fastpath": true,
+   "export_ok": true,
+   "n_nodes": 1223,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager": 4.32e-07
+  },
+  "predictor_op18_fastpathOFF": {
+   "opset": 18,
+   "fastpath": false,
+   "export_ok": true,
+   "n_nodes": 1223,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager": 4.41e-07
+  },
+  "encoder_op17_fastpathON": {
+   "opset": 17,
+   "fastpath": true,
+   "export_ok": false,
+   "err": "SymbolicValueError: Unsupported: ONNX export of operator adaptive_avg_pool2d, output size that are not factor of input size. Please feel free to request support or submit a pull request on PyTorch GitHub: https://github.com/pytorch/pytorch/issues  [Caused by the value '2401 defined in (%2401 : Long(2, strides=[1], devi"
+  },
+  "encoder_op17_fastpathOFF": {
+   "opset": 17,
+   "fastpath": false,
+   "export_ok": false,
+   "err": "SymbolicValueError: Unsupported: ONNX export of operator adaptive_avg_pool2d, output size that are not factor of input size. Please feel free to request support or submit a pull request on PyTorch GitHub: https://github.com/pytorch/pytorch/issues  [Caused by the value '2401 defined in (%2401 : Long(2, strides=[1], devi"
+  }
+ },
+ "READING": {
+  "every_cell_parity_clean": false,
+  "any_graph_carries_a_fused_mha_op": false,
+  "verdict": "MECHANISM PARTIALLY REPRODUCES \u2014 see the per-cell table; do NOT generalise either way"
+ }
+}

@@ -23,6 +23,20 @@ the four things found while reading it that **change its order**.
 
 ---
 
+## 0.5 STATUS — B1 EXECUTED the same day (2026-08-03, Thor back online)
+
+Full result: `Research/2026-08-03-thor-candidate-fan-and-engine-graph.md` ·
+`Implementation/incoming/2026-08-03-thor-b1-fan/`.
+
+| plan item | outcome |
+|---|---|
+| **B0** val data on Thor | ✅ **DONE — by the orchestrator, not by us.** `~/valdata/physicalai-val-0c5f7dac3b11` (2.4 GB `ep_*.pt`) + a `w120-256x640cyl` variant; `~/models/` now carries **flagship-v1-speedjerk, v5f, refc-base, refc-xl, rollout-recovery, flagship-v4.2b** ⇒ **B2/B3 are unblocked** |
+| **B1** complete tick / **F1** | ✅ **CONFIRMED AND RESOLVED.** 9 candidates serialised through the shipped batch-1 engine = **243.84 ms (244 % of budget)**; through a **batch-9 engine (built + timed)** = **56.13 ms (56 %)**. ⇒ **rebuild the engine at batch 9 or dynamic — it is a deployment requirement worth 4.3×** |
+| **F4** MHA fastpath | ⚠️ **DID NOT REPRODUCE at 6 cells** (predictor × opset 17/18 × fastpath ON/OFF; 10 MHA modules present; opset 18 fastpath-ON exports **clean**). ✅ But the question that mattered is answered: the **corrected-graph engine is 1.187 ms vs the published 1.168 ms (1.6 %)** ⇒ **the 5.33× survives** |
+| **NEW — O2-pre** | 🔴 **O2 is blocked by a defect that is not TensorRT.** The encoder **does not export at 176×624**: `adaptive_avg_pool2d, output size that are not factor of input size`. The 2026-07-08 "encoder exports clean" claim was measured at **256×256** ⇒ **geometry-conditional and false for the shipping geometry.** Fix + an export test **at the deployed geometry** |
+| **A1** local export guard | **re-scoped** — the guard is still owed, but its content changes: the real defects found are *geometry-conditional export failure* and *a wiring-bug-shaped parity error*, not a fastpath flag |
+| next | **B2** (bf16-vs-fp16 decision agreement, trained ckpt, real windows) — now unblocked by B0 |
+
 ## 1. Resource reality — measured today, not assumed
 
 | resource | state | evidence |

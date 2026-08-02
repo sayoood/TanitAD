@@ -19,6 +19,24 @@ compatibility (ONNX/TRT).
 | numerics-safety class (cross-cutting) | **2026-07-18** | 0 open (class closed) | run #4 grep-sweep of all learned/data `exp`/`log`/`div` sites → every one guarded (clamp / count-gate / neg-exponent); shipped **11-test regression guard** intake `2026-07-18-numerics-safety-sweep` (test-only → `stack/tests/test_numerics_safety.py`, all green) |
 | `stack/scripts/` + training loop | **2026-07-18** (part) | 1 fixed (intake), 3 logged | **review #3 (run #5):** resume-write path **atomic in every trainer** (`tmp→.replace`: `train_worldmodel.py:354`, `train_flagship4b.py:326`, `refc_train.py:136`, `refb_train.py:346`, `refa_train4b.py:303`). **LIVE BUG found + fixed:** the milestone archive is **non-atomic** in all 3 pod trainers (`train_flagship4b.py:337`, `refb_train.py:358`, `refa_train_plus.py:540`) — `shutil.copy2` guarded by `not arch.exists()` → a kill mid-copy leaves a truncated-but-existing `ckpt_step{m}.pt` the guard adopts forever → gate protocol loads a corrupt milestone. Intake `2026-07-18-atomic-milestone-archive` (`.partial`→`os.replace`, 4 tests, failing-then-passing). Logged for next run: log-hygiene (`/workspace` swallow-on-death vs `/tmp`), quota-preflight before copy (Errno122), `epcache` DONE-marker + short-episode-drop counter |
 
+## 🔴 Thor deployment blockers — MEASURED 2026-08-03 (B1 run)
+
+1. ⛔ **The shipped `predictor_fp16.plan` is BATCH-1 STATIC and the deployed selector fans 9
+   candidates.** Serialised that is **243.84 ms = 244 % of the 100 ms budget**; through a **batch-9
+   engine it is 56.13 ms = 56 %**. **Rebuild with a batch-9 or dynamic profile before any
+   deployment.** (Eager is not a fallback: the eager batched fan alone is 208 ms of roll.)
+2. ⛔ **The encoder does not export to ONNX at the deployed 176×624 geometry** —
+   `SymbolicValueError: adaptive_avg_pool2d, output size that are not factor of input size`, at both
+   fastpath settings. ⇒ **O2 (TRT encoder engine) cannot start**, which matters because O2 is the
+   fallback if bf16 fails the decision-agreement gate. The 2026-07-08 "encoder+readout exports clean"
+   row was measured at **256×256** and is **geometry-conditional — false for the shipping geometry**.
+3. ✅ **Not a blocker after all:** the corrected-graph (fastpath-OFF) predictor engine measures
+   **1.187 ms** vs the published **1.168 ms** — 1.6 % — so the 5.33× / 51.2 ms survive the export
+   correction. The fastpath mechanism itself **did not reproduce at 6 probed cells**.
+
+Source: `Research/2026-08-03-thor-candidate-fan-and-engine-graph.md`,
+`Implementation/incoming/2026-08-03-thor-b1-fan/thor_b1{,b}_*.json`.
+
 ## ⭐ Thor deployment status (2026-08-02) — plan: `THOR_OPTIMISATION_PLAN.md`
 
 - ⛔ **"Target hardware (Orin/Thor) not in-house" is RETRACTED.** A **Jetson Thor** (Blackwell

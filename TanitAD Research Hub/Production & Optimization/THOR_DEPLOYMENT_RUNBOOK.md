@@ -91,6 +91,64 @@ leave on permanently.
 that is **false**. Root-cause class: *a passing check on an old toolchain re-asserted on a new one
 without re-running it.* ⇒ **ONNX parity must be re-verified per torch version, never inherited.**
 
+### ⚠️ ANNOTATION 2026-08-03 (Production & Optimization) — §3's MECHANISM DID NOT REPRODUCE
+
+*Added, not deleted: the original text stands and this is the measurement beside it.*
+`Research/2026-08-03-thor-candidate-fan-and-engine-graph.md` §3/§5 ·
+`Implementation/incoming/2026-08-03-thor-b1-fan/`
+
+**MEASURED on the same box, same torch 2.13, same model, 6 cells** — predictor × opset {17, 18} ×
+fastpath {ON, OFF}, plus 2 encoder cells:
+
+| cell | fused MHA op in graph | ORT rel-err vs eager | engine median |
+|---|---|---|---|
+| predictor op17 fastpath **ON** | **no** | **3.6e-07 / 4.32e-07** | 1.154 ms |
+| predictor op17 fastpath OFF | no | 3.7e-07 / 4.41e-07 | 1.187 ms |
+| predictor **op18 fastpath ON** | **no** | **4.32e-07** | — |
+| predictor op18 fastpath OFF | no | 4.41e-07 | — |
+
+⇒ **The flag is inert on this path** (identical node counts, 1223 both), **opset 18 with the
+fastpath ON does NOT fail**, and the 0.726 does not reappear. `nn.MultiheadAttention` modules ARE
+present (predictor 10, encoder 12, model 41), so "no MHA here" is not the explanation.
+
+**The likelier cause of the 0.726 is the one §5 learning #8 already names:** the superseded
+`thor:~/thor_trt_accuracy.json` (18:13) reports fp32 **0.72824** and fp16 **0.72818** — near-identical
+across precisions, *"the signature of a wiring/test bug, not a precision problem"* — and learning #9
+records a sibling failure in the same session (a gate compared the engine to a **different random
+model**). ⇒ 🔴 **the retraction §3 applies to our 2026-07-08 "ONNX-clean" claim rests on a mechanism
+that does not reproduce, and its owner should revisit it.**
+
+⚠️ **Fairness:** the script behind `thor_trt_gate.json` is **not on disk** (transient heredoc — only
+the 2026-08-03 scripts reference `set_fastpath` anywhere on the box), so what it exported cannot be
+inspected. The non-reproduction is scoped to what was re-run.
+
+✅ **Keep the `set_fastpath_enabled(False)` line in §4 anyway** — 5.1e-7 in eager, 1.6 % in engine
+latency; cheap insurance against a mechanism not fully mapped.
+
+✅ **§1's headline survives the check that mattered:** the corrected-graph engine measures
+**1.187 ms** against the published **1.168 ms** (**1.6 %**), so the 5.33× and the 51.2 ms are
+admissible — they had simply never been re-timed after the correction.
+
+### 🔴 ANNOTATION 2026-08-03 — TWO CORRECTIONS TO §6's PRICING
+
+1. ⭐⭐ **O1/O3 understate the tick: every Thor measurement rolls ONE candidate, the deployed
+   `TacticalSelector` loops over NINE** (`config.py:95`, `fourbrain.py:571`). MEASURED: 9 candidates
+   **serialised** through the shipped **batch-1** `predictor_fp16.plan` = **243.84 ms (244 % of
+   budget)**; through a **batch-9** engine = **56.13 ms (56 %)**. ⇒ **O9 is not P2-structural, it is
+   a deployment requirement worth 4.3×**, and the shipped engine must be rebuilt with a batch-9 or
+   dynamic profile.
+2. **O4's saving is ~2× overstated.** `thor_ksweep.json` is an **eager** sweep (4.107–4.308 ms/step);
+   at TRT-fp16 K20→K10 saves **11.7 ms**, not 23 (23.36 ms is the whole K20 TRT roll). At the
+   batch-9 engine's 1.294 ms/step the whole fan is 25.9 ms and halving K saves **12.9 ms** of a
+   56 ms tick.
+3. ⛔ **O8 is CLOSED on its own falsifier** — full-roll graph **1.02×** vs per-step (bar was <1.1×).
+4. ⛔ **O2 IS BLOCKED and the blocker is not TensorRT.** The encoder does not export to ONNX at the
+   deployed **176×624** at all: `SymbolicValueError: adaptive_avg_pool2d, output size that are not
+   factor of input size` — at **both** fastpath settings. The 2026-07-08 "encoder exports clean" row
+   was measured at **256×256** and is **geometry-conditional and false for the shipping geometry**.
+   ⇒ new item **O2-pre**: fix the shape-derived pooling in `stack/`, with an export test **at the
+   deployed geometry**.
+
 ## 4. DEPLOYMENT PROCEDURE ON THOR
 
 **Environment** (PI rule — two venvs, never mixed):
