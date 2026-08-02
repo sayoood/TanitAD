@@ -810,18 +810,35 @@ def test_a_v2_run_without_require_parity_trips_PREFLIGHT():
 # 6. pod1 — the run that must not be disturbed                                  #
 # =========================================================================== #
 def test_train_flagship4b_is_untouched_by_this_change():
-    """pod1 is ~18k/30k steps into ``flagship-v2corpus-30k`` on
-    ``train_flagship4b --v2-cache``. This change edits ``train_flagship_v4``, so
-    the strongest available statement is that 4b's source is byte-identical to
-    the state that command was verified against — no behavioural argument
-    needed. (Full parse + resume proof:
-    ``…/2026-07-28-v5-trainer/raw/pod1_resume_safety_2026-07-27.json``.)"""
+    """The trainer that produced our published arms is pinned — edits must be deliberate.
+
+    ⚠️ **PIN UPDATED 2026-08-02, and the ORIGINAL PREMISE IS DISCHARGED.** The pin was added
+    while *"pod1 is ~18k/30k steps into ``flagship-v2corpus-30k``"*, to prove that a
+    ``train_flagship_v4`` edit could not disturb a run in flight. That run **COMPLETED at step
+    29999 on 2026-07-29** (``rc=0``) and every pod is now stopped, so **nothing is mid-run on this
+    file** and that specific protection no longer applies.
+
+    The pin is kept for a DIFFERENT and still-live reason: ``train_flagship4b.py`` is the trainer
+    behind v1, v2corpus, RR-20/RR-CTL and v1arch — arms whose weights are published and whose
+    numbers are quoted in ``MODEL_REGISTRY.md``. A silent edit here changes what those names mean.
+
+    **Why the hash moved:** ``_preflight_banner`` was added — the DATA-vs-ARCHITECTURE launch
+    banner. It is the fix for the mistake that produced ``flagship-v2corpus-30k``: ``--v2-cache``
+    (a DATA flag) and ``--v2`` (a ten-lever ARCHITECTURE pack that also forces ``rollout_k=12``)
+    were both passed to a run intended as a corpus experiment. The banner is **print + record
+    only** — it mutates no config, and it appends ``launch_axes`` to ``config.json``.
+
+    ⇒ When this fails again: confirm the edit is intended, confirm no arm is mid-run on this
+    trainer, then update the pin **deliberately** — do not silently re-baseline it.
+    """
     import hashlib
     p = Path(__file__).resolve().parents[1] / "scripts" / "train_flagship4b.py"
     assert hashlib.sha256(p.read_bytes()).hexdigest() == \
-        "53f3ab5b0dd3e7118d836e75d061ddfc2355e6eb377b12f833a6abdb1b5d8ab8", (
-            "train_flagship4b.py changed. pod1 is mid-run on it — re-run "
-            "code/pod1_resume_safety.py and update this pin deliberately.")
+        "3c7e0ab9abd11c78bae21c344935544b1474e5b318271f3d117b1c2b3eb02572", (
+            "train_flagship4b.py changed. This trainer produced v1, v2corpus, RR-20/RR-CTL "
+            "and v1arch — published weights and registry numbers depend on it. Confirm the "
+            "edit is intended AND that no arm is mid-run on it, then update this pin "
+            "deliberately.")
 
 
 def test_the_v2_loader_import_stays_inside_the_branch():

@@ -244,6 +244,89 @@ def _health(states) -> dict:
 # --------------------------------------------------------------------------- #
 # Train                                                                        #
 # --------------------------------------------------------------------------- #
+def _preflight_banner(args, cfg) -> dict:
+    """⛔ Separate DATA changes from ARCHITECTURE changes, and say so at launch.
+
+    WHY THIS EXISTS — it is the fix for a mistake that cost days. `flagship-v2corpus-30k` was
+    launched to answer "does a bigger, better-balanced corpus help?" and was given BOTH:
+
+        --v2-cache   a DATA flag. Its own help: "windows stay contract-identical
+                     (same keys/shapes/dtypes/labels)". It changes WHICH CORPUS is read.
+        --v2         a TEN-LEVER ARCHITECTURE PACK (ego->planners, ego-dropout .25,
+                     fa-dropout .3, goal-decode, nav-dropout .5, gated-intent,
+                     anchor-tactical, invdyn-gradscale .25, v2 labels) that ALSO silently
+                     forces rollout_k = 12 when --rollout-k is not given.
+
+    Two flags whose names differ by one suffix, with opposite meanings. The resulting arm was
+    then compared against v1 as if it were a corpus contrast. It was not: it differed in corpus
+    AND architecture AND rollout_k, so no outcome could be attributed to the corpus. The result
+    also went unnoticed until the state_dict refused to load — `goal_traj_head`, `intent_gate`,
+    `ego_emb` and a whole `anchor_decoder` are modules v1 does not have (286.3M vs 276.9M params).
+
+    ⇒ Print the ACTIVE LEVER SET at launch, grouped by AXIS, and record it in config.json so the
+    axes are readable after the fact instead of reconstructed from a shell script months later.
+    Returns the dict that is stored under ``launch_axes``.
+    """
+    data_axis, arch_axis = {}, {}
+
+    # ---- DATA axis: what corpus is read. Changing only these is a CORPUS experiment. ----
+    if args.v2_cache:
+        data_axis["--v2-cache"] = list(args.v2_cache)
+    if args.cache_dirs:
+        data_axis["--cache-dirs"] = list(args.cache_dirs)
+    data_axis["--data"] = args.data
+    data_axis["require_parity"] = bool(args.require_parity)
+
+    # ---- ARCHITECTURE axis: what MODEL is built/trained. ----
+    if args.v2:
+        arch_axis["--v2"] = ("TEN-LEVER PACK: ego->planners, ego-dropout .25, fa-dropout .3, "
+                             "goal-decode, nav-dropout .5, jerk .02, gated-intent, "
+                             "anchor-tactical, speed-input, invdyn-gradscale .25")
+    if args.staged_levers:
+        arch_axis["--staged-levers"] = "step-conditional decorr / rollout-k / gradscale schedule"
+    if getattr(args, "speed_input", False) and not args.v2:
+        arch_axis["--speed-input"] = "action_dim 2 -> 3"
+    arch_axis["rollout_k"] = cfg.train.rollout_k
+    if args.v2 and args.rollout_k is None:
+        arch_axis["rollout_k_source"] = ("⚠️ SET BY --v2 (12), NOT by --rollout-k. An explicit "
+                                         "--rollout-k would have overridden it.")
+    else:
+        arch_axis["rollout_k_source"] = "explicit --rollout-k" if args.rollout_k is not None \
+            else "config default"
+    arch_axis["sigreg_free_dims"] = cfg.loss.sigreg.free_dims
+    arch_axis["invdyn_gradscale"] = getattr(cfg, "v2_invdyn_gradscale", None)
+    arch_axis["v2_labels"] = getattr(cfg, "v2_labels", None)
+
+    both = bool(args.v2) and bool(args.v2_cache)
+    axes = {"DATA": data_axis, "ARCHITECTURE": arch_axis,
+            "changes_both_axes": both}
+
+    bar = "=" * 78
+    print(f"\n{bar}\n[preflight] LAUNCH AXES — what this run actually changes\n{bar}",
+          flush=True)
+    print("[preflight] DATA (which corpus is read):", flush=True)
+    for k, v in data_axis.items():
+        print(f"[preflight]     {k} = {v}", flush=True)
+    print("[preflight] ARCHITECTURE (what model is built):", flush=True)
+    for k, v in arch_axis.items():
+        print(f"[preflight]     {k} = {v}", flush=True)
+    if both:
+        # ⚠️ Deliberately a WARNING, not a refusal: changing both axes at once is a legitimate
+        # thing to do on purpose (v2corpus was meant to be a v2-line arm). What is NOT legitimate
+        # is doing it by accident and then reading the delta as a corpus effect.
+        print(f"[preflight] {bar}", flush=True)
+        print("[preflight] ⚠️  THIS RUN CHANGES BOTH AXES AT ONCE (--v2-cache AND --v2).",
+              flush=True)
+        print("[preflight]     Its delta vs a v1-line arm is NOT attributable to the corpus.",
+              flush=True)
+        print("[preflight]     For a CORPUS experiment: pass --v2-cache and DROP --v2.",
+              flush=True)
+        print("[preflight]     For an ARCHITECTURE experiment: pass --v2 on the SAME corpus.",
+              flush=True)
+    print(f"{bar}\n", flush=True)
+    return axes
+
+
 def train(args) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if args.device == "auto" else args.device
@@ -480,6 +563,7 @@ def train(args) -> dict:
     ptab = param_table()
     cfg_record = {
         "arch": "flagship-4b", "config": args.config, "cfg": cfg.to_json(),
+        # NOTE: "launch_axes" is appended below, after the preflight banner runs.
         "data": args.data, "cache_dirs": args.cache_dirs,
         "horizon_plan": {"level_cfg": {k: [list(h), fk] for k, (h, fk)
                                        in plan.level_cfg.items()},
@@ -501,6 +585,7 @@ def train(args) -> dict:
             "rollout_k": "4 for step<5000, 8 for step<10000, then 12",
             "invdyn_gradscale": cfg.v2_invdyn_gradscale,
             "fa_dropout": cfg.v2_fa_dropout}
+    cfg_record["launch_axes"] = _preflight_banner(args, cfg)
     (out_dir / "config.json").write_text(
         json.dumps(cfg_record, indent=2, default=str), encoding="utf-8")
     print(f"[init] params {ptab['total_trainable']/1e6:.2f}M "
