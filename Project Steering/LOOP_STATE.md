@@ -1217,3 +1217,10 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - Every Thor command names its venv python explicitly; system env stays untouched; torch = NVIDIA
   JetPack/aarch64 wheel only. NEXT on Thor: torch into tanitad-edge first (eval is the near-term
   use), then val windows + v1/v5 ckpts -> four-family panel dry run.
+
+## 2026-08-02 14:3x UTC — PAPER UPDATED (queue item 2 CLOSED — last 0-GPU item)
+
+- `Paper/TANITAD_PAPER.md` +§7.11 (four-family doctrine, C64+option A, sign flip, H-COMPOUND,
+  RR-20 trade, sitclf label defect, v5->v5f incl. guard + 1.01x) + changelog v0.7. Queue items
+  1,3,4,5 were already closed => the drumbeat queue is now: Thor torch verify -> v5f gate@2000
+  (~20:15 UTC) -> 5k four-family milestone -> v1arch milestones.

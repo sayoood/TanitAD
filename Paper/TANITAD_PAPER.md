@@ -1299,6 +1299,111 @@ additively" finding from a 1-step select does not generalize to a 20-step rollou
 encoder runs once and broadcasts — which **refutes** the per-candidate-re-encoding arithmetic that had
 projected 723 ms and nearly retired the planning thesis on a calculation.
 
+### 7.11 The four-family doctrine pays for itself: a corpus arm falsified, compounding proven, rollout recovery measured, and the flagship's missing imagination found (2026-07-29 → 2026-08-02)
+
+This round is dominated by a change in **what we measure**, ordered by the PI as binding: every
+evaluation now reports four metric families — LONGITUDINAL (speed setting + distance keeping),
+LATERAL (heading, curvature, yaw-rate, cross-track), TACTICAL (manoeuvre decision + goal), and
+STRATEGIC (route/goal) — **in addition to** ADE, per family, never pooled, each with the paired
+episode-cluster bootstrap. The instrument is `taniteval/four_families.py`. Within days it exposed a
+sign flip, a decorative tactical brain, and a trade-off that an ADE column is structurally unable to
+represent. ADE is retained; it is simply no longer allowed to stand alone.
+
+**(a) The v2-corpus arm is falsified — and the experiment could not have said what it was built to
+say.** The 50 h manoeuvre-balanced corpus (`physicalai-v2bal`, 9,000 clips) was trained to 30 k as
+`flagship-v2corpus-30k`. Two audit findings preceded any score. First (**C64**), the corpus
+re-selection did not inherit the previous generation's validation exclusion: **21 of the 40**
+canonical validation episodes sit inside the new arm's training corpus, so the canonical surface is
+void for it; scoring moved to the 19 leak-free episodes with v1 **re-scored there** (v1's published
+0.4271 is the full-40 statistic and is not comparable). Second, the launch had passed both
+`--v2-cache` (a data-loader flag) **and** `--v2` (a ten-lever architecture pack that also silently
+forces `rollout_k` 12 vs v1's 4) — so the arm differs from v1 in corpus *and* architecture *and*
+rollout horizon, and **no outcome is attributable to the corpus**. The state dict itself carries the
+proof (`goal_traj_head`, `intent_gate`, an `anchor_decoder`; 286.3 M vs 276.9 M parameters). The
+admissible claim is only: *the v2-line arm is worse*. On the 19 leak-free episodes (n = 418 windows,
+paired episode-cluster bootstrap, B = 2000): v1 **0.393** [0.307, 0.493] vs v2corpus **0.575**
+[0.429, 0.752]; paired Δ CI **[−0.221, −0.145]**, separated. A trainer preflight
+(`_preflight_banner`) now prints the DATA axis and the ARCHITECTURE axis separately at every launch
+and records them in `config.json`, so this conflation class cannot recur silently.
+
+**(b) The four families say *why* it is worse, and ADE could not have.** Longitudinal: the two arms
+fail in **opposite directions** — v1's signed speed bias is **+1.465 m/s** (runs ahead of the
+human), v2corpus's is **−1.260 m/s** (lags). An absolute-distance scalar cannot represent a sign
+flip. Lateral: v2corpus is uniformly ≈2× worse (heading 0.529° → 1.072°; curvature 0.00168 →
+0.00313 m⁻¹; yaw-rate 4.99 → 7.88 °/s; cross-track 0.114 → 0.197 m). Tactical: the
+manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1, weak) to κ = **0.0072**
+(v2corpus) — the declared manoeuvre is unrelated to the driven path; the `--v2` pack's tactical
+machinery is **decorative**. Strategic: under nav-dropout 0.5 the arm *learned the dropout* —
+route-following under a given command fell 1.0 → **0.5351**. And a correction to our own instrument,
+logged before any number shipped: `route_acc_nav` feeds the model the command, so its 1.0 for v1
+measures **copying, not route skill**; the honest test is vision-only route accuracy against the
+majority-straight baseline, where v1 scores 0.9474 — **exactly** the majority rate. Neither arm
+demonstrably does route work, and the hierarchy seam panel agrees: **0/3 seams beneficial on both
+arms**. That is the current, honest state of the hierarchy thesis — and it motivated (f).
+
+**(c) Compounding is real (C61 resolved: H-COMPOUND).** The earlier "decay accelerates" reading
+from a rising ADE-vs-horizon exponent confounded task difficulty with error feedback. The missing
+control — a **teacher-forced arm at matched steps** (identical roll, one line changed: the window
+advances with the true latent) — separates them: the recursive rollout's compounding ratio rises
+**3.50 → 80.77** across the horizon while the teacher-forced arm stays flat. Imagination error is
+dominated by the rollout eating its own error, not by far horizons being intrinsically hard.
+(E-DPSI, the direction-sensitivity probe, is null below 12° — no anticipation claim is made below
+that threshold.)
+
+**(d) Rollout-recovery training erases the speed bias — and pays in curvature.** Prescribed by (c):
+fine-tune v1 for 2,000 steps with `--rollout-k 20` (RR-20) against an identical-seed control at
+`--rollout-k 4` (RR-CTL); one flag apart, same pod; RR-20 is compared **only** to RR-CTL (against
+v1 it would confound the horizon with 2,000 extra steps). On the canonical 40 episodes (n = 881,
+paired B = 2000): ADE 0.424 → **0.348**, Δ CI [0.0613, 0.0906], separated. The four families turn
+the headline into a trade: the longitudinal speed bias is **erased** (+0.9397 → **−0.0092 m/s**;
+speed MAE −27 %) — the first intervention to move the programme's largest measured defect — but
+curvature error is **2.2× worse** (0.0218 → 0.0483 m⁻¹), yaw-rate degrades, and miss@2m rises
+0.043 → 0.056 *while ADE improves*. Under an ADE-only doctrine this would have been recorded as an
+unambiguous win. Rollout recovery therefore enters the flagship plan as a **post-training phase**
+whose gate is the family panel, not a bake-in; the mitigation hypothesis (an RR phase under a loss
+that keeps curvature weighted — v1's loss had no curvature term) is pre-registered.
+
+**(e) The situation-classifier result cannot answer the question it was built for.** The
+lane-change/intersection labels are derived **from the ego trajectory alone** (`situations.py`:
+yaw-rate lobes; heading change) — a frame is labelled "intersection" iff the ego turned. The
+ego-kinematics head is thus a partial tautology (0.08858 CV-AP decodes its own input's labelling
+rule), and the camera head is **penalised for correctly seeing** a junction driven straight through.
+What survives: camera-only anticipation is real (0.04869 ≈ 2.1× the shuffle null, which lands at
+the base rate), and under a *linear* ridge probe the camera reaches 0.836 of ego where the neural
+head reaches 0.549 — the signal is present; the extraction, and above all the **label**, are the
+bottlenecks. A scene-truth gold set (300–500 hand-labelled frames) is the pre-registered L0; no
+camera-count decision may cite the current numbers.
+
+**(f) The flagship's imagination was off — found, fixed, guarded, and re-launched as v5f.** The
+running v5 (176×624 @ 120° cylindrical, 256-anchor two-step diffusion head, goal conditioning,
+separated loss families) had `cond_imagination` — the mechanism §3.4 calls the novel part, the
+decoder seeing the consequences of candidate controls before it denoises — **hard-wired off** in
+the trainer since a smoke experiment: zero imagination tokens for the whole run, a reactive planner
+over goal tokens. The fix is a launch flag plus the missing feed (no-grad probe rolls under an
+FPS vocabulary of eight real action sequences, cached for resume parity), validated by tests
+including a dead-conditioning assert (different imagination must change the decode). Before
+relaunch, a pre-registered guard on the step-5k checkpoint scored the anchor head's tactical and
+strategic families for the first time (a permutation-null instrument — command-following against
+shuffled commands — that needs no knowledge of the dropped embedding row): route conditioning
+**live** (Δ 0.067, CI [0.032, 0.103]), the tactical set-speed goal **live** (+0.895 m/s output-speed
+movement), anchor-vs-refined κ **0.519** — the most tactically coherent arm the programme has
+measured. Goal-dropout 0.5 was therefore *kept* (the v2corpus collapse was the `--v2` pack, not
+dropout per se). Measured relaunch cost of imagination: **≈1.01×** step time (12.10–12.16 s/step vs
+12.0 baseline) — the no-grad rolls hide inside data loading; the 1.2–1.5× estimate is retired.
+`flagship-v5f` trains from scratch on the parity corpus with this configuration; the v2bal corpus
+is deferred until a leak-free v2-line validation split exists (C64, option B).
+
+**Retraction discipline, this round (C61–C67, by root-cause class):** C61 — a mechanism claimed
+where only a magnitude was measured (resolved by the teacher-forced control). C62 — fleet state
+recited from working memory instead of the stated enumeration. C63 — a metric imported without
+measuring its precondition (decoded-displacement CR; the readout cannot decode true latents).
+C64 — a missing constraint in a build spec (validation exclusion not inherited). C65/C66 — a
+stale tree force-loaded past `PYTHONPATH` by a hard-derived `sys.path` insert, and a fix "verified"
+along a path the failing code never took. C67 — a running job killed before its replacement was
+verified, compounded by a scheduler that silently failed to re-arm. Every number in this section is
+MEASURED, with raw artifacts under `TanitAD Research Hub/Evaluation/Implementation/incoming/`
+(2026-08-02 directories) and estimators named inline.
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -1616,3 +1721,18 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   trap, the **tolerance-band closed-loop metric**, and a leaking validation split (**78 %** overlap) now
   **refused in code**. §8 extended with what §7.6–§7.7 do to the two-stage question; §9 status updated to
   point at §7.6; §10 roadmap re-ordered. All open-loop numbers remain weak claims (arXiv 2605.00066).
+- v0.7 (2026-08-02): §7.11 — the binding four-family doctrine (LON/LAT/TAC/STR added to ADE,
+  per-family, paired episode-cluster bootstrap) and what it exposed in its first days: the
+  v2-corpus arm falsified on the 19 leak-free episodes (v1 re-scored 0.393 [0.307, 0.493] vs
+  0.575 [0.429, 0.752], paired ΔCI [−0.221, −0.145]) with the C64 leak (21/40) and the
+  `--v2-cache`/`--v2` conflation making it a corpus+architecture+rollout_k change, hence not a
+  corpus result; the longitudinal **sign flip** (+1.465 vs −1.260 m/s) that ADE cannot represent;
+  tactical κ 0.253 → 0.0072 (decorative) and the `route_acc_nav`-is-copying correction (vision
+  route = exactly the majority-straight rate; 0/3 hierarchy seams on both arms); **H-COMPOUND**
+  (CR 3.50 → 80.77, teacher-forced flat; C61 resolved) and E-DPSI null < 12°; rollout recovery
+  RR-20 vs RR-CTL (ADE 0.424 → 0.348, ΔCI [0.0613, 0.0906]; speed bias erased +0.9397 → −0.0092;
+  curvature ×2.2, miss@2m up — a trade, not a win); the situation-classifier **label defect**
+  (ego-derived labels; camera penalised for being right); and the v5 → v5f fix (`cond_imagination`
+  hard-wired off → flag + feed + dead-conditioning test; 5k guard ROUTE_LIVE Δ0.067 [0.032, 0.103],
+  VT_LIVE +0.895 m/s, κ 0.519; imagination cost measured ≈1.01×). Retractions C61–C67 by
+  root-cause class. All §7.11 numbers MEASURED with named estimators.
