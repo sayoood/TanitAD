@@ -336,3 +336,88 @@ entirely unexplored — a possible free speedup that costs nothing but a config 
 | GPU 1976 mW, tj ~61.3–61.9 °C, 39 min | **MEASURED (ours)** — `tegrastats.log`, 1,157 samples |
 | "K=10 halves the dominant stage" | **MEASURED** (latency) — ⛔ accuracy consequence **UNMEASURED** |
 | "nvpmodel headroom exists" | **HYPOTHESIS** — inferred from thermals, not tested |
+
+
+---
+
+# ADDENDUM 4 — NVFP4 on Thor: the silicon supports it, our tensors are too small to use it
+
+**PI question: "did you investigate NVFP4?"** No — that was a real gap, and worth closing
+properly, because **Thor reports `sm_110` — Blackwell, the generation NVFP4 was introduced for.**
+
+## What NVFP4 is (PUBLISHED)
+
+E2M1 4-bit float with **two-level scaling** — a per-tensor FP32 scale plus a **per-block E4M3
+(FP8) scale** — which is what separates it from flat INT4 and preserves dynamic range. Published
+claims: **up to ~4x throughput over BF16**, ~2-3x arithmetic and ~1.8x memory versus FP8, with
+**DeepSeek-R1 PTQ staying within ~1 %** of FP8 (MMLU-Pro 85 -> 84, GPQA 81 -> 80). Tooling is the
+TensorRT Model Optimizer plus TransformerEngine's fused quantize-and-GEMM path.
+
+⚠️ **Every one of those numbers is an LLM number.** That matters more than usual here.
+
+## What is actually true on our Thor (MEASURED)
+
+| probe | result |
+|---|---|
+| compute capability | **`sm_110`** (Blackwell), 20 SMs, 131.9 GB |
+| `torch.float4_e2m1fn_x2` dtype | ✅ **present** |
+| `torch._scaled_mm` / `functional.scaled_mm` | ✅ present |
+| **casting bf16 -> fp4 in eager torch** | ⛔ **`RuntimeError: copy_() does not support casting`** |
+
+⇒ **The storage dtype exists, but eager PyTorch has no cast path.** NVFP4 here is not a
+`.to(dtype)` away — it needs the **TensorRT Model Optimizer / TransformerEngine** route
+(block-scale computation + fused kernels), which is exactly the toolchain still downloading.
+
+## ⭐ The decisive measurement: FP8 GEMM speedup **as a function of size**
+
+FP8 runs today in eager torch and is NVFP4's nearest neighbour — same tensor-core lineage, one
+step less aggressive — so it is a legitimate proxy for whether low precision can help our shapes
+at all:
+
+| GEMM | tag | bf16 | fp8 | speedup |
+|---|---|---|---|---|
+| **8x2048x2048** | ⭐ **our predictor step** | 0.0632 ms | 0.0524 ms | **1.21x** |
+| 128x2048x2048 | our batched | 0.0738 | 0.0654 | 1.13x |
+| 1024x2048x2048 | medium | 0.2753 | 0.1645 | **1.67x** |
+| 4096x4096x4096 | LLM-scale | 1.0856 | 0.5510 | **1.97x** |
+
+⭐⭐ **The speedup is a function of GEMM size, and our tensors sit at the bottom of the curve.**
+Low precision returns **1.21x** at our predictor's shape versus **1.97x** at LLM scale — and that
+1.21x is on the *bare GEMM*, before the per-op cast overhead that already made bf16 a **0.86x
+LOSS** on the real roll. **The published ~4x NVFP4 figures are measured at the right-hand end of
+this curve; we live on the left.**
+
+## Verdict, per stage
+
+| stage | NVFP4 outlook | reasoning |
+|---|---|---|
+| **predictor roll** (69 ms, 71 % of tick) | ⛔ **unpromising** | 8x2048x2048 GEMMs; FP8 is only 1.21x on the bare GEMM and bf16 was net-*negative* in situ. NVFP4 adds block-scale work on top |
+| **encoder** (27.8 ms) | ⚠️ **worth testing** | large conv/attention GEMMs — the regime where the curve pays. But it is already only 28 % of the tick, so even 2x buys ~14 ms |
+| **memory footprint** | ✅ **real, if ever needed** | ~1.8x smaller than FP8 — irrelevant at 13 GB of 122 GB today, relevant on a smaller Orin-class target |
+
+⇒ **NVFP4 is not the next lever for this model on this device.** The honest ranking is unchanged:
+**K 20 -> 10 (-41 ms, gated on a four-family accuracy check)** >> TensorRT fusion >> NVFP4.
+
+⭐ **The reason is architectural, not a limitation of NVFP4:** our world model is a *small-tensor,
+many-step* workload, and every low-precision format is built for *large-tensor, few-step* work.
+Same root cause as the bf16-roll regression — **the third independent observation of that fact
+today.**
+
+## What would change this verdict
+
+1. **A wider predictor**, or **batched multi-candidate rolls** (`imagine_candidates`, one roll per
+   candidate), would move our GEMMs rightward on the curve — an *architecture* change that would
+   make quantisation pay. Worth remembering if per-candidate imagination ever ships.
+2. **TensorRT ModelOpt NVFP4 on the encoder**, measured, once the toolchain lands.
+3. ⛔ **Any NVFP4 adoption must clear the four families**, not ADE — a 4-bit format that preserves
+   ADE while degrading manoeuvre κ or route accuracy is exactly the silent regression the binding
+   rule exists to catch.
+
+## Evidence class
+
+| claim | class |
+|---|---|
+| `sm_110`, fp4 dtype present, cast unsupported in eager torch | **MEASURED (ours)** — `thor_nvfp4.json` |
+| FP8 GEMM speedup 1.21x -> 1.97x across sizes | **MEASURED (ours)** |
+| NVFP4 format, ~4x vs BF16, DeepSeek-R1 within ~1 % | **PUBLISHED** (cited) — LLM workloads, **not** re-verified for our shapes |
+| "NVFP4 will underperform on the predictor" | **HYPOTHESIS** — strongly supported by the FP8 size curve and the bf16 regression, but NVFP4 itself is **not yet runnable** here |
