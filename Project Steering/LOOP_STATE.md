@@ -1286,3 +1286,25 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - ⇒ Thor can now do open-loop four-family evals WITHOUT any pod, once val windows are present.
   Remaining data gap: val episodes (eval pod stopped; pod2 busy training). AlpaSim path does NOT
   need them — it downloads its own scenes.
+
+## 2026-08-02 15:40 UTC — TENSORRT + ONNX INSTALLING ON THOR (PI directive)
+
+- ⭐ **THOR OPTIMISATION LANDED: combined tick 272.56 -> 98.63 ms = 2.76x, INSIDE the 100ms
+  budget**, by applying the Production&Optimization playbook rather than re-searching. Per stage:
+  encoder 187.8->27.8ms bf16 (6.76x, rel-err 0.0059); predictor graph 4.23->3.42ms (1.24x,
+  rel-err **0.0 BIT-EXACT**); roll20 81.5->69.6ms. **Levers COMPOSE on Thor too** (measured 98.63
+  vs additive projection 101.25 = -2.6%), replicating their 4060 0.4% finding.
+- ✅ **NO THROTTLING** over 180s sustained (first-decile 27.90 -> last-decile 26.57ms, ratio
+  0.952). The published burst p50 is a real deployment number.
+- ⛔ **torch.compile FAILS on Thor too** (InductorError via gcc/libcuda; theirs was missing
+  Triton). Same verdict, different cause, TWO platforms => manual capture + TensorRT is SETTLED,
+  stop re-attempting per device.
+- 🔵 **TensorRT + ONNX INSTALLING NOW** into `tanitad-edge` (apt: tensorrt, libnvinfer-bin,
+  python3-libnvinfer + pip onnx/onnxruntime-gpu). This unblocks the Production&Optimization
+  stream #1 latency item, recorded there as "toolchain-blocked ... run when tensorrt lands".
+  Their ONNX IR is ALREADY parity-clean at opset 17/18 (max|dz| 8.8e-6, no unexportable ops), so
+  only the engine build remains. ⚠️ TRT python bindings are SYSTEM packages
+  (/usr/lib/python3.12/dist-packages) — the venv reaches them via PYTHONPATH, not a pip wheel.
+- ⚠️ TARGET HAS MOVED: after bf16 the 20-step roll is **71%** of the remaining 98.63ms. Next
+  levers: TRT engine; capture the WHOLE roll in ONE graph (removes 19 replay boundaries); INT8
+  PTQ (⛔ accuracy must clear ALL FOUR FAMILIES); bf16 accuracy gate vs their 95.3% bar.
