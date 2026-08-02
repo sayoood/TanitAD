@@ -188,3 +188,35 @@ Ordered by expected value. Each states its falsifier so the agent can run indepe
 | A40 5.35×, 95.3 % bar, ONNX-clean claim | **INHERITED** — Production & Optimization runs #4/#5; the ONNX-clean claim is **RETRACTED for torch 2.13** |
 | 51.2 ms tick | **MEASURED per stage, PROJECTED in composition** — O3 measures it end-to-end |
 | NVFP4/INT8/DLA outlooks | **HYPOTHESIS** — O5/O6/O13 exist to test them |
+
+
+---
+
+## 11. ⛔ CORPUS DURABILITY RULE (added 2026-08-02, after a real loss)
+
+**What happened:** four RunPod pods were shut down. Model weights were pushed to HF and 283 small
+artifacts to git — but the **validation caches were left on pod volumes**, because they were too
+large to relay in the remaining runway. The pods were then **TERMINATED, not stopped**, and the
+val cache plus every optimizer state went with them.
+
+**Recoverable:** all model weights (HF), all results/logs/configs (git), and — by luck rather than
+design — the canonical parity val, which happened to also exist on a still-running training pod
+(603 clips, sha-verified against the committed manifest).
+
+**Unrecoverable:** optimizer states (so RR-20 / RR-CTL can be EVALUATED from their HF weights but
+never RESUMED), and the eval pod's derived caches.
+
+⇒ **THE RULE: a corpus or cache that exists on exactly ONE disk is a pending loss.**
+
+1. **Any val/eval cache must live in at least two places** — push it to HF as a **dataset** the day
+   it is built, not the day the pod is shut down. Weights were handled this way and survived;
+   caches were not, and did not.
+2. **Distinguish STOP from TERMINATE explicitly in every shutdown note.** Stop preserves the
+   volume; terminate does not. Writing "safe to stop" is not writing "safe to terminate", and the
+   reader will not supply that distinction for you.
+3. **If a full checkpoint cannot be moved, move the model-only extract AND state what the extract
+   cannot do.** A model+grounding extract (1.1 GB from 3.3 GB) evaluates fine and **cannot resume
+   training**. Say that at the time, not afterwards.
+4. **Derived caches deserve a rebuild recipe, not just a copy.** Anything rebuildable from HF plus
+   a committed script is not really lost — record the recipe next to the artifact so the next
+   reader knows which category it is in.
