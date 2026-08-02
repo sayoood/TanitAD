@@ -202,7 +202,11 @@ class TanitADModel(BaseTrajectoryModel):
 
         from tanitad.models.metric_dynamics import (accumulate_se2,
                                                     rollout_transitions)
-        trans = rollout_transitions(self.world.predictor, states, a, self.horizon)
+        # future_actions=None HOLDS the last action across the roll -- the correct closed-loop
+        # semantics: at drive time we do NOT know the future action sequence, so the model
+        # imagines forward under a held control. Passing the true future here would be
+        # teacher forcing and would make a closed-loop number look like an open-loop one.
+        trans = rollout_transitions(self.world.predictor, states, a, None, self.horizon)
         dpose = torch.stack([self.step_readout(trans[j][0], trans[j][1])
                              for j in range(self.horizon)], dim=1)      # [1, T, 3]
         wp = accumulate_se2(dpose)[0].float().cpu().numpy()             # [T, 2] ego frame
