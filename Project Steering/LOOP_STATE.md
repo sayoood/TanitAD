@@ -1198,3 +1198,13 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - NEXT: paper (last 0-GPU item) -> v5f gate@2000 (incumbent probe, cannot stop run) -> 5k
   milestone four-family panel -> v1arch milestones. Thor access pending PI IP+username
   (instructions delivered; key ready; scan found no SSH yet).
+
+## 2026-08-02 14:15 UTC — ⭐ JETSON THOR JOINED THE FLEET
+
+- **`tanitad-thor`** (ssh alias, key tanitad_pod): `192.168.178.93`, user `nvidia`, hostname `thor6`.
+  MEASURED: aarch64, **L4T R38.4.0** (JetPack 7 line), NVIDIA Thor GPU, **122 GB unified RAM**,
+  **937 GB disk (880 free)**. ⛔ **NO PyTorch yet** — install needs the NVIDIA JetPack/aarch64
+  wheel (jp6/cu126-class index), NEVER the PyPI x86 wheel. WiFi link => corpus copies overnight.
+- PI intent: inference, EVAL, optimization, eventually training. First uses: offline v5f gate
+  evals + four-family milestone panels (frees pods to train only); Orin/Thor deployment stream.
+- NEXT on Thor: torch install -> pull v1_modelonly + val19 windows -> four-family panel dry run.
