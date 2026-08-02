@@ -1319,6 +1319,8 @@ def train(a) -> dict:
     hcfg = v4_config()
     hcfg.state_dim = world.state_dim
     hcfg.cond_imagination = bool(getattr(a, "cond_imagination", False))
+    if getattr(a, "goal_dropout", None) is not None:     # guard-actionable (P6)
+        hcfg.goal_dropout = float(a.goal_dropout)
     hcfg.window = cfg.predictor.window
     hcfg.ego_null_row = a.ego_null_row                   # P5b default True (X15 off)
     # ⭐ seam_fail EXPOSED 2026-07-28. It was hard-wired at 1.5 in V4Config while
@@ -1866,6 +1868,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "consecutive steps — a batch MAX can no longer kill a run. "
                          "Raising it does NOT weaken the graft bound: seam_clamp "
                          "(1.0) still rescales in-graph. Recorded in config.json.")
+    ap.add_argument("--goal-dropout", type=float, default=None,
+                    help="override the head's goal_dropout (default: the config's "
+                         "0.5). Exists so the v5 guard's route-collapse verdict is "
+                         "ACTIONABLE at launch — v2corpus's nav-dropout 0.5 "
+                         "measurably taught the model to ignore the command "
+                         "(route_acc_nav 1.0 -> 0.5351).")
     ap.add_argument("--cond-imagination", dest="cond_imagination",
                     action="store_true", default=False,
                     help="P1 (deep review 2026-08-02): feed the head the imagined "

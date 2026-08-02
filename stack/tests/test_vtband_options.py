@@ -102,10 +102,25 @@ def test_route_zero_is_ROUTE_LEFT_and_contradicts_route_graded_zero():
 def test_VT_DROPPED_is_IN_DISTRIBUTION_because_goal_dropout_ships_at_half():
     """⭐ The ``v2_ego_dropout``-precedent question, answered from the source.
 
-    ``V15Config.goal_dropout = 0.5`` is inherited by ``V4Config`` and the trainer
-    NEVER overrides it, so a real v5 run masks ~50 % of every batch to
-    ``VT_DROPPED``/``ROUTE_DROPPED``. Those are their own learned embedding rows,
-    not a zero-fill — a STRONGER precedent than ``v2_ego_dropout``'s."""
+    ``V15Config.goal_dropout = 0.5`` is inherited by ``V4Config``, so a DEFAULT
+    v5 run masks ~50 % of every batch to ``VT_DROPPED``/``ROUTE_DROPPED`` —
+    learned embedding rows, not a zero-fill.
+
+    **PREMISE UPDATED 2026-08-02 (deliberately, per this test's own failure
+    instruction).** The trainer now carries EXACTLY ONE write: the flag-guarded
+    ``--goal-dropout`` override added so the v5 guard's route-collapse verdict is
+    actionable at launch (v2corpus's dropout-0.5 measurably taught the model to
+    ignore the route command, 1.0 → 0.5351). The re-derivation:
+
+    * default (no flag) → 0.5, DROPPED rows trained — the original argument holds;
+    * an explicit override still trains them at any value > 0 (just less often);
+    * ⚠️ ``--goal-dropout 0.0`` WOULD leave them untrained — and the override is
+      recorded in ``config.json``'s ``head_cfg`` dump, so a gate reading
+      ``--heldout-goal dropped`` can check THAT RUN's value instead of trusting
+      this global argument.
+
+    The AST scan therefore pins the write-count at ONE and requires the guard —
+    a second, unguarded write would silently void the in-distribution argument."""
     from tanitad.models.flagship_v4 import v4_config
     from tanitad.models.flagship_v15 import V15Config
 
@@ -133,10 +148,16 @@ def test_VT_DROPPED_is_IN_DISTRIBUTION_because_goal_dropout_ships_at_half():
         if isinstance(n, ast.Call):
             writes += [f"kwarg@{n.lineno}" for k in n.keywords
                        if k.arg == "goal_dropout"]
-    assert not writes, \
-        f"the trainer now WRITES goal_dropout ({writes}) — re-derive whether " \
-        f"the DROPPED rows are still trained at 0.5 before trusting " \
-        f"--heldout-goal dropped"
+    assert len(writes) == 1, \
+        f"expected EXACTLY ONE flag-guarded goal_dropout write, found {writes} — " \
+        f"a new unguarded write voids the in-distribution argument; re-derive " \
+        f"before trusting --heldout-goal dropped"
+    src_lines = Path(T.__file__).read_text(encoding="utf-8").splitlines()
+    w_line = int(writes[0].split("@")[1])
+    ctx = "\n".join(src_lines[max(0, w_line - 3):w_line])
+    assert 'is not None' in ctx and 'goal_dropout' in ctx, \
+        f"the goal_dropout write at line {w_line} is not None-guarded — the " \
+        f"DEFAULT run would no longer ship 0.5 and VTBAND_DECISION.md is void"
 
 
 def test_the_dropped_rows_are_real_embedding_rows_distinct_from_UNKNOWN():
