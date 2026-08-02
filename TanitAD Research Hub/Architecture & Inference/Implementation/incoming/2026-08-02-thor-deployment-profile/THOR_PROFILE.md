@@ -188,3 +188,77 @@ majority cost (71 %)**, having been the minority before bf16. The target has mov
 | 4060 figures (2.57×, 1.59×, 0.4 %, 95.3 % bar) | **INHERITED** — Production & Optimization runs #4/#5, different silicon |
 | ONNX parity-clean at opset 17/18 | **INHERITED** — their 2026-07-08 export run, **not** re-verified on Thor |
 | TensorRT will beat the graph baseline | **HYPOTHESIS** — item 1 exists to test it |
+
+---
+
+# ADDENDUM 2 — the roll is compute-bound, and precision HURTS it (2026-08-02, same day)
+
+After bf16 the 20-step imagination roll became **71 %** of the 98.63 ms tick, so it became the
+target. Two levers were tested on it. **Both are negative results, and both are worth more than a
+positive one would have been**, because each closes a direction that looked obvious.
+
+## Lever #2 — capture the WHOLE roll in ONE CUDA graph
+
+| variant | p50 | vs eager | accuracy |
+|---|---|---|---|
+| eager fp32 | 81.70 ms | — | reference |
+| per-step graph (20 replays) | 70.47 ms | 1.16× | **rel-err 0.0** |
+| ⭐ **whole roll, one graph** | **69.25 ms** | 1.18× | **rel-err 0.0** |
+
+⚠️ **One capture beats 20 replays by only 1.02×.** Removing 19 launch boundaries and 20 Python
+window-slides bought **2 %** ⇒ **the roll is COMPUTE-bound, not launch-bound.** The launch overhead
+was already gone after the per-step capture; what remains (~69 ms ≈ 20 × 3.4 ms) is genuine
+predictor arithmetic.
+
+⭐ Both captures are **bit-exact** (rel-err exactly 0.0), including the full-roll variant that
+reuses one static buffer set across 20 steps — the aliasing hazard this test existed to catch did
+not fire.
+
+## Lever #3 — precision on the roll ⛔ **SLOWER, both dtypes**
+
+| variant | p50 | speedup | rel-err |
+|---|---|---|---|
+| fp32 | 81.67 ms | 1.00× | reference |
+| **bf16** | **95.10 ms** | ⛔ **0.86×** | 0.00759 |
+| **fp16** | **90.80 ms** | ⛔ **0.90×** | 0.000834 |
+
+⛔ **Autocast makes the roll 10–16 % SLOWER.** The predictor's tensors are `1×8×2048` — far too
+small for tensor-core throughput to repay autocast's per-operation cast overhead. The encoder's
+large convolution/attention tensors repay it 6.76×; the predictor's do not.
+
+⭐⭐ **THE ASYMMETRY IS THE FINDING: precision is a 6.76× win on the encoder and a 0.86× LOSS on
+the predictor.** "Cast the model to bf16" is exactly the kind of blanket optimisation that would
+have silently cost ~14 % on the dominant stage. **Per-stage, never global.**
+
+ⓘ Worth keeping if precision is ever revisited: **fp16 is 9× more accurate than bf16 here**
+(rel-err 0.000834 vs 0.00759) *and* faster — bf16's wider exponent buys nothing on these values.
+
+## Where the tick stands, and what is actually left
+
+| configuration | tick p50 |
+|---|---|
+| fp32 eager baseline | 272.56 ms |
+| bf16 encoder + per-step graph | 98.63 ms |
+| ⭐ **bf16 encoder + full-roll graph (fp32)** | **≈97.05 ms** |
+| | **2.81× total, inside the 100 ms budget** |
+
+**The eager-PyTorch levers are now EXHAUSTED.** Precision is applied where it helps and rejected
+where it hurts; launch overhead is fully removed from both stages; `torch.compile` fails on two
+platforms. Every remaining gain must come from **kernel-level work**:
+
+| # | lever | rationale |
+|---|---|---|
+| 1 | ⭐ **TensorRT engine on the PREDICTOR** | the dominant stage is 20 small transformer steps — kernel *fusion* is precisely what small-tensor compute-bound work needs, and it is the one thing eager PyTorch cannot do |
+| 2 | **TensorRT on the encoder** | already 27.8 ms; fusion + fp16 kernels may still beat autocast |
+| 3 | **INT8 PTQ** | ⛔ accuracy must clear **all four families**, never ADE alone |
+| 4 | **Shorten the roll** | an architecture question, not an engineering one: does the planner need K=20, or does K=10 lose nothing? That is a four-family measurement, not a latency one |
+
+## Evidence class (addendum 2)
+
+| claim | class |
+|---|---|
+| full-roll graph 69.25 ms, bit-exact, 1.02× over per-step | **MEASURED (ours)** — `thor_fullroll_graph.json` |
+| bf16 0.86× / fp16 0.90× on the roll, with rel-errs | **MEASURED (ours)** — `thor_bf16_roll.json` |
+| "the roll is compute-bound" | **MEASURED** — inferred from the 1.02× ceiling on launch-overhead removal |
+| "small tensors defeat autocast on this predictor" | **HYPOTHESIS** — consistent with the measurement and with tensor shape, not independently profiled at kernel level |
+| TensorRT will help the predictor | **HYPOTHESIS** — lever #1 exists to test it |
