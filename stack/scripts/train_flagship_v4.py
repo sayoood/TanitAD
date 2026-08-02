@@ -1898,6 +1898,14 @@ def build_parser() -> argparse.ArgumentParser:
                          "pseudo-simulation every --heldout-every steps and STOP "
                          "when the held-out primary (the MAP-FREE COMPOSITE, not "
                          "ade_0_2s) is separated-worse for two consecutive probes")
+    # The guard above says "Drop the flag, or RECORD THE REASON". This is that record: it keeps
+    # disabling the gate a deliberate, visible, attributable act (the whole point of the guard)
+    # instead of a silent bypass, and the reason is echoed at launch and stored in config.json.
+    # ⛔ Do NOT turn this into a bare boolean escape hatch — a reason a human had to type is the
+    # mechanism; a --force flag would be back to an accident waiting to happen.
+    ap.add_argument("--heldout-off-reason", dest="heldout_off_reason", default="",
+                    help="Required WITH --no-heldout-gate: why this run has no held-out "
+                         "early-stop signal. Recorded in config.json and printed at launch.")
     ap.add_argument("--no-heldout-gate", dest="heldout_gate", action="store_false",
                     help="⚠️ disables the early-stop that exists because ~29.5 "
                          "GPU-h were burned without it; trips preflight_asserts")
@@ -2065,6 +2073,8 @@ PATH_ARGS: dict[str, tuple[str, str]] = {
 NOT_A_PATH: dict[str, str] = {
     "v2_subframe": "a frame spec ('176x624' / 'none'), validated by the geometry layer",
     "device":      "a torch device string",
+    "heldout_off_reason": "free prose — the human-written justification required alongside "
+                          "--no-heldout-gate; recorded, never opened",
 }
 
 
@@ -2141,12 +2151,13 @@ def preflight_asserts(a) -> list[str]:
     # ~29.5 GPU-h — half the v4 30k run — went into training past the best
     # checkpoint because there was NO held-out early-stop signal. Launching
     # without the gate is now a deliberate, visible act.
-    if not getattr(a, "heldout_gate", True):
+    if not getattr(a, "heldout_gate", True) and not getattr(a, "heldout_off_reason", ""):
         problems.append(
             "[HELDOUT-GATE] --no-heldout-gate: this run would have NO held-out "
             "early-stop signal. MEASURED cost of that on the v4 30k run: ~29.5 "
             "GPU-h, half the run, spent training past the best checkpoint while "
-            "every training term improved. Drop the flag, or record the reason.")
+            "every training term improved. Drop the flag, or record the reason "
+            "with --heldout-off-reason '<why>'.")
     if getattr(a, "heldout_gate", True):
         if a.heldout_every <= 0 or a.heldout_every > a.steps:
             problems.append(

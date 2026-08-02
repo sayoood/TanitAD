@@ -1,0 +1,494 @@
+{
+ "P1_slice_refusal": {
+  "w120_stored_frame": {
+   "height": 256,
+   "width": 640,
+   "f_ref": 305.5774907364391,
+   "projection": "cylindrical"
+  },
+  "w120_tag": "256x640f305.5775cyl",
+  "w120_codec": "png",
+  "target_CANONICAL_256": {
+   "height": 256,
+   "width": 256,
+   "f_ref": 266.0,
+   "projection": "pinhole"
+  },
+  "target_tag": "256x256f266pin",
+  "F_REF": 266.0,
+  "w120cyl_to_256sq": {
+   "result": "REFUSED",
+   "exc": "ValueError",
+   "msg": "256x256f266pin is not a slice of 256x640f305.5775cyl: a slice preserves f_ref and projection exactly (got f_ref 266.0 vs 305.5774907364391, projection pinhole vs cylindrical). Changing either is a RESAMPLE, i.e. a rebuild from the source video."
+  },
+  "CONTROL_w120cyl_to_256x256cyl": {
+   "result": "SLICE OK",
+   "rows": [
+    0,
+    256
+   ],
+   "cols": [
+    192,
+    448
+   ]
+  }
+ },
+ "P2_parity_guard": {
+  "deployments": [
+   {
+    "n_episodes": 600,
+    "role": "full build (the epcache split dir on the training pods)",
+    "where": "<epcache root>/physicalai-val-0c5f7dac3b11 \u2014 pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+    "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+    "evidence_class": "MEASURED"
+   },
+   {
+    "n_episodes": 40,
+    "role": "canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)",
+    "where": "tanitad-eval:/root/valdata/physicalai-val-0c5f7dac3b11",
+    "evidence": "MODEL_REGISTRY.md:61 'Val set | physicalai-val-0c5f7dac3b11 - 40 episodes -> 881 windows, episode-disjoint from train'; 30 of 30 decision-grade taniteval/results/*.json carry n_episodes=40, n_windows=881 (the remaining 4 predate the n_episodes field and carry n_windows=881)",
+    "evidence_class": "MEASURED"
+   }
+  ],
+  "full_600": {
+   "corpus_key": "physicalai-val-0c5f7dac3b11",
+   "split": "val",
+   "cache_dir": "/workspace/data/physicalai_phase0/_epcache/physicalai-val-0c5f7dac3b11",
+   "mode": "subset",
+   "episodes_expected": 600,
+   "episodes_loaded": 600,
+   "uid_source": "count-only-unrecorded",
+   "skip_hash": "f09e44db",
+   "episode_uid_sha256": "75a4d429be8cef8ea47a319e2033d792ee9eecbff033fad27dbb624b5634df20",
+   "episode_uid_sha256_expected": null,
+   "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+   "parity": true,
+   "checked": true,
+   "episodes_present": 600,
+   "registered_deployments": [
+    40,
+    600
+   ],
+   "deployment": {
+    "n_episodes": 600,
+    "role": "full build (the epcache split dir on the training pods)",
+    "where": "<epcache root>/physicalai-val-0c5f7dac3b11 \u2014 pod1/pod2 /workspace/data/physicalai_phase0/_epcache, pod3 /workspace/pai_epcache",
+    "evidence": "2026-07-22-v4-labels/labels_val_v4_provenance.json n_episodes=600; stack/scripts/parity_skipset.sh asserts len(val)==600; MODEL_REGISTRY.md:37 cache paths",
+    "evidence_class": "MEASURED"
+   },
+   "label": "P2-full",
+   "requested_episodes": null,
+   "decision_grade": true
+  },
+  "prefix_40": {
+   "corpus_key": "physicalai-val-0c5f7dac3b11",
+   "split": "val",
+   "cache_dir": "/tmp/val40_probe/physicalai-val-0c5f7dac3b11",
+   "mode": "subset",
+   "episodes_expected": 600,
+   "episodes_loaded": 40,
+   "uid_source": "count-only-unrecorded",
+   "skip_hash": "f09e44db",
+   "episode_uid_sha256": "c36c2168e0ea6eaa0668c10003b8d97355d24d9f7363ab64f1b582328d40828a",
+   "episode_uid_sha256_expected": null,
+   "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+   "parity": true,
+   "checked": true,
+   "episodes_present": 40,
+   "registered_deployments": [
+    40,
+    600
+   ],
+   "deployment": {
+    "n_episodes": 40,
+    "role": "canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)",
+    "where": "tanitad-eval:/root/valdata/physicalai-val-0c5f7dac3b11",
+    "evidence": "MODEL_REGISTRY.md:61 'Val set | physicalai-val-0c5f7dac3b11 - 40 episodes -> 881 windows, episode-disjoint from train'; 30 of 30 decision-grade taniteval/results/*.json carry n_episodes=40, n_windows=881 (the remaining 4 predate the n_episodes field and carry n_windows=881)",
+    "evidence_class": "MEASURED"
+   },
+   "label": "P2-prefix40",
+   "requested_episodes": null,
+   "decision_grade": true
+  },
+  "NEGCTRL_prefix_39": {
+   "REFUSED": "\n==============================================================================\nPARITY VIOLATION [P2-neg39] \u2014 corpus physicalai-val-0c5f7dac3b11\n==============================================================================\n  cache      : /tmp/val39_probe/physicalai-val-0c5f7dac3b11\n  episodes   : 39 present \u2014 NOT a registered val deployment\n  registered : [40, 600]\n                600  full build"
+  }
+ },
+ "P3_episode_identity": {
+  "n_w120_clips": 600,
+  "index_build_s": 12.3,
+  "n_distinct_keys": 554,
+  "n_matched": 40,
+  "n_unmatched": 0,
+  "n_distinct_clip_ids": 40,
+  "grades": {
+   "BIT_EXACT": 40
+  },
+  "matches": [
+   {
+    "ep_index": 0,
+    "ep_uid": "ep_00000.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "76cc9e25",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 1,
+    "ep_uid": "ep_00001.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "ac4b749f",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 2,
+    "ep_uid": "ep_00002.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "2a23321a",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 3,
+    "ep_uid": "ep_00003.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "2a3794ce",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 4,
+    "ep_uid": "ep_00004.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "64125224",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 5,
+    "ep_uid": "ep_00005.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "cb8e1c20",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 6,
+    "ep_uid": "ep_00006.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "9668c3d5",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 7,
+    "ep_uid": "ep_00007.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "b8c8727d",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 8,
+    "ep_uid": "ep_00008.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "7bc81be6",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 9,
+    "ep_uid": "ep_00009.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "072bdc14",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 10,
+    "ep_uid": "ep_00010.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "a2bd72d9",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 205
+   },
+   {
+    "ep_index": 11,
+    "ep_uid": "ep_00011.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "577a353b",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 198
+   },
+   {
+    "ep_index": 12,
+    "ep_uid": "ep_00012.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "8a854350",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 13,
+    "ep_uid": "ep_00013.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "a26c7f0e",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 14,
+    "ep_uid": "ep_00014.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "ff92cd1a",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 15,
+    "ep_uid": "ep_00015.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "d16e6b01",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 16,
+    "ep_uid": "ep_00016.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "6be069dd",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 17,
+    "ep_uid": "ep_00017.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "cf0ff9f8",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 18,
+    "ep_uid": "ep_00018.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "9164d523",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 198
+   },
+   {
+    "ep_index": 19,
+    "ep_uid": "ep_00019.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "45b58134",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 20,
+    "ep_uid": "ep_00020.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "295b0233",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 21,
+    "ep_uid": "ep_00021.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "f20a68ca",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 22,
+    "ep_uid": "ep_00022.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "f89592d1",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 23,
+    "ep_uid": "ep_00023.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "cde81aae",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 24,
+    "ep_uid": "ep_00024.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "73784bdb",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 25,
+    "ep_uid": "ep_00025.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "32094f1e",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 26,
+    "ep_uid": "ep_00026.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "3ae175ca",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 27,
+    "ep_uid": "ep_00027.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "d55bebd0",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 28,
+    "ep_uid": "ep_00028.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "7b7cd063",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 29,
+    "ep_uid": "ep_00029.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "49a55b82",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 30,
+    "ep_uid": "ep_00030.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "402e8e78",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 31,
+    "ep_uid": "ep_00031.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "fc57cb66",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 32,
+    "ep_uid": "ep_00032.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "a4cfecf2",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 33,
+    "ep_uid": "ep_00033.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "ba9a53c6",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 34,
+    "ep_uid": "ep_00034.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "20708219",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 35,
+    "ep_uid": "ep_00035.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "575e934f",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 36,
+    "ep_uid": "ep_00036.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "76d970cb",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 37,
+    "ep_uid": "ep_00037.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "a62409a2",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 38,
+    "ep_uid": "ep_00038.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "8715b75e",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   },
+   {
+    "ep_index": 39,
+    "ep_uid": "ep_00039.pt",
+    "clip_id": "REDACTED (gated PhysicalAI-AV content)",
+    "clip_id_sha256_8": "ae3e5808",
+    "max_abs_pose_diff": 0.0,
+    "grade": "BIT_EXACT",
+    "T": 199
+   }
+  ],
+  "unmatched": [],
+  "clip_id_sha256_sorted_40prefix": "be2eedcec5e966fb7d8d160c24fd0ae506e27ce8918720d2fec3ed5d7c39f997",
+  "clip_ids_redacted": true,
+  "redaction_reason": "clip ids are gated-confidential PhysicalAI-AV content per parity_manifest.json clip_membership.provenance.confidentiality; only digests are quotable in-repo"
+ }
+}

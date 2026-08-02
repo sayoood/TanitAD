@@ -1,0 +1,224 @@
+[v4-eval] MODE A: loaded v1-shaped ckpt, step=29999, state_dim=2048 (FROZEN)
+{
+ "code_md5": {
+  "tanitad/data/calib.py": "041c600e7264685e38545994c599e2a4",
+  "tanitad/models/fourbrain.py": "aac64b00da260a11e6e22da86f5adaee",
+  "tanitad/config.py": "e31afdd9baa82b629c24087319d740cc",
+  "tanitad/data/parity.py": "7b42991893b27182c2384e79349d4acf"
+ },
+ "device": "cuda",
+ "v1": {
+  "ckpt": "/workspace/v4gate30k/v1_speedjerk_ckpt.pt",
+  "step": 29999,
+  "encoder.pos": [
+   1,
+   256,
+   768
+  ],
+  "action_dim": 3,
+  "load_s": 20.5,
+  "loaded_strict": true,
+  "state_dim": 2048,
+  "n_params_M": 263.44,
+  "cfg_frame": {
+   "height": 256,
+   "width": 256,
+   "f_ref": 266.0,
+   "projection": "pinhole"
+  },
+  "encoder_in_channels": 9
+ },
+ "episodes": [
+  {
+   "i": 0,
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "actions": [
+    199,
+    2
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "i": 1,
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "actions": [
+    199,
+    2
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "i": 2,
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "actions": [
+    199,
+    2
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "i": 3,
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "actions": [
+    199,
+    2
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "i": 4,
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "actions": [
+    199,
+    2
+   ],
+   "dtype": "torch.uint8"
+  }
+ ],
+ "dataset": {
+  "n_windows_5ep": 855,
+  "window": 8,
+  "max_horizon": 20,
+  "n_stride8_windows_5ep": 110
+ },
+ "batch_keys": {
+  "frames": [
+   4,
+   8,
+   9,
+   256,
+   256
+  ],
+  "actions": [
+   4,
+   8,
+   2
+  ],
+  "future_frames": [
+   4,
+   20,
+   9,
+   256,
+   256
+  ],
+  "future_actions": [
+   4,
+   20,
+   2
+  ],
+  "future_poses": [
+   4,
+   20,
+   4
+  ],
+  "pose_last": [
+   4,
+   4
+  ],
+  "episode_id": [
+   4
+  ],
+  "nav_cmd": [
+   4
+  ],
+  "nav_valid": [
+   4
+  ],
+  "route_target": [
+   4
+  ],
+  "maneuver_label": [
+   4
+  ],
+  "pose_prev": [
+   4,
+   4
+  ]
+ },
+ "forward": {
+  "input": [
+   4,
+   8,
+   9,
+   256,
+   256
+  ],
+  "encoder_out": [
+   32,
+   256,
+   768
+  ],
+  "finite": true,
+  "mean": 0.0036001908592879772,
+  "std": 0.6800031065940857
+ },
+ "refc_base": {
+  "ckpt": "/workspace/models/refc-base-30k/ckpt.pt",
+  "step": 29999,
+  "keys": [
+   "opt",
+   "step"
+  ],
+  "grid_shape": null,
+  "image_size": null,
+  "config_keys": [],
+  "n_tensors": 487
+ },
+ "refc_xl": {
+  "ckpt": "/workspace/models/refc-xl-30k/ckpt.pt",
+  "step": 29999,
+  "keys": [
+   "opt",
+   "step"
+  ],
+  "grid_shape": null,
+  "image_size": null,
+  "config_keys": [],
+  "n_tensors": 673
+ }
+}

@@ -1,0 +1,166 @@
+[parity] thor-relay: physicalai-val-0c5f7dac3b11 count OK (5/600) — NO uid digest committed for this split, so this is a COUNT-ONLY check. Upgrade it once on a pod: scripts/make_parity_manifest.py --record --split val --cache-dir <verified cache>
+[v4-eval] MODE A: loaded v1-shaped ckpt, step=29999, state_dim=2048 (FROZEN)
+{
+ "host": "thor6",
+ "torch": "2.13.0+cu130",
+ "cuda": true,
+ "gpu": "NVIDIA Thor",
+ "sm": [
+  11,
+  0
+ ],
+ "code_md5": {
+  "tanitad/data/calib.py": "2f042d633e0d70596f6cabaae8011c95",
+  "tanitad/models/fourbrain.py": "0199033585a92654fe1c97da97e9a591",
+  "tanitad/config.py": "cc6ad949a2abbb576a1e10b8ccc493ef",
+  "tanitad/data/parity.py": "eb8c2dad86df51be7646a1df0674617b"
+ },
+ "relayed_files": [
+  {
+   "f": "ep_00000.pt",
+   "bytes": 117383256,
+   "md5": "47ee0e683ad2ad78f2368245d641d334"
+  },
+  {
+   "f": "ep_00001.pt",
+   "bytes": 117383256,
+   "md5": "867e56106a7e3391b55aea0411fa7b57"
+  },
+  {
+   "f": "ep_00002.pt",
+   "bytes": 117383256,
+   "md5": "ea669e49c00774b6c3197d8f1e1bb6bd"
+  },
+  {
+   "f": "ep_00003.pt",
+   "bytes": 117383256,
+   "md5": "65e173c3d56a66b0a89081c4b84c9f4e"
+  },
+  {
+   "f": "ep_00004.pt",
+   "bytes": 117383256,
+   "md5": "1795891245d9a86e2dd29b8e83e73967"
+  }
+ ],
+ "parity": {
+  "REFUSED": "\n==============================================================================\nPARITY VIOLATION [thor-relay] \u2014 corpus physicalai-val-0c5f7dac3b11\n==============================================================================\n  cache      : /home/nvidia/valdata/physicalai-val-0c5f7dac3b11\n  episodes   : 5 present \u2014 NOT a registered val deployment\n  registered : [40, 600]\n                600  full build (the epcache split dir on the training pods)  [MEASURED]\n                 40  canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)  [MEASURED]\n  A val cache"
+ },
+ "v1": {
+  "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+  "ckpt_md5": "b5f07d9e3dd2ca643949bc86832e6585",
+  "step": 29999,
+  "encoder.pos": [
+   1,
+   256,
+   768
+  ],
+  "action_dim": 3,
+  "load_s": 8.4,
+  "loaded_strict": true,
+  "state_dim": 2048,
+  "n_params_M": 263.44,
+  "cfg_frame": {
+   "height": 256,
+   "width": 256,
+   "f_ref": 266.0,
+   "projection": "pinhole"
+  }
+ },
+ "episodes": [
+  {
+   "f": "ep_00000.pt",
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "f": "ep_00001.pt",
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "f": "ep_00002.pt",
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "f": "ep_00003.pt",
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "dtype": "torch.uint8"
+  },
+  {
+   "f": "ep_00004.pt",
+   "frames": [
+    199,
+    9,
+    256,
+    256
+   ],
+   "poses": [
+    199,
+    4
+   ],
+   "dtype": "torch.uint8"
+  }
+ ],
+ "dataset": {
+  "n_episodes": 5,
+  "n_windows": 855,
+  "n_stride8_windows": 110,
+  "window": 8,
+  "max_horizon": 20
+ },
+ "forward": {
+  "input": [
+   4,
+   8,
+   9,
+   256,
+   256
+  ],
+  "encoder_out": [
+   32,
+   256,
+   768
+  ],
+  "finite": true,
+  "mean": 0.0036001901607960463,
+  "std": 0.6800031065940857,
+  "wall_s": 0.692
+ }
+}
