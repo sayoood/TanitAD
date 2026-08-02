@@ -1248,3 +1248,25 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
   compose up (post-docker-fix) -> TanitAD driver adapter (v1 first, then REF-C) -> closed-loop
   runs scored with ALL FOUR FAMILIES via four_families.py (binding rule applies in closed loop
   too) -> LONG videos with camera overlay + BEV per the viz standard.
+
+## 2026-08-02 15:0x UTC — THOR UNBLOCKED (PI gave sudo) + ALPASIM SETUP CHAIN ARMED
+
+- ✅ **sudo applied and VERIFIED (not exit codes)**: `nvidia` in the **docker** group
+  (`docker ps` works without sudo), `python3.12-venv` ii-installed, **docker-compose-v2 2.40.3**
+  installed (was absent — the tutorial requires `docker compose`), plus curl/wget/git-lfs.
+- ⭐ **AlpaSim IS aarch64-READY**: its Dockerfile ships a native ARM base —
+  `FROM nvcr.io/nvidia/pytorch:25.08-py3 AS base-arm64` with the comment *"aarch64 -> NGC PyTorch
+  base (only CUDA-enabled PyTorch source on ARM)"*. No x86 emulation needed on Thor.
+- Launch path (TUTORIAL): `uv run alpasim_wizard deploy=local topology=1gpu driver=vavam
+  wizard.log_dir=...`; one-time setup needs **HF_TOKEN** (staged at ~/.hftok, 600) + VaVAM asset
+  download. Output = **ASL** (size-delimited protobuf, schema src/grpc/.../logging.proto):
+  RolloutMetadata + ActorPoses (global coords, incl EGO) + microservice request/return pairs —
+  ⭐ ActorPoses is exactly the surface the FOUR FAMILIES need for closed-loop scoring, and the
+  request/return pairs give the decoded decisions for TACTICAL/STRATEGIC.
+- `~/alpasim_setup_chain.sh` ARMED (detached): waits for torch DONE -> installs uv -> downloads
+  VaVAM assets -> logs CHAIN_COMPLETE. Serialized on purpose: one WiFi pipe.
+- ⚠️ PI: `nvidia` is the Jetson FACTORY-DEFAULT password on a WiFi-connected board — recommend
+  changing it once AlpaSim is up.
+- NEXT: chain completes -> stock `driver=vavam` smoke (proves renderer+physics+runtime on Thor)
+  -> TanitAD driver adapter (v1 from HF first, then REF-C) -> closed-loop scored with ALL FOUR
+  FAMILIES -> long camera+BEV overlay videos.
