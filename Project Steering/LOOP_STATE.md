@@ -1374,3 +1374,27 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - STATE AT LAST CONTACT: val clips ~29 (target 40, load-verified at eval time, 3 truncations
   quarantined); REF-C base 1.2GB + xl 2.9GB pulled; TanitAD AlpaSim driver written, installed,
   registered, **not yet run**; 12-agent workflow still running.
+
+
+## 2026-08-03 ~22:45 UTC — v5f died a THIRD time; the real defect was the SAVE INTERVAL
+
+**Three CUDA OOMs, all near step 1200, all rewinding to step 1000.** The OOM was the visible symptom;
+the compounding defect was that `--save-every` defaults to **1000**, so the next checkpoint was step
+2000 and the run **never reached it**. Every crash therefore replayed the identical 200 steps.
+⇒ **A crash loop plus a long save interval is a PROGRESS RATCHET SET TO ZERO.** Nothing I did to the
+OOM would have mattered while that held.
+
+FIXES (all live):
+- `--batch 4 --accum 16` (eff_batch 64 preserved). GPU **27.2 GB → 16.1 GB** — real headroom, where
+  batch 8 still died at 44.42 GiB with 119.88 MiB free.
+- `--save-every 250` — progress banked every ~56 min at ~13.5 s/step.
+- `--v2-lru 4`, `expandable_segments:True`, detached via `setsid nohup … < /dev/null`.
+- VERIFIED RUNNING: PID 943, GPU 100 %, 16 075 MiB, `[resume] step 1001`.
+
+⚠️ **Corrections to the state I was carrying:**
+- **pod2 is NOT the only live pod.** `tanitad-pod4` / `tanitad-v2arch` = 69.30.85.48:22192 (RunPod
+  `interesting_gray_ant`) runs `flagship-v1arch-v2bal-30k` — **step 9750, `g_op_fwd_ade_m` 0.0898**,
+  the best curve in the programme. The PI is keeping it; **do not touch it.**
+- **`oom_kill` on pod2 read 6 earlier and 0 now** — the counter is not a durable history; do not
+  quote it as "killed N times" without a timestamped source.
+- The v5f OOM is **GPU**, not container RAM: container usage was 1.4 GB at the time of death.
