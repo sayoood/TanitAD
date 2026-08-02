@@ -1350,3 +1350,27 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
   any pod. REF-C base (1.25GB) + XL (2.0GB) also landed from HF.
 - NEXT: complete the 40-clip relay -> four families on v1arch@5k, RR-20 vs RR-CTL, REF-C base/xl;
   then O1 (the blocking accuracy gate on the TRT engine).
+
+
+## 2026-08-02 ~18:0x UTC — THOR WIFI IS NOW A MATERIAL BLOCKER + a repeated bug class
+
+- ⛔ **THOR UNREACHABLE** — 4 consecutive silent ssh attempts. Earlier drops today were transient
+  (uptime showed no reboot) but they now recur every few minutes and have killed: the driver smoke
+  test (twice), a uv sync, and the val relay.
+- 🔴 **I REPEATED A BUG CLASS I HAD ALREADY DIAGNOSED.** The chunked val relay logged
+  `have=0 missing=40` for 10 rounds and STALLED — while the clips actually existed (a later direct
+  probe saw 29, and the REF-C eval ran on 16). Cause: the script reads the destination listing over
+  ssh and **treats an ssh FAILURE as "zero files present"**. I identified exactly this flaw in the
+  v2bal corpus relay earlier today and did not carry the fix into the new script.
+  ⇒ **Rule: a remote listing that fails must return UNKNOWN, never 0.** A count of zero from a
+  failed probe is indistinguishable from a real zero and drives the wrong action.
+- ⇒ On an unstable link, **the self-healing loop must distinguish "probe failed" from "nothing
+  there"**, and should verify by LOADING files (which it now does at eval time) rather than by
+  counting them.
+- ⭐ RECOMMENDATION FOR THE PI: the Thor is doing real work (TensorRT 5.33x, four-family evals,
+  REF-C scoring) and WiFi is now the limiting factor. **An ethernet cable to the Thor would remove
+  this entire class of failure** — every transfer truncation, every dropped test, and the relay
+  stall above trace back to link instability.
+- STATE AT LAST CONTACT: val clips ~29 (target 40, load-verified at eval time, 3 truncations
+  quarantined); REF-C base 1.2GB + xl 2.9GB pulled; TanitAD AlpaSim driver written, installed,
+  registered, **not yet run**; 12-agent workflow still running.
