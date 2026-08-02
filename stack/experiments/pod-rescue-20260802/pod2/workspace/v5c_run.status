@@ -1,0 +1,22 @@
+=== v5 START 2026-07-28T21:38:52Z ===
+=== v5 EXIT 2026-07-29T05:04:45Z rc=1 ===
+    last stderr:
+      Traceback (most recent call last):
+        File "/workspace/TanitAD/stack/scripts/train_flagship_v4.py", line 2334, in <module>
+          raise SystemExit(main())
+                           ^^^^^^
+        File "/workspace/TanitAD/stack/scripts/train_flagship_v4.py", line 2329, in main
+          train(a)
+        File "/workspace/TanitAD/stack/scripts/train_flagship_v4.py", line 1433, in train
+          return _training_loop(
+                 ^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/scripts/train_flagship_v4.py", line 1102, in _training_loop
+          hrec = heldout_gate.probe(step, world, head, heldout_episodes,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/train/heldout_gate.py", line 585, in probe
+          value, eid, node = self._composite_of(pw)
+                             ^^^^^^^^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/train/heldout_gate.py", line 610, in _composite_of
+          sc = ps.score_windows(pw, progress_term=term, recovery_term=rterm)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      TypeError: score_windows() got an unexpected keyword argument 'recovery_term'

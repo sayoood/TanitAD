@@ -1,0 +1,23 @@
+=== v5 START 2026-07-28T21:32:05Z ===
+=== v5 EXIT 2026-07-28T21:36:27Z rc=1 ===
+    last stderr:
+                                ^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/train/flagship_losses.py", line 371, in flagship_loss
+          loss_sig = (position_relaxed(model.sigreg, z_all, sigreg_free_dims)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/models/sigreg.py", line 112, in position_relaxed
+          return sigreg(z[:, free_dims:])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/usr/local/lib/python3.11/dist-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+          return self._call_impl(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/usr/local/lib/python3.11/dist-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+          return forward_call(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/models/sigreg.py", line 64, in forward
+          return self._forward_fp32(z.float())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/workspace/TanitAD/stack/tanitad/models/sigreg.py", line 76, in _forward_fp32
+          t1 = torch.exp(-0.5 * b2 * diff.pow(2)).sum(dim=(0, 1)) / n   # [M]
+                                     ^^^^^^^^^^^
+      torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 162.00 MiB. GPU 0 has a total capacity of 44.42 GiB of which 73.88 MiB is free. Including non-PyTorch memory, this process has 44.33 GiB memory in use. Of the allocated memory 43.97 GiB is allocated by PyTorch, and 39.76 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

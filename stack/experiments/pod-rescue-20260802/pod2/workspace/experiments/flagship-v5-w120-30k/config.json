@@ -1,0 +1,615 @@
+{
+  "arch": "flagship-v4 (joint WM + operative planner; \u03bb_plan curriculum) \u2014 FROM-SCRATCH (random-init trunk, no v1 warm-start)",
+  "parity": {
+    "corpus_format": "v2 compressed (<clip_id>.v2ep.pt)",
+    "train_corpus_key": "physicalai-train-e438721ae894-w120-256x640cyl",
+    "skip_hash": "f09e44db",
+    "train_cache": [
+      "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl"
+    ],
+    "val_cache": [
+      "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+    ],
+    "episodes_verified": 2400,
+    "episode_uid_sha256": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+    "episode_reselection": "refused (clip-id MEMBERSHIP check vs tanitad/data/parity_manifest.json \u2014 a swapped clip at identical count is refused; parity.assert_v2_parity_cache)",
+    "uid_kind": "v2ep_clipid",
+    "require_parity": true,
+    "train_parity": {
+      "parity": true,
+      "checked": true,
+      "label": "--v2-train-cache",
+      "cache_dirs": [
+        "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl"
+      ],
+      "corpus_key": "physicalai-train-e438721ae894-w120-256x640cyl",
+      "uid_kind": "v2ep_clipid",
+      "split": "train",
+      "uid_source": "v2 re-cache of physicalai-train-e438721ae894 at a new geometry",
+      "skip_hash": "f09e44db",
+      "episodes_expected": 2400,
+      "episodes_loaded": 2400,
+      "episode_uid_sha256": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+      "episode_uid_sha256_expected": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+      "derived_from": "physicalai-train-e438721ae894",
+      "geometry": {
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "frame_tag": "256x640f305.5775cyl",
+        "projection_mode": "cylindrical",
+        "codec": "png",
+        "quality": null,
+        "selection_parquet": "/workspace/data/physicalai_phase0/r0/r0_selection.parquet",
+        "only_clips": "/workspace/wfov/paritysplit/parity_train_clips.txt",
+        "clips_requested": 2400,
+        "geometry_check": {
+          "requested_hfov_deg": 120.0,
+          "achieved_hfov_deg": 120.0,
+          "f_eff": 305.5775,
+          "observed_frac": 0.9348642592,
+          "frame_tag": "256x640f305.5775cyl",
+          "observed_frac_superseded": 1.0,
+          "observed_frac_basis": "POPULATION: every clip in this cache (2400), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+          "observed_frac_note": "CORRECTED 2026-07-27. The superseded value came from a ONE-CLIP pre-decode probe and is false of this corpus. See corrections[]."
+        },
+        "rig_observability": {
+          "A": {
+            "n": 642,
+            "mean": 0.9999861572,
+            "min": 0.9993652105,
+            "max": 1.0
+          },
+          "B": {
+            "n": 1758,
+            "mean": 0.9110825422,
+            "min": 0.8947876096,
+            "max": 0.9190063477
+          },
+          "rig_assignment": "native principal-point row cy, boundary 650.872 (MEASURED: largest gap 193.35 px over 3,000 clips; no clip ambiguous)",
+          "fully_observed_by_all": false
+        },
+        "subframe_observability": {
+          "176x624": {
+            "A": {
+              "n": 642,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 1758,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "128x576": {
+            "A": {
+              "n": 642,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 1758,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "_": "what a CENTRED sub-frame of this cache would deliver. It is a pure pixel slice \u2014 `v2_dataset.build_v2_providers(frame=\u2026)` / `v2_compressed.load_compressed(path, frame=\u2026)`. Nothing needs rebuilding to reach these numbers."
+        },
+        "corrections": [
+          {
+            "date": "2026-07-27",
+            "field": "geometry_check.observed_frac",
+            "old": 1.0,
+            "new": 0.9348642592,
+            "old_basis": "ONE clip. `v2_compressed._assert_geometry_deliverable` probed clips[0] before the first decode; that clip was rig A, which this frame fully observes.",
+            "new_basis": 2400,
+            "new_basis_note": "POPULATION: every clip in this cache (2400), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+            "why": "the front-wide camera is TWO RIGS whose principal points differ ~211 px vertically; a 120 deg x 45.456 deg request over-runs rig B's sensor, so the rectifier masks ~8.9 % of every rig-B frame. A single-clip probe cannot see that, and nothing hashes pixels \u2014 this declaration is what a consumer checks, and `register_v2_sibling.py` copies it verbatim into parity_manifest.json.",
+            "changes_no_pixels": true,
+            "backup_of_original": "_geometry.json.orig-2026-07-27",
+            "instrument": "restamp_geometry_manifest.py (rig-fix-wiring stream)",
+            "raw": "restamp_2026-07-27.json"
+          }
+        ]
+      },
+      "content_check": "sha256(sorted clip ids) MATCHES the committed manifest entry"
+    },
+    "val_parity": {
+      "parity": true,
+      "checked": true,
+      "label": "--v2-val-cache",
+      "cache_dirs": [
+        "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+      ],
+      "corpus_key": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+      "uid_kind": "v2ep_clipid",
+      "split": "val",
+      "uid_source": "v2 re-cache of physicalai-val-0c5f7dac3b11 at a new geometry",
+      "skip_hash": "f09e44db",
+      "episodes_expected": 600,
+      "episodes_loaded": 600,
+      "episode_uid_sha256": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+      "episode_uid_sha256_expected": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+      "derived_from": "physicalai-val-0c5f7dac3b11",
+      "geometry": {
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "frame_tag": "256x640f305.5775cyl",
+        "projection_mode": "cylindrical",
+        "codec": "png",
+        "quality": null,
+        "selection_parquet": "/workspace/data/physicalai_phase0/r0/r0_selection.parquet",
+        "only_clips": "/workspace/wfov/paritysplit/parity_val_clips.txt",
+        "clips_requested": 600,
+        "geometry_check": {
+          "requested_hfov_deg": 120.0,
+          "achieved_hfov_deg": 120.0,
+          "f_eff": 305.5775,
+          "observed_frac": 0.9360899822,
+          "frame_tag": "256x640f305.5775cyl",
+          "observed_frac_superseded": 1.0,
+          "observed_frac_basis": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+          "observed_frac_note": "CORRECTED 2026-07-27. The superseded value came from a ONE-CLIP pre-decode probe and is false of this corpus. See corrections[]."
+        },
+        "rig_observability": {
+          "A": {
+            "n": 170,
+            "mean": 0.9999701276,
+            "min": 0.9993652105,
+            "max": 1.0
+          },
+          "B": {
+            "n": 430,
+            "mean": 0.910835041,
+            "min": 0.8947876096,
+            "max": 0.9190063477
+          },
+          "rig_assignment": "native principal-point row cy, boundary 650.872 (MEASURED: largest gap 193.35 px over 3,000 clips; no clip ambiguous)",
+          "fully_observed_by_all": false
+        },
+        "subframe_observability": {
+          "176x624": {
+            "A": {
+              "n": 170,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 430,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "128x576": {
+            "A": {
+              "n": 170,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 430,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "_": "what a CENTRED sub-frame of this cache would deliver. It is a pure pixel slice \u2014 `v2_dataset.build_v2_providers(frame=\u2026)` / `v2_compressed.load_compressed(path, frame=\u2026)`. Nothing needs rebuilding to reach these numbers."
+        },
+        "corrections": [
+          {
+            "date": "2026-07-27",
+            "field": "geometry_check.observed_frac",
+            "old": 1.0,
+            "new": 0.9360899822,
+            "old_basis": "ONE clip. `v2_compressed._assert_geometry_deliverable` probed clips[0] before the first decode; that clip was rig A, which this frame fully observes.",
+            "new_basis": 600,
+            "new_basis_note": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+            "why": "the front-wide camera is TWO RIGS whose principal points differ ~211 px vertically; a 120 deg x 45.456 deg request over-runs rig B's sensor, so the rectifier masks ~8.9 % of every rig-B frame. A single-clip probe cannot see that, and nothing hashes pixels \u2014 this declaration is what a consumer checks, and `register_v2_sibling.py` copies it verbatim into parity_manifest.json.",
+            "changes_no_pixels": true,
+            "backup_of_original": "_geometry.json.orig-2026-07-27",
+            "instrument": "restamp_geometry_manifest.py (rig-fix-wiring stream)",
+            "raw": "restamp_2026-07-27.json"
+          }
+        ]
+      },
+      "content_check": "sha256(sorted clip ids) MATCHES the committed manifest entry"
+    },
+    "train_val_disjoint": {
+      "disjoint": true,
+      "train_clips": 2400,
+      "val_clips": 600,
+      "overlap": 0,
+      "label": "v2 train/val"
+    },
+    "geometry_binding": {
+      "label": "--v2-train-cache",
+      "checked_shape": true,
+      "checked_declaration": true,
+      "frame": {
+        "height": 176,
+        "width": 624,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "pixels_are_not_hashed": "membership proves WHICH CLIPS, shape proves the RASTER SIZE on disk, the manifest proves what the BUILDER RECORDED. None of the three proves the resampler produced that field.",
+      "sliced_from": {
+        "parent": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "parent_tag": "256x640f305.5775cyl",
+        "sub_tag": "176x624f305.5775cyl",
+        "rows": [
+          40,
+          216
+        ],
+        "cols": [
+          8,
+          632
+        ],
+        "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+      },
+      "cache_frame_shapes": [
+        [
+          176,
+          624
+        ]
+      ],
+      "registered_geometry": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      }
+    },
+    "geometry_binding_val": {
+      "label": "--v2-val-cache",
+      "checked_shape": true,
+      "checked_declaration": true,
+      "frame": {
+        "height": 176,
+        "width": 624,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "pixels_are_not_hashed": "membership proves WHICH CLIPS, shape proves the RASTER SIZE on disk, the manifest proves what the BUILDER RECORDED. None of the three proves the resampler produced that field.",
+      "sliced_from": {
+        "parent": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "parent_tag": "256x640f305.5775cyl",
+        "sub_tag": "176x624f305.5775cyl",
+        "rows": [
+          40,
+          216
+        ],
+        "cols": [
+          8,
+          632
+        ],
+        "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+      },
+      "cache_frame_shapes": [
+        [
+          176,
+          624
+        ]
+      ],
+      "registered_geometry": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      }
+    }
+  },
+  "corpus_format": "v2 compressed",
+  "geometry": {
+    "height": 176,
+    "width": 624,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical",
+    "tag": "176x624f305.5775cyl",
+    "hfov_deg": 117.0,
+    "vfov_deg": 32.131,
+    "n_tokens_at_patch16": 429,
+    "is_canonical": false,
+    "comma2k19_hfov_ceiling_deg": 65.203,
+    "exceeds_comma2k19_field": true,
+    "patch_size": 16,
+    "token_grid": [
+      11,
+      39
+    ],
+    "n_tokens": 429,
+    "readout_grid": [
+      4,
+      4
+    ],
+    "state_dim": 2048,
+    "cache_key_fragment": {
+      "geom": "176x624f305.5775cyl"
+    },
+    "is_deployed_frame": false
+  },
+  "geometry_cache": {
+    "height": 256,
+    "width": 640,
+    "f_ref": 305.5774907364391,
+    "projection": "cylindrical",
+    "tag": "256x640f305.5775cyl",
+    "hfov_deg": 120.0,
+    "vfov_deg": 45.456,
+    "n_tokens_at_patch16": 640,
+    "is_canonical": false,
+    "comma2k19_hfov_ceiling_deg": 65.203,
+    "exceeds_comma2k19_field": true,
+    "subframe_of_cache": {
+      "parent": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "parent_tag": "256x640f305.5775cyl",
+      "sub_tag": "176x624f305.5775cyl",
+      "rows": [
+        40,
+        216
+      ],
+      "cols": [
+        8,
+        632
+      ],
+      "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+    },
+    "note": "the cache is UNCHANGED on disk; the loader slices it (bit-exact for a lossless/PNG cache)."
+  },
+  "trunk": {
+    "init": "from-scratch (random)",
+    "ckpt": null,
+    "step": -1,
+    "rationale": "v4 from-scratch fallback \u2014 WM + anchored-diffusion planner co-evolve from random init like v1 (canary held 0.42); no warm-start coupling degradation. v1 is the existence proof."
+  },
+  "from_scratch": true,
+  "from_scratch_schedule_note": "\u03bb_plan/floor tension differs from-scratch: there is NO pre-converged WM to protect, so the canary controller is inert BY CONSTRUCTION \u2014 its baseline is the step-0 UNTRAINED canary (high), and a co-evolving WM's canary only IMPROVES below that, so delta<0 keeps the controller at 'ok' and \u03bb_plan follows the pure schedule to 1.0. The floor (--lam-mult-floor) is a no-op safety net in this regime. DEFAULT keeps the v4.2b schedule (phase_a/b + floor) UNCHANGED so from-scratch changes exactly ONE thing vs v4.2b (trunk init) \u2014 maximal attributability. Phase A (\u03bb_plan=0, steps 0..phase_a) is retained on purpose: it lets the random WM establish a predictive latent before the planner gradient couples in during the Phase B ramp.",
+  "cfg": "{\n  \"encoder\": {\n    \"in_channels\": 9,\n    \"image_size\": 176,\n    \"patch_size\": 16,\n    \"d_model\": 768,\n    \"depth\": 12,\n    \"n_heads\": 12,\n    \"grad_checkpoint\": false,\n    \"image_width\": 624\n  },\n  \"predictor\": {\n    \"d_model\": 768,\n    \"depth\": 10,\n    \"n_heads\": 12,\n    \"window\": 8,\n    \"horizons\": [\n      1,\n      2,\n      4\n    ],\n    \"action_dim\": 3,\n    \"residual\": true,\n    \"change_weighted\": true\n  },\n  \"tactical_pred\": {\n    \"d_model\": 512,\n    \"depth\": 6,\n    \"n_heads\": 8,\n    \"window\": 8,\n    \"horizons\": [\n      8,\n      16\n    ],\n    \"action_dim\": 3,\n    \"residual\": true,\n    \"change_weighted\": true\n  },\n  \"tactical_policy\": {\n    \"d_model\": 512,\n    \"depth\": 6,\n    \"n_heads\": 8,\n    \"n_maneuvers\": 5,\n    \"waypoint_horizons\": [\n      5,\n      10,\n      15,\n      20\n    ],\n    \"d_intent\": 256,\n    \"cadence\": 5\n  },\n  \"strategic_policy\": {\n    \"n_commands\": 4,\n    \"d_cmd\": 128,\n    \"d_model\": 384,\n    \"depth\": 4,\n    \"n_heads\": 6,\n    \"d_ctx\": 256,\n    \"n_route\": 3,\n    \"cadence\": 20\n  },\n  \"readout\": {\n    \"grid\": 4,\n    \"d_readout\": 128,\n    \"grid_w\": null\n  },\n  \"tactical\": {\n    \"n_maneuvers\": 9,\n    \"horizon\": 4\n  },\n  \"h15\": {\n    \"enabled\": true,\n    \"mask_prob\": 0.5,\n    \"weight\": 0.5,\n    \"depth\": 3,\n    \"observed_weight\": 0.1\n  },\n  \"loss\": {\n    \"sigreg\": {\n      \"n_slices\": 512,\n      \"beta\": 1.0,\n      \"weight\": 0.1,\n      \"free_dims\": 64\n    },\n    \"pred_weight\": 1.0,\n    \"inv_dyn_weight\": 0.5\n  },\n  \"train\": {\n    \"lr\": 0.0003,\n    \"weight_decay\": 0.05,\n    \"betas\": [\n      0.9,\n      0.95\n    ],\n    \"batch_size\": 64,\n    \"accum_steps\": 1,\n    \"save_every\": 500,\n    \"steps\": 60000,\n    \"warmup_steps\": 2000,\n    \"device\": \"auto\",\n    \"seed\": 0,\n    \"log_every\": 50,\n    \"out_dir\": \"experiments/dev\",\n    \"rollout_k\": 4\n  },\n  \"v2_ego_to_planners\": false,\n  \"v2_ego_dropout\": 0.0,\n  \"v2_fa_dropout\": 0.0,\n  \"v2_goal_decode\": false,\n  \"v2_nav_dropout\": 0.0,\n  \"v2_traj_jerk\": 0.0,\n  \"v2_gated_intent\": false,\n  \"v2_anchor_tactical\": false,\n  \"v2_route_from_vision\": false,\n  \"v2_encoder_ego_decorr\": false,\n  \"speed_input\": true,\n  \"v2_invdyn_gradscale\": 1.0,\n  \"v2_labels\": false,\n  \"v21_route_labels\": false,\n  \"geometry\": {\n    \"height\": 176,\n    \"width\": 624,\n    \"f_ref\": 305.5774907364391,\n    \"projection\": \"cylindrical\"\n  }\n}",
+  "head_cfg": {
+    "state_dim": 2048,
+    "readout_grid": 4,
+    "d_cell": 128,
+    "window": 8,
+    "action_dim": 3,
+    "horizons": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "n_anchors": 256,
+    "decoder": {
+      "d": 384,
+      "n_heads": 8,
+      "layers": 4,
+      "ff_mult": 4,
+      "aux_hidden": 512,
+      "diffusion_steps": 2,
+      "noise_std": 0.1
+    },
+    "d_token": 512,
+    "d_meas": 128,
+    "cond_states": true,
+    "cond_imagination": false,
+    "cond_vtarget": true,
+    "cond_route": true,
+    "n_probes": 8,
+    "probe_steps": 20,
+    "imag_read": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "goal_dropout": 0.5,
+    "ego_dropout": 0.5,
+    "ego_null_row": true,
+    "vt_gate_init": 0.1,
+    "sel_gate_init": 0.0,
+    "sel_accel_max": 2.5,
+    "sel_reach_clamp": false,
+    "vision_rank": 16,
+    "allow_raw_vision": false,
+    "vision_rank_reason": "",
+    "factorised": true,
+    "factor_hidden": 128,
+    "seam_clamp": 1.0,
+    "seam_fail": 1.5,
+    "seam_fail_frac": 0.75,
+    "seam_fail_patience": 50,
+    "graft_lambda": 1.0,
+    "graft_tau": 1.0
+  },
+  "horizon_plan": {
+    "needed_fut": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7,
+      14,
+      15,
+      18,
+      19
+    ],
+    "max_horizon": 20,
+    "maneuver_h": 20
+  },
+  "phases": {
+    "phase_a": 2000,
+    "phase_b": 8000,
+    "gate_step": 10000
+  },
+  "optimizer": {
+    "kind": "AdamW",
+    "lr_head": 0.0001,
+    "lr_trunk": 0.0001,
+    "wd": 0.01,
+    "warmup": 2000,
+    "schedule": "cosine",
+    "micro_batch": 8,
+    "accum_steps": 8,
+    "effective_batch": 64,
+    "effective_batch_note": "matches v1 (16*4=64); v4.1 was 16*1=16"
+  },
+  "canary_controller": {
+    "kind": "cap-and-hold-floor (v4.2 fix for v4.1 halve-to-zero)",
+    "mult_floor": 0.25,
+    "ctrl_thresh": 0.05,
+    "alarm_thresh": 0.3,
+    "ctrl_factor": 0.5,
+    "alarm_evals": 3
+  },
+  "not_frozen_proof": {
+    "not_frozen": true,
+    "trunk_params_total": 631,
+    "trunk_params_requires_grad": 631,
+    "encoder_params_requires_grad": "149/149",
+    "predictor_params_requires_grad": "159/159",
+    "trunk_params_in_optimizer_trunk_group": 631,
+    "trunk_group_lr": 0.0001,
+    "lr_trunk_arg": 0.0001,
+    "trunk_tensors_frozen": 0
+  },
+  "loss_weights": {
+    "w_lat": 0.05,
+    "w_lon": 0.05,
+    "w_dist": 0.05,
+    "w_jerk": 0.02,
+    "w_curv": 0.01,
+    "w_strat": 0.05
+  },
+  "lambda_plan_mode": "sched",
+  "strategic": "full",
+  "milestones": [
+    5000,
+    10000,
+    15000,
+    20000,
+    30000
+  ],
+  "note_on_the_fly_labels": "FlagshipV4Dataset mints v3 factorised + strategic labels PER WINDOW from full-episode poses; for a 30k run precompute them once (v4_labels.build) and index \u2014 --poses-*/--labels-* are reserved for that path and are NOT read by this on-the-fly loop yet.",
+  "args": {
+    "train_cache": null,
+    "val_cache": null,
+    "v2_train_cache": [
+      "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl"
+    ],
+    "v2_val_cache": [
+      "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+    ],
+    "v2_lru": 8,
+    "v2_subframe": "176x624",
+    "require_parity": true,
+    "poses_train": null,
+    "poses_val": null,
+    "labels_train": null,
+    "labels_val": null,
+    "trunk": null,
+    "from_scratch": true,
+    "frame_h": 256,
+    "frame_w": 640,
+    "frame_hfov": 120.0,
+    "f_ref": null,
+    "projection": "cylindrical",
+    "anchors_dense": "/workspace/experiments/flagship_v4_anchors_dense.pt",
+    "anchors_coarse": null,
+    "probes": null,
+    "out": "/workspace/experiments/flagship-v5-w120-30k",
+    "labels": "v3",
+    "lambda_plan": "sched",
+    "phase_a_steps": 2000,
+    "phase_b_steps": 8000,
+    "strategic": "full",
+    "d_strat": 128,
+    "long_horizon_k": 50,
+    "probe_steps": 50,
+    "probe_grad": "one",
+    "dense_plan": true,
+    "lat_weight": 0.05,
+    "lon_weight": 0.05,
+    "dist_weight": 0.05,
+    "strat_goal_weight": 0.1,
+    "strat_pred_weight": 0.5,
+    "strat_scalar_weight": 0.05,
+    "jerk_w": 0.02,
+    "curv_w": 0.01,
+    "seam_fail": 1.5,
+    "ego_null_row": true,
+    "rollout_k": 4,
+    "s2_film": false,
+    "heldout_gate": true,
+    "heldout_every": 2000,
+    "heldout_episodes": 8,
+    "heldout_patience": 2,
+    "heldout_stride": 8,
+    "heldout_nboot": 2000,
+    "heldout_goal": "dropped",
+    "steps": 30000,
+    "gate_step": 10000,
+    "batch": 8,
+    "accum": 8,
+    "lr_head": 0.0001,
+    "lr_trunk": 0.0001,
+    "lam_mult_floor": 0.25,
+    "warmup": 2000,
+    "workers": 4,
+    "log_every": 50,
+    "eval_every": 500,
+    "save_every": 1000,
+    "eval_episodes": 40,
+    "device": "cuda",
+    "seed": 0,
+    "smoke": false,
+    "smoke_loop": false,
+    "real_smoke": false,
+    "n_windows": 8,
+    "print_launch": false
+  }
+}
