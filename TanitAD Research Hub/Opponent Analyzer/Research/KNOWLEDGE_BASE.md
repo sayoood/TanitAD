@@ -9,6 +9,54 @@
 > #2/#3/#4 whose real wall-clock was 2026-07-09 / 07-17 / 07-20 — so a run-#5 row dated **2026-08-02**
 > is NEWER than a run-#4 row dated 2026-08-07. **Order by run number.**
 
+- [2026-08-02 · Wayve deep-dive] [Wayve, primary sources] **FACT — ★ LA-Pose IS OUR H7, PUBLISHED, AT
+  10.2 MILLION CLIPS** (arXiv **2604.27448**, 2026-04-30, Wayve): an **inverse-dynamics model** on
+  **10.2 M unlabelled driving clips** learns **latent actions** (never told speed or heading) that
+  cluster into straight/left/right/stopped **with zero pose labels**; a light head reads camera pose
+  **including field-of-view and metric scale** in one forward pass; **>10 % over feed-forward SOTA** on
+  Waymo + **PandaSet (unseen → zero-shot)**; **a 50-d latent bottleneck beat a 1,536-d one despite worse
+  video reconstruction**; degrades in reverse motion — impact: **H7's premise is externally VALIDATED
+  but H7 is dead as a differentiator in the form "IDM gives 1000× data"** (they published it first at 5
+  orders more data) ⇒ **restate H7 as the data-efficiency SLOPE at matched params, which Wayve has NOT
+  published**. Also directly closes our IDM pilot's two recorded gaps (**unknown intrinsics, metric
+  scale**) and benchmarks on **PandaSet, for which we already hold an (unverdicted) loader** — and the
+  **50-d result is third-party support for our own latent thesis (H3)** — https://arxiv.org/abs/2604.27448
+- [2026-08-02 · Wayve deep-dive] [Wayve, primary source] **FACT — the inference we carried since run #1
+  is now an AFFIRMATIVE STATEMENT: GAIA-3 is "designed for offline evaluation and safety validation, NOT
+  real-time in-vehicle deployment."** 15 B latent diffusion, **2 Dec 2025**; tokenizer 2× GAIA-2's, **5×
+  compute, ~10× data, 9 countries / 3 continents**; conditioned on ego action, agents' 3D boxes,
+  weather/time-of-day, road attributes; **"World-on-Rails" perturbation** (move ego, hold the scene);
+  claims **"synthetic-test rejection rates reduced fivefold"** and that it **"reliably predicts relative
+  policy performance"** — ⚠️ **with no paper, only a blog post and press release** — impact: the honest
+  framing is **"their world model VALIDATES; ours DRIVES"** (stop saying they *failed* to put it in the
+  loop — they chose not to); attack the ranking claim on **reviewability**, not relevance — https://wayve.ai/thinking/gaia-3/
+- [2026-08-02 · Wayve deep-dive] [Wayve] **FACT — they already have the closed loop we are blocked on.**
+  **Ghost Gym** (Dec'23) = closed-loop **neural** simulator (neural renderer + simulated robot car +
+  vehicle-dynamics model, **action fed back**), now powered by **PRISM-1** (Jun'24) — 4D photorealistic
+  reconstruction **from cameras only, no LiDAR** — impact: **a third route around our closed-loop wall**
+  (AlpaSim NO-GO + CARLA pixels host-blocked are both *renderer* problems; neural reconstruction needs
+  GPUs, not a graphics-capable container). Highest-value architectural steal in this note — https://wayve.ai/thinking/ghost-gym-neural-simulator/
+- [2026-08-02 · Wayve deep-dive] [Wayve] FACT/INFER — **Rig3R** (Oct'25, **NeurIPS 2025 Spotlight**):
+  ViT-L encoder + ViT-L multiview decoder + a **metadata embedding layer (camera ID, timestamps, raymap
+  calibration)**, heads for pointmaps / pose raymaps / rig raymaps; **+17–45 % over baselines**, biggest
+  gains on **unseen camera configurations** — impact: **a published answer to our two-rig PhysicalAI
+  problem** (cy≈543 vs cy≈755; geometric-centre crop ~215 px wrong for rig B) — **rig-metadata
+  conditioning is cheaper than filtering a rig out** (Data Eng) — https://wayve.ai/thinking/rig3r/
+- [2026-08-02 · Wayve deep-dive] [Wayve] FACT — **multi-country generalization, their own numbers, and
+  the benchmark our H7 story must beat or reframe:** UK→US needed **500 h** of incremental US data over
+  8 weeks to reach UK-equivalence (100 h → "5×", 500 h → "40×"); **Germany zero-shot "3× better"** than
+  the initial US deployment; a new vehicle platform "8×" after **100 h**. ⚠️ **All relative multipliers
+  off an undisclosed baseline — no miles, no intervention rate, no absolute figure**; their safety page
+  likewise has **no metrics, thresholds, runtime-monitor or OOD methodology** — impact: strongest
+  evidence *for* the AV2.0 bet **and** the most technical exemplar of **W-11**; **H11 (self-monitoring
+  with a threshold) is the widest unoccupied gap in the field** — https://wayve.ai/thinking/multi-country-generalization/
+- [2026-08-02 · Wayve deep-dive] [Opponent Analyzer] **INFER + process note — three agreeing probes were
+  still wrong.** Wayve's `/science/` page, an arXiv `all:Wayve` query (**0 results**) and an arXiv author
+  search all suggested Wayve had published nothing after Mar 2025; the `/thinking/category/research/`
+  archive shows **Rig3R (Oct'25)** and **LA-Pose (May'26)**. Cause: **arXiv does not index the
+  affiliation string**, and Wayve's recent first authors are not the founders — impact: **never make an
+  opponent-publication absence claim from arXiv search alone**; go to the lab's own research archive.
+  Operating Standard #2, earned again
 - [2026-08-02 · run #5] [TanitAD / eval pod] **MEASURED — SC-13 RESOLVED, and the open-loop probe is
   RETIRED.** flagship v1, 40-ep PhysicalAI val, **stride 1 → 6,444 anchors, n=44 BRAKE_FAR over 15
   episodes**. Run #4 **reproduced to three decimals** on the recoverable stride-2 subset. Speed-matched:

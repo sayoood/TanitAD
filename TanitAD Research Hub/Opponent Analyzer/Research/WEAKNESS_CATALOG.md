@@ -31,6 +31,16 @@
 - **Evidence (FACT, converging):** the **CA DMV is retiring the disengagement metric** (see W-07), i.e.
   the one published denominator-bearing series in the field is being withdrawn rather than fixed.
   — https://www.dmv.ca.gov/portal/vehicle-industry-services/autonomous-vehicles/disengagement-reports/
+- **Evidence (FACT) — WAYVE IS THE MOST TECHNICAL EXEMPLAR, which is the point.** This is not a weakness
+  of the sloppy operators; it holds for the research-first lab too. Wayve's **safety-framework page
+  contains no quantitative safety metric, no threshold, no runtime-monitoring detail and no OOD
+  methodology**; their headline generalization results are **relative multipliers off an undisclosed
+  baseline** — "500 h to reach UK-equivalence", "**40×**", "**3×** better", "**fivefold**" — with **no
+  miles, no intervention rate, no absolute number**; and GAIA-3's central claim that it **"reliably
+  predicts relative policy performance"** ships with **no paper**, only a blog post and a press release.
+  — https://wayve.ai/technology/safety-framework/ , https://wayve.ai/thinking/multi-country-generalization/
+  **INFER:** when the most publication-active opponent in the field still cannot be checked, the gap is
+  structural — and it is the axis on which a small, rigorous program can visibly out-argue an $8.6 B one.
 - **TanitAD counter — this is the weakness where we are *already* strongest (H0, and P8 as method):**
   every number this program publishes carries its **denominator, its estimator and its evidence class**:
   n=881 windows over 40 held-out episodes; a **pre-registered gate card with both outcomes committed
@@ -260,6 +270,15 @@
   **AlpaGym** (open-source high-throughput **closed-loop RL** framework, GRPO, single-GPU→multi-node) and
   quantization scripts "coming soon" — the quantization work is the first sign NVIDIA itself expects the
   32 B number to be a deployment problem. — https://huggingface.co/blog/nvidia/nvidia-alpamayo-2
+- **Wayve delta (FACT, deep-dive 2026-08-02) — the inference is now their own statement, and it changes
+  the wording of the wedge.** GAIA-3 (15 B) is **"designed for offline evaluation and safety validation,
+  NOT real-time in-vehicle deployment"** — Wayve's own page. So the correct claim is **not** "they can't
+  put the world model in the loop"; it is **"their world model VALIDATES, ours DRIVES."** The on-car
+  policy stays a **flat E2E network** with no hierarchy, no decision-time imagination and no separable
+  strategic layer, on **DRIVE AGX Thor (up to 2,000 FP4 TFLOPS)**. ⚠️ **Their on-car parameter count has
+  never been disclosed** (checked four ways) — only the *offline* models' sizes are public, which is
+  itself informative. Full analysis: `Research/2026-08-02-wayve-deep-dive.md`.
+  — https://wayve.ai/thinking/gaia-3/ , https://wayve.ai/thinking/wayve-gen-3/
 - **TanitAD counter:** **H1/H3/H5** (hierarchical ~261 M model, data-efficient, real-time on Orin) proven
   by **CNCE** (compute-normalized causal efficacy). Our ~261 M-on-Orin vs 32 B-on-car is the wedge.
 - **Scenario-spec status:** metric-only (CNCE) — no scenario needed. **Recommendation:** competitor param

@@ -24,14 +24,67 @@
   Still no signal that GAIA moves *in-loop* — it stays an offline data/eval factory (W-05 intact).
 - **Δ 08-07 / real 07-20 (FACT):** **$85 M employee tender (2026-07-01)** — a **liquidity event, not
   new capital**; no technical or deployment delta in-window. W-05 unchanged. — https://wayve.ai/press/series-d/
-- **Strengths (INFER):** talent + capital density; UK/EU regulatory access; genuine multi-country
-  generalization data; strong generative-WM data factory.
-- **Exploitable weaknesses:** generative-**pixel** WM is compute-hungry and used **offline**, not in the
-  loop (W-05); on-car driver is monolithic E2E — **no hierarchy, no imagination-in-the-loop, no
-  self-monitoring guarantee** (W-04 adjacent); L2+/robotaxi split spreads focus.
-- **What would beat them:** ship the WM *as the on-car reasoning substrate* (not an offline data factory)
-  at 1–2 orders less compute (H1/H3/H5, CNCE), with in-loop imagination (H15) + guaranteed self-monitoring
-  (H11) that a monolithic E2E net structurally lacks.
+- **Δ run #5 / 2026-08-02 — FULL DEEP-DIVE: `Research/2026-08-02-wayve-deep-dive.md`.** Read that note
+  before quoting anything here; the summary below is compressed from it.
+- **Architecture, corrected (FACT) — Wayve is TWO stacks, not one.**
+  **(a) On-car:** a *flat* end-to-end policy, camera-first + radar, mapless, licensed to OEMs (they do
+  not operate fleets). **LINGO-2** (Apr'24) = the first closed-loop **vision-language-action** driving
+  model tested on public roads — emits a path *and* a running natural-language commentary, and accepts
+  language instruction. **Gen 3** runs on **NVIDIA DRIVE AGX Thor, up to 2,000 FP4 TFLOPS**, targeting
+  **eyes-off L3 + driverless L4**. ⚠️ **The on-car parameter count has NEVER been disclosed** (checked
+  four ways); only the *offline* models' sizes are public. A **75 W** deployable figure exists as
+  **CLAIM** (secondary source only).
+  **(b) Offline factory:** FIERY (2021) → MILE (2022, model-based imitation w/ latent WM — their closest
+  ancestor to *our* design) → **GAIA-1** 9 B (2023) → **Ghost Gym** (Dec'23, **closed-loop neural
+  simulator**: neural renderer + simulated robot car + vehicle dynamics, action fed back) → **PRISM-1**
+  (Jun'24, 4D photorealistic reconstruction **from cameras only, no LiDAR**) → **GAIA-2** (Mar'25,
+  multi-view, arXiv 2503.20523) → **Rig3R** (Oct'25, **NeurIPS Spotlight**, multi-camera geometry
+  conditioned on **rig metadata**, +17–45 % over baselines, best on **unseen rig configs**) → **GAIA-3**
+  (**2 Dec 2025**, 15 B latent diffusion) → **LA-Pose** (**30 Apr 2026**, arXiv 2604.27448).
+- **★ THE LOAD-BEARING FACT (FACT, Wayve's own page):** GAIA-3 is **explicitly for offline evaluation and
+  safety validation, NOT real-time in-vehicle deployment.** Our long-standing "no signal that GAIA moves
+  in-loop" is no longer an inference from absence — **they say so.** ⇒ the honest framing is **"their
+  world model VALIDATES; ours DRIVES."** GAIA-3 detail: video tokenizer 2× GAIA-2's, **5× compute, ~10×
+  data, 9 countries / 3 continents**; conditioned on ego action, agents' 3D boxes, weather/time, road
+  attributes; **"World-on-Rails" perturbation** (move ego, hold the scene); claims **"reduced
+  synthetic-test rejection rates fivefold"** and that it **"reliably predicts relative policy
+  performance."** ⚠️ **No paper — blog + press release only.** — https://wayve.ai/thinking/gaia-3/
+- **★ LA-Pose = OUR H7, PUBLISHED, AT 10.2 M CLIPS (FACT).** An **inverse-dynamics model** on **10.2
+  million unlabelled driving clips** learns **latent actions** (never told speed or heading); they
+  cluster into straight/left/right/stopped **with zero pose labels**; a light head then reads **camera
+  pose incl. field-of-view and metric scale** in one forward pass. **>10 % over feed-forward SOTA** on
+  Waymo + **PandaSet (unseen → zero-shot)**. **A 50-d latent bottleneck beat a 1,536-d one despite worse
+  video reconstruction.** Known limit: degrades in reverse motion. — https://arxiv.org/abs/2604.27448
+- **Multi-country generalization, their own numbers (FACT):** UK→US needed **500 h** of incremental US
+  data over 8 weeks to reach UK-equivalence (100 h → "5×", 500 h → "40×"); **Germany zero-shot "3×
+  better"** than the initial US deployment; a new vehicle platform → "8×" after **100 h**. ⚠️ **All
+  relative multipliers off an undisclosed baseline — no miles, no intervention rate** (→ W-11).
+- **Δ run #5 — deployment reality check (FACT):** first commercial launch = **Ford Mustang Mach-E on Uber
+  London WITH A SAFETY DRIVER**, pending regulator go-ahead (waitlist open); UK fully-driverless targeted
+  **2027**; **Waymo targets a London service Q3 2026, possibly driverless from the start.** Nissan ADAS
+  from 2027; **Wayve+Nissan+Uber Tokyo pilot late 2026** (DRIVE Hyperion). ⚠️ **Do not quote the
+  TechCrunch "$1.8 B" headline** — its own body says $1.2 B + $300 M conditional = **$1.5 B at $8.6 B
+  post**, which is our figure. The **NVIDIA $500 M LOI is 2025-09-18** and is superseded.
+- **Strengths (INFER, sharpened):** ① **a closed-loop camera-only evaluation stack that actually works**
+  (Ghost Gym + PRISM-1 + GAIA-3) — *the capability we are most blocked on*; ② real multi-domain
+  generalization with a measured data cost; ③ research depth (NeurIPS Spotlight, active arXiv output);
+  ④ distribution + capital + **multi-SoC optionality** (NVIDIA/AMD/Arm/Qualcomm).
+- **Exploitable weaknesses:** ① **the WM is an evaluator, not a driver** — no hierarchy, **no
+  imagination at decision time**, no separable strategic layer on-car (W-05); ② **no denominators
+  anywhere** — no safety metrics, thresholds, runtime-monitor or OOD methodology on their safety page;
+  generalization quoted only as multipliers (**W-11**, their most technical exemplar); ③ **LINGO
+  introspection is narrative, not numeric** — a commentary track is not a runtime monitor with a
+  threshold (H11 gap); ④ they bet **explicitly against scenario enumeration** ("Safety 2.0"), which
+  NHTSA's W-09 *"functional insufficiency"* finding cuts against; ⑤ **behind Waymo in their own home
+  market**, safety-driver-first; ⑥ camera+radar with no published epistemic-uncertainty mechanism (W-04
+  exposure — **INFER from absence at one source class; probe again before it carries weight**);
+  ⑦ **an internal tension**: their own 50-d LA-Pose result argues reconstruction fidelity is *not* what
+  driving needs, against their 15 B reconstructive flagship.
+- **What would beat them:** the WM **as the on-car reasoning substrate at decision time** (H15 in-loop
+  imagination) inside a **planning-time hierarchy** (H1), at 1–2 orders less compute with a **published
+  CNCE** number they do not report — plus the one thing nobody in the field publishes: **self-monitoring
+  with a threshold (H11)**. ⚠️ **P8 honesty:** H11 is our *widest opportunity*, **not** a current
+  advantage — our own D8 AUROC bar (>0.85) is unmet. State it that way.
 
 ## Waymo  (US · modular+learned, HD maps · robotaxi at scale)
 - **Approach (FACT):** modular+learned stack, HD maps, large multi-sensor fleet; freeway autonomy since
