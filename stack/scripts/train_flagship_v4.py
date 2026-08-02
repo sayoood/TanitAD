@@ -78,7 +78,7 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
                  plan, cfg, step: int, phases: CurriculumPhases,
                  lw: V4LossWeights, lam_mode: str = "sched",
                  lam_mult: float = 1.0, device: str = "cpu",
-                 goal_head=None) -> tuple:
+                 goal_head=None, probes=None) -> tuple:
     """One joint step's TOTAL loss = WM stack + planner + factorised + smoothness
     (+ the strategic goal-scalar regression when a ``goal_head`` is supplied).
 
@@ -109,7 +109,8 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
         batch["future_poses"][:, :max(horizons)].float(), horizons)
 
     goal = _goal_inputs(head.cfg, batch, v0)
-    out = head(states, v0, lambda_plan=lam, **goal)
+    imag = _imagination_inputs(world, head.cfg, batch, states, probes)
+    out = head(states, v0, lambda_plan=lam, **goal, **imag)
     from tanitad.models.flagship_v15 import v15_losses
     plan_l = v15_losses(out, head.decoder.anchors, traj_tgt)
 
@@ -219,6 +220,73 @@ def _goal_inputs(cfg: V4Config, batch: dict, v0: torch.Tensor) -> dict:
         kw["route"] = batch.get("route", torch.zeros(b, dtype=torch.long))
         kw["route_graded"] = batch.get("route_graded", torch.zeros(b))
     return kw
+
+
+def _imagination_inputs(world, head_cfg, batch: dict, states: torch.Tensor,
+                        probes: torch.Tensor | None) -> dict:
+    """P1 (review 2026-08-02): the imagination conditioning the head was DESIGNED around.
+
+    ``flagship_v15`` calls ``cond_imagination`` "THE NOVEL PART" — probe action sequences are
+    rolled through the predictor and the imagined latents condition the decode, so the decoder
+    sees the CONSEQUENCES of candidate controls instead of inferring them from the present
+    frame. It was hard-wired OFF ("imagination off per real_smoke") and that smoke-experiment
+    default silently became the flagship default. This helper is the missing feed.
+
+    ⚠️ The roll is under ``torch.no_grad()`` — the tokens are INPUTS to the head (gradient
+    flows into ``imag_proj`` on the head side), never a 20-step backprop path into the
+    predictor, which keeps step cost bounded and matches the "frozen predictor" design.
+    ⚠️ The observed action window is lifted to the SAME 3-channel format the predictor trains
+    with (speed appended, ``flagship_losses.py:228`` pattern) — a 2-channel roll would feed
+    the predictor an action space it has never seen.
+    """
+    if not getattr(head_cfg, "cond_imagination", False):
+        return {}
+    if probes is None:
+        raise RuntimeError(
+            "cond_imagination=True but no probe vocabulary was supplied — build it at "
+            "setup (probe_vocab.pt) and thread it through; a silent skip here would "
+            "train a head that expects 32 imagination tokens and never sees them.")
+    from tanitad.models.flagship_v15 import imagine_probes
+    v0n = batch["pose_last"][:, 3].float().to(states.device) / 10.0   # SPEED_SCALE contract
+    aw = batch["actions"].to(states.device).float()                   # [B, W, 2|3]
+    if aw.shape[-1] == 2:
+        aw = torch.cat([aw, v0n[:, None, None].expand(-1, aw.shape[1], -1)], dim=-1)
+    with torch.no_grad():
+        imag = imagine_probes(world.predictor, states.detach(), aw, probes,
+                              tuple(head_cfg.imag_read), v0n)
+    return {"imagined": imag}
+
+
+def build_probes_from_dataset(ds_train, head_cfg, out_dir, device,
+                              n_seqs: int = 512) -> torch.Tensor:
+    """FPS probe vocabulary over REAL future (steer, accel) sequences — built ONCE per run.
+
+    Cached as ``probe_vocab.pt`` in the run dir so a resume reuses the byte-identical
+    vocabulary (within-run parity; a re-sampled vocabulary would silently change what the
+    imagination is asked). FPS not k-means: the corpus is ~74 % straight cruise and k-means
+    would collapse every probe onto "hold speed, go straight".
+    """
+    from pathlib import Path as _P
+
+    from tanitad.models.flagship_v15 import build_probe_vocabulary
+    pf = _P(out_dir) / "probe_vocab.pt"
+    if pf.exists():
+        return torch.load(pf, map_location=device)
+    K = head_cfg.probe_steps
+    seqs = []
+    for i in range(min(len(ds_train), n_seqs)):
+        fa = torch.as_tensor(ds_train[i]["future_actions"]).float()[:K, :2]
+        if fa.shape[0] == K:
+            seqs.append(fa)
+    if len(seqs) < head_cfg.n_probes:
+        raise RuntimeError(f"only {len(seqs)} usable future-action sequences of length "
+                           f"{K} in the first {n_seqs} samples — cannot build "
+                           f"{head_cfg.n_probes} probes")
+    probes = build_probe_vocabulary(torch.stack(seqs), head_cfg.n_probes)
+    torch.save(probes, pf)
+    print(f"[imag] probe vocabulary: {tuple(probes.shape)} from {len(seqs)} real "
+          f"sequences -> {pf}", flush=True)
+    return probes.to(device)
 
 
 # ============================================================================
@@ -517,7 +585,8 @@ def canary_rollout(world, grounding, ds_val, device, *,
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
 def evaluate_planner(head, world, ds_val, device, *, episodes: int = 40,
-                     stride: int = 8, batch: int = 16, amp: bool = True) -> dict:
+                     stride: int = 8, batch: int = 16, amp: bool = True,
+                     probes=None) -> dict:
     """ADE@2s + oracle-in-fan + sel_gap over the val windows, re-encoding through
     the current trunk. Mirrors ``train_flagship_v16.evaluate`` but reuses
     ``v15_losses`` (already the operative-planner loss in ``v4_loss_step``)."""
@@ -540,7 +609,8 @@ def evaluate_planner(head, world, ds_val, device, *, episodes: int = 40,
             b["future_poses"][:, :max(horizons)].float(), horizons)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp_on):
             st = world.encode_window(b["frames"])
-            out = head(st, v0, lambda_plan=1.0, **_goal_inputs(head.cfg, b, v0))
+            out = head(st, v0, lambda_plan=1.0, **_goal_inputs(head.cfg, b, v0),
+                       **_imagination_inputs(world, head.cfg, b, st, probes))
         lg = v15_losses(out, head.decoder.anchors, traj_tgt)
         bs = traj_tgt.shape[0]
         ade.append(float(lg["ade"]) * bs); oracle.append(float(lg["oracle_ade"]) * bs)
@@ -882,7 +952,8 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                    lam_mode: str, canary_horizons, canary_kmax: int,
                    eval_episodes: int, batch: int, milestones,
                    accum: int = 1, canary_override=None,
-                   heldout_gate=None, heldout_episodes=None) -> dict:
+                   heldout_gate=None, heldout_episodes=None,
+                   probes=None) -> dict:
     """Run the joint WM + planner training loop. Auto-resumes from ``ckpt.pt`` if
     present (pod-restart safe). Returns a result dict (final step, canary trace,
     controller multiplier trace, milestone archives) for the smoke proof.
@@ -966,7 +1037,7 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                 total, log = v4_loss_step(
                     world, grounding, head, batch_d, plan, cfg, step, phases, lw,
                     lam_mode=lam_mode, lam_mult=float(controller._mult),
-                    device=str(device), goal_head=goal_head)
+                    device=str(device), goal_head=goal_head, probes=probes)
             if not torch.isfinite(total):
                 raise SystemExit(f"[v4] non-finite loss at step {step} "
                                  f"(micro {_micro}/{accum}): {log}")
@@ -1074,7 +1145,8 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                                  horizons=canary_horizons, k_max=canary_kmax,
                                  episodes=eval_episodes, batch=batch, amp=amp)
             ev = evaluate_planner(head, world, ds_val, device,
-                                  episodes=eval_episodes, batch=batch, amp=amp)
+                                  episodes=eval_episodes, batch=batch, amp=amp,
+                                  probes=probes)
             # §5.5 CONTROLLER: feed the canary; it may only pull λ_plan DOWN.
             ctrl_val = (canary_override[min(eval_i, len(canary_override) - 1)]
                         if canary_override else can["canary_ade@2s"])
@@ -1140,7 +1212,8 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                                horizons=canary_horizons, k_max=canary_kmax,
                                episodes=eval_episodes, batch=batch, amp=amp)
     final_ev = evaluate_planner(head, world, ds_val, device,
-                                episodes=eval_episodes, batch=batch, amp=amp)
+                                episodes=eval_episodes, batch=batch, amp=amp,
+                                probes=probes)
     archives = sorted(p.name for p in out_dir.glob("ckpt_step*.pt"))
     metrics = {"final_step": step - 1, "canary_ade@2s": final_can["canary_ade@2s"],
                "canary_baseline": controller.baseline, "val": final_ev,
@@ -1236,10 +1309,16 @@ def train(a) -> dict:
     else:
         trunk_step = _warmstart_trunk(world, grounding, a.trunk, device)
 
-    # ---- operative planner head (v4_config; imagination off per real_smoke) -----
+    # ---- operative planner head --------------------------------------------------
+    # cond_imagination is a LAUNCH FLAG now (deep review 2026-08-02, P1). It was
+    # hard-wired False here since real_smoke — an attributability choice for one
+    # experiment that silently became the flagship default, leaving the planner
+    # with ZERO imagination tokens for the whole v5 run. The default stays False
+    # so every existing command reproduces byte-identically; v5-flagship passes
+    # --cond-imagination explicitly and the preflight banner records it.
     hcfg = v4_config()
     hcfg.state_dim = world.state_dim
-    hcfg.cond_imagination = False
+    hcfg.cond_imagination = bool(getattr(a, "cond_imagination", False))
     hcfg.window = cfg.predictor.window
     hcfg.ego_null_row = a.ego_null_row                   # P5b default True (X15 off)
     # ⭐ seam_fail EXPOSED 2026-07-28. It was hard-wired at 1.5 in V4Config while
@@ -1430,6 +1509,11 @@ def train(a) -> dict:
               "signal, the cause of the last run's ~29.5 wasted GPU-h.",
               flush=True)
 
+    # P1 (deep review 2026-08-02): the probe vocabulary for imagination conditioning —
+    # built once from real future-action sequences, cached in OUT for resume parity.
+    probes = (build_probes_from_dataset(ds_train, hcfg, out_dir, device)
+              if hcfg.cond_imagination else None)
+
     return _training_loop(
         out_dir=out_dir, device=device, amp=amp, world=world, grounding=grounding,
         head=head, goal_head=goal_head, opt=opt, plan=plan, cfg=cfg, phases=phases,
@@ -1439,7 +1523,8 @@ def train(a) -> dict:
         gate_step=a.gate_step, lam_mode=a.lambda_plan,
         canary_horizons=(5, 10, 15, 20), canary_kmax=20,
         eval_episodes=a.eval_episodes, batch=a.batch, accum=a.accum,
-        milestones=milestones, heldout_gate=hgate, heldout_episodes=hg_eps)
+        milestones=milestones, heldout_gate=hgate, heldout_episodes=hg_eps,
+        probes=probes)
 
 
 def _is_from_scratch(a) -> bool:
@@ -1781,6 +1866,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "consecutive steps — a batch MAX can no longer kill a run. "
                          "Raising it does NOT weaken the graft bound: seam_clamp "
                          "(1.0) still rescales in-graph. Recorded in config.json.")
+    ap.add_argument("--cond-imagination", dest="cond_imagination",
+                    action="store_true", default=False,
+                    help="P1 (deep review 2026-08-02): feed the head the imagined "
+                         "consequences of the probe-action vocabulary — the "
+                         "conditioning flagship_v15 calls THE NOVEL PART. Default "
+                         "off = byte-identical to every pre-v5f command.")
     ap.add_argument("--ego-null-row", dest="ego_null_row", action="store_true", default=True)
     ap.add_argument("--ego-zero-fill", dest="ego_null_row", action="store_false",
                     help="X15 — the v3enc zero-fill bug; ablation ONLY, never a shipping run")
