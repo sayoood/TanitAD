@@ -101,3 +101,90 @@ are **sequenced, not additive** (capture first). Expect a similar shape here, fr
 | "encoder is compute-bound" | **MEASURED** — inferred from flat ms/sample across batch 1→8 |
 | A40 precedent 138 → 18.75 ms | **INHERITED** — paper §7.10, different silicon, **not** re-verified on Thor |
 | expected TensorRT/INT8 gains | **HYPOTHESIS** — the whole point of measurements 1–3 |
+
+---
+
+# ADDENDUM — sustained load, and the prod-optimization playbook applied (same day)
+
+## A. The risk check on everything above: **NO THROTTLING**
+
+⚠️ The p50s in §1 came from 50 iterations (~10 s). An edge SoC that holds a number for ten
+seconds and then throttles has **not** met a budget. Re-ran the bf16 encoder for **180 s**:
+
+| | |
+|---|---|
+| first-decile p50 | 27.90 ms |
+| **last-decile p50** | **26.57 ms** |
+| throttle ratio (last/first) | **0.952** — it got *faster*, not slower |
+| overall p50 / p99 | 27.78 / — |
+
+✅ **The published burst number holds under sustained load.** (Faster-at-the-end is consistent
+with clocks settling upward once the initial DVFS ramp completes.)
+
+## B. ⭐ Applying the Production & Optimization stream's MEASURED playbook
+
+This is not a fresh search — that stream already measured, on a 4060: *"the whole win is the ViT;
+the predictor is **launch-bound**"*; manual `torch.cuda.CUDAGraph` on the predictor = **2.57×**
+(rel-err 2.8e-7, agreement 100 %); fp16-encoder + graph-predictor combined tick **17.75 → 11.16 ms
+(1.59×)** matching its additive projection to **0.4 %**; and `torch.compile` **not viable**.
+
+**My first Thor pass put graph capture on the ENCODER and got 1.09× — that is their diagnosis
+reproducing, not contradicting it:** a *compute*-bound stage cannot be helped by removing launch
+overhead. Each lever then went on the stage their measurements assign it.
+
+### The combined tick (20-step imagination roll + encode), MEASURED on Thor
+
+| configuration | p50 | p99 | vs 100 ms budget |
+|---|---|---|---|
+| fp32 eager (baseline) | **272.56 ms** | 273.71 | ⛔ 273 % |
+| ⭐ **bf16 encoder + CUDA-graph predictor** | **98.63 ms** | 102.57 | ✅ **98.6 %** |
+| | **2.76× speedup** | | |
+
+**Per-stage, with the accuracy delta beside every speed delta (their G-P2 rule):**
+
+| stage | eager | optimised | gain | accuracy |
+|---|---|---|---|---|
+| encoder | 187.8 ms fp32 | **27.8 ms bf16** | **6.76×** | rel-err **0.0059**, max\|Δz\| 0.0080 |
+| predictor 1-step | 4.23 ms | **3.42 ms** graph | 1.24× | rel-err **0.0** (bit-exact) |
+| 20-step roll | 81.52 ms | **69.62 ms** graph | 1.17× | bit-exact |
+
+⭐ **The CUDA graph is numerically FREE — rel-err exactly 0.0**, i.e. bit-identical replay. It is
+the one lever with no accuracy question at all, which is why their stream put it first.
+
+⭐⭐ **THE LEVERS COMPOSE ON THOR TOO.** Additive projection **101.25 ms** vs measured **98.63 ms**
+— **−2.6 %**, i.e. slightly *better* than additive. The 4060 finding (0.4 %) replicates on
+Blackwell/aarch64. ⇒ future levers can be planned additively rather than re-measured combinatorially.
+
+### Two cross-silicon differences worth recording
+
+1. **Predictor graph gain is 1.24× on Thor vs 2.57× on the 4060.** Not a contradiction — the gain
+   is launch-overhead removal, and Thor's launch overhead is a *smaller fraction* of a step that
+   its faster compute has already shortened. ⇒ **the graph matters less here, and precision matters
+   more** than the 4060 experience predicts.
+2. ⛔ **`torch.compile` fails on Thor too** — `InductorError` from the gcc/`libcuda.so.1` link step
+   (their 4060 cause was a missing Triton). **Same verdict, different root cause, two platforms:**
+   the deployment path is **manual capture + TensorRT**, and this should now be treated as settled
+   rather than re-attempted per-device.
+
+## C. Where the remaining 98.63 ms sits, and what is next
+
+Encoder **27.8** + roll **69.6** ≈ 97.4 of the 98.6 ms ⇒ **the 20-step imagination roll is now the
+majority cost (71 %)**, having been the minority before bf16. The target has moved.
+
+| # | next lever | why now |
+|---|---|---|
+| 1 | ⭐ **TensorRT fp16 engine** — their **#1 latency item**, recorded as *"toolchain-blocked… run when `tensorrt` lands"* | ⚠️ **Thor's image has NO TensorRT** (`nvinfer` absent, no `trtexec`, no python module) — it needs installing, but the ONNX IR is already **parity-clean at opset 17/18** (max\|Δz\| 8.8e-6, no unexportable ops), so the export half of the job is *already done* |
+| 2 | **Capture the WHOLE 20-step roll in ONE graph** | today each step is a separate replay; one capture removes 19 replay boundaries from the now-dominant stage |
+| 3 | **INT8 PTQ** | ⛔ accuracy must clear **all four families**, never ADE alone |
+| 4 | **bf16 accuracy gate** | rel-err 0.0059 is small but **not free** — it must be checked against their 95.3 % decision-agreement bar on real windows before bf16 ships |
+
+## Evidence class (addendum)
+
+| claim | class |
+|---|---|
+| sustained 180 s, no throttling | **MEASURED (ours)** — `thor_sustained.json` |
+| combined tick 272.56 → 98.63 ms (2.76×), per-stage gains, accuracy deltas | **MEASURED (ours)** — `thor_combined_tick.json`, warmup + CUDA-synced |
+| levers compose on Thor (−2.6 % vs additive) | **MEASURED (ours)** |
+| 4060 figures (2.57×, 1.59×, 0.4 %, 95.3 % bar) | **INHERITED** — Production & Optimization runs #4/#5, different silicon |
+| ONNX parity-clean at opset 17/18 | **INHERITED** — their 2026-07-08 export run, **not** re-verified on Thor |
+| TensorRT will beat the graph baseline | **HYPOTHESIS** — item 1 exists to test it |

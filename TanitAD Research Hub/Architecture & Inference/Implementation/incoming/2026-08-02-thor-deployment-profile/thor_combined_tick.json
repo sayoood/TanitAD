@@ -1,0 +1,58 @@
+{
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "replicates": "Production&Optimization run #4/#5 (4060): predictor graph 2.57x, combined tick 1.59x, torch.compile not viable",
+ "encoder_fp32": {
+  "p50_ms": 188.23,
+  "p99_ms": 188.81
+ },
+ "encoder_bf16": {
+  "p50_ms": 28.82,
+  "p99_ms": 31.08
+ },
+ "encoder_bf16_accuracy": {
+  "rel_err_vs_fp32": 0.005895,
+  "max_abs_dz": 0.008044
+ },
+ "predictor_1step_eager": {
+  "p50_ms": 4.23,
+  "p99_ms": 5.15
+ },
+ "predictor_1step_graph": {
+  "p50_ms": 3.42,
+  "p99_ms": 3.82
+ },
+ "predictor_graph_speedup_x": 1.24,
+ "predictor_graph_accuracy": {
+  "rel_err_vs_eager": 0.0,
+  "note": "their 4060 bar: rel-err 2.8e-7, agreement 100 %"
+ },
+ "roll20_eager": {
+  "p50_ms": 81.52,
+  "p99_ms": 81.88
+ },
+ "roll20_graph": {
+  "p50_ms": 69.62,
+  "p99_ms": 69.87
+ },
+ "roll20_speedup_x": 1.17,
+ "tick_fp32_eager": {
+  "p50_ms": 272.56,
+  "p99_ms": 273.71
+ },
+ "tick_bf16enc_graphpred": {
+  "p50_ms": 98.63,
+  "p99_ms": 102.57
+ },
+ "TICK_SPEEDUP_x": 2.76,
+ "composition_check": {
+  "additive_projection_ms": 101.25,
+  "measured_ms": 98.63,
+  "delta_pct": -2.6,
+  "verdict": "LEVERS COMPOSE (within 10 %) \u2014 matches the 4060 finding"
+ },
+ "budget_100ms": {
+  "baseline_pct": 272.6,
+  "optimised_pct": 98.6
+ }
+}

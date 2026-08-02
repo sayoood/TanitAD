@@ -1,0 +1,29 @@
+{
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "sustained": {
+  "duration_s": 180,
+  "iters": 6471,
+  "first_decile_p50_ms": 27.9,
+  "last_decile_p50_ms": 26.57,
+  "overall_p50_ms": 27.78,
+  "overall_p99_ms": 32.06,
+  "max_ms": 34.09,
+  "throttle_ratio_last_over_first": 0.952,
+  "verdict": "NO THROTTLING \u2014 the burst number holds under sustained load"
+ },
+ "cuda_graph": {
+  "p50_ms": 25.45,
+  "p99_ms": 29.33,
+  "out_shape": [
+   1,
+   8,
+   2048
+  ],
+  "speedup_vs_eager_bf16_x": 1.09
+ },
+ "torch_compile": {
+  "FAILED": "InductorError: CalledProcessError: Command '['/usr/bin/gcc', '/tmp/tmpj2la9z6f/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmpj2la9z6f/cuda_utils.cpython-312-aarch64-linux-gnu.so', '-l:libcuda.so.1', '-L/home/nv",
+  "note": "a failure here is a RESULT \u2014 it routes the deployment stream to TensorRT/graph capture instead"
+ }
+}
