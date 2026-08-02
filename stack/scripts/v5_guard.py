@@ -191,20 +191,35 @@ def run_guard(head, world, ds, device, episodes: int, batch: int = 16,
 
 
 def load_v5(ckpt: str, config: str, device: str):
-    """Rebuild WM + head from the run's OWN config.json (the loaders.py pattern —
-    a v2-family checkpoint is unloadable without its recorded config)."""
-    import dataclasses
+    """Rebuild geometry + WM + head from the run's OWN recorded launch args.
 
+    ⚠️ The guard goes through the TRAINER'S seams (``resolve_v2_frames``, which also
+    mutates the encoder config to the sub-frame) rather than re-deriving geometry —
+    a hand-rebuilt encoder at the cache frame would load weights that expect
+    176×624 and silently score garbage. Same class as C66: verify the path the
+    code actually takes, not a lookalike."""
+    import dataclasses
+    from types import SimpleNamespace
+
+    from scripts.train_flagship_v4 import resolve_v2_frames
     from tanitad.config import flagship4b_config
     from tanitad.models.flagship_v4 import FlagshipV4Head, v4_config
     from tanitad.models.fourbrain import WorldModel
 
     rec = json.loads(Path(config).read_text())
+    ra = rec.get("args") or {}
+    assert isinstance(ra, dict) and ra, "config.json has no recorded launch args"
+    ns = SimpleNamespace(**ra)
+
     cfg = flagship4b_config()
-    # geometry + trunk overrides recorded by the v4 trainer
-    for k, v in (rec.get("trunk") or {}).items():
-        if hasattr(cfg.encoder, k):
-            object.__setattr__(cfg.encoder, k, v)
+    cache_frame, train_frame = resolve_v2_frames(ns, cfg, label="v5_guard")
+    # v5 trains the v1 speed-input trunk (action_dim 3) — mirror the trainer's own
+    # block (train_flagship_v4.py:1288ff) or the STRICT load refuses on act_emb.
+    cfg.speed_input = True
+    cfg.predictor = dataclasses.replace(cfg.predictor, action_dim=3)
+    if getattr(cfg, "tactical_pred", None) is not None:
+        cfg.tactical_pred = dataclasses.replace(cfg.tactical_pred, action_dim=3)
+
     world = WorldModel(cfg)
     hcfg = v4_config()
     for k, v in (rec.get("head_cfg") or {}).items():
@@ -214,11 +229,12 @@ def load_v5(ckpt: str, config: str, device: str):
             setattr(hcfg, k, tuple(v) if isinstance(v, list) else v)
     head = FlagshipV4Head(hcfg)
     ck = torch.load(ckpt, map_location="cpu", weights_only=False)
-    world.load_state_dict(ck["model"])
+    world.load_state_dict(ck["model"])                 # STRICT — a mismatch is a finding
     head.load_state_dict(ck["head"])
-    print(f"[guard] loaded step={ck.get('step')}  head tokens: "
-          f"imag={head.n_imag_tokens}", flush=True)
-    return world.to(device).eval(), head.to(device).eval(), ck.get("step")
+    print(f"[guard] loaded step={ck.get('step')} frame={train_frame.height}x"
+          f"{train_frame.width} imag_tokens={head.n_imag_tokens}", flush=True)
+    return (world.to(device).eval(), head.to(device).eval(), ck.get("step"),
+            ns, cfg, cache_frame, train_frame)
 
 
 def main():
@@ -231,18 +247,21 @@ def main():
     a = ap.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    from tanitad.data.mixing import load_episode
+    from flagship_v4_data import FlagshipV4Dataset
 
-    from scripts.train_flagship_v4 import FlagshipV4Dataset, horizon_plan
-    from tanitad.config import flagship4b_config
+    from tanitad.data.v2_dataset import build_v2_providers
+    from tanitad.train.flagship_losses import horizon_plan
 
-    world, head, step = load_v5(a.ckpt, a.config, device)
-    cfg = flagship4b_config()
-    plan = horizon_plan(cfg)
-    files = sorted(Path(a.val_cache).glob("ep_*.pt"))[:a.episodes]
-    assert files, f"no ep_*.pt under {a.val_cache}"
-    eps = [load_episode(str(p), mmap=True) for p in files]
-    ds = FlagshipV4Dataset(eps, window=head.cfg.window,
+    world, head, step, ns, cfg, cache_frame, train_frame = \
+        load_v5(a.ckpt, a.config, device)
+
+    # the run's own val corpus, at the run's own frame (v2 compressed, lazy)
+    slice_frame = None if train_frame == cache_frame else train_frame
+    eps = build_v2_providers([a.val_cache], lru_size=int(getattr(ns, "v2_lru", 8)),
+                             frame=slice_frame, verbose=False)
+    assert eps, f"no *.v2ep.pt under {a.val_cache}"
+    plan = horizon_plan(cfg, op_fwd_k=4, tac_fwd_k=16, str_fwd_k=20)
+    ds = FlagshipV4Dataset(eps[:a.episodes], window=head.cfg.window,
                            max_horizon=plan.max_horizon,
                            maneuver_h=plan.maneuver_h,
                            channels=cfg.encoder.in_channels)
