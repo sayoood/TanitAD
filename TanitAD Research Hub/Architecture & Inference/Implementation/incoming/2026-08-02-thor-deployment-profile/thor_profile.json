@@ -1,0 +1,85 @@
+{
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "arch": "aarch64",
+ "geometry": "176x624",
+ "budget_ms": 100.0,
+ "method": "warmup+cuda_synchronize, p50/p99 over 50 iters",
+ "frame": "176x624 hfov 117.0",
+ "params_M": 263.58,
+ "rss_after_load_GB": 11.48,
+ "encode_window_fp32": {
+  "p50_ms": 187.81,
+  "p90_ms": 189.24,
+  "p99_ms": 191.45,
+  "min_ms": 184.68,
+  "max_ms": 191.45,
+  "n": 50
+ },
+ "state_shape": [
+  1,
+  8,
+  2048
+ ],
+ "predictor_1step_fp32": {
+  "p50_ms": 4.29,
+  "p90_ms": 5.09,
+  "p99_ms": 6.06,
+  "min_ms": 4.16,
+  "max_ms": 6.06,
+  "n": 50
+ },
+ "predictor_roll20_fp32": {
+  "p50_ms": 80.87,
+  "p90_ms": 85.81,
+  "p99_ms": 86.48,
+  "min_ms": 80.07,
+  "max_ms": 86.48,
+  "n": 15
+ },
+ "mem_fp32": {
+  "alloc_MB": 1105.0,
+  "peak_MB": 1231.5
+ },
+ "encode_window_bf16": {
+  "p50_ms": 27.78,
+  "p90_ms": 30.58,
+  "p99_ms": 32.74,
+  "min_ms": 27.33,
+  "max_ms": 32.74,
+  "n": 50
+ },
+ "mem_bf16": {
+  "alloc_MB": 1105.0,
+  "peak_MB": 1375.1
+ },
+ "batch_scaling_encode": {
+  "b1": {
+   "p50_ms": 187.1,
+   "ms_per_sample": 187.1,
+   "peak_MB": 1263.1
+  },
+  "b2": {
+   "p50_ms": 373.62,
+   "ms_per_sample": 186.81,
+   "peak_MB": 1421.3
+  },
+  "b4": {
+   "p50_ms": 739.56,
+   "ms_per_sample": 184.89,
+   "peak_MB": 1737.6
+  },
+  "b8": {
+   "p50_ms": 1465.92,
+   "ms_per_sample": 183.24,
+   "peak_MB": 2371.2
+  }
+ },
+ "verdict": {
+  "encode_p50_vs_budget": "187.8 ms = 188% of the 100 ms budget",
+  "bf16_speedup_x": 6.76,
+  "imagination_roll20_ms": 80.87,
+  "note": "EAGER fp32/bf16 baseline \u2014 TensorRT/INT8/CUDA-graph capture not applied. The A40 precedent moved a v1-class plan step 138 ms -> 18.75 ms with a sequenced 4-lever pass, so read these as the STARTING point."
+ },
+ "rss_end_GB": 13.19
+}
