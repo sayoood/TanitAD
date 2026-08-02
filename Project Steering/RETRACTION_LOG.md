@@ -1472,3 +1472,41 @@ retractions: an instrument fed the wrong thing that did not complain.
 ⚠️ Second finding the same pass: switching the sky env-map on made the render WORSE
 (mean 0.240 -> 0.391 vs reference 0.266; PSNR 16.76 -> 15.32) because it fills the ~49% of pixels no
 gaussian covers. "The obvious missing piece" is not automatically an improvement — measure it.
+
+
+## 2026-08-03 — R-2026-08-03-b: "pod2 is the only live pod" and "not a memory problem" — BOTH WRONG
+**Root-cause class: SURVEYED ONLY THE HOSTS I ALREADY KNEW, and READ A LIMIT AT THE WRONG SCOPE.**
+
+**(i) The fleet.** I probed the 4 hosts in `~/.ssh/config`, found 3 refused, and reported *"pod2 is
+the entire GPU fleet"*. The PI corrected me: a second pod was training. It is
+**`69.30.85.48:22192`** (RunPod `interesting_gray_ant` / `v9ni8rpan3qyn3`), an A40 running
+`flagship-v1arch-v2bal-30k` — **at step 9750 with `g_op_fwd_ade_m` 0.0898**, started 2026-08-01
+23:34 UTC. It was simply not in my ssh config. Grepping the repo for connection strings found it in
+one command.
+⇒ **RULE: an ssh config is a cache of what I happened to write down, NEVER the fleet inventory.**
+Enumerate from the provider or from repo-wide connection strings before any "we have N pods" claim.
+Now registered as `tanitad-pod4` / `tanitad-v2arch`.
+
+**(ii) The memory.** Diagnosing v5f's death I ran `free -g`, saw **503 GB total / 487 GB available**,
+and wrote *"not memory"*. That is the **HOST**. The container cgroup limit is
+`memory.limit_in_bytes = 49,999,998,976` — **50 GB**, and usage was **48.9 GB**. RunPod's own console
+showed an *"Out of Memory (OOM) Detected"* banner and `Memory 50 GB` the whole time, and
+`memory.oom_control` records **`oom_kill 6`** — the container has been OOM-killed **six times**.
+⇒ **Exactly the class CLAUDE.md already warns about for disk** (*"Never judge pod disk with `df`" —
+it shows the cluster, not the per-pod quota*). **The same trap exists for RAM: `free` shows the host,
+not the cgroup.** Read `/sys/fs/cgroup/memory/memory.limit_in_bytes`, never `free`.
+
+⚠️ **What survives:** v5f's specific crash today WAS `torch.OutOfMemoryError: CUDA out of memory`
+(GPU, 44.42 GiB) — a traceback, not an inference. GPU-OOM and container-RAM-OOM are different
+resources and both are real here. The mitigations applied (batch 16->8, accum 4->8,
+expandable_segments, v2-lru 8->6) address both. Current state: 38.9 GB of the 46.4 GB usage is
+**reclaimable page cache**, only 6.4 GB is RSS, `under_oom 0`, and v5f is stepping — so this is
+tight, not imminent. `drop_caches` is DENIED inside the container (read-only `/proc/sys`).
+
+⚠️ **Two operational risks the console shows and no probe of mine would have found:**
+1. **"We have detected a critical error on this machine"** — RunPod advises backing up and
+   recreating the pod.
+2. **Scheduled maintenance 2026-08-06 21:00 → 2026-08-08 21:00 MESZ**, server down. v5f will not
+   survive it in place; it must be checkpointed and migrated, or restarted after.
+⇒ **RULE: the provider console carries state the pod cannot self-report. Check it before planning
+multi-day runs.**
