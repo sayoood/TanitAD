@@ -42,6 +42,20 @@ RESOURCE (G-I): dev-box **CPU only**, ~2.6 h session / **6.1 s** for the measure
    `stack/scripts/` (additive, 27 standalone tests) so every future consumer of the pool validates first.
 3. **`Project Steering/BACKLOG.md` A3** carried the 6.77× figure; corrected on this branch.
 
+### D-026 session guard (G-F) — `RESULT: PASS`, and the debt it surfaces
+- Run from the worktree root against tip `c6c1701`: **PASS** (nothing stranded uncommitted).
+- ⚠️ **WARN: 11 unmerged `agent/*` branches** vs tip — `agent/opponent-20260802` (+5),
+  `agent/benchmarks-eval-20260802` (+3), `agent/phase0-highway-dataset` (+3),
+  `agent/data-engineering-20260711` (+2), `agent/opponent-20260721` (+2),
+  `agent/pod-code-intake-20260720` (+2), `agent/prod-opt-20260711` (+2), plus four at +1
+  (`data-engineering-20260710`, `opponent-20260715`, `opponent-20260720`, `tools-devenv-20260721`).
+  **Two of my own discipline's branches are in there and predate this run by three weeks.**
+- ⚠️ **WARN: 26 INTAKE packages carry no orchestrator verdict**, oldest 25 days — the same
+  unfixed backlog PROJECT_STATE flagged as "19 of 23" on 07-20; it has grown, not shrunk.
+  Four are mine (`2026-07-15-pandaset-loader`, `2026-07-17-d016-r1-pinhole-rectify`,
+  `2026-07-18-curve-rebalance`, `2026-07-18-zod-loader`) plus the two VLM packages.
+  ⇒ **orchestrator escalation**, not a note nobody re-reads.
+
 ### Fleet context
 - **No Monday output exists this week** (last `tools-devenv` note 2026-07-21): the weekly-agent cadence has
   been superseded by the autonomous main loop since ~07-24. Consumed `LOOP_STATE.md`, C64/C65 and the
