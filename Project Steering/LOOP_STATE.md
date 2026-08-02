@@ -1181,3 +1181,10 @@ attribute its own failure; that ambiguity cost ~60 GPU-h.
 Never idle. Diagnose real causes before restarting anything. Report in chat every iteration (D-023),
 but **do not repeat an unchanged report** — advance an open question instead and say what was learned.
 Resume rate-limited agents via `SendMessage`, **never respawn**.
+
+## 2026-08-02 13:45 UTC — V5F LIVE (append; supersedes the FLEET block above)
+
+- ⭐ **v5f = V5-FLAGSHIP training on pod2** since 13:33 UTC: `--cond-imagination` ON (probe vocab 8x20 FPS/512 real seqs), goal_dropout 0.5 PER THE PASSED GUARD (ROUTE_LIVE d=0.067 CI[0.032,0.103]; VT_LIVE +0.895 m/s; kappa 0.519), parity w120 corpus sha-VERIFIED, in-loop gate ACCEPTED (trainer preflight refuses gateless, rc=2; C66 cause fixed+call-site-verified). 5 procs, stderr 975B (warning-class).
+- 🔴 NEXT: read first `step_s` row (~step 50) = **R3 imagination cost** vs 12.0 s/step baseline. >2x = decision-grade finding for the PI. Then paper (queue item 2, LAST 0-GPU item), then 5k milestone with FOUR FAMILIES + guard re-run.
+- newpod/v1arch still training (corpus contrast); pod3+eval STOPPED (weights safe: HF `Sayood/tanitad-rollout-recovery` + volumes); pod1 console.
+- Killed v5e at step 5450 (PI-ordered restart); its 5k guard verdict + ckpt banked.
