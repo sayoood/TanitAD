@@ -1188,3 +1188,13 @@ Resume rate-limited agents via `SendMessage`, **never respawn**.
 - 🔴 NEXT: read first `step_s` row (~step 50) = **R3 imagination cost** vs 12.0 s/step baseline. >2x = decision-grade finding for the PI. Then paper (queue item 2, LAST 0-GPU item), then 5k milestone with FOUR FAMILIES + guard re-run.
 - newpod/v1arch still training (corpus contrast); pod3+eval STOPPED (weights safe: HF `Sayood/tanitad-rollout-recovery` + volumes); pod1 console.
 - Killed v5e at step 5450 (PI-ordered restart); its 5k guard verdict + ckpt banked.
+
+## 2026-08-02 14:08 UTC — R3 MEASURED: imagination costs ~1.01x (FREE)
+
+- **v5f step_s = 12.10-12.16 s/step** (elapsed_s deltas 50->100->150), vs 12.0 baseline => the
+  no-grad probe rolls overlap with data loading and cost ~1%. The 1.2-1.5x ESTIMATE is retired.
+  30k ETA ~4.2 days. 5 procs, stderr 975B (warning-class), step 150+.
+- R1 guard + R3 both green => v5f config is FINAL: imagination ON, goal_dropout 0.5, parity w120.
+- NEXT: paper (last 0-GPU item) -> v5f gate@2000 (incumbent probe, cannot stop run) -> 5k
+  milestone four-family panel -> v1arch milestones. Thor access pending PI IP+username
+  (instructions delivered; key ready; scan found no SSH yet).
