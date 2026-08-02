@@ -86,6 +86,7 @@ def mean_speed(traj: torch.Tensor, dt: float = 0.1) -> torch.Tensor:
 
 @torch.no_grad()
 def run_guard(head, world, ds, device, episodes: int, batch: int = 16,
+              probes=None,
               seed: int = 0) -> dict:
     from torch.utils.data import default_collate
 
@@ -106,6 +107,14 @@ def run_guard(head, world, ds, device, episodes: int, batch: int = 16,
         st = world.encode_window(b["frames"])
         goal = _goal_inputs(head.cfg, b, v0)
         bs = v0.shape[0]
+
+        # ⛔ COND-IMAGINATION FEED. A head trained with --cond-imagination REQUIRES imagined
+        # latents and raises without them (flagship_v15.build_tokens). The guard previously
+        # called head(...) bare, so it could not score ANY v5-line arm — the exact class of arm
+        # it exists to guard. Built through the TRAINER'S OWN helper so the tokens the guard
+        # feeds are identical to the ones the head was trained on; a re-implementation here
+        # would silently measure a different model.
+        goal.update(_imagination_inputs(world, head.cfg, b, st, probes))
 
         # --- STRATEGIC: true command vs permuted command --------------------------
         out_t = head(st, v0, **goal)
@@ -264,10 +273,17 @@ def main():
     ap.add_argument("--val-cache", required=True)
     ap.add_argument("--episodes", type=int, default=40)
     ap.add_argument("--out", required=True)
+    # ⛔ A cond-imagination arm CANNOT be scored without its OWN probe vocabulary.
+    # It must be the run's cached probe_vocab.pt: a re-sampled vocabulary silently
+    # changes what the imagination was asked, so the guard would measure a different
+    # conditioning than training used.
+    ap.add_argument("--probes", default=None,
+                    help="probe_vocab.pt from the run dir (REQUIRED for --cond-imagination arms)")
     a = ap.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     from flagship_v4_data import FlagshipV4Dataset
+    from train_flagship_v4 import _imagination_inputs  # noqa: F401 (used in run_guard)
 
     from tanitad.data.v2_dataset import build_v2_providers
     from tanitad.train.flagship_losses import horizon_plan
@@ -285,7 +301,19 @@ def main():
                            max_horizon=plan.max_horizon,
                            maneuver_h=plan.maneuver_h,
                            channels=cfg.encoder.in_channels)
-    res = run_guard(head, world, ds, device, episodes=a.episodes)
+    probes = None
+    if getattr(head.cfg, "cond_imagination", False):
+        if not a.probes:
+            raise SystemExit(
+                "this checkpoint was trained with cond_imagination=True, so the head "
+                "REQUIRES imagined latents. Pass --probes <run_dir>/probe_vocab.pt. "
+                "Scoring it without them is impossible, not optional.")
+        probes = torch.load(a.probes, map_location=device, weights_only=False)
+        if isinstance(probes, dict):
+            probes = probes.get("probes", probes.get("vocab"))
+        probes = probes.to(device).float()
+        print(f"[guard] probe vocabulary {tuple(probes.shape)} from {a.probes}", flush=True)
+    res = run_guard(head, world, ds, device, episodes=a.episodes, probes=probes)
     res["ckpt"], res["step"] = a.ckpt, step
     Path(a.out).write_text(json.dumps(res, indent=2))
     print(json.dumps(res["strategic"], indent=1), flush=True)

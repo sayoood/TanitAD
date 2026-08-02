@@ -1,3 +1,29 @@
+# ⚠️ CORRECTED 2026-08-02 — the title below OVERREACHED
+
+**The narrow claim survives: the NRE renderer is a closed x86_64 binary, so it cannot run on Thor
+(`aarch64`).** ⛔ **But the framing "AlpaSim is blocked" was WRONG, and the probe I used tested a
+path this programme does not use.**
+
+- ✅ **AlpaSim RUNS, and we have run it — bare on one A40.** `ALPASIM_STATE.md` §1: *"Upstream
+  deploys it with Docker Compose; we run it bare on one A40, which is the program's own
+  contribution and the reason it works on a RunPod container at all."*
+- ✅ The renderer was acquired **without Docker** — a bearer-token layer-fetch into
+  `/workspace/nre/rootfs` (38 GB extracted). My `docker pull` manifest probe was therefore
+  **irrelevant to how we actually obtain and run it**.
+- ✅ **Closed-loop videos for REF-C (base/xl/small) and flagship v1 ALREADY EXIST** and are now
+  collected at `TanitAD Research Hub/Evaluation/Videos/alpasim-closedloop/`.
+- ⇒ The real constraint is **not architecture, it is that `tanitad-eval` is stopped**
+  (MEASURED: `Connection refused`). Restarting it restores the whole capability.
+
+**Root-cause class: I probed ONE acquisition path, found it closed, and generalised to the whole
+capability — the "absence found at ONE location is not absence" rule, in a doc I wrote minutes
+after applying that same rule to someone else.** The second probe I should have run first was
+`grep -ril alpasim` over our own hub, which would have found `ALPASIM_STATE.md` immediately.
+
+The original text follows, with its narrow aarch64 finding intact.
+
+---
+
 # ⛔ AlpaSim cannot run on the Jetson Thor — the renderer is amd64-only
 
 **MEASURED 2026-08-02, four independent probes.** This is not a configuration problem and no amount
