@@ -505,12 +505,16 @@ def train(args) -> dict:
     cfg.tactical_speed_input = bool(args.tactical_speed_input)
     cfg.man_prior_tau = float(args.man_prior_tau)
     cfg.graft_prior_center = not args.no_graft_prior_center
-    if (args.tactical_speed_input or args.man_prior_tau) \
-            and not args.factored_maneuver:
-        raise SystemExit("--tactical-speed-input / --man-prior-tau require "
-                         "--factored-maneuver (they are the F1/F3 levers of the "
-                         "same seam; the 5-way head's input and decode are "
-                         "frozen so published REF-C numbers stay reproducible)")
+    # --man-prior-tau is the F3 DECISION lever and it acts on the per-axis
+    # priors, which only exist with the factored seam — so it still requires it.
+    # --tactical-speed-input (F1 INPUT) does NOT: it applies to the shipped 5-way
+    # head too, and that is exactly the arm (`refc_f1only_config`) that isolates
+    # INPUT from STRUCTURE. Coupling them left F1 estimable only as
+    # `full - f2only`, where the two arms also differ in the head itself.
+    if args.man_prior_tau and not args.factored_maneuver:
+        raise SystemExit("--man-prior-tau requires --factored-maneuver (it "
+                         "adjusts the per-axis lat/lon class priors, which only "
+                         "the factored seam registers)")
     model = RefCModel(cfg).to(device)
     # Install the FPS anchor vocabulary (else the built-in default anchors).
     if args.anchors:
@@ -763,10 +767,11 @@ def main(argv=None):
                          "heads + split lat/lon anchor grafts (lon zero-init). "
                          "maneuver_logits is still emitted, derived exactly.")
     ap.add_argument("--tactical-speed-input", action="store_true",
-                    help="F1 INPUT: the tactical heads read the ego speed. The "
-                         "5-way head reads the image embedding alone while its "
-                         "own label is dv = v(t+2s) - v(t). Requires "
-                         "--factored-maneuver.")
+                    help="F1 INPUT: the tactical head reads the ego speed. The "
+                         "shipped head reads the image embedding alone while "
+                         "its own label is dv = v(t+2s) - v(t). Usable WITH or "
+                         "WITHOUT --factored-maneuver; alone it is the "
+                         "INPUT-only arm (refc_f1only_config).")
     ap.add_argument("--man-prior-tau", type=float, default=0.0,
                     help="F3 DECISION: logit-adjustment strength for the "
                          "REPORTED tactical class (1.0 = balanced posterior). "

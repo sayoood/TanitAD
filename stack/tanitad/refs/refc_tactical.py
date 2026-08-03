@@ -34,45 +34,74 @@ two and three are a LATERAL comparison that has nothing to do with it, and they
 are the mixing: any lateral uncertainty raises the bar a longitudinal class must
 clear. That is the mechanism, in algebra, from source.
 
-MEASURED (REF-C-base 30k, canonical val, n = 859 windows; artifact
-``TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
-2026-08-03-lan-refc-e0/LAN_E0_RESULTS.md`` section 5 TACTICAL):
+MEASURED (REF-C-base step 29999, canonical val, **n = 1364 windows / 39
+episodes**; run directory ``TanitAD Research Hub/Architecture & Inference/
+Implementation/incoming/2026-08-03-dtac1-tactical-head/``, substrate
+``dtac1_substrate_refc-base-30k.pt``, banked in that directory):
 
     class          n true   n predicted   recall
-    lane_keep         510        675      0.9745
-    turn_left         110        106      0.8182
-    turn_right         68         71      0.8529
-    accelerate         93          0      0.0000
-    brake_stop         78          7      0.0385
+    lane_keep         818       1078      0.9743
+    turn_left         174        165      0.8218
+    turn_right        109        114      0.8349
+    accelerate        146          0      0.0000
+    brake_stop        117          7      0.0256
 
-The turns are emitted at very nearly their true rate (106 vs 110, 71 vs 68) —
+(An earlier n = 859 table from ``…/2026-08-03-lan-refc-e0/LAN_E0_RESULTS.md``
+section 5 is the SAME 39 episodes at a sparser stride and is NOT window-for-
+window comparable; the 1364-window grid is the decision-grade one.)
+
+The turns are emitted at very nearly their true rate (165 vs 174, 114 vs 109) —
 so ``P_lat`` is well learned and the naive reading "the lateral classes win
-every argmax" is WRONG. 675 - 510 = 165 excess ``lane_keep`` against
-93 + 78 - 7 = 164 missing longitudinal: the longitudinal mass lands ENTIRELY in
-``lane_keep``, i.e. the failure is the WITHIN-lane_keep comparison
-``P_lon(steady)`` vs ``P_lon(brake)`` vs ``P_lon(accel)``, which is degenerate.
+every argmax" is WRONG. 1078 - 818 = 260 excess ``lane_keep`` against
+146 + 117 - 7 = 256 missing longitudinal, i.e. the failure is the
+WITHIN-lane_keep comparison ``P_lon(steady)`` vs ``P_lon(brake)`` vs
+``P_lon(accel)``, which is degenerate.
+
+⚠️ CORRECTED 2026-08-03 (adversarial R1): this used to read "the longitudinal
+mass lands ENTIRELY in lane_keep". It does not. Of 263 true-longitudinal
+windows, 241 (**91.6 %**) go to ``lane_keep`` and **19 (7.2 %) go to a LATERAL
+class**. "Almost entirely" is the claim the measurement supports.
 
 Three separable causes follow, and this module + ``refc.py``'s gated
-``factored_maneuver`` seam make each independently ablatable:
+``factored_maneuver`` seam make each independently ablatable. (Cited by SYMBOL,
+not line number: the L925/L916-922/L966 citations this docstring used to carry
+were stale the day they were written — adversarial R14 — and moved again when
+the F1 seam was decoupled.)
 
-  F1 INPUT.     ``refc.py`` computes ``man_logits = self.maneuver_head(pooled)``
-                (L925) where ``pooled`` is the IMAGE embedding alone; the ego
-                speed ``v0`` reaches only ``self.measurement`` -> the decoder
-                (L916-922). The longitudinal label IS ``dv = v(t+2s) - v(t)``,
-                so the head is asked a question about speed while blind to
-                speed. (The ``refc1`` target-speed head already concatenates the
-                measurement — L966 — so the fix is a pattern the same file
-                already uses.)
+  F1 INPUT.     ``RefCModel.forward`` computed ``man_logits =
+                self.maneuver_head(pooled)`` where ``pooled`` is the IMAGE
+                embedding alone, while the ego speed ``v0`` reached only
+                ``self.measurement`` -> the decoder condition. The longitudinal
+                label IS ``dv = v(t+2s) - v(t)``, so the head was asked a
+                question about speed while blind to speed. (``refc1``'s
+                ``speed_cls`` already concatenates the measurement, so the fix
+                is a pattern the same file uses.) FIXED, gated:
+                ``RefCConfig.tactical_speed_input`` — INDEPENDENT of
+                ``factored_maneuver`` since 2026-08-03, so
+                ``refc.refc_f1only_config()`` is an INPUT-only arm on the
+                unchanged 5-way head (+384 params, MEASURED).
   F2 STRUCTURE. The single softmax multiplies the longitudinal decision by the
                 lateral one (algebra above) and cannot represent
-                "lane_keep AND braking" at all.
+                "lane_keep AND braking" at all. It is also the LABEL's defect:
+                MEASURED 132 / 1364 = **9.68 %** of windows carry a live
+                longitudinal manoeuvre AND are labelled a turn, so no decode
+                rule can recover them. That is what needs the retrain.
   F3 DECISION.  Even factorised, a 3-way softmax under an unweighted CE learns
                 P(lon|x); its argmax emits a minority class only where that
-                class's posterior exceeds the majority's. On the same windows
-                the longitudinal marginal is steady 510 / brake 78 / accel 93 =
-                74.9 % / 11.5 % / 13.7 %, so factorisation ALONE does not
-                guarantee emission. Prior-corrected decoding (logit adjustment)
-                is the matching decision-rule fix.
+                class's posterior exceeds the majority's. On these windows the
+                longitudinal marginal is brake 0.1122 / steady 0.7104 /
+                accelerate 0.1774, so factorisation ALONE does not guarantee
+                emission (MEASURED: at tau = 0 brake recall 0.0719, accelerate
+                0.0455). Prior-corrected decoding (:func:`logit_adjust`) is the
+                matching decision-rule fix.
+                ⚠️ AND IT IS SMALLER THAN IT FIRST LOOKED. With tau chosen
+                LEAVE-ONE-EPISODE-OUT rather than off val (``scripts/
+                refc_tactical_tau_select.py``, results ``DTAC1B_RESULTS.md``):
+                brake recall 0.0719 -> 0.4248 at precision 0.2340 -> 0.1711, and
+                on the 1232 windows the 5-way LABEL can represent the whole patch
+                is **NOT separated** from doing nothing (paired episode-cluster
+                bootstrap: macro-F1 +0.0107 [-0.0418, +0.0665]). Never quote its
+                recall without its precision.
 
 CONTRACT / PROVENANCE
 ============================================================================

@@ -1815,3 +1815,66 @@ with polyline coverage as the cross-check: the correct branch scores **1.00 at 0
 next best **0.41 at 4.31 m**. A sibling of the same trap: an incoming connector **1.02 m long**
 (road 189, scene 00040136) never wins a snap at all and made the option count read **0**, i.e.
 "no continuation exists".
+
+---
+
+## 2026-08-03 — "brake_stop 0.026 → 0.503 with no retrain" — the MAGNITUDE survives an honest τ; the CLAIM does not survive precision.
+
+**Root-cause class: A ONE-SIDED METRIC ON A RULE WHOSE ENTIRE MECHANISM IS MOVING THE DECISION
+BOUNDARY TOWARD THE RARE CLASS.** Not the class everyone expected. The stream flagged
+*"reading τ off this table is fitting on val"* against its own work, and that was the right flag —
+but it was **not the load-bearing defect**. Same family as C9/C13/C14: an instrument structurally
+unable to report the answer it is cited for.
+
+**What was published** (`…/incoming/2026-08-03-dtac1-tactical-head/DTAC1_RESULTS.md` §2.3, §0.5, §3):
+prior-corrected decoding lifts `brake_stop` recall **0.026 → 0.503** at τ = 0.5 with no retrain, and
+`accelerate` peaks at 0.153. Recommended as a free read-out patch.
+
+**What the honest re-run says** (run directory `…/2026-08-03-dtac1-tactical-head/`, output
+`dtac1_tau_selection_refc-base-30k.json`, `DTAC1B_RESULTS.md`; τ AND the class prior selected
+**leave-one-episode-out**, so every window is decoded by a rule fitted without its own clip):
+
+* **The τ-on-val part was cheap.** Modal out-of-fold τ under macro-F1 is **0.50 in 36/39 folds** —
+  the same τ. Cost of honesty **1.49–3.16 % relative**, and the paired episode-cluster bootstrap on
+  out-of-fold vs val-optimal **includes zero in all 8 comparisons**.
+* **The precision part was not.** Honest brake recall is **0.4248** (all 1364 windows) at precision
+  **0.1711** — 380 fires against 153 true. **Precision appears nowhere** in the parent's results file,
+  its probe JSON, its pre-registration, or `refc_tactical_probe.py` (adversarial R3, confirmed).
+* ⛔ **On the 1232 windows the 5-way LABEL can represent, the patch is NOT separated from doing
+  nothing:** Δmacro-F1 **+0.0107 [−0.0418, +0.0665]**, Δmacro-recall +0.0213 [−0.0256, +0.0726].
+  The visible gain lives on the 132 windows the label destroys — the set the same report calls
+  irrecoverable.
+* **Optimising the published metric is self-defeating.** Selecting τ by macro-recall gives
+  Δmacro-recall **+0.1069 [+0.0381, +0.1749]** (separated) for Δmacro-F1 **−0.0006
+  [−0.0922, +0.0788]** and a *separated* accuracy loss of **−0.2757 [−0.3851, −0.1745]**. The recall
+  is bought with an exactly offsetting precision loss, and macro-recall cannot see it.
+* **The stated chance floor was wrong.** The full selection pipeline on **shuffled** logits scores
+  macro-recall **0.3678**, not the nominal 0.3333 — so ~0.034 of every macro-recall here is extracted
+  from the class prior by the procedure itself. (Third time this class has appeared: adversarial R4
+  found the same on E-A2.)
+
+⇒ **RULE: a decision rule that works by shifting a threshold toward a rare class MUST report
+precision, and must be scored on the denominator where the label can actually carry the answer.**
+Recall alone is monotone in exactly the knob being tuned, so it cannot falsify the tuning.
+⇒ **RULE: an out-of-fold protocol beats a promise.** "Thresholds were fixed in advance" is
+unverifiable self-report (adversarial R11 made that point against the parent's own pre-registration,
+whose mtime is *after* its probe JSON). A leave-one-episode-out selection is checkable from the code:
+a fold mechanically cannot see itself.
+⇒ **RULE: report the empirical null, not the nominal one.** Run the whole pipeline — selection
+included — on shuffled inputs and quote *that* as the floor.
+
+**What is NOT retracted:** the retrain justification. It never rested on brake reporting. It rests on
+the **9.68 %** of windows whose longitudinal class the 5-way label destroys, on `accelerate`, and on
+the `lon_to_anchor` selection graft — and the representable-denominator null above **strengthens** it,
+because it shows no decode rule reaches what the label already threw away.
+
+### Second defect closed the same day — the F1 lever was not independently testable
+
+`tactical_speed_input` raised `ValueError` unless `factored_maneuver` was also on, so the **shipped**
+5-way head could never read the ego speed and the pre-registered arm set contained **no F1-only arm**.
+F1's only estimate would have been `dtac1-full − dtac1-f2only`, two arms that also differ in the head
+itself. **Root-cause class: a guard justified by reproducibility that was already guaranteed by the
+flag defaulting OFF, and that silently removed an ablation.** Decoupled; `refc_f1only_config()` is
+**+384 params (+0.000369 %)**, MEASURED, with the decoder bit-identical.
+⇒ **RULE: before coupling two gated levers, ask which ABLATION the coupling deletes.** A conservative
+guard that makes an effect unattributable is not conservative.

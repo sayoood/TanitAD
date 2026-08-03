@@ -52,8 +52,8 @@ import refc_train  # noqa: E402  (scripts/refc_train.py)
 from tanitad.refs import refc_tactical as tac  # noqa: E402
 from tanitad.refs.refc import (N_LAT_MAN, N_LON_MAN,  # noqa: E402
                                N_MANEUVERS, RefCModel, param_breakdown,
-                               refc_config, refc_factored_config,
-                               refc_smoke_config)
+                               refc_config, refc_f1only_config,
+                               refc_factored_config, refc_smoke_config)
 
 from test_refc import _make_cached_root, _batch, _poses  # noqa: E402
 
@@ -382,11 +382,140 @@ def test_tactical_speed_input_is_live_and_gated(tmp_path):
     assert float((c["lon_logits"] - d["lon_logits"]).abs().max()) > 1e-4
 
 
-def test_speed_input_requires_the_factored_seam():
+def _f1only_smoke():
+    """The shipped 5-way head + the ego speed, and NOTHING else changed."""
     cfg = refc_smoke_config()
-    cfg.tactical_speed_input = True          # without factored_maneuver
-    with pytest.raises(ValueError, match="requires factored_maneuver"):
-        RefCModel(cfg)
+    cfg.tactical_speed_input = True          # WITHOUT factored_maneuver
+    return cfg
+
+
+def test_speed_input_on_the_SHIPPED_5way_head_is_live_and_gated(tmp_path):
+    """F1 in isolation — the defect and its fix on the head REF-C actually ships.
+
+    NEGATIVE CONTROL FIRST: with the flag off, `maneuver_logits` must be
+    BIT-IDENTICAL across a 0 -> 25 m/s change of v0. That is the measured defect
+    (`man_logits = self.maneuver_head(pooled)`, the image embedding alone, while
+    the label is dv = v(t+2s) - v(t)). An instrument that could not show the
+    logits frozen there cannot certify that turning the flag on unfroze them.
+
+    ⚠️ v0 DOES reach the decoder (via `measurement`), so `traj` moves in BOTH
+    arms and is not a discriminator — the control has to be read on
+    `maneuver_logits`, which is the tensor the tactical CE and the H19 anchor
+    reweight consume.
+    """
+    root = _make_cached_root(tmp_path)
+    slow = torch.zeros(4)
+    fast = torch.full((4,), 25.0)
+
+    off = RefCModel(refc_smoke_config()).eval()
+    batch = _batch(root, off.cfg)
+    a = off(batch["frames"], v0=slow)["maneuver_logits"]
+    b = off(batch["frames"], v0=fast)["maneuver_logits"]
+    assert torch.equal(a, b)                              # THE defect
+
+    on = RefCModel(_f1only_smoke()).eval()
+    c = on(batch["frames"], v0=slow)["maneuver_logits"]
+    d = on(batch["frames"], v0=fast)["maneuver_logits"]
+    assert not torch.allclose(c, d, atol=1e-6)
+    assert float((c - d).abs().max()) > 1e-4
+    # ...and the H19 anchor reweight therefore moves too: the speed reaches
+    # SELECTION, not merely the reported class.
+    assert not torch.allclose(on(batch["frames"], v0=slow)["anchor_logits"],
+                              on(batch["frames"], v0=fast)["anchor_logits"],
+                              atol=1e-6)
+
+
+def test_f1only_is_the_shipped_head_widened_by_exactly_one_column(tmp_path):
+    """Structure control: the F1 arm must differ from the base model in ONE
+    weight matrix's input width and in nothing else — no new modules, no new
+    buffers, no lost keys. Otherwise a delta is not attributable to the input."""
+    base = RefCModel(refc_smoke_config())
+    f1 = RefCModel(_f1only_smoke())
+    sd_b, sd_f = base.state_dict(), f1.state_dict()
+    assert set(sd_b) == set(sd_f)                 # same keys, both directions
+    diff = [k for k in sd_b if sd_b[k].shape != sd_f[k].shape]
+    assert diff == ["maneuver_head.0.weight"], diff
+    assert sd_f["maneuver_head.0.weight"].shape[1] == \
+        sd_b["maneuver_head.0.weight"].shape[1] + 1
+    # the factored seam is absent — this arm is NOT the factored one
+    assert not any(k.startswith(("lat_head", "lon_head", "tactical_trunk"))
+                   for k in sd_f)
+    assert "lat_log_prior" not in sd_f
+    assert "decoder.maneuver_to_anchor.weight" in sd_f
+    # ...and the new column is not dead: it receives gradient.
+    root = _make_cached_root(tmp_path)
+    batch = _batch(root, f1.cfg)
+    f1.train()
+    refc_train.compute_losses(f1, batch, mode="diffusion")["loss"].backward()
+    g = f1.maneuver_head[0].weight.grad
+    assert g is not None and torch.isfinite(g).all()
+    assert float(g[:, -1].abs().max()) > 0.0, "the speed column got no gradient"
+
+
+def test_f1only_is_not_a_capacity_change():
+    """MEASURED at build, on the REAL base preset: exactly ``aux_hidden`` extra
+    parameters — one input column into ``maneuver_head.0`` — and not one more.
+    Pinned EXACTLY (not as a band) because the whole point of this arm is that a
+    win cannot be attributed to capacity."""
+    with torch.device("meta"):
+        base = param_breakdown(RefCModel(refc_config()))
+        f1 = param_breakdown(RefCModel(refc_f1only_config()))
+        fact = param_breakdown(RefCModel(refc_factored_config()))
+    aux_hidden = refc_config().decoder.aux_hidden
+    assert f1["total"] - base["total"] == aux_hidden == 384
+    assert f1["aux"] - base["aux"] == aux_hidden      # it lands in the aux heads
+    assert f1["decoder"] == base["decoder"]           # graft untouched (rank-5)
+    # strictly cheaper than the factored arm, which also splits the graft
+    assert f1["total"] < fact["total"]
+    cfg = refc_f1only_config()
+    assert (cfg.tactical_speed_input, cfg.factored_maneuver) == (True, False)
+    assert cfg.man_prior_tau == 0.0                   # decode rule UNCHANGED
+
+
+def test_man_prior_tau_cannot_move_the_trajectory(tmp_path):
+    """⭐ THE FOUR-FAMILY GUARANTEE, pinned as a test rather than argued.
+
+    ``man_prior_tau`` is a REPORTING transform. If it could reach the trajectory,
+    a "free read-out patch" would silently be a model change and the
+    LONGITUDINAL / LATERAL / STRATEGIC / ADE families would all need re-scoring.
+    It cannot: the graft consumes ``lat_prior``/``lon_prior``, which are never
+    logit-adjusted. Same weights, same fixed input, two taus -> bit-identical
+    everything except the two decision fields.
+
+    (An earlier adversarial pass reported a 0.0039 leak here; it was confounded
+    by drawing ``v0`` twice — ``v0`` reaches the decoder. One fixed input.)
+    """
+    torch.manual_seed(0)
+    model = RefCModel(_factored_smoke(tau=0.0)).eval()
+    root = _make_cached_root(tmp_path)
+    batch = _batch(root, model.cfg)
+    frames, v0 = batch["frames"], batch["pose_last"][:, 3]      # ONE draw
+    # make the prior non-uniform, else tau is trivially inert
+    with torch.no_grad():
+        model.lon_log_prior.copy_(torch.tensor([0.1122, 0.7104,
+                                                0.1774]).log())
+    lo = model(frames, v0=v0)
+    model.cfg.man_prior_tau = 2.0
+    hi = model(frames, v0=v0)
+    for k in ("traj", "anchor_logits", "anchor_traj", "offset", "sel_idx",
+              "maneuver_logits", "lat_logits", "lon_logits", "route_logits",
+              "pooled", "measurement", "ctx"):
+        assert torch.equal(lo[k], hi[k]), f"man_prior_tau moved {k}"
+
+    # VACUITY CONTROL — an invariance proved with an INERT knob proves nothing.
+    # (i) tau = 2 under THIS prior is a live transform: it flips the argmax of a
+    # posterior where the rare class is second. (ii) the model's decision field
+    # really is that transform of its own logits, and at tau = 0 it is the plain
+    # argmax — so the bit-identity above is the graft being untouched, not a
+    # dead field. Deliberately NOT "the 4 smoke windows must flip": whether a
+    # random-init head happens to sit near a boundary is luck, not evidence.
+    probe = torch.tensor([[0.15, 0.55, 0.30]]).log()
+    assert int(tac.logit_adjust(probe, model.lon_log_prior, 0.0).argmax(-1)) \
+        != int(tac.logit_adjust(probe, model.lon_log_prior, 2.0).argmax(-1))
+    assert torch.equal(hi["lon_decision"],
+                       tac.logit_adjust(hi["lon_logits"], model.lon_log_prior,
+                                        2.0).argmax(-1))
+    assert torch.equal(lo["lon_decision"], lo["lon_logits"].argmax(-1))
 
 
 # ---------- (g) trainer wiring ------------------------------------------------
@@ -454,12 +583,38 @@ def test_trainer_end_to_end_with_the_seam(tmp_path):
     assert cfgj["loss_weights"]["man_total_held_at"] == refc_train.MANEUVER_WEIGHT
 
 
-def test_cli_rejects_orphan_levers(tmp_path):
+def test_cli_rejects_the_orphan_DECODE_lever_only(tmp_path):
+    """--man-prior-tau acts on the per-axis priors, which only the factored seam
+    registers, so it stays coupled. --tactical-speed-input does NOT: it is the
+    F1-only arm and coupling it left F1 estimable only as `full - f2only`."""
     root = _make_cached_root(tmp_path)
-    with pytest.raises(SystemExit, match="require --factored-maneuver"):
+    with pytest.raises(SystemExit, match="requires --factored-maneuver"):
         refc_train.main(["--data-root", str(root), "--out", str(tmp_path / "x"),
                          "--steps", "1", "--batch", "4", "--smoke",
-                         "--tactical-speed-input"])
+                         "--man-prior-tau", "1.0"])
+
+
+def test_trainer_end_to_end_f1only(tmp_path):
+    """The F1-only arm trains: 5-way head, 5-way CE, rank-5 graft, one extra
+    input column. The checkpoint must prove it is NOT the factored arm."""
+    import json
+    root = _make_cached_root(tmp_path)
+    out_dir = tmp_path / "run-f1only"
+    metrics = refc_train.main([
+        "--data-root", str(root), "--out", str(out_dir), "--steps", "2",
+        "--batch", "4", "--smoke", "--log-every", "1", "--mode", "diffusion",
+        "--tactical-speed-input",
+    ])
+    assert metrics["steps"] >= 2
+    ck = torch.load(out_dir / "ckpt.pt", map_location="cpu",
+                    weights_only=False)
+    assert "maneuver_head.0.weight" in ck["model"]
+    assert "lat_head.weight" not in ck["model"]
+    assert "lon_log_prior" not in ck["model"]
+    cfgj = json.loads((out_dir / "config.json").read_text())
+    assert cfgj["cfg"]["tactical_speed_input"] is True
+    assert cfgj["cfg"]["factored_maneuver"] is False
+    assert "man_total_held_at" not in cfgj["loss_weights"]
 
 
 # ---------- capacity: this is a STRUCTURE change, not a capacity change -------

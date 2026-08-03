@@ -42,10 +42,15 @@ Graft seams (gated, zero-init / identity starts — byte-identical when off):
     effect on selection is attributable from step 0). ``maneuver_logits`` [B, 5]
     is still emitted — derived exactly from the two heads through the priority
     collapse (``refc_tactical.derive_man5_logprobs``) — so every downstream
-    reader keeps working. Companions: ``tactical_speed_input`` (the heads read
-    the ego speed, which the 5-way head never did) and ``man_prior_tau``
-    (prior-corrected decode). MEASURED motivation and the algebra: see
-    ``tanitad/refs/refc_tactical.py``.
+    reader keeps working. Companion: ``man_prior_tau`` (prior-corrected decode).
+    MEASURED motivation and the algebra: see ``tanitad/refs/refc_tactical.py``.
+  - ``tactical_speed_input`` (default False, D-TAC1 F1): the tactical head reads
+    the ego speed alongside the image embedding. **INDEPENDENT of
+    ``factored_maneuver``** — it applies to the SHIPPED 5-way head as well, so
+    INPUT can be ablated without STRUCTURE. (It was coupled to
+    ``factored_maneuver`` until 2026-08-03; the coupling made the pre-registered
+    arms confound F1 with F2, since `dtac1-full` = F1+F2 and `dtac1-f2only` = F2
+    left no arm isolating F1. See ``refc_f1only_config``.)
   - ``graft_target_latent`` (default False): a tactical GOAL latent [B, S] FiLMs
     (zero-init -> identity) the decoder condition. Off by default because it has
     no standalone supervision (it only activates when a real tactical brain
@@ -356,7 +361,10 @@ class RefCConfig:
     #                                   CONSTANT at eval (nav_cmd=None -> follow)
     #                                   so feeding it here would train the head
     #                                   on a signal that vanishes at eval — the
-    #                                   C6 confound. Requires factored_maneuver.
+    #                                   C6 confound. INDEPENDENT of
+    #                                   factored_maneuver: it widens the SHIPPED
+    #                                   5-way head's input too, which is what
+    #                                   makes an F1-only arm possible.
     man_prior_tau: float = 0.0        # F3 DECISION: logit-adjustment strength
     #                                   for the REPORTED class. 0.0 = argmax of
     #                                   the raw posterior (today's behaviour).
@@ -452,6 +460,37 @@ def refc_factored_config() -> RefCConfig:
     cfg.factored_maneuver = True     # F2 structure
     cfg.tactical_speed_input = True  # F1 input
     cfg.man_prior_tau = 1.0          # F3 decision rule (balanced-posterior)
+    return cfg
+
+
+def refc_f1only_config() -> RefCConfig:
+    """REF-C-base with the SHIPPED 5-way tactical head, plus the ego speed —
+    the INPUT-only arm (D-TAC1 F1 in isolation), added 2026-08-03.
+
+    WHY IT EXISTS. The pre-registered arm set was `dtac1-full` (F1+F2+F3),
+    `dtac1-f2only` (F2) and `dtac1-nolon-graft`. F1's only estimate would then
+    have been `full − f2only`, which is confounded: those two arms differ not
+    only in whether the speed is read but in WHICH head reads it (a shared trunk
+    with two 3-way readouts vs a 2-layer MLP with one 5-way readout). This arm
+    changes the input and NOTHING else — same head, same label, same loss, same
+    decode — so a delta against `refc-base` is attributable to the input alone.
+
+    **MEASURED capacity delta** (``param_breakdown``, pinned by
+    ``tests/test_refc_tactical.py::test_f1only_is_not_a_capacity_change``):
+    104,191,577 -> 104,191,961 = **+384 parameters (+0.00037 %)**, exactly one
+    extra input column into ``maneuver_head.0`` (``aux_hidden = 384``). That is
+    less than half the factored arm's +897 and ~1/700 of the +272,001 the first
+    two-MLP implementation cost.
+
+    ⚠️ Note the training/eval asymmetry it inherits: ``ego_dropout = 0.5`` zeroes
+    ``v`` on half the TRAINING samples while eval always supplies it. That is the
+    existing, documented guard (the same one the measurement encoder lives with),
+    not something this arm introduces — but it does mean the head is trained to
+    work without the channel half the time, so ``ego_dropout`` is the first knob
+    to sweep if F1 lands weaker than the E-A2 lower bound.
+    """
+    cfg = refc_config()
+    cfg.tactical_speed_input = True  # F1 input, on the UNCHANGED 5-way head
     return cfg
 
 
@@ -934,10 +973,17 @@ class RefCModel(nn.Module):
         # concatenates the measurement (see ``speed_cls`` below), so this is a
         # pattern the file already uses; only the SPEED channel is taken, never
         # the nav one-hot (constant at eval -> the C6 confound).
-        if cfg.tactical_speed_input and not cfg.factored_maneuver:
-            raise ValueError("tactical_speed_input requires factored_maneuver "
-                             "(the 5-way head's input is frozen so every "
-                             "published REF-C number stays reproducible)")
+        #
+        # ⚠️ It is DELIBERATELY INDEPENDENT of ``factored_maneuver`` (it was
+        # coupled to it until 2026-08-03). The coupling looked conservative — it
+        # "froze the 5-way head's input so published numbers stay reproducible" —
+        # but reproducibility is already guaranteed by the flag DEFAULTING OFF
+        # (pinned byte-identical by tests), and the coupling had a real cost: the
+        # pre-registered arm set (`dtac1-full` = F1+F2, `dtac1-f2only` = F2) had
+        # NO arm isolating F1, so a win by `dtac1-full` over `dtac1-f2only` was
+        # the only available F1 estimate and it is confounded by the fact that
+        # the two arms also differ in which head consumes the speed. With the
+        # flag free, `refc_f1only_config()` is the missing INPUT-only arm.
         d_tac = feat + (1 if cfg.tactical_speed_input else 0)
         if cfg.factored_maneuver:
             # ONE shared trunk, TWO linear readouts — deliberately, and measured:
@@ -962,8 +1008,11 @@ class RefCModel(nn.Module):
                                  torch.full((N_LON_MAN,),
                                             -math.log(N_LON_MAN)))
         else:
+            # ``d_tac`` (not ``feat``) is the ONLY difference from the shipped
+            # head, and it is ``feat`` exactly when tactical_speed_input is off —
+            # so the default path builds the identical module it always did.
             self.maneuver_head = nn.Sequential(
-                nn.Linear(feat, cfg.decoder.aux_hidden), nn.ReLU(inplace=True),
+                nn.Linear(d_tac, cfg.decoder.aux_hidden), nn.ReLU(inplace=True),
                 nn.Linear(cfg.decoder.aux_hidden, N_MANEUVERS))
         self.route_head = nn.Linear(feat, N_ROUTE)
         # LAW aux (KEEP): decoded trajectory enters NON-detached — gradients flow.
@@ -1090,15 +1139,16 @@ class RefCModel(nn.Module):
         # Aux heads (image branch): maneuver logits also drive the H19 reweight.
         route_logits = self.route_head(pooled)
         lat_logits = lon_logits = lat_prior = lon_prior = None
+        # D-TAC1 F1. ``v`` is the SHARED, already-ego-dropped speed channel: one
+        # dropout draw per sample across the whole model, so the tactical head
+        # introduces no new stochastic surface and cannot be accused of weakening
+        # the documented ego-dropout guard. (If speed turns out to be the binding
+        # constraint, ``ego_dropout`` is the knob to sweep — not a second,
+        # unsynchronised dropout here.) Built once and used by BOTH branches, so
+        # the factored and 5-way heads see exactly the same input vector.
+        tac_in = torch.cat([pooled, v], dim=-1) \
+            if self.cfg.tactical_speed_input else pooled
         if self.cfg.factored_maneuver:
-            # D-TAC1. ``v`` is the SHARED, already-ego-dropped speed channel:
-            # one dropout draw per sample across the whole model, so the
-            # tactical head introduces no new stochastic surface and cannot be
-            # accused of weakening the documented ego-dropout guard. (If the
-            # probe shows speed is the binding constraint, ``ego_dropout`` is
-            # the knob to sweep — not a second, unsynchronised dropout here.)
-            tac_in = torch.cat([pooled, v], dim=-1) \
-                if self.cfg.tactical_speed_input else pooled
             h_tac = self.tactical_trunk(tac_in)
             lat_logits = self.lat_head(h_tac)
             lon_logits = self.lon_head(h_tac)
@@ -1112,7 +1162,7 @@ class RefCModel(nn.Module):
                 lat_prior = torch.log_softmax(lat_logits, dim=-1)
                 lon_prior = torch.log_softmax(lon_logits, dim=-1)
         else:
-            man_logits = self.maneuver_head(pooled)
+            man_logits = self.maneuver_head(tac_in)
         reweight = maneuver_logits if maneuver_logits is not None else man_logits
         if maneuver_logits is not None and self.cfg.factored_maneuver:
             # An EXTERNAL tactical brain speaks the 5-way surface. Factorise its

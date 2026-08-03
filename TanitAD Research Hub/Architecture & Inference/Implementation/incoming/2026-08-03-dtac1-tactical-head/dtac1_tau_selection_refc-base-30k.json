@@ -1,0 +1,1187 @@
+{
+  "experiment": "D-TAC1b \u2014 out-of-fold tau selection for the prior-corrected LON decode",
+  "prereg": "Project Steering/PREREG_D-TAC1B_TAU_SELECTION_AND_F1_ARM.md",
+  "evidence_class": "MEASURED (ours)",
+  "substrate": {
+    "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/dtac1_substrate_refc-base-30k.pt",
+    "ckpt": "/home/nvidia/models/refc-base/ckpt.pt",
+    "val_dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+    "stride": 5,
+    "decoder_steps": 2,
+    "n_windows": 1364,
+    "n_episodes": 39
+  },
+  "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, unit = episode, callable reducers; overlapping_holdout_se is NEVER used",
+  "denominators": {
+    "ALL": 1364,
+    "REPRESENTABLE": 1232,
+    "label_destroyed_excluded": 132,
+    "_why": "R2: at tau=0 every correct `accelerate` prediction fell on a label-destroyed window, so the ALL-denominator number is not a claim about recoverability"
+  },
+  "CONTROLS": {
+    "self_consistency_collapse": {
+      "_what": "collapse(lat, lon) must equal the 5-way label elementwise",
+      "agreement": 1.0,
+      "n": 1364
+    },
+    "self_consistency_label_source": {
+      "_what": "derived 5-way vs the epcache's banked `maneuvers`",
+      "n_with_banked": 1364,
+      "agreement": 1.0
+    },
+    "frontier_rederivation": {
+      "_what": "the parent's published 8-row frontier recomputed FROM THE SUBSTRATE with prior = the val label marginal (R6: that is what it used). A mismatch means the substrate and the published table are different runs.",
+      "max_abs_deviation": 0.0001,
+      "matches_published_to_4dp": true,
+      "rederived": {
+        "0.0": {
+          "accuracy": 0.7045,
+          "macro_recall": 0.3621
+        },
+        "0.25": {
+          "accuracy": 0.6782,
+          "macro_recall": 0.4125
+        },
+        "0.5": {
+          "accuracy": 0.5953,
+          "macro_recall": 0.4588
+        },
+        "0.75": {
+          "accuracy": 0.5132,
+          "macro_recall": 0.4708
+        },
+        "1.0": {
+          "accuracy": 0.4267,
+          "macro_recall": 0.4761
+        },
+        "1.25": {
+          "accuracy": 0.3644,
+          "macro_recall": 0.4666
+        },
+        "2.0": {
+          "accuracy": 0.151,
+          "macro_recall": 0.3624
+        }
+      },
+      "val_label_marginal": {
+        "brake_stop": 0.1122,
+        "steady": 0.7104,
+        "accelerate": 0.1774
+      }
+    },
+    "uniform_prior_is_inert": {
+      "_what": "subtracting a constant from every logit cannot move an argmax",
+      "identical_at_every_tau": true
+    },
+    "tau0_is_the_raw_argmax": {
+      "identical": true
+    },
+    "shuffled_pipeline": {
+      "_what": "logits permuted across windows, then the FULL out-of-fold selection. Must land at chance; if it does not, the selection is reading the class prior, not the model.",
+      "macro_recall": 0.3678,
+      "macro_f1": 0.3307,
+      "accuracy": 0.5139,
+      "chance_macro_recall": 0.3333,
+      "modal_tau": 0.5
+    }
+  },
+  "selection_protocol": {
+    "kind": "leave-one-EPISODE-out within val",
+    "\u26d4_this_is_not_train_selected": "a train-selected tau needs REF-C posteriors on TRAIN windows. MEASURED 2026-08-03: no train episode cache is reachable (5 probes, PREREG D-TAC1b section 1.1) and refc-base predates factored_maneuver so it carries no EMA prior buffer. LOEO removes 'tau was read off the number being reported'; it does NOT remove 'selection and reporting share a distribution'.",
+    "tau_grid": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      2.0
+    ],
+    "criteria_fixed_in_advance": [
+      "macro_recall",
+      "macro_f1"
+    ],
+    "train_substrate_supplied": false
+  },
+  "arms": {
+    "macro_recall": {
+      "criterion": "macro_recall",
+      "out_of_fold": {
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 833,
+              "recall": 0.8693,
+              "precision": 0.1597,
+              "f1": 0.2698
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 492,
+              "recall": 0.4427,
+              "precision": 0.872,
+              "f1": 0.5873
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 39,
+              "recall": 0.095,
+              "precision": 0.5897,
+              "f1": 0.1637
+            }
+          },
+          "confusion": [
+            [
+              133,
+              18,
+              2
+            ],
+            [
+              526,
+              429,
+              14
+            ],
+            [
+              174,
+              45,
+              23
+            ]
+          ],
+          "accuracy": 0.4289,
+          "macro_recall": 0.469,
+          "macro_f1": 0.3402,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 717,
+              "recall": 0.8376,
+              "precision": 0.1367,
+              "f1": 0.235
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 488,
+              "recall": 0.4427,
+              "precision": 0.8791,
+              "f1": 0.5889
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 27,
+              "recall": 0.0753,
+              "precision": 0.4074,
+              "f1": 0.1272
+            }
+          },
+          "confusion": [
+            [
+              98,
+              17,
+              2
+            ],
+            [
+              526,
+              429,
+              14
+            ],
+            [
+              93,
+              42,
+              11
+            ]
+          ],
+          "accuracy": 0.4367,
+          "macro_recall": 0.4519,
+          "macro_f1": 0.317,
+          "never_predicted": []
+        }
+      },
+      "tau_stability": {
+        "n_folds": 39,
+        "modal_tau": 1.0,
+        "unique_taus": [
+          0.75,
+          1.0,
+          1.25
+        ],
+        "frac_at_modal": 0.7436,
+        "min": 0.75,
+        "max": 1.25
+      },
+      "prior_spread_across_folds": {
+        "min": [
+          0.100828,
+          0.702784,
+          0.163281
+        ],
+        "max": [
+          0.115124,
+          0.72406,
+          0.182092
+        ],
+        "_classes": [
+          "brake_stop",
+          "steady",
+          "accelerate"
+        ]
+      },
+      "val_optimal_oracle": {
+        "tau": 1.0,
+        "_what": "(pi, tau) fitted on ALL of val \u2014 the parent's rule",
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 865,
+              "recall": 0.902,
+              "precision": 0.1595,
+              "f1": 0.2711
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 462,
+              "recall": 0.4355,
+              "precision": 0.9134,
+              "f1": 0.5898
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 37,
+              "recall": 0.0909,
+              "precision": 0.5946,
+              "f1": 0.1577
+            }
+          },
+          "confusion": [
+            [
+              138,
+              14,
+              1
+            ],
+            [
+              533,
+              422,
+              14
+            ],
+            [
+              194,
+              26,
+              22
+            ]
+          ],
+          "accuracy": 0.4267,
+          "macro_recall": 0.4761,
+          "macro_f1": 0.3395,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 743,
+              "recall": 0.8718,
+              "precision": 0.1373,
+              "f1": 0.2372
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 461,
+              "recall": 0.4355,
+              "precision": 0.9154,
+              "f1": 0.5902
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 28,
+              "recall": 0.089,
+              "precision": 0.4643,
+              "f1": 0.1494
+            }
+          },
+          "confusion": [
+            [
+              102,
+              14,
+              1
+            ],
+            [
+              533,
+              422,
+              14
+            ],
+            [
+              108,
+              25,
+              13
+            ]
+          ],
+          "accuracy": 0.4359,
+          "macro_recall": 0.4654,
+          "macro_f1": 0.3256,
+          "never_predicted": []
+        },
+        "score_per_tau": {
+          "0.0": 0.3621,
+          "0.25": 0.4125,
+          "0.5": 0.4588,
+          "0.75": 0.4708,
+          "1.0": 0.4761,
+          "1.25": 0.4666,
+          "1.5": 0.437,
+          "2.0": 0.3624
+        }
+      },
+      "tau0_baseline": {
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 47,
+              "recall": 0.0719,
+              "precision": 0.234,
+              "f1": 0.11
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 1299,
+              "recall": 0.969,
+              "precision": 0.7229,
+              "f1": 0.828
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 18,
+              "recall": 0.0455,
+              "precision": 0.6111,
+              "f1": 0.0846
+            }
+          },
+          "confusion": [
+            [
+              11,
+              142,
+              0
+            ],
+            [
+              23,
+              939,
+              7
+            ],
+            [
+              13,
+              218,
+              11
+            ]
+          ],
+          "accuracy": 0.7045,
+          "macro_recall": 0.3621,
+          "macro_f1": 0.3409,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 32,
+              "recall": 0.0769,
+              "precision": 0.2812,
+              "f1": 0.1208
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 1193,
+              "recall": 0.969,
+              "precision": 0.7871,
+              "f1": 0.8686
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 7,
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0
+            }
+          },
+          "confusion": [
+            [
+              9,
+              108,
+              0
+            ],
+            [
+              23,
+              939,
+              7
+            ],
+            [
+              0,
+              146,
+              0
+            ]
+          ],
+          "accuracy": 0.7695,
+          "macro_recall": 0.3487,
+          "macro_f1": 0.3298,
+          "never_predicted": []
+        }
+      },
+      "cost_of_honesty": {
+        "ALL": {
+          "val_optimal": 0.4761,
+          "out_of_fold": 0.469,
+          "cost": 0.0071,
+          "cost_pct": 1.49
+        },
+        "REPRESENTABLE": {
+          "val_optimal": 0.4654,
+          "out_of_fold": 0.4519,
+          "cost": 0.0135,
+          "cost_pct": 2.9
+        }
+      },
+      "ci_paired": {
+        "oof_vs_tau0::ALL::macro_recall": {
+          "delta": 0.1069,
+          "lo": 0.0381,
+          "hi": 0.1749,
+          "ci95": 0.0684,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "_macro_recall",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::ALL::macro_f1": {
+          "delta": -0.0006,
+          "lo": -0.0922,
+          "hi": 0.0788,
+          "ci95": 0.0855,
+          "p_delta_gt0": 0.4885,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::ALL::accuracy": {
+          "delta": -0.2757,
+          "lo": -0.3851,
+          "hi": -0.1745,
+          "ci95": 0.1053,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "_accuracy",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::macro_recall": {
+          "delta": 0.1032,
+          "lo": 0.0289,
+          "hi": 0.1754,
+          "ci95": 0.0733,
+          "p_delta_gt0": 0.9972,
+          "separated": true,
+          "reducer": "_macro_recall",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::macro_f1": {
+          "delta": -0.0128,
+          "lo": -0.0931,
+          "hi": 0.0625,
+          "ci95": 0.0778,
+          "p_delta_gt0": 0.363,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::accuracy": {
+          "delta": -0.3328,
+          "lo": -0.4432,
+          "hi": -0.229,
+          "ci95": 0.1071,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "_accuracy",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::macro_recall": {
+          "delta": -0.0071,
+          "lo": -0.0235,
+          "hi": 0.0085,
+          "ci95": 0.016,
+          "p_delta_gt0": 0.2095,
+          "separated": false,
+          "reducer": "_macro_recall",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::macro_f1": {
+          "delta": 0.0007,
+          "lo": -0.0174,
+          "hi": 0.0178,
+          "ci95": 0.0176,
+          "p_delta_gt0": 0.5403,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::accuracy": {
+          "delta": 0.0022,
+          "lo": -0.0118,
+          "hi": 0.0161,
+          "ci95": 0.0139,
+          "p_delta_gt0": 0.6105,
+          "separated": false,
+          "reducer": "_accuracy",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::macro_recall": {
+          "delta": -0.0136,
+          "lo": -0.0302,
+          "hi": 0.0025,
+          "ci95": 0.0164,
+          "p_delta_gt0": 0.0475,
+          "separated": false,
+          "reducer": "_macro_recall",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::macro_f1": {
+          "delta": -0.0086,
+          "lo": -0.0231,
+          "hi": 0.0065,
+          "ci95": 0.0148,
+          "p_delta_gt0": 0.138,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::accuracy": {
+          "delta": 0.0008,
+          "lo": -0.0145,
+          "hi": 0.0153,
+          "ci95": 0.0149,
+          "p_delta_gt0": 0.5335,
+          "separated": false,
+          "reducer": "_accuracy",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    },
+    "macro_f1": {
+      "criterion": "macro_f1",
+      "out_of_fold": {
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 380,
+              "recall": 0.4248,
+              "precision": 0.1711,
+              "f1": 0.2439
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 896,
+              "recall": 0.7286,
+              "precision": 0.7879,
+              "f1": 0.7571
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 88,
+              "recall": 0.1488,
+              "precision": 0.4091,
+              "f1": 0.2182
+            }
+          },
+          "confusion": [
+            [
+              65,
+              80,
+              8
+            ],
+            [
+              219,
+              706,
+              44
+            ],
+            [
+              96,
+              110,
+              36
+            ]
+          ],
+          "accuracy": 0.5916,
+          "macro_recall": 0.4341,
+          "macro_f1": 0.4064,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 303,
+              "recall": 0.3333,
+              "precision": 0.1287,
+              "f1": 0.1857
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 872,
+              "recall": 0.7286,
+              "precision": 0.8096,
+              "f1": 0.767
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 57,
+              "recall": 0.0479,
+              "precision": 0.1228,
+              "f1": 0.069
+            }
+          },
+          "confusion": [
+            [
+              39,
+              72,
+              6
+            ],
+            [
+              219,
+              706,
+              44
+            ],
+            [
+              45,
+              94,
+              7
+            ]
+          ],
+          "accuracy": 0.6104,
+          "macro_recall": 0.37,
+          "macro_f1": 0.3406,
+          "never_predicted": []
+        }
+      },
+      "tau_stability": {
+        "n_folds": 39,
+        "modal_tau": 0.5,
+        "unique_taus": [
+          0.25,
+          0.5
+        ],
+        "frac_at_modal": 0.9231,
+        "min": 0.25,
+        "max": 0.5
+      },
+      "prior_spread_across_folds": {
+        "min": [
+          0.100828,
+          0.702784,
+          0.163281
+        ],
+        "max": [
+          0.115124,
+          0.72406,
+          0.182092
+        ],
+        "_classes": [
+          "brake_stop",
+          "steady",
+          "accelerate"
+        ]
+      },
+      "val_optimal_oracle": {
+        "tau": 0.5,
+        "_what": "(pi, tau) fitted on ALL of val \u2014 the parent's rule",
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 398,
+              "recall": 0.5033,
+              "precision": 0.1935,
+              "f1": 0.2795
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 868,
+              "recall": 0.7203,
+              "precision": 0.8041,
+              "f1": 0.7599
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 98,
+              "recall": 0.1529,
+              "precision": 0.3776,
+              "f1": 0.2176
+            }
+          },
+          "confusion": [
+            [
+              77,
+              66,
+              10
+            ],
+            [
+              220,
+              698,
+              51
+            ],
+            [
+              101,
+              104,
+              37
+            ]
+          ],
+          "accuracy": 0.5953,
+          "macro_recall": 0.4588,
+          "macro_f1": 0.419,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 314,
+              "recall": 0.4103,
+              "precision": 0.1529,
+              "f1": 0.2227
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 854,
+              "recall": 0.7203,
+              "precision": 0.8173,
+              "f1": 0.7658
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 64,
+              "recall": 0.0479,
+              "precision": 0.1094,
+              "f1": 0.0667
+            }
+          },
+          "confusion": [
+            [
+              48,
+              63,
+              6
+            ],
+            [
+              220,
+              698,
+              51
+            ],
+            [
+              46,
+              93,
+              7
+            ]
+          ],
+          "accuracy": 0.6112,
+          "macro_recall": 0.3928,
+          "macro_f1": 0.3517,
+          "never_predicted": []
+        },
+        "score_per_tau": {
+          "0.0": 0.3409,
+          "0.25": 0.4062,
+          "0.5": 0.419,
+          "0.75": 0.3747,
+          "1.0": 0.3395,
+          "1.25": 0.2981,
+          "1.5": 0.2565,
+          "2.0": 0.1283
+        }
+      },
+      "tau0_baseline": {
+        "ALL": {
+          "n": 1364,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 153,
+              "n_pred": 47,
+              "recall": 0.0719,
+              "precision": 0.234,
+              "f1": 0.11
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 1299,
+              "recall": 0.969,
+              "precision": 0.7229,
+              "f1": 0.828
+            },
+            "accelerate": {
+              "n_true": 242,
+              "n_pred": 18,
+              "recall": 0.0455,
+              "precision": 0.6111,
+              "f1": 0.0846
+            }
+          },
+          "confusion": [
+            [
+              11,
+              142,
+              0
+            ],
+            [
+              23,
+              939,
+              7
+            ],
+            [
+              13,
+              218,
+              11
+            ]
+          ],
+          "accuracy": 0.7045,
+          "macro_recall": 0.3621,
+          "macro_f1": 0.3409,
+          "never_predicted": []
+        },
+        "REPRESENTABLE": {
+          "n": 1232,
+          "per_class": {
+            "brake_stop": {
+              "n_true": 117,
+              "n_pred": 32,
+              "recall": 0.0769,
+              "precision": 0.2812,
+              "f1": 0.1208
+            },
+            "steady": {
+              "n_true": 969,
+              "n_pred": 1193,
+              "recall": 0.969,
+              "precision": 0.7871,
+              "f1": 0.8686
+            },
+            "accelerate": {
+              "n_true": 146,
+              "n_pred": 7,
+              "recall": 0.0,
+              "precision": 0.0,
+              "f1": 0.0
+            }
+          },
+          "confusion": [
+            [
+              9,
+              108,
+              0
+            ],
+            [
+              23,
+              939,
+              7
+            ],
+            [
+              0,
+              146,
+              0
+            ]
+          ],
+          "accuracy": 0.7695,
+          "macro_recall": 0.3487,
+          "macro_f1": 0.3298,
+          "never_predicted": []
+        }
+      },
+      "cost_of_honesty": {
+        "ALL": {
+          "val_optimal": 0.419,
+          "out_of_fold": 0.4064,
+          "cost": 0.0126,
+          "cost_pct": 3.01
+        },
+        "REPRESENTABLE": {
+          "val_optimal": 0.3517,
+          "out_of_fold": 0.3406,
+          "cost": 0.0111,
+          "cost_pct": 3.16
+        }
+      },
+      "ci_paired": {
+        "oof_vs_tau0::ALL::macro_recall": {
+          "delta": 0.0719,
+          "lo": 0.02,
+          "hi": 0.1286,
+          "ci95": 0.0543,
+          "p_delta_gt0": 0.9958,
+          "separated": true,
+          "reducer": "_macro_recall",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::ALL::macro_f1": {
+          "delta": 0.0655,
+          "lo": -0.0029,
+          "hi": 0.1312,
+          "ci95": 0.0671,
+          "p_delta_gt0": 0.9692,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::ALL::accuracy": {
+          "delta": -0.1129,
+          "lo": -0.1861,
+          "hi": -0.0471,
+          "ci95": 0.0695,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "_accuracy",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::macro_recall": {
+          "delta": 0.0213,
+          "lo": -0.0256,
+          "hi": 0.0726,
+          "ci95": 0.0491,
+          "p_delta_gt0": 0.8075,
+          "separated": false,
+          "reducer": "_macro_recall",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::macro_f1": {
+          "delta": 0.0107,
+          "lo": -0.0418,
+          "hi": 0.0665,
+          "ci95": 0.0541,
+          "p_delta_gt0": 0.653,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_tau0::REPRESENTABLE::accuracy": {
+          "delta": -0.1591,
+          "lo": -0.2385,
+          "hi": -0.0878,
+          "ci95": 0.0753,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "_accuracy",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::macro_recall": {
+          "delta": -0.0248,
+          "lo": -0.058,
+          "hi": 0.0092,
+          "ci95": 0.0336,
+          "p_delta_gt0": 0.0838,
+          "separated": false,
+          "reducer": "_macro_recall",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::macro_f1": {
+          "delta": -0.0126,
+          "lo": -0.0426,
+          "hi": 0.013,
+          "ci95": 0.0278,
+          "p_delta_gt0": 0.1775,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::ALL::accuracy": {
+          "delta": -0.0037,
+          "lo": -0.0168,
+          "hi": 0.0081,
+          "ci95": 0.0124,
+          "p_delta_gt0": 0.2645,
+          "separated": false,
+          "reducer": "_accuracy",
+          "n_windows": 1364,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::macro_recall": {
+          "delta": -0.0229,
+          "lo": -0.06,
+          "hi": 0.0065,
+          "ci95": 0.0332,
+          "p_delta_gt0": 0.1045,
+          "separated": false,
+          "reducer": "_macro_recall",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::macro_f1": {
+          "delta": -0.0112,
+          "lo": -0.0329,
+          "hi": 0.0029,
+          "ci95": 0.0179,
+          "p_delta_gt0": 0.0943,
+          "separated": false,
+          "reducer": "_macro_f1",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "oof_vs_val_optimal::REPRESENTABLE::accuracy": {
+          "delta": -0.0008,
+          "lo": -0.0123,
+          "hi": 0.0098,
+          "ci95": 0.0111,
+          "p_delta_gt0": 0.4248,
+          "separated": false,
+          "reducer": "_accuracy",
+          "n_windows": 1232,
+          "n_episodes": 39,
+          "n_boot": 4000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      }
+    }
+  },
+  "lateral_readout_CLASSIFICATION_not_kinematics": {
+    "_what": "the lateral axis recovered from the same 5-way head. This is a CLASSIFICATION readout and is NOT the LATERAL metric family (heading / curvature / yaw-rate / cross-track), which needs a predicted trajectory the substrate does not carry.",
+    "n": 1364,
+    "per_class": {
+      "lane_keep": {
+        "n_true": 1081,
+        "n_pred": 1124,
+        "recall": 0.9806,
+        "precision": 0.9431,
+        "f1": 0.9615
+      },
+      "turn_left": {
+        "n_true": 174,
+        "n_pred": 153,
+        "recall": 0.7816,
+        "precision": 0.8889,
+        "f1": 0.8318
+      },
+      "turn_right": {
+        "n_true": 109,
+        "n_pred": 87,
+        "recall": 0.7248,
+        "precision": 0.908,
+        "f1": 0.8061
+      }
+    },
+    "confusion": [
+      [
+        1060,
+        16,
+        5
+      ],
+      [
+        35,
+        136,
+        3
+      ],
+      [
+        29,
+        1,
+        79
+      ]
+    ],
+    "accuracy": 0.9348,
+    "macro_recall": 0.829,
+    "macro_f1": 0.8665,
+    "never_predicted": []
+  },
+  "FOUR_METRIC_FAMILIES": {
+    "_rule": "CLAUDE.md \u2014 every eval reports four families IN ADDITION to ADE",
+    "TACTICAL": "MEASURED in full above (recall + precision + F1 + confusion, both denominators, paired episode-cluster bootstrap).",
+    "LONGITUDINAL": {
+      "delta": "EXACTLY ZERO \u2014 the tau patch is a post-hoc argmax on already-emitted logits and cannot reach the trajectory. Pinned by tests/test_refc_tactical.py::test_man_prior_tau_cannot_move_the_trajectory (traj / anchor_logits / sel_idx / ... bit-identical across tau).",
+      "level_not_computable": "target-speed accuracy and headway / time-gap / TTC need a predicted speed and lead-agent state; the substrate banks logits, pooled, v0, labels and eid only",
+      "n": 0
+    },
+    "LATERAL": {
+      "delta": "EXACTLY ZERO (same proof).",
+      "level_not_computable": "heading / curvature / yaw-rate / cross-track need a predicted trajectory, not banked. The lateral CLASSIFICATION readout is reported separately and is not a substitute (R8).",
+      "n": 0
+    },
+    "STRATEGIC": {
+      "delta": "EXACTLY ZERO (same proof).",
+      "level_not_computable": "route_logits are not banked in the substrate",
+      "n": 0
+    },
+    "ADE": {
+      "delta": "EXACTLY ZERO at every horizon (same proof).",
+      "n": 0
+    }
+  }
+}
