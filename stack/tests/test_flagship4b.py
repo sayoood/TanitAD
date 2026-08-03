@@ -358,3 +358,85 @@ def test_tactical_selector_grounded_rescoring():
                                          grounding.step["tac"], ctx)
     assert 0 <= best < len(maneuvers)
     assert scores.shape == (len(maneuvers),) and torch.isfinite(scores).all()
+
+
+# --------------------------------------------------------------------------- #
+# (i.b) the candidate fan BATCHED — a deployment requirement, not an optimiser  #
+#                                                                              #
+# MEASURED on Thor 2026-08-03: 9 candidates serialised through the shipped      #
+# batch-1 TRT engine = 244 % of the 100 ms budget; batched through a batch-9    #
+# engine = 56 %. The engine rebuild alone does not deliver it — a batch-1-      #
+# shaped CALLER serialises whatever engine it is handed, which is why the       #
+# batching lives here in the selector and is pinned by tests.                   #
+# --------------------------------------------------------------------------- #
+def _fan_fixture(n_candidates=9, k_steps=4, seed=0):
+    torch.manual_seed(seed)
+    cfg = flagship4b_smoke_config()
+    m = WorldModel(cfg).eval()
+    grounding = build_grounding(m.state_dim, hidden=32)
+    sel = TacticalSelector(m, probe_imag=None)
+    W = cfg.predictor.window
+    states = torch.randn(1, W, m.state_dim)
+    past = torch.randn(1, W, 2)
+    ctx = torch.randn(1, cfg.strategic_policy.d_ctx)
+    n_cls = cfg.tactical_policy.n_maneuvers
+    mans = [Maneuver(f"m{i}", torch.randn(k_steps, 2) * 0.3,
+                     maneuver_class=i % n_cls) for i in range(n_candidates)]
+    return sel, states, past, ctx, mans, grounding.step["tac"]
+
+
+def test_propose_and_score_batch_fan_matches_loop():
+    """The batched fan is the SAME computation, reassociated over the batch axis.
+
+    Pinned invariant: identical selected index + scores to float tolerance.
+    (Not bit-exact: a batched GEMM reduces in a different order than N single-row
+    ones — asserting bit-equality here would be a flaky test asserting a false
+    property.)"""
+    sel, states, past, ctx, mans, step_ro = _fan_fixture()
+    subgoal = torch.tensor([7.0, 1.5])
+    b_loop, s_loop = sel.propose_and_score(states, past, mans, subgoal, step_ro, ctx)
+    b_batch, s_batch = sel.propose_and_score(states, past, mans, subgoal, step_ro,
+                                             ctx, batch_fan=True)
+    assert s_batch.shape == s_loop.shape == (len(mans),)
+    assert torch.isfinite(s_batch).all()
+    assert torch.allclose(s_batch, s_loop, atol=1e-4, rtol=1e-4), \
+        f"batched fan diverged from the loop: {(s_batch - s_loop).abs().max():.3e}"
+    assert b_batch == b_loop
+
+
+def test_batch_fan_issues_one_predictor_call_per_STEP_not_per_candidate():
+    """The whole point, mechanically pinned: K calls, not N*K.
+
+    A future refactor that reintroduces the per-candidate loop would still pass
+    the equivalence test above — this is the test that would fail."""
+    sel, states, past, ctx, mans, step_ro = _fan_fixture(n_candidates=9, k_steps=4)
+    subgoal = torch.tensor([7.0, 1.5])
+    calls: list[tuple] = []
+    # A forward PRE-hook, not an attribute swap: ``predictor`` is a child module
+    # and torch refuses a plain callable there (which is also why a TensorRT
+    # drop-in must subclass nn.Module — learned the hard way writing this test).
+    handle = sel.world.predictor.register_forward_pre_hook(
+        lambda _m, args: calls.append(tuple(args[0].shape)))
+    try:
+        sel.propose_and_score(states, past, mans, subgoal, step_ro, ctx,
+                              batch_fan=True)
+        batched_calls = list(calls)
+        calls.clear()
+        sel.propose_and_score(states, past, mans, subgoal, step_ro, ctx)
+        loop_calls = list(calls)
+    finally:
+        handle.remove()
+    assert len(batched_calls) == 4, f"expected K=4 batched calls, got {len(batched_calls)}"
+    assert len(loop_calls) == 36, f"expected N*K=36 serialised calls, got {len(loop_calls)}"
+    assert all(c[0] == 9 for c in batched_calls), f"fan not batched to 9: {batched_calls}"
+    assert all(c[0] == 1 for c in loop_calls)
+
+
+def test_batch_fan_refuses_a_ragged_vocabulary():
+    """Fails loud rather than falling back silently — a silent per-candidate
+    fallback would hide exactly the 9x cliff this path removes."""
+    sel, states, past, ctx, mans, step_ro = _fan_fixture(n_candidates=3, k_steps=4)
+    mans[1] = Maneuver("short", torch.zeros(2, 2), maneuver_class=1)
+    with pytest.raises(ValueError, match="uniform primitive length"):
+        sel.propose_and_score(states, past, mans, torch.tensor([5.0, 0.0]),
+                              step_ro, ctx, batch_fan=True)

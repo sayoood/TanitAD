@@ -1,0 +1,46 @@
+{
+  "probe": "lan_e_pre_launch_gate",
+  "prereg": "PREREG_lan_refc.md \u00a76.0",
+  "coverage": {
+    "val_dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+    "n_files_seen": 40,
+    "n_episodes_loaded": 39,
+    "n_unreadable": 1,
+    "unreadable": [
+      {
+        "file": "ep_00028.pt",
+        "bytes": 92299264,
+        "error": "RuntimeError: PytorchStreamReader failed reading zip archive: failed finding central directory. This is an internal miniz error. If you are seeing this error, t"
+      }
+    ],
+    "\u26a0\ufe0f": "1 of 40 val episodes are unreadable, so this run is NOT window-for-window comparable with a full-set published number. The episode-cluster bootstrap is still valid \u2014 its unit is the episode and it resamples the episodes present."
+  },
+  "n_windows": 859,
+  "window": 8,
+  "eval_stride": 8,
+  "arclengths_m": [
+    20.0,
+    40.0,
+    80.0,
+    160.0
+  ],
+  "min_lead_m": 5.0,
+  "lan_any_valid_frac": 0.8801,
+  "lan_per_anchor_valid_frac": [
+    0.3015,
+    0.5867,
+    0.5867,
+    0.3015
+  ],
+  "nav_cmd_valid_frac_SAME_WINDOWS": 0.2724,
+  "route_v21_valid_frac_SAME_WINDOWS": 0.8463,
+  "ratio_lan_over_nav": 3.231,
+  "ego_speed_mps": {
+    "median": 9.958,
+    "mean": 12.457,
+    "p90": 28.011
+  },
+  "gate_threshold": 0.5,
+  "GATE": "PASS \u2014 LAN may launch",
+  "_note": "the leak guard masks an anchor unless its arc-length exceeds max(2 s GT path, v0*2 s) + min_lead_m, so coverage FALLS as ego speed rises; the speed block is reported so a coverage number is never read without the speed distribution that produced it."
+}

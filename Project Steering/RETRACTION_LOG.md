@@ -1561,3 +1561,72 @@ caught this at any point in the last months.
 true 10 Hz path when present; `MIN_DS_MPS = 0.5 m/s` so the gate scales with cadence; every family
 carries its `dt_s` and `all_families` emits a `_grid` provenance block) and
 `taniteval/tests/test_four_families_dt.py` (12 tests, all passing).
+
+---
+
+## 2026-08-03 — R-2026-08-03-d: "REF-C's route pathway is INERT" — REFUTED by the experiment written to test it
+
+**Class: an INFERENCE from true premises, carried as if it were a measurement.**
+
+**Retracted claim.** That REF-C's 4-way `nav_cmd` is functionally dead — the reading behind
+`PREREG_lan_refc.md` §1's *"the route input is degenerate at train time **and constant at eval
+time**. A decoder in that position learns the marginal"*, and behind the LAN design that replaces it.
+
+**What is MEASURED instead** (run dir `tanitad-thor:/home/nvidia/lan_e0/`, banked at
+`…/Implementation/incoming/2026-08-03-lan-refc-e0/E0_refc-base_navcf_full.json`; REF-C-base
+104.192 M, 859 windows / 39 val episodes, 256px SQUARE raster asserted, paired episode-cluster
+bootstrap n_boot 2000):
+
+- Sweeping `nav_cmd` moves the decoded trajectory by **0.2416 m** over the label-reachable commands
+  {follow, left, right}, with the bit-identical-input control at **exactly 0.0** (tol 1e-6).
+  **Verdict RESPONSIVE, not INERT.**
+- ⇒ Every published REF-C number did not hold a *dead* input constant. It held a **live** one
+  constant. The C6 confound is real and is now MEASURED — in the opposite direction from the one
+  that was argued for a fortnight.
+
+**And the pre-registered fallback is ALSO refuted.** §7 committed in advance that a RESPONSIVE
+reading makes the cheap fix *"supply the label at eval and re-score every REF-C row … a bigger,
+cheaper correction than LAN"*. Measured, assembled from the same decodes at zero extra GPU:
+
+| arm vs `follow_constant` | ADE@2s Δ | LATERAL `cross_mae_m` Δ |
+|---|---|---|
+| **oracle** route (GT label, upper bound) | +0.0024 [−0.0107, +0.0147] **not sep** | **+0.0031 [+0.0001, +0.0063] SEPARATED WORSE** |
+| **produced** route (model's own head) | **+0.0118 [+0.0011, +0.0227] SEPARATED WORSE** | +0.0028 [+0.0003, +0.0053] SEPARATED WORSE |
+
+Handing REF-C the **correct** route degrades cross-track and curvature and buys nothing anywhere.
+⇒ **Supplying the label at eval is NOT the cheap fix. Do not re-score the REF-C rows expecting a
+gain.**
+
+🔴 **THE ROOT CAUSE, and it is the transferable part.** Every fact in §1 was individually MEASURED
+and individually true: the label thresholds net heading over 15–25 s; validity is 0.27; eval feeds a
+constant. The *conclusion* — "therefore the pathway is unused" — was an **inference**, and it
+travelled through six documents wearing the evidence class of its premises. **A chain of MEASURED
+links does not make the conclusion MEASURED.** The experiment that could have settled it
+(`nav_cmd_sensitivity`) is **four forward passes** and was available the whole time.
+⇒ **RULE: when a design exists to fix a mechanism, the FIRST run is the one that shows the mechanism
+is broken — not the one that shows the fix works.** §7 got this exactly right by pre-registering E0
+as the cheapest discriminating experiment; the error was the fortnight before anyone ran it.
+
+**Two secondary corrections banked in the same run:**
+
+1. **A 4-way sweep of `nav_cmd` is really a 3-way sweep.** `refc_eval.ROUTE_TO_NAV = {0:1, 1:0, 2:2}`
+   maps the 3-class route label onto nav **{0,1,2}**; index 3 is an embedding row no label or eval
+   mode can emit. It dominates the raw sweep (`0v3` 1.5126 m vs `0v1` 0.2416 m) and would have
+   overstated route sensitivity **7.3×**. Reporting it as a route response is an OOD probe
+   mislabelled. `lan_probe.py` now reports the reachable-only sweep and takes its verdict from it.
+2. **`PREREG_lan_refc.md` §6.2's PRIMARY OUTCOME READOUT IS NOT COMPUTABLE ON REF-C.** MEASURED:
+   REF-C's decoder emits `traj` of shape **[B, 4, 2]** — 4 waypoints, **2.0 s**. `corridor_departure
+   @ K=185 (18.5 s)` has no open-loop path to run on. E1a's K=185 result came from a **rollout**
+   decoder; REF-C's is anchored one-shot. ⇒ **RULE: a pre-registration must state the readout is
+   computable ON THE ARM, not merely that the instrument exists.**
+
+**Near-miss caught before publication, logged because the mechanism generalises.** The per-window
+reducers added for the bootstrap back-filled windows where every step failed the `MIN_DS` gate with
+their **unmasked** row mean — importing exactly the crawling/stopped windows the gate removes:
+`heading_mae` **4.0181°** vs `four_families`' **1.1486°**, `curvature_mae` **42.1365 1/m** vs
+**0.00788** (**5,347×**). It would have published a separated lateral degradation
+(+0.2241 [+0.0178, +0.5856]) that does not exist (true value +0.0185 [−0.0080, +0.0458], **not**
+separated). Caught by a **component-vs-family self-consistency control** that now ships inside the
+result JSON and runs on every invocation. ⇒ **RULE: when you compute per-window components to feed a
+cluster bootstrap, assert they reduce to the family mean printed beside them. Same family as
+R-2026-08-03-c: a derived quantity must be checked against the one the data already carries.**

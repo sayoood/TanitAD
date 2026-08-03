@@ -1,0 +1,501 @@
+{
+  "script": "/home/nvidia/thor_d1_batch9_engine.py",
+  "host": "thor6",
+  "torch": "2.13.0+cu130",
+  "started": "2026-08-03T11:36:11+0200",
+  "budget_ms": 100.0,
+  "n_candidates": 9,
+  "k_roll": 20,
+  "tensorrt": "10.13.3.9",
+  "v1": {
+    "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+    "step": 29999,
+    "strict_load": true,
+    "raster": "256x256 SQUARE",
+    "params_M": 263.44,
+    "state_dim": 2048,
+    "action_dim": 3
+  },
+  "v5f": {
+    "ckpt": "/home/nvidia/models/v5f/ckpt.pt",
+    "step": 1000,
+    "strict_load": false,
+    "sd_missing": 0,
+    "sd_unexpected": 0,
+    "raster": "176x624 CYLINDRICAL",
+    "params_M": 263.58,
+    "state_dim": 2048,
+    "action_dim": 3
+  },
+  "predictor_geometry_independent": {
+    "v1_state_dim": 2048,
+    "v5f_state_dim": 2048,
+    "note": "the predictor consumes 2048-d latents, not pixels \u2014 asserted, not assumed"
+  },
+  "updated": "2026-08-03T11:36:55+0200",
+  "engines": {
+    "v1_dyn1-9_fp16": {
+      "onnx": {
+        "path": "/home/nvidia/trt_d1/v1_dyn1-9_fp16.onnx",
+        "reused": true
+      },
+      "build": {
+        "ok": true,
+        "reused_plan": "/home/nvidia/trt_d1/v1_dyn1-9_fp16.plan",
+        "MB": 174.3
+      },
+      "verify": {
+        "io_names": [
+          "states",
+          "actions",
+          "z_next"
+        ],
+        "profile_states": [
+          [
+            1,
+            8,
+            2048
+          ],
+          [
+            9,
+            8,
+            2048
+          ],
+          [
+            9,
+            8,
+            2048
+          ]
+        ],
+        "profile_actions": [
+          [
+            1,
+            8,
+            3
+          ],
+          [
+            9,
+            8,
+            3
+          ],
+          [
+            9,
+            8,
+            3
+          ]
+        ],
+        "per_batch": {
+          "1": {
+            "shape": [
+              1,
+              2048
+            ],
+            "rel_err": 0.00036681,
+            "finite": true
+          },
+          "9": {
+            "shape": [
+              9,
+              2048
+            ],
+            "rel_err": 0.00062085,
+            "finite": true
+          }
+        },
+        "row_independence_rel_err": 0.00133462
+      }
+    },
+    "v1_static_b1_fp16": {
+      "onnx": {
+        "path": "/home/nvidia/trt_d1/v1_static_b1_fp16.onnx",
+        "reused": true
+      },
+      "build": {
+        "ok": true,
+        "reused_plan": "/home/nvidia/trt_d1/v1_static_b1_fp16.plan",
+        "MB": 174.0
+      },
+      "verify": {
+        "io_names": [
+          "states",
+          "actions",
+          "z_next"
+        ],
+        "profile_states": [
+          [
+            1,
+            8,
+            2048
+          ],
+          [
+            1,
+            8,
+            2048
+          ],
+          [
+            1,
+            8,
+            2048
+          ]
+        ],
+        "profile_actions": [
+          [
+            1,
+            8,
+            3
+          ],
+          [
+            1,
+            8,
+            3
+          ],
+          [
+            1,
+            8,
+            3
+          ]
+        ],
+        "per_batch": {
+          "1": {
+            "shape": [
+              1,
+              2048
+            ],
+            "rel_err": 0.00051785,
+            "finite": true
+          }
+        },
+        "row_independence_rel_err": 0.0
+      }
+    },
+    "v5f_dyn1-9_fp16": {
+      "onnx": {
+        "path": "/home/nvidia/trt_d1/v5f_dyn1-9_fp16.onnx",
+        "reused": true
+      },
+      "build": {
+        "ok": true,
+        "reused_plan": "/home/nvidia/trt_d1/v5f_dyn1-9_fp16.plan",
+        "MB": 174.3
+      },
+      "verify": {
+        "io_names": [
+          "states",
+          "actions",
+          "z_next"
+        ],
+        "profile_states": [
+          [
+            1,
+            8,
+            2048
+          ],
+          [
+            9,
+            8,
+            2048
+          ],
+          [
+            9,
+            8,
+            2048
+          ]
+        ],
+        "profile_actions": [
+          [
+            1,
+            8,
+            3
+          ],
+          [
+            9,
+            8,
+            3
+          ],
+          [
+            9,
+            8,
+            3
+          ]
+        ],
+        "per_batch": {
+          "1": {
+            "shape": [
+              1,
+              2048
+            ],
+            "rel_err": 0.00159912,
+            "finite": true
+          },
+          "9": {
+            "shape": [
+              9,
+              2048
+            ],
+            "rel_err": 0.00133454,
+            "finite": true
+          }
+        },
+        "row_independence_rel_err": 0.00300041
+      }
+    }
+  },
+  "two_arms_are_different_engines": {
+    "rel_err_v1_vs_v5f_same_input": 0.446088,
+    "why": "engines carry WEIGHTS: the same input must give different outputs, or one of them was built from the wrong checkpoint"
+  },
+  "batch_sweep_v1_dyn": {
+    "1": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.6319,
+        "p95": 1.9167,
+        "p99": 2.323,
+        "mean": 1.6691,
+        "min": 1.553
+      },
+      "eager": {
+        "n": 60,
+        "p50": 4.1176,
+        "p95": 5.191,
+        "p99": 5.6804,
+        "mean": 4.3503,
+        "min": 3.9608
+      },
+      "per_candidate_engine_p50": 1.6319,
+      "per_candidate_eager_p50": 4.1176
+    },
+    "2": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4559,
+        "p95": 1.7011,
+        "p99": 1.7745,
+        "mean": 1.4763,
+        "min": 1.3499
+      },
+      "eager": {
+        "n": 60,
+        "p50": 5.8146,
+        "p95": 6.8383,
+        "p99": 7.2117,
+        "mean": 5.9348,
+        "min": 5.6531
+      },
+      "per_candidate_engine_p50": 0.7279,
+      "per_candidate_eager_p50": 2.9073
+    },
+    "3": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4493,
+        "p95": 1.7405,
+        "p99": 2.431,
+        "mean": 1.4977,
+        "min": 1.3485
+      },
+      "eager": {
+        "n": 60,
+        "p50": 6.3701,
+        "p95": 6.9668,
+        "p99": 7.1581,
+        "mean": 6.4548,
+        "min": 6.2216
+      },
+      "per_candidate_engine_p50": 0.4831,
+      "per_candidate_eager_p50": 2.1234
+    },
+    "4": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4331,
+        "p95": 1.6692,
+        "p99": 1.7431,
+        "mean": 1.4701,
+        "min": 1.3688
+      },
+      "eager": {
+        "n": 60,
+        "p50": 6.3798,
+        "p95": 7.0715,
+        "p99": 8.1411,
+        "mean": 6.4472,
+        "min": 6.1593
+      },
+      "per_candidate_engine_p50": 0.3583,
+      "per_candidate_eager_p50": 1.595
+    },
+    "5": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4639,
+        "p95": 1.705,
+        "p99": 1.9064,
+        "mean": 1.5034,
+        "min": 1.3711
+      },
+      "eager": {
+        "n": 60,
+        "p50": 10.1621,
+        "p95": 11.7293,
+        "p99": 12.3223,
+        "mean": 10.305,
+        "min": 9.5982
+      },
+      "per_candidate_engine_p50": 0.2928,
+      "per_candidate_eager_p50": 2.0324
+    },
+    "6": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4635,
+        "p95": 1.7032,
+        "p99": 1.9851,
+        "mean": 1.5073,
+        "min": 1.4191
+      },
+      "eager": {
+        "n": 60,
+        "p50": 10.3123,
+        "p95": 11.8334,
+        "p99": 12.5969,
+        "mean": 10.5151,
+        "min": 9.8507
+      },
+      "per_candidate_engine_p50": 0.2439,
+      "per_candidate_eager_p50": 1.7187
+    },
+    "7": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.4996,
+        "p95": 1.7887,
+        "p99": 1.8856,
+        "mean": 1.541,
+        "min": 1.4204
+      },
+      "eager": {
+        "n": 60,
+        "p50": 10.5645,
+        "p95": 12.2762,
+        "p99": 13.5531,
+        "mean": 10.8545,
+        "min": 10.1761
+      },
+      "per_candidate_engine_p50": 0.2142,
+      "per_candidate_eager_p50": 1.5092
+    },
+    "8": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.5106,
+        "p95": 1.7468,
+        "p99": 1.8108,
+        "mean": 1.5425,
+        "min": 1.4334
+      },
+      "eager": {
+        "n": 60,
+        "p50": 10.9022,
+        "p95": 11.9283,
+        "p99": 12.9913,
+        "mean": 10.9027,
+        "min": 10.2519
+      },
+      "per_candidate_engine_p50": 0.1888,
+      "per_candidate_eager_p50": 1.3628
+    },
+    "9": {
+      "engine_inproc": {
+        "n": 200,
+        "p50": 1.494,
+        "p95": 1.7902,
+        "p99": 2.2607,
+        "mean": 1.543,
+        "min": 1.4026
+      },
+      "eager": {
+        "n": 60,
+        "p50": 10.9701,
+        "p95": 12.2059,
+        "p99": 13.5233,
+        "mean": 10.9319,
+        "min": 10.1313
+      },
+      "per_candidate_engine_p50": 0.166,
+      "per_candidate_eager_p50": 1.2189
+    }
+  },
+  "batch_sweep_v1_static_b1": {
+    "1": {
+      "n": 200,
+      "p50": 1.5072,
+      "p95": 1.6704,
+      "p99": 1.7635,
+      "mean": 1.4983,
+      "min": 1.2593
+    }
+  },
+  "trtexec_medians": {
+    "v1_dyn1-9_fp16_b1": {
+      "median_ms": 1.24402
+    },
+    "v1_dyn1-9_fp16_b9": {
+      "median_ms": 1.28937
+    },
+    "v1_static_b1_fp16_b1": {
+      "median_ms": 1.17154
+    }
+  },
+  "fan_measured": {
+    "eager_serialised": {
+      "n": 10,
+      "p50": 717.035,
+      "p95": 722.7231,
+      "p99": 722.7231,
+      "mean": 716.9872,
+      "min": 710.1482
+    },
+    "eager_batched": {
+      "n": 10,
+      "p50": 206.2893,
+      "p95": 207.4863,
+      "p99": 207.4863,
+      "mean": 206.1314,
+      "min": 204.4934
+    },
+    "trt_b1_serialised_SHIPPED": {
+      "n": 10,
+      "p50": 265.6617,
+      "p95": 269.689,
+      "p99": 269.689,
+      "mean": 264.7804,
+      "min": 259.1774
+    },
+    "trt_dyn_serialised": {
+      "n": 10,
+      "p50": 272.8367,
+      "p95": 277.3433,
+      "p99": 277.3433,
+      "mean": 273.2191,
+      "min": 271.2613
+    },
+    "trt_dyn_batched_FIX": {
+      "n": 20,
+      "p50": 31.3775,
+      "p95": 36.9214,
+      "p99": 36.9214,
+      "mean": 31.9138,
+      "min": 30.9684
+    },
+    "single_candidate_trt_dyn": {
+      "n": 20,
+      "p50": 29.9676,
+      "p95": 31.3976,
+      "p99": 31.3976,
+      "mean": 30.1532,
+      "min": 29.6975
+    }
+  },
+  "fan_speedup_shipped_to_fixed": 8.467
+}

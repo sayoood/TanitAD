@@ -1,0 +1,209 @@
+{
+  "script": "/home/nvidia/thor_d2_full_tick.py",
+  "host": "thor6",
+  "torch": "2.13.0+cu130",
+  "started": "2026-08-03T11:37:09+0200",
+  "budget_ms": 100.0,
+  "n_candidates": 9,
+  "k_primitive": 20,
+  "n_ticks": 60,
+  "model": {
+    "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+    "step": 29999,
+    "params_M": 263.44,
+    "raster": "256x256 SQUARE",
+    "strict_load": true,
+    "state_dim": 2048,
+    "has_tactical_policy": true,
+    "has_strategic_policy": true
+  },
+  "val": {
+    "dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+    "n_episodes": 12,
+    "frame_shape": [
+      1,
+      9,
+      256,
+      256
+    ],
+    "raster_assert": "PASSED"
+  },
+  "engines": {
+    "dyn": {
+      "plan": "/home/nvidia/trt_d1/v1_dyn1-9_fp16.plan",
+      "profile_states": [
+        [
+          1,
+          8,
+          2048
+        ],
+        [
+          9,
+          8,
+          2048
+        ],
+        [
+          9,
+          8,
+          2048
+        ]
+      ]
+    },
+    "b1": {
+      "plan": "/home/nvidia/trt_d1/v1_static_b1_fp16.plan",
+      "profile_states": [
+        [
+          1,
+          8,
+          2048
+        ],
+        [
+          1,
+          8,
+          2048
+        ],
+        [
+          1,
+          8,
+          2048
+        ]
+      ]
+    }
+  },
+  "vocabulary": {
+    "steer": [
+      -0.15,
+      0.0,
+      0.15
+    ],
+    "accel": [
+      -1.0,
+      0.0,
+      1.0
+    ],
+    "k": 20,
+    "n": 9,
+    "class_map": "refb priority turn > brake > accelerate",
+    "evidence_class": "INSTRUMENT (ours) \u2014 no committed primitive table exists; identical across arms"
+  },
+  "full_tick": {
+    "A_fp32_eager_serialised": {
+      "n": 60,
+      "p50": 860.456,
+      "p95": 866.023,
+      "p99": 867.817,
+      "mean": 859.583,
+      "max": 867.817,
+      "pct_of_budget_p50": 860.5
+    },
+    "B_bf16_trtB1_serialised_SHIPPED": {
+      "n": 60,
+      "p50": 365.895,
+      "p95": 375.816,
+      "p99": 378.569,
+      "mean": 365.707,
+      "max": 378.569,
+      "pct_of_budget_p50": 365.9
+    },
+    "C_bf16_trtDYN_batched_FIX": {
+      "n": 60,
+      "p50": 62.135,
+      "p95": 67.444,
+      "p99": 68.847,
+      "mean": 62.78,
+      "max": 68.847,
+      "pct_of_budget_p50": 62.1
+    },
+    "D_bf16_eager_batched_NOENGINE": {
+      "n": 60,
+      "p50": 233.513,
+      "p95": 239.557,
+      "p99": 239.971,
+      "mean": 233.277,
+      "max": 239.971,
+      "pct_of_budget_p50": 233.5
+    }
+  },
+  "updated": "2026-08-03T11:39:54+0200",
+  "stage_breakdown_armC": {
+    "encode_bf16": {
+      "n": 60,
+      "p50": 17.127,
+      "p95": 18.819,
+      "p99": 20.425,
+      "mean": 17.317,
+      "max": 20.425
+    },
+    "heads": {
+      "n": 60,
+      "p50": 7.221,
+      "p95": 7.717,
+      "p99": 7.975,
+      "mean": 7.162,
+      "max": 7.975
+    },
+    "fan": {
+      "n": 60,
+      "p50": 45.13,
+      "p95": 47.417,
+      "p99": 47.718,
+      "mean": 45.171,
+      "max": 47.718
+    }
+  },
+  "d3_batch_consistency": {
+    "dyn_b9_vs_dyn_b1_rel_err": 0.000157462,
+    "dyn_b9_vs_eager_rel_err": 0.00032925,
+    "dyn_b1_vs_eager_rel_err": 0.00033075,
+    "static_b1_vs_eager_rel_err": 0.00034515,
+    "why": "TRT may pick different tactics per profile shape; if b9 != b1 the 2026-08-03 four-family gate (a 1..8 engine at rollout batch 8) does not automatically transfer to the 9-candidate fan"
+  },
+  "d3_compounding_real_activations_batched": {
+    "step1_rel_err": 0.00078466,
+    "step20_rel_err": 0.00095011,
+    "growth": 1.211,
+    "per_step": [
+      0.00078466,
+      0.00097032,
+      0.00109813,
+      0.00111584,
+      0.00111776,
+      0.00111456,
+      0.00110273,
+      0.00106455,
+      0.00100445,
+      0.00094948,
+      0.0009842,
+      0.00092076,
+      0.00089842,
+      0.00092341,
+      0.00095213,
+      0.00096111,
+      0.00095127,
+      0.00093613,
+      0.00094688,
+      0.00095011
+    ]
+  },
+  "d3_decision_agreement": {
+    "n_windows": 60,
+    "n_episodes": 12,
+    "agreement": 0.48333,
+    "n_flipped": 31,
+    "max_abs_score_delta": 73.37709,
+    "bar": 0.953,
+    "family": "TACTICAL (decision quality)",
+    "ci_episode_cluster_bootstrap": {
+      "mean": 0.4833,
+      "lo": 0.3,
+      "hi": 0.6667,
+      "ci95": 0.1833,
+      "se": 0.0946,
+      "reducer": "mean",
+      "n_windows": 60,
+      "n_episodes": 12,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  }
+}

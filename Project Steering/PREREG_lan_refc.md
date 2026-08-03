@@ -1,5 +1,22 @@
 # PRE-REGISTRATION — LAN (Lane-Anchored Navigation) for REF-C
 
+> ## ⚠️ EXECUTION RECORD — appended 2026-08-03, AFTER the fact, WITHOUT altering anything below
+>
+> **E0 (§7) and E-pre (§6.0) HAVE NOW RUN.** Results:
+> `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`
+> (`LAN_E0_RESULTS.md` + `E0_refc-base_navcf_full.json`); run dir `tanitad-thor:/home/nvidia/lan_e0/`.
+>
+> | clause | outcome |
+> |---|---|
+> | **§6.0 E-pre** | ✅ **PASS** — `any_valid_frac` **0.8801** vs `nav_cmd` **0.2724** re-measured on the same 859 windows (**3.231×**) |
+> | **§7 E0** | ⭐ **RESPONSIVE**, `max_pairwise_mean_m` **0.2416 m** (reachable commands), control **0.0**. **The INERT branch is REFUTED.** |
+> | **§7 RESPONSIVE follow-up** ("supply the label at eval") | ⛔ **ALSO REFUTED** — oracle route: ADE Δ +0.0024 **not separated**, cross-track **+0.0031 [+0.0001, +0.0063] separated WORSE** |
+> | **§6.3 ADE@2s null** | ✅ landed exactly as pre-committed (\|Δ\| ≤ 0.01, not separated) |
+> | **§6.1 / §6.2** | **NOT RUN** — no LAN-grafted checkpoint exists. ⛔ **§6.2 is NOT COMPUTABLE on REF-C**: its decoder emits `traj [B, 4, 2]` = **2.0 s** (MEASURED), so `corridor_departure @ K=185 (18.5 s)` has no open-loop path. **This is a defect in the pre-registration.** |
+>
+> ⛔ **Nothing in §§0–9 below has been edited.** The pre-registered text stands as written so the
+> outcomes stay falsifiable. Retraction + root-cause class: `RETRACTION_LOG.md` R-2026-08-03-d.
+
 **Date:** 2026-08-03 (Europe/Berlin) · **Author:** LAN/REF-C implementation agent ·
 **Status:** code + instruments DELIVERED and STAGED, **no training launched**, no GPU spent.
 **Estimator for every interval below:** paired episode-cluster bootstrap over the 40 val episodes,

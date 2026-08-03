@@ -588,7 +588,8 @@ class TacticalSelector:
     def propose_and_score(self, states: Tensor, past_actions: Tensor,
                           maneuvers: list[Maneuver], subgoal_xy: Tensor,
                           step_readout, ctx: Tensor,
-                          prior_weight: float = 1.0) -> tuple[int, Tensor]:
+                          prior_weight: float = 1.0,
+                          batch_fan: bool = False) -> tuple[int, Tensor]:
         """D-030 tactical selection: the TRAINED policy PROPOSES, the GROUNDED
         rollout SCORES.
 
@@ -602,13 +603,27 @@ class TacticalSelector:
         class. Returns ``(best_idx, scores)`` (lower is better).
 
         ``states``/``past_actions`` [1, W, *]; ``ctx`` [1, d_ctx] the strategic
-        context; ``subgoal_xy`` [2] the tactical goal in the ego frame."""
+        context; ``subgoal_xy`` [2] the tactical goal in the ego frame.
+
+        ``batch_fan=True`` rolls ALL candidates in ONE batched predictor call per
+        step instead of one call per candidate. ⛔ **This is a deployment
+        requirement, not an optimisation.** MEASURED on Thor 2026-08-03: the
+        serialised fan costs 9x the predictor time and misses the 100 ms / 10 Hz
+        budget by 2.4x, while the batched fan through a batch-9 TensorRT engine
+        costs 1.09x of ONE candidate. The engine rebuild alone does not deliver
+        it — a batch-1-shaped caller serialises whatever engine it is given.
+        Requires a uniform primitive length (fails loud otherwise); the scores
+        are the same computation, not an approximation (pinned by
+        ``tests/test_flagship4b.py::test_propose_and_score_batch_fan_matches_loop``)."""
         from tanitad.models.metric_dynamics import accumulate_se2
         assert self.world.tactical_policy is not None, \
             "propose_and_score needs a trained tactical policy"
         tac = self.world.tactical_policy(states, ctx)
         intent = tac["intent"]
         logp = torch.log_softmax(tac["maneuver_logits"][0], dim=-1)
+        if batch_fan:
+            return self._fan_batched(states, past_actions, maneuvers, subgoal_xy,
+                                     step_readout, intent, logp, prior_weight)
         scores = []
         for m in maneuvers:
             s, a = states.clone(), past_actions.clone()
@@ -628,6 +643,58 @@ class TacticalSelector:
             scores.append(dist + self.comfort_weight * comfort
                           - prior_weight * prior)
         scores_t = torch.stack(scores)
+        return int(scores_t.argmin()), scores_t
+
+    @torch.no_grad()
+    def _fan_batched(self, states: Tensor, past_actions: Tensor,
+                     maneuvers: list[Maneuver], subgoal_xy: Tensor,
+                     step_readout, intent: Tensor, logp: Tensor,
+                     prior_weight: float) -> tuple[int, Tensor]:
+        """The candidate fan as ONE batch — N candidates, K batched steps.
+
+        Same arithmetic as the loop in :meth:`propose_and_score`, reassociated
+        over the batch axis: candidate ``i`` occupies row ``i`` and never sees
+        another row (the predictor is per-row; ``step_readout`` and
+        ``accumulate_se2`` are row-wise). ⚠️ Batched GEMMs pick different
+        reduction orders than N single-row ones, so the scores match the loop to
+        float tolerance, not bit-exactly — the pinned invariant is the SELECTED
+        index plus a tight score tolerance.
+        """
+        from tanitad.models.metric_dynamics import accumulate_se2
+        n = len(maneuvers)
+        assert n > 0, "empty maneuver vocabulary"
+        ks = {int(m.actions.shape[0]) for m in maneuvers}
+        if len(ks) != 1:
+            raise ValueError(
+                f"batch_fan needs a uniform primitive length, got {sorted(ks)}. "
+                "Group the vocabulary by length and call once per group — a "
+                "silent per-candidate fallback would hide the 9x latency cliff "
+                "this path exists to remove.")
+        k_steps = ks.pop()
+        assert states.shape[0] == 1 and past_actions.shape[0] == 1, \
+            f"batch_fan expects a single ego window, got {tuple(states.shape)}"
+        # [N, K, A] — one row per candidate, on the ego window's device/dtype.
+        prim = torch.stack([m.actions.to(device=states.device, dtype=past_actions.dtype)
+                            for m in maneuvers])
+        s = states.expand(n, -1, -1).contiguous()
+        a = past_actions.expand(n, -1, -1).contiguous()
+        intent_n = intent.expand(n, -1) if intent is not None else None
+        dposes = []
+        for k in range(k_steps):
+            a = torch.roll(a, -1, dims=1)
+            a[:, -1] = prim[:, k]
+            z_next = self.world.predictor(s, a, intent=intent_n)[1]      # [N, S]
+            dposes.append(step_readout(s[:, -1], z_next))                # [N, 3]
+            s = torch.roll(s, -1, dims=1)
+            s[:, -1] = z_next
+        endpoint = accumulate_se2(torch.stack(dposes, dim=1))[:, -1]      # [N, 2]
+        dist = (endpoint - subgoal_xy.to(endpoint.dtype)).norm(dim=-1)    # [N]
+        comfort = prim.pow(2).mean(dim=(1, 2)).to(dist.dtype)             # [N]
+        prior = torch.stack([
+            (logp[m.maneuver_class] if m.maneuver_class is not None
+             else torch.zeros((), device=states.device, dtype=logp.dtype))
+            for m in maneuvers]).to(dist.dtype)
+        scores_t = dist + self.comfort_weight * comfort - prior_weight * prior
         return int(scores_t.argmin()), scores_t
 
 
