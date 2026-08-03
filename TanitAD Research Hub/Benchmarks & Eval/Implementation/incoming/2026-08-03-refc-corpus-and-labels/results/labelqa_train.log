@@ -1,0 +1,206 @@
+{
+ "DENOMINATORS": {
+  "episodes_scanned": 400,
+  "episodes_too_short_for_a_window": 0,
+  "frames": 79577,
+  "windows": 9203,
+  "median_clip_len_s": 19.9,
+  "min_clip_len_s": 19.7,
+  "max_clip_len_s": 20.5
+ },
+ "TACTICAL": {
+  "man5_v1_balance": {
+   "lane_keep": {
+    "n": 3076,
+    "pct": 33.4239
+   },
+   "turn_left": {
+    "n": 1763,
+    "pct": 19.1568
+   },
+   "turn_right": {
+    "n": 1475,
+    "pct": 16.0274
+   },
+   "accelerate": {
+    "n": 1473,
+    "pct": 16.0057
+   },
+   "brake_stop": {
+    "n": 1416,
+    "pct": 15.3863
+   },
+   "_n": 9203
+  },
+  "man5_v2_balance": {
+   "lane_keep": {
+    "n": 3216,
+    "pct": 34.9451
+   },
+   "turn_left": {
+    "n": 1631,
+    "pct": 17.7225
+   },
+   "turn_right": {
+    "n": 1327,
+    "pct": 14.4192
+   },
+   "accelerate": {
+    "n": 1541,
+    "pct": 16.7445
+   },
+   "brake_stop": {
+    "n": 1488,
+    "pct": 16.1686
+   },
+   "_n": 9203
+  },
+  "lat_v1_balance": {
+   "lane_keep": {
+    "n": 5965,
+    "pct": 64.8158
+   },
+   "turn_left": {
+    "n": 1763,
+    "pct": 19.1568
+   },
+   "turn_right": {
+    "n": 1475,
+    "pct": 16.0274
+   },
+   "_n": 9203
+  },
+  "lat_v2_balance": {
+   "lane_keep": {
+    "n": 6245,
+    "pct": 67.8583
+   },
+   "turn_left": {
+    "n": 1631,
+    "pct": 17.7225
+   },
+   "turn_right": {
+    "n": 1327,
+    "pct": 14.4192
+   },
+   "_n": 9203
+  },
+  "lon_v1_balance": {
+   "brake_stop": {
+    "n": 1951,
+    "pct": 21.1996
+   },
+   "steady": {
+    "n": 4612,
+    "pct": 50.1141
+   },
+   "accelerate": {
+    "n": 2640,
+    "pct": 28.6863
+   },
+   "_n": 9203
+  },
+  "lon_v2_balance": {
+   "brake_stop": {
+    "n": 1951,
+    "pct": 21.1996
+   },
+   "steady": {
+    "n": 4612,
+    "pct": 50.1141
+   },
+   "accelerate": {
+    "n": 2640,
+    "pct": 28.6863
+   },
+   "_n": 9203
+  },
+  "LOSSY_RATE": {
+   "v1": {
+    "n_windows": 9203,
+    "n_turn": 3238,
+    "pct_turn": 35.1842,
+    "n_live_longitudinal": 4591,
+    "pct_live_longitudinal": 49.8859,
+    "n_LOSSY_turn_and_live_lon": 1702,
+    "PCT_LOSSY": 18.494,
+    "pct_of_live_longitudinal_destroyed": 37.0725,
+    "collapse_self_check_mismatches": 0,
+    "collapse_self_check": "PASS \u2014 collapse(lat,lon) == the shipped 5-way label on every window"
+   },
+   "v2": {
+    "n_windows": 9203,
+    "n_turn": 2958,
+    "pct_turn": 32.1417,
+    "n_live_longitudinal": 4591,
+    "pct_live_longitudinal": 49.8859,
+    "n_LOSSY_turn_and_live_lon": 1562,
+    "PCT_LOSSY": 16.9727,
+    "pct_of_live_longitudinal_destroyed": 34.0231,
+    "collapse_self_check_mismatches": 0,
+    "collapse_self_check": "PASS \u2014 collapse(lat,lon) == the shipped 5-way label on every window"
+   }
+  },
+  "interpretation": "PCT_LOSSY is the fraction of windows on which the 5-way target CANNOT represent the true state: the lateral class is a turn, so the priority collapse discards a live longitudinal class. No decode rule recovers them \u2014 the factored (lat x lon) target does, at the same thresholds."
+ },
+ "STRATEGIC": {
+  "n_windows": 9203,
+  "route_valid_rate": 78.4309,
+  "route_reason_share": {
+   "tight_transient": {
+    "n": 6024,
+    "pct": 65.4569
+   },
+   "no_arc": {
+    "n": 1200,
+    "pct": 13.0392
+   },
+   "road_following": {
+    "n": 1194,
+    "pct": 12.974
+   },
+   "gray_zone": {
+    "n": 785,
+    "pct": 8.5298
+   }
+  },
+  "route_class_share": {
+   "left": {
+    "n": 3321,
+    "pct": 36.0861
+   },
+   "right": {
+    "n": 2703,
+    "pct": 29.3709
+   },
+   "unknown": {
+    "n": 1985,
+    "pct": 21.5691
+   },
+   "straight": {
+    "n": 1194,
+    "pct": 12.974
+   }
+  },
+  "nav_input_class_share": {
+   "left": {
+    "n": 3321,
+    "pct": 36.0861
+   },
+   "follow": {
+    "n": 3179,
+    "pct": 34.5431
+   },
+   "right": {
+    "n": 2703,
+    "pct": 29.3709
+   }
+  },
+  "NAV_FOLLOW_DEGENERACY": {
+   "n_nav_follow": 3179,
+   "from_road_following": 1194,
+   "from_UNKNOWN_sentinel": 1985,
+   "pct_of_follow_that_is_a_collapsed_sentinel": 62.441,
+   "what_this_measures": "`route_target_v21` refuses to say `straight` when it does not know (ROUTE_UNKNOWN), but `nav_command_v2
+
+[labelqa] wrote results/labelqa_pai_train_400ep.json  (400 episodes, 9203 windows, 39.0 s)

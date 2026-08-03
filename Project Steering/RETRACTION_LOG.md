@@ -2156,7 +2156,16 @@ The discrepancy was visible in `CAP_PROP_FRAME_COUNT` from the first day anyone 
 
 ---
 
-## R-2026-08-03-j — flagship-v1's STRATEGIC route accuracy is the ECHO of an ORACLE INPUT, not a decision
+## R-2026-08-03-l — flagship-v1's STRATEGIC route accuracy is the ECHO of an ORACLE INPUT, not a decision
+
+> ⚠️ **ID corrected 2026-08-03 by the adversarial-verification pass.** This entry was appended as
+> `R-2026-08-03-j`, which was **already taken** by the rolling-shutter retraction at the top of this
+> file (and cited from `stack/experiments/alpasim-gsplat/results/2026-08-03-rolling-shutter/
+> ROLLING_SHUTTER.md:704` and from R-2026-08-03-k). `-k` was taken too, so this entry is now `-l`.
+> **The content below is unchanged and was independently reproduced** (see the verification note at
+> the end of this entry). An append-only log whose standing rule is *"must be read before asserting
+> in a known class"* cannot carry two entries under one citable identifier — check the last used
+> letter before appending.
 
 **Retracted claim.** `stack/experiments/nurec-gsplat/STRATEGIC_FAMILY.md` §(b) and
 `results/closedloop_strategic_7c72937c.json`, carried into task #51's report: *"flagship-v1 /
@@ -2227,3 +2236,31 @@ identity — the control returns clean output and measures nothing.
 pass.** Regression tests: `test_an_echo_arm_beats_every_constant_yet_is_INADMISSIBLE`,
 `test_echo_control_refuses_a_sweep_that_cannot_separate_anything`, +5 more in
 `taniteval/tests/test_strategic_optionset.py`.
+
+**INDEPENDENTLY REPRODUCED 2026-08-03 (adversarial-verification pass).** `aggregate_t1_strategic.py`
+re-run on the banked `t1_route_ticks.json.gz` + `strategic_gt_t1.tar.gz` reproduces **every number in
+the table above bit-for-bit**, on both the 77-scene and the 39-scene leak-free set. Passthrough
+1.0000/0.0000 re-derived from the raw logits (4745 poses); `refc-base` logits **bit-identical across
+all 4 navs**. Suites re-run green (stack 1851 / taniteval 903). **Three corrections that do NOT touch
+the verdict but do touch what may be quoted from it:**
+
+1. ⛔ **The mechanism is STRONGER than stated here.** `refb_labels.py:715` (`nav_command_v21`) and
+   `:730` (`route_target_v21`) call the **identical** `route_from_future_v21(poses, t, horizon)` with
+   identical arguments, and `:455 _ROUTE_TO_NAV` is a bijection on {LEFT, STRAIGHT, RIGHT}. The aux
+   route CE target is not merely *"derived from the same GT future"* as the FiLM condition — on every
+   `valid` window it **is a relabelling of it**. The CE is 100 % solvable from `nav` alone.
+2. ⚠️ **The head-to-head is condition-dependent and the omitted contrasts flip sign.** Nine paired
+   contrasts were computed and four were reported. Also separated: `flagship − refc @ navORACLE =`
+   **+0.1724 [+0.0991, +0.2520]** (the flagship *wins*), `refc navORACLE − NAV_ECHO =` **−0.1724
+   [−0.2520, −0.0991]** (the image-free lookup table *beats* REF-C), and `flagship − refc @
+   navSHUFFLED =` **−0.3103 [−0.4202, −0.2000]**. The **direction** survives at navFOLLOW *and*
+   navSHUFFLED; **−0.5000 is the largest of three defensible magnitudes**, and on these T1 turn
+   scenes the true nav is left/right at **4265/4745 = 89.9 %** of scored poses, so navFOLLOW feeds
+   the FiLM-conditioned arm a *wrong* command almost everywhere. Quote **navSHUFFLED (−0.3103)** when
+   the claim must not depend on calling navFOLLOW "deployable".
+3. ⚠️ **`nav_passthrough_rate = 1.0000` is a statement about the ARGMAX under 3 of 4 nav values.**
+   At `nav=3` the flagship is **not** a lookup table (LEFT 288 / STRAIGHT 44 / RIGHT 4413), because
+   `_ROUTE_TO_NAV` never emits `NAV_STRAIGHT=3` — that embedding row is **untrained**, making
+   `flagship/navSTRAIGHT` an out-of-vocabulary probe rather than a condition. Harmless for the
+   verdict (`nav_oracle ∈ {0,1,2}`, verified over all 4745 poses), but `flagship/navSTRAIGHT 0.3879`
+   must not be read as a result.

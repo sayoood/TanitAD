@@ -1,0 +1,129 @@
+{
+ "tool": "adversarial verification of stream 'strategic-141-scenes'",
+ "date": "2026-08-03",
+ "evidence_class": "MEASURED",
+ "reproduction": {
+  "method": "aggregate_t1_strategic.py re-run from the banked t1_route_ticks.json.gz + strategic_gt_t1.tar.gz on the dev box, independent invocation",
+  "result": "BIT-FOR-BIT on both the 77-scene and the 39-scene leak-free set: passthrough 1.0000/0.0000 (n=4745); flagship navORACLE 0.8707 [0.8053,0.9298] identical to NAV_ECHO; navFOLLOW 0.1983; refc 0.6983 [0.6179,0.7810]; flagship-refc @navFOLLOW -0.5000 [-0.6053,-0.4017]; leak-free -0.5254 [-0.6897,-0.3823]",
+  "suites": "stack 1851 passed / 12 skipped / 2 xfailed; taniteval 903 passed"
+ },
+ "LEAKAGE_MEASURED_upper_bound": {
+  "evidence_class": "MEASURED",
+  "probe": "4-hex-char UUID-prefix intersection of the T1 scene ids against the ACTUAL parity-corpus manifest (2376 episodes, key e438721ae894)",
+  "manifest": "TanitAD Research Hub/.../2026-07-26-s3-decision-grade/artifacts/manifest_train_parity.json",
+  "n_corpus_episodes": 2376,
+  "n_distinct_prefixes": 2342,
+  "prefix_hits_over_141": [
+   "3b6a7ba3-9fca-428a-8fbc-8c4e44cb4c4d",
+   "624265f9-9c16-49c0-ab8b-9660cd740c34",
+   "bc843fa0-b475-46af-8e88-ba1597c02128"
+  ],
+  "prefix_hits_over_scored_77": [
+   "624265f9-9c16-49c0-ab8b-9660cd740c34",
+   "bc843fa0-b475-46af-8e88-ba1597c02128"
+  ],
+  "expected_spurious_hits_141": 5.02,
+  "expected_spurious_hits_77": 2.74,
+  "VERDICT": "a prefix hit is NECESSARY but not sufficient for corpus membership, so this is a HARD UPPER BOUND: at most 2 of the 77 scored scenes can be in our training corpus. Observed hits (3/141, 2/77) are BELOW the chance expectation (5.02/2.74) and are fully consistent with ZERO true leakage. This REPLACES the base-rate ESTIMATE ('expected ~0.6 scenes') with a measurement.",
+  "caveat": "the manifest stores only a 4-hex-char packed prefix, so exact identity cannot be resolved; only the UPPER BOUND is decisive.",
+  "note_on_the_hardcode": "aggregate_t1_strategic.py:283 hardcodes our_build_n_clips = 2400; the canonical parity corpus is 2376. base rate 0.01562 vs 0.01547."
+ },
+ "PER_EVENT_GATE_recovery": {
+  "evidence_class": "MEASURED",
+  "probe": "replay the scene-level self-consistency refusal as a PER-EVENT gate over the 141 banked label files",
+  "n_refused_scenes": 31,
+  "n_refused_scenes_failing_on_exactly_one_event": 24,
+  "n_refused_scenes_with_a_gt150deg_failure": 11,
+  "n_SCOREABLE_events_inside_refused_scenes": 38,
+  "n_events_that_WOULD_SURVIVE_a_per_event_gate": 15,
+  "n_events_that_are_THEMSELVES_the_failure": 23,
+  "recovered_scenes": 14,
+  "recovered_events_leakfree": 7,
+  "recovered_scenes_leakfree": 6,
+  "full_set_after": {
+   "events": 131,
+   "clusters": 91
+  },
+  "leakfree_set_after": {
+   "events": 66,
+   "clusters": 45
+  },
+  "REFUTES": "the stream next_action claimed the per-event gate would 're-score the 38 events currently lost' and 'restore the leak-free subset's power to settle whether REF-C genuinely clears the best constant'. MEASURED: only 15 of the 38 survive (23 ARE the failing events). Leak-free gain is +7 events / +6 clusters (39 -> 45), a ~7% CI narrowing — it CANNOT move a bound sitting exactly at 0.0000. The claim generalised a SCENE-level count (24/31) into an EVENT-level recovery.",
+  "second_failure_mode": "11 of the 31 refused scenes fail with >150 deg error — a near-180 heading flip, a different (likely systematic) defect from the 36-55 deg cases. A per-event loosening mixes two failure modes and should separate them first."
+ },
+ "STRICTER_FLOOR_control": {
+  "evidence_class": "MEASURED",
+  "probe": "paired episode-cluster bootstrap, refc-base/navFOLLOW MINUS a map-informed UNIFORM-RANDOM draw over each event's admissible option CLASSES — a STRICTER floor than BEST_CONSTANT, which the STRATEGIC_SKILL_ADMISSIBLE gate does not use",
+  "why": "UNIFORM_RANDOM_OVER_OPTION_CLASSES scores 0.5345 on this set and therefore BEATS BEST_CONSTANT (0.4397). The admissibility gate only requires clearing the constant, so it is the weaker of the two available floors.",
+  "per_seed": [
+   {
+    "seed": 0,
+    "uniform_acc": 0.5345,
+    "delta": 0.1638,
+    "lo": 0.0583,
+    "hi": 0.2727,
+    "separated": true
+   },
+   {
+    "seed": 1,
+    "uniform_acc": 0.5086,
+    "delta": 0.1897,
+    "lo": 0.0619,
+    "hi": 0.3197,
+    "separated": true
+   },
+   {
+    "seed": 2,
+    "uniform_acc": 0.4741,
+    "delta": 0.2241,
+    "lo": 0.114,
+    "hi": 0.3308,
+    "separated": true
+   },
+   {
+    "seed": 3,
+    "uniform_acc": 0.4828,
+    "delta": 0.2155,
+    "lo": 0.1043,
+    "hi": 0.3217,
+    "separated": true
+   },
+   {
+    "seed": 4,
+    "uniform_acc": 0.5517,
+    "delta": 0.1466,
+    "lo": 0.025,
+    "hi": 0.2818,
+    "separated": true
+   },
+   {
+    "seed": 5,
+    "uniform_acc": 0.4655,
+    "delta": 0.2328,
+    "lo": 0.1327,
+    "hi": 0.3309,
+    "separated": true
+   },
+   {
+    "seed": 6,
+    "uniform_acc": 0.4828,
+    "delta": 0.2155,
+    "lo": 0.1101,
+    "hi": 0.3223,
+    "separated": true
+   },
+   {
+    "seed": 7,
+    "uniform_acc": 0.569,
+    "delta": 0.1293,
+    "lo": 0.0268,
+    "hi": 0.2261,
+    "separated": true
+   }
+  ],
+  "mean_delta": 0.1897,
+  "n_separated": 8,
+  "n_seeds": 8,
+  "SURVIVES": "REF-C's route skill on the full 77 scenes clears the STRICTER map-informed floor too: mean +0.1897, separated on 8/8 seeds. This STRENGTHENS the stream's finding beyond what it tested."
+ }
+}

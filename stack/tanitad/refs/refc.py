@@ -106,6 +106,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
 
 # Strategic vocabulary — order pinned against scripts/refb_labels.py indices
@@ -333,6 +334,35 @@ class LanConfig:
 
 
 @dataclass
+class SelectionConfig:
+    """D-SEL — the selection-surface policy the decoder carries.
+
+    A projection of the ``RefCConfig`` D-SEL fields, built by
+    :meth:`RefCConfig.selection`. It exists so the decoder owns its own ranking
+    policy (every lever acts on the argmax this class performs) without the
+    decoder needing the whole model config. Defaults are exactly today's
+    behaviour, so a decoder built with ``SelectionConfig()`` is byte-identical
+    to one built before D-SEL existed.
+    """
+    refined: bool = False             # S1 rank on the refined confidence
+    reach_clamp: bool = False         # S2 bounded-acceleration candidate band
+    accel_max: float = 2.5            # m/s^2 for that band
+    graft_cons: bool = False          # S3 consequence score reaches the ranking
+    cons_detach: bool = True          # ...with law_head under no_grad
+    graft_route: bool = False         # S5 route readout reaches the ranking
+    seam_clamp: float = 0.0           # S4 norm cap on the total graft (<=0 off)
+    seam_fail: float = 1.5
+    seam_fail_frac: float = 0.75
+    seam_fail_patience: int = 50
+    horizon_s: float = 2.0            # last horizon in seconds (band + speeds)
+
+    @property
+    def any_on(self) -> bool:
+        return bool(self.refined or self.reach_clamp or self.graft_cons
+                    or self.graft_route or self.seam_clamp > 0.0)
+
+
+@dataclass
 class RefCConfig:
     encoder: CNNEncoderConfig = field(default_factory=CNNEncoderConfig)
     window: int = 8               # shared state window (main stack: 8)
@@ -378,11 +408,64 @@ class RefCConfig:
     grounded_selector: bool = False     # progress/collision proxy vs top-1 conf
     graft_imagination: bool = False     # H15 belief field over conv-map tokens
     graft_lan: bool = False             # LAN lane-anchored route conditioning
+    # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
+    # Every lever below acts on WHICH candidate is emitted, never on which are
+    # proposed. All are zero-init or param-free; all default OFF, so the
+    # state_dict of an all-off build is byte-identical to REF-C today.
+    sel_refined: bool = False         # S1 rank the refined fan with the REFINED
+    #                                   confidence (today: the t=0 classifier
+    #                                   score ranks post-denoise trajectories).
+    #                                   Inert at steps=0 BY CONSTRUCTION.
+    sel_reach_clamp: bool = False     # S2 bounded-acceleration band on the
+    #                                   CANDIDATES (argmax only; the returned
+    #                                   score stays unmasked so no -inf reaches
+    #                                   a cross-entropy)
+    sel_accel_max: float = 2.5        # m/s^2 for that band (flagship v1.5's)
+    graft_cons: bool = False          # S3 candidate-conditioned CONSEQUENCE
+    #                                   scoring through law_head — the only
+    #                                   form of cond_imagination REF-C's world
+    #                                   model can express
+    cons_detach: bool = True          # run law_head under no_grad in S3, so the
+    #                                   ranking objective cannot corrupt the
+    #                                   world model (the flagship's FROZEN-
+    #                                   predictor discipline)
+    graft_route: bool = False         # S5 the strategic route READOUT reaches
+    #                                   the ranked score (zero-init), instead of
+    #                                   only warping the decoder condition
+    seam_clamp: float = 0.0           # S4 in-graph norm cap on the TOTAL graft
+    #                                   per surface, as a multiple of the base
+    #                                   score norm. <=0 disables; below the cap
+    #                                   the rescale is exactly 1.0 (bit-exact).
+    seam_fail: float = 1.5            # ...fail-loud ceiling on the batch MEAN
+    seam_fail_frac: float = 0.75      # ...AND this share of the batch clamped
+    seam_fail_patience: int = 50      # ...AND sustained this many steps (0=off)
+    ego_valid_channel: bool = False   # X15: never zero-fill a channel whose
+    #                                   zero is a valid in-distribution value.
+    #                                   Adds an explicit "v0 is present" flag
+    #                                   alongside the ego-dropped speed, for the
+    #                                   measurement encoder AND (when
+    #                                   tactical_speed_input is on) the tactical
+    #                                   head. 0.0 m/s is in-distribution
+    #                                   "stationary"; masking to it is a
+    #                                   confident lie.
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
     speed_bins: int = 4           # refc1 target-speed classes over [0, max]
     speed_max: float = 30.0       # m/s
+
+    def selection(self) -> SelectionConfig:
+        """The D-SEL policy the decoder carries. ``horizon_s`` is DERIVED from
+        the trajectory horizons (0.1 s steps), never a constant — the reachable
+        band and the anchors must agree about how long the plan is."""
+        return SelectionConfig(
+            refined=self.sel_refined, reach_clamp=self.sel_reach_clamp,
+            accel_max=self.sel_accel_max, graft_cons=self.graft_cons,
+            cons_detach=self.cons_detach, graft_route=self.graft_route,
+            seam_clamp=self.seam_clamp, seam_fail=self.seam_fail,
+            seam_fail_frac=self.seam_fail_frac,
+            seam_fail_patience=self.seam_fail_patience,
+            horizon_s=max(self.trajectory.horizons) * 0.1)
 
 
 def refc_config() -> RefCConfig:
@@ -491,6 +574,59 @@ def refc_f1only_config() -> RefCConfig:
     """
     cfg = refc_config()
     cfg.tactical_speed_input = True  # F1 input, on the UNCHANGED 5-way head
+    return cfg
+
+
+def refc_select_config() -> RefCConfig:
+    """REF-C-base with the D-SEL SELECTION SURFACE — the pre-registered arm
+    (``Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md``).
+
+    IDENTICAL to :func:`refc_config` everywhere except how a candidate is
+    CHOSEN. The five levers and what each answers:
+
+      S1 ``sel_refined``      rank the refined fan with the REFINED confidence.
+                              Today the post-denoise trajectories are ranked by
+                              the t=0 classifier score; MEASURED on REF-C's own
+                              fan, the pick is >2x worse than the fan's best in
+                              45.4 % of windows against an oracle-in-fan of
+                              0.1640 m. 0 parameters.
+      S2 ``sel_reach_clamp``  delete candidates a bounded-acceleration ego
+                              cannot fly. MEASURED on ``fan_refc-xl-30k.pt``:
+                              72.08 % removed, oracle survives 100 %, paired
+                              delta exactly 0.0000. 0 parameters.
+      S3 ``graft_cons``       the CONSEQUENCE of each candidate, through
+                              ``law_head``, reaches the ranking — the only form
+                              of the flagship's ``cond_imagination`` REF-C's
+                              world model can express, and the only one with a
+                              real candidate axis. +1 parameter.
+      S4 ``seam_clamp``       cap the TOTAL graft against the base score. The
+                              trainer already logs ``graft_lat_norm`` /
+                              ``graft_lon_norm`` / ``conf_norm``; this is the
+                              missing actuator. 0 parameters.
+      S5 ``graft_route``      the strategic route READOUT reaches the ranking
+                              instead of only warping the condition. +384
+                              parameters (3 x 128 anchors, zero-init).
+
+    **MEASURED capacity delta** (``param_breakdown``, pinned by
+    ``tests/test_refc_select.py::test_dsel_is_not_a_capacity_change``):
+    104,191,577 -> 104,191,962 = **+385 parameters (+0.00037 %)**.
+
+    ⚠️ ``graft_route`` REQUIRES a future-derived route target (``--labels
+    v21``/``v3``). Under ``--labels v1`` the route target is
+    ``route_target(nav_cmd)`` — circular with a model INPUT — and grafting that
+    readout onto selection would pipe the nav echo into the ranking. The trainer
+    refuses the combination.
+
+    ``ego_valid_channel`` is NOT in this preset: it changes the measurement
+    encoder's INPUT, so it is an input lever, not a selection lever, and mixing
+    it in would make the arm non-attributable. It has its own arm.
+    """
+    cfg = refc_config()
+    cfg.sel_refined = True
+    cfg.sel_reach_clamp = True
+    cfg.graft_cons = True
+    cfg.graft_route = True
+    cfg.seam_clamp = 1.0
     return cfg
 
 
@@ -651,11 +787,20 @@ class AnchoredDiffusionDecoder(nn.Module):
                  graft_target_latent: bool, grounded_selector: bool,
                  n_maneuvers: int = N_MANEUVERS,
                  graft_lan: bool = False, d_lan: int = 0,
-                 factored_maneuver: bool = False):
+                 factored_maneuver: bool = False,
+                 sel: "SelectionConfig | None" = None):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
         self.grounded = grounded_selector
+        # D-SEL: the selection-surface policy travels with the decoder, because
+        # every one of its levers acts on the ranking this class performs.
+        self.sel = sel or SelectionConfig()
+        # Sustained-saturation counters: PLAIN attributes, never buffers — they
+        # must not enter state_dict and change checkpoint compatibility.
+        self._seam_conf = sl.SeamState()
+        self._seam_refined = sl.SeamState()
+        self._seam_rank = sl.SeamState()
         # Anchor vocabulary — a persistent buffer (travels with the checkpoint).
         self.register_buffer("anchors", anchors)              # [N, S, 2]
         d = cfg.d
@@ -725,6 +870,28 @@ class AnchoredDiffusionDecoder(nn.Module):
             nn.init.zeros_(self.lan_to_cond.weight)
             nn.init.zeros_(self.lan_to_cond.bias)
             self.lan_gate = nn.Parameter(torch.zeros(1))
+        # --- D-SEL grafts on the RANKED score (gated; absent when off) -------
+        # S5: the STRATEGIC route readout reaches SELECTION. Today the route
+        # reaches the decoder only through the CONDITION (nav_cmd -> measurement,
+        # LAN -> cond), i.e. it can WARP every candidate but never CHOOSE among
+        # them — and MEASURED (LAN E0), feeding the ORACLE route makes the
+        # cross-track separation WORSE, which is what a warp-only pathway looks
+        # like. Same shape and same zero-init discipline as v4's lat/lon/dist
+        # grafts and as ``lon_to_anchor``: bias-free, so a constant offset in the
+        # log-posterior is absorbable, and zero at step 0 so the ranked score
+        # starts bit-identical to the graft-free baseline.
+        self.route_to_anchor: nn.Linear | None = None
+        if self.sel.graft_route:
+            self.route_to_anchor = nn.Linear(N_ROUTE, anchors.shape[0],
+                                             bias=False)
+            nn.init.zeros_(self.route_to_anchor.weight)
+        # S3: ONE scalar on the candidate-conditioned consequence score. The
+        # score itself costs zero parameters (refc_select.consequence_scores
+        # reuses feat_proj + conf_head + a param-free layer_norm), so the whole
+        # cond_imagination port is +1 parameter.
+        self.cons_gate: nn.Parameter | None = None
+        if self.sel.graft_cons:
+            self.cons_gate = nn.Parameter(torch.zeros(1))
 
     def load_anchors(self, anchors: Tensor) -> None:
         """Install an externally-built anchor vocabulary (build_refc_anchors.py).
@@ -766,6 +933,31 @@ class AnchoredDiffusionDecoder(nn.Module):
                   + sin_a[None] * lan_dir[:, 1:2])            # [B, N]
         return compat * lan_dir[:, 2:3]
 
+    def _apply_grafts(self, base: Tensor, terms: list[Tensor],
+                      state, surface: str, patience: int) -> tuple[Tensor, dict]:
+        """``base`` + the graft terms, optionally norm-capped as a group (S4).
+
+        ⚠️ THE UNCLAMPED PATH ACCUMULATES IN THE LEGACY ORDER, ON PURPOSE.
+        Floating-point addition is not associative: pre-D-SEL the decoder wrote
+        ``conf = conf + man; conf = conf + lat; ...``, and folding that into
+        ``conf + (man + lat + ...)`` would change the last bits of every published
+        REF-C decode. So with ``seam_clamp <= 0`` this reproduces the original
+        left-fold exactly, and the summed form is built ONLY when the clamp is
+        on — where the group norm is the quantity being controlled anyway.
+        """
+        out = base
+        for t in terms:
+            out = out + t                       # EXACT pre-D-SEL accumulation
+        if self.sel.seam_clamp <= 0.0 or not terms:
+            return out, {}
+        total = terms[0]
+        for t in terms[1:]:
+            total = total + t
+        return sl.apply_seam_clamp(
+            base, total, clamp=self.sel.seam_clamp, fail=self.sel.seam_fail,
+            fail_frac=self.sel.seam_fail_frac, patience=patience,
+            state=state, surface=surface)
+
     @staticmethod
     def _grounded_score(x: Tensor) -> Tensor:
         """Param-free progress/collision proxy over decoded endpoints [B,N,S,2]:
@@ -779,8 +971,30 @@ class AnchoredDiffusionDecoder(nn.Module):
                 steps: int = 0, lan_emb: Tensor | None = None,
                 lan_dir: Tensor | None = None,
                 lat_prior: Tensor | None = None,
-                lon_prior: Tensor | None = None) -> dict:
+                lon_prior: Tensor | None = None,
+                route_prior: Tensor | None = None,
+                cons_head=None, cons_ctx: Tensor | None = None,
+                v_ms: Tensor | None = None,
+                ego_keep: Tensor | None = None) -> dict:
+        """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
+        emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
+
+        ``route_prior`` [B, N_ROUTE] log-probs (S5) · ``cons_head`` + ``cons_ctx``
+        [B, F] the model's ``law_head`` and pooled latent (S3) · ``v_ms`` [B] the
+        RAW ego speed in m/s and ``ego_keep`` [B] bool for the reachability band
+        (S2).
+
+        ⚠️ ``ego_keep`` is not decoration. ``v_ms`` is the speed BEFORE
+        ego-dropout, and using it to filter candidates on a sample whose speed
+        was withheld from the conditioning would leak the channel back in through
+        the ranking — the exact failure ``flagship_v15``'s ``vt_keep`` masking
+        exists to prevent ("a goal that was withheld from the decoder must not
+        sneak back in through the ranking"). The band is therefore applied only
+        where the speed was KEPT. At eval nothing is dropped, so the band is
+        always active there — which is the regime the 72.08 % was measured in.
+        """
         b = fmap.shape[0]
+        sel = self.sel
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
@@ -793,40 +1007,96 @@ class AnchoredDiffusionDecoder(nn.Module):
         anchors = self.anchors.to(fmap.dtype)                 # [N, S, 2]
         n = anchors.shape[0]
         x0 = anchors[None].expand(b, n, self.n_steps, 2)
-        conf, offset = self._decode(kv, cond, x0, 0)          # classifier pass
+        conf0, offset = self._decode(kv, cond, x0, 0)         # classifier pass
         x = anchors[None] + offset                            # [B, N, S, 2]
 
+        # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
+        terms: list[Tensor] = []
         # H19: maneuver prior reweights the anchor confidences (log-space).
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
-            conf = conf + self.maneuver_to_anchor(
-                torch.log_softmax(maneuver_logits, dim=-1))
+            terms.append(self.maneuver_to_anchor(
+                torch.log_softmax(maneuver_logits, dim=-1)))
         # D-TAC1: the factorised pair, summed. ``lat_prior`` / ``lon_prior`` are
         # already log-probabilities (optionally prior-centered) prepared by the
         # model, so the decoder keeps no policy of its own.
         if self.lat_to_anchor is not None and lat_prior is not None:
-            conf = conf + self.lat_to_anchor(lat_prior)
+            terms.append(self.lat_to_anchor(lat_prior))
         if self.lon_to_anchor is not None and lon_prior is not None:
-            conf = conf + self.lon_to_anchor(lon_prior)
-
+            terms.append(self.lon_to_anchor(lon_prior))
         # LAN: the route reweights the SAME anchor priors, geometrically.
         if self.lan_gate is not None and lan_dir is not None:
-            conf = conf + self.lan_gate * self._lan_anchor_prior(lan_dir)
+            terms.append(self.lan_gate * self._lan_anchor_prior(lan_dir))
+        conf, tele = self._apply_grafts(conf0, terms, self._seam_conf, "conf",
+                                        sel.seam_fail_patience)
 
         # Truncated diffusion: refine the anchor trajectories a few steps. Noise
         # only in training (deterministic at eval so decoding is reproducible).
+        # S1: the last pass's confidence is KEPT. Pre-D-SEL this was
+        # ``_, off = self._decode(...)`` — the refined fan was then ranked by the
+        # UNREFINED score, which is the measured 45.4 %-of-windows ranking
+        # failure. ``steps == 0`` leaves ``refined is conf`` by construction, so
+        # ``--mode classifier`` is provably unaffected by S1.
+        refined = conf
         for i in range(steps):
             t_idx = min(i + 1, self.cfg.diffusion_steps)
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
             x_in = x + noise
-            _, off = self._decode(kv, cond, x_in, t_idx)
+            r_conf, off = self._decode(kv, cond, x_in, t_idx)
             x = x_in + off
+            # The refined readout carries the SAME priors as the classifier
+            # surface: switching the ranking to `refined` without them would
+            # silently DELETE the H19 coupling from selection, which is a
+            # regression dressed as a fix. Patience 0 — the saturation counter is
+            # advanced once per forward, on the classifier surface above.
+            refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
+                                            "refined", 0)
 
-        score = conf + self._grounded_score(x) if self.grounded else conf
-        idx = score.argmax(dim=1)                             # [B] (detached)
+        # ---- the RANKED score ------------------------------------------------
+        base = refined if sel.refined else conf
+        r_terms: list[Tensor] = []
+        cons_s = None
+        if self.route_to_anchor is not None and route_prior is not None:
+            r_terms.append(self.route_to_anchor(route_prior))
+        if (self.cons_gate is not None and cons_head is not None
+                and cons_ctx is not None):
+            cons_s = sl.consequence_scores(x, cons_ctx, cons_head,
+                                           self.feat_proj, self.conf_head,
+                                           detach=sel.cons_detach)
+            r_terms.append(self.cons_gate * cons_s)
+        score, r_tele = self._apply_grafts(base, r_terms, self._seam_rank,
+                                           "rank", sel.seam_fail_patience)
+        if self.grounded:
+            score = score + self._grounded_score(x)
+        tele.update(r_tele)
+
+        # S2: the reachability band filters the ARGMAX ONLY. ``score`` is
+        # returned unmasked, so no ``-inf`` can reach a cross-entropy, and a row
+        # whose survivor set is empty keeps its whole fan — an unreachable-
+        # everywhere window is a measurement failure, not a licence to emit
+        # nothing.
+        rank = score
+        if sel.reach_clamp and v_ms is not None:
+            keep = sl.reachability_mask(x, v_ms.to(x.dtype),
+                                        accel_max=sel.accel_max,
+                                        horizon_s=sel.horizon_s)
+            if ego_keep is not None:                  # never leak past dropout
+                keep = keep | (~ego_keep)[:, None]
+            dead = ~keep.any(dim=1)
+            keep = keep | dead[:, None]
+            rank = score.masked_fill(~keep, float("-inf"))
+            tele["reach_frac_candidates_clipped"] = round(
+                float(1.0 - keep.to(score.dtype).mean().detach()), 4)
+            tele["reach_frac_windows_empty"] = round(
+                float(dead.to(score.dtype).mean().detach()), 4)
+        idx = rank.argmax(dim=1)                              # [B] (detached)
         traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
-        return {"anchor_logits": conf, "anchor_traj": x, "offset": offset,
-                "traj": traj, "sel_idx": idx}
+        out = {"anchor_logits": conf, "refined_logits": refined,
+               "anchor_traj": x, "offset": offset, "sel_score": score,
+               "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        if cons_s is not None:
+            out["cons_score"] = cons_s
+        return out
 
 
 # ============================================================================
@@ -928,7 +1198,18 @@ class RefCModel(nn.Module):
                                           cfg.strategic.d_ctx)
         # Measurement encoder (KEEP): [v0, nav one-hot] with ego-dropout. The
         # strategic ctx now conditions the DECODER, not the measurement.
-        d_meas_in = 1 + len(NAV_COMMANDS)
+        # X15 (``ego_valid_channel``): an explicit "v0 is present" flag next to
+        # the ego-dropped speed. REF-C zero-fills ``v`` under ego-dropout, but
+        # 0.0 m/s is a perfectly in-distribution "stationary", so the zero-fill
+        # is a CONFIDENT LIE — the reader cannot tell "we withheld the speed"
+        # from "the car is stopped". The repo already encodes exactly this
+        # distinction for the route (``LAN_FEATS_PER_ANCHOR`` carries a ``valid``
+        # flag), so the validity CHANNEL is this codebase's own convention; the
+        # flagship reaches the same rule with a learned null EMBEDDING ROW
+        # (``V15Config.ego_null_row``). The channel is preferred here because it
+        # also reaches the TACTICAL head, which reads ``v`` directly and would be
+        # untouched by a row swapped in at the measurement OUTPUT.
+        d_meas_in = 1 + len(NAV_COMMANDS) + (1 if cfg.ego_valid_channel else 0)
         self.measurement = nn.Sequential(
             nn.Linear(d_meas_in, cfg.measurement.hidden), nn.ReLU(inplace=True),
             nn.Linear(cfg.measurement.hidden, cfg.measurement.d_out),
@@ -944,7 +1225,8 @@ class RefCModel(nn.Module):
             graft_target_latent=cfg.graft_target_latent,
             grounded_selector=cfg.grounded_selector,
             graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out,
-            factored_maneuver=cfg.factored_maneuver)
+            factored_maneuver=cfg.factored_maneuver,
+            sel=cfg.selection())
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -984,7 +1266,11 @@ class RefCModel(nn.Module):
         # the only available F1 estimate and it is confounded by the fact that
         # the two arms also differ in which head consumes the speed. With the
         # flag free, `refc_f1only_config()` is the missing INPUT-only arm.
-        d_tac = feat + (1 if cfg.tactical_speed_input else 0)
+        # The tactical head's speed channel carries its validity flag with it —
+        # the flag is meaningless to a head that never reads the speed, so it is
+        # conditioned on BOTH switches rather than on ``ego_valid_channel`` alone.
+        d_tac = feat + (2 if (cfg.tactical_speed_input and cfg.ego_valid_channel)
+                        else 1 if cfg.tactical_speed_input else 0)
         if cfg.factored_maneuver:
             # ONE shared trunk, TWO linear readouts — deliberately, and measured:
             # two independent MLPs cost +272,001 params (+0.261 % of REF-C-base)
@@ -1130,11 +1416,18 @@ class RefCModel(nn.Module):
         nav = F.one_hot(nav_cmd, len(NAV_COMMANDS)).to(pooled.dtype)
         v = torch.zeros(b, 1, dtype=pooled.dtype, device=pooled.device) \
             if v0 is None else (v0.to(pooled.dtype) / 10.0).reshape(b, 1)
+        # ``keep`` is now MATERIAL, not an intermediate: it is the ego-validity
+        # channel (X15) and it is what stops the reachability band (S2) from
+        # leaking the speed back in on a sample whose speed was withheld.
+        keep = torch.ones(b, 1, dtype=v.dtype, device=v.device) \
+            if v0 is not None else torch.zeros(b, 1, dtype=v.dtype,
+                                               device=v.device)
         if self.training and self.cfg.ego_dropout > 0:
-            keep = (torch.rand(b, 1, device=v.device)
-                    >= self.cfg.ego_dropout).to(v.dtype)
+            keep = keep * (torch.rand(b, 1, device=v.device)
+                           >= self.cfg.ego_dropout).to(v.dtype)
             v = v * keep                         # per-sample Bernoulli zero
-        m = self.measurement(torch.cat([v, nav], dim=-1))
+        meas_in = [v, nav] + ([keep] if self.cfg.ego_valid_channel else [])
+        m = self.measurement(torch.cat(meas_in, dim=-1))
 
         # Aux heads (image branch): maneuver logits also drive the H19 reweight.
         route_logits = self.route_head(pooled)
@@ -1146,7 +1439,8 @@ class RefCModel(nn.Module):
         # constraint, ``ego_dropout`` is the knob to sweep — not a second,
         # unsynchronised dropout here.) Built once and used by BOTH branches, so
         # the factored and 5-way heads see exactly the same input vector.
-        tac_in = torch.cat([pooled, v], dim=-1) \
+        tac_in = torch.cat([pooled, v] + ([keep] if self.cfg.ego_valid_channel
+                                          else []), dim=-1) \
             if self.cfg.tactical_speed_input else pooled
         if self.cfg.factored_maneuver:
             h_tac = self.tactical_trunk(tac_in)
@@ -1188,10 +1482,30 @@ class RefCModel(nn.Module):
             lan_emb = self.lan_enc(lan_in)
             lan_dir = self.lan_direction(lan_in, self.cfg.lan.k)
 
+        # D-SEL wiring. Each is None unless its flag is on, so a default build
+        # calls the decoder with exactly the pre-D-SEL argument set.
+        #   S5  the model's OWN strategic route readout, as log-probabilities —
+        #       the same shape of coupling H19 already gives the tactical head.
+        #       ⚠️ Admissible only when route_head is trained on a FUTURE-derived
+        #       target (--labels v21/v3); under --labels v1 the target is
+        #       route_target(nav_cmd) and grafting it would pipe the nav echo
+        #       into selection (the C6 confound). The trainer enforces this.
+        #   S3  law_head is REF-C's trajectory-conditioned world model, so it
+        #       IS the consequence predictor; `pooled` is its context.
+        #   S2  the RAW speed and the ego-dropout keep-mask.
+        route_prior = torch.log_softmax(route_logits, dim=-1) \
+            if self.cfg.graft_route else None
+        cons_head = self.law_head if self.cfg.graft_cons else None
+        cons_ctx = pooled if self.cfg.graft_cons else None
+        v_ms = (v0.to(pooled.dtype) if (self.cfg.sel_reach_clamp
+                                        and v0 is not None) else None)
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
-                           lat_prior=lat_prior, lon_prior=lon_prior)
+                           lat_prior=lat_prior, lon_prior=lon_prior,
+                           route_prior=route_prior, cons_head=cons_head,
+                           cons_ctx=cons_ctx, v_ms=v_ms,
+                           ego_keep=keep.squeeze(-1) > 0.5)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -1201,10 +1515,14 @@ class RefCModel(nn.Module):
         out = {"pooled": pooled, "traj": traj, "wp_seq": traj,
                "waypoints": {k: traj[:, i] for i, k in enumerate(keys)},
                "anchor_logits": dec["anchor_logits"],
+               "refined_logits": dec["refined_logits"],
+               "sel_score": dec["sel_score"], "sel_tele": dec["sel_tele"],
                "anchor_traj": dec["anchor_traj"], "offset": dec["offset"],
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m}
+        if "cons_score" in dec:
+            out["cons_score"] = dec["cons_score"]
         if ctx is not None:
             out["ctx"] = ctx
         if lat_logits is not None:
@@ -1239,6 +1557,15 @@ class RefCModel(nn.Module):
 def param_breakdown(model: RefCModel) -> dict[str, int]:
     """Per-module trainable-parameter table (report + config.json row).
 
+    ⭐ ``selection`` is the D-SEL capacity control and it is reported SEPARATELY
+    from ``decoder`` even though both grafts are decoder submodules — a lever
+    whose cost is buried inside a 40 M-parameter line is a lever nobody can
+    audit. On REF-C-base the whole selection surface with every flag on is
+    ``route_to_anchor`` (N_ROUTE x n_anchors, zero-init) + ``cons_gate`` (1):
+    **+385 parameters**, i.e. +0.00037 % — the same order as the F1 arm's +384
+    and ~1/700 of the +272,001 an earlier tactical attempt cost before its own
+    capacity check caught it. S1/S2/S4 are structurally FREE (0 parameters).
+
     ``encoder`` (the proven lever — where the lifted budget goes) vs ``decoder``
     (the anchored-diffusion decoder INCLUDING its gated graft submodules ctx->
     cond, maneuver->anchor, target-latent FiLM) is the split that shows where the
@@ -1247,11 +1574,17 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
     when hierarchy=False; ``speed`` is 0 unless refc1. REF-C-base lands ~110 M
     (tests pin 90-130 M), REF-C-XL ~260 M (230-280 M)."""
     cnt = lambda m: sum(p.numel() for p in m.parameters())  # noqa: E731
+    dec = model.decoder
+    # D-SEL is CARVED OUT of `decoder`, never added on top of it: the breakdown
+    # must keep summing to `total` exactly (pinned by tests/test_refc.py), and a
+    # line that double-counted would make the capacity control unreadable.
+    n_sel = ((cnt(dec.route_to_anchor) if dec.route_to_anchor is not None else 0)
+             + (dec.cons_gate.numel() if dec.cons_gate is not None else 0))
     return {
         "encoder": cnt(model.encoder),
         "measurement": cnt(model.measurement),
         "strategic": cnt(model.strategic) if model.cfg.hierarchy else 0,
-        "decoder": cnt(model.decoder),
+        "decoder": cnt(model.decoder) - n_sel,
         "imagination": cnt(model.imagination) if model.cfg.graft_imagination
         else 0,
         "lan": cnt(model.lan_enc) if model.cfg.graft_lan else 0,
@@ -1260,5 +1593,6 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
                 else cnt(model.maneuver_head)) + cnt(model.route_head),
         "law": cnt(model.law_head),
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,
+        "selection": n_sel,
         "total": cnt(model),
     }

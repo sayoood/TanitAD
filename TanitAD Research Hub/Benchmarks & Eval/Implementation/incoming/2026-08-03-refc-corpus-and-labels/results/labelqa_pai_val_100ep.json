@@ -1,0 +1,323 @@
+{
+ "tool": "labelqa_scan.py",
+ "evidence_class": "MEASURED",
+ "generated_utc": "2026-08-03T18:27:11Z",
+ "wall_s": 8.7,
+ "splits": [
+  {
+   "cache_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-val-bb543bdf7836",
+   "n_episode_files": 100,
+   "n_scanned": 100,
+   "resolved_corpus_key": null,
+   "is_registered_parity_corpus": false,
+   "parity_note": "NOT a registered parity corpus (tanitad.data.parity.corpus_key_of returned None) \u2014 numbers off it are NOT cross-arm comparable with the parity arms and must never be quoted as parity numbers.",
+   "skip_markers_present": 0
+  }
+ ],
+ "grid": {
+  "stride": 8,
+  "horizon_steps": 20,
+  "horizon_s": 2.0,
+  "note": "one window per stride-th frame that has a FULL 2 s future"
+ },
+ "DENOMINATORS": {
+  "episodes_scanned": 100,
+  "episodes_too_short_for_a_window": 0,
+  "frames": 19900,
+  "windows": 2301,
+  "median_clip_len_s": 19.9,
+  "min_clip_len_s": 19.8,
+  "max_clip_len_s": 20.5
+ },
+ "TACTICAL": {
+  "man5_v1_balance": {
+   "lane_keep": {
+    "n": 761,
+    "pct": 33.0726
+   },
+   "turn_left": {
+    "n": 337,
+    "pct": 14.6458
+   },
+   "turn_right": {
+    "n": 439,
+    "pct": 19.0787
+   },
+   "accelerate": {
+    "n": 414,
+    "pct": 17.9922
+   },
+   "brake_stop": {
+    "n": 350,
+    "pct": 15.2108
+   },
+   "_n": 2301
+  },
+  "man5_v2_balance": {
+   "lane_keep": {
+    "n": 785,
+    "pct": 34.1156
+   },
+   "turn_left": {
+    "n": 336,
+    "pct": 14.6023
+   },
+   "turn_right": {
+    "n": 403,
+    "pct": 17.5141
+   },
+   "accelerate": {
+    "n": 416,
+    "pct": 18.0791
+   },
+   "brake_stop": {
+    "n": 361,
+    "pct": 15.6888
+   },
+   "_n": 2301
+  },
+  "lat_v1_balance": {
+   "lane_keep": {
+    "n": 1525,
+    "pct": 66.2755
+   },
+   "turn_left": {
+    "n": 337,
+    "pct": 14.6458
+   },
+   "turn_right": {
+    "n": 439,
+    "pct": 19.0787
+   },
+   "_n": 2301
+  },
+  "lat_v2_balance": {
+   "lane_keep": {
+    "n": 1562,
+    "pct": 67.8835
+   },
+   "turn_left": {
+    "n": 336,
+    "pct": 14.6023
+   },
+   "turn_right": {
+    "n": 403,
+    "pct": 17.5141
+   },
+   "_n": 2301
+  },
+  "lon_v1_balance": {
+   "brake_stop": {
+    "n": 469,
+    "pct": 20.3824
+   },
+   "steady": {
+    "n": 1142,
+    "pct": 49.6306
+   },
+   "accelerate": {
+    "n": 690,
+    "pct": 29.987
+   },
+   "_n": 2301
+  },
+  "lon_v2_balance": {
+   "brake_stop": {
+    "n": 469,
+    "pct": 20.3824
+   },
+   "steady": {
+    "n": 1142,
+    "pct": 49.6306
+   },
+   "accelerate": {
+    "n": 690,
+    "pct": 29.987
+   },
+   "_n": 2301
+  },
+  "LOSSY_RATE": {
+   "v1": {
+    "n_windows": 2301,
+    "n_turn": 776,
+    "pct_turn": 33.7245,
+    "n_live_longitudinal": 1159,
+    "pct_live_longitudinal": 50.3694,
+    "n_LOSSY_turn_and_live_lon": 395,
+    "PCT_LOSSY": 17.1664,
+    "pct_of_live_longitudinal_destroyed": 34.0811,
+    "collapse_self_check_mismatches": 0,
+    "collapse_self_check": "PASS \u2014 collapse(lat,lon) == the shipped 5-way label on every window"
+   },
+   "v2": {
+    "n_windows": 2301,
+    "n_turn": 739,
+    "pct_turn": 32.1165,
+    "n_live_longitudinal": 1159,
+    "pct_live_longitudinal": 50.3694,
+    "n_LOSSY_turn_and_live_lon": 382,
+    "PCT_LOSSY": 16.6015,
+    "pct_of_live_longitudinal_destroyed": 32.9594,
+    "collapse_self_check_mismatches": 0,
+    "collapse_self_check": "PASS \u2014 collapse(lat,lon) == the shipped 5-way label on every window"
+   }
+  },
+  "interpretation": "PCT_LOSSY is the fraction of windows on which the 5-way target CANNOT represent the true state: the lateral class is a turn, so the priority collapse discards a live longitudinal class. No decode rule recovers them \u2014 the factored (lat x lon) target does, at the same thresholds."
+ },
+ "STRATEGIC": {
+  "n_windows": 2301,
+  "route_valid_rate": 75.5758,
+  "route_reason_share": {
+   "tight_transient": {
+    "n": 1483,
+    "pct": 64.4502
+   },
+   "no_arc": {
+    "n": 359,
+    "pct": 15.6019
+   },
+   "road_following": {
+    "n": 256,
+    "pct": 11.1256
+   },
+   "gray_zone": {
+    "n": 203,
+    "pct": 8.8223
+   }
+  },
+  "route_class_share": {
+   "right": {
+    "n": 809,
+    "pct": 35.1586
+   },
+   "left": {
+    "n": 674,
+    "pct": 29.2916
+   },
+   "unknown": {
+    "n": 562,
+    "pct": 24.4242
+   },
+   "straight": {
+    "n": 256,
+    "pct": 11.1256
+   }
+  },
+  "nav_input_class_share": {
+   "follow": {
+    "n": 818,
+    "pct": 35.5498
+   },
+   "right": {
+    "n": 809,
+    "pct": 35.1586
+   },
+   "left": {
+    "n": 674,
+    "pct": 29.2916
+   }
+  },
+  "NAV_FOLLOW_DEGENERACY": {
+   "n_nav_follow": 818,
+   "from_road_following": 256,
+   "from_UNKNOWN_sentinel": 562,
+   "pct_of_follow_that_is_a_collapsed_sentinel": 68.7042,
+   "what_this_measures": "`route_target_v21` refuses to say `straight` when it does not know (ROUTE_UNKNOWN), but `nav_command_v21` maps ROUTE_UNKNOWN back onto NAV_FOLLOW so the model INPUT can never tell the two apart. This is the v2.1 D2 silent-straight-fallback, still alive on the input side."
+  },
+  "graded_mean_curv": {
+   "n": 2301,
+   "abs_mean": 0.012668,
+   "note": "threshold-free target; defined on every window the CE must mask"
+  },
+  "observed_arc_m": {
+   "median": 60.51,
+   "pct_below_MIN_ARC_ROUTE_M": 15.6019,
+   "pct_below_TRANSIENCE_MIN_ARC_M": 96.5233,
+   "note": "below TRANSIENCE_MIN_ARC_M the concentration gate is NOT applied (route_from_future_v21 R1), so tightness alone decides"
+  }
+ },
+ "LONGITUDINAL": {
+  "n_windows": 2301,
+  "v0_mps": {
+   "mean": 5.3897,
+   "median": 5.5942,
+   "pct_stopped_lt_1mps": 19.6002
+  },
+  "dv_2s_mps": {
+   "mean_abs": 1.3019,
+   "hist": {
+    "[-100,-3)": 105,
+    "[-3,-1)": 363,
+    "[-1,-0.3)": 283,
+    "[-0.3,0.3)": 539,
+    "[0.3,1)": 321,
+    "[1,3)": 584,
+    "[3,100)": 106
+   }
+  },
+  "target_speed_label": {
+   "available": true,
+   "definition": "v(t+2s) \u2014 a pure function of the cached pose track",
+   "n": 2301
+  },
+  "distance_keeping_headway_TTC": {
+   "available": false,
+   "reason": "the epcache episode record stores only {frames_u8, actions, poses, episode_id, maneuvers} \u2014 there is NO lead-agent track in it, so headway / time-gap / TTC cannot be computed from this cache. The 3D agent tracks exist in the source corpus as `obstacle.offline` (97.44 % of clips) and would have to be joined in at build time.",
+   "n": 0
+  }
+ },
+ "LATERAL": {
+  "n_windows": 2301,
+  "dyaw_2s_rad": {
+   "mean_abs": 0.17744,
+   "hist": {
+    "[-4,-0.5)": 159,
+    "[-0.5,-0.15)": 280,
+    "[-0.15,-0.05)": 205,
+    "[-0.05,0.05)": 1144,
+    "[0.05,0.15)": 176,
+    "[0.15,0.5)": 193,
+    "[0.5,4)": 144
+   }
+  },
+  "curvature_1_per_m": {
+   "mean_abs": 0.023587,
+   "pct_above_junction_gate_CURV_TURN_PER_M": 32.1165,
+   "pct_below_road_gate_CURV_ROAD_PER_M": 54.6719
+  },
+  "yaw_rate_rad_s": {
+   "mean_abs": 0.08872
+  }
+ },
+ "SITUATION": {
+  "n_episodes": 100,
+  "events": {
+   "lane_change_events": 12,
+   "intersection_events": 49,
+   "turn_events": 49,
+   "roundabout_events": 7,
+   "episodes_with_lane_change": 12,
+   "episodes_with_intersection": 45
+  },
+  "episodes_with_lane_change_pct": 12.0,
+  "episodes_with_intersection_pct": 45.0,
+  "CAUSALITY_AUDIT": {
+   "n_frames": 19900,
+   "alon_pre": {
+    "max_abs_diff_mps2": 0.461798,
+    "mean_abs_diff_mps2": 0.031654,
+    "mean_abs_value_mps2": 0.673245,
+    "relative_error_pct": 4.702,
+    "pct_frames_differing_gt_1e-6": 89.5126
+   },
+   "omega_pre": {
+    "max_abs_diff_rad_s": 0.059274,
+    "mean_abs_diff_rad_s": 0.002862,
+    "mean_abs_value_rad_s": 0.088301,
+    "relative_error_pct": 3.241,
+    "pct_frames_differing_gt_1e-6": 89.3518
+   },
+   "what_this_measures": "situations.kinematics builds alon_pre/omega_pre on np.gradient, a CENTRED difference, then applies a TRAILING mean and calls the result STRICTLY CAUSAL. The value at t therefore contains the sample at t+1. The columns above are |centred - strictly-causal-backward-difference| over every frame of every scanned episode."
+  }
+ }
+}

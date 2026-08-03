@@ -39,8 +39,20 @@ even `intersection` is the turn half alone. An ego-input head therefore observes
 GENERATING PROCESS directly, while the camera must infer it from pixels.
    It is **NOT** a future-information leak: the head's window is [t-0.7 s, t] (`sc_train.py:37`,
    offsets -7..0) and the label's evidence window is [onset, onset+4 s] with onset > t — disjoint.
-   But `omega_pre`/`alon_pre` are built on `np.gradient`, a CENTRED difference, so they do read
-   **one frame (0.1 s) past t**; a small boundary leak that bites only for onsets at exactly t+1.
+✅ **FIXED 2026-08-03 — the centred-difference causality break.** `omega_pre`/`alon_pre` were built
+on `np.gradient`, a CENTRED difference, so despite the comment reading `STRICTLY CAUSAL` they read
+**one frame (0.1 s) past t** on every interior frame. `kinematics` now builds them on
+:func:`backward_diff` and returns `pre_mode` alongside; `causal_pre=False` reproduces the old
+channels bit-for-bit for regenerating pre-fix substrates. ⚠️ The detector channels
+(`omega`/`kappa`/`alon`) are deliberately UNCHANGED — labels may use the future (PI ruling below)
+and their thresholds are frozen by PRE_REGISTRATION.md Sec 2.
+⚠️ **BLAST RADIUS — every banked `ego` block was built on the leaky channels** and their numbers do
+not carry over unchanged: `…/2026-07-26-situation-classifier/scripts/sc_build_labels.py:164`,
+`…/2026-08-03-sitclf-matched-capacity/build_substrate.py:111`, and every consumer of
+`[v, alon_pre, omega_pre] / EGO_SCALE` (`sc_train.py:38`, `sc_train_v2.py:38`, `gen1_sc_train.py:38`,
+`tanitad/eval/sitclf_deploy.py:264`). Rebuild before quoting an ego-arm number as causal — and note
+the PI ruling makes the ego arm undeployable anyway, so the fix matters most for `head_img_ego`-style
+diagnostics and for any future causal ego channel.
 
 The THREE SITUATION DETECTORS — lane change / roundabout / intersection.
 
@@ -115,25 +127,100 @@ def movavg(x: np.ndarray, n: int) -> np.ndarray:
     return np.convolve(np.pad(x, (n // 2, n - 1 - n // 2), mode="edge"), k, mode="valid")
 
 
-def kinematics(P: np.ndarray) -> dict:
-    """P [T,4] = (x, y, yaw, v) at 10 Hz -> the derived signals every detector reads."""
+def backward_diff(x: np.ndarray, dt: float = DT) -> np.ndarray:
+    """STRICTLY CAUSAL first derivative: ``d[t] = (x[t] - x[t-1]) / dt``.
+
+    ⭐ The replacement for ``np.gradient`` in the ``*_pre`` channels. ``np.gradient``
+    is a CENTRED difference — ``g[t] = (x[t+1] - x[t-1]) / (2 dt)`` on the interior —
+    so its value at ``t`` contains the sample at ``t+1``. A trailing moving average
+    applied afterwards CANNOT undo that: it averages values each of which already
+    peeked one frame ahead, so the result still reads ``t+1``. That is the whole
+    mechanism of the leak this function closes.
+
+    ``d[0]`` copies ``d[1]`` (edge extension), matching the ``mode="edge"`` padding
+    convention the trailing means already use, so the first frame is defined and no
+    consumer has to special-case it.
+    """
+    d = np.empty_like(x, dtype=np.float64)
+    if len(x) < 2:
+        d[:] = 0.0
+        return d
+    d[1:] = (x[1:] - x[:-1]) / dt
+    d[0] = d[1]
+    return d
+
+
+def _trailing_mean(x: np.ndarray, n: int) -> np.ndarray:
+    """Mean over ``x[t-n+1 : t+1]`` — ends AT t, edge-padded at the start."""
+    return np.convolve(np.pad(x, (n - 1, 0), mode="edge"),
+                       np.ones(n) / n, mode="valid")
+
+
+def kinematics(P: np.ndarray, causal_pre: bool = True) -> dict:
+    """P [T,4] = (x, y, yaw, v) at 10 Hz -> the derived signals every detector reads.
+
+    ⭐ ``causal_pre`` (default **True**, 2026-08-03) controls ONLY the two ``*_pre``
+    channels. See :func:`backward_diff` and the CAUSALITY block below.
+
+    THE TWO CLASSES OF CHANNEL IN THIS DICT — they have different rules
+    ------------------------------------------------------------------
+    ``omega`` / ``kappa`` / ``alon``  are LABEL-DERIVATION channels. They feed the
+        detectors, they are computed offline over the whole track, and they are
+        ALLOWED to use the future: PI ruling 2026-08-03, *"for ground truth data of
+        scenario classification you can use both ego and other label, for inference
+        only vision."* Their smoothing is centred BY DESIGN and their thresholds are
+        FROZEN by PRE_REGISTRATION.md Sec 2. ⛔ Nothing here changes them, because
+        changing them would silently re-derive every situation label in the
+        programme and retro-fit a pre-registered study.
+    ``alon_pre`` / ``omega_pre``      are the channels the module docstring calls
+        *"the only ego channels a head may receive"* — i.e. the ones whose entire
+        justification is that they contain no future. Those are the ones that must
+        actually be causal, and until 2026-08-03 they were not.
+
+    ⚠️ THE BUG THIS FIXES (and it lived inside a docstring that asserted the
+    opposite). Both ``*_pre`` channels were built as a TRAILING mean of
+    ``np.gradient(..., DT)``. The trailing mean is correct; ``np.gradient`` is a
+    CENTRED difference, so every value it produces at ``t`` already contains the
+    sample at ``t+1``. The composition therefore reads **exactly one frame (0.1 s)
+    past t** on every interior frame, while the comment on the line said
+    ``STRICTLY CAUSAL``. The module docstring had ALREADY conceded the leak in
+    prose ("a small boundary leak that bites only for onsets at exactly t+1") and
+    the code was left as it was — a known defect in a label pipeline that nothing
+    ever closed.
+
+    ``causal_pre=False`` reproduces the pre-fix (leaky) channels EXACTLY, so a
+    banked substrate built before 2026-08-03 can be regenerated bit-for-bit rather
+    than being silently invalidated. Both variants are ALWAYS returned under
+    unambiguous names — ``alon_pre_causal`` / ``alon_pre_centred`` and the omega
+    pair — and ``pre_mode`` records which of them ``alon_pre`` / ``omega_pre``
+    currently alias, so a consumer that stamps its provenance cannot fail to notice
+    which convention its features were built under.
+    """
     x, y = P[:, 0].astype(np.float64), P[:, 1].astype(np.float64)
     psi = np.unwrap(P[:, 2].astype(np.float64))
     v = P[:, 3].astype(np.float64)
     T = len(v)
     ns = max(2, int(round(SMOOTH_S * HZ)))
     nk = max(2, int(round(SMOOTH_KAPPA_S * HZ)))
+    # ---- LABEL-DERIVATION channels (future-using by design, thresholds frozen) ----
     omega = np.gradient(psi, DT)
     omega_s = movavg(omega, ns)
     kappa = movavg(omega_s / np.maximum(v, V_FLOOR_KAPPA), nk)
     alon = movavg(np.gradient(v, DT), ns)
-    # trailing 0.5 s means (STRICTLY CAUSAL -- these are the only ego channels a head may receive)
-    alon_pre = np.convolve(np.pad(np.gradient(v, DT), (ns - 1, 0), mode="edge"),
-                           np.ones(ns) / ns, mode="valid")
-    omega_pre = np.convolve(np.pad(omega, (ns - 1, 0), mode="edge"),
-                            np.ones(ns) / ns, mode="valid")
+    # ---- INFERENCE-SIDE channels (must read nothing past t) ----------------------
+    alon_pre_causal = _trailing_mean(backward_diff(v), ns)
+    omega_pre_causal = _trailing_mean(backward_diff(psi), ns)
+    alon_pre_centred = _trailing_mean(np.gradient(v, DT), ns)
+    omega_pre_centred = _trailing_mean(omega, ns)
+    alon_pre = alon_pre_causal if causal_pre else alon_pre_centred
+    omega_pre = omega_pre_causal if causal_pre else omega_pre_centred
     return dict(T=T, x=x, y=y, psi=psi, v=v, omega=omega_s, kappa=kappa,
-                alon=alon, alon_pre=alon_pre, omega_pre=omega_pre)
+                alon=alon, alon_pre=alon_pre, omega_pre=omega_pre,
+                alon_pre_causal=alon_pre_causal, omega_pre_causal=omega_pre_causal,
+                alon_pre_centred=alon_pre_centred,
+                omega_pre_centred=omega_pre_centred,
+                pre_mode="causal_backward_diff" if causal_pre
+                else "LEGACY_centred_np_gradient_LEAKS_t_plus_1")
 
 
 def _runs(mask: np.ndarray) -> list[tuple[int, int]]:
