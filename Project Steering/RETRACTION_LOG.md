@@ -1630,3 +1630,47 @@ separated). Caught by a **component-vs-family self-consistency control** that no
 result JSON and runs on every invocation. ⇒ **RULE: when you compute per-window components to feed a
 cluster bootstrap, assert they reduce to the family mean printed beside them. Same family as
 R-2026-08-03-c: a derived quantity must be checked against the one the data already carries.**
+
+## 2026-08-03 — R-2026-08-03-e: "TRT-fp16 flips 13.5 % of tactical selections" — CAUGHT BEFORE PUBLICATION
+**Root-cause class: AN ENGINE COMPARED AGAINST A MODEL IT DOES NOT IMPLEMENT — a wrapper that
+ACCEPTED an argument and IGNORED it. Third instance of the family behind runbook learnings #8
+(identical-across-precisions error = wiring bug) and #9 (a gate compared the engine to a *different*
+random model).**
+
+Building the batch-9 predictor engine (P6), the first selected-candidate comparison read **48.3 %
+agreement** against the 95.3 % bar, with a max score delta of **73.4** on scores whose decision
+margin is **1.9**. The tempting headline — *"fp16 is not safe for the imagine-and-select path"* —
+was wrong.
+
+- **Three factors had changed at once.** Decomposed one at a time (200 windows / 23 episodes,
+  episode-cluster bootstrap): fan **batching** alone **1.0000** [1.0,1.0]; **bf16 encoder** alone
+  **1.0000**; the *engine* step **0.8650** (K=4) / **0.4000** (K=20).
+- 🔴 **The engine step was MY OWN wiring bug.** The ONNX export was `(states, actions) -> z_next`,
+  dropping the **D-030 tactical intent token**. `TacticalSelector` passes `intent=` as a KEYWORD, and
+  a two-input wrapper takes it and discards it — no error, no warning. The engine arm was computing
+  the *unconditioned* prediction, so the two arms were different models.
+- ✅ **Rebuilt with `intent` as a third input** (`intent_is_live_rel_change = 0.0522`, so the seam is
+  verifiably live): the fp16 batch-9 engine agrees on **200 of 200** selections with **exactly 0.0
+  regret**. The intent-less control costs mean **0.131 m** regret, p95 **1.07 m**, max **4.76 m**.
+- ⚠️ **A one-factor result would have been published as a precision verdict** and would have blocked
+  fp16 deployment on a defect that does not exist.
+
+⇒ **RULE: a runtime wrapper must REFUSE an input it cannot honour.** Implemented, not just written
+down: `stack/scripts/build_predictor_trt.py::TRTPredictor.forward` raises when an `intent` token is
+passed to an engine without an `intent` input **and** when one is withheld from an engine that has
+it; `verify_engine` asserts the token changes the output. Silence was the only symptom this bug had.
+⇒ **RULE: when an A/B differs in ≥2 respects, the FIRST run is the decomposition, not the verdict**
+(class **C6**, and the decomposition here cost 6 minutes of GPU).
+⇒ **RULE: verify an exported engine against the model WITH THE SAME CONDITIONING INPUTS.** Comparing
+a conditioned reference to an unconditioned engine passes every shape and rel-err check that does
+not exercise the conditioning.
+
+**Two further corrections banked in the same run:**
+1. 🔴 **`thor:~/trt/predictor_fp16.plan` — the "shipped" engine — was built from a RANDOMLY
+   INITIALISED model** (`thor_trt.py` contains no `torch.load`/`load_state_dict`; second probe: its
+   profile is static (1,8,2048)). It was never deployable, for a reason independent of its batch-1
+   profile. Superseded by `thor:~/trt_deploy/` + `MANIFEST.md`.
+2. ⚠️ **"Rebuild the engine at batch 9" was an INSUFFICIENT instruction.** `propose_and_score` loops
+   over candidates, so the rebuilt engine driven by the unchanged caller measures **272.8 ms** —
+   *worse* than the batch-1 engine's 265.7 ms. ⇒ **RULE: an optimisation stated as an artifact change
+   must name the CALLER shape it requires**, or it silently buys nothing.

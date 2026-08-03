@@ -263,6 +263,106 @@ path cannot have moved a single v1 number.** Pinned by `stack/tests/test_readout
 (13 tests, all passing). ⇒ **O2 can now run:** build the encoder engine and compare against bf16
 autocast at **30.23 ms**; its falsifier (engine ≤ bf16 ⇒ keep autocast) is already written.
 
+### ⭐⭐ ANNOTATION 2026-08-03 (Production & Optimization) — THE BATCH-9 ENGINE IS BUILT, AND THE FIRST END-TO-END MEASURED TICK
+
+*Added, not deleted.* `Research/2026-08-03-thor-batch9-engine-and-wired-tick.md` ·
+`Implementation/incoming/2026-08-03-thor-batch9-engine/` · engines at `thor:~/trt_deploy/`
+(+ `MANIFEST.md`). Model: **flagship-v1-speedjerk @ step 29999**, STRICT load, **256×256** (its
+trained raster, asserted in code before any frame is fed); v5f @ 176×624 as the second arm.
+
+**1. ⭐ The engine exists and is verified BY LOADING AND EXECUTING, not by exit code.**
+`v1_dyn1-9_fp16` — profile `states` **(1,8,2048) / (9,8,2048) / (9,8,2048)**, 38.4 s, 174.3 MB,
+rel-err vs eager **3.67e-4 @b1 / 6.21e-4 @b9**. Built by a **checked-in** script,
+`stack/scripts/build_predictor_trt.py` — the 2026-08-02 builder was a transient heredoc, which is
+exactly why its export could never be inspected when the 0.726 claim needed settling.
+
+**2. ⭐⭐ THE ENGINE WAS ONLY HALF THE FIX — and §6.1 as written would not have delivered it.**
+`TacticalSelector.propose_and_score` **loops over candidates**, so a batch-1-shaped CALLER
+serialises whatever engine it is handed. MEASURED: the rebuilt dynamic engine driven by the
+unchanged serialised caller costs **272.8 ms** — *worse* than the batch-1 engine's 265.7 ms. The
+batching had to be implemented in `stack/`: `propose_and_score(..., batch_fan=True)` +
+`_fan_batched`, with three pinning tests (equivalence to the loop, **K calls not N×K**, and a loud
+refusal of a ragged vocabulary). `pytest -q`: **1722 passed**, 12 skipped, 2 xfailed.
+
+**3. ⭐ THE FIRST TICK THAT WAS MEASURED RATHER THAN COMPOSED** — encoder + strategic head +
+tactical head + 9-candidate fan + `step_readout` decode + SE(2) + scoring, 60 real held-out
+windows, K=20, on the **intent-carrying** engine (`thor_d6_tick_intent_K20.json`):
+
+| arm | p50 | **p95** | vs 100 ms |
+|---|---|---|---|
+| fp32 eager, serialised fan | 764.1 | 768.4 | ⛔ 764 % |
+| bf16 + engine, **serialised** (engine rebuilt, CALLER not fixed) | 372.0 | 380.1 | ⛔ **372 %** |
+| ⭐ **bf16 + dynamic 1..9 engine, BATCHED fan** | **60.3** | **63.1** | ✅ **60 % / 63 %** |
+| bf16 + eager batched (no engine) | 204.4 | 205.7 | ⛔ 204 % |
+
+⇒ **6.17× on the measured tick**, clearing budget at p95 as well as p50. The earlier pass with the
+**shipped batch-1** engine (`thor_d2_full_tick_K20.json`) measures it at **365.9 / 375.8 ms** —
+same verdict, and that run is where §7's bug was found.
+⚠️ **Run-to-run drift on this box is ~13 %** (the identical fp32 arm measured 860.5 and 764.1 ms
+minutes apart). **Quote within-run ratios; treat the absolute tick as ±13 %** — 60.3 ms at +13 % is
+68 ms, still inside budget, so the conclusion survives the drift. ⚠️ Higher than the
+composed 56.13 ms projection because that composition used `trtexec` kernel medians and omitted the
+heads, the decode and the scoring — **the decode + scoring alone are ~30 % of the fan** (45.1 ms
+measured vs 31.4 ms of bare predictor rolls). Stage split (arm C): encoder **17.1**, heads **7.2**,
+fan **45.1** ms. ⓘ The encoder is 17.1 ms here because v1 is **256×256**; at v5f's 176×624 it stays
+~30 ms, so the deployed-geometry tick projects to **~75 ms** — still inside budget.
+
+**4. ⚠️ TWO LATENCY METRICS, NEVER MIXED.** The published 1.168 / 1.294 ms are `trtexec` medians
+(kernel-only) and reproduce here to **1.2 %** (1.244 / 1.289). Called from python the same plans cost
+**1.632 / 1.494 ms** — deployment pays the second number, **+0.2 ms per predictor call ≈ 4 ms over a
+K=20 roll**. Batch 9 in-process is **0.92× of batch 1** (the per-call overhead is paid once), i.e.
+**9.83× cheaper per candidate**. The dynamic engine costs **6.2 %** over a static b1 at batch 1 —
+the quantified price of serving 1..9 from one plan.
+
+**5. 🔴 THE SHIPPED `predictor_fp16.plan` WAS NEVER DEPLOYABLE — for a second reason.** Two probes:
+(i) `thor_trt.py`, the script that built it, contains **no `torch.load` and no `load_state_dict`**;
+(ii) its profile is static (1,8,2048). ⇒ it is **batch-1 AND random-weight**. Superseded by
+`~/trt_deploy/`; kept for provenance, not for use. (`~/trt_c3/pred_dyn_fp16.plan` is real-weight but
+**1..8** — it cannot serve the 9-fan either.)
+
+**6. ✅ THE 2026-08-03 FOUR-FAMILY GATE TRANSFERS.** On 32 real held-out windows with real encoder
+states: the dynamic engine at **b9 vs the same engine at b1 = 1.57e-4**, while b9-vs-eager (3.29e-4)
+and b1-vs-eager (3.31e-4) are identical to 3 s.f. Batching moves the answer by **half** of what fp16
+does. Had they differed, the gate — which ran a 1..8 engine — would not have carried over.
+
+**7. 🔴 A "PRECISION FAILURE" THAT WAS A WIRING BUG, CAUGHT IN MY OWN INSTRUMENT.** The first
+decision comparison read **48.3 % agreement** (bar 95.3 %) with a max score delta of 73.4.
+Decomposed one factor at a time on 200 windows / 23 episodes:
+
+| step | K=4 | K=20 |
+|---|---|---|
+| **fan batching alone** | ✅ **1.0000** [1.0,1.0] | ✅ **1.0000** [1.0,1.0] |
+| fp32 eager → TRT-fp16 engine | ⛔ 0.8650 | ⛔ 0.4000 |
+| fp32 → **bf16 encoder** | ✅ **1.0000** | ✅ **1.0000** |
+
+The engine had been exported as `(states, actions)` — dropping the **D-030 intent token**, which
+`propose_and_score` passes as a keyword and a two-input wrapper silently ignores. Rebuilt with
+`--intent-dim 256` (`intent_is_live_rel_change = 0.0522`, so the seam is verifiably live), and
+re-scored with **regret** (`score_fp32[fp16's pick] − score_fp32[fp32's pick]`, i.e. metres):
+
+| arm | K | agreement | regret |
+|---|---|---|---|
+| ⭐ fp16 batch-9 engine, **with intent** | 4 | ✅ **1.0000** [1.0, 1.0], 0/200 | ⭐ **0.0 exactly** |
+| ⭐ fp16 batch-9 engine, **with intent** | 20 | ✅ **0.9850** [0.960, 1.0], 3/200 | mean **4.1e-05 m**, **max 0.0038 m** |
+| the same engine **without** intent | 4 | ⛔ 0.8650 | mean 0.131 m, max 4.76 m |
+| the same engine **without** intent | 20 | ⛔ 0.4000 | mean **3.81 m**, **48.5 % of windows > 1 m worse** |
+
+⇒ **fp16 passes the 95.3 % bar at both horizons**, and its three K=20 flips are ties worth 3.8 mm. ⇒ **"fp16 flips tactical
+decisions" is retracted before publication.** **Root-cause class: an engine compared against a model
+it does not implement** — the third instance after learnings #8 and #9. ⛔ The fix is in the runtime:
+`TRTPredictor.forward` now **raises** when an intent token is passed to an engine without an intent
+input (or withheld from one that has it), and `verify_engine` asserts the token is live.
+
+**8. ⚠️ SCOPE — the selector fan has NO production caller today.** Two probes (repo-wide grep;
+`taniteval/`): `TacticalSelector` / `propose_and_score` appear only in `stack/tests`, these harnesses
+and stale worktree copies. The only closed-loop driver,
+`stack/experiments/alpasim-gsplat/closedloop_drive.py::FlagshipV1Policy.plan`, is **heads-only**
+(encoder → strategic → tactical → waypoints, **no imagination fan**) and costs encoder + heads ≈
+**24 ms** at 256 px. ⇒ this work makes the *designed* deployment path affordable; it does not speed
+up what runs today, and the runbook's 100 ms pricing is for the fan path.
+
+**9. ⛔ §4's procedure below is superseded by the checked-in builder** — see the block added there.
+
 ## 4. DEPLOYMENT PROCEDURE ON THOR
 
 **Environment** (PI rule — two venvs, never mixed):
@@ -271,6 +371,27 @@ autocast at **30.23 ms**; its falsifier (engine ≤ bf16 ⇒ keep autocast) is a
 
 ⚠️ TensorRT's python bindings are **system** packages; there is no aarch64 TRT wheel matching an
 L4T runtime. Reach them with `PYTHONPATH=/usr/lib/python3.12/dist-packages`.
+
+⛔ **DO NOT hand-roll the export any more (2026-08-03).** The heredoc below is what the original
+build used; it produced a **batch-1, random-weight, intent-less** engine, and because it was
+transient it could never be inspected afterwards. **Use the checked-in builder**, which exports with
+the fastpath line, the dynamic 1..9 profile and the intent input, then verifies by deserialising the
+plan, reading its profile back, executing it at min and max batch and asserting the intent token is
+live:
+
+```bash
+export PATH=$HOME/venvs/tanitad-edge/bin:/usr/local/cuda/bin:$PATH
+export PYTHONPATH=$HOME/TanitAD/stack:/usr/lib/python3.12/dist-packages
+python $HOME/TanitAD/stack/scripts/build_predictor_trt.py \
+  --ckpt $HOME/models/flagship-v1-speedjerk/ckpt.pt \
+  --out  $HOME/trt_deploy/predictor_v1_intent_dyn1-9_fp16 \
+  --max-batch 9 --fp16 --intent-dim 256          # ⛔ --intent-dim is NOT optional for the flagship
+```
+
+⛔ **And the caller must batch**: `propose_and_score(..., batch_fan=True)`. A batch-9 engine driven
+by the serialised loop measures **worse** than the batch-1 engine (272.8 vs 265.7 ms).
+
+<details><summary>superseded 2026-08-02 procedure, kept for provenance</summary>
 
 ```bash
 # 0) one-time
@@ -292,6 +413,7 @@ PY
 # 3) GATE — never skip. Same process, same weights, 1-step AND 20-step roll.
 #    Bind by NAME ('states','actions','z_next'), never by index.
 ```
+</details>
 
 **Runtime shape:** bf16 autocast on the encoder · TRT-fp16 engine for the predictor · CUDA-graph
 capture where TRT is not used. ⛔ **Never** blanket-cast the model: bf16 is **6.76× on the encoder**
@@ -353,7 +475,7 @@ Ordered by expected value. Each states its falsifier so the agent can run indepe
 
 | # | experiment | falsifier |
 |---|---|---|
-| **O9** | **Batched multi-candidate rolls** (`imagine_candidates`) — moves GEMMs rightward on the size curve and could flip the NVFP4/INT8 verdict | per-candidate cost does not amortise |
+| ~~**O9**~~ | ✅ **CLOSED 2026-08-03 — and it was never P2.** Batched fan + dynamic 1..9 engine: **6.17× on the measured tick**, 60.3 / 63.1 ms p50/p95. Its falsifier ("per-candidate cost does not amortise") is refuted at **9.83× cheaper per candidate**, 9 candidates for **0.92×** of one. ⇒ **re-price O6/O14** (NVFP4, 2:4 sparsity): the "our GEMMs are too small" argument no longer applies unchanged at batch 9 | — |
 | **O10** | **Encoder resolution ablation** 176×624 vs 128×448 — four families + latency | accuracy loss beyond CI |
 | **O11** | **Multi-camera scaling** — 122 GB and 2 W suggest room for 2–3 cameras | tick exceeds budget, or thermals rise |
 | **O12** | **Orin-class port** — same pipeline on a smaller target; memory becomes binding where it is not here | fp16 engine does not fit |

@@ -1,0 +1,89 @@
+{
+  "script": "/home/nvidia/thor_d6_tick_intent_engine.py",
+  "host": "thor6",
+  "started": "2026-08-03T11:55:43+0200",
+  "budget_ms": 100.0,
+  "k_primitive": 20,
+  "n_candidates": 9,
+  "plan": "/home/nvidia/trt_deploy/predictor_v1_intent_dyn1-9_fp16.plan",
+  "engine": {
+    "plan": "/home/nvidia/trt_deploy/predictor_v1_intent_dyn1-9_fp16.plan",
+    "io": [
+      "states",
+      "actions",
+      "intent",
+      "z_next"
+    ],
+    "profile_states": [
+      [
+        1,
+        8,
+        2048
+      ],
+      [
+        9,
+        8,
+        2048
+      ],
+      [
+        9,
+        8,
+        2048
+      ]
+    ],
+    "profile_intent": [
+      [
+        1,
+        256
+      ],
+      [
+        9,
+        256
+      ],
+      [
+        9,
+        256
+      ]
+    ]
+  },
+  "val": {
+    "dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+    "n_episodes": 12,
+    "n_windows": 60
+  },
+  "full_tick": {
+    "A_fp32_eager_serialised": {
+      "n": 60,
+      "p50": 764.063,
+      "p95": 768.436,
+      "p99": 769.837,
+      "mean": 763.841,
+      "max": 769.837
+    },
+    "B_bf16_ENGINE_serialised_CALLER_NOT_FIXED": {
+      "n": 60,
+      "p50": 371.973,
+      "p95": 380.091,
+      "p99": 382.461,
+      "mean": 369.568,
+      "max": 382.461
+    },
+    "C_bf16_ENGINE_batched_THE_FIX": {
+      "n": 60,
+      "p50": 60.296,
+      "p95": 63.076,
+      "p99": 65.277,
+      "mean": 60.665,
+      "max": 65.277
+    },
+    "D_bf16_eager_batched_NO_ENGINE": {
+      "n": 60,
+      "p50": 204.412,
+      "p95": 205.71,
+      "p99": 206.295,
+      "mean": 204.02,
+      "max": 206.295
+    }
+  },
+  "speedup_B_to_C": 6.169
+}

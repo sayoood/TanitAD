@@ -43,19 +43,32 @@ TRTEXEC = "/usr/src/tensorrt/bin/trtexec"
 
 
 class PredWrap(torch.nn.Module):
-    """(states, actions) -> z_next. The engine's IO contract, bound BY NAME."""
+    """(states, actions[, intent]) -> z_next. The engine's IO contract, bound BY NAME.
 
-    def __init__(self, predictor, intent=None):
+    ⛔ **The intent input is not optional for the flagship.** The D-030 operative
+    predictor is FiLM-conditioned on the tactical intent token — that conditioning
+    IS the hierarchy seam. An engine exported with two inputs silently computes
+    the UNCONDITIONED prediction, and nothing raises: `TacticalSelector` passes
+    `intent=` as a keyword, a two-input wrapper accepts and ignores it, and the
+    only symptom is that the decision changes. Measured 2026-08-03 while building
+    this: an intent-less engine moved the selector's score by a **median 3.5
+    units** against a 1.9-unit decision margin and flipped **13.5 %** of
+    selections — which reads exactly like an fp16 precision failure and is not one.
+    """
+
+    def __init__(self, predictor, with_intent=False):
         super().__init__()
         self.p = predictor
-        self.intent = intent
+        self.with_intent = with_intent
 
-    def forward(self, states, actions):
+    def forward(self, states, actions, intent=None):
+        if self.with_intent:
+            return self.p(states, actions, intent=intent)[1]
         return self.p(states, actions)[1]
 
 
 def export_onnx(predictor, path, *, batch, window, state_dim, action_dim,
-                device="cuda", opset=17, dynamic=True):
+                device="cuda", opset=17, dynamic=True, intent_dim=None):
     """Export the predictor to ONNX with a dynamic batch axis.
 
     ⛔ ``set_fastpath_enabled(False)`` stays. Two independent 2026-08-03 probes
@@ -68,23 +81,28 @@ def export_onnx(predictor, path, *, batch, window, state_dim, action_dim,
     torch.backends.mha.set_fastpath_enabled(False)
     st = torch.randn(batch, window, state_dim, device=device)
     ac = torch.randn(batch, window, action_dim, device=device)
-    wrap = PredWrap(predictor).eval()
+    names = ["states", "actions"]
+    args = (st, ac)
+    if intent_dim:
+        args = (st, ac, torch.randn(batch, intent_dim, device=device))
+        names.append("intent")
+    wrap = PredWrap(predictor, with_intent=bool(intent_dim)).eval()
     kw = {}
     if dynamic:
-        kw["dynamic_axes"] = {"states": {0: "B"}, "actions": {0: "B"},
-                              "z_next": {0: "B"}}
+        kw["dynamic_axes"] = {n: {0: "B"} for n in names + ["z_next"]}
     t0 = time.perf_counter()
-    torch.onnx.export(wrap, (st, ac), path, input_names=["states", "actions"],
+    torch.onnx.export(wrap, args, path, input_names=names,
                       output_names=["z_next"], opset_version=opset,
                       dynamo=False, **kw)
     return {"path": path, "export_s": round(time.perf_counter() - t0, 2),
             "MB": round(os.path.getsize(path) / 1e6, 1), "opset": opset,
-            "dynamic_batch": bool(dynamic), "fastpath": "OFF"}
+            "dynamic_batch": bool(dynamic), "fastpath": "OFF",
+            "inputs": names, "intent_dim": intent_dim}
 
 
 def build_engine(onnx_path, plan_path, *, window, state_dim, action_dim,
                  min_batch=1, opt_batch=9, max_batch=9, fp16=True,
-                 dynamic=True, timeout_s=3600):
+                 dynamic=True, timeout_s=3600, intent_dim=None):
     """Run trtexec. Returns a dict; **existence of the plan is the evidence**,
     not the exit code."""
     cmd = [TRTEXEC, f"--onnx={onnx_path}", f"--saveEngine={plan_path}",
@@ -93,7 +111,8 @@ def build_engine(onnx_path, plan_path, *, window, state_dim, action_dim,
         cmd.append("--fp16")
     if dynamic:
         def shp(b):
-            return f"states:{b}x{window}x{state_dim},actions:{b}x{window}x{action_dim}"
+            s = f"states:{b}x{window}x{state_dim},actions:{b}x{window}x{action_dim}"
+            return s + (f",intent:{b}x{intent_dim}" if intent_dim else "")
         cmd += [f"--minShapes={shp(min_batch)}", f"--optShapes={shp(opt_batch)}",
                 f"--maxShapes={shp(max_batch)}"]
     t0 = time.perf_counter()
@@ -126,6 +145,7 @@ class TRTPredictor(torch.nn.Module):
                       for i in range(self.engine.num_io_tensors)]
         for n in ("states", "actions", "z_next"):
             assert n in self.names, f"engine IO {self.names} lacks {n!r}"
+        self.has_intent = "intent" in self.names
         self.device = device
         self.plan_path = plan_path
 
@@ -134,14 +154,36 @@ class TRTPredictor(torch.nn.Module):
         return [tuple(s) for s in self.engine.get_tensor_profile_shape(name, profile)]
 
     def forward(self, states, actions, intent=None):
+        # ⛔ FAIL LOUD instead of silently computing the unconditioned prediction.
+        # A wrapper that accepted `intent` and ignored it cost a whole gate on
+        # 2026-08-03: it looked exactly like an fp16 precision failure (13.5 % of
+        # tactical selections flipped) and was a dropped hierarchy input.
+        if intent is not None and not self.has_intent:
+            raise ValueError(
+                f"engine {os.path.basename(self.plan_path)} has inputs {self.names} "
+                "and cannot consume an intent token, but one was passed. Rebuild "
+                "with --intent-dim, or the hierarchy seam is silently severed.")
+        if intent is None and self.has_intent:
+            raise ValueError(
+                f"engine {os.path.basename(self.plan_path)} REQUIRES an intent "
+                "token and none was passed.")
         st = states.detach().contiguous().float()
         ac = actions.detach().contiguous().float()
         self.ctx.set_input_shape("states", tuple(st.shape))
         self.ctx.set_input_shape("actions", tuple(ac.shape))
+        keep = [st, ac]
+        if self.has_intent:
+            it = intent.detach().contiguous().float()
+            if it.shape[0] == 1 and st.shape[0] > 1:
+                it = it.expand(st.shape[0], -1).contiguous()
+            self.ctx.set_input_shape("intent", tuple(it.shape))
+            keep.append(it)
         out = torch.empty(tuple(self.ctx.get_tensor_shape("z_next")),
                           device=self.device, dtype=torch.float32)
         self.ctx.set_tensor_address("states", st.data_ptr())
         self.ctx.set_tensor_address("actions", ac.data_ptr())
+        if self.has_intent:
+            self.ctx.set_tensor_address("intent", keep[-1].data_ptr())
         self.ctx.set_tensor_address("z_next", out.data_ptr())
         assert self.ctx.execute_async_v3(torch.cuda.current_stream().cuda_stream), \
             "TRT execute_async_v3 returned False"
@@ -152,35 +194,57 @@ class TRTPredictor(torch.nn.Module):
 
 
 def verify_engine(plan_path, predictor, *, window, state_dim, action_dim,
-                  batches=(1, 9), device="cuda"):
+                  batches=(1, 9), device="cuda", intent_dim=None):
     """VERIFY BY LOADING AND EXECUTING — the runbook's rule.
 
     Returns per-batch rel-err against eager plus the profile read back from the
     plan. A batch the profile does not cover fails here, loudly, instead of at
-    deployment.
+    deployment. When the engine carries an ``intent`` input, the reference is the
+    eager predictor **with the same intent** — comparing a conditioned engine
+    against an unconditioned reference is the wiring bug this file exists to stop.
     """
     eng = TRTPredictor(plan_path, device=device)
     rep = {"io_names": eng.names, "profile_states": eng.profile_shapes("states"),
-           "profile_actions": eng.profile_shapes("actions"), "per_batch": {}}
+           "profile_actions": eng.profile_shapes("actions"),
+           "has_intent": eng.has_intent, "per_batch": {}}
+    if eng.has_intent:
+        rep["profile_intent"] = eng.profile_shapes("intent")
     for b in batches:
         st = torch.randn(b, window, state_dim, device=device)
         ac = torch.randn(b, window, action_dim, device=device)
+        it = torch.randn(b, intent_dim, device=device) if eng.has_intent else None
         with torch.no_grad():
-            ref = predictor(st, ac)[1]
-            got = eng(st, ac)[1]
+            ref = (predictor(st, ac, intent=it)[1] if eng.has_intent
+                   else predictor(st, ac)[1])
+            got = eng(st, ac, intent=it)[1]
         rep["per_batch"][b] = {
             "shape": tuple(got.shape),
             "rel_err": round(float((ref - got).norm() / ref.norm()), 8),
             "finite": bool(torch.isfinite(got).all()),
         }
+    if eng.has_intent:
+        # ⛔ The intent must MATTER: an engine that took the input and ignored it
+        # would pass every check above.
+        st = torch.randn(2, window, state_dim, device=device)
+        ac = torch.randn(2, window, action_dim, device=device)
+        i1 = torch.randn(2, intent_dim, device=device)
+        with torch.no_grad():
+            a_ = eng(st, ac, intent=i1)[1]
+            b_ = eng(st, ac, intent=i1 * 0)[1]
+        rep["intent_is_live_rel_change"] = round(
+            float((a_ - b_).norm() / a_.norm()), 6)
+        assert rep["intent_is_live_rel_change"] > 1e-5, \
+            "engine has an 'intent' input but its output does not depend on it"
     # A row must not depend on its neighbours: batch-9 row 0 == batch-1 output.
     st1 = torch.randn(1, window, state_dim, device=device)
     ac1 = torch.randn(1, window, action_dim, device=device)
-    stn = st1.expand(max(batches), -1, -1).contiguous()
-    acn = ac1.expand(max(batches), -1, -1).contiguous()
+    it1 = torch.randn(1, intent_dim, device=device) if eng.has_intent else None
+    nb = max(batches)
+    stn, acn = st1.expand(nb, -1, -1).contiguous(), ac1.expand(nb, -1, -1).contiguous()
+    itn = it1.expand(nb, -1).contiguous() if eng.has_intent else None
     with torch.no_grad():
-        o1 = eng(st1, ac1)[1]
-        on = eng(stn, acn)[1]
+        o1 = eng(st1, ac1, intent=it1)[1]
+        on = eng(stn, acn, intent=itn)[1]
     rep["row_independence_rel_err"] = round(
         float((on - o1.expand_as(on)).norm() / o1.norm()), 8)
     return eng, rep
@@ -200,12 +264,36 @@ def main(argv=None):
     ap.add_argument("--fp16", action="store_true")
     ap.add_argument("--static", action="store_true", help="static batch = max-batch")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--intent-dim", type=int, default=None,
+                    help="export the D-030 intent input (flagship: "
+                         "cfg.tactical_policy.d_intent = 256). ⛔ omit ONLY for a "
+                         "model whose predictor is genuinely unconditioned")
+    # ⛔ Geometry. The default config is 256x256 SQUARE; a 429-token arm (v5f,
+    # 176x624 cylindrical) needs these, and the STRICT load below will REFUSE the
+    # checkpoint without them (`encoder.pos` 429 vs 256) rather than quietly
+    # resizing. That refusal is the feature — never feed an arm a raster it was
+    # not trained at.
+    ap.add_argument("--v2-subframe", default=None, help="e.g. 176x624")
+    ap.add_argument("--frame-h", type=int, default=256)
+    ap.add_argument("--frame-w", type=int, default=640)
+    ap.add_argument("--frame-hfov", type=float, default=120.0)
+    ap.add_argument("--projection", default="cylindrical")
     a = ap.parse_args(argv)
 
     from tanitad import config as C
     from tanitad.models.fourbrain import WorldModel
 
     cfg = getattr(C, f"{a.config}_config")()
+    if a.v2_subframe:
+        from types import SimpleNamespace
+
+        from train_flagship_v4 import resolve_v2_frames
+        resolve_v2_frames(SimpleNamespace(frame_h=a.frame_h, frame_w=a.frame_w,
+                                          frame_hfov=a.frame_hfov,
+                                          projection=a.projection,
+                                          v2_subframe=a.v2_subframe, f_ref=None),
+                          cfg, label="trt_build")
+        cfg.speed_input = True
     object.__setattr__(cfg.predictor, "action_dim", a.action_dim)
     if getattr(cfg, "tactical_pred", None) is not None:
         object.__setattr__(cfg.tactical_pred, "action_dim", a.action_dim)
@@ -227,17 +315,19 @@ def main(argv=None):
                              else f"dynamic {a.min_batch}..{a.max_batch} (opt {opt_b})")}
     rep["onnx"] = export_onnx(model.predictor, onnx_p, batch=opt_b, window=W,
                               state_dim=S, action_dim=A, device=a.device,
-                              opset=a.opset, dynamic=not a.static)
+                              opset=a.opset, dynamic=not a.static,
+                              intent_dim=a.intent_dim)
     rep["engine"] = build_engine(onnx_p, plan_p, window=W, state_dim=S, action_dim=A,
                                  min_batch=a.min_batch, opt_batch=opt_b,
                                  max_batch=a.max_batch, fp16=a.fp16,
-                                 dynamic=not a.static)
+                                 dynamic=not a.static, intent_dim=a.intent_dim)
     if not rep["engine"]["ok"]:
         print(json.dumps(rep, indent=2))
         sys.exit(2)
     batches = (a.max_batch,) if a.static else (a.min_batch, a.max_batch)
     _, rep["verify"] = verify_engine(plan_p, model.predictor, window=W, state_dim=S,
-                                     action_dim=A, batches=batches, device=a.device)
+                                     action_dim=A, batches=batches, device=a.device,
+                                     intent_dim=a.intent_dim)
     with open(f"{a.out}.json", "w") as f:
         json.dump(rep, f, indent=2)
     print(json.dumps(rep, indent=2))
