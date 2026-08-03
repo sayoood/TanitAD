@@ -135,7 +135,7 @@ def actors_at(tracks, frac, ego):
     return out
 
 
-def per_step_metrics(rec, gt, tracks=None):
+def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
     xy, gyaw, gv, gtp = gt_arrays(gt)
     N = len(gt)
     steps = rec["steps"]
@@ -205,21 +205,51 @@ def per_step_metrics(rec, gt, tracks=None):
             "headway": headway, "time_gap": tgap, "ttc": ttc,
             "lead_idx": lead_idx, "actors": acts,
         })
+        # --- CONSTRUCTED lead geometry (synth_actor.LeadGeometry) ------------------
+        # Recorded on EVERY run including `empty`, so the control carries the matched
+        # COUNTERFACTUAL headway and the with-vs-without pairing has something to
+        # compare. `lead_ref` names which constructed condition's geometry to score.
+        L = st.get("lead")
+        if L and lead_ref and lead_ref in L:
+            e = L[lead_ref]
+            tg = e.get("time_gap_s")
+            out[-1].update({
+                "synth_headway": e.get("headway_m"), "synth_time_gap": tg,
+                "synth_ttc": e.get("ttc_s"), "synth_x": e.get("x"),
+                "synth_y": e.get("y"), "synth_v_lead": e.get("v_lead"),
+                "synth_tg_below_1s": (float(tg < 1.0) if tg is not None else np.nan),
+                "synth_tg_below_0_5s": (float(tg < 0.5) if tg is not None else np.nan),
+                # bumper-to-bumper headway <= 0 means the ego has driven INTO the lead.
+                # The lead is a rendered object with no physics, so nothing stops it —
+                # which is precisely why it has to be counted rather than assumed away.
+                "synth_collision": (float(e["headway_m"] <= 0.0)
+                                    if e.get("headway_m") is not None else np.nan),
+                # is the lead actually in the ego's lane at this tick? On a curving road
+                # a vehicle 15 m ahead is genuinely offset in the ego frame, so this is
+                # reported, not asserted.
+                "synth_inlane": (float(abs(e["y"]) <= 1.8)
+                                 if e.get("y") is not None else np.nan),
+            })
     return out
 
 
-def rollout_summary(rec, gt, tracks=None):
-    m = per_step_metrics(rec, gt, tracks)
+def rollout_summary(rec, gt, tracks=None, lead_ref=None):
+    m = per_step_metrics(rec, gt, tracks, lead_ref)
     xy, gyaw, gv, gtp = gt_arrays(gt)
     e0, e1 = rec["steps"][0]["ego"], rec["steps"][-1]["ego"]
     driven = float(np.linalg.norm(np.array(e1[:2]) - np.array(e0[:2])))
     i0, i1 = rec["steps"][0]["i_gt"], rec["steps"][-1]["i_gt"]
     gt_dist = float(np.linalg.norm(np.diff(xy[i0:i1 + 1], axis=0), axis=1).sum()) if i1 > i0 else 0.0
-    return m, {"start": rec["start_frame"], "n": len(m), "driven_m": driven,
-               "gt_dist_m": gt_dist,
-               "progress_rel": (driven / gt_dist) if gt_dist > 1 else None,
-               "max_cross_track": float(max(abs(x["cross_track"]) for x in m)),
-               "corridor_departure_rate": float(np.mean([x["corridor_departure"] for x in m]))}
+    s = {"start": rec["start_frame"], "n": len(m), "driven_m": driven,
+         "gt_dist_m": gt_dist,
+         "progress_rel": (driven / gt_dist) if gt_dist > 1 else None,
+         "max_cross_track": float(max(abs(x["cross_track"]) for x in m)),
+         "corridor_departure_rate": float(np.mean([x["corridor_departure"] for x in m]))}
+    hw = [x["synth_headway"] for x in m if x.get("synth_headway") is not None]
+    if hw:
+        s["synth_min_headway_m"] = round(float(min(hw)), 3)
+        s["synth_mean_headway_m"] = round(float(np.mean(hw)), 3)
+    return m, s
 
 
 # --------------------------------------------------------------------------------- #
@@ -246,12 +276,12 @@ def _paired(a, b, eid):
     return r
 
 
-def collect(path, tracks=None, drop_truncated=True):
+def collect(path, tracks=None, drop_truncated=True, lead_ref=None):
     d = load_rollouts(path)
     gt = d["gt"]
     rows, eids, summ = [], [], []
     for rec in d["rollouts"]:
-        m, s = rollout_summary(rec, gt, tracks)
+        m, s = rollout_summary(rec, gt, tracks, lead_ref)
         summ.append(s)
         for x in m:
             if drop_truncated and x["trunc"]:
@@ -290,6 +320,34 @@ def families(rows, eids, summ=None):
         fam["LONGITUDINAL"]["distance_keeping"] = {
             "n": 0, "reason": "no annotated agent inside the in-lane window "
                               f"(|y|<{LEAD_HALF_W} m, 0<x<{LEAD_MAX_X} m) at any tick"}
+    # distance-keeping against the CONSTRUCTED lead. Present on every arm and every
+    # condition — in `empty` it is the counterfactual, which is exactly what makes the
+    # with-vs-without contrast a paired one.
+    sh = [r.get("synth_headway") for r in rows]
+    if any(x is not None for x in sh):
+        ok = [i for i, x in enumerate(sh) if x is not None]
+        oe = [eids[i] for i in ok]
+        fam["LONGITUDINAL"]["synth_lead_headway_m"] = _ci([sh[i] for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_time_gap_s"] = _ci(
+            [rows[i]["synth_time_gap"] for i in ok], oe)
+        # closest approach, not the average: `min` is not one of taniteval's named
+        # reducers, so it is passed as a callable (the API explicitly allows one).
+        fam["LONGITUDINAL"]["synth_lead_min_headway_m"] = _ci(
+            [sh[i] for i in ok], oe, reduce=lambda v: float(np.min(v)))
+        fam["LONGITUDINAL"]["synth_lead_frac_time_gap_below_1s"] = _ci(
+            [rows[i]["synth_tg_below_1s"] for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_ttc_s"] = _ci(
+            [(rows[i]["synth_ttc"] if rows[i]["synth_ttc"] is not None else np.nan)
+             for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_collision_rate"] = _ci(
+            [rows[i]["synth_collision"] for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_inlane_rate"] = _ci(
+            [rows[i]["synth_inlane"] for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_note"] = (
+            "CONSTRUCTED lead (synth_actor.py). Geometry is computed on every run, so "
+            "the `empty` control carries the matched COUNTERFACTUAL headway rather than "
+            "a missing value. Headway is bumper-to-bumper using the rendered cuboid's "
+            "own measured extent.")
     fam["LATERAL"] = {
         "heading_err_rad": _ci([abs(x) for x in g("heading_err")], eids),
         "curvature_err_1pm": _ci(g("curv_err"), eids),
@@ -413,13 +471,17 @@ def main():
     ap.add_argument("--a", required=True, help="arm A rollouts json")
     ap.add_argument("--b", default=None, help="arm B rollouts json (paired)")
     ap.add_argument("--tracks", default=None)
+    ap.add_argument("--lead-ref", default=None,
+                    help="constructed condition whose lead geometry to score "
+                         "(lead25/lead15/lead8/cutin/behind). Applied to BOTH arms so "
+                         "the empty control gets the matched counterfactual.")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     from gsplat_renderer import ActorTracks
     tr = ActorTracks(args.tracks) if args.tracks and Path(args.tracks).exists() else None
 
-    dA, rA, eA, sA = collect(args.a, tr)
+    dA, rA, eA, sA = collect(args.a, tr, lead_ref=args.lead_ref)
     res = {"arm_A": {"name": dA["arm"], "condition": dA["condition"], "ckpt": dA["ckpt"],
                      "f_eff": dA["f_eff"], "n_windows": len(rA),
                      "n_clusters": int(len(set(eA.tolist()))),
@@ -434,8 +496,9 @@ def main():
         "reconstructions vs 0.4728 on real footage (3.21x OOD). Orderings survive; "
         "absolute rates do not.")
 
+    res["lead_ref"] = args.lead_ref
     if args.b:
-        dB, rB, eB, sB = collect(args.b, tr)
+        dB, rB, eB, sB = collect(args.b, tr, lead_ref=args.lead_ref)
         res["arm_B"] = {"name": dB["arm"], "condition": dB["condition"], "ckpt": dB["ckpt"],
                         "f_eff": dB["f_eff"], "n_windows": len(rB),
                         "n_clusters": int(len(set(eB.tolist()))),
@@ -456,8 +519,19 @@ def main():
                         ("yawrate_err_rads", lambda r: r["yawrate_err"]),
                         ("cross_track_abs_m", lambda r: abs(r["cross_track"])),
                         ("manoeuvre_plan_eq_logged", lambda r: float(r["man_plan"] == r["man_gt"])),
+                        ("lateral_ade_m", lambda r: r["lat_ade"]),
+                        ("executed_speed_err_ms", lambda r: r["speed_track_err"]),
+                        ("abs_executed_speed_err_ms", lambda r: abs(r["speed_track_err"])),
+                        ("synth_lead_headway_m", lambda r: r.get("synth_headway", np.nan)),
+                        ("synth_lead_time_gap_s", lambda r: r.get("synth_time_gap", np.nan)),
+                        ("synth_lead_frac_tg_below_1s",
+                         lambda r: r.get("synth_tg_below_1s", np.nan)),
                         ("route_corridor_departure_rate", lambda r: float(r["corridor_departure"]))):
-            pair[lab] = _paired([fn(KA[c]) for c in common], [fn(KB[c]) for c in common], pe)
+            va = [fn(KA[c]) for c in common]
+            vb = [fn(KB[c]) for c in common]
+            va = [np.nan if v is None else v for v in va]
+            vb = [np.nan if v is None else v for v in vb]
+            pair[lab] = _paired(va, vb, pe)
         res["paired_A_minus_B"] = pair
         res["paired_n_windows"] = len(common)
     Path(args.out).write_text(json.dumps(res, indent=2))

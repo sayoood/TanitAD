@@ -1464,3 +1464,30 @@ afternoon slots into the window the host is actually awake.
 both from **2026-07-10/11, i.e. ~24 days unmerged**. Everything else is merged. That is far better
 than the historical 10-12-day backlog, but those two are the oldest debt in the repo and belong in
 the orchestrator's next sweep.
+
+
+## 2026-08-03 ~10:40 UTC — pod2 TERMINATED by the PI. Migration closed.
+
+MEASURED: `ssh tanitad-pod2` -> `Connection refused`. Both live trainings verified unaffected in the
+same probe (v5f PID 19412 on tanitad-new, v1arch PID 9076 on pod4).
+
+**Everything was off it first, and every item was verified by LOADING or from the far side, never by
+an exit code:**
+
+| asset | destination | how it was verified |
+|---|---|---|
+| 256 px epcache, 349.5 GB / 3053 files | `Sayood/tanitad-physicalai-w120-256x640cyl` | downloaded a 121 MB episode back and **torch.load**ed it (dict: frames_u8/actions/poses/episode_id/maneuvers) |
+| train + val w120 caches, 106 GB | same repo | **parity sha256 re-matched after the round trip** — val 600 clips `0b176d2e5cb4…`, train 2400 clips `e61a04553df5…` |
+| 8 orphan checkpoints, 11.76 GB | `tanitad-archive-pod2-2026-08` | listed from HF's side with sizes |
+| v5f ckpt/config/probe_vocab | `tanitad-flagship-v5f-w120` | loaded on the new pod (`[resume] step 1001`) |
+| 319-file uncommitted diff | repo `_pod_backup/pod2-2026-08-03/` | committed |
+| 6 checkpoints | local disk | md5-verified per file |
+
+⇒ **The fleet is now: tanitad-new (v5f), tanitad-pod4 (v1arch), tanitad-thor. Three machines, no
+dead weight.** `~/.ssh/config` entry renamed to `tanitad-pod2-TERMINATED` so a stale reference fails
+loudly rather than silently resolving to a recycled address.
+
+⚠️ **Rule earned across the migration:** pod↔pod networking was refused in both directions and the
+dev-box relay ran at 0.92 MB/s, so **HF is the transfer bus** (377 MB/s up, 93 MB/s down). And
+`runpodctl stop` **exits 0 while printing "API key not found"** — one more member of the
+exit-code-is-not-evidence family, alongside `scp` exiting 0 on a truncated file.

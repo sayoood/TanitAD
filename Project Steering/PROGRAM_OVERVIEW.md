@@ -158,8 +158,14 @@ so the doctrine is not an artifact of one harness.
 **Three defects only the families expose:**
 1. **The arms fail longitudinally in OPPOSITE directions** — flagship `target_speed_err_ms`
    **−2.0412 m/s** (too slow), REF-C **+1.3307 m/s** (too fast). **A pooled score cancels this.**
-2. **The flagship does not execute what it selects** — `manoeuvre_exec_eq_plan` **0.4481** vs REF-C
-   **0.8741**.
+2. **The flagship does not execute what it selects** — `manoeuvre_exec_eq_plan` **0.4481**, a genuine
+   5-class agreement rate (executed classes span lane_keep 83 / turn_right 30 / accelerate 33 /
+   brake_stop 124 of 270). ⛔ **REF-C's 0.8741 is NOT the comparator it looks like.** REF-C's executed
+   class is `lane_keep` on **270/270** windows, so the metric degenerates to *"how often was the plan
+   lane_keep"* = 236/270 = **0.8741 exactly** — a **constant-predictor tie**, the same collapse as
+   defect 3, not evidence REF-C executes well. **The metric cannot discriminate on a single-class
+   arm; the two values are not comparable.** *(Verified against the primary artifact
+   `confusion_planned_x_executed` in `metrics_empty.json`, adversarial pass 2026-08-03.)*
 3. 🔴 **REF-C's 5-way manoeuvre head NEVER emits a longitudinal class** — closed-loop
    `head_class_share` lane_keep 0.627 / turn_right 0.373 / **accelerate 0 / brake_stop 0**, while
    **41.9 %** of logged windows are `brake_stop`. **The programme's top defect**, the documented
@@ -270,7 +276,7 @@ Full entries and root-cause classes in [`RETRACTION_LOG.md`](RETRACTION_LOG.md).
 | **PSNR / plain NCC on the NuRec night clip** | A **WRONG** reference frame beats the correct one under both (PSNR 17.457 > 16.758; NCC 0.782 > 0.704) — every frame is a dark night street, so ~17 dB measures "both images are dark". ✅ **grad-NCC discriminates** (argmax = frame 0); on the corrected `wxyz` quaternion layout **0.3802** vs best wrong **0.2110**, margin **+0.1692**. The mapping is validated by **STRUCTURE, not photometry**. ⇒ *on a low-dynamic-range corpus the negative control runs FIRST and CHOOSES the metric.* |
 | **The ISP / per-frame-photometry lead** | **Dead.** PPISP found (`.post_processings.0.ppisp.*`, 3594 views): exposure **exactly 0** for all 3594, colour **identical** (std == 0), vignetting max \|α\| 0.0047 ⇒ **combined 0.18 %**, because `per_frame_ppisp_enabled: false`. **The scene ships no per-frame photometry.** ⭐ The real residual is **COVERAGE, not colour** — 79–81 % of the absolute error is in pixels **no gaussian covers**; the "near-equal ~0.45 per-channel gain" was an averaging artifact (masked to covered pixels the channels spread 1.55–3.4×). ⚠️ Enabling the sky env-map made the render **worse**. ⚠️ Standing risk: the `f0` appearance-basis choice was selected **on PSNR** and therefore rests on a retracted metric. |
 | **The Thor precision / quantisation table** (*"precision gate PASS, error does not compound"*) | **Measured on a RANDOMLY-INITIALISED model fed `torch.randn`** — no `torch.load` in any of the five scripts. Quantisation error is a function of the *trained* distribution; a random net has no outlier channels. 🔴 **We measured the OPPOSITE on real weights** (paper §7.10): W+A INT8 collapses the post-pool `readout_head` to cos 0.566, costing **+0.0215 m ADE@2s** — past the 0.02 m pre-registered falsifier, degradation growing 27× from 0.5 s to 2 s. ✅ **Latency survives** (weight-independent). ⚠️ The CUDA-graph "bit-exact" row is near-tautological (a *static* input replayed must reproduce itself). Also: **`thor:~/trt/predictor_fp16.plan` was itself built from random weights** and was never deployable — superseded by `thor:~/trt_deploy/`. |
-| **The ego-only `sitclf` swap** | **REJECTED by the PI — "no ego heads" — and must not be proposed again.** The finding stands (`head_img_ego` separated-**worse** than `head_ego`: lane_change ΔAP-lift +2.3524 [+0.8591, +4.2364]; intersection +0.9485 [+0.2237, +1.6944]) **but the response is to FIX THE FUSION.** `sc_train.py:143` concatenates a 16-d PCA image block normalised by its own mean-abs against a 3-d ego block on a hand-set `EGO_SCALE` — an arbitrary relative scale, so the wider block wins. **A scale bug, not evidence the camera carries no signal** (image arm: lane_change ΔAP +0.01987 [+0.01141, +0.02901], AUROC 0.703/0.769, anticipation lead 1.4–2.0 s). Fix = `late_fuse_scores` (`stack/tanitad/eval/sitclf.py`, 13 tests pass) — **implemented and consumed by nothing; wiring it is the open work item.** |
+| **The ego-only `sitclf` swap** — **and, since 2026-08-03 12:39, score-level image+ego fusion as well** | **The ego-only swap was REJECTED by the PI ("no ego heads") and must not be proposed again.** ⛔ **Then a THIRD PI position superseded BOTH candidates: `LABELS MAY USE EGO; INFERENCE IS VISION-ONLY`** (CLAUDE.md, binding) — verbatim *"for ground truth data of scenario classification you can use both ego and other label, for inference only vision."* **`late_fuse_scores` is therefore ALSO out**, because score-level fusion is still ego-at-inference. **The deployable arm is `head_img` (image-only).** ⚠️ **And the anomaly that started this is now itself suspect:** the situation labels are derived from **ego dynamics** (`stack/tanitad/data/situations.py`), so a classifier *given* ego at inference is partly reading **the label's own source** — the banked ranking `head_ego` 0.0697 > `head_img_ego` 0.0525 > `head_img` 0.0376 may be **LEAK MAGNITUDE, not capability**, and it makes `situations.py:19`'s *"vision adds nothing over ego state"* unfalsifiable as stated. **Flagged to verify from source (two probes, file:line), not assumed.** The `sc_train.py:143` scale bug is real but is no longer the fix. **Guardrail: "vision scores worse" is NEVER a reason to reopen ego at inference.** |
 | **"REF-C's route pathway is INERT"** | **REFUTED** by §5.0.4. Every premise was individually MEASURED; the *conclusion* was an **inference** that travelled through six documents wearing its premises' evidence class. **A chain of MEASURED links does not make the conclusion MEASURED.** |
 | **Every four-family ABSOLUTE RATE published before 2026-08-03** | Wrong by **5×–25×** — `four_families.py` hard-coded `DT_S = 0.1` while its inputs are the sparse 4-waypoint **0.5 s** grid. `speed_*` **/5.00**, `accel_*` **/25.00**, `yaw_rate_*` /6.48, `curvature_*` **/8.36**, `heading_*` /1.90 (the last two via the `MIN_DS` mask alone — dt-invariant and *still* wrong). Ground truth: ego speed 12.4565 m/s vs the instrument's 62.9789. ✅ **Every cross-arm comparison, rank and paired delta SURVIVES** (common factor). **FIXED + tested** (`infer_dt`, `prefer_dense`, `MIN_DS_MPS`, a `_grid` provenance block, 12 tests). |
 | **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 arms). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
@@ -520,6 +526,12 @@ absence, the cheapest metric-or-power check *before* declaring closure.
   renderer; we do **not** have `alpasim_runtime`, so there is **no collision / offroad / scene
   score**. That is bounded work (`cargo` present), not a blocker — but nothing safety-grade may be
   claimed until it lands.
+- ⛔ **New binding doctrine (PI, 2026-08-03): LABELS MAY USE EGO; INFERENCE IS VISION-ONLY.** Label
+  derivation may use ego state, other agents, maps, future poses — anything, offline. **Inference may
+  use vision only.** It supersedes both sitclf candidates (ego-only swap *and* score-level fusion)
+  and generalises: **for ANY head, ask whether its inference inputs include something the label was
+  derived from.** If they do, the score measures **leak magnitude, not capability** — the same family
+  as the C6 confound and the REF-A I-JEPA val leak. Full text in `CLAUDE.md`.
 
 - **Proven:** the 4-brain latent world model **beats every trivial floor open-loop** (0.452 m vs
   best-of-3 0.5005, CTRV 0.523, no-vision ego ceiling 0.5735, CV 0.825), and it does so *causally* —
@@ -583,8 +595,11 @@ absence, the cheapest metric-or-power check *before* declaring closure.
    USDZ-extracted `map.xodr` / `lane.parquet` (§5.0.3) is the material for it.
 3. **Finish `alpasim_runtime` on Thor** to convert the renderer wire contract into a **safety-grade**
    closed-loop score (collision / offroad). Bounded — `cargo` is present.
-4. **Wire `late_fuse_scores`.** Implemented, tested, **consumed by nothing** — the programme's
-   recurring "implemented but unmerged" failure, and the PI's chosen answer to the sitclf question.
+4. **Re-scope `sitclf` to `head_img` (image-only) and establish label provenance from source.**
+   ⛔ *Superseded 2026-08-03 12:39:* this item previously read "wire `late_fuse_scores`" — that is
+   **out**, because score-level image+ego fusion is still ego-at-inference. The binding rule is
+   **labels may use ego; inference is VISION-ONLY**. First deliverable is **label provenance from
+   source (two probes, file:line)**, because the banked ranking may be measuring a leak.
 5. **Wire distance-keeping into LONGITUDINAL.** The reader exists and is not wired; a family with a
    built-but-unwired instrument is a **work item, not a pass**.
 6. **Re-quote nothing from §5.0.5** — including in the paper, the registry and the reports. Several

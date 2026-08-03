@@ -1,0 +1,1320 @@
+{
+ "_what": "VISION-ONLY situation classification (PI ruling 2026-08-03: ego may derive the LABELS, only vision may be an INFERENCE input)",
+ "preset": "vision_only",
+ "_inference_inputs": [
+  "head_img",
+  "ridge_img"
+ ],
+ "bundle": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Implementation\\incoming\\2026-07-26-situation-classifier\\artifacts\\heldout_frames.npz",
+ "n_rows": 308973,
+ "n_clusters": 1610,
+ "situations": [
+  "lane_change",
+  "roundabout",
+  "intersection"
+ ],
+ "bundle_arms": [
+  "head_img_ego",
+  "head_img",
+  "head_ego",
+  "head_img_ego_concat",
+  "head_priv",
+  "head_img_shuf",
+  "ridge_img_ego",
+  "ridge_img",
+  "ridge_ego",
+  "ridge_img_shuf"
+ ],
+ "deployed_arm": "head_img",
+ "modality_arms": [
+  "head_img",
+  "ridge_img"
+ ],
+ "null_image_arm": "head_img_shuf",
+ "fusion": {
+  "fn": "tanitad.eval.sitclf.late_fuse_scores",
+  "consumer": "tanitad.eval.sitclf_deploy.fuse_modalities",
+  "n_folds": 2,
+  "seed": 0,
+  "l2": 1.0,
+  "fold_unit": "whole clip cluster"
+ },
+ "estimator": "paired_ap_episode_cluster_bootstrap on AP-LIFT",
+ "n_boot": 2000,
+ "strata_n_boot": 400,
+ "python": "3.13.5",
+ "per_situation": {
+  "lane_change": {
+   "n_valid_rows": 252826,
+   "n_rows_scored": 252826,
+   "n_pos": 4361,
+   "base_rate": 0.017249,
+   "ap": {
+    "PRIMARY": 0.03741,
+    "NEG_MACHINERY": 0.03678,
+    "FUSED": 0.03839,
+    "NEG_VISION": 0.01715,
+    "NEG_FUSED": 0.01884,
+    "NEG_LABEL": 0.03078,
+    "head_img": 0.03741,
+    "ridge_img": 0.03405
+   },
+   "ap_lift": {
+    "PRIMARY": 2.1691,
+    "NEG_MACHINERY": 2.13257,
+    "FUSED": 2.22557,
+    "NEG_VISION": 0.99417,
+    "NEG_FUSED": 1.092,
+    "NEG_LABEL": 1.78465,
+    "head_img": 2.1691,
+    "ridge_img": 1.97382
+   },
+   "contrasts": {
+    "PRIMARY_vs_NEG_VISION": {
+     "delta": 1.17493,
+     "lo": 0.79303,
+     "hi": 1.68899,
+     "ci95": 0.44798,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.1691,
+     "ap_b": 0.99417,
+     "base_rate": 0.017249,
+     "n_pos": 4361,
+     "n_windows": 252826,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "DISCRIMINATION CONTROL, run first: does the camera carry ANY signal over its own permuted-feature null?"
+    },
+    "FUSED_vs_PRIMARY": {
+     "delta": 0.05648,
+     "lo": -0.09253,
+     "hi": 0.30717,
+     "ci95": 0.19985,
+     "p_delta_gt0": 0.7465,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.22557,
+     "ap_b": 2.1691,
+     "base_rate": 0.017249,
+     "n_pos": 4361,
+     "n_windows": 252826,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "THE FIX under the ruling: score-level fusion of TWO VISION arms vs the single deployable vision arm"
+    },
+    "FUSED_vs_NEG_FUSED": {
+     "delta": 1.13357,
+     "lo": 0.69484,
+     "hi": 1.77593,
+     "ci95": 0.54055,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.22557,
+     "ap_b": 1.092,
+     "base_rate": 0.017249,
+     "n_pos": 4361,
+     "n_windows": 252826,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the fused vision score against the identical combiner on permuted vision features \u2014 the camera's value with parameter count held fixed"
+    },
+    "NEG_MACHINERY_vs_PRIMARY": {
+     "delta": -0.03653,
+     "lo": -0.13027,
+     "hi": 0.03504,
+     "ci95": 0.08266,
+     "p_delta_gt0": 0.151,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.13257,
+     "ap_b": 2.1691,
+     "base_rate": 0.017249,
+     "n_pos": 4361,
+     "n_windows": 252826,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the combiner's free parameters ALONE on one vision column: must not be a gain"
+    },
+    "PRIMARY_vs_NEG_LABEL": {
+     "delta": 0.38445,
+     "lo": 0.11322,
+     "hi": 0.71982,
+     "ci95": 0.3033,
+     "p_delta_gt0": 0.997,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.1691,
+     "ap_b": 1.78465,
+     "base_rate": 0.017249,
+     "n_pos": 4361,
+     "n_windows": 252826,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the protocol cannot manufacture signal: combiner fitted on permuted labels"
+    }
+   },
+   "four_families": {
+    "situation": "lane_change",
+    "families": {
+     "TACTICAL": {
+      "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+      "n_rows_scored": 252826,
+      "n_rows_dropped_nonfinite": 0,
+      "base_rate": 0.017249,
+      "n_pos": 4361,
+      "ap": {
+       "FUSED": 0.03839,
+       "PRIMARY": 0.03741
+      },
+      "ap_lift": {
+       "FUSED": 2.22557,
+       "PRIMARY": 2.1691
+      },
+      "paired_delta_ap_lift": {
+       "delta": 0.05648,
+       "lo": -0.09253,
+       "hi": 0.30717,
+       "ci95": 0.19985,
+       "p_delta_gt0": 0.7465,
+       "separated": false,
+       "statistic": "ap_lift",
+       "ap_a": 2.22557,
+       "ap_b": 2.1691,
+       "base_rate": 0.017249,
+       "n_pos": 4361,
+       "n_windows": 252826,
+       "n_episodes": 1610,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "paired_ap_episode_cluster_bootstrap"
+      },
+      "single_arm_ci": {
+       "FUSED": {
+        "point": 2.22557,
+        "lo": 1.81587,
+        "hi": 2.86729,
+        "ci95": 0.52571,
+        "se": 0.27116,
+        "statistic": "ap_lift",
+        "base_rate": 0.017249,
+        "n_pos": 4361,
+        "n_windows": 252826,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 1.8158651905344885,
+        "_hi_raw": 2.8672880845980737
+       },
+       "PRIMARY": {
+        "point": 2.1691,
+        "lo": 1.81183,
+        "hi": 2.67617,
+        "ci95": 0.43217,
+        "se": 0.22717,
+        "statistic": "ap_lift",
+        "base_rate": 0.017249,
+        "n_pos": 4361,
+        "n_windows": 252826,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 1.8118334979756239,
+        "_hi_raw": 2.67616532132318
+       }
+      },
+      "anticipation_lead": {
+       "FUSED": {
+        "median_lead_s": 2.7,
+        "n_runs": 171,
+        "n_runs_no_alarm": 128,
+        "n_alarm_rows": 12641,
+        "top_frac": 0.05
+       },
+       "PRIMARY": {
+        "median_lead_s": 2.45,
+        "n_runs": 171,
+        "n_runs_no_alarm": 117,
+        "n_alarm_rows": 12641,
+        "top_frac": 0.05
+       }
+      }
+     },
+     "LONGITUDINAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "decelerating": {
+        "n_rows": 40230,
+        "n_pos": 494,
+        "base_rate": 0.012279,
+        "ap_lift": {
+         "FUSED": 1.75649,
+         "PRIMARY": 1.87499
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.1185,
+         "lo": -0.51297,
+         "hi": 0.47047,
+         "ci95": 0.49172,
+         "p_delta_gt0": 0.2675,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.75649,
+         "ap_b": 1.87499,
+         "base_rate": 0.012279,
+         "n_pos": 494,
+         "n_windows": 40230,
+         "n_episodes": 1032,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "steady": {
+        "n_rows": 167207,
+        "n_pos": 2508,
+        "base_rate": 0.014999,
+        "ap_lift": {
+         "FUSED": 2.26509,
+         "PRIMARY": 2.18679
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.0783,
+         "lo": -0.11106,
+         "hi": 0.43622,
+         "ci95": 0.27364,
+         "p_delta_gt0": 0.7925,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 2.26509,
+         "ap_b": 2.18679,
+         "base_rate": 0.014999,
+         "n_pos": 2508,
+         "n_windows": 167207,
+         "n_episodes": 1608,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "accelerating": {
+        "n_rows": 45389,
+        "n_pos": 1359,
+        "base_rate": 0.029941,
+        "ap_lift": {
+         "FUSED": 2.02744,
+         "PRIMARY": 2.07295
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.04551,
+         "lo": -0.30565,
+         "hi": 0.25965,
+         "ci95": 0.28265,
+         "p_delta_gt0": 0.3725,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 2.02744,
+         "ap_b": 2.07295,
+         "base_rate": 0.029941,
+         "n_pos": 1359,
+         "n_windows": 45389,
+         "n_episodes": 1040,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "low_speed_lt8": {
+        "n_rows": 101320,
+        "n_pos": 851,
+        "base_rate": 0.008399,
+        "ap_lift": {
+         "FUSED": 3.18951,
+         "PRIMARY": 3.23677
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.04726,
+         "lo": -0.51869,
+         "hi": 0.62271,
+         "ci95": 0.5707,
+         "p_delta_gt0": 0.52,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 3.18951,
+         "ap_b": 3.23677,
+         "base_rate": 0.008399,
+         "n_pos": 851,
+         "n_windows": 101320,
+         "n_episodes": 881,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "cruise_ge8": {
+        "n_rows": 151506,
+        "n_pos": 3510,
+        "base_rate": 0.023167,
+        "ap_lift": {
+         "FUSED": 2.05923,
+         "PRIMARY": 1.90463
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.1546,
+         "lo": 0.00672,
+         "hi": 0.49432,
+         "ci95": 0.2438,
+         "p_delta_gt0": 0.98,
+         "separated": true,
+         "statistic": "ap_lift",
+         "ap_a": 2.05923,
+         "ap_b": 1.90463,
+         "base_rate": 0.023167,
+         "n_pos": 3510,
+         "n_windows": 151506,
+         "n_episodes": 1327,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "LATERAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "straight": {
+        "n_rows": 205025,
+        "n_pos": 1870,
+        "base_rate": 0.009121,
+        "ap_lift": {
+         "FUSED": 1.56449,
+         "PRIMARY": 1.67148
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.10699,
+         "lo": -0.2258,
+         "hi": -0.04223,
+         "ci95": 0.09178,
+         "p_delta_gt0": 0.0,
+         "separated": true,
+         "statistic": "ap_lift",
+         "ap_a": 1.56449,
+         "ap_b": 1.67148,
+         "base_rate": 0.009121,
+         "n_pos": 1870,
+         "n_windows": 205025,
+         "n_episodes": 1603,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "turning": {
+        "n_rows": 47801,
+        "n_pos": 2491,
+        "base_rate": 0.052112,
+        "ap_lift": {
+         "FUSED": 1.36016,
+         "PRIMARY": 1.43589
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.07573,
+         "lo": -0.18241,
+         "hi": 0.06287,
+         "ci95": 0.12264,
+         "p_delta_gt0": 0.1225,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.36016,
+         "ap_b": 1.43589,
+         "base_rate": 0.052112,
+         "n_pos": 2491,
+         "n_windows": 47801,
+         "n_episodes": 887,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "STRATEGIC": {
+      "_status": "UNAVAILABLE",
+      "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+      "n_rows": 252826
+     }
+    },
+    "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+    "n_clusters": 1610,
+    "n_boot": 2000
+   }
+  },
+  "roundabout": {
+   "n_valid_rows": 258540,
+   "n_rows_scored": 258540,
+   "n_pos": 721,
+   "base_rate": 0.002789,
+   "ap": {
+    "PRIMARY": 0.00721,
+    "NEG_MACHINERY": 0.00668,
+    "FUSED": 0.00975,
+    "NEG_VISION": 0.00328,
+    "NEG_FUSED": 0.00299,
+    "NEG_LABEL": 0.0067,
+    "head_img": 0.00721,
+    "ridge_img": 0.01056
+   },
+   "ap_lift": {
+    "PRIMARY": 2.58455,
+    "NEG_MACHINERY": 2.39449,
+    "FUSED": 3.49471,
+    "NEG_VISION": 1.17631,
+    "NEG_FUSED": 1.07203,
+    "NEG_LABEL": 2.40217,
+    "head_img": 2.58455,
+    "ridge_img": 3.78527
+   },
+   "contrasts": {
+    "PRIMARY_vs_NEG_VISION": {
+     "delta": 1.40824,
+     "lo": 0.13692,
+     "hi": 3.45519,
+     "ci95": 1.65913,
+     "p_delta_gt0": 0.9875,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.58455,
+     "ap_b": 1.17631,
+     "base_rate": 0.002789,
+     "n_pos": 721,
+     "n_windows": 258540,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "DISCRIMINATION CONTROL, run first: does the camera carry ANY signal over its own permuted-feature null?"
+    },
+    "FUSED_vs_PRIMARY": {
+     "delta": 0.91016,
+     "lo": -0.14904,
+     "hi": 2.18809,
+     "ci95": 1.16856,
+     "p_delta_gt0": 0.955,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 3.49471,
+     "ap_b": 2.58455,
+     "base_rate": 0.002789,
+     "n_pos": 721,
+     "n_windows": 258540,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "THE FIX under the ruling: score-level fusion of TWO VISION arms vs the single deployable vision arm"
+    },
+    "FUSED_vs_NEG_FUSED": {
+     "delta": 2.42268,
+     "lo": 0.95621,
+     "hi": 4.88355,
+     "ci95": 1.96367,
+     "p_delta_gt0": 0.9995,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 3.49471,
+     "ap_b": 1.07203,
+     "base_rate": 0.002789,
+     "n_pos": 721,
+     "n_windows": 258540,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the fused vision score against the identical combiner on permuted vision features \u2014 the camera's value with parameter count held fixed"
+    },
+    "NEG_MACHINERY_vs_PRIMARY": {
+     "delta": -0.19007,
+     "lo": -0.53415,
+     "hi": 0.04077,
+     "ci95": 0.28746,
+     "p_delta_gt0": 0.05,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.39449,
+     "ap_b": 2.58455,
+     "base_rate": 0.002789,
+     "n_pos": 721,
+     "n_windows": 258540,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the combiner's free parameters ALONE on one vision column: must not be a gain"
+    },
+    "PRIMARY_vs_NEG_LABEL": {
+     "delta": 0.18238,
+     "lo": -9.1104,
+     "hi": 3.28744,
+     "ci95": 6.19892,
+     "p_delta_gt0": 0.5735,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.58455,
+     "ap_b": 2.40217,
+     "base_rate": 0.002789,
+     "n_pos": 721,
+     "n_windows": 258540,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the protocol cannot manufacture signal: combiner fitted on permuted labels"
+    }
+   },
+   "four_families": {
+    "situation": "roundabout",
+    "families": {
+     "TACTICAL": {
+      "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+      "n_rows_scored": 258540,
+      "n_rows_dropped_nonfinite": 0,
+      "base_rate": 0.002789,
+      "n_pos": 721,
+      "ap": {
+       "FUSED": 0.00975,
+       "PRIMARY": 0.00721
+      },
+      "ap_lift": {
+       "FUSED": 3.49471,
+       "PRIMARY": 2.58455
+      },
+      "paired_delta_ap_lift": {
+       "delta": 0.91016,
+       "lo": -0.14904,
+       "hi": 2.18809,
+       "ci95": 1.16856,
+       "p_delta_gt0": 0.955,
+       "separated": false,
+       "statistic": "ap_lift",
+       "ap_a": 3.49471,
+       "ap_b": 2.58455,
+       "base_rate": 0.002789,
+       "n_pos": 721,
+       "n_windows": 258540,
+       "n_episodes": 1610,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "paired_ap_episode_cluster_bootstrap"
+      },
+      "single_arm_ci": {
+       "FUSED": {
+        "point": 3.49471,
+        "lo": 2.20896,
+        "hi": 5.84355,
+        "ci95": 1.81729,
+        "se": 0.91933,
+        "statistic": "ap_lift",
+        "base_rate": 0.002789,
+        "n_pos": 721,
+        "n_windows": 258540,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 2.208958788075016,
+        "_hi_raw": 5.843546358814545
+       },
+       "PRIMARY": {
+        "point": 2.58455,
+        "lo": 1.67301,
+        "hi": 4.46518,
+        "ci95": 1.39608,
+        "se": 0.739,
+        "statistic": "ap_lift",
+        "base_rate": 0.002789,
+        "n_pos": 721,
+        "n_windows": 258540,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 1.673008112850971,
+        "_hi_raw": 4.465175431948765
+       }
+      },
+      "anticipation_lead": {
+       "FUSED": {
+        "median_lead_s": 2.1,
+        "n_runs": 26,
+        "n_runs_no_alarm": 13,
+        "n_alarm_rows": 12927,
+        "top_frac": 0.05
+       },
+       "PRIMARY": {
+        "median_lead_s": 2.2,
+        "n_runs": 26,
+        "n_runs_no_alarm": 17,
+        "n_alarm_rows": 12927,
+        "top_frac": 0.05
+       }
+      }
+     },
+     "LONGITUDINAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "decelerating": {
+        "n_rows": 41721,
+        "n_pos": 249,
+        "base_rate": 0.005968,
+        "ap_lift": {
+         "FUSED": 1.62352,
+         "PRIMARY": 1.30217
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.32135,
+         "lo": -0.08647,
+         "hi": 0.87539,
+         "ci95": 0.48093,
+         "p_delta_gt0": 0.93,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.62352,
+         "ap_b": 1.30217,
+         "base_rate": 0.005968,
+         "n_pos": 249,
+         "n_windows": 41721,
+         "n_episodes": 1035,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "steady": {
+        "n_rows": 170168,
+        "n_pos": 291,
+        "base_rate": 0.00171,
+        "ap_lift": {
+         "FUSED": 9.31513,
+         "PRIMARY": 4.48561
+        },
+        "paired_delta_ap_lift": {
+         "delta": 4.82952,
+         "lo": 0.95609,
+         "hi": 10.14365,
+         "ci95": 4.59378,
+         "p_delta_gt0": 0.9975,
+         "separated": true,
+         "statistic": "ap_lift",
+         "ap_a": 9.31513,
+         "ap_b": 4.48561,
+         "base_rate": 0.00171,
+         "n_pos": 291,
+         "n_windows": 170168,
+         "n_episodes": 1607,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "accelerating": {
+        "n_rows": 46651,
+        "n_pos": 181,
+        "base_rate": 0.00388,
+        "ap_lift": {
+         "FUSED": 1.99316,
+         "PRIMARY": 2.62754
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.63438,
+         "lo": -5.19148,
+         "hi": 1.01013,
+         "ci95": 3.1008,
+         "p_delta_gt0": 0.2375,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.99316,
+         "ap_b": 2.62754,
+         "base_rate": 0.00388,
+         "n_pos": 181,
+         "n_windows": 46651,
+         "n_episodes": 1046,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "low_speed_lt8": {
+        "n_rows": 99744,
+        "n_pos": 596,
+        "base_rate": 0.005975,
+        "ap_lift": {
+         "FUSED": 2.20824,
+         "PRIMARY": 2.19852
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.00972,
+         "lo": -1.52382,
+         "hi": 0.67841,
+         "ci95": 1.10111,
+         "p_delta_gt0": 0.4625,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 2.20824,
+         "ap_b": 2.19852,
+         "base_rate": 0.005975,
+         "n_pos": 596,
+         "n_windows": 99744,
+         "n_episodes": 881,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "cruise_ge8": {
+        "n_rows": 158796,
+        "n_pos": 125,
+        "base_rate": 0.000787,
+        "ap_lift": {
+         "FUSED": 3.76678,
+         "PRIMARY": 2.46101
+        },
+        "paired_delta_ap_lift": {
+         "delta": 1.30577,
+         "lo": -2.08308,
+         "hi": 4.84311,
+         "ci95": 3.4631,
+         "p_delta_gt0": 0.835,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 3.76678,
+         "ap_b": 2.46101,
+         "base_rate": 0.000787,
+         "n_pos": 125,
+         "n_windows": 158796,
+         "n_episodes": 1329,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "LATERAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "straight": {
+        "n_rows": 209646,
+        "n_pos": 327,
+        "base_rate": 0.00156,
+        "ap_lift": {
+         "FUSED": 9.16831,
+         "PRIMARY": 2.00106
+        },
+        "paired_delta_ap_lift": {
+         "delta": 7.16726,
+         "lo": 2.20562,
+         "hi": 32.70358,
+         "ci95": 15.24898,
+         "p_delta_gt0": 1.0,
+         "separated": true,
+         "statistic": "ap_lift",
+         "ap_a": 9.16831,
+         "ap_b": 2.00106,
+         "base_rate": 0.00156,
+         "n_pos": 327,
+         "n_windows": 209646,
+         "n_episodes": 1610,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "turning": {
+        "n_rows": 48894,
+        "n_pos": 394,
+        "base_rate": 0.008058,
+        "ap_lift": {
+         "FUSED": 1.49345,
+         "PRIMARY": 1.50885
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.0154,
+         "lo": -0.79718,
+         "hi": 0.40894,
+         "ci95": 0.60306,
+         "p_delta_gt0": 0.49,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.49345,
+         "ap_b": 1.50885,
+         "base_rate": 0.008058,
+         "n_pos": 394,
+         "n_windows": 48894,
+         "n_episodes": 902,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "STRATEGIC": {
+      "_status": "UNAVAILABLE",
+      "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+      "n_rows": 258540
+     }
+    },
+    "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+    "n_clusters": 1610,
+    "n_boot": 2000
+   }
+  },
+  "intersection": {
+   "n_valid_rows": 249480,
+   "n_rows_scored": 249480,
+   "n_pos": 7620,
+   "base_rate": 0.030544,
+   "ap": {
+    "PRIMARY": 0.07955,
+    "NEG_MACHINERY": 0.07703,
+    "FUSED": 0.08419,
+    "NEG_VISION": 0.03304,
+    "NEG_FUSED": 0.02683,
+    "NEG_LABEL": 0.03374,
+    "head_img": 0.07955,
+    "ridge_img": 0.07767
+   },
+   "ap_lift": {
+    "PRIMARY": 2.60433,
+    "NEG_MACHINERY": 2.52184,
+    "FUSED": 2.75629,
+    "NEG_VISION": 1.08171,
+    "NEG_FUSED": 0.8785,
+    "NEG_LABEL": 1.10461,
+    "head_img": 2.60433,
+    "ridge_img": 2.54283
+   },
+   "contrasts": {
+    "PRIMARY_vs_NEG_VISION": {
+     "delta": 1.52263,
+     "lo": 1.13583,
+     "hi": 1.97888,
+     "ci95": 0.42153,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.60433,
+     "ap_b": 1.08171,
+     "base_rate": 0.030544,
+     "n_pos": 7620,
+     "n_windows": 249480,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "DISCRIMINATION CONTROL, run first: does the camera carry ANY signal over its own permuted-feature null?"
+    },
+    "FUSED_vs_PRIMARY": {
+     "delta": 0.15196,
+     "lo": -0.17857,
+     "hi": 0.5513,
+     "ci95": 0.36494,
+     "p_delta_gt0": 0.811,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.75629,
+     "ap_b": 2.60433,
+     "base_rate": 0.030544,
+     "n_pos": 7620,
+     "n_windows": 249480,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "THE FIX under the ruling: score-level fusion of TWO VISION arms vs the single deployable vision arm"
+    },
+    "FUSED_vs_NEG_FUSED": {
+     "delta": 1.87779,
+     "lo": 1.45863,
+     "hi": 2.41008,
+     "ci95": 0.47572,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.75629,
+     "ap_b": 0.8785,
+     "base_rate": 0.030544,
+     "n_pos": 7620,
+     "n_windows": 249480,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the fused vision score against the identical combiner on permuted vision features \u2014 the camera's value with parameter count held fixed"
+    },
+    "NEG_MACHINERY_vs_PRIMARY": {
+     "delta": -0.08249,
+     "lo": -0.2171,
+     "hi": 0.09286,
+     "ci95": 0.15498,
+     "p_delta_gt0": 0.1475,
+     "separated": false,
+     "statistic": "ap_lift",
+     "ap_a": 2.52184,
+     "ap_b": 2.60433,
+     "base_rate": 0.030544,
+     "n_pos": 7620,
+     "n_windows": 249480,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the combiner's free parameters ALONE on one vision column: must not be a gain"
+    },
+    "PRIMARY_vs_NEG_LABEL": {
+     "delta": 1.49972,
+     "lo": 1.15103,
+     "hi": 1.93765,
+     "ci95": 0.39331,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "statistic": "ap_lift",
+     "ap_a": 2.60433,
+     "ap_b": 1.10461,
+     "base_rate": 0.030544,
+     "n_pos": 7620,
+     "n_windows": 249480,
+     "n_episodes": 1610,
+     "n_boot": 2000,
+     "n_boot_valid": 2000,
+     "estimator": "paired_ap_episode_cluster_bootstrap",
+     "_what": "the protocol cannot manufacture signal: combiner fitted on permuted labels"
+    }
+   },
+   "four_families": {
+    "situation": "intersection",
+    "families": {
+     "TACTICAL": {
+      "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+      "n_rows_scored": 249480,
+      "n_rows_dropped_nonfinite": 0,
+      "base_rate": 0.030544,
+      "n_pos": 7620,
+      "ap": {
+       "FUSED": 0.08419,
+       "PRIMARY": 0.07955
+      },
+      "ap_lift": {
+       "FUSED": 2.75629,
+       "PRIMARY": 2.60433
+      },
+      "paired_delta_ap_lift": {
+       "delta": 0.15196,
+       "lo": -0.17857,
+       "hi": 0.5513,
+       "ci95": 0.36494,
+       "p_delta_gt0": 0.811,
+       "separated": false,
+       "statistic": "ap_lift",
+       "ap_a": 2.75629,
+       "ap_b": 2.60433,
+       "base_rate": 0.030544,
+       "n_pos": 7620,
+       "n_windows": 249480,
+       "n_episodes": 1610,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "paired_ap_episode_cluster_bootstrap"
+      },
+      "single_arm_ci": {
+       "FUSED": {
+        "point": 2.75629,
+        "lo": 2.33456,
+        "hi": 3.30514,
+        "ci95": 0.48529,
+        "se": 0.2498,
+        "statistic": "ap_lift",
+        "base_rate": 0.030544,
+        "n_pos": 7620,
+        "n_windows": 249480,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 2.3345633621547695,
+        "_hi_raw": 3.305138046025282
+       },
+       "PRIMARY": {
+        "point": 2.60433,
+        "lo": 2.2527,
+        "hi": 3.05286,
+        "ci95": 0.40008,
+        "se": 0.20037,
+        "statistic": "ap_lift",
+        "base_rate": 0.030544,
+        "n_pos": 7620,
+        "n_windows": 249480,
+        "n_episodes": 1610,
+        "n_boot": 2000,
+        "n_boot_valid": 2000,
+        "estimator": "ap_episode_cluster_bootstrap",
+        "_lo_raw": 2.252703687260712,
+        "_hi_raw": 3.0528581640881134
+       }
+      },
+      "anticipation_lead": {
+       "FUSED": {
+        "median_lead_s": 2.0,
+        "n_runs": 269,
+        "n_runs_no_alarm": 182,
+        "n_alarm_rows": 12474,
+        "top_frac": 0.05
+       },
+       "PRIMARY": {
+        "median_lead_s": 2.3,
+        "n_runs": 269,
+        "n_runs_no_alarm": 179,
+        "n_alarm_rows": 12474,
+        "top_frac": 0.05
+       }
+      }
+     },
+     "LONGITUDINAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "decelerating": {
+        "n_rows": 40167,
+        "n_pos": 3500,
+        "base_rate": 0.087136,
+        "ap_lift": {
+         "FUSED": 1.5276,
+         "PRIMARY": 1.5738
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.0462,
+         "lo": -0.21194,
+         "hi": 0.14167,
+         "ci95": 0.17681,
+         "p_delta_gt0": 0.285,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.5276,
+         "ap_b": 1.5738,
+         "base_rate": 0.087136,
+         "n_pos": 3500,
+         "n_windows": 40167,
+         "n_episodes": 1035,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "steady": {
+        "n_rows": 167636,
+        "n_pos": 2738,
+        "base_rate": 0.016333,
+        "ap_lift": {
+         "FUSED": 4.09046,
+         "PRIMARY": 3.69965
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.39081,
+         "lo": -0.37573,
+         "hi": 1.51814,
+         "ci95": 0.94693,
+         "p_delta_gt0": 0.8175,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 4.09046,
+         "ap_b": 3.69965,
+         "base_rate": 0.016333,
+         "n_pos": 2738,
+         "n_windows": 167636,
+         "n_episodes": 1607,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "accelerating": {
+        "n_rows": 41677,
+        "n_pos": 1382,
+        "base_rate": 0.03316,
+        "ap_lift": {
+         "FUSED": 3.13444,
+         "PRIMARY": 2.08727
+        },
+        "paired_delta_ap_lift": {
+         "delta": 1.04716,
+         "lo": 0.19552,
+         "hi": 2.24036,
+         "ci95": 1.02242,
+         "p_delta_gt0": 1.0,
+         "separated": true,
+         "statistic": "ap_lift",
+         "ap_a": 3.13444,
+         "ap_b": 2.08727,
+         "base_rate": 0.03316,
+         "n_pos": 1382,
+         "n_windows": 41677,
+         "n_episodes": 1039,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "low_speed_lt8": {
+        "n_rows": 90825,
+        "n_pos": 6349,
+        "base_rate": 0.069904,
+        "ap_lift": {
+         "FUSED": 1.46152,
+         "PRIMARY": 1.55664
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.09512,
+         "lo": -0.29547,
+         "hi": 0.10357,
+         "ci95": 0.19952,
+         "p_delta_gt0": 0.1675,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.46152,
+         "ap_b": 1.55664,
+         "base_rate": 0.069904,
+         "n_pos": 6349,
+         "n_windows": 90825,
+         "n_episodes": 873,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "cruise_ge8": {
+        "n_rows": 158655,
+        "n_pos": 1271,
+        "base_rate": 0.008011,
+        "ap_lift": {
+         "FUSED": 2.4538,
+         "PRIMARY": 2.2889
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.1649,
+         "lo": -0.0165,
+         "hi": 0.48945,
+         "ci95": 0.25297,
+         "p_delta_gt0": 0.95,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 2.4538,
+         "ap_b": 2.2889,
+         "base_rate": 0.008011,
+         "n_pos": 1271,
+         "n_windows": 158655,
+         "n_episodes": 1329,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "LATERAL": {
+      "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+      "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+      "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+      "strata": {
+       "straight": {
+        "n_rows": 209292,
+        "n_pos": 6128,
+        "base_rate": 0.02928,
+        "ap_lift": {
+         "FUSED": 3.00048,
+         "PRIMARY": 2.79579
+        },
+        "paired_delta_ap_lift": {
+         "delta": 0.20469,
+         "lo": -0.19625,
+         "hi": 0.7696,
+         "ci95": 0.48292,
+         "p_delta_gt0": 0.8675,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 3.00048,
+         "ap_b": 2.79579,
+         "base_rate": 0.02928,
+         "n_pos": 6128,
+         "n_windows": 209292,
+         "n_episodes": 1610,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       },
+       "turning": {
+        "n_rows": 40188,
+        "n_pos": 1492,
+        "base_rate": 0.037126,
+        "ap_lift": {
+         "FUSED": 1.9134,
+         "PRIMARY": 1.93059
+        },
+        "paired_delta_ap_lift": {
+         "delta": -0.01719,
+         "lo": -0.63593,
+         "hi": 0.52647,
+         "ci95": 0.5812,
+         "p_delta_gt0": 0.485,
+         "separated": false,
+         "statistic": "ap_lift",
+         "ap_a": 1.9134,
+         "ap_b": 1.93059,
+         "base_rate": 0.037126,
+         "n_pos": 1492,
+         "n_windows": 40188,
+         "n_episodes": 890,
+         "n_boot": 400,
+         "n_boot_valid": 400,
+         "estimator": "paired_ap_episode_cluster_bootstrap"
+        }
+       }
+      }
+     },
+     "STRATEGIC": {
+      "_status": "UNAVAILABLE",
+      "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+      "n_rows": 249480
+     }
+    },
+    "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+    "n_clusters": 1610,
+    "n_boot": 2000
+   }
+  }
+ }
+}

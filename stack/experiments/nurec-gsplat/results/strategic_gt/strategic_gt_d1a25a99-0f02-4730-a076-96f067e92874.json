@@ -1,0 +1,1825 @@
+{
+ "SELFCONSISTENCY_CONTROL": {
+  "name": "map-branch-class vs realised-heading (component vs family)",
+  "n_events_checked": 2,
+  "n_untruncated": 2,
+  "worst_abs_err_deg_untruncated": 179.86,
+  "tolerance_deg": 35.0,
+  "PASS": false,
+  "note": "truncated traversals are excluded because the realised heading change is only a partial arc when the clip ends mid-junction; they are reported, never scored.",
+  "per_event": [
+   {
+    "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+    "map_branch_dyaw_deg": 92.32,
+    "realised_on_branch_deg": 92.27,
+    "realised_over_junction_span_deg": 92.42,
+    "abs_err_deg": 0.05,
+    "truncated_by_clip_end": false
+   },
+   {
+    "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+    "map_branch_dyaw_deg": 179.85,
+    "realised_on_branch_deg": -0.01,
+    "realised_over_junction_span_deg": 2.12,
+    "abs_err_deg": 179.86,
+    "truncated_by_clip_end": false
+   }
+  ]
+ },
+ "ADMISSIBLE": false,
+ "tool": "strategic_gt.py",
+ "evidence_class": "MEASURED",
+ "clipgt": "/tmp/nurec_dl/d1a25a99-0f02-4730-a076-96f067e92874/clipgt",
+ "xodr": "/tmp/nurec_dl/d1a25a99-0f02-4730-a076-96f067e92874/map.xodr",
+ "horizon_m": 60.0,
+ "alignment_rms_m": 0.0253,
+ "n_poses": 202,
+ "n_decision_events": 2,
+ "n_SCOREABLE_events": 1,
+ "branching_factor": {
+  "max": 2,
+  "values": [
+   2,
+   1
+  ]
+ },
+ "n_admissible_poses": 40,
+ "admissible_pose_fraction": 0.198,
+ "route_gt_class_share_over_events": {
+  "LEFT": 1,
+  "STRAIGHT": 0,
+  "RIGHT": 0,
+  "UTURN": 1
+ },
+ "EFFECTIVE_N_FOR_THE_CI": 1,
+ "effective_n_note": "the paired episode-cluster bootstrap must resample DECISION EVENTS, not poses: every pose approaching one junction carries the identical label, so a pose-level n overstates the sample by roughly the approach length in poses. On this scene that is 40 poses vs 1 events.",
+ "events": [
+  {
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "junction_id": "116",
+   "entry_pose": 40,
+   "exit_pose": 93,
+   "entry_arc_m": 29.54,
+   "incoming_road": "26",
+   "incoming_lane": 1,
+   "entry_road": "26",
+   "exit_road": "11",
+   "connecting_road_taken": "90",
+   "resolved_by": "coverage=0.98",
+   "coverage_of_taken_road_by_ego_path": 0.981,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "route_gt_branch_dyaw_deg": 92.32,
+   "n_options": 2,
+   "options": [
+    {
+     "road": "90",
+     "lane": -1,
+     "class": 0,
+     "class_name": "LEFT",
+     "branch_dyaw_deg": 92.32
+    },
+    {
+     "road": "47",
+     "lane": -1,
+     "class": 2,
+     "class_name": "RIGHT",
+     "branch_dyaw_deg": -73.06
+    }
+   ],
+   "option_classes": [
+    "LEFT",
+    "RIGHT"
+   ],
+   "realised_heading_change_over_junction_span_deg": 92.42,
+   "realised_heading_change_on_branch_deg": 92.27,
+   "SCOREABLE": true,
+   "selfconsistency_abs_err_deg": 0.05,
+   "selfconsistency_truncated": false
+  },
+  {
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "junction_id": "114",
+   "entry_pose": 94,
+   "exit_pose": 103,
+   "entry_arc_m": 58.34,
+   "incoming_road": "11",
+   "incoming_lane": 1,
+   "entry_road": "26",
+   "exit_road": "11",
+   "connecting_road_taken": "99",
+   "resolved_by": "exit-link",
+   "coverage_of_taken_road_by_ego_path": 0.0,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "route_gt_branch_dyaw_deg": 179.85,
+   "n_options": 1,
+   "options": [
+    {
+     "road": "99",
+     "lane": -1,
+     "class": 3,
+     "class_name": "UTURN",
+     "branch_dyaw_deg": 179.85
+    }
+   ],
+   "option_classes": [
+    "UTURN"
+   ],
+   "realised_heading_change_over_junction_span_deg": 2.12,
+   "realised_heading_change_on_branch_deg": -0.01,
+   "SCOREABLE": false,
+   "selfconsistency_abs_err_deg": 179.86,
+   "selfconsistency_truncated": false
+  }
+ ],
+ "per_pose": [
+  {
+   "pose": 0,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 29.54,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 1,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 28.55,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 2,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 27.45,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 3,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 26.37,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 4,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 25.32,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 5,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 24.28,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 6,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 23.27,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 7,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 22.28,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 8,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 21.31,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 9,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 20.36,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 10,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 19.43,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 11,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 18.52,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 12,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 17.63,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 13,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 16.76,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 14,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 15.91,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 15,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 15.07,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 16,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 14.26,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 17,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 13.46,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 18,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 12.68,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 19,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 11.92,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 20,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 11.17,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 21,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 10.43,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 22,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 9.71,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 23,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 9.01,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 24,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 8.33,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 25,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 7.66,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 26,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 7.02,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 27,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 6.39,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 28,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 5.79,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 29,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 5.21,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 30,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 4.65,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 31,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 4.11,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 32,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 3.59,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 33,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 3.09,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 34,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 2.61,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 35,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 2.14,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 36,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 1.69,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 37,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 1.25,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 38,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 0.82,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 39,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": 0.4,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 40,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J116|40",
+   "dist_to_decision_point_m": -0.0,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": false,
+   "reason": "decision point -0.0 m away, outside the 60 m horizon"
+  },
+  {
+   "pose": 41,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 28.4,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 42,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 28.02,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 43,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 27.65,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 44,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 27.3,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 45,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 26.96,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 46,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 26.64,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 47,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 26.34,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 48,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 26.06,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 49,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 25.79,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 50,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 25.52,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 51,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 25.26,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 52,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 25.0,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 53,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 24.74,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 54,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 24.49,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 55,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 24.24,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 56,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 24.0,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 57,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 23.75,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 58,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 23.49,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 59,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 23.24,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 60,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 22.97,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 61,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 22.69,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 62,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 22.4,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 63,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 22.1,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 64,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 21.77,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 65,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 21.43,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 66,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 21.06,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 67,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 20.67,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 68,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 20.27,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 69,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 19.84,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 70,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 19.39,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 71,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 18.91,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 72,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 18.41,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 73,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 17.89,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 74,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 17.33,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 75,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 16.74,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 76,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 16.13,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 77,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 15.48,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 78,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 14.8,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 79,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 14.09,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 80,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 13.34,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 81,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 12.56,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 82,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 11.75,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 83,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 10.92,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 84,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 10.05,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 85,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 9.16,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 86,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 8.24,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 87,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 7.31,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 88,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 6.34,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 89,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 5.35,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 90,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 4.34,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 91,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 3.3,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 92,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 2.23,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 93,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": 1.13,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 94,
+   "has_decision_ahead": true,
+   "event_id": "d1a25a99-0f02-4730-a076-96f067e92874|J114|94",
+   "dist_to_decision_point_m": -0.0,
+   "n_options": 1,
+   "route_gt_class": 3,
+   "route_gt_name": "UTURN",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 95,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 96,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 97,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 98,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 99,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 100,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 101,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 102,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 103,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 104,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 105,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 106,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 107,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 108,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 109,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 110,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 111,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 112,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 113,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 114,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 115,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 116,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 117,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 118,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 119,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 120,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 121,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 122,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 123,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 124,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 125,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 126,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 127,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 128,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 129,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 130,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 131,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 132,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 133,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 134,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 135,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 136,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 137,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 138,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 139,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 140,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 141,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 142,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 143,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 144,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 145,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 146,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 147,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 148,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 149,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 150,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 151,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 152,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 153,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 154,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 155,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 156,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 157,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 158,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 159,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 160,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 161,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 162,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 163,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 164,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 165,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 166,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 167,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 168,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 169,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 170,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 171,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 172,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 173,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 174,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 175,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 176,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 177,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 178,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 179,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 180,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 181,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 182,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 183,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 184,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 185,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 186,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 187,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 188,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 189,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 190,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 191,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 192,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 193,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 194,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 195,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 196,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 197,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 198,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 199,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 200,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 201,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  }
+ ]
+}

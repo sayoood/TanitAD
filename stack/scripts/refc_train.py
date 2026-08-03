@@ -63,6 +63,7 @@ import refb_labels
 from refb_train import FailLoudWindowDataset, load_cached_episodes
 from tanitad.data.lan import LanConfig, lan_window_features
 from tanitad.config import base250cam_config
+from tanitad.refs import refc_tactical
 from tanitad.refs.refc import (N_ROUTE, RefCModel, param_breakdown, refc_config,
                                LanConfig as RefCLanConfig,
                                refc_small_config, refc_smoke_config,
@@ -78,6 +79,16 @@ LAW_WEIGHT = 0.5
 ROUTE_WEIGHT = 0.1
 MANEUVER_WEIGHT = 0.1
 SPEED_CLS_WEIGHT = 0.2        # refc1 only
+
+# D-TAC1: with --factored-maneuver the ONE 5-way CE becomes TWO. The total
+# tactical aux pressure is held at EXACTLY MANEUVER_WEIGHT so the arm differs
+# from the base run in STRUCTURE, not in loss budget — "the aux got louder" is
+# the first confound anyone would raise, and it is removed by construction here
+# rather than argued about afterwards. The 5-way CE is NOT kept alongside: the
+# 5-way label is a deterministic function of the (lat, lon) pair, so supervising
+# the pair supervises it, and `maneuver_logits` is still emitted (derived).
+LAT_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
+LON_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
 
 TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
@@ -344,7 +355,44 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     # Maneuver CE (kinematic pseudo-labels) + route-heading CE.
     man_tgt = refb_labels.window_maneuver_labels(
         pose_last, fut_poses, horizon=max(cfg.trajectory.horizons))
-    loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
+    lat_extra: dict = {}
+    if cfg.factored_maneuver:
+        # D-TAC1. The SAME endpoint kinematics the 5-way labeler reads, split
+        # onto its two axes — so the arm's labels are a refinement of the base
+        # arm's, never a different label set. The projection back through the
+        # priority collapse is asserted equal to `man_tgt` below (a
+        # component-vs-family self-consistency control: a silent divergence
+        # between the two labelers would train the arm on a different target
+        # and make the A/B non-attributable).
+        lat_tgt, lon_tgt = refc_tactical.window_factored_labels(
+            pose_last, fut_poses, horizon=max(cfg.trajectory.horizons))
+        if not bool((refc_tactical.collapse(lat_tgt, lon_tgt) == man_tgt).all()):
+            raise ValueError(
+                "factored tactical labels do not collapse to the 5-way label — "
+                "refc_tactical and refb_labels have DRIFTED; refusing to train "
+                "on a target that is not the documented one")
+        loss_lat = F.cross_entropy(out["lat_logits"], lat_tgt)
+        loss_lon = F.cross_entropy(out["lon_logits"], lon_tgt)
+        # `loss_man` is multiplied by MANEUVER_WEIGHT in the total below, so the
+        # fractions here make the EFFECTIVE weights exactly LAT_WEIGHT/LON_WEIGHT.
+        loss_man = ((LAT_WEIGHT / MANEUVER_WEIGHT) * loss_lat
+                    + (LON_WEIGHT / MANEUVER_WEIGHT) * loss_lon)
+        if model.training:
+            model.update_tactical_prior(lat_tgt, lon_tgt)
+        lat_extra = {
+            "lat": loss_lat.detach(), "lon": loss_lon.detach(),
+            "lat_acc": (out["lat_logits"].argmax(-1) == lat_tgt).float().mean(),
+            "lon_acc": (out["lon_logits"].argmax(-1) == lon_tgt).float().mean(),
+            # THE metric this whole change exists to move: what fraction of
+            # windows the model DECIDES are longitudinally active. The base arm
+            # scores 7/859 = 0.008 on the 5-way surface (LAN_E0_RESULTS.md).
+            "lon_active_pred": (out["lon_decision"]
+                                != refc_tactical.LON_STEADY).float().mean(),
+            "lon_active_tgt": (lon_tgt
+                               != refc_tactical.LON_STEADY).float().mean(),
+        }
+    else:
+        loss_man = F.cross_entropy(out["maneuver_logits"], man_tgt)
     if "route_valid" in batch:
         # v2.1 labels: mask on the ROUTE validity. route_target is
         # ROUTE_UNKNOWN (=3, out of CE range) wherever invalid — masked out, and
@@ -393,6 +441,14 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "anchor_acc": anchor_acc, "man_acc": man_acc,
             "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
+            **lat_extra,
+            **({"graft_lat_norm": model.decoder.lat_to_anchor(
+                out["lat_logits"].detach().log_softmax(-1)).norm(dim=-1).mean(),
+                "graft_lon_norm": model.decoder.lon_to_anchor(
+                    out["lon_logits"].detach().log_softmax(-1)
+                ).norm(dim=-1).mean(),
+                "conf_norm": out["anchor_logits"].detach().norm(dim=-1).mean()}
+               if cfg.factored_maneuver and cfg.graft_maneuver else {}),
             **({"lan_valid_frac": out["lan_dir"][:, 2].mean()}
                if "lan_dir" in out else {}),
             "pooled": out["pooled"]}
@@ -444,6 +500,17 @@ def train(args) -> dict:
         cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
         cfg.route_dropout = args.route_dropout
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
+    # D-TAC1 (gated BEFORE build — module presence, REF-B convention).
+    cfg.factored_maneuver = bool(args.factored_maneuver)
+    cfg.tactical_speed_input = bool(args.tactical_speed_input)
+    cfg.man_prior_tau = float(args.man_prior_tau)
+    cfg.graft_prior_center = not args.no_graft_prior_center
+    if (args.tactical_speed_input or args.man_prior_tau) \
+            and not args.factored_maneuver:
+        raise SystemExit("--tactical-speed-input / --man-prior-tau require "
+                         "--factored-maneuver (they are the F1/F3 levers of the "
+                         "same seam; the 5-way head's input and decode are "
+                         "frozen so published REF-C numbers stay reproducible)")
     model = RefCModel(cfg).to(device)
     # Install the FPS anchor vocabulary (else the built-in default anchors).
     if args.anchors:
@@ -498,7 +565,10 @@ def train(args) -> dict:
                        "warmup": warmup, "schedule": "cosine (main run's)"},
          "loss_weights": {"traj": TRAJ_WEIGHT, "cls": ANCHOR_CLS_WEIGHT,
                           "law": LAW_WEIGHT, "route": ROUTE_WEIGHT,
-                          "man": MANEUVER_WEIGHT, "speed_cls": SPEED_CLS_WEIGHT},
+                          "man": MANEUVER_WEIGHT, "speed_cls": SPEED_CLS_WEIGHT,
+                          **({"lat": LAT_WEIGHT, "lon": LON_WEIGHT,
+                              "man_total_held_at": MANEUVER_WEIGHT}
+                             if cfg.factored_maneuver else {})},
          # Label provenance — the artifact must describe its own labels.
          "labels": {
              "label_set": args.labels,
@@ -686,6 +756,24 @@ def main(argv=None):
     ap.add_argument("--route-dropout", type=float, default=0.5,
                     help="per-sample Bernoulli mask of the LAN route (train "
                          "only) so the planner never becomes route-DEPENDENT")
+    # --- D-TAC1: the factorised tactical head (three separable levers) -------
+    ap.add_argument("--factored-maneuver", action="store_true",
+                    help="F2 STRUCTURE: replace the mixed 5-way tactical "
+                         "softmax with independent lateral(3) x longitudinal(3) "
+                         "heads + split lat/lon anchor grafts (lon zero-init). "
+                         "maneuver_logits is still emitted, derived exactly.")
+    ap.add_argument("--tactical-speed-input", action="store_true",
+                    help="F1 INPUT: the tactical heads read the ego speed. The "
+                         "5-way head reads the image embedding alone while its "
+                         "own label is dv = v(t+2s) - v(t). Requires "
+                         "--factored-maneuver.")
+    ap.add_argument("--man-prior-tau", type=float, default=0.0,
+                    help="F3 DECISION: logit-adjustment strength for the "
+                         "REPORTED tactical class (1.0 = balanced posterior). "
+                         "0 = today's argmax. Requires --factored-maneuver.")
+    ap.add_argument("--no-graft-prior-center", action="store_true",
+                    help="feed the anchor grafts the raw log-posterior instead "
+                         "of the log-likelihood ratio (ablation).")
     ap.add_argument("--refc1", action="store_true",
                     help="REF-C.1: fixed-distance path checkpoints at "
                          "(2,5,10,20) m + target-speed classification head")

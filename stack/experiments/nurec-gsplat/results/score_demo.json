@@ -1,0 +1,254 @@
+{
+ "tool": "score_demo.py",
+ "evidence_class": "MEASURED",
+ "n_admissible_scenes": 12,
+ "n_scenes_refused_by_selfconsistency_control": 2,
+ "refused": [
+  {
+   "scene": "302c5c99-2762-4f5d-950e-1122f3e7c20a",
+   "worst_abs_err_deg": 98.21
+  },
+  {
+   "scene": "d1a25a99-0f02-4730-a076-96f067e92874",
+   "worst_abs_err_deg": 179.86
+  }
+ ],
+ "arms": {
+  "ORACLE": {
+   "route_choice_accuracy": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_accuracy": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "chance_floor": 0.4611,
+   "chance_floor_note": "mean of 1/n_options. Quoting an accuracy without this is meaningless: a set of 2-option junctions has a 0.50 floor.",
+   "route_choice_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 8
+    },
+    "RIGHT": {
+     "RIGHT": 2
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 5
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 12,
+     "acc": 1.0
+    },
+    "3": {
+     "n": 2,
+     "acc": 1.0
+    },
+    "4": {
+     "n": 1,
+     "acc": 1.0
+    }
+   },
+   "n_events": 15,
+   "n_scenes": 8,
+   "n_events_without_a_prediction": 0,
+   "CLUSTER": "scene (values are per decision EVENT, never per pose)"
+  },
+  "RANDOM": {
+   "route_choice_accuracy": {
+    "mean": 0.6667,
+    "lo": 0.3844,
+    "hi": 0.9002,
+    "ci95": 0.2579,
+    "se": 0.1361,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_accuracy": {
+    "mean": 0.7333,
+    "lo": 0.5,
+    "hi": 0.9444,
+    "ci95": 0.2222,
+    "se": 0.1269,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "chance_floor": 0.4611,
+   "chance_floor_note": "mean of 1/n_options. Quoting an accuracy without this is meaningless: a set of 2-option junctions has a 0.50 floor.",
+   "route_choice_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 6,
+     "UTURN": 2
+    },
+    "RIGHT": {
+     "RIGHT": 2
+    },
+    "STRAIGHT": {
+     "RIGHT": 2,
+     "STRAIGHT": 3
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 12,
+     "acc": 0.75
+    },
+    "3": {
+     "n": 2,
+     "acc": 0.5
+    },
+    "4": {
+     "n": 1,
+     "acc": 0.0
+    }
+   },
+   "n_events": 15,
+   "n_scenes": 8,
+   "n_events_without_a_prediction": 0,
+   "CLUSTER": "scene (values are per decision EVENT, never per pose)"
+  },
+  "ALWAYS_STRAIGHTEST": {
+   "route_choice_accuracy": {
+    "mean": 0.5333,
+    "lo": 0.25,
+    "hi": 0.8125,
+    "ci95": 0.2812,
+    "se": 0.1435,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_accuracy": {
+    "mean": 0.6,
+    "lo": 0.3333,
+    "hi": 0.8667,
+    "ci95": 0.2667,
+    "se": 0.1378,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "chance_floor": 0.4611,
+   "chance_floor_note": "mean of 1/n_options. Quoting an accuracy without this is meaningless: a set of 2-option junctions has a 0.50 floor.",
+   "route_choice_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 3,
+     "STRAIGHT": 3,
+     "RIGHT": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 1,
+     "RIGHT": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 5
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 12,
+     "acc": 0.5
+    },
+    "3": {
+     "n": 2,
+     "acc": 0.5
+    },
+    "4": {
+     "n": 1,
+     "acc": 1.0
+    }
+   },
+   "n_events": 15,
+   "n_scenes": 8,
+   "n_events_without_a_prediction": 0,
+   "CLUSTER": "scene (values are per decision EVENT, never per pose)"
+  },
+  "NO_HEAD": {
+   "route_choice_accuracy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_accuracy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 15,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "chance_floor": 0.4611,
+   "chance_floor_note": "mean of 1/n_options. Quoting an accuracy without this is meaningless: a set of 2-option junctions has a 0.50 floor.",
+   "route_choice_confusion_gt_x_pred": {
+    "LEFT": {
+     "none": 8
+    },
+    "RIGHT": {
+     "none": 2
+    },
+    "STRAIGHT": {
+     "none": 5
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 12,
+     "acc": 0.0
+    },
+    "3": {
+     "n": 2,
+     "acc": 0.0
+    },
+    "4": {
+     "n": 1,
+     "acc": 0.0
+    }
+   },
+   "n_events": 15,
+   "n_scenes": 8,
+   "n_events_without_a_prediction": 15,
+   "CLUSTER": "scene (values are per decision EVENT, never per pose)"
+  }
+ },
+ "DISCRIMINATES": true,
+ "ci_width_random": 0.5158,
+ "power_note": "RANDOM's 95% CI is 0.516 wide on 15 events from 8 scenes. A cluster bootstrap narrows roughly as 1/sqrt(n_scenes), so halving that width needs ~4x the scenes and a +-0.10 verdict needs ~100+ scenes with a scoreable branch. That is exactly what the 141 T1 scenes in nurec_survey_report.json are for -- a shortlist cannot carry a strategic verdict."
+}

@@ -1,0 +1,2159 @@
+{
+ "SELFCONSISTENCY_CONTROL": {
+  "name": "map-branch-class vs realised-heading (component vs family)",
+  "n_events_checked": 2,
+  "n_untruncated": 2,
+  "worst_abs_err_deg_untruncated": 10.52,
+  "tolerance_deg": 35.0,
+  "PASS": true,
+  "note": "truncated traversals are excluded because the realised heading change is only a partial arc when the clip ends mid-junction; they are reported, never scored.",
+  "per_event": [
+   {
+    "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+    "map_branch_dyaw_deg": 98.88,
+    "realised_on_branch_deg": 109.4,
+    "realised_over_junction_span_deg": 114.36,
+    "abs_err_deg": 10.52,
+    "truncated_by_clip_end": false
+   },
+   {
+    "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+    "map_branch_dyaw_deg": 0.04,
+    "realised_on_branch_deg": -0.07,
+    "realised_over_junction_span_deg": -0.21,
+    "abs_err_deg": 0.11,
+    "truncated_by_clip_end": false
+   }
+  ]
+ },
+ "ADMISSIBLE": true,
+ "tool": "strategic_gt.py",
+ "evidence_class": "MEASURED",
+ "clipgt": "/tmp/nurec_dl/0d10d2e3-29ef-40cb-b612-94021d98245c/clipgt",
+ "xodr": "/tmp/nurec_dl/0d10d2e3-29ef-40cb-b612-94021d98245c/map.xodr",
+ "horizon_m": 60.0,
+ "alignment_rms_m": 0.01195,
+ "n_poses": 202,
+ "n_decision_events": 2,
+ "n_SCOREABLE_events": 1,
+ "branching_factor": {
+  "max": 2,
+  "values": [
+   2,
+   1
+  ]
+ },
+ "n_admissible_poses": 62,
+ "admissible_pose_fraction": 0.3069,
+ "route_gt_class_share_over_events": {
+  "LEFT": 1,
+  "STRAIGHT": 1,
+  "RIGHT": 0,
+  "UTURN": 0
+ },
+ "EFFECTIVE_N_FOR_THE_CI": 1,
+ "effective_n_note": "the paired episode-cluster bootstrap must resample DECISION EVENTS, not poses: every pose approaching one junction carries the identical label, so a pose-level n overstates the sample by roughly the approach length in poses. On this scene that is 62 poses vs 1 events.",
+ "events": [
+  {
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "junction_id": "115",
+   "entry_pose": 62,
+   "exit_pose": 136,
+   "entry_arc_m": 10.41,
+   "incoming_road": "13",
+   "incoming_lane": -1,
+   "entry_road": "13",
+   "exit_road": "11",
+   "connecting_road_taken": "12",
+   "resolved_by": "exit+entry-link",
+   "coverage_of_taken_road_by_ego_path": 1.0,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "route_gt_branch_dyaw_deg": 98.88,
+   "n_options": 2,
+   "options": [
+    {
+     "road": "12",
+     "lane": -1,
+     "class": 0,
+     "class_name": "LEFT",
+     "branch_dyaw_deg": 98.88
+    },
+    {
+     "road": "14",
+     "lane": -1,
+     "class": 0,
+     "class_name": "LEFT",
+     "branch_dyaw_deg": 97.77
+    }
+   ],
+   "option_classes": [
+    "LEFT"
+   ],
+   "realised_heading_change_over_junction_span_deg": 114.36,
+   "realised_heading_change_on_branch_deg": 109.4,
+   "SCOREABLE": true,
+   "selfconsistency_abs_err_deg": 10.52,
+   "selfconsistency_truncated": false
+  },
+  {
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "junction_id": "114",
+   "entry_pose": 161,
+   "exit_pose": 165,
+   "entry_arc_m": 50.45,
+   "incoming_road": "11",
+   "incoming_lane": -1,
+   "entry_road": "11",
+   "exit_road": "10",
+   "connecting_road_taken": "107",
+   "resolved_by": "exit+entry-link",
+   "coverage_of_taken_road_by_ego_path": 1.0,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "route_gt_branch_dyaw_deg": 0.04,
+   "n_options": 1,
+   "options": [
+    {
+     "road": "107",
+     "lane": -1,
+     "class": 1,
+     "class_name": "STRAIGHT",
+     "branch_dyaw_deg": 0.04
+    }
+   ],
+   "option_classes": [
+    "STRAIGHT"
+   ],
+   "realised_heading_change_over_junction_span_deg": -0.21,
+   "realised_heading_change_on_branch_deg": -0.07,
+   "SCOREABLE": false,
+   "selfconsistency_abs_err_deg": 0.11,
+   "selfconsistency_truncated": false
+  }
+ ],
+ "per_pose": [
+  {
+   "pose": 0,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 1,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 2,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 3,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 4,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 5,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 6,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 7,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 8,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 9,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 10,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 11,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.4,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 12,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.39,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 13,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.39,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 14,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.37,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 15,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.36,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 16,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.34,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 17,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.31,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 18,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.28,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 19,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.25,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 20,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.2,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 21,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.15,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 22,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.09,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 23,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 10.01,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 24,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.93,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 25,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.83,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 26,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.72,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 27,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.59,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 28,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.46,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 29,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.3,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 30,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 9.14,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 31,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 8.96,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 32,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 8.77,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 33,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 8.57,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 34,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 8.36,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 35,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 8.14,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 36,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 7.9,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 37,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 7.66,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 38,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 7.39,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 39,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 7.12,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 40,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 6.84,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 41,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 6.55,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 42,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 6.24,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 43,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 5.94,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 44,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 5.63,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 45,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 5.33,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 46,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 5.02,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 47,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 4.72,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 48,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 4.41,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 49,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 4.1,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 50,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 3.8,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 51,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 3.49,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 52,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 3.18,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 53,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 2.87,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 54,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 2.56,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 55,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 2.25,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 56,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 1.93,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 57,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 1.61,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 58,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 1.29,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 59,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 0.96,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 60,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 0.64,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 61,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": 0.32,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 62,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J115|62",
+   "dist_to_decision_point_m": -0.0,
+   "n_options": 2,
+   "route_gt_class": 0,
+   "route_gt_name": "LEFT",
+   "admissible": false,
+   "reason": "decision point -0.0 m away, outside the 60 m horizon"
+  },
+  {
+   "pose": 63,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 39.71,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 64,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 39.4,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 65,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 39.09,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 66,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 38.78,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 67,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 38.49,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 68,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 38.2,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 69,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 37.91,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 70,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 37.63,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 71,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 37.36,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 72,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 37.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 73,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 36.84,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 74,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 36.59,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 75,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 36.34,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 76,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 36.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 77,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 35.86,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 78,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 35.62,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 79,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 35.38,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 80,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 35.15,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 81,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 34.92,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 82,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 34.69,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 83,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 34.46,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 84,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 34.23,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 85,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 34.0,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 86,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 33.77,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 87,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 33.55,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 88,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 33.32,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 89,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 33.09,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 90,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 32.86,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 91,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 32.63,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 92,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 32.4,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 93,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 32.16,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 94,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 31.92,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 95,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 31.66,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 96,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 31.4,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 97,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 31.13,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 98,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 30.84,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 99,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 30.55,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 100,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 30.26,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 101,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 29.95,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 102,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 29.63,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 103,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 29.31,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 104,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 28.99,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 105,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 28.66,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 106,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 28.33,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 107,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 28.0,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 108,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 27.66,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 109,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 27.31,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 110,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 26.96,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 111,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 26.61,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 112,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 26.25,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 113,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 25.88,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 114,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 25.5,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 115,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 25.12,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 116,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 24.73,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 117,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 24.33,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 118,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 23.93,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 119,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 23.52,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 120,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 23.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 121,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 22.68,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 122,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 22.26,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 123,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 21.82,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 124,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 21.38,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 125,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 20.93,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 126,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 20.48,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 127,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 20.03,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 128,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 19.57,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 129,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 19.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 130,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 18.62,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 131,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 18.13,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 132,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 17.64,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 133,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 17.14,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 134,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 16.64,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 135,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 16.12,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 136,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 15.6,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 137,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 15.07,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 138,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 14.53,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 139,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 13.99,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 140,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 13.43,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 141,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 12.87,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 142,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 12.3,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 143,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 11.72,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 144,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 11.14,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 145,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 10.54,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 146,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 9.93,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 147,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 9.32,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 148,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 8.69,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 149,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 8.06,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 150,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 7.42,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 151,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 6.78,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 152,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 6.13,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 153,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 5.48,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 154,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 4.81,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 155,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 4.14,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 156,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 3.47,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 157,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 2.79,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 158,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 2.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 159,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 1.41,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 160,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 0.71,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 161,
+   "has_decision_ahead": true,
+   "event_id": "0d10d2e3-29ef-40cb-b612-94021d98245c|J114|161",
+   "dist_to_decision_point_m": 0.0,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 162,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 163,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 164,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 165,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 166,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 167,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 168,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 169,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 170,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 171,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 172,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 173,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 174,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 175,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 176,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 177,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 178,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 179,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 180,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 181,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 182,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 183,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 184,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 185,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 186,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 187,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 188,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 189,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 190,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 191,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 192,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 193,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 194,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 195,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 196,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 197,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 198,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 199,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 200,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 201,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  }
+ ]
+}

@@ -35,6 +35,17 @@ Graft seams (gated, zero-init / identity starts — byte-identical when off):
     learned maneuver->anchor projection (LIVE from step 0 — the H19 coupling is
     the point; the zero-init discipline applies to the ctx / target-latent
     seams).
+  - ``factored_maneuver`` (default False, D-TAC1): REPLACES the single 5-way
+    tactical softmax with INDEPENDENT lateral (3) and longitudinal (3) heads,
+    and splits the H19 graft into ``lat_to_anchor`` (default init, inherits
+    today's role) + ``lon_to_anchor`` (ZERO-init, so the longitudinal prior's
+    effect on selection is attributable from step 0). ``maneuver_logits`` [B, 5]
+    is still emitted — derived exactly from the two heads through the priority
+    collapse (``refc_tactical.derive_man5_logprobs``) — so every downstream
+    reader keeps working. Companions: ``tactical_speed_input`` (the heads read
+    the ego speed, which the 5-way head never did) and ``man_prior_tau``
+    (prior-corrected decode). MEASURED motivation and the algebra: see
+    ``tanitad/refs/refc_tactical.py``.
   - ``graft_target_latent`` (default False): a tactical GOAL latent [B, S] FiLMs
     (zero-init -> identity) the decoder condition. Off by default because it has
     no standalone supervision (it only activates when a real tactical brain
@@ -83,11 +94,14 @@ feature (state_dict keys pinned by tests/test_refc.py).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+
+from tanitad.refs import refc_tactical as tac
 
 # Strategic vocabulary — order pinned against scripts/refb_labels.py indices
 # by tests/test_refc.py (same 4-wide interface as tanitad.refs.refb).
@@ -98,6 +112,11 @@ NAV_COMMANDS = ("follow", "left", "right", "straight")
 # the trainer supplies the kinematic pseudo-label target (refc.py must not import
 # from scripts/, so the count is pinned here and cross-checked by the tests).
 N_MANEUVERS = 5
+# Factorised tactical widths (D-TAC1). Sourced from the vocabulary module, never
+# from a literal, so the head can never be sized apart from the collapse table
+# it is projected through.
+N_LAT_MAN = tac.N_LAT              # lane_keep / turn_left / turn_right
+N_LON_MAN = tac.N_LON              # brake_stop / steady / accelerate
 N_ROUTE = 3                        # route-heading aux (left / straight / right)
 # LAN per-anchor feature width. Pinned here (refc.py stays import-light, the
 # same rule as N_MANEUVERS) and cross-checked against tanitad.data.lan by
@@ -325,6 +344,28 @@ class RefCConfig:
     route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
     hierarchy: bool = True        # strategic ctx -> decoder condition (graft)
     graft_maneuver: bool = True   # maneuver logits reweight anchor priors (H19)
+    # --- D-TAC1: the factorised tactical head (three INDEPENDENT ablations) ---
+    factored_maneuver: bool = False   # F2 STRUCTURE: lat(3) x lon(3) heads +
+    #                                   split lat/lon anchor grafts, replacing
+    #                                   the mixed 5-way softmax. Off => the
+    #                                   model is byte-identical to today.
+    tactical_speed_input: bool = False  # F1 INPUT: the tactical head(s) read the
+    #                                   ego speed alongside the image embedding.
+    #                                   Deliberately the SPEED CHANNEL ONLY, not
+    #                                   the full measurement: `nav_cmd` is a
+    #                                   CONSTANT at eval (nav_cmd=None -> follow)
+    #                                   so feeding it here would train the head
+    #                                   on a signal that vanishes at eval — the
+    #                                   C6 confound. Requires factored_maneuver.
+    man_prior_tau: float = 0.0        # F3 DECISION: logit-adjustment strength
+    #                                   for the REPORTED class. 0.0 = argmax of
+    #                                   the raw posterior (today's behaviour).
+    graft_prior_center: bool = True   # feed the anchor grafts the log-likelihood
+    #                                   RATIO rather than the raw log-posterior
+    #                                   (conditioning, not expressivity — see
+    #                                   refc_tactical.prior_centered_logprobs).
+    tactical_prior_momentum: float = 0.99   # EMA on the label class priors the
+    #                                   trainer feeds to update_tactical_prior()
     graft_target_latent: bool = False   # FiLM the condition on a goal latent
     grounded_selector: bool = False     # progress/collision proxy vs top-1 conf
     graft_imagination: bool = False     # H15 belief field over conv-map tokens
@@ -386,6 +427,31 @@ def refc_xl_config() -> RefCConfig:
     cfg.imagination = ImaginationConfig(d=512, depth=6, n_heads=8, ff_mult=4,
                                         head_hidden=1024)
     cfg.graft_imagination = True
+    return cfg
+
+
+def refc_factored_config() -> RefCConfig:
+    """REF-C-base with the D-TAC1 factorised tactical head — the pre-registered
+    arm (``Project Steering/PREREG_D-TAC1_FACTORED_TACTICAL_HEAD.md``).
+
+    IDENTICAL to :func:`refc_config` except for the tactical seam, so the A/B is
+    attributable to STRUCTURE and INPUT, not to capacity: the delta is two
+    ``Linear(aux_hidden, 3)`` readouts off a SHARED trunk in place of one
+    ``Linear(aux_hidden, 5)``, two ``Linear(3, n_anchors)`` grafts in place of
+    one ``Linear(5, n_anchors)``, and one extra input scalar.
+    **MEASURED** by ``param_breakdown`` (tests/test_refc_tactical.py):
+    104,191,577 -> 104,192,474, i.e. **+897 parameters (+0.00086 %)**. The
+    earlier spec's "~5 k" was an ESTIMATE and the first implementation here cost
+    +272,001 because it built two full MLPs — the test is what caught both.
+
+    All three levers ON together, because the pre-registered probes decide which
+    are load-bearing BEFORE any GPU-day is spent; the single-lever ablations are
+    the same function with one field flipped back.
+    """
+    cfg = refc_config()
+    cfg.factored_maneuver = True     # F2 structure
+    cfg.tactical_speed_input = True  # F1 input
+    cfg.man_prior_tau = 1.0          # F3 decision rule (balanced-posterior)
     return cfg
 
 
@@ -545,7 +611,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                  hierarchy: bool, graft_maneuver: bool,
                  graft_target_latent: bool, grounded_selector: bool,
                  n_maneuvers: int = N_MANEUVERS,
-                 graft_lan: bool = False, d_lan: int = 0):
+                 graft_lan: bool = False, d_lan: int = 0,
+                 factored_maneuver: bool = False):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
@@ -570,8 +637,30 @@ class AnchoredDiffusionDecoder(nn.Module):
             nn.init.zeros_(self.ctx_to_cond.bias)
         # Graft (H19): maneuver logits reweight anchor priors. LIVE from step 0
         # (default Linear init) — the coupling is the point of the seam.
+        #
+        # D-TAC1: with ``factored_maneuver`` the ONE rank-5 graft becomes TWO
+        # additive rank-3 grafts. Why two summed terms and not one Linear over
+        # the concatenation: (i) the anchor vocabulary is 2-D — every anchor is a
+        # trajectory with BOTH a lateral shape and a speed profile, and a
+        # lateral-dominated prior can only ever re-rank the lateral axis, so
+        # ``lon_to_anchor`` is the surface on which "we are stopping" can
+        # suppress every anchor that keeps rolling; (ii) two separable terms are
+        # ABLATABLE — ``lon_to_anchor`` can be zeroed and the delta measured,
+        # which the single concatenated graft never allowed. ``lon_to_anchor``
+        # is ZERO-INIT (the ctx_to_cond discipline) so the selection path starts
+        # with exactly today's lateral-only prior and every subsequent change is
+        # attributable to the longitudinal seam; ``lat_to_anchor`` keeps the
+        # default init because it inherits the LIVE H19 role.
         self.maneuver_to_anchor: nn.Linear | None = None
-        if graft_maneuver:
+        self.lat_to_anchor: nn.Linear | None = None
+        self.lon_to_anchor: nn.Linear | None = None
+        if graft_maneuver and factored_maneuver:
+            self.lat_to_anchor = nn.Linear(N_LAT_MAN, anchors.shape[0],
+                                           bias=False)
+            self.lon_to_anchor = nn.Linear(N_LON_MAN, anchors.shape[0],
+                                           bias=False)
+            nn.init.zeros_(self.lon_to_anchor.weight)
+        elif graft_maneuver:
             self.maneuver_to_anchor = nn.Linear(n_maneuvers, anchors.shape[0],
                                                 bias=False)
         # Graft: FiLM the condition on a tactical goal latent (zero-init).
@@ -649,7 +738,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None,
                 steps: int = 0, lan_emb: Tensor | None = None,
-                lan_dir: Tensor | None = None) -> dict:
+                lan_dir: Tensor | None = None,
+                lat_prior: Tensor | None = None,
+                lon_prior: Tensor | None = None) -> dict:
         b = fmap.shape[0]
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
@@ -670,6 +761,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
             conf = conf + self.maneuver_to_anchor(
                 torch.log_softmax(maneuver_logits, dim=-1))
+        # D-TAC1: the factorised pair, summed. ``lat_prior`` / ``lon_prior`` are
+        # already log-probabilities (optionally prior-centered) prepared by the
+        # model, so the decoder keeps no policy of its own.
+        if self.lat_to_anchor is not None and lat_prior is not None:
+            conf = conf + self.lat_to_anchor(lat_prior)
+        if self.lon_to_anchor is not None and lon_prior is not None:
+            conf = conf + self.lon_to_anchor(lon_prior)
 
         # LAN: the route reweights the SAME anchor priors, geometrically.
         if self.lan_gate is not None and lan_dir is not None:
@@ -806,7 +904,8 @@ class RefCModel(nn.Module):
             hierarchy=cfg.hierarchy, graft_maneuver=cfg.graft_maneuver,
             graft_target_latent=cfg.graft_target_latent,
             grounded_selector=cfg.grounded_selector,
-            graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out)
+            graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out,
+            factored_maneuver=cfg.factored_maneuver)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -819,11 +918,53 @@ class RefCModel(nn.Module):
         if cfg.graft_imagination:
             self.imagination = ImaginationField(feat, cfg.encoder.grid_shape,
                                                 cfg.imagination)
-        # Aux heads (always present): the maneuver head feeds BOTH the maneuver
-        # CE and the H19 anchor reweight; the route head is the strategic aux.
-        self.maneuver_head = nn.Sequential(
-            nn.Linear(feat, cfg.decoder.aux_hidden), nn.ReLU(inplace=True),
-            nn.Linear(cfg.decoder.aux_hidden, N_MANEUVERS))
+        # Aux heads: the tactical head feeds BOTH the tactical CE and the H19
+        # anchor reweight; the route head is the strategic aux.
+        #
+        # D-TAC1 (gated): ``factored_maneuver`` REPLACES the mixed 5-way head
+        # with two independent ones. The 5-way output survives as an exact
+        # derivation (refc_tactical.derive_man5_logprobs), so nothing downstream
+        # loses a field, and the priority collapse stops destroying the
+        # longitudinal decision INSIDE the model.
+        #
+        # ``tactical_speed_input`` widens the head input by the ego-speed
+        # channel. The 5-way head reads ``pooled`` — the IMAGE embedding alone —
+        # while its own label is dv = v(t+2s) - v(t): it is asked a question
+        # about speed while blind to speed. The refc1 target-speed head already
+        # concatenates the measurement (see ``speed_cls`` below), so this is a
+        # pattern the file already uses; only the SPEED channel is taken, never
+        # the nav one-hot (constant at eval -> the C6 confound).
+        if cfg.tactical_speed_input and not cfg.factored_maneuver:
+            raise ValueError("tactical_speed_input requires factored_maneuver "
+                             "(the 5-way head's input is frozen so every "
+                             "published REF-C number stays reproducible)")
+        d_tac = feat + (1 if cfg.tactical_speed_input else 0)
+        if cfg.factored_maneuver:
+            # ONE shared trunk, TWO linear readouts — deliberately, and measured:
+            # two independent MLPs cost +272,001 params (+0.261 % of REF-C-base)
+            # and would let anyone attribute an A/B win to capacity. Sharing the
+            # trunk makes the change a PURE READOUT change — same features, two
+            # heads — for +897 params (+0.00086 %). Pinned by
+            # tests/test_refc_tactical.py, which is what caught the original
+            # two-MLP version and the spec's "~5 k parameters" estimate.
+            self.tactical_trunk = nn.Sequential(
+                nn.Linear(d_tac, cfg.decoder.aux_hidden), nn.ReLU(inplace=True))
+            self.lat_head = nn.Linear(cfg.decoder.aux_hidden, N_LAT_MAN)
+            self.lon_head = nn.Linear(cfg.decoder.aux_hidden, N_LON_MAN)
+            # Class log-priors travel with the checkpoint. UNIFORM at init on
+            # purpose: logit adjustment by a uniform prior is exactly the
+            # identity, so a run that never calls update_tactical_prior() can
+            # never silently alter a decode.
+            self.register_buffer("lat_log_prior",
+                                 torch.full((N_LAT_MAN,),
+                                            -math.log(N_LAT_MAN)))
+            self.register_buffer("lon_log_prior",
+                                 torch.full((N_LON_MAN,),
+                                            -math.log(N_LON_MAN)))
+        else:
+            self.maneuver_head = nn.Sequential(
+                nn.Linear(feat, cfg.decoder.aux_hidden), nn.ReLU(inplace=True),
+                nn.Linear(cfg.decoder.aux_hidden, N_MANEUVERS))
         self.route_head = nn.Linear(feat, N_ROUTE)
         # LAW aux (KEEP): decoded trajectory enters NON-detached — gradients flow.
         self.law_head = nn.Sequential(
@@ -846,6 +987,28 @@ class RefCModel(nn.Module):
         half = self.cfg.speed_max / (2 * self.cfg.speed_bins)
         return torch.linspace(half, self.cfg.speed_max - half,
                               self.cfg.speed_bins, device=device, dtype=dtype)
+
+    # --- D-TAC1 tactical class prior ----------------------------------------
+    @torch.no_grad()
+    def update_tactical_prior(self, lat_idx: Tensor, lon_idx: Tensor,
+                              momentum: float | None = None) -> None:
+        """EMA the empirical class log-priors from a batch of LABELS.
+
+        Called by the trainer, NOT by ``forward``: a buffer that mutates inside
+        a forward pass would drift at eval and silently change a published
+        decode. Uniform at init, so a run that never calls this leaves
+        :func:`refc_tactical.logit_adjust` an exact identity at any ``tau``.
+        """
+        if not self.cfg.factored_maneuver:
+            raise ValueError("update_tactical_prior needs factored_maneuver")
+        mom = self.cfg.tactical_prior_momentum if momentum is None else momentum
+        for buf, idx, n in ((self.lat_log_prior, lat_idx, N_LAT_MAN),
+                            (self.lon_log_prior, lon_idx, N_LON_MAN)):
+            batch = tac.class_log_prior(idx, n).to(buf.device, buf.dtype)
+            # EMA in PROBABILITY space (an EMA of log-probs does not stay
+            # normalised), then re-log.
+            p = mom * buf.exp() + (1.0 - mom) * batch.exp()
+            buf.copy_((p / p.sum().clamp_min(1e-12)).clamp_min(1e-6).log())
 
     # ------------------------------------------------------------------------
     @staticmethod
@@ -891,7 +1054,10 @@ class RefCModel(nn.Module):
         offset [B, N, n_steps, 2], sel_idx [B], maneuver_logits [B, 5],
         route_logits [B, 3], law_pred [B, F], measurement [B, d_m] (+ hierarchy:
         ctx [B, d_ctx]) (+ graft_imagination: imag_logvar [B, g*g]) (+ refc1:
-        speed_logits, target_speed).
+        speed_logits, target_speed) (+ factored_maneuver: lat_logits [B, 3],
+        lon_logits [B, 3], lat_decision / lon_decision / maneuver_decision [B];
+        ``maneuver_logits`` is then the EXACT derived 5-way LOG-PROB vector, so
+        every existing reader keeps its field and its semantics).
         """
         b, w = frames.shape[:2]
         if self.cfg.hierarchy:
@@ -922,9 +1088,41 @@ class RefCModel(nn.Module):
         m = self.measurement(torch.cat([v, nav], dim=-1))
 
         # Aux heads (image branch): maneuver logits also drive the H19 reweight.
-        man_logits = self.maneuver_head(pooled)
         route_logits = self.route_head(pooled)
+        lat_logits = lon_logits = lat_prior = lon_prior = None
+        if self.cfg.factored_maneuver:
+            # D-TAC1. ``v`` is the SHARED, already-ego-dropped speed channel:
+            # one dropout draw per sample across the whole model, so the
+            # tactical head introduces no new stochastic surface and cannot be
+            # accused of weakening the documented ego-dropout guard. (If the
+            # probe shows speed is the binding constraint, ``ego_dropout`` is
+            # the knob to sweep — not a second, unsynchronised dropout here.)
+            tac_in = torch.cat([pooled, v], dim=-1) \
+                if self.cfg.tactical_speed_input else pooled
+            h_tac = self.tactical_trunk(tac_in)
+            lat_logits = self.lat_head(h_tac)
+            lon_logits = self.lon_head(h_tac)
+            man_logits = tac.derive_man5_logprobs(lat_logits, lon_logits)
+            if self.cfg.graft_prior_center:
+                lat_prior = tac.prior_centered_logprobs(lat_logits,
+                                                        self.lat_log_prior)
+                lon_prior = tac.prior_centered_logprobs(lon_logits,
+                                                        self.lon_log_prior)
+            else:
+                lat_prior = torch.log_softmax(lat_logits, dim=-1)
+                lon_prior = torch.log_softmax(lon_logits, dim=-1)
+        else:
+            man_logits = self.maneuver_head(pooled)
         reweight = maneuver_logits if maneuver_logits is not None else man_logits
+        if maneuver_logits is not None and self.cfg.factored_maneuver:
+            # An EXTERNAL tactical brain speaks the 5-way surface. Factorise its
+            # posterior through the exact inverse collapse rather than dropping
+            # it on the floor — a silently-ignored external prior is exactly the
+            # class of bug this seam exists to remove.
+            log_lat, log_lon = tac.invert_man5(maneuver_logits)
+            lat_prior, lon_prior = (
+                (log_lat - self.lat_log_prior, log_lon - self.lon_log_prior)
+                if self.cfg.graft_prior_center else (log_lat, log_lon))
 
         # LAN (gated): encode the route corridor, with per-sample route dropout
         # in training so the planner can never become route-DEPENDENT — a model
@@ -942,7 +1140,8 @@ class RefCModel(nn.Module):
 
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
-                           lan_emb=lan_emb, lan_dir=lan_dir)
+                           lan_emb=lan_emb, lan_dir=lan_dir,
+                           lat_prior=lat_prior, lon_prior=lon_prior)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -958,6 +1157,23 @@ class RefCModel(nn.Module):
                "measurement": m}
         if ctx is not None:
             out["ctx"] = ctx
+        if lat_logits is not None:
+            # D-TAC1. Raw logits (what the CE trains) AND the prior-corrected
+            # DECISION (what a report/HUD/closed-loop logger should read) are
+            # both emitted, never conflated: an argmax over the raw posterior is
+            # the estimate of "most likely class"; the adjusted argmax is the
+            # estimate of "most surprising given the base rate", and only the
+            # second can emit a 12 %-prior class at all. ``man_prior_tau = 0``
+            # makes them identical, which is the default.
+            out["lat_logits"] = lat_logits
+            out["lon_logits"] = lon_logits
+            tau = float(self.cfg.man_prior_tau)
+            out["lat_decision"] = tac.logit_adjust(
+                lat_logits, self.lat_log_prior, tau).argmax(dim=-1)
+            out["lon_decision"] = tac.logit_adjust(
+                lon_logits, self.lon_log_prior, tau).argmax(dim=-1)
+            out["maneuver_decision"] = tac.collapse(out["lat_decision"],
+                                                    out["lon_decision"])
         if lan_dir is not None:
             out["lan_dir"] = lan_dir                 # route bearing actually used
         if imag_logvar is not None:
@@ -989,7 +1205,9 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "imagination": cnt(model.imagination) if model.cfg.graft_imagination
         else 0,
         "lan": cnt(model.lan_enc) if model.cfg.graft_lan else 0,
-        "aux": cnt(model.maneuver_head) + cnt(model.route_head),
+        "aux": (cnt(model.tactical_trunk) + cnt(model.lat_head)
+                + cnt(model.lon_head) if model.cfg.factored_maneuver
+                else cnt(model.maneuver_head)) + cnt(model.route_head),
         "law": cnt(model.law_head),
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,
         "total": cnt(model),

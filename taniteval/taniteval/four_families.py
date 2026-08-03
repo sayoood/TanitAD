@@ -190,6 +190,12 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
         "along_final_bias_m": round(float(al_err[:, -1].mean()), 4),
         # --- acceleration profile ---
         "accel_mae_mps2": round(float(ac_err.abs().mean()), 4),
+        # --- EGO PROGRESS: along-track distance covered / the human's (2026-08-03, Stream E) ---
+        # ⭐ PUBLISHED (arXiv 2605.00066): Ego Progress ALONE is the strongest single predictor of
+        # closed-loop Driving Score (rho = 0.83) while traditional L2 gives rho = -0.36, p = 0.43,
+        # NOT significant — on n = 8 with no CI, so the DIRECTION only. dt-invariant, so it is
+        # immune to the sparse-grid defect that inflated every published speed_* by 5x.
+        "ego_progress": _ego_progress(pred, gt),
         # --- the grid these rates were computed on. NEVER quote a rate without it. ---
         "dt_s": dt,
         "rate_scaling_note": ("speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are "
@@ -198,6 +204,19 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
         "distance_keeping": _distance_keeping(pred, dt, lead),
         "n_windows": int(pred.shape[0]),
     }
+
+
+def _ego_progress(pred: torch.Tensor, gt: torch.Tensor) -> dict:
+    """``progress.progress`` over the arm's own waypoints — the LONGITUDINAL scalar the
+    closed-loop literature says carries the signal.
+
+    Kept in its own numpy-pure module (:mod:`taniteval.progress`) rather than inlined, because the
+    CONVENTION is the substance: projecting on the human's own direction makes GT score exactly
+    1.0, while pseudosim's published t0-axis reading charges the human for its own curvature. That
+    module documents both and reports the size of the difference.
+    """
+    from taniteval.progress import progress as _progress
+    return _progress(pred.detach().cpu().numpy(), gt.detach().cpu().numpy())
 
 
 def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:

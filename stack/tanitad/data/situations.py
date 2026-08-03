@@ -16,10 +16,31 @@ WHAT THE MEASURED STUDY FOUND (so nobody re-derives it):
                AUROC 0.703 · median anticipation lead 1.4 s · verdict A−
   intersection 264 clusters · ΔAP +0.04894 [+0.03735, +0.06277], AUROC 0.769 · lead 2.0 s · A−
   roundabout    26 clusters · UNPOWERED — which is why the PI deferred it
-⛔ **VISION ADDS NOTHING OVER EGO STATE**: head_ego CV-AP 0.0697 beats every image-containing
-arm (img+ego 0.0525, img-only 0.0376; shuffled control 0.0166; privileged ceiling 0.1838). A
-sensor-request policy conditioned on FRONT-CAMERA situation classification has no measured signal
-to stand on. The situations are predictable — from ego dynamics.
+⛔ **RETRACTED 2026-08-03 — "VISION ADDS NOTHING OVER EGO STATE" was the wrong test.**
+The retired claim read the ego arm against the image arms (head_ego CV-AP 0.0697 vs img+ego 0.0525,
+img-only 0.0376) and concluded the front camera "has no measured signal to stand on". Two defects:
+  (a) the img+ego arm was produced by the SCALE-MISMATCH early concat at `sc_train.py:143` — a
+      16-dim PCA image block normalised by its own mean-abs against a 3-dim ego block on a hand-set
+      `EGO_SCALE`, one shared Linear. A broken fusion is not evidence about vision.
+  (b) **ego is not a legal inference input.** PI ruling 2026-08-03: *"for ground truth data of
+      scenario classification you can use both ego and other label, for inference only vision."*
+      So "is vision better than ego" cannot decide anything deployable — the deployable question is
+      whether vision beats CHANCE, and that comparison was never run.
+✅ **The right test — vision against its OWN null — SEPARATES.** MEASURED on the banked held-out
+bundle, paired episode-cluster bootstrap B=2000 over 1,610 clip clusters
+(`…/incoming/2026-08-03-sitclf-fusion-wired/results_sitclf_vision_only.json`): on `lane_change`,
+`head_img` AP 0.03741 vs its permuted-feature null `head_img_shuf` 0.01715 —
+ΔAP-lift **+1.1749 [+0.7930, +1.6890]**, i.e. the front camera carries **2.18x its own null**.
+⚠️ **LABEL PROVENANCE — why the old comparison was structurally unfair (2 probes).** Every situation
+label is a pure deterministic function of the ego pose track [x, y, yaw, v]:
+`scripts/emit_situation_labels.py:54-62` reads only `d["poses"]`, and every detector below
+(`:161`, `:210`, `:244`, `:284`) takes only `K = kinematics(P)` — the emitter passes `cross=None`, so
+even `intersection` is the turn half alone. An ego-input head therefore observes the label's
+GENERATING PROCESS directly, while the camera must infer it from pixels.
+   It is **NOT** a future-information leak: the head's window is [t-0.7 s, t] (`sc_train.py:37`,
+   offsets -7..0) and the label's evidence window is [onset, onset+4 s] with onset > t — disjoint.
+   But `omega_pre`/`alon_pre` are built on `np.gradient`, a CENTRED difference, so they do read
+   **one frame (0.1 s) past t**; a small boundary leak that bites only for onsets at exactly t+1.
 
 The THREE SITUATION DETECTORS — lane change / roundabout / intersection.
 

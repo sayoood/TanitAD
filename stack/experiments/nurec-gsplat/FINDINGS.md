@@ -1,3 +1,10 @@
+> **See also `STRATEGIC_FAMILY.md`** (2026-08-03) — the map/junction half of this scene, and the
+> survey of all 1607 NuRec scenes for a junction traversal with an actual branch. Headline: the
+> night clip is **inside a junction for 46 of its 202 poses**, so "no junction" was FALSE — but
+> every traversal has exactly **one** admissible continuation, so "no junction-scale decision" was
+> TRUE. **141 of 1607 scenes** contain a real junction turn; the recommended one is downloaded to
+> Thor.
+
 # ⭐ CRACKED: NuRec scenes render on the Jetson Thor with gsplat
 
 **MEASURED 2026-08-02, Thor (aarch64 Blackwell `sm_110`).** The one open unknown blocking

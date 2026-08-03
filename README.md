@@ -70,6 +70,23 @@ they reduce to the family mean printed beside them** — that control caught a *
 inflation in an agent's own reducer that would have published a lateral separation that does not
 exist.
 
+### 5. Labels may use ego; **inference is VISION-ONLY**
+
+Binding since 2026-08-03 (PI, verbatim: *"for ground truth data of scenario classification you can
+use both ego and other label, for inference only vision"*).
+
+| stage | what may be used |
+|---|---|
+| **Ground truth / label derivation** | ego state, other agents, maps, future poses — anything. Labels are built offline; privileged signals are **fine** here. |
+| **Inference** | ⛔ **VISION ONLY.** No ego state, no privileged channel. |
+
+⇒ For the scenario classifier the deployable arm is **`head_img` (image-only)** — not `head_img_ego`,
+not `head_ego`. ⭐ **Generalised beyond that case: for ANY head, ask whether its inference inputs
+include something the label was DERIVED FROM.** If they do, the score measures **leak magnitude**,
+not capability. Same family as the C6 confound and the REF-A I-JEPA leak (~80 % of val inside train).
+**Guardrail: "vision scores worse" is NEVER a reason to reopen ego at inference** — if the
+vision-only arm is weak, the finding is *how much, why, and what would fix it*.
+
 ---
 
 ## The result that made the four-family rule binding
@@ -106,8 +123,13 @@ different scene** — so the doctrine is not an artifact of one harness.
 
 1. **The arms fail longitudinally in OPPOSITE directions** — flagship `target_speed_err_ms`
    **−2.0412 m/s** (too slow), REF-C **+1.3307 m/s** (too fast). **A pooled score cancels this.**
-2. **The flagship does not execute what it selects** — `manoeuvre_exec_eq_plan` **0.4481** vs
-   REF-C's **0.8741**.
+2. **The flagship does not execute what it selects** — `manoeuvre_exec_eq_plan` **0.4481**, a genuine
+   5-class agreement rate (its executed classes span lane_keep 83 / turn_right 30 / accelerate 33 /
+   brake_stop 124 of 270). ⛔ **Do NOT read REF-C's 0.8741 as "REF-C executes what it selects".**
+   REF-C's executed class is `lane_keep` on **270/270** windows, so the metric collapses to *"how
+   often was the plan lane_keep"* = 236/270 = **0.8741 exactly**. It is a **constant predictor tie**
+   — the same degeneracy as defect 3, not a competence. **The two numbers are not comparable**;
+   `manoeuvre_exec_eq_plan` cannot discriminate on an arm whose execution is single-class.
 3. 🔴 **REF-C's 5-way manoeuvre head NEVER emits a longitudinal class.** Closed-loop
    `head_class_share` = lane_keep 0.627 / turn_right 0.373 / **accelerate 0 / brake_stop 0**, while
    **41.9 %** of logged windows are `brake_stop`. **This is the programme's top defect** — the
@@ -218,7 +240,7 @@ a known class. These are the entries most likely to be re-quoted from an old sum
 | **PSNR / plain NCC on the NuRec night clip** — *"render validated at PSNR 16.758 dB"* | ⛔ A **WRONG** reference frame beats the correct one on both (PSNR 17.457 > 16.758; NCC 0.782 > 0.704) — every frame is a dark night street, so ~17 dB measures "both images are dark". ✅ **grad-NCC discriminates** (argmax = frame 0). The mapping is validated by **STRUCTURE, not photometry**. On the corrected `wxyz` quaternion layout: grad-NCC **0.3802** vs best wrong **0.2110**, margin **+0.1692**. | quoted a metric before checking it could discriminate |
 | **The ISP / per-frame-photometry lead** | ⛔ **Dead.** The PPISP parameters were found (`.post_processings.0.ppisp.*`, 3594 views) and measured: exposure **exactly 0 for all 3594**, colour **identical** across views (std == 0), vignetting max \|α\| 0.0047 ⇒ **combined effect 0.18 %**, because `per_frame_ppisp_enabled: false`. **The scene ships no per-frame photometry.** ⭐ The real residual is **COVERAGE, not colour**: 79–81 % of the absolute error lives in pixels **no gaussian covers**. ⚠️ Turning the sky env-map on made the render **worse**. ⚠️ Open risk the agent raised against itself: the `f0` appearance-basis choice was selected **on PSNR**, so it rests on a retracted metric. | "the obvious missing piece" assumed to be an improvement |
 | **The Thor precision / quantisation table** — *"precision gate PASS, error does not compound"* | ⛔ **Measured on a RANDOMLY-INITIALISED model fed `torch.randn`.** Quantisation error is a function of the *trained* weight/activation distribution; a random network has no outlier channels. 🔴 **We measured the OPPOSITE on real weights** (paper §7.10): post-pool `readout_head` collapses to cosine 0.566 under W+A INT8, costing **+0.0215 m ADE@2s** — past the pre-registered 0.02 m falsifier. ✅ **Latency survives** (weight-independent). Also: the "shipped" `thor:~/trt/predictor_fp16.plan` was **itself built from random weights** and was never deployable — superseded by `thor:~/trt_deploy/`. | numerics measured on random weights |
-| **The ego-only `sitclf` swap** | ⛔ **REJECTED by the PI — "no ego heads" — and must not be proposed again.** The finding that produced it still stands (`head_img_ego` separated-**worse** than `head_ego`: lane_change ΔAP-lift +2.3524 [+0.8591, +4.2364]), **but the response is to FIX THE FUSION.** `sc_train.py:143` concatenates a 16-d PCA image block normalised by its own mean-abs against a 3-d ego block scaled by a hand-set `EGO_SCALE` — an arbitrary relative scale, so the wider block wins. **That is a scale bug, not evidence the camera carries no signal.** The fix is `late_fuse_scores` (`stack/tanitad/eval/sitclf.py`, 13 tests pass) — implemented, and **wiring it is the open work item.** | dropping a modality because a fusion bug made it look useless |
+| **The ego-only `sitclf` swap** — *and, since 2026-08-03, **score-level image+ego fusion too*** | ⛔ **The ego-only swap was REJECTED by the PI ("no ego heads") and must not be proposed again.** ⛔ **Then a THIRD position superseded both candidates: labels may use ego, inference is VISION-ONLY** (rule 5 above) — so `late_fuse_scores` is **also** out, because score-level fusion is still ego-at-inference. **The deployable arm is `head_img` (image-only).** ⚠️ And the finding that started it is now itself suspect: the situation labels are derived from **ego dynamics** (`stack/tanitad/data/situations.py`), so the banked ranking `head_ego` 0.0697 > `head_img_ego` 0.0525 > `head_img` 0.0376 may measure **leak magnitude, not capability** — *flagged to verify from source, not assumed*. The separate `sc_train.py:143` scale bug (a 16-d PCA image block normalised by its own mean-abs against a 3-d ego block on a hand-set `EGO_SCALE`) is real but is no longer the fix. | first: dropping a modality because a fusion bug made it look useless. Then: **a head whose inference inputs include what the label was derived from** |
 | **"REF-C's route pathway is INERT"** | ⛔ **REFUTED by the experiment written to test it** — it is **RESPONSIVE** (0.2416 m, control 0.0). Every published REF-C number held a **LIVE** input constant, not a dead one. Every premise was individually MEASURED; the *conclusion* was an **inference** that travelled through six documents wearing its premises' evidence class. **A chain of MEASURED links does not make the conclusion MEASURED.** | inference carried as measurement |
 | **Every four-family ABSOLUTE RATE published before 2026-08-03** | ⛔ Wrong by **5×–25×**: `taniteval/four_families.py` hard-coded `DT_S = 0.1` while the windows it reads are the **sparse 4-waypoint 0.5 s grid**. Corrections: `speed_*` **/5.00**, `accel_*` **/25.00**, `yaw_rate_*` /6.48, `curvature_*` **/8.36** and `heading_*` /1.90 (those two via the `MIN_DS` mask alone — they are dt-invariant and were *still* wrong). ✅ **Every cross-arm comparison, rank and paired delta survives** (common factor). **FIXED + tested** (`infer_dt`, `prefer_dense`, `MIN_DS_MPS`, a `_grid` provenance block, 12 tests). | a hazard documented next to one caller instead of fixed at the shared function |
 | **`overlapping_holdout_se` / the "8-split episode-disjoint jackknife"** | ⛔ Neither a jackknife nor a valid SE — **and it biases the point estimate too.** It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. | a metric NAME is not a metric DEFINITION |

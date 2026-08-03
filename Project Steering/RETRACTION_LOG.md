@@ -1674,3 +1674,144 @@ not exercise the conditioning.
    over candidates, so the rebuilt engine driven by the unchanged caller measures **272.8 ms** —
    *worse* than the batch-1 engine's 265.7 ms. ⇒ **RULE: an optimisation stated as an artifact change
    must name the CALLER shape it requires**, or it silently buys nothing.
+
+## 2026-08-03 — R-2026-08-03-f: "VISION ADDS NOTHING OVER EGO STATE" (`situations.py:19`) — RETRACTED
+**Root-cause class: AN ARM RETIRED ON A COMPARISON IT WAS NEVER GOING TO WIN AND DID NOT NEED TO
+WIN — the baseline was a signal the deployed system is not allowed to read, and the arm's OWN null
+control was sitting in the same file, unrun. Sibling of C9/C13/C14 (an instrument structurally
+unable to report the answer it is cited for) and of R-2026-08-03-e (an engine compared against a
+model it does not implement).**
+
+`stack/tanitad/data/situations.py:19-22` asserted, and ≥3 downstream documents repeated, that the
+front camera *"has no measured signal to stand on"*, on the strength of `head_ego` CV-AP **0.0697**
+beating `head_img_ego` **0.0525** and `head_img` **0.0376**.
+
+- 🔴 **Defect 1 — the multimodal arm in that comparison was broken.** `sc_train.py:143` fuses by
+  `np.concatenate([img, S["E"]], 1)`: a 16-dim PCA image block normalised by its own global mean-abs
+  (`:130-131`) against a 3-dim ego block divided by a hand-set `EGO_SCALE = [10, 2, 0.5]` (`:38`),
+  into one shared `nn.Linear`. Two unrelated normalisations, 5.3 : 1 dimensional imbalance. A broken
+  fusion is not evidence about the modality it broke.
+- 🔴 **Defect 2 — the baseline is not a legal inference input.** PI, 2026-08-03: *"for ground truth
+  data of scenario classification you can use both ego and other label, for inference only vision."*
+  Ego may DERIVE the labels; it may not be READ at inference. So "is vision better than ego" cannot
+  decide the deployment question it was cited for. **The deployable question is whether vision beats
+  CHANCE — and that comparison had never been run**, although `head_img_shuf` (the camera's own
+  permuted-feature null) was banked in the same `.npz` from the start.
+- ✅ **Run now, it separates.** `head_img` 0.03741 vs `head_img_shuf` 0.01715 on `lane_change`,
+  ΔAP-lift **+1.1749 [+0.7930, +1.6890]**, paired episode-cluster bootstrap B=2000, 1,610 clip
+  clusters (`…/incoming/2026-08-03-sitclf-fusion-wired/results_sitclf_vision_only.json`).
+  **2.18× its own null.** The camera carries situation signal; it was never shown not to.
+
+**MEASURED alongside, and it is why the old comparison was structurally unfair.** Label provenance,
+two probes: every situation label is a pure deterministic function of the ego pose track
+`[x, y, yaw, v]` — `stack/scripts/emit_situation_labels.py:54-62` reads only `d["poses"]`, and every
+detector in `situations.py` (`:161`, `:210`, `:244`, `:284`) takes only `K = kinematics(P)`; the
+emitter passes `cross=None`, so even `intersection` is the turn half alone. An ego-input head
+observes the label's **generating process**; the camera must infer it from pixels.
+
+⚠️ **Do NOT over-claim this as a leak — I checked and it is not one.** The head's window is
+[t−0.7 s, t] (`sc_train.py:37`, offsets −7..0) and the label's evidence window is
+[onset, onset+4 s] with onset > t: **disjoint, no future information**. The precise statement is
+*same-source privileged access*, not leakage. One genuine boundary defect does exist and is new:
+`omega_pre`/`alon_pre` are built on `np.gradient`, a **centred** difference, so they read **one frame
+(0.1 s) past t** despite the source comment claiming "STRICTLY CAUSAL" — it bites only for onsets at
+exactly t+1, but the comment overstates the guarantee.
+
+⇒ **RULE: before retiring a modality, score it against ITS OWN NULL, not against a rival modality.**
+A rival-modality comparison answers "which is better", never "does this work" — and if the rival is
+not deployable, it answers nothing at all.
+⇒ **RULE: a claim of the form "X adds nothing over Y" is inadmissible unless Y is a legal input to
+the deployed system.** Check the deployment contract before the statistics.
+⇒ **RULE: when a fusion is the mechanism under suspicion, no arm that passes through that fusion may
+be quoted as evidence about its inputs.**
+
+---
+
+## R-2026-08-03-dtac1 — "REF-C's tactical head is INPUT-limited (blind to v0)" — REFUTED by my own pre-registered probe
+
+**Root-cause class: A MECHANISM THAT IS REAL IN THE SOURCE IS NOT THEREBY THE BINDING CONSTRAINT.**
+(Sibling of the "score it against its own null" class: I found a true structural defect by reading
+code and promoted it to *the* cause without measuring how much of the failure it explains.)
+
+**What I asserted**, in `Project Steering/PREREG_D-TAC1_FACTORED_TACTICAL_HEAD.md` §6.3, registered
+before running: *"My prediction, registered before running: INPUT-limited."* Grounds were sound and
+MEASURED — `refc.py`'s `maneuver_head` genuinely reads `pooled` (the image embedding) alone while its
+label is `dv = v(t+2s) − v(t)`, and REF-A's speed-input result (3.73 → 0.83 m) is real.
+
+**What the measurement says** (`…/incoming/2026-08-03-dtac1-tactical-head/`, `refc-base` step 29999,
+canonical val, 39 episodes / 1364 windows, `taniteval.ci.episode_cluster_bootstrap`):
+`auc_lon_active` recovered from the EXISTING 5-way head = **0.7294** (shuffled control **0.4933**).
+**The longitudinal information is already in the head that cannot emit a longitudinal class.**
+The pre-registered threshold for this branch (≥ 0.65) was fixed in advance. A linear probe confirms
+the input lever is real but *modest*: `pooled` 0.3833 → `pooled+v0` 0.4346 macro-recall (+0.051).
+
+**And the correction has a second half the pre-registration also got wrong**, in the other
+direction: its READOUT branch claimed F2+F3 would be *sufficient*. The τ frontier says F2 alone
+(τ = 0) yields brake recall **0.072** / accel **0.045** — near-nothing — and that **`accelerate`
+cannot be recovered at ANY τ** (peak 0.153) because the rarest class crowds it out as τ rises.
+Separately, **9.68 % of windows have their longitudinal class destroyed by the 5-way LABEL**, which
+no decode rule can undo.
+
+⇒ **RULE: reading a defect out of the source establishes that it EXISTS, never that it DOMINATES.**
+Before a structural claim decides a GPU-day, measure the fraction of the failure it accounts for.
+⇒ **RULE: when a fix has separable levers, pre-register a probe that ORDERS them, not one that
+confirms the favourite.** This probe cost minutes on an idle box and reversed the ordering
+(F1 > F2 > F3 became F3 > F2 > F1), which is a full REF-C retrain's worth of scope.
+⇒ **RULE: a single τ / threshold is a POINT on a trade-off, and the "principled" value is not
+automatically the right one.** τ = 1 (the balanced posterior) maximises the prior correction, not the
+metric: it took accuracy 0.705 → 0.427 and predicted `brake_stop` on 865 of 1364 windows against 153
+true. Report the frontier; choose the operating point on train/dev data, never on val.
+
+---
+
+## 2026-08-03 — "the 20 s night clip contains no junction" — REFUTED. "…no junction-scale DECISION" — upheld, and now proved.
+
+**Root-cause class: an ABSENCE ASSERTED FROM THE INSTRUMENT'S SILENCE, never probed against the
+asset that owns the fact.** Same class as the Vulkan ICD (12 days) and `obstacle.offline`.
+
+**What was asserted**, in `stack/experiments/alpasim-gsplat/cl_metrics.py` `families()` — and from
+there in the STREAM C brief and in every report quoting the degenerate strategic block:
+*"this 20 s clip contains no junction-scale strategic decision"*, offered as the explanation for
+`route_head_eq_logged = 1.0000`. The grounds were real but indirect: `route_from_future_v21`
+returned `ROUTE_UNKNOWN / road_following` on 100 % of windows. **Nobody opened `map.xodr`.**
+
+**What the map says** (`stack/experiments/nurec-gsplat/results/junction_00040136.json`, two
+independent sources agreeing to **rms 0.1053 m**, all three discrimination controls PASS):
+the ego is **INSIDE a junction for 46 of its 202 poses (22.8 %)**, traversing **four** of them
+(220, 222, 230, 239). Median clearance to the nearest junction is **19.963 m**, not "there isn't
+one". NVIDIA's own `clipgt/intersection_area` independently labels **4** intersection polygons,
+two of them entered, and **100 % of every polygon's vertices land on an xodr junction surface**.
+
+**But the conclusion the false premise supported turns out to be TRUE for a different reason.**
+At **every one of the four**, the ego's own lane has exactly **ONE** admissible continuation in the
+junction's `<connection>` table, and the largest heading change through any of them is **2.58 deg**.
+⇒ `route_from_future_v21` was **right**: road following really was the only option. The instrument
+was never the problem; the scene has no branch.
+
+⇒ **RULE: "the metric is degenerate here" is a hypothesis about the SCENE, and the scene has an
+owner — go read it.** A label that abstains and an environment that offers no choice produce
+identical output; only the map separates them. Had the survey been scoped as "find a scene with a
+junction" instead of "find a scene with a BRANCH", it would have returned ~1265 of 1607 scenes and
+almost all of them would have been just as degenerate.
+⇒ **RULE: a degeneracy flag must name the QUANTITY that is degenerate.** `n_options == 1` is
+checkable; "no junction-scale decision" is prose that survived because nothing could falsify it.
+
+### Two corpus-level traps found while proving this (both now regression-tested)
+
+**1. ⛔ In PhysicalAI-NuRec's OpenDRIVE, the reference line is NOT the driven line.** MEASURED on
+scene `7c72937c`, road 35: `laneOffset a = 10.495 m`, so the **reference line sweeps 40.5 deg while
+the lane centreline the car drives is straight to within 0.5 deg**. Computing a branch angle from
+`planView` headings gave **+51.49 deg** for a manoeuvre driven at **+123.53 deg**. Any route,
+heading or curvature quantity must come from the sampled lane centreline (reference + `laneOffset`
++ inner widths), never from a `<geometry hdg=…>` attribute. *This one was caught by the mandatory
+component-vs-family self-consistency control, which fired on every left turn in the shortlist — the
+second time in the programme that control has stopped a wrong number from being published.*
+
+**2. Connecting-road centrelines overlap at a junction entry, so a nearest-lane snap picks the
+wrong branch.** On `7c72937c` junction 149 the snap flip-flopped over ten internal roads; the modal
+one was **15 (STRAIGHT)** while the ego actually drove **13 → 12** and turned 163 deg. Resolve the
+branch topologically (the connector whose link lands on the road the ego is on when it leaves),
+with polyline coverage as the cross-check: the correct branch scores **1.00 at 0.66 m mean**, the
+next best **0.41 at 4.31 m**. A sibling of the same trap: an incoming connector **1.02 m long**
+(road 189, scene 00040136) never wins a snap at all and made the option count read **0**, i.e.
+"no continuation exists".

@@ -1,0 +1,1965 @@
+{
+ "SELFCONSISTENCY_CONTROL": {
+  "name": "map-branch-class vs realised-heading (component vs family)",
+  "n_events_checked": 2,
+  "n_untruncated": 2,
+  "worst_abs_err_deg_untruncated": 2.12,
+  "tolerance_deg": 35.0,
+  "PASS": true,
+  "note": "truncated traversals are excluded because the realised heading change is only a partial arc when the clip ends mid-junction; they are reported, never scored.",
+  "per_event": [
+   {
+    "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+    "map_branch_dyaw_deg": -98.06,
+    "realised_on_branch_deg": -95.94,
+    "realised_over_junction_span_deg": -96.19,
+    "abs_err_deg": 2.12,
+    "truncated_by_clip_end": false
+   },
+   {
+    "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+    "map_branch_dyaw_deg": -0.39,
+    "realised_on_branch_deg": 0.09,
+    "realised_over_junction_span_deg": 0.04,
+    "abs_err_deg": 0.48,
+    "truncated_by_clip_end": false
+   }
+  ]
+ },
+ "ADMISSIBLE": true,
+ "tool": "strategic_gt.py",
+ "evidence_class": "MEASURED",
+ "clipgt": "/tmp/nurec_dl/3ce13eed-f97b-4c37-8716-a590569fab77/clipgt",
+ "xodr": "/tmp/nurec_dl/3ce13eed-f97b-4c37-8716-a590569fab77/map.xodr",
+ "horizon_m": 60.0,
+ "alignment_rms_m": 0.02757,
+ "n_poses": 202,
+ "n_decision_events": 2,
+ "n_SCOREABLE_events": 1,
+ "branching_factor": {
+  "max": 2,
+  "values": [
+   2,
+   1
+  ]
+ },
+ "n_admissible_poses": 33,
+ "admissible_pose_fraction": 0.1634,
+ "route_gt_class_share_over_events": {
+  "LEFT": 0,
+  "STRAIGHT": 1,
+  "RIGHT": 1,
+  "UTURN": 0
+ },
+ "EFFECTIVE_N_FOR_THE_CI": 1,
+ "effective_n_note": "the paired episode-cluster bootstrap must resample DECISION EVENTS, not poses: every pose approaching one junction carries the identical label, so a pose-level n overstates the sample by roughly the approach length in poses. On this scene that is 33 poses vs 1 events.",
+ "events": [
+  {
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "junction_id": "158",
+   "entry_pose": 33,
+   "exit_pose": 114,
+   "entry_arc_m": 9.89,
+   "incoming_road": "42",
+   "incoming_lane": -2,
+   "entry_road": "42",
+   "exit_road": "18",
+   "connecting_road_taken": "121",
+   "resolved_by": "exit+entry-link",
+   "coverage_of_taken_road_by_ego_path": 0.791,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "route_gt_branch_dyaw_deg": -98.06,
+   "n_options": 2,
+   "options": [
+    {
+     "road": "108",
+     "lane": -1,
+     "class": 1,
+     "class_name": "STRAIGHT",
+     "branch_dyaw_deg": -3.0
+    },
+    {
+     "road": "121",
+     "lane": -1,
+     "class": 2,
+     "class_name": "RIGHT",
+     "branch_dyaw_deg": -98.06
+    }
+   ],
+   "option_classes": [
+    "RIGHT",
+    "STRAIGHT"
+   ],
+   "realised_heading_change_over_junction_span_deg": -96.19,
+   "realised_heading_change_on_branch_deg": -95.94,
+   "SCOREABLE": true,
+   "selfconsistency_abs_err_deg": 2.12,
+   "selfconsistency_truncated": false
+  },
+  {
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "junction_id": "167",
+   "entry_pose": 122,
+   "exit_pose": 145,
+   "entry_arc_m": 44.16,
+   "incoming_road": "140",
+   "incoming_lane": -1,
+   "entry_road": "18",
+   "exit_road": "20",
+   "connecting_road_taken": "19",
+   "resolved_by": "coverage=1.00",
+   "coverage_of_taken_road_by_ego_path": 1.0,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "route_gt_branch_dyaw_deg": -0.39,
+   "n_options": 1,
+   "options": [
+    {
+     "road": "19",
+     "lane": -1,
+     "class": 1,
+     "class_name": "STRAIGHT",
+     "branch_dyaw_deg": -0.39
+    }
+   ],
+   "option_classes": [
+    "STRAIGHT"
+   ],
+   "realised_heading_change_over_junction_span_deg": 0.04,
+   "realised_heading_change_on_branch_deg": 0.09,
+   "SCOREABLE": false,
+   "selfconsistency_abs_err_deg": 0.48,
+   "selfconsistency_truncated": false
+  }
+ ],
+ "per_pose": [
+  {
+   "pose": 0,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.89,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 1,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.82,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 2,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.63,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 3,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.43,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 4,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.23,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 5,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 9.01,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 6,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 8.78,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 7,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 8.54,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 8,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 8.29,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 9,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 8.04,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 10,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 7.77,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 11,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 7.5,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 12,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 7.21,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 13,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 6.92,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 14,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 6.61,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 15,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 6.3,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 16,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 5.99,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 17,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 5.66,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 18,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 5.33,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 19,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 4.99,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 20,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 4.64,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 21,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 4.29,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 22,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 3.93,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 23,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 3.56,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 24,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 3.2,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 25,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 2.84,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 26,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 2.48,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 27,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 2.12,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 28,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 1.76,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 29,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 1.41,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 30,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 1.05,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 31,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 0.7,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 32,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": 0.35,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": true,
+   "reason": "ok"
+  },
+  {
+   "pose": 33,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J158|33",
+   "dist_to_decision_point_m": -0.0,
+   "n_options": 2,
+   "route_gt_class": 2,
+   "route_gt_name": "RIGHT",
+   "admissible": false,
+   "reason": "decision point -0.0 m away, outside the 60 m horizon"
+  },
+  {
+   "pose": 34,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 33.92,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 35,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 33.57,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 36,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 33.22,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 37,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 32.87,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 38,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 32.53,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 39,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 32.19,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 40,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 31.84,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 41,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 31.5,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 42,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 31.16,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 43,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 30.82,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 44,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 30.48,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 45,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 30.14,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 46,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 29.8,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 47,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 29.46,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 48,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 29.12,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 49,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 28.78,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 50,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 28.44,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 51,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 28.11,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 52,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 27.77,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 53,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 27.44,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 54,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 27.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 55,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 26.77,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 56,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 26.44,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 57,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 26.1,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 58,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 25.77,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 59,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 25.44,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 60,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 25.11,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 61,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 24.78,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 62,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 24.45,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 63,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 24.12,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 64,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 23.8,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 65,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 23.48,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 66,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 23.16,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 67,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 22.85,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 68,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 22.54,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 69,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 22.23,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 70,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 21.92,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 71,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 21.62,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 72,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 21.33,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 73,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 21.04,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 74,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 20.76,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 75,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 20.49,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 76,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 20.23,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 77,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 19.96,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 78,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 19.7,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 79,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 19.44,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 80,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 19.19,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 81,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 18.93,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 82,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 18.67,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 83,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 18.42,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 84,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 18.16,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 85,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 17.89,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 86,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 17.62,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 87,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 17.34,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 88,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 17.05,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 89,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 16.76,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 90,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 16.45,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 91,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 16.13,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 92,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 15.79,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 93,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 15.45,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 94,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 15.09,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 95,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 14.73,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 96,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 14.35,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 97,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 13.96,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 98,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 13.56,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 99,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 13.15,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 100,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 12.72,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 101,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 12.29,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 102,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 11.84,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 103,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 11.38,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 104,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 10.91,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 105,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 10.43,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 106,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 9.93,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 107,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 9.42,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 108,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 8.89,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 109,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 8.35,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 110,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 7.8,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 111,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 7.23,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 112,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 6.64,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 113,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 6.03,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 114,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 5.4,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 115,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 4.76,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 116,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 4.09,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 117,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 3.42,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 118,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 2.74,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 119,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 2.06,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 120,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 1.38,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 121,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 0.69,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 122,
+   "has_decision_ahead": true,
+   "event_id": "3ce13eed-f97b-4c37-8716-a590569fab77|J167|122",
+   "dist_to_decision_point_m": 0.0,
+   "n_options": 1,
+   "route_gt_class": 1,
+   "route_gt_name": "STRAIGHT",
+   "admissible": false,
+   "reason": "single-option junction: a constant predictor ties"
+  },
+  {
+   "pose": 123,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 124,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 125,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 126,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 127,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 128,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 129,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 130,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 131,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 132,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 133,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 134,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 135,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 136,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 137,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 138,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 139,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 140,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 141,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 142,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 143,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 144,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 145,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 146,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 147,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 148,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 149,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 150,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 151,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 152,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 153,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 154,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 155,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 156,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 157,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 158,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 159,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 160,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 161,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 162,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 163,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 164,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 165,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 166,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 167,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 168,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 169,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 170,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 171,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 172,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 173,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 174,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 175,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 176,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 177,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 178,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 179,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 180,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 181,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 182,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 183,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 184,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 185,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 186,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 187,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 188,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 189,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 190,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 191,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 192,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 193,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 194,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 195,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 196,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 197,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 198,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 199,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 200,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  },
+  {
+   "pose": 201,
+   "has_decision_ahead": false,
+   "admissible": false,
+   "reason": "no junction ahead inside this clip"
+  }
+ ]
+}

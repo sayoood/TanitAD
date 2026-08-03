@@ -146,6 +146,13 @@ def hud_lines(rec, st, m, arm, cond):
         f"LATERAL cross-track {m['cross_track']:+5.2f} m   heading err {m['heading_err']:+.3f} rad"
         f"   LONGITUDINAL speed err {m['speed_err']:+5.2f} m/s   plan ADE@2s {m['de2s']:5.2f} m",
     ]
+    if m.get("synth_headway") is not None:
+        hw, tg = m["synth_headway"], m.get("synth_time_gap")
+        lines.append(
+            f"CONSTRUCTED LEAD  headway {hw:+6.2f} m"
+            + (f"   time-gap {tg:5.2f} s" if tg is not None else "")
+            + f"   lateral {m['synth_y']:+5.2f} m"
+            + ("   *** COLLISION (headway <= 0) ***" if hw <= 0 else ""))
     return lines
 
 
@@ -184,7 +191,12 @@ def main():
     if args.tracks and Path(args.tracks).exists():
         tracks = ActorTracks(args.tracks)
 
-    mets = per_step_metrics(rec, gt, tracks=tracks)
+    cond = d["condition"]
+    # In a CONSTRUCTED condition the drawn vehicle is not in `tracks` at all, so the BEV
+    # would be empty and the HUD silent about the very thing under test. Score and draw
+    # the synthetic lead from the geometry the rollout recorded.
+    lead_ref = cond if cond not in ("empty", "objects") else None
+    mets = per_step_metrics(rec, gt, tracks=tracks, lead_ref=lead_ref)
     fdir = Path(args.frames)
     files = sorted(fdir.glob("*.jpg"))
     if not files:
@@ -229,9 +241,15 @@ def main():
         cv2.putText(cam_img, "front-wide f-theta (gsplat render of the NuRec scene)",
                     (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (210, 210, 210), 1, cv2.LINE_AA)
 
-        actors = m.get("actors", [])
+        actors = list(m.get("actors", []))
+        lead_idx = m.get("lead_idx", -1)
+        if m.get("synth_x") is not None:
+            sx, sy = float(m["synth_x"]), float(m["synth_y"])
+            actors.append({"id": "SYNTH_LEAD", "xy": list(rig_to_world((sx, sy), ego)),
+                           "yaw": ego[3], "rig": [sx, sy], "l": 3.08, "w": 1.63})
+            lead_idx = len(actors) - 1
         bev = draw_bev(bev_s, bev_s / 110.0 * 2.2, ego, plan, gt_xy[i0:i0 + 80], driven,
-                       actors, m.get("lead_idx", -1))
+                       actors, lead_idx)
 
         canvas = np.full((H, W, 3), 18, np.uint8)
         canvas[0:ch, 0:cw] = cam_img

@@ -384,7 +384,7 @@ def plan_to_poses(traj, v0):
 
 
 def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
-                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None):
+                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None, leadgeom=None):
     """One closed-loop rollout. Returns a record dict."""
     from collections import deque
     gf = GroundFollower(gt_T)
@@ -404,6 +404,16 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     v = float(gtp[f0, 3])
     t_us = gt_ts_us[f0]
 
+    # ⚠️ Anchor any lateral (cut-in) profile to THIS ROLLOUT's first decision, not to
+    # the clip start. Anchored to the clip, the 2.0-3.5 s ramp would have finished long
+    # before a rollout that starts at tick 120 ever looked — 8 of the 9 clusters would
+    # have silently been a plain lead vehicle while the panel called them cut-ins.
+    act = getattr(renderer, "_actor", None) or {}
+    if hasattr(act.get("tracks"), "t0_us"):
+        act["tracks"].t0_us = float(t_us)
+    if leadgeom is not None:
+        leadgeom.set_t0(float(t_us))
+
     for k in range(n_steps):
         i_gt = gf.nearest(T_ego[:3, 3])
         nav, navd = nav_from_route(gtp, i_gt)
@@ -420,6 +430,10 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
             "v_target": v_target, "kappa_plan": kappa, "plan_ms": plan_ms,
             "extra": extra,
         }
+        # Lead geometry for EVERY synthetic condition, on EVERY run — including
+        # `empty`, where it is the matched counterfactual the pairing needs.
+        if leadgeom is not None:
+            st["lead"] = leadgeom.at(T_ego, t_us, v)
         rec["steps"].append(st)
         if save_frames is not None:
             save_frames(k, frames[-1], st)
@@ -457,7 +471,12 @@ def main():
     ap.add_argument("--arm", required=True,
                     choices=["flagship-v1", "refc-base", "refc-xl"])
     ap.add_argument("--ckpt", required=True)
-    ap.add_argument("--condition", default="empty", choices=["empty", "objects"])
+    ap.add_argument("--condition", default="empty",
+                    choices=["empty", "objects", "lead25", "lead15", "lead8",
+                             "cutin", "behind"],
+                    help="empty/objects use the scene's own annotation; the rest are "
+                         "CONSTRUCTED lead vehicles (see synth_actor.py) because two "
+                         "probes agree the scene has no close-following geometry")
     ap.add_argument("--layers", default=None)
     ap.add_argument("--addr", default=None, help="gRPC renderer addr; omit for in-process")
     ap.add_argument("--starts", default="0")
@@ -479,6 +498,7 @@ def main():
     sd = Path(args.scene_dir).expanduser()
     r = NuRecGsplatRenderer(sd, layers=[x for x in layers.split(",") if x],
                             loader_dir=args.loader_dir)
+    attach_info = None
     if args.condition == "objects":
         from actor_map import attach_actors_verified
         info = attach_actors_verified(r, sd)
@@ -487,6 +507,12 @@ def main():
                              + json.dumps({k: v for k, v in info.items() if k != "per_track"}))
         (out / "actor_attach.json").write_text(json.dumps(info, indent=2))
         logger.info("actors: %s", {k: v for k, v in info.items() if k != "per_track"})
+    elif args.condition != "empty":
+        from synth_actor import SYNTH_CONDITIONS, attach_synth_lead
+        assert args.condition in SYNTH_CONDITIONS, args.condition
+        attach_info = attach_synth_lead(r, args.condition)
+        (out / "synth_attach.json").write_text(json.dumps(attach_info, indent=2))
+        logger.info("CONSTRUCTED lead attached: %s", attach_info)
 
     transport = (GrpcTransport(args.addr) if args.addr else InProcTransport(r))
     intr = build_intr(transport.camera())
@@ -504,6 +530,15 @@ def main():
     gt_ts = [r.frame_timestamps_us(f * stride)[1] for f in range(n)]
     logger.info("GT: %d camera frames -> %d ticks at 10 Hz (stride %d)",
                 r.n_frames(), n, stride)
+
+    # ⚠️ half_len is derived INSIDE LeadGeometry from the renderer, never from the
+    # attach info — otherwise the `empty` control (which attaches nothing) would use a
+    # different half-length from the lead conditions and the counterfactual headway
+    # would carry a constant bias. See synth_actor.LeadGeometry.
+    from synth_actor import LeadGeometry
+    leadgeom = LeadGeometry(r)
+    logger.info("lead geometry probe active (half_len=%.3f m, %d conditions)",
+                leadgeom.half_len, len(leadgeom.tracks))
 
     if args.arm == "flagship-v1":
         pol = FlagshipV1Policy(args.ckpt)
@@ -524,7 +559,7 @@ def main():
                             [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         t0 = time.time()
         rec = run_rollout(transport, r, pol, intr, s, args.steps, gt_T, gt_ts,
-                          save_frames=saver, log=True)
+                          save_frames=saver, log=True, leadgeom=leadgeom)
         rec["wall_s"] = time.time() - t0
         rec["condition"] = args.condition
         rec["transport"] = "grpc" if args.addr else "inproc"
@@ -540,7 +575,9 @@ def main():
                for f in range(n)]
     payload = {"arm": pol.name, "ckpt": args.ckpt, "condition": args.condition,
                "scene": sd.name, "layers": layers, "steps": args.steps,
-               "f_eff": pol.f_eff, "gt": gt_dump, "rollouts": recs}
+               "f_eff": pol.f_eff, "gt": gt_dump, "rollouts": recs,
+               "synth_attach": attach_info,
+               "lead_path_extrapolated_calls": int(leadgeom.path.n_extrap)}
     p = out / f"rollouts_{args.arm}_{args.condition}.json"
     p.write_text(json.dumps(payload))
     logger.info("wrote %s (%d rollouts)", p, len(recs))

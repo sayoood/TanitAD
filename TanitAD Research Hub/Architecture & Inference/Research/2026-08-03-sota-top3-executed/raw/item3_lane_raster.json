@@ -1,0 +1,93 @@
+{
+ "run": "SOTA_SCAN \u00a711 item 3 \u2014 ego-frame lane-graph raster + D-MAP-1",
+ "date": "2026-08-03",
+ "host": "dev-box CPU",
+ "gpu_hours": 0.0,
+ "evidence_class": "MEASURED (ours)",
+ "scene": "00040136-e651-4abd-991d-0655ccda9430 (NuRec sample_set 26.04)",
+ "source": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Architecture & Inference\\Research\\2026-08-02-nurec-xodr-map",
+ "raster_spec": {
+  "forward_m": [
+   -8.0,
+   56.0
+  ],
+  "lateral_m": 32.0,
+  "res_m": 0.5,
+  "shape": [
+   3,
+   128,
+   128
+  ],
+  "channels": [
+   "lane_presence",
+   "lane_dir_cos",
+   "lane_dir_sin"
+  ],
+  "frame": "ego: +x forward (rows, row 0 = far), +y left (cols, col 0 = far left)"
+ },
+ "n_poses": 299,
+ "render_s_total": 5.48,
+ "render_ms_per_frame": 18.33,
+ "lane_occupancy": {
+  "mean": 0.05202,
+  "min": 0.03125,
+  "max": 0.09332,
+  "n_frames_empty": 0
+ },
+ "label": {
+  "horizon_s": 3.0,
+  "turn_threshold_deg": 10.0,
+  "classes": {
+   "0": "right",
+   "1": "straight",
+   "2": "left"
+  },
+  "counts": {
+   "0": 67,
+   "1": 202
+  },
+  "majority_rate": 0.7509,
+  "n_valid": 269,
+  "n_total": 299
+ },
+ "readout": {
+  "model": "multinomial logistic regression, C=0.1, on 8x8 mean-pooled channels",
+  "n_features": 768,
+  "split": "8 CONTIGUOUS time blocks (never a random split \u2014 10 Hz neighbours would leak)"
+ },
+ "D_MAP_1": {
+  "acc": 0.9294,
+  "lo": 0.8513,
+  "hi": 0.9889,
+  "n": 269,
+  "n_blocks": 8,
+  "estimator": "contiguous_block_bootstrap",
+  "\u26d4_not_decision_grade": "one scene = one cluster; the programme's decision-grade interval is the episode-cluster bootstrap over 40 val episodes and this is NOT it",
+  "majority_rate": 0.7509,
+  "margin": 0.1785,
+  "verdict": "PASS \u2014 the raster carries route information beyond the majority baseline"
+ },
+ "D_MAP_2_shuffled_raster": {
+  "acc": 0.6357,
+  "lo": 0.4407,
+  "hi": 0.8008,
+  "n": 269,
+  "n_blocks": 8,
+  "estimator": "contiguous_block_bootstrap",
+  "\u26d4_not_decision_grade": "one scene = one cluster; the programme's decision-grade interval is the episode-cluster bootstrap over 40 val episodes and this is NOT it",
+  "verdict": "PASS \u2014 collapses to baseline, so D-MAP-1 is reading the map"
+ },
+ "D_MAP_3_anticipation": {
+  "n_stratum": 178,
+  "criterion": "|dyaw over 0.5 s| < 1.0 deg at t0 \u2014 the ego is NOT yet turning",
+  "counts": {
+   "0": 2,
+   "1": 176
+  },
+  "n_minority": 2,
+  "min_minority_required": 20,
+  "verdict": "NOT-APPLICABLE \u2014 the anticipation stratum holds only 2 turn example(s) on this single 30 s clip. It is UNDER-POWERED, not negative: no verdict is issued. Answering it is a work item (more scenes), not a pass and not a failure."
+ },
+ "\u26d4_scope": "this measures whether the RASTER carries route information, NOT whether our model would use it. The trained frozen-trunk probe is SOTA \u00a711 row 4 and is out of scope at 0 GPU.",
+ "wall_clock_s": 10.4
+}
