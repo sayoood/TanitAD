@@ -1976,3 +1976,254 @@ autocorrelation; it was asserted from the arithmetic of `1/(2·dt)` alone.
 ⇒ **RULE: a NULL is only admissible with a DETECTION FLOOR.** "X is not recoverable" and "X is not
 recoverable above strength S at this n" are different claims, and only the second is falsifiable.
 The floor costs one extra arm — the same probe run on a latent with a KNOWN signal planted in it.
+
+---
+
+## R-2026-08-03-j — "ROLLING SHUTTER is the biggest render-quality lever" — the NUMBER stands, the CAUSE is RETRACTED
+
+**Retracted claim** (`stack/experiments/alpasim-gsplat/RENDER_QUALITY.md`, "WHAT WORKED, IN ORDER OF
+SIZE / 1. ⭐ Rolling shutter — biggest lever, 161× the cost"): *"All three move the right way at once,
+and coverage rises 21 % — **the scanline sweep fills pixels a single pose leaves thin**"*, headlined as
+**+35.1 % grad-NCC**.
+
+**The measurement is NOT retracted.** Enabling gsplat's rolling shutter really does raise grad-NCC and
+`mean_alpha`, and it really does cost ~two orders of magnitude. **What is retracted is the attribution
+of that gain to the shutter.**
+
+**Root-cause class: ATTRIBUTING AN EFFECT TO THE FEATURE THAT WAS TOGGLED, RATHER THAN TO THE CODE
+PATH THE TOGGLE SWITCHED ON.** `rolling_shutter=…` + `viewmats_rs=…` does two things at once — it
+sweeps the camera pose, *and* it enters a different projection branch. Only the first was in anyone's
+head, so no arm was ever run that had one without the other. This is the same shape as the
+`--v2` conflation in R-2026-07-3x: a single flag moving two things, and the gain booked to the
+interesting one.
+
+**MEASURED (mine)** — `~/rq_out/rs_sweep_chosen/report.json`, `~/rq_out/rs_cost_probe.json`, deployed
+config, 12 frames over the 599-frame clip, grad-NCC with a paired frame bootstrap; repo copies under
+`stack/experiments/alpasim-gsplat/results/2026-08-03-rolling-shutter/`:
+
+| control | result | what it rules out |
+|---|---|---|
+| sweep run **BACKWARDS** (`native_swapped`) | **+0.0216 [+0.0131,+0.0312]** vs native's **+0.0210 [+0.0096,+0.0365]**; images **2.264/255** apart — closer to native than any other arm by 2.7x | a readout-motion correction **cannot be invariant to the readout direction** |
+| the pose sweep done FAITHFULLY, 2→64 slices | monotonically **worse**: `s4` +0.0048 → `s16` +0.0004 → **`s64` −0.0095 [−0.0129,−0.0055]** | the sweep itself is worth **nothing**; the best sliced arm ties a **free** single-pose render |
+| per-band Δ | native's biggest gains are at the frame **BOTTOM** (+0.0667, +0.0755) — where a TOP_TO_BOTTOM sweep and the shutter-END baseline are **the same camera** | a pose effect cannot appear where there is no pose difference (holds under either row→time convention) |
+| gaussians surviving projection | production **759,404 / 614,538**; native RS **1,341,915 / 1,096,693** = **+77 % / +78 %** | a sweep **moves** geometry, it cannot **create coverage** |
+| RS kernel at **ZERO motion** | **614,538 vs 614,538** — the same integer as production | the code path alone is not it either; the two must BOTH differ |
+| `require_all_sigma_points_valid=False` on a plain **global** render | **+50 % / +52 %** more gaussians, no geometry change | ~two thirds of the effect is available **free** |
+| `in_image_margin_factor` 0.1 → 2.0 | **+1 and +3 gaussians** | the obvious second candidate, dead |
+
+**The actual mechanism, read from `gsplat/cuda/include/Cameras.cuh:357` and then COUNTED:**
+`world_point_to_image_point_shutter_pose` returns the real `valid_start` on the GLOBAL branch but a
+hard-coded `true` on the ROLLING branch; upstream, `require_all_sigma_points_valid` (default `True`,
+and `gsplat.rasterization()` never exposes `ut_params`) culls any gaussian with a single invalid sigma
+point. So **rolling shutter silently disables the cull.** The zero-motion control confirms the
+predicted boundary exactly: with `q_start == q_end` an invalid point is invalid at both ends, the
+function early-returns `false`, and the count matches production **to the unit**.
+
+**A second, smaller retraction in the same section.** *"Off by default; `--rolling-shutter`"* was
+presented with `render_probe.py --rs` as a working alternative. It never ran: `render_probe.py:204`
+called `RollingShutterType.TOP_TO_BOTTOM`, which does not exist in gsplat 1.5.3 (`AttributeError`,
+verified by reading the file **and** by querying the installed enum). Fixed — the member name is now
+read from the calibration string.
+
+⇒ **RULE: when a flag switches on a CODE PATH as well as a PHYSICAL EFFECT, the null arm is the same
+code path with the physical effect set to ZERO.** Here that is one line (`viewmats_rs = viewmats`),
+and it would have caught this on day one.
+⇒ **RULE: a symmetry the claimed cause forbids is the cheapest falsifier available.** Rolling shutter
+is directional; running it backwards costs one arm and it decided the whole question.
+⇒ **RULE: `mean_alpha` (coverage) and grad-NCC (structure) moving TOGETHER is not "all three move the
+right way at once" — it is a WARNING.** A geometric correction redistributes coverage; only a change
+in *which primitives are drawn* raises it. "Everything improved" should prompt "what else did I
+change?", not confidence.
+
+---
+
+## R-2026-08-03-C — "the closed-loop separation is ENTIRELY LATERAL, and ADE would have said no difference"
+
+**What was asserted**, this morning, in the videos README, `README.md`, `PROGRAM_OVERVIEW.md` (C1) and
+`Paper/TANITAD_PAPER.md` (§5.0.1 and the abstract-level summary): *REF-C base beats flagship v1
+closed-loop on the NuRec reconstruction and the separation is **entirely lateral** —
+`dist_to_gt` +1.171 [0.030, 2.244], heading +0.084, curvature +0.0050, yaw-rate +0.038 all separated,
+**ADE +0.789 [−0.865, +2.728] NOT separated** — so an ADE-only table would have reported "no
+difference".* It was quoted as the four-family doctrine's strongest single piece of evidence.
+
+**What survives.** REF-C still beats flagship v1, and **every one of the four lateral separations
+holds and widens.** That half is confirmed on a better render.
+
+**What is RETRACTED: "entirely lateral", and with it "ADE would have reported no difference".** Re-run
+on the shipped +23.4 % grad-NCC render (run dir `thor:~/cl_out_hq`, artifacts
+`stack/experiments/alpasim-gsplat/results/closedloop-hq-render/`), on the same 437 paired windows,
+same starts, same checkpoints, same scorer:
+
+| | morning render | shipped render |
+|---|---|---|
+| `ade_0_2s` | +0.789 [−0.865, +2.728] **not sep** | **+7.164 [+5.265, +8.966] separated** |
+| `abs_target_speed_err_ms` | +1.124 [−0.101, +2.566] not sep | **+6.397 [+5.000, +7.801] separated** |
+| `along_track_ade_m` | +0.650 [−1.017, +2.590] not sep | **+7.153 [+5.240, +8.953] separated** |
+| `route_corridor_departure_rate` | +0.204 [−0.002, +0.398] not sep | **+0.506 [+0.382, +0.629] separated** |
+
+**Root-cause class: PUBLISHING A CLOSED-LOOP RESULT WITHOUT MEASURING THE POLICY'S SENSITIVITY TO THE
+SIMULATOR IT WAS MEASURED IN.** The panel was treated as *an arm property observed through a
+renderer*. It is a **joint** property of the arm and the renderer, and for one of the two arms the
+renderer term dominates. flagship v1's driven path moves a **mean 9.05 m (max 37.78 m)** and its
+commanded speed drops **12.96 → 7.05 m/s** under a render change that moves REF-C **0.43 m** and
+**0.13 m/s** — a **21×** sensitivity ratio. At `k=0`, with zero accumulated drift, flagship's plan
+already moves up to **9.09 m** from the render alone. Every "closed-loop ADE" for this arm was a
+measurement of the pair, reported as a measurement of the arm.
+
+**A second, smaller retraction in the same block.** The morning table listed `dist_to_gt_traj` (under
+ADE) *and* cross-track (under LATERAL) as separate separated metrics. They are the **same number**:
+`cl_metrics.py` builds them in one dict literal, `"cross_track": ct, "dist_to_gt": abs(ct)`. Verified
+identical on 6/6 rollout sets, max |Δ| exactly 0. Four separated lateral metrics, not five.
+
+**Why the attribution is admissible — the control was exactly zero.** Re-running the MORNING config
+today reproduced the morning rollouts **bit-exactly**: 0.0 m driven path, 0.0 m plan, 0.0 on all 19
+paired metrics, both arms, 450/450 windows (`CONTROL_<arm>_repro_vs_morning.json`). Every change is
+the render. Each was additionally tested as a **difference-in-differences** on identical windows
+rather than by comparing two CIs by eye; 9 of 10 separate.
+
+**And the feature is identified.** A 2×2 over the two `empty`-road render changes: the **scale cull**
+carries it (flagship ADE **+4.489 [+3.146, +5.999]**), the gated sky is null-to-helpful
+(**−0.457 [−0.999, +0.118]**). The change that most improved fidelity to the reference is the one
+that breaks flagship's speed control.
+
+⇒ **RULE: a closed-loop number is not admissible without a render-perturbation sensitivity measured
+beside it.** An arm whose plan moves 9 m under a fidelity improvement cannot be compared at 0.1 m,
+and the sensitivity is itself the more transferable quantity.
+⇒ **RULE: before attributing anything to a changed simulator, re-run the OLD simulator config and
+require the old rollouts back.** Here it returned exactly 0.0 and licensed everything; on the
+`objects` condition the same control **failed** (flagship 1.536 m mean / 7.266 m max, 18 of 19 paired
+deltas moved) because an unrelated same-day code line only executes with actors attached — so no
+`objects` morning-vs-HQ number was publishable, and that was caught by the control rather than by
+review.
+⇒ **RULE: "metric X did not separate" is a statement about the measurement conditions, not about the
+metric.** ADE was blind here because the *renderer* had suppressed the effect that makes flagship
+fail, not because ADE cannot see longitudinal failure. The four-family doctrine is untouched — the
+argument for it is that ADE *can* hide the gap, and it did; what is retracted is this panel's use as
+its showcase example.
+
+---
+
+## R-2026-08-03-k — every render-fidelity number on NuRec scene `00040136` was scored against a reference **6 FRAMES TOO EARLY**
+
+**Retracted:** not one claim but a **class** — every **absolute** grad-NCC / MAE / PSNR ever quoted for
+this scene. That includes `FINDINGS.md`'s original decode validation (*"correct frame 0.3802 vs best
+wrong 0.2110"*), `RENDER_QUALITY.md`'s **0.2774 → 0.3424 "+23.4 %"** and **0.3747 "+35.1 %"** headlines,
+panels `panel1`…`panel6_chosen`, and **every absolute number in my own
+`…/results/2026-08-03-rolling-shutter/ROLLING_SHUTTER.md`.**
+
+**Root-cause class: A NEGATIVE CONTROL WITH A BLIND SPOT BUILT INTO ITS OWN CONSTRUCTION — and nobody
+checked the neighbourhood it excluded.** `render_quality.wrong_frames_for()` requires wrong candidates
+to sit **`MIN_WRONG_GAP = 40`** frames away, with the comment *"a 'wrong' frame 5 frames away is nearly
+the correct one"*. That is correct reasoning for the question it was built for ("is our decode real?")
+and it makes the control **structurally incapable** of seeing a small index error. The control was
+never wrong; it was answering a different question, and its passing was read as alignment.
+
+**MEASURED (mine)** — `~/rq_out/rs_frame_offset_k10.json`, `~/rq_out/mp4_frame_count.json`; render held
+at PRODUCTION settings (shutter-END pose, actors at shutter-END time), **only the reference index
+varies**; 12 frames spread over the clip:
+
+| reference offset | −2 | 0 | +2 | +4 | +5 | **+6** | +7 | +8 | +10 |
+|---|---|---|---|---|---|---|---|---|---|
+| mean grad-NCC | 0.2963 | **0.3114** | 0.3363 | 0.3806 | 0.4213 | **0.4911** | 0.4661 | 0.4077 | 0.3478 |
+
+* **`argmax_histogram = {6: 12}`** — every frame, no ties, and the curve **turns over** at +7, so it is
+  a maximum and not a scan boundary. *(An earlier ±3 scan of mine stopped at its edge still rising and
+  reported "≥ +3"; it is superseded, and it is kept in the run dir precisely because reporting a
+  boundary as an answer is the failure this entry is about.)*
+* **+0.1797 grad-NCC, +57.7 %, free.** For scale, the rolling shutter of R-2026-08-03-j buys **+0.0210
+  at ~90× the render cost**, and the honest pose-sweep effect is **+0.003–0.005**. The misalignment is
+  **8.6×** the first and **~40×** the second.
+* **Independent corroboration, same integer:** a **full sequential decode** (not the metadata estimate,
+  though both agree) gives the mp4 **605** frames against the rig's **599** — **Δ = 6**.
+
+**What survives and what does not.** Every arm in every panel shared the same wrong reference, so
+**PAIRED DELTAS BETWEEN ARMS SURVIVE** — the rolling-shutter verdict, the layer/cull/sky A/Bs and the
+"which metric may decide" analysis all stand. **ABSOLUTE values do not**, and the direction is
+flattering-in-reverse: **the renderer is materially better than anyone measured.**
+
+⚠️ **NOT established, and must not be "fixed" before it is:** WHICH side is off. Six extra frames in
+the mp4 is consistent with leader frames, but I did not verify where they sit and I checked **one
+scene**. `stack/experiments/alpasim-gsplat/rs_frame_offset.py` is the instrument; ~2 min/scene.
+
+⇒ **RULE: a negative control certifies only the discrimination it was built to test.** This one proved
+"our render matches THIS clip rather than a different part of it". It never claimed "…and the index is
+right", and it was read as if it had. **State what a control excludes, next to what it includes.**
+⇒ **RULE: before trusting any reference-based fidelity metric, scan the IMMEDIATE NEIGHBOURS.** The
+hard negatives for an alignment error are `f±1, f±2, …`, i.e. exactly the frames a coarse control
+deliberately excludes. It costs one render per frame.
+⇒ **RULE: when two counts that should match do not (`605` vs `599`), that is a finding, not noise.**
+The discrepancy was visible in `CAP_PROP_FRAME_COUNT` from the first day anyone opened the mp4.
+
+---
+
+## R-2026-08-03-j — flagship-v1's STRATEGIC route accuracy is the ECHO of an ORACLE INPUT, not a decision
+
+**Retracted claim.** `stack/experiments/nurec-gsplat/STRATEGIC_FAMILY.md` §(b) and
+`results/closedloop_strategic_7c72937c.json`, carried into task #51's report: *"flagship-v1 /
+empty **route_class_accuracy = 1.0000 (6/6)**, flagship-v1 / objects **1.0000 (6/6)**; paired
+flagship − refc = **+1.000** (empty), **+0.800** (objects)"* — the option-set STRATEGIC family's
+first numbers on a real branch scene.
+
+**Root-cause class: A MODEL SCORED ON A TARGET IT WAS HANDED AS AN INPUT** — a *conditioning
+echo*. New sub-class of the C6 family, and the one the existing guards were structurally unable to
+catch. `discrimination_control` proves the **labels** carry entropy (its ORACLE copies
+`route_gt_class`, a tautology). `BEST_CONSTANT` catches a head that always answers one class.
+**Neither can catch an echo, because an echo is not constant and beats every constant.**
+
+The harness derives the nav command from the ego's own logged future
+(`closedloop_drive.py:348 nav_from_route` → `refb_labels.nav_command_v21`) and **feeds it to the
+policy**; the flagship's `StrategicPolicy` then FiLM-conditions *every* causal block on
+`nav_emb(nav_cmd)` and reads `route_head` off that stack (`models/fourbrain.py:58, 77-86`), while
+its auxiliary route CE target (`route_target_v21`) is derived from **the same GT future**. The
+shortcut — copy the FiLM condition — exists by construction.
+
+**MEASURED (mine)** — run dir `stack/experiments/nurec-gsplat/results/2026-08-03-strategic-T1/`,
+open-loop on the logged clipgt track with the real 4K reference camera, **116 map-derived decision
+events over 77 NuRec T1 branch scenes, 4 745 poses**, episode-cluster bootstrap, cluster = scene.
+The identifying move is a **MANIPULATION**: sweep the nav vocabulary with the **pixels held fixed**.
+
+| quantity | flagship-v1 | refc-base |
+|---|---|---|
+| `nav_passthrough_rate` (argmax moves when only nav moves) | **1.0000** (n=4745) | **0.0000** (n=4745) |
+| argmax under nav=`follow` / `left` / `right` | STRAIGHT 4745/4745 · LEFT 4745/4745 · RIGHT 4745/4745 | unchanged under all 4 navs |
+| logit std across NAVS at a fixed pose | 9.65 (nav-to-image ratio **5.19**) | **exactly 0.0** (`HEAD_IS_NAV_BLIND`) |
+| route_class_accuracy @ **navORACLE** | 0.8707 [0.8053, 0.9298] | 0.6983 |
+| route_class_accuracy @ **navFOLLOW** (deployable; `follow` is **~75-79 % of training windows** and the standard eval value, `refs/refc.py:66-68`) | **0.1983 [0.1240, 0.2727]** — **BELOW** the best constant, separated | **0.6983 [0.6179, 0.7810]** — above it, separated |
+| **navORACLE − NAV_ECHO** (a lookup table with **no image at all**) | **+0.0000 [+0.0000, +0.0000]**, not separated | −0.1724 |
+
+⇒ under the oracle nav the flagship's route head is **indistinguishable from a nav lookup table on
+every one of the 116 events**, and `NAV_ECHO` scores the identical 0.8707 with no model. Strip the
+oracle and the arm falls to 0.1983, predicting STRAIGHT on 110 of 116 events (**precision 0.2091**,
+zero LEFT and zero RIGHT emitted, `prediction_degenerate = true`) and naming a manoeuvre the map
+does not admit on **34** of them. Head-to-head at the deployable setting **flagship − refc =
+−0.5000 [−0.6053, −0.4017]**, separated, and **−0.5254 [−0.6897, −0.3823]** on the 39-scene
+leak-free subset.
+
+**Confirmed three independent ways** — this manipulation; a **closed-loop** observational check by
+a sibling stream the same day (`strategic_conditioning_control.py`: flagship head an exact
+bijection of nav, 369/369 and 81/81 over 450 ticks); and **source** (`fourbrain.py:77-86` vs
+`refc.py:1130/1137/1140`, where REF-C's `route_head(pooled)` reads image features *before* the nav
+one-hot is fused, i.e. nav-blind **by architecture**).
+
+⇒ **RULE: before scoring a head, ask what was FED to it.** A metric is only a measurement of the
+model if the answer is not already in the model's input. Enumerate every conditioning channel the
+harness supplies from ground truth, and for each one ask whether the scored target is a function
+of it.
+⇒ **RULE: a degeneracy control must be run against the ARM, not only against the LABELS.** The
+label-side control (ORACLE vs BEST_CONSTANT) passed on this scene set at
+**+0.5641 [0.4601, 0.6667]** — the labels were fine. It was never capable of saying anything about
+an arm, because its ORACLE is built by copying the label.
+⇒ **RULE: identify a conditioning echo by MANIPULATION, never by an observational contingency
+table.** A competent head and an echo agree whenever the command is correct; only holding the
+observation fixed while moving the input separates them. Cost: one extra forward pass per
+conditioning value.
+⇒ **RULE: a PERMUTATION of the conditioning is not a substitute for a SWEEP.** MEASURED here: 50
+of the 78 T1 branch scenes carry exactly ONE decision event, so a within-scene shuffle is the
+identity — the control returns clean output and measures nothing.
+
+**Now enforced in code, not in prose**: `taniteval.strategic_optionset.conditioning_echo_control`
++ `strategic_family(..., conditioning_sweeps=…)` → `STRATEGIC_SKILL_ADMISSIBLE`, threaded through
+`four_families.strategic`. **With no sweep supplied the verdict is `None` (UNTESTED), never a
+pass.** Regression tests: `test_an_echo_arm_beats_every_constant_yet_is_INADMISSIBLE`,
+`test_echo_control_refuses_a_sweep_that_cannot_separate_anything`, +5 more in
+`taniteval/tests/test_strategic_optionset.py`.

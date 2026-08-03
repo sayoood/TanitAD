@@ -1,0 +1,98 @@
+{
+  "what": "cross_version",
+  "evidence_class": "MEASURED (ours)",
+  "A": {
+    "file": "results/scene2-cutin-targeted/rollouts/rollouts_flagship-v1_objects.json",
+    "arm": "flagship-v1",
+    "condition": "objects",
+    "n_rollouts": 12,
+    "starts": [
+      75,
+      78,
+      81,
+      84,
+      87,
+      90,
+      93,
+      96,
+      99,
+      102,
+      105,
+      109
+    ]
+  },
+  "B": {
+    "file": "results/scene2-realclose/rollouts/rollouts_flagship-v1_objects.json",
+    "arm": "flagship-v1",
+    "condition": "objects",
+    "n_rollouts": 9,
+    "starts": [
+      0,
+      15,
+      30,
+      45,
+      60,
+      75,
+      90,
+      105,
+      120
+    ]
+  },
+  "shared_starts": [
+    75,
+    90,
+    105
+  ],
+  "ALL_SHARED_ROLLOUTS_BIT_IDENTICAL": true,
+  "per_start": {
+    "75": {
+      "identical": true,
+      "max_abs_diff": {
+        "v": 0.0,
+        "steer": 0.0,
+        "accel": 0.0,
+        "v_target": 0.0,
+        "kappa_plan": 0.0,
+        "ego_xy": 0.0,
+        "plan": 0.0,
+        "i_gt": 0,
+        "t_us": 0.0,
+        "extra_logits": 0.0,
+        "nav_mismatches": 0
+      }
+    },
+    "90": {
+      "identical": true,
+      "max_abs_diff": {
+        "v": 0.0,
+        "steer": 0.0,
+        "accel": 0.0,
+        "v_target": 0.0,
+        "kappa_plan": 0.0,
+        "ego_xy": 0.0,
+        "plan": 0.0,
+        "i_gt": 0,
+        "t_us": 0.0,
+        "extra_logits": 0.0,
+        "nav_mismatches": 0
+      }
+    },
+    "105": {
+      "identical": true,
+      "max_abs_diff": {
+        "v": 0.0,
+        "steer": 0.0,
+        "accel": 0.0,
+        "v_target": 0.0,
+        "kappa_plan": 0.0,
+        "ego_xy": 0.0,
+        "plan": 0.0,
+        "i_gt": 0,
+        "t_us": 0.0,
+        "extra_logits": 0.0,
+        "nav_mismatches": 0
+      }
+    }
+  },
+  "verdict": "PASS \u2014 the renderer change is a MEASURED no-op on the default path, so the targeted panel may be compared to the banked scene-2 panel."
+}

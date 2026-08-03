@@ -1,0 +1,96 @@
+{
+  "degeneracy_audit": [
+    {
+      "arm": "flagship-v1",
+      "family": "ADE",
+      "metric": "dist_to_gt_traj_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "literally abs(cross_track) in cl_metrics \u2014 the same measurement under a second name"
+    },
+    {
+      "arm": "flagship-v1",
+      "family": "LONGITUDINAL",
+      "metric": "executed_speed_err_ms",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "the ego speed IS the logged speed; no controller runs"
+    },
+    {
+      "arm": "flagship-v1",
+      "family": "LATERAL",
+      "metric": "cross_track_abs_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "the ego pose IS the logged pose, so its distance to the logged polyline is zero by construction"
+    },
+    {
+      "arm": "flagship-v1",
+      "family": "LATERAL",
+      "metric": "cross_track_signed_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "same quantity, signed"
+    },
+    {
+      "arm": "flagship-v1",
+      "family": "STRATEGIC",
+      "metric": "route_corridor_departure_rate",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "departure is |cross_track| > 2 m, and cross_track is pinned at 0"
+    },
+    {
+      "arm": "refc-base",
+      "family": "ADE",
+      "metric": "dist_to_gt_traj_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "literally abs(cross_track) in cl_metrics \u2014 the same measurement under a second name"
+    },
+    {
+      "arm": "refc-base",
+      "family": "LONGITUDINAL",
+      "metric": "executed_speed_err_ms",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "the ego speed IS the logged speed; no controller runs"
+    },
+    {
+      "arm": "refc-base",
+      "family": "LATERAL",
+      "metric": "cross_track_abs_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "the ego pose IS the logged pose, so its distance to the logged polyline is zero by construction"
+    },
+    {
+      "arm": "refc-base",
+      "family": "LATERAL",
+      "metric": "cross_track_signed_m",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "same quantity, signed"
+    },
+    {
+      "arm": "refc-base",
+      "family": "STRATEGIC",
+      "metric": "route_corridor_departure_rate",
+      "measured_max_abs": 0.0,
+      "tolerance": 1e-06,
+      "confirmed": true,
+      "why": "departure is |cross_track| > 2 m, and cross_track is pinned at 0"
+    }
+  ],
+  "all_confirmed": true,
+  "panel": "/home/nvidia/ol_out/OL_flagship_vs_refc_objects.json"
+}

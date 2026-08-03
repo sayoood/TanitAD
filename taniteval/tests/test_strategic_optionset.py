@@ -504,3 +504,102 @@ def test_an_arm_whose_key_is_unknown_is_UNAVAILABLE_not_scored_as_wrong():
     fam = SO.strategic_family({sid: rep, "_refused": {}}, p, n_boot=100)
     assert fam["status"] == "UNAVAILABLE"
     assert "ARM/JOIN gap" in fam["reason"]
+
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE SECOND DEGENERACY: an INPUT ECHO. Not constant, beats every constant,  #
+# and still not a decision. MEASURED 2026-08-03: flagship-v1's route head moves #
+# with `nav` at 100 % of 6 660 swept poses over 78 NuRec T1 scenes, while       #
+# refc-base's moves at 0 %.                                                     #
+# --------------------------------------------------------------------------- #
+def test_echo_control_catches_a_head_that_relabels_its_own_input():
+    sweeps = [{0: 1, 1: 0, 2: 2, 3: 1} for _ in range(20)]
+    c = SO.conditioning_echo_control(sweeps)
+    assert c["ECHO"] is True
+    assert c["echo_rate"] == 1.0
+    assert c["DETERMINISTIC_ECHO"] is True
+    assert c["input_to_output_map_if_deterministic"] == {0: 1, 1: 0, 2: 2, 3: 1}
+
+
+def test_echo_control_clears_a_head_that_ignores_its_conditioning():
+    sweeps = [{0: c, 1: c, 2: c, 3: c} for c in (0, 1, 2, 0, 1)]
+    c = SO.conditioning_echo_control(sweeps)
+    assert c["ECHO"] is False
+    assert c["echo_rate"] == 0.0
+
+
+def test_echo_control_refuses_a_sweep_that_cannot_separate_anything():
+    """A one-value 'sweep' measures nothing and must NOT report a pass."""
+    c = SO.conditioning_echo_control([{1: 0} for _ in range(50)])
+    assert c["ECHO"] is None
+    assert c["n_usable"] == 0
+    assert "MISSING CONTROL" in c["reason"]
+
+
+def test_an_echo_arm_beats_every_constant_yet_is_INADMISSIBLE(branchy):
+    """⭐ The regression that matters: BEST_CONSTANT cannot catch an echo.
+
+    The echo arm is built by copying the GT class, so it scores 1.0 and clears the
+    constant floor — exactly the shape the closed-loop panel reported for
+    flagship-v1. The family must still refuse to call it strategic skill.
+    """
+    events, _ = SO.scoreable_events(branchy)
+    oracle = {e["event_id"]: {"class": e["route_gt_class"], "road": None}
+              for e in events}
+    fam = SO.strategic_family(
+        branchy, oracle, arm="ECHO", n_boot=200,
+        conditioning_sweeps=[{0: 1, 1: 0, 2: 2, 3: 1} for _ in events])
+    assert fam["route_class_accuracy"]["mean"] == 1.0
+    assert fam["beats_best_constant"] is True          # the old guard is satisfied
+    assert fam["conditioning_echo_control"]["ECHO"] is True
+    assert fam["STRATEGIC_SKILL_ADMISSIBLE"] is False  # ...and the new one refuses
+    assert "⛔_ECHO" in fam
+
+
+def test_a_non_echo_arm_that_beats_the_constant_IS_admissible(branchy):
+    events, _ = SO.scoreable_events(branchy)
+    oracle = {e["event_id"]: {"class": e["route_gt_class"], "road": None}
+              for e in events}
+    fam = SO.strategic_family(
+        branchy, oracle, arm="REAL", n_boot=200,
+        conditioning_sweeps=[{0: 1, 1: 1, 2: 1, 3: 1} for _ in events])
+    assert fam["conditioning_echo_control"]["ECHO"] is False
+    assert fam["STRATEGIC_SKILL_ADMISSIBLE"] is fam["beats_best_constant"]
+
+
+def test_missing_sweep_is_reported_as_UNTESTED_not_as_a_pass(branchy):
+    events, _ = SO.scoreable_events(branchy)
+    oracle = {e["event_id"]: {"class": e["route_gt_class"], "road": None}
+              for e in events}
+    fam = SO.strategic_family(branchy, oracle, arm="NO_SWEEP", n_boot=200)
+    assert fam["STRATEGIC_SKILL_ADMISSIBLE"] is None
+    assert "⚠️_ECHO_UNTESTED" in fam
+
+
+def test_nav_to_route_matches_the_harness_vocabulary():
+    """``closedloop_drive.NAV_NAMES`` order pinned against a silent renumbering."""
+    assert SO.NAV_TO_ROUTE == {0: 1, 1: 0, 2: 2, 3: 1}
+    assert SO.ROUTE_CLASSES[SO.NAV_TO_ROUTE[1]] == "LEFT"
+    assert SO.ROUTE_CLASSES[SO.NAV_TO_ROUTE[2]] == "RIGHT"
+    assert SO.ROUTE_CLASSES[SO.NAV_TO_ROUTE[3]] == "STRAIGHT"
+
+
+def test_a_manoeuvre_the_map_does_not_admit_is_counted_separately():
+    """⭐ 'wrong branch' and 'no such branch' are DIFFERENT strategic failures.
+
+    A class-vs-class confusion scores them identically; only the option set can tell
+    them apart, which is the whole reason this module exists.
+    """
+    ev = _event("s1", 1, 40, 0, [("r1", 0), ("r2", 1)])       # options are {LEFT, STRAIGHT}
+    reports = {"s1": _report("s1", [ev]), "_refused": {}}
+    fam = SO.strategic_family(
+        reports, {ev["event_id"]: {"class": 2, "road": None}},   # predicts RIGHT
+        arm="OFF_MAP", n_boot=100)
+    assert fam["n_predictions_outside_the_option_set"] == 1
+    assert fam["route_class_accuracy"]["mean"] == 0.0
+
+    fam_ok = SO.strategic_family(
+        reports, {ev["event_id"]: {"class": 1, "road": None}},   # wrong, but admitted
+        arm="ON_MAP", n_boot=100)
+    assert fam_ok["n_predictions_outside_the_option_set"] == 0
+    assert fam_ok["route_class_accuracy"]["mean"] == 0.0

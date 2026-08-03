@@ -40,8 +40,27 @@ field                                            strategic_gt.py
 ``SELFCONSISTENCY_CONTROL`` / ``ADMISSIBLE``     :383-384  the refusal gate
 ===============================================  =========================================
 
-⛔ FIVE TRAPS THIS MODULE EXISTS TO MAKE UNREACHABLE
----------------------------------------------------
+⛔ SIX TRAPS THIS MODULE EXISTS TO MAKE UNREACHABLE
+--------------------------------------------------
+0. **THE ARM ECHOES ITS OWN CONDITIONING INPUT.** The one a constant-predictor floor
+   structurally CANNOT catch, because an echo is not constant and beats every
+   constant. The harness derives ``nav`` from the ego's own logged future
+   (``closedloop_drive.py:348`` → ``refb_labels.nav_command_v21``) and feeds it to
+   the policy; a route head that hands it back scores perfectly and has decided
+   nothing. **MEASURED 2026-08-03 over 78 NuRec T1 branch scenes, by sweeping the
+   nav vocabulary at a FIXED observation:** ``flagship-v1``'s argmax moves with the
+   nav input at **100 %** of poses (nav-to-image logit-variance ratio ≈ 7×) while
+   ``refc-base``'s logits are **bit-identical under all four nav commands** — and
+   the source agrees on both counts (``fourbrain.py:77-86`` FiLM-conditions every
+   block on ``nav_emb`` and reads ``route_head`` off it; ``refc.py:1140`` reads
+   ``route_head(pooled)``, i.e. image features, BEFORE the nav one-hot is fused at
+   ``:1130``). :func:`conditioning_echo_control` +
+   ``strategic_family(conditioning_sweeps=…)` → ``STRATEGIC_SKILL_ADMISSIBLE``.
+   ⚠️ With no sweep the verdict is ``None`` (**UNTESTED**), never a pass.
+   ⚠️ And a *permutation* of the conditioning is NOT a substitute: 50 of those 78
+   scenes hold exactly ONE decision event, so a within-scene shuffle is the
+   identity and the control measures nothing while appearing to run.
+
 1. **A single-option junction is never scored.** ``SCOREABLE`` gates every value.
    A set with no scoreable event returns ``status="UNAVAILABLE"`` **with the
    reason and the n**, never a free 1.0. This is the one rule that killed the
@@ -103,6 +122,8 @@ __all__ = [
     "strategic_family",
     "constant_arm",
     "discrimination_control",
+    "conditioning_echo_control",
+    "NAV_TO_ROUTE",
 ]
 
 #: ``strategic_gt.py:60`` verbatim. Index IS the class id in the labels.
@@ -114,6 +135,11 @@ HEAD_TO_ROUTE = {0: 0, 1: 1, 2: 2}
 #: the class ids no deployed head can emit
 CLASSES_OUTSIDE_HEAD_VOCABULARY = tuple(
     c for c in range(len(ROUTE_CLASSES)) if c not in HEAD_TO_ROUTE.values())
+
+#: ``closedloop_drive.NAV_NAMES`` = ("follow","left","right","straight") -> this module's
+#: map classes. FOLLOW carries no route meaning; STRAIGHT is the kindest reading of it
+#: (and the most common class), which makes the echo baseline STRONGER, not weaker.
+NAV_TO_ROUTE = {0: 1, 1: 0, 2: 2, 3: 1}
 
 DEFAULT_N_BOOT = 2000
 
@@ -463,8 +489,75 @@ def _guard_single_cluster(block: dict, n_scenes: int) -> dict:
     return block
 
 
+def conditioning_echo_control(sweeps) -> dict:
+    """⭐ THE SECOND DEGENERACY, AND THE ONE THAT SURVIVED THE FIRST GUARD.
+
+    :func:`discrimination_control` proves the **labels** carry entropy, and
+    :func:`strategic_family`'s ``BEST_CONSTANT`` floor kills a head that always
+    answers one class. Neither can see the failure that actually happened: the
+    harness computes the nav command from **the ego's own logged future**
+    (``closedloop_drive.py:348 nav_from_route`` -> ``refb_labels.nav_command_v21``),
+    feeds it to the policy, and the policy's route head hands it straight back.
+    That head is not constant, it beats every constant, and it is **still not
+    strategy** — it is a relabelling of an oracle input.
+
+    ``sweeps`` is a list of per-decision observations, each
+    ``{conditioning_value: predicted_class}`` **taken at a FIXED observation**.
+    Sweeping the input while the pixels are held constant is a MANIPULATION, so
+    it identifies the echo; an observational nav-vs-head contingency table cannot,
+    because a competent head and an echo agree whenever the nav is correct.
+
+    ⚠️ The sweep must cover more than one conditioning value or the control
+    silently measures nothing — the failure mode that made a within-scene
+    permutation useless on the 60 %+ of branch scenes carrying ONE decision.
+
+    Returns ``ECHO`` True when the prediction moves with the input on a majority
+    of observations, and ``DETERMINISTIC_ECHO`` when the map input -> output is a
+    function with no observation-dependence left at all.
+    """
+    rows = [s for s in (sweeps or []) if isinstance(s, dict) and len(s) >= 2]
+    n_all = len(sweeps or [])
+    if not rows:
+        return {"ECHO": None, "n_observations": n_all, "n_usable": 0,
+                "reason": ("no observation carries >=2 distinct conditioning values, so "
+                           "the sweep cannot separate an echo from a decision. This is a "
+                           "MISSING CONTROL, not a pass.")}
+    moved = sum(1 for s in rows if len({v for v in s.values() if v is not None}) > 1)
+    mapping, deterministic = {}, True
+    for s in rows:
+        for k, v in s.items():
+            if v is None:
+                continue
+            if k in mapping and mapping[k] != v:
+                deterministic = False
+            mapping.setdefault(k, v)
+    rate = moved / len(rows)
+    return {
+        "n_observations": n_all,
+        "n_usable": len(rows),
+        "n_observations_whose_answer_MOVED_with_the_input": moved,
+        "echo_rate": round(rate, 4),
+        "ECHO": bool(rate >= 0.5),
+        "DETERMINISTIC_ECHO": bool(deterministic and rate > 0.0),
+        "input_to_output_map_if_deterministic": (
+            {int(k): int(v) for k, v in sorted(mapping.items())} if deterministic else None),
+        "⛔_verdict": (
+            "the route head is a relabelling of its own conditioning input: it changes "
+            "answer when ONLY the input changes and the observation does not. Any accuracy "
+            "scored while that input is an ORACLE is the oracle, not the arm."
+            if rate >= 0.5 else
+            "not an echo on this sweep — the answer is driven by the observation, not by "
+            "the conditioning input."),
+        "⭐_why_this_is_not_the_constant_guard": (
+            "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT "
+            "cannot catch it. It is the second way to score 1.0000 without deciding "
+            "anything, and it is the one that survived the first guard."),
+    }
+
+
 def strategic_family(reports, predictions, *, arm="arm", n_boot=DEFAULT_N_BOOT,
-                     seed=0, compare_to_best_constant=True) -> dict:
+                     seed=0, compare_to_best_constant=True,
+                     conditioning_sweeps=None) -> dict:
     """THE closed-loop STRATEGIC family, scored on map-derived option sets.
 
     ``reports``      ``{scene_id: strategic_gt report}`` (:func:`load_label_reports`)
@@ -568,6 +661,18 @@ def strategic_family(reports, predictions, *, arm="arm", n_boot=DEFAULT_N_BOOT,
             [(p or {}).get("class") for p in preds]),
         "route_class_confusion_gt_x_pred": _confusion(
             gt_class, [(p or {}).get("class") for p in preds]),
+        # ⭐ A STRATEGIC ERROR THE CONFUSION MATRIX CANNOT NAME: predicting a manoeuvre
+        # the MAP DOES NOT ADMIT here. "wrong branch" and "no such branch" are different
+        # failures — the first is a choice, the second means the head is not reading the
+        # junction at all — and a class-vs-class confusion table scores them identically.
+        # Only an option-set label can tell them apart, which is the point of this module.
+        "n_predictions_outside_the_option_set": sum(
+            1 for e, p in zip(events, preds)
+            if (p or {}).get("class") is not None
+            and (p["class"] not in {o.get("class") for o in (e.get("options") or [])})),
+        "predictions_outside_the_option_set_note": (
+            "the map admitted no continuation of that class at this junction. Distinct "
+            "from a wrong-branch error, and invisible to a class-vs-class confusion."),
         "accuracy_by_branching_factor": {
             int(k): {"n": int(sum(1 for v, kk in zip(cls_ok, n_opts) if kk == k)),
                      "acc": round(float(np.mean([v for v, kk in zip(cls_ok, n_opts)
@@ -700,6 +805,29 @@ def strategic_family(reports, predictions, *, arm="arm", n_boot=DEFAULT_N_BOOT,
             "resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch "
             "scenes (results/junction_turn_scenes.tsv lists 225 candidates).")
         out["beats_best_constant_ADMISSIBLE"] = False
+
+    # ---- ⛔ the INPUT-ECHO degeneracy, which BEST_CONSTANT structurally cannot see
+    echo = conditioning_echo_control(conditioning_sweeps)
+    out["conditioning_echo_control"] = echo
+    beat = bool(out.get("beats_best_constant"))
+    if echo.get("ECHO"):
+        out["STRATEGIC_SKILL_ADMISSIBLE"] = False
+        out["⛔_ECHO"] = (
+            f"echo_rate {echo['echo_rate']}: this arm's route answer moves with its "
+            "CONDITIONING INPUT at a fixed observation. The nav command is derived from "
+            "the ego's own logged future (closedloop_drive.py:348 -> "
+            "refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE "
+            "passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-"
+            "conditioning) number, or do not quote one. `beats_best_constant` is "
+            f"{beat} and is NOT sufficient here — an echo beats every constant.")
+    elif echo.get("ECHO") is None:
+        out["STRATEGIC_SKILL_ADMISSIBLE"] = None
+        out["⚠️_ECHO_UNTESTED"] = (
+            "no conditioning sweep was supplied, so the input-echo degeneracy is UNTESTED. "
+            "Pass `conditioning_sweeps=[{nav: predicted_class}, ...]` measured at FIXED "
+            "observations. An untested control is a gap, not a pass.")
+    else:
+        out["STRATEGIC_SKILL_ADMISSIBLE"] = beat
 
     out["_binding_rule"] = (
         "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, "

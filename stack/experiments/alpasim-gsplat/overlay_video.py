@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Closed-loop video in the TanitEval house style: camera + metric BEV + decision HUD.
+"""Closed- OR open-loop video in the TanitEval house style: camera + metric BEV + HUD.
+
+⭐ `--mode` decides which experiment the frame is FROM, and it is stamped on the frame:
+  * `closed_loop` (default, unchanged behaviour) — the model drives; the cyan path is
+    where the car actually went under its own plans.
+  * `open_loop` — the ego is pinned to the LOGGED trajectory and the model only predicts.
+    There is no driven path distinct from ground truth, so the cyan layer is dropped and
+    the badge says OPEN-LOOP. ⛔ The two must never be confusable after the fact, which
+    is why the mode is burned into the pixels and not only into the filename.
 
 The programme's standing visualisation standard (memory: "TanitEval viz standard") is
 camera projection AND a metric BEV inset TOGETHER, with a text overlay of the model's
@@ -85,7 +93,7 @@ def polyline(img, pts, color, thick=3):
         prev = p
 
 
-def draw_bev(size, scale, ego, plan, gt_xy, driven, actors, lead_idx):
+def draw_bev(size, scale, ego, plan, gt_xy, driven, actors, lead_idx, mode="closed_loop"):
     """Metric BEV, ego at bottom-centre, rotated to ego (the house layout)."""
     import cv2
     bev = np.full((size, size, 3), 24, np.uint8)
@@ -100,8 +108,13 @@ def draw_bev(size, scale, ego, plan, gt_xy, driven, actors, lead_idx):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.35, (95, 95, 95), 1, cv2.LINE_AA)
     cv2.line(bev, (cx, 0), (cx, size), (44, 44, 44), 1)
 
-    polyline(bev, [P(world_to_rig(p, ego)) for p in gt_xy], C_ROUTE, 2)
-    if len(driven) > 1:
+    # GT is drawn FIRST and THICKER so it survives as a halo where the plan agrees with
+    # it. Equal widths made the green vanish under the orange wherever the arm was right,
+    # i.e. exactly where the viewer most needs to see that the two coincide.
+    polyline(bev, [P(world_to_rig(p, ego)) for p in gt_xy], C_ROUTE, 5)
+    # ⛔ In OPEN loop the ego IS the logged path, so a "driven" layer would be a second
+    # copy of the green one and would read as agreement the run never demonstrated.
+    if mode != "open_loop" and len(driven) > 1:
         polyline(bev, [P(world_to_rig(p, ego)) for p in driven], C_DRIVEN, 2)
     polyline(bev, [P(p) for p in densify(plan, 24)], C_PLAN, 2)
     for h, k in zip((0.5, 1.0, 1.5, 2.0), range(4)):
@@ -125,15 +138,69 @@ def draw_bev(size, scale, ego, plan, gt_xy, driven, actors, lead_idx):
     cv2.polylines(bev, [car], True, C_EGO, 2, cv2.LINE_AA)
     cv2.putText(bev, "BEV (metric, ego-centred)", (8, 18), cv2.FONT_HERSHEY_SIMPLEX,
                 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+
     return bev
 
 
-def hud_lines(rec, st, m, arm, cond):
+def draw_legend(canvas, x0, y0, w, mode):
+    """Legend, in the dead space under the BEV.
+
+    ⛔ "Draw GT and prediction distinguishably" is not satisfied by using two colours —
+    the viewer has to be TOLD which is which, on the frame, or a screenshot of it is
+    unreadable a week later.
+    """
+    import cv2
+    leg = [("GROUND TRUTH — the logged path", C_ROUTE),
+           ("MODEL PREDICTION — the plan, 0.5-2.0 s", C_PLAN)]
+    if mode != "open_loop":
+        leg.append(("DRIVEN — where the model actually went", C_DRIVEN))
+    leg += [("annotated agent", C_ACTOR), ("LEAD agent", C_LEAD),
+            ("ego", C_EGO)]
+    cv2.putText(canvas, "LEGEND", (x0 + 10, y0 + 18), cv2.FONT_HERSHEY_SIMPLEX, 0.44,
+                (150, 150, 150), 1, cv2.LINE_AA)
+    for i, (txt, col) in enumerate(leg):
+        yy = y0 + 40 + i * 20
+        cv2.line(canvas, (x0 + 12, yy - 4), (x0 + 40, yy - 4), col, 4, cv2.LINE_AA)
+        cv2.putText(canvas, txt, (x0 + 48, yy), cv2.FONT_HERSHEY_SIMPLEX, 0.42,
+                    (220, 220, 220), 1, cv2.LINE_AA)
+    return canvas
+
+
+def draw_mode_badge(img, mode):
+    """Burn OPEN-LOOP / CLOSED-LOOP into the camera panel.
+
+    The two experiments answer different questions and have been confused before; a
+    filename is not a defence once the file has been copied somewhere else.
+    """
+    import cv2
+    openl = mode == "open_loop"
+    txt = "OPEN-LOOP" if openl else "CLOSED-LOOP"
+    sub = ("ego on GROUND TRUTH - model predicts, does NOT drive"
+           if openl else "model DRIVES - each frame rendered from where it went")
+    col = (90, 220, 90) if openl else (40, 165, 255)
+    h, w = img.shape[:2]
+    x0, y0 = w - 470, 12
+    cv2.rectangle(img, (x0, y0), (w - 12, y0 + 62), (12, 12, 12), -1)
+    cv2.rectangle(img, (x0, y0), (w - 12, y0 + 62), col, 2)
+    cv2.putText(img, txt, (x0 + 14, y0 + 32), cv2.FONT_HERSHEY_SIMPLEX, 0.95, col, 2,
+                cv2.LINE_AA)
+    cv2.putText(img, sub, (x0 + 14, y0 + 52), cv2.FONT_HERSHEY_SIMPLEX, 0.40,
+                (205, 205, 205), 1, cv2.LINE_AA)
+    return img
+
+
+def hud_lines(rec, st, m, arm, cond, mode="closed_loop", scene="00040136"):
     v = st["v"]
+    openl = mode == "open_loop"
+    head = (f"{arm}  |  scene {scene} (NuRec recon)  |  "
+            + ("EGO ON LOGGED PATH  |  OPEN LOOP @10Hz - model predicts only"
+               if openl else f"{cond.upper()} ROAD  |  CLOSED LOOP @10Hz - model drives"))
+    ctrl = ("   steer {:+.3f} rad   accel {:+.2f} m/s2 (COMMANDED, NOT APPLIED)"
+            if openl else "   steer {:+.3f} rad   accel {:+.2f} m/s2")
     lines = [
-        f"{arm}  |  scene 00040136 (NuRec recon)  |  {cond.upper()} ROAD  |  closed loop @10Hz",
+        head,
         f"t = {st['k'] * 0.1:5.1f}s   speed {v:5.2f} m/s   plan target {st['v_target']:5.2f} m/s"
-        f"   steer {st['steer']:+.3f} rad   accel {st['accel']:+.2f} m/s2",
+        + ctrl.format(st["steer"], st["accel"]),
         f"TACTICAL   planned: {MAN_NAMES[m['man_plan']]:<11}"
         + (f" head: {MAN_NAMES[m['man_head']]:<11}" if m.get("man_head") is not None else " " * 18)
         + f" executed: {MAN_NAMES[m['man_exec']] if m.get('man_exec') is not None else '-':<11}"
@@ -142,9 +209,13 @@ def hud_lines(rec, st, m, arm, cond):
         + (f" route head: {ROUTE_NAMES[m['route_head']]:<9}" if m.get("route_head") is not None
            else " " * 21)
         + f" route logged: {ROUTE_NAMES[m['route_gt']]:<9} corridor: "
-        + ("OFF-ROUTE" if abs(m["cross_track"]) > 2.0 else "on-route"),
-        f"LATERAL cross-track {m['cross_track']:+5.2f} m   heading err {m['heading_err']:+.3f} rad"
-        f"   LONGITUDINAL speed err {m['speed_err']:+5.2f} m/s   plan ADE@2s {m['de2s']:5.2f} m",
+        + ("n/a (ego on GT)" if openl else
+           ("OFF-ROUTE" if abs(m["cross_track"]) > 2.0 else "on-route")),
+        (f"LATERAL lat-ADE {m['lat_ade']:5.2f} m   heading err {m['heading_err']:+.3f} rad"
+         f"   LONGITUDINAL along-track {m['lon_ade']:5.2f} m  speed err {m['speed_err']:+5.2f} m/s"
+         f"   plan ADE@2s {m['de2s']:5.2f} m" if openl else
+         f"LATERAL cross-track {m['cross_track']:+5.2f} m   heading err {m['heading_err']:+.3f} rad"
+         f"   LONGITUDINAL speed err {m['speed_err']:+5.2f} m/s   plan ADE@2s {m['de2s']:5.2f} m"),
     ]
     if m.get("synth_headway") is not None:
         hw, tg = m["synth_headway"], m.get("synth_time_gap")
@@ -166,6 +237,8 @@ def main():
     ap.add_argument("--cam-w", type=int, default=1280)
     ap.add_argument("--bev", type=int, default=520)
     ap.add_argument("--tracks", default=None)
+    ap.add_argument("--mode", default=None, choices=["closed_loop", "open_loop"],
+                    help="default: read `mode` from the rollout file, else closed_loop")
     args = ap.parse_args()
 
     import cv2
@@ -192,10 +265,14 @@ def main():
         tracks = ActorTracks(args.tracks)
 
     cond = d["condition"]
+    # ⚠️ The mode is taken from the PRODUCER's own record by default. Passing it only on
+    # the command line would let a mislabelled invocation stamp CLOSED-LOOP on an
+    # open-loop run, which is exactly the confusion the badge exists to prevent.
+    mode = args.mode or d.get("mode") or "closed_loop"
     # In a CONSTRUCTED condition the drawn vehicle is not in `tracks` at all, so the BEV
     # would be empty and the HUD silent about the very thing under test. Score and draw
     # the synthetic lead from the geometry the rollout recorded.
-    lead_ref = cond if cond not in ("empty", "objects") else None
+    lead_ref = cond if cond not in ("empty", "objects", "logged") else None
     mets = per_step_metrics(rec, gt, tracks=tracks, lead_ref=lead_ref)
     fdir = Path(args.frames)
     files = sorted(fdir.glob("*.jpg"))
@@ -228,7 +305,7 @@ def main():
         i0 = max(0, st["i_gt"])
         route_rig = [world_to_rig(p, ego) for p in gt_xy[i0:i0 + 60]]
         polyline(img, project_rig_points(route_rig, intr, Ts, cam.width, cam.height),
-                 C_ROUTE, 3)
+                 C_ROUTE, 9)
         polyline(img, project_rig_points(densify(plan, 24), intr, Ts, cam.width, cam.height),
                  C_PLAN, 4)
         for k4 in range(4):
@@ -240,6 +317,7 @@ def main():
         cam_img = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_AREA)
         cv2.putText(cam_img, "front-wide f-theta (gsplat render of the NuRec scene)",
                     (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (210, 210, 210), 1, cv2.LINE_AA)
+        draw_mode_badge(cam_img, mode)
 
         actors = list(m.get("actors", []))
         lead_idx = m.get("lead_idx", -1)
@@ -249,13 +327,16 @@ def main():
                            "yaw": ego[3], "rig": [sx, sy], "l": 3.08, "w": 1.63})
             lead_idx = len(actors) - 1
         bev = draw_bev(bev_s, bev_s / 110.0 * 2.2, ego, plan, gt_xy[i0:i0 + 80], driven,
-                       actors, lead_idx)
+                       actors, lead_idx, mode=mode)
 
         canvas = np.full((H, W, 3), 18, np.uint8)
         canvas[0:ch, 0:cw] = cam_img
         canvas[0:bev_s, cw:cw + bev_s] = bev
+        if H > bev_s + 40:
+            draw_legend(canvas, cw, bev_s + 6, bev_s, mode)
         y = max(ch, bev_s) + 24
-        for i, line in enumerate(hud_lines(rec, st, m, d["arm"], d["condition"])):
+        for i, line in enumerate(hud_lines(rec, st, m, d["arm"], d["condition"], mode,
+                                           str(d.get("scene", "00040136"))[:8])):
             cv2.putText(canvas, line, (14, y + i * 21), cv2.FONT_HERSHEY_SIMPLEX,
                         0.48, (235, 235, 235) if i else (120, 220, 255), 1, cv2.LINE_AA)
         vw.write(canvas)
@@ -266,8 +347,10 @@ def main():
     n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     ok, fr = cap.read()
     cap.release()
-    info = {"out": args.out, "frames_written": min(len(files), len(rec["steps"])),
+    info = {"out": args.out, "mode": mode,
+            "frames_written": min(len(files), len(rec["steps"])),
             "frames_decoded": n, "first_frame_ok": bool(ok),
+            "duration_s": round(n / max(args.fps, 1), 2),
             "size": [W, H], "bytes": Path(args.out).stat().st_size,
             "mean_pixel": float(fr.mean()) if ok else None}
     print(json.dumps(info, indent=2))

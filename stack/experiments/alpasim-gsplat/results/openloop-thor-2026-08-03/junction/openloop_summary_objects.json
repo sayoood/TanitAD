@@ -1,0 +1,44 @@
+{
+  "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+  "n_ticks": 199,
+  "stride": 3,
+  "n_frames_rendered": 199,
+  "render_ms_mean": 185.9532612652036,
+  "render_ms_p50": 216.70889854431152,
+  "wall_s": 102.7559597492218,
+  "arms": {
+    "flagship-v1": {
+      "scoring": "/home/nvidia/ol_out_junction/objects/rollouts_flagship-v1_openloop.json",
+      "video": "/home/nvidia/ol_out_junction/objects/video_flagship-v1_openloop.json",
+      "n_windows": 190,
+      "n_clusters": 9
+    },
+    "refc-base": {
+      "scoring": "/home/nvidia/ol_out_junction/objects/rollouts_refc-base_openloop.json",
+      "video": "/home/nvidia/ol_out_junction/objects/video_refc-base_openloop.json",
+      "n_windows": 190,
+      "n_clusters": 9
+    }
+  },
+  "render_quality": {
+    "layers": "background,road",
+    "all_dynamic_layers": true,
+    "sky_gain": 0.3,
+    "sky_ramp_deg": [
+      0.0,
+      6.0
+    ],
+    "cull_scale_quantile": 0.95,
+    "cull": {
+      "quantile": 0.95,
+      "scale_thresh_m": 0.8193,
+      "n_dropped": 134206,
+      "n_kept": 2532391
+    },
+    "rolling_shutter": false,
+    "shutter_s": 0.0,
+    "shutter_type": "ROLLING_TOP_TO_BOTTOM"
+  },
+  "frames_dir": "/home/nvidia/ol_out_junction/objects/frames",
+  "shared_observation_note": "ONE render pass drove every arm in this process, so the arms are paired on IDENTICAL pixels by construction. `frame_md5` in each rollout file is the per-tick digest of the rendered frame; it is the same list in every arm's file by identity, and it lets a later re-render be checked bit-exactly rather than assumed to reproduce."
+}

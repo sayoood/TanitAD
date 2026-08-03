@@ -6,8 +6,27 @@ Pulled from `tanitad-pod3:/workspace/idmretrain/taniteval/results/videos` on **2
 
 ⚠️ These are the videos that existed BEFORE the v2corpus run. Fresh long overlays for v2corpus vs v1 on the canonical val are rendering separately.
 
+---
 
-**56 videos, 49.8 MB total.**
+## ⭐ AlpaSim / NuRec sim videos — OPEN loop and CLOSED loop are SEPARATE folders
+
+⛔ **They answer different questions and must never be confused.** The mode is burned into
+every frame as well as into the folder name.
+
+| folder | mode | what it means | files |
+|---|---|---|---|
+| [`alpasim-openloop-thor-2026-08-03/`](alpasim-openloop-thor-2026-08-03/README.md) | **OPEN** | the ego follows the **LOGGED** trajectory; the model predicts and is scored, but **never drives**. Isolates perception + prediction. | 8 × 19.0 s (2 scenes × 2 arms × 2 traffic conditions) |
+| [`alpasim-closedloop-thor-2026-08-03/`](alpasim-closedloop-thor-2026-08-03/README.md) | **CLOSED** | the model **drives**; each frame is rendered from where it actually went. Perception error and control drift are confounded here — that is the point of also having the open-loop set. | 4 × 18.0 s |
+| `alpasim-closedloop-archive-2026-07-22/` | CLOSED | superseded 10.4 s clips from the terminated eval pod. | archive |
+
+Both sets use the identical 2026-08-03 render (4 layers + scale-cull 0.95 + gated sky 0.3,
+grad-NCC 0.3424). ⛔ All AlpaSim numbers are **WITHIN-SIM RELATIVE**: REF-C's open-loop ADE
+is 1.5157 on these reconstructions vs 0.4728 on real footage — **3.21× OOD**. Orderings
+survive; absolute rates do not.
+
+---
+
+**56 videos, 49.8 MB total** *(the pod3 set below; the AlpaSim folders above are counted separately).*
 
 
 ## REF-A — 5 clips, 4.2 MB

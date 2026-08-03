@@ -1,0 +1,2634 @@
+{
+ "tool": "aggregate_t1_strategic.py",
+ "evidence_class": "MEASURED",
+ "mode": "OPEN-LOOP on the LOGGED clipgt track, REAL 4K reference camera",
+ "arms": {
+  "flagship-v1": {
+   "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+   "step": 29999
+  },
+  "refc-base": {
+   "ckpt": "/home/nvidia/models/refc-base/ckpt.pt",
+   "step": 29999
+  }
+ },
+ "TIER": "T1 (|turn| >= 60 deg, complete traversal) of the 1607-scene NuRec survey",
+ "n_scenes_with_ticks": 77,
+ "n_scoreable_events": 116,
+ "n_bootstrap_clusters_scenes": 77,
+ "n_decision_instances_scored": 110,
+ "n_poses_observed": 4745,
+ "SHUFFLE_CONTROL": {
+  "n_events": 110,
+  "n_fixed_points": 0,
+  "n_events_whose_nav_VALUE_is_unchanged": 46,
+  "note": "a 4-value vocabulary means a permutation often lands on the same VALUE; that is counted, not hidden \u2014 it makes navSHUFFLED a CONSERVATIVE control (it retains some genuine signal)."
+ },
+ "LEAKAGE_CONTROL": {
+  "n_scored_in_train_split": 38,
+  "catalogue_train_split_size": 153625,
+  "our_build_n_clips": 2400,
+  "base_rate_of_selection": 0.01562,
+  "leak_free_subset_applied": false,
+  "\u26d4_note": "'in the train SPLIT' is an UPPER BOUND, not leakage: the split holds 153625 valid clips and our corpus took 2400 of them. The assumption-free control is to re-score on the COMPLEMENT (--leak-free), which is what this flag does."
+ },
+ "NEGATIVE_CONTROL": {
+  "control": "ORACLE vs BEST CONSTANT PREDICTOR on the real option sets",
+  "evidence_class": "MEASURED",
+  "n_events": 116,
+  "n_scenes": 77,
+  "arms": {
+   "ORACLE": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "NO_HEAD": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "CONSTANT_LEFT": {
+    "mean": 0.4397,
+    "lo": 0.3388,
+    "hi": 0.5392,
+    "ci95": 0.1002,
+    "se": 0.0517,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "CONSTANT_STRAIGHT": {
+    "mean": 0.2241,
+    "lo": 0.1373,
+    "hi": 0.3109,
+    "ci95": 0.0868,
+    "se": 0.0441,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "CONSTANT_RIGHT": {
+    "mean": 0.3362,
+    "lo": 0.2411,
+    "hi": 0.4386,
+    "ci95": 0.0988,
+    "se": 0.051,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "UNIFORM_RANDOM_OVER_OPTION_CLASSES": {
+    "mean": 0.5345,
+    "lo": 0.4464,
+    "hi": 0.6273,
+    "ci95": 0.0904,
+    "se": 0.0459,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "best_constant": "CONSTANT_LEFT",
+  "oracle_minus_best_constant": {
+   "delta": 0.5603,
+   "lo": 0.4608,
+   "hi": 0.6612,
+   "ci95": 0.1002,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "DISCRIMINATES": true,
+  "constant_predictor_does_not_score_well": true,
+  "no_head_scores_zero": true,
+  "\u26d4_why_this_gate": "a constant predictor tying the oracle is EXACTLY the degeneracy that made route_head_eq_logged = 1.0000 meaningless. If DISCRIMINATES is False the scene set cannot carry a strategic verdict and no accuracy may be quoted from it.",
+  "\u26a0\ufe0f_power": "the cluster bootstrap narrows ~1/sqrt(n_scenes); a +-0.10 strategic verdict needs ~100+ scenes WITH a branch. One scene cannot carry a strategic CI."
+ },
+ "NAV_PASSTHROUGH": {
+  "flagship-v1": {
+   "n_poses": 4745,
+   "nav_passthrough_rate": 1.0,
+   "argmax_distribution_per_nav": {
+    "follow": {
+     "STRAIGHT": 4745
+    },
+    "left": {
+     "LEFT": 4745
+    },
+    "right": {
+     "RIGHT": 4745
+    },
+    "straight": {
+     "LEFT": 288,
+     "STRAIGHT": 44,
+     "RIGHT": 4413
+    }
+   },
+   "reading": "1.0 = the route head is a relabelling of its own nav input at EVERY pose; 0.0 = the head ignores nav entirely and answers from pixels."
+  },
+  "refc-base": {
+   "n_poses": 4745,
+   "nav_passthrough_rate": 0.0,
+   "argmax_distribution_per_nav": {
+    "follow": {
+     "LEFT": 1842,
+     "STRAIGHT": 1272,
+     "RIGHT": 1631
+    },
+    "left": {
+     "LEFT": 1842,
+     "STRAIGHT": 1272,
+     "RIGHT": 1631
+    },
+    "right": {
+     "LEFT": 1842,
+     "STRAIGHT": 1272,
+     "RIGHT": 1631
+    },
+    "straight": {
+     "LEFT": 1842,
+     "STRAIGHT": 1272,
+     "RIGHT": 1631
+    }
+   },
+   "reading": "1.0 = the route head is a relabelling of its own nav input at EVERY pose; 0.0 = the head ignores nav entirely and answers from pixels."
+  }
+ },
+ "LOGIT_VARIANCE_DECOMPOSITION": {
+  "flagship-v1": {
+   "n_poses": 4745,
+   "logit_std_across_POSES_at_fixed_nav_mean": 1.85967,
+   "logit_std_across_POSES_at_fixed_nav_per_nav": {
+    "follow": 1.35962,
+    "left": 2.12308,
+    "right": 0.52551,
+    "straight": 3.43047
+   },
+   "logit_std_across_NAVS_at_fixed_pose_mean": 9.65335,
+   "nav_over_image_variance_ratio": 5.191,
+   "HEAD_IS_NAV_BLIND": false,
+   "reading": "across_NAVS == 0.0 -> the head structurally cannot see its nav input. ratio >> 1 -> the conditioning input outweighs the observation. Neither is read alone: pair it with nav_passthrough_rate, which is what actually decides the answer."
+  },
+  "refc-base": {
+   "n_poses": 4745,
+   "logit_std_across_POSES_at_fixed_nav_mean": 1.17147,
+   "logit_std_across_POSES_at_fixed_nav_per_nav": {
+    "follow": 1.17147,
+    "left": 1.17147,
+    "right": 1.17147,
+    "straight": 1.17147
+   },
+   "logit_std_across_NAVS_at_fixed_pose_mean": 0.0,
+   "nav_over_image_variance_ratio": 0.0,
+   "HEAD_IS_NAV_BLIND": true,
+   "reading": "across_NAVS == 0.0 -> the head structurally cannot see its nav input. ratio >> 1 -> the conditioning input outweighs the observation. Neither is read alone: pair it with nav_passthrough_rate, which is what actually decides the answer."
+  }
+ },
+ "families": {
+  "flagship-v1/navFOLLOW": {
+   "status": "OK",
+   "arm": "flagship-v1/navFOLLOW",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 34,
+   "route_class_accuracy": {
+    "mean": 0.1983,
+    "lo": 0.124,
+    "hi": 0.2727,
+    "ci95": 0.0744,
+    "se": 0.0388,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 110,
+     "n_correct": 23,
+     "recall": 0.8846,
+     "precision": 0.2091
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "STRAIGHT": 49,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 38,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 23,
+     "none": 3
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.2469
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.1154
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.0
+    },
+    "5": {
+     "n": 3,
+     "acc": 0.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.2414,
+    "lo": -0.395,
+    "hi": -0.0948,
+    "ci95": 0.1501,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "decision_lead_distance_m": {
+    "mean": 6.7527,
+    "lo": 3.8538,
+    "hi": 9.7209,
+    "ci95": 2.9335,
+    "se": 1.5138,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 23,
+    "\u26a0\ufe0f_censoring": "23 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "flagship-v1/navORACLE": {
+   "status": "OK",
+   "arm": "flagship-v1/navORACLE",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 3,
+   "route_class_accuracy": {
+    "mean": 0.8707,
+    "lo": 0.8053,
+    "hi": 0.9298,
+    "ci95": 0.0623,
+    "se": 0.0318,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 50,
+     "n_correct": 48,
+     "recall": 0.9412,
+     "precision": 0.96
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 18,
+     "n_correct": 16,
+     "recall": 0.6154,
+     "precision": 0.8889
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 42,
+     "n_correct": 37,
+     "recall": 0.9487,
+     "precision": 0.881
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 48,
+     "none": 2,
+     "STRAIGHT": 1
+    },
+    "RIGHT": {
+     "RIGHT": 37,
+     "none": 1,
+     "STRAIGHT": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 16,
+     "none": 3,
+     "LEFT": 2,
+     "RIGHT": 5
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.8395
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.9615
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.8333
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.431,
+    "lo": 0.319,
+    "hi": 0.5462,
+    "ci95": 0.1136,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is True and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 15.5895,
+    "lo": 12.7129,
+    "hi": 18.6944,
+    "ci95": 2.9907,
+    "se": 1.5567,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 86,
+    "\u26a0\ufe0f_censoring": "86 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "flagship-v1/navSHUFFLED": {
+   "status": "OK",
+   "arm": "flagship-v1/navSHUFFLED",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 35,
+   "route_class_accuracy": {
+    "mean": 0.3879,
+    "lo": 0.3103,
+    "hi": 0.4722,
+    "ci95": 0.0809,
+    "se": 0.0401,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 59,
+     "n_correct": 28,
+     "recall": 0.549,
+     "precision": 0.4746
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 7,
+     "n_correct": 2,
+     "recall": 0.0769,
+     "precision": 0.2857
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 44,
+     "n_correct": 15,
+     "recall": 0.3846,
+     "precision": 0.3409
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 28,
+     "RIGHT": 19,
+     "none": 2,
+     "STRAIGHT": 2
+    },
+    "RIGHT": {
+     "LEFT": 20,
+     "RIGHT": 15,
+     "STRAIGHT": 3,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "LEFT": 11,
+     "none": 3,
+     "STRAIGHT": 2,
+     "RIGHT": 10
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.3704
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.3462
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.5
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.0517,
+    "lo": -0.168,
+    "hi": 0.0588,
+    "ci95": 0.1134,
+    "p_delta_gt0": 0.1585,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 6.8272,
+    "lo": 4.9089,
+    "hi": 9.0668,
+    "ci95": 2.0789,
+    "se": 1.0832,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 45,
+    "\u26a0\ufe0f_censoring": "45 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "flagship-v1/navLEFT": {
+   "status": "OK",
+   "arm": "flagship-v1/navLEFT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 28,
+   "route_class_accuracy": {
+    "mean": 0.4224,
+    "lo": 0.3274,
+    "hi": 0.521,
+    "ci95": 0.0968,
+    "se": 0.0493,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 110,
+     "n_correct": 49,
+     "recall": 0.9608,
+     "precision": 0.4455
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 49,
+     "none": 2
+    },
+    "RIGHT": {
+     "LEFT": 38,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "LEFT": 23,
+     "none": 3
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.358
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.5385
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 0.6667
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.0172,
+    "lo": -0.0442,
+    "hi": 0.0,
+    "ci95": 0.0221,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "decision_lead_distance_m": {
+    "mean": 7.3058,
+    "lo": 4.9095,
+    "hi": 10.0975,
+    "ci95": 2.594,
+    "se": 1.3235,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 49,
+    "\u26a0\ufe0f_censoring": "49 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "flagship-v1/navRIGHT": {
+   "status": "OK",
+   "arm": "flagship-v1/navRIGHT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 52,
+   "route_class_accuracy": {
+    "mean": 0.3276,
+    "lo": 0.2325,
+    "hi": 0.4348,
+    "ci95": 0.1011,
+    "se": 0.0515,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 110,
+     "n_correct": 38,
+     "recall": 0.9744,
+     "precision": 0.3455
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "RIGHT": 49,
+     "none": 2
+    },
+    "RIGHT": {
+     "RIGHT": 38,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "RIGHT": 23,
+     "none": 3
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.3457
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.3077
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.1667
+    },
+    "5": {
+     "n": 3,
+     "acc": 0.3333
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.1121,
+    "lo": -0.2832,
+    "hi": 0.0702,
+    "ci95": 0.1767,
+    "p_delta_gt0": 0.104,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "decision_lead_distance_m": {
+    "mean": 5.7448,
+    "lo": 3.6376,
+    "hi": 8.1267,
+    "ci95": 2.2446,
+    "se": 1.1341,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 38,
+    "\u26a0\ufe0f_censoring": "38 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "flagship-v1/navSTRAIGHT": {
+   "status": "OK",
+   "arm": "flagship-v1/navSTRAIGHT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 44,
+   "route_class_accuracy": {
+    "mean": 0.3879,
+    "lo": 0.2956,
+    "hi": 0.4844,
+    "ci95": 0.0944,
+    "se": 0.0485,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 8,
+     "n_correct": 7,
+     "recall": 0.1373,
+     "precision": 0.875
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 102,
+     "n_correct": 38,
+     "recall": 0.9744,
+     "precision": 0.3725
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "RIGHT": 42,
+     "LEFT": 7,
+     "none": 2
+    },
+    "RIGHT": {
+     "RIGHT": 38,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "RIGHT": 22,
+     "none": 3,
+     "LEFT": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.4321
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.3077
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.1667
+    },
+    "5": {
+     "n": 3,
+     "acc": 0.3333
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.0517,
+    "lo": -0.2204,
+    "hi": 0.114,
+    "ci95": 0.1672,
+    "p_delta_gt0": 0.256,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 6.1155,
+    "lo": 4.0736,
+    "hi": 8.4467,
+    "ci95": 2.1866,
+    "se": 1.11,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 40,
+    "\u26a0\ufe0f_censoring": "40 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navFOLLOW": {
+   "status": "OK",
+   "arm": "refc-base/navFOLLOW",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navORACLE": {
+   "status": "OK",
+   "arm": "refc-base/navORACLE",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navSHUFFLED": {
+   "status": "OK",
+   "arm": "refc-base/navSHUFFLED",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navLEFT": {
+   "status": "OK",
+   "arm": "refc-base/navLEFT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navRIGHT": {
+   "status": "OK",
+   "arm": "refc-base/navRIGHT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "refc-base/navSTRAIGHT": {
+   "status": "OK",
+   "arm": "refc-base/navSTRAIGHT",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 13,
+   "route_class_accuracy": {
+    "mean": 0.6983,
+    "lo": 0.6179,
+    "hi": 0.781,
+    "ci95": 0.0816,
+    "se": 0.0413,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 45,
+     "n_correct": 36,
+     "recall": 0.7059,
+     "precision": 0.8
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 24,
+     "n_correct": 15,
+     "recall": 0.5769,
+     "precision": 0.625
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 41,
+     "n_correct": 30,
+     "recall": 0.7692,
+     "precision": 0.7317
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 36,
+     "RIGHT": 7,
+     "STRAIGHT": 6,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 3,
+     "RIGHT": 30,
+     "LEFT": 5,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 15,
+     "none": 3,
+     "LEFT": 4,
+     "RIGHT": 4
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.7037
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.6538
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.6667
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.2586,
+    "lo": 0.1238,
+    "hi": 0.3966,
+    "ci95": 0.1364,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": true,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 0,
+    "echo_rate": 0.0,
+    "ECHO": false,
+    "DETERMINISTIC_ECHO": false,
+    "input_to_output_map_if_deterministic": null,
+    "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 7.7793,
+    "lo": 5.6038,
+    "hi": 10.1183,
+    "ci95": 2.2573,
+    "se": 1.1432,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 26,
+    "\u26a0\ufe0f_censoring": "26 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "NAV_ECHO/navFOLLOW": {
+   "status": "OK",
+   "arm": "NAV_ECHO/navFOLLOW",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 34,
+   "route_class_accuracy": {
+    "mean": 0.1983,
+    "lo": 0.124,
+    "hi": 0.2727,
+    "ci95": 0.0744,
+    "se": 0.0388,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 110,
+     "n_correct": 23,
+     "recall": 0.8846,
+     "precision": 0.2091
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "STRAIGHT": 49,
+     "none": 2
+    },
+    "RIGHT": {
+     "STRAIGHT": 38,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 23,
+     "none": 3
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.2469
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.1154
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.0
+    },
+    "5": {
+     "n": 3,
+     "acc": 0.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.2414,
+    "lo": -0.395,
+    "hi": -0.0948,
+    "ci95": 0.1501,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": true,
+    "input_to_output_map_if_deterministic": {
+     "0": 1,
+     "1": 0,
+     "2": 2,
+     "3": 1
+    },
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "decision_lead_distance_m": {
+    "mean": 6.7527,
+    "lo": 3.8538,
+    "hi": 9.7209,
+    "ci95": 2.9335,
+    "se": 1.5138,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 23,
+    "\u26a0\ufe0f_censoring": "23 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "NAV_ECHO/navORACLE": {
+   "status": "OK",
+   "arm": "NAV_ECHO/navORACLE",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 3,
+   "route_class_accuracy": {
+    "mean": 0.8707,
+    "lo": 0.8053,
+    "hi": 0.9298,
+    "ci95": 0.0623,
+    "se": 0.0318,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 50,
+     "n_correct": 48,
+     "recall": 0.9412,
+     "precision": 0.96
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 18,
+     "n_correct": 16,
+     "recall": 0.6154,
+     "precision": 0.8889
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 42,
+     "n_correct": 37,
+     "recall": 0.9487,
+     "precision": 0.881
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 48,
+     "none": 2,
+     "STRAIGHT": 1
+    },
+    "RIGHT": {
+     "RIGHT": 37,
+     "none": 1,
+     "STRAIGHT": 1
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 16,
+     "none": 3,
+     "LEFT": 2,
+     "RIGHT": 5
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.8395
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.9615
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.8333
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": 0.431,
+    "lo": 0.319,
+    "hi": 0.5462,
+    "ci95": 0.1136,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": true,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": true,
+    "input_to_output_map_if_deterministic": {
+     "0": 1,
+     "1": 0,
+     "2": 2,
+     "3": 1
+    },
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is True and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 15.5895,
+    "lo": 12.7129,
+    "hi": 18.6944,
+    "ci95": 2.9907,
+    "se": 1.5567,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 86,
+    "\u26a0\ufe0f_censoring": "86 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  "NAV_ECHO/navSHUFFLED": {
+   "status": "OK",
+   "arm": "NAV_ECHO/navSHUFFLED",
+   "n_events_scoreable": 116,
+   "n_decision_instances_scored": 116,
+   "n_scenes_scored": 77,
+   "n_events_without_a_prediction": 6,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "n_predictions_outside_the_option_set": 35,
+   "route_class_accuracy": {
+    "mean": 0.3879,
+    "lo": 0.3103,
+    "hi": 0.4722,
+    "ci95": 0.0809,
+    "se": 0.0401,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 51,
+     "n_pred": 59,
+     "n_correct": 28,
+     "recall": 0.549,
+     "precision": 0.4746
+    },
+    "STRAIGHT": {
+     "n_true": 26,
+     "n_pred": 7,
+     "n_correct": 2,
+     "recall": 0.0769,
+     "precision": 0.2857
+    },
+    "RIGHT": {
+     "n_true": 39,
+     "n_pred": 44,
+     "n_correct": 15,
+     "recall": 0.3846,
+     "precision": 0.3409
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 28,
+     "RIGHT": 19,
+     "none": 2,
+     "STRAIGHT": 2
+    },
+    "RIGHT": {
+     "LEFT": 20,
+     "RIGHT": 15,
+     "STRAIGHT": 3,
+     "none": 1
+    },
+    "STRAIGHT": {
+     "LEFT": 11,
+     "none": 3,
+     "STRAIGHT": 2,
+     "RIGHT": 10
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 81,
+     "acc": 0.3704
+    },
+    "3": {
+     "n": 26,
+     "acc": 0.3462
+    },
+    "4": {
+     "n": 6,
+     "acc": 0.5
+    },
+    "5": {
+     "n": 3,
+     "acc": 1.0
+    }
+   },
+   "floors": {
+    "uniform_over_options": 0.442,
+    "uniform_over_option_CLASSES": 0.5244,
+    "constant_predictor_per_class": {
+     "LEFT": 0.4397,
+     "STRAIGHT": 0.2241,
+     "RIGHT": 0.3362
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.4397
+    }
+   },
+   "vs_best_constant": {
+    "delta": -0.0517,
+    "lo": -0.168,
+    "hi": 0.0588,
+    "ci95": 0.1134,
+    "p_delta_gt0": 0.1585,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 116,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT"
+   },
+   "beats_best_constant": false,
+   "STRATEGIC_SKILL_ADMISSIBLE": false,
+   "conditioning_echo_control": {
+    "n_observations": 4745,
+    "n_usable": 4745,
+    "n_observations_whose_answer_MOVED_with_the_input": 4745,
+    "echo_rate": 1.0,
+    "ECHO": true,
+    "DETERMINISTIC_ECHO": true,
+    "input_to_output_map_if_deterministic": {
+     "0": 1,
+     "1": 0,
+     "2": 2,
+     "3": 1
+    },
+    "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+    "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard."
+   },
+   "\u26d4_ECHO": "echo_rate 1.0: this arm's route answer moves with its CONDITIONING INPUT at a fixed observation. The nav command is derived from the ego's own logged future (closedloop_drive.py:348 -> refb_labels.nav_command_v21), so an accuracy scored under it is the ORACLE passing through, NOT a strategic decision. Quote the navFOLLOW (neutral-conditioning) number, or do not quote one. `beats_best_constant` is False and is NOT sufficient here \u2014 an echo beats every constant.",
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "decision_lead_distance_m": {
+    "mean": 6.8272,
+    "lo": 4.9089,
+    "hi": 9.0668,
+    "ci95": 2.0789,
+    "se": 1.0832,
+    "reducer": "mean",
+    "n_windows": 110,
+    "n_episodes": 77,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 19.8,
+    "available_lead_m_max": 59.68,
+    "n_censored_by_clip": 45,
+    "\u26a0\ufe0f_censoring": "45 of 110 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms"
+   },
+   "branching_factor": {
+    "max": 5,
+    "distinct": [
+     2,
+     3,
+     4,
+     5
+    ]
+   }
+  }
+ },
+ "PAIRED": {
+  "flagship-v1: navORACLE - navSHUFFLED": {
+   "A": "flagship-v1/navORACLE",
+   "B": "flagship-v1/navSHUFFLED",
+   "why": "NAV PASS-THROUGH. >0 and separated => the score rides on the oracle nav input.",
+   "delta": 0.4828,
+   "lo": 0.3879,
+   "hi": 0.5715,
+   "ci95": 0.0918,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-v1: navORACLE - NAV_ECHO": {
+   "A": "flagship-v1/navORACLE",
+   "B": "NAV_ECHO/navORACLE",
+   "why": "does the arm add anything over repeating the oracle command it was handed?",
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-v1: navFOLLOW - navORACLE": {
+   "A": "flagship-v1/navFOLLOW",
+   "B": "flagship-v1/navORACLE",
+   "why": "what the deployable (no-oracle) setting costs.",
+   "delta": -0.6724,
+   "lo": -0.7798,
+   "hi": -0.568,
+   "ci95": 0.1059,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base: navORACLE - navSHUFFLED": {
+   "A": "refc-base/navORACLE",
+   "B": "refc-base/navSHUFFLED",
+   "why": "NAV PASS-THROUGH. >0 and separated => the score rides on the oracle nav input.",
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base: navORACLE - NAV_ECHO": {
+   "A": "refc-base/navORACLE",
+   "B": "NAV_ECHO/navORACLE",
+   "why": "does the arm add anything over repeating the oracle command it was handed?",
+   "delta": -0.1724,
+   "lo": -0.252,
+   "hi": -0.0991,
+   "ci95": 0.0765,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base: navFOLLOW - navORACLE": {
+   "A": "refc-base/navFOLLOW",
+   "B": "refc-base/navORACLE",
+   "why": "what the deployable (no-oracle) setting costs.",
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-v1 - refc-base @ navFOLLOW": {
+   "A": "flagship-v1/navFOLLOW",
+   "B": "refc-base/navFOLLOW",
+   "why": "THE head-to-head, paired on identical decision events.",
+   "delta": -0.5,
+   "lo": -0.6053,
+   "hi": -0.4017,
+   "ci95": 0.1018,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-v1 - refc-base @ navORACLE": {
+   "A": "flagship-v1/navORACLE",
+   "B": "refc-base/navORACLE",
+   "why": "THE head-to-head, paired on identical decision events.",
+   "delta": 0.1724,
+   "lo": 0.0991,
+   "hi": 0.252,
+   "ci95": 0.0765,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-v1 - refc-base @ navSHUFFLED": {
+   "A": "flagship-v1/navSHUFFLED",
+   "B": "refc-base/navSHUFFLED",
+   "why": "THE head-to-head, paired on identical decision events.",
+   "delta": -0.3103,
+   "lo": -0.4202,
+   "hi": -0.2,
+   "ci95": 0.1101,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 116,
+   "n_episodes": 77,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

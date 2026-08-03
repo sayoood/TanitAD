@@ -413,7 +413,13 @@ def strategic(win: dict, hier: dict | None = None, optionset: dict | None = None
         out = strategic_family(opt["labels"], opt.get("predictions") or {},
                                arm=opt.get("arm", "arm"),
                                n_boot=opt.get("n_boot", 2000),
-                               seed=opt.get("seed", 0))
+                               seed=opt.get("seed", 0),
+                               # ⛔ the INPUT-ECHO guard. Without a sweep the family returns
+                               # STRATEGIC_SKILL_ADMISSIBLE=None (UNTESTED), which is the
+                               # honest state — MEASURED 2026-08-03, flagship-v1's route head
+                               # moves with `nav` at 100 % of 6 660 swept poses, and an echo
+                               # beats every constant so BEST_CONSTANT cannot catch it.
+                               conditioning_sweeps=opt.get("conditioning_sweeps"))
         out["source"] = "strategic_optionset.strategic_family (map.xodr option sets)"
         out["_supersedes"] = (
             "the ego-yaw route label (route_from_future_v21 / seam_nav_to_strategic). Those "

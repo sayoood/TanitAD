@@ -43,6 +43,134 @@ EGO_LEN = 4.7            # m
 CORRIDOR_M = 2.0         # m: |cross-track| beyond this = off the intended route
 
 
+# =================================================================================== #
+# THE STAMP CONTRACT — why this exists                                                #
+# =================================================================================== #
+# The producer (`closedloop_drive.py`) does NOT emit a declared set of keys. Both
+# policies build `extra` by iterating their model's own output dict and keeping any
+# tensor that happens to be [1, <=16]:
+#
+#     for k, v in out.items():
+#         if hasattr(v, "shape") and v.ndim == 2 and v.shape[0] == 1 and v.shape[1] <= 16:
+#             extra[k] = ...
+#
+# So the key names are whatever the MODEL internally calls them. flagship-v1 prefixes
+# its strategic outputs `s_`; refc-base does not prefix at all. MEASURED over all 16
+# banked rollout files (2 arms x 8 arm-conditions, 450 steps each, 100 % coverage):
+#
+#     flagship-v1 : maneuver_logits (5), s_route_logits (3)
+#     refc-base   : maneuver_logits (5),   route_logits (3)
+#
+# Reading that with `ex.get("s_route_logits")` deleted REF-C's ENTIRE strategic route
+# family from every published closed-loop panel and reported it as
+# {"n": 0, "reason": "this arm exposes no strategic route logits at the deploy path"} —
+# a confident absence claim about a head that was present on 450/450 steps.
+#
+# ⛔ THE RULE THAT REPLACES `.get()`: a stamp is resolved through a DECLARED alias table,
+# and the three outcomes are kept apart instead of collapsed onto None:
+#   1. a known alias is present            -> use it
+#   2. NO alias, and `extra` holds no unrecognised vector of the expected width
+#                                          -> genuinely absent, declared, with the keys
+#                                             that WERE seen recorded for audit
+#   3. NO alias, but `extra` DOES hold an unrecognised vector of the expected width
+#                                          -> RAISE. That is this bug, recurring: a head
+#                                             is there under a spelling we do not know.
+# Outcome 3 is the whole point. It converts a silent metric deletion into a crash that
+# names the offending key and tells you where to declare it.
+STAMP_SPEC = {
+    "route": {
+        "aliases": ("s_route_logits", "route_logits", "strategic_route_logits"),
+        "width": 3,
+        "family": "STRATEGIC",
+        "what": "strategic route head logits (left/straight/right)",
+    },
+    "maneuver": {
+        "aliases": ("maneuver_logits", "t_maneuver_logits", "tactical_maneuver_logits"),
+        "width": 5,
+        "family": "TACTICAL",
+        "what": "tactical manoeuvre head logits (5-way)",
+    },
+}
+# Keys that are legitimately NOT heads. Declaring one here is the documented way to
+# silence outcome 3 for a vector that merely happens to share a head's width.
+IGNORED_STAMPS: set[str] = set()
+
+
+class StampError(RuntimeError):
+    """A stamp could not be read in a way that is safe to score."""
+
+
+class MissingStampError(StampError):
+    """A head is present under an unrecognised key — scoring would silently drop it."""
+
+
+class PartialStampError(StampError):
+    """A head is present on SOME steps and not others.
+
+    Never scoreable: `None == 2` is False, so the missing steps would be counted as
+    WRONG ANSWERS rather than excluded, and the metric would deflate in proportion to
+    how much of the instrument was missing. MEASURED on the banked scene-2 REF-C dump:
+    keeping 1 stamp of 450 turned `head_eq_logged` into 0.0022 over n_used=450 — a
+    fully-scored metric built from 449 absent values.
+    """
+
+
+def resolve_stamp(ex, kind, strict=True):
+    """Resolve one stamp from a step's `extra` dict. Returns (value | None, key | None).
+
+    `strict=False` downgrades outcome 3 to a silent None and exists ONLY for the
+    deliberate audit path that needs to inspect a broken file without crashing.
+    """
+    spec = STAMP_SPEC[kind]
+    for k in spec["aliases"]:
+        v = ex.get(k)
+        if v is not None:
+            if len(v) != spec["width"]:
+                raise StampError(
+                    f"stamp {kind!r} found under {k!r} with width {len(v)}, expected "
+                    f"{spec['width']}. Refusing to score a head whose geometry does not "
+                    f"match the class set this module assumes.")
+            return v, k
+    # no known alias — is there an UNRECOGNISED vector of the right width?
+    known = {a for s in STAMP_SPEC.values() for a in s["aliases"]} | IGNORED_STAMPS
+    suspects = [k for k, v in ex.items()
+                if k not in known and isinstance(v, list) and len(v) == spec["width"]]
+    if suspects and strict:
+        raise MissingStampError(
+            f"no known alias for the {kind!r} stamp ({spec['what']}), but `extra` "
+            f"carries unrecognised width-{spec['width']} vector(s) {suspects!r}. This is "
+            f"almost certainly that head under a new spelling — the exact failure that "
+            f"deleted REF-C's strategic route family from every published panel. "
+            f"Declare it in STAMP_SPEC['{kind}']['aliases'], or in IGNORED_STAMPS if it "
+            f"genuinely is not a head. Keys seen: {sorted(ex)}")
+    return None, None
+
+
+def stamp_availability(rows, field, kind):
+    """Resolve a stamp's availability ONCE over all rows: 'present' | 'absent'.
+
+    ⛔ Presence is a property of the ARM, not of a row — so it is decided over the whole
+    file, never from `rows[0]` and never with `any()`. Both of those were live defects:
+      * `if rows[0]["man_head"] is not None` decided an entire family from ROW ZERO.
+        MEASURED: blanking 1 stamp of 450 made the whole TACTICAL head family report
+        "this arm exposes no maneuver_head logits at the deploy path" while 449/450
+        windows still carried it.
+      * `any(...)` let partially-stamped rows through to be scored as wrong answers.
+    Mixed coverage is a producer bug and RAISES rather than being averaged over.
+    """
+    n = len(rows)
+    have = sum(1 for r in rows if r[field] is not None)
+    if have == 0:
+        return "absent"
+    if have == n:
+        return "present"
+    raise PartialStampError(
+        f"stamp {kind!r} present on {have}/{n} windows. A head is an architectural "
+        f"property of the arm: it is on every step or none. Partial coverage means the "
+        f"producer changed mid-run or the dump is truncated — scoring it would count "
+        f"{n - have} missing stamps as wrong answers. Refusing.")
+
+
 def wrap(a):
     return (a + math.pi) % (2 * math.pi) - math.pi
 
@@ -196,15 +324,24 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None, keep_tracks=None):
         if k + 20 < len(steps):
             sub = ego_poses[k:k + 21]
             man_exec = classify(sub)
-        ex = st.get("extra", {})
-        man_head = int(np.argmax(ex["maneuver_logits"])) if "maneuver_logits" in ex else None
-        # ⚠️ CORRECTED 2026-08-03: this read only `s_route_logits`. flagship-v1 emits that
-        # name; refc-base emits `route_logits` — on 450/450 steps of all six conditions.
-        # The panel therefore published REF-C's STRATEGIC route head as
+        if "extra" not in st:
+            raise StampError(
+                f"step {k} carries no `extra` dict at all. Every closedloop_drive record "
+                f"writes one (it may be empty); its absence means this dump was not "
+                f"produced by the current harness and its head metrics are not scoreable.")
+        ex = st["extra"]
+        # ⚠️ CORRECTED 2026-08-03: this read `ex["maneuver_logits"]` and
+        # `ex.get("s_route_logits", ...)` directly. flagship-v1 emits `s_route_logits`;
+        # refc-base emits `route_logits` — on 450/450 steps of every condition. The panels
+        # therefore published REF-C's STRATEGIC route head as
         # {"n":0,"reason":"this arm exposes no strategic route logits at the deploy path"},
         # which is FALSE: the head was there the whole time and a key-name mismatch
-        # deleted a whole metric family for one of the two arms. Probe both names.
-        rl = ex.get("s_route_logits", ex.get("route_logits"))
+        # deleted a whole metric family for one of the two arms. Both spellings are now
+        # declared in STAMP_SPEC, and an UNRECOGNISED head-width vector RAISES instead of
+        # quietly becoming None — see the stamp contract at the top of this module.
+        ml, man_key = resolve_stamp(ex, "maneuver")
+        man_head = int(np.argmax(ml)) if ml is not None else None
+        rl, route_key = resolve_stamp(ex, "route")
         route_head = int(np.argmax(rl)) if rl is not None else None
         rgt, rok, rreason, rnet = route_gt_at(gtp, i)
 
@@ -242,6 +379,10 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None, keep_tracks=None):
             "man_plan": man_plan, "man_gt": man_gt, "man_exec": man_exec,
             "man_head": man_head, "route_gt": rgt, "route_valid": rok,
             "route_reason": rreason, "route_net_dyaw": rnet, "route_head": route_head,
+            # which spelling each head was actually read under. Recorded so a mixed-
+            # spelling dump is detectable after the fact and so every published panel can
+            # say WHICH key its strategic number came from.
+            "man_head_key": man_key, "route_head_key": route_key,
             "corridor_departure": int(abs(ct) > CORRIDOR_M),
             "headway": headway, "time_gap": tgap, "ttc": ttc, "v_lead": v_lead,
             "lead_idx": lead_idx, "actors": acts,
@@ -329,7 +470,16 @@ def per_class_pr(y_true, y_pred, names):
     153 true cases. So precision, recall, support (n true) and n_pred (n fires) travel
     together here, plus the majority-class baseline that any constant predictor achieves.
     """
-    y_true, y_pred = np.asarray(y_true, int), np.asarray(y_pred, int)
+    # ⚠️ CORRECTED 2026-08-03: `np.asarray(y_pred, int)` CRASHED on a None prediction
+    # (TypeError: int() argument must be ... not 'NoneType'), which is how a partially
+    # stamped dump failed here — after the graded proxy had already silently imputed the
+    # same Nones as `straight`. Drop unpaired entries explicitly and REPORT how many, so
+    # a shrinking denominator is visible rather than either crashing or being invented.
+    n_in = len(list(y_true))
+    pairs = [(t, p) for t, p in zip(y_true, y_pred) if t is not None and p is not None]
+    n_dropped = n_in - len(pairs)
+    y_true = np.asarray([t for t, _ in pairs], int)
+    y_pred = np.asarray([p for _, p in pairs], int)
     out, f1s = {}, []
     for c, nm in enumerate(names):
         tp = int(((y_pred == c) & (y_true == c)).sum())
@@ -348,6 +498,12 @@ def per_class_pr(y_true, y_pred, names):
     out["_majority_class_baseline_acc"] = (
         round(float(supp.max() / supp.sum()), 4) if supp.sum() else None)
     out["_n"] = int(y_true.size)
+    out["_n_input"] = int(n_in)
+    out["_n_dropped_unpaired"] = int(n_dropped)
+    if n_dropped:
+        out["_dropped_note"] = (
+            f"{n_dropped}/{n_in} window(s) had no prediction or no label and were EXCLUDED, "
+            "not imputed. Every rate above is over the reduced denominator.")
     return out
 
 
@@ -432,9 +588,28 @@ def families(rows, eids, summ=None):
             f"is bumper-to-bumper (EGO_LEN={EGO_LEN} m), in-lane band |y| < {LEAD_HALF_W} m, "
             f"search window 0 < x < {LEAD_MAX_X} m.")
     else:
-        fam["LONGITUDINAL"]["distance_keeping"] = {
-            "n": 0, "reason": "no annotated agent inside the in-lane window "
-                              f"(|y|<{LEAD_HALF_W} m, 0<x<{LEAD_MAX_X} m) at any tick"}
+        # ⚠️ CORRECTED 2026-08-03: this asserted a SCENE FACT ("no annotated agent ...")
+        # that is equally produced by never having loaded any tracks at all — `collect`
+        # defaults `tracks=None`, and `main` silently passed None when `--tracks` pointed
+        # at a path that did not exist. The two cases are now separated: an unmeasured
+        # family says so.
+        n_actor_obs = sum(len(r.get("actors") or ()) for r in rows)
+        if n_actor_obs == 0:
+            fam["LONGITUDINAL"]["distance_keeping"] = {
+                "n": 0,
+                "reason": "NOT MEASURED — no annotated agent was observed on any window. "
+                          "That is what you get both from a scene with no agents AND from "
+                          "running without `--tracks`, so this is reported as an unmeasured "
+                          "family rather than as a property of the scene. Re-run with "
+                          "`--tracks <sequence_tracks.json>` to distinguish them.",
+                "n_actor_observations": 0}
+        else:
+            fam["LONGITUDINAL"]["distance_keeping"] = {
+                "n": 0, "n_actor_observations": n_actor_obs,
+                "reason": "MEASURED: tracks were loaded and agents were seen "
+                          f"({n_actor_obs} agent-observations), but none fell inside the "
+                          f"in-lane window (|y|<{LEAD_HALF_W} m, 0<x<{LEAD_MAX_X} m) at any "
+                          "tick. This IS a property of the scene."}
     # distance-keeping against the CONSTRUCTED lead. Present on every arm and every
     # condition — in `empty` it is the counterfactual, which is exactly what makes the
     # with-vs-without contrast a paired one.
@@ -505,7 +680,14 @@ def families(rows, eids, summ=None):
         "confusion_planned_x_executed": cm_pe.tolist(),
         "class_names": list(MAN_NAMES),
     }
-    if rows and rows[0]["man_head"] is not None:
+    # ⚠️ CORRECTED 2026-08-03: this was `if rows and rows[0]["man_head"] is not None`, i.e.
+    # the presence of an ENTIRE metric family was decided from ROW ZERO. MEASURED on the
+    # banked scene-2 REF-C dump: blanking one stamp of 450 made the family report
+    # "this arm exposes no maneuver_head logits at the deploy path" with 449/450 windows
+    # still carrying it. Availability is now resolved over ALL rows and mixed coverage
+    # raises instead of being silently scored — see `stamp_availability`.
+    man_avail = stamp_availability(rows, "man_head", "maneuver") if rows else "absent"
+    if man_avail == "present":
         fam["TACTICAL"]["head_eq_plan"] = _ci(
             [float(r["man_head"] == r["man_plan"]) for r in rows], eids)
         fam["TACTICAL"]["head_eq_logged"] = _ci(
@@ -514,21 +696,37 @@ def families(rows, eids, summ=None):
             MAN_NAMES[c]: round(float(np.mean([r["man_head"] == c for r in rows])), 4)
             for c in range(5)}
         # PRECISION alongside recall, per class, with both denominators.
-        hrows = [r for r in rows if r["man_head"] is not None]
         fam["TACTICAL"]["head_vs_logged_per_class_PR"] = per_class_pr(
-            [r["man_gt"] for r in hrows], [r["man_head"] for r in hrows], MAN_NAMES)
+            [r["man_gt"] for r in rows], [r["man_head"] for r in rows], MAN_NAMES)
         fam["TACTICAL"]["plan_vs_logged_per_class_PR"] = per_class_pr(
             [r["man_gt"] for r in rows], [r["man_plan"] for r in rows], MAN_NAMES)
+        fam["TACTICAL"]["head_stamp_key"] = sorted(
+            {r.get("man_head_key") for r in rows if r.get("man_head_key")})
     else:
         fam["TACTICAL"]["maneuver_head"] = {
-            "n": 0, "reason": "this arm exposes no maneuver_head logits at the deploy path"}
+            "n": 0, "n_windows_checked": len(rows),
+            "reason": "this arm exposes no maneuver_head logits at the deploy path",
+            "checked_aliases": list(STAMP_SPEC["maneuver"]["aliases"]),
+            "evidence": "ABSENT ON EVERY WINDOW, not inferred from one row. An "
+                        "unrecognised width-5 vector in `extra` would have raised "
+                        "MissingStampError instead of reaching this branch."}
 
     vr = [r for r in rows if r["route_valid"]]
     ver = [e for r, e in zip(rows, eids) if r["route_valid"]]
-    has_head = any(r["route_head"] is not None for r in rows)
+    # ⚠️ CORRECTED 2026-08-03: this was `any(r["route_head"] is not None ...)`. `any` lets
+    # a partially-stamped dump through, and the unstamped rows were then scored as wrong
+    # answers (None == int is False) rather than excluded. Resolve over ALL rows.
+    has_head = (stamp_availability(rows, "route_head", "route") == "present") if rows else False
     reasons = {}
     for r in rows:
         reasons[r["route_reason"]] = reasons.get(r["route_reason"], 0) + 1
+    # ⛔ A LABELLER CRASH IS NOT A SCENE PROPERTY. `route_gt_at` swallows every exception
+    # and returns route_valid=False with reason `error:*`. Without this split, a
+    # 100 %-broken labeller produced the confident sentence "this 20 s clip contains no
+    # junction-scale strategic decision ... a property of the SCENE, not a missing
+    # instrument" — MEASURED by monkeypatching route_from_future_v21 to raise: 450/450
+    # windows, reason_share {'error:RuntimeError': 1.0}, and that text still emitted.
+    n_err = sum(1 for r in rows if str(r["route_reason"]).startswith("error:"))
     fam["STRATEGIC"] = {
         "route_corridor_departure_rate": _ci(g("corridor_departure"), eids),
         "route_logged_share": {ROUTE_NAMES[c]: round(float(np.mean([r["route_gt"] == c for r in rows])), 4)
@@ -537,19 +735,39 @@ def families(rows, eids, summ=None):
         "route_derivation_reason_share": {k: round(v / len(rows), 4) for k, v in reasons.items()},
         "logged_net_dyaw_rad": _ci(g("route_net_dyaw"), eids),
     }
+    fam["STRATEGIC"]["route_label_error_rate"] = round(n_err / max(len(rows), 1), 4)
+    if n_err:
+        fam["STRATEGIC"]["route_label_INSTRUMENT_FAILURE"] = {
+            "n_windows_errored": n_err, "n_windows": len(rows),
+            "reasons": {k: v for k, v in reasons.items() if str(k).startswith("error:")},
+            "verdict": "the route LABELLER raised on these windows. Their ROUTE_UNKNOWN is "
+                       "an instrument failure, NOT evidence that the scene has no junction. "
+                       "Fix the labeller before reading any strategic conclusion here."}
     # discrete route agreement, only where a route judgement EXISTS
     if not vr:
-        fam["STRATEGIC"]["route_head_eq_logged"] = {
-            "n": 0,
-            "reason": ("no VALID logged route class on any window: "
-                       f"route_from_future_v21 returned ROUTE_UNKNOWN on {len(rows)}/{len(rows)} "
-                       f"windows (reasons {reasons}). Under Sayed's 2026-07-20 ruling a wide "
-                       "road sweep is ROAD FOLLOWING, not a route event — this 20 s clip "
-                       "contains no junction-scale strategic decision, so the discrete "
-                       "strategic class is genuinely undefined here. This is a property of "
-                       "the SCENE, not a missing instrument: the graded `logged_net_dyaw_rad`, "
-                       "the corridor-departure rate and the route progress below ARE the "
-                       "strategic read for this clip.")}
+        if n_err == len(rows) and rows:
+            fam["STRATEGIC"]["route_head_eq_logged"] = {
+                "n": 0, "INSTRUMENT_FAILURE": True,
+                "reason": (f"route_from_future_v21 RAISED on {n_err}/{len(rows)} windows "
+                           f"(reasons {reasons}). No strategic conclusion of any kind may "
+                           "be drawn from this run — in particular this is NOT the "
+                           "'scene contains no junction' case, which requires the labeller "
+                           "to have RUN and returned road_following.")}
+        else:
+            fam["STRATEGIC"]["route_head_eq_logged"] = {
+                "n": 0,
+                "n_windows_errored": n_err,
+                "reason": ("no VALID logged route class on any window: "
+                           f"route_from_future_v21 returned ROUTE_UNKNOWN on {len(rows)}/{len(rows)} "
+                           f"windows (reasons {reasons}). Under Sayed's 2026-07-20 ruling a wide "
+                           "road sweep is ROAD FOLLOWING, not a route event — this 20 s clip "
+                           "contains no junction-scale strategic decision, so the discrete "
+                           "strategic class is genuinely undefined here. This is a property of "
+                           "the SCENE, not a missing instrument: the graded `logged_net_dyaw_rad`, "
+                           "the corridor-departure rate and the route progress below ARE the "
+                           "strategic read for this clip."
+                           + (f" ⚠️ {n_err} window(s) additionally ERRORED — see "
+                              "route_label_INSTRUMENT_FAILURE." if n_err else ""))}
     elif has_head:
         fam["STRATEGIC"]["route_head_eq_logged"] = _ci(
             [float(r["route_head"] == r["route_gt"]) for r in vr], ver)
@@ -568,8 +786,17 @@ def families(rows, eids, summ=None):
                 "instead, and get a scene WITH a junction before quoting a strategic "
                 "accuracy.")
     else:
+        # ⚠️ THIS IS THE SENTENCE THAT WAS FALSE. It was published for refc-base on every
+        # condition of every closed-loop panel while `route_logits` sat in the dump on
+        # 450/450 steps. It can now only be reached when NO declared alias resolved AND
+        # `extra` held no unrecognised width-3 vector — otherwise resolve_stamp raises.
         fam["STRATEGIC"]["route_head_eq_logged"] = {
-            "n": 0, "reason": "this arm exposes no strategic route logits at the deploy path"}
+            "n": 0, "n_windows_checked": len(rows),
+            "reason": "this arm exposes no strategic route logits at the deploy path",
+            "checked_aliases": list(STAMP_SPEC["route"]["aliases"]),
+            "evidence": "ABSENT ON EVERY WINDOW. An unrecognised width-3 vector in "
+                        "`extra` would have raised MissingStampError instead of "
+                        "reaching this branch."}
     if has_head:
         # ⛔ NAV-ECHO GUARD (added 2026-08-03 after it fired on the first scene it saw).
         # The harness FEEDS a nav command to the policy. If the route head is a
@@ -580,40 +807,76 @@ def families(rows, eids, summ=None):
         # exact bijection of nav (nav=1 -> head=0 on 369/369, nav=0 -> head=1 on 81/81)
         # and scored route_head_eq_logged = 1.0000 [1.0000, 1.0000]. REF-C's is not a
         # function of nav and scored 0.2605. The guard is computed, not assumed.
+        # ⚠️ CORRECTED 2026-08-03 — IDENTIFIABILITY. The first version accepted
+        # `len(nav_map) >= 1`, so on a scene where nav never varies the test was
+        # VACUOUSLY TRUE for any constant head and it published CIRCULAR anyway.
+        # MEASURED on the cut-in scene (nav == 0 on 450/450): flagship-v1's map was
+        # {0: [1]} -> "CIRCULAR", when all that is really observable there is a CONSTANT
+        # head. You cannot separate an echo from a constant with one input value, so with
+        # < 2 distinct nav values the verdict is UNIDENTIFIABLE and nothing is stamped.
+        # The genuine echo call needs the two-value case: on scene 7c72937c flagship-v1
+        # maps nav=1 -> head=0 on 369/369 and nav=0 -> head=1 on 81/81, an exact
+        # bijection, scoring route_head_eq_logged = 1.0000 [1.0000, 1.0000]; REF-C on the
+        # same windows is not a function of nav and scores 0.2178 [0.0690, 0.4302].
         nav_map = {}
         circular = None
-        if all(r.get("nav") is not None for r in rows) and rows:
+        identifiable = False
+        n_nav = 0
+        if rows and all(r.get("nav") is not None for r in rows):
             for r in rows:
                 nav_map.setdefault(int(r["nav"]), set()).add(r["route_head"])
-            circular = all(len(v) == 1 for v in nav_map.values()) and len(nav_map) >= 1
+            n_nav = len(nav_map)
+            identifiable = n_nav >= 2
+            if identifiable:
+                circular = all(len(v) == 1 for v in nav_map.values())
+        n_head_vals = len({r["route_head"] for r in rows})
+        if circular:
+            verdict = ("CIRCULAR — route_head_eq_logged above reproduces the nav command "
+                       "the policy was GIVEN and is NOT evidence of strategic skill; do "
+                       "not quote it")
+        elif circular is False:
+            verdict = "not an echo — the head is not a function of nav on these windows"
+        elif not rows or n_nav == 0:
+            verdict = "not evaluated (nav missing on at least one window)"
+        else:
+            verdict = (f"UNIDENTIFIABLE — nav takes only {n_nav} distinct value(s) on these "
+                       f"{len(rows)} windows, so an echo cannot be distinguished from a "
+                       f"constant head (the head takes {n_head_vals} distinct value(s) "
+                       "here). Needs a scene where the nav command actually varies. NOT a "
+                       "clearance: do not read this as 'not an echo'.")
         fam["STRATEGIC"]["route_head_nav_echo_check"] = {
             "head_is_deterministic_function_of_nav": circular,
+            "identifiable": identifiable,
+            "n_distinct_nav": n_nav,
+            "n_distinct_head": n_head_vals,
             "nav_to_head_map": {str(k): sorted(x for x in v if x is not None)
                                 for k, v in nav_map.items()},
             "n": len(rows),
-            "verdict": ("CIRCULAR — route_head_eq_logged above reproduces the nav command "
-                        "the policy was GIVEN and is NOT evidence of strategic skill; do "
-                        "not quote it" if circular else
-                        "not an echo — the head is not a function of nav on these windows"
-                        if circular is False else "not evaluated (nav missing)")}
-        if circular:
-            for k in ("route_head_eq_logged", "route_head_side_eq_graded_proxy"):
-                if isinstance(fam["STRATEGIC"].get(k), dict):
-                    fam["STRATEGIC"][k]["CIRCULAR_NAV_ECHO"] = True
-                    fam["STRATEGIC"][k]["do_not_quote"] = (
-                        "the route head is a deterministic function of the nav input")
+            "verdict": verdict}
         fam["STRATEGIC"]["route_head_share"] = {
             ROUTE_NAMES[c]: round(float(np.mean([r["route_head"] == c for r in rows])), 4)
-            for c in range(3)}
+            for c in range(STAMP_SPEC["route"]["width"])}
+        fam["STRATEGIC"]["route_head_stamp_key"] = sorted(
+            {r.get("route_head_key") for r in rows if r.get("route_head_key")})
         # graded proxy: does the head's LATERAL intent agree with the sign of the
         # logged cumulative heading change? Deadband 0.087 rad (5 deg) over the
         # available future. Labelled a PROXY — it is not the trained target.
         def sgn(x, dead=0.087):
             return 1 if x > dead else (2 if x < -dead else 0)   # left / right / straight
+
+        # ⚠️ CORRECTED 2026-08-03: this was
+        #     hd = [{0: 1, 1: 0, 2: 2}.get(r["route_head"], 0) for r in rows]
+        # whose `.get(..., 0)` default silently IMPUTED a missing head as a confident
+        # prediction of `straight`, and did the same for any out-of-range class. That is
+        # worse than reporting absent — it manufactures data. MEASURED: with 1 stamp of
+        # 450 kept, the proxy still reported n_used=450 (mean 0.2933 -> 0.0778), i.e. 449
+        # invented predictions were scored. Missing/unknown now becomes NaN, which `_ci`
+        # excludes and counts in n_used vs n_total.
+        HEAD_TO_SIDE = {0: 1, 1: 0, 2: 2}                       # head idx -> l/s/r idx
         gt_side = [sgn(r["route_net_dyaw"]) for r in rows]
-        hd = [{0: 1, 1: 0, 2: 2}.get(r["route_head"], 0) for r in rows]  # head -> l/s/r idx
+        hd = [HEAD_TO_SIDE.get(r["route_head"]) for r in rows]
         fam["STRATEGIC"]["route_head_side_eq_graded_proxy"] = _ci(
-            [float(a == b) for a, b in zip(gt_side, hd)], eids)
+            [(np.nan if b is None else float(a == b)) for a, b in zip(gt_side, hd)], eids)
         fam["STRATEGIC"]["route_head_side_note"] = (
             "PROXY, not the trained target: agreement between the route head's lateral "
             "side and sign(cumulative logged heading change) with a 5 deg deadband. "
@@ -625,9 +888,40 @@ def families(rows, eids, summ=None):
         if vr:
             fam["STRATEGIC"]["route_head_vs_logged_per_class_PR"] = per_class_pr(
                 [r["route_gt"] for r in vr], [r["route_head"] for r in vr], ROUTE_NAMES)
+        # ⚠️ CORRECTED 2026-08-03 — THE GUARD WAS ONLY HALF-WIRED. The stamping loop used
+        # to sit immediately after the echo computation, ABOVE the point where
+        # `route_head_side_eq_graded_proxy` and the per-class PR blocks are created — so
+        # `fam["STRATEGIC"].get(k)` returned None for them and only the discrete metric
+        # was ever marked. The comment claimed both were covered; only one was.
+        # MEASURED in the published artifacts: flagship-v1 scene2 `route_head_eq_logged`
+        # carries CIRCULAR_NAV_ECHO, while `route_head_side_eq_graded_proxy` = 0.9311 went
+        # out with NO circularity warning at all — a high-looking strategic number that
+        # reads as skill. Stamping now happens AFTER every affected key exists.
+        _echo_targets = ("route_head_eq_logged", "route_head_side_eq_graded_proxy",
+                         "route_head_side_per_class_PR",
+                         "route_head_vs_logged_per_class_PR", "route_head_share")
+        if circular:
+            for k in _echo_targets:
+                if isinstance(fam["STRATEGIC"].get(k), dict):
+                    fam["STRATEGIC"][k]["CIRCULAR_NAV_ECHO"] = True
+                    fam["STRATEGIC"][k]["do_not_quote"] = (
+                        "the route head is a deterministic function of the nav input")
+        elif identifiable is False and rows:
+            # an unidentifiable guard must not read as a clean bill of health
+            for k in _echo_targets:
+                if isinstance(fam["STRATEGIC"].get(k), dict):
+                    fam["STRATEGIC"][k]["NAV_ECHO_UNIDENTIFIABLE"] = True
+                    fam["STRATEGIC"][k]["nav_echo_note"] = (
+                        f"nav takes only {n_nav} distinct value(s) here, so the echo guard "
+                        "could not run. This number is NOT cleared of circularity.")
     else:
         fam["STRATEGIC"]["route_head"] = {
-            "n": 0, "reason": "this arm exposes no strategic route logits at the deploy path"}
+            "n": 0, "n_windows_checked": len(rows),
+            "reason": "this arm exposes no strategic route logits at the deploy path",
+            "checked_aliases": list(STAMP_SPEC["route"]["aliases"]),
+            "evidence": "ABSENT ON EVERY WINDOW. An unrecognised width-3 vector in "
+                        "`extra` would have raised MissingStampError instead of "
+                        "reaching this branch."}
     if summ:
         pr = [s["progress_rel"] for s in summ if s["progress_rel"] is not None]
         se = [s["start"] for s in summ if s["progress_rel"] is not None]
@@ -657,9 +951,25 @@ def main():
     args = ap.parse_args()
 
     from gsplat_renderer import ActorTracks
-    tr = ActorTracks(args.tracks) if args.tracks and Path(args.tracks).exists() else None
+    # ⚠️ CORRECTED 2026-08-03: both of these were `if <arg> and Path(<arg>).exists()`, so a
+    # MISTYPED PATH silently degraded instead of failing. The two silent degradations are
+    # not symmetric and both are bad:
+    #   --tracks           typo -> tracks=None -> the distance-keeping family reports a
+    #                              scene fact it never measured;
+    #   --renderable-from  typo -> keep=None   -> the lead search silently WIDENS to
+    #                              agents the renderer never drew, i.e. it credits
+    #                              distance-keeping to a lead the model could not see —
+    #                              exactly what this flag's own help text says it prevents.
+    # An argument that was PASSED must resolve or the run must stop.
+    for lbl, val in (("--tracks", args.tracks), ("--renderable-from", args.renderable_from)):
+        if val and not Path(val).exists():
+            raise FileNotFoundError(
+                f"{lbl}={val!r} does not exist. Refusing to score: silently continuing "
+                f"without it changes which agents the metrics are computed over and "
+                f"produces a number that looks measured but is not.")
+    tr = ActorTracks(args.tracks) if args.tracks else None
     keep = None
-    if args.renderable_from and Path(args.renderable_from).exists():
+    if args.renderable_from:
         am = json.loads(Path(args.renderable_from).read_text())
         keep = {int(x["best_track"]) for x in am["per_track"] if x["accepted"]}
 

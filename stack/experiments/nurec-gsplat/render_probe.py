@@ -201,7 +201,20 @@ def main():
 
             vm_start = torch.from_numpy(rig.viewmat(args.cam, fi, shutter=0)[None].astype(np.float32)).to(dev)
             # viewmats = shutter start, viewmats_rs = shutter end
-            kw = dict(rolling_shutter=RollingShutterType.TOP_TO_BOTTOM, viewmats_rs=vm_end)
+            # ⛔ FIXED 2026-08-03: this line read `RollingShutterType.TOP_TO_BOTTOM`,
+            # which DOES NOT EXIST in gsplat 1.5.3 (members: GLOBAL,
+            # ROLLING_{TOP_TO_BOTTOM,BOTTOM_TO_TOP,LEFT_TO_RIGHT,RIGHT_TO_LEFT}), so
+            # `--rolling-shutter` raised AttributeError and NO rolling-shutter render was
+            # ever produced by this probe. MEASURED twice today: the enum members read
+            # back live, and the attribute access raises. The member name is now taken
+            # from the CALIBRATION (`shutter_type` == "ROLLING_TOP_TO_BOTTOM") so the
+            # code and the rig cannot drift apart again.
+            st = str(cam.shutter_type)
+            if st not in RollingShutterType.__members__:
+                raise ValueError(f"camera shutter_type {st!r} is not a gsplat "
+                                 f"RollingShutterType; have "
+                                 f"{list(RollingShutterType.__members__)}")
+            kw = dict(rolling_shutter=RollingShutterType[st], viewmats_rs=vm_end)
             vm = vm_start
         else:
             vm = vm_end

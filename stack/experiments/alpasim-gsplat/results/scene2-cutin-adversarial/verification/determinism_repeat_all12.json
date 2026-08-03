@@ -1,0 +1,25 @@
+{
+  "what": "determinism (CONTROL_1) — the control the stream reported as OUTSTANDING. Run by the adversarial verifier.",
+  "evidence_class": "MEASURED (ours)",
+  "host": "tanitad-thor",
+  "A": "/home/nvidia/cutin_targeted_out/flagship-v1_objects/rollouts_flagship-v1_objects.json",
+  "B": "/home/nvidia/cutin_targeted_out/flagship-v1_objects_REPEAT/rollouts_flagship-v1_objects.json",
+  "n_shared_starts": 12,
+  "shared_starts": [75, 78, 81, 84, 87, 90, 93, 96, 99, 102, 105, 109],
+  "max_abs_diff": {
+    "v": 0.0, "steer": 0.0, "accel": 0.0, "v_target": 0.0, "kappa_plan": 0.0,
+    "ego": 0.0, "plan": 0.0, "i_gt": 0.0, "t_us": 0.0, "extra_logits": 0.0, "nav": 0.0
+  },
+  "DETERMINISTIC_ALL_12": true,
+  "file_md5_A": "d494fdbf013223e6a0fa77d540f36aef",
+  "file_md5_B": "157bf847520fd03d495c6b02e12c81cc",
+  "note_on_md5": "the two files differ in md5 ONLY through wall-clock metadata (render_ms / wall_s). Every model and state quantity compares to exactly 0.0. Verify by LOADING, never by md5.",
+  "IT_IS_ALSO_A_CROSS_VERSION_TEST": {
+    "banked_panel_renderer_md5": "0780e18d406bea394dd62fc53840be88",
+    "repeat_renderer_md5_on_pod": "1c0434e9b081e3df0e43701a0f2e0109",
+    "predecessor_panel_renderer_md5": "24b61aa0 (per the stream's note)",
+    "meaning": "a sibling stream synced a further renderer edit between the panel and the repeat, so this run is a THIRD build. Three builds, bit-identical closed-loop output. Cross-build identity implies same-build determinism a fortiori.",
+    "consequence": "CONTROL_1 should be relabelled 'cross-version + cross-process', not left as not-run. A strict same-build repeat has still never been executed."
+  },
+  "verdict": "PASS — every contrast in the cut-in-targeted panel is treatment or accumulated divergence, not run-to-run noise."
+}

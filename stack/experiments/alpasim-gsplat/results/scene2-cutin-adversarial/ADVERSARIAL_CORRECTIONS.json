@@ -1,0 +1,116 @@
+{
+  "what": "ADVERSARIAL VERIFICATION of the cut-in-targeted panel (results/scene2-cutin-targeted)",
+  "date": "2026-08-03",
+  "evidence_class": "MEASURED (ours) unless stated",
+  "instrument": "rederive_cutin_targeted.py — an INDEPENDENT re-implementation from the raw rollout json. Does NOT import cutin_targeted.py. Own wall-tick selector, own paired episode-cluster bootstrap (4000 resamples, seed 20260803).",
+
+  "REPRODUCED_EXACTLY": {
+    "note": "every point estimate I re-derived from the raw rollouts matched the banked metrics file. The estimator and the selector are sound.",
+    "denominators": "n_all=600/12 clusters, n_exposure=387/12, n_sham=176/11, n_other=37/12 — reproduced",
+    "exogenous_clock": "wall tick = argmin|gt.ts_us - step.t_us| gives IDENTICAL ticks in both condition files: 0 disagreements on all 600 rows. The selector really is exogenous.",
+    "flagship_v_target_k0_5_ALLwindows": -0.2988,
+    "flagship_v_target_EXPOSURE_pooled": 0.6764,
+    "flagship_v_target_k38_50_ALLwindows": 1.5814,
+    "flagship_v_target_EARLY_starts_75_84": {"delta": -0.7908, "lo": -0.9007, "hi": -0.6630, "n": 20, "clusters": 4},
+    "refc_v_target_EARLY_starts_75_84": {"delta": 0.0030, "lo": -0.0144, "hi": 0.0203, "separated": false},
+    "positive_control_flagship_vs_refc_exposure": "19/24 separated — reproduced from the banked file",
+    "refc_DiD_mean": 0.02057,
+    "pytest": "1851 passed, 12 skipped, 2 xfailed in 189.62 s — VERIFIED by re-running"
+  },
+
+  "REFUTED_1_DENOMINATOR_SWAP_IN_THE_HEADLINE": {
+    "severity": "HIGH — this is the headline",
+    "claim": "'the re-powered panel (12 clusters, 387 exposure windows vs 3/107) turns the old objects-null into a positive finding: flagship-v1 sets a target speed 0.299 m/s lower when real agents are drawn (ADE -0.315 [-0.553,-0.094])'",
+    "what_is_true": "-0.2988 / -0.3150 are from BY_K_BAND_all_windows.k_0_5 — n=60 rows drawn from ALL 600 windows. They are NOT from the 387 exposure windows the same sentence cites.",
+    "on_the_387_exposure_windows_instead": {
+      "k_0_5": {"metric": "v_target", "delta": -0.0927, "n_windows": 6, "n_clusters": 2, "comment": "n=6 in 2 clusters — not a quotable stratum"},
+      "k_0_5_ade": {"delta": -0.0170, "lo": -0.0252, "hi": 0.0241, "separated": false},
+      "pooled": {"v_target": 0.6764, "lo": 0.0874, "hi": 1.3594, "ade_0_2s": 0.4887, "ade_lo": 0.1103, "ade_hi": 0.8737, "separated": true, "comment": "OPPOSITE SIGN — on the exposure stratum, drawing the agents makes flagship set a HIGHER target speed and produces WORSE ADE"}
+    },
+    "cross_tab_that_kills_the_attribution": {
+      "what": "fraction of each k-band that is actually an exposure window",
+      "k_0_5": {"n": 60, "n_exposure": 6, "n_sham": 50, "pct_exposure": 10.0},
+      "k_5_13": {"n": 96, "n_exposure": 25, "n_sham": 63, "pct_exposure": 26.0},
+      "k_13_26": {"n": 156, "n_exposure": 87, "n_sham": 56, "pct_exposure": 55.8},
+      "k_26_38": {"n": 144, "n_exposure": 129, "n_sham": 7, "pct_exposure": 89.6},
+      "k_38_50": {"n": 144, "n_exposure": 140, "n_sham": 0, "pct_exposure": 97.2},
+      "therefore": "the k-band axis and the exposure/sham stratum are near-perfectly confounded. 'early k is negative, late k is positive' and 'the sham epoch is negative, the exposure epoch is positive' are ONE fact reported twice. The pooled sham effect is v_target -0.4881 [-0.8240,-0.1884], LARGER in magnitude than anything in the exposure stratum."
+    },
+    "start_level_proof": "at k 0-5: starts 75,78,81,84,87,90,93,96,99 have ALL 5 rows in the SHAM epoch (first wall ticks 84,87,90,93,96,99,102,105,108 — T_SHAM=[79,114]); start 102 has 4 sham + 1 other; start 105 has 1 exposure + 1 sham + 3 other; start 109 alone has all 5 in the exposure epoch (first wall tick 118). Row totals 50 sham / 6 exposure / 4 other. The 4 'EARLY' starts (75,78,81,84) that carry the entire effect are the four deepest positions inside the sham epoch.",
+    "corrected_statement": "at k 0-5, drawing the 92 annotated agents lowers flagship-v1's target speed by 0.299 m/s [-0.508,-0.100] over ALL 600 windows — a window set that is 83% the sham epoch and only 10% exposure windows. The effect is NOT an exposure-window / agent-proximity finding, and on the exposure windows themselves the sign reverses."
+  },
+
+  "REFUTED_2_PURELY_LONGITUDINAL": {
+    "severity": "MEDIUM — repeats a failure CLAUDE.md names explicitly",
+    "claim": "'purely LONGITUDINAL, while refc-base is flat' with 'LAT lateral_ade +0.002 [-0.032,+0.034] NS' offered as the LATERAL row",
+    "refutation": "the LATERAL family at k 0-5 / ALL windows has 2 of 5 metrics SEPARATED in the same banked file: curvature_err_1pm -0.00140 [-0.00290,-0.00020] and cross_track_abs_m -0.00053 [-0.00124,-0.00003]. lateral_ade_m is the one lateral metric that does NOT separate, and it is the one that was quoted.",
+    "on_the_exposure_stratum_k0_5": "3 of 5 LATERAL metrics separate, INCLUDING lateral_ade_m itself at +0.0305 [+0.0231,+0.0676] — opposite sign to the number quoted.",
+    "why_this_matters": "CLAUDE.md's binding four-family rule says verbatim that LATERAL must carry curvature and yaw-rate because \"'lateral is fine' has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up.\" This is that exact failure.",
+    "family_breakdown_k0_5_all_windows": {"ADE": "3/3", "LONGITUDINAL": "10/12", "LATERAL": "2/5", "TACTICAL": "0/5", "STRATEGIC": "0/3"}
+  },
+
+  "REFUTED_3_THE_REFUTATION_INSTRUMENT_IS_FED_A_TRUNCATED_LIST": {
+    "severity": "MEDIUM — it wounds the panel's own headline verdict",
+    "claim": "'PREMISE REFUTED — 0 of 3 distinct crossings survive the curve-invariant test'",
+    "defect": "scene_geometry.py:404 writes \"cutins_ALL\": cut_all[:40] while n_cutin_events_ALL=44. cutin_is_real.py:crossings() reads s.get(\"cutins_ALL\", []) — the TRUNCATED list. The refutation therefore saw 40 of 44 detected events.",
+    "measured": "SCENE2_GEOMETRY_renderable.json: n_cutin_events_ALL=44, len(cutins_ALL)=40, tracks in the list {34:8, 117:21, 65:11} = 40. 4 events silently absent.",
+    "what_survives": "n_cutin_events_RENDERABLE=21 and track 117 alone contributes 21 records, so the 4 dropped events are NON-renderable. No renderable crossing was missed, and the only renderable crossing (track 117) WAS tested and refuted on its merits. The DIRECTION of the refutation stands.",
+    "what_does_not": "'3 distinct crossings' is not established; it is '3 crossings visible in a list that drops 4 of 44 events'. The correct headline is '0 of AT LEAST 3'. The stream noticed the truncation and filed it as a cosmetic reporting bug for the future — it did not notice its own refutation consumes that field."
+  },
+
+  "REFUTED_4_UNBANKED_HEADLINE_NUMBERS": {
+    "severity": "MEDIUM — provenance, not correctness",
+    "claim": "the EARLY/LATE concentration block and the leave-one-cluster-out range",
+    "measured": "grep for EARLY / LATE_ / leave_one / LOO / cluster_jackknife / the literal values 0.868, 0.7909, 0.726 returns ZERO hits across ALL FOUR metrics json files, and cutin_targeted.py contains no such code. These numbers exist only in the report text.",
+    "i_recomputed_them_myself_and_they_are_CORRECT": {
+      "flagship_v_target_EARLY": "-0.7908 [-0.9007,-0.6630] n=20 cl=4 — matches the reported -0.791 [-0.901,-0.663]",
+      "flagship_v_target_LATE": "-0.0527 [-0.1298,+0.0115] NS",
+      "refc_v_target_EARLY": "+0.0030 [-0.0144,+0.0203] NS — matches the reported +0.003 [-0.014,+0.020]",
+      "LOO_range_v_target": "-0.3341 .. -0.2401 (report said -0.241 to -0.351 across three metrics)"
+    },
+    "verdict": "TRUE but STRANDED — a headline quantity that lives only in an agent's context is not done. Now reproducible via rederive_cutin_targeted.py."
+  },
+
+  "REFUTED_5_SELECTIVE_TRACKING_THRESHOLD": {
+    "severity": "LOW-MEDIUM",
+    "claim": "'flagship at <=2 m cross-track, ADE -0.051 [-0.165,-0.005]* on 30 windows / 4 clusters ... refc at <=5 m, ADE -0.225 [-0.415,-0.025]* on 102 windows / 7 clusters'",
+    "defect": "both arms were scored at BOTH thresholds and the report quoted, for each arm, only the threshold at which that arm separates. The suppressed halves: flagship @5m = -0.0697 [-0.1316,+0.0251] NOT separated (n=69/6); refc @2m = +0.0326 [-0.0079,+0.0834] NOT separated (n=38/5).",
+    "verdict": "a forking path. Both strata must be reported for both arms."
+  },
+
+  "FLAGGED_6_MULTIPLICITY_FRAMING": {
+    "claim": "'15/29 separated vs 1.45 expected'",
+    "objection": "the 29 metrics are strongly collinear — ade_0_2s, de_2s, dist_to_gt_traj_m, abs_target_speed_err_ms, target_speed_err_ms, executed_speed_err_ms, along_track_ade_m and v_target_ms are largely one longitudinal quantity. '1.45 expected by chance' assumes 29 independent tests. The count overstates the evidence; the family breakdown (ADE 3/3, LON 10/12, LAT 2/5, TAC 0/5, STR 0/3) is the honest presentation."
+  },
+
+  "SURVIVES_AND_IS_NOW_STRONGER": {
+    "DETERMINISM_CONTROL_1_IS_NOW_RUN_AND_PASSES": {
+      "status": "the stream reported this as outstanding. I ran it.",
+      "measured": "flagship-v1/objects vs flagship-v1_objects_REPEAT on tanitad-thor: 12 of 12 shared starts, max abs diff EXACTLY 0.0 on v, steer, accel, v_target, kappa_plan, ego, plan, i_gt, t_us, extra_logits and nav.",
+      "note": "the two json files differ in md5 (d494fdbf vs 157bf847) ONLY through wall-clock metadata (render_ms/wall_s). Every model and state quantity is bit-identical.",
+      "bonus": "the pod's CODE_MD5 for the REPEAT records gsplat_renderer.py = 1c0434e9, while the banked panel ran 0780e18d. So the 'determinism repeat' is in fact a THIRD renderer build and this is a cross-version test too. Renderer lineage 24b61aa0 -> 0780e18d -> 1c0434e9, all producing bit-identical closed-loop output.",
+      "consequence": "there is still no SAME-BUILD determinism run, but cross-build bit-identity implies it a fortiori. CONTROL_1 should be relabelled cross-version, not left as 'not run'."
+    },
+    "CROSS_VERSION_EXTENDED_TO_THE_OBJECTS_CONDITION": {
+      "gap_found": "verification/cross_version_render.json compares condition='empty' ONLY — the path that draws NO actors. The entire treatment effect lives in 'objects', whose actor-compositing path was untested.",
+      "i_ran_it": "flagship objects (targeted) vs objects (banked realclose), shared starts 75/90/105: ALL_SHARED_ROLLOUTS_BIT_IDENTICAL = true, every field 0.0. Same for refc objects and refc empty.",
+      "verdict": "the claim SURVIVES with strictly better evidence than the stream provided."
+    },
+    "THE_CURVE_INVARIANT_REFUTATION_IS_SOUND_ON_ITS_MERITS": "cutin_is_real.py measures the actor's perpendicular distance to the ego's LOGGED polyline, which is invariant to ego heading by construction, and reports cross-track RANGE (not just min). Track 117 moves 0.265 m relative to the ego path while its ego-frame y sweeps 6.26 m and the ego turns +33.2 deg — a correct diagnosis of ego rotation, not a lane entry. The off-route saturation guard (|ct|min > 5 m) correctly separates junction cross traffic (34, 65) from lane changes.",
+    "TREATMENT_IS_REAL_NOT_A_NULL_RENDER": "actor_attach.json falsifier: pixels_changed_by_actors 528901-639834 over 3 frames, grad-NCC on 0.4886-0.5785 vs off 0.3604-0.4032 vs WRONG-TIME 0.3746-0.4369. All 92 layer tracks mapped at accept_reason=exact_zero_cost.",
+    "NON_RENDERABILITY_CONFIRMED_AT_TWO_PATHS": "tracks 34 and 65 are absent from the 92 mapped tracks in BOTH results/scene2-cutin-targeted/rollouts/actor_attach.json AND results/scene2-realclose/actor_map_7c72937c.json; track 117 is present in both. (Caveat: both files are outputs of actor_map.py, so this is one TOOL at two paths; the grad-NCC falsifier is the independent physical evidence.)",
+    "i_gt_ENDOGENEITY_IS_CLEAN_AT_k_0_5": "the metric reference index i_gt is post-treatment, but at k 0-5 it is IDENTICAL between conditions on 0 of 60 rows differing, and log speed at i_gt matches to +0.0000 m/s. So ade_0_2s and abs_target_speed_err at k 0-5 are free of that confound. (At k 38-50, 74/144 rows differ and the median i_gt-minus-wall drift is -15 ticks — the late bands are correctly described as accumulated divergence.)",
+    "HEADWAY_CLAIMS_VERIFIED": "scene 7c72937c min_inlane_headway_m = 3.268; scene 00040136 = 46.246. Both read from their own geometry json.",
+    "STRATEGIC_CIRCULARITY_VERIFIED": "flagship nav_to_head_map {1:[0], 0:[1]} with zero exceptions on 387/387 — route_head_eq_logged is a nav echo and correctly marked do_not_quote. refc's guard returns head_is_deterministic_function_of_nav=false — correctly NOT an echo.",
+    "TACTICAL_PRECISION_WITH_RECALL_VERIFIED": "every number quoted (flagship acc 0.0879 vs baseline 0.5659; brake_stop 188 fires / 0 true; lane_keep 113/0; turn_right 46/0; turn_left P 0.8529 R 0.1324 on 219 true; accelerate P 0.8333 R 0.0298 on 168 true) matches PRECISION_WITH_RECALL.A_exposure exactly.",
+    "PREDECESSOR_DENOMINATORS_VERIFIED": "scene2-realclose cutin_subset: flagship 107 windows / 3 clusters, refc 99 / 3 — matches the '3/107' the report cites as the predecessor.",
+    "SELF_HONEST_CONTROL_2": "the stream logged that its own placebo separated on 12/28 and explained why no placebo epoch can exist in this design (objects draws all 92 agents at every tick). I confirm the mechanism and the sham stratum's pooled v_target -0.4881 [-0.8240,-0.1884]."
+  },
+
+  "PROVENANCE_DEFECT": {
+    "CODE_MD5_does_not_describe_the_scorer": "results/scene2-cutin-targeted/CODE_MD5.txt stamps the POD's rollout-generation code. The metrics were scored LOCALLY (the A/B paths in the metrics json are G:/... paths) against the repo's cl_metrics.py (660a3f6c), while CODE_MD5 records the pod's cl_metrics (d853190c). The version of the code that produced the published numbers is stamped nowhere.",
+    "staged_renderer_differs_from_the_banked_run": "repo gsplat_renderer.py is 1c0434e9; CODE_MD5 records 0780e18d. Harmless in fact — I measured the two builds to be bit-identical on the closed loop — but the stamp alone does not tell a reader that."
+  },
+
+  "HONEST_VERDICT": "The premise refutation SURVIVES (with its denominator corrected to 'at least 3'). The instruments, the exogenous clock, the estimator, the treatment and the determinism all SURVIVE and are stronger than reported. The POSITIVE FINDING does not survive as stated: it is not an exposure-window effect, it is not purely longitudinal, and it rests on 4 of 12 clusters that are exactly the four starts furthest inside the sham epoch. Dropping them gives v_target -0.0527 [-0.1298,+0.0115], NOT separated."
+}

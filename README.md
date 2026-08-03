@@ -100,6 +100,15 @@ videos [`TanitAD Research Hub/Evaluation/Videos/alpasim-closedloop/`](TanitAD%20
 
 ### REF-C base beats flagship v1 closed-loop — and the separation is **entirely lateral**
 
+⛔ **SUPERSEDED 2026-08-03 evening — "entirely lateral" is RETRACTED (R-2026-08-03-C).** Re-measured
+on the +23.4 % grad-NCC render the videos actually show, ADE **separates at +7.164 [+5.265, +8.966]**
+and so do both longitudinal metrics and strategic corridor departure; the four lateral separations
+all survive and widen. The mechanism is that **flagship v1's driven path moves a mean 9.05 m under
+the render change while REF-C's moves 0.43 m** — a 21× render-sensitivity ratio. Determinism control
+was exactly 0.0 on 450/450 windows, so the attribution is clean. Current numbers:
+[`…/closedloop-hq-render/STREAM_C_RENDER_AB.md`](stack/experiments/alpasim-gsplat/results/closedloop-hq-render/STREAM_C_RENDER_AB.md).
+**The table below is the OLD render and is kept only as the retracted record.**
+
 Paired Δ = flagship v1 − REF-C base (positive = flagship worse), empty-road condition:
 
 | family | metric | paired Δ [CI95] | separated |

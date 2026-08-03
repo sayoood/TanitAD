@@ -1427,10 +1427,25 @@ starts, n = 9; paired comparison over the **437 shared windows**.
 **+0.084 [0.028, 0.175]**, curvature **+0.0050 [0.0008, 0.0130]**, yaw-rate **+0.038 [0.020, 0.057]**.
 ⛔ **ADE is NOT separated: +0.789 [-0.865, +2.728].**
 
+⛔ **RETRACTED THE SAME DAY (R-2026-08-03-C) — the numbers above are the OLD render.** Re-measured on
+the improved render the shipped videos use (+23.4 % grad-NCC, same scene, checkpoints, starts, scorer
+and 437 paired windows): **ADE separates at +7.164 [+5.265, +8.966]**, `abs_target_speed_err_ms` at
+**+6.397 [+5.000, +7.801]**, `along_track_ade_m` at **+7.153 [+5.240, +8.953]** and corridor
+departure at **+0.506 [+0.382, +0.629]**; all four lateral separations survive and widen.
+**REF-C still wins — "entirely lateral" does not.** ⚠️ Note also that `dist_to_gt` and
+`cross_track_abs` are the SAME measurement (`cl_metrics.py`: `"dist_to_gt": abs(ct)`), so this is
+four separated lateral metrics, not five. The mechanism is a **21× render-sensitivity ratio**
+(flagship's driven path moves 9.05 m mean under the render change, REF-C's 0.43 m; flagship's
+commanded speed falls 12.96 → 7.05 m/s against a logged ~15.0), isolated by a 2×2 to the **scale
+cull**, and licensed by a determinism control that returned **exactly 0.0** on 450/450 windows.
+Current panel: `stack/experiments/alpasim-gsplat/results/closedloop-hq-render/`.
+
 ⇒ **An ADE-only table would have reported "no difference" on a comparison where four lateral
 measures separate cleanly and in the same direction.** This reproduces the 2026-07-23 native-1080
 n = 12 suite on **different hardware, a different renderer and a different scene** — the doctrine is
-not an artifact of one harness.
+not an artifact of one harness. ⚠️ **On the improved render this panel no longer demonstrates that**
+(ADE separates there); the doctrine's claim — that ADE *can* hide a real gap — is what it showed,
+and the 07-23 suite remains the un-retracted instance.
 
 **Three defects only the families expose.**
 1. **The arms fail longitudinally in OPPOSITE directions** — flagship 2.04 m/s too slow, REF-C
@@ -1811,11 +1826,13 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   root-cause class. All §7.11 numbers MEASURED with named estimators.
 
 - v0.8 (2026-08-03): added **§7.12 — closed-loop on a neural reconstruction, on the edge device**.
-  The four-family doctrine's strongest test yet: REF-C beats flagship v1 closed-loop and the whole
-  separation is **LATERAL** (dist_to_gt +1.171 [0.030, 2.244], heading +0.084, curvature +0.0050,
-  yaw-rate +0.038 — all separated), while **ADE is NOT separated** (+0.789 [-0.865, +2.728]) — an
-  ADE-only table would have reported "no difference". Reproduces the 07-23 native-1080 suite on
-  different hardware, renderer and scene. Three defects only the families expose: the arms fail
+  REF-C beats flagship v1 closed-loop. ⛔ **The "whole separation is LATERAL / ADE is not separated"
+  reading is RETRACTED the same day (R-2026-08-03-C)**: re-measured on the improved render the
+  shipped videos use, **ADE separates at +7.164 [+5.265, +8.966]** along with both longitudinal
+  metrics and strategic corridor departure, while all four lateral separations survive and widen.
+  The mechanism is a **21× render-sensitivity ratio** between the arms, isolated by a 2×2 to the
+  scale cull and licensed by an exactly-zero determinism control.
+  Reproduces the 07-23 native-1080 suite on different hardware, renderer and scene. Three defects only the families expose: the arms fail
   longitudinally in OPPOSITE directions (-2.04 vs +1.33 m/s, a pooled score cancels them); the
   flagship executes what it selects only 0.4481 of the time; and **REF-C's 5-way head never emits a
   longitudinal class** (accelerate 0, brake_stop 0) while 42 % of windows are brake_stop — the

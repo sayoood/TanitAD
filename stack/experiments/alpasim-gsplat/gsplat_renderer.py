@@ -83,6 +83,71 @@ def yaw_of(T: np.ndarray) -> float:
     return math.atan2(T[1, 0], T[0, 0])
 
 
+def R_to_quat_wxyz(R: np.ndarray) -> np.ndarray:
+    """Rotation matrix -> unit quaternion (w,x,y,z), branch-selected on the trace so
+    the square root is never taken of a near-zero (Shepperd's method)."""
+    m = np.asarray(R, np.float64)
+    t = m[0, 0] + m[1, 1] + m[2, 2]
+    if t > 0.0:
+        s = math.sqrt(t + 1.0) * 2.0
+        q = [0.25 * s, (m[2, 1] - m[1, 2]) / s, (m[0, 2] - m[2, 0]) / s,
+             (m[1, 0] - m[0, 1]) / s]
+    elif m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+        s = math.sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2]) * 2.0
+        q = [(m[2, 1] - m[1, 2]) / s, 0.25 * s, (m[0, 1] + m[1, 0]) / s,
+             (m[0, 2] + m[2, 0]) / s]
+    elif m[1, 1] > m[2, 2]:
+        s = math.sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2]) * 2.0
+        q = [(m[0, 2] - m[2, 0]) / s, (m[0, 1] + m[1, 0]) / s, 0.25 * s,
+             (m[1, 2] + m[2, 1]) / s]
+    else:
+        s = math.sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1]) * 2.0
+        q = [(m[1, 0] - m[0, 1]) / s, (m[0, 2] + m[2, 0]) / s,
+             (m[1, 2] + m[2, 1]) / s, 0.25 * s]
+    q = np.asarray(q, np.float64)
+    return q / (np.linalg.norm(q) or 1.0)
+
+
+def se3_interp(T0: np.ndarray, T1: np.ndarray, t: float,
+               clamp: bool = True) -> np.ndarray:
+    """SE(3) interpolation: LERP the translation, SLERP the rotation.
+
+    Used to place the camera at shutter fraction `t` in [0,1] between the frame's
+    shutter-START pose `T0` and shutter-END pose `T1`. ⚠️ A naive per-element LERP of
+    the 3x3 block is NOT a rotation (it shrinks toward the chord) — over a 30.6 ms
+    readout the error is small but it is a silent geometry bug, and geometry is asserted
+    here rather than assumed.
+
+    `clamp=False` allows EXTRAPOLATION outside [0,1] — the same slerp/lerp formula
+    evaluated at t<0 or t>1. It exists for one question: the phase sweep is monotone
+    toward the shutter START, and the only way to tell "the start pose is the optimum"
+    from "we are rendering systematically late" is to look at t<0 and see whether the
+    curve turns over. ⚠️ `clamp=True` (the default) is what every render uses, and it
+    keeps `t=1.0` EXACTLY equal to the production pose rather than a slerp round-trip
+    of it.
+    """
+    t = float(t)
+    if clamp and t <= 0.0:
+        return np.array(T0, np.float64, copy=True)
+    if clamp and t >= 1.0:
+        return np.array(T1, np.float64, copy=True)
+    q0, q1 = R_to_quat_wxyz(T0[:3, :3]), R_to_quat_wxyz(T1[:3, :3])
+    if float(q0 @ q1) < 0.0:            # shortest arc
+        q1 = -q1
+    d = float(np.clip(q0 @ q1, -1.0, 1.0))
+    if d > 0.9995:                      # near-parallel: LERP + renormalise is exact enough
+        q = q0 + t * (q1 - q0)
+    else:
+        th = math.acos(d)
+        st = math.sin(th)
+        q = (math.sin((1.0 - t) * th) / st) * q0 + (math.sin(t * th) / st) * q1
+    q = q / (np.linalg.norm(q) or 1.0)
+    T = np.eye(4, dtype=np.float64)
+    T[:3, :3] = quat_wxyz_to_R(q)
+    T[:3, 3] = (1.0 - t) * T0[:3, 3] + t * T1[:3, 3]
+    return T
+
+
 # --------------------------------------------------------------------------------- #
 # dynamic actor tracks (from the USDZ's sequence_tracks.json)                        #
 # --------------------------------------------------------------------------------- #
@@ -550,7 +615,7 @@ class NuRecGsplatRenderer:
                height: int | None = None, tau: float | None = None,
                actor_frac: float | None = None, actor_time_us: float | None = None,
                near: float = 0.05, far: float = 2000.0, with_depth: bool = False,
-               cam_to_nre_end: np.ndarray | None = None):
+               cam_to_nre_end: np.ndarray | None = None, *, return_torch: bool = False):
         """Render one f-theta frame. Returns (uint8 HxWx3, alpha HxW float32, ms).
 
         ⛔ `with_depth` is NOT available on this path — see `render_depth()`.
@@ -560,6 +625,14 @@ class NuRecGsplatRenderer:
         interpolates down the image (`RollingShutterType.TOP_TO_BOTTOM`, which is what
         this rig's `shutter_type` declares). Omit it for the global-shutter behaviour
         every existing caller has.
+
+        ⚠️ `cam_to_nre_end` is gsplat's NATIVE per-pixel rolling shutter and costs ~161x
+        a global-shutter render on this scene (MEASURED: 3700 ms vs 23 ms). For the
+        affordable approximation see `render_rs_sliced()`.
+
+        `return_torch=True` returns the GPU tensors instead of numpy, so a caller that
+        composites several renders (the sliced shutter) pays ONE device->host copy
+        instead of N. Every other caller is bit-identical to before this kwarg existed.
         """
         import torch
         from gsplat import rasterization
@@ -639,9 +712,188 @@ class NuRecGsplatRenderer:
             self.last_sky_weight_mean = float(w.mean())
         torch.cuda.synchronize()
         ms = (time.time() - t1) * 1000.0
-        img = (rgb.clamp(0, 1) * 255.0).to(torch.uint8).cpu().numpy()
-        alpha = a2d.cpu().numpy()
-        return img, alpha, ms
+        img_t = (rgb.clamp(0, 1) * 255.0).to(torch.uint8)
+        if return_torch:
+            return img_t, a2d, ms
+        return img_t.cpu().numpy(), a2d.cpu().numpy(), ms
+
+    # -- the unscented-transform validity gate --------------------------------------
+    @staticmethod
+    def ut_defaults():
+        """gsplat's SHARED default `UnscentedTransformParameters` instance.
+
+        `gsplat.rasterization()` does NOT expose `ut_params`; it lets
+        `fully_fused_projection_with_ut` fall through to the single default object
+        created at import time. Mutating that object is therefore the only way to reach
+        the gate from our side — and it is a real knob, not a hack, because it is the
+        SAME gate the rolling-shutter path silently relaxes:
+
+            Cameras.cuh:357 `world_point_to_image_point_shutter_pose`
+              GLOBAL  -> `return {image_point_start, valid_start};`   <- validity KEPT
+              ROLLING -> `return {image_points_rs_prev, true};`       <- validity DISCARDED
+
+        and upstream, with `require_all_sigma_points_valid = True` (the default), a
+        gaussian with ANY invalid sigma point is culled outright (`radii = 0`). So the
+        rolling-shutter render is not only a pose sweep: it also stops culling. This
+        accessor exists so that difference can be tested SEPARATELY from the sweep.
+        """
+        import inspect
+        from gsplat.cuda import _wrapper as W
+        return inspect.signature(
+            W.fully_fused_projection_with_ut).parameters["ut_params"].default
+
+    def set_ut_gate(self, require_all_sigma_points_valid: bool | None = None,
+                    in_image_margin_factor: float | None = None) -> dict:
+        """Set the UT validity gate. Returns the PREVIOUS values so a caller can restore
+        them exactly (this mutates process-global gsplat state)."""
+        p = self.ut_defaults()
+        prev = {"require_all_sigma_points_valid": bool(p.require_all_sigma_points_valid),
+                "in_image_margin_factor": float(p.in_image_margin_factor)}
+        if require_all_sigma_points_valid is not None:
+            p.require_all_sigma_points_valid = bool(require_all_sigma_points_valid)
+        if in_image_margin_factor is not None:
+            p.in_image_margin_factor = float(in_image_margin_factor)
+        return prev
+
+    # -- affordable rolling shutter -------------------------------------------------
+    def render_rs_sliced(self, cam_to_nre_start: np.ndarray, cam_to_nre_end: np.ndarray,
+                         n_slices: int, *, actor_time_us_start: float | None = None,
+                         actor_time_us_end: float | None = None,
+                         sweep_actor_time: bool = True, reverse: bool = False,
+                         **kw):
+        """Rolling shutter approximated by `n_slices` GLOBAL-shutter renders.
+
+        gsplat's native rolling shutter re-derives the camera pose PER PIXEL inside the
+        `rasterize_to_pixels_from_world` kernel, which is why it costs ~161x. The rig's
+        readout is 30.559 ms and the ego moves <= 0.63 m over it, so the pose is a smooth
+        1-parameter family: rendering it at `n_slices` sampled phases and keeping only
+        each render's own horizontal band reproduces the sweep to O(1/n_slices) of the
+        motion, at exactly `n_slices` x the global-shutter cost.
+
+        `n_slices=1` is a plain global-shutter render at the shutter MIDPOINT — which is
+        itself a phase correction over the shutter-END pose every previous render used.
+
+        Band k covers rows [y_k, y_{k+1}) and is rendered at shutter fraction
+        `t = (y_k + y_{k+1}) / (2 H)`. ⚠️ That mapping assumes TOP_TO_BOTTOM readout
+        (row 0 exposed at shutter START). `reverse=True` flips it, and exists so the
+        assumption can be FALSIFIED rather than trusted: only the correct direction
+        converges to gsplat's native RS as `n_slices` grows.
+
+        Returns (uint8 HxWx3, alpha HxW float32, ms) with `ms` the SUM of the slices'
+        raster times — the honest per-frame cost, not the per-slice cost.
+        """
+        import torch
+        n = int(n_slices)
+        if n < 1:
+            raise ValueError(f"n_slices must be >= 1, got {n_slices}")
+        H, W = self.height, self.width
+        edges = np.linspace(0, H, n + 1).round().astype(int)
+        out_img = torch.empty((H, W, 3), dtype=torch.uint8, device=self.device)
+        out_a = torch.empty((H, W), dtype=torch.float32, device=self.device)
+        ms_total, phases = 0.0, []
+        for k in range(n):
+            y0, y1 = int(edges[k]), int(edges[k + 1])
+            if y1 <= y0:
+                continue
+            t = (y0 + y1) / (2.0 * H)
+            if reverse:
+                t = 1.0 - t
+            phases.append(round(t, 6))
+            pose = se3_interp(cam_to_nre_start, cam_to_nre_end, t)
+            akw = dict(kw)
+            if sweep_actor_time and actor_time_us_start is not None \
+                    and actor_time_us_end is not None:
+                akw["actor_time_us"] = float(actor_time_us_start) + t * (
+                    float(actor_time_us_end) - float(actor_time_us_start))
+            elif actor_time_us_end is not None:
+                akw["actor_time_us"] = float(actor_time_us_end)
+            img_t, a_t, ms = self.render(pose, return_torch=True, **akw)
+            out_img[y0:y1] = img_t[y0:y1]
+            out_a[y0:y1] = a_t[y0:y1]
+            ms_total += ms
+        self.last_rs_phases = phases
+        return out_img.cpu().numpy(), out_a.cpu().numpy(), ms_total
+
+    def render_rs_batched(self, cam_to_nre_start: np.ndarray, cam_to_nre_end: np.ndarray,
+                          n_slices: int, *, actor_time_us: float | None = None,
+                          near: float = 0.05, far: float = 2000.0):
+        """The same sliced shutter, but as ONE rasterization call over N CAMERAS.
+
+        `gsplat.rasterization` takes `viewmats [..., C, 4, 4]` and returns
+        `[..., C, H, W, 3]`, so the N shutter phases can be N cameras in a single launch
+        instead of N sequential calls. Two costs go away and one does not:
+
+        * ✅ the N Python/CUDA launch round-trips collapse to one;
+        * ✅ **the dynamic actors are posed ONCE**, not once per slice — `_posed_actors`
+          walks all 37 tracks in Python and costs ~41.6 ms per call, which in the
+          sequential path is the single biggest per-slice overhead;
+        * ⛔ the per-pixel blending work does NOT go away — each camera still rasterises
+          a full frame — so this cannot beat O(N) in the rasteriser itself.
+
+        ⚠️ Because the gaussian set is shared across the camera batch, the actors are at
+        ONE timestamp for all slices. Over a 30.559 ms readout the tracked agents move
+        ~1 cm, and `s16_fixedactor` measured that choice at +0.0002 grad-NCC against the
+        swept-time version, so this is a measured-negligible simplification rather than
+        an assumed one.
+        """
+        import torch
+        from gsplat import rasterization
+        n = int(n_slices)
+        if n < 1:
+            raise ValueError(f"n_slices must be >= 1, got {n_slices}")
+        H, W = self.height, self.width
+        edges = np.linspace(0, H, n + 1).round().astype(int)
+        phases = [float((edges[k] + edges[k + 1]) / (2.0 * H)) for k in range(n)]
+        poses = [se3_interp(cam_to_nre_start, cam_to_nre_end, t) for t in phases]
+        vm = torch.from_numpy(
+            np.stack([np.linalg.inv(P) for P in poses]).astype(np.float32)).to(self.device)
+        K = torch.from_numpy(
+            np.repeat(self._K_for(self.cam).copy()[None], n, 0)).to(self.device)
+
+        means, quats, scales, opac, sh = (self.means, self.quats, self.scales,
+                                          self.opac, self.sh)
+        self.last_actors_rendered = 0
+        self.last_actors_per_layer = {}
+        if self._actors_on and actor_time_us is not None:
+            for A in self._actors:
+                am, aq, keep = self._posed_actors(A, None, actor_time_us)
+                if am is None:
+                    self.last_actors_per_layer[A["layer"]] = 0
+                    continue
+                means = torch.cat([means, am]); quats = torch.cat([quats, aq])
+                scales = torch.cat([scales, A["scales"][keep]])
+                opac = torch.cat([opac, A["opac"][keep]])
+                sh = torch.cat([sh, A["sh"][keep]])
+                nk = int(keep.sum())
+                self.last_actors_per_layer[A["layer"]] = nk
+                self.last_actors_rendered += nk
+
+        torch.cuda.synchronize()
+        t1 = time.time()
+        colors, alphas, _ = rasterization(
+            means=means, quats=quats, scales=scales, opacities=opac, colors=sh,
+            viewmats=vm, Ks=K, width=W, height=H, sh_degree=3, packed=False,
+            with_ut=True, with_eval3d=True, camera_model="ftheta",
+            ftheta_coeffs=self._ftheta_coeffs_for(self.cam),
+            near_plane=near, far_plane=far, render_mode="RGB")
+        out_rgb = torch.empty((H, W, 3), dtype=torch.float32, device=self.device)
+        out_a = torch.empty((H, W), dtype=torch.float32, device=self.device)
+        for k in range(n):
+            y0, y1 = int(edges[k]), int(edges[k + 1])
+            if y1 <= y0:
+                continue
+            rgb_k, a_k = colors[k][..., :3].float(), alphas[k, ..., 0].float()
+            if self._sky is not None:
+                dirs_world = self._ray_dirs_cam() @ torch.from_numpy(
+                    np.ascontiguousarray(poses[k][:3, :3].T, np.float32)).to(self.device)
+                rgb_k, _w = self._sky.composite(rgb_k, a_k, dirs_world)
+            out_rgb[y0:y1] = rgb_k[y0:y1]
+            out_a[y0:y1] = a_k[y0:y1]
+        torch.cuda.synchronize()
+        ms = (time.time() - t1) * 1000.0
+        self.last_rs_phases = [round(t, 6) for t in phases]
+        img = (out_rgb.clamp(0, 1) * 255.0).to(torch.uint8).cpu().numpy()
+        return img, out_a.cpu().numpy(), ms
 
     def render_depth(self, cam_to_nre: np.ndarray, near: float = 0.05,
                      far: float = 2000.0):

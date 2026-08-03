@@ -1,0 +1,57 @@
+{
+ "utc": "2026-08-03T17:40:00Z",
+ "what": "ADVERSARIAL, RENDERER-FREE settlement of the two things the rolling-shutter stream left open: (a) which SIDE of the mp4/rig pair carries the extra frames, (b) whether the offset is a constant +6. No GPU was used; tanitad-thor was running two other streams' jobs at 98 % sm and 108/122 GB, so no render was launched.",
+ "instruments": [
+  "stack/experiments/alpasim-gsplat/rs_align_gpufree.py  -- cross-correlates the mp4's frame-to-frame image motion against the rig's ego translation per frame",
+  "stack/experiments/alpasim-gsplat/rs_leader_probe.py   -- full-resolution head/tail frame differencing + the rig's own speed at those frames"
+ ],
+ "third_independent_source": {
+  "file": "<scene>/data_info.json",
+  "why": "neither the mp4 nor rig_trajectories.json -- the dataset's own manifest",
+  "camera_front_wide_120fov.num-frames": 599,
+  "sequence-frame-offset": 0,
+  "reading": "the DATASET says 599. The mp4 decodes to more. The extra frames belong to the mp4, not to the rig."
+ },
+ "scenes": {
+  "00040136-e651-4abd-991d-0655ccda9430": {
+   "mp4_decodable_frames": 605,
+   "mp4_CAP_PROP_FRAME_COUNT": 605,
+   "rig_n_frames": 599,
+   "data_info_num_frames": 599,
+   "delta_mp4_minus_rig": 6,
+   "mp4_pts_first_ms": 0.0,
+   "mp4_pts_last_ms": 20133.52,
+   "mp4_dPTS_median_ms": 3.3333e1,
+   "rig_frame_period_ms": 33.333,
+   "rig_ego_speed_mps_first_9_frames": [20.56, 20.32, 20.32, 20.32, 20.37, 20.37, 20.37, 20.3, 20.3],
+   "fullres_head_absdiff_idx1_to_15": [0.0693, 0.0243, 0.0158, 0.0128, 0.3756, 0.0265, 5.3297, 5.6304, 6.6419, 8.1171, 7.4079, 8.1569, 7.4628, 6.0474, 4.8719],
+   "fullres_tail_absdiff_last_15": [3.7524, 3.4513, 3.6737, 3.4593, 3.4955, 3.6159, 3.5652, 3.5983, 3.6414, 3.7013, 3.8465, 3.7821, 3.934, 4.5719, 4.1833],
+   "static_head_block_frames": 7,
+   "implied_pad": 6,
+   "crosscorr_best_lag_mp4_minus_rig": 6,
+   "crosscorr_r_at_best": 0.4488,
+   "crosscorr_r_at_zero": 0.39459,
+   "crosscorr_turns_over_at": 7,
+   "VERDICT": "MEASURED. The mp4 opens with a 7-frame FROZEN block (full-res consecutive |dI| 0.013-0.38, versus 3.5-8.2 once motion starts) while the rig says the ego is doing 20.6 m/s at its very first frame. A moving camera cannot produce 7 identical frames. The extra 6 frames are a LEADER at the HEAD of the mp4: the pad is a repeat of the first real frame, pad = 6 = mp4 - rig, real frame k = mp4[k+6]. Independently, cross-correlating image motion against ego translation -- a signal that touches neither the renderer nor grad-NCC -- peaks at exactly +6 and turns over at +7. The stream's +6 is CONFIRMED and its open question 'WHICH SIDE IS WRONG' is ANSWERED: the mp4 leads, so the reference index must be RAISED by the pad."
+  },
+  "7c72937c-c620-4776-9555-d57222c0081f": {
+   "mp4_decodable_frames": 604,
+   "mp4_CAP_PROP_FRAME_COUNT": 604,
+   "rig_n_frames": 599,
+   "data_info_num_frames": 599,
+   "delta_mp4_minus_rig": 5,
+   "rig_ego_speed_mps_first_9_frames": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+   "fullres_head_absdiff_idx1_to_15": [0.0721, 0.0226, 0.012, 0.0099, 0.7809, 0.7082, 0.079, 0.0931, 0.0773, 0.8272, 0.0756, 0.0636, 0.0642, 0.0812, 0.7992],
+   "static_head_block_frames": 5,
+   "crosscorr_best_lag_mp4_minus_rig": 15,
+   "crosscorr_note": "UNINFORMATIVE ON THIS SCENE. r rises monotonically from -15 to +15 with no turnover, because the ego is STATIONARY for the first 9 rig frames, so image motion carries no speed signal to correlate against. Reported as an instrument failure, not as a +15 offset.",
+   "VERDICT": "THE OFFSET IS NOT A CONSTANT +6. This scene's mp4 carries 5 extra frames, not 6, and its static head block is 5 frames -- consistent with 5 pad frames followed by 599 real frames (5 + 599 = 604). Hardcoding +6 would put this scene off by one."
+  }
+ },
+ "CORRECTED_RULE": {
+  "statement": "video_frame_index = rig_frame_index + (n_mp4_decodable - n_rig_frames), read PER SCENE.",
+  "evidence_class": "MEASURED on 2 of 2 scenes that have both files on tanitad-thor (the only two present); the pad-equals-delta identity is verified directly on 00040136 and is arithmetically forced on 7c72937c by 5 + 599 = 604.",
+  "not_established": "that every NuRec scene has a leader at all, or that the pad is always a repeat of the first real frame. Only 2 scenes have the mp4 downloaded; the other 62 do not."
+ },
+ "CONSEQUENCE_FOR_THE_STREAM": "The +6 finding SURVIVES on 00040136 and is strengthened by two renderer-free probes and by the dataset manifest. The generalisation to a constant +6 is REFUTED at the second scene. Anyone actioning task #58 must read the per-scene delta, not add 6."
+}
