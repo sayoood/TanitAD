@@ -27,45 +27,43 @@ Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stra
    LOCK touch-file convention, the pod2 no-touch rule, the memory-safe ckpt relay pattern) so
    every agent can use the pod without re-learning the ops constraints from incident history.
 
-## P0 — next run
+## P0 — next run (re-prioritized 2026-08-03, first DAILY slot)
 
-1. **Make `ci_gate` + `session_guard` + `fleet_probe` unskippable (session/cron hook wiring)
-   — now the top item, and it is the same gap three times.** All three are disciplines an
-   agent must remember to perform; nothing executes any of them automatically. `fleet_probe`
-   raises the stakes: a probe nobody runs is exactly as blind as the grep-based monitor it
-   replaced, and GOALS G1's "detected within one 6-hour cycle" is unprovable until a cron runs
-   it and pages on exit code 2. Method: pre-push/session-end hook for the two gates + a
-   6-hourly cron for the probe. Falsifiers: (a) a deliberately-red branch must be un-pushable
-   without an explicit override flag; (b) a trainer killed by hand must produce a RED alert
-   without any human invoking the probe.
-2. **`rr_log.py` dual-sink tee (findings-driven; replaces the retired viz item).** Two
-   `RecordingStream`s + an explicit `recording=` on every `rr.log`, because
-   `rr.set_sinks(FileSink, GrpcSink(url))` after `serve_grpc()` **deadlocks** (measured
-   2026-07-21: killed at 120 s, no output — the sink connects back to its own in-process
-   server). Resource: CPU, ~2 h. **Pre-registered falsifier: the dual-sink `.rrd` must land
-   within 5 % of the single-sink `.rrd` (52,966 B/window baseline) for identical input** —
-   anything smaller is still a stub. Until then the shipped guard refuses the combination.
-3. **Pin `rerun-sdk==0.34.1`** — the entire viz backbone depends on it and it is pinned in
-   **no** requirements file in the repo (measured 2026-07-21). Trivial; blast radius is not.
-4. **Wire the Rerun 0.34.1 Viewer-MCP into an agent tool list** — the surviving half of the
-   old P0#1. The rest of that item was stale and is retired: 0.34.1 was **already installed**
-   and `rr_log.py` (417 lines) **already logs episodes**, so the "pin + migrate, 1–2 h"
-   work did not exist. This is the GOALS G2 lever that turns "the overlay looks right" from an
-   assertion into a verification. Expected ~30 min; measure it (G-T1).
-5. **`rrd_bench` on a real episode** — current numbers are synthetic records; confirm
-   B/window at true frame entropy on one `ep_*.pt`. Falsifier: if real-frame B/window differs
-   >2× from 52,966, the synthetic baseline is not a valid stand-in and G2's 5 % test re-bases.
-6. **`gpu_tripwire` v2 — bf16/AMP arm + CUDA-graph capture probe.** v1 is fp32 + eager only,
-   so Prod-Opt's CUDA-graph deploy tick (`b984e04`, 11.16 ms) and every bf16 training path are
-   still unguarded. Method: add a bf16 autocast parity arm (looser tol, measured first) and a
-   capture/replay-equivalence probe. Resource: 4060, minutes. Expected: bf16 deviation ~1e-2
-   on O(1) activations — **measure before setting the tolerance**, do not guess it.
-7. **Re-scoped: `test_replay_app_test_mode_and_regression_gate`** — the "10.86 s tall pole" was
-   partly an I/O+contention artifact: measured **8.02 s clean / 14.90 s beside a second pytest
-   process** (2026-07-20). Two questions now, not one: (a) can the FastAPI TestClient boot be
-   shared across the module (fixture reuse)? (b) should `ci_gate` detect concurrent load and
-   widen the per-test budget rather than false-positive? Falsifier for (a): if it stays >6 s
-   after fixture reuse, the cost is the boot, not the payload → keep 15 s and document.
+0. **`RESIM_ROADMAP.md` — WRITE IT.** Mission P1 says the TanitResim roadmap lives there and it
+   still does not exist; this is the FOURTH run carrying it, each time losing to more urgent work.
+   That is exactly why it goes first now. Scope for one day: the gap list already known
+   (dual-sink empty file, live-proxy gRPC, 3-arm view, per-scenario filtering, worst-K reel,
+   checkpoint A/B diff, latency/CNCE panel, export-to-figure), each with a measured cost estimate
+   and a go/no-go under P5 (G-T1). Resource: 0-GPU. Falsifier: if writing it surfaces no concrete
+   next increment, the product mandate itself needs renegotiating with Sayed — say so.
+5. **Thor GPU is UNMONITORED (findings-driven, 2026-08-03).** `nvidia-smi --query-gpu=...` returns
+   nothing on Jetson — it exposes `tegrastats`. `fleet_probe` therefore reports Thor `AMBER
+   NO_GPU_READOUT`, which is honest but blind, and becomes a real gap the moment Thor runs
+   inference. Method: add a `tegrastats`-based GPU readout for `role=edge` hosts (one sample,
+   parse `GR3D_FREQ`), behind the same absence-is-an-alarm rule. Resource: Thor over ssh, minutes.
+   Expected: util + RAM on the same table row as the pods. Falsifier: if `tegrastats` needs root
+   or blocks, record the blocker and keep the honest AMBER rather than inventing a green.
+6. **`JOB_RE` is the THIRD level of the stale-name defect (findings-driven, 2026-08-03).** The
+   class has now appeared at log names (v1) and host names (v2); `JOB_RE` still encodes what a
+   trainer *cmdline* looks like, so a run launched through an unmatched wrapper is invisible the
+   same way. Method: cross-check discovered jobs against GPU-owning pids (`nvidia-smi
+   --query-compute-apps`) — a pid holding GPU memory that `JOB_RE` did not classify is an alarm,
+   and that check cannot go stale because it does not name anything. Resource: 0-GPU + one live
+   probe. Expected: 0 unclassified GPU owners on a healthy pod. Falsifier: if `--query-compute-apps`
+   is empty inside these containers (it often is under some runtimes), the check is not available —
+   measure that first and say so rather than shipping a check that always passes.
+1. **`episode → Rerun .rrd` replay/viz + the 0.34.1 Viewer-MCP upgrade (duty #2)** — unchanged
+   from 2026-07-20/21; predicted-vs-actual trajectory + BEV overlay, doubles as the D3
+   imagined-vs-oracle visual. `rerun-sdk==0.34.1` is already pinned in the venv.
+2. **Make `ci_gate` (and now `fleet_probe`) unskippable — session/pre-push hook wiring.** Nothing
+   executes either automatically; both are disciplines an agent must remember. One wiring closes
+   both. Falsifier: after wiring, a deliberately-red branch must be un-pushable without an explicit
+   override flag.
+3. **`gpu_tripwire` v2 — bf16/AMP arm + CUDA-graph capture probe.** v1 is fp32 + eager only.
+   **Measure the bf16 deviation before setting its tolerance** — do not guess it.
+4. **Re-scoped: `test_replay_app_test_mode_and_regression_gate`** — 8.02 s clean / 14.90 s under
+   contention. (a) can the FastAPI TestClient boot be shared across the module? (b) should
+   `ci_gate` detect concurrent load rather than false-positive?
 
 ## P1
 
@@ -101,6 +99,14 @@ Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stra
    VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-08-03) **`fleet_probe` v2 — DISCOVERY-BASED MEMBERSHIP + `/proc/fd/1` log binding DONE**
+  (`9584405`), and the 13-day-stranded v1 landed (`7f34086`). MEASURED: the live ssh config holds
+  **8 `tanitad-*` endpoints; v1's hardcoded dict knew 4**, and the missing ones included **pod5,
+  running the flagship `v5f` at that moment** — v1 would have printed a complete-looking table
+  with the only working host absent. `/proc/<pid>/fd/1` resolved the live flagship from
+  `AMBER NO_LOG_BOUND` to **GREEN step=1250 log_age=51 s** without loosening any check. Two of my
+  own v2 defects fixed from the live run (a manufactured `RED DISK_FULL` at a guessed path;
+  thor-wifi as a phantom second host). 164 falsifiers / 38.3 s, discovery ones mutation-proven.
 - (2026-07-21) **`tools/fleet_probe.py` DONE (unplanned — took the top slot because the
   program's #1 risk moved to ops).** Discovery-based fleet liveness: no hardcoded run/log
   names, absence of evidence is AMBER not GREEN. Live: 4 hosts in **9.7–11.3 s**; found pod2

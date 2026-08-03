@@ -1,8 +1,47 @@
-﻿# KNOWLEDGE_BASE — Tools&DevEnv
+# KNOWLEDGE_BASE — Tools&DevEnv
 
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-03] [root-cause] **A defect class does not die at the level you fixed it — it moves up.**
+  `fleet_probe` v1 killed hardcoded *log* names and shipped a hardcoded four-host *FLEET dict*.
+  MEASURED 2026-08-03: the live ssh config holds **8 `tanitad-*` endpoints; the dict knew 4**, and
+  the missing ones included **pod5, running `flagship-v5f-w120-30k` at that moment**. A v1 probe
+  prints a complete-looking table with the working host simply ABSENT — worse than a false GREEN,
+  because absence-of-a-row is not a finding any check can raise. Expect it at a third level next:
+  `JOB_RE` still encodes what a trainer cmdline looks like — impact: TOP-RISK/ops/all-agents —
+  note `2026-08-03-fleet-probe-v2-and-the-13-day-strand.md` §1
+- [2026-08-03] [built] **`fleet_probe` v2 — membership DISCOVERED from `~/.ssh/config`.**
+  `ROLE_HINTS` supplies only semantics (train / burst / edge / unknown), never membership: an
+  unhinted host is probed and reported `AMBER HOST_UNCLASSIFIED`, a vanished hinted alias is
+  `AMBER ALIAS_GONE`, and an unreadable or tanitad-free config is **RED** (no fleet = UNKNOWN, not
+  all-clear). Aliases sharing an `(hostname, port)` are one machine (`pod4`/`v2arch`). 164
+  falsifiers / 38.3 s; the discovery ones are **mutation-proven** — restoring v1's hardcoded
+  membership fails 3 — impact: ops/all-agents — `tools/fleet_probe.py`
+- [2026-08-03] [measured] ⭐ **`/proc/<pid>/fd/1` is the authoritative log binding, and it is free.**
+  v5f runs `--out /workspace/experiments/flagship-v5f-w120-30k` while writing
+  **`/workspace/v5f_run.log`**; `ssh -f` left no shell parent carrying a redirect. No name, prefix
+  or out-dir rule could ever link them, so the LIVE FLAGSHIP read as `NO_LOG_BOUND` (correctly —
+  there was no evidence). The kernel had the answer all along. Direct evidence now outranks every
+  heuristic; bound-but-undated is `AMBER LOG_AGE_UNKNOWN`, not a pass. Before → after, same host,
+  same minute: `step=None log_age=n/a` → **`GREEN step=1250 log_age=51s` GPU 85 %** — impact:
+  ops/any-agent-reading-a-pod-log — note §2.1
+- [2026-08-03] [measured] **A monitor that manufactures alarms from guesses is as dangerous as one
+  that misses them.** v2 reported `RED DISK_FULL` on `thor-wifi`, which has **no `/workspace` at
+  all** and **917 MB/s** of real headroom — the RED came from a defaulted path. `RED DISK_FULL`
+  asserts a *cause* (MooseFS quota); an unwritable *guessed* path establishes only "unknown". Only
+  a hinted `dd_path` may now claim quota; otherwise `AMBER DISK_UNVERIFIED`. False alarms get a
+  monitor muted, which is how it ends up reporting nothing — impact: ops/instrument-doctrine — §2.2
+- [2026-08-03] [measured] **Jetson Thor's GPU is UNMONITORED by any nvidia-smi-based probe** —
+  `nvidia-smi --query-gpu=...` returns nothing on Jetson (it exposes `tegrastats`). Honest AMBER
+  today because Thor idles by design; a real gap the moment Thor runs inference — impact:
+  H-edge/prod-opt — backlog P0.5
+- [2026-08-03] [ops] **13 days of stranding, MEASURED cost:** `agent/tools-devenv-20260721` sat 1
+  ahead / 333 behind, holding `fleet_probe` (581 lines), 20 falsifiers, an intake package, and the
+  `fleet-status` skill REWRITE. So the fix for "the monitor reported GREEN because it found
+  nothing, 4 times" **existed on a branch and did not exist in the fleet for 13 days** — the tip's
+  skill was still the original hardcoded-grep version. Stranding is not bookkeeping — impact:
+  D-026/G-I — note §0
 - [2026-07-21] [root-cause] **The fleet monitor's blind spot is structural, not a bug**: every
   check in `.claude/skills/fleet-status/SKILL.md` grepped a **hardcoded** run/log name
   (`p0-sB01-realmix.log`, `arm_base.log`, `arm_kstep.log`, `pgrep -fc train_worldmode[l]`) —

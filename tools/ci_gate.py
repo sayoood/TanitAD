@@ -211,6 +211,17 @@ def run_pytest(pytest_args: list[str], rootdir: Path) -> Report:
                       cases=cases, parse_error=parse_error)
 
 
+# Tests whose runtime IS the test. Each carries its measured time and the
+# reason the cost is intrinsic, so the list cannot quietly become a dumping
+# ground. Raising --max-test-seconds to cover these instead would blind the
+# check to every future regression.
+SLOW_EXEMPT: dict[str, str] = {
+    "tests.test_sitclf::test_head_learns_a_signal_that_needs_a_LONG_window":
+        "41.8 s (2026-08-03) — it trains a head to convergence on a long "
+        "window; the duration is the hypothesis under test, not overhead.",
+}
+
+
 def evaluate(report: Report, max_test_seconds: float, max_wall_seconds: float,
              require: list[str], suites: dict[str, int] | None = None,
              min_total: int = 0) -> list[str]:
@@ -232,10 +243,22 @@ def evaluate(report: Report, max_test_seconds: float, max_wall_seconds: float,
         reasons.append(f"pytest exit {report.exit_code}{detail}")
 
     # 2) per-test slowness budget (the backlog falsifier).
-    slow = sorted((c for c in report.cases if c.time > max_test_seconds),
+    #
+    # SLOW_EXEMPT holds tests whose runtime IS the test — raising the global
+    # budget to cover them would blind the check to every future regression,
+    # which is how a gate ends up permanently red and therefore ignored. Each
+    # entry carries its measured time and why the cost is intrinsic.
+    slow = sorted((c for c in report.cases
+                   if c.time > max_test_seconds and c.nodeid not in SLOW_EXEMPT),
                   key=lambda c: c.time, reverse=True)
     for c in slow:
         reasons.append(f"slow test {c.nodeid}: {c.time:.2f}s > {max_test_seconds:.2f}s budget")
+    # An exemption that stops being slow is a stale exemption. That is
+    # information, not a failure, so it prints and does not gate.
+    for c in report.cases:
+        if c.nodeid in SLOW_EXEMPT and c.time < max_test_seconds / 2:
+            print(f"[ci_gate] note: stale SLOW_EXEMPT {c.nodeid} now runs in "
+                  f"{c.time:.2f}s — drop it from the exemption list")
 
     # 3) total wall budget.
     if report.wall_s > max_wall_seconds:
@@ -329,10 +352,16 @@ def main(argv: list[str] | None = None) -> int:
     # Drive tree, 2026-07-20) with headroom while still catching a runaway
     # fixture; tighten as tests speed up.
     ap.add_argument("--max-test-seconds", type=float, default=15.0)
-    # 150 s: the full 531-test Drive tree measured 60.2 s on 2026-07-20, so this
-    # is ~2.5x headroom and still an order of magnitude under the 5-min ceiling
-    # the backlog set for "shard it instead".
-    ap.add_argument("--max-wall-seconds", type=float, default=150.0)
+    # See SLOW_EXEMPT for the one test that legitimately exceeds this.
+    # 300 s, REBASED 2026-08-03. The 150 s default was calibrated against a
+    # 531-test suite (60.2 s, 2026-07-20). The suite is now **1708 collected /
+    # 1694 passed in 186.7 s** — it roughly TRIPLED, so the old budget failed
+    # the gate on size alone while nothing was wrong: 0 failed, 0 error. A gate
+    # that is red for everyone gets ignored, which is the same muted-monitor
+    # failure fleet_probe exists to prevent. 300 s = ~1.6x today's measured
+    # wall, still under the 5-minute ceiling the backlog set for "shard it
+    # instead" — so crossing it remains a real signal to shard.
+    ap.add_argument("--max-wall-seconds", type=float, default=300.0)
     ap.add_argument("--require", action="append", default=None,
                     help="test node that MUST exist and pass (repeatable). "
                          f"default: {DEFAULT_REQUIRE}. pass --require '' to disable.")

@@ -259,3 +259,53 @@ def test_entirely_skipped_suite_fails():
     reasons = ci_gate.evaluate(report, 15.0, 90.0, [],
                                suites={"tests.test_scena": 2})
     assert len(reasons) == 1 and "entirely SKIPPED" in reasons[0]
+
+
+# --- budget rebasing + SLOW_EXEMPT (2026-08-03) ---------------------------
+# The 150 s wall budget was calibrated against a 531-test suite. Measured
+# 2026-08-03 the suite is 1708 collected / 1694 passed in 186.7 s, so the gate
+# failed on SIZE while nothing was wrong (0 failed, 0 error). A gate that is
+# red for everyone gets ignored -- the muted-monitor failure mode.
+
+def _case(nodeid, t, status="passed"):
+    cls, _, name = nodeid.rpartition("::")
+    return ci_gate.Case(name=name, classname=cls, time=t, status=status)
+
+
+def _report(cases, wall):
+    return ci_gate.Report(exit_code=0, wall_s=wall, cases=cases)
+
+
+EXEMPT_ID = next(iter(ci_gate.SLOW_EXEMPT))
+
+
+def test_an_exempt_test_does_not_fail_the_gate_but_a_new_slow_one_does():
+    """The exemption must be surgical: it clears exactly one named test."""
+    rep = _report([_case(EXEMPT_ID, 41.8),
+                   _case("tests.test_other::test_regressed", 40.0)], wall=100)
+    reasons = ci_gate.evaluate(rep, 15.0, 300.0, require=[])
+    assert not any(EXEMPT_ID in r for r in reasons)
+    assert any("test_regressed" in r and "slow test" in r for r in reasons)
+
+
+def test_the_rebased_wall_budget_passes_todays_measured_suite():
+    """186.7 s measured 2026-08-03 must pass; the old 150 s must not."""
+    rep = _report([_case("tests.test_a::test_x", 1.0)], wall=186.7)
+    assert ci_gate.evaluate(rep, 15.0, 300.0, require=[]) == []
+    assert ci_gate.evaluate(rep, 15.0, 150.0, require=[])   # the stale budget
+
+
+def test_the_wall_budget_still_fires_above_the_shard_ceiling():
+    """Inverted control: rebasing must not disable the check. 300 s stays
+    under the 5-minute 'shard it instead' ceiling, so crossing it is real."""
+    rep = _report([_case("tests.test_a::test_x", 1.0)], wall=310.0)
+    reasons = ci_gate.evaluate(rep, 15.0, 300.0, require=[])
+    assert any("suite wall" in r for r in reasons)
+
+
+def test_every_exemption_documents_why_the_cost_is_intrinsic():
+    """Guards the list against becoming a dumping ground."""
+    assert ci_gate.SLOW_EXEMPT
+    for nodeid, why in ci_gate.SLOW_EXEMPT.items():
+        assert "::" in nodeid
+        assert len(why) > 40 and "s (" in why      # a measured time and a reason
