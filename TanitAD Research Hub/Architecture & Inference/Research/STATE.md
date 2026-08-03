@@ -43,6 +43,18 @@ pandas/numpy over local PhysicalAI label zips — a GPU would sit idle. `tanitad
 
 ## HANDOFF — 2026-08-03
 
+⚠️ **PROVENANCE — this run's deliverables landed inside commit `3a27899`
+`hub(orchestrator): daily sweep 2026-08-03`, NOT under a `hub(arch-inf):` message.** The orchestrator
+agent ran `git commit` on the shared index while my files were staged in it, so the whole index went
+in under its message. **Nothing is lost** — verified with `git ls-tree -r HEAD`, all 10 artifacts are
+in the tree. History was NOT rewritten (that would clobber the sibling's work). This is the **third**
+occurrence of the class CLAUDE.md §"Git hygiene" records — `60265d3` swallowed the eval tooling,
+`3d41bd0` swallowed REF-C v1.2's rescorer, and now `3a27899` has swallowed this package. ⇒ the
+documented remedy ("commit with an explicit pathspec") is **not usable** here, because
+`git commit -- <pathspec>` segfaults on this repo. **The remaining mitigation is TIMING, and it is
+not written down anywhere: an agent must not leave work staged while another agent may commit.**
+Worth a RETRACTION_LOG row and a rule: *stage and commit in one uninterrupted step, or don't stage.*
+
 **No half-done work.** Everything below is in the repo with its provenance; nothing on a pod or in a worktree.
 
 1. **D-LEAD-1 (G-H, targets the binding rule + the 88.7 % longitudinal gap).** GT vs hold-`v0` CV over
