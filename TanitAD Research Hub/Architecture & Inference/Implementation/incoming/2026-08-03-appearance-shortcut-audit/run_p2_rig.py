@@ -161,7 +161,8 @@ def horizon_profile(eps_meta, n_eps=25, n_frames=40):
             "profile": [round(float(x), 6) for x in prof]}
 
 
-def shifted_pix(eps_meta, shift_rows: int, side: int = 32, k: int = 4):
+def shifted_pix(eps_meta, shift_rows: int, side: int = 32, k: int = 4,
+                basis: str = "pix"):
     """Rebuild the pix32 window substrate with the frames rolled DOWN by ``shift_rows``.
 
     ⚠️ ``torch.roll`` wraps rather than pads. On a 256-row frame a 48-row roll moves 19 % of
@@ -182,6 +183,10 @@ def shifted_pix(eps_meta, shift_rows: int, side: int = 32, k: int = 4):
         if shift_rows:
             x = torch.roll(x, shifts=int(shift_rows), dims=2)
         g = (x * LUMA).sum(1, keepdim=True)
+        if basis == "mot":                   # motion energy: |dI| at FULL res, pool AFTER
+            d = torch.zeros_like(g)
+            d[:-1] = (g[1:] - g[:-1]).abs()
+            g = d
         g = torch.nn.functional.avg_pool2d(g, g.shape[-1] // side).reshape(g.shape[0], -1)
         t = m["t"]
         out.append(g[t[:, None] + offs[None, :]])
@@ -195,6 +200,7 @@ def main():
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--skip-g3", action="store_true")
+    ap.add_argument("--stage", default="all", choices=("all", "g3"))
     a = ap.parse_args()
 
     import tanitad.eval.accel_probe as AP
@@ -214,26 +220,31 @@ def main():
         "n_boot": a.n_boot,
         "estimator": "paired episode-cluster bootstrap (tanitad/eval/ap_ci.py)"}}
 
+    if a.stage == "g3" and Path(a.out).exists():
+        res = json.load(open(a.out))                  # merge into the existing verdicts
+        log(f"stage=g3: merging into {a.out}")
+
     # ---------------- G1 ---------------- #
-    log("G1: measuring the horizon row from the pixels")
-    pA, pB = horizon_profile(hoA), horizon_profile(hoB)
-    res["G1_horizon_row"] = {
-        "rig_a": {k: v for k, v in pA.items() if k != "profile"},
-        "rig_b": {k: v for k, v in pB.items() if k != "profile"},
-        "argmax_offset_rows_256space": pB["argmax_row"] - pA["argmax_row"],
-        "centroid_offset_rows_256space": round(pB["centroid_row"] - pA["centroid_row"], 3),
-        "interpretation": "a LEGACY geometric-centre crop would put rig B's horizon ~215 px "
-                          "off in ORIGINAL 1920x1080 pixels; the D-016 R1 per-clip "
-                          "principal-point crop puts both rigs' horizon at the same output "
-                          "row. This measures which one this cache actually is.",
-        "profiles": {"rig_a": pA["profile"], "rig_b": pB["profile"]}}
-    log(f"G1 horizon argmax rows: A={pA['argmax_row']} B={pB['argmax_row']} "
-        f"(offset {pB['argmax_row']-pA['argmax_row']}), centroids "
-        f"{pA['centroid_row']:.1f} / {pB['centroid_row']:.1f}")
+    if a.stage == "all":
+        log("G1: measuring the horizon row from the pixels")
+        pA, pB = horizon_profile(hoA), horizon_profile(hoB)
+        res["G1_horizon_row"] = {
+            "rig_a": {k: v for k, v in pA.items() if k != "profile"},
+            "rig_b": {k: v for k, v in pB.items() if k != "profile"},
+            "argmax_offset_rows_256space": pB["argmax_row"] - pA["argmax_row"],
+            "centroid_offset_rows_256space": round(pB["centroid_row"] - pA["centroid_row"], 3),
+            "interpretation": "a LEGACY geometric-centre crop would put rig B's horizon ~215 px "
+                              "off in ORIGINAL 1920x1080 pixels; the D-016 R1 per-clip "
+                              "principal-point crop puts both rigs' horizon at the same output "
+                              "row. This measures which one this cache actually is.",
+            "profiles": {"rig_a": pA["profile"], "rig_b": pB["profile"]}}
+        log(f"G1 horizon argmax rows: A={pA['argmax_row']} B={pB['argmax_row']} "
+            f"(offset {pB['argmax_row']-pA['argmax_row']}), centroids "
+            f"{pA['centroid_row']:.1f} / {pB['centroid_row']:.1f}")
 
     # ---------------- G2 + G4 ---------------- #
-    res["G2_G4_transfer"] = {}
-    for arm, key, feat, kernel in ARMS:
+    res.setdefault("G2_G4_transfer", {})
+    for arm, key, feat, kernel in (ARMS if a.stage == "all" else ()):
         rec = {"feature": feat, "kernel": kernel, "substrate": key, "cells": {}}
         for src_name, src_tr in (("A", trA), ("B", trB)):
             fit_eps = [e for i, e in enumerate(src_tr) if i % 3 != 0]
@@ -284,19 +295,44 @@ def main():
         Xs, ys, _ = stack_sub(sel_eps, "pix32")
         XF, yF, _ = stack_sub(trA, "pix32")
         _, yhA, eA = stack_sub(hoA, "pix32")
-        tests = [shifted_pix(hoA, s) for s in SHIFTS_PX]
-        preds, sel = fit_predict(AP, Xf, yf[:, SPEED_J], Xs, ys[:, SPEED_J],
-                                 XF, yF[:, SPEED_J], tests,
-                                 feat="centre", kernel="rbf", device=a.device)
         res["G3_vertical_shift"] = {
-            "arm": "pix32_centre_rbf fitted on rig A, tested on rig-A held-out frames "
-                   "rolled DOWN by n rows (256-space)",
-            "selection": sel,
             "note": "torch.roll WRAPS; a real rig offset would crop. The perturbation is "
-                    "therefore stronger than the geometric one it stands in for.",
-            "sweep": [{"shift_rows": s, "r2_speed": round(AP.r2_score(p, yhA[:, SPEED_J]), 5)}
-                      for s, p in zip(SHIFTS_PX, preds)]}
-        log(f"G3 sweep: {res['G3_vertical_shift']['sweep']}")
+                    "therefore STRONGER than the geometric one it stands in for, so a shift "
+                    "that still fails to reproduce the collapse is the stronger evidence.",
+            "reference_scale": "a legacy geometric-centre crop is ~215 px off for rig B in "
+                               "1920x1080; scaled into a ~533 px crop resized to 256 that is "
+                               "~100 output ROWS -- beyond the top of this sweep.",
+            "arms": {}}
+        # RUN IT ON AN ARM THAT HAS SKILL TO LOSE. The still-frame arm is at the null on
+        # PhysicalAI in BOTH rigs, so a degradation cannot be measured on it; that cell is
+        # reported VOID rather than as "geometry does not matter".
+        for aname, key_, basis, side, feat_ in (
+                ("pix32_centre_rbf", "pix32", "pix", 32, "centre"),
+                ("mot8_window_rbf",  "mot8",  "mot",  8, "window")):
+            Xf, yf, _ = stack_sub(fit_eps, key_)
+            Xs, ys, _ = stack_sub(sel_eps, key_)
+            XF, yF, _ = stack_sub(trA, key_)
+            _, yhA, eA = stack_sub(hoA, key_)
+            tests = [shifted_pix(hoA, sh, side=side, basis=basis) for sh in SHIFTS_PX]
+            preds, sel = fit_predict(AP, Xf, yf[:, SPEED_J], Xs, ys[:, SPEED_J],
+                                     XF, yF[:, SPEED_J], tests,
+                                     feat=feat_, kernel="rbf", device=a.device)
+            base = AP.r2_score(preds[0], yhA[:, SPEED_J])
+            sweep = []
+            for sh, pr in zip(SHIFTS_PX, preds):
+                r2 = AP.r2_score(pr, yhA[:, SPEED_J])
+                sweep.append({"shift_rows": sh, "r2_speed": round(r2, 5),
+                              "frac_of_baseline_lost": (None if base < 0.05 else
+                                                        round(float((base - r2) / base), 4))})
+            res["G3_vertical_shift"]["arms"][aname] = {
+                "fitted_on": "rig A train, UNSHIFTED", "selection": sel,
+                "baseline_r2_shift0": round(base, 5), "VOID": bool(base < 0.05),
+                "void_reason": (None if base >= 0.05 else
+                                "the arm has no skill at shift 0 on this corpus, so a "
+                                "degradation cannot be measured on it"),
+                "sweep": sweep}
+            log(f"G3 {aname}: base {base:+.4f} -> "
+                f"{[r['r2_speed'] for r in sweep]}")
 
     Path(a.out).write_text(json.dumps(res, indent=1, default=str))
     log(f"wrote {a.out}")

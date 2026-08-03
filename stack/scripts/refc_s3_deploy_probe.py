@@ -295,6 +295,16 @@ def run(bank: str, arm: str, out_dir: str) -> dict:
             "rho_cv", s_cv, neg, eid, sees_future=False,
             provenance=("-mean||fan_i - constant_velocity||: ZERO parameters, "
                         "zero compute, already in every bank")),
+        # ⭐ THE INCUMBENT'S OWN rho. Without it the panel has no scale: S3 is
+        # proposed as a GRAFT ONTO this score, so "is rho_deploy large" is the
+        # wrong question and "is it large NEXT TO the score it is added to" is
+        # the right one. `refc_rescorer.py:27` asserts 0.907 for it in PROSE —
+        # measured here so the comparison is not INHERITED.
+        "shipped": rho_block(
+            "rho_shipped", logits.numpy().astype(np.float64), neg, eid,
+            sees_future=False,
+            provenance=("anchor_logits — the t=0 classifier score REF-C "
+                        "ACTUALLY ships. The incumbent S3 would be grafted onto.")),
         "shuffled": rho_block(
             "rho_shuffled", shf, neg, eid, sees_future=False,
             provenance="s_deploy permuted along the candidate axis"),
@@ -312,6 +322,8 @@ def run(bank: str, arm: str, out_dir: str) -> dict:
         "deploy_minus_ctxswap": P._paired(pw["deploy"], pw["ctxswap"], eid),
         "deploy_minus_cv": P._paired(pw["deploy"], pw["cv"], eid),
         "deploy_minus_oracle": P._paired(pw["deploy"], pw["oracle"], eid),
+        "deploy_minus_shipped": P._paired(pw["deploy"], pw["shipped"], eid),
+        "oracle_minus_shipped": P._paired(pw["oracle"], pw["shipped"], eid),
         "oracle_minus_shuffled": P._paired(pw["oracle"], pw["shuffled"], eid),
         "ctxswap_minus_shuffled": P._paired(pw["ctxswap"], pw["shuffled"], eid),
     }
@@ -458,7 +470,7 @@ def run(bank: str, arm: str, out_dir: str) -> dict:
     # quantity, and P2 asks to convert rho into an ADE effect. The honest
     # conversion is to MEASURE the selector each score produces, not to model it.
     SCORES = {"deploy": d["cons_deploy"], "oracle": d["cons_oracle"],
-              "ctxswap": d["cons_ctxswap"],
+              "ctxswap": d["cons_ctxswap"], "shipped": logits,
               "cv": -torch.linalg.norm(fan - d["cv"][:, None], dim=-1).mean(-1)}
     diag: dict = {"argmax_selector": {}, "graft_on_shipped": {}}
     for nm, sc in SCORES.items():
@@ -469,6 +481,11 @@ def run(bank: str, arm: str, out_dir: str) -> dict:
                                            ade_ship.numpy(), eid),
             "rho_full_axis": float(R[nm]["mean"]),
         }
+        if nm == "shipped":
+            # grafting the incumbent onto itself is not a lever; the argmax row
+            # above is the identity check and IS meaningful.
+            diag["graft_on_shipped"][nm] = "N/A — that is the base, not a graft"
+            continue
         zz = zscore_rows(sc)
         _, a_lo, ch = loeo_alpha(de_all, logits, zz, eid, S3_THRESHOLDS["alphas"])
         sw = alpha_sweep(de_all, logits, zz, eid, S3_THRESHOLDS["alphas"])

@@ -38,8 +38,8 @@
   },
   "prereg_parent": {
     "path": "Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md",
-    "staged_blob": "52c005840ef23788aac561330fb115709fa733df",
-    "worktree_blob": "52c005840ef23788aac561330fb115709fa733df",
+    "staged_blob": "a7bd12ddaf133f51de68aa86c0c08bf85b2f7625",
+    "worktree_blob": "a7bd12ddaf133f51de68aa86c0c08bf85b2f7625",
     "thresholds_unmoved_since_staging": true,
     "how_to_verify": "git ls-files -s -- 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md' && git hash-object 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md'  # must match",
     "thresholds": {
@@ -162,6 +162,22 @@
       "provenance": "-mean||fan_i - constant_velocity||: ZERO parameters, zero compute, already in every bank",
       "n_nan_windows": 0
     },
+    "shipped": {
+      "mean": 0.8838,
+      "lo": 0.8642,
+      "hi": 0.9022,
+      "ci95": 0.019,
+      "se": 0.0097,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "name": "rho_shipped",
+      "sees_future_frame": false,
+      "provenance": "anchor_logits — the t=0 classifier score REF-C ACTUALLY ships. The incumbent S3 would be grafted onto.",
+      "n_nan_windows": 0
+    },
     "shuffled": {
       "mean": -0.0012,
       "lo": -0.007,
@@ -225,6 +241,32 @@
       "lo": -0.6009,
       "hi": -0.2377,
       "ci95": 0.1816,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "deploy_minus_shipped": {
+      "delta": -0.6344,
+      "lo": -0.7753,
+      "hi": -0.4998,
+      "ci95": 0.1377,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "oracle_minus_shipped": {
+      "delta": -0.2181,
+      "lo": -0.2752,
+      "hi": -0.1572,
+      "ci95": 0.059,
       "p_delta_gt0": 0.0,
       "separated": true,
       "reducer": "mean",
@@ -852,6 +894,71 @@
         },
         "rho_full_axis": 0.3906
       },
+      "shipped": {
+        "tag": "argmax_shipped",
+        "ade_0_2s": {
+          "mean": 0.4728,
+          "lo": 0.3835,
+          "hi": 0.5699,
+          "ci95": 0.0932,
+          "se": 0.0472,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.2814,
+          "lo": 0.2127,
+          "hi": 0.3543,
+          "ci95": 0.0708,
+          "se": 0.0365,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.4109,
+          "lo": 0.3439,
+          "hi": 0.4773,
+          "ci95": 0.0667,
+          "se": 0.0339,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.3292,
+          "lo": 0.2705,
+          "hi": 0.3946,
+          "ci95": 0.0621,
+          "se": 0.0316,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "paired_vs_shipped": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "rho_full_axis": 0.8838
+      },
       "cv": {
         "tag": "argmax_cv",
         "ade_0_2s": {
@@ -976,6 +1083,7 @@
         "alpha_star_mean_ade": 0.468631,
         "n_distinct_alphas_loeo": 2
       },
+      "shipped": "N/A — that is the base, not a graft",
       "cv": {
         "loeo_mean_ade": 0.465485,
         "loeo_paired_vs_shipped": {
@@ -1041,6 +1149,21 @@
         "n_windows_with_>=3_survivors": 881,
         "n_windows_dropped": 0,
         "rho_full_axis": 0.3906
+      },
+      "shipped": {
+        "mean": 0.5272,
+        "lo": 0.496,
+        "hi": 0.5589,
+        "ci95": 0.0314,
+        "se": 0.0161,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n_windows_with_>=3_survivors": 881,
+        "n_windows_dropped": 0,
+        "rho_full_axis": 0.8838
       },
       "cv": {
         "mean": 0.882,

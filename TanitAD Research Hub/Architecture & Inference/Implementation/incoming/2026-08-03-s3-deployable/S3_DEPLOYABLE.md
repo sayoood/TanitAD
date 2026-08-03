@@ -18,14 +18,24 @@ prereg's own check also passes.
 
 | | **`refc-base-30k`** | **`refc-xl-30k`** |
 |---|---|---|
+| **ρ_shipped** — the INCUMBENT `anchor_logits`, the score S3 is grafted **onto** | **0.8838** [0.8642, 0.9022] | **0.9071** [0.8966, 0.9172] |
 | **ρ_oracle** — E-SEL-1's number, uses the **FUTURE FRAME** `z_{t+5}` | **0.6657** [0.6183, 0.7157] | **0.6212** [0.5650, 0.6791] |
 | ⭐ **ρ_deploy** — what `consequence_scores` can produce **at inference** | **+0.2493** [+0.0988, +0.3953] | **−0.2728** [−0.4592, −0.0807] |
 | paired `deploy − oracle`, same windows | **−0.4163** [−0.6009, −0.2377] ✅ separated | **−0.8941** [−1.0753, −0.7049] ✅ separated |
+| paired `deploy − shipped` | **−0.6344** [−0.7753, −0.4998] ✅ separated | **−1.1800** [−1.3712, −0.9821] ✅ separated |
+| paired **`oracle − shipped`** | **−0.2181** [−0.2752, −0.1572] ✅ separated | **−0.2859** [−0.3425, −0.2248] ✅ separated |
 
 > **Information present ≫ information reachable.** The upper bound overstates the deployable score
 > by **0.42** (base) and by **0.89** (XL) — and on XL the deployable score does not merely shrink,
 > **it changes sign.** Two arms of the same family disagree on whether REF-C's consequence points
 > toward good candidates or away from them.
+
+> ⭐⭐ **And the row that settles it: on E-SEL-1's own statistic, the score S3 proposes to ADD is
+> WORSE than the score it is being added TO — separated, both arms, even in its future-seeing
+> upper-bound form** (`oracle − shipped` = −0.2181 / −0.2859). S3 was registered LIVE at ρ = 0.6657
+> against a **shuffled** comparator; against the **incumbent** comparator the same statistic reads
+> **−0.22**. ⚠️ The ρ_shipped row is MEASURED here and reproduces `refc_rescorer.py:27`'s prose
+> *"Spearman 0.907 against ADE"* **exactly on XL** — a number that had been INHERITED since v1.2.
 
 **And the realized effect, which is the number that should size S3:**
 
@@ -133,11 +143,16 @@ selector each score produces**, not to model it.)*
 | ⭐ **`oracle`** (**sees `z_{t+5}`**) | **0.666 / 0.621** | **6.4889 / 6.4501** | 0.0227 / 0.0159 | 0.9648 / 0.9705 |
 | **`ctxswap`** | 0.391 / −0.244 | 19.03 / 35.91 | 0.0034 / 0.0000 | 0.9955 / 1.0000 |
 | **`deploy`** | 0.249 / −0.273 | **20.23 / 35.86** | 0.0023 / 0.0000 | 0.9955 / 1.0000 |
-| *(C-shuffled, from E-SEL)* | 0.000 | *14.54 / 13.96* | *0.0078 / 0.0039* | *0.9798 / 0.9894* |
+| **uniform random pick** (exact expectation) | 0.000 | **14.5426** [13.696, 15.435] / **13.9564** [13.005, 14.985] | — | — |
 
 ⭐ **The score with ρ = 0.6657 — the one that is allowed to look at the future — selects at
 6.49 m, 13.7× WORSE than the shipped ranker.** And the deployable score selects at **20.2 / 35.9 m,
-i.e. WORSE THAN RANDOM** (14.5 / 14.0 m).
+i.e. WORSE THAN A UNIFORM RANDOM PICK.**
+
+⚠️ The random row is **recomputed here from this bank**, not inherited: the exact per-window
+expectation of a uniform pick is the mean over candidates, and it reproduces E-SEL's C-shuffled
+**14.5426 / 13.9564 to 4 dp**. (E-SEL's §2.1 is why it is a closed form rather than a sample:
+permute-then-argmax is a uniform pick for **any** score.)
 
 ### 3.2 Why — and it is measurable, not a story
 
@@ -150,10 +165,14 @@ anything — and it collapses:
 
 | score | base: full axis → **reachable only** | XL: full axis → **reachable only** |
 |---|---|---|
-| **deploy** | +0.2493 → **−0.0286** [−0.0863, +0.0277] ⛔ **CI CROSSES ZERO** | −0.2728 → **−0.1043** [−0.1446, −0.0638] (still negative) |
+| **shipped** (incumbent) | 0.8838 → **+0.5272** [+0.4960, +0.5589] | 0.9071 → **+0.6125** [+0.5903, +0.6353] |
 | **oracle** | +0.6657 → **+0.3008** [+0.2622, +0.3421] | +0.6212 → **+0.3079** [+0.2695, +0.3446] |
+| **deploy** | +0.2493 → **−0.0286** [−0.0863, +0.0277] ⛔ **CI CROSSES ZERO** | −0.2728 → **−0.1043** [−0.1446, −0.0638] (still negative) |
 | ctxswap | +0.3906 → +0.0375 [+0.0009, +0.0770] | −0.2437 → −0.0542 |
 | cv | +0.9951 → +0.8820 | +0.9944 → +0.8928 |
+
+**The ordering is unchanged by the restriction and the incumbent dominates at both scopes:**
+`shipped` > `oracle` > `deploy`, everywhere.
 
 ⇒ **On the part of the fan that can be selected, the deployable consequence score carries NO
 information on base and NEGATIVE information on XL.** And **E-SEL-1's 0.6657 loses more than half
@@ -227,7 +246,7 @@ Base reproduces E-SEL's §5.1 row **to 4 dp**, from an independently decoded ban
 |---|---|---|
 | **TACTICAL** — goal/anchor selection | ✅ **MEASURED** — this is the half D-SEL exists to move. shipped `rank_acc` **0.3292** / **0.3110**, `sel_gap` **0.2814** / **0.3075**, `frac_sel_2x_worse` **0.4109** / **0.4540**; every reranker's values in §3.1 | **881** |
 | **TACTICAL** — manoeuvre decision + confusion | ⛔ **UNAVAILABLE**: a fan bank stores no decoded manoeuvre logits. **WORK ITEM.** | **0** |
-| **LONGITUDINAL** — distance-keeping (headway / time-gap / TTC) | ⛔ **UNAVAILABLE**: no lead-agent track in a fan bank. The reader exists (`…/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py` over `obstacle.offline`); joining it to the val windows is a **WORK ITEM**, not a pass. | **0** |
+| **LONGITUDINAL** — distance-keeping (headway / time-gap / TTC) | ⚠️ **NOT RUN — and no longer "no instrument".** ⭐ **CORRECTED mid-task:** a sibling stream shipped the instrument **while this task ran** (commit `49e2229`: `taniteval/lead_metrics.py::distance_keeping` / `paired_distance_keeping`, `taniteval/lead_source.py::lead_block` over `obstacle.offline`), and it reports coverage on **exactly these 881 windows**. **The join is now a run, not a work item.** I did not run it. | **≈270 of 881** carry a lead (550 NO_LEAD, 61 NO_LABEL) — **ESTIMATED / INHERITED** from `…/Data Engineering/…/2026-08-03-obstacle-offline-join/raw/val40_coverage.json`, whose own class says *"t0 is reconstructed from a measured prior… the eval-host run supersedes this"* |
 | **STRATEGIC** | ⛔ **UNAVAILABLE**: no route/goal label, and the decode used `nav_mode='follow_constant'` so the route input was never exercised (the C6 confound, inherited deliberately — see §5). **WORK ITEM**, the S5 arm needs it. | **0** |
 
 ---
@@ -272,9 +291,13 @@ is the finding with the longest reach and it came out of a control, not the head
    — so it does not falsify a trained S3. It does say S3 must not be funded as a *free* win, and
    that if it is run it needs the LONGITUDINAL family as its read, not ADE.
 3. **→ eval-tools — every place the programme sizes a SELECTOR from a rank correlation is
-   suspect.** §3.2 gives the mechanism (72–74 % unpickable fan) and the fix (report ρ on the
-   S2-reachable subset beside the full-axis ρ; both are now in the probe). This generalises beyond
-   REF-C.
+   suspect, and there is at least one more site.** §3.2 gives the mechanism (72–74 % unpickable
+   fan) and the fix (report ρ on the S2-reachable subset **and** against the **incumbent**, not
+   only against a shuffled control; both are now in the probe). ⭐ **The second site is already
+   half-corrected in the programme's own source**: `refc_rescorer.py:22-30` records the *"the
+   full-fan oracle is partly a lottery… a haystack of garbage"* insight and responds with a top-8
+   restriction — i.e. REF-C v1.2 met this exact hazard and D-SEL's §6.2 did not inherit the
+   lesson. Its `Spearman 0.907` is now MEASURED (§0) rather than prose.
 4. **→ ops — the 256×256 REF-C val cache is STILL a single-disk dependency** (`thor:~/valdata/
    physicalai-val-0c5f7dac3b11`), unchanged since E-SEL's escalation 3. ⭐ **Partly retired for this
    question**: `raw/fan_deploy_refc-{base,xl}-30k.pt` now bank `pooled` **and** `law_tgt` (z_{t+5})
@@ -289,8 +312,13 @@ is the finding with the longest reach and it came out of a control, not the head
   85 s on an idle Thor (GPU 0 % before and after).
 * ⛔ **Did not measure S3 AFTER training.** Everything here is at frozen 30 k weights with a
   zero-init gate. Stated as a LOWER BOUND throughout and never upgraded to an effect size.
-* ⛔ **Did not run distance-keeping, manoeuvre-confusion or STRATEGIC** — UNAVAILABLE with reason
-  and n = 0 (§4.3). Each is a work item, not a pass.
+* ⛔ **Did not run manoeuvre-confusion or STRATEGIC** — UNAVAILABLE with reason and n = 0 (§4.3).
+* ⛔ **Did not run distance-keeping — and it is NOT unavailable any more.** The instrument landed in
+  `49e2229` mid-task and covers these exact windows at **n ≈ 270**. This is the highest-value
+  immediate follow-up on this artifact: the S3 graft's realized effect is LONGITUDINAL-adverse on XL
+  (§4.1), and distance-keeping is the half of LONGITUDINAL nobody has yet checked it against.
+  ⚠️ I nearly shipped the stale *"the reader exists, joining is a work item"* row — the exact
+  absence-claim-goes-stale class, inside one session.
 * ⛔ **Did not re-open E-SEL-0**, and did not run `refc-small-30k` (Thor holds no small checkpoint —
   unchanged from E-SEL).
 * ⛔ **Did not edit `PREREG_S3_DEPLOYABLE.md` after seeing a result**, including where it would have
@@ -312,20 +340,26 @@ is the finding with the longest reach and it came out of a control, not the head
 | realized LOEO ΔADE **−0.0013** / **−0.0024** m, **not separated**; 0.46 % / 0.78 % of the selection gap | **MEASURED** — same files |
 | C-ctxswap **+0.3906** > deploy on base, paired **−0.1413** separated adverse; XL not separated | **MEASURED** — same files |
 | C-cv ρ **0.9951 / 0.9944**, paired **−0.7458 / −1.2673** separated adverse | **MEASURED** — same files |
-| argmax of the **oracle** score = **6.49 / 6.45 m**; of `deploy` = **20.23 / 35.86 m** (worse than random) | **MEASURED** — `diagnostic_rho_vs_selection.argmax_selector` |
+| argmax of the **oracle** score = **6.49 / 6.45 m**; of `deploy` = **20.23 / 35.86 m** | **MEASURED** — `diagnostic_rho_vs_selection.argmax_selector` |
+| the uniform-random-pick floor **14.5426 / 13.9564**, reproducing E-SEL's C-shuffled to 4 dp | **MEASURED here** from `raw/fan_deploy_refc-*.pt` — not inherited |
 | ρ on the S2-reachable subset: deploy **−0.0286** (CI crosses 0, base); oracle **0.6657 → 0.3008** | **MEASURED** — `diagnostic_rho_vs_selection.rho_on_S2_reachable_only` |
 | XL's realized graft is a **separated longitudinal regression** (`speed_signed` +0.0118, `along_signed` +0.0112) | **MEASURED** — `families.paired_loeo_rerank_minus_shipped` |
 | the re-decode reproduces E-SEL's fan **bit-for-bit**; ρ_oracle inside E-SEL's CI | **MEASURED** — `controls.C-reproduce-esel`, `controls.C-oracle-reproduce` |
 | `consequence_scores` never sees `z_{t+5}`; `cons_ctx = pooled` | **MEASURED (source)** — `refc_select.py:308-321`, `refc.py:1246-1251` + `1835-1836` |
 | `constant_velocity` uses only the pose at `last`/`last−1` (no future) | **MEASURED (source)** — `driving_diagnostic.py:113-124` |
 | 87.60 % / 89.28 % of the selection gap is LONGITUDINAL | **INHERITED** from `ESEL_VERDICT.md` §5.1 — **not** re-derived here; its *component* rows ARE reproduced (§4.2) |
+| distance-keeping coverage **≈270 / 881** windows on these episodes | **ESTIMATED, INHERITED** — `…/2026-08-03-obstacle-offline-join/raw/val40_coverage.json`; its own header says the eval-host run supersedes it |
 | *"the oracle gap is ~92 % irreducible"*, v1.2's **8.4 %** | **INHERITED** — a prose note in `MODEL_REGISTRY.md` §4.1, **not a results JSON**. ⚠️ **NOT** the other 8.4 % in §1.4b (a relative change in the flagship's fan under unfreezing) |
 | *"`conf_head` is off its training distribution"* is the mechanism | **HYPOTHESIS** — not tested (§8) |
 
-**Full suite:** `cd stack && pytest -q` → see `raw/pytest_full_suite.txt`. ⚠️ The baseline is moving
-under concurrent streams (the brief quoted 1932/12/2; E-SEL saw it climb 1900 → 1913 → 1932 inside
-one task), so a count is only meaningful against a pinned commit. My 18 new tests are in
-`stack/tests/test_s3_deploy_probe.py`.
+| ρ_shipped **0.8838 / 0.9071**, reproducing `refc_rescorer.py:27`'s prose *"Spearman 0.907"* exactly on XL | **MEASURED** — was **INHERITED** in that docstring since v1.2 |
+
+**Full suite:** `cd stack && pytest -q` → **1962 passed, 12 skipped, 2 xfailed**, 0 failed, in
+856.70 s (`raw/pytest_full_suite.txt`). ⚠️ The baseline is moving under concurrent streams: the brief
+quoted **1932**/12/2, E-SEL saw it climb 1900 → 1913 → 1932 inside one task, and this run reads
+**1962**. **18 of the +30 are mine** (`stack/tests/test_s3_deploy_probe.py`); the other **+12
+entered from other streams while this task ran.** Reported, not reconciled — a suite count is only
+meaningful against a pinned commit.
 
 ---
 

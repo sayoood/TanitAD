@@ -1,0 +1,159 @@
+{
+ "meta": {
+  "prereg": "Project Steering/PREREG_APPEARANCE_SHORTCUT.md",
+  "rungs": {
+   "within_clip": "random WINDOW split -- LEAKY BY CONSTRUCTION (adjacent windows overlap). Never a generalisation number; its only job is to show the substrate is not degenerate.",
+   "across_clip": "episode-disjoint i%3 -- the real number"
+  },
+  "device": "cuda"
+ },
+ "corpora": {
+  "comma2k19_highway": {
+   "n_episodes": 50,
+   "n_windows": 6900,
+   "speed_mps": {
+    "mean": 19.5555,
+    "std": 11.5083,
+    "p05": 0.0096,
+    "p50": 23.3016,
+    "p95": 33.5724,
+    "frac_below_1mps": 0.0968,
+    "cv": 0.5885
+   },
+   "substrate": {
+    "pix32": {
+     "n_windows": 6900,
+     "W": 9,
+     "D": 1024,
+     "centre_mean": 0.250221,
+     "centre_std": 0.167293,
+     "centre_min": 0.0,
+     "centre_max": 1.0,
+     "n_constant_features": 0,
+     "median_feature_std": 0.084527
+    },
+    "Z": {
+     "n_windows": 6900,
+     "W": 9,
+     "D": 2048,
+     "centre_mean": 0.119152,
+     "centre_std": 0.854373,
+     "centre_min": -3.699219,
+     "centre_max": 4.125,
+     "n_constant_features": 0,
+     "median_feature_std": 0.61505
+    }
+   },
+   "arms": {
+    "pix32_centre_rbf": {
+     "within_clip": {
+      "r2_speed": 0.9825,
+      "corr": 0.9913,
+      "n_train_windows": 4600,
+      "n_heldout_windows": 2300,
+      "n_heldout_units": 50,
+      "gt_speed_mean": 19.8892,
+      "gt_speed_std": 11.4694,
+      "selection": {
+       "gamma_mult": 1.0,
+       "alpha": 0.03162277660168379,
+       "inner_r2": 0.97793,
+       "best_inner_r2": 0.98244,
+       "rule": "one_se_tiebreak",
+       "n_features": 1024
+      }
+     },
+     "across_clip": {
+      "r2_speed": 0.66417,
+      "corr": 0.82531,
+      "n_train_windows": 4554,
+      "n_heldout_windows": 2346,
+      "n_heldout_units": 17,
+      "gt_speed_mean": 20.0664,
+      "gt_speed_std": 10.7647,
+      "selection": {
+       "gamma_mult": 1.0,
+       "alpha": 0.31622776601683794,
+       "inner_r2": 0.41978,
+       "best_inner_r2": 0.41978,
+       "rule": "one_se_tiebreak",
+       "n_features": 1024
+      }
+     }
+    },
+    "pix32_centre": {
+     "within_clip": {
+      "r2_speed": 0.87446,
+      "corr": 0.93514,
+      "n_train_windows": 4600,
+      "n_heldout_windows": 2300,
+      "n_heldout_units": 50,
+      "gt_speed_mean": 19.8892,
+      "gt_speed_std": 11.4694,
+      "selection": {
+       "gamma_mult": null,
+       "alpha": 31.622776601683793,
+       "inner_r2": 0.86603,
+       "best_inner_r2": 0.86882,
+       "rule": "one_se_tiebreak",
+       "n_features": 1024
+      }
+     },
+     "across_clip": {
+      "r2_speed": -0.05876,
+      "corr": 0.45274,
+      "n_train_windows": 4554,
+      "n_heldout_windows": 2346,
+      "n_heldout_units": 17,
+      "gt_speed_mean": 20.0664,
+      "gt_speed_std": 10.7647,
+      "selection": {
+       "gamma_mult": null,
+       "alpha": 31.622776601683793,
+       "inner_r2": 0.25212,
+       "best_inner_r2": 0.25312,
+       "rule": "one_se_tiebreak",
+       "n_features": 1024
+      }
+     }
+    },
+    "v1_window": {
+     "within_clip": {
+      "r2_speed": 0.88414,
+      "corr": 0.94034,
+      "n_train_windows": 4600,
+      "n_heldout_windows": 2300,
+      "n_heldout_units": 50,
+      "gt_speed_mean": 19.8892,
+      "gt_speed_std": 11.4694,
+      "selection": {
+       "gamma_mult": null,
+       "alpha": 1000.0,
+       "inner_r2": 0.8782,
+       "best_inner_r2": 0.88243,
+       "rule": "one_se_tiebreak",
+       "n_features": 18432
+      }
+     },
+     "across_clip": {
+      "r2_speed": 0.71451,
+      "corr": 0.86497,
+      "n_train_windows": 4554,
+      "n_heldout_windows": 2346,
+      "n_heldout_units": 17,
+      "gt_speed_mean": 20.0664,
+      "gt_speed_std": 10.7647,
+      "selection": {
+       "gamma_mult": null,
+       "alpha": 1000.0,
+       "inner_r2": 0.72399,
+       "best_inner_r2": 0.72655,
+       "rule": "one_se_tiebreak",
+       "n_features": 18432
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -223,9 +223,16 @@ def main():
             scores[aname] = p
             rec["arms"][aname] = {
                 "n_features": int(X.shape[1]), "alpha": al, "inner_ap": round(isel, 6),
+                "null_is_degenerate_for_1d": bool(X.shape[1] == 1),
                 "ap_lift": APCI.ap_episode_cluster_bootstrap(
                     y[h], p[h], cc[h], n_boot=a.n_boot, lift=True)}
             # its own permuted-feature null
+            # ⛔ DEGENERATE FOR 1-D ARMS, AND SAID SO IN THE OUTPUT. AP is RANK-based, so a
+            # 1-feature model whose coefficient is fitted on scrambled pairs still ranks the
+            # held-out rows by that same single feature (possibly reversed) and can reproduce
+            # the arm's AP exactly. The permuted-feature null is only meaningful where the
+            # fitted DIRECTION can become random, i.e. for high-dimensional blocks. It is
+            # reported for every arm for symmetry and is used for NO verdict.
             g = np.random.default_rng(7)
             perm = g.permutation(int(F_.sum()))
             Xp = X[F_][perm]
@@ -241,23 +248,40 @@ def main():
                 f"[{rec['arms'][aname]['ap_lift']['lo']:+.4f},"
                 f"{rec['arms'][aname]['ap_lift']['hi']:+.4f}]  "
                 f"null {rec['arms'][aname]['ap_lift_shuffled_null']['point']:+.4f}")
-        # ⭐ the pre-registered verdict quantities
+        # the pre-registered verdict quantities
+        # ⚠️ MY OWN PRE-REGISTRATION UNDER-SPECIFIED THIS AND I AM NOT SILENTLY REDEFINING IT.
+        # ``ap_lift`` is AP / base_rate, so CHANCE IS 1.0, NOT 0.0. A ratio of raw lifts
+        # therefore inherits a +1 offset in both terms and is biased towards "THREATENED":
+        # an arm at chance (1.00) scores 0.50 of an arm at 2.00 while contributing NOTHING.
+        # The defensible statistic is the ratio of EXCESS lift (lift - 1). Both are reported;
+        # the verdict is taken on the excess form and the raw form is shown beside it.
         lift = {k: rec["arms"][k]["ap_lift"]["point"] for k in blocks}
-        shortcut_share = (lift["speed_from_appearance"] / lift["img_latent"]
-                          if lift["img_latent"] > 0 else float("nan"))
-        incremental = lift["speed_plus_img"] - lift["ego_speed_true"]
-        keeps = (incremental / lift["img_latent"] if lift["img_latent"] > 0 else float("nan"))
-        if shortcut_share >= 0.50:
+        exc = {k: v - 1.0 for k, v in lift.items()}
+        share_raw = (lift["speed_from_appearance"] / lift["img_latent"]
+                     if lift["img_latent"] > 0 else float("nan"))
+        share_exc = (exc["speed_from_appearance"] / exc["img_latent"]
+                     if exc["img_latent"] > 0 else float("nan"))
+        incremental = exc["speed_plus_img"] - exc["ego_speed_true"]   # == lift difference
+        keeps = (incremental / exc["img_latent"] if exc["img_latent"] > 0 else float("nan"))
+        if not np.isfinite(share_exc):
+            verdict = "VOID (img_latent is at or below chance)"
+        elif share_exc >= 0.50:
             verdict = "THREATENED"
         elif keeps >= 0.70:
             verdict = "NOT THREATENED"
         else:
             verdict = "MIXED"
         rec["verdict"] = {
-            "shortcut_share_speed_from_appearance_over_img": round(float(shortcut_share), 5),
+            "ap_lift_note": "ap_lift = AP / base_rate, so CHANCE = 1.0. 'excess' = lift - 1.",
+            "shortcut_share_EXCESS_lift": round(float(share_exc), 5),
+            "shortcut_share_RAW_lift_as_preregistered": round(float(share_raw), 5),
             "incremental_ap_lift_of_vision_over_speed": round(float(incremental), 5),
-            "incremental_share_of_img_lift": round(float(keeps), 5),
-            "PREREG_OUTCOME": verdict}
+            "incremental_share_of_img_excess_lift": round(float(keeps), 5),
+            "PREREG_OUTCOME": verdict,
+            "prereg_defect": "the pre-registration wrote '>= 50 % of img_latent's AP-lift' "
+                             "without saying that AP-lift's chance value is 1.0, not 0. The "
+                             "raw-lift form is reported unchanged so the registered rule is "
+                             "auditable; the verdict uses the excess form."}
         rec["paired_img_vs_speed_from_appearance"] = APCI.paired_ap_episode_cluster_bootstrap(
             y[h], scores["img_latent"][h], scores["speed_from_appearance"][h], cc[h],
             n_boot=a.n_boot, lift=True)
@@ -265,8 +289,8 @@ def main():
             y[h], scores["speed_plus_img"][h], scores["ego_speed_true"][h], cc[h],
             n_boot=a.n_boot, lift=True)
         res["situations"][sname] = rec
-        log(f"⭐ {sname}: shortcut_share {shortcut_share:.4f}  incremental {incremental:+.4f} "
-            f"-> {verdict}")
+        log(f">> {sname}: shortcut_share(excess) {share_exc:.4f} "
+            f"(raw {share_raw:.4f})  incremental {incremental:+.4f} -> {verdict}")
         Path(a.out).write_text(json.dumps(res, indent=1, default=str))
 
     Path(a.out).write_text(json.dumps(res, indent=1, default=str))

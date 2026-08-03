@@ -1,0 +1,452 @@
+{
+ "meta": {
+  "instrument": "stack/tanitad/eval/latent_screen.py (promoted from \u2026/2026-08-03-latent-bottleneck LATENT_BOTTLENECK.md \u00a76)",
+  "encoder": "v1_speedjerk_ckpt.pt step 29999 for EVERY case -- this widens the CORPUS calibration, not the ENCODER calibration",
+  "gates": {
+   "jitter_ratio_max": 2.0,
+   "derivative_corr_min": 0.5,
+   "derived_accel_r2_min": 0.5,
+   "speed_sigma_max_mps": 0.28
+  },
+  "sigma_estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this.",
+  "reference_record_before_this_run": {
+   "flagship_v1_step29999_comma2k19": {
+    "jitter_ratio": 51.0,
+    "derivative_corr": 0.0891,
+    "derived_accel_r2": -0.3773,
+    "cos_adjacent_100ms": 0.98825,
+    "verdict": "FAIL",
+    "source": "\u2026/incoming/2026-08-03-latent-bottleneck/results_mechanism.json"
+   },
+   "ORACLE_true_speed_window": {
+    "jitter_ratio": 1.0,
+    "derivative_corr": 0.99997,
+    "derived_accel_r2": 0.9277,
+    "verdict": "PASS",
+    "source": "\u2026/incoming/2026-08-03-latent-bottleneck/results_mechanism.json"
+   }
+  }
+ },
+ "screens": {
+  "flagship_v1_step29999_comma2k19": {
+   "name": "flagship_v1_step29999_comma2k19",
+   "verdict": "FAIL",
+   "failed_screens": [
+    "jitter_ratio",
+    "derivative_corr",
+    "derived_accel_r2",
+    "speed_sigma_mps"
+   ],
+   "screens": {
+    "jitter_ratio": {
+     "value": 50.9644,
+     "gate": "<= 2.0",
+     "pass": false,
+     "definition": "std(w.(z_{j+1}-z_j)) / std(true dv/dt), ONE shared linear speed direction applied per window position",
+     "pred_increment_std_mps2": 29.6678,
+     "true_increment_std_mps2": 0.58213
+    },
+    "derivative_corr": {
+     "value": 0.08907,
+     "gate": "> 0.5",
+     "pass": false,
+     "per_position_form": 0.00624,
+     "definition": "corr(within-window speed derivative, true derivative); the per-position form uses the shared readout of screen 1"
+    },
+    "derived_accel_r2": {
+     "value": -0.40866,
+     "gate": "> 0.5",
+     "pass": false,
+     "upper_bound_best_stencil": -0.40866,
+     "upper_bound_cfg": {
+      "half_window": 4,
+      "poly_order": 1
+     },
+     "upper_bound_note": "the stencil for the upper bound is chosen ON THE HELD-OUT SET and is CHEATING BY CONSTRUCTION -- quotable only as an upper bound. If even this fails the gate, the reject is safe.",
+     "sweep": [
+      {
+       "half_window": 1,
+       "poly_order": 1,
+       "r2": -0.41533
+      },
+      {
+       "half_window": 1,
+       "poly_order": 2,
+       "r2": -0.41533
+      },
+      {
+       "half_window": 2,
+       "poly_order": 1,
+       "r2": -0.41161
+      },
+      {
+       "half_window": 2,
+       "poly_order": 2,
+       "r2": -0.41161
+      },
+      {
+       "half_window": 2,
+       "poly_order": 3,
+       "r2": -0.41762
+      },
+      {
+       "half_window": 3,
+       "poly_order": 1,
+       "r2": -0.41037
+      },
+      {
+       "half_window": 3,
+       "poly_order": 2,
+       "r2": -0.41037
+      },
+      {
+       "half_window": 3,
+       "poly_order": 3,
+       "r2": -0.41409
+      },
+      {
+       "half_window": 4,
+       "poly_order": 1,
+       "r2": -0.40866
+      },
+      {
+       "half_window": 4,
+       "poly_order": 2,
+       "r2": -0.40866
+      },
+      {
+       "half_window": 4,
+       "poly_order": 3,
+       "r2": -0.41343
+      }
+     ],
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "speed_sigma_mps": {
+     "value": 5.94285,
+     "gate": "<= 0.28",
+     "pass": false,
+     "shared_readout_form": 5.99081,
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "cos_adjacent_100ms": {
+     "value": 0.98825,
+     "gate": "DIAGNOSTIC (not a gate)",
+     "pass": null,
+     "cos_window_ends": 0.91398,
+     "cos_random_other_row": 0.3277,
+     "note": "a high adjacent cosine WITH a high jitter ratio means the motion the latent does have is off-axis noise"
+    }
+   },
+   "fit": {
+    "shared_readout_alpha": 100.0,
+    "shared_readout_fit_stride": 7,
+    "window_ridge_fit_stride": [
+     1,
+     1
+    ],
+    "shared_readout_inner_pooled_speed_r2": 0.65484,
+    "shared_readout_heldout_speed_r2_centre": 0.68884,
+    "window_ridge_alpha": 316.22776601683796,
+    "window_ridge_inner_mean_seq_r2": 0.72631,
+    "window_ridge_heldout_speed_r2_centre": 0.69117
+   },
+   "shape": {
+    "n_heldout_windows": 2346,
+    "W": 9,
+    "D": 2048,
+    "dt_s": 0.1
+   },
+   "gates": {
+    "jitter_ratio_max": 2.0,
+    "derivative_corr_min": 0.5,
+    "derived_accel_r2_min": 0.5,
+    "speed_sigma_max_mps": 0.28
+   },
+   "sigma_estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this.",
+   "calibration_n_latents": 2,
+   "calibration_note": "thresholds proposed from ONE encoder plus an oracle (LATENT_BOTTLENECK.md \u00a76); re-calibrate by ADDING screened latents, never by moving a threshold to pass an arm.",
+   "does_not_test": "appearance shortcuts, lateral/strategic content, or whether a channel is present in the video at all"
+  },
+  "flagship_v1_step29999_physicalai_av_mixed": {
+   "name": "flagship_v1_step29999_physicalai_av_mixed",
+   "verdict": "FAIL",
+   "failed_screens": [
+    "jitter_ratio",
+    "derivative_corr",
+    "derived_accel_r2",
+    "speed_sigma_mps"
+   ],
+   "screens": {
+    "jitter_ratio": {
+     "value": 7.4223,
+     "gate": "<= 2.0",
+     "pass": false,
+     "definition": "std(w.(z_{j+1}-z_j)) / std(true dv/dt), ONE shared linear speed direction applied per window position",
+     "pred_increment_std_mps2": 7.77517,
+     "true_increment_std_mps2": 1.04754
+    },
+    "derivative_corr": {
+     "value": 0.4019,
+     "gate": "> 0.5",
+     "pass": false,
+     "per_position_form": 0.09231,
+     "definition": "corr(within-window speed derivative, true derivative); the per-position form uses the shared readout of screen 1"
+    },
+    "derived_accel_r2": {
+     "value": 0.16773,
+     "gate": "> 0.5",
+     "pass": false,
+     "upper_bound_best_stencil": 0.16853,
+     "upper_bound_cfg": {
+      "half_window": 3,
+      "poly_order": 3
+     },
+     "upper_bound_note": "the stencil for the upper bound is chosen ON THE HELD-OUT SET and is CHEATING BY CONSTRUCTION -- quotable only as an upper bound. If even this fails the gate, the reject is safe.",
+     "sweep": [
+      {
+       "half_window": 1,
+       "poly_order": 1,
+       "r2": 0.16827
+      },
+      {
+       "half_window": 1,
+       "poly_order": 2,
+       "r2": 0.16827
+      },
+      {
+       "half_window": 2,
+       "poly_order": 1,
+       "r2": 0.16838
+      },
+      {
+       "half_window": 2,
+       "poly_order": 2,
+       "r2": 0.16838
+      },
+      {
+       "half_window": 2,
+       "poly_order": 3,
+       "r2": 0.16815
+      },
+      {
+       "half_window": 3,
+       "poly_order": 1,
+       "r2": 0.16798
+      },
+      {
+       "half_window": 3,
+       "poly_order": 2,
+       "r2": 0.16798
+      },
+      {
+       "half_window": 3,
+       "poly_order": 3,
+       "r2": 0.16853
+      },
+      {
+       "half_window": 4,
+       "poly_order": 1,
+       "r2": 0.16773
+      },
+      {
+       "half_window": 4,
+       "poly_order": 2,
+       "r2": 0.16773
+      },
+      {
+       "half_window": 4,
+       "poly_order": 3,
+       "r2": 0.16828
+      }
+     ],
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "speed_sigma_mps": {
+     "value": 2.16154,
+     "gate": "<= 0.28",
+     "pass": false,
+     "shared_readout_form": 2.31088,
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "cos_adjacent_100ms": {
+     "value": 0.99037,
+     "gate": "DIAGNOSTIC (not a gate)",
+     "pass": null,
+     "cos_window_ends": 0.90051,
+     "cos_random_other_row": 0.04356,
+     "note": "a high adjacent cosine WITH a high jitter ratio means the motion the latent does have is off-axis noise"
+    }
+   },
+   "fit": {
+    "shared_readout_alpha": 100.0,
+    "shared_readout_fit_stride": 8,
+    "window_ridge_fit_stride": [
+     1,
+     1
+    ],
+    "shared_readout_inner_pooled_speed_r2": 0.63387,
+    "shared_readout_heldout_speed_r2_centre": 0.62817,
+    "window_ridge_alpha": 3162.2776601683795,
+    "window_ridge_inner_mean_seq_r2": 0.67822,
+    "window_ridge_heldout_speed_r2_centre": 0.67519
+   },
+   "shape": {
+    "n_heldout_windows": 2390,
+    "W": 9,
+    "D": 2048,
+    "dt_s": 0.1
+   },
+   "gates": {
+    "jitter_ratio_max": 2.0,
+    "derivative_corr_min": 0.5,
+    "derived_accel_r2_min": 0.5,
+    "speed_sigma_max_mps": 0.28
+   },
+   "sigma_estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this.",
+   "calibration_n_latents": 2,
+   "calibration_note": "thresholds proposed from ONE encoder plus an oracle (LATENT_BOTTLENECK.md \u00a76); re-calibrate by ADDING screened latents, never by moving a threshold to pass an arm.",
+   "does_not_test": "appearance shortcuts, lateral/strategic content, or whether a channel is present in the video at all"
+  },
+  "flagship_v1_step29999_physicalai_av_rigA": {
+   "name": "flagship_v1_step29999_physicalai_av_rigA",
+   "verdict": "FAIL",
+   "failed_screens": [
+    "jitter_ratio",
+    "derivative_corr",
+    "derived_accel_r2",
+    "speed_sigma_mps"
+   ],
+   "screens": {
+    "jitter_ratio": {
+     "value": 8.1914,
+     "gate": "<= 2.0",
+     "pass": false,
+     "definition": "std(w.(z_{j+1}-z_j)) / std(true dv/dt), ONE shared linear speed direction applied per window position",
+     "pred_increment_std_mps2": 7.50436,
+     "true_increment_std_mps2": 0.91613
+    },
+    "derivative_corr": {
+     "value": 0.36588,
+     "gate": "> 0.5",
+     "pass": false,
+     "per_position_form": 0.09714,
+     "definition": "corr(within-window speed derivative, true derivative); the per-position form uses the shared readout of screen 1"
+    },
+    "derived_accel_r2": {
+     "value": 0.13907,
+     "gate": "> 0.5",
+     "pass": false,
+     "upper_bound_best_stencil": 0.13907,
+     "upper_bound_cfg": {
+      "half_window": 4,
+      "poly_order": 1
+     },
+     "upper_bound_note": "the stencil for the upper bound is chosen ON THE HELD-OUT SET and is CHEATING BY CONSTRUCTION -- quotable only as an upper bound. If even this fails the gate, the reject is safe.",
+     "sweep": [
+      {
+       "half_window": 1,
+       "poly_order": 1,
+       "r2": 0.13683
+      },
+      {
+       "half_window": 1,
+       "poly_order": 2,
+       "r2": 0.13683
+      },
+      {
+       "half_window": 2,
+       "poly_order": 1,
+       "r2": 0.13754
+      },
+      {
+       "half_window": 2,
+       "poly_order": 2,
+       "r2": 0.13754
+      },
+      {
+       "half_window": 2,
+       "poly_order": 3,
+       "r2": 0.13651
+      },
+      {
+       "half_window": 3,
+       "poly_order": 1,
+       "r2": 0.1386
+      },
+      {
+       "half_window": 3,
+       "poly_order": 2,
+       "r2": 0.1386
+      },
+      {
+       "half_window": 3,
+       "poly_order": 3,
+       "r2": 0.1365
+      },
+      {
+       "half_window": 4,
+       "poly_order": 1,
+       "r2": 0.13907
+      },
+      {
+       "half_window": 4,
+       "poly_order": 2,
+       "r2": 0.13907
+      },
+      {
+       "half_window": 4,
+       "poly_order": 3,
+       "r2": 0.13752
+      }
+     ],
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "speed_sigma_mps": {
+     "value": 2.02756,
+     "gate": "<= 0.28",
+     "pass": false,
+     "shared_readout_form": 2.08267,
+     "estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this."
+    },
+    "cos_adjacent_100ms": {
+     "value": 0.99201,
+     "gate": "DIAGNOSTIC (not a gate)",
+     "pass": null,
+     "cos_window_ends": 0.91828,
+     "cos_random_other_row": 0.21538,
+     "note": "a high adjacent cosine WITH a high jitter ratio means the motion the latent does have is off-axis noise"
+    }
+   },
+   "fit": {
+    "shared_readout_alpha": 100.0,
+    "shared_readout_fit_stride": 4,
+    "window_ridge_fit_stride": [
+     1,
+     1
+    ],
+    "shared_readout_inner_pooled_speed_r2": 0.7053,
+    "shared_readout_heldout_speed_r2_centre": 0.68558,
+    "window_ridge_alpha": 100000.0,
+    "window_ridge_inner_mean_seq_r2": 0.72831,
+    "window_ridge_heldout_speed_r2_centre": 0.7012
+   },
+   "shape": {
+    "n_heldout_windows": 1166,
+    "W": 9,
+    "D": 2048,
+    "dt_s": 0.1
+   },
+   "gates": {
+    "jitter_ratio_max": 2.0,
+    "derivative_corr_min": 0.5,
+    "derived_accel_r2_min": 0.5,
+    "speed_sigma_max_mps": 0.28
+   },
+   "sigma_estimator": "9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0.1 s). The older programme figure 'sigma <= 0.1 m/s, ~47x' is the SAME requirement under a 2-POINT CENTRED DIFFERENCE. Never quote the sigma without this.",
+   "calibration_n_latents": 2,
+   "calibration_note": "thresholds proposed from ONE encoder plus an oracle (LATENT_BOTTLENECK.md \u00a76); re-calibrate by ADDING screened latents, never by moving a threshold to pass an arm.",
+   "does_not_test": "appearance shortcuts, lateral/strategic content, or whether a channel is present in the video at all"
+  }
+ }
+}

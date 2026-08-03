@@ -427,7 +427,7 @@ def main():
             "still_frame_separates": bool(sep_num),
             "latent_window_separates": bool(sep_den),
             "PREREG_OUTCOME": outcome}
-        log(f"⭐ PRIMARY RATIO = {ratio:.4f} (comma reference 0.9296) -> {outcome}")
+        log(f">> PRIMARY RATIO = {ratio:.4f} (comma reference 0.9296) -> {outcome}")
 
     # ------------------------------------------------------------------ #
     scored = [x for x in ("v1_window", "pix32_centre_rbf", "mot8_window_rbf")
@@ -436,6 +436,14 @@ def main():
         results["strata"] = strat_scores(
             AP, APCI, preds_by_arm, Yho_ref, eid_ho,
             strata_masks(v_ho, man_ho, MANEUVER_CLASSES), scored, a.n_boot)
+    # ⭐ BANK THE PER-WINDOW PREDICTIONS. The programme's own lesson: a panel that has to be
+    # REFITTED to be re-analysed is a panel nobody re-analyses. gt/eid/speed/manoeuvre travel
+    # with it so any stratification can be recomputed at 0 GPU.
+    np.savez_compressed(
+        Path(a.out).with_suffix(".preds.npz"),
+        gt_scalars=gs_ho, gt_traj=gt_ho, eid=eid_ho, centre_speed=v_ho, maneuver=man_ho,
+        **{f"pred__{k}": v for k, v in preds_by_arm.items()})
+    results["meta"]["per_window_predictions"] = str(Path(a.out).with_suffix(".preds.npz").name)
     results["meta"]["maneuver_classes"] = list(MANEUVER_CLASSES)
     Path(a.out).write_text(json.dumps(results, indent=1, default=str))
     log(f"wrote {a.out}")
