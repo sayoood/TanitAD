@@ -596,7 +596,22 @@ def route_from_future_v21(poses: Tensor, t: int,
                           # but it is NOT the default: `strategic route` means
                           # driver intent at junction scale, not "where the road
                           # bends over the next 20 s".
-                          use_net_dyaw: bool = False) -> dict:
+                          use_net_dyaw: bool = False,
+                          # ⭐ ADDED 2026-08-03. v2 took `min_steps`; v2.1 replaced
+                          # the step gate with the ARC gate and DROPPED the
+                          # parameter — but two live callers still pass it and
+                          # swallow the resulting TypeError in a bare `except`,
+                          # so their scene-length-adapted fallback has NEVER run.
+                          # MEASURED: every rollout row in
+                          # `stack/experiments/alpasim-gsplat/results/
+                          # openloop-thor-2026-08-03/rollouts/*.json` carries
+                          # `nav_short_err: TypeError("route_from_future_v21() got
+                          # an unexpected keyword argument 'min_steps'")` with
+                          # `nav_short = 0, nav_short_valid = False`
+                          # (`closedloop_drive.py` L368, `score_t1_strategic.py`
+                          # L392). Accepting and HONOURING it costs nothing and
+                          # unbreaks both; None keeps the pure-arc v2.1 semantics.
+                          min_steps: int | None = None) -> dict:
     """v2.1 route derivation at ``t`` — adaptive-horizon, never-straight-by-
     default. Drop-in shape-compatible with :func:`route_from_future` plus new
     keys. Returns:
@@ -650,9 +665,18 @@ def route_from_future_v21(poses: Tensor, t: int,
             "signed_curv": 0.0, "peak_kappa": 0.0, "concentration": 0.0,
             "mean_curv": 0.0, "graded_route": 0.0, "arc_m": 0.0, "h_steps": 0,
             "transience_measurable": False}
+    if min_steps is not None and int(min_steps) < 1:
+        raise ValueError(f"min_steps must be >= 1 or None, got {min_steps}")
     h = min(int(horizon_steps), T - 1 - t)
     if h < 1:
         return base                                   # literally no future left
+    if min_steps is not None and h < int(min_steps):
+        # an explicit STEP floor on top of the arc gate. Kept OPTIONAL because it
+        # is exactly the v2 guard whose 15 s default caused the D1 coverage
+        # collapse — a caller may want a *small* floor (e.g. 10 steps) without
+        # reinstating that failure, and silently ignoring the request would be
+        # worse than either.
+        return dict(base, reason="no_future", h_steps=int(h))
     seg = poses[t:t + h + 1]                          # [h+1, 4]
     d = seg[1:, :2] - seg[:-1, :2]
     ds = d.norm(dim=-1)                               # [h] realized arc per step
@@ -1298,3 +1322,183 @@ def tactical_from_future_v3(poses: Tensor, t: int,
             "man5": man5,
             "collapsed": bool(man5 in (LANE_KEEP, TURN_LEFT, TURN_RIGHT)
                               and lon["active"])}
+
+
+# ============================================================================
+# v2.2 (2026-08-03): THE NAV **INPUT** STOPS LYING, AND THE TRANSIENCE GATE
+# BECOMES MEASURABLE ON 20 s CLIPS.
+# ----------------------------------------------------------------------------
+# Two defects, both MEASURED over 500 PhysicalAI episodes / 11,504 stride-8
+# windows (`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+# 2026-08-03-refc-corpus-and-labels/results/labelqa_pai_train_400ep.json`,
+# `labelqa_pai_val_100ep.json`, `route_gate_speed_probe.json`).
+#
+#  E1  THE SILENT-STRAIGHT FALLBACK IS STILL ALIVE — ON THE INPUT SIDE.
+#      v2.1's whole D2 lesson was "never emit `straight` when you mean
+#      `unknown`", and `route_target_v21` honours it. But `nav_command_v21` maps
+#      the answer back through `_ROUTE_TO_NAV.get(route, NAV_FOLLOW)`, and
+#      ROUTE_UNKNOWN is not a key — so **road_following and UNKNOWN both arrive
+#      at the model as nav = 0 = follow** and the network cannot tell a judgement
+#      from a confession. MEASURED on the 400-episode train sample: of the 3,179
+#      windows fed `follow`, **1,985 (62.4 %) are a collapsed UNKNOWN sentinel**
+#      and only 1,194 are a real road_following judgement. The `valid` flag does
+#      carry the distinction, and every consumer that drops it — the label
+#      exports do, they carry the class — re-creates the exact bug v2.1 was
+#      written to kill.
+#      => `nav_command_v21_ex` returns the provenance; `nav_input_v22` returns
+#         the (command, known) PAIR a trainer should actually feed.
+#
+#  E2  THE TRANSIENCE GATE IS DEAD ON THIS CORPUS.
+#      `route_from_future_v21` applies the concentration test only when
+#      `arc >= TRANSIENCE_MIN_ARC_M` (150 m), reasoning that below that no
+#      SUSTAINED alternative could fit. PhysicalAI clips are ~20 s and the corpus
+#      is slow (mean ego speed 5.98 m/s), so the observed arc has median 66.9 m
+#      and **96.0 % of windows fall below 150 m** — on 96 % of the corpus
+#      `transient` is forced True and the turn rule degenerates to the TIGHTNESS
+#      test alone, which is precisely the false-turn failure mode the
+#      concentration gate was added (v2 header) to prevent. The consequence is
+#      visible in the label: `tight_transient` fires on **65.5 %** of train
+#      windows, i.e. the route label calls two windows in three a junction-scale
+#      turn.
+#      => `route_from_future_v22` measures concentration over an ARC-RELATIVE
+#         sub-window and so re-enables the gate at 60 m of road, not 150 m.
+#
+# WHY 60 m AND NOT A SWEPT NUMBER. It is not a new threshold — it is the OLD one
+# (`CONC_ARC_M` = 60 m, the junction-scale stretch v2.1 already declares) plus
+# the statement that to distinguish "concentrated in one junction length" from
+# "spread along the road" you must observe at least THREE such lengths. With
+# `conc_arc = clamp(arc / 3, CONC_ARC_MIN_M, CONC_ARC_M)` the gate becomes
+# measurable exactly when `arc >= 3 * CONC_ARC_MIN_M = 60 m`, and above 180 m it
+# is identical to v2.1's fixed 60 m window. Nothing here was fitted to an outcome.
+#
+# ⚠️ PARITY OF THE EVIDENCE. Those measurements were taken on the epcache splits
+# that exist on the dev box (`physicalai-train-14231cd29c74`,
+# `physicalai-val-bb543bdf7836`), which `tanitad.data.parity.corpus_key_of`
+# resolves to **None** — they are NOT the canonical
+# `physicalai-train-e438721ae894` set. They are admissible as evidence about the
+# LABELER (a pure function of poses) and about the MECHANISM; they are NOT
+# cross-arm comparable and no percentage here may be quoted as a parity number.
+# `route_gate_speed_probe.json` shows exactly why the percentages travel badly:
+# the turn rate runs from **60.2 % at 3-6 m/s to 2.5 % at 10-15 m/s**, so any
+# re-selection that moves the speed mix moves the label distribution with it.
+#
+# ADDITIVE: every v1 / v2 / v2.1 / v3 function above is untouched, and
+# `route_from_future_v22` CALLS `route_from_future_v21` and only ever re-decides
+# the transience half — so the delta is exactly auditable as `changed_from_v21`.
+# ----------------------------------------------------------------------------
+
+CONC_ARC_MIN_M = 20.0          # shortest junction-scale stretch worth measuring
+TRANSIENCE_ARC_RATIO = 3.0     # how many such stretches of road must be observed
+                               # before "concentrated vs spread" means anything
+
+
+def nav_command_v21_ex(poses: Tensor, t: int,
+                       horizon_steps: int = NAV_HORIZON_STEPS, **kw) -> dict:
+    """:func:`nav_command_v21` WITH ITS PROVENANCE — the E1 instrument.
+
+    Returns ``{nav, valid, route, reason, unknown_sentinel}`` where
+    ``unknown_sentinel`` is True iff ``nav`` is NAV_FOLLOW **because the route
+    was ROUTE_UNKNOWN** — i.e. the command is a confession wearing the costume of
+    a judgement. That is the bit :func:`nav_command_v21`'s 2-tuple cannot express
+    and that every label export dropped.
+
+    ``nav`` and ``valid`` are identical to :func:`nav_command_v21` for every
+    input; nothing about the shipped path changes by calling this instead.
+    """
+    r = route_from_future_v21(poses, t, horizon_steps, **kw)
+    nav = _ROUTE_TO_NAV.get(r["route"], NAV_FOLLOW)
+    return {"nav": int(nav), "valid": bool(r["valid"]),
+            "route": int(r["route"]), "reason": str(r["reason"]),
+            "unknown_sentinel": bool(r["route"] == ROUTE_UNKNOWN)}
+
+
+def nav_input_v22(poses: Tensor, t: int,
+                  horizon_steps: int = NAV_HORIZON_STEPS,
+                  **kw) -> tuple[int, float]:
+    """THE PAIR A TRAINER SHOULD FEED: ``(nav_cmd, nav_known)``.
+
+    ``nav_known`` is 1.0 when the command is a real judgement (road_following or
+    a decided turn) and 0.0 when it is the UNKNOWN sentinel collapsed onto
+    ``follow``. Feed it as an extra input channel next to the one-hot command, or
+    use it to gate the command embedding to zero.
+
+    WHY A CHANNEL AND NOT A LOSS MASK. A loss mask fixes the TARGET side, and
+    :func:`route_target_v21` already does that. This is the INPUT side: the model
+    is handed a command on EVERY window, and on 62.4 % of the `follow` windows
+    (MEASURED, see the v2.2 header) that command carries no information. Without
+    the companion bit the network's only options are to trust a meaningless
+    command or to learn to ignore the command channel altogether — and REF-C
+    evaluating with ``nav_cmd=None`` is exactly what "it learned to ignore it"
+    looks like from outside (the C6 confound: a decoder judged on its marginal).
+    """
+    d = nav_command_v21_ex(poses, t, horizon_steps, **kw)
+    return int(d["nav"]), 0.0 if d["unknown_sentinel"] else 1.0
+
+
+def route_from_future_v22(poses: Tensor, t: int,
+                          horizon_steps: int = NAV_HORIZON_STEPS,
+                          conc_arc_min_m: float = CONC_ARC_MIN_M,
+                          conc_arc_max_m: float = CONC_ARC_M,
+                          transience_arc_ratio: float = TRANSIENCE_ARC_RATIO,
+                          **v21_kw) -> dict:
+    """v2.2 route derivation — v2.1 with a SCENE-ADAPTIVE transience gate.
+
+    Everything except the transience half is delegated to
+    :func:`route_from_future_v21`, so coverage can never regress and the change
+    is exactly auditable. Extra keys on top of the v2.1 dict:
+
+        conc_arc_m_used   float the sub-window length actually used (metres),
+                                ``clamp(arc / ratio, conc_arc_min_m,
+                                conc_arc_max_m)``
+        transience_measurable bool whether the gate was APPLIED — v2.1 sets this
+                                from its fixed 150 m rule, v2.2 overwrites it
+                                with the arc-relative one
+        v21_route / v21_reason  what v2.1 decided, for the A/B
+        changed_from_v21  bool  the migration counter
+
+    ⛔ NOT A DEFAULT. v2.1 remains the shipped labeler. This is opt-in precisely
+    so the two can be measured against each other on the same windows before
+    anything is retrained on either (``labelqa_route_v22_ab.py``).
+    """
+    base = route_from_future_v21(poses, t, horizon_steps, **v21_kw)
+    out = dict(base, v21_route=int(base["route"]),
+               v21_reason=str(base["reason"]), conc_arc_m_used=0.0,
+               changed_from_v21=False)
+    if base["reason"] in ("no_future", "no_arc", "net_heading"):
+        return out                                    # nothing to re-decide
+    T = poses.shape[0]
+    h = min(int(horizon_steps), T - 1 - t)
+    seg = poses[t:t + h + 1]
+    ds = (seg[1:, :2] - seg[:-1, :2]).norm(dim=-1)
+    arc = float(ds.sum())
+    step_dyaw = wrap_to_pi(seg[1:, 2] - seg[:-1, 2])
+    net_dyaw = float(step_dyaw.sum())
+    conc_arc = min(max(arc / max(float(transience_arc_ratio), 1e-6),
+                       float(conc_arc_min_m)), float(conc_arc_max_m))
+    measurable = arc >= float(transience_arc_ratio) * conc_arc - 1e-9
+    conc = _arc_concentration(step_dyaw, ds, net_dyaw, conc_arc_m=conc_arc)
+    out.update(concentration=conc, conc_arc_m_used=float(conc_arc),
+               transience_measurable=bool(measurable))
+    tight = float(base["peak_kappa"]) >= CURV_TURN_PER_M
+    transient = conc >= CONCENTRATION_MIN if measurable else True
+    if tight and transient:
+        out.update(route=ROUTE_LEFT if base["signed_curv"] > 0 else ROUTE_RIGHT,
+                   valid=True, ambiguous=False, reason="tight_transient")
+    elif float(base["peak_kappa"]) <= CURV_ROAD_PER_M:
+        out.update(route=ROUTE_STRAIGHT, valid=True, ambiguous=False,
+                   reason="road_following")
+    else:
+        out.update(route=ROUTE_UNKNOWN, valid=False, ambiguous=True,
+                   reason="gray_zone")
+    out["changed_from_v21"] = bool(out["route"] != base["route"])
+    return out
+
+
+def route_target_v22(poses: Tensor, t: int,
+                     horizon_steps: int = NAV_HORIZON_STEPS,
+                     **kw) -> tuple[int, bool]:
+    """v2.2 route aux target as ``(target, valid)`` — the same contract as
+    :func:`route_target_v21` (ROUTE_UNKNOWN, deliberately out of CE range,
+    whenever ``valid`` is False)."""
+    r = route_from_future_v22(poses, t, horizon_steps, **kw)
+    return int(r["route"]), bool(r["valid"])

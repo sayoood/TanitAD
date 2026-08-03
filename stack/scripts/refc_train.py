@@ -90,6 +90,21 @@ SPEED_CLS_WEIGHT = 0.2        # refc1 only
 LAT_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
 LON_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
 
+# D-SEL S1: the RANKING term. ``anchor_logits`` is supervised against the
+# GT-nearest ORIGINAL anchor (the DiffusionDrive vocabulary-assignment CE, which
+# also picks the reconstruction target); ``sel_score`` is supervised against the
+# GT-nearest REFINED trajectory — the quantity ``argmax`` actually ranks.
+#
+# ⚠️ S1 IS THESE TWO CHANGES TOGETHER AND CANNOT BE SPLIT. Ranking on the refined
+# confidence while leaving it unsupervised would rank on an untrained readout;
+# supervising it while ranking on the classifier score would train a head nothing
+# reads. So the arm carries a NEW loss term, and the honest statement is that the
+# lever is "rank the refined fan AND supervise that ranking", not "one flag".
+# Weight 1.0 matches ``flagship_v15.REFINED_CLS_WEIGHT`` (the same recipe, in the
+# module that first repaired this decoder), so the arm inherits an operating
+# point rather than inventing one.
+REFINED_CLS_WEIGHT = 1.0
+
 TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
 SPEED_AHEAD = 5              # refc1 speed target: v at t+5 (same 0.5 s horizon)
@@ -343,9 +358,47 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     a_star = dist.argmin(dim=1)                            # [B]
 
     # anchor-cls CE + traj-recon L1 (reconstruction FROM the assigned anchor).
+    ar = torch.arange(b, device=device)
     loss_cls = F.cross_entropy(out["anchor_logits"], a_star)
-    recon = out["anchor_traj"][torch.arange(b, device=device), a_star]
+    recon = out["anchor_traj"][ar, a_star]
     loss_traj = (recon - traj_tgt).abs().mean()
+
+    # D-SEL: supervise the RANKED score against the oracle REFINED candidate,
+    # and report the selection diagnostic the fleet asked for as a standing
+    # metric — ``oracle_ade`` is the best plan available in the fan, ``sel_ade``
+    # is the one taken, and ``sel_gap`` separates "cannot propose it" (both high)
+    # from "cannot rank it" (gap high). REF-C's published gap is the second.
+    #
+    # ⭐ THE CE FIRES FOR EVERY LEVER THAT TOUCHES THE RANKED SCORE, not only
+    # for S1 — and that is a STRUCTURAL DEPENDENCY, not a convenience. ``argmax``
+    # has NO gradient, and the only other consumers of the selected trajectory
+    # (``traj``, and ``law_pred`` through it) differentiate w.r.t. the fan, never
+    # w.r.t. the score. So without this term ``cons_gate`` and
+    # ``route_to_anchor`` receive EXACTLY ZERO gradient and are dead parameters —
+    # found by ``tests/test_refc_select.py`` on the first run of the gradient
+    # check, which is what that check is for. (``flagship_v15.v15_losses`` states
+    # the same mechanism for its ``sel_gate``: "supervising the score rather than
+    # the bare logits is also what gives the longitudinal gate a gradient —
+    # argmax has none".)
+    sel_extra: dict = {}
+    loss_rcls = torch.zeros((), device=out["pooled"].device)
+    if cfg.sel_refined or cfg.graft_cons or cfg.graft_route:
+        fan_err = (out["anchor_traj"] - traj_tgt[:, None]).norm(dim=-1).mean(-1)
+        r_star = fan_err.argmin(dim=1)                      # [B] oracle index
+        loss_rcls = F.cross_entropy(out["sel_score"], r_star.detach())
+        with torch.no_grad():
+            oracle = fan_err.min(dim=1).values
+            sel_err = fan_err[ar, out["sel_idx"]]
+            sel_extra = {
+                "cls_refined": loss_rcls.detach(),
+                "oracle_ade": oracle.mean(),
+                "sel_ade": sel_err.mean(),
+                "sel_gap": (sel_err - oracle).mean(),
+                "rank_acc": (out["sel_idx"] == r_star).float().mean(),
+                # the headline REF-C selection pathology, in-loop: MEASURED
+                # 45.4 % on refc-xl-30k / 41.09 % on refc-base-30k at 30 k.
+                "frac_sel_2x_worse": (sel_err > 2.0 * oracle).float().mean(),
+            }
 
     # LAW latent MSE: no_grad target through the same encoder.
     with torch.no_grad():
@@ -431,6 +484,7 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
         speed_mae = torch.zeros((), device=out["pooled"].device)
 
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
+            + REFINED_CLS_WEIGHT * loss_rcls
             + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
             + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls)
     anchor_acc = (out["anchor_logits"].argmax(dim=1) == a_star).float().mean()
@@ -441,6 +495,7 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "anchor_acc": anchor_acc, "man_acc": man_acc,
             "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
+            **sel_extra, "sel_tele": out["sel_tele"],
             **lat_extra,
             **({"graft_lat_norm": model.decoder.lat_to_anchor(
                 out["lat_logits"].detach().log_softmax(-1)).norm(dim=-1).mean(),
@@ -515,6 +570,27 @@ def train(args) -> dict:
         raise SystemExit("--man-prior-tau requires --factored-maneuver (it "
                          "adjusts the per-axis lat/lon class priors, which only "
                          "the factored seam registers)")
+    # --- D-SEL: the selection surface (gated BEFORE build, module presence) ---
+    cfg.sel_refined = bool(args.sel_refined)
+    cfg.sel_reach_clamp = bool(args.sel_reach_clamp)
+    cfg.sel_accel_max = float(args.sel_accel_max)
+    cfg.graft_cons = bool(args.graft_cons)
+    cfg.graft_route = bool(args.graft_route)
+    cfg.seam_clamp = float(args.seam_clamp)
+    cfg.ego_valid_channel = bool(args.ego_valid_channel)
+    # ⛔ C6 GUARD. Under --labels v1 the route CE target is
+    # ``refb_labels.route_target(nav_cmd)`` — a deterministic function of a model
+    # INPUT. Grafting that readout onto SELECTION would pipe the nav echo into
+    # the ranking and any route effect measured afterwards would be circular.
+    # This is the same failure class as RETRACTION_LOG C6 and R-2026-08-03-l
+    # (flagship's route_class_accuracy = 1.0000 is an oracle-conditioning echo,
+    # not a decision). Refuse at ARGUMENT-PARSE time, not after a GPU-day.
+    if cfg.graft_route and args.labels == "v1":
+        raise SystemExit(
+            "--graft-route requires --labels v21 or v3. Under v1 the route CE "
+            "target is route_target(nav_cmd) — circular with a model INPUT — so "
+            "grafting route_logits onto the ranked score would train selection "
+            "on a nav echo (RETRACTION_LOG C6 / R-2026-08-03-l).")
     model = RefCModel(cfg).to(device)
     # Install the FPS anchor vocabulary (else the built-in default anchors).
     if args.anchors:
@@ -559,6 +635,26 @@ def train(args) -> dict:
     dl = DataLoader(ds, **dl_kw)
     print(f"[refc] train: {len(train_eps)} episodes / {len(ds)} windows "
           f"from {train_dir} (mode={args.mode})", flush=True)
+    # D-SEL preflight banner: the arm PRINTS ITS OWN AXES. The DATA-vs-ARCH
+    # conflation (a `--v2-cache` read as `--v2`) is only structurally visible if
+    # every lever is on one line of the log before step 0. `sel_on` False with a
+    # D-SEL flag set would be a wiring bug, so the banner asserts rather than
+    # merely reports.
+    _sel = cfg.selection()
+    print(json.dumps({"d_sel": {
+        "sel_on": _sel.any_on, "sel_refined": cfg.sel_refined,
+        "sel_reach_clamp": cfg.sel_reach_clamp,
+        "sel_accel_max": cfg.sel_accel_max, "horizon_s": _sel.horizon_s,
+        "graft_cons": cfg.graft_cons, "cons_detach": cfg.cons_detach,
+        "graft_route": cfg.graft_route, "seam_clamp": cfg.seam_clamp,
+        "ego_valid_channel": cfg.ego_valid_channel,
+        "labels": args.labels, "mode": args.mode,
+        "n_selection_params": param_breakdown(model)["selection"],
+        # S1 is inert at 0 denoise steps BY CONSTRUCTION — say so rather than
+        # let a `--mode classifier --sel-refined` run look like a live arm.
+        "s1_inert_because_classifier_mode": (cfg.sel_refined
+                                             and args.mode == "classifier"),
+    }}), flush=True)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -657,6 +753,16 @@ def train(args) -> dict:
                 # log line, not inferred after a 30 k run.
                 **({"lan_valid_frac": sc(out["lan_valid_frac"])}
                    if "lan_valid_frac" in out else {}),
+                # D-SEL: the ranking diagnostic and the seam telemetry. Same
+                # rule as lan_valid_frac — a graft that swamps the score, or a
+                # ranking that never improves, must be visible in the FIRST log
+                # line rather than reconstructed from a 30 k post-mortem. The
+                # seam ratios were already computed and thrown away before D-SEL
+                # (graft_lat_norm/conf_norm were logged with no actuator).
+                **{k: sc(out[k]) for k in
+                   ("cls_refined", "oracle_ade", "sel_ade", "sel_gap",
+                    "rank_acc", "frac_sel_2x_worse") if k in out},
+                **out.get("sel_tele", {}),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
             }
@@ -697,6 +803,11 @@ def train(args) -> dict:
                                     "speed_cls", "speed_mae", "anchor_acc",
                                     "man_acc", "route_acc", "route_valid_frac",
                                     "nav_follow_frac")}
+        # D-SEL selection diagnostic on val, when the arm carries it.
+        metrics["val"].update({k: round(float(vout[k]), 5) for k in
+                               ("cls_refined", "oracle_ade", "sel_ade",
+                                "sel_gap", "rank_acc", "frac_sel_2x_worse")
+                               if k in vout})
         if "lan_valid_frac" in vout:
             metrics["val"]["lan_valid_frac"] = round(
                 float(vout["lan_valid_frac"]), 5)
@@ -779,20 +890,36 @@ def main(argv=None):
     ap.add_argument("--no-graft-prior-center", action="store_true",
                     help="feed the anchor grafts the raw log-posterior instead "
                          "of the log-likelihood ratio (ablation).")
-    ap.add_argument("--refc1", action="store_true",
-                    help="REF-C.1: fixed-distance path checkpoints at "
-                         "(2,5,10,20) m + target-speed classification head")
-    ap.add_argument("--workers", type=int, default=0,
-                    help="DataLoader workers (0 = in-loop decode, old behavior)")
-    ap.add_argument("--log-every", type=int, default=None)
-    ap.add_argument("--save-every", type=int, default=None)
-    ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--device", default="auto")
-    ap.add_argument("--smoke", action="store_true",
-                    help="tiny config (CI/CPU smoke; 1-channel 64 px episodes)")
-    args = ap.parse_args(argv)
-    return train(args)
-
-
-if __name__ == "__main__":
-    main()
+    # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
+    ap.add_argument("--sel-refined", action="store_true",
+                    help="S1: rank the refined fan with the REFINED confidence "
+                         "and supervise it (adds the cls_refined CE). Today the "
+                         "post-denoise trajectories are ranked by the t=0 "
+                         "classifier score. Inert at --mode classifier.")
+    ap.add_argument("--sel-reach-clamp", action="store_true",
+                    help="S2: restrict the argmax to candidates a bounded-"
+                         "acceleration ego could fly. MEASURED INERT on ADE "
+                         "(paired delta exactly 0.0) — it is a precondition "
+                         "that makes per-candidate compute 3.58x cheaper, not "
+                         "an improvement. Never applied where ego-dropout "
+                         "withheld v0.")
+    ap.add_argument("--sel-accel-max", type=float, default=2.5,
+                    help="m/s^2 for that band (flagship v1.5's own constant)")
+    ap.add_argument("--graft-cons", action="store_true",
+                    help="S3: score each candidate by its CONSEQUENCE through "
+                         "law_head (REF-C's trajectory-conditioned world model) "
+                         "and let that reach the ranking. +1 parameter; the "
+                         "world model runs under no_grad.")
+    ap.add_argument("--graft-route", action="store_true",
+                    help="S5: the strategic route READOUT reaches the ranked "
+                         "score (zero-init). REQUIRES --labels v21/v3 — under "
+                         "v1 the route target is circular with nav_cmd.")
+    ap.add_argument("--seam-clamp", type=float, default=0.0,
+                    help="S4: cap the TOTAL anchor graft at this multiple of "
+                         "the base score's norm (<=0 disables; 1.0 is v4's). "
+                         "Below the cap the rescale is exactly 1.0.")
+    ap.add_argument("--ego-valid-channel", action="store_true",
+                    help="X15: feed an explicit 'v0 is present' flag beside the "
+                         "ego-dropped speed, to the measurement encoder and (if "
+                         "--tactical-speed-input) the tactical head. 0.0 m/s is "
+                         "in-distribution 'stationary', 

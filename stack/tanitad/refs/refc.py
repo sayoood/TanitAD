@@ -601,14 +601,21 @@ def refc_select_config() -> RefCConfig:
 
       S1 ``sel_refined``      rank the refined fan with the REFINED confidence.
                               Today the post-denoise trajectories are ranked by
-                              the t=0 classifier score; MEASURED on REF-C's own
-                              fan, the pick is >2x worse than the fan's best in
-                              45.4 % of windows against an oracle-in-fan of
-                              0.1640 m. 0 parameters.
+                              the t=0 classifier score; MEASURED on **REF-C-XL**
+                              (256 anchors, 881 windows) the pick is >2x worse
+                              than the fan's best in 45.4 % of windows against
+                              an oracle-in-fan of 0.1640 m — base's own figures
+                              are 41.09 % / 0.1914 m. 0 parameters.
+                              ⛔ NOT a headroom claim: the registry's standing
+                              caveat is that the oracle gap is ~92 % irreducible
+                              and REF-C v1.2's re-scorer was NOT separated.
       S2 ``sel_reach_clamp``  delete candidates a bounded-acceleration ego
                               cannot fly. MEASURED on ``fan_refc-xl-30k.pt``:
-                              72.08 % removed, oracle survives 100 %, paired
-                              delta exactly 0.0000. 0 parameters.
+                              72.08 % removed, oracle survives 100 %, empty sets
+                              0.00 %, paired delta **exactly 0.0** — i.e. INERT
+                              on ADE by measurement. It is a PRECONDITION: it
+                              makes per-candidate compute 3.58x cheaper, which
+                              is what lets S3 run. 0 parameters.
       S3 ``graft_cons``       the CONSEQUENCE of each candidate, through
                               ``law_head``, reaches the ranking — the only form
                               of the flagship's ``cond_imagination`` REF-C's
@@ -621,6 +628,21 @@ def refc_select_config() -> RefCConfig:
       S5 ``graft_route``      the strategic route READOUT reaches the ranking
                               instead of only warping the condition. +384
                               parameters (3 x 128 anchors, zero-init).
+                              ⚠️ THE LOWEST-PRIOR LEVER OF THE FIVE, on purpose.
+                              MEASURED (R-2026-08-03-l): ``route_head(pooled)``
+                              is nav-blind BY ARCHITECTURE
+                              (``nav_passthrough_rate`` 0.0000, logit std across
+                              navs exactly 0.0), its junction-scene accuracy
+                              0.7613 sits BELOW that scene's majority-class
+                              baseline 0.7806, and an image-free NAV_ECHO lookup
+                              beats it by 0.1724. Grafting a weak readout onto
+                              selection is expected to be NULL; it is included
+                              because it is the only lever that TESTS the
+                              readout pathway, and zero-init means training —
+                              not taste — decides. The higher-prior route ->
+                              selection pathway already exists and is LAN's
+                              param-free geometric ``lan_gate`` (route coverage
+                              0.8801 vs ``nav_cmd``'s 0.2724).
 
     **MEASURED capacity delta** (``param_breakdown``, pinned by
     ``tests/test_refc_select.py::test_dsel_is_not_a_capacity_change``):

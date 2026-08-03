@@ -1,0 +1,92 @@
+{
+ "tool": "route_within_clip_probe.py",
+ "evidence_class": "MEASURED",
+ "generated_utc": "2026-08-03T18:38:29Z",
+ "splits": [
+  {
+   "cache_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-train-14231cd29c74",
+   "resolved_corpus_key": null,
+   "is_registered_parity_corpus": false
+  },
+  {
+   "cache_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-val-bb543bdf7836",
+   "resolved_corpus_key": null,
+   "is_registered_parity_corpus": false
+  }
+ ],
+ "n_episodes": 500,
+ "stride": 8,
+ "wall_s": 43.7,
+ "PARITY_WARNING": "percentages here are NOT parity numbers unless a split above resolves to a registered key",
+ "ROUTE_label_within_clip": {
+  "pct_episodes_with_a_CONSTANT_route": 5.4,
+  "distinct_classes_per_episode": {
+   "n": 500,
+   "mean": 2.36,
+   "median": 2.0,
+   "p90": 3.0
+  },
+  "switches_per_episode": {
+   "n": 500,
+   "mean": 1.488,
+   "median": 1.0,
+   "p90": 3.0
+  }
+ },
+ "TACTICAL_man5_within_clip": {
+  "pct_episodes_with_a_CONSTANT_man5": 0.4,
+  "distinct_classes_per_episode": {
+   "n": 500,
+   "mean": 3.67,
+   "median": 4.0,
+   "p90": 5.0
+  },
+  "switches_per_episode": {
+   "n": 500,
+   "mean": 4.568,
+   "median": 4.0,
+   "p90": 7.0
+  },
+  "lat_distinct_per_episode": {
+   "n": 500,
+   "mean": 2.174,
+   "median": 2.0,
+   "p90": 3.0
+  },
+  "lon_distinct_per_episode": {
+   "n": 500,
+   "mean": 2.656,
+   "median": 3.0,
+   "p90": 3.0
+  }
+ },
+ "DISTANCE_TO_MANEUVER": {
+  "n_turn_windows": 7507,
+  "median_m": 22.06,
+  "p90_m": 85.41,
+  "pct_beyond_50m": 24.51,
+  "band_share": {
+   "d_now": {
+    "n": 2471,
+    "pct": 32.916
+   },
+   "d_10_25": {
+    "n": 1616,
+    "pct": 21.527
+   },
+   "d_25_50": {
+    "n": 1580,
+    "pct": 21.047
+   },
+   "d_50_100": {
+    "n": 1369,
+    "pct": 18.236
+   },
+   "d_100_200": {
+    "n": 471,
+    "pct": 6.274
+   }
+  },
+  "why_it_matters": "these windows all carry the SAME route token. A planner needs `turn_left in 12 m` and `turn_left in 90 m` to be different instructions; the shipped 3-class label cannot express the difference, and refb_labels.DIST_BAND_TOKENS (width 8) is minted by route_from_future_v3 but NOT enrolled in lake/vocab.py."
+ }
+}

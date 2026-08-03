@@ -2,42 +2,80 @@
 
 WHY A SELECTION MODULE, AND WHY NOW
 ============================================================================
-REF-C beats flagship v1 open-loop and closed-loop with the separation ENTIRELY
-LATERAL, and every one of its MEASURED defects sits on the SELECTION surface —
-not on the proposal surface. Read together they are one defect, not five:
+REF-C is the programme's reference model, and every one of its MEASURED defects
+sits on the SELECTION surface — on WHICH candidate is emitted, not on which are
+proposed. Read together they are one defect, not five. Each number below carries
+its ARM and its artifact, because two of them are commonly quoted against the
+wrong arm:
 
-  1. **The refined fan is ranked by the UNREFINED score.**
-     ``AnchoredDiffusionDecoder.forward`` runs the denoise loop as
-     ``_, off = self._decode(...)`` — the refined confidence is DISCARDED — and
-     then ``argmax`` es the t=0 classifier score over the REFINED trajectories.
-     Scoring and refinement are decoupled. (Source: ``refc.py``, the ``for i in
-     range(steps)`` loop. Restated by ``flagship_v15.V15Decoder``, which repairs
-     exactly this and calls it "THE SCORING FIX".)
+  1. **The refined fan is ranked by the UNREFINED score.** MEASURED, source.
+     ``AnchoredDiffusionDecoder.forward`` ran the denoise loop as
+     ``_, off = self._decode(...)`` — the refined confidence was DISCARDED — and
+     then ``argmax`` ed the t=0 classifier score over the REFINED trajectories.
+     Scoring and refinement were decoupled. (Restated by
+     ``flagship_v15.V15Decoder``, which repairs exactly this and calls it "THE
+     SCORING FIX". S1 is that repair, brought home.)
   2. **The consequence is a RANKING failure, not a coverage failure.** MEASURED
-     on REF-C's own fan, corpus-wide (881 canonical val windows / 40 episodes):
-     oracle-in-fan **0.1640 m** against a selected score an order above it, with
-     the pick more than 2x worse than the fan's best in **45.4 %** of windows.
-     The 0.16 m plan was already IN the fan. (Earlier single-clip figures
-     0.295 / 65 % were restated 2026-07-20 and must not be quoted.)
-  3. **72.08 % of the emitted fan is not physically flyable.** The anchor
-     vocabulary is blameless — ``furthest_point_sample`` returns ``pool[chosen]``
-     — but the UNBOUNDED offset head refines anchors into candidates implying up
-     to 171.5 km/h against a val GT max of 132.4. MEASURED on
-     ``fan_refc-xl-30k.pt``: the bounded-acceleration band removes 72.08 % of
-     candidates, the ADE-oracle survives 100 %, no window is left empty, and the
-     paired episode-cluster delta is exactly **0.0000**.
-  4. **The grafts that reach the score are UNCLAMPED.** ``maneuver_to_anchor`` /
-     ``lat_to_anchor`` / ``lon_to_anchor`` / ``lan_gate`` are all added straight
-     to ``conf``. ``scripts/refc_train.py`` already LOGS ``graft_lat_norm`` /
-     ``graft_lon_norm`` / ``conf_norm`` — the instrument exists and there is no
-     actuator. A graft that swamps the base score is not a prior, it is a second
-     selector (flagship v4 §6.2 discipline 4; that failure mode fired at 2.80x).
+     on 881 canonical val windows / 40 episodes, ``taniteval/results/
+     scaleab_refc-base-30k_vs_refc-xl-30k.json`` (independently duplicated in
+     ``taniteval/results/planfan_clips_summary.json``):
+
+       ==============  =========  ==========  ============  ===================
+       arm             anchors    selected    oracle-in-fan  pick >2x worse
+       ==============  =========  ==========  ============  ===================
+       refc-XL-30k     256        0.4714      **0.1640**     **45.4 %**
+       refc-base-30k   128        0.4728      0.1914         41.09 %
+       refc-XL @128    128        —           0.2624         31.9 %
+       ==============  =========  ==========  ============  ===================
+
+     ⚠️ **0.1640 / 45.4 % are REF-C-XL's, not base's** — a frequent mis-citation.
+     ⚠️ Earlier single-clip figures 0.295 / 65 % were restated 2026-07-20 and
+     must not be quoted.
+     ⛔ **AND THE GAP IS NOT AVAILABLE HEADROOM.** ``MODEL_REGISTRY.md`` §4.1
+     carries a standing caveat: *the oracle gap is ~92 % irreducible*; REF-C
+     v1.2's learned re-scorer, across 47 trained arms, recovered at most 8.4 %
+     of it and its headline (0.46251 vs 0.47144) is **NOT separated**
+     (+0.00893 [-0.0062, +0.0250]). D-SEL is therefore NOT pitched as
+     "recover 0.31 m". S1 differs from v1.2 IN KIND — v1.2 re-ranked a FROZEN
+     decoder post hoc, whereas S1 puts the ranking objective INSIDE training so
+     the refined readout is shaped by it — but "different in kind" is an
+     argument, and this programme settles those with a pre-registered
+     experiment, not with an argument.
+  3. **72.08 % of the emitted fan is not physically flyable — and removing it is
+     EXACTLY INERT.** The anchor vocabulary is blameless (``furthest_point_
+     sample`` returns ``pool[chosen]``); the UNBOUNDED offset head refines
+     anchors into candidates implying up to 171.5 km/h against a val GT max of
+     132.4. MEASURED on ``fan_refc-xl-30k.pt`` (REF-C-XL, 881 windows),
+     ``…/incoming/2026-07-27-percandidate-labels/raw/t1_clip_fansize.json``:
+     72.08 % of candidates removed · empty survivor sets **0.00 %** · oracle
+     survives **100 %** · ``as_trained_ade`` 0.4714 == ``clipped_ade`` 0.4714,
+     paired delta **exactly 0.0**.
+     ⇒ **S2 is a PRECONDITION, not a win.** Nobody should expect it to move ADE;
+     it is here because it deletes 72.08 % of the search space at zero cost and
+     therefore makes any PER-CANDIDATE computation **3.58x cheaper** — which is
+     what lets S3 exist at all. Pitching it as an improvement would be the
+     mistake, not running it.
+  4. **The grafts that reach the score are UNCLAMPED.** MEASURED, source.
+     ``maneuver_to_anchor`` / ``lat_to_anchor`` / ``lon_to_anchor`` / ``lan_gate``
+     were all added straight to ``conf``. ``scripts/refc_train.py`` already LOGS
+     ``graft_lat_norm`` / ``graft_lon_norm`` / ``conf_norm`` — **the instrument
+     exists and there is no actuator.** A graft that swamps the base score is not
+     a prior, it is a second selector (flagship v4 §6.2 discipline 4; that
+     failure mode fired at 2.80x).
   5. **The consequences of candidates never reach the ranking.** This is
      ``cond_imagination``, which ``flagship_v15`` calls "THE NOVEL PART" and
      which was hard-wired OFF in the flagship for months.
 
 ⇒ D-SEL rebuilds the ranking, and ONLY the ranking. Every lever here is
 zero-init or param-free, so a disabled flag gives a byte-identical state_dict.
+
+⚠️ **WHAT THIS MODULE DOES NOT REST ON.** An earlier framing — *"REF-C's
+separation from flagship v1 is ENTIRELY LATERAL"* — is **RETRACTED**
+(``RETRACTION_LOG.md`` R-2026-08-03-C): ``dist_to_gt_traj_m`` and
+``cross_track_abs_m`` are byte-identical in ``metrics_empty.json`` (four lateral
+metrics, not five), and on the shipped HQ render ADE separates at +7.1642
+[+5.2654, +8.9661]. The four lateral separations hold and widen; "entirely
+lateral" does not, and no argument here depends on it.
 
 WHAT DOES **NOT** TRANSFER FROM THE FLAGSHIP, AND WHY (argued from source)
 ============================================================================
