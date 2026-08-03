@@ -64,19 +64,150 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 # --------------------------------------------------------------------------
-# fleet definition. `role` decides what "healthy" means: a `train` host with no
-# trainer is RED; a `burst` host with no trainer is GREEN-idle by design.
+# Fleet definition — DISCOVERED from ~/.ssh/config, not hardcoded (v2).
+#
+# v1 shipped a hardcoded four-host dict, which is the SAME defect this probe
+# was written to kill, one level up: the log names were discovered but the
+# *host list* was still a name somebody typed. Measured 2026-08-03: the ssh
+# config held `tanitad-pod4`/`v2arch`, `tanitad-pod5`/`new` and `tanitad-thor`,
+# none of them in that dict — and `POD_SHUTDOWN_2026-08-02.md` records an arm
+# (v1arch-on-v2bal) training on pod4 the whole time. A four-host probe would
+# have reported the fleet complete while omitting the host doing the work.
+#
+# So: every `tanitad-*` alias in the ssh config is a fleet member. ROLE_HINTS
+# only supplies *semantics* (what "healthy" means), never membership — a host
+# with no hint is still probed, and is flagged AMBER rather than dropped.
 # --------------------------------------------------------------------------
-FLEET: dict[str, dict] = {
-    "pod1": {"ssh": "tanitad-pod", "role": "train",
-             "note": "A6000 — flagship arm"},
-    "pod2": {"ssh": "tanitad-pod2", "role": "train",
-             "note": "A40 — arm slot"},
-    "pod3": {"ssh": "tanitad-pod3", "role": "train",
-             "note": "A40 — REF/VLM slot"},
-    "eval": {"ssh": "tanitad-eval", "role": "burst",
-             "note": "A40 — TanitEval, idle by design between jobs"},
+SSH_CONFIG_DEFAULT = Path.home() / ".ssh" / "config"
+FLEET_ALIAS_RE = re.compile(r"^tanitad[-_]", re.I)
+
+# `role` decides what "healthy" means:
+#   train   — no trainer running is RED (a paid GPU doing nothing)
+#   burst   — idle by design between jobs; idle is GREEN
+#   edge    — a device we own outright (Thor); idle is GREEN, no /workspace
+#   unknown — not classified yet: never RED for idleness (we do not know what
+#             it is for), always AMBER so it cannot be silently ignored
+ROLE_HINTS: dict[str, dict] = {
+    "tanitad-pod":    {"name": "pod1",  "role": "train",
+                       "note": "A6000 — flagship arm"},
+    "tanitad-pod2":   {"name": "pod2",  "role": "train",
+                       "note": "A40 — arm slot"},
+    "tanitad-pod3":   {"name": "pod3",  "role": "train",
+                       "note": "A40 — REF/VLM slot"},
+    "tanitad-pod4":   {"name": "pod4",  "role": "train",
+                       "note": "A40 — v2arch slot"},
+    "tanitad-pod5":   {"name": "pod5",  "role": "train",
+                       "note": "A40 — migration target"},
+    "tanitad-eval":   {"name": "eval",  "role": "burst",
+                       "note": "A40 — TanitEval, idle by design between jobs"},
+    "tanitad-thor":   {"name": "thor",  "role": "edge",
+                       "note": "Jetson Thor — inference/AlpaSim, idle by design",
+                       "dd_path": "/home/nvidia"},
+    # Same physical Jetson, second interface. Endpoint dedup cannot merge it
+    # (different IPs by definition), so it is hinted explicitly — otherwise it
+    # reports as a separate unclassified host, which it is not.
+    "tanitad-thor-wifi": {"name": "thor-wifi", "role": "edge",
+                          "note": "Jetson Thor over WiFi — same device as thor",
+                          "dd_path": "/home/nvidia"},
 }
+
+# Retained ONLY so an explicit --hosts pod1 keeps working and so the absence of
+# a historically-known alias from the ssh config is itself reportable.
+KNOWN_ALIASES: tuple[str, ...] = tuple(ROLE_HINTS)
+
+
+def parse_ssh_config(text: str) -> dict[str, dict]:
+    """Alias -> {hostname, port, user} for every non-wildcard `Host` block.
+
+    One `Host` line may declare several aliases (`Host tanitad-pod4 v2arch`);
+    all of them map to the same block, which is how the same physical pod ends
+    up under two names. Wildcards are patterns, not hosts, and are skipped.
+    """
+    out: dict[str, dict] = {}
+    current: list[str] = []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        key, _, val = line.partition(" ")
+        key = key.rstrip("=").lower()
+        val = val.lstrip("= ").strip()
+        if key == "host":
+            current = [a for a in val.split() if "*" not in a and "?" not in a]
+            for a in current:
+                out.setdefault(a, {"hostname": None, "port": "22",
+                                   "user": None})
+        elif current and key in ("hostname", "port", "user"):
+            for a in current:
+                out[a][key] = val
+    return out
+
+
+def discover_fleet(cfg: dict[str, dict],
+                   alias_re: re.Pattern = FLEET_ALIAS_RE) -> dict[str, dict]:
+    """Build the probe target list from parsed ssh-config entries.
+
+    Aliases sharing an (hostname, port) endpoint are the SAME machine and are
+    collapsed to one probe — probing `tanitad-pod4` and `tanitad-v2arch`
+    separately would double-count one A40 and could report it twice with
+    different verdicts. The preferred alias is the one carrying a role hint.
+    """
+    by_endpoint: dict[tuple, list[str]] = {}
+    for alias, spec in cfg.items():
+        if not alias_re.match(alias):
+            continue
+        endpoint = (spec.get("hostname") or alias, spec.get("port") or "22")
+        by_endpoint.setdefault(endpoint, []).append(alias)
+
+    fleet: dict[str, dict] = {}
+    for endpoint, aliases in sorted(by_endpoint.items()):
+        hinted = [a for a in aliases if a in ROLE_HINTS]
+        primary = hinted[0] if hinted else sorted(aliases)[0]
+        hint = ROLE_HINTS.get(primary, {})
+        name = hint.get("name") or primary.replace("tanitad-", "")
+        while name in fleet:                    # two endpoints, one hint name
+            name += "'"
+        fleet[name] = {
+            "ssh": primary,
+            "role": hint.get("role", "unknown"),
+            "note": hint.get("note", "no role hint — classify it in ROLE_HINTS"),
+            "dd_path": hint.get("dd_path", "/workspace"),
+            "dd_path_hinted": "dd_path" in hint or bool(hint),
+            "aliases": sorted(aliases),
+            "endpoint": f"{endpoint[0]}:{endpoint[1]}",
+        }
+    return fleet
+
+
+def load_fleet(config_path: Path | None = None) -> tuple[dict[str, dict],
+                                                         list[str]]:
+    """Discovered fleet + the warnings that must never be swallowed."""
+    path = config_path or SSH_CONFIG_DEFAULT
+    warnings: list[str] = []
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return {}, [f"RED NO_SSH_CONFIG: cannot read {path} ({exc}) — the "
+                    f"fleet is UNKNOWN, not empty"]
+    fleet = discover_fleet(parse_ssh_config(text))
+    if not fleet:
+        warnings.append(
+            f"RED NO_FLEET_DISCOVERED: no tanitad-* Host block in {path} — "
+            f"absence of evidence is an alarm, not an empty fleet")
+    seen = {a for spec in fleet.values() for a in spec["aliases"]}
+    for alias in KNOWN_ALIASES:
+        if alias not in seen:
+            warnings.append(
+                f"AMBER ALIAS_GONE: {alias} has a role hint but no longer "
+                f"appears in {path.name} — pod released, or config drifted?")
+    for name, spec in fleet.items():
+        if spec["role"] == "unknown":
+            warnings.append(
+                f"AMBER HOST_UNCLASSIFIED: {name} ({spec['endpoint']}, "
+                f"aliases {'/'.join(spec['aliases'])}) is in the ssh config "
+                f"with no ROLE_HINTS entry — probed, but 'healthy' is "
+                f"undefined for it until someone classifies it")
+    return fleet, warnings
 
 # A process is a *trainer/job* if its cmdline matches this and not EXCLUDE.
 # Deliberately broad: the whole point is not to depend on one run's name.
@@ -102,19 +233,31 @@ echo '##NOW'; date +%s
 echo '##HOST'; hostname
 echo '##GPU'; nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null || echo NA
 echo '##PS'; ps -eo pid,ppid,etimes,rss,args --no-headers 2>/dev/null | tr -s ' ' | sed 's/^ //'
+echo '##FD'
+# The kernel's own record of where a process writes. This is the ONLY binding
+# that survives a launcher that left no shell parent (`ssh -f ... &`), which is
+# how every arm here is started. Measured 2026-08-03: the v5f flagship wrote to
+# /workspace/v5f_run.log while its --out was /workspace/experiments/flagship-
+# v5f-w120-30k, so no name- or prefix-based rule could ever have linked them,
+# and the probe correctly but uselessly reported liveness UNVERIFIED.
+for f in /proc/[0-9]*/fd/1; do
+  pid=${f#/proc/}; pid=${pid%%/fd/1}
+  tgt=$(readlink "$f" 2>/dev/null) || continue
+  case "$tgt" in /*) echo "$pid|$tgt";; esac
+done 2>/dev/null | head -200
 echo '##LOGS'
 # Per-directory, hard-timeboxed, recent-only. A single `find /workspace -maxdepth 3`
 # took >90 s on the MooseFS-backed pods (measured 2026-07-21) and timed out the
 # whole probe on exactly the two hosts that were actually training — i.e. the
 # naive form is blind precisely where it matters.
-for d in /workspace/experiments /root /tmp /workspace; do
+for d in /workspace/experiments /root /tmp /workspace "${DD_PATH:-/workspace}"; do
   [ -d "$d" ] && timeout 8 find "$d" -maxdepth 2 -type f -mmin -2880 \
     \( -name '*.log' -o -name '*.out' -o -name 'metrics.json' \) \
     -printf '%T@|%s|%p\n' 2>/dev/null
 done | sort -rn | head -60
 echo '##DD'
 if [ "$DO_DD" = "1" ]; then
-  D=/workspace/.fleet_probe_dd
+  D="${DD_PATH:-/workspace}"/.fleet_probe_dd
   T0=$(date +%s.%N)
   if dd if=/dev/zero of=$D bs=1M count=100 conv=fsync 2>/dev/null 1>/dev/null; then
     T1=$(date +%s.%N); echo "OK $(echo "$T1 $T0" | awk '{printf "%.3f", $1-$2}')"
@@ -139,6 +282,7 @@ class Job:
     etimes: int = 0                # oldest member's age (s)
     log: str | None = None
     log_age_s: float | None = None
+    log_bound_by: str | None = None     # "proc_fd" (evidence) | "heuristic"
     step: int | None = None
 
 
@@ -147,6 +291,10 @@ class HostReport:
     name: str
     ssh: str
     role: str
+    aliases: list[str] = field(default_factory=list)
+    endpoint: str | None = None
+    dd_path: str = "/workspace"
+    dd_path_hinted: bool = False
     reachable: bool = False
     error: str | None = None
     hostname: str | None = None
@@ -191,10 +339,12 @@ def ssh_client() -> str:
 
 
 def run_remote(ssh_alias: str, do_dd: bool, timeout: int,
-               ssh_bin: str | None = None) -> tuple[bool, str]:
+               ssh_bin: str | None = None,
+               dd_path: str = "/workspace") -> tuple[bool, str]:
     cmd = [ssh_bin or ssh_client(), "-o", "ConnectTimeout=12",
            "-o", "BatchMode=yes",
-           ssh_alias, f"DO_DD={'1' if do_dd else '0'} bash -s"]
+           ssh_alias, f"DO_DD={'1' if do_dd else '0'} "
+                      f"DD_PATH={shlex.quote(dd_path)} bash -s"]
     try:
         # CRLF must never reach the remote bash: a Windows checkout turns every
         # `fi` into `fi\r`, and bash then dies with "unexpected end of file".
@@ -309,14 +459,45 @@ def parse_logs(lines: list[str]) -> list[tuple[float, int, str]]:
 STEP_RE = re.compile(r'"step"\s*:\s*(\d+)')
 
 
+def parse_fd(lines: list[str]) -> dict[int, str]:
+    """pid -> the file its stdout is connected to, straight from /proc."""
+    out: dict[int, str] = {}
+    for ln in lines:
+        pid, _, tgt = ln.partition("|")
+        if not tgt.startswith("/") or tgt.startswith("/dev/"):
+            continue                      # a tty/pipe/socket is not a log file
+        try:
+            out[int(pid)] = tgt
+        except ValueError:
+            continue
+    return out
+
+
 def attach_logs(jobs: list[Job], logs: list[tuple[float, int, str]],
-                now: float) -> None:
+                now: float, fd_map: dict[int, str] | None = None) -> None:
     """Bind each run to its newest own log. Candidate order:
-    (1) the redirect target from the launcher cmdline, (2) any log inside the
-    ``--out`` dir, (3) any log whose name contains the out-dir basename.
-    A run with no candidate keeps ``log=None`` — which is an AMBER finding,
-    never a silent pass."""
+    (0) **/proc/<pid>/fd/1** — the kernel's record of where the process writes,
+    which is direct evidence rather than inference and is preferred over every
+    heuristic below; (1) the redirect target from the launcher cmdline, (2) any
+    log inside the ``--out`` dir, (3) any log whose name contains the out-dir
+    basename. A run with no candidate keeps ``log=None`` — which is an AMBER
+    finding, never a silent pass."""
+    fd_map = fd_map or {}
+    known = {p: (mt, sz) for mt, sz, p in logs}
     for job in jobs:
+        fd_paths = [fd_map[pid] for pid in job.pids if pid in fd_map]
+        if fd_paths:
+            # Every pid of one run shares a log; take the newest known one.
+            best = max(fd_paths, key=lambda p: known.get(p, (0.0, 0))[0])
+            job.log = best
+            mt = known.get(best, (None, None))[0]
+            job.log_age_s = None if mt is None else max(0.0, now - mt)
+            job.log_bound_by = "proc_fd"
+            if mt is not None:
+                continue
+            # Bound with certainty but outside the find window: the path is
+            # right, the age is unknown. fetch_steps still reads it.
+            continue
         cands = []
         if job.log:
             cands += [(mt, sz, p) for mt, sz, p in logs if p == job.log]
@@ -329,6 +510,7 @@ def attach_logs(jobs: list[Job], logs: list[tuple[float, int, str]],
             continue
         mt, _sz, path = max(cands, key=lambda c: c[0])
         job.log, job.log_age_s = path, max(0.0, now - mt)
+        job.log_bound_by = "heuristic"
 
 
 def fetch_steps(ssh_alias: str, jobs: list[Job], timeout: int,
@@ -394,8 +576,13 @@ def judge(rep: HostReport, prev: dict, now: float,
             rep.findings.append(
                 f"RED GPU_IDLE_NO_TRAINER: role=train, util={max_util}%, "
                 f"{busy_mem} MiB — the slot is paid for and doing nothing")
+        elif rep.role == "unknown":
+            rep.findings.append(
+                "AMBER IDLE_UNCLASSIFIED_HOST: no job and no role hint — "
+                "cannot decide whether idle is correct here")
         else:
-            rep.findings.append("OK idle burst host (no job expected)")
+            rep.findings.append(
+                f"OK idle {rep.role} host (no job expected)")
     else:
         keys = {j.key for j in rep.jobs}
         if len(keys) > 1:
@@ -409,6 +596,11 @@ def judge(rep: HostReport, prev: dict, now: float,
                     f"running but no log could be discovered — liveness is "
                     f"UNVERIFIED, not fine")
                 continue
+            if j.log_age_s is None:
+                rep.findings.append(
+                    f"AMBER LOG_AGE_UNKNOWN: {j.log} is bound to "
+                    f"{j.script} by /proc, but its mtime was not in the "
+                    f"discovery window — freshness UNVERIFIED")
             if j.log_age_s is not None and j.log_age_s > LOG_STALE_S:
                 rep.findings.append(
                     f"RED LOG_STALE: {j.log} last written "
@@ -435,9 +627,17 @@ def judge(rep: HostReport, prev: dict, now: float,
             f"RED DISK_SLOW_OR_FULL: {rep.disk_mbps:.1f} MB/s on a real "
             f"100 MB write")
     elif rep.disk_note == "FAIL":
-        rep.findings.append(
-            "RED DISK_FULL: could not write 100 MB to /workspace (quota — "
-            "df would have shown the cluster and lied)")
+        if rep.dd_path_hinted:
+            rep.findings.append(
+                f"RED DISK_FULL: could not write 100 MB to "
+                f"{rep.dd_path} (quota — df would have shown the cluster "
+                f"and lied)")
+        else:
+            rep.findings.append(
+                f"AMBER DISK_UNVERIFIED: could not write 100 MB to the "
+                f"DEFAULTED path {rep.dd_path} — this host has no declared "
+                f"scratch dir, so a failed write is not evidence of a full "
+                f"quota. Headroom is UNKNOWN; add a dd_path to ROLE_HINTS")
 
     reds = [f for f in rep.findings if f.startswith("RED")]
     ambers = [f for f in rep.findings if f.startswith("AMBER")]
@@ -448,8 +648,13 @@ def judge(rep: HostReport, prev: dict, now: float,
 def probe_host(name: str, spec: dict, do_dd: bool, timeout: int,
                with_steps: bool = True,
                ssh_bin: str | None = None) -> HostReport:
-    rep = HostReport(name=name, ssh=spec["ssh"], role=spec["role"])
-    ok, payload = run_remote(spec["ssh"], do_dd, timeout, ssh_bin)
+    rep = HostReport(name=name, ssh=spec["ssh"], role=spec["role"],
+                     aliases=spec.get("aliases", [spec["ssh"]]),
+                     endpoint=spec.get("endpoint"),
+                     dd_path=spec.get("dd_path", "/workspace"),
+                     dd_path_hinted=spec.get("dd_path_hinted", False))
+    ok, payload = run_remote(spec["ssh"], do_dd, timeout, ssh_bin,
+                             spec.get("dd_path", "/workspace"))
     if not ok:
         rep.error = payload
         return rep
@@ -471,7 +676,8 @@ def probe_host(name: str, spec: dict, do_dd: bool, timeout: int,
                 pass
 
     rep.jobs = discover_jobs(parse_ps(sec.get("PS", [])))
-    attach_logs(rep.jobs, parse_logs(sec.get("LOGS", [])), now)
+    attach_logs(rep.jobs, parse_logs(sec.get("LOGS", [])), now,
+                parse_fd(sec.get("FD", [])))
     if with_steps:
         fetch_steps(spec["ssh"], rep.jobs, timeout, ssh_bin)
 
@@ -506,7 +712,8 @@ def save_state(path: Path, reports: list[HostReport], now: float) -> None:
         pass
 
 
-def render(reports: list[HostReport]) -> str:
+def render(reports: list[HostReport],
+           fleet_warnings: list[str] | None = None) -> str:
     ico = {"GREEN": "OK  ", "AMBER": "WARN", "RED": "RED ", "UNKNOWN": "????"}
     out = ["", "TanitAD fleet probe — discovery-based (no hardcoded targets)",
            "-" * 78,
@@ -529,16 +736,26 @@ def render(reports: list[HostReport]) -> str:
             out.append(" " * len(head) + f"disk write {r.disk_mbps:.0f} MB/s")
         for f in r.findings:
             out.append(" " * 12 + f)
-    worst = ("RED" if any(r.verdict == "RED" for r in reports)
-             else "AMBER" if any(r.verdict == "AMBER" for r in reports)
-             else "GREEN")
-    out += ["-" * 78, f"FLEET: {worst}", ""]
+    warns = list(fleet_warnings or [])
+    if warns:
+        out += ["-" * 78, "fleet discovery (ssh config):"]
+        out += ["  " + w for w in warns]
+    levels = [r.verdict for r in reports] + [w.split()[0] for w in warns]
+    worst = ("RED" if "RED" in levels
+             else "AMBER" if "AMBER" in levels else "GREEN")
+    out += ["-" * 78,
+            f"FLEET: {worst}  ({len(reports)} hosts probed, discovered)", ""]
     return "\n".join(out)
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--hosts", nargs="*", default=list(FLEET))
+    ap.add_argument("--hosts", nargs="*", default=None,
+                    help="subset by discovered name (default: every "
+                         "tanitad-* host in the ssh config)")
+    ap.add_argument("--ssh-config", type=Path, default=None,
+                    help="ssh config to discover the fleet from "
+                         "(default: ~/.ssh/config)")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--no-dd", action="store_true",
                     help="skip the 100 MB disk write test")
@@ -551,17 +768,30 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--state", type=Path, default=STATE_DEFAULT)
     a = ap.parse_args(argv)
 
+    fleet, fleet_warnings = load_fleet(a.ssh_config)
+    if not fleet:
+        # No fleet discovered is UNKNOWN, never "all clear" — exit RED, loudly.
+        for w in fleet_warnings:
+            print(w, file=sys.stderr)
+        if a.json:
+            print(json.dumps({"probed_at": time.time(), "hosts": [],
+                              "fleet_warnings": fleet_warnings}, indent=1))
+        return 2
+
+    names = list(fleet) if a.hosts is None else a.hosts
+    for name in names:
+        if name not in fleet:
+            print(f"unknown host {name!r}; discovered: {', '.join(fleet)}",
+                  file=sys.stderr)
+            return 2
+
     prev = load_state(a.state)
     now = time.time()
     gap = now - prev["_probed_at"] if "_probed_at" in prev else None
 
     reports = []
-    for name in a.hosts:
-        if name not in FLEET:
-            print(f"unknown host {name!r}; known: {', '.join(FLEET)}",
-                  file=sys.stderr)
-            return 2
-        rep = probe_host(name, FLEET[name], not a.no_dd, a.timeout,
+    for name in names:
+        rep = probe_host(name, fleet[name], not a.no_dd, a.timeout,
                          with_steps=not a.no_steps, ssh_bin=a.ssh)
         judge(rep, prev, now, gap)
         reports.append(rep)
@@ -569,12 +799,15 @@ def main(argv: list[str] | None = None) -> int:
     save_state(a.state, reports, now)
     if a.json:
         print(json.dumps({"probed_at": now, "probe_gap_s": gap,
+                          "fleet_warnings": fleet_warnings,
                           "hosts": [asdict(r) for r in reports]}, indent=1))
     else:
-        print(render(reports))
-    if any(r.verdict == "RED" for r in reports):
-        return 2
-    return 1 if any(r.verdict == "AMBER" for r in reports) else 0
+        print(render(reports, fleet_warnings))
+    red = (any(r.verdict == "RED" for r in reports)
+           or any(w.startswith("RED") for w in fleet_warnings))
+    amber = (any(r.verdict == "AMBER" for r in reports)
+             or any(w.startswith("AMBER") for w in fleet_warnings))
+    return 2 if red else (1 if amber else 0)
 
 
 if __name__ == "__main__":                                 # pragma: no cover
