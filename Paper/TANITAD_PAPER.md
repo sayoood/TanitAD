@@ -1404,6 +1404,79 @@ verified, compounded by a scheduler that silently failed to re-arm. Every number
 MEASURED, with raw artifacts under `TanitAD Research Hub/Evaluation/Implementation/incoming/`
 (2026-08-02 directories) and estimators named inline.
 
+### 7.12 Closed-loop on a neural reconstruction, on the edge device: REF-C beats the flagship and the whole separation is LATERAL (2026-08-03)
+
+**The strongest test of the four-family doctrine so far, and it is the one where ADE sees nothing.**
+
+**Setting.** Nine rollout starts x 50 ticks in a NuRec 3D-Gaussian reconstruction, rendered **on the
+Jetson Thor** (aarch64 Blackwell sm_110). Estimator: episode-cluster bootstrap, clusters = rollout
+starts, n = 9; paired comparison over the **437 shared windows**.
+
+| family | flagship v1 | REF-C base |
+|---|---|---|
+| **ADE** `ade_0_2s` | 3.6432 [2.400, 5.267] | **2.7341** [1.711, 3.787] |
+| `dist_to_gt_traj_m` | 2.2393 | **0.8856** |
+| **LON** target-speed error (signed) | **-2.0412** [-3.751, -0.432] | **+1.3307** [0.288, 2.371] |
+| **LAT** heading error (rad) | 0.1368 | **0.0422** |
+| **LAT** curvature error (1/m) | 0.0074 | **0.0018** |
+| **LAT** yaw-rate error (rad/s) | 0.0555 | **0.0152** |
+| **TAC** executed == planned | **0.4481** | **0.8741** |
+| **STR** corridor departure | **0.3533** | **0.1304** |
+
+**Paired flagship - REF-C, separated:** `dist_to_gt` **+1.171 [0.030, 2.244]**, heading
+**+0.084 [0.028, 0.175]**, curvature **+0.0050 [0.0008, 0.0130]**, yaw-rate **+0.038 [0.020, 0.057]**.
+⛔ **ADE is NOT separated: +0.789 [-0.865, +2.728].**
+
+⇒ **An ADE-only table would have reported "no difference" on a comparison where four lateral
+measures separate cleanly and in the same direction.** This reproduces the 2026-07-23 native-1080
+n = 12 suite on **different hardware, a different renderer and a different scene** — the doctrine is
+not an artifact of one harness.
+
+**Three defects only the families expose.**
+1. **The arms fail longitudinally in OPPOSITE directions** — flagship 2.04 m/s too slow, REF-C
+   1.33 m/s too fast. Any pooled longitudinal score cancels this to near zero.
+2. **The flagship does not execute what it selects** (0.4481 vs REF-C's 0.8741) — a decision-quality
+   failure invisible to any displacement metric.
+3. ⭐ **REF-C's 5-way manoeuvre head never emits a longitudinal class.** Head share
+   `lane_keep 0.63 / turn_right 0.37 / accelerate 0 / brake_stop 0`, while **42 % of logged windows
+   are `brake_stop`**. This is the programme's documented "5-way softmax mixes lat+lon" defect,
+   observed for the first time **in closed loop** rather than inferred from open-loop statistics.
+
+**Objects vs empty road: NULL for both arms.** 19 of 20 paired deltas have CIs containing zero;
+headway is statistically identical with and without the other vehicles rendered. **Neither arm
+changes its driving when traffic becomes visible.** Bounded honestly: the agents cover 0.02-0.4 % of
+frame at 40-45 m (~2.8 s gap), so this is evidence about *distant* traffic only — a cut-in /
+close-following scene is the discriminating follow-up, not a claim that vision is ignored.
+
+**An instrument property that constrains every future sim number.** The renderer is a **step function
+of pose**: identical pose reproduces bit-exactly, but perturbations from 1e-9 to 1e-4 rad all produce
+the *same* mean pixel delta (8.7-11.0/255) with no growth in between — discrete blend-order ties
+among 3.1 M overlapping semi-transparent gaussians, not floating-point precision. The decision-level
+cost is large: on one identical 10-frame window the flagship's 2 s waypoint moves **0.0000 m** on an
+in-process repeat, **4.59 m** through the gRPC float32 pose round-trip, and **6.65 m** under a
+0.1 px camera rotation. ⇒ **All production numbers must come from ONE numerical path, and
+"bit-identical" is the wrong acceptance criterion for a splat renderer.** It is also an independent
+measure of how far OOD these arms are on reconstructions.
+
+**Scope, stated rather than implied.** This satisfies AlpaSim's renderer **wire contract** with a
+gsplat backend and drives it from a TanitAD closed-loop harness; it is **not**
+`alpasim_runtime.simulate`, so there is **no AlpaSim collision/offroad/scene score here**. The
+strategic family is reported but **degenerate on this clip** — `route_head_eq_logged` = 1.0000 is a
+constant-predictor tie, and the 20 s scene contains no junction-scale decision; **a junction scene is
+required before any strategic-accuracy claim**. TTC is reported as n = 0 with its reason rather than
+dropped. ⚠️ And as established at n = 4 scenes previously, closed-loop rates on reconstructions are
+**within-sim relative** (REF-C open-loop ADE 1.5157 here vs 0.4728 on real footage = **3.21x OOD**):
+orderings survive, absolute rates do not.
+
+⭐ **A capability result alongside the science.** NVIDIA's NRE renderer is amd64-only, but the
+reconstruction format is not closed: `volume.nurec` is gzip + MessagePack, and **gsplat renders it
+natively on aarch64 including the f-theta camera model at 16-28 ms per 1920x1080 frame**, whole
+closed loop **0.09-0.21 s/step (5-11 Hz)**. Validation is by **gradient-NCC** against the scene's own
+shipped reference video (0.3664 correct vs 0.2052 best-wrong over the wire, argmax 0). ⛔ PSNR and
+plain NCC are **inadmissible on this clip** — a *wrong* reference frame outranks the correct one
+under both, because every frame is a dark night street. **On low-dynamic-range corpora the negative
+control must choose the metric before the metric is quoted.**
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -1736,3 +1809,26 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   hard-wired off → flag + feed + dead-conditioning test; 5k guard ROUTE_LIVE Δ0.067 [0.032, 0.103],
   VT_LIVE +0.895 m/s, κ 0.519; imagination cost measured ≈1.01×). Retractions C61–C67 by
   root-cause class. All §7.11 numbers MEASURED with named estimators.
+
+- v0.8 (2026-08-03): added **§7.12 — closed-loop on a neural reconstruction, on the edge device**.
+  The four-family doctrine's strongest test yet: REF-C beats flagship v1 closed-loop and the whole
+  separation is **LATERAL** (dist_to_gt +1.171 [0.030, 2.244], heading +0.084, curvature +0.0050,
+  yaw-rate +0.038 — all separated), while **ADE is NOT separated** (+0.789 [-0.865, +2.728]) — an
+  ADE-only table would have reported "no difference". Reproduces the 07-23 native-1080 suite on
+  different hardware, renderer and scene. Three defects only the families expose: the arms fail
+  longitudinally in OPPOSITE directions (-2.04 vs +1.33 m/s, a pooled score cancels them); the
+  flagship executes what it selects only 0.4481 of the time; and **REF-C's 5-way head never emits a
+  longitudinal class** (accelerate 0, brake_stop 0) while 42 % of windows are brake_stop — the
+  lat+lon softmax defect seen in closed loop for the first time. Objects-vs-empty-road is **NULL**
+  for both arms (19/20 CIs contain zero), bounded to *distant* traffic (0.02-0.4 % of frame at
+  40-45 m). Instrument property that constrains all future sim numbers: the renderer is a **step
+  function of pose** (discrete blend-order ties among 3.1 M gaussians) — a 0.1 px camera rotation
+  moves the 2 s waypoint 6.65 m and the gRPC float32 round-trip alone costs 4.59 m, so every
+  production number must come from ONE numerical path. Capability: `volume.nurec` is gzip+MessagePack
+  and **gsplat renders it natively on aarch64 incl. f-theta at 16-28 ms/frame** (closed loop
+  5-11 Hz) — the amd64-only NRE renderer is not required. Validation by **gradient-NCC** against the
+  scene's shipped reference; ⛔ PSNR and NCC are inadmissible on this clip (a wrong frame outranks
+  the correct one under both). Scope stated: renderer **wire contract**, not `alpasim_runtime`, so no
+  AlpaSim collision/offroad score; strategic family degenerate on a junction-free 20 s clip; rates
+  are within-sim relative (3.21x OOD).
+
