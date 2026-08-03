@@ -29,27 +29,38 @@ Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stra
 
 ## P0 — next run
 
-1. **`episode → Rerun .rrd` replay/viz + the 0.34.1 Viewer-MCP upgrade (duty #2, upgraded
-   2026-07-20)** — predicted-vs-actual trajectory + BEV overlay; doubles as the D3
-   imagined-vs-oracle visual. Rerun **0.34.1** now ships a **Viewer MCP server**: an agent can
-   see and interact with what the viewer renders, i.e. *verify its own overlay* instead of
-   asserting it — which is the single biggest quality lever for the TanitEval viz standard.
-   Method: pin `rerun-sdk==0.34.1` on a branch (breaking API changes → migration guide),
-   migrate `corpus_overlay.py`, log one real episode, wire the MCP into an agent tool list.
-   Resource: 4060 / CPU. Expected: SDK bump + migration 1–2 h, MCP wiring ~30 min; measure
-   .rrd size + write time per episode (G-T1). Falsifier: if migration exceeds ~3 h, pin 0.33
-   and ship the episode-replay without MCP. Don't dup the orchestrator's trajectory-fan
-   overlay (`a25a3fe`) — this is the *episode-replay* complement.
-2. **Make `ci_gate` unskippable (session-hook wiring)** — the gate is still a discipline an
-   agent must remember to perform; nothing executes it automatically. Wire it (and
-   `session_guard`) into a real pre-push/session-end hook. Falsifier: after wiring, a
-   deliberately-red branch must be un-pushable without an explicit override flag.
-3. **`gpu_tripwire` v2 — bf16/AMP arm + CUDA-graph capture probe.** v1 is fp32 + eager only,
+1. **Make `ci_gate` + `session_guard` + `fleet_probe` unskippable (session/cron hook wiring)
+   — now the top item, and it is the same gap three times.** All three are disciplines an
+   agent must remember to perform; nothing executes any of them automatically. `fleet_probe`
+   raises the stakes: a probe nobody runs is exactly as blind as the grep-based monitor it
+   replaced, and GOALS G1's "detected within one 6-hour cycle" is unprovable until a cron runs
+   it and pages on exit code 2. Method: pre-push/session-end hook for the two gates + a
+   6-hourly cron for the probe. Falsifiers: (a) a deliberately-red branch must be un-pushable
+   without an explicit override flag; (b) a trainer killed by hand must produce a RED alert
+   without any human invoking the probe.
+2. **`rr_log.py` dual-sink tee (findings-driven; replaces the retired viz item).** Two
+   `RecordingStream`s + an explicit `recording=` on every `rr.log`, because
+   `rr.set_sinks(FileSink, GrpcSink(url))` after `serve_grpc()` **deadlocks** (measured
+   2026-07-21: killed at 120 s, no output — the sink connects back to its own in-process
+   server). Resource: CPU, ~2 h. **Pre-registered falsifier: the dual-sink `.rrd` must land
+   within 5 % of the single-sink `.rrd` (52,966 B/window baseline) for identical input** —
+   anything smaller is still a stub. Until then the shipped guard refuses the combination.
+3. **Pin `rerun-sdk==0.34.1`** — the entire viz backbone depends on it and it is pinned in
+   **no** requirements file in the repo (measured 2026-07-21). Trivial; blast radius is not.
+4. **Wire the Rerun 0.34.1 Viewer-MCP into an agent tool list** — the surviving half of the
+   old P0#1. The rest of that item was stale and is retired: 0.34.1 was **already installed**
+   and `rr_log.py` (417 lines) **already logs episodes**, so the "pin + migrate, 1–2 h"
+   work did not exist. This is the GOALS G2 lever that turns "the overlay looks right" from an
+   assertion into a verification. Expected ~30 min; measure it (G-T1).
+5. **`rrd_bench` on a real episode** — current numbers are synthetic records; confirm
+   B/window at true frame entropy on one `ep_*.pt`. Falsifier: if real-frame B/window differs
+   >2× from 52,966, the synthetic baseline is not a valid stand-in and G2's 5 % test re-bases.
+6. **`gpu_tripwire` v2 — bf16/AMP arm + CUDA-graph capture probe.** v1 is fp32 + eager only,
    so Prod-Opt's CUDA-graph deploy tick (`b984e04`, 11.16 ms) and every bf16 training path are
    still unguarded. Method: add a bf16 autocast parity arm (looser tol, measured first) and a
    capture/replay-equivalence probe. Resource: 4060, minutes. Expected: bf16 deviation ~1e-2
    on O(1) activations — **measure before setting the tolerance**, do not guess it.
-4. **Re-scoped: `test_replay_app_test_mode_and_regression_gate`** — the "10.86 s tall pole" was
+7. **Re-scoped: `test_replay_app_test_mode_and_regression_gate`** — the "10.86 s tall pole" was
    partly an I/O+contention artifact: measured **8.02 s clean / 14.90 s beside a second pytest
    process** (2026-07-20). Two questions now, not one: (a) can the FastAPI TestClient boot be
    shared across the module (fixture reuse)? (b) should `ci_gate` detect concurrent load and
@@ -90,6 +101,14 @@ Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The review merged 5 stra
    VRAM). Deliverable: a Phase-1 adoption note with the concrete integration surface + VRAM measured.
 
 ## Done / retired
+- (2026-07-21) **`tools/fleet_probe.py` DONE (unplanned — took the top slot because the
+  program's #1 risk moved to ops).** Discovery-based fleet liveness: no hardcoded run/log
+  names, absence of evidence is AMBER not GREEN. Live: 4 hosts in **9.7–11.3 s**; found pod2
+  idle (RED) and pod3 unverifiable (AMBER); 20 falsifiers 0.35 s. `.claude/skills/
+  fleet-status/SKILL.md` rewritten to call it. Follow-up → new P0#1 (cron it).
+- (2026-07-21) **rerun `.rrd` measured (old P0#1's real content)** — 52,966 B/window at
+  jpeg85, 299 win/s; **dual-sink = 3,196 B stub, 3,314× loss**; guard shipped via intake
+  `2026-07-21-rrd-dual-sink-guard/`. Item's migration premise was stale (see new P0#4).
 - (2026-07-20) **ci_gate v2 + gpu_tripwire + session_guard source check DONE** — see P0#2 above.
   57 falsifiers 15.5 s; both trees GATE PASS; CUDA parity 4/4 on the 4060 (worst dev 9.5e-07,
   batch-1 encode 0.85–1.43 ms). The stranded `2026-07-17-ci-gate/` intake is **superseded** —

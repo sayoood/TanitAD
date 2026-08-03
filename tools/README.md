@@ -15,10 +15,39 @@ to stdlib-only — it needs `torch` and the `stack/` package, by definition.
 | `safe_commit.py` | The **only sanctioned commit path**. Never emits the segfaulting `git commit -- <pathspec>` form; instead makes the whole-index commit safe by declaration, refuses staged secrets, and clears the phantom `index.lock`. | **Every commit.** |
 | `registry_lint.py` | Keeps `MODEL_REGISTRY.md` honest: **pointer drift** against the raw eval JSON, and a **multiline retracted-claim sweep over section headers**. | Before quoting the registry; after any retraction. |
 | `repo_janitor.py` | Worktree/`incoming/` sprawl report — safe-to-delete worktrees (**report-only** unless `--delete`), a dated incoming ledger, and future-dated items. | Weekly, and whenever a search result looks truncated. |
+| `fleet_probe.py` | Fleet liveness by **discovery**, never by hardcoded log names: finds jobs in `ps`, binds each to its own log via the launcher's stdout redirect, cross-checks the GPU against the process table, catches freezes (`LOG_STALE`, `STEP_NOT_ADVANCING`) and measures disk with a real `dd`. Exit `0`/`1`/`2` = GREEN/AMBER/RED. | Before claiming the fleet is healthy; behind the `fleet-status` skill. |
 
-Tests: `pytest tools/tests/` — **127 falsifiers, 27.2 s** (2026-07-25; was 55 on
-07-20). Each drives a throwaway git repo or a synthetic pytest project end-to-end;
-the CUDA-specific ones skip loudly on a CPU-only box.
+Tests: `pytest tools/tests/` — count re-measured each run; see the current figure in
+`Tools&DevEnv/Research/STATE.md`. Each drives a throwaway git repo, a synthetic pytest
+project, or a captured `ps`/`nvidia-smi` payload end-to-end; the CUDA-specific ones skip
+loudly on a CPU-only box.
+
+## fleet_probe
+
+```bash
+python tools/fleet_probe.py                     # table, all four hosts, ~10 s
+python tools/fleet_probe.py --json              # machine-readable
+python tools/fleet_probe.py --hosts pod1 --no-dd
+```
+
+It exists because the previous monitor greped **hardcoded** run names
+(`p0-sB01-realmix.log`, `arm_base.log`, `pgrep -fc train_worldmode[l]`) that had been
+renamed away. A grep matching nothing prints nothing, and printing nothing was scored as
+health — the fleet lost 2 of 4 GPUs behind dead trainers **four times** under a monitor
+that reported no anomaly. The one rule the tool enforces everywhere:
+
+> **Absence of evidence is an ALARM, not an all-clear.**
+
+A verdict starts at `UNKNOWN` and needs positive evidence to reach GREEN; a running job
+whose log cannot be discovered is **AMBER — "liveness UNVERIFIED"**, never green. Roles
+matter: `role=burst` (the eval pod) is *supposed* to sit idle, `role=train` at 0 % is RED.
+
+Two Windows traps are baked in, both measured the hard way (see the 2026-07-21 note):
+remote bash payloads are sent as **LF bytes** (`text=True` would translate `\n` to CRLF
+and every `fi` would arrive as `fi\r`), and on win32 it drives
+`C:\Windows\System32\OpenSSH\ssh.exe` — git-bash's MSYS `ssh.exe` **deadlocks** under
+`subprocess` pipes, and does so only against the *busy* hosts, which looks exactly like an
+outage and is not one. Override with `--ssh`.
 
 ## ci_gate
 
