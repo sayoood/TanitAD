@@ -4,6 +4,195 @@
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 > Labels: FACT / CLAIM / INFER (G-O1). Full analysis: dated notes in this folder.
 
+> **Dating note (run #5):** the discipline's *narrative clock* is **retired**. Entries from run #5 on
+> carry the **real** date. Rows dated 2026-07-24 / 07-31 / 08-07 were written on narrative dates by runs
+> #2/#3/#4 whose real wall-clock was 2026-07-09 / 07-17 / 07-20 — so a run-#5 row dated **2026-08-02**
+> is NEWER than a run-#4 row dated 2026-08-07. **Order by run number.**
+
+- [2026-08-02 · Wayve deep-dive] [Wayve, primary sources] **FACT — ★ LA-Pose IS OUR H7, PUBLISHED, AT
+  10.2 MILLION CLIPS** (arXiv **2604.27448**, 2026-04-30, Wayve): an **inverse-dynamics model** on
+  **10.2 M unlabelled driving clips** learns **latent actions** (never told speed or heading) that
+  cluster into straight/left/right/stopped **with zero pose labels**; a light head reads camera pose
+  **including field-of-view and metric scale** in one forward pass; **>10 % over feed-forward SOTA** on
+  Waymo + **PandaSet (unseen → zero-shot)**; **a 50-d latent bottleneck beat a 1,536-d one despite worse
+  video reconstruction**; degrades in reverse motion — impact: **H7's premise is externally VALIDATED
+  but H7 is dead as a differentiator in the form "IDM gives 1000× data"** (they published it first at 5
+  orders more data) ⇒ **restate H7 as the data-efficiency SLOPE at matched params, which Wayve has NOT
+  published**. Also directly closes our IDM pilot's two recorded gaps (**unknown intrinsics, metric
+  scale**) and benchmarks on **PandaSet, for which we already hold an (unverdicted) loader** — and the
+  **50-d result is third-party support for our own latent thesis (H3)** — https://arxiv.org/abs/2604.27448
+- [2026-08-02 · Wayve deep-dive] [Wayve, primary source] **FACT — the inference we carried since run #1
+  is now an AFFIRMATIVE STATEMENT: GAIA-3 is "designed for offline evaluation and safety validation, NOT
+  real-time in-vehicle deployment."** 15 B latent diffusion, **2 Dec 2025**; tokenizer 2× GAIA-2's, **5×
+  compute, ~10× data, 9 countries / 3 continents**; conditioned on ego action, agents' 3D boxes,
+  weather/time-of-day, road attributes; **"World-on-Rails" perturbation** (move ego, hold the scene);
+  claims **"synthetic-test rejection rates reduced fivefold"** and that it **"reliably predicts relative
+  policy performance"** — ⚠️ **with no paper, only a blog post and press release** — impact: the honest
+  framing is **"their world model VALIDATES; ours DRIVES"** (stop saying they *failed* to put it in the
+  loop — they chose not to); attack the ranking claim on **reviewability**, not relevance — https://wayve.ai/thinking/gaia-3/
+- [2026-08-02 · Wayve deep-dive] [Wayve] **FACT — they already have the closed loop we are blocked on.**
+  **Ghost Gym** (Dec'23) = closed-loop **neural** simulator (neural renderer + simulated robot car +
+  vehicle-dynamics model, **action fed back**), now powered by **PRISM-1** (Jun'24) — 4D photorealistic
+  reconstruction **from cameras only, no LiDAR** — impact: **a third route around our closed-loop wall**
+  (AlpaSim NO-GO + CARLA pixels host-blocked are both *renderer* problems; neural reconstruction needs
+  GPUs, not a graphics-capable container). Highest-value architectural steal in this note — https://wayve.ai/thinking/ghost-gym-neural-simulator/
+- [2026-08-02 · Wayve deep-dive] [Wayve] FACT/INFER — **Rig3R** (Oct'25, **NeurIPS 2025 Spotlight**):
+  ViT-L encoder + ViT-L multiview decoder + a **metadata embedding layer (camera ID, timestamps, raymap
+  calibration)**, heads for pointmaps / pose raymaps / rig raymaps; **+17–45 % over baselines**, biggest
+  gains on **unseen camera configurations** — impact: **a published answer to our two-rig PhysicalAI
+  problem** (cy≈543 vs cy≈755; geometric-centre crop ~215 px wrong for rig B) — **rig-metadata
+  conditioning is cheaper than filtering a rig out** (Data Eng) — https://wayve.ai/thinking/rig3r/
+- [2026-08-02 · Wayve deep-dive] [Wayve] FACT — **multi-country generalization, their own numbers, and
+  the benchmark our H7 story must beat or reframe:** UK→US needed **500 h** of incremental US data over
+  8 weeks to reach UK-equivalence (100 h → "5×", 500 h → "40×"); **Germany zero-shot "3× better"** than
+  the initial US deployment; a new vehicle platform "8×" after **100 h**. ⚠️ **All relative multipliers
+  off an undisclosed baseline — no miles, no intervention rate, no absolute figure**; their safety page
+  likewise has **no metrics, thresholds, runtime-monitor or OOD methodology** — impact: strongest
+  evidence *for* the AV2.0 bet **and** the most technical exemplar of **W-11**; **H11 (self-monitoring
+  with a threshold) is the widest unoccupied gap in the field** — https://wayve.ai/thinking/multi-country-generalization/
+- [2026-08-02 · Wayve deep-dive] [Opponent Analyzer] **INFER + process note — three agreeing probes were
+  still wrong.** Wayve's `/science/` page, an arXiv `all:Wayve` query (**0 results**) and an arXiv author
+  search all suggested Wayve had published nothing after Mar 2025; the `/thinking/category/research/`
+  archive shows **Rig3R (Oct'25)** and **LA-Pose (May'26)**. Cause: **arXiv does not index the
+  affiliation string**, and Wayve's recent first authors are not the founders — impact: **never make an
+  opponent-publication absence claim from arXiv search alone**; go to the lab's own research archive.
+  Operating Standard #2, earned again
+- [2026-08-02 · run #5] [TanitAD / eval pod] **MEASURED — SC-13 RESOLVED, and the open-loop probe is
+  RETIRED.** flagship v1, 40-ep PhysicalAI val, **stride 1 → 6,444 anchors, n=44 BRAKE_FAR over 15
+  episodes**. Run #4 **reproduced to three decimals** on the recoverable stride-2 subset. Speed-matched:
+  held **0.736** · frozen **0.723** · blind **0.672** · shuffled **0.634** · reactive **0.455**.
+  **F-A (volume) did NOT fire** — `held − reactive` **+0.281**, episode-cluster CI [+0.009, +0.562] ⇒
+  run #4's positive was **not** noise. **But the survival condition FAILS:** `held − blind` and
+  `held − shuffled` CIs **include 0** ⇒ **vision attribution not established.** **The decomposition is
+  the finding: ≈64 % of the gap survives with the scene DESTROYED** (a real window from a *different
+  episode*), ≈32 % is the correct **static** scene, ≈5 % is motion ⇒ **a static-frame + ego-kinematic
+  property, NOT a rolled-forward consequence.** ⚠️ On run #4's **anchor-level** bootstrap this would
+  have read "confirmed"; the **episode-cluster** estimator flips it (44 events, 15 episodes) — same
+  class as the `overlapping_holdout_se` retraction, caught pre-publication — impact: **H15 open-loop
+  form weakened further; the closed loop is now the only remaining test**; the `D = CV_fwd − pred_fwd`
+  monitor recommendation **survives with a rewritten rationale** (real vs a naive decel floor, but not
+  vision-driven, and unproven vs a plain ego feature) — see `2026-08-02-opponent-sweep-run5.md` §1,
+  substrate banked at `Implementation/sc13-real-probe/results/sc13_v1_stride1_windows.pt`
+- [2026-08-02 · run #5] [TanitAD / intake] **MEASURED — the scenario pipeline is stalled, not slow.**
+  `ls stack/tanitad/eval/scenarios/` contains only `work_zone_phantom.py` + `traffic_light.py`.
+  **SC-04 (11 tests, run #2), SC-13 (14, run #3) and SC-06 (16, run #4) are all still in
+  `Implementation/incoming/` with UNFILLED orchestrator-verdict blocks** — oldest for three runs. All
+  three **re-verified green today: 41/41** (py3.13.5, numpy 2.5.1, CPU, <0.15 s each) — impact: **H6
+  DoA corrected 45 % → 35 %**; the binding blocker on H6 is **intake triage, not the renderer**; and it
+  re-weights my own backlog toward measurement over authoring a fifth package into a stalled queue
+- [2026-08-02 · run #5] [Momenta/KBA] **FACT — and it RETRACTS one of our own inferences.** Momenta won a
+  **Germany-wide Level-4 testing approval from the KBA** (**2026-07-29**), says it is the **first Chinese
+  firm** to hold one, underpinning its **Munich** robotaxi plan; **Uber increased its stake** the same
+  week; it also confirmed **robovans in Suzhou** (07-27). ⛔ This **falsifies run #3's INFER** that "EU
+  political resistance to Chinese key-tech" was an EU-market-access weakness for Momenta/Pony we could
+  turn into a wedge — impact: **delete that framing from every deck**; root-cause class *single-source
+  geopolitical INFER promoted to a market-structure conclusion* → `RETRACTION_LOG.md` — https://cnevpost.com/2026/07/29/momenta-cleared-test-robotaxis-across-germany/
+- [2026-08-02 · run #5] [Zoox/NHTSA] FACT — **the regulatory bottleneck came off while the capability gap
+  stayed open.** NHTSA **granted Zoox a commercial exemption 2026-07-30** (Federal Register **07-31**) to
+  **charge for rides** with **no steering wheel/pedals/driver's seat** — the **first US authorization of
+  its kind for a purpose-built AV** — **up to 2,500 vehicles over two years**; **the same day** the NHTSA
+  first-responder deadline **expired with no public resolution**, and six weeks after Zoox's own smoke
+  recall — impact: **W-09 strategic read inverts.** Our story may **not** be "the regulator will stop
+  them"; it must be "**the capability is worth more than the exemption**", proven on SC-06/SC-13 — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- [2026-08-02 · run #5] [US Congress/NHTSA] FACT — **W-09 escalates from regulator letter to draft
+  statute**: Rep. **Kevin Mullin (D-Calif.)** introduced the **"AV Emergency Response Coordination Act"**
+  (week of **2026-07-28**) — first-responder protocols, **24 h hotline**, NHTSA **minimum standards**,
+  and **city authority to geofence AVs during emergencies**. Same coverage adds a **second** fleet-stall
+  instance (a **December power outage stranded dozens of Waymos**) — impact: **W-09 + W-10**; **INFER:**
+  a *geofencing* remedy concedes the in-vehicle capability is not expected soon, which is precisely the
+  gap SC-06 measures — https://techcrunch.com/2026/07/28/waymo-robotaxi-operators-face-fresh-scrutiny-over-emergency-response-failures/
+- [2026-08-02 · run #5] [arXiv/LMB Freiburg] **FACT/INFER — ★ the sharpest differentiation risk to date,
+  ahead of HWM: `Orbis 2: A Hierarchical World Model for Driving`** (**2607.15898**, 2026-07-17, Mittal
+  et al., **Brox** group). Two-level: **high-level predictor of coarse scene structure over extended
+  horizons** + **low-level generator conditioned on it**; standard driving-WM suite + counterfactual
+  steering-responsiveness. HWM was hierarchy off-driving; **this is hierarchy ON driving.** Still ours
+  (INFER, abstract-level): **representation/temporal hierarchy, not planning-time — no planner selecting
+  over imagined futures**; **no params, no compute figure, no self-monitoring** — impact: **H1 must never
+  again be pitched as "hierarchy"; the claim is "hierarchy a planner USES, with a number attached."**
+  Architecture deep-read **top priority, ahead of SGDrive** — https://arxiv.org/abs/2607.15898
+- [2026-08-02 · run #5] [arXiv] FACT/INFER — **our second moat pillar is also being published**:
+  **CheckVLA** (**2607.26789**, 07-29) uses an **action-conditioned world model to verify execution at
+  run time and replan on deviation** — the mechanism of **H11 self-monitoring + A9 fallback**, on
+  VLA/robotics rather than driving and **without a guarantee claim**. Field scan also shows the
+  literature working on our own instruments: **Temporally Centered SIGReg** (2607.26924 — *our*
+  anti-collapse method), **latent-WM physical-parameter identifiability** (2607.27017 — a principled
+  form of our speed-decodability probe), **ODEWorld** (2607.27924, representation collapse),
+  **Temporal-Distance JEPA** (2607.25337), and on efficiency **DriftWorld** (2607.15065, 30+ fps, 17×
+  faster than diffusion) + **GigaWorld-Policy-0.5** (2607.13960, **85 ms**) — impact: H11/H1 narrative;
+  seam routing → Architecture (SIGReg, identifiability, ODEWorld), Production & Opt (DriftWorld,
+  GigaWorld) — https://arxiv.org/abs/2607.26789
+- [2026-08-02 · run #5] [NVIDIA, primary source] FACT — **W-05 wedge re-verified OPEN, third consecutive
+  run, this time from NVIDIA's own technical post rather than press:** Alpamayo 2 Super = **32 B VLM
+  backbone, "3× the parameters of prior Alpamayo models"**, +360° surround, +Meta-Action, claiming
+  "state-of-the-art … reasoning quality, trajectory accuracy, alignment" — **no benchmark table, no
+  latency, no compute number, no Nano tier**; weights "**summer 2026**". Also **quantization scripts
+  "coming soon"** and **AlpaGym** released — an open-source high-throughput **closed-loop RL** framework
+  (GRPO, stated **single-GPU → multi-node**). ⚠️ **AlpaGym is NOT new to this program** — Tools & DevEnv
+  logged *"AlpaSim/AlpaGym = Phase-1 cloud (40–60 GB VRAM)"* on **2026-07-06** (`PROJECT_STATE.md` §5);
+  what is new is the release + the **single-GPU** claim, which **contradicts the 40–60 GB figure on
+  record** and makes it re-testable on our **A40 48 GB** — impact: **CNCE wedge intact**; **INFER:**
+  shipping quantization tooling with a 3× param jump concedes the deployment problem in engineering but
+  not in the benchmark table; **Tools & DevEnv: re-check the VRAM figure before further spend on a
+  graphics-capable host** (AlpaSim = eval-pod NO-GO, CARLA pixels host-blocked) — https://huggingface.co/blog/nvidia/nvidia-alpamayo-2
+- [2026-08-02 · run #5] [IIHS / Fortune] FACT — **new W-11: the field has no exposure denominator.** Per
+  the **Insurance Institute for Highway Safety**, most AV operators **"don't report how many miles their
+  autonomous vehicles drove, which makes it impossible to calculate a crash rate,"** and there is **no
+  standard for which incidents must be reported**; AV firms log many more minor events than human
+  drivers do — impact: **W-11 (new)**, pairs with W-07 (CA DMV retiring disengagements). This is the
+  weakness where our **published denominators + pre-registered gates + episode-cluster intervals +
+  retraction log** are already the counter (H0) — https://fortune.com/2026/07/31/zoox-robotaxi-steering-wheel-safety-data-gap/
+- [2026-08-02 · run #5] [Waymo/Pony, economics] FACT/CLAIM — W-06 refresh: Waymo ~**3,700** I-PACE
+  (Feb'26), ~**500 k** paid rides/week (May'26, 2× Apr'25), ~**$355 M** annualized revenue (Feb'26 —
+  **CLAIM**, Sacra third-party estimate, not a filing), ~**$15–17**/ride, ~**20** trips/vehicle/day.
+  **Pony.ai Q2'26 is NOT out** — it reports **2026-08-18**, so no Q2 delta exists to quote — impact:
+  W-06 is not only a Chinese-operator story (~$96 k/vehicle/yr gross against a multi-sensor,
+  map-maintained, remote-assisted stack); re-check Pony after 08-18 — https://sacra.com/c/waymo/
+- [2026-08-07 · run #4, real 2026-07-20] [Zoox/NHTSA] FACT — **Zoox recalled 105 vehicles** (NHTSA
+  notified **2026-07-08**, public **2026-07-17**): on **2026-06-20** a Las Vegas robotaxi **drove into
+  thick smoke from an active fire**, **failed to recognize the smoke**, then **suddenly braked, tried
+  to turn, and halted** — inside the scene — impact: **W-09 becomes CROSS-OPERATOR** (Waymo + Zoox +
+  federal directive = a *class*, not a company story) and **fuses W-09 with W-04** (smoke is obscurant
+  *and* emergency cue → **one shared OOD head**); drove the SC-06 authoring this run — https://www.cnbc.com/2026/07/17/amazon-zoox-recalls-robotaxi-smoke.html
+- [2026-08-07 · run #4] [Waymo/SF] FACT — **2026-07-04 San Francisco breakdown**: dozens of Waymos
+  stalled in post-fireworks gridlock at the **Presidio**; **64 vehicles** retrieved by staff/tow, some
+  with **depleted batteries**; **unplanned road closures** a named contributor; one **occupied** car
+  **drove over a lit firework**; SF mayor demanding stricter rules — impact: **new W-10** (fleet-scale
+  mission/energy/network-disruption blindness, marked **`no-counter-yet`**); **SC-08 evidence upgraded**
+  from the 2022 Cruise anecdote to a fresh large-N FACT — https://sfstandard.com/2026/07/05/waymo-sf-gridlock-fourth-of-july-2026/
+- [2026-08-07 · run #4] [TanitAD / eval pod] **MEASURED (not oracle) — NEGATIVE RESULT (P8)** — first
+  SC-13 test on our own checkpoint, and the **pre-registered falsifier FIRED on replication**.
+  flagship-30k, future actions **withheld**, speed confound controlled two ways. **In-domain
+  (PhysicalAI, 3,241 anchors, n=23 events):** braking starting **2–3 s out (outside the 2 s rollout)**
+  detected at **AUROC 0.72–0.74** vs reactive floor **0.43**. **Cross-corpus (comma2k19, 8,384 anchors,
+  n=45): held 0.54–0.61 ≈ vision-blind 0.55–0.61 ≈ reactive 0.55–0.59 — indistinguishable.** Confounds:
+  comma2k19 is out-of-domain and **CV beats the model there** (1.302 vs 1.874 m ADE), plus it is
+  highway (29.1 m/s cruise) where CV is near-unbeatable — a failed replication, not a clean refutation
+  — impact: **H15 evidence moves AGAINST the open-loop anticipation claim**; **SC-13 → live-measured
+  (falsifier fired)**; the oracle collision-rate contrast is now **unsupported** and must stay out of
+  external narrative; next test = in-domain volume + an arm that beats CV on the target corpus — see
+  `2026-08-07-opponent-sweep-w5.md` §1, archive `Implementation/sc13-real-probe/`
+- [2026-08-07 · run #4] [arXiv] FACT/INFER — **HWM, "Hierarchical Planning with Latent World Models"**
+  (**2604.03208**, Zhang/Terver/Zholus et al., Apr'26 rev Jun'26): world models at **multiple temporal
+  scales in one latent space**, long-horizon predictions used as **subgoals for the short-horizon model
+  via latent matching**, no rewards/hierarchical policy, **up to 3× less planning compute**.
+  **Planning-time hierarchy — our H1 claim — is now published**, though on **manipulation/maze, not
+  driving**, with **no param count** and **no self-monitoring/OOD guarantee** — impact: H1 must be
+  positioned as hierarchy+efficiency+in-loop-imagination+self-monitoring *on driving*; also the closest
+  published relative of the **v3** direction (DINO-WM lineage) → **Architecture deep-read, top
+  priority** — https://arxiv.org/abs/2604.03208
+- [2026-08-07 · run #4] [Opponent Analyzer] INFER (design-oracle, P8) — **Emergency-Scene** scenario
+  (SC-06, W-09) shipped, **16/16 tests**: corridor **incursion rate 0.0 (yield) vs 0.2 (rule-literal)**;
+  **blockage 0.0 s vs 2.54 s** (12.7 s at thick smoke); **detection lead time +5.70 s vs +2.84 s**
+  (−0.10 s at thick smoke). Mechanism: the obscurant collapses **object** range **90→13.5 m** while
+  **scene**-level OOD range falls only **80→68 m**. **The failure is a CLIFF not a slope** → graded
+  obscurant sweeps are mandatory — impact: **H11/H15/A9**; **blocked on SC-05's D8 detector**, which is
+  currently failing — see `2026-08-07-opponent-sweep-w5.md` §2
+- [2026-08-07 · run #4] [NHTSA/Wayve/Pony/NVIDIA] FACT (deltas) — the first-responder deadline is for
+  **presenting fixes in meetings, NOT deployed fixes** (correction, do not overstate); **Wayve $85 M
+  employee tender (07-01)** = liquidity, not new capital; **Pony** reaffirms **>3,500 robotaxis / 20+
+  cities** 2026 (**W-06 unchanged** — fleet targets still outrun revenue); **NVIDIA**: Alpamayo 1 =
+  **10 B** open weights, **2 Super = 32 B** "expected this summer", AlpaSim open — **still no Nano-tier
+  CNCE number**, our W-05 wedge stays open — https://www.axios.com/2026/07/15/waymo-accountability-emergencies-nhtsa
 - [2026-07-31 · run #3, real 2026-07-17] [NHTSA] FACT — ODI issued a formal **ADS-developers letter
   (2026-07-08)** demanding every AV developer fix, **by end of July 2026**, a **"clear pattern"** of
   robotaxis interfering with first responders (driving into emergency scenes; blocking ambulances/fire;
