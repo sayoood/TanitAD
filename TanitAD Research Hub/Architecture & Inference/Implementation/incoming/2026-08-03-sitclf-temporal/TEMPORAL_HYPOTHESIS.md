@@ -118,13 +118,169 @@ frame count — must pass before it produces anything.)*
 
 ## 3b. What the controls establish before any arm is quoted
 
-*(filled from `results_temporal.json` / `results_fast.json` — see §4)*
+| control | result | what it licenses |
+|---|---|---|
+| **NEG_FEAT**, fitted and scored FIRST | AP-lift **0.715 – 1.327** over **57** vision-arm × situation cells with the image features permuted across clips. Per situation: `intersection` **0.956 – 1.042**, `lane_change` 0.899 – 1.327, `roundabout` 0.715 – 1.054 | the protocol does not manufacture signal; 1.0 is chance, and on the decision-grade situation the null sits within ±4.4 % of it. Same band as B4's 0.756–1.331 |
+| **NEG_LABEL** (labels permuted across whole clusters) | **0.974 – 1.265** (9 cells) | ditto from the label side |
+| ⭐ **PARAMETERISATION INVARIANCE** — `ridge_app16_w8_diffparam`, an exactly invertible remap of the reference's own window | `lane_change` **+0.003 [−0.052, +0.057]**, not separated | **the control behaves exactly as designed**: a pure change of basis moves nothing. Without this, any "explicit motion channels help" reading would be unattributable — and it is what makes H-T3 testable rather than rhetorical |
+| ⭐ **C-POS ORACLE** — ego over the FUTURE 3 s, the label's own evidence window ⛔ not a deployable | `lane_change` **+1.098 [+0.610, +1.942] SEPARATED** | the rows CAN be separated. **A null from a vision arm is therefore a fact about vision, not about the instrument** — the distinction the pre-registration makes mandatory |
+| **C-POW** — positive clusters counted before any score was read | `intersection` **216** · `lane_change` **55** · `roundabout` **37** | roundabout is **below the bar of 40 ⇒ no verdict**; the other two are eligible |
+| **SLOW ≡ FAST** | 260 values compared, **0 differing, max abs diff 0.000e+00** | the shared-draw re-analysis is bit-identical to the per-arm one, so both artifacts are the same measurement |
+
+⚠️ **One control column in this run is degenerate and must not be read.** `build_features` did not
+apply the clip permutation to the ego block, so `NEG_FEAT__CPOS_*` was byte-identical to its real
+arm and its `paired_vs_own_null` is exactly `+0.000` by construction. It never touched a **vision**
+arm's null and never entered the C-POS predicate (which reads `paired_vs_reference`).
+`run_temporal.py` is fixed; see `MANIFEST.md` §3.
 
 ---
 
-## 4. The ladder
+## 4. The ladder — 21 arms, every one against its own permuted-feature null
 
-*(filled from `results_temporal.json` via `render_tables.py` — see `tables.md`)*
+Full tables: `tables.md` (generated from the JSONs by `render_tables.py`, never retyped).
+Ladder numbers: `results_fast.json`, **bit-identical** to `results_temporal.json` where the latter
+completed (260 values, max abs diff 0.000e+00).
+
+### 4.1 `intersection` — 216 positive clusters, DECISION-GRADE. MDE 0.323 (widest) / 0.247 (median)
+
+| group | arm | history | flat | params | AP-lift | vs reference |
+|---|---|---:|---:|---:|---:|---|
+| **A** matched capacity | `ridge_app128_w1` | 0.0 s | 128 | 129 | 1.525 | −0.199 [−0.473, +0.031] |
+| | `ridge_app64_w2` | 0.1 s | 128 | 129 | 1.510 | −0.214 **SEP WORSE** |
+| | `ridge_app32_w4` | 0.3 s | 128 | 129 | 1.644 | −0.081 [−0.308, +0.112] |
+| | **`ridge_app16_w8` ⬅ REF** | 0.7 s | 128 | 129 | **1.724** | — |
+| | `ridge_app8_w16` | 1.5 s | 128 | 129 | 1.184 | **−0.541 [−0.868, −0.276] SEP WORSE** |
+| | `ridge_app4_w32` | 3.1 s | 128 | 129 | 1.120 | **−0.605 [−0.959, −0.323] SEP WORSE** |
+| **B** fixed rank 16 | `ridge_app16_w1` | 0.0 s | 16 | 17 | 1.734 | **+0.009 [−0.049, +0.054]** |
+| | `ridge_app16_w4` | 0.3 s | 64 | 65 | 1.746 | +0.022 [−0.013, +0.051] |
+| | `ridge_app16_w16` | 1.5 s | 256 | 257 | 1.576 | −0.149 **SEP WORSE** |
+| | `ridge_app16_w32` | 3.1 s | 512 | 513 | 1.601 | −0.123 [−0.321, +0.058] |
+| **C** motion basis | `ridge_mot16_w8` | 0.7 s | 128 | 129 | 1.063 | **−0.662 SEP WORSE** |
+| | `ridge_app8mot8_w8` | 0.7 s | 128 | 129 | 1.202 | **−0.522 SEP WORSE** |
+| | `ridge_app16mot16_w8` | 0.7 s | 256 | 257 | 1.635 | −0.089 **SEP WORSE** |
+| **D** transformer | `tf_app16_w8_d128` | 0.7 s | 128 | 417,028 | 1.470 | **−0.254 SEP WORSE** |
+| | `tf_app16_w32` | 3.1 s | 512 | 420,100 | 1.291 | **−0.434 SEP WORSE** |
+| **CTRL** invariance | `ridge_app16_w8_diffparam` | 0.7 s | 128 | 129 | 1.635 | −0.089 [−0.174, −0.037] SEP |
+
+⭐ **NOT ONE longer-window or motion arm separates ABOVE the reference. Nine separate BELOW it.**
+And the sharpest row in the whole study: **`ridge_app16_w1` — a SINGLE latent, 17 parameters, zero
+frames of history — is statistically indistinguishable from the deployed 0.7 s window,
++0.009 [−0.049, +0.054]**, an interval ~5× tighter than the study's own MDE.
+
+⚠️ **`ridge_app16mot16_w8` (−0.089) and the pure reparameterisation control (−0.089) are the SAME
+number.** The motion block therefore contributes *exactly* the reparameterisation penalty and
+nothing else — H-T2 and H-T3 refuted in one row.
+
+### 4.2 `lane_change` — 55 positive clusters. MDE 0.449 (widest) / 0.278 (median)
+
+| group | arm | history | AP-lift | vs reference |
+|---|---|---:|---:|---|
+| **A** matched capacity | `ridge_app128_w1` | 0.0 s | 1.442 | +0.182 [−0.120, +0.679] |
+| | **`ridge_app16_w8` ⬅ REF** | 0.7 s | **1.259** | — |
+| | `ridge_app8_w16` | 1.5 s | 1.536 | **+0.276 [+0.034, +0.574] SEP** |
+| | `ridge_app4_w32` | 3.1 s | 1.599 | **+0.340 [+0.026, +0.702] SEP** |
+| **B** fixed rank 16 | `ridge_app16_w16` | 1.5 s | 1.299 | +0.040 [−0.061, +0.162] |
+| | `ridge_app16_w32` | 3.1 s | 1.348 | +0.089 [−0.126, +0.429] |
+| **C** motion basis | `ridge_mot16_w8` | 0.7 s | 0.987 | **−0.273 SEP WORSE** |
+| **D** transformer | `tf_app16_w8_d128` ⬅ **PEAK** | 0.7 s | **1.723** | **+0.463 [+0.162, +0.962] SEP** |
+| **CTRL** invariance | `ridge_app16_w8_diffparam` | 0.7 s | 1.262 | +0.003 [−0.052, +0.057] |
+
+The pre-registered CONFIRMED predicate **fires**: two matched-capacity long-window arms separate
+above the reference. ⚠️ **But it does not survive its own replication.** Group A trades window
+length against PCA rank at fixed capacity, so `app8_w16` and `app4_w32` change **two** things at
+once. **Group B holds rank at 16 and moves the window alone — and nothing separates at any window.**
+Both separating intervals also *barely* exclude zero (+0.034 and +0.026 lower bounds). And the
+largest lever on `lane_change` is not temporal at all: it is the 417 k-parameter **head**, at +0.463.
+
+⇒ On `lane_change` the honest statement is **"window length is not shown to be the operative
+variable"**, not "longer windows work".
+
+### 4.3 `roundabout` — 37 positive clusters ⇒ **UNDERPOWERED_C_POW, no verdict** (bar is 40)
+
+### 4.4 ⚠️ The pre-registered verdict on `intersection` fired INDETERMINATE — and why the null still stands
+
+My pre-registration required the C-POS oracle to **separate above the reference**. On `intersection`
+it did not: `CPOS_ORACLE_egofuture30` reaches lift 1.746 against the reference's 1.724,
+**+0.022 [−0.353, +0.369]**. By my own rule that is `INDETERMINATE_C_POS_FAILED`, and it is reported
+as such in `results_fast.json`. ⛔ I have **not** weakened the threshold.
+
+**But the predicate was mis-specified, and I am saying so rather than quietly re-reading it.** The
+job of C-POS is to prove that a null comes from the arm and not from a dead instrument. Requiring
+the oracle to beat *the reference* tests something else entirely — and on this substrate the oracle
+fails it for a substantive reason: the ego channels are **trailing** 0.5 s means, so even reading
+(t, t+3 s] they lag the turn's onset. The right predicate was "the oracle separates above **chance**",
+and it does: **1.746 [1.547, 1.996]**, lower bound clear of 1.0.
+
+The instrument's power is in any case demonstrated **directly, without the oracle**:
+
+* the reference separates strongly from its own null, **+0.738 SEP**;
+* **13 arms separate from the reference** on `intersection`, and the **smallest difference the
+  contrast actually resolved was 0.0891** — far below any effect the temporal hypothesis predicts;
+* the key null, `ridge_app16_w1` vs the reference, has an interval of **±0.05**.
+
+An instrument that resolves −0.089 would have resolved +0.089. It did not, in 21 arms.
+⇒ **This is a well-powered null, not an unpowered one**, and it is reported as *no effect above the
+stated MDE* — never as an unbounded refutation, which the parent pre-registration forbids.
+
+---
+
+## 4b. ⭐ THE ANTICIPATION HORIZON — and the finding nobody was looking for
+
+`lead_s = 3.0` has been a frozen constant since the original pre-registration and had **never been
+characterised**. Artifact `results_horizon.json`, script `run_horizon.py`, reference recipe pinned
+(appearance PCA-16, WIN 8, 129 params/head), PCA basis fitted once per fold and reused at every
+horizon so the only thing moving is the label's lead.
+
+⛔ **No constant is re-selected.** Every horizon is reported, none is chosen, the detectors and
+their frozen thresholds are untouched, and the deployed value stays 3.0 (pre-registration §5b).
+
+⚠️ **The row set and the base rate both move with the lead** (a longer lead creates more positive
+frames and masks more end-of-clip rows), so `precision_lift` = P@5 % ÷ base rate is reported beside
+AP-lift: it is normalised at the operating point and does not inherit AP-lift's `1/base` ceiling.
+**Both move the same way, which is what makes the reading safe.**
+
+### `intersection` — 230 positive clusters, decision-grade — **HORIZON-LIMITED**
+
+| lead | rows | pos | base | AP | AP-lift | P@5 % | fires / true | **precision lift** | Δ vs null |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 1 s | 79,930 | 2,455 | 0.0307 | 0.06242 | **2.032** | 0.0833 | 3,996 / 2,455 | **2.713** | **+0.982** SEP |
+| 2 s | 75,406 | 4,832 | 0.0641 | 0.11445 | 1.786 | 0.1546 | 3,770 / 4,832 | 2.413 | +0.785 SEP |
+| 3 s ⬅ deployed | 71,010 | 7,032 | 0.0990 | 0.16607 | 1.677 | 0.2490 | 3,550 / 7,032 | 2.515 | +0.685 SEP |
+| 4 s | 66,645 | 8,996 | 0.1350 | 0.20460 | 1.516 | 0.2875 | 3,332 / 8,996 | 2.130 | +0.530 SEP |
+| 5 s | 62,277 | 10,678 | 0.1715 | 0.23350 | **1.362** | 0.3076 | 3,114 / 10,678 | **1.794** | **+0.378** SEP |
+
+Skill over the permuted-feature null falls **monotonically, +0.982 → +0.378 (2.60×)**, and the
+base-rate-normalised precision lift falls with it, **2.713 → 1.794**. Two differently-constructed
+metrics agreeing in direction is what rules out the base-rate artefact I was worried about.
+
+### `lane_change` — 64 positive clusters — **HORIZON-FLAT, and it leans the OTHER WAY**
+
+| lead | pos | base | AP-lift | **precision lift** | Δ vs null |
+|---:|---:|---:|---:|---:|---|
+| 1 s | 633 | 0.0072 | 1.195 | 1.169 | −0.136 |
+| 3 s ⬅ deployed | 1,749 | 0.0224 | 1.269 | 0.812 | +0.084 |
+| 5 s | 2,692 | 0.0392 | **1.408** | 1.174 | **+0.436** SEP |
+
+The **only** lead at which `lane_change` separates from its own null at all is **5 s** — the longest
+one tested. Its skill *rises* with the horizon, the exact opposite of `intersection`.
+
+### `roundabout` — 39 positive clusters ⇒ **UNDERPOWERED_C_POW at every lead, no verdict**
+
+Its lifts are large (9.919 at 1 s) and every lead separates, but 39 clusters is **below the
+pre-registered bar of 40** and the parent study's own roundabout label control fails. ⛔ **No
+roundabout number here decides anything**, and it is reported only so its absence is not mistaken
+for an oversight.
+
+### ⭐ THE SYNTHESIS — the two situations have OPPOSITE temporal signatures
+
+| | `lane_change` | `intersection` |
+|---|---|---|
+| longer **lead** | **helps** (only 5 s separates) | **hurts**, monotonically (+0.982 → +0.378) |
+| what it is | a 4 s ego manoeuvre (`LC_W_S = 4.0`) whose precursors build up over seconds | a scene-recognition problem — the junction is either visible now or it is not |
+
+**The programme has been forcing ONE window and ONE horizon onto two phenomena with opposite
+timescales.** That is a concrete, mechanistic reason why "one head for three situations" underperforms,
+and it is independent of encoder capacity, head capacity and feature richness.
 
 ---
 

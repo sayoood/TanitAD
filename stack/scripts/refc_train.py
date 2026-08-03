@@ -639,6 +639,8 @@ def train(args) -> dict:
     cfg.tactical_speed_input = bool(args.tactical_speed_input)
     cfg.man_prior_tau = float(args.man_prior_tau)
     cfg.graft_prior_center = not args.no_graft_prior_center
+    # E1 (gated BEFORE build — it widens measurement.0.weight by one column).
+    cfg.nav_known_channel = bool(args.nav_known_channel)
     # --man-prior-tau is the F3 DECISION lever and it acts on the per-axis
     # priors, which only exist with the factored seam — so it still requires it.
     # --tactical-speed-input (F1 INPUT) does NOT: it applies to the shipped 5-way
@@ -1000,6 +1002,22 @@ def main(argv=None):
     ap.add_argument("--no-graft-prior-center", action="store_true",
                     help="feed the anchor grafts the raw log-posterior instead "
                          "of the log-likelihood ratio (ablation).")
+    # --- E1: the nav command's COMPANION BIT ---------------------------------
+    ap.add_argument("--nav-known-channel", action="store_true",
+                    help="E1 INPUT: feed the nav command's `known` bit "
+                         "alongside the command itself (+128 params, exactly "
+                         "one column of measurement.0.weight). "
+                         "nav_command_v21 collapses ROUTE_UNKNOWN and "
+                         "ROUTE_STRAIGHT onto the SAME NAV_FOLLOW token, so "
+                         "'the road goes straight' and 'I could not judge the "
+                         "route' are byte-identical at the model input. "
+                         "MEASURED: 70.78 % of `follow` tokens corpus-wide are "
+                         "the UNKNOWN sentinel (3,537/4,997), rising monotonely "
+                         "from 34.69 % at 15+ m/s to 96.05 % at 1-3 m/s. "
+                         "The bit was never missing -- refb_labels.py:621 "
+                         "returns it and every consumer dropped it at the "
+                         "model boundary, so this is a PLUMBING gap, not a "
+                         "labelling one.")
     # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
     ap.add_argument("--sel-refined", action="store_true",
                     help="S1: rank the refined fan with the REFINED confidence "

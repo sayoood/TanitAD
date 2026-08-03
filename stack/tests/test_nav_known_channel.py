@@ -192,3 +192,58 @@ def test_driver_policies_declare_whether_they_consume_the_bit():
     # the flagship path never overrides it: its StrategicPolicy has no companion-bit
     # seam, and that is a named gap rather than an accident.
     assert cd.FlagshipV1Policy.consumes_nav_known is False
+
+
+# --------------------------------------------------------------------------- #
+# The TRAINER flag — the gap that made the lever unmeasurable                   #
+# --------------------------------------------------------------------------- #
+def test_refc_train_exposes_nav_known_channel_and_it_reaches_the_config():
+    """Until 2026-08-03 the seam was reachable by the model and by the drivers but
+    `refc_train.py` had no flag, so **no arm could be trained with it** and a +128-param
+    lever could not be measured at all.
+
+    A seam nothing can train is not a lever, it is dead code with tests. This pins the
+    whole path: the flag PARSES, it DEFAULTS OFF (a gated lever that arrives on is not
+    gated), and it REACHES `RefCConfig` — checked by the parameter delta rather than by
+    reading the attribute, because an assignment that lands on the wrong object would
+    still satisfy an attribute check.
+    """
+    import argparse
+    import inspect
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import refc_train as T                                   # noqa: E402
+
+    # Rebuild main()'s parser exactly as main() builds it, stopping at parse_args, so
+    # this test cannot drift from the real CLI the way a hand-written copy would.
+    src = inspect.getsource(T.main)
+    body = (src.split("args = ap.parse_args")[0]
+               .replace("def main(argv=None):", "def _mk():").rstrip()
+            + "\n    return ap\n")
+    ns: dict = {}
+    exec(compile(body, "<parser>", "exec"),                  # noqa: S102
+         {"argparse": argparse, **vars(T)}, ns)
+    ap = ns["_mk"]()
+
+    required = ["--data-root", "/tmp/nx", "--out", "/tmp/ny"]
+    assert ap.parse_args(required + ["--nav-known-channel"]).nav_known_channel is True
+    assert ap.parse_args(required).nav_known_channel is False, (
+        "--nav-known-channel must default OFF: flipping what every arm is fed is the "
+        "PI's call, not a side effect of landing the seam"
+    )
+
+
+def test_nav_known_channel_costs_exactly_128_params():
+    """Pinned as a constant, not a comment — see the module docstring."""
+    from tanitad.refs.refc import RefCModel, refc_config
+
+    off, on = refc_config(), refc_config()
+    on.nav_known_channel = True
+    n_off = sum(p.numel() for p in RefCModel(off).parameters())
+    n_on = sum(p.numel() for p in RefCModel(on).parameters())
+    assert n_on - n_off == 128, (
+        f"expected exactly +128 (one column of measurement.0.weight), got "
+        f"{n_on - n_off:+d}"
+    )
