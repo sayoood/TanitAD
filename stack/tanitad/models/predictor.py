@@ -16,6 +16,7 @@ import torch
 from torch import Tensor, nn
 
 from tanitad.config import PredictorConfig
+from tanitad.models._validate import validate_operative_inputs
 
 
 class FiLM(nn.Module):
@@ -72,6 +73,7 @@ class OperativePredictor(nn.Module):
                  intent_dim: int | None = None, gated_intent: bool = False):
         super().__init__()
         self.cfg = cfg
+        self.state_dim = state_dim      # plain int; not a buffer => state_dict unchanged
         d = cfg.d_model
         self.in_proj = nn.Linear(state_dim, d)
         self.act_emb = nn.Sequential(nn.Linear(cfg.action_dim, d), nn.GELU(), nn.Linear(d, d))
@@ -97,8 +99,12 @@ class OperativePredictor(nn.Module):
 
     def forward(self, states: Tensor, actions: Tensor,
                 intent: Tensor | None = None) -> dict[int, Tensor]:
+        # `-O`-proof, named-axis contract check. Supersedes the bare `assert`,
+        # which was stripped under `python -O` and let a short window run
+        # SILENTLY (pos slice, causal mask and FiLM cond all re-align).
+        validate_operative_inputs(states, actions, self.cfg.window,
+                                  self.state_dim, self.cfg.action_dim)
         b, w, _ = states.shape
-        assert w == self.cfg.window, f"window mismatch: {w} != {self.cfg.window}"
         x = self.in_proj(states) + self.pos[:, :w]
         cond = self.act_emb(actions)                        # [B, W, D]
         if intent is not None:

@@ -1,0 +1,129 @@
+{
+  "experiment": "D-LEAD-1 distance-keeping discrimination control",
+  "prereg": "PRE_REGISTRATION.md",
+  "date": "2026-08-03",
+  "config": {
+    "horizon_s": 2.0,
+    "dt_s": 0.5,
+    "stride_s": 1.0,
+    "n_boot": 2000,
+    "seed": 0,
+    "ttc_cap_s": 30.0,
+    "chunks": [
+      "0036",
+      "0170",
+      "0174",
+      "0181",
+      "0617",
+      "0834",
+      "0840",
+      "0852",
+      "0868",
+      "0906",
+      "0919",
+      "0928",
+      "0931",
+      "1573",
+      "1852",
+      "1860",
+      "1864",
+      "1870",
+      "1880",
+      "1900",
+      "2433",
+      "2498",
+      "2500",
+      "2503",
+      "2820",
+      "2838"
+    ]
+  },
+  "coverage": {
+    "n_windows_with_lead": 15760,
+    "n_clips_with_lead": 1548,
+    "n_paired": 14027,
+    "n_gt_only": 336,
+    "n_cv_only": 713,
+    "n_clusters_paired": 1431,
+    "windows_scanned": 41087,
+    "dropped_no_lead": 25282,
+    "dropped_span": 45,
+    "clips_scanned": 2417
+  },
+  "arms": {
+    "GT": {
+      "status": "OK",
+      "n": 14363,
+      "n_windows": 15760,
+      "mean_headway_min_m": 29.0515,
+      "mean_time_gap_min_s": 4.2861,
+      "mean_min_ttc_s": 23.5645,
+      "n_closing": 6936,
+      "n_time_gap": 12859
+    },
+    "CV": {
+      "status": "OK",
+      "n": 14740,
+      "n_windows": 15760,
+      "mean_headway_min_m": 28.0155,
+      "mean_time_gap_min_s": 4.2243,
+      "mean_min_ttc_s": 21.2774,
+      "n_closing": 7738,
+      "n_time_gap": 13226
+    }
+  },
+  "censored_frac": {
+    "GT": 0.5171,
+    "CV": 0.475
+  },
+  "paired_bootstrap": {
+    "min_ttc_s": {
+      "delta": 1.7474,
+      "lo": 1.5813,
+      "hi": 1.9218,
+      "ci95": 0.1702,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 14027,
+      "n_episodes": 1431,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_paired": 14027
+    },
+    "headway_min_m": {
+      "delta": 0.9769,
+      "lo": 0.883,
+      "hi": 1.0758,
+      "ci95": 0.0964,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 14027,
+      "n_episodes": 1431,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_paired": 14027
+    },
+    "time_gap_min_s": {
+      "delta": 0.1641,
+      "lo": 0.1499,
+      "hi": 0.1786,
+      "ci95": 0.0144,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 12530,
+      "n_episodes": 1414,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_paired": 12530
+    }
+  },
+  "verdict": "PASS \u2014 ADMISSIBLE",
+  "prereg_branch": 1,
+  "instrument_fail_reasons": [],
+  "wall_clock_s": 125.3,
+  "hardware": "dev box CPU (no GPU)",
+  "cost_usd": 0.0
+}

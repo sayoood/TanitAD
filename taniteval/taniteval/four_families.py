@@ -154,16 +154,26 @@ def _masked(x: torch.Tensor, m: torch.Tensor) -> tuple[float, int]:
     return float(x[m].mean()), n
 
 
-def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
+def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
+                 lead: dict | None = None) -> dict:
     """Is the arm setting the RIGHT SPEED, and does it keep distance?
 
     ⛔ ``dt`` is the spacing between the supplied waypoints. Speed scales as 1/dt and acceleration
     as 1/dt², so a wrong dt inflates them by 5x and 25x on the sparse 4-waypoint view — see
     :data:`_DT_CONTRACT`. Positional metrics (``along_*``) are dt-invariant.
 
-    ⚠️ ``distance_keeping`` requires a LEAD-AGENT track. PhysicalAI-AV ships
-    ``obstacle.offline`` (3D agent tracks on 97.44 % of the corpus) but our episode ingest does not
-    read it, so headway/TTC is **UNAVAILABLE** here and is reported as such with the reason.
+    ``lead`` (2026-08-03) supplies the LEAD-AGENT track and turns ``distance_keeping`` on. It is a
+    dict with ``leads`` [n,H,2] (lead centres in the SAME window-origin ego frame as ``pred``, NaN
+    where absent), ``lead_lens`` [n] and ``speeds`` [n] (ego speed at t0, the time-gap denominator).
+    `taniteval.lead_metrics` computes headway / time-gap / min-TTC from it; build it with the
+    Architecture & Inference package `2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`,
+    which reads `obstacle.offline` and composes the rig->world->t0 frame chain.
+
+    ⚠️ Without ``lead`` the half of the family Sayed made binding is **UNAVAILABLE** — reported as
+    such with its reason, never as a pass. The instrument was admitted by the pre-registered
+    GT-vs-CV control **D-LEAD-1** (2026-08-03): Δ min-TTC **+1.7474 s** [1.5813, 1.9218],
+    Δ headway **+0.9769 m** [0.883, 1.0758], Δ time-gap **+0.1641 s** [0.1499, 0.1786], paired
+    episode-cluster bootstrap over 14,027 windows / 1,431 clip clusters, all separated.
     """
     P, G = _seq_geometry(pred, dt), _seq_geometry(gt, dt)
     sp_err = P["speed"] - G["speed"]
@@ -185,15 +195,40 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict
         "rate_scaling_note": ("speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are "
                               "off by those powers; along_* are dt-invariant."),
         # --- distance keeping ---
-        "distance_keeping": {
-            "status": "UNAVAILABLE",
-            "reason": ("no lead-agent track in the episode cache — PhysicalAI-AV ships "
-                       "obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our "
-                       "ingest does not read it. Implementing it is a WORK ITEM, not a pass."),
-            "n": 0,
-        },
+        "distance_keeping": _distance_keeping(pred, dt, lead),
         "n_windows": int(pred.shape[0]),
     }
+
+
+def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:
+    """``lead_metrics.distance_keeping`` over the arm's own predicted path, or the reason why not.
+
+    Kept out of :func:`longitudinal` so the UNAVAILABLE branch reads as one thing: a WORK ITEM with
+    a reason and an ``n``, exactly as the binding rule's clause 5 requires.
+    """
+    if lead is None:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": ("no lead-agent track supplied — pass `lead=` (see this function's caller "
+                       "docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, "
+                       "97.44 % of the corpus); the reader is "
+                       "`Architecture & Inference/Implementation/incoming/"
+                       "2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. "
+                       "Not supplying it is a WORK ITEM, not a pass."),
+            "n": 0,
+        }
+    from taniteval.lead_metrics import distance_keeping
+    paths = pred.detach().cpu().numpy()
+    out = distance_keeping(paths, lead["leads"], lead["lead_lens"], lead["speeds"], dt)
+    # per-window arrays are for a paired bootstrap, not for a report — keep them out of the JSON
+    # summary but reachable, so nobody re-derives them from a rounded mean.
+    out["_per_window"] = {k: out.pop(k) for k in
+                          ("headway_min_m", "time_gap_min_s", "min_ttc_s",
+                           "n_steps_in_corridor")}
+    out["admitted_by"] = ("D-LEAD-1 discrimination control, 2026-08-03 — GT vs hold-v0 CV, "
+                          "PASS on all three metrics, paired episode-cluster bootstrap, "
+                          "14,027 windows / 1,431 clusters")
+    return out
 
 
 def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
@@ -397,6 +432,10 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True)
     ⭐ Pass ``hier``. A fidelity pass alone cannot see a decision error, and the binding rule
     treats an absent family as a work item rather than a pass.
 
+    ⭐ Pass ``win["lead"]`` too (2026-08-03). Without it the LONGITUDINAL family reports its
+    distance-keeping half UNAVAILABLE and ``_complete`` stays False — which is the honest state,
+    not a pass. See :func:`longitudinal` for the dict's shape and the D-LEAD-1 admission.
+
     ⛔ ``prefer_dense`` (default True, changed 2026-08-03). When the window carries the true 10 Hz
     ``pred_dense``/``gt_dense`` path, the rate families are computed on it. That is the grid the
     derivatives were designed for: 20 samples instead of 4, and a genuine 0.1 s tick. When only the
@@ -423,7 +462,7 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True)
     if pred.shape != gt.shape:
         raise ValueError(f"pred {tuple(pred.shape)} != gt {tuple(gt.shape)}")
     fam = {
-        "longitudinal": longitudinal(pred, gt, dt),
+        "longitudinal": longitudinal(pred, gt, dt, win.get("lead")),
         "lateral": lateral(pred, gt, dt),
         "tactical": tactical(win, hier),
         "strategic": strategic(win, hier),

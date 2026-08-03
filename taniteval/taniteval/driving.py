@@ -12,8 +12,9 @@ is computable **today, on CPU, from an already-persisted
     geometry · T3 heading error stratified by curvature · T4 curvature SIGN
     agreement · S1 kinematic scenario strata · ADE / FDE / miss
 
-each with an **episode-cluster bootstrap** and a **paired** test against BOTH
-trivial floors (**CV** and **hold-v0**).
+each with an **episode-cluster bootstrap** and a **paired** test against EVERY
+trivial floor the dump carries (**CV**, **hold-v0**, **CTRV** — see `FLOORS`;
+pre-2026-08-02 dumps carry no CTRV channel and report it in `floors_missing`).
 
 WHY IT EXISTS — one scalar was hiding three different competencies
 -----------------------------------------------------------------
@@ -301,10 +302,20 @@ def hold_v0(v0, n=4):
     return torch.stack([v0[:, None] * t[None, :], torch.zeros(len(v0), n)], -1)
 
 
-FLOORS = ("cv", "holdv0")
+#: ⚠️ ``cv`` and ``holdv0`` are BOTH straight lines. Until 2026-08-02 they
+#: were the whole family, so every lateral / turn verdict this block emitted
+#: was measured against predictors structurally unable to turn. MEASURED
+#: (…/incoming/2026-08-02-ctrv-floor): adding CTRV moves 16 of 25 banked
+#: arms' headline verdicts and shrinks flagship-v1's sustained-turn margin
+#: 5.3x (+1.8063 -> +0.3398, still separated). The nuScenes PhysicsOracle is
+#: a best-of-FOUR including two yaw-rate models; ours was a best-of-two with
+#: both removed.
+FLOORS = ("cv", "holdv0", "ctrv")
 FLOOR_DESC = {
     "cv": "constant velocity (persisted by rollout.collect)",
     "holdv0": "hold-v0: go straight at the observed entry speed",
+    "ctrv": "constant turn rate + velocity (persisted by rollout.collect "
+            "since 2026-08-02; absent from pre-2026-08-02 window dumps)",
 }
 
 
@@ -545,6 +556,13 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
     hv = hold_v0(v0, n=pred.shape[1])
     pw = {"model": per_window(pred, gt), "cv": per_window(cv, gt),
           "holdv0": per_window(hv, gt)}
+    # Legacy dumps (every windows_*.pt written before 2026-08-02) carry no
+    # `ctrv`. Degrade to the two-floor family rather than crash — but say so
+    # in the block, so a two-floor row can never be mistaken for a
+    # three-floor one. Backfill: …/incoming/2026-08-02-ctrv-floor.
+    if win.get("ctrv") is not None:
+        pw["ctrv"] = per_window(win["ctrv"].float(), gt)
+    floors = tuple(f for f in FLOORS if f in pw)
     draws = _Draws(eid, n_boot=n_boot, seed=seed)
 
     out = {
@@ -583,7 +601,8 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
             "sustained_turn_deg": SUSTAINED_TURN_DEG,
             "heading_exceed_deg": HEADING_EXCEED_DEG,
             "min_n_stratum": MIN_N_STRATUM},
-        "floors": {f: FLOOR_DESC[f] for f in FLOORS},
+        "floors": {f: FLOOR_DESC[f] for f in floors},
+        "floors_missing": [f for f in FLOORS if f not in floors],
         "refused": {
             "headway_ttc_distance_keeping":
                 "no lead-agent state exists (lead_state is a None stub)",
@@ -617,7 +636,7 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
         f: {k: {"value": round(float(_reducer(REDUCE.get(k, "mean"))(
             np.asarray(pw[f][k], dtype=float))), 4),
             "reducer": REDUCE.get(k, "mean")} for k in HEADLINE}
-        for f in FLOORS}
+        for f in floors}
 
     # RMSE forms (the registry quotes RMSE, not MAE, for long/lat)
     lsq = float(pw["model"]["long_sq_2s"].mean())
@@ -629,7 +648,7 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
     # ---- the decisive test: WHERE does the win live? ---------------------- #
     out["vs_floor_paired"] = {
         f: {k: _paired(pw[f][k], pw["model"][k], draws, REDUCE.get(k, "mean"))
-            for k in PAIRED} for f in FLOORS}
+            for k in PAIRED} for f in floors}
 
     # ---- L1 CRUISE-QUALITY / L2 TRANSIENT-RESPONSE ------------------------ #
     reg = regimes(gt, v0)
@@ -643,7 +662,7 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
                "metric": "L1 CRUISE-QUALITY" if r == "steady"
                else "L2 TRANSIENT-RESPONSE",
                "low_confidence": bool(int(m.sum()) < MIN_N_STRATUM)}
-        for f in ("model",) + FLOORS:
+        for f in ("model",) + floors:
             row[f"{f}_ade"] = round(float(pw[f]["ade_0_2s"][idx].mean()), 4)
             row[f"{f}_speed_mae"] = round(
                 float(pw[f]["speed_mae_mps"][idx].mean()), 4)
@@ -724,7 +743,7 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
                "low_confidence": bool(n < MIN_N_STRATUM)}
         if n:
             idx, sd = _sub_draws(eid, m, n_boot, seed)
-            for f in ("model",) + FLOORS:
+            for f in ("model",) + floors:
                 row[f"{f}_ade"] = round(float(pw[f]["ade_0_2s"][idx].mean()), 4)
                 row[f"{f}_speed_mae"] = round(
                     float(pw[f]["speed_mae_mps"][idx].mean()), 4)

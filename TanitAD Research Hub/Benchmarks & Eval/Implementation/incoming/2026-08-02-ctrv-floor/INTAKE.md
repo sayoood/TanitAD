@@ -79,6 +79,57 @@ patch validation. GPU untouched, no checkpoint loaded, no training pod touched, 
 `git apply -R proposed_ctrv_floor.patch`. Legacy dumps are unaffected either way; nothing is written
 to any dump on disk by this change (the backfill is in-memory in the driver).
 
+---
+
+## ORCHESTRATOR VERDICT
+
+- **Verdict:** **integrate-with-changes**
+- **Date / by:** 2026-08-03 · orchestrator daily sweep
+- **Reason & notes:**
+  - **Re-verified here, not inherited.** Package tests re-run on this box against repo tip:
+    **11 passed / 1.50 s** (`venvs/tanitad`). `git apply --check` clean against tip `dfddd4e`
+    (the INTAKE cited `4978a82`; the patch still applies unchanged).
+  - Integrated as the **priority override**: while `FLOORS = ("cv","holdv0")` every gate run
+    publishes a CV-only verdict, and the package MEASURED that 12 arms "beat the floor" under
+    CV where only **6** do under CTRV. That is a correctness defect in the block that decides
+    restarts, so it outranks the age queue.
+  - **The one change** (hence -with-changes, not plain integrate): `tests/test_driving.py::
+    test_every_emitted_interval_names_its_estimator` iterated the **global** `D.FLOORS` and
+    KeyError'd on `ctrv` for the pinned legacy 2-floor dump. This is exactly the golden refresh
+    the package's own Risk section predicted ("any golden that pins `floors` … will need a
+    one-time refresh"). Fixed to iterate the block's **emitted** `out["floors"]` and to assert
+    `floors ⊎ floors_missing == FLOORS` — so the guard now also proves the partition, and adding
+    a fourth floor later cannot silently unverify every legacy dump.
+  - `driving.py`'s module docstring said "against BOTH trivial floors (**CV** and **hold-v0**)";
+    corrected to name the family and the `floors_missing` mechanism.
+  - Verified green AFTER integration: **taniteval 785 passed / 75.7 s** (was 784+1 failed),
+    `test_ctrv_backfill.py + test_driving.py` **44 passed**.
+- **Integrated as:**
+  - `taniteval/taniteval/rollout.py` — persists `ctrv` beside `cv` (patch hunk 1).
+  - `taniteval/taniteval/driving.py` — `FLOORS = ("cv","holdv0","ctrv")`, per-call `floors`,
+    `floors_missing` (patch hunk 2) + docstring correction.
+  - `ctrv_floor.py` → **`taniteval/taniteval/ctrv_backfill.py`** (as proposed), with its analytic
+    ground-truth suite as **`taniteval/tests/test_ctrv_backfill.py`** — the backfill is now inside
+    the suite that must stay green, not only in the incoming package.
+  - `taniteval/tests/test_driving.py` — the golden refresh above.
+
+### Escalations — orchestrator disposition
+
+1. **`PROJECT_STATE.md` / `MODEL_REGISTRY.md` §0.3 "first arm below EVERY trivial bar"** —
+   **UPHELD, restatement owed.** The escalation is correct: on the canonical windows with the
+   programme's own paired estimator flagship-v1 vs CTRV is **+0.0993 [−0.026, +0.220] NOT
+   separated**. Point estimate still below the floor; the *separation* claim is not. Logged to
+   `PROJECT_STATE.md` this sweep; the registry edit is queued behind it (registry is the quotable
+   source, so it gets a dedicated edit, not a drive-by).
+2. **Three dumps carry a packed-string `eid`** (`windows_flagship-v4.1-10k.pt`,
+   `-v4.2-step4000.pt`, `-v16-ab-ft.pt`) — **ACCEPTED as a work item**, not fixed here: it is a
+   write-time normalisation in the dump producer, owned by Benchmarks & Eval, and touching three
+   banked dumps mid-sweep would break the alignment precondition this package depends on.
+   Independently corroborated by the banked-window memo, so it is not a single-source claim.
+3. **The v4 30k gate's `sustained_turn +1.2416` / `where_the_win_lives = "lateral only"`** —
+   **QUARANTINED.** Both were measured against the two-floor family and must not be re-quoted
+   until re-run with three floors. Recorded in `PROJECT_STATE.md`.
+
 ## Escalation (⛔ not editable by this agent — Project Steering)
 
 1. **`PROJECT_STATE.md` / `MODEL_REGISTRY.md` §0.3** state flagship-v1 is *"the FIRST arm below EVERY

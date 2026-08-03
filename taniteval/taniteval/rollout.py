@@ -122,7 +122,7 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
     as driving or as hierarchy."""
     from taniteval import hierarchy_guard as _hg
     _trace = _hg.HierarchyTrace(model)
-    S_wp, GT, CV, EID, SPD, HDG = [], [], [], [], [], []
+    S_wp, GT, CV, CT, EID, SPD, HDG = [], [], [], [], [], [], []
     S_dense, GT_dense = [], []
     dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
@@ -158,8 +158,15 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
                 GT.append(gt_ego_waypoints(ep.poses, last))
                 GT_dense.append(gt_ego_waypoints(ep.poses, last,
                                                  wp_steps=dense_steps))
-                CV.append(
-                    baseline_waypoints(ep.poses, last)["constant_velocity"])
+                _bl = baseline_waypoints(ep.poses, last)
+                CV.append(_bl["constant_velocity"])
+                # CTRV — already computed by baseline_waypoints and, until
+                # 2026-08-02, discarded here. It is the DOMINANT trivial floor
+                # on the canonical val (423/881 windows, ADE 0.5265 vs CV
+                # 0.8377) and the only one that can turn, so a floor family
+                # without it cannot judge any lateral claim. Zero extra
+                # compute: the tensor exists, it was being thrown away.
+                CT.append(_bl["constant_yaw_rate"])
                 EID.extend([ep.episode_id] * len(ch))
                 SPD.append(ep.poses[last, 3])
                 HDG.append(net_heading_change_deg(ep.poses, last))
@@ -177,7 +184,8 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
     _pc2["honest_metric_name"] = "wm_fidelity_ade_2s"
     return {"pc2": _pc2,
             "pred": torch.cat(S_wp), "gt": torch.cat(GT).float(),
-            "cv": torch.cat(CV).float(), "eid": EID,
+            "cv": torch.cat(CV).float(),
+            "ctrv": torch.cat(CT).float(), "eid": EID,
             "speed": torch.cat(SPD).float(),
             "head_deg": torch.cat(HDG).float(),
             "wp_steps": list(WP_STEPS),

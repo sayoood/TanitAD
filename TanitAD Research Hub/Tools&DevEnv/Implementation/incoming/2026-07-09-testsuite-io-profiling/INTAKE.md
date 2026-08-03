@@ -42,7 +42,26 @@ Full measurement + the Drive "Available offline" mitigation are in the research 
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:**
+- **Verdict:** **integrate-with-changes**
+- **Date / by:** 2026-08-03 · orchestrator daily sweep (age at adjudication: **25 days**, oldest
+  in the queue)
 - **Reason & notes:**
+  - **Re-verified here, not inherited:** `tests/` re-run on this box → **9 passed / 0.10 s**
+    (`venvs/tanitad`). Stdlib only, 0 deps, additive dev script — the risk read holds.
+  - The measurement it rests on is still live: the repo is on Google Drive File Stream and the
+    venv is off-Drive, so the cold/warm split it profiles is a cost **every scheduled agent**
+    pays on its first `pytest` of the day. With six research agents now running **daily** (the
+    2026-08-03 rotation change), that cost is paid 6× a day, not once a week — the tool got
+    *more* valuable while it sat unadjudicated, not less.
+  - **The one change:** the test's `sys.path.insert(..., parents[1])` resolved to the package
+    root; under `stack/tests/` that is `stack/`, and the script lives in `stack/scripts/`
+    (`ModuleNotFoundError: profile_testsuite` on collection). Repointed to
+    `parents[1] / "scripts"`, which is the convention every other stack test uses
+    (`test_accum_effective_batch.py:44`, `test_anchor_tactical.py:35`, …).
+  - **Not wired into CI in this sweep.** `check` stays opt-in exactly as the package ships it.
+    Turning on a budget gate is a separate decision with a separate blast radius (a red CI on a
+    slow Drive morning is a false alarm that costs an agent-hour); the tool has to be *in* the
+    repo before that can even be argued.
 - **Integrated as:**
+  - `stack/scripts/profile_testsuite.py`
+  - `stack/tests/test_profile_testsuite.py` (9 tests, in the suite that must stay green)

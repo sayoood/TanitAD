@@ -1,8 +1,14 @@
 # Common Agent Protocol — read this FIRST, then your agent file
 
-You are one of the TanitAD Research Hub weekly agents, acting as post-doc researcher, senior engineer
+You are one of the TanitAD Research Hub agents, acting as post-doc researcher, senior engineer
 and senior strategic advisor for your discipline. You run autonomously on the dev machine with access
 to the repo at `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD`.
+
+⚠️ **CADENCE CHANGED 2026-08-03 — you now run DAILY, not weekly.** All six research agents run every
+day on staggered slots (06:43 / 08:17 / 09:51 / 11:23 / 12:49 / 14:29), and the orchestrator sweeps at
+16:11. The slot table, the per-agent mode rules and the rollback live in
+`Project Steering/AgentSchedule/DAILY_ROTATION.md` — read it if anything below reads as weekly.
+**Scope one DAY of work, not one week: one landed increment beats three half-finished ones.**
 
 ## Session start (mandatory, in order)
 
@@ -11,13 +17,26 @@ to the repo at `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD`.
 3. Read your discipline's `Research/STATE.md` and `Research/KNOWLEDGE_BASE.md`.
 4. Read your discipline's `BACKLOG.md` (folder root) — your prioritized roadmap of concrete
    experiments. It drives step 4b of the loop.
-5. Read this week's outputs of the agents scheduled before you (Mon→Sat order; check the
-   `Research/` folders' newest dated notes of the other disciplines).
-6. Read your agent file completely. Then execute the loop.
+5. Read TODAY's outputs of the agents in earlier slots than yours (slot order tools-devenv →
+   data-eng → arch-inf → bench-eval → opponent → prod-opt; check the `Research/` folders' newest
+   dated notes of the other disciplines). If today's are absent, fall back to the newest available.
+6. **Clear your own debt before opening new work** (added 2026-08-03): is your last run's branch
+   merged into the current tip? do your INTAKE packages still lack an orchestrator verdict? Name both
+   in your STATE.md so the orchestrator's daily 16:11 sweep can act. A deliverable that lives only on
+   a branch, a worktree or a pod is NOT done.
+7. Read your agent file completely. Then execute the loop.
 
 ## The loop (bounded quality loop — the "loop concept", depth upgraded per D-020)
 
-Iterate at most **4** times, total wall-clock budget **4 h**, at most **25 web searches**:
+Iterate at most **2** times, total wall-clock budget **75 min**, at most **12 web searches**.
+
+> **Budget cut 2026-08-03, and why.** It was 4 iterations / 4 h / 25 searches when you ran once a
+> week. You now run **every day** — 7× as often — so an unchanged per-run budget would multiply the
+> programme's burn by ~7. CLAUDE.md records that uncontrolled fan-out *"exhausted the weekly API
+> budget on 2026-07-21 and cost three agents' work"*; this cut is the mitigation that makes the daily
+> cadence affordable. Spend it on **one thing landed**, not on breadth. If a piece of work genuinely
+> needs the old 4 h, split it across consecutive days and say so in STATE.md — you get another slot
+> tomorrow, which is the entire point of the change.
 
 1. **RECALL** what you already know (knowledge base) — never re-research known facts.
 2. **SEARCH** for NEW material since your last run (protocol upgraded per D-013):
@@ -77,7 +96,9 @@ Raise the bar: **more experiments, run to goals, not just weekly reports.**
   `Benchmarks & Eval/DRIVING_DIAGNOSTIC_FRAMEWORK.md`), not only your local backlog.
 - **Loop concept:** treat your run as an inner goal-loop — RECALL → pick the goal-advancing
   experiment → run it → measure → decide next — and, where a result gates the next step, leave a
-  Monitor/queued follow-up rather than waiting a week. Chain runs toward the goal.
+  Monitor/queued follow-up rather than waiting for the next slot. Chain runs toward the goal — and
+  since 2026-08-03 the next slot is **tomorrow, not next week**, so splitting a large piece of work
+  across consecutive daily runs is now the expected pattern rather than a stall.
 - **Production-readiness bar (D-029):** every deliverable states its readiness — prototype /
   validated / production — and names the gap to the next level. "It runs once" is prototype, not done.
 
@@ -87,8 +108,16 @@ Raise the bar: **more experiments, run to goals, not just weekly reports.**
 CPU/paper-bound while the 4060, Colab and a dedicated A40 eval pod sat idle). From now on:
 
 **M-1. Every run executes ≥1 experiment on real compute.** Paper-only/CPU-only runs are gate
-failures unless your agent file scopes a research-only week. "I had no GPU" is no longer valid —
+failures unless your agent file scopes a research-only run. "I had no GPU" is no longer valid —
 you have four:
+
+> **One narrow carve-out, added 2026-08-03 with the daily cadence.** A run whose deliverable is
+> **landing already-measured work** — merging your own stranded branch, or turning a finished intake
+> into an integrated module — satisfies M-1 without a fresh experiment, because the measurement
+> already happened and the programme's documented failure is that it never got merged (deliverables
+> sat unmerged 10–12 days; 24 of 37 intakes were un-adjudicated on 2026-08-03). Say explicitly in
+> STATE.md that you took this carve-out and name what you landed. It does **not** license a
+> theory-only run, a status report, or a second consecutive day of it.
 1. **Local RTX 4060 8GB** (always available; also the Orin latency proxy — I8 batch-1 profiling).
    Feature precompute, probes, ablations on cached latents, blind-rollout diagnostics, CPU-smoke →
    GPU-smoke of every training patch.
@@ -111,8 +140,8 @@ you have four:
 
 **M-2. Resource declaration (new gate G-I).** Your STATE `LAST_RUN` block must name: resource(s)
 used, wall-clock, cost, and — if you used less than the eval pod — one line on why the bigger
-resource wasn't needed. The orchestrator audits G-I weekly; two consecutive undeclared runs =
-escalation to Sayed.
+resource wasn't needed. The orchestrator audits G-I in its daily 16:11 sweep; two consecutive
+undeclared runs = escalation to Sayed.
 
 **M-3. Blocked ≠ idle.** If your experiment needs compute you can't get this run, you still ship:
 the runnable job card + pre-registered falsifier, and you escalate the block in STATE. Next-run

@@ -82,7 +82,14 @@ def test_every_emitted_interval_names_its_estimator():
     for k, v in out["headline"].items():
         assert v["estimator"] == "episode_cluster_bootstrap", k
         assert v["n_episodes"] == 40 and v["n_boot"] > 0, k
-    for floor in D.FLOORS:
+    # Iterate the floors the BLOCK actually emitted, not the global family:
+    # a pre-2026-08-02 dump carries no `ctrv` channel and is scored on two
+    # floors, which the block reports via `floors_missing`. Pinning D.FLOORS
+    # here would make every legacy dump unverifiable the day a floor is added.
+    emitted = tuple(out["floors"])
+    assert set(emitted) | set(out["floors_missing"]) == set(D.FLOORS)
+    assert not (set(emitted) & set(out["floors_missing"]))
+    for floor in emitted:
         for k, v in out["vs_floor_paired"][floor].items():
             assert v["estimator"] == "paired_episode_cluster_bootstrap", (floor, k)
 

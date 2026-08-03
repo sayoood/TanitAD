@@ -55,7 +55,35 @@ tick, ×K=9 in imagine-and-select). Its only input guard is
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:** <...>
-- **Reason & notes:** <...>
-- **Integrated as:** <commit hash / stack path> (if applicable)
+- **Verdict:** **integrate-with-changes**
+- **Date / by:** 2026-08-03 · orchestrator daily sweep (age at adjudication: **25 days**)
+- **Reason & notes:**
+  - **Re-verified here, not inherited:** `tests/` re-run on this box → **8 passed / 1.62 s**
+    (`venvs/tanitad`), including `test_export_safe` (ONNX opset 17 still clean; the
+    TracerWarnings are the expected constant-fold, not errors).
+  - **The defect is still present at tip and still un-fixed after 25 days.** The bare
+    `assert w == self.cfg.window` is live — it has merely MOVED from line 73 to **line 101**
+    (`grep` on tip). The package's line reference was stale; the code it describes was not.
+    This is the silent-wrong-data class, on the batch-1 streaming hot path, ×K=9 in
+    imagine-and-select.
+  - **Changes made on integration** (all forced by the call site, none by the validator):
+    1. `state_dim` is a **ctor argument, not a `cfg` field** (`__init__(cfg, state_dim, …)`), so
+       there was nothing to pass the validator. Stored as `self.state_dim = state_dim` — a plain
+       int, **not** a buffer or Parameter, so **`state_dict` is byte-identical** and every banked
+       checkpoint still loads. (This matters: the ctor's own comment already guards
+       "byte-identical state_dict" for the ReZero lever.)
+    2. Import added at module scope; `assert` replaced by the validator call, which now runs
+       **before** the `b, w, _ = states.shape` unpack rather than after it.
+    3. The `-O` tripwire was strengthened. As shipped it parsed only `validate.py` — but the
+       failure mode being guarded is *an `assert` in the predictor*, and the shipped test could
+       not have caught the assert coming back. It now ALSO walks
+       `predictor.py`'s `forward()` bodies and fails if any `assert` statement reappears there.
+       (Resolved via `_validate.__file__` / `predictor.__file__` rather than a relative path, so
+       the tripwire cannot silently pass by reading the wrong file.)
+  - **Scope deliberately NOT widened.** The INTAKE offers "apply the SAME guard to `tactical_pred`
+    if desired" — declined for this sweep. Same class, different module, and a 25-day-old package
+    should land as its author measured it; the tactical call site is filed as its own item.
+- **Integrated as:**
+  - `stack/tanitad/models/_validate.py` (as proposed)
+  - `stack/tanitad/models/predictor.py` — `self.state_dim`, import, call site (assert removed)
+  - `stack/tests/test_predictor_failfast.py` (8 tests + the strengthened call-site tripwire)

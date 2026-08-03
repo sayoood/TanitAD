@@ -40,7 +40,37 @@ yields 3.85× the clips (per-chunk cost, not per-clip). Note: `2026-07-09-physic
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 
-- **Verdict:** integrate / integrate-with-changes / defer / reject
-- **Date / by:**
+- **Verdict:** **reject-with-reason — superseded by the canonical R0-derived corpus**
+- **Date / by:** 2026-08-03 · orchestrator daily sweep (age at adjudication: **25 days**)
 - **Reason & notes:**
-- **Integrated as:**
+  - ⚠️ **This is NOT a quality rejection.** The package's tests were re-run here and **3 passed /
+    6.24 s** (`venvs/tanitad`); the scorer reuse is correct and the measurement (2,850 scored /
+    1,926 gate-pass / 23 countries) is sound work. It is rejected on **fit to the corpus the
+    programme actually built**, which changed under it while it waited 25 days.
+  - **What overtook it.** The canonical train corpus is
+    `physicalai-train-e438721ae894` — **2,376 episodes**, skip-hash `f09e44db` — and
+    `MODEL_REGISTRY.md` §rebuild traces its provenance to `build_pai_cache.py`,
+    `physicalai_r0.py fetch-camera` and `rebuild_pai_rolling.py`. **R1 is nowhere in that chain.**
+    R1 targeted 2,000 and reached 1,926; the corpus that exists is larger *and* is the one every
+    banked arm was trained on.
+  - **Absence checked at more than one location** (the two-probe rule): `grep -rn
+    "r1_selection\|physicalai_r1"` over `stack/` **and** `Project Steering/` returns **zero
+    hits** — 25 days on, nothing references it. Conversely `r0_selection.parquet` is hardcoded at
+    **three** live call sites (`stack/tanitad/data/physicalai.py:282,401,463`) and is named in
+    `stack/tanitad/lake/filtering.py:72` as the thing the **parity key derives from**.
+  - **The follow-up it needs is the one thing that cannot be done.** The INTAKE is explicit that
+    loading an R1 selection requires a `selection_path` parameter on the loader. That loader is
+    on the parity path. CLAUDE.md: *"Parity is sacred … anything that re-selects episodes breaks
+    cross-arm comparability and must be refused."* Integrating a selector whose only use requires
+    editing the parity path — for a selection smaller than the one in production — buys nothing
+    and risks the comparability of every banked arm.
+  - **Nothing is lost by rejecting.** The reusable half is
+    `_urban_score_from_egomotion`, which already lives in `stack/scripts/physicalai_r0.py` and is
+    imported, not copied. The R1-specific half is round-robin selection + a camera-fetch cost
+    plan whose artifacts were written **only** to `C:/Users/Admin/tanitad-data/physicalai/r1/`
+    — one dev box, never banked. That stranding is itself the finding here.
+  - **If a future non-parity corpus arm (R2 / an external corpus) is opened**, re-open this
+    package rather than rewriting it: the scorer-reuse design is right, and only the target size
+    and the loader hook need to change. Filed, not deleted — the directory stays in `incoming/`
+    with this verdict attached.
+- **Integrated as:** n/a — nothing copied into `stack/`.
