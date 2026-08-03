@@ -109,6 +109,20 @@ was exactly 0.0 on 450/450 windows, so the attribution is clean. Current numbers
 [`…/closedloop-hq-render/STREAM_C_RENDER_AB.md`](stack/experiments/alpasim-gsplat/results/closedloop-hq-render/STREAM_C_RENDER_AB.md).
 **The table below is the OLD render and is kept only as the retracted record.**
 
+
+> ⛔ **SUPERSEDED 2026-08-03 — the reference video is offset from the rig by a per-scene
+> constant** (`+6` on `00040136`, `+5` on `7c72937c`; rule: `video_idx = rig_idx +
+> (n_mp4_decodable − n_rig_frames)`, measured by the renderer, unanimous over 12 frames each).
+> Re-baselined against the **aligned** reference the improvement is **roughly half the size and
+> does not replicate**: `00040136` n=5 **+13.5 %** (was +23.4 %), n=12 **+8.0 %**, and
+> `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
+> BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
+> magnitude quoted here is not. Corrected table + estimator:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
+> never opens the reference video.
+
+
 Paired Δ = flagship v1 − REF-C base (positive = flagship worse), empty-road condition:
 
 | family | metric | paired Δ [CI95] | separated |

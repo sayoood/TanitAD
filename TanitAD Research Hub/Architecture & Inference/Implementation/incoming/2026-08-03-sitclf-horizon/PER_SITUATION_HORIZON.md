@@ -199,8 +199,24 @@ the boundaries were simply not the causal ones.
 **Action taken** (`MANIFEST.md` §3): a **new** `…/sitclf_b4_substrate.ego_causal.npz` sidecar with a
 provenance blob, and an `ego_block_defect` **quarantine stamp** written into the substrate's own
 `.meta.json`. ⛔ **The 410 MB substrate was deliberately NOT rewritten** — that would have broken the
-bit-reproducibility this study's own `C-FID-PARENT` depends on. This run's four-family tables use the
-**causal** block, and re-run the legacy one beside it so the difference is measured, not asserted.
+bit-reproducibility this study's own `C-FID-PARENT` depends on.
+
+### ⭐ And how much it actually MOVED a published family number — measured, not assumed
+
+This run computes the four families **twice**, on the causal and the legacy block, so the effect on
+the *reported* statistic is a measurement rather than a hand-wave:
+
+| stratum | Δ AP-lift (causal ego) | Δ AP-lift (legacy ego) | shift |
+|---|---:|---:|---:|
+| `intersection` · LATERAL `turning` | **−0.0282** | **−0.0604** | **+0.0322 — a 2.1× change in the point estimate** |
+| `lane_change` · LATERAL `straight` | −0.0703 | −0.0950 | +0.0247 |
+| `intersection` · LONGITUDINAL `accelerating` | +0.1026 | +0.0933 | +0.0093 |
+| every **speed** stratum (`low_speed_lt8`, `cruise_ge8`) | — | — | **+0.0000 exactly** — `v` is not a `*_pre` channel |
+
+⇒ **A 1–2 % boundary reassignment is not a 1–2 % effect on the number.** On the smallest stratum it
+doubled a point estimate. No verdict in this study depends on it (the TACTICAL family, which carries
+every headline, does not read ego at all), but any pre-2026-08-03 LONGITUDINAL/LATERAL stratum figure
+computed from this substrate should be treated as provisional.
 
 ---
 

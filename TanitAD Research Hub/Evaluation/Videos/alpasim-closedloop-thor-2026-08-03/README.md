@@ -52,6 +52,20 @@ composite the scene's own sky env map**. Full evidence, run dirs and the measure
 | morning (`background+road`) | 0.2774 | +0.0873 | 23.3 |
 | **these files** (4 layers + cull 0.95 + gated sky 0.3) | **0.3424 (+23.4 %)** | **+0.1020** | 36.3 |
 
+
+> ⛔ **SUPERSEDED 2026-08-03 — the reference video is offset from the rig by a per-scene
+> constant** (`+6` on `00040136`, `+5` on `7c72937c`; rule: `video_idx = rig_idx +
+> (n_mp4_decodable − n_rig_frames)`, measured by the renderer, unanimous over 12 frames each).
+> Re-baselined against the **aligned** reference the improvement is **roughly half the size and
+> does not replicate**: `00040136` n=5 **+13.5 %** (was +23.4 %), n=12 **+8.0 %**, and
+> `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
+> BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
+> magnitude quoted here is not. Corrected table + estimator:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
+> never opens the reference video.
+
+
 `run_dir = thor:~/rq_out/panel6_chosen`. Negative control passes 5/5 frames.
 Closed loop measured at **0.15–0.24 s/step, render 26–29 ms** — inside the 10 Hz budget.
 

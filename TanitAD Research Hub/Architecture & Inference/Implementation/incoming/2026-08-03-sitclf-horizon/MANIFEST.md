@@ -3,9 +3,8 @@
 **Date** 2026-08-03 · **Stream** situation classifier / per-situation `(window, lead_s)` ·
 **0 pod GPU-h** — the whole study ran on the dev box. No pod was touched; `tanitad-new` (v5f) and
 `tanitad-pod4` (v1arch) were left training.
-**Scope owned:** this run directory + the B4 substrate's ego sidecar.
-⛔ `stack/tanitad/` was NOT modified by this stream — it needed no change, and saying so is part of
-the report.
+**Scope owned:** this run directory, the B4 substrate's ego sidecar, and **one additive function**
+in `stack/tanitad/eval/sitclf_deploy.py` (+ its tests). Nothing existing in `stack/` was changed.
 
 ---
 
@@ -23,7 +22,18 @@ the report.
 | **C-FID-PARENT** | `…/2026-08-03-sitclf-horizon/cfid_parent.py` → `cfid_parent.json` | **REPO, STAGED.** reproduces the sibling stream's banked lead-3.0 row |
 | **four families** | `…/2026-08-03-sitclf-horizon/four_families_ps.py` → `results_four_families.json` | **REPO, STAGED.** LONGITUDINAL / LATERAL / TACTICAL / STRATEGIC per situation, never pooled, on **both** the causal and the legacy ego block |
 | **P4 — ego audit + rebuild** | `…/2026-08-03-sitclf-horizon/rebuild_causal_ego.py` → `ego_leak_audit.json` | **REPO, STAGED.** the audit over ALL 500 clips and the causal rebuild |
-| run logs | `…/2026-08-03-sitclf-horizon/run_log_{ego,cfid,ps,families}.txt` | **REPO, STAGED.** |
+| ⭐ **independent verifier** | `…/2026-08-03-sitclf-horizon/verify_event_yardstick.py` → `verify_event_yardstick.json` | **REPO, STAGED.** re-derives every Q-B headline from the banked scores using the **promoted `stack` function**, so the JSON cannot agree with itself. **12/12 cells, 0 mismatches** |
+| ⚠️ **winner's-curse diagnostic** | `…/2026-08-03-sitclf-horizon/oracle_winners_curse.py` → `oracle_winners_curse.json` | **REPO, STAGED. POST-HOC, not pre-registered** — measures how much of `C-ORACLE-PS`'s margin is selection bias. Changes no verdict |
+| **Q-B verdicts** | `…/2026-08-03-sitclf-horizon/qb_verdict.py` → `qb_verdict.json` | **REPO, STAGED.** the Sec 5 predicates applied to Q-B, which the run script wrote for Q-A only |
+| **P3 cost analysis** | `…/2026-08-03-sitclf-horizon/trainer_gap_cost.json` | **REPO, STAGED.** exact parameter counts + what would have to be built + the stale-claim correction |
+| run logs | `…/2026-08-03-sitclf-horizon/run_log_{ego,cfid,ps,curse,families}.txt` | **REPO, STAGED.** |
+
+### ⭐ Promoted into `stack/` — the one code change this stream made
+
+| artifact | path | why it is not left in an analysis script |
+|---|---|---|
+| **the event-level yardstick** | `stack/tanitad/eval/sitclf_deploy.py::event_anticipation_report` | **REPO.** `precision_recall_at_budget` and `anticipation_lead_s` both take `y`, which is a function of `lead_s`, so **neither can compare two heads at different horizons**. This one takes the ONSETS and no label. Leaving it in one analysis script is the stranded-instrument failure the operating standard exists to prevent |
+| its tests | `stack/tests/test_sitclf_deploy.py` (+8, **43** in file) | **REPO.** including the two load-bearing ones: the look-back **never crosses a clip boundary**, and an unwarned onset contributes **no lead** rather than a 0 s that would reward silence |
 
 ### Deliberately NOT in the repo
 
@@ -40,9 +50,12 @@ the report.
 
 ```
 python rebuild_causal_ego.py            # P4: audit + causal sidecar + quarantine stamp  (~5 s)
-python cfid_parent.py                   # C-FID-PARENT: must PASS before anything else    (~1 min)
-python run_per_situation_horizon.py     # the study
-python four_families_ps.py              # the four binding families, 0-GPU re-analysis
+python cfid_parent.py                   # C-FID-PARENT: must PASS before anything else   (~1 min)
+python run_per_situation_horizon.py     # the study                                      (~20 min)
+python verify_event_yardstick.py        # the independent verifier — must PASS           (~5 s)
+python oracle_winners_curse.py          # the post-hoc control-on-a-control              (~1 min)
+python qb_verdict.py                    # the Sec 5 predicates applied to Q-B            (~1 s)
+python four_families_ps.py              # the four binding families, 0-GPU re-analysis   (~9 min)
 python render_tables.py                 # TABLES.md
 ```
 
