@@ -2424,3 +2424,61 @@ taken from an *indexing expression* instead.
 Evidence: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-latent-bottleneck/`
 (`LATENT_BOTTLENECK.md`, `results_mechanism.json`, `results_temporal_falsifier.json`,
 `results_precision_ladder.json`, `raw/temporal_kv_cost.json`).
+
+---
+
+## R-2026-08-03-hf — ⛔ "HF pulls at 93 MB/s" is RETRACTED (real: 23 MB/s, 4× slower)
+
+**Retracted claim (mine).** The 2026-08-03 06:30 program report published a migration table with
+`HF → new pod, 106 GB … 93 MB/s`, and I re-used 93 MB/s in agent briefs the same day as the number
+to size transfer plans against.
+
+**MEASURED 2026-08-03** on the Thor parity-corpus pull: the sustained rate is **23 MB/s**. Any plan
+sized on 93 MB/s is wrong by **~2.5 h on a 278 GB corpus**. Upload (368–377 MB/s) is unaffected —
+this retraction is about the **download** leg only.
+
+**Root-cause class: a single leg of one transfer, measured once, promoted to a constant.** 93 MB/s
+was real for that pod, that day, that file mix; it was never re-measured and it became a planning
+input. Same family as *"the trainer's 13 s/step"*, which was the **cumulative mean** rather than the
+marginal rate, and as the `225 ms/frame` render figure that turned out to be a **first-call** number.
+⇒ **RULE: a throughput figure is only quotable with its date, its direction, and its endpoints.
+Re-measure before sizing anything on it.** Upload and download are different numbers; a mean over a
+run and its current marginal rate are different numbers.
+
+⭐ **The important finding underneath it.** Before the pull, the raw parity corpus was probed for and
+**not found on any live machine**: pod1/pod3/eval all `Connection refused`; pod4 and `tanitad-new`
+hold no raw epcache (three probes each). It survives **only** on HF
+(`Sayood/tanitad-physicalai-w120-256x640cyl` → `epcache-256px-phase0/`), where strict parity does
+pass on the listing — uid `sha256 9877bef6…7386`, **2376/2376**, all 24 skip indices.
+⇒ ⛔ **HF is currently the ONLY copy of the raw parity corpus**, and the E-SEL stream independently
+escalated that the 256 px REF-C val raster it evaluates on has **one reachable copy**. Two streams,
+two artifacts, same failure mode, found the same day. **Corpus durability is now the top
+non-scientific risk in the programme.**
+
+---
+
+## R-2026-08-03-hor — ⛔ `--heldout-off-reason` (MINE, shipped today) had THREE latent defects
+
+**What I claimed** when I added it earlier this session: a required reason string that is recorded
+with the run, deliberately **not** a bare `--force` boolean, so an operator must state intent.
+
+**What was actually true**, found only when another agent mirrored the flag's shape to build
+`--parity-off-reason` and tested the mirror properly:
+
+1. **Whitespace unlocked the guard** — a reason of `" "` satisfied the required-reason check, so the
+   flag degraded to exactly the `--force` boolean it was designed not to be.
+2. **The reason never survived `_staged_command`** — it was accepted, then dropped before the run
+   record was written, so the intent it exists to capture was not persisted anywhere.
+3. **It was never echoed**, despite the help text saying it would be.
+
+All three are fixed for **both** flags, with 17 tests. Suite **1932 passed**, 12 skipped, 2 xfailed.
+
+**Root-cause class: I tested that the flag EXISTS, not that it WORKS.** Every defect is downstream
+of the argument parser, and my check stopped at the parser. A guard whose bypass is unlocked by a
+space is not a guard, and a reason that is not persisted is not a record.
+⇒ **RULE: for any guard, test the BYPASS PATH, not the happy path** — pass the degenerate value
+(empty, whitespace, the sentinel) and assert it is refused; then assert the recorded artifact
+actually contains the reason. Same family as *"a seam that is wired but cannot change the output is
+decoration"*, one level down: a rail that can be stepped over is not a rail.
+⇒ **RULE: mirroring an existing pattern is a free audit of the original.** This one found three
+defects in code I had shipped hours earlier. When copying a shape, test the source too.

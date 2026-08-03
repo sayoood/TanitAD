@@ -1,0 +1,20 @@
+
+==============================================================================
+PARITY VIOLATION [*train* cache] — corpus physicalai-train-e438721ae894
+==============================================================================
+  cache      : /home/nvidia/epcache_prefix/physicalai-train-e438721ae894
+  episodes   : 152 loaded, 2376 expected   <-- TRUNCATED by 2224
+  missing    : ep_00152.pt, ep_00153.pt, ep_00154.pt, ep_00155.pt, ep_00156.pt, ep_00157.pt, … (+2218 more)
+  extra      : (none)
+
+  The canonical corpus is SACRED (CLAUDE.md §Invariants). A truncated or
+  re-selected episode set breaks cross-arm comparability INVISIBLY — every
+  number produced against it is void. Refusing to train.
+
+  Most common cause: the /workspace MooseFS quota filled mid-build. `df` does
+  NOT show that quota — verify with a real dd write test, not df.
+  Rebuild:  scripts/rebuild_pai_rolling.py --expect-key e438721ae894 --skip-idx …
+  Re-verify: scripts/pod_ops/compute_skipset.py   (hash + count verdict)
+  If (and only if) the cache is verified good and the manifest is stale, re-record
+  it with scripts/make_parity_manifest.py --record and commit the diff.
+==============================================================================

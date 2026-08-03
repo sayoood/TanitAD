@@ -1,0 +1,206 @@
+{
+  "arch": "REF-C (Anchored-Diffusion-C)",
+  "cfg": {
+    "encoder": {
+      "in_channels": 9,
+      "image_size": 256,
+      "image_width": null,
+      "base_width": 88,
+      "blocks": [
+        3,
+        6,
+        16,
+        6
+      ]
+    },
+    "window": 8,
+    "measurement": {
+      "hidden": 128,
+      "d_out": 128
+    },
+    "trajectory": {
+      "horizons": [
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    "anchors": {
+      "n_anchors": 128,
+      "pool_size": 4096,
+      "seed": 0
+    },
+    "decoder": {
+      "d": 384,
+      "n_heads": 8,
+      "layers": 4,
+      "ff_mult": 4,
+      "aux_hidden": 384,
+      "diffusion_steps": 2,
+      "noise_std": 0.1
+    },
+    "law": {
+      "hidden": 2048
+    },
+    "strategic": {
+      "hidden": 512,
+      "d_ctx": 64
+    },
+    "imagination": {
+      "d": 512,
+      "depth": 6,
+      "n_heads": 8,
+      "ff_mult": 4,
+      "head_hidden": 1024
+    },
+    "lan": {
+      "k": 4,
+      "feats": 4,
+      "hidden": 64,
+      "d_out": 64
+    },
+    "speed_hidden": 256,
+    "ego_dropout": 0.5,
+    "route_dropout": 0.5,
+    "hierarchy": true,
+    "graft_maneuver": true,
+    "factored_maneuver": false,
+    "tactical_speed_input": false,
+    "man_prior_tau": 0.0,
+    "graft_prior_center": true,
+    "tactical_prior_momentum": 0.99,
+    "graft_target_latent": false,
+    "grounded_selector": false,
+    "graft_imagination": false,
+    "graft_lan": false,
+    "sel_refined": false,
+    "sel_reach_clamp": false,
+    "sel_accel_max": 2.5,
+    "graft_cons": false,
+    "cons_detach": true,
+    "graft_route": false,
+    "graft_goal": false,
+    "seam_clamp": 0.0,
+    "seam_fail": 1.5,
+    "seam_fail_frac": 0.75,
+    "seam_fail_patience": 50,
+    "ego_valid_channel": false,
+    "nav_known_channel": false,
+    "tactical_latent_dim": 512,
+    "refc1": false,
+    "path_dists": [
+      2.0,
+      5.0,
+      10.0,
+      20.0
+    ],
+    "speed_bins": 4,
+    "speed_max": 30.0
+  },
+  "args": {
+    "data_root": "/home/nvidia/epcache_prefix",
+    "out": "/tmp/refc_parity_prefix",
+    "steps": 20,
+    "mode": "diffusion",
+    "config": "base",
+    "anchors": null,
+    "labels": "v1",
+    "use_net_dyaw": false,
+    "batch": 8,
+    "lr": null,
+    "episodes": 152,
+    "warmup": null,
+    "graft_lan": false,
+    "lan_arclengths": [
+      20.0,
+      40.0,
+      80.0,
+      160.0
+    ],
+    "lan_min_lead_m": 5.0,
+    "route_dropout": 0.5,
+    "factored_maneuver": false,
+    "tactical_speed_input": false,
+    "man_prior_tau": 0.0,
+    "no_graft_prior_center": false,
+    "nav_known_channel": false,
+    "sel_refined": false,
+    "sel_reach_clamp": false,
+    "sel_accel_max": 2.5,
+    "graft_cons": false,
+    "graft_route": false,
+    "graft_goal": false,
+    "seam_clamp": 0.0,
+    "ego_valid_channel": false,
+    "refc1": false,
+    "workers": 2,
+    "log_every": 1,
+    "save_every": 1000000,
+    "seed": 0,
+    "device": "auto",
+    "smoke": false
+  },
+  "optimizer": {
+    "kind": "Adam (DiffusionDrive/TCP)",
+    "lr": 0.0001,
+    "warmup": 2000,
+    "schedule": "cosine (main run's)"
+  },
+  "loss_weights": {
+    "traj": 1.0,
+    "cls": 1.0,
+    "law": 0.5,
+    "route": 0.1,
+    "man": 0.1,
+    "speed_cls": 0.2
+  },
+  "labels": {
+    "label_set": "v1",
+    "route_derivation": "refb_labels.route_target(nav_command)",
+    "use_net_dyaw": null,
+    "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+    "lan": null,
+    "maneuver_derivation": "refb_labels.window_maneuver_labels (v1 5-way) \u2014 UNCHANGED in every label set; the LAT x LON factorization is a MODEL change (retrain), specified in V3_FACTORIZED_TACTICAL_HEAD_SPEC.md",
+    "route_unknown_handling": "n/a",
+    "train_label_stats": null
+  },
+  "d_sel": {
+    "sel_on": false,
+    "sel_refined": false,
+    "sel_reach_clamp": false,
+    "sel_accel_max": 2.5,
+    "horizon_s": 2.0,
+    "graft_cons": false,
+    "cons_detach": true,
+    "graft_route": false,
+    "seam_clamp": 0.0,
+    "graft_goal": false,
+    "goal_provenance": null,
+    "ego_valid_channel": false,
+    "labels": "v1",
+    "mode": "diffusion",
+    "n_selection_params": 0,
+    "n_goal_params": 0,
+    "s1_inert_because_classifier_mode": false
+  },
+  "data": {
+    "cache_dir": "/home/nvidia/epcache_prefix/physicalai-train-e438721ae894",
+    "n_episodes": 152,
+    "n_windows": 25966
+  },
+  "param_breakdown": {
+    "encoder": 90458632,
+    "measurement": 17280,
+    "strategic": 1903680,
+    "decoder": 8634505,
+    "imagination": 0,
+    "lan": 0,
+    "aux": 274760,
+    "law": 2902720,
+    "speed": 0,
+    "selection": 0,
+    "goal": 0,
+    "total": 104191577
+  }
+}
