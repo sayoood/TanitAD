@@ -1,0 +1,54 @@
+{
+ "purpose": "O2-pre \u2014 encoder ONNX export at the DEPLOYED 176x624 geometry, REAL weights",
+ "torch": "2.13.0+cu130",
+ "started": "2026-08-03T02:09:37+0200",
+ "v5f": {
+  "step": 1000,
+  "sd_missing": 0,
+  "sd_unexpected": 0
+ },
+ "readout_route": {
+  "found": true,
+  "exact_pool": false,
+  "token_grid": [
+   11,
+   39
+  ],
+  "has_matrices": true,
+  "note": "exact_pool False + has_matrices True is the fixed non-tiling route"
+ },
+ "encoder_176x624_fastpathOFF": {
+  "fastpath": false,
+  "opset": 17,
+  "export_ok": true,
+  "export_s": 1.8,
+  "MB": 349.2,
+  "n_nodes": 1034,
+  "has_adaptive_pool": false,
+  "ort_rel_err_vs_eager": 1.76723e-05
+ },
+ "encoder_176x624_fastpathON": {
+  "fastpath": true,
+  "opset": 17,
+  "export_ok": true,
+  "export_s": 1.7,
+  "MB": 349.2,
+  "n_nodes": 1034,
+  "has_adaptive_pool": false,
+  "ort_rel_err_vs_eager": 1.76723e-05
+ },
+ "v1_tiling_path_regression": {
+  "exact_pool": true,
+  "has_matrices": false,
+  "state_absmax": 1.85257,
+  "state_mean": -0.0162594,
+  "reading": "exact_pool True and NO matrices built => v1 takes the untouched AvgPool2d route; the fix cannot have moved any v1 number"
+ },
+ "VERDICT": {
+  "export_at_deployed_geometry": true,
+  "ort_rel_err": 1.76723e-05,
+  "falsifier_export_fails": false,
+  "falsifier_wrong_numbers": false,
+  "reading": "\u2705 O2-pre CLOSED \u2014 the encoder exports at 176x624 with parity; O2 (a TensorRT engine for the encoder) is unblocked"
+ }
+}

@@ -49,41 +49,101 @@ import math
 
 import torch
 
-DT_S = 0.1               # 10 Hz waypoint cadence
-MIN_DS_M = 0.05          # below this a step carries no reliable heading/curvature
+DT_S = 0.1               # 10 Hz waypoint cadence — the DENSE grid's spacing
+MIN_DS_MPS = 0.5         # below this SPEED a step carries no reliable heading/curvature
+MIN_DS_M = MIN_DS_MPS * DT_S    # 0.05 m at 10 Hz — kept as a name for back-compat
 _EPS = 1e-8
 
+#: ⛔ THE DEFECT THIS CONSTANT EXISTS TO PREVENT (MEASURED 2026-08-03, Thor, real weights).
+#: ``all_families`` reads ``win["pred"]`` / ``win["gt"]``, and for BOTH ``rollout.collect`` and
+#: ``refc_eval.collect`` those are the **SPARSE 4-waypoint view at WP_STEPS = (5, 10, 15, 20)** —
+#: i.e. **0.5 s spacing**, not 0.1 s. Every derivative here was nevertheless divided by the
+#: hard-coded ``DT_S = 0.1``, so every published LONGITUDINAL/LATERAL rate was inflated:
+#:
+#:     speed   x5      accel   x25      yaw_rate  x5      curvature/heading/positions  correct
+#:
+#: NEGATIVE CONTROL that proves it, not an argument: on 859 real held-out windows the ego's own
+#: recorded speed (``poses[:, 3]``) is **12.4565 m/s** while ``_seq_geometry(gt)["speed"]`` returned
+#: **62.9789 m/s** — ratio **5.0559**, and dividing by 5 lands at 12.5958 m/s (**1.1 %** of truth,
+#: the residual being chord-vs-instantaneous speed on curves).
+#: ⇒ dt is now DERIVED from the window's own ``wp_steps``/``dt_s`` contract and CARRIED IN THE
+#: OUTPUT, so a rate can never again be quoted without the grid it was computed on.
+_DT_CONTRACT = ("dt is derived from win['wp_steps'] x win.get('dt_s', 0.1); a sparse 4-waypoint "
+                "view at WP_STEPS=(5,10,15,20) is a 0.5 s grid, NOT the 0.1 s the module "
+                "constant names")
 
-def _seq_geometry(wp: torch.Tensor):
-    """wp [n,H,2] ego-frame metres -> per-step speed, heading, yaw-rate, curvature.
 
-    Returns dict of tensors; heading/yaw/curvature are masked where the step displacement is
-    below ``MIN_DS_M`` (a stopped or crawling vehicle has no meaningful path tangent).
+def _seq_geometry(wp: torch.Tensor, dt: float = DT_S):
+    """wp [n,H,2] ego-frame metres on a **dt-second grid** -> speed, heading, yaw-rate, curvature.
+
+    ⛔ ``dt`` is the spacing BETWEEN the supplied waypoints, not the model's tick. Passing the
+    sparse 4-waypoint view (0.5 s apart) with ``dt=0.1`` inflates every rate — see
+    :data:`_DT_CONTRACT`. Callers should use :func:`infer_dt` rather than assume.
+
+    Returns dict of tensors; heading/yaw/curvature are masked where the step displacement is below
+    ``MIN_DS_MPS * dt`` (a stopped or crawling vehicle has no meaningful path tangent). The
+    threshold SCALES with dt — a fixed 0.05 m gate on a 0.5 s grid excludes essentially nothing and
+    silently lets crawling windows into the curvature statistic.
     """
+    min_ds = MIN_DS_MPS * dt
     # prepend the origin so step 0 is measured from the ego's own position
     zero = torch.zeros_like(wp[:, :1])
     p = torch.cat([zero, wp], dim=1)                    # [n,H+1,2]
     d = p[:, 1:] - p[:, :-1]                            # [n,H,2] per-step displacement
     ds = torch.linalg.norm(d, dim=-1)                   # [n,H] arc length per step
-    speed = ds / DT_S                                   # m/s
+    speed = ds / dt                                     # m/s
 
-    valid = ds > MIN_DS_M
+    valid = ds > min_ds
     heading = torch.atan2(d[..., 1], d[..., 0])         # path tangent, radians
 
     # unwrap along the horizon so a +pi/-pi crossing does not create a fake spike
     dh = heading[:, 1:] - heading[:, :-1]
     dh = (dh + math.pi) % (2 * math.pi) - math.pi       # wrap to (-pi, pi]
-    yaw_rate = dh / DT_S                                # rad/s
-    # curvature = dheading/ds, using the mean arc length of the two steps involved
+    yaw_rate = dh / dt                                  # rad/s
+    # curvature = dheading/ds, using the mean arc length of the two steps involved.
+    # ⓘ dt-INVARIANT by construction (both dh and ds are geometric), which is why curvature and
+    # heading were the only two rate-like metrics the old hard-coded dt did NOT corrupt.
     ds_mid = 0.5 * (ds[:, 1:] + ds[:, :-1])
     curvature = dh / (ds_mid + _EPS)                    # 1/m
     pair_valid = valid[:, 1:] & valid[:, :-1]
 
-    accel = (speed[:, 1:] - speed[:, :-1]) / DT_S       # m/s^2
+    accel = (speed[:, 1:] - speed[:, :-1]) / dt         # m/s^2
     return {"speed": speed, "heading": heading, "valid": valid,
             "yaw_rate": yaw_rate, "curvature": curvature,
             "pair_valid": pair_valid, "accel": accel, "along": p[..., 0][:, 1:],
-            "cross": p[..., 1][:, 1:]}
+            "cross": p[..., 1][:, 1:], "dt_s": dt, "min_ds_m": min_ds}
+
+
+def infer_dt(win: dict) -> tuple[float, str]:
+    """-> (dt seconds between the waypoints in ``win['pred']``, provenance string).
+
+    Reads the window dict's OWN sampling contract. ``rollout.collect`` publishes
+    ``wp_steps=[5,10,15,20]`` and ``dt_s=0.1``; ``refc_eval``/``refb_eval`` publish ``wp_steps``
+    too. The spacing must be uniform AND the first step must equal the spacing, because
+    :func:`_seq_geometry` prepends the origin as step 0 — a non-uniform or offset grid would make
+    the first displacement mean something different from the rest.
+
+    ⛔ Falls back to :data:`DT_S` ONLY when no contract is present, and says so in the provenance
+    so the caller can stamp it. It never guesses silently.
+    """
+    steps = win.get("wp_steps")
+    tick = float(win.get("dt_s", DT_S) or DT_S)
+    if not steps:
+        return DT_S, (f"NO wp_steps IN WINDOW — assumed dt={DT_S}s. {_DT_CONTRACT}")
+    steps = [int(s) for s in steps]
+    if len(steps) == 1:
+        return steps[0] * tick, f"single wp_step {steps[0]} x dt_s {tick}"
+    gaps = {steps[i + 1] - steps[i] for i in range(len(steps) - 1)}
+    if len(gaps) != 1:
+        return DT_S, (f"NON-UNIFORM wp_steps {steps} — cannot derive a single dt; assumed "
+                      f"{DT_S}s. {_DT_CONTRACT}")
+    gap = gaps.pop()
+    if steps[0] != gap:
+        return gap * tick, (f"wp_steps {steps} are uniformly spaced by {gap} ticks but start at "
+                            f"{steps[0]} — the prepended origin makes step 0 span "
+                            f"{steps[0] * tick}s while the rest span {gap * tick}s; using the "
+                            f"spacing. Prefer the dense path for this window shape.")
+    return gap * tick, f"derived from wp_steps {steps} x dt_s {tick} -> {gap * tick}s grid"
 
 
 def _masked(x: torch.Tensor, m: torch.Tensor) -> tuple[float, int]:
@@ -94,14 +154,18 @@ def _masked(x: torch.Tensor, m: torch.Tensor) -> tuple[float, int]:
     return float(x[m].mean()), n
 
 
-def longitudinal(pred: torch.Tensor, gt: torch.Tensor) -> dict:
+def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
     """Is the arm setting the RIGHT SPEED, and does it keep distance?
+
+    ⛔ ``dt`` is the spacing between the supplied waypoints. Speed scales as 1/dt and acceleration
+    as 1/dt², so a wrong dt inflates them by 5x and 25x on the sparse 4-waypoint view — see
+    :data:`_DT_CONTRACT`. Positional metrics (``along_*``) are dt-invariant.
 
     ⚠️ ``distance_keeping`` requires a LEAD-AGENT track. PhysicalAI-AV ships
     ``obstacle.offline`` (3D agent tracks on 97.44 % of the corpus) but our episode ingest does not
     read it, so headway/TTC is **UNAVAILABLE** here and is reported as such with the reason.
     """
-    P, G = _seq_geometry(pred), _seq_geometry(gt)
+    P, G = _seq_geometry(pred, dt), _seq_geometry(gt, dt)
     sp_err = P["speed"] - G["speed"]
     al_err = P["along"] - G["along"]
     ac_err = P["accel"] - G["accel"]
@@ -116,6 +180,10 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor) -> dict:
         "along_final_bias_m": round(float(al_err[:, -1].mean()), 4),
         # --- acceleration profile ---
         "accel_mae_mps2": round(float(ac_err.abs().mean()), 4),
+        # --- the grid these rates were computed on. NEVER quote a rate without it. ---
+        "dt_s": dt,
+        "rate_scaling_note": ("speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are "
+                              "off by those powers; along_* are dt-invariant."),
         # --- distance keeping ---
         "distance_keeping": {
             "status": "UNAVAILABLE",
@@ -128,13 +196,17 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor) -> dict:
     }
 
 
-def lateral(pred: torch.Tensor, gt: torch.Tensor) -> dict:
+def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
     """Heading, curvature, yaw-rate and cross-track — not cross-track alone.
 
     A path can be smooth and wrong: matching cross-track at the waypoints while turning with the
     wrong curvature. That is invisible to ADE and to cross-track, and it is what these catch.
+
+    ⛔ ``dt`` scales ``yaw_rate`` (1/dt). ``heading``, ``curvature`` and ``cross_*`` are
+    dt-invariant — which is why the 2026-08-03 dt defect corrupted exactly one metric in this
+    family and left the other three correct. See :data:`_DT_CONTRACT`.
     """
-    P, G = _seq_geometry(pred), _seq_geometry(gt)
+    P, G = _seq_geometry(pred, dt), _seq_geometry(gt, dt)
     both = P["valid"] & G["valid"]
     both_pair = P["pair_valid"] & G["pair_valid"]
 
@@ -158,7 +230,12 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor) -> dict:
         "n_steps_heading": n_head,
         "n_steps_curvature": n_curv,
         "excluded_below_min_ds": int((~both).sum()),
-        "min_ds_m": MIN_DS_M,
+        # ⛔ the gate SCALES with dt now. A fixed 0.05 m on a 0.5 s grid excluded ~nothing and let
+        # crawling windows into the curvature statistic.
+        "min_ds_m": MIN_DS_MPS * dt,
+        "min_ds_mps": MIN_DS_MPS,
+        "dt_s": dt,
+        "dt_invariant": ["heading_mae_deg", "curvature_*", "cross_*"],
         "n_windows": int(pred.shape[0]),
     }
 
@@ -310,7 +387,7 @@ def strategic(win: dict, hier: dict | None = None) -> dict:
     return _decision_family(win, "strategic", "route_pred", "route_gt", classes)
 
 
-def all_families(win: dict, hier: dict | None = None) -> dict:
+def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True) -> dict:
     """The full binding block for one arm. Attach to every eval result, beside ADE.
 
     ``win`` is a ``rollout.collect``/``refb_eval``/``refc_eval`` window dict; ``pred``/``gt`` are
@@ -319,18 +396,49 @@ def all_families(win: dict, hier: dict | None = None) -> dict:
 
     ⭐ Pass ``hier``. A fidelity pass alone cannot see a decision error, and the binding rule
     treats an absent family as a work item rather than a pass.
+
+    ⛔ ``prefer_dense`` (default True, changed 2026-08-03). When the window carries the true 10 Hz
+    ``pred_dense``/``gt_dense`` path, the rate families are computed on it. That is the grid the
+    derivatives were designed for: 20 samples instead of 4, and a genuine 0.1 s tick. When only the
+    sparse 4-waypoint view exists, the grid is DERIVED from ``wp_steps`` (see :func:`infer_dt`)
+    rather than assumed to be 0.1 s — the defect that inflated every published speed by 5x and
+    every acceleration by 25x. Set ``prefer_dense=False`` to reproduce a historical sparse-grid
+    number; the grid actually used is always reported in ``_grid``.
     """
-    pred = torch.as_tensor(win["pred"]).float()
-    gt = torch.as_tensor(win["gt"]).float()
+    dense = prefer_dense and win.get("pred_dense") is not None \
+        and win.get("gt_dense") is not None
+    if dense:
+        pred = torch.as_tensor(win["pred_dense"]).float()
+        gt = torch.as_tensor(win["gt_dense"]).float()
+        dt = float(win.get("dt_s", DT_S) or DT_S)
+        prov = (f"DENSE path ({tuple(pred.shape)}) at dt_s {dt} — the grid the derivatives are "
+                f"defined on")
+    else:
+        pred = torch.as_tensor(win["pred"]).float()
+        gt = torch.as_tensor(win["gt"]).float()
+        dt, prov = infer_dt(win)
+        prov = f"SPARSE waypoint view; {prov}"
     if pred.ndim != 3 or pred.shape[-1] != 2:
         raise ValueError(f"expected pred [n,H,2] ego-frame metres, got {tuple(pred.shape)}")
     if pred.shape != gt.shape:
         raise ValueError(f"pred {tuple(pred.shape)} != gt {tuple(gt.shape)}")
     fam = {
-        "longitudinal": longitudinal(pred, gt),
-        "lateral": lateral(pred, gt),
+        "longitudinal": longitudinal(pred, gt, dt),
+        "lateral": lateral(pred, gt, dt),
         "tactical": tactical(win, hier),
         "strategic": strategic(win, hier),
+    }
+    fam["_grid"] = {
+        "used": "dense" if dense else "sparse",
+        "dt_s": dt, "horizon_steps": int(pred.shape[1]),
+        "provenance": prov,
+        "⛔_history": (
+            "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE "
+            "4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* "
+            "x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. "
+            "Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any "
+            "comparison to a physical bar do not. MEASURED negative control: GT ego speed "
+            "12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."),
     }
     unavailable = [k for k, v in fam.items()
                    if isinstance(v, dict) and v.get("status") == "UNAVAILABLE"]

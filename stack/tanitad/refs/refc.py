@@ -41,6 +41,15 @@ Graft seams (gated, zero-init / identity starts — byte-identical when off):
     feeds a ``target_latent``).
   - ``grounded_selector`` (default False, param-free): score decoded ego-frame
     endpoints by a progress/collision proxy and blend with the top-1 confidence.
+  - ``graft_lan`` (default False, LAN): a LANE-ANCHORED ROUTE corridor — K
+    arc-length route anchors x [cos bearing, sin bearing, lat_norm, valid] from
+    ``tanitad.data.lan`` — enters on two surfaces: a zero-init projection into
+    the decoder CONDITION, and ONE learned scalar gate on a param-free
+    geometric compatibility between each anchor's terminal bearing and the
+    route bearing (the SELECTION surface). Both start at exactly 0, so the
+    model is unchanged at step 0. Exists because the 4-way ``nav_cmd`` is
+    ``follow`` on ~75-79 % of windows and is a CONSTANT at eval (``nav_cmd=
+    None``) — the C6 confound. Additive: nav_cmd is kept.
   - ``graft_imagination`` (default False, H15): a belief field over the conv-map
     tokens — latent-advection prior (object permanence) + transformer refinement
     + per-cell epistemic log-variance gating a residual belief written back into
@@ -90,6 +99,10 @@ NAV_COMMANDS = ("follow", "left", "right", "straight")
 # from scripts/, so the count is pinned here and cross-checked by the tests).
 N_MANEUVERS = 5
 N_ROUTE = 3                        # route-heading aux (left / straight / right)
+# LAN per-anchor feature width. Pinned here (refc.py stays import-light, the
+# same rule as N_MANEUVERS) and cross-checked against tanitad.data.lan by
+# tests/test_lan.py — a silent divergence would mis-slice the route tensor.
+LAN_FEATS_PER_ANCHOR = 4
 
 
 # ============================================================================
@@ -273,6 +286,29 @@ class ImaginationConfig:
 
 
 @dataclass
+class LanConfig:
+    """LAN — Lane-Anchored Navigation route conditioning (graft_lan, default
+    OFF). Shape MUST match ``tanitad.data.lan.LanConfig``: K route anchors x 4
+    features [cos bearing, sin bearing, lat_norm, valid].
+
+    Why this seam exists: the 4-way ``nav_cmd`` one-hot is ``follow`` on the
+    large majority of windows (``nav_valid_frac`` 0.21-0.25, MEASURED across all
+    four arms) and is a CONSTANT at eval (every published REF-C number decodes
+    with ``nav_cmd=None`` -> index 0). LAN adds a dense, always-defined,
+    leak-guarded route corridor ALONGSIDE nav_cmd — it never removes it.
+    """
+    k: int = 4                    # route anchors (arc-lengths, not timesteps)
+    feats: int = 4                # per-anchor features (pinned by data.lan)
+    hidden: int = 64              # route-feature MLP width
+    d_out: int = 64               # route embedding -> decoder condition seam
+
+    @property
+    def dim(self) -> int:
+        """Flat input width the model consumes."""
+        return self.k * self.feats
+
+
+@dataclass
 class RefCConfig:
     encoder: CNNEncoderConfig = field(default_factory=CNNEncoderConfig)
     window: int = 8               # shared state window (main stack: 8)
@@ -283,13 +319,16 @@ class RefCConfig:
     law: LawConfig = field(default_factory=LawConfig)
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
+    lan: LanConfig = field(default_factory=LanConfig)
     speed_hidden: int = 256       # refc1 target-speed class head width
     ego_dropout: float = 0.5      # per-sample Bernoulli zero of v0 (training)
+    route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
     hierarchy: bool = True        # strategic ctx -> decoder condition (graft)
     graft_maneuver: bool = True   # maneuver logits reweight anchor priors (H19)
     graft_target_latent: bool = False   # FiLM the condition on a goal latent
     grounded_selector: bool = False     # progress/collision proxy vs top-1 conf
     graft_imagination: bool = False     # H15 belief field over conv-map tokens
+    graft_lan: bool = False             # LAN lane-anchored route conditioning
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
@@ -505,7 +544,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                  tac_latent_dim: int, anchors: Tensor, cfg: DecoderConfig,
                  hierarchy: bool, graft_maneuver: bool,
                  graft_target_latent: bool, grounded_selector: bool,
-                 n_maneuvers: int = N_MANEUVERS):
+                 n_maneuvers: int = N_MANEUVERS,
+                 graft_lan: bool = False, d_lan: int = 0):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
@@ -540,6 +580,23 @@ class AnchoredDiffusionDecoder(nn.Module):
         if graft_target_latent:
             self.tgt_proj = nn.Linear(tac_latent_dim, d)
             self.tgt_film = FiLM(d, d)
+        # Graft (LAN): the route corridor enters on TWO surfaces.
+        #   1. ``lan_to_cond`` — zero-init, so the condition is unperturbed at
+        #      step 0 (the ctx_to_cond discipline).
+        #   2. ``lan_gate`` — ONE scalar on a PARAM-FREE geometric compatibility
+        #      between each anchor's terminal bearing and the route's bearing.
+        #      Selection among the fan is where a route can act at all, and a
+        #      geometric score cannot become a route-shaped shortcut the way a
+        #      learned ``route -> n_anchors`` matrix could. Initialised to 0, so
+        #      the anchor priors are bit-unchanged at step 0 while the gradient
+        #      (compat * dL/dconf) is non-zero — gated, not dead.
+        self.lan_to_cond: nn.Linear | None = None
+        self.lan_gate: nn.Parameter | None = None
+        if graft_lan:
+            self.lan_to_cond = nn.Linear(d_lan, d)
+            nn.init.zeros_(self.lan_to_cond.weight)
+            nn.init.zeros_(self.lan_to_cond.bias)
+            self.lan_gate = nn.Parameter(torch.zeros(1))
 
     def load_anchors(self, anchors: Tensor) -> None:
         """Install an externally-built anchor vocabulary (build_refc_anchors.py).
@@ -562,6 +619,25 @@ class AnchoredDiffusionDecoder(nn.Module):
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
 
+    def _lan_anchor_prior(self, lan_dir: Tensor) -> Tensor:
+        """Param-free geometric route compatibility of every anchor. [B, N].
+
+        ``lan_dir`` [B, 3] = (cos, sin, valid) of the route's bearing at its
+        first admissible arc-length anchor — i.e. WHICH WAY the route goes from
+        here. Each trajectory anchor is scored by ``cos(phi_anchor - theta_
+        route)`` on its TERMINAL bearing, so the score is purely a lateral-
+        topology agreement and carries no along-track information (the axis
+        GOAL_INPUT.md measured at +83.7 % and which a route input must never
+        supply). Invalid routes score 0 for every anchor.
+        """
+        a = self.anchors.to(lan_dir.dtype)                    # [N, S, 2]
+        end = a[:, -1]                                        # [N, 2]
+        r = torch.linalg.vector_norm(end, dim=-1).clamp_min(1e-6)
+        cos_a, sin_a = end[:, 0] / r, end[:, 1] / r           # [N]
+        compat = (cos_a[None] * lan_dir[:, 0:1]
+                  + sin_a[None] * lan_dir[:, 1:2])            # [B, N]
+        return compat * lan_dir[:, 2:3]
+
     @staticmethod
     def _grounded_score(x: Tensor) -> Tensor:
         """Param-free progress/collision proxy over decoded endpoints [B,N,S,2]:
@@ -572,12 +648,15 @@ class AnchoredDiffusionDecoder(nn.Module):
     def forward(self, fmap: Tensor, m: Tensor, ctx: Tensor | None = None,
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None,
-                steps: int = 0) -> dict:
+                steps: int = 0, lan_emb: Tensor | None = None,
+                lan_dir: Tensor | None = None) -> dict:
         b = fmap.shape[0]
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
             cond = cond + self.ctx_to_cond(ctx)
+        if self.lan_to_cond is not None and lan_emb is not None:
+            cond = cond + self.lan_to_cond(lan_emb)           # LAN (zero-init)
         if self.tgt_film is not None and target_latent is not None:
             cond = self.tgt_film(cond, self.tgt_proj(target_latent))
 
@@ -591,6 +670,10 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
             conf = conf + self.maneuver_to_anchor(
                 torch.log_softmax(maneuver_logits, dim=-1))
+
+        # LAN: the route reweights the SAME anchor priors, geometrically.
+        if self.lan_gate is not None and lan_dir is not None:
+            conf = conf + self.lan_gate * self._lan_anchor_prior(lan_dir)
 
         # Truncated diffusion: refine the anchor trajectories a few steps. Noise
         # only in training (deterministic at eval so decoding is reproducible).
@@ -722,7 +805,15 @@ class RefCModel(nn.Module):
             cfg.tactical_latent_dim, anchors, cfg.decoder,
             hierarchy=cfg.hierarchy, graft_maneuver=cfg.graft_maneuver,
             graft_target_latent=cfg.graft_target_latent,
-            grounded_selector=cfg.grounded_selector)
+            grounded_selector=cfg.grounded_selector,
+            graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out)
+        # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
+        # Lives at model level next to ``measurement`` because it is an INPUT
+        # encoder, not part of the decoder; param_breakdown reports it as `lan`.
+        if cfg.graft_lan:
+            self.lan_enc = nn.Sequential(
+                nn.Linear(cfg.lan.dim, cfg.lan.hidden), nn.ReLU(inplace=True),
+                nn.Linear(cfg.lan.hidden, cfg.lan.d_out), nn.ReLU(inplace=True))
         # H15 imagination graft (gated): belief field over the conv-map tokens,
         # refining the [B, F, 8, 8] map the decoder cross-attends. Absent when off.
         if cfg.graft_imagination:
@@ -757,16 +848,43 @@ class RefCModel(nn.Module):
                               self.cfg.speed_bins, device=device, dtype=dtype)
 
     # ------------------------------------------------------------------------
+    @staticmethod
+    def lan_direction(lan: Tensor, k: int) -> Tensor:
+        """[B, K*4] LAN features -> [B, 3] (cos, sin, valid) route bearing.
+
+        The bearing is read from the FIRST anchor whose ``valid`` flag is set —
+        the nearest admissible arc-length, i.e. the earliest point of the route
+        that survived the leak guard. Rows with no valid anchor return
+        ``(1, 0, 0)``: bearing dead ahead but ``valid = 0``, so the geometric
+        anchor prior multiplies out to exactly zero rather than silently voting
+        "straight" (which on a 74 %-straight corpus is the base rate and is how
+        an inert route input looks like a working one).
+        """
+        f = lan.reshape(lan.shape[0], k, LAN_FEATS_PER_ANCHOR)
+        valid = f[..., 3] > 0.5                                   # [B, K]
+        any_valid = valid.any(dim=-1)
+        first = torch.argmax(valid.to(lan.dtype), dim=-1)         # [B]
+        idx = first.reshape(-1, 1, 1).expand(-1, 1, LAN_FEATS_PER_ANCHOR)
+        picked = torch.gather(f, 1, idx).squeeze(1)               # [B, 4]
+        cos_b = torch.where(any_valid, picked[:, 0],
+                            torch.ones_like(picked[:, 0]))
+        sin_b = torch.where(any_valid, picked[:, 1],
+                            torch.zeros_like(picked[:, 1]))
+        return torch.stack([cos_b, sin_b, any_valid.to(lan.dtype)], dim=-1)
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None,
                 maneuver_logits: Tensor | None = None,
-                target_latent: Tensor | None = None, steps: int = 0) -> dict:
+                target_latent: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
         model's own maneuver head drives the H19 reweight and the target-latent
-        FiLM stays inactive). ``steps`` selects the decoder mode: 0 = classifier
-        (default), >0 = truncated diffusion.
+        FiLM stays inactive). ``lan`` [B, K*4] is the LAN route corridor
+        (``graft_lan``; None -> the seam is skipped entirely, so an unrouted
+        window costs nothing). ``steps`` selects the decoder mode: 0 =
+        classifier (default), >0 = truncated diffusion.
 
         Returns dict: pooled [B, F], traj / wp_seq [B, n_steps, 2], waypoints
         {key: [B, 2]}, anchor_logits [B, N], anchor_traj [B, N, n_steps, 2],
@@ -808,8 +926,23 @@ class RefCModel(nn.Module):
         route_logits = self.route_head(pooled)
         reweight = maneuver_logits if maneuver_logits is not None else man_logits
 
+        # LAN (gated): encode the route corridor, with per-sample route dropout
+        # in training so the planner can never become route-DEPENDENT — a model
+        # that collapses when the route is absent cannot be deployed on a corpus
+        # whose route label is missing on ~75 % of windows.
+        lan_emb = lan_dir = None
+        if self.cfg.graft_lan and lan is not None:
+            lan_in = lan.to(pooled.dtype)
+            if self.training and self.cfg.route_dropout > 0:
+                keep = (torch.rand(b, 1, device=lan_in.device)
+                        >= self.cfg.route_dropout).to(lan_in.dtype)
+                lan_in = lan_in * keep       # zeroes valid flags too -> masked
+            lan_emb = self.lan_enc(lan_in)
+            lan_dir = self.lan_direction(lan_in, self.cfg.lan.k)
+
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
-                           target_latent=target_latent, steps=steps)
+                           target_latent=target_latent, steps=steps,
+                           lan_emb=lan_emb, lan_dir=lan_dir)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -825,6 +958,8 @@ class RefCModel(nn.Module):
                "measurement": m}
         if ctx is not None:
             out["ctx"] = ctx
+        if lan_dir is not None:
+            out["lan_dir"] = lan_dir                 # route bearing actually used
         if imag_logvar is not None:
             out["imag_logvar"] = imag_logvar         # H15 per-cell uncertainty
         if self.cfg.refc1:
@@ -853,6 +988,7 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "decoder": cnt(model.decoder),
         "imagination": cnt(model.imagination) if model.cfg.graft_imagination
         else 0,
+        "lan": cnt(model.lan_enc) if model.cfg.graft_lan else 0,
         "aux": cnt(model.maneuver_head) + cnt(model.route_head),
         "law": cnt(model.law_head),
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,

@@ -1,0 +1,370 @@
+{
+ "purpose": "the Thor optimisation + precision gate ON REAL TRAINED WEIGHTS",
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "started": "2026-08-03T01:29:32+0200",
+ "trt_version": "10.13.3.9",
+ "thor_repo_sha": "4954544",
+ "v1_flagship_speedjerk": {
+  "loaded": true,
+  "step": 29999,
+  "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+  "w_absmax": 2.6605,
+  "w_std": 0.031966,
+  "params_M": 263.44,
+  "H": 256,
+  "W": 256,
+  "in_channels": 9
+ },
+ "v5f": {
+  "loaded": true,
+  "step": 1000,
+  "ckpt": "/home/nvidia/models/v5f/ckpt.pt",
+  "sd_missing": 0,
+  "sd_unexpected": 0,
+  "sd_missing_sample": [],
+  "sd_unexpected_sample": [],
+  "w_absmax": 3.7333,
+  "w_std": 0.02479,
+  "params_M": 263.58,
+  "H": 176,
+  "W": 624,
+  "in_channels": 9
+ },
+ "\u26a0_v5f_caveat": "v5f on Thor is step 1000 \u2014 REAL trained weights but EARLY. Its numerics are a second weight distribution (a control), not a deployment verdict. The decision-grade accuracy arm is v1 @ step 29999.",
+ "val_integrity": {
+  "n_listed": 40,
+  "n_loadable": 39,
+  "corrupt": [
+   {
+    "file": "ep_00028.pt",
+    "bytes": 92299264,
+    "err": "RuntimeError"
+   }
+  ],
+  "policy": "verified by LOADING each clip, not by size or exit code. Corrupt clips are EXCLUDED and named. The run is stamped decision_grade=False for ABSOLUTE levels; the precision DELTA is PAIRED on identical windows in both arms and is therefore unaffected by the missing episode."
+ },
+ "val_parity": {
+  "corpus_key": "physicalai-val-0c5f7dac3b11",
+  "split": "val",
+  "cache_dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+  "mode": "subset",
+  "episodes_expected": 600,
+  "episodes_loaded": 40,
+  "uid_source": "count-only-unrecorded",
+  "skip_hash": "f09e44db",
+  "episode_uid_sha256": "c36c2168e0ea6eaa0668c10003b8d97355d24d9f7363ab64f1b582328d40828a",
+  "episode_uid_sha256_expected": null,
+  "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+  "parity": true,
+  "checked": true,
+  "episodes_present": 40,
+  "registered_deployments": [
+   40,
+   600
+  ],
+  "deployment": {
+   "n_episodes": 40,
+   "role": "canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)",
+   "where": "tanitad-eval:/root/valdata/physicalai-val-0c5f7dac3b11",
+   "evidence": "MODEL_REGISTRY.md:61 'Val set | physicalai-val-0c5f7dac3b11 - 40 episodes -> 881 windows, episode-disjoint from train'; 30 of 30 decision-grade taniteval/results/*.json carry n_episodes=40, n_windows=881 (the remaining 4 predate the n_episodes field and carry n_windows=881)",
+   "evidence_class": "MEASURED"
+  },
+  "label": "val physicalai-val-0c5f7dac3b11",
+  "requested_episodes": 40,
+  "decision_grade": false,
+  "episodes_listed": 40
+ },
+ "val": {
+  "dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+  "n_episodes": 39,
+  "frame_shape": [
+   9,
+   256,
+   256
+  ],
+  "decision_grade_absolute": false,
+  "note": "CLEAN held-out split; v1's TRAINED raster 256x256 \u2014 parity respected"
+ },
+ "probe": {
+  "n_windows": 64,
+  "frames": [
+   64,
+   8,
+   9,
+   256,
+   256
+  ],
+  "actions": [
+   64,
+   8,
+   3
+  ],
+  "future_actions": [
+   64,
+   20,
+   3
+  ],
+  "source": "REAL val frames + REAL expert actions (NOT torch.randn)"
+ },
+ "Q3_encoder_bf16_numerics": {
+  "v1_REAL_weights_real_frames": {
+   "tag": "v1 real/real",
+   "rel_err_global": 0.00446932,
+   "latent_cosine_mean": 0.99998951,
+   "latent_cosine_min": 0.99987346,
+   "latent_cosine_p01": 0.99991333,
+   "rel_err_per_state_mean": 0.00416542,
+   "rel_err_per_state_max": 0.0168337,
+   "state_absmax_fp32": 3.8131,
+   "state_std_fp32": 0.902233,
+   "n_channels_over_10sigma": 0,
+   "n_states": 512
+  },
+  "v1_REAL_weights_randn_input": {
+   "tag": "v1 real/randn",
+   "rel_err_global": 0.00525004,
+   "latent_cosine_mean": 0.99998665,
+   "latent_cosine_min": 0.99991763,
+   "latent_cosine_p01": 0.99995792,
+   "rel_err_per_state_mean": 0.00511155,
+   "rel_err_per_state_max": 0.01306261,
+   "state_absmax_fp32": 2.3231,
+   "state_std_fp32": 0.484389,
+   "n_channels_over_10sigma": 0,
+   "n_states": 512
+  },
+  "v1_RANDOM_weights_randn_input": {
+   "tag": "v1 rand/randn",
+   "rel_err_global": 0.00662144,
+   "latent_cosine_mean": 0.99997807,
+   "latent_cosine_min": 0.99997002,
+   "latent_cosine_p01": 0.99997264,
+   "rel_err_per_state_mean": 0.00662711,
+   "rel_err_per_state_max": 0.0077526,
+   "state_absmax_fp32": 1.4644,
+   "state_std_fp32": 0.375414,
+   "n_channels_over_10sigma": 0,
+   "n_states": 512
+  }
+ },
+ "Q3_VERDICT": {
+  "falsifier": "latent cosine < 0.999 on real windows",
+  "measured_min_cosine": 0.99987346,
+  "fires": false,
+  "reading": "\u2705 bf16 encoder preserves the latent direction on real data"
+ },
+ "Q2_predictor_trt_numerics_REAL": {
+  "fp16": {
+   "engine": {
+    "ok": true,
+    "build_s": 38.7,
+    "MB": 174.0
+   },
+   "rel_err_1step_mean": 0.00031271,
+   "rel_err_1step_p99": 0.000344,
+   "rel_err_1step_max": 0.00034423,
+   "rel_err_20step_mean": 0.00133861,
+   "rel_err_20step_p99": 0.00653915,
+   "rel_err_20step_max": 0.00816382,
+   "growth_mean_x": 4.273,
+   "growth_max_x": 26.147,
+   "n_windows": 64
+  },
+  "fp32": {
+   "engine": {
+    "ok": true,
+    "build_s": 25.3,
+    "MB": 346.8
+   },
+   "rel_err_1step_mean": 4.745e-05,
+   "rel_err_1step_p99": 0.00017133,
+   "rel_err_1step_max": 0.0001963,
+   "rel_err_20step_mean": 0.0003723,
+   "rel_err_20step_p99": 0.00150448,
+   "rel_err_20step_max": 0.00188718,
+   "growth_mean_x": 9.827,
+   "growth_max_x": 46.811,
+   "n_windows": 64
+  },
+  "CONTROL_random_weights_randn": {
+   "FAILED": "RuntimeError: Sizes of tensors must match except in dimension 1. Expected size 16 but got size 1 for tensor number 1 in the list."
+  }
+ },
+ "Q2_VERDICT": {
+  "falsifier": "real-weight rel-err > 10x the published random-weight figure, or growth ratio > 2x",
+  "published_random_weights": {
+   "1step": 0.00141,
+   "20step": 0.0018,
+   "growth": 1.3
+  },
+  "measured_real_weights": {
+   "1step": 0.00031271,
+   "20step": 0.00133861,
+   "growth": 4.273
+  },
+  "ratio_1step_x": 0.22,
+  "ratio_20step_x": 0.74,
+  "fires": true
+ },
+ "Q1_latency_REAL_weights": {
+  "v1_256x256": {
+   "geometry": "256x256",
+   "params_M": 263.44,
+   "step": 29999,
+   "encoder_fp32": {
+    "p50_ms": 108.601,
+    "p99_ms": 112.426,
+    "n": 15
+   },
+   "encoder_bf16": {
+    "p50_ms": 18.481,
+    "p99_ms": 21.219,
+    "n": 15
+   },
+   "encoder_speedup_x": 5.876,
+   "predictor_eager_b1": {
+    "p50_ms": 4.207,
+    "p99_ms": 5.621,
+    "n": 50
+   },
+   "predictor_eager_b9": {
+    "p50_ms": 10.847,
+    "p99_ms": 12.569,
+    "n": 50
+   },
+   "roll_K20_eager_b1": {
+    "p50_ms": 79.146,
+    "p99_ms": 81.212,
+    "n": 8
+   }
+  },
+  "v5f_176x624": {
+   "geometry": "176x624",
+   "params_M": 263.58,
+   "step": 1000,
+   "encoder_fp32": {
+    "p50_ms": 196.86,
+    "p99_ms": 197.542,
+    "n": 15
+   },
+   "encoder_bf16": {
+    "p50_ms": 30.229,
+    "p99_ms": 35.126,
+    "n": 15
+   },
+   "encoder_speedup_x": 6.512,
+   "predictor_eager_b1": {
+    "p50_ms": 4.088,
+    "p99_ms": 5.776,
+    "n": 50
+   },
+   "predictor_eager_b9": {
+    "p50_ms": 10.779,
+    "p99_ms": 13.084,
+    "n": 50
+   },
+   "roll_K20_eager_b1": {
+    "p50_ms": 78.061,
+    "p99_ms": 78.177,
+    "n": 8
+   }
+  }
+ },
+ "Q1_latency_RANDOM_weights_control": {
+  "geometry": "176x624",
+  "encoder_fp32": {
+   "p50_ms": 197.046,
+   "p99_ms": 197.586,
+   "n": 15
+  },
+  "encoder_bf16": {
+   "p50_ms": 29.603,
+   "p99_ms": 32.113,
+   "n": 15
+  },
+  "predictor_eager_b1": {
+   "p50_ms": 4.136,
+   "p99_ms": 6.527,
+   "n": 50
+  }
+ },
+ "Q1_trt_latency_REAL_weights": {
+  "v5f_176x624_b1": {
+   "ok": true,
+   "build_s": 36.2,
+   "MB": 174.0,
+   "median_ms": 1.17676
+  },
+  "v5f_176x624_b9": {
+   "ok": true,
+   "build_s": 36.7,
+   "MB": 173.9,
+   "median_ms": 1.29358,
+   "per_candidate_ms": 0.1437
+  },
+  "v1_256x256_b1": {
+   "ok": true,
+   "build_s": 35.9,
+   "MB": 174.0,
+   "median_ms": 1.17664
+  },
+  "v1_256x256_b9": {
+   "ok": true,
+   "build_s": 36.9,
+   "MB": 173.8,
+   "median_ms": 1.31897,
+   "per_candidate_ms": 0.1466
+  }
+ },
+ "Q4_fastpath_REAL_weights": {
+  "mha_module_census": {
+   "predictor": 10,
+   "encoder": 12,
+   "whole_model": 41
+  },
+  "REALW_predictor_op17_fastpathON": {
+   "opset": 17,
+   "fastpath": true,
+   "export_ok": true,
+   "n_nodes": 1146,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager_RANDN_input": 1.035e-07,
+   "ort_rel_err_vs_eager_REAL_input": 5.56e-08
+  },
+  "REALW_predictor_op17_fastpathOFF": {
+   "opset": 17,
+   "fastpath": false,
+   "export_ok": true,
+   "n_nodes": 1146,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager_RANDN_input": 8.8e-08,
+   "ort_rel_err_vs_eager_REAL_input": 5.56e-08
+  },
+  "REALW_predictor_op18_fastpathON": {
+   "opset": 18,
+   "fastpath": true,
+   "export_ok": true,
+   "n_nodes": 1146,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager_RANDN_input": 9.19e-08,
+   "ort_rel_err_vs_eager_REAL_input": 5.56e-08
+  },
+  "REALW_predictor_op18_fastpathOFF": {
+   "opset": 18,
+   "fastpath": false,
+   "export_ok": true,
+   "n_nodes": 1146,
+   "has_fused_mha_op": false,
+   "ort_rel_err_vs_eager_RANDN_input": 1.913e-07,
+   "ort_rel_err_vs_eager_REAL_input": 5.56e-08
+  }
+ },
+ "Q4_VERDICT": {
+  "falsifier": "any cell's ORT-vs-eager rel-err > 1e-4 on REAL weights",
+  "max_rel_err_real_input": 5.56e-08,
+  "fires": false,
+  "reading": "\u2705 the fastpath flag is inert on REAL weights too \u2014 the 0.726 was NOT this mechanism; a second, independent weight distribution now supports the wiring-bug explanation"
+ },
+ "finished": "2026-08-03T01:35:21+0200"
+}

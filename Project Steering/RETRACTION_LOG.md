@@ -1510,3 +1510,54 @@ tight, not imminent. `drop_caches` is DENIED inside the container (read-only `/p
    survive it in place; it must be checkpointed and migrated, or restarted after.
 ⇒ **RULE: the provider console carries state the pod cannot self-report. Check it before planning
 multi-day runs.**
+
+
+## 2026-08-03 — R-2026-08-03-c: every four-family RATE the programme has published is wrong by 5x-25x
+**Root-cause class: A HAZARD DOCUMENTED NEXT TO ONE CALLER INSTEAD OF FIXED AT THE SHARED FUNCTION —
+plus NO NUMBER WAS EVER COMPARED AGAINST A PHYSICAL QUANTITY THE DATA ALREADY CARRIED.**
+
+`taniteval/four_families.py` hard-coded `DT_S = 0.1`, but `all_families` reads `win["pred"]`, which
+for **both** `rollout.collect` and `refc_eval.collect` is the **SPARSE 4-waypoint view at
+`WP_STEPS = (5,10,15,20)` — a 0.5 s grid**. Every derivative was divided by the wrong dt.
+
+**MEASURED (Thor, 859 real held-out windows, `thor_c4_rescore_corrected.json`):** the ego's own
+recorded speed `poses[:,3]` averages **12.4565 m/s**; the instrument returned **62.9789 m/s** —
+ratio **5.0559**. At the true dt = 0.5 it returns **12.5958** (1.011x truth).
+
+| corrections | factor | mechanism |
+|---|---|---|
+| `speed_*` | **/5.00** | 1/dt |
+| `accel_*` | **/25.00** | 1/dt^2 |
+| `yaw_rate_*` | /6.48 | 1/dt **and** the validity mask |
+| `curvature_*` | **/8.36** | ⭐ the **mask alone** — curvature is dt-INVARIANT |
+| `heading_*` | /1.90 | the mask alone |
+| `along_*`, `cross_*` | **x1.00** | dt-invariant, always correct |
+
+⭐ **The mask half is the bigger trap.** `MIN_DS_M = 0.05 m` is a *distance* gate meant to drop steps
+where the vehicle barely moves (curvature = dtheta/ds **explodes** as ds->0). On a 0.5 s grid it is
+5x too permissive: **excluding 38 more steps out of ~2465 moves `curvature_mae` by 8.4x.** Two
+metrics that are dt-invariant by construction were still wrong, through the mask.
+
+✅ **What survives:** every CROSS-ARM comparison, rank, and paired delta — the factor is common to
+both arms. ⛔ **What does not:** every ABSOLUTE rate quotation, and every comparison against a
+physical or external bar. Including the 2026-08-02 REF-C Thor panel (`speed_mae 3.0609 ->
+0.6122 m/s`). `19.25 m/s^2` was never a physically possible acceleration and nobody noticed.
+
+🔴 **THE ROOT CAUSE, and it is the transferable part: the trap was ALREADY DOCUMENTED — in a FORK.**
+`stack/tanitad/eval/idm_families.py` says verbatim that feeding 4 waypoints at {5,10,15,20} to
+`four_families` *"reads every speed and yaw-rate 5x too large"*, and its author responded by
+**re-implementing the geometry with an explicit cadence for the IDM**. What nobody noticed is that
+`rollout.collect` and `refc_eval.collect` emit **exactly that same shape** — so the trap was never
+hypothetical, it was already live in the mainline instrument.
+⇒ **RULE: when you find a hazard in a shared function, FIX THE SHARED FUNCTION. A warning written
+beside your own caller protects only your caller, and it actively harms everyone else — a reader who
+greps and finds the hazard documented concludes that someone has already handled it.**
+⇒ **RULE: an instrument that derives a physical quantity must be checked against that quantity where
+the data already carries it.** The episodes had `poses[:,3]` all along; one comparison would have
+caught this at any point in the last months.
+
+**FIXED + tested (staged):** `taniteval/taniteval/four_families.py` (dt derived from the window's own
+`wp_steps`x`dt_s` contract via new `infer_dt`, never guessed silently; `prefer_dense=True` uses the
+true 10 Hz path when present; `MIN_DS_MPS = 0.5 m/s` so the gate scales with cadence; every family
+carries its `dt_s` and `all_families` emits a `_grid` provenance block) and
+`taniteval/tests/test_four_families_dt.py` (12 tests, all passing).

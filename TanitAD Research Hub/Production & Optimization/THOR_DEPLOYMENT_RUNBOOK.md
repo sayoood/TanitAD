@@ -149,6 +149,120 @@ admissible — they had simply never been re-timed after the correction.
    ⇒ new item **O2-pre**: fix the shape-derived pooling in `stack/`, with an export test **at the
    deployed geometry**.
 
+### ⭐ ANNOTATION 2026-08-03 (Production & Optimization) — RE-RUN ON REAL TRAINED WEIGHTS
+
+*Added, not deleted.* `Research/2026-08-03-thor-real-weight-precision-gate.md` ·
+`Implementation/incoming/2026-08-03-thor-real-weights/`. Models: **flagship-v1-speedjerk @ step
+29999** (256×256, its trained raster) and **v5f @ step 1000** (176×624, the deployed geometry) —
+`torch.load` + STRICT `load_state_dict`, both verified.
+
+**1. ✅ §1 SURVIVES — latency is weight-independent, and this is now MEASURED, not assumed.**
+
+| stage @176×624 | REAL weights | RANDOM weights, **same session** | published above |
+|---|---|---|---|
+| encoder fp32 | 196.86 ms | 197.05 ms (**0.10 %**) | 187.8 ms |
+| encoder bf16 | 30.23 ms | 29.60 ms (2.1 %) | 27.78 ms |
+| predictor eager b1 | 4.088 ms | 4.136 ms (1.2 %) | 4.23 ms |
+| ⭐ TRT-fp16 b1 | **1.17676 ms** | — | **1.168 ms (+0.7 %)** |
+| TRT-fp16 b9 | 1.29358 ms | — | 1.294 ms |
+
+The same-session random control sits at the same offset from the published figures as the real one,
+so the 5–9 % level gap is **session/thermal drift, not weights**. ⇒ **the 5.33× and the ≈51 ms tick
+are admissible.** Recomposed on real weights: **53.77 / 241.99 / 56.10 ms** for 1 / 9-serialised /
+9-batched candidates — within 1 % of the B1 fan run.
+
+**2. ⚠️ §2 IS RESTATED — smaller error, MUCH steeper compounding.** 64 real held-out windows, real
+encoder, rolled 20 steps under the expert's real actions:
+
+| condition | 1 step | 20 steps | growth | worst |
+|---|---|---|---|---|
+| published (random w, randn x) | 1.41e-3 | 1.80e-3 | 1.3× | — |
+| ✅ replicated here (random w, randn x) | 1.193e-3 | 1.652e-3 | 1.385× | 1.49× |
+| real w, randn x | 5.168e-4 | 1.063e-3 | 2.056× | 3.28× |
+| ⭐ **real w, REAL activations** | **3.127e-4** | **1.339e-3** | ⛔ **4.273×** | ⛔ **26.15×** |
+
+Weights alone cost **×1.48** of growth; real activations another **×2.08**; **total 3.08× steeper**
+than the published row — while the absolute error is 4.5× *smaller* at 1 step. ⇒ **§2's own warning
+("DO NOT READ THIS AS 'ERROR DOES NOT COMPOUND'") is vindicated and now quantified.**
+⚠️ **But the ratio is not a precision diagnostic:** the **TRT-fp32** engine compounds *harder still*
+(**9.83× mean, 46.81× max**). Compounding is a property of the **recursive roll**, not of fp16.
+Gate on the absolute level, never the growth ratio.
+
+**3. ⭐ §2's untested lever is now tested: bf16 on the ENCODER passes on real frames.** Latent cosine
+min **0.99987** (bar 0.999), rel-err 4.469e-3, and **zero** post-pool channels above 10σ in any
+condition. ⇒ the §7.10 INT8 outlier-channel collapse is **specific to INT8 on the un-normalised
+readout** and does not transfer to bf16 on the trunk. ⚠️ The worst-case per-state error is **2.2×
+wider** on real data than random (1.68e-2 vs 7.75e-3) — so O5/O6 (INT8/NVFP4) must be gated on the
+**tail**, not the mean.
+
+**4. ⛔ §3's fastpath mechanism is INERT ON REAL WEIGHTS TOO.** Four cells (opset 17/18 × fastpath
+ON/OFF) on the step-29999 predictor: identical 1146 nodes, no fused MHA op, ORT rel-err **5.56e-08**
+on real state input — three orders below the 1e-4 falsifier — and **opset 18 with the fastpath ON
+exports cleanly**. With the 6 random-weight cells that is **10 cells across two weight
+distributions**. 🔴 **The retraction §3 applies to our 2026-07-08 "ONNX-clean" claim rests on a
+mechanism that does not reproduce and should be revisited by its owner.** ✅ Keep
+`set_fastpath_enabled(False)` regardless — it is 1.6 % of engine latency.
+
+**5. ⭐ O1 IS CLOSED — the four-family gate has RUN.** A = fp32 eager, B = bf16 encoder + TRT-fp16
+predictor, identical windows, 39 clean held-out episodes → **859 windows**, paired episode-cluster
+bootstrap. A negative control ran first (the engine differs from eager AND responds to its inputs),
+so no delta is vacuous.
+
+| falsifier | fired? | evidence |
+|---|---|---|
+| **ADE** Δ > 0.02 m and CI excludes 0 | ✅ no | Δ **−0.0004 m** [−0.0009, +0.0001] — **50× below the bar** |
+| **LONGITUDINAL** any paired CI excludes 0 | ⛔ **YES** | `speed_bias` −0.58 %, `accel_mae` +0.12 % of level |
+| **LATERAL** same | ⛔ **YES** (corrected instrument) | `curvature_mae` +0.16 % of level |
+| **TACTICAL** agreement < 95.3 % | ✅ no | **99.42 %** — 5 of 859 decisions flipped |
+| **STRATEGIC** agreement < 95.3 % | ✅ no | **100.00 %** — 0 flipped |
+
+⛔ **The bar is NOT being moved after the fact.** It was written as a *separation* test and it fired
+as written. The effect sizes are reported beside it, not instead of it: **0.12 %, 0.16 %, 0.58 % of
+their own fp32 levels**, and the largest moves *toward* zero (less over-speeding). A paired bootstrap
+over 859 windows resolves sub-percent shifts — that is the estimator working. ⇒ **PI DECISION
+REQUIRED: pre-register a MATERIALITY threshold (proposed: 1 % of the fp32 level per metric, which
+all three clear by 2–8×). Until then this gate reads DO NOT SHIP, and it is reported that way.**
+
+**6. 🔴 A PROGRAM-WIDE INSTRUMENT DEFECT, found while running the gate — and now fixed.**
+`taniteval/four_families.py` hard-coded `DT_S = 0.1` while `all_families` reads the **SPARSE
+4-waypoint view at `WP_STEPS=(5,10,15,20)` — a 0.5 s grid**. NEGATIVE CONTROL on 859 real windows:
+the ego's own recorded speed is **12.4565 m/s**; the instrument returned **62.9789 m/s** (**5.0559×**);
+at dt = 0.5 it returns 12.5958 (1.011× truth). Corrections: **speed ÷5, accel ÷25, yaw-rate ÷6.48,
+curvature ÷8.36, heading ÷1.90; positions unchanged.** The last two are dt-*invariant* and were
+still wrong — via the `MIN_DS_M` gate, which on a 0.5 s grid was 5× too permissive and let crawling
+steps with exploding curvature into the mean. ✅ **Cross-arm comparisons are unaffected** (common
+factor); ⛔ **every absolute rate ever published from `all_families` is wrong by those factors**,
+including the 2026-08-02 REF-C Thor panel. Fixed + 12 passing tests: `taniteval/four_families.py`,
+`taniteval/tests/test_four_families_dt.py`.
+**Root-cause class:** the trap was *already documented* — in a **fork** (`tanitad/eval/idm_families.py`
+says verbatim that this shape reads *"5× too large"*) — and the author re-implemented the geometry
+for their own caller instead of fixing the shared one. **A hazard documented next to one caller
+protects only that caller, and makes every other reader assume someone has looked.**
+
+**7. ✅ O2-pre IS CLOSED — the encoder now exports at the deployed geometry, so O2 is UNBLOCKED.**
+§6.4 of the pricing annotation above records `SymbolicValueError: adaptive_avg_pool2d, output size
+that are not factor of input size` at 176×624. Cause: **11×39 tokens onto a 4×4 readout grid does
+not tile**, so `SpatialGridReadout` fell back to `nn.AdaptiveAvgPool2d`, which ONNX cannot express
+at a non-factor output size. **Fixed in `stack/tanitad/models/readout.py`**: adaptive pooling with
+static sizes is a *fixed linear operator* (bin `i` averages `[floor(i·H/G), ceil((i+1)·H/G))`), so
+it is materialised as two constant averaging matrices — same bins, two matmuls, exportable at every
+opset. ⚠️ **The bins OVERLAP** (11 → 4 is **3/4/4/3**, not a 3/3/3/2 partition); the first version of
+the test asserted the partition and failed, which is exactly the silent model change an "export fix"
+can smuggle in.
+
+| MEASURED on Thor, REAL v5f weights | export | nodes | adaptive pool in graph | ORT rel-err |
+|---|---|---|---|---|
+| encoder 176×624, opset 17, fastpath OFF | ✅ **1.7 s, 349.2 MB** | 1034 | **no** | **1.51e-05 / 1.77e-05** |
+| encoder 176×624, opset 17, fastpath ON | ✅ 1.5 s | 1034 | no | 1.51e-05 / 1.77e-05 |
+
+⛔ **Regression check on the REAL v1 checkpoint** (the claim that mattered more than the fix):
+`exact_pool=True`, pool module `AvgPool2d`, **no matrices built**, STRICT `load_state_dict` of the
+step-29999 ckpt **OK** (the matrices are `persistent=False`, so no state_dict key was added), and
+the readout output is **bit-identical to `AvgPool2d`, max abs diff 0.0**. ⇒ **the deployed 256 px
+path cannot have moved a single v1 number.** Pinned by `stack/tests/test_readout_onnx_pool.py`
+(13 tests, all passing). ⇒ **O2 can now run:** build the encoder engine and compare against bf16
+autocast at **30.23 ms**; its falsifier (engine ≤ bf16 ⇒ keep autocast) is already written.
+
 ## 4. DEPLOYMENT PROCEDURE ON THOR
 
 **Environment** (PI rule — two venvs, never mixed):

@@ -1,0 +1,685 @@
+{
+ "purpose": "runbook O1 \u2014 four-family accuracy gate on the TRT-fp16 + bf16 pipeline, REAL trained weights, REAL held-out windows",
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "started": "2026-08-03T01:35:58+0200",
+ "arms": {
+  "A": "fp32 eager (reference)",
+  "B": "bf16-autocast encoder + TensorRT-fp16 predictor (shipped optimisation)"
+ },
+ "binding_rule": "Sayed 2026-08-02 \u2014 four families ADDED to ADE, per-family, paired episode-cluster bootstrap",
+ "trt_version": "10.13.3.9",
+ "thor_repo_sha": "4954544",
+ "model": {
+  "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+  "step": 29999,
+  "params_M": 263.44,
+  "raster": "256x256 SQUARE (v1's TRAINED raster \u2014 parity rule)",
+  "has_tactical_policy": true,
+  "has_strategic_policy": true
+ },
+ "val": {
+  "dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+  "n_episodes": 39,
+  "excluded_corrupt": [
+   "ep_00028.pt"
+  ],
+  "parity": {
+   "corpus_key": "physicalai-val-0c5f7dac3b11",
+   "split": "val",
+   "cache_dir": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+   "mode": "subset",
+   "episodes_expected": 600,
+   "episodes_loaded": 40,
+   "uid_source": "count-only-unrecorded",
+   "skip_hash": "f09e44db",
+   "episode_uid_sha256": "c36c2168e0ea6eaa0668c10003b8d97355d24d9f7363ab64f1b582328d40828a",
+   "episode_uid_sha256_expected": null,
+   "content_check": "COUNT-ONLY (manifest carries no uid digest)",
+   "parity": true,
+   "checked": true,
+   "episodes_present": 40,
+   "registered_deployments": [
+    40,
+    600
+   ],
+   "deployment": {
+    "n_episodes": 40,
+    "role": "canonical TanitEval deployment -> 881 stride-8 windows (THE published open-loop statistic)",
+    "where": "tanitad-eval:/root/valdata/physicalai-val-0c5f7dac3b11",
+    "evidence": "MODEL_REGISTRY.md:61 'Val set | physicalai-val-0c5f7dac3b11 - 40 episodes -> 881 windows, episode-disjoint from train'; 30 of 30 decision-grade taniteval/results/*.json carry n_episodes=40, n_windows=881 (the remaining 4 predate the n_episodes field and carry n_windows=881)",
+    "evidence_class": "MEASURED"
+   },
+   "label": "val physicalai-val-0c5f7dac3b11",
+   "requested_episodes": 40,
+   "decision_grade": false,
+   "episodes_listed": 40
+  },
+  "decision_grade_absolute": false,
+  "note": "the PAIRED delta is on identical windows in both arms and is unaffected by the excluded clip; only ABSOLUTE levels lose the 40/40 stamp"
+ },
+ "engine": {
+  "plan": "/home/nvidia/trt_c3/pred_dyn_fp16.plan",
+  "build_s": 37.3,
+  "MB": 174.2,
+  "dynamic_batch": "1..8",
+  "fastpath": "OFF (runbook \u00a74)"
+ },
+ "negative_control": {
+  "engine_vs_eager_rel_err": 0.00058918,
+  "engine_responds_to_action_change_rel": 0.232177,
+  "discriminates": true,
+  "why": "an engine that ignored its inputs, or one aliased to the eager tensor, would make every family delta 0 and the gate would 'pass' vacuously"
+ },
+ "n_windows": 859,
+ "wall_s": {
+  "A": 124.5,
+  "B": 24.2
+ },
+ "FOUR_FAMILIES": {
+  "ADE": {
+   "ade_0_2s": {
+    "A_fp32": {
+     "mean": 0.4209,
+     "lo": 0.3612,
+     "hi": 0.4822,
+     "ci95": 0.0605,
+     "se": 0.0314,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "B_opt": {
+     "mean": 0.4205,
+     "lo": 0.3609,
+     "hi": 0.4819,
+     "ci95": 0.0605,
+     "se": 0.0314,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A": {
+     "delta": -0.0004,
+     "lo": -0.0009,
+     "hi": 0.0001,
+     "ci95": 0.0005,
+     "p_delta_gt0": 0.0825,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ade_0_5s": {
+    "A_fp32": {
+     "mean": 0.0707,
+     "lo": 0.0616,
+     "hi": 0.0805,
+     "ci95": 0.0095,
+     "se": 0.0049,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "B_opt": {
+     "mean": 0.0707,
+     "lo": 0.0616,
+     "hi": 0.0805,
+     "ci95": 0.0095,
+     "se": 0.0049,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A": {
+     "delta": -0.0,
+     "lo": -0.0002,
+     "hi": 0.0001,
+     "ci95": 0.0001,
+     "p_delta_gt0": 0.3615,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ade_1s": {
+    "A_fp32": {
+     "mean": 0.1438,
+     "lo": 0.1207,
+     "hi": 0.168,
+     "ci95": 0.0236,
+     "se": 0.0118,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "B_opt": {
+     "mean": 0.1438,
+     "lo": 0.1208,
+     "hi": 0.1681,
+     "ci95": 0.0236,
+     "se": 0.0118,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A": {
+     "delta": 0.0,
+     "lo": -0.0002,
+     "hi": 0.0002,
+     "ci95": 0.0002,
+     "p_delta_gt0": 0.5305,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "ade_2s_final": {
+    "A_fp32": {
+     "mean": 0.4209,
+     "lo": 0.3612,
+     "hi": 0.4822,
+     "ci95": 0.0605,
+     "se": 0.0314,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "B_opt": {
+     "mean": 0.4205,
+     "lo": 0.3609,
+     "hi": 0.4819,
+     "ci95": 0.0605,
+     "se": 0.0314,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A": {
+     "delta": -0.0004,
+     "lo": -0.0009,
+     "hi": 0.0001,
+     "ci95": 0.0005,
+     "p_delta_gt0": 0.0825,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "fde_2s": {
+    "A_fp32": {
+     "mean": 0.8943,
+     "lo": 0.7738,
+     "hi": 1.0196,
+     "ci95": 0.1229,
+     "se": 0.064,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "B_opt": {
+     "mean": 0.8933,
+     "lo": 0.7725,
+     "hi": 1.0191,
+     "ci95": 0.1233,
+     "se": 0.0639,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "paired_delta_B_minus_A": {
+     "delta": -0.0009,
+     "lo": -0.002,
+     "hi": 0.0,
+     "ci95": 0.001,
+     "p_delta_gt0": 0.033,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "LONGITUDINAL": {
+   "A_fp32": {
+    "speed_mae_mps": 2.3332,
+    "speed_bias_mps": 0.9423,
+    "speed_rmse_mps": 3.3541,
+    "along_mae_m": 0.3893,
+    "along_bias_m": 0.1289,
+    "along_final_bias_m": 0.3346,
+    "accel_mae_mps2": 19.2517,
+    "distance_keeping": {
+     "status": "UNAVAILABLE",
+     "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+     "n": 0
+    },
+    "n_windows": 859
+   },
+   "B_opt": {
+    "speed_mae_mps": 2.333,
+    "speed_bias_mps": 0.9368,
+    "speed_rmse_mps": 3.354,
+    "along_mae_m": 0.389,
+    "along_bias_m": 0.1275,
+    "along_final_bias_m": 0.3326,
+    "accel_mae_mps2": 19.2745,
+    "distance_keeping": {
+     "status": "UNAVAILABLE",
+     "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+     "n": 0
+    },
+    "n_windows": 859
+   },
+   "paired_delta_B_minus_A": {
+    "speed_mae_mps": {
+     "delta": -0.0002,
+     "lo": -0.002,
+     "hi": 0.0017,
+     "ci95": 0.0019,
+     "p_delta_gt0": 0.43,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_bias_mps": {
+     "delta": -0.0055,
+     "lo": -0.0076,
+     "hi": -0.0034,
+     "ci95": 0.0021,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_mae_m": {
+     "delta": -0.0003,
+     "lo": -0.0008,
+     "hi": 0.0002,
+     "ci95": 0.0005,
+     "p_delta_gt0": 0.1,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "accel_mae_mps2": {
+     "delta": 0.0228,
+     "lo": 0.012,
+     "hi": 0.0357,
+     "ci95": 0.0118,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "distance_keeping": {
+    "status": "UNAVAILABLE",
+    "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+    "n": 0
+   }
+  },
+  "LATERAL": {
+   "A_fp32": {
+    "heading_mae_deg": 1.5089,
+    "yaw_rate_mae_degps": 9.142,
+    "curvature_mae_1pm": 0.027623,
+    "curvature_bias_1pm": -0.02272,
+    "cross_mae_m": 0.1118,
+    "cross_bias_m": -0.0025,
+    "cross_final_mae_m": 0.2679,
+    "n_steps_heading": 3303,
+    "n_steps_curvature": 2465,
+    "excluded_below_min_ds": 133,
+    "min_ds_m": 0.05,
+    "n_windows": 859
+   },
+   "B_opt": {
+    "heading_mae_deg": 1.5085,
+    "yaw_rate_mae_degps": 9.1396,
+    "curvature_mae_1pm": 0.02764,
+    "curvature_bias_1pm": -0.022729,
+    "cross_mae_m": 0.1117,
+    "cross_bias_m": -0.0024,
+    "cross_final_mae_m": 0.2676,
+    "n_steps_heading": 3303,
+    "n_steps_curvature": 2465,
+    "excluded_below_min_ds": 133,
+    "min_ds_m": 0.05,
+    "n_windows": 859
+   },
+   "paired_delta_B_minus_A": {
+    "heading_mae_deg": {
+     "delta": -0.0005,
+     "lo": -0.0016,
+     "hi": 0.0005,
+     "ci95": 0.0011,
+     "p_delta_gt0": 0.1775,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "yaw_rate_mae_degps": {
+     "delta": -0.0058,
+     "lo": -0.0209,
+     "hi": 0.005,
+     "ci95": 0.013,
+     "p_delta_gt0": 0.2005,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "curvature_mae_1pm": {
+     "delta": 0.0,
+     "lo": -0.0002,
+     "hi": 0.0003,
+     "ci95": 0.0003,
+     "p_delta_gt0": 0.6,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "cross_mae_m": {
+     "delta": -0.0001,
+     "lo": -0.0004,
+     "hi": 0.0002,
+     "ci95": 0.0003,
+     "p_delta_gt0": 0.3855,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 859,
+     "n_episodes": 39,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "TACTICAL": {
+   "A_fp32": {
+    "status": "OK",
+    "n": 859,
+    "accuracy": 0.5914,
+    "per_class": {
+     "lane_keep": {
+      "n_true": 510,
+      "recall": 0.6647,
+      "n_pred": 447
+     },
+     "turn_left": {
+      "n_true": 110,
+      "recall": 0.7,
+      "n_pred": 109
+     },
+     "turn_right": {
+      "n_true": 68,
+      "recall": 0.6618,
+      "n_pred": 73
+     },
+     "accelerate": {
+      "n_true": 93,
+      "recall": 0.2688,
+      "n_pred": 119
+     },
+     "brake_stop": {
+      "n_true": 78,
+      "recall": 0.2821,
+      "n_pred": 111
+     }
+    },
+    "never_predicted": []
+   },
+   "B_opt": {
+    "status": "OK",
+    "n": 859,
+    "accuracy": 0.5949,
+    "per_class": {
+     "lane_keep": {
+      "n_true": 510,
+      "recall": 0.6706,
+      "n_pred": 449
+     },
+     "turn_left": {
+      "n_true": 110,
+      "recall": 0.7,
+      "n_pred": 110
+     },
+     "turn_right": {
+      "n_true": 68,
+      "recall": 0.6618,
+      "n_pred": 73
+     },
+     "accelerate": {
+      "n_true": 93,
+      "recall": 0.2688,
+      "n_pred": 118
+     },
+     "brake_stop": {
+      "n_true": 78,
+      "recall": 0.2821,
+      "n_pred": 109
+     }
+    },
+    "never_predicted": []
+   },
+   "decision_agreement_A_vs_B": {
+    "mean": 0.9942,
+    "lo": 0.9872,
+    "hi": 0.9988,
+    "ci95": 0.0058,
+    "se": 0.003,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "paired_delta_accuracy_B_minus_A": {
+    "delta": 0.0035,
+    "lo": 0.0,
+    "hi": 0.0081,
+    "ci95": 0.0041,
+    "p_delta_gt0": 0.9635,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "n_flipped_decisions": 5
+  },
+  "STRATEGIC": {
+   "A_fp32_follow_visiononly": {
+    "status": "OK",
+    "n": 859,
+    "accuracy": 0.908,
+    "per_class": {
+     "route_left": {
+      "n_true": 54,
+      "recall": 0.0,
+      "n_pred": 0
+     },
+     "route_straight": {
+      "n_true": 780,
+      "recall": 1.0,
+      "n_pred": 859
+     },
+     "route_right": {
+      "n_true": 25,
+      "recall": 0.0,
+      "n_pred": 0
+     }
+    },
+    "never_predicted": [
+     "route_left",
+     "route_right"
+    ]
+   },
+   "B_opt_follow_visiononly": {
+    "status": "OK",
+    "n": 859,
+    "accuracy": 0.908,
+    "per_class": {
+     "route_left": {
+      "n_true": 54,
+      "recall": 0.0,
+      "n_pred": 0
+     },
+     "route_straight": {
+      "n_true": 780,
+      "recall": 1.0,
+      "n_pred": 859
+     },
+     "route_right": {
+      "n_true": 25,
+      "recall": 0.0,
+      "n_pred": 0
+     }
+    },
+    "never_predicted": [
+     "route_left",
+     "route_right"
+    ]
+   },
+   "decision_agreement_A_vs_B_follow": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "decision_agreement_A_vs_B_nav": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "paired_delta_accuracy_B_minus_A": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "majority_straight_rate": 0.908,
+   "n_flipped_decisions": 0,
+   "route_label_valid_frac": 0.2724,
+   "\u26d4_void_by_construction": "GATE_PROTOCOL \u00a70.7 \u2014 route_acc_nav is PRIVILEGED (the answer is an input). The skill read is the vision-only 'follow' column against majority_straight_rate. This gate's PRIMARY question is nevertheless AGREEMENT between precisions, which is unaffected by that caveat."
+  }
+ },
+ "VERDICT": {
+  "F_ADE": {
+   "bar": "|paired dADE@0-2s| > 0.02 m AND CI excludes 0",
+   "delta_m": -0.0004,
+   "ci": [
+    -0.0009,
+    0.0001
+   ],
+   "separated": false,
+   "degenerate": false,
+   "fires": false
+  },
+  "F_LONGITUDINAL": {
+   "bar": "any longitudinal metric's paired CI excludes 0 (non-degenerate)",
+   "separated_metrics": [
+    "speed_bias_mps",
+    "accel_mae_mps2"
+   ],
+   "fires": true
+  },
+  "F_LATERAL": {
+   "bar": "any lateral metric's paired CI excludes 0 (non-degenerate)",
+   "separated_metrics": [],
+   "fires": false
+  },
+  "F_TACTICAL": {
+   "bar": "manoeuvre decision agreement < 0.953",
+   "agreement": 0.9942,
+   "n_flipped": 5,
+   "fires": false
+  },
+  "F_STRATEGIC": {
+   "bar": "route decision agreement < 0.953",
+   "agreement": 1.0,
+   "n_flipped": 0,
+   "fires": false
+  },
+  "ANY_FIRED": [
+   "F_LONGITUDINAL"
+  ],
+  "READING": "\u26d4 ['F_LONGITUDINAL'] fired \u2014 the optimised pipeline is NOT a drop-in for fp32 on this checkpoint"
+ },
+ "finished": "2026-08-03T01:39:10+0200"
+}

@@ -10,7 +10,37 @@ without the closed x86-only NRE binary.
 *Left: our gsplat render. Middle: NVIDIA's shipped `camera_front_wide_120fov.mp4` frame 0.
 Right: difference.*
 
-## ⛔ FIRST, A RETRACTION: PSNR IS NOT A VALID METRIC ON THIS CLIP
+## ⛔⛔ 2026-08-03 — EVERY SCALAR BELOW THIS LINE IS RETRACTED (wrong quaternion layout)
+
+**Root-cause class: a headline table copied from a superseded run directory.**
+All numbers in the two tables below came from `thor:~/nurec_work/out_xyzw/report.json`, the run
+with `quat_layout = xyzw` — **the layout the scene's own geometric self-test REJECTED**. The
+definitive run is `final/report.json` (`quat_layout = wxyz`); the two are trivially separated by
+`render_mean` (0.2404 vs 0.2762) and nobody checked. Corrected values:
+
+| quantity | RETRACTED (`out_xyzw`) | **CORRECT (`final`, wxyz)** |
+|---|---|---|
+| grad-NCC vs correct frame 0 | 0.2719 | **0.3802** |
+| best WRONG frame | 0.1913 (f300) | **0.2110** (f300) |
+| negative-control margin | +0.0806 | **+0.1692** |
+| PSNR (context only) | 16.758 | 17.012 |
+| render mean | 0.2404 | 0.2762 |
+| affine gain R/G/B | 0.485 / 0.446 / 0.434 | **0.463 / 0.445 / 0.444** full-frame; **0.698 / 0.462 / 0.719** on covered pixels |
+
+The verdict is unchanged — the negative control PASSES either way — but the margin is **2.1×
+larger** than reported. ⇒ *Quote a run directory, not a number.*
+
+**⛔ ALSO RETRACTED: "the residual is the scene's trained per-frame ISP" (the "next step 1" below).**
+The PPISP parameters were found at `.post_processings.0.ppisp.*`, decoded and applied
+(`ppisp.py`, `isp_experiment.py`). `exposure` is **exactly 0 for all 3594 views**, `color` is
+**identical for all 3594 views**, vignetting `max|α| = 0.0047` — combined effect **`mean|Δ| =
+0.0018` (0.18 %)**, because the config sets `per_frame_ppisp_enabled: false`. **The scene ships
+no per-frame photometry at all.** And the "near-equal per-channel gain" is an artifact of the
+**79–81 % of the absolute error that lives in pixels no gaussian covers**: restricted to covered
+pixels the channels spread 1.55× at frame 0 and 3.4× at frame 450 (`0.960 / 0.286 / 0.471`).
+Full corrected write-up: the 2026-08-03 agent report; measured numbers in `isp_report.json`.
+
+## ⛔ RETRACTION: PSNR IS NOT A VALID METRIC ON THIS CLIP (this one STANDS)
 
 **MEASURED 2026-08-03, negative control.** Our ONE render of frame 0 was scored against the correct
 reference frame **and against four wrong ones**. If the mapping were right and PSNR meaningful, the

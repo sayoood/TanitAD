@@ -1,0 +1,564 @@
+{
+ "purpose": "the same 859 windows, scored on the WRONG grid and the RIGHT grid",
+ "n_windows": 859,
+ "n_episodes": 39,
+ "wp_steps": [
+  5,
+  10,
+  15,
+  20
+ ],
+ "module_has_infer_dt": true,
+ "NEGATIVE_CONTROL": {
+  "what": "the ego's OWN recorded speed poses[:,3] vs the speed the instrument derives",
+  "gt_ego_speed_mps_mean": 12.4565,
+  "seq_geometry_dt0.1_mps_mean": 62.9789,
+  "seq_geometry_dt0.5_mps_mean": 12.5958,
+  "ratio_dt0.1_over_truth": 5.0559,
+  "ratio_dt0.5_over_truth": 1.0112,
+  "verdict": "the 0.5 s grid reproduces the recorded ego speed; the 0.1 s grid is 5x it. This is what makes the defect a MEASUREMENT, not an argument."
+ },
+ "arms": {
+  "A_fp32": {
+   "PRE_FIX_dt0.1_WRONG": {
+    "longitudinal": {
+     "speed_mae_mps": 2.3332,
+     "speed_bias_mps": 0.9423,
+     "speed_rmse_mps": 3.3541,
+     "along_mae_m": 0.3893,
+     "along_bias_m": 0.1289,
+     "along_final_bias_m": 0.3346,
+     "accel_mae_mps2": 19.2517,
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 859
+    },
+    "lateral": {
+     "heading_mae_deg": 1.5089,
+     "yaw_rate_mae_degps": 9.142,
+     "curvature_mae_1pm": 0.027623,
+     "curvature_bias_1pm": -0.02272,
+     "cross_mae_m": 0.1118,
+     "cross_bias_m": -0.0025,
+     "cross_final_mae_m": 0.2679,
+     "n_steps_heading": 3303,
+     "n_steps_curvature": 2465,
+     "excluded_below_min_ds": 133,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 859
+    }
+   },
+   "CORRECTED_dt0.5": {
+    "longitudinal": {
+     "speed_mae_mps": 0.4666,
+     "speed_bias_mps": 0.1885,
+     "speed_rmse_mps": 0.6708,
+     "along_mae_m": 0.3893,
+     "along_bias_m": 0.1289,
+     "along_final_bias_m": 0.3346,
+     "accel_mae_mps2": 0.7701,
+     "dt_s": 0.5,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 859
+    },
+    "lateral": {
+     "heading_mae_deg": 0.7935,
+     "yaw_rate_mae_degps": 1.4115,
+     "curvature_mae_1pm": 0.003304,
+     "curvature_bias_1pm": 0.001381,
+     "cross_mae_m": 0.1118,
+     "cross_bias_m": -0.0025,
+     "cross_final_mae_m": 0.2679,
+     "n_steps_heading": 3265,
+     "n_steps_curvature": 2439,
+     "excluded_below_min_ds": 171,
+     "min_ds_m": 0.25,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.5,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 859
+    }
+   },
+   "grid": {
+    "used": "sparse",
+    "dt_s": 0.5,
+    "horizon_steps": 4,
+    "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+   }
+  },
+  "B_opt": {
+   "PRE_FIX_dt0.1_WRONG": {
+    "longitudinal": {
+     "speed_mae_mps": 2.333,
+     "speed_bias_mps": 0.9368,
+     "speed_rmse_mps": 3.354,
+     "along_mae_m": 0.389,
+     "along_bias_m": 0.1275,
+     "along_final_bias_m": 0.3326,
+     "accel_mae_mps2": 19.2745,
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 859
+    },
+    "lateral": {
+     "heading_mae_deg": 1.5085,
+     "yaw_rate_mae_degps": 9.1396,
+     "curvature_mae_1pm": 0.02764,
+     "curvature_bias_1pm": -0.022729,
+     "cross_mae_m": 0.1117,
+     "cross_bias_m": -0.0024,
+     "cross_final_mae_m": 0.2676,
+     "n_steps_heading": 3303,
+     "n_steps_curvature": 2465,
+     "excluded_below_min_ds": 133,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 859
+    }
+   },
+   "CORRECTED_dt0.5": {
+    "longitudinal": {
+     "speed_mae_mps": 0.4666,
+     "speed_bias_mps": 0.1874,
+     "speed_rmse_mps": 0.6708,
+     "along_mae_m": 0.389,
+     "along_bias_m": 0.1275,
+     "along_final_bias_m": 0.3326,
+     "accel_mae_mps2": 0.771,
+     "dt_s": 0.5,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track in the episode cache \u2014 PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus) but our ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 859
+    },
+    "lateral": {
+     "heading_mae_deg": 0.7931,
+     "yaw_rate_mae_degps": 1.4114,
+     "curvature_mae_1pm": 0.00331,
+     "curvature_bias_1pm": 0.001383,
+     "cross_mae_m": 0.1117,
+     "cross_bias_m": -0.0024,
+     "cross_final_mae_m": 0.2676,
+     "n_steps_heading": 3265,
+     "n_steps_curvature": 2439,
+     "excluded_below_min_ds": 171,
+     "min_ds_m": 0.25,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.5,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 859
+    }
+   },
+   "grid": {
+    "used": "sparse",
+    "dt_s": 0.5,
+    "horizon_steps": 4,
+    "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+   }
+  }
+ },
+ "CORRECTED_paired_delta_B_minus_A": {
+  "speed_mae_mps": {
+   "delta": -0.0,
+   "lo": -0.0004,
+   "hi": 0.0003,
+   "ci95": 0.0004,
+   "p_delta_gt0": 0.43,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "speed_bias_mps": {
+   "delta": -0.0011,
+   "lo": -0.0015,
+   "hi": -0.0007,
+   "ci95": 0.0004,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "along_mae_m": {
+   "delta": -0.0003,
+   "lo": -0.0008,
+   "hi": 0.0002,
+   "ci95": 0.0005,
+   "p_delta_gt0": 0.1,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "accel_mae_mps2": {
+   "delta": 0.0009,
+   "lo": 0.0005,
+   "hi": 0.0014,
+   "ci95": 0.0005,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "heading_mae_deg": {
+   "delta": -0.0004,
+   "lo": -0.0012,
+   "hi": 0.0003,
+   "ci95": 0.0008,
+   "p_delta_gt0": 0.156,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "yaw_rate_mae_degps": {
+   "delta": -0.0,
+   "lo": -0.0013,
+   "hi": 0.0011,
+   "ci95": 0.0012,
+   "p_delta_gt0": 0.511,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "curvature_mae_1pm": {
+   "delta": 5e-06,
+   "lo": 2e-06,
+   "hi": 9e-06,
+   "ci95": 4e-06,
+   "p_delta_gt0": 0.9995,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "display_dp": 6,
+   "display_note": "rendered at 6 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+  },
+  "cross_mae_m": {
+   "delta": -0.0001,
+   "lo": -0.0004,
+   "hi": 0.0002,
+   "ci95": 0.0003,
+   "p_delta_gt0": 0.3855,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 859,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "CORRECTED_arm_levels": {
+  "speed_mae_mps": {
+   "A_fp32": {
+    "mean": 0.4666,
+    "lo": 0.4095,
+    "hi": 0.526,
+    "ci95": 0.0583,
+    "se": 0.0296,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.4666,
+    "lo": 0.4093,
+    "hi": 0.526,
+    "ci95": 0.0584,
+    "se": 0.0296,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "speed_bias_mps": {
+   "A_fp32": {
+    "mean": 0.1885,
+    "lo": 0.0854,
+    "hi": 0.2861,
+    "ci95": 0.1004,
+    "se": 0.0517,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.1874,
+    "lo": 0.0842,
+    "hi": 0.2852,
+    "ci95": 0.1005,
+    "se": 0.0517,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "along_mae_m": {
+   "A_fp32": {
+    "mean": 0.3893,
+    "lo": 0.3346,
+    "hi": 0.4483,
+    "ci95": 0.0569,
+    "se": 0.0293,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.389,
+    "lo": 0.3344,
+    "hi": 0.4479,
+    "ci95": 0.0567,
+    "se": 0.0293,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "accel_mae_mps2": {
+   "A_fp32": {
+    "mean": 0.7701,
+    "lo": 0.6807,
+    "hi": 0.8568,
+    "ci95": 0.088,
+    "se": 0.0451,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.771,
+    "lo": 0.6816,
+    "hi": 0.8577,
+    "ci95": 0.088,
+    "se": 0.0451,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "heading_mae_deg": {
+   "A_fp32": {
+    "mean": 0.9238,
+    "lo": 0.5965,
+    "hi": 1.3963,
+    "ci95": 0.3999,
+    "se": 0.2133,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.9233,
+    "lo": 0.5961,
+    "hi": 1.3962,
+    "ci95": 0.4001,
+    "se": 0.2132,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "yaw_rate_mae_degps": {
+   "A_fp32": {
+    "mean": 1.3461,
+    "lo": 1.0687,
+    "hi": 1.6512,
+    "ci95": 0.2912,
+    "se": 0.1466,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 1.3461,
+    "lo": 1.0674,
+    "hi": 1.6505,
+    "ci95": 0.2915,
+    "se": 0.1465,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "curvature_mae_1pm": {
+   "A_fp32": {
+    "mean": 0.0032,
+    "lo": 0.0022,
+    "hi": 0.0042,
+    "ci95": 0.001,
+    "se": 0.0005,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.0032,
+    "lo": 0.0022,
+    "hi": 0.0043,
+    "ci95": 0.001,
+    "se": 0.0005,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "cross_mae_m": {
+   "A_fp32": {
+    "mean": 0.1118,
+    "lo": 0.0899,
+    "hi": 0.1361,
+    "ci95": 0.0231,
+    "se": 0.0118,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "B_opt": {
+    "mean": 0.1117,
+    "lo": 0.0899,
+    "hi": 0.136,
+    "ci95": 0.0231,
+    "se": 0.0118,
+    "reducer": "mean",
+    "n_windows": 859,
+    "n_episodes": 39,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  }
+ },
+ "MATERIALITY": {
+  "note": "a paired episode-cluster bootstrap over 859 windows resolves sub-percent shifts. SEPARATION is not MATERIALITY \u2014 both are reported, neither is used to redefine the other, and the pre-registered falsifier stands as written.",
+  "per_metric": {
+   "speed_mae_mps": {
+    "delta": -0.0,
+    "separated": false,
+    "pct_of_fp32_level": -0.0
+   },
+   "speed_bias_mps": {
+    "delta": -0.0011,
+    "separated": true,
+    "pct_of_fp32_level": -0.5836
+   },
+   "along_mae_m": {
+    "delta": -0.0003,
+    "separated": false,
+    "pct_of_fp32_level": -0.0771
+   },
+   "accel_mae_mps2": {
+    "delta": 0.0009,
+    "separated": true,
+    "pct_of_fp32_level": 0.1169
+   },
+   "heading_mae_deg": {
+    "delta": -0.0004,
+    "separated": false,
+    "pct_of_fp32_level": -0.0433
+   },
+   "yaw_rate_mae_degps": {
+    "delta": -0.0,
+    "separated": false,
+    "pct_of_fp32_level": -0.0
+   },
+   "curvature_mae_1pm": {
+    "delta": 5e-06,
+    "separated": true,
+    "pct_of_fp32_level": 0.1562
+   },
+   "cross_mae_m": {
+    "delta": -0.0001,
+    "separated": false,
+    "pct_of_fp32_level": -0.0894
+   }
+  }
+ }
+}

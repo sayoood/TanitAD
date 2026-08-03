@@ -61,8 +61,10 @@ from torch.utils.data import DataLoader
 
 import refb_labels
 from refb_train import FailLoudWindowDataset, load_cached_episodes
+from tanitad.data.lan import LanConfig, lan_window_features
 from tanitad.config import base250cam_config
 from tanitad.refs.refc import (N_ROUTE, RefCModel, param_breakdown, refc_config,
+                               LanConfig as RefCLanConfig,
                                refc_small_config, refc_smoke_config,
                                refc_xl_config)
 from tanitad.train.train_worldmodel import cosine_lr
@@ -141,6 +143,62 @@ class RouteV21Dataset(FailLoudWindowDataset):
                 "route_frac": [round(c / tot, 4) for c in counts],
                 "valid_frac": round((tot - counts[3]) / tot, 4),
                 "reasons": {k: round(v / tot, 4) for k, v in sorted(reasons.items())}}
+
+
+# ---- LAN route input (opt-in; --graft-lan) -----------------------------------
+
+def lan_dataset_class(base):
+    """Wrap ANY FailLoudWindowDataset subclass so each item carries ``lan``.
+
+    Composes with the v1 / v21 / v3 label sets instead of forking them, because
+    LAN changes a model INPUT and must not perturb the route CE TARGET — the
+    same separation ``RouteV21Dataset`` documents for ``nav_cmd``.
+    """
+
+    class _WithLan(base):
+        def __init__(self, *a, lan_cfg=None, **kw):
+            super().__init__(*a, **kw)
+            self.lan_cfg = lan_cfg or LanConfig()
+
+        def __getitem__(self, i: int):
+            item = super().__getitem__(i)
+            e_i, t = self.index[i]
+            f = lan_window_features(self.episodes[e_i].poses,
+                                    t + self.window - 1, self.lan_cfg)
+            item["lan"] = torch.from_numpy(f)      # already float32 [K*4]
+            return item
+
+        def lan_stats(self, n: int = 4000, seed: int = 0) -> dict:
+            """Route-INPUT coverage over sampled windows (config.json row).
+
+            The number that matters: ``any_valid_frac``. The 4-way ``nav_cmd``
+            it replaces is valid on 0.21-0.25 of windows (MEASURED, all four
+            arms) — if LAN is not materially higher, the input is not fixed and
+            the experiment should not run.
+            """
+            g = torch.Generator().manual_seed(seed)
+            idx = torch.randperm(len(self.index), generator=g)[:min(n, len(self))]
+            k = self.lan_cfg.k
+            per_anchor = [0.0] * k
+            any_valid = 0
+            for i in idx.tolist():
+                e_i, t = self.index[i]
+                f = lan_window_features(self.episodes[e_i].poses,
+                                        t + self.window - 1, self.lan_cfg)
+                v = f.reshape(k, -1)[:, 3]
+                per_anchor = [a + float(b) for a, b in zip(per_anchor, v)]
+                any_valid += int(v.any())
+            tot = max(int(idx.numel()), 1)
+            return {"n_sampled": tot,
+                    "arclengths_m": list(self.lan_cfg.arclengths_m),
+                    "min_lead_m": self.lan_cfg.min_lead_m,
+                    "per_anchor_valid_frac": [round(x / tot, 4)
+                                              for x in per_anchor],
+                    "any_valid_frac": round(any_valid / tot, 4)}
+
+    _WithLan.__name__ = f"Lan{base.__name__}"
+    _WithLan.__qualname__ = _WithLan.__name__
+    return _WithLan
 
 
 # ---- v3 labels (opt-in; --labels v3) -----------------------------------------
@@ -251,9 +309,12 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     nav_valid = batch["nav_valid"].to(device)      # [B] bool
     route_tgt = batch["route_target"].to(device)   # [B] long
     v0 = pose_last[:, 3]                            # [B] current ego speed (t0)
+    # LAN route corridor (only when the graft is on AND the dataset emits it —
+    # a missing key must not be silently defaulted to "no route").
+    lan = batch["lan"].to(device) if "lan" in batch else None
 
     steps = model.cfg.decoder.diffusion_steps if mode == "diffusion" else 0
-    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps)
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan)
     cfg = model.cfg
     b = frames.shape[0]
 
@@ -332,6 +393,8 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "anchor_acc": anchor_acc, "man_acc": man_acc,
             "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
+            **({"lan_valid_frac": out["lan_dir"][:, 2].mean()}
+               if "lan_dir" in out else {}),
             "pooled": out["pooled"]}
 
 
@@ -376,6 +439,10 @@ def train(args) -> dict:
     _presets = {"small": refc_small_config, "base": refc_config,
                 "xl": refc_xl_config}
     cfg = refc_smoke_config() if args.smoke else _presets[args.config]()
+    if args.graft_lan:
+        cfg.graft_lan = True
+        cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
+        cfg.route_dropout = args.route_dropout
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
     model = RefCModel(cfg).to(device)
     # Install the FPS anchor vocabulary (else the built-in default anchors).
@@ -393,14 +460,25 @@ def train(args) -> dict:
     ds_kw = dict(window=cfg.window, max_horizon=max_h,
                  channels=cfg.encoder.in_channels)
     label_stats: dict | None = None
+    lan_stats: dict | None = None
+    lan_cfg = LanConfig(arclengths_m=tuple(args.lan_arclengths),
+                        min_lead_m=args.lan_min_lead_m) if args.graft_lan else None
+    lan_kw = {"lan_cfg": lan_cfg} if args.graft_lan else {}
     if args.labels in ("v21", "v3"):
         dcls = RouteV21Dataset if args.labels == "v21" else RouteV3Dataset
-        ds = dcls(train_eps, use_net_dyaw=args.use_net_dyaw, **ds_kw)
+        if args.graft_lan:
+            dcls = lan_dataset_class(dcls)
+        ds = dcls(train_eps, use_net_dyaw=args.use_net_dyaw, **lan_kw, **ds_kw)
         label_stats = ds.label_stats()
         print(f"[labels] {args.labels} route (use_net_dyaw="
               f"{args.use_net_dyaw}): {json.dumps(label_stats)}", flush=True)
     else:
-        ds = FailLoudWindowDataset(train_eps, **ds_kw)
+        dcls = (lan_dataset_class(FailLoudWindowDataset) if args.graft_lan
+                else FailLoudWindowDataset)
+        ds = dcls(train_eps, **lan_kw, **ds_kw)
+    if args.graft_lan:
+        lan_stats = ds.lan_stats()
+        print(f"[lan] route-input coverage: {json.dumps(lan_stats)}", flush=True)
     assert len(ds) >= batch, \
         f"only {len(ds)} windows for batch {batch} — add episodes"
     dl_kw = dict(batch_size=batch, shuffle=True, drop_last=True)
@@ -433,6 +511,10 @@ def train(args) -> dict:
              "use_net_dyaw": (bool(args.use_net_dyaw)
                               if args.labels in ("v21", "v3") else None),
              "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+             "lan": ({"derivation": "tanitad.data.lan.lan_window_features "
+                                    "(S1 ego_future, arc-length resample)",
+                      "route_dropout": args.route_dropout,
+                      "stats": lan_stats} if args.graft_lan else None),
              "maneuver_derivation": ("refb_labels.window_maneuver_labels "
                                      "(v1 5-way) — UNCHANGED in every label "
                                      "set; the LAT x LON factorization is a "
@@ -497,6 +579,10 @@ def train(args) -> dict:
                 "route_acc": sc(out["route_acc"]),
                 "route_valid_frac": sc(out["route_valid_frac"]),
                 "nav_follow_frac": sc(out["nav_follow_frac"]),
+                # LAN arm only: a dead route input must be visible in the FIRST
+                # log line, not inferred after a 30 k run.
+                **({"lan_valid_frac": sc(out["lan_valid_frac"])}
+                   if "lan_valid_frac" in out else {}),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
             }
@@ -516,8 +602,17 @@ def train(args) -> dict:
         vkw = dict(window=cfg.window, max_horizon=max_h,
                    channels=cfg.encoder.in_channels)
         vcls = {"v21": RouteV21Dataset, "v3": RouteV3Dataset}.get(args.labels)
+        # ⚠️ The val set MUST carry the same route input as train, or the arm is
+        # evaluated on a route it never receives — which is exactly the
+        # nav_cmd=None confound (RETRACTION_LOG C6) reintroduced by omission.
+        if args.graft_lan:
+            vcls = lan_dataset_class(vcls if vcls is not None
+                                     else FailLoudWindowDataset)
+            vkw = dict(vkw, lan_cfg=lan_cfg)
         vds = (vcls(val_eps, use_net_dyaw=args.use_net_dyaw, **vkw)
-               if vcls is not None else FailLoudWindowDataset(val_eps, **vkw))
+               if vcls is not None and issubclass(vcls, RouteV21Dataset)
+               else vcls(val_eps, **vkw) if vcls is not None
+               else FailLoudWindowDataset(val_eps, **vkw))
         model.eval()
         with torch.no_grad():
             vb = torch.utils.data.default_collate(
@@ -528,6 +623,9 @@ def train(args) -> dict:
                                     "speed_cls", "speed_mae", "anchor_acc",
                                     "man_acc", "route_acc", "route_valid_frac",
                                     "nav_follow_frac")}
+        if "lan_valid_frac" in vout:
+            metrics["val"]["lan_valid_frac"] = round(
+                float(vout["lan_valid_frac"]), 5)
     except AssertionError:
         pass                                        # no val cache dir
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2),
@@ -575,6 +673,19 @@ def main(argv=None):
     ap.add_argument("--episodes", type=int, default=0, help="0 = all")
     ap.add_argument("--warmup", type=int, default=None,
                     help="default: the main run's warmup (base250cam, 2000)")
+    ap.add_argument("--graft-lan", action="store_true",
+                    help="LAN: feed a lane-anchored route corridor alongside "
+                         "nav_cmd (see PREREG_lan_refc.md). Additive and "
+                         "zero-init: OFF is byte-identical to a model without "
+                         "it, so this flag alone defines the LAN arm")
+    ap.add_argument("--lan-arclengths", type=float, nargs="+",
+                    default=[20.0, 40.0, 80.0, 160.0],
+                    help="LAN route-anchor arc-lengths in metres (ascending)")
+    ap.add_argument("--lan-min-lead-m", type=float, default=5.0,
+                    help="extra leak-guard margin past the 2 s path length")
+    ap.add_argument("--route-dropout", type=float, default=0.5,
+                    help="per-sample Bernoulli mask of the LAN route (train "
+                         "only) so the planner never becomes route-DEPENDENT")
     ap.add_argument("--refc1", action="store_true",
                     help="REF-C.1: fixed-distance path checkpoints at "
                          "(2,5,10,20) m + target-speed classification head")

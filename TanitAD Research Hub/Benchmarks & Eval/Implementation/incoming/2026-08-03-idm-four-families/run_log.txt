@@ -1,0 +1,17 @@
+[01:57:14] estimator in use: G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\taniteval\taniteval\ci.py
+[01:57:14] split: clean=50 leaked=9
+[01:57:16] encoder loaded: 87.0M enc + 0.1M readout, state_dim 2048, ckpt step 29999
+[01:57:16] encoder loaded: state_dim=2048 step=29999
+[02:01:43] CLEAN: windows 6,900 latent (6900, 9, 2048) episodes 50 (266s)
+[02:02:31] LEAKED: windows 1,242 episodes 9
+[02:02:31] predicting: shipped ensemble on the CLEAN split
+[02:02:32] predicting: shipped ensemble on the KNOWN-LEAKED split (sensitivity)
+[02:02:32] predicting: NEG-1 latents shuffled across windows
+[02:02:33] NEG-2 blind mean predictor (train-mean of THIS set: an upper bound on a blind arm, so it flatters the control, not us)
+[02:02:33] NEG-3 GT trajectory with the yaw sign flipped (right<->left)
+[02:02:33]   shipped_ensemble_v4_steer_ens3: ADE 0.4482  lat_BA 0.7722  lon_BA 0.6865  speedR2 0.9986
+[02:02:33]   NEG1_latents_shuffled_across_windows: ADE 16.3159  lat_BA 0.3297  lon_BA 0.3335  speedR2 -0.9962
+[02:02:33]   NEG2_blind_mean_predictor: ADE 12.6727  lat_BA 0.3333  lon_BA 0.3333  speedR2 -0.0
+[02:02:33]   NEG3_gt_with_lateral_sign_flipped: ADE 0.5538  lat_BA 0.3333  lon_BA 1.0  speedR2 1.0
+[02:02:42]   LEAKED-arm: ADE 0.4759 lat_BA 0.6282 lon_BA 0.5395 speedR2 0.9979
+[02:02:42] wrote results_idm_four_families.json

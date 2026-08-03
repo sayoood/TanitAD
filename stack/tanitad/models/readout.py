@@ -16,6 +16,26 @@ import torch
 from torch import Tensor, nn
 
 
+def _adaptive_avg_matrix(n_in: int, n_out: int) -> Tensor:
+    """The averaging matrix ``[n_out, n_in]`` that ``AdaptiveAvgPool1d`` applies along one axis.
+
+    PyTorch's adaptive pooling assigns output bin ``i`` the input range
+    ``[floor(i * n_in / n_out), ceil((i + 1) * n_in / n_out))`` and takes its mean. With static
+    sizes that is a constant linear map, so the whole op becomes a matmul — which ONNX exports and
+    ``adaptive_avg_pool2d`` does not (see :class:`SpatialGridReadout`).
+
+    ⚠️ Bins are deliberately UNEQUAL where the sizes do not tile (11 -> 4 gives 3/3/3/2), because
+    that is exactly what the trained weights were fitted against. Equalising them would be a
+    silent model change dressed up as an export fix.
+    """
+    m = torch.zeros(n_out, n_in)
+    for i in range(n_out):
+        start = (i * n_in) // n_out
+        end = -((-(i + 1) * n_in) // n_out)          # ceil((i+1)*n_in/n_out)
+        m[i, start:end] = 1.0 / float(end - start)
+    return m
+
+
 class SpatialGridReadout(nn.Module):
     """Token grid [B, N, D] -> compact state [B, Gh*Gw*d_r] preserving layout.
 
@@ -67,13 +87,40 @@ class SpatialGridReadout(nn.Module):
         self.exact_pool = (th % grid == 0 and tw % gw == 0)
         self.pool = (nn.AvgPool2d((th // grid, tw // gw)) if self.exact_pool
                      else nn.AdaptiveAvgPool2d((grid, gw)))
+        # ⛔ ONNX. `AdaptiveAvgPool2d` with an output size that is not a factor of the input is
+        # UNEXPORTABLE — `SymbolicValueError: adaptive_avg_pool2d, output size that are not factor
+        # of input size`, at every opset and both MHA-fastpath settings. MEASURED 2026-08-03 on
+        # Thor: this is what blocks the ENCODER from exporting at the DEPLOYED 176x624 geometry
+        # (11x39 tokens onto a 4x4 readout grid), and therefore blocks backlog item O2 — the
+        # designated fallback for the single largest lever in the whole Thor result.
+        #
+        # The fix is not an approximation. Adaptive pooling with STATIC input and output sizes is a
+        # FIXED LINEAR OPERATOR: output bin i averages input rows [floor(i*H/G), ceil((i+1)*H/G)).
+        # Materialising that as two constant averaging matrices makes the same computation a pair
+        # of matmuls, which every opset exports. The bins, and therefore the numbers, are identical
+        # by construction — `tests/test_readout_onnx_pool.py` measures the residual against
+        # `F.adaptive_avg_pool2d` rather than asserting it, including at the deployed 11x39 -> 4x4.
+        #
+        # ⚠️ NOT persistent: these are derived constants, so they must never enter the state_dict.
+        # A persistent buffer here would make every existing checkpoint fail a STRICT load.
+        if not self.exact_pool:
+            self.register_buffer("pool_mh", _adaptive_avg_matrix(th, grid),
+                                 persistent=False)
+            self.register_buffer("pool_mw", _adaptive_avg_matrix(tw, gw),
+                                 persistent=False)
         self.proj = nn.Linear(d_model, d_readout)
         self.out_dim = grid * gw * d_readout
 
     def forward(self, tokens: Tensor) -> Tensor:
         b, n, d = tokens.shape
         x = tokens.transpose(1, 2).reshape(b, d, self.token_h, self.token_w)
-        x = self.pool(x)                                  # [B, D, Gh, Gw]
+        if self.exact_pool:
+            x = self.pool(x)                              # [B, D, Gh, Gw] — deployed path, untouched
+        else:
+            # [Gh,H] @ [B,D,H,W] -> [B,D,Gh,W] @ [W,Gw] -> [B,D,Gh,Gw]
+            mh = self.pool_mh.to(x.dtype)
+            mw = self.pool_mw.to(x.dtype)
+            x = torch.matmul(torch.matmul(mh, x), mw.transpose(0, 1))
         x = x.flatten(2).transpose(1, 2)                  # [B, Gh*Gw, D]
         return self.proj(x).flatten(1)                    # [B, Gh*Gw*d_r]
 
