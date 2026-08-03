@@ -210,6 +210,34 @@ def main():
                     f"{f(op['precision'])} | {op['n_alarm']:,} / {op['n_pos']:,} | "
                     f"**{f(op['precision_lift'], 3)}** | {ci(r['paired_vs_null'])} |")
 
+    # ---- the still-frame control ------------------------------------------
+    if a.stillframe and Path(a.stillframe).exists():
+        SF = json.loads(Path(a.stillframe).read_text(encoding="utf-8"))
+        L.append("\n## T6. The STILL-FRAME control — is the classifier reading appearance?\n")
+        L.append("Same encoder, same clips, same labels; the 9-channel input is the last RGB frame "
+                 "replicated 3x, so it carries **zero** inter-frame motion. `recovery` = "
+                 "(still_lift − still_null) ÷ (real_lift − real_null), i.e. skill over each "
+                 "substrate's OWN permuted null. ⚠️ `recovery` is meaningless when the real skill "
+                 "is ~0 — flagged rather than printed.\n")
+        L.append("| situation | arm | real lift (null) | **real skill** | still lift (null) | "
+                 "**still skill** | **recovery** | still − real |")
+        L.append("|---|---|---:|---:|---:|---:|---:|---|")
+        for s in SITS:
+            row = SF["per_situation"].get(s)
+            if not row:
+                continue
+            for arm, q in row["arms"].items():
+                r_, s_ = q["real"], q["still"]
+                rec = q["RECOVERY_FRACTION"]
+                rec_s = ("**n/a** (real skill ≈ 0)" if rec is None or abs(r_["skill_over_null"]) < 0.05
+                         else f"**{rec:.3f}**")
+                L.append(
+                    f"| `{s}` | `{arm}` | {r_['ap_lift']['point']:.3f} "
+                    f"({r_['own_null_ap_lift']:.3f}) | {r_['skill_over_null']:+.3f} | "
+                    f"{s_['ap_lift']['point']:.3f} ({s_['own_null_ap_lift']:.3f}) | "
+                    f"{s_['skill_over_null']:+.3f} | {rec_s} | "
+                    f"{ci(q['paired_still_minus_real'])} |")
+
     Path(a.out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"wrote {a.out}  ({len(L)} lines)")
 

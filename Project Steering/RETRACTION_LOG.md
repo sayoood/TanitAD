@@ -2482,3 +2482,88 @@ actually contains the reason. Same family as *"a seam that is wired but cannot c
 decoration"*, one level down: a rail that can be stepped over is not a rail.
 ⇒ **RULE: mirroring an existing pattern is a free audit of the original.** This one found three
 defects in code I had shipped hours earlier. When copying a shape, test the source too.
+
+---
+
+## R-2026-08-03-cite — ⛔ CITATION DRIFT: `refc.py:1112-1117` is the WRONG line range,
+## and it propagated into every brief I wrote today
+
+**What I circulated.** That `refc.py:1112-1117` *"computes feature maps for all W frames and keeps
+only the last"*, and that this was the mechanism behind both the sitclf capacity ceiling and
+`long_accel`'s unrecoverability. It went into **three agent briefs**, the chat summary, and a
+program report.
+
+**What is actually at those lines:** `_goal_along_prior` — the **anchor-endpoint prior**. Nothing to
+do with feature maps. The correct location is **`refc.py:1688, 1691`**.
+
+**And the claim the citation was carrying is itself refuted** (see the latent-bottleneck stream,
+2026-08-03): REF-C's input is `in_channels=9`, a D-015 **3-frame stack**, so the kept map already
+spans **~300 ms**. "Single-instant" was wrong in substance as well as in address.
+
+**Root-cause class: a line number quoted from memory across a file that other streams were editing
+concurrently.** Line numbers are the least stable identifier in a live repo, and I re-quoted mine
+without re-reading. The claim looked verified *because it carried a precise-looking citation* — a
+false precision that made it harder, not easier, to check.
+⇒ **RULE: cite a SYMBOL, not a line range** — `RefCModel.forward`, `_goal_along_prior` — and re-read
+before re-quoting. A line range is admissible only alongside the symbol name, so drift is detectable.
+⇒ **RULE: a precise citation is not evidence the claim was checked.** Three agents accepted this one
+because it was specific.
+
+### Also retracted here: S6's registered conditionality
+
+`refc.py`'s `refc_goal_config` docstring registered the S6 predicted-goal arm as **"conditional on
+the sibling temporal-feature stream"**. **Retracted** — the two do **not** share an input path
+(REF-C keeps one feature map; `sitclf.causal_window` stacks eight). A null in the temporal stream is
+not evidence about S6, and the registration would have let an unrelated result **silently cancel a
+lever that had never been tested**. Fixed in `refc.py`; S6 is an independent lever.
+⇒ **RULE: an arm may be registered as conditional on another result only when the two share the
+MECHANISM, not merely the topic.** Check the input path before writing "conditional on".
+
+---
+
+## R-2026-08-03-rho — ⛔ A RANK CORRELATION OVER THE CANDIDATE AXIS WAS USED TO SIZE A SELECTOR,
+## and it is not a proxy for one — MEASURED on both REF-C arms
+
+**What was circulated.** `PREREG_D-SEL…` §6.3 registered *"S3 LIVE ⇒ include S3 in the retrain
+arm"*, triggered by Spearman `ρ(cons_i, −ADE_i)` over REF-C's whole candidate axis. E-SEL-1
+measured **ρ = 0.6657** (base) / **0.6212** (XL) and the branch fired.
+
+**What is NOT retracted.** E-SEL-1's ρ is correct and reproduces **inside its own CI** from an
+independently decoded, **bit-identical** fan. E-SEL also flagged, correctly, that the statistic uses
+the **future frame** `z_{t+5}` which the deployed path never sees, and refused to quote 0.65 as an
+effect size. That refusal was right and is the reason this measurement exists.
+
+**What IS retracted: the inference from a high ρ to a fundable SELECTOR.** MEASURED 2026-08-03
+(`…/incoming/2026-08-03-s3-deployable/`, 881 windows / 40 episodes, both arms):
+
+* the score with **ρ = 0.6657 — the one allowed to see the future — selects at 6.49 m ADE@2s**
+  against a shipped 0.4728, i.e. **13.7× worse**;
+* the **deployable** score selects at **20.23 m / 35.86 m**, i.e. **worse than the random control**
+  (14.54 / 13.96 m);
+* a **zero-parameter** score (distance to the constant-velocity baseline) reaches **ρ = 0.995** and
+  still selects **worse than shipped** (0.815 m).
+
+**Root-cause class: the statistic was computed over a population the decision cannot act on.**
+**72–74 % of REF-C's fan is outside the reachable band and deleting it is MEASURED exactly inert on
+ADE** — so a full-axis rank correlation is dominated by candidates **no selector ever picks**.
+Restricted to the reachable survivors, ρ collapses: **oracle 0.6657 → 0.3008**, and the **deployable
+score → −0.0286 [−0.0863, +0.0277], a CI that crosses zero**.
+
+⇒ **RULE: a correlation only sizes a decision if it is computed over the candidates the decision can
+actually choose between.** Report ρ on the actionable subset **beside** the full-axis ρ, or do not
+quote it for a selector.
+⇒ **RULE: convert a correlation into the decision's own units by MEASURING the decision** — here,
+run the argmax and the gated graft — never by arguing from the correlation's magnitude.
+⇒ This is the same family as the C6 confound and the REF-A I-JEPA leak one level out: not a leaked
+*input*, but a **statistic whose support does not match the deployed choice**.
+
+### Also logged: the branch-table defect reproduced ONE DAY after it was escalated
+
+`PREREG_S3_DEPLOYABLE.md` §4 (written 2026-08-03) registered *"ρ_deploy **separated from**
+C-ctxswap AND **separated from** C-cv"* as the FUND trigger. Both separations came back
+**ADVERSE** — the controls beat the score — and the trigger fired anyway, exactly as
+`PREREG_D-SEL…` §6.3's four S1 branches could not express E-SEL-0's adverse separation the day
+before. **The escalation was read and the same defect was written again.**
+⇒ **RULE: every "separated from a control" trigger carries a DIRECTION predicate** —
+*separated **and** the delta favours the treatment*. A bare `separated` is satisfied by a control
+that beats you.

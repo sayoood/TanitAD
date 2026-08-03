@@ -1,0 +1,443 @@
+{
+ "_what": "LONGITUDINAL distance-keeping on the canonical val40 window grid",
+ "_binding": "Sayed 2026-08-02 \u2014 per family, never pooled; a missing family is a work item",
+ "_estimator": "episode-cluster bootstrap; paired for deltas. NEVER overlapping_holdout_se",
+ "n_windows": 176,
+ "n_episodes": 8,
+ "canonical_881_asserted": false,
+ "window_states": {
+  "LEAD": 68,
+  "NO_LEAD": 77,
+  "NO_LABEL": 31
+ },
+ "episodes": [
+  {
+   "file": "ep_00000.pt",
+   "clip": "clip_b8a8c760",
+   "chunk": 779,
+   "T": 199,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00042,
+   "grid_dt_s": 0.100667,
+   "LEAD": 5,
+   "NO_LEAD": 8,
+   "NO_LABEL": 9
+  },
+  {
+   "file": "ep_00001.pt",
+   "clip": "clip_b36c4d6e",
+   "chunk": 1864,
+   "T": 199,
+   "n_windows": 22,
+   "has_obstacle": false,
+   "registration_residual_m": 0.00114,
+   "grid_dt_s": 0.100502,
+   "LEAD": 0,
+   "NO_LEAD": 0,
+   "NO_LABEL": 22
+  },
+  {
+   "file": "ep_00002.pt",
+   "clip": "clip_e43999c1",
+   "chunk": 1893,
+   "T": 199,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00099,
+   "grid_dt_s": 0.1005,
+   "LEAD": 16,
+   "NO_LEAD": 6,
+   "NO_LABEL": 0
+  },
+  {
+   "file": "ep_00003.pt",
+   "clip": "clip_3878ea75",
+   "chunk": 170,
+   "T": 199,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00021,
+   "grid_dt_s": 0.100667,
+   "LEAD": 7,
+   "NO_LEAD": 15,
+   "NO_LABEL": 0
+  },
+  {
+   "file": "ep_00004.pt",
+   "clip": "clip_577a353b",
+   "chunk": 1893,
+   "T": 198,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00128,
+   "grid_dt_s": 0.101006,
+   "LEAD": 5,
+   "NO_LEAD": 17,
+   "NO_LABEL": 0
+  },
+  {
+   "file": "ep_00005.pt",
+   "clip": "clip_e562ea71",
+   "chunk": 184,
+   "T": 199,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00047,
+   "grid_dt_s": 0.100666,
+   "LEAD": 21,
+   "NO_LEAD": 1,
+   "NO_LABEL": 0
+  },
+  {
+   "file": "ep_00006.pt",
+   "clip": "clip_7013cbe1",
+   "chunk": 1893,
+   "T": 198,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00027,
+   "grid_dt_s": 0.101005,
+   "LEAD": 0,
+   "NO_LEAD": 22,
+   "NO_LABEL": 0
+  },
+  {
+   "file": "ep_00007.pt",
+   "clip": "clip_98081ee6",
+   "chunk": 1846,
+   "T": 198,
+   "n_windows": 22,
+   "has_obstacle": true,
+   "registration_residual_m": 0.00074,
+   "grid_dt_s": 0.101006,
+   "LEAD": 14,
+   "NO_LEAD": 8,
+   "NO_LABEL": 0
+  }
+ ],
+ "refused": [],
+ "arms": {
+  "GT": {
+   "pooled": {
+    "n": 55,
+    "n_windows": 176,
+    "dt_s": 0.5,
+    "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+    "ttc_cap_s": 30.0,
+    "status": "OK",
+    "mean_headway_min_m": 27.5721,
+    "mean_time_gap_min_s": 7.1228,
+    "n_time_gap": 39,
+    "mean_min_ttc_s": 21.783,
+    "n_closing": 24,
+    "censoring_note": "31 of 55 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone."
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 176,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 26,
+      "window_states": {
+       "LEAD": 21,
+       "NO_LEAD": 5
+      },
+      "n_with_lead": 20,
+      "lead_rate": 0.7692,
+      "status": "UNPOWERED",
+      "reason": "20 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 10,
+      "window_states": {
+       "LEAD": 6,
+       "NO_LABEL": 2,
+       "NO_LEAD": 2
+      },
+      "n_with_lead": 4,
+      "lead_rate": 0.4,
+      "status": "UNPOWERED",
+      "reason": "4 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 58,
+      "window_states": {
+       "LEAD": 23,
+       "NO_LABEL": 2,
+       "NO_LEAD": 33
+      },
+      "n_with_lead": 15,
+      "lead_rate": 0.2586,
+      "status": "UNPOWERED",
+      "reason": "15 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 57,
+      "window_states": {
+       "LEAD": 15,
+       "NO_LABEL": 12,
+       "NO_LEAD": 30
+      },
+      "n_with_lead": 13,
+      "lead_rate": 0.2281,
+      "status": "UNPOWERED",
+      "reason": "13 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 25,
+      "window_states": {
+       "LEAD": 3,
+       "NO_LABEL": 15,
+       "NO_LEAD": 7
+      },
+      "n_with_lead": 3,
+      "lead_rate": 0.12,
+      "status": "UNPOWERED",
+      "reason": "3 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 0,
+      "window_states": {},
+      "n_with_lead": 0,
+      "lead_rate": null,
+      "status": "EMPTY",
+      "reason": "no window fell in this speed band"
+     }
+    },
+    "window_states_total": {
+     "LEAD": 68,
+     "NO_LABEL": 31,
+     "NO_LEAD": 77
+    }
+   }
+  },
+  "CV": {
+   "pooled": {
+    "n": 65,
+    "n_windows": 176,
+    "dt_s": 0.5,
+    "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+    "ttc_cap_s": 30.0,
+    "status": "OK",
+    "mean_headway_min_m": 25.856,
+    "mean_time_gap_min_s": 6.9802,
+    "n_time_gap": 49,
+    "mean_min_ttc_s": 15.5026,
+    "n_closing": 42,
+    "censoring_note": "23 of 65 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone."
+   },
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 176,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 26,
+      "window_states": {
+       "LEAD": 21,
+       "NO_LEAD": 5
+      },
+      "n_with_lead": 20,
+      "lead_rate": 0.7692,
+      "status": "UNPOWERED",
+      "reason": "20 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 10,
+      "window_states": {
+       "LEAD": 6,
+       "NO_LABEL": 2,
+       "NO_LEAD": 2
+      },
+      "n_with_lead": 6,
+      "lead_rate": 0.6,
+      "status": "UNPOWERED",
+      "reason": "6 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 58,
+      "window_states": {
+       "LEAD": 23,
+       "NO_LABEL": 2,
+       "NO_LEAD": 33
+      },
+      "n_with_lead": 23,
+      "lead_rate": 0.3966,
+      "status": "UNPOWERED",
+      "reason": "23 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 57,
+      "window_states": {
+       "LEAD": 15,
+       "NO_LABEL": 12,
+       "NO_LEAD": 30
+      },
+      "n_with_lead": 13,
+      "lead_rate": 0.2281,
+      "status": "UNPOWERED",
+      "reason": "13 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 25,
+      "window_states": {
+       "LEAD": 3,
+       "NO_LABEL": 15,
+       "NO_LEAD": 7
+      },
+      "n_with_lead": 3,
+      "lead_rate": 0.12,
+      "status": "UNPOWERED",
+      "reason": "3 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 0,
+      "window_states": {},
+      "n_with_lead": 0,
+      "lead_rate": null,
+      "status": "EMPTY",
+      "reason": "no window fell in this speed band"
+     }
+    },
+    "window_states_total": {
+     "LEAD": 68,
+     "NO_LABEL": 31,
+     "NO_LEAD": 77
+    }
+   }
+  }
+ },
+ "paired": {
+  "GT_minus_CV": {
+   "_what": "paired GT - CV distance-keeping deltas",
+   "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+   "arms": [
+    "GT",
+    "CV"
+   ],
+   "metrics": {
+    "headway_min_m": {
+     "n_used": 55,
+     "n_windows": 55,
+     "n_a_only": 0,
+     "n_b_only": 10,
+     "delta": 2.8587,
+     "lo": 1.1266,
+     "hi": 6.6232,
+     "ci95": 2.7483,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 6,
+     "n_boot": 500,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 39,
+     "n_windows": 39,
+     "n_a_only": 0,
+     "n_b_only": 10,
+     "delta": 0.7157,
+     "lo": 0.4832,
+     "hi": 1.182,
+     "ci95": 0.3494,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 6,
+     "n_boot": 500,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 55,
+     "n_windows": 55,
+     "n_a_only": 0,
+     "n_b_only": 10,
+     "delta": 5.9252,
+     "lo": 3.1858,
+     "hi": 11.8022,
+     "ci95": 4.3082,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 6,
+     "n_boot": 500,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   }
+  }
+ }
+}

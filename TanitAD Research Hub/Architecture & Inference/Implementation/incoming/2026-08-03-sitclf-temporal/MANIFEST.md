@@ -69,6 +69,45 @@ predicate (which reads `paired_vs_reference`), but the `paired_vs_own_null` colu
 
 ---
 
-## 4. Escalations
+## 4. Additional artifacts produced after the first pass
 
-*(filled at the end of the run)*
+| artifact | path | what it is |
+|---|---|---|
+| **anticipation-horizon** | `…/run_horizon.py` → `results_horizon.json` | **REPO, STAGED.** the lead sweep 1–5 s; also **reproduces B4's banked row bit-identically** at lead 3.0 |
+| **still-frame control** | `…/build_stillframe_substrate.py`, `…/run_stillframe.py` → `results_stillframe.json` | **REPO, STAGED.** the coordinator's requested appearance test: same encoder, motion deleted from the input |
+| **four binding families** | `…/four_families.py` → `results_four_families.json` | **REPO, STAGED.** LONGITUDINAL / LATERAL / TACTICAL / STRATEGIC per situation, never pooled |
+| **fast re-analysis** | `…/fast_analysis.py` → `results_fast.json` | **REPO, STAGED.** shared-draw recomputation, **bit-identical** to the slow run (260 values, max diff 0.000e+00) |
+| **causality blast radius** | `…/causality_blast_radius.py` → `causality_blast_radius.json` | **REPO, STAGED.** |
+| still-frame substrate (410 MB) | `C:/Users/Admin/tanitad-data/eval/sitclf_stillframe_substrate.npz` + `.meta.json` | **NOT in the repo** — too large, fully reproducible in ~14 min with `build_stillframe_substrate.py`. |
+
+⚠️ **`results_temporal.json` is PARTIAL.** The slow run was killed after completing `lane_change`
+(the box was running the still-frame encode concurrently). Nothing is lost: its **scores `.npz` is
+complete for all 42 arms**, and `results_fast.json` — proven bit-identical on every row the slow run
+did produce — carries all three situations. `results_temporal.json` is kept because it holds the
+`NEG_FEAT` / `NEG_LABEL` control blocks and the arm specs.
+
+---
+
+## 5. Escalations
+
+1. ⭐ **CROSS-STREAM, ACT ON THIS: a null here must NOT cancel REF-C's S6 arm.** `refc.py:726-727`
+   registers S6 as *"conditional on the sibling temporal-feature stream"* — this one. **The two
+   systems do not share an input path** (REF-C keeps ONE feature map, `refc.py:1688,1691`; the
+   situation head stacks EIGHT). My refutation is about the situation classifier and does not
+   transfer. REF-C needs its own evidence.
+2. ⚠️ **A wrong citation is in circulation.** "REF-C keeps only the last frame's feature map" is
+   being cited as `refc.py:1112-1117`, which is the anchor-endpoint prior. Correct cite:
+   **`refc.py:1688, 1691`** (implementation) and `refc.py:722` (docstring). Worth a
+   `RETRACTION_LOG` entry under the root-cause class *"citation drift — line numbers moved, claim
+   never re-verified at source"*. I have not edited `RETRACTION_LOG.md`; this is the escalation.
+3. ⭐ **The horizon finding is a new, unclaimed lever.** `intersection` and `lane_change` want
+   **opposite** anticipation horizons. `lead_s = 3.0` is frozen in the parent pre-registration §2.4,
+   so acting on it needs a new pre-registration — but the characterisation is now measured and the
+   PI should see it.
+4. **My own pre-registered C-POS predicate was mis-specified** ("oracle beats the *reference*"
+   rather than "oracle beats *chance*"). It fired `INDETERMINATE` on `intersection`. I did **not**
+   weaken it; the verdict stands as recorded and §4.4 supplies the direct power evidence instead.
+   Any reuse of this pre-registration template should fix the predicate.
+5. **The situation classifier still has no promoted trainer** — `sc_train*.py` remain in hub
+   `incoming/` only. Unchanged by this stream and still a prerequisite for re-fitting a head in
+   production.

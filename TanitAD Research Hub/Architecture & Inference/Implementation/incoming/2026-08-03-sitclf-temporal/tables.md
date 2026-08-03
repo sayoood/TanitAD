@@ -274,3 +274,19 @@ paired Δ AP-lift: +0.022 [-0.013, +0.051]
 | 3.0 s | 71,010 | 7,032 | 230 | PASS | 0.09903 | 0.16607 | 1.677 [1.454, 1.996] | 0.2490 | 3,550 / 7,032 | **2.515** | +0.685 [+0.428, +1.011] **SEP** |
 | 4.0 s | 66,645 | 8,996 | 230 | PASS | 0.13498 | 0.20460 | 1.516 [1.323, 1.768] | 0.2875 | 3,332 / 8,996 | **2.130** | +0.530 [+0.317, +0.786] **SEP** |
 | 5.0 s | 62,277 | 10,678 | 230 | PASS | 0.17146 | 0.23350 | 1.362 [1.212, 1.540] | 0.3076 | 3,114 / 10,678 | **1.794** | +0.378 [+0.206, +0.570] **SEP** |
+
+## T6. The STILL-FRAME control — is the classifier reading appearance?
+
+Same encoder, same clips, same labels; the 9-channel input is the last RGB frame replicated 3x, so it carries **zero** inter-frame motion. `recovery` = (still_lift − still_null) ÷ (real_lift − real_null), i.e. skill over each substrate's OWN permuted null. ⚠️ `recovery` is meaningless when the real skill is ~0 — flagged rather than printed.
+
+| situation | arm | real lift (null) | **real skill** | still lift (null) | **still skill** | **recovery** | still − real |
+|---|---|---:|---:|---:|---:|---:|---|
+| `lane_change` | `ridge_app16_w8` | 1.269 (1.185) | +0.084 | 0.965 (0.931) | +0.034 | **0.405** | -0.304 [-0.459, -0.141] **SEP** |
+| `lane_change` | `ridge_app16_w1` | 1.291 (1.287) | +0.004 | 1.011 (0.979) | +0.032 | **n/a** (real skill ≈ 0) | -0.280 [-0.414, -0.079] **SEP** |
+| `lane_change` | `tf_app16_w8_d128` | 1.520 (1.194) | +0.326 | 1.086 (0.982) | +0.104 | **0.318** | -0.434 [-0.768, -0.132] **SEP** |
+| `roundabout` | `ridge_app16_w8` | 2.619 (0.756) | +1.863 | 1.799 (0.833) | +0.966 | **0.518** | -0.820 [-1.847, -0.179] **SEP** |
+| `roundabout` | `ridge_app16_w1` | 2.307 (0.736) | +1.571 | 1.736 (0.828) | +0.908 | **0.578** | -0.571 [-1.359, +0.077] |
+| `roundabout` | `tf_app16_w8_d128` | 2.624 (0.979) | +1.645 | 1.672 (1.015) | +0.657 | **0.399** | -0.952 [-2.044, -0.069] **SEP** |
+| `intersection` | `ridge_app16_w8` | 1.677 (0.992) | +0.685 | 1.187 (0.983) | +0.204 | **0.297** | -0.490 [-0.731, -0.312] **SEP** |
+| `intersection` | `ridge_app16_w1` | 1.688 (1.001) | +0.687 | 1.197 (0.988) | +0.209 | **0.303** | -0.491 [-0.707, -0.307] **SEP** |
+| `intersection` | `tf_app16_w8_d128` | 1.391 (0.948) | +0.443 | 1.099 (0.959) | +0.140 | **0.316** | -0.292 [-0.489, -0.124] **SEP** |

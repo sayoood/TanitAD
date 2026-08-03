@@ -244,6 +244,26 @@ def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:
     out["_per_window"] = {k: out.pop(k) for k in
                           ("headway_min_m", "time_gap_min_s", "min_ttc_s",
                            "n_steps_in_corridor")}
+    # ⭐ SPEED-STRATIFIED read (2026-08-03). Emitted whenever the lead block carries the window
+    # ids the episode-cluster bootstrap needs. A pooled distance-keeping number averages over
+    # regimes that do not resemble each other on this corpus — MEASURED, the tactical lossy rate
+    # runs 38.2 % at 1-3 m/s down to 1.8 % at 10-15 m/s — so the pooled value hides the regime
+    # that matters. `lead["state"]` (lead_source.LEAD / NO_LEAD / NO_LABEL) is passed through so
+    # each stratum reports WHY its denominator is what it is; without it NO_LABEL windows would
+    # be indistinguishable from free flow.
+    if lead.get("eid") is not None:
+        from taniteval.lead_metrics import distance_keeping_by_speed
+        out["by_speed"] = distance_keeping_by_speed(
+            out, lead["speeds"], lead["eid"], states=lead.get("state"),
+            n_boot=int(lead.get("n_boot", 2000)), seed=int(lead.get("seed", 0)))
+    else:
+        out["by_speed"] = {
+            "status": "UNAVAILABLE",
+            "reason": ("no per-window episode/clip id in the lead block, so the episode-cluster "
+                       "bootstrap cannot be formed. Pass lead['eid']. ⛔ A pooled number is NOT "
+                       "a substitute — this corpus's behaviour is strongly speed-dependent."),
+            "n": 0,
+        }
     out["admitted_by"] = ("D-LEAD-1 discrimination control, 2026-08-03 — GT vs hold-v0 CV, "
                           "PASS on all three metrics, paired episode-cluster bootstrap, "
                           "14,027 windows / 1,431 clusters")

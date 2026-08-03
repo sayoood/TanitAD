@@ -51,9 +51,22 @@ MIN_SPEED_MPS = 0.5
 #: closing rates beyond this are a track switch, not a vehicle. `lead_state_gate.CLOSING_CLIP_MS`.
 CLOSING_CLIP_MS = 20.0
 
+#: speed bands for the BINDING stratified read, m/s. ⛔ A pooled distance-keeping number hides the
+#: regime that matters: MEASURED on this corpus, the tactical lossy rate runs 38.2 % at 1-3 m/s down
+#: to 1.8 % at 10-15 m/s, and the nav-sentinel share 96.05 % down to 34.69 % at 15+ m/s. Boundaries
+#: chosen to CONTAIN the bands those numbers are quoted on (1-3, 10-15, 15+) so they stay comparable.
+SPEED_BANDS = ((0.0, 1.0), (1.0, 3.0), (3.0, 6.0), (6.0, 10.0),
+               (10.0, 15.0), (15.0, float("inf")))
+#: a stratum below this many lead-bearing windows is reported as UNPOWERED with its n, never as a
+#: number. An episode-cluster bootstrap over a handful of windows in one or two clips is noise.
+MIN_STRATUM_N = 30
+
 __all__ = [
     "LEAD_LAT_M", "TTC_CAP_S", "MIN_SPEED_MPS", "CLOSING_CLIP_MS",
+    "SPEED_BANDS", "MIN_STRATUM_N",
     "path_headings", "per_step_gap", "distance_keeping",
+    "band_label", "assign_bands", "distance_keeping_by_speed",
+    "paired_distance_keeping",
 ]
 
 
@@ -200,4 +213,173 @@ def distance_keeping(paths, leads, lead_lens, speeds, dt: float,
     out["censoring_note"] = (f"{n - int(closing.sum())} of {n} windows never close on the lead and "
                              f"are censored at TTC_CAP_S={TTC_CAP_S}s. The mean is over censored "
                              f"data — quote n_closing beside it, never the mean alone.")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# SPEED-STRATIFIED read + the paired estimator                                 #
+#                                                                             #
+# ⛔ Why this is not optional. This corpus's behaviour is strongly speed-       #
+# dependent, so a pooled headway/time-gap/TTC is an average over regimes that  #
+# do not resemble each other — and the crawling regime, which dominates the    #
+# window count, is the one where a time gap is least meaningful. Reported      #
+# per band, each with its own n and its own reason when it cannot be computed. #
+# --------------------------------------------------------------------------- #
+def band_label(lo: float, hi: float) -> str:
+    return f"{lo:g}-{hi:g}" if np.isfinite(hi) else f"{lo:g}+"
+
+
+def assign_bands(speeds, bands=SPEED_BANDS) -> np.ndarray:
+    """-> [W] band index, ``-1`` where the speed is not finite. Half-open ``[lo, hi)``."""
+    v = np.asarray(speeds, dtype=np.float64).reshape(-1)
+    out = np.full(v.size, -1, dtype=np.int64)
+    for i, (lo, hi) in enumerate(bands):
+        out[np.isfinite(v) & (v >= lo) & (v < hi)] = i
+    return out
+
+
+def _agg(vals, eid, n_boot, seed):
+    """Episode-cluster bootstrap over the finite entries, or the reason there are none."""
+    from taniteval.ci import episode_cluster_bootstrap
+    v = np.asarray(vals, dtype=np.float64)
+    ok = np.isfinite(v)
+    if ok.sum() == 0:
+        return {"n": 0, "status": "NOT-APPLICABLE", "reason": "no finite values in this stratum"}
+    r = episode_cluster_bootstrap(v[ok], list(np.asarray(eid, dtype=object)[ok]),
+                                  reduce="mean", n_boot=n_boot, seed=seed)
+    r["n"] = int(ok.sum())
+    r["n_total"] = int(v.size)
+    return r
+
+
+def distance_keeping_by_speed(dk: dict, speeds, eid, *, states=None,
+                              bands=SPEED_BANDS, n_boot: int = 2000, seed: int = 0,
+                              min_stratum_n: int = MIN_STRATUM_N) -> dict:
+    """Stratify a :func:`distance_keeping` result by ego speed at t0, with CIs and denominators.
+
+    Args:
+        dk:     the dict :func:`distance_keeping` returned, INCLUDING its per-window arrays. When
+                it came back from `four_families._distance_keeping` those live under
+                ``dk["_per_window"]``; both shapes are accepted.
+        speeds: ``[W]`` ego speed at each window's t0, m/s — the stratifier, and the same array
+                that denominated the time gap.
+        eid:    ``[W]`` episode / clip cluster id per window. ⛔ The bootstrap resamples THESE, not
+                windows: consecutive windows of one clip are not independent.
+        states: optional ``[W]`` of ``lead_source.LEAD`` / ``NO_LEAD`` / ``NO_LABEL``. Supplying it
+                is what lets each stratum report **why** its denominator is what it is instead of
+                a bare n — and it keeps NO_LABEL out of the free-flow count.
+
+    Every stratum carries ``n`` and, when it cannot be computed, a ``status``/``reason``. A stratum
+    thinner than ``min_stratum_n`` is UNPOWERED — reported, never quoted.
+    """
+    pw = dk.get("_per_window", dk)
+    for key in ("headway_min_m", "time_gap_min_s", "min_ttc_s"):
+        if key not in pw:
+            raise KeyError(f"distance_keeping result is missing per-window {key!r}; pass the dict "
+                           f"returned by distance_keeping() or one carrying '_per_window'")
+    head = np.asarray(pw["headway_min_m"], dtype=np.float64)
+    tg = np.asarray(pw["time_gap_min_s"], dtype=np.float64)
+    ttc = np.asarray(pw["min_ttc_s"], dtype=np.float64)
+    v = np.asarray(speeds, dtype=np.float64).reshape(-1)
+    eid = np.asarray(eid, dtype=object).reshape(-1)
+    if not (head.shape == tg.shape == ttc.shape == v.shape == eid.shape):
+        raise ValueError(f"per-window arrays disagree: headway {head.shape}, speeds {v.shape}, "
+                         f"eid {eid.shape}")
+    st = None if states is None else np.asarray(states, dtype=object).reshape(-1)
+    if st is not None and st.shape != head.shape:
+        raise ValueError(f"states {st.shape} must match the window count {head.shape}")
+
+    bi = assign_bands(v, bands)
+    out = {
+        "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+        "_binding": ("Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER "
+                     "STRATUM with the reason and the n, rather than silently dropping it."),
+        "bands_mps": [band_label(lo, hi) for lo, hi in bands],
+        "min_stratum_n": int(min_stratum_n),
+        "estimator": "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+        "n_windows_total": int(head.size),
+        "strata": {},
+    }
+    if st is not None:
+        vals, cnts = np.unique(st, return_counts=True)
+        out["window_states_total"] = {str(k): int(c) for k, c in zip(vals, cnts)}
+
+    for i, (lo, hi) in enumerate(bands):
+        m = bi == i
+        lab = band_label(lo, hi)
+        blk = {"speed_mps": [lo, (None if not np.isfinite(hi) else hi)],
+               "n_windows": int(m.sum())}
+        if st is not None:
+            vals, cnts = np.unique(st[m], return_counts=True) if m.any() else ([], [])
+            blk["window_states"] = {str(k): int(c) for k, c in zip(vals, cnts)}
+        n_lead = int(np.isfinite(head[m]).sum())
+        blk["n_with_lead"] = n_lead
+        blk["lead_rate"] = (round(n_lead / int(m.sum()), 4) if m.any() else None)
+        if not m.any():
+            blk["status"] = "EMPTY"
+            blk["reason"] = "no window fell in this speed band"
+        elif n_lead == 0:
+            blk["status"] = "NOT-APPLICABLE"
+            blk["reason"] = (f"none of the {int(m.sum())} windows in this band had a lead agent "
+                             f"inside the |lat| < {LEAD_LAT_M} m corridor ahead of the predicted "
+                             f"path — free flow, not a failure")
+        elif n_lead < int(min_stratum_n):
+            blk["status"] = "UNPOWERED"
+            blk["reason"] = (f"{n_lead} lead-bearing windows < min_stratum_n {min_stratum_n}; an "
+                             f"episode-cluster bootstrap over this few is noise. Reported, not "
+                             f"quoted.")
+        else:
+            blk["status"] = "OK"
+            blk["headway_min_m"] = _agg(head[m], eid[m], n_boot, seed)
+            blk["time_gap_min_s"] = _agg(tg[m], eid[m], n_boot, seed)
+            blk["min_ttc_s"] = _agg(ttc[m], eid[m], n_boot, seed)
+            if lo < MIN_SPEED_MPS:
+                blk["time_gap_caveat"] = (
+                    f"this band straddles MIN_SPEED_MPS={MIN_SPEED_MPS} m/s; a time gap is "
+                    f"UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by "
+                    f"construction. Never read the gap here as a following behaviour.")
+        out["strata"][lab] = blk
+
+    bad = int((bi < 0).sum())
+    if bad:
+        out["n_windows_unbanded"] = bad
+        out["unbanded_reason"] = "ego speed at t0 was not finite"
+    return out
+
+
+def paired_distance_keeping(dk_a: dict, dk_b: dict, eid, *, names=("A", "B"),
+                            n_boot: int = 2000, seed: int = 0) -> dict:
+    """Paired A-minus-B deltas on the three distance-keeping metrics, on JOINTLY-valid windows.
+
+    ⛔ The paired estimator, never two independent intervals combined in quadrature, and never
+    `overlapping_holdout_se` — which biases the POINT ESTIMATE (mean-of-split-means, not the
+    full set) bidirectionally, up to a sign flip on paired deltas.
+
+    Only windows where BOTH arms produced a finite value enter a metric's delta; a window where
+    one arm drove out of the corridor and the other did not is not a paired observation, and
+    ``n_used`` / ``n_a_only`` / ``n_b_only`` report exactly how many those were.
+    """
+    from taniteval.ci import paired_episode_cluster_bootstrap
+    pa, pb = dk_a.get("_per_window", dk_a), dk_b.get("_per_window", dk_b)
+    eid = np.asarray(eid, dtype=object).reshape(-1)
+    out = {"_what": f"paired {names[0]} - {names[1]} distance-keeping deltas",
+           "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+           "arms": list(names), "metrics": {}}
+    for key in ("headway_min_m", "time_gap_min_s", "min_ttc_s"):
+        a = np.asarray(pa[key], dtype=np.float64)
+        b = np.asarray(pb[key], dtype=np.float64)
+        if a.shape != b.shape or a.shape != eid.shape:
+            raise ValueError(f"{key}: shapes {a.shape} / {b.shape} / eid {eid.shape} disagree")
+        ok = np.isfinite(a) & np.isfinite(b)
+        blk = {"n_used": int(ok.sum()), "n_windows": int(a.size),
+               "n_a_only": int((np.isfinite(a) & ~np.isfinite(b)).sum()),
+               "n_b_only": int((np.isfinite(b) & ~np.isfinite(a)).sum())}
+        if ok.sum() == 0:
+            blk["status"] = "NOT-APPLICABLE"
+            blk["reason"] = "no window has a finite value for BOTH arms"
+        else:
+            blk.update(paired_episode_cluster_bootstrap(
+                a[ok], b[ok], list(eid[ok]), n_boot=n_boot, seed=seed))
+            blk["status"] = "OK"
+        out["metrics"][key] = blk
     return out

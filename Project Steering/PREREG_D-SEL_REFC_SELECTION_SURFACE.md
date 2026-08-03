@@ -376,6 +376,26 @@ the shuffled control, S3 is a mechanism without information and must not consume
 | **S6 ALONG-TRACK NULL (predicted)** | `goal_dist_gate` stays \|w\| < 0.01 through 30 k | K7 holds on this substrate: along-track distance is not recoverable from single-instant latents | report it as a **positive read on the temporal-feature question**, not as "goals do not work" |
 | **S6 ALONG-TRACK LIVE** | `goal_dist_gate` learns \|w\| ≥ 0.05 | the K7 prior is WRONG here | say so; it materially raises the priority of a predicted goal POINT (GoalFlow's +4.7 form) |
 | **INDETERMINATE** | E-SEL-0 separated but < 0.02 m | too small to justify a GPU-day on its own | tie-break on E-SEL-1: S3 LIVE ⇒ run the arm (S1+S2+S3+S4); S3 DEAD ⇒ ship S2+S4 only |
+| **S1 SEPARATED ADVERSELY** ⚠️ *(added 2026-08-03, AFTER the result — see the note below)* | E-SEL-0 paired ΔADE@2s separated and the refined confidence is **WORSE** | the refined readout is not noise (else it would not separate) but it is not a drop-in ranker either — the most likely cause is that it is **off-distribution**: a t=0 classifier being asked about denoised trajectories it was never supervised on | **do not ship, do not drop.** Check `rank_acc` against chance: **well above chance ⇒ the premise survives and S1 must CLIMB OUT (supervise the refined readout on refined trajectories), not HARVEST**; **at chance ⇒ this collapses into S1 DEAD** |
+
+⛔ **HONEST NOTE ON THE FIFTH BRANCH — it was added after seeing the result, and that is a defect,
+not a feature.** The registered table had **no branch for "separated adversely"**: every S1 row
+assumed *separated-and-better* or *not-separated*. What MEASURED happened is *separated and worse*
+(`refc-base` **+0.8372 m [+0.6915, +0.9939]**, `refc-xl` **+0.9187 m [+0.7778, +1.0669]**), so the
+experiment produced an outcome its own decision table could not express.
+
+⇒ **The 2026-08-03 adjudication of E-SEL-0 is therefore POST-HOC and must be labelled that way
+wherever it is quoted.** It does not carry the evidential weight of a pre-registered branch, and
+adding the row now does not retroactively confer it. The row exists so the protocol can represent
+this outcome **next time** — not so that this time can be scored as if it had been.
+
+⇒ **RULE, general: a two-sided quantity needs a THREE-sided table** — better, worse, and not
+separated. A branch table that enumerates only "wins" and "doesn't win" silently assumes the lever
+cannot hurt, and that assumption is exactly what an experiment is for. Before registering, ask of
+every row: *what if this comes back separated in the direction I did not consider?*
+*(Same family as the R-2026-08-03-dtac1 lesson — "a mechanism that is real in the source is not
+thereby the binding constraint" — one level up: a table that cannot express an outcome cannot
+adjudicate it.)*
 
 **Registered personal prediction:** *S1 NEEDS TRAINING* (E-SEL-0 not separated, C-shuffled clearly worse)
 and *S3 LIVE at a small ρ, 0.10–0.25*. **If E-SEL-0 comes back a FREE WIN ≥ 0.02 m, I was wrong about

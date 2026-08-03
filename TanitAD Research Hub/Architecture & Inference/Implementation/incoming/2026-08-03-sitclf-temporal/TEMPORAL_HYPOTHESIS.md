@@ -13,7 +13,26 @@ deployable arm below reads the frozen v1 camera latents and nothing else. The tw
 
 ## 0. The headline
 
-*(filled from `results_temporal.json` — see §4)*
+**The temporal hypothesis is REFUTED in its actionable form.** Not because the classifier is blind to
+motion — it is not — but because **all the motion this task can use is already inside the frozen
+trunk's 200 ms 3-frame stack, and nothing added downstream reaches it.**
+
+| # | finding | evidence class |
+|---|---|---|
+| 1 | **The brief's premise was false.** The sitclf features are not single-instant: the encoder eats a **3-frame stack** (`config.py:17,360`; `refc.py:248`) and the head stacks 8 of them — **0.9 s** of motion-bearing evidence, not 0. | MEASURED, 2 probes |
+| 2 | **H-T2 (motion subspace) refuted MECHANISTICALLY, before any AP.** The rank-16 *appearance* basis already retains **88.1 %** of the frame-to-frame difference variance against the purpose-built motion basis's 89.5 % — a **1.4 pp** gap — at mean principal cosine **0.9803**. There is no discarded motion subspace. | MEASURED, `results_subspace.json` |
+| 3 | **H-T1 (window length) refuted on the decision-grade situation.** On `intersection` (216 clusters) **not one** of 9 longer-window arms separates above the deployed 0.7 s window; several separate below. **A single latent — 17 parameters, zero history — ties the deployed window at +0.009 [−0.049, +0.054].** | MEASURED, `results_fast.json` |
+| 4 | **H-T3 (parameterisation) refuted.** The exactly-invertible remap control moves `lane_change` by **+0.003 [−0.052, +0.057]**, and on `intersection` the appearance+motion arm's deficit (−0.089) is *identical* to the pure reparameterisation penalty (−0.089) — the motion block contributes exactly nothing. | MEASURED |
+| 5 | ⭐ **But motion IS load-bearing — it is just already captured.** Deleting the 200 ms inside the encoder's own stack costs **~70 % of the skill** (recovery 0.297 / 0.303 / 0.316 on `intersection`, all separated). So the classifier is **not** an appearance shortcut. | MEASURED, `results_stillframe.json` ⚠️ off-distribution caveat in §4c |
+| 6 | ⭐ **The finding nobody was looking for: the two situations have OPPOSITE temporal signatures.** `intersection` skill decays monotonically with the anticipation horizon (+0.982 → +0.378 over 1→5 s, precision-lift 2.713 → 1.794); `lane_change` **rises** with it and separates **only** at 5 s. The programme forces one window and one horizon onto both. | MEASURED, `results_horizon.json` |
+| 7 | **The label pipeline's causality fix is landed and tested — and I sized its blast radius**, which nobody had: `alon_pre` moves **4.70 %** of its own scale on **72.4 %** of frames, `omega_pre` **3.24 %** on **50.7 %**, with **every detector and every label bit-identical**. | MEASURED, `causality_blast_radius.json` |
+| 8 | ⚠️ **The brief's source citation is wrong.** `refc.py:1112-1117` is the anchor-endpoint prior, not the frame-selection code. The claim is true at **`refc.py:1688, 1691`**. | MEASURED |
+
+**What this redirects.** Stop buying temporal context for the situation head — window, motion
+features and motion bases are all measured dead. The two live levers this study exposes are
+**(a) per-situation horizons and windows** (finding 6), and **(b) a trunk that learns motion over a
+longer span**, i.e. BACKLOG **B5** — because the only place motion has ever helped here is *inside*
+the encoder, never downstream of it.
 
 ---
 
@@ -281,6 +300,83 @@ for an oversight.
 **The programme has been forcing ONE window and ONE horizon onto two phenomena with opposite
 timescales.** That is a concrete, mechanistic reason why "one head for three situations" underperforms,
 and it is independent of encoder capacity, head capacity and feature richness.
+
+---
+
+## 4c. ⭐ THE APPEARANCE-SHORTCUT EXPOSURE — the still-frame control
+
+**Raised mid-flight by the coordinator**, from the latent-bottleneck stream's OUTCOME V: a single
+32×32 grayscale **still frame** reads ego `speed` at **93 % of the 800 ms learned latent** and
+**1.75× the best motion-only arm**; all ten linear pure-difference arms sit at the null. Since the
+situation labels are pure functions of the ego pose track, a "vision-only" situation classifier may
+be riding **appearance → speed → the ego-derived label** rather than perceiving the situation. That
+is the indirect form of the PI's binding leak test.
+
+### Am I exposed? — **YES, and I can measure it rather than guess**
+
+| what I had already measured | what it says about the exposure |
+|---|---|
+| `ridge_app16_w1` (a **single** latent, 17 params, **no** multi-frame window) vs the 0.7 s reference: `intersection` **+0.009 [−0.049, +0.054]**, `lane_change` +0.030 [−0.020, +0.079] | one latent is **statistically indistinguishable** from eight. Whatever the classifier reads, it is available in a **single instant** |
+| every motion-basis arm | separated **WORSE** on `intersection`, never better anywhere |
+| the H-T2 subspace diagnostic | the appearance basis already retains 88 % of the Δ variance |
+
+⇒ Three independent lines already point the same way, and they are **exactly what the coordinator's
+finding predicts**. ⚠️ But `win=1` is **not** a clean still-frame control: that single latent is
+itself encoded from a D-015 **3-frame stack**, so it still carries 200 ms of motion. To close the
+gap I built the control that removes the last of it.
+
+### The control: same encoder, motion deleted from the input
+
+`build_stillframe_substrate.py` re-encodes all 500 clips with the 9-channel input replaced by the
+**last RGB frame replicated three times** — identical shape, dtype and preprocessing, zero
+inter-frame motion. VERIFIED at build time: the three slots are bit-identical, the last frame is
+preserved exactly, and the *real* stack's mean |rgb(t−2) − rgb(t)| is **0.02642**, i.e. the motion
+that was removed was really there. Rows, labels, clip ids and folds are identical by construction
+(asserted as C-FID), so the two substrates are comparable with the **paired** episode-cluster
+bootstrap.
+
+The reported statistic is **recovery** = (still_lift − still_null) / (real_lift − real_null): skill
+over each substrate's **own** permuted-feature null, so the two are on one scale.
+
+### The result — the classifier is **NOT** an appearance shortcut
+
+| situation | arm | real skill over null | still-frame skill | **recovery** | still − real |
+|---|---|---:|---:|---:|---|
+| `intersection` | `ridge_app16_w8` | +0.685 | +0.204 | **0.297** | −0.490 [−0.731, −0.312] **SEP** |
+| `intersection` | `ridge_app16_w1` | +0.687 | +0.209 | **0.303** | −0.491 [−0.707, −0.307] **SEP** |
+| `intersection` | `tf_app16_w8_d128` | +0.443 | +0.140 | **0.316** | −0.292 [−0.489, −0.124] **SEP** |
+| `lane_change` | `ridge_app16_w8` | +0.084 | +0.034 | 0.405 | −0.304 [−0.459, −0.141] **SEP** |
+| `lane_change` | `tf_app16_w8_d128` | +0.326 | +0.104 | 0.318 | −0.434 [−0.768, −0.132] **SEP** |
+| `roundabout` ⛔ unpowered | `ridge_app16_w8` | +1.863 | +0.966 | 0.518 | −0.820 **SEP** |
+
+**Deleting the 200 ms of motion inside the encoder's own 3-frame stack costs ~70 % of the skill**,
+consistently across three arms and all three situations, every contrast separated. So on the
+question the coordinator asked: **no, the sitclf numbers are not a pure appearance shortcut** —
+appearance alone retains roughly 30 % of the skill, not most of it.
+
+⚠️ **The honest caveat, and it cuts against my own conclusion.** The frozen v1 trunk was trained
+**only** on real 3-frame stacks, so a stack of three identical frames is **off-distribution** for it.
+The measured drop therefore conflates "motion removed" with "input off-distribution" and is an
+**UPPER bound** on motion's contribution. The true appearance-only share is ≥ 30 %. A cleaner
+control (a within-stack temporal shuffle, or a trunk retrained on still stacks) is a follow-up, not
+something this substrate can settle.
+
+⚠️ `lane_change / ridge_app16_w1` shows `recovery` 7.11 in the raw JSON. It is **uninterpretable** —
+the denominator (real skill +0.004) is essentially zero. `render_tables.py` suppresses it; it must
+not be quoted.
+
+### ⭐ WHAT THIS COMBINES TO — the useful motion window is ~200 ms wide, and we already have it
+
+| direction | evidence | result |
+|---|---|---|
+| **remove** the encoder's 200 ms motion | still-frame control | skill falls to **~30 %** — motion is load-bearing |
+| **add** motion downstream — window 0.7 s → 3.1 s | Groups A and B, 9 arms | nothing separates above the reference; several separate **below** |
+| **add** motion downstream — explicit motion bases | Group C, 4 arms | separated **WORSE** everywhere it is powered |
+| **add** motion downstream — one latent vs eight | `ridge_app16_w1` | **+0.009 [−0.049, +0.054]** — indistinguishable |
+
+⇒ **All of the motion this task can use is already inside the frozen trunk's 3-frame stack, and
+nothing bolted on downstream adds to it.** That is the actionable form of the temporal hypothesis,
+and it is refuted.
 
 ---
 

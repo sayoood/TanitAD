@@ -1,0 +1,778 @@
+{
+ "_what": "LONGITUDINAL distance-keeping on the REAL eval window grid, from obstacle.offline. GT vs the hold-v0 CV floor.",
+ "_evidence_class": "MEASURED (ours; this run)",
+ "_parity": "read-only over labels/*.zip + r0/r0_selection.parquet + the camera timestamps parquets. No episode re-selected, no cache written.",
+ "corpus": {
+  "n_clips_registered": 500,
+  "n_windows": 11004,
+  "n_clips_with_obstacle_feature": 119,
+  "window_states": {
+   "LEAD": 886,
+   "NO_LEAD": 1651,
+   "NO_LABEL": 8467
+  },
+  "lead_rate_over_labelled_windows": 0.3492,
+  "waypoint_grid_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "dt_s": 0.5
+ },
+ "registration_proof": {
+  "_what": "register_poses_to_time recovers the clip time of every pose index FROM THE POSES ALONE. Compared here against the true t_query the episode was built on. This is what makes the same call exact on the eval host, where the camera timestamps parquet does not exist.",
+  "n_clips": 500,
+  "pose_match_residual_m": {
+   "median_of_medians": 0.00108,
+   "worst_max": 0.02456
+  },
+  "recovered_time_error_s": {
+   "median_of_medians": 0.000189,
+   "p95_of_max": 0.001391,
+   "worst_max": 0.025866
+  },
+  "grid_dt_s_fit": {
+   "median": 0.100667,
+   "min": 0.100486,
+   "max": 0.101013
+  }
+ },
+ "GT": {
+  "n": 685,
+  "n_windows": 11004,
+  "dt_s": 0.5,
+  "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+  "ttc_cap_s": 30.0,
+  "status": "OK",
+  "mean_headway_min_m": 23.9351,
+  "mean_time_gap_min_s": 5.7992,
+  "n_time_gap": 528,
+  "mean_min_ttc_s": 21.3255,
+  "n_closing": 332,
+  "censoring_note": "353 of 685 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone."
+ },
+ "CV": {
+  "n": 776,
+  "n_windows": 11004,
+  "dt_s": 0.5,
+  "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+  "ttc_cap_s": 30.0,
+  "status": "OK",
+  "mean_headway_min_m": 21.9188,
+  "mean_time_gap_min_s": 5.1762,
+  "n_time_gap": 615,
+  "mean_min_ttc_s": 16.0753,
+  "n_closing": 511,
+  "censoring_note": "265 of 776 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone."
+ },
+ "GT_by_speed": {
+  "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+  "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+  "bands_mps": [
+   "0-1",
+   "1-3",
+   "3-6",
+   "6-10",
+   "10-15",
+   "15+"
+  ],
+  "min_stratum_n": 30,
+  "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+  "n_windows_total": 11004,
+  "strata": {
+   "0-1": {
+    "speed_mps": [
+     0.0,
+     1.0
+    ],
+    "n_windows": 1804,
+    "window_states": {
+     "LEAD": 214,
+     "NO_LABEL": 1418,
+     "NO_LEAD": 172
+    },
+    "n_with_lead": 183,
+    "lead_rate": 0.1014,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 17.7827,
+     "lo": 12.5028,
+     "hi": 24.5104,
+     "ci95": 6.0038,
+     "se": 3.0913,
+     "reducer": "mean",
+     "n_windows": 183,
+     "n_episodes": 32,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 183,
+     "n_total": 1804
+    },
+    "time_gap_min_s": {
+     "mean": 23.3016,
+     "lo": 16.0863,
+     "hi": 31.3301,
+     "ci95": 7.6219,
+     "se": 3.9536,
+     "reducer": "mean",
+     "n_windows": 26,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 26,
+     "n_total": 1804
+    },
+    "min_ttc_s": {
+     "mean": 27.1688,
+     "lo": 25.535,
+     "hi": 28.4925,
+     "ci95": 1.4787,
+     "se": 0.7707,
+     "reducer": "mean",
+     "n_windows": 183,
+     "n_episodes": 32,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 183,
+     "n_total": 1804
+    },
+    "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+   },
+   "1-3": {
+    "speed_mps": [
+     1.0,
+     3.0
+    ],
+    "n_windows": 991,
+    "window_states": {
+     "LEAD": 90,
+     "NO_LABEL": 794,
+     "NO_LEAD": 107
+    },
+    "n_with_lead": 73,
+    "lead_rate": 0.0737,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 19.0095,
+     "lo": 14.8546,
+     "hi": 23.6955,
+     "ci95": 4.4205,
+     "se": 2.2505,
+     "reducer": "mean",
+     "n_windows": 73,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 73,
+     "n_total": 991
+    },
+    "time_gap_min_s": {
+     "mean": 10.1435,
+     "lo": 8.0613,
+     "hi": 12.6536,
+     "ci95": 2.2961,
+     "se": 1.1819,
+     "reducer": "mean",
+     "n_windows": 73,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 73,
+     "n_total": 991
+    },
+    "min_ttc_s": {
+     "mean": 21.9198,
+     "lo": 19.5072,
+     "hi": 24.3009,
+     "ci95": 2.3969,
+     "se": 1.2411,
+     "reducer": "mean",
+     "n_windows": 73,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 73,
+     "n_total": 991
+    }
+   },
+   "3-6": {
+    "speed_mps": [
+     3.0,
+     6.0
+    ],
+    "n_windows": 2510,
+    "window_states": {
+     "LEAD": 185,
+     "NO_LABEL": 1947,
+     "NO_LEAD": 378
+    },
+    "n_with_lead": 122,
+    "lead_rate": 0.0486,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 20.246,
+     "lo": 16.8323,
+     "hi": 24.3209,
+     "ci95": 3.7443,
+     "se": 1.9136,
+     "reducer": "mean",
+     "n_windows": 122,
+     "n_episodes": 47,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 122,
+     "n_total": 2510
+    },
+    "time_gap_min_s": {
+     "mean": 4.6994,
+     "lo": 3.893,
+     "hi": 5.6886,
+     "ci95": 0.8978,
+     "se": 0.4647,
+     "reducer": "mean",
+     "n_windows": 122,
+     "n_episodes": 47,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 122,
+     "n_total": 2510
+    },
+    "min_ttc_s": {
+     "mean": 19.6477,
+     "lo": 16.5045,
+     "hi": 23.1332,
+     "ci95": 3.3143,
+     "se": 1.6762,
+     "reducer": "mean",
+     "n_windows": 122,
+     "n_episodes": 47,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 122,
+     "n_total": 2510
+    }
+   },
+   "6-10": {
+    "speed_mps": [
+     6.0,
+     10.0
+    ],
+    "n_windows": 4293,
+    "window_states": {
+     "LEAD": 350,
+     "NO_LABEL": 3203,
+     "NO_LEAD": 740
+    },
+    "n_with_lead": 267,
+    "lead_rate": 0.0622,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 29.6798,
+     "lo": 26.391,
+     "hi": 33.3009,
+     "ci95": 3.455,
+     "se": 1.8184,
+     "reducer": "mean",
+     "n_windows": 267,
+     "n_episodes": 66,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 267,
+     "n_total": 4293
+    },
+    "time_gap_min_s": {
+     "mean": 3.8159,
+     "lo": 3.3807,
+     "hi": 4.2964,
+     "ci95": 0.4579,
+     "se": 0.2386,
+     "reducer": "mean",
+     "n_windows": 267,
+     "n_episodes": 66,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 267,
+     "n_total": 4293
+    },
+    "min_ttc_s": {
+     "mean": 18.0193,
+     "lo": 15.7659,
+     "hi": 20.3327,
+     "ci95": 2.2834,
+     "se": 1.1339,
+     "reducer": "mean",
+     "n_windows": 267,
+     "n_episodes": 66,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 267,
+     "n_total": 4293
+    }
+   },
+   "10-15": {
+    "speed_mps": [
+     10.0,
+     15.0
+    ],
+    "n_windows": 1347,
+    "window_states": {
+     "LEAD": 45,
+     "NO_LABEL": 1058,
+     "NO_LEAD": 244
+    },
+    "n_with_lead": 38,
+    "lead_rate": 0.0282,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 34.332,
+     "lo": 27.7887,
+     "hi": 43.1531,
+     "ci95": 7.6822,
+     "se": 4.0055,
+     "reducer": "mean",
+     "n_windows": 38,
+     "n_episodes": 13,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 38,
+     "n_total": 1347
+    },
+    "time_gap_min_s": {
+     "mean": 3.1571,
+     "lo": 2.5884,
+     "hi": 3.8887,
+     "ci95": 0.6502,
+     "se": 0.3366,
+     "reducer": "mean",
+     "n_windows": 38,
+     "n_episodes": 13,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 38,
+     "n_total": 1347
+    },
+    "min_ttc_s": {
+     "mean": 20.2045,
+     "lo": 14.123,
+     "hi": 25.3197,
+     "ci95": 5.5983,
+     "se": 2.9796,
+     "reducer": "mean",
+     "n_windows": 38,
+     "n_episodes": 13,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 38,
+     "n_total": 1347
+    }
+   },
+   "15+": {
+    "speed_mps": [
+     15.0,
+     null
+    ],
+    "n_windows": 59,
+    "window_states": {
+     "LEAD": 2,
+     "NO_LABEL": 47,
+     "NO_LEAD": 10
+    },
+    "n_with_lead": 2,
+    "lead_rate": 0.0339,
+    "status": "UNPOWERED",
+    "reason": "2 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+   }
+  },
+  "window_states_total": {
+   "LEAD": 886,
+   "NO_LABEL": 8467,
+   "NO_LEAD": 1651
+  }
+ },
+ "CV_by_speed": {
+  "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+  "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+  "bands_mps": [
+   "0-1",
+   "1-3",
+   "3-6",
+   "6-10",
+   "10-15",
+   "15+"
+  ],
+  "min_stratum_n": 30,
+  "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+  "n_windows_total": 11004,
+  "strata": {
+   "0-1": {
+    "speed_mps": [
+     0.0,
+     1.0
+    ],
+    "n_windows": 1804,
+    "window_states": {
+     "LEAD": 214,
+     "NO_LABEL": 1418,
+     "NO_LEAD": 172
+    },
+    "n_with_lead": 188,
+    "lead_rate": 0.1042,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 17.9478,
+     "lo": 12.6926,
+     "hi": 24.6437,
+     "ci95": 5.9755,
+     "se": 3.0876,
+     "reducer": "mean",
+     "n_windows": 188,
+     "n_episodes": 32,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 188,
+     "n_total": 1804
+    },
+    "time_gap_min_s": {
+     "mean": 23.5829,
+     "lo": 16.0554,
+     "hi": 32.1762,
+     "ci95": 8.0604,
+     "se": 4.1228,
+     "reducer": "mean",
+     "n_windows": 27,
+     "n_episodes": 18,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 27,
+     "n_total": 1804
+    },
+    "min_ttc_s": {
+     "mean": 27.3065,
+     "lo": 25.8144,
+     "hi": 28.5912,
+     "ci95": 1.3884,
+     "se": 0.7009,
+     "reducer": "mean",
+     "n_windows": 188,
+     "n_episodes": 32,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 188,
+     "n_total": 1804
+    },
+    "time_gap_caveat": "this band straddles MIN_SPEED_MPS=0.5 m/s; a time gap is UNDEFINED at standstill and is NaN there, so n_time_gap < n_with_lead by construction. Never read the gap here as a following behaviour."
+   },
+   "1-3": {
+    "speed_mps": [
+     1.0,
+     3.0
+    ],
+    "n_windows": 991,
+    "window_states": {
+     "LEAD": 90,
+     "NO_LABEL": 794,
+     "NO_LEAD": 107
+    },
+    "n_with_lead": 77,
+    "lead_rate": 0.0777,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 17.6333,
+     "lo": 13.7871,
+     "hi": 21.7946,
+     "ci95": 4.0038,
+     "se": 2.1019,
+     "reducer": "mean",
+     "n_windows": 77,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 77,
+     "n_total": 991
+    },
+    "time_gap_min_s": {
+     "mean": 9.4797,
+     "lo": 7.4825,
+     "hi": 11.7619,
+     "ci95": 2.1397,
+     "se": 1.1078,
+     "reducer": "mean",
+     "n_windows": 77,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 77,
+     "n_total": 991
+    },
+    "min_ttc_s": {
+     "mean": 17.2391,
+     "lo": 14.0373,
+     "hi": 20.4502,
+     "ci95": 3.2065,
+     "se": 1.6067,
+     "reducer": "mean",
+     "n_windows": 77,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 77,
+     "n_total": 991
+    }
+   },
+   "3-6": {
+    "speed_mps": [
+     3.0,
+     6.0
+    ],
+    "n_windows": 2510,
+    "window_states": {
+     "LEAD": 185,
+     "NO_LABEL": 1947,
+     "NO_LEAD": 378
+    },
+    "n_with_lead": 156,
+    "lead_rate": 0.0622,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 18.1149,
+     "lo": 14.9081,
+     "hi": 21.6369,
+     "ci95": 3.3644,
+     "se": 1.7264,
+     "reducer": "mean",
+     "n_windows": 156,
+     "n_episodes": 50,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 156,
+     "n_total": 2510
+    },
+    "time_gap_min_s": {
+     "mean": 4.1589,
+     "lo": 3.408,
+     "hi": 4.9812,
+     "ci95": 0.7866,
+     "se": 0.4059,
+     "reducer": "mean",
+     "n_windows": 156,
+     "n_episodes": 50,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 156,
+     "n_total": 2510
+    },
+    "min_ttc_s": {
+     "mean": 10.554,
+     "lo": 7.9111,
+     "hi": 13.2117,
+     "ci95": 2.6503,
+     "se": 1.353,
+     "reducer": "mean",
+     "n_windows": 156,
+     "n_episodes": 50,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 156,
+     "n_total": 2510
+    }
+   },
+   "6-10": {
+    "speed_mps": [
+     6.0,
+     10.0
+    ],
+    "n_windows": 4293,
+    "window_states": {
+     "LEAD": 350,
+     "NO_LABEL": 3203,
+     "NO_LEAD": 740
+    },
+    "n_with_lead": 311,
+    "lead_rate": 0.0724,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 26.0664,
+     "lo": 22.8149,
+     "hi": 29.6301,
+     "ci95": 3.4076,
+     "se": 1.7207,
+     "reducer": "mean",
+     "n_windows": 311,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 311,
+     "n_total": 4293
+    },
+    "time_gap_min_s": {
+     "mean": 3.3588,
+     "lo": 2.9373,
+     "hi": 3.8194,
+     "ci95": 0.441,
+     "se": 0.225,
+     "reducer": "mean",
+     "n_windows": 311,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 311,
+     "n_total": 4293
+    },
+    "min_ttc_s": {
+     "mean": 11.8497,
+     "lo": 9.331,
+     "hi": 14.4897,
+     "ci95": 2.5794,
+     "se": 1.3053,
+     "reducer": "mean",
+     "n_windows": 311,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 311,
+     "n_total": 4293
+    }
+   },
+   "10-15": {
+    "speed_mps": [
+     10.0,
+     15.0
+    ],
+    "n_windows": 1347,
+    "window_states": {
+     "LEAD": 45,
+     "NO_LABEL": 1058,
+     "NO_LEAD": 244
+    },
+    "n_with_lead": 42,
+    "lead_rate": 0.0312,
+    "status": "OK",
+    "headway_min_m": {
+     "mean": 31.5357,
+     "lo": 25.6548,
+     "hi": 39.7354,
+     "ci95": 7.0403,
+     "se": 3.6617,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 42,
+     "n_total": 1347
+    },
+    "time_gap_min_s": {
+     "mean": 2.9053,
+     "lo": 2.3942,
+     "hi": 3.5846,
+     "ci95": 0.5952,
+     "se": 0.3103,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 42,
+     "n_total": 1347
+    },
+    "min_ttc_s": {
+     "mean": 16.18,
+     "lo": 9.0869,
+     "hi": 21.9646,
+     "ci95": 6.4389,
+     "se": 3.3182,
+     "reducer": "mean",
+     "n_windows": 42,
+     "n_episodes": 16,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 42,
+     "n_total": 1347
+    }
+   },
+   "15+": {
+    "speed_mps": [
+     15.0,
+     null
+    ],
+    "n_windows": 59,
+    "window_states": {
+     "LEAD": 2,
+     "NO_LABEL": 47,
+     "NO_LEAD": 10
+    },
+    "n_with_lead": 2,
+    "lead_rate": 0.0339,
+    "status": "UNPOWERED",
+    "reason": "2 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+   }
+  },
+  "window_states_total": {
+   "LEAD": 886,
+   "NO_LABEL": 8467,
+   "NO_LEAD": 1651
+  }
+ },
+ "paired_GT_minus_CV": {
+  "_what": "paired GT - CV distance-keeping deltas",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+  "arms": [
+   "GT",
+   "CV"
+  ],
+  "metrics": {
+   "headway_min_m": {
+    "n_used": 676,
+    "n_windows": 676,
+    "n_a_only": 9,
+    "n_b_only": 100,
+    "delta": 1.945,
+    "lo": 1.4344,
+    "hi": 2.5839,
+    "ci95": 0.5748,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_episodes": 82,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "status": "OK"
+   },
+   "time_gap_min_s": {
+    "n_used": 519,
+    "n_windows": 519,
+    "n_a_only": 9,
+    "n_b_only": 96,
+    "delta": 0.4331,
+    "lo": 0.3299,
+    "hi": 0.5531,
+    "ci95": 0.1116,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_episodes": 81,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "status": "OK"
+   },
+   "min_ttc_s": {
+    "n_used": 676,
+    "n_windows": 676,
+    "n_a_only": 9,
+    "n_b_only": 100,
+    "delta": 4.2384,
+    "lo": 3.032,
+    "hi": 5.6443,
+    "ci95": 1.3061,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_episodes": 82,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "status": "OK"
+   }
+  }
+ }
+}

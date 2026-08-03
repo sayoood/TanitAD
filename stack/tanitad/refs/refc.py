@@ -736,13 +736,34 @@ def refc_goal_config() -> RefCConfig:
 
     ⛔ **SEQUENCING, NOT A STANDALONE WIN.** A predicted goal must predict
     along-track distance from latents in which ``long_accel`` was MEASURED
-    unrecoverable across 17 head architectures (K7), and REF-C is structurally
-    single-instant: :meth:`RefCModel.forward` cross-attends the LAST frame's
-    feature map only. Our own prior therefore predicts PARTIAL FAILURE — the
-    bearing half should work, the along-track half should not, until temporal
-    features land. The two gates are separate precisely so that prediction is
-    MEASURED rather than assumed, and the arm is registered as **conditional on
-    the sibling temporal-feature stream**, not as an independent lever.
+    unrecoverable across 17 head architectures (K7). Our own prior therefore
+    predicts PARTIAL FAILURE — the bearing half should work, the along-track
+    half should not. The two gates are separate precisely so that prediction is
+    MEASURED rather than assumed.
+
+    ⛔ **CORRECTED 2026-08-03 — two claims in the previous version of this
+    paragraph were wrong, and the second one could have killed this arm for
+    free.**
+
+    1. *"REF-C is structurally single-instant"* is **imprecise**. It keeps one
+       feature **map**, but that map is computed from a D-015 **3-frame stack**
+       (``in_channels=9``), so it already carries **~300 ms** of motion — not
+       zero. Verified numerically: ``frames_u8[t][6:9] == frames_u8[t+1][3:6]``,
+       max|d| = 0.0. Two independent streams corroborated it on different files
+       and corpora. What REF-C discards is *history beyond that stack*, which is
+       a much weaker statement than "single-instant".
+    2. ⭐ *"conditional on the sibling temporal-feature stream"* is **RETRACTED**.
+       The two do **not** share an input path — REF-C keeps ONE feature map
+       (``forward``, this file), while the situation classifier stacks **eight**
+       via ``sitclf.causal_window``. A null in that stream is therefore **not
+       evidence about S6**, and registering S6 as contingent on it would have
+       let an unrelated result cancel a lever that was never tested.
+       **S6 needs its own evidence.** It is an independent lever whose
+       along-track half carries a stated adverse prior — not a dependent one.
+
+    ⇒ **RULE: an arm may only be registered as conditional on another result
+    when the two share the mechanism, not merely the topic.** Check the input
+    path before writing "conditional on".
 
     Capacity, MEASURED: ``goal_head`` = ``Linear(feat, 3)`` = 2,115 on base,
     plus two scalar gates.
