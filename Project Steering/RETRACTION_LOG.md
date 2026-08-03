@@ -2707,3 +2707,54 @@ supervisor because the command string contained both literals. The preflight rul
 explicit PID"; the sharper form is: ⇒ **`pgrep`/`pkill -f` are inadmissible for STATE CHECKS too,
 not just for killing. Use `kill -0 <explicit PID>`, or an `awk` filter that excludes your own
 command.**
+
+---
+
+## R-2026-08-03-corpus — ⛔ "the raw parity corpus was not found on any live machine" is RETRACTED
+
+**What I wrote**, in a program report and then into an agent brief as an established premise:
+*"pod1/pod3/eval all `Connection refused`; pod4 and `tanitad-new` hold no raw epcache (three probes
+each). It survives ONLY on HF."* I labelled corpus durability the programme's top non-scientific
+risk on the strength of it.
+
+**MEASURED:** `tanitad-thor` was holding it the whole time —
+`~/epcache/epcache-256px-phase0/physicalai-train-e438721ae894` and
+`~/valdata/physicalai-val-0c5f7dac3b11` with **40/40** val episodes present.
+
+**Root-cause class: ABSENCE FOUND AT ONE LOCATION, REPORTED AS ABSENCE** — the rule that is already
+first in the operating standard, with the 12-day Vulkan-ICD failure attached to it. The probes swept
+`/workspace/...`, which is where the *pods* keep a corpus. **Thor keeps its corpus in `$HOME`.** One
+probe shape, applied to a host with a different layout, and the answer inverts.
+⇒ **RULE: a negative probe must vary the PATH SHAPE, not only the host.** "Not at `/workspace/X` on
+four machines" is one probe repeated four times, not four probes.
+⇒ **RULE: I inherited this from a sibling stream's report and promoted it to a brief premise without
+re-deriving it.** That is exactly the INHERITED→MEASURED laundering the evidence-class rule exists to
+stop, and it is worse in a brief than in a report, because a brief is read as settled ground.
+
+**The risk survives the retraction, in a smaller and better-specified form** — Thor's *train* holding
+is partial, so the 278.78 GB raw parity train epcache still has one non-durable copy plus HF. But it
+had to be re-derived, and the sharper census is:
+
+| artifact | size | copies | durable | status |
+|---|---|---|---|---|
+| raw parity TRAIN epcache 256 px | 278.78 GB | 1 | 1 (HF) | mitigation in flight |
+| raw parity VAL epcache 256 px | 70.39 GB | 1 | 1 (HF) | mitigation armed, sequenced behind the train pull |
+| **9 checkpoints on `pod4`** | ~28 GB | 1 | **0** | 🔴 **PI authorisation required** |
+
+✅ **Closed:** the 256 px REF-C val raster — **40/40 episodes match the HF LFS sha256 bit-for-bit**
+and `torch.load` cleanly, including the previously 21 %-truncated `ep_00028`. Size and exit code were
+not accepted as evidence.
+
+### Registry citation defects: the brace-expansion bug is NOT isolated
+
+The `…_vs_refc-{base,xl}-30k.json` defect corrected earlier today is **one of 17**. Full sweep of
+`MODEL_REGISTRY.md`: **252 citations — 115 EXISTS · 4 MISSING · 17 NOT_A_PATH · 22 pod paths
+(uncheckable)**. All 4 MISSING are **malformed citations, not missing artifacts**. Five cited pod
+paths are stranded with no repo counterpart.
+
+⚠️ **Process note, recorded because it is a real exposure.** An agent command printed `Keys.txt` to
+its tool output. **VERIFIED: `Keys.txt` is git-ignored (`.gitignore:44`), has never been staged, and
+appears in no commit on any branch.** The exposure is confined to the session transcript. The HF
+token was redacted by the agent; **the file's other keys were not**, so they should be treated as
+disclosed and rotated. ⇒ **RULE: read the token programmatically (`grep -oE 'hf_[A-Za-z0-9]+'`) —
+never `cat`, `head` or print the file, not even once, not even to check it exists.**

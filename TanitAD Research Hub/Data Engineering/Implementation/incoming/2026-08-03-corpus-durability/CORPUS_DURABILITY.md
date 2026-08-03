@@ -2,8 +2,8 @@
 
 **Author:** Data/ops stream · **Branch:** `agent/arch-inf-20260803`
 **Machine-readable:** `CORPUS_DURABILITY_CENSUS.json` (this dir)
-**Instrument:** `tools/corpus_census.py` + `tools/tests/test_corpus_census.py` (34 tests)
-**Registry sweep:** `tools/registry_paths.py` + `tools/tests/test_registry_paths.py` (33 tests)
+**Instrument:** `tools/corpus_census.py` + `tools/tests/test_corpus_census.py` (**43 tests**)
+**Registry sweep:** `tools/registry_paths.py` + `tools/tests/test_registry_paths.py` (**24 tests**)
 
 ---
 
@@ -109,7 +109,8 @@ so concurrency would not finish either sooner — it would just halve the more c
 * supervisor `/tmp/pull_val600.sh` — PID **34909**, polls `/proc/22414`, then launches
 * `/tmp/pull_val600.py` — `snapshot_download` → `~/epcache/epcache-256px-phase0/physicalai-val-0c5f7dac3b11`,
   then **verifies all 600 against the HF sha256 manifest** and `torch.load`s a 1-in-25 sample.
-* Digest manifests staged on Thor: `/tmp/hf_val600_sha.txt`, `/tmp/hf_train2376_sha.txt`.
+* Digest manifests staged on Thor: `/tmp/hf_val600_sha.txt`, `/tmp/hf_train2376_sha.txt`
+  (the train manifest is staged so the in-flight pull can be verified the same way when it lands).
 * Disk checked with a **real `dd` write** (1.2 GB/s), not `df` alone: 670 GB free, need ~348 GB.
 
 ⚠️ The wait target was confirmed by reading `/proc/22414/cmdline` before arming — **not** by a
@@ -294,10 +295,13 @@ nightly `pod_git_drift.py` slot. See §8.
 
 ## 7. Test status
 
-| suite | result |
+| suite | result (MEASURED 2026-08-03) |
 |---|---|
-| `tools/tests/` (incl. 34 census + 33 registry-path tests) | **222 passed** |
-| `stack/` full suite | see §9 — reported as measured, not as a baseline claim |
+| `tools/tests/` — incl. **43** census + **24** registry-path tests, all new | **231 passed** |
+| `stack/` full suite (`pytest -q`, `OMP_NUM_THREADS=6`) | **2023 passed, 12 skipped, 2 xfailed** in 379.8 s |
+
+I changed nothing under `stack/`, so the stack figure is a pre-existing-green confirmation, not a
+result of this work.
 
 ⚠️ The stack baseline is **moving** (1900 → 1913 → 1932 within one session), so a count mismatch
 is not by itself a regression.
