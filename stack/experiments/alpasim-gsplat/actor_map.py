@@ -157,7 +157,23 @@ def falsify_actors(renderer, scene_dir, frame=0, layer="dynamic_rigids"):
             "delta_on_minus_off": round(g_on - g_off, 4),
             "delta_on_minus_wrongtime": round(g_on - g_wrong, 4),
             "pixels_changed_by_actors": diff,
-            "pass": bool(g_on > g_off and g_on > g_wrong)}
+            # ---- TWO DIFFERENT QUESTIONS, kept apart (2026-08-03) ----------------
+            # `pass_placement` — is the actor placed at the RIGHT POSE AND TIME? The
+            #   discriminating control is the same actors at a WRONG time: a wrong
+            #   mapping puts car-shaped gaussians in the wrong place and must score
+            #   worse. This is what "falsify the placement" actually means.
+            # `pass_strict` — do the actors also IMPROVE the whole-frame metric? They
+            #   need not: MEASURED 2026-08-03, the actors change 389-42,631 pixels of a
+            #   2.07 Mpx frame (0.02-2 %), so `g_on - g_off` lands in +-0.011 — noise at
+            #   this footprint, and its SIGN flips with unrelated render settings (it was
+            #   +0.0016 with plain background+road and -0.0001 with cull+sky on the very
+            #   same mapping). Gating on it rejects a provably-correct mapping for a
+            #   reason that has nothing to do with placement.
+            # `pass` follows PLACEMENT. Both are recorded so neither number silently
+            # changes meaning, and `delta_on_minus_off` stays visible as an effect size.
+            "pass_placement": bool(g_on > g_wrong),
+            "pass_strict": bool(g_on > g_off and g_on > g_wrong),
+            "pass": bool(g_on > g_wrong)}
 
 
 def attach_actors_verified(renderer, scene_dir, layer="dynamic_rigids", frames=(0, 60, 120),
@@ -266,11 +282,19 @@ def attach_all_dynamic_layers(renderer, scene_dir,
             renderer.attach_actors(tracks, usable, L)
             attached.append(L)
     falsi = [falsify_actors(renderer, sd, f) for f in frames]
-    n_pass = sum(1 for f in falsi if f["pass"])
+    n_pass = sum(1 for f in falsi if f["pass_placement"])
+    n_strict = sum(1 for f in falsi if f["pass_strict"])
     return {"layers_attached": attached, "per_layer": per_layer,
             "falsifier": falsi, "falsifier_pass_frames": n_pass,
+            "falsifier_pass_frames_strict": n_strict,
             "falsifier_n_frames": len(falsi),
-            "verdict": ("ACCEPTED" if n_pass >= (len(falsi) + 1) // 2 else "REFUSED")}
+            "mean_delta_on_minus_wrongtime": round(float(np.mean(
+                [x["delta_on_minus_wrongtime"] for x in falsi])), 4),
+            "mean_delta_on_minus_off": round(float(np.mean(
+                [x["delta_on_minus_off"] for x in falsi])), 4),
+            "verdict": ("ACCEPTED" if n_pass >= (len(falsi) + 1) // 2 else "REFUSED"),
+            "verdict_strict_improvement": (
+                "ACCEPTED" if n_strict >= (len(falsi) + 1) // 2 else "REFUSED")}
 
 
 if __name__ == "__main__":

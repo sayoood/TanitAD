@@ -448,6 +448,31 @@ class NuRecGsplatRenderer:
         return rec
 
     # -- culling -------------------------------------------------------------------
+    def cull_haze(self, scale_quantile: float = 0.98, opacity_max: float = 0.3):
+        """Drop splats that are BOTH over-sized AND low-opacity — the haze population.
+
+        WHY THIS SHAPE. The visible defect in this reconstruction is a set of long
+        horizontal light STREAKS (the "magenta smear" and a cyan companion). They are
+        produced by a small number of very elongated, semi-transparent gaussians.
+        A pure max-scale cull removes them but also removes large OPAQUE splats — the
+        road surface and building faces — which is why `cull_by_scale(0.95)` drops the
+        render's mean from 0.2423 to 0.1462 against a reference mean of 0.2425.
+        Requiring low opacity as well keeps the surfaces and takes only the haze.
+        """
+        import torch
+        smax = self.scales.max(dim=1).values.float()
+        thr = float(torch.quantile(smax[::37], scale_quantile))
+        drop = (smax > thr) & (self.opac.float() < opacity_max)
+        keep = ~drop
+        self.means, self.quats = self.means[keep], self.quats[keep]
+        self.scales, self.opac = self.scales[keep], self.opac[keep]
+        self.sh = self.sh[keep]
+        self.n_gauss = int(self.means.shape[0])
+        self.cull_info = {"mode": "haze", "scale_quantile": scale_quantile,
+                          "scale_thresh_m": round(thr, 4), "opacity_max": opacity_max,
+                          "n_dropped": int(drop.sum()), "n_kept": self.n_gauss}
+        return self.cull_info
+
     def cull_by_scale(self, quantile: float):
         """Drop the static gaussians whose LARGEST axis exceeds the `quantile` of that
         statistic. Returns the applied threshold in metres and the number dropped.

@@ -1,0 +1,247 @@
+{
+ "run_dir": "/home/nvidia/rq_out/diagnose_f150",
+ "scene_dir": "/home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430",
+ "frame": 150,
+ "render_ms": 183.0,
+ "black_band": {
+  "max_angle_rad": 1.3477432483900214,
+  "max_angle_deg": 77.22,
+  "frac_pixels_beyond_max_angle": 0.0,
+  "frac_alpha_lt_0.01": 0.11094,
+  "frac_render_near_black": 0.29797,
+  "IoU_empty_vs_beyond_fov": 0.0,
+  "IoU_dark_vs_beyond_fov": 0.0,
+  "frac_of_empty_that_is_beyond_fov": 0.0,
+  "frac_of_beyond_fov_that_is_empty": 0.0,
+  "empty_boxes": [
+   {
+    "bbox_xywh": [
+     674,
+     0,
+     1246,
+     202
+    ],
+    "n_px": 118149,
+    "centroid_xy": [
+     1447.7,
+     60.4
+    ]
+   },
+   {
+    "bbox_xywh": [
+     0,
+     0,
+     382,
+     443
+    ],
+    "n_px": 111857,
+    "centroid_xy": [
+     168.9,
+     170.5
+    ]
+   }
+  ],
+  "beyond_fov_boxes": [],
+  "dark_boxes": [
+   {
+    "bbox_xywh": [
+     0,
+     0,
+     1920,
+     521
+    ],
+    "n_px": 611268,
+    "centroid_xy": [
+     858.0,
+     194.2
+    ]
+   },
+   {
+    "bbox_xywh": [
+     1831,
+     486,
+     89,
+     140
+    ],
+    "n_px": 4816,
+    "centroid_xy": [
+     1875.4,
+     553.0
+    ]
+   },
+   {
+    "bbox_xywh": [
+     1887,
+     548,
+     33,
+     63
+    ],
+    "n_px": 1420,
+    "centroid_xy": [
+     1905.2,
+     580.2
+    ]
+   },
+   {
+    "bbox_xywh": [
+     753,
+     534,
+     39,
+     22
+    ],
+    "n_px": 283,
+    "centroid_xy": [
+     769.6,
+     546.2
+    ]
+   }
+  ],
+  "region_empty": {
+   "region": "alpha<0.01",
+   "n_px": 230038,
+   "frac_of_frame": 0.11094,
+   "render_rgb_mean": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ref_rgb_mean": [
+    28.7,
+    26.0,
+    22.8
+   ],
+   "alpha_mean": 0.0011,
+   "alpha_p95": 0.0074,
+   "mae": 0.1011,
+   "depth_median_m": 36.18,
+   "depth_p05_m": 5.38
+  }
+ },
+ "magenta": {
+  "frac_render": 6e-05,
+  "frac_reference": 0.00036,
+  "boxes_render": [],
+  "boxes_reference": [
+   {
+    "bbox_xywh": [
+     1692,
+     454,
+     52,
+     46
+    ],
+    "n_px": 693,
+    "centroid_xy": [
+     1718.2,
+     479.1
+    ]
+   }
+  ],
+  "region": {
+   "region": "magenta",
+   "n_px": 123,
+   "frac_of_frame": 6e-05,
+   "render_rgb_mean": [
+    167.7,
+    136.9,
+    161.4
+   ],
+   "ref_rgb_mean": [
+    71.3,
+    74.4,
+    78.1
+   ],
+   "alpha_mean": 0.9806,
+   "alpha_p95": 0.9994,
+   "mae": 0.3228,
+   "depth_median_m": 308.57,
+   "depth_p05_m": 22.6
+  },
+  "per_layer": {
+   "background": {
+    "frac_magenta": 6e-05,
+    "magenta_overlap_with_full_render": 1.0,
+    "boxes": [],
+    "rgb_mean_in_full_magenta_region": [
+     167.7,
+     136.9,
+     161.4
+    ],
+    "alpha_mean_in_full_magenta_region": 0.9806
+   },
+   "road": {
+    "frac_magenta": 0.0,
+    "magenta_overlap_with_full_render": 0.0,
+    "boxes": [],
+    "rgb_mean_in_full_magenta_region": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "alpha_mean_in_full_magenta_region": 0.0
+   }
+  },
+  "scale_cull_sweep": [
+   {
+    "scale_quantile_kept": 1.0,
+    "scale_thresh_m": null,
+    "n_culled": 0,
+    "frac_magenta": 6e-05,
+    "rgb_mean_in_magenta_region": [
+     167.7,
+     136.9,
+     161.4
+    ],
+    "grad_ncc": 0.2854
+   },
+   {
+    "scale_quantile_kept": 0.9999,
+    "scale_thresh_m": 94.074,
+    "n_culled": 322,
+    "frac_magenta": 6e-05,
+    "rgb_mean_in_magenta_region": [
+     168.9,
+     137.1,
+     161.8
+    ],
+    "grad_ncc": 0.2698
+   },
+   {
+    "scale_quantile_kept": 0.999,
+    "scale_thresh_m": 19.661,
+    "n_culled": 2907,
+    "frac_magenta": 7e-05,
+    "rgb_mean_in_magenta_region": [
+     164.3,
+     133.3,
+     157.9
+    ],
+    "grad_ncc": 0.2578
+   },
+   {
+    "scale_quantile_kept": 0.99,
+    "scale_thresh_m": 4.45,
+    "n_culled": 29094,
+    "frac_magenta": 0.0005,
+    "rgb_mean_in_magenta_region": [
+     179.7,
+     139.7,
+     167.1
+    ],
+    "grad_ncc": 0.2705
+   },
+   {
+    "scale_quantile_kept": 0.95,
+    "scale_thresh_m": 1.426,
+    "n_culled": 153506,
+    "frac_magenta": 0.00052,
+    "rgb_mean_in_magenta_region": [
+     181.7,
+     136.9,
+     165.6
+    ],
+    "grad_ncc": 0.3214
+   }
+  ],
+  "grad_ncc_baseline": 0.2854
+ }
+}

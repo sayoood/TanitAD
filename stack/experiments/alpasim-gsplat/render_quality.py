@@ -196,7 +196,7 @@ def parse_arm(spec: str) -> dict:
     if len(parts) < 2:
         raise ValueError(f"bad arm spec {spec!r}; want name:layers[:sky=lo,hi][:rs]")
     arm = {"name": parts[0], "layers": [x for x in parts[1].split(",") if x],
-           "sky": None, "rs": False, "cull": None}
+           "sky": None, "rs": False, "cull": None, "haze": None}
     for extra in parts[2:]:
         if extra.startswith("sky="):
             v = [float(x) for x in extra[4:].split(",")]
@@ -208,6 +208,9 @@ def parse_arm(spec: str) -> dict:
             arm["rs"] = True      # rolling shutter: render start->end down the frame
         elif extra.startswith("cull="):
             arm["cull"] = float(extra[5:])   # drop static splats above this scale-quantile
+        elif extra.startswith("haze="):
+            v = [float(x) for x in extra[5:].split(",")]
+            arm["haze"] = {"scale_quantile": v[0], "opacity_max": v[1]}
         else:
             raise ValueError(f"unknown arm option {extra!r}")
     return arm
@@ -221,6 +224,8 @@ def build_renderer(scene_dir: Path, arm: dict, loader_dir: str | None, verbose=F
     r = NuRecGsplatRenderer(scene_dir, layers=static, loader_dir=loader_dir,
                             verbose=verbose)
     info = None
+    if arm.get("haze"):
+        r.cull_haze(**arm["haze"])
     if arm.get("cull"):
         r.cull_by_scale(float(arm["cull"]))
     if dynamic:
