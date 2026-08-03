@@ -2326,3 +2326,45 @@ ticks of the night scene and correctly **declines to judge** on the junction sce
 cannot see a 125 m arc).
 ⇒ **RULE: a bare `except` around a label call converts a signature breakage into a plausible
 default. Record the exception in the artifact — that is the only reason this was findable.**
+
+---
+
+## R-2026-08-03-v5f — ⛔ the "v5f IS GOING THE WRONG WAY" alarm is WITHDRAWN
+
+**Retracted claim (mine, headlined in the 13:00 program report):** *v5f is degrading — it sat around
+0.31 at steps 1800–2000 and is now 0.64–1.02; a decision is needed at the 5 k milestone.*
+
+**MEASURED 2026-08-03T18:57Z**, `tanitad-new:/workspace/experiments/flagship-v5f-w120-30k/train_log.jsonl`,
+53 metric rows, **500-step block medians** (n ≥ 4 per block):
+
+| block | 1000–1500 | 1500–2000 | **2000–2500** | 2500–3000 | 3000–3500 | 3500–4000 |
+|---|---|---|---|---|---|---|
+| `g_op_fwd_ade_m` | 0.3522 | 0.2933 | **0.4191** | 0.1784 | 0.2389 | 0.1893 |
+
+The alarm was the **2000–2500 bump**. The run has since printed values **better than anything before
+it**. The HYPOTHESIS filed next to the alarm — LR warm-up under the changed `--batch 4 --accum 16`
+regime — is what the data supports. **No restart.** Full row now at `MODEL_REGISTRY.md` §1.8.
+
+**Root-cause class: a 3-point read inside an LR warm-up is not a trend.** This is the *fourth*
+`g_op_fwd_ade_m` misread this programme, and the second in the "raised an alarm" direction (the
+others read a lucky batch as a 73 % drop). The existing rule — *read ≥3 logged steps* — was
+**followed and was still insufficient**, because 3 consecutive logged points span only 150 steps.
+⇒ **STRENGTHENED RULE: on this metric, quote a BLOCK MEDIAN over ≥500 steps with its n, or do not
+raise it. Never compare two blocks that straddle a warm-up boundary.**
+⇒ **RULE: an alarm and its own hedge must be resolved by the same instrument that raised it.** The
+13:00 report hedged correctly and recommended holding; the hedge is what saved the run, and it only
+worked because the alarm was written with the counter-hypothesis attached.
+
+### What the same probe found instead — and it is the more important result
+
+`oracle_ade` improves monotonically after the bump (0.9450 → 0.5902 → 0.5663 → **0.5254**) while
+`sel_gap = plan_ade − oracle_ade` **does not close at all** (0.4510 / 0.4878 / 0.5681 / 0.3980 /
+0.3432 / 0.4715 over 2,650 steps), `rank_acc` sits at **0.000–0.375**, and
+`frac_sel_2x_worse_than_oracle` at **0.25–0.50**. At step 3,650: `plan_ade` **1.0251** vs
+`oracle_ade` **0.5254**.
+⇒ **The fan is good and the SELECTOR is the defect — the arm would be ~2× better if it merely chose
+correctly among candidates it already generates.** ⛔ Invisible in `g_op_fwd_ade_m`, which is why an
+ADE-only read of this run reports "healthy". Third independent instrument now pointing at selection
+rather than generation (with D-TAC1's within-`lane_keep` finding and the closed-loop TACTICAL row).
+⚠️ Trainer-log numbers: a curve watch, **not quotable as a result**. The 5 k gate is adjudicated on
+`stack/scripts/run_gate.py` over the four families with the paired episode-cluster bootstrap.

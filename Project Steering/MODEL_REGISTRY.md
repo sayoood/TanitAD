@@ -964,6 +964,68 @@ Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/
 
 ---
 
+### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — 🟢 **RUNNING** (step 3,650 @ 2026-08-03T18:57Z)
+
+**The 120° wide-FOV cylindrical arm with conditional imagination.** Added to the registry
+2026-08-03 — it had been the programme's headline live run for days **with no registry row**, so
+every quoted v5f fact was un-anchored. All fields below are MEASURED off the pod in one probe.
+
+| Field | Value |
+|---|---|
+| **Status** | 🟢 RUNNING on `tanitad-new` (pod5, `69.30.85.106:22039`), trainer PID **19412**. Migrated from the faulty pod2. Resumed `[resume] step 1001`. |
+| **Location** | `tanitad-new:/workspace/experiments/flagship-v5f-w120-30k/` · log `…/train_log.jsonl` (+ `/workspace/v5f_run.log`) |
+| **Corpus** ✅ | **PARITY VERIFIED by the trainer itself**: `physicalai-train-e438721ae894-w120-256x640cyl`, **2400 clips**, clip sha256 `e61a04553df5…` matching the committed manifest; sibling of `physicalai-train-e438721ae894`, skip-hash **`f09e44db`**. Val: `physicalai-val-0c5f7dac3b11-w120-256x640cyl`, 600 clips, sha256 `0b176d2e5cb4…`. |
+| **Geometry** | 256×640, `f_ref` 305.5775, **cylindrical**, HFOV 120°, subframe 176×624, `frame_tag` `256x640f305.5775cyl` |
+| **Levers** | `--from-scratch` (trunk *init* only) · `--cond-imagination` · `--batch 4 --accum 16` (eff_batch **64**) · `--anchors-dense` · `--save-every 250` · ⚠️ `--no-heldout-gate` with `--heldout-off-reason` *"PI directive: no heldout gate. Migrated from the faulty pod2…"* |
+| **Trainability** | `[v4][not-frozen]` self-check PASSES: **631/631** trunk tensors require grad and sit in the AdamW `trunk` group at lr 1e-4; encoder **149/149**, predictor **159/159** trainable; `gnorm_trunk > 0` confirmed in the log. |
+| **Throughput** | **MEASURED 19.58 s/step** over the last 250 steps ⇒ **143.3 h ≈ 6.0 days** remaining to 30 k. |
+| **Container RAM** | ⚠️ `memory.max` = **49,999,998,976 B (50 GB)** — the *same* cap as the pod2 that was OOM-killed 6×. The migration runbook asked for more and did not get it. |
+| **HF** | `Sayood/tanitad-flagship-v5f-w120` (ckpt + config + probe_vocab) |
+
+#### ⛔ The 13:00 "v5f IS GOING THE WRONG WAY" alarm is WITHDRAWN
+
+MEASURED, **500-step block medians** (n ≥ 4 per block — never one logged line):
+
+| step block | `g_op_fwd_ade_m` | `plan_ade` | `oracle_ade` | `sel_gap` | `rank_acc` | `frac_sel_2x_worse` |
+|---|---|---|---|---|---|---|
+| 1000–1500 | 0.3522 | 1.4935 | 0.8798 | 0.4510 | 0.2500 | 0.2500 |
+| 1500–2000 | 0.2933 | 1.3949 | 0.8382 | 0.4878 | 0.0000 | 0.3750 |
+| **2000–2500** | **0.4191** ← *the alarm* | 1.6597 | 0.9450 | 0.5681 | 0.1250 | 0.2500 |
+| 2500–3000 | 0.1784 | 1.0714 | 0.5902 | 0.3980 | 0.1250 | 0.2500 |
+| 3000–3500 | 0.2389 | 0.9762 | 0.5663 | 0.3432 | 0.0000 | 0.2500 |
+| 3500–4000 *(n=4)* | 0.1893 | 1.0251 | **0.5254** | 0.4715 | 0.3750 | 0.5000 |
+
+The 13:00 report read **0.64–1.02 around step 2300** and headlined *"v5f IS GOING THE WRONG WAY"*.
+Block medians show that was the **2000–2500 bump**, and the run has since printed 0.1784 / 0.2389 /
+0.1893 — **better than anything before the bump**. ⇒ **No restart. The HYPOTHESIS stated alongside
+the alarm (LR warm-up under a changed `--batch 4 --accum 16` regime) is the reading the data now
+supports**, and the recommendation *"hold to 5 k, do not restart on 3 noisy points"* was correct.
+⭐ **Root-cause class: a 3-point read inside an LR warm-up is not a trend — block-median it or do
+not raise it.** Same family as the three earlier `g_op_fwd_ade_m` misreads, in both directions.
+
+#### ⭐ What the same table shows instead — the fan is good and the SELECTOR is the defect
+
+- `oracle_ade` **improves monotonically after the bump**: 0.9450 → 0.5902 → 0.5663 → **0.5254**.
+  The best candidate in the fan is getting substantially better.
+- `sel_gap` = `plan_ade − oracle_ade` **does not close**: 0.4510 / 0.4878 / 0.5681 / 0.3980 /
+  0.3432 / 0.4715 — no trend across 2,650 steps.
+- `rank_acc` sits at **0.000–0.375** and `frac_sel_2x_worse_than_oracle` at **0.25–0.50**: the
+  selector picks a candidate **≥2× worse than the oracle on a quarter to a half of logged steps**.
+- ⇒ At step 3,650 `plan_ade` **1.0251** vs `oracle_ade` **0.5254** — **the arm would be ~2× better
+  if it merely chose correctly among candidates it already generates.**
+
+⇒ **This is the TACTICAL family failing live in the flagship's own training log**, independent of
+REF-C's manoeuvre head (§ the D-TAC1 stream) and of the sitclf work — three instruments now point at
+selection rather than generation. ⛔ It is **not** visible in `g_op_fwd_ade_m`, which is why an
+ADE-only read of this run says "healthy".
+
+⚠️ **These are TRAINER-log numbers, not eval output.** Per the operating standard they are a curve
+watch and are **not quotable as a result** — trainer val has run ~10 % optimistic vs `eval_*.py`
+before. The 5 k gate must be adjudicated on `stack/scripts/run_gate.py`, on the four families, with
+the paired episode-cluster bootstrap.
+
+---
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the

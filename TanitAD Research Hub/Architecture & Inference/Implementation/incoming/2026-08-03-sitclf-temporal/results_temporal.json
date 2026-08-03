@@ -1,0 +1,1394 @@
+{
+ "_what": "Is the situation classifier limited by MISSING TEMPORAL CONTENT?",
+ "_hypotheses": {
+  "H-T1": "window length",
+  "H-T2": "motion subspace",
+  "H-T3": "explicit parameterisation"
+ },
+ "_inference_inputs": "CAMERA ONLY (frozen v1 encoder latents). No ego channel.",
+ "substrate": "C:/Users/Admin/tanitad-data/eval/sitclf_b4_substrate.npz",
+ "substrate_meta": {
+  "trunk": {
+   "ckpt": "C:/Users/Admin/tanitad-data/eval/v1_speedjerk_ckpt.pt",
+   "step": 29999,
+   "encoder_params": 87022848,
+   "readout_params": 98432,
+   "state_dim": 2048,
+   "strict_load": true,
+   "frozen": true
+  },
+  "caches": [
+   "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-train-14231cd29c74",
+   "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-val-bb543bdf7836"
+  ],
+  "n_clips": 500,
+  "n_frames": 99477,
+  "state_dim": 2048,
+  "lead_s": 3.0,
+  "hz": 10.0,
+  "ego_scale": [
+   10.0,
+   2.0,
+   0.5
+  ],
+  "labels": "tanitad.data.situations (constants byte-identical to sc_situations.py)",
+  "intersection_cross": null,
+  "n_events": {
+   "lane_change": 71,
+   "roundabout": 47,
+   "intersection": 271
+  },
+  "per_situation": {
+   "lane_change": {
+    "scorable": 81611,
+    "pos": 1841,
+    "base_rate": 0.022558
+   },
+   "roundabout": {
+    "scorable": 81698,
+    "pos": 1164,
+    "base_rate": 0.014248
+   },
+   "intersection": {
+    "scorable": 74361,
+    "pos": 7178,
+    "base_rate": 0.096529
+   }
+  },
+  "wallclock_s": 881.8
+ },
+ "protocol": {
+  "win_max_common_rows": 32,
+  "epochs": 8,
+  "sel_frac": 0.2,
+  "outer_folds": 2,
+  "fold_unit": "clip cluster",
+  "pca": "appearance AND motion bases fitted on the FIT rows of each fold",
+  "estimator": "paired_ap_episode_cluster_bootstrap (taniteval draws)",
+  "n_boot": 2000,
+  "strata_n_boot": 500,
+  "reference_arm": "ridge_app16_w8"
+ },
+ "row_counts": {
+  "lane_change": {
+   "scorable": 66368,
+   "pos": 1498,
+   "base_rate": 0.022571,
+   "clusters_with_a_positive": 55
+  },
+  "roundabout": {
+   "scorable": 66454,
+   "pos": 1034,
+   "base_rate": 0.01556,
+   "clusters_with_a_positive": 37
+  },
+  "intersection": {
+   "scorable": 59708,
+   "pos": 6286,
+   "base_rate": 0.105279,
+   "clusters_with_a_positive": 216
+  }
+ },
+ "arms": {
+  "NEG_FEAT__ridge_app128_w1": {
+   "rep": [
+    [
+     "app",
+     128
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 128,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app64_w2": {
+   "rep": [
+    [
+     "app",
+     64
+    ]
+   ],
+   "win": 2,
+   "history_s": 0.1,
+   "in_dim": 64,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app32_w4": {
+   "rep": [
+    [
+     "app",
+     32
+    ]
+   ],
+   "win": 4,
+   "history_s": 0.3,
+   "in_dim": 32,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w8": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    1.0
+   ]
+  },
+  "NEG_FEAT__ridge_app8_w16": {
+   "rep": [
+    [
+     "app",
+     8
+    ]
+   ],
+   "win": 16,
+   "history_s": 1.5,
+   "in_dim": 8,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    1000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app4_w32": {
+   "rep": [
+    [
+     "app",
+     4
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 4,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    1000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w1": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 16,
+   "flat_dim": 16,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 17,
+   "lambda_selected": [
+    10.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w4": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 4,
+   "history_s": 0.3,
+   "in_dim": 16,
+   "flat_dim": 64,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 65,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w16": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 16,
+   "history_s": 1.5,
+   "in_dim": 16,
+   "flat_dim": 256,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 257,
+   "lambda_selected": [
+    10000.0,
+    10.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w32": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 513,
+   "lambda_selected": [
+    10000.0,
+    1000.0
+   ]
+  },
+  "NEG_FEAT__ridge_mot16_w8": {
+   "rep": [
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10.0
+   ]
+  },
+  "NEG_FEAT__ridge_app8mot8_w8": {
+   "rep": [
+    [
+     "app",
+     8
+    ],
+    [
+     "mot",
+     8
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16mot16_w8": {
+   "rep": [
+    [
+     "app",
+     16
+    ],
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 32,
+   "flat_dim": 256,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 257,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__ridge_mot16_w32": {
+   "rep": [
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 513,
+   "lambda_selected": [
+    1.0,
+    1.0
+   ]
+  },
+  "NEG_FEAT__ridge_app16_w8_diffparam": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": true,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10.0
+   ]
+  },
+  "NEG_FEAT__CPOS_ego_w8": {
+   "rep": [
+    [
+     "ego",
+     3
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 3,
+   "flat_dim": 24,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 25,
+   "lambda_selected": [
+    1.0,
+    10000.0
+   ]
+  },
+  "NEG_FEAT__CPOS_ego_w32": {
+   "rep": [
+    [
+     "ego",
+     3
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 3,
+   "flat_dim": 96,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 97,
+   "lambda_selected": [
+    1.0,
+    10.0
+   ]
+  },
+  "NEG_FEAT__CPOS_ORACLE_egofuture30": {
+   "rep": [
+    [
+     "egofut",
+     30
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 90,
+   "flat_dim": 90,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 91,
+   "lambda_selected": [
+    1.0,
+    1000.0
+   ]
+  },
+  "NEG_FEAT__tf_app16_w8_d128": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    4,
+    4
+   ],
+   "sel_curve": [
+    [
+     0.04096,
+     0.06763,
+     0.12151,
+     0.12705,
+     0.06517,
+     0.06094,
+     0.04942,
+     0.05093
+    ],
+    [
+     0.04579,
+     0.04145,
+     0.04809,
+     0.05007,
+     0.04928,
+     0.04867,
+     0.04784,
+     0.04679
+    ]
+   ]
+  },
+  "NEG_FEAT__tf_app16_w32": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 420100,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    2,
+    7
+   ],
+   "sel_curve": [
+    [
+     0.05246,
+     0.10395,
+     0.08953,
+     0.07414,
+     0.06857,
+     0.04926,
+     0.04398,
+     0.05454
+    ],
+    [
+     0.03805,
+     0.0378,
+     0.04469,
+     0.04789,
+     0.04904,
+     0.04866,
+     0.05538,
+     0.05254
+    ]
+   ]
+  },
+  "NEG_FEAT__tf_app8mot8_w8": {
+   "rep": [
+    [
+     "app",
+     8
+    ],
+    [
+     "mot",
+     8
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    1,
+    5
+   ],
+   "sel_curve": [
+    [
+     0.05317,
+     0.04239,
+     0.04395,
+     0.04353,
+     0.04071,
+     0.04618,
+     0.04306,
+     0.04028
+    ],
+    [
+     0.04364,
+     0.0501,
+     0.05839,
+     0.06408,
+     0.07118,
+     0.05269,
+     0.05171,
+     0.0484
+    ]
+   ]
+  },
+  "NEG_FEAT__tf_app16_w8_diffparam": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": true,
+   "diff_reparam": true,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    2,
+    8
+   ],
+   "sel_curve": [
+    [
+     0.05536,
+     0.07055,
+     0.05197,
+     0.03567,
+     0.03631,
+     0.03675,
+     0.03504,
+     0.04303
+    ],
+    [
+     0.04547,
+     0.04755,
+     0.04783,
+     0.04718,
+     0.04544,
+     0.04863,
+     0.04265,
+     0.04955
+    ]
+   ]
+  },
+  "ridge_app128_w1": {
+   "rep": [
+    [
+     "app",
+     128
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 128,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "ridge_app64_w2": {
+   "rep": [
+    [
+     "app",
+     64
+    ]
+   ],
+   "win": 2,
+   "history_s": 0.1,
+   "in_dim": 64,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    1.0,
+    10.0
+   ]
+  },
+  "ridge_app32_w4": {
+   "rep": [
+    [
+     "app",
+     32
+    ]
+   ],
+   "win": 4,
+   "history_s": 0.3,
+   "in_dim": 32,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10.0,
+    1000.0
+   ]
+  },
+  "ridge_app16_w8": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "ridge_app8_w16": {
+   "rep": [
+    [
+     "app",
+     8
+    ]
+   ],
+   "win": 16,
+   "history_s": 1.5,
+   "in_dim": 8,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    1000.0,
+    10000.0
+   ]
+  },
+  "ridge_app4_w32": {
+   "rep": [
+    [
+     "app",
+     4
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 4,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10.0,
+    100.0
+   ]
+  },
+  "ridge_app16_w1": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 16,
+   "flat_dim": 16,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 17,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "ridge_app16_w4": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 4,
+   "history_s": 0.3,
+   "in_dim": 16,
+   "flat_dim": 64,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 65,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "ridge_app16_w16": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 16,
+   "history_s": 1.5,
+   "in_dim": 16,
+   "flat_dim": 256,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 257,
+   "lambda_selected": [
+    10000.0,
+    100.0
+   ]
+  },
+  "ridge_app16_w32": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 513,
+   "lambda_selected": [
+    10000.0,
+    1000.0
+   ]
+  },
+  "ridge_mot16_w8": {
+   "rep": [
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    1.0,
+    100.0
+   ]
+  },
+  "ridge_app8mot8_w8": {
+   "rep": [
+    [
+     "app",
+     8
+    ],
+    [
+     "mot",
+     8
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    10000.0,
+    10000.0
+   ]
+  },
+  "ridge_app16mot16_w8": {
+   "rep": [
+    [
+     "app",
+     16
+    ],
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 32,
+   "flat_dim": 256,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 257,
+   "lambda_selected": [
+    10000.0,
+    10.0
+   ]
+  },
+  "ridge_mot16_w32": {
+   "rep": [
+    [
+     "mot",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 513,
+   "lambda_selected": [
+    1.0,
+    10000.0
+   ]
+  },
+  "ridge_app16_w8_diffparam": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": true,
+   "kind": "closed-form ridge",
+   "params_per_head": 129,
+   "lambda_selected": [
+    1.0,
+    100.0
+   ]
+  },
+  "CPOS_ego_w8": {
+   "rep": [
+    [
+     "ego",
+     3
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 3,
+   "flat_dim": 24,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 25,
+   "lambda_selected": [
+    1.0,
+    10000.0
+   ]
+  },
+  "CPOS_ego_w32": {
+   "rep": [
+    [
+     "ego",
+     3
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 3,
+   "flat_dim": 96,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 97,
+   "lambda_selected": [
+    1.0,
+    10.0
+   ]
+  },
+  "CPOS_ORACLE_egofuture30": {
+   "rep": [
+    [
+     "egofut",
+     30
+    ]
+   ],
+   "win": 1,
+   "history_s": 0.0,
+   "in_dim": 90,
+   "flat_dim": 90,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "closed-form ridge",
+   "params_per_head": 91,
+   "lambda_selected": [
+    1.0,
+    1000.0
+   ]
+  },
+  "tf_app16_w8_d128": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    3,
+    2
+   ],
+   "sel_curve": [
+    [
+     0.07292,
+     0.07314,
+     0.0862,
+     0.07794,
+     0.08486,
+     0.06311,
+     0.06388,
+     0.05354
+    ],
+    [
+     0.07487,
+     0.12052,
+     0.09056,
+     0.09615,
+     0.10833,
+     0.09168,
+     0.06994,
+     0.09953
+    ]
+   ]
+  },
+  "tf_app16_w32": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 32,
+   "history_s": 3.1,
+   "in_dim": 16,
+   "flat_dim": 512,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 420100,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    3,
+    1
+   ],
+   "sel_curve": [
+    [
+     0.09551,
+     0.07774,
+     0.10894,
+     0.05786,
+     0.07309,
+     0.06405,
+     0.06166,
+     0.059
+    ],
+    [
+     0.06816,
+     0.06013,
+     0.05517,
+     0.06122,
+     0.05886,
+     0.0513,
+     0.05115,
+     0.05281
+    ]
+   ]
+  },
+  "tf_app8mot8_w8": {
+   "rep": [
+    [
+     "app",
+     8
+    ],
+    [
+     "mot",
+     8
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": false,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    5,
+    1
+   ],
+   "sel_curve": [
+    [
+     0.05622,
+     0.05931,
+     0.07037,
+     0.06639,
+     0.09364,
+     0.08884,
+     0.08306,
+     0.0886
+    ],
+    [
+     0.07219,
+     0.05956,
+     0.06115,
+     0.06262,
+     0.05993,
+     0.06653,
+     0.06708,
+     0.05946
+    ]
+   ]
+  },
+  "tf_app16_w8_diffparam": {
+   "rep": [
+    [
+     "app",
+     16
+    ]
+   ],
+   "win": 8,
+   "history_s": 0.7,
+   "in_dim": 16,
+   "flat_dim": 128,
+   "shuffled_features": false,
+   "diff_reparam": true,
+   "kind": "CausalSitHead",
+   "d": 128,
+   "params_per_head": 417028,
+   "budget": 417028,
+   "epochs_trained": 8,
+   "epochs_selected": [
+    1,
+    8
+   ],
+   "sel_curve": [
+    [
+     0.05674,
+     0.0549,
+     0.05053,
+     0.04924,
+     0.04792,
+     0.04585,
+     0.04489,
+     0.04683
+    ],
+    [
+     0.07166,
+     0.06778,
+     0.06729,
+     0.06343,
+     0.06966,
+     0.0616,
+     0.06598,
+     0.08463
+    ]
+   ]
+  }
+ },
+ "controls": {
+  "NEG_FEAT_ap_lift": {
+   "lane_change": {
+    "ridge_app128_w1": 1.1961,
+    "ridge_app64_w2": 1.2721,
+    "ridge_app32_w4": 1.1104,
+    "ridge_app16_w8": 1.0868,
+    "ridge_app8_w16": 1.268,
+    "ridge_app4_w32": 1.1603,
+    "ridge_app16_w1": 1.2738,
+    "ridge_app16_w4": 1.1838,
+    "ridge_app16_w16": 1.0274,
+    "ridge_app16_w32": 1.0253,
+    "ridge_mot16_w8": 0.8989,
+    "ridge_app8mot8_w8": 1.3103,
+    "ridge_app16mot16_w8": 1.1097,
+    "ridge_mot16_w32": 1.0361,
+    "ridge_app16_w8_diffparam": 1.0302,
+    "CPOS_ego_w8": 2.0191,
+    "CPOS_ego_w32": 2.0502,
+    "CPOS_ORACLE_egofuture30": 2.3569,
+    "tf_app16_w8_d128": 1.121,
+    "tf_app16_w32": 1.0723,
+    "tf_app8mot8_w8": 1.3265,
+    "tf_app16_w8_diffparam": 1.1675
+   },
+   "roundabout": {
+    "ridge_app128_w1": 0.9818,
+    "ridge_app64_w2": 0.8563,
+    "ridge_app32_w4": 0.8583,
+    "ridge_app16_w8": 0.7526,
+    "ridge_app8_w16": 0.8491,
+    "ridge_app4_w32": 0.9253,
+    "ridge_app16_w1": 0.715,
+    "ridge_app16_w4": 0.7301,
+    "ridge_app16_w16": 0.7793,
+    "ridge_app16_w32": 0.8194,
+    "ridge_mot16_w8": 0.8843,
+    "ridge_app8mot8_w8": 0.8401,
+    "ridge_app16mot16_w8": 0.754,
+    "ridge_mot16_w32": 0.8847,
+    "ridge_app16_w8_diffparam": 0.7575,
+    "CPOS_ego_w8": 1.3613,
+    "CPOS_ego_w32": 1.5339,
+    "CPOS_ORACLE_egofuture30": 7.4773,
+    "tf_app16_w8_d128": 0.8813,
+    "tf_app16_w32": 0.9298,
+    "tf_app8mot8_w8": 1.0539,
+    "tf_app16_w8_diffparam": 0.9099
+   },
+   "intersection": {
+    "ridge_app128_w1": 0.9949,
+    "ridge_app64_w2": 1.0337,
+    "ridge_app32_w4": 1.0141,
+    "ridge_app16_w8": 0.9866,
+    "ridge_app8_w16": 1.0185,
+    "ridge_app4_w32": 1.021,
+    "ridge_app16_w1": 1.0082,
+    "ridge_app16_w4": 0.9905,
+    "ridge_app16_w16": 0.9931,
+    "ridge_app16_w32": 0.9987,
+    "ridge_mot16_w8": 0.9976,
+    "ridge_app8mot8_w8": 1.0415,
+    "ridge_app16mot16_w8": 1.0023,
+    "ridge_mot16_w32": 0.9632,
+    "ridge_app16_w8_diffparam": 0.9849,
+    "CPOS_ego_w8": 1.4381,
+    "CPOS_ego_w32": 1.4341,
+    "CPOS_ORACLE_egofuture30": 1.7459,
+    "tf_app16_w8_d128": 0.9921,
+    "tf_app16_w32": 0.9564,
+    "tf_app8mot8_w8": 0.987,
+    "tf_app16_w8_diffparam": 0.96
+   }
+  },
+  "NEG_LABEL_ap_lift": {
+   "lane_change": {
+    "ridge_app16_w8": 1.13729,
+    "ridge_app16_w32": 1.2652,
+    "ridge_mot16_w8": 1.18158
+   },
+   "roundabout": {
+    "ridge_app16_w8": 0.99495,
+    "ridge_app16_w32": 1.00051,
+    "ridge_mot16_w8": 1.00062
+   },
+   "intersection": {
+    "ridge_app16_w8": 0.97428,
+    "ridge_app16_w32": 1.02412,
+    "ridge_mot16_w8": 1.00868
+   }
+  },
+  "H_T2_SUBSPACE_DIAGNOSTIC": {
+   "rank_16": {
+    "appearance_var_in_appearance_basis": 0.96651,
+    "DELTA_var_in_APPEARANCE_basis": 0.95203,
+    "DELTA_var_in_MOTION_basis": 0.89519,
+    "principal_angle_cosines": [
+     0.9999,
+     0.9999,
+     0.9999,
+     0.9999,
+     0.9998,
+     0.9997,
+     0.9996,
+     0.9995,
+     0.9991,
+     0.9987,
+     0.9986,
+     0.9942,
+     0.9861,
+     0.9544,
+     0.8997,
+     0.8557
+    ],
+    "mean_principal_cosine": 0.9803,
+    "n_fit_rows": 39793,
+    "n_fit_rows_with_delta": 39593
+   },
+   "rank_64": {
+    "appearance_var_in_appearance_basis": 0.99968,
+    "DELTA_var_in_APPEARANCE_basis": 0.99715,
+    "DELTA_var_in_MOTION_basis": 0.99307,
+    "principal_angle_cosines": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     0.9999,
+     0.9999,
+     0.9999,
+     0.9999,
+     0.9998,
+     0.9997,
+     0.9997,
+     0.9996,
+     0.9995,
+     0.9995,
+     0.9992,
+     0.9991,
+     0.999,
+     0.9987,
+     0.9982,
+     0.9981,
+     0.998,
+     0.997,
+     0.9962,
+     0.9954,
+     0.9945,
+     0.9938,
+     0.9919,
+     0.9904,
+     0.9876,
+     0.9852,
+     0.9811,
+     0.9701,
+     0.9645,
+     0.9538,
+     0.8682,
+     0.4419,
+     0.424,
+     0.2238,
+     0.2198,
+     0.1625,
+     0.1187,
+     0.0821,
+     0.0763,
+     0.0024
+    ],
+    "mean_principal_cosine": 0.88138,
+    "n_fit_rows": 39793,
+    "n_fit_rows_with_delta": 39593
+   }
+  }
+ },
+ "per_situation": {}
+}

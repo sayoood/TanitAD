@@ -37,7 +37,8 @@ import refc_train                                                   # noqa: E402
 from tanitad.refs import refc_select as sl                          # noqa: E402
 from tanitad.refs.refc import (RefCModel, SelectionConfig,          # noqa: E402
                                param_breakdown, refc_config,
-                               refc_select_config, refc_smoke_config)
+                               refc_goal_config, refc_select_config,
+                               refc_smoke_config)
 from tests.test_refc import _batch, _make_cached_root               # noqa: E402
 
 
@@ -451,6 +452,128 @@ def test_trainer_refuses_the_circular_route_graft(tmp_path):
             "--data-root", str(root), "--out", str(tmp_path / "x"),
             "--steps", "1", "--batch", "4", "--smoke", "--labels", "v1",
             "--graft-route"])
+
+
+# ---------- (f) S6 — the PREDICTED GEOMETRIC goal, under the PI ruling --------
+
+def _lan(b: int, k: int = 4) -> torch.Tensor:
+    """A LAN corridor batch: [cos, sin, lat_norm, valid] x k, all valid."""
+    f = torch.zeros(b, k, 4)
+    ang = torch.linspace(-0.5, 0.5, b)
+    f[..., 0] = torch.cos(ang)[:, None]
+    f[..., 1] = torch.sin(ang)[:, None]
+    f[..., 3] = 1.0
+    return f.reshape(b, k * 4)
+
+
+def test_goal_is_geometric_and_predicted_not_categorical_or_supplied():
+    """⛔ THE PI's ADMISSIBILITY RULING, as an executable check.
+
+    Binding (Sayed, 2026-08-03): a goal input is admissible, but it must not
+    carry the situation classifier's output *in any form*, and the published
+    evidence says it should be GEOMETRIC and PREDICTED rather than categorical
+    and supplied (TransFuser command-only **+0.2**; route path +2.3; GoalFlow
+    goal point +4.7).
+
+    The load-bearing assertion is the last one: **withholding the ``lan``
+    corridor at inference leaves the goal terms bit-unchanged.** That is what
+    "predicted, not supplied" means operationally — the corridor is a training
+    LABEL and the seam never reads it.
+    """
+    prov = RefCModel.goal_provenance()
+    assert prov["contains_situation_classifier_output"] is False
+    assert prov["situation_classifier_in_graph"] is False
+    assert prov["form"].startswith("geometric")
+    assert prov["supplied_or_predicted"] == "predicted"
+    assert "TRAIN ONLY" in prov["label_source"]
+    assert prov["inference_inputs"] == [
+        "pooled (mean-pooled conv features, last frame)"]
+    # ...and the shared trunk is DECLARED rather than left implicit.
+    assert "route_head" in prov["shared_trunk_with"]
+    assert prov["shared_trunk_justification"]
+
+    m = _build(graft_goal=True).eval()          # NOTE: graft_lan stays OFF
+    assert not any("lan" in k for k in m.state_dict()), \
+        "the S6 arm must not build the SUPPLIED-route input pathway"
+    frames, v0 = torch.randn(4, 4, 1, 64, 64), torch.tensor([3., 9., 15., 21.])
+    with torch.no_grad():
+        with_lan = m(frames, v0=v0, steps=2, lan=_lan(4, m.cfg.lan.k))
+        no_lan = m(frames, v0=v0, steps=2, lan=None)
+    # THE CHECK: the goal is a function of vision alone.
+    assert torch.equal(with_lan["goal_bearing"], no_lan["goal_bearing"])
+    assert torch.equal(with_lan["goal_dist_pref"], no_lan["goal_dist_pref"])
+    # bearing is a UNIT vector (a direction, not a class and not a magnitude)
+    assert torch.allclose(with_lan["goal_bearing"].norm(dim=-1),
+                          torch.ones(4), atol=1e-5)
+    assert float(with_lan["goal_dist_pref"].abs().max()) <= 1.0
+
+
+def test_goal_gates_are_separate_so_K7_is_readable():
+    """The bearing and along-track gates are INDEPENDENT parameters.
+
+    ⭐ This is the instrument, not tidiness. A predicted goal must predict
+    along-track distance from latents where ``long_accel`` was MEASURED
+    unrecoverable across 17 head architectures (K7), and REF-C is structurally
+    single-instant. Splitting the gates means ``goal_dist_gate`` staying at ~0
+    while ``goal_gate`` opens IS the K7 read, off a training run — instead of
+    one pooled gate whose null would be uninterpretable."""
+    m = _build(graft_goal=True)
+    assert m.decoder.goal_gate is not m.decoder.goal_dist_gate
+    assert float(m.decoder.goal_gate.detach().abs().max()) == 0.0
+    assert float(m.decoder.goal_dist_gate.detach().abs().max()) == 0.0
+    frames, v0 = torch.randn(3, 4, 1, 64, 64), torch.tensor([4., 8., 12.])
+    base = _build().eval()
+    m.eval()
+    m.load_state_dict(base.state_dict(), strict=False)
+    with torch.no_grad():
+        a, b = base(frames, v0=v0, steps=2), m(frames, v0=v0, steps=2)
+    assert torch.equal(a["sel_score"], b["sel_score"])   # zero-init => unchanged
+    # each gate reaches a DIFFERENT surface: bearing is lateral-only (the
+    # along-track axis a SUPPLIED route may never touch), distance is along-track
+    d = m.decoder
+    dirv = torch.tensor([[1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 0.0, 0.0]])
+    lat = d._lan_anchor_prior(dirv)
+    alo = d._goal_along_prior(torch.tensor([1.0, -1.0, 0.0]))
+    assert lat.shape == alo.shape == (3, m.cfg.anchors.n_anchors)
+    assert float(alo[2].abs().max()) == 0.0        # zero preference -> no vote
+    assert float(lat[2].abs().max()) == 0.0        # invalid route  -> no vote
+    assert not torch.allclose(alo[0], alo[1])      # sign of the preference bites
+
+
+def test_goal_head_capacity_and_the_trainer_end_to_end(tmp_path):
+    with torch.device("meta"):
+        n0 = param_breakdown(RefCModel(refc_config()))["total"]
+        cfg = refc_config()
+        cfg.graft_goal = True
+        bd = param_breakdown(RefCModel(cfg))
+        goal_preset = param_breakdown(RefCModel(refc_goal_config()))
+    # Linear(feat, 3) + two scalar gates. ONE Linear, not an MLP.
+    assert bd["goal"] == refc_config().encoder.feat_dim * 3 + 3      # 2115
+    assert bd["selection"] == 2                                      # two gates
+    assert bd["total"] - n0 == bd["goal"] + 2
+    assert sum(v for k, v in bd.items() if k != "total") == bd["total"]
+    # ⛔ the SHIPPED S6 preset carries NO supplied-route input pathway
+    assert goal_preset["lan"] == 0
+    assert goal_preset["selection"] == 3        # cons_gate + the two goal gates
+
+    root = _make_cached_root(tmp_path)
+    out = tmp_path / "goal"
+    # ...and the trainer mints the corridor as a LABEL without --graft-lan.
+    refc_train.main([
+        "--data-root", str(root), "--out", str(out), "--steps", "2",
+        "--batch", "4", "--smoke", "--log-every", "1", "--labels", "v21",
+        "--graft-goal", "--sel-refined"])
+    conf = json.loads((out / "config.json").read_text())
+    assert conf["cfg"]["graft_goal"] is True
+    assert conf["cfg"]["graft_lan"] is False        # nothing supplied
+    assert conf["d_sel"]["goal_provenance"][
+        "supplied_or_predicted"] == "predicted"
+    assert conf["d_sel"]["goal_provenance"][
+        "contains_situation_classifier_output"] is False
+    met = json.loads((out / "metrics.json").read_text())
+    for k in ("goal_dir", "goal_dist", "goal_valid_frac", "goal_gate",
+              "goal_dist_gate"):
+        assert k in met["final"], f"{k} missing from the step log"
 
 
 def test_selection_config_defaults_are_todays_behaviour():

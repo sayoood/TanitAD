@@ -105,6 +105,11 @@ LON_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
 # point rather than inventing one.
 REFINED_CLS_WEIGHT = 1.0
 
+# S6 goal-head supervision, held at ROUTE_WEIGHT so the goal arm differs from
+# the control in STRUCTURE, not in aux loss budget — the same discipline
+# LAT_WEIGHT/LON_WEIGHT apply to the factored tactical seam.
+GOAL_WEIGHT = ROUTE_WEIGHT             # 0.1
+
 TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
 SPEED_AHEAD = 5              # refc1 speed target: v at t+5 (same 0.5 s horizon)
@@ -471,6 +476,34 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                  .float().mean() if bool(mask.any())
                  else torch.zeros((), device=out["pooled"].device))
 
+    # S6: the PREDICTED GEOMETRIC goal. The head reads the IMAGE EMBEDDING only
+    # (`RefCModel.goal_provenance()`); the LAN corridor appears here as the
+    # TRAINING LABEL and nowhere else — the sanctioned direction of "LABELS MAY
+    # USE EGO; INFERENCE IS VISION-ONLY".
+    loss_goal = torch.zeros((), device=out["pooled"].device)
+    goal_extra: dict = {}
+    if cfg.graft_goal:
+        if lan is None:
+            raise ValueError(
+                "graft_goal is on but the batch carries no `lan` field — the "
+                "goal head would be a DEAD parameter with no label. Pass "
+                "--graft-lan (which mints the corridor) alongside --graft-goal; "
+                "the corridor is the LABEL only, never a model input here.")
+        g_dir, g_dist, g_valid = RefCModel.goal_targets(lan, cfg.lan.k)
+        if bool(g_valid.any()):
+            mv = g_valid
+            # bearing: cosine distance on unit vectors (angle-only, so a
+            # magnitude the head cannot know is never regressed)
+            l_dir = (1.0 - (out["goal_bearing"][mv] * g_dir[mv]).sum(-1)).mean()
+            l_dist = (out["goal_dist_pref"][mv] - g_dist[mv]).abs().mean()
+            loss_goal = l_dir + l_dist
+            goal_extra = {"goal_dir": l_dir.detach(), "goal_dist": l_dist.detach(),
+                          "goal_valid_frac": g_valid.float().mean(),
+                          # the K7 instrument, readable per log line
+                          "goal_gate": model.decoder.goal_gate.detach().abs()[0],
+                          "goal_dist_gate":
+                              model.decoder.goal_dist_gate.detach().abs()[0]}
+
     # refc1: target-speed classification (bins over [0, speed_max]).
     if cfg.refc1:
         v_tgt = fut_poses[:, SPEED_AHEAD - 1, 3].clamp(0.0, cfg.speed_max)
@@ -486,7 +519,8 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
             + REFINED_CLS_WEIGHT * loss_rcls
             + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
-            + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls)
+            + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls
+            + GOAL_WEIGHT * loss_goal)
     anchor_acc = (out["anchor_logits"].argmax(dim=1) == a_star).float().mean()
     man_acc = (out["maneuver_logits"].argmax(dim=1) == man_tgt).float().mean()
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
@@ -495,7 +529,7 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "anchor_acc": anchor_acc, "man_acc": man_acc,
             "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
-            **sel_extra, "sel_tele": out["sel_tele"],
+            **sel_extra, **goal_extra, "sel_tele": out["sel_tele"],
             **lat_extra,
             **({"graft_lat_norm": model.decoder.lat_to_anchor(
                 out["lat_logits"].detach().log_softmax(-1)).norm(dim=-1).mean(),
@@ -526,7 +560,9 @@ def assert_selection_params_are_alive(model) -> dict:
     """
     checks, dead = {}, []
     for name, p in model.named_parameters():
-        if not any(t in name for t in ("route_to_anchor", "cons_gate")):
+        if not any(t in name for t in ("route_to_anchor", "cons_gate",
+                                       "goal_gate", "goal_dist_gate",
+                                       "goal_head")):
             continue
         g = 0.0 if p.grad is None else float(p.grad.abs().sum())
         checks[name] = g
@@ -583,9 +619,19 @@ def train(args) -> dict:
     _presets = {"small": refc_small_config, "base": refc_config,
                 "xl": refc_xl_config}
     cfg = refc_smoke_config() if args.smoke else _presets[args.config]()
+    # ⭐ THE CORRIDOR IS NEEDED IN TWO DIFFERENT ROLES, AND THEY ARE SEPARATED.
+    #   --graft-lan  : the corridor as a MODEL INPUT (the SUPPLIED route).
+    #   --graft-goal : the corridor as the goal head's TRAINING LABEL ONLY.
+    # Both need the dataset to emit the `lan` field; only the first may build the
+    # input pathway. Conflating them would give the S6 arm a supplied route AND a
+    # predicted one — precisely what the PI ruling of 2026-08-03 forbids ("a
+    # supplied route is optimistic by construction on PhysicalAI, whose only
+    # route supplier is the ego's own future path").
+    want_lan_field = bool(args.graft_lan or args.graft_goal)
+    if want_lan_field:
+        cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
     if args.graft_lan:
         cfg.graft_lan = True
-        cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
         cfg.route_dropout = args.route_dropout
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
     # D-TAC1 (gated BEFORE build — module presence, REF-B convention).
@@ -609,6 +655,7 @@ def train(args) -> dict:
     cfg.sel_accel_max = float(args.sel_accel_max)
     cfg.graft_cons = bool(args.graft_cons)
     cfg.graft_route = bool(args.graft_route)
+    cfg.graft_goal = bool(args.graft_goal)
     cfg.seam_clamp = float(args.seam_clamp)
     cfg.ego_valid_channel = bool(args.ego_valid_channel)
     # ⛔ C6 GUARD. Under --labels v1 the route CE target is
@@ -618,6 +665,17 @@ def train(args) -> dict:
     # This is the same failure class as RETRACTION_LOG C6 and R-2026-08-03-l
     # (flagship's route_class_accuracy = 1.0000 is an oracle-conditioning echo,
     # not a decision). Refuse at ARGUMENT-PARSE time, not after a GPU-day.
+    # S6 mints its OWN label (`want_lan_field` above) and must NOT be forced to
+    # turn on the supplied-route model input to get it. But `--graft-goal
+    # --graft-lan` together IS admissible as an explicit contrast arm, so it is
+    # allowed and merely announced — the config.json records both, and the
+    # provenance row says which one the goal seam actually reads.
+    if cfg.graft_goal and cfg.graft_lan:
+        print("[d-sel] ⚠️ --graft-goal WITH --graft-lan: this arm carries BOTH "
+              "the SUPPLIED corridor (a model input) and the PREDICTED goal. "
+              "That is a contrast arm, not the S6 arm — refc_goal_config() "
+              "keeps graft_lan OFF so the goal is predicted and nothing is "
+              "supplied (PI ruling 2026-08-03).", flush=True)
     if cfg.graft_route and args.labels == "v1":
         raise SystemExit(
             "--graft-route requires --labels v21 or v3. Under v1 the route CE "
@@ -642,21 +700,21 @@ def train(args) -> dict:
     label_stats: dict | None = None
     lan_stats: dict | None = None
     lan_cfg = LanConfig(arclengths_m=tuple(args.lan_arclengths),
-                        min_lead_m=args.lan_min_lead_m) if args.graft_lan else None
-    lan_kw = {"lan_cfg": lan_cfg} if args.graft_lan else {}
+                        min_lead_m=args.lan_min_lead_m) if want_lan_field else None
+    lan_kw = {"lan_cfg": lan_cfg} if want_lan_field else {}
     if args.labels in ("v21", "v3"):
         dcls = RouteV21Dataset if args.labels == "v21" else RouteV3Dataset
-        if args.graft_lan:
+        if want_lan_field:
             dcls = lan_dataset_class(dcls)
         ds = dcls(train_eps, use_net_dyaw=args.use_net_dyaw, **lan_kw, **ds_kw)
         label_stats = ds.label_stats()
         print(f"[labels] {args.labels} route (use_net_dyaw="
               f"{args.use_net_dyaw}): {json.dumps(label_stats)}", flush=True)
     else:
-        dcls = (lan_dataset_class(FailLoudWindowDataset) if args.graft_lan
+        dcls = (lan_dataset_class(FailLoudWindowDataset) if want_lan_field
                 else FailLoudWindowDataset)
         ds = dcls(train_eps, **lan_kw, **ds_kw)
-    if args.graft_lan:
+    if want_lan_field:
         lan_stats = ds.lan_stats()
         print(f"[lan] route-input coverage: {json.dumps(lan_stats)}", flush=True)
     assert len(ds) >= batch, \
@@ -674,20 +732,25 @@ def train(args) -> dict:
     # D-SEL flag set would be a wiring bug, so the banner asserts rather than
     # merely reports.
     _sel = cfg.selection()
-    print(json.dumps({"d_sel": {
+    dsel_row = {
         "sel_on": _sel.any_on, "sel_refined": cfg.sel_refined,
         "sel_reach_clamp": cfg.sel_reach_clamp,
         "sel_accel_max": cfg.sel_accel_max, "horizon_s": _sel.horizon_s,
         "graft_cons": cfg.graft_cons, "cons_detach": cfg.cons_detach,
         "graft_route": cfg.graft_route, "seam_clamp": cfg.seam_clamp,
+        "graft_goal": cfg.graft_goal,
+        "goal_provenance": RefCModel.goal_provenance() if cfg.graft_goal
+        else None,
         "ego_valid_channel": cfg.ego_valid_channel,
         "labels": args.labels, "mode": args.mode,
         "n_selection_params": param_breakdown(model)["selection"],
+        "n_goal_params": param_breakdown(model)["goal"],
         # S1 is inert at 0 denoise steps BY CONSTRUCTION — say so rather than
         # let a `--mode classifier --sel-refined` run look like a live arm.
         "s1_inert_because_classifier_mode": (cfg.sel_refined
                                              and args.mode == "classifier"),
-    }}), flush=True)
+    }
+    print(json.dumps({"d_sel": dsel_row}), flush=True)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -728,6 +791,11 @@ def train(args) -> dict:
                                         if args.labels in ("v21", "v3")
                                         else "n/a"),
              "train_label_stats": label_stats},
+         # D-SEL axes + the goal-provenance declaration. The artifact must
+         # describe its own goal, exactly as it already describes its own labels:
+         # the PI's admissibility ruling is checkable from the run directory
+         # alone, without re-reading source.
+         "d_sel": dsel_row,
          "data": {"cache_dir": str(train_dir), "n_episodes": len(train_eps),
                   "n_windows": len(ds)},
          "param_breakdown": param_breakdown(model)},
@@ -764,7 +832,8 @@ def train(args) -> dict:
         opt.zero_grad(set_to_none=True)
         out = compute_losses(model, batch_d, device, mode=args.mode)
         out["loss"].backward()
-        if not _sel_checked and (cfg.graft_cons or cfg.graft_route):
+        if not _sel_checked and (cfg.graft_cons or cfg.graft_route
+                                 or cfg.graft_goal):
             print(json.dumps({"d_sel_gradients": {
                 k: round(v, 8) for k, v in
                 assert_selection_params_are_alive(model).items()}}), flush=True)
@@ -800,7 +869,9 @@ def train(args) -> dict:
                 # (graft_lat_norm/conf_norm were logged with no actuator).
                 **{k: sc(out[k]) for k in
                    ("cls_refined", "oracle_ade", "sel_ade", "sel_gap",
-                    "rank_acc", "frac_sel_2x_worse") if k in out},
+                    "rank_acc", "frac_sel_2x_worse", "goal_dir", "goal_dist",
+                    "goal_valid_frac", "goal_gate", "goal_dist_gate")
+                   if k in out},
                 **out.get("sel_tele", {}),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
@@ -824,7 +895,7 @@ def train(args) -> dict:
         # ⚠️ The val set MUST carry the same route input as train, or the arm is
         # evaluated on a route it never receives — which is exactly the
         # nav_cmd=None confound (RETRACTION_LOG C6) reintroduced by omission.
-        if args.graft_lan:
+        if want_lan_field:
             vcls = lan_dataset_class(vcls if vcls is not None
                                      else FailLoudWindowDataset)
             vkw = dict(vkw, lan_cfg=lan_cfg)
@@ -953,6 +1024,17 @@ def main(argv=None):
                     help="S5: the strategic route READOUT reaches the ranked "
                          "score (zero-init). REQUIRES --labels v21/v3 — under "
                          "v1 the route target is circular with nav_cmd.")
+    ap.add_argument("--graft-goal", action="store_true",
+                    help="S6: a PREDICTED GEOMETRIC goal (bearing + signed "
+                         "along-track preference) reaches the ranked score "
+                         "through the SAME param-free geometric compatibility "
+                         "LAN uses, on TWO independent zero-init gates. The "
+                         "head reads the IMAGE EMBEDDING ONLY; the LAN corridor "
+                         "is its TRAINING LABEL and nothing else, so this "
+                         "REQUIRES --graft-lan. Geometric-and-predicted, per "
+                         "the PI ruling of 2026-08-03 — never categorical and "
+                         "never supplied. Carries no situation-classifier "
+                         "output in any form (RefCModel.goal_provenance()).")
     ap.add_argument("--seam-clamp", type=float, default=0.0,
                     help="S4: cap the TOTAL anchor graft at this multiple of "
                          "the base score's norm (<=0 disables; 1.0 is v4's). "
