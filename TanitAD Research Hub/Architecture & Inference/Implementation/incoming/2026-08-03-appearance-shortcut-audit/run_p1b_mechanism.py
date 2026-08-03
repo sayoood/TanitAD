@@ -188,6 +188,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="results_p1b_mechanism.json")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--only", default="", help="comma-separated corpus subset")
+    ap.add_argument("--merge", action="store_true",
+                    help="keep corpora already present in --out (a killed run must not cost "
+                         "a refit of the corpora that already finished)")
     a = ap.parse_args()
     import tanitad.eval.accel_probe as AP
 
@@ -206,8 +210,16 @@ def main():
                            "the substrate is not degenerate.",
             "across_clip": "episode-disjoint i%3 -- the real number"},
         "device": a.device}, "corpora": {}}
+    if a.merge and Path(a.out).exists():
+        res["corpora"].update(json.load(open(a.out)).get("corpora", {}))
+        log(f"merge: recovered {list(res['corpora'])}")
 
     for cname, eps in corpora.items():
+        if a.only and cname not in a.only.split(","):
+            continue
+        if a.merge and cname in res["corpora"]:
+            log(f"{cname}: SKIPPED (already in {a.out})")
+            continue
         # ⚠️ cap the window count so the dual eigh stays the same size on every corpus --
         # a corpus-size difference must not be mistaken for a corpus difference.
         n_win = sum(e["n"] for e in eps)

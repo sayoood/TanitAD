@@ -49,6 +49,7 @@ from pathlib import Path
 
 import numpy as np
 
+from frame_align import scene_ref_offset
 from render_quality import (CAM, build_renderer, coverage_and_error, git_sha, grad_ncc,
                             load_refs, negative_control, parse_arm, save_sbs,
                             wrong_frames_for)
@@ -279,7 +280,10 @@ def main():
     wrong_map = {f: wrong_frames_for(f, n_clip) for f in frames}
     need = set(frames) | {w for ws in wrong_map.values() for w in ws}
     t0 = time.time()
-    refs = load_refs(scene / f"{CAM}.mp4", need, size)
+    # R-2026-08-03-k: the reference is offset from the rig PER SCENE. Derived,
+    # never hard-coded (+6 on 00040136, +5 on 7c72937c).
+    ref_offset = scene_ref_offset(scene, n_clip)
+    refs = load_refs(scene / f"{CAM}.mp4", need, size, ref_offset=ref_offset)
     print(f"[rs] decoded {len(refs)}/{len(need)} refs in {time.time() - t0:.1f}s "
           f"(clip {n_clip} frames)", flush=True)
     missing = sorted(need - set(refs))

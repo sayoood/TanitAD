@@ -1,0 +1,102 @@
+{
+ "_what": "POST-HOC: how much of C-ORACLE-PS's margin is winner's curse?",
+ "_not_prereg": "added after seeing the oracle fire. It changes NO verdict \u2014 every pre-registered predicate stands as results_horizon_ps.json recorded it. It can only make the reading more conservative.",
+ "_method": "the IDENTICAL test-fold argmax over the same 25 cells, run on the clip-permuted (NEG_FEAT) substrate where no clip-specific per-situation gain can exist. Whatever margin it earns there is pure selection bias.",
+ "null_oracle_cells": {
+  "fold0.lane_change": {
+   "win": 1,
+   "lead_s": 2.0
+  },
+  "fold0.roundabout": {
+   "win": 32,
+   "lead_s": 5.0
+  },
+  "fold0.intersection": {
+   "win": 32,
+   "lead_s": 5.0
+  },
+  "fold1.lane_change": {
+   "win": 1,
+   "lead_s": 1.0
+  },
+  "fold1.roundabout": {
+   "win": 32,
+   "lead_s": 5.0
+  },
+  "fold1.intersection": {
+   "win": 32,
+   "lead_s": 1.0
+  }
+ },
+ "per_situation": {
+  "lane_change": {
+   "null_oracle_lift": 1.39273,
+   "null_frozen_lift": 1.10275,
+   "NULL_ORACLE_vs_NULL_FROZEN": {
+    "delta": 0.28998,
+    "lo": 0.05532,
+    "hi": 0.81042,
+    "ci95": 0.37755,
+    "p_delta_gt0": 0.9955,
+    "separated": true,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "REAL_ORACLE_vs_FROZEN": {
+    "delta": 0.85284,
+    "lo": 0.15499,
+    "hi": 1.87778,
+    "separated": true
+   },
+   "winners_curse_share_of_real_margin": 0.34,
+   "READING": "selection bias reproduces PART of the real oracle's margin"
+  },
+  "roundabout": {
+   "null_oracle_lift": 0.8562,
+   "null_frozen_lift": 0.74735,
+   "NULL_ORACLE_vs_NULL_FROZEN": {
+    "delta": 0.10885,
+    "lo": 0.03115,
+    "hi": 0.24528,
+    "ci95": 0.10707,
+    "p_delta_gt0": 0.995,
+    "separated": true,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "REAL_ORACLE_vs_FROZEN": {
+    "delta": 0.02395,
+    "lo": -0.65018,
+    "hi": 1.82315,
+    "separated": false
+   },
+   "winners_curse_share_of_real_margin": 4.5449,
+   "READING": "the real oracle's margin is NOT distinguishable from selection bias"
+  },
+  "intersection": {
+   "null_oracle_lift": 1.10278,
+   "null_frozen_lift": 0.99799,
+   "NULL_ORACLE_vs_NULL_FROZEN": {
+    "delta": 0.10478,
+    "lo": -0.03708,
+    "hi": 0.25865,
+    "ci95": 0.14786,
+    "p_delta_gt0": 0.93,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "REAL_ORACLE_vs_FROZEN": {
+    "delta": -0.16737,
+    "lo": -0.34386,
+    "hi": -0.01219,
+    "separated": true
+   },
+   "winners_curse_share_of_real_margin": 0.626,
+   "READING": "selection bias alone does NOT reproduce the real oracle's margin"
+  }
+ }
+}

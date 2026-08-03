@@ -1,5 +1,28 @@
 # Rolling shutter: quality vs cost — and what the "+35 %" actually was
 
+> ## ⛔⛔ 2026-08-03 — EVERY ABSOLUTE IN THIS FILE IS SUPERSEDED, AND THE RS MARGINAL IS 3–6.5× BIGGER
+>
+> The reference was **6 frames early** (`R-2026-08-03-k`). §11 called the offset *"EXACTLY +6"*; the
+> rule is **per scene** — `video_index = rig_index + (n_mp4_decodable − n_rig)`, **+6 here, +5 on
+> `7c72937c`** (renderer ±10 scan, `{6: 12}` / `{5: 12}`, bootstrap mass 1.00). §11's two open items
+> are now CLOSED: the extra frames are a **leader at the HEAD of the mp4**, and the **second scene
+> disagrees** with a constant +6.
+>
+> ⚠️ **§11 also says "PAIRED DELTAS BETWEEN ARMS SURVIVE". That is true of the SIGN and false of the
+> MAGNITUDE.** Re-measured at the corrected reference (same code, same frames, paired bootstrap over
+> frames B=10000), the rolling-shutter marginal over the deployed config is
+> **+0.1158 [+0.1046, +0.1285]** on `00040136` n=12 against the published **+0.0179** — **×6.5** —
+> and **+0.1615** on `7c72937c` — **×3.0**.
+>
+> ⭐ **This does NOT reinstate the shutter as the cause.** This file's own retraction of the CAUSE is
+> now *better* supported: an RS render sweeps the pose across a **30.559 ms readout ≈ 0.917 of a
+> frame**, so it spans the newly measured **sub-frame residual** (+0.232 fr on `00040136`, +0.164 fr
+> on `7c72937c`) by construction. **The cost verdict is untouched: 82–108×, RS stays off.**
+>
+> Full re-baseline, both scenes, the gate:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/` ·
+> `Project Steering/RETRACTION_LOG.md` → `R-2026-08-03-align`.
+
 **STREAM E. MEASURED 2026-08-03 on `tanitad-thor` (Jetson aarch64 Blackwell `sm_110`),
 gsplat 1.5.3, scene `00040136-e651-4abd-991d-0655ccda9430`, 12 frames spread over the
 599-frame clip** (`0,54,109,163,217,272,326,381,435,489,544,598` — the 5-frame set the

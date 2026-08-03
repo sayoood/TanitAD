@@ -284,6 +284,10 @@ def main():
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--arms", default="", help="comma-separated subset")
+    ap.add_argument("--merge", action="store_true",
+                    help="load an existing --out, KEEP arms already scored, and "
+                         "only fit the ones missing. Per-arm predictions are "
+                         "cached beside it so a killed run never costs a refit.")
     a = ap.parse_args()
 
     import tanitad.eval.accel_probe as AP
@@ -317,6 +321,19 @@ def main():
                      "NEVER overlapping_holdout_se",
     }, "arms": {}, "strata": {}}
 
+    # ⭐ MERGE + PREDICTION CACHE. A 22-minute panel that has to restart from zero every time
+    # the box kills it is a panel that never finishes; this run lost two passes that way.
+    pred_cache = Path(a.out).with_suffix(".preds.npz")
+    cached = {}
+    if a.merge and pred_cache.exists():
+        z = np.load(pred_cache, allow_pickle=False)
+        cached = {k[len("pred__"):]: z[k] for k in z.files if k.startswith("pred__")}
+        log(f"merge: {len(cached)} arm predictions recovered from {pred_cache.name}")
+    if a.merge and Path(a.out).exists():
+        prev = json.loads(Path(a.out).read_text())
+        results["arms"].update(prev.get("arms", {}))
+        log(f"merge: {len(prev.get('arms', {}))} arm records recovered from {Path(a.out).name}")
+
     _, Yho_ref, eid_ho, v_ho, man_ho = stack_sub(ho, "pix1")
     _, Ytr_ref, _, _, _ = stack_sub(tr, "pix1")
     gs_ho, gt_ho = unpack(Yho_ref)
@@ -330,8 +347,11 @@ def main():
     log(f"NULL_train_mean speed R2 "
         f"{results['arms']['NULL_train_mean']['r2']['speed']['point']:+.4f}")
 
-    preds_by_arm = {}
+    preds_by_arm = dict(cached)
     for name, key, feat, kernel, shuf_order in arm_list:
+        if name in results["arms"] and name in preds_by_arm:
+            log(f"{name:26s} SKIPPED (already scored and cached)")
+            continue
         t_arm = time.time()
         order_seed = 20260803 if shuf_order else None
         Xfit, Yfit, _, _, _ = stack_sub(inner_tr, key, order_seed=order_seed)
@@ -375,6 +395,10 @@ def main():
             f"[{d['lo']:+.4f},{d['hi']:+.4f}] {'SEP' if d['separated'] else '---'}  "
             f"({time.time()-t_arm:.0f}s)")
         Path(a.out).write_text(json.dumps(results, indent=1, default=str))
+        np.savez_compressed(
+            pred_cache, gt_scalars=gs_ho, gt_traj=gt_ho, eid=eid_ho,
+            centre_speed=v_ho, maneuver=man_ho,
+            **{f"pred__{k}": v for k, v in preds_by_arm.items()})
 
     # ------------------------------------------------------------------ #
     # THE PRIMARY STATISTIC, exactly as pre-registered                     #
@@ -440,10 +464,10 @@ def main():
     # REFITTED to be re-analysed is a panel nobody re-analyses. gt/eid/speed/manoeuvre travel
     # with it so any stratification can be recomputed at 0 GPU.
     np.savez_compressed(
-        Path(a.out).with_suffix(".preds.npz"),
-        gt_scalars=gs_ho, gt_traj=gt_ho, eid=eid_ho, centre_speed=v_ho, maneuver=man_ho,
+        pred_cache, gt_scalars=gs_ho, gt_traj=gt_ho, eid=eid_ho,
+        centre_speed=v_ho, maneuver=man_ho,
         **{f"pred__{k}": v for k, v in preds_by_arm.items()})
-    results["meta"]["per_window_predictions"] = str(Path(a.out).with_suffix(".preds.npz").name)
+    results["meta"]["per_window_predictions"] = str(pred_cache.name)
     results["meta"]["maneuver_classes"] = list(MANEUVER_CLASSES)
     Path(a.out).write_text(json.dumps(results, indent=1, default=str))
     log(f"wrote {a.out}")

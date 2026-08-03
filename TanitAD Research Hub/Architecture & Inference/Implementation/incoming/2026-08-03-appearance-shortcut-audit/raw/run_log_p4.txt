@@ -26,3 +26,20 @@
   FAILED: jitter_ratio, derivative_corr, derived_accel_r2, speed_sigma_mps
   sigma estimator: 9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0
 [  168.2s] screening flagship_v1_step29999_physicalai_av_rigB (120 episodes)
+[  198.6s] LATENT SCREEN  flagship_v1_step29999_physicalai_av_rigB  ->  FAIL
+  XX jitter_ratio              10.4873   gate <= 2.0
+  XX derivative_corr           0.31683   gate > 0.5
+  XX derived_accel_r2           0.0636   gate > 0.5
+  XX speed_sigma_mps           1.98453   gate <= 0.28
+     cos_adjacent_100ms        0.98945   gate DIAGNOSTIC (not a gate)
+  FAILED: jitter_ratio, derivative_corr, derived_accel_r2, speed_sigma_mps
+  sigma estimator: 9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0
+[  198.6s] screening the ORACLE positive control
+[  225.2s] LATENT SCREEN  ORACLE_true_speed_window_physicalai  ->  PASS
+  OK jitter_ratio                  1.0   gate <= 2.0
+  OK derivative_corr               1.0   gate > 0.5
+  OK derived_accel_r2              1.0   gate > 0.5
+  OK speed_sigma_mps             4e-05   gate <= 0.28
+     cos_adjacent_100ms         0.9103   gate DIAGNOSTIC (not a gate)
+  sigma estimator: 9-point Savitzky-Golay derivative (half_window=4, poly_order=2, dt=0
+[  225.3s] wrote results_p4_screen.json

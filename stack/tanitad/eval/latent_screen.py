@@ -106,20 +106,29 @@ def shared_speed_direction(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
                            Z_sel: torch.Tensor, Q_sel: torch.Tensor,
                            Z_full: torch.Tensor, Q_full: torch.Tensor,
                            Z_hold: torch.Tensor, *, device: str = "cpu",
-                           fit_stride: int = 3) -> tuple[np.ndarray, float, float]:
+                           fit_stride: int | None = None, max_fit_rows: int = 6000,
+                           ) -> tuple[np.ndarray, float, float, int]:
     """ONE linear speed readout ``w`` fitted on POOLED window positions, applied per position.
 
-    Returns ``(v_hat [N_hold, W], alpha, inner_pooled_speed_r2)``.
+    Returns ``(v_hat [N_hold, W], alpha, inner_pooled_speed_r2, fit_stride)``.
 
     Pooling the positions is what makes ``w`` a single *speed direction* rather than a
     position-specific decoder: everything the whole-window ridge can do by borrowing other
     positions' latents is removed, so the per-position difference ``w·(z_{j+1} − z_j)`` is the
     latent's OWN motion along its OWN speed axis and nothing else.
 
-    ``fit_stride`` subsamples the pooled rows before the eigendecomposition (the dual is
-    O(n³)); 3 is the value the reference measurement used.
+    ⚠️ COST, and why the stride is adaptive. Pooling multiplies the row count by ``W``, and the
+    dual eigendecomposition is O(n³): a 40 000-row pooled train set is a ~2.5e12-flop eigh, i.e.
+    tens of minutes, which would defeat the whole point of a MINUTES-scale pre-flight screen.
+    ``fit_stride`` subsamples the pooled rows; leaving it ``None`` picks the smallest stride that
+    keeps the fit under ``max_fit_rows``, and the value actually used is returned and recorded
+    in the screen output so two screens are never compared across different strides silently.
+    (The reference measurement used a hard-coded stride of 3.)
     """
     d = Z_fit.shape[-1]
+    if fit_stride is None:
+        n_pool = max(len(Z_full) * Z_full.shape[1], 1)
+        fit_stride = max(1, -(-n_pool // max(int(max_fit_rows), 1)))
     Xf, Xs = standardize(Z_fit.reshape(-1, d), Z_sel.reshape(-1, d))
     XF, Xh = standardize(Z_full.reshape(-1, d), Z_hold.reshape(-1, d))
     qf = Q_fit.reshape(-1, 1)
@@ -139,7 +148,7 @@ def shared_speed_direction(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
     full = DualRidge(XF[::fit_stride], ((qF[::fit_stride] - mu) / sd).double(), **kw)
     v_hat = (full.predict(Xh, best_a) * sd + mu).numpy().reshape(Z_hold.shape[:2])
     del full
-    return v_hat, float(best_a), float(best_s)
+    return v_hat, float(best_a), float(best_s), int(fit_stride)
 
 
 # --------------------------------------------------------------------------- #
@@ -149,7 +158,8 @@ def screen_latent(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
                   Z_hold: torch.Tensor, Q_hold: torch.Tensor,
                   *, name: str = "candidate", dt: float = DT,
                   device: str = "cpu", gates: dict[str, float] | None = None,
-                  fit_stride: int = 3, sg_half: int = 4, sg_order: int = 2,
+                  fit_stride: int | None = None, max_fit_rows: int = 6000,
+                  max_window_rows: int = 6000, sg_half: int = 4, sg_order: int = 2,
                   ) -> dict[str, Any]:
     """Run the pre-flight screen on ONE candidate latent. 0 GPU required (``device='cpu'``).
 
@@ -178,9 +188,9 @@ def screen_latent(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
     d_true = np.diff(Qh, axis=1) / dt
 
     # --- 1. the SHARED per-position readout -> jitter ratio + per-position corr --- #
-    v_hat, alpha, inner_r2 = shared_speed_direction(
+    v_hat, alpha, inner_r2, used_stride = shared_speed_direction(
         Z_fit, Q_fit, Z_sel, Q_sel, Z_full, Q_full, Z_hold,
-        device=device, fit_stride=fit_stride)
+        device=device, fit_stride=fit_stride, max_fit_rows=max_fit_rows)
     dv = np.diff(v_hat, axis=1) / dt
     jitter = float(dv.std() / max(d_true.std(), 1e-12))
     corr_pp = (float(np.corrcoef(dv.ravel(), d_true.ravel())[0, 1])
@@ -189,15 +199,20 @@ def screen_latent(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
     sigma = float((v_hat[:, c] - Qh[:, c]).std())
 
     # --- 2/3. the WHOLE-WINDOW speed-track read -> derivative corr + derived accel --- #
-    Xf = Z_fit.reshape(len(Z_fit), -1)
+    # ⚠️ the same O(n³) cost argument as the shared readout: cap the dual's row count so the
+    # screen stays a MINUTES-scale pre-flight step. The stride used is recorded.
+    s_f = max(1, -(-len(Z_fit) // max(int(max_window_rows), 1)))
+    s_F = max(1, -(-len(Z_full) // max(int(max_window_rows), 1)))
+    Xf = Z_fit[::s_f].reshape(-1, W * Z_fit.shape[-1])
     Xs = Z_sel.reshape(len(Z_sel), -1)
-    XF = Z_full.reshape(len(Z_full), -1)
+    XF = Z_full[::s_F].reshape(-1, W * Z_full.shape[-1])
     Xh = Z_hold.reshape(len(Z_hold), -1)
     Xf, Xs = standardize(Xf, Xs)
     XF, Xh = standardize(XF, Xh)
-    mu, sd = Q_full.mean(0, keepdim=True), Q_full.std(0, keepdim=True).clamp_min(1e-6)
+    Q_fit_s, Q_full_s = Q_fit[::s_f], Q_full[::s_F]
+    mu, sd = Q_full_s.mean(0, keepdim=True), Q_full_s.std(0, keepdim=True).clamp_min(1e-6)
     kw = dict(kernel="linear", matmul_device=device, matmul_dtype=torch.float32)
-    inner = DualRidge(Xf, ((Q_fit - mu) / sd).double(), **kw)
+    inner = DualRidge(Xf, ((Q_fit_s - mu) / sd).double(), **kw)
     Qs_np = np.asarray(Q_sel, dtype=np.float64)
     best_a, best_s = None, -1e18
     for al in DualRidge.alpha_grid(2, -4, 10):
@@ -206,7 +221,7 @@ def screen_latent(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
         if s > best_s:
             best_a, best_s = al, s
     del inner
-    full = DualRidge(XF, ((Q_full - mu) / sd).double(), **kw)
+    full = DualRidge(XF, ((Q_full_s - mu) / sd).double(), **kw)
     Qpred = (full.predict(Xh, best_a) * sd + mu).numpy().astype(np.float64)
     del full
     d_pred = np.diff(Qpred, axis=1) / dt
@@ -291,6 +306,8 @@ def screen_latent(Z_fit: torch.Tensor, Q_fit: torch.Tensor,
         "failed_screens": failed,
         "screens": screens,
         "fit": {"shared_readout_alpha": alpha,
+                "shared_readout_fit_stride": used_stride,
+                "window_ridge_fit_stride": [int(s_f), int(s_F)],
                 "shared_readout_inner_pooled_speed_r2": round(inner_r2, 5),
                 "shared_readout_heldout_speed_r2_centre": round(speed_r2_shared, 5),
                 "window_ridge_alpha": float(best_a),

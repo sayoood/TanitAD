@@ -1953,8 +1953,22 @@ they were made in the operator loop and never got an ADR.
    `V3_GOAL_VOCABULARY_V1.md` before implementation (D-A9). ⚠️
 6. **Supervised-IDM does not transfer cross-domain (2026-07-22 finding — not a model row).** A 2.9 M
    inverse-dynamics head reaches PhysicalAI held-out speed R² **0.930** but **fails cross-domain** —
-   comma2k19 speed R² 0.657 / yaw R² 0.000, and even same-corpus **rig-B speed R² −2.465** (ADE ratio
-   2.40 / 4.01; both FAIL the cross-domain >0.9 gate). The YouTube-scale IDM data pipeline is **gated on
+   comma2k19 speed R² 0.657 / yaw R² 0.000, and even same-corpus **rig-B speed R² −2.4654** (ADE ratio
+   2.40 / 4.01; both FAIL the cross-domain >0.9 gate).
+
+   ⛔ **CORRECTED 2026-08-03 — do NOT quote "0.930 → −2.465" as the cross-rig drop.** Those two
+   numbers come from **two different experiments**: 0.930 is the *held-out* read of one run, while
+   −2.4654 is the *cross-rig* read of another, **whose own within-rig baseline is +0.7863**. The
+   honest cross-rig pair is therefore **+0.7863 → −2.4654**; pairing it with 0.930 borrows a
+   baseline from an experiment that was not the one generalised across rigs, and overstates the drop.
+   ⇒ **RULE: a "X → Y" degradation pair must come from ONE experiment.** If the baseline and the
+   stressed read are from different runs, the difference contains the between-run delta as well as
+   the effect, and nothing separates them afterwards.
+   *(MEASURED in the D-APPEAR audit, 2026-08-03; see also R-2026-08-03-appear.)*
+   ⚠️ **And the cross-rig collapse itself does not reproduce in the current cache**: A→A +0.7052,
+   B→A +0.7127, paired **+0.0075 [−0.0318, +0.0502] NOT separated**. The −2.4654 is **not
+   attributed** — cache geometry (the rigs' horizons agree on 8 of 256 rows here) and MLP
+   extrapolation both remain live explanations. Do not cite it as an established mechanism. The YouTube-scale IDM data pipeline is **gated on
    the re-gate** and does not proceed on these numbers. Raw:
    `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json`.
    **UPDATE 2026-07-24 — the fix was built and it FAILED.** The own dynamics-encoder designed to give this

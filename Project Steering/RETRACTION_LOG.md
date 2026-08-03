@@ -2758,3 +2758,195 @@ appears in no commit on any branch.** The exposure is confined to the session tr
 token was redacted by the agent; **the file's other keys were not**, so they should be treated as
 disclosed and rotated. ⇒ **RULE: read the token programmatically (`grep -oE 'hf_[A-Za-z0-9]+'`) —
 never `cat`, `head` or print the file, not even once, not even to check it exists.**
+
+---
+
+## R-2026-08-03-align — the reference-offset CORRECTION, and three claims made ABOUT it that do not hold
+
+`R-2026-08-03-k` established that every absolute render-fidelity number on `00040136` was scored
+against a reference **6 frames too early**. This entry closes it: the rule is now measured, the
+absolutes are re-baselined, a gate is in the code — and **three statements made while establishing
+the +6 are withdrawn.**
+
+**THE RULE (MEASURED, mine, on 2 of 2 scenes that have both files):**
+
+> `video_frame_index = rig_frame_index + (n_mp4_decodable − n_rig_frames)`
+> **+6** on `00040136` (605 − 599) · **+5** on `7c72937c` (604 − 599).
+
+Renderer neighbour scan, k = ±10, 12 frames per scene, PRODUCTION render, only the reference index
+varying: `argmax_histogram` **`{6: 12}`** and **`{5: 12}`** — unanimous, **zero refusals**, bootstrap
+mass **1.00** on each point (bootstrap over probed frames of `argmax(mean curve)`, B=2000; an
+integer estimator has no meaningful SE, so the **mass function IS the interval**). Gain over the
+shipped indexing: **+0.1797** and **+0.1699** grad-NCC, free.
+⭐ **`7c72937c` had never been scanned by the renderer at all** — its +5 rested on arithmetic. It is
+now MEASURED, and it agrees with the counting predictor exactly.
+Artifacts: `…/incoming/2026-08-03-render-rebaseline/raw/rs_frame_offset_{00040136,7c72937c}_k10*.json`.
+
+### 1. RETRACTED — "cross-correlating image motion against ego translation … peaks at exactly +6 and turns over at +7" as an INDEPENDENT CONFIRMATION
+
+Source: `stack/experiments/alpasim-gsplat/results/2026-08-03-rolling-shutter-adversarial/ALIGNMENT_DIRECTION_GPUFREE.json`,
+cited as one of *"3 independent probes incl. a renderer-free one"*.
+**Literally true and NOT decisive.** MEASURED (mine, `raw/align_gpufree.json`): peak `r = 0.44884`
+at +6; **best competitor outside ±1 is `r = 0.44341` at +8**; **prominence 0.0054** — a 1.2 %
+separation across a ±2-frame span on a curve that ramps monotonically 0.383 → 0.449. It **agrees**;
+it cannot **discriminate**. The genuinely independent confirmations are `count_delta` (the dataset's
+own counts) and `leader_pad` (the frozen head block).
+
+### 2. RETRACTED — `static_head_block_frames = 5` on `7c72937c` as evidence of a leader
+
+Same file. That scene's own `rig_ego_speed_mps_first_9_frames` field reads **`0.0` for all nine
+frames**. A stationary camera produces near-identical frames with no synthetic leader, so the block
+length is **not identifiable from the video alone** there. `frame_align.leader_pad()` now REFUSES
+(`ego_stationary_unidentifiable`) instead of reporting the number. The +5 is unaffected — it stands
+on `count_delta` **and** the renderer scan.
+
+### 3. SUPERSEDED — "rolling shutter buys +0.0210 at ~90× the render cost" (`R-2026-08-03-j`)
+
+That delta was measured against a reference 5–6 frames out of alignment. Re-measured at the
+corrected reference, same code, same frames, paired bootstrap over frames B=10000
+(`raw/RS_MARGINAL_REBASELINE.json`), RS over the deployed config:
+
+| scene / n | superseded | **corrected** | ratio | cost |
+|---|---|---|---|---|
+| `00040136` n=12 | +0.0179 [+0.0124, +0.0237] | **+0.1158** [+0.1046, +0.1285] | **×6.5** | ×93.5 |
+| `7c72937c` n=12 | +0.0542 [+0.0332, +0.0782] | **+0.1615** [+0.1440, +0.1803] | **×3.0** | ×81.6 |
+
+⚠️ **This does NOT vindicate rolling-shutter physics** — `R-2026-08-03-j`'s retraction of the CAUSE
+is now *better* supported. An RS render sweeps the pose across a **30.559 ms readout ≈ 0.917 of a
+frame**, so it spans the newly measured **sub-frame residual** (+0.232 fr / 7.75 ms on `00040136`,
++0.164 fr / 5.47 ms on `7c72937c`) by construction. A temporal-smear arm gaining most when a
+temporal misalignment is removed is evidence the gain is TEMPORAL, not shutter-specific. **The
+deployment verdict is untouched: 2498–3684 ms against a 36 ms budget. RS stays off.**
+
+### AND THE HEADLINE THE PROGRAMME SHIPPED: "+23.4 % grad-NCC" SURVIVES AT ROUGHLY HALF SIZE, AND DOES NOT REPLICATE
+
+Same code, same scene, same frames, same arms — **only `--ref-offset` differs**, and the offset-0 arm
+reproduces the shipped `panel6_chosen` EXACTLY (0.2774 / 0.3424 / 0.3747), so this is not confounded
+by a code change. Paired bootstrap over frames, B=10000 (`raw/REBASELINE_TABLE.json`):
+
+| contrast | superseded | **corrected** |
+|---|---|---|
+| `00040136` n=5 (the shipped panel) | **+23.4 %**, Δ +0.0650 [+0.0422, +0.0923] sep | **+13.5 %**, Δ +0.0572 [+0.0323, +0.0892] sep |
+| `00040136` n=12 | +22.1 %, Δ +0.0564 sep | **+8.0 %**, Δ +0.0362 [+0.0083, +0.0648] sep |
+| `7c72937c` n=12 | +8.4 %, Δ +0.0233 [+0.0014, +0.0490] sep | **+4.4 %**, Δ +0.0199 **[−0.0097, +0.0521] NOT sep** |
+
+⇒ Under the standing rule already written into `Q2_RENDER_FIDELITY_PLAN.md` §R4 (*improvement = CI
+above 0 on ≥2 of 3 scenes*), the shipped configuration now clears **1 of 2**. Not a refutation — a
+**loss of the evidence that justified it**, and the `cull=0.95` / `sky-gain=0.3` optima were both
+chosen by maximising grad-NCC against the misaligned reference and must be re-swept.
+✅ **What is untouched: every closed-loop number, including `R-2026-08-03-C`.** `cl_metrics.py` never
+opens the reference video (no `load_refs`, no `VideoCapture`, no `.mp4`); the four families come from
+rollout poses and `sequence_tracks.json`. The one channel by which the correction could still reach
+them — the render CONFIG was selected on the biased criterion — is flagged as a follow-up, not a claim.
+
+**Root-cause class: C14 — A SWEEP'S GRID END RE-LABELLED AS A MEASURED LIMIT, in its ESTIMATOR form:
+an instrument structurally incapable of reporting anything but an answer.** `max(d, key=score)`
+returns an offset on a monotone curve, on a flat curve, and on pure noise. In this work alone it did
+so three times: a ±3 scan that stopped at its edge still rising and reported *"≥ +3"*; the
+cross-correlation on `7c72937c` that rose monotonically −15 → +15 and argmaxed at **+15**; and the
+gate's own first version, which classified a **flat** curve peaking at the window edge as
+*"the residual is off-window"* and **blocked a CORRECT offset**.
+
+⇒ **RULE: an estimator that cannot return "I do not know" is not an estimator, it is a formatter.**
+Every alignment curve now goes through `frame_align.adjudicate()`, which refuses on `weak`,
+`not_separated`, `boundary` or `no_turnover` — and the ORDER matters: signal strength is adjudicated
+BEFORE window position, because a flat curve peaking at an edge is *no signal*, not *off-window*, and
+those demand opposite responses.
+⇒ **RULE: a control that the estimator passes by REFUSING proves nothing.** `motion_lag`'s
+injected-shift controls all "fail" on real data purely because it refuses the base case; that is
+stated in the report rather than scored as a pass.
+⇒ **Shipped so it cannot recur:** `render_quality.py::assert_reference_aligned` runs BEFORE any arm
+reports a number, is **on by default**, derives the offset **per scene**, and has three outcomes —
+PASS / FAILED / **CANNOT CERTIFY** (no probe frame carries signal), the last explicitly *not*
+"aligned". Demonstrated on the real scenes: it REFUSES the shipped configuration on both
+(naming +6 and +5), REFUSES an **over**-correction of +10 (naming −4, so it cannot be satisfied by
+pushing the offset until the number looks good), and PASSES at +6 and +5. 50 tests
+(`stack/tests/test_frame_align.py`, `test_render_quality_alignment_gate.py`,
+`test_ref_offset_repo_wide.py`), full suite **2031 passed**.
+
+⚠️ **NOT established:** that the rule holds beyond **n = 2 scenes**. Only 2 of the 79 NuRec scenes on
+Thor have `rig_trajectories.json` (the rest are mp4-only), both are 599-rig-frame clips from one
+release, and there is **no fps field, no dropped-frame marker and no manifest field** that predicts
+the delta — `data_info.json` says 599 on both. The offset must be **estimated per scene**, and that
+estimate is part of every future render number.
+
+---
+
+## R-2026-08-03-appear — ⛔ "APPEARANCE DOMINATES MOTION" is CORPUS-SPECIFIC, and I reported it
+## as a programme-scale finding
+
+**What I reported to the PI**, as the finding that "reframes the programme": *a single 32×32
+grayscale STILL FRAME reads `speed` at +0.6642 — 93 % of the 800 ms learned latent and 1.75× the
+best motion-only arm; all ten linear pure-difference arms sit at the null; nothing in our training
+ever forced the encoder to learn motion.* I attached to it the hypothesis that this re-explains the
+88.7 % longitudinal gap and the cross-rig collapse.
+
+**MEASURED on PhysicalAI-AV** (pre-registered OUTCOME C, `PREREG_APPEARANCE_SHORTCUT.md`, S/C/P/VOID
+with every threshold fixed before any PhysicalAI number existed). Encoder-matched — same frozen
+`v1_speedjerk_ckpt.pt` @ 29999, same recipe, 240 eps → 160/80, 4,787/2,390 windows matched to
+comma's 4,554/2,346:
+
+| arm | comma2k19 highway | **PhysicalAI-AV** |
+|---|---:|---:|
+| `pix32_centre_rbf` — one 32×32 grey still frame | **+0.6642** | **−0.0025 = the empirical null** |
+| `v1_window` — 18,432 features, 800 ms | +0.7145 | **+0.6752** |
+| **ratio** | **0.9296** | **−0.0037** [−0.0498, −0.0000] |
+
+The run is **admissible, not VOID**: `v1_window` separates (+0.6777 [+0.6328, +0.7235]) and the null
+arm reproduces the floor.
+
+⇒ **The programme-scale claim is WITHDRAWN.** And it does not merely shrink — **the ordering
+reverses**: on PhysicalAI every appearance form is at the null (1,024 / 9,216 / 9 features; linear,
+rbf, single-instant, within-stack) while **64 features of motion energy separate** (`mot8_centre_rbf`
++0.3707, `mot16_window_rbf` +0.4124).
+
+### The mechanism, established by a pre-registered ladder rather than argued
+
+| corpus | still-frame arm | within-clip split (leaky) | across-clip split (real) | retained |
+|---|---|---:|---:|---:|
+| comma2k19 | `pix32_centre_rbf` | +0.9825 | +0.6642 | **68 %** |
+| PhysicalAI | `pix32_centre_rbf` | +0.8023 | −0.0025 | **0 %** |
+
+Both rival explanations were killed by measurement, not by assertion: the PhysicalAI substrate is not
+degenerate (**higher** dynamic range than comma's, 0 constant features) and its speed distribution is
+not narrower (**CV 0.621 vs 0.589**). The appearance→speed map **exists on both corpora and transfers
+on one**, because **comma2k19 val is a single driver / vehicle / camera / road class**.
+
+⭐ **Root-cause class C16: EPISODE-DISJOINT ≠ DOMAIN-DISJOINT.** A held-out split that separates
+*episodes* can leave the *domain* fully shared, and a shortcut that memorises the domain then reads
+as a capability. **Cheap general fix: run every probe once with a RANDOM-WINDOW split too.** The gap
+between the two splits IS the shortcut, measured — 68 % on comma, 0 % on PhysicalAI.
+⇒ **RULE: a probe on a single-domain corpus cannot support a programme-scale claim about
+representations, however clean its held-out split.** I promoted a comma2k19-highway result to
+"reframes the programme" in one step.
+
+### Two further corrections that travel with it
+
+1. ⛔ **"+0.930 → −2.465" pairs TWO DIFFERENT EXPERIMENTS.** 0.930 is one run's *held-out* read;
+   −2.4654 is another run's *cross-rig* read, and **that run's own within-rig baseline is +0.7863**.
+   The honest pair is **+0.7863 → −2.4654**. Fixed in `MODEL_REGISTRY.md`; the figure also appears in
+   ~8 other documents which the registry now supersedes.
+   ⇒ **RULE: a "X → Y" degradation pair must come from ONE experiment**, or the difference silently
+   contains the between-run delta as well as the effect.
+2. ⚠️ **The cross-rig collapse does not reproduce in the current cache**: A→A +0.7052, B→A +0.7127,
+   paired **+0.0075 [−0.0318, +0.0502] NOT separated**. The −2.4654 is **NOT ATTRIBUTED** — cache
+   geometry (the rigs' horizons agree on 8 of 256 rows here) and MLP extrapolation both remain live.
+   **The appearance shortcut is NOT a third explanation for it** — it is at the null in all four rig
+   cells.
+
+### What the audit CONFIRMED rather than overturned
+
+- **The scenario classifier is NOT threatened** on all three situations: the shortcut's first hop
+  does not exist on this corpus (still→speed R² **+0.0102** vs latent **+0.6900**). This agrees
+  independently with the sitclf stream's own still-frame control (motion worth ~70 % of the skill).
+  ⚠️ Only `intersection` is properly powered; the agent said so rather than dressing up the other two.
+- **`long_accel`'s unrecoverability is untouched** by this retraction — that result stands on its own
+  17-architecture evidence.
+- The **0-GPU latent screen is now promoted** to `stack/tanitad/eval/latent_screen.py` with 12
+  contract tests, reproducing its reference through the promoted module and passing its oracle
+  control. ⚠️ **New fact: the same encoder is 6.9× LESS jittery on PhysicalAI than on comma2k19**, so
+  **the screen's thresholds are corpus-dependent and must carry their corpus.**
+
+⚠️ The agent also found and reported **a defect in its own pre-registration** (AP-lift's chance level
+is 1.0, not 0 — the raw form would have wrongly read THREATENED on `lane_change`) rather than
+quietly using the corrected form.

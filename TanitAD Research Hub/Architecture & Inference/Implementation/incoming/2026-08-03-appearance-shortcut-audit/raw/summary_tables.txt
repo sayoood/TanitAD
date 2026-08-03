@@ -1,0 +1,258 @@
+
+====================================================================================================
+P1 — PhysicalAI-AV: speed R2 per arm, with each arm's OWN shuffled control
+====================================================================================================
+corpus            : physicalai r0 500-clip build (NOT the canonical physicalai-train-e438721ae894 training corpus)
+encoder           : C:/Users/Admin/tanitad-data/eval/v1_speedjerk_ckpt.pt step 29999  (SAME encoder as the comma2k19 panel)
+episodes/windows  : 240 eps -> 160 train (4787 win) / 80 held out (2390 win)
+rigs              : {'a': 59, 'b': 181}
+alignment (A1)    : max |v_latentbank - v_epcache| = 9.537e-07 m/s
+estimator         : paired episode-cluster bootstrap (tanitad/eval/ap_ci.py); NEVER overlapping_holdout_se, B=2000
+
+arm                            feat  kernel   speed R2  d vs shuf   ci95 lo   ci95 hi  sep
+NULL_train_mean                   0    none    -0.0025          -         -         -   (the empirical null)
+v1_window                     18432  linear    +0.6752    +0.6777   +0.6328   +0.7235  SEP
+pix32_centre_rbf               1024     rbf    -0.0025    +0.0000   +0.0000   +0.0000  ---
+v1_centre                      2048  linear    +0.6391    +0.6416   +0.5919   +0.6905  SEP
+v1_tdiff                      16384  linear    -0.0025    +0.0000   +0.0000   +0.0000  ---
+pix32_centre                   1024  linear    -0.0025    +0.0000   +0.0000   +0.0000  ---
+stk32_centre                   1024  linear    -0.0025    +0.0000   +0.0000   +0.0000  ---
+stk32_centre_rbf               1024     rbf    -0.0025    +0.0000   +0.0000   +0.0000  ---
+pix8_tdiff_rbf                  512     rbf    +0.2492    +0.2517   +0.1351   +0.3450  SEP
+mot8_window_rbf                 576     rbf    +0.3922    +0.3947   +0.2906   +0.4869  SEP
+mot16_window_rbf               2304     rbf    +0.4124    +0.4149   +0.3155   +0.5005  SEP
+mot8_centre_rbf                  64     rbf    +0.3707    +0.3732   +0.2810   +0.4545  SEP
+pix1_window_rbf                   9     rbf    -0.0025    +0.0000   +0.0000   +0.0000  ---
+v1_window_shufframes          18432  linear    +0.6812    +0.6837   +0.6396   +0.7301  SEP
+pix32_window                   9216  linear    -0.0025    +0.0000   +0.0000   +0.0000  ---
+pix32_window_shufframes        9216  linear    -0.0025    +0.0000   +0.0000   +0.0000  ---
+
+====================================================================================================
+P1 — THE PRE-REGISTERED PRIMARY STATISTIC
+====================================================================================================
+definition : R2_speed(pix32_centre_rbf) / R2_speed(v1_window), same held-out windows, encoder-matched
+numerator   (pix32_centre_rbf, still frame) : -0.00249   separates=False
+denominator (v1_window, 800 ms latent)      : +0.67519   separates=True
+RATIO on PhysicalAI-AV : -0.00369  CI95 [-0.04977, -1e-05]
+RATIO on comma2k19     : +0.92960  (0.6642/0.7145)
+paired delta (still - latent) : -0.67768 [-0.72349, -0.63278] SEP  n_ep=80
+
+>>> PRE-REGISTERED OUTCOME: C (CORPUS-SPECIFIC -- withdraw the programme-scale claim)
+
+====================================================================================================
+P1 — FOUR METRIC FAMILIES (per family, never pooled). ADE is ONE ROW of four.
+====================================================================================================
+
+--- v1_window --- (ADE_2s 2.2808 m [2.0939,2.4744])
+  LONGITUDINAL  target-speed MAE 1.6668 m/s  bias -0.1656  along-track MAE 2.2226 m bias -0.2147  accel MAE 0.7078 m/s2
+                distance-keeping/TTC: UNAVAILABLE — no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.
+  LATERAL       heading MAE 0.08177 rad (n=8299)  curvature MAE 0.017730 1/m (n=6154)  yaw-rate MAE 0.06272 rad/s  cross-track MAE 0.2680 m
+  TACTICAL/lateral      bal-acc 0.8229 (chance 0.3333)  support None
+  TACTICAL/longitudinal bal-acc 0.3886 (chance 0.3333)  support None
+  TACTICAL/mixed        bal-acc 0.5195 (chance 0.2)  support None
+  TACTICAL/goal_setting  {"status": "PARTIAL", "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set t
+  STRATEGIC     UNAVAILABLE — no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus — a WORK ITEM, not a pass. (n=2390)
+
+--- pix32_centre_rbf --- (ADE_2s 4.0855 m [3.7762,4.3904])
+  LONGITUDINAL  target-speed MAE 3.1457 m/s  bias -0.1898  along-track MAE 3.9086 m bias -0.2342  accel MAE 0.7513 m/s2
+                distance-keeping/TTC: UNAVAILABLE — no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.
+  LATERAL       heading MAE 0.10779 rad (n=8381)  curvature MAE 0.023980 1/m (n=6219)  yaw-rate MAE 0.10894 rad/s  cross-track MAE 0.5076 m
+  TACTICAL/lateral      bal-acc 0.3333 (chance 0.3333)  support None
+  TACTICAL/longitudinal bal-acc 0.3333 (chance 0.3333)  support None
+  TACTICAL/mixed        bal-acc 0.2000 (chance 0.2)  support None
+  TACTICAL/goal_setting  {"status": "PARTIAL", "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set t
+  STRATEGIC     UNAVAILABLE — no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus — a WORK ITEM, not a pass. (n=2390)
+
+--- mot16_window_rbf --- (ADE_2s 2.9256 m [2.6663,3.2135])
+  LONGITUDINAL  target-speed MAE 2.2406 m/s  bias -0.2229  along-track MAE 2.7954 m bias -0.2654  accel MAE 0.7635 m/s2
+                distance-keeping/TTC: UNAVAILABLE — no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.
+  LATERAL       heading MAE 0.09553 rad (n=8358)  curvature MAE 0.024360 1/m (n=6208)  yaw-rate MAE 0.10540 rad/s  cross-track MAE 0.4427 m
+  TACTICAL/lateral      bal-acc 0.5137 (chance 0.3333)  support None
+  TACTICAL/longitudinal bal-acc 0.3390 (chance 0.3333)  support None
+  TACTICAL/mixed        bal-acc 0.3104 (chance 0.2)  support None
+  TACTICAL/goal_setting  {"status": "PARTIAL", "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set t
+  STRATEGIC     UNAVAILABLE — no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus — a WORK ITEM, not a pass. (n=2390)
+
+--- NULL_train_mean --- (ADE_2s 4.0855 m [3.7762,4.3904])
+  LONGITUDINAL  target-speed MAE 3.1457 m/s  bias -0.1898  along-track MAE 3.9086 m bias -0.2342  accel MAE 0.7513 m/s2
+                distance-keeping/TTC: UNAVAILABLE — no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.
+  LATERAL       heading MAE 0.10779 rad (n=8381)  curvature MAE 0.023980 1/m (n=6219)  yaw-rate MAE 0.10894 rad/s  cross-track MAE 0.5076 m
+  TACTICAL/lateral      bal-acc 0.3333 (chance 0.3333)  support None
+  TACTICAL/longitudinal bal-acc 0.3333 (chance 0.3333)  support None
+  TACTICAL/mixed        bal-acc 0.2000 (chance 0.2)  support None
+  TACTICAL/goal_setting  {"status": "PARTIAL", "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set t
+  STRATEGIC     UNAVAILABLE — no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus — a WORK ITEM, not a pass. (n=2390)
+
+====================================================================================================
+P1 — STRATIFIED speed R2 (pre-registered: pooled numbers are not admissible alone)
+====================================================================================================
+stratum                     n  n_ep  v_mean         v1_window  pix32_centre_rbf   mot8_window_rbf   powered
+speed_0_1                 355    39    0.13          -65.0160         -533.8173         -106.8694   yes
+speed_1_3                 195    51    2.01          -19.6330          -46.5873          -36.6096   yes
+speed_3_6                 535    75    4.66           -3.6708           -2.4851           -5.2896   yes
+speed_6_10                939    76    7.94           -1.0900           -3.1455           -2.0566   yes
+speed_10_15               345    48   11.48           -5.2101          -19.2347          -14.5359   yes
+speed_15_inf               21     4   16.44          -87.5375         -239.3133         -182.5391   UNPOWERED
+man_lane_keep             775    79    5.83           +0.7773           -0.0008           +0.5881   yes
+man_turn_left             411    45    5.88           +0.4074           -0.0006           +0.1412   yes
+man_turn_right            396    54    5.79           +0.5563           -0.0031           -0.0952   yes
+man_accelerate            403    66    5.70           +0.7287           -0.0053           +0.4434   yes
+man_brake_stop            405    56    7.82           +0.4518           -0.3366           +0.0216   yes
+man_invalid                 0     0     nan              +nan              +nan              +nan   UNPOWERED
+
+⚠️ within-stratum R2 uses the STRATUM's own variance as denominator, so a narrow speed bin has a shrunken denominator by construction and its R2 is not comparable to the pooled value. Read the ORDERING across arms, not the level.
+
+====================================================================================================
+P1b — THE LADDER that separates 'the probe is broken' from 'the map does not transfer'
+====================================================================================================
+within_clip = random WINDOW split (LEAKY BY CONSTRUCTION — substrate check only)
+across_clip = episode-disjoint i%3 (the real number)
+
+corpus                         arm                 within_clip  across_clip  speed mean  speed cv
+comma2k19_highway              pix32_centre_rbf        +0.9825      +0.6642      19.555     0.589
+comma2k19_highway              pix32_centre            +0.8745      -0.0588      19.555     0.589
+comma2k19_highway              v1_window               +0.8841      +0.7145      19.555     0.589
+physicalai_av_mixed            pix32_centre_rbf        +0.8023      -0.0025       6.020     0.621
+physicalai_av_mixed            pix32_centre            +0.2546      -0.0025       6.020     0.621
+physicalai_av_mixed            v1_window               +0.7235      +0.6752       6.020     0.621
+
+====================================================================================================
+P1b — substrate integrity (a degenerate pixel block would show here)
+====================================================================================================
+comma2k19_highway              pix32  n=  6900 W=9 D= 1024  centre mean +0.2502 std 0.1673 range [0.000,1.000]  constant feats 0  median feat std 0.08453
+comma2k19_highway              Z      n=  6900 W=9 D= 2048  centre mean +0.1192 std 0.8544 range [-3.699,4.125]  constant feats 0  median feat std 0.61505
+physicalai_av_mixed            pix32  n=  7177 W=9 D= 1024  centre mean +0.3059 std 0.1746 range [0.000,1.000]  constant feats 0  median feat std 0.14452
+physicalai_av_mixed            Z      n=  7177 W=9 D= 2048  centre mean -0.0331 std 0.8930 range [-4.270,4.539]  constant feats 0  median feat std 0.86195
+
+====================================================================================================
+P1b — speed distributions (the corpus property the shortcut depends on)
+====================================================================================================
+comma2k19_highway              mean  19.56  std 11.51  cv 0.589  p05   0.01  p50  23.30  p95  33.57  frac<1m/s 0.097
+physicalai_av_mixed            mean   6.02  std  3.74  cv 0.621  p05   0.00  p50   6.31  p95  12.00  frac<1m/s 0.152
+
+====================================================================================================
+P2 — G1: the HORIZON ROW, MEASURED from the pixels of the substrate actually used
+====================================================================================================
+rig A: argmax row 129  centroid 117.627 (n_eps 25, cy mean 542.58)
+rig B: argmax row 137  centroid 108.997 (n_eps 25, cy mean 753.81)
+offset: argmax 8 rows, centroid -8.63 rows (256-space)
+note  : a LEGACY geometric-centre crop would put rig B's horizon ~215 px off in ORIGINAL 1920x1080 pixels; the D-016 R1 per-clip principal-point crop puts both rigs' horizon at the same output row. This measures which one this cache actually is.
+
+====================================================================================================
+P2 — G2/G4: WITHIN-rig vs CROSS-rig speed R2 (the geometry-vs-appearance discriminator)
+====================================================================================================
+arm                       A->A      B->B      B->A      A->B  drop on A  drop on B
+pix32_centre_rbf       -0.0106   -0.0465   -0.0248   -0.0177    -0.0142    +0.0288
+mot8_window_rbf        +0.4572   +0.3811   +0.3991   +0.3843    -0.0580    +0.0031
+v1_window              +0.7052   +0.7194   +0.7127   +0.7011    +0.0075    -0.0183
+
+paired intervals (cross-rig minus within-rig, SAME held-out rows):
+  pix32_centre_rbf     on rig A: -0.0142 [-0.0678,+0.0380] ---  n_ep=39
+  pix32_centre_rbf     on rig B: +0.0288 [+0.0014,+0.0593] SEP  n_ep=40
+  mot8_window_rbf      on rig A: -0.0580 [-0.1400,+0.0228] ---  n_ep=39
+  mot8_window_rbf      on rig B: +0.0031 [-0.0810,+0.0808] ---  n_ep=40
+  v1_window            on rig A: +0.0075 [-0.0318,+0.0502] ---  n_ep=39
+  v1_window            on rig B: -0.0183 [-0.0555,+0.0120] ---  n_ep=40
+
+====================================================================================================
+P2 — G3: does a PURE GEOMETRIC vertical shift reproduce the collapse?
+====================================================================================================
+torch.roll WRAPS; a real rig offset would crop. The perturbation is therefore STRONGER than the geometric one it stands in for, so a shift that still fails to reproduce the collapse is the stronger evidence.
+a legacy geometric-centre crop is ~215 px off for rig B in 1920x1080; scaled into a ~533 px crop resized to 256 that is ~100 output ROWS -- beyond the top of this sweep.
+
+  pix32_centre_rbf (fitted on rig A train, UNSHIFTED), baseline R2 -0.0106 ⛔ VOID — the arm has no skill at shift 0 on this corpus, so a degradation cannot be measured on it
+    shift   0 rows -> speed R2 -0.01059
+    shift   4 rows -> speed R2 -0.01238
+    shift   8 rows -> speed R2 -0.01415
+    shift  16 rows -> speed R2 -0.01545
+    shift  24 rows -> speed R2 -0.01450
+    shift  32 rows -> speed R2 -0.01239
+    shift  48 rows -> speed R2 -0.00885
+
+  mot8_window_rbf (fitted on rig A train, UNSHIFTED), baseline R2 +0.4572
+    shift   0 rows -> speed R2 +0.45715   (  0.0 % of baseline lost)
+    shift   4 rows -> speed R2 +0.43987   (  3.8 % of baseline lost)
+    shift   8 rows -> speed R2 +0.41452   (  9.3 % of baseline lost)
+    shift  16 rows -> speed R2 +0.33335   ( 27.1 % of baseline lost)
+    shift  24 rows -> speed R2 +0.22256   ( 51.3 % of baseline lost)
+    shift  32 rows -> speed R2 +0.07450   ( 83.7 % of baseline lost)
+    shift  48 rows -> speed R2 -0.14178   (131.0 % of baseline lost)
+
+====================================================================================================
+P3 — the scenario classifier: is 'vision-only' riding APPEARANCE -> SPEED -> the ego-derived LABEL?
+====================================================================================================
+the shortcut's FIRST HOP on this substrate (clip-disjoint held out):
+  still 32x32 frame -> speed  R2 +0.0102
+  frozen v1 latent  -> speed  R2 +0.6900
+
+⚠️ ap_lift = AP / base_rate, so CHANCE = 1.0 (not 0). 'excess' = lift - 1.
+⛔ the permuted-feature null is DEGENERATE for 1-feature arms (AP is rank-based) and decides nothing.
+
+--- lane_change --- n_heldout 27293, n_pos 630, base rate 0.02308
+  arm                        feat   AP-lift       lo       hi   excess
+  img_latent                 2048   +2.0261  +1.2405  +3.8533  +1.0261
+  img_still32                1024   +1.0475  +0.8571  +1.3438  +0.0475
+  ego_speed_true                1   +1.6853  +1.2751  +2.5606  +0.6853
+  speed_from_appearance         1   +1.0855  +0.8042  +1.7112  +0.0855
+  speed_plus_img             2049   +2.5104  +1.6754  +3.9821  +1.5104
+  shortcut share (EXCESS lift)  : +0.0833
+  shortcut share (raw, as prereg): +0.5357
+  incremental AP-lift of vision OVER the true speed channel: +0.8251 (+0.8041 of img's excess)
+  paired  img_latent - speed_from_appearance : +0.9406 [-0.1994,+2.7893] ---
+  paired  speed+img  - ego_speed_true        : +0.8251 [-0.1202,+2.1955] ---
+  >>> NOT THREATENED
+--- roundabout --- n_heldout 27231, n_pos 355, base rate 0.01304
+  arm                        feat   AP-lift       lo       hi   excess
+  img_latent                 2048   +5.5192  +1.2919 +16.1899  +4.5192
+  img_still32                1024   +4.4787  +1.0239 +15.0538  +3.4787
+  ego_speed_true                1   +0.9952  +0.8236  +1.4079  -0.0048
+  speed_from_appearance         1   +1.0226  +0.7110  +2.5536  +0.0226
+  speed_plus_img             2049   +5.5332  +1.2942 +16.2239  +4.5332
+  shortcut share (EXCESS lift)  : +0.0050
+  shortcut share (raw, as prereg): +0.1853
+  incremental AP-lift of vision OVER the true speed channel: +4.5380 (+1.0042 of img's excess)
+  paired  img_latent - speed_from_appearance : +4.4966 [-0.1711,+14.8629] ---
+  paired  speed+img  - ego_speed_true        : +4.5380 [+0.2278,+15.0608] SEP
+  >>> NOT THREATENED
+--- intersection --- n_heldout 25158, n_pos 2147, base rate 0.08534
+  arm                        feat   AP-lift       lo       hi   excess
+  img_latent                 2048   +2.3491  +1.8888  +2.9610  +1.3491
+  img_still32                1024   +1.1314  +0.9192  +1.5223  +0.1314
+  ego_speed_true                1   +1.2089  +0.9929  +1.2944  +0.2089
+  speed_from_appearance         1   +1.1691  +0.9802  +1.4778  +0.1691
+  speed_plus_img             2049   +2.4637  +1.9686  +3.1483  +1.4637
+  shortcut share (EXCESS lift)  : +0.1254
+  shortcut share (raw, as prereg): +0.4977
+  incremental AP-lift of vision OVER the true speed channel: +1.2548 (+0.9301 of img's excess)
+  paired  img_latent - speed_from_appearance : +1.1800 [+0.6782,+1.7941] SEP
+  paired  speed+img  - ego_speed_true        : +1.2548 [+0.8478,+1.9895] SEP
+  >>> NOT THREATENED
+
+====================================================================================================
+P4 — the promoted 0-GPU LATENT SCREEN, run on every latent we can reach
+====================================================================================================
+gates: {'jitter_ratio_max': 2.0, 'derivative_corr_min': 0.5, 'derived_accel_r2_min': 0.5, 'speed_sigma_max_mps': 0.28}
+latent                                           jitter    dcorr  accelR2   sigma  cos100  verdict
+flagship_v1_step29999_comma2k19                   50.96  +0.0891  -0.4087   5.943  0.9882  FAIL (jitter_ratio,derivative_corr,derived_accel_r2,speed_sigma_mps)
+flagship_v1_step29999_physicalai_av_mixed          7.42  +0.4019  +0.1677   2.162  0.9904  FAIL (jitter_ratio,derivative_corr,derived_accel_r2,speed_sigma_mps)
+flagship_v1_step29999_physicalai_av_rigA           8.19  +0.3659  +0.1391   2.028  0.9920  FAIL (jitter_ratio,derivative_corr,derived_accel_r2,speed_sigma_mps)
+flagship_v1_step29999_physicalai_av_rigB          10.49  +0.3168  +0.0636   1.985  0.9895  FAIL (jitter_ratio,derivative_corr,derived_accel_r2,speed_sigma_mps)
+ORACLE_true_speed_window_physicalai                1.00  +1.0000  +1.0000   0.000  0.9103  PASS (all gates passed)
+
+reproduction of the reference measurement through the PROMOTED module:
+  reference : {'jitter_ratio': 51.0, 'derivative_corr': 0.0891, 'derived_accel_r2': -0.3773, 'cos_adjacent_100ms': 0.98825, 'verdict': 'FAIL', 'source': '…/incoming/2026-08-03-latent-bottleneck/results_mechanism.json'}
+  measured  : {'jitter_ratio': 50.9644, 'derivative_corr': 0.08907, 'derivative_corr_per_position': 0.00624, 'derived_accel_r2': -0.40866, 'derived_accel_r2_upper_bound': -0.40866, 'cos_adjacent_100ms': 0.98825}
+  the reference numbers were produced by the one-off run_mechanism.py / run_precision_ladder.py; small differences are expected where the promoted module fixes a stencil instead of sweeping it, and any difference is reported rather than tuned away.
+
+====================================================================================================
+CROSS-CORPUS CONTRAST — the same arms, the same encoder, two corpora
+====================================================================================================
+arm                        comma2k19 speed R2   PhysicalAI speed R2
+v1_window                             +0.7145               +0.6752
+v1_centre                             +0.6857               +0.6391
+pix32_centre_rbf                      +0.6642               -0.0025
+pix32_centre                          -0.0588               -0.0025
+stk32_centre                          -0.1016               -0.0025
+pix8_tdiff_rbf                        +0.3778               +0.2492
+mot8_window_rbf                       +0.5582               +0.3922
+mot16_window_rbf                      +0.5148               +0.4124

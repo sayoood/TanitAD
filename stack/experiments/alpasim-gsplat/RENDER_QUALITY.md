@@ -16,7 +16,32 @@ Every number below cites a **run directory**, never a prior summary.
 
 ---
 
-## HEADLINE
+## ⛔⛔ 2026-08-03 — THE HEADLINE BELOW IS SUPERSEDED (reference 6 frames out of alignment)
+
+Every **absolute** in this document was scored against a reference video **6 frames too early**
+(`R-2026-08-03-k`). The rule is `video_index = rig_index + (n_mp4_decodable − n_rig)` — **+6 here,
++5 on `7c72937c`** — MEASURED by the renderer's own ±10 neighbour scan, `argmax_histogram`
+`{6: 12}` / `{5: 12}`, bootstrap mass 1.00. **Corrected values** (same code, same frames, same
+arms, only `--ref-offset` differing; the offset-0 arm reproduces the table below exactly):
+
+| arm | SUPERSEDED grad-NCC | **CORRECTED grad-NCC** |
+|---|---|---|
+| **BEFORE** `background+road` | 0.2774 | **0.4228** |
+| **AFTER** all 4 layers + cull 0.95 + gated sky 0.3 | 0.3424 | **0.4800** |
+| AFTER **+ rolling shutter** | 0.3747 | **0.5913** |
+
+⚠️ **The "+23.4 %" becomes +13.5 % on these 5 frames, +8.0 % on 12 frames, and +4.4 % with a CI
+that INCLUDES ZERO on scene `7c72937c`** — so the shipped configuration clears the standing
+≥2-of-3-scene rule on **1 of 2**. The "+35.1 %" RS figure becomes **+39.9 %** and the RS *marginal*
+over the deployed config is **3.0–6.5× larger** than published — which does **not** vindicate
+shutter physics (see `R-2026-08-03-align`). RS still costs 82–108× the render and stays off.
+
+⇒ **Full re-baseline, both scenes, paired CIs, and the alignment gate:**
+`TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`.
+⇒ `render_quality.py` now runs an **alignment gate before any arm reports a number**; it REFUSES
+the configuration that produced the table below.
+
+## HEADLINE (SUPERSEDED — kept for the audit trail, do not quote)
 
 | arm | grad-NCC | neg-control margin | mean_alpha | MAE | ms/frame |
 |---|---|---|---|---|---|
@@ -26,7 +51,8 @@ Every number below cites a **run directory**, never a prior summary.
 
 `run_dir = ~/rq_out/panel6_chosen`. **+23.4 % grad-NCC inside the render budget**
 (36 ms ≈ 28 FPS, the closed loop needs 10 Hz); **+35.1 % if wall clock is not a constraint.**
-Negative control PASSES on 5/5 frames for every arm.
+Negative control PASSES on 5/5 frames for every arm — ⚠️ and it passed **at the wrong offset too**,
+because `MIN_WRONG_GAP = 40` makes it blind to a 6-frame error by construction.
 
 ---
 

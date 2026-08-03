@@ -1,0 +1,186 @@
+{
+ "gate": "reference_alignment",
+ "ref_offset_applied": 0,
+ "k": 10,
+ "probe_frames": [
+  60,
+  150,
+  300,
+  450
+ ],
+ "frames_offered": [
+  0,
+  60,
+  150,
+  300,
+  450
+ ],
+ "frames_skipped_incomplete_window": [
+  0
+ ],
+ "informative_frames": [
+  150,
+  300,
+  450
+ ],
+ "offwindow_frames": [],
+ "uninformative_frames": {
+  "60": "not_separated"
+ },
+ "min_prominence": 0.02,
+ "min_modal_mass": 0.5,
+ "residual_argmax_by_frame": {
+  "60": null,
+  "150": 5,
+  "300": 5,
+  "450": 6
+ },
+ "residual_offset_bootstrap": {
+  "point": 5,
+  "refused": false,
+  "reason": "ok",
+  "n_units": 3,
+  "B": 1000,
+  "mass": {
+   "5": 0.84,
+   "6": 0.16
+  },
+  "frac_refused": 0.0,
+  "modal_mass": 0.84,
+  "estimator": "bootstrap over probed frames of argmax(mean curve); an integer estimator has no meaningful SE, so the mass function IS the interval"
+ },
+ "residual_mass_at_zero": 0.0,
+ "residual_subframe_mean": 5.393,
+ "per_frame": {
+  "60": {
+   "grad_ncc_by_offset": {
+    "-10": 0.40444,
+    "-9": 0.40445,
+    "-8": 0.40447,
+    "-7": 0.40464,
+    "-6": 0.40475,
+    "-5": 0.40375,
+    "-4": 0.40367,
+    "-3": 0.40373,
+    "-2": 0.4039,
+    "-1": 0.40406,
+    "0": 0.4032,
+    "1": 0.40308,
+    "2": 0.40291,
+    "3": 0.40277,
+    "4": 0.40271,
+    "5": 0.40233,
+    "6": 0.40224,
+    "7": 0.40231,
+    "8": 0.40208,
+    "9": 0.40191,
+    "10": 0.40069
+   },
+   "argmax_offset": null,
+   "refused": true,
+   "reason": "not_separated",
+   "informative": false,
+   "prominence": 0.00028,
+   "subframe_offset": -6.4009,
+   "gain_vs_offset0": null
+  },
+  "150": {
+   "grad_ncc_by_offset": {
+    "-10": 0.21662,
+    "-9": 0.21962,
+    "-8": 0.22392,
+    "-7": 0.23007,
+    "-6": 0.23497,
+    "-5": 0.23869,
+    "-4": 0.24463,
+    "-3": 0.25461,
+    "-2": 0.26674,
+    "-1": 0.27846,
+    "0": 0.28672,
+    "1": 0.29845,
+    "2": 0.31467,
+    "3": 0.33451,
+    "4": 0.35721,
+    "5": 0.38933,
+    "6": 0.38258,
+    "7": 0.35603,
+    "8": 0.32602,
+    "9": 0.29981,
+    "10": 0.28073
+   },
+   "argmax_offset": 5,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.0333,
+   "subframe_offset": 5.3263,
+   "gain_vs_offset0": 0.10261
+  },
+  "300": {
+   "grad_ncc_by_offset": {
+    "-10": 0.08764,
+    "-9": 0.087,
+    "-8": 0.09393,
+    "-7": 0.10162,
+    "-6": 0.106,
+    "-5": 0.10375,
+    "-4": 0.10401,
+    "-3": 0.10815,
+    "-2": 0.11752,
+    "-1": 0.12576,
+    "0": 0.13458,
+    "1": 0.14927,
+    "2": 0.16944,
+    "3": 0.18859,
+    "4": 0.24092,
+    "5": 0.40914,
+    "6": 0.36051,
+    "7": 0.21769,
+    "8": 0.18336,
+    "9": 0.15985,
+    "10": 0.14502
+   },
+   "argmax_offset": 5,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.19145,
+   "subframe_offset": 5.2757,
+   "gain_vs_offset0": 0.27456
+  },
+  "450": {
+   "grad_ncc_by_offset": {
+    "-10": 0.22262,
+    "-9": 0.22563,
+    "-8": 0.23101,
+    "-7": 0.23592,
+    "-6": 0.24843,
+    "-5": 0.25399,
+    "-4": 0.26327,
+    "-3": 0.27603,
+    "-2": 0.29381,
+    "-1": 0.31349,
+    "0": 0.32413,
+    "1": 0.33964,
+    "2": 0.35489,
+    "3": 0.38374,
+    "4": 0.42654,
+    "5": 0.48347,
+    "6": 0.48773,
+    "7": 0.4366,
+    "8": 0.40021,
+    "9": 0.3819,
+    "10": 0.36944
+   },
+   "argmax_offset": 6,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.06119,
+   "subframe_offset": 5.5769,
+   "gain_vs_offset0": 0.1636
+  }
+ },
+ "pass": false,
+ "why": "the harness's other negative control uses MIN_WRONG_GAP=40 and is structurally blind to a small index error; this one is not"
+}

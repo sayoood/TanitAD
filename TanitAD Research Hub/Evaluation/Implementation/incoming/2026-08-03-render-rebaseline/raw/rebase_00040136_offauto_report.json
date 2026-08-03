@@ -1,0 +1,2921 @@
+{
+ "run_dir": "/home/nvidia/align_out/rebase_00040136_offauto",
+ "scene_dir": "/home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430",
+ "git_sha": "",
+ "utc": "2026-08-03T20:56:33Z",
+ "frames": [
+  0,
+  60,
+  150,
+  300,
+  450
+ ],
+ "clip_n_frames": 599,
+ "ref_offset": 6,
+ "ref_offset_source": "count_delta(mp4=605, rig=599)",
+ "ref_offset_rule": "video_index = rig_index + ref_offset  (R-2026-08-03-k)",
+ "alignment_gate": {
+  "gate": "reference_alignment",
+  "ref_offset_applied": 6,
+  "k": 3,
+  "probe_frames": [
+   60,
+   300,
+   450
+  ],
+  "frames_offered": [
+   0,
+   60,
+   150,
+   300,
+   450
+  ],
+  "frames_skipped_incomplete_window": [
+   0
+  ],
+  "residual_argmax_by_frame": {
+   "60": 0,
+   "300": 0,
+   "450": 0
+  },
+  "residual_offset_bootstrap": {
+   "point": 0,
+   "refused": false,
+   "reason": "ok",
+   "n_units": 3,
+   "B": 1000,
+   "mass": {
+    "0": 1.0
+   },
+   "frac_refused": 0.0,
+   "modal_mass": 1.0,
+   "estimator": "bootstrap over probed frames of argmax(mean curve); an integer estimator has no meaningful SE, so the mass function IS the interval"
+  },
+  "per_frame": {
+   "60": {
+    "grad_ncc_by_offset": {
+     "-3": 0.28016,
+     "-2": 0.30738,
+     "-1": 0.35021,
+     "0": 0.42394,
+     "1": 0.38544,
+     "2": 0.31798,
+     "3": 0.28611
+    },
+    "argmax_offset": 0,
+    "refused": false,
+    "reason": "ok",
+    "gain_vs_offset0": 0.0
+   },
+   "300": {
+    "grad_ncc_by_offset": {
+     "-3": 0.27768,
+     "-2": 0.30452,
+     "-1": 0.34974,
+     "0": 0.44409,
+     "1": 0.41211,
+     "2": 0.33518,
+     "3": 0.29687
+    },
+    "argmax_offset": 0,
+    "refused": false,
+    "reason": "ok",
+    "gain_vs_offset0": 0.0
+   },
+   "450": {
+    "grad_ncc_by_offset": {
+     "-3": 0.29729,
+     "-2": 0.32126,
+     "-1": 0.36439,
+     "0": 0.44547,
+     "1": 0.43925,
+     "2": 0.3711,
+     "3": 0.32611
+    },
+    "argmax_offset": 0,
+    "refused": false,
+    "reason": "ok",
+    "gain_vs_offset0": 0.0
+   }
+  },
+  "pass": true,
+  "why": "the harness's other negative control uses MIN_WRONG_GAP=40 and is structurally blind to a small index error; this one is not"
+ },
+ "alignment_gate_disabled": false,
+ "wrong_frames_per_correct": {
+  "0": [
+   75,
+   150,
+   224,
+   299,
+   374
+  ],
+  "60": [
+   0,
+   150,
+   224,
+   299,
+   374
+  ],
+  "150": [
+   0,
+   75,
+   224,
+   299,
+   374
+  ],
+  "300": [
+   0,
+   75,
+   150,
+   224,
+   374
+  ],
+  "450": [
+   0,
+   75,
+   150,
+   224,
+   299
+  ]
+ },
+ "metric": "gradient-NCC (PSNR and plain NCC are RETRACTED on this clip)",
+ "arms": [
+  {
+   "arm": "BEFORE_base",
+   "layers": [
+    "background",
+    "road"
+   ],
+   "sky": null,
+   "rolling_shutter": false,
+   "n_frames": 5,
+   "neg_control_pass_frames": 5,
+   "neg_control_all_pass": true,
+   "gradncc_argmax_correct_frames": 5,
+   "mae_argmin_correct_frames": 4,
+   "psnr_argmax_correct_frames": 4,
+   "grad_ncc_mean": 0.4228,
+   "neg_margin_mean": 0.232,
+   "mean_alpha": 0.5404,
+   "frac_covered": 0.8714,
+   "mae_full": 0.0976,
+   "mae_covered": 0.0956,
+   "mae_opaque": 0.0904,
+   "share_err_uncovered": 0.1446,
+   "share_err_not_opaque": 0.8069,
+   "frac_opaque": 0.2071,
+   "frac_truly_empty": 0.05908,
+   "ref_mean_low_alpha": 0.136,
+   "render_mean_low_alpha": 0.0176,
+   "frac_low_alpha": 0.1864,
+   "render_mean": 0.2386,
+   "ref_mean": 0.2408,
+   "raster_ms_median": 23.67,
+   "actor_gaussians_median": 0,
+   "build_s": 3.4,
+   "n_static_gaussians": 3105514,
+   "layer_counts": {
+    "background": 2382789,
+    "road": 722725
+   },
+   "cull": null,
+   "shutter_type_declared": "ROLLING_TOP_TO_BOTTOM",
+   "per_frame": [
+    {
+     "frame": 0,
+     "raster_ms": 23.9,
+     "wall_ms": 25.85,
+     "n_actor_gaussians": 0,
+     "actors_per_layer": {},
+     "mean_alpha": 0.5974997282028198,
+     "frac_covered": 0.9995929783950618,
+     "frac_alpha_ge_0.995_OPAQUE": 0.20615113811728394,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.0,
+     "render_mean": 0.27424654364585876,
+     "ref_mean": 0.2660837769508362,
+     "mae_full": 0.10275156050920486,
+     "mae_covered": 0.10272715985774994,
+     "mae_uncovered": 0.16266612708568573,
+     "share_of_abs_error_uncovered": 0.0006443563615903258,
+     "share_of_abs_error_not_opaque": 0.7993066310882568,
+     "mae_opaque": 0.10003124922513962,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.0,
+      0.00041,
+      0.21233,
+      0.28851,
+      0.05164,
+      0.10175,
+      0.13921,
+      0.20615
+     ],
+     "alpha_hist_abs_error_share": [
+      0.0,
+      0.00064,
+      0.18201,
+      0.27476,
+      0.05506,
+      0.13628,
+      0.15056,
+      0.20069
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.19408653676509857,
+     "render_mean_where_alpha_lt_0.1": 0.037218790501356125,
+     "frac_alpha_lt_0.1": 0.009967206790123457,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "0": 0.3787,
+       "75": 0.1761,
+       "150": 0.2065,
+       "224": 0.1496,
+       "299": 0.2095,
+       "374": 0.1474
+      },
+      "correct_frame": 0,
+      "grad_ncc_correct": 0.3787,
+      "best_wrong_frame": 299,
+      "grad_ncc_best_wrong": 0.2095,
+      "margin": 0.1692,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "0": 0.1028,
+       "75": 0.0945,
+       "150": 0.0891,
+       "224": 0.0967,
+       "299": 0.0927,
+       "374": 0.0911
+      },
+      "mae_argmin_is_correct": false,
+      "psnr_argmax_is_correct": false,
+      "psnr_by_ref_frame": {
+       "0": 17.019,
+       "75": 17.278,
+       "150": 17.568,
+       "224": 16.731,
+       "299": 17.241,
+       "374": 17.372
+      }
+     },
+     "grad_ncc": 0.3787
+    },
+    {
+     "frame": 60,
+     "raster_ms": 24.95,
+     "wall_ms": 40.57,
+     "n_actor_gaussians": 0,
+     "actors_per_layer": {},
+     "mean_alpha": 0.5076121091842651,
+     "frac_covered": 0.800934124228395,
+     "frac_alpha_ge_0.995_OPAQUE": 0.19717640817901236,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.09962866512345679,
+     "render_mean": 0.22584836184978485,
+     "ref_mean": 0.24379108846187592,
+     "mae_full": 0.10068052262067795,
+     "mae_covered": 0.09740855544805527,
+     "mae_uncovered": 0.1138451024889946,
+     "share_of_abs_error_uncovered": 0.22509494423866272,
+     "share_of_abs_error_not_opaque": 0.834411084651947,
+     "mae_opaque": 0.08455156534910202,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.09963,
+      0.09944,
+      0.24926,
+      0.08323,
+      0.03193,
+      0.09503,
+      0.14431,
+      0.19718
+     ],
+     "alpha_hist_abs_error_share": [
+      0.11304,
+      0.11206,
+      0.25644,
+      0.07812,
+      0.03058,
+      0.101,
+      0.14317,
+      0.16559
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1278863400220871,
+     "render_mean_where_alpha_lt_0.1": 0.01222285721451044,
+     "frac_alpha_lt_0.1": 0.28519338348765433,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "60": 0.4239,
+       "0": 0.1916,
+       "150": 0.2061,
+       "224": 0.1574,
+       "299": 0.2237,
+       "374": 0.1487
+      },
+      "correct_frame": 60,
+      "grad_ncc_correct": 0.4239,
+      "best_wrong_frame": 299,
+      "grad_ncc_best_wrong": 0.2237,
+      "margin": 0.2003,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "60": 0.1007,
+       "0": 0.1393,
+       "150": 0.1157,
+       "224": 0.1198,
+       "299": 0.1104,
+       "374": 0.1152
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "60": 17.986,
+       "0": 15.017,
+       "150": 16.493,
+       "224": 16.052,
+       "299": 16.948,
+       "374": 16.838
+      }
+     },
+     "grad_ncc": 0.4239
+    },
+    {
+     "frame": 150,
+     "raster_ms": 23.67,
+     "wall_ms": 55.34,
+     "n_actor_gaussians": 0,
+     "actors_per_layer": {},
+     "mean_alpha": 0.5186316967010498,
+     "frac_covered": 0.816000675154321,
+     "frac_alpha_ge_0.995_OPAQUE": 0.2088377700617284,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.11093653549382716,
+     "render_mean": 0.22466450929641724,
+     "ref_mean": 0.24274420738220215,
+     "mae_full": 0.1065559983253479,
+     "mae_covered": 0.10321386158466339,
+     "mae_uncovered": 0.12137768417596817,
+     "share_of_abs_error_uncovered": 0.20959319174289703,
+     "share_of_abs_error_not_opaque": 0.8255801200866699,
+     "mae_opaque": 0.08899486809968948,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.11094,
+      0.07306,
+      0.24293,
+      0.07993,
+      0.05443,
+      0.09415,
+      0.13572,
+      0.20884
+     ],
+     "alpha_hist_abs_error_share": [
+      0.12066,
+      0.08893,
+      0.29495,
+      0.05524,
+      0.0416,
+      0.09301,
+      0.13118,
+      0.17442
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1373348832130432,
+     "render_mean_where_alpha_lt_0.1": 0.012193447910249233,
+     "frac_alpha_lt_0.1": 0.2830979938271605,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "150": 0.4218,
+       "0": 0.1844,
+       "75": 0.1813,
+       "224": 0.1565,
+       "299": 0.1953,
+       "374": 0.1278
+      },
+      "correct_frame": 150,
+      "grad_ncc_correct": 0.4218,
+      "best_wrong_frame": 299,
+      "grad_ncc_best_wrong": 0.1953,
+      "margin": 0.2265,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "150": 0.1066,
+       "0": 0.1407,
+       "75": 0.1237,
+       "224": 0.1228,
+       "299": 0.1131,
+       "374": 0.1171
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "150": 17.274,
+       "0": 14.882,
+       "75": 15.807,
+       "224": 15.737,
+       "299": 16.697,
+       "374": 16.351
+      }
+     },
+     "grad_ncc": 0.4218
+    },
+    {
+     "frame": 300,
+     "raster_ms": 21.62,
+     "wall_ms": 54.41,
+     "n_actor_gaussians": 0,
+     "actors_per_layer": {},
+     "mean_alpha": 0.5719038248062134,
+     "frac_covered": 0.9474483989197531,
+     "frac_alpha_ge_0.995_OPAQUE": 0.2232542438271605,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.016987364969135804,
+     "render_mean": 0.24763073027133942,
+     "ref_mean": 0.2306613326072693,
+     "mae_full": 0.08576846122741699,
+     "mae_covered": 0.08490721881389618,
+     "mae_uncovered": 0.10129579156637192,
+     "share_of_abs_error_uncovered": 0.06206542253494263,
+     "share_of_abs_error_not_opaque": 0.7735139727592468,
+     "mae_opaque": 0.08701004087924957,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.01699,
+      0.03556,
+      0.23487,
+      0.21639,
+      0.07556,
+      0.06959,
+      0.12779,
+      0.22325
+     ],
+     "alpha_hist_abs_error_share": [
+      0.02066,
+      0.0414,
+      0.18747,
+      0.16471,
+      0.08773,
+      0.11021,
+      0.16132,
+      0.22649
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.10904769599437714,
+     "render_mean_where_alpha_lt_0.1": 0.015475215390324593,
+     "frac_alpha_lt_0.1": 0.09876832561728395,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "300": 0.4441,
+       "0": 0.1615,
+       "75": 0.1627,
+       "150": 0.1476,
+       "224": 0.1544,
+       "374": 0.1584
+      },
+      "correct_frame": 300,
+      "grad_ncc_correct": 0.4441,
+      "best_wrong_frame": 75,
+      "grad_ncc_best_wrong": 0.1627,
+      "margin": 0.2814,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "300": 0.0858,
+       "0": 0.132,
+       "75": 0.1124,
+       "150": 0.1086,
+       "224": 0.1081,
+       "374": 0.0993
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "300": 17.978,
+       "0": 15.133,
+       "75": 16.406,
+       "150": 16.298,
+       "224": 16.426,
+       "374": 17.063
+      }
+     },
+     "grad_ncc": 0.4441
+    },
+    {
+     "frame": 450,
+     "raster_ms": 18.6,
+     "wall_ms": 51.83,
+     "n_actor_gaussians": 0,
+     "actors_per_layer": {},
+     "mean_alpha": 0.5065787434577942,
+     "frac_covered": 0.7932735339506173,
+     "frac_alpha_ge_0.995_OPAQUE": 0.19994936342592592,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.06782552083333333,
+     "render_mean": 0.22084036469459534,
+     "ref_mean": 0.22082091867923737,
+     "mae_full": 0.0921635851264,
+     "mae_covered": 0.08996724337339401,
+     "mae_uncovered": 0.10059161484241486,
+     "share_of_abs_error_uncovered": 0.22563086450099945,
+     "share_of_abs_error_not_opaque": 0.8018862009048462,
+     "mae_opaque": 0.09131748974323273,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.06783,
+      0.1389,
+      0.20854,
+      0.1297,
+      0.04615,
+      0.07384,
+      0.1351,
+      0.19995
+     ],
+     "alpha_hist_abs_error_share": [
+      0.07967,
+      0.14597,
+      0.17426,
+      0.08231,
+      0.05643,
+      0.10997,
+      0.15328,
+      0.19811
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.11152375489473343,
+     "render_mean_where_alpha_lt_0.1": 0.011132502928376198,
+     "frac_alpha_lt_0.1": 0.25474971064814816,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "450": 0.4455,
+       "0": 0.1518,
+       "75": 0.163,
+       "150": 0.1328,
+       "224": 0.1249,
+       "299": 0.1307
+      },
+      "correct_frame": 450,
+      "grad_ncc_correct": 0.4455,
+      "best_wrong_frame": 75,
+      "grad_ncc_best_wrong": 0.163,
+      "margin": 0.2825,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "450": 0.0922,
+       "0": 0.134,
+       "75": 0.1196,
+       "150": 0.1164,
+       "224": 0.1202,
+       "299": 0.1126
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "450": 18.56,
+       "0": 15.438,
+       "75": 16.309,
+       "150": 16.207,
+       "224": 15.911,
+       "299": 16.478
+      }
+     },
+     "grad_ncc": 0.4455
+    }
+   ]
+  },
+  {
+   "arm": "AFTER_all4_cull95_sky03",
+   "layers": [
+    "background",
+    "road",
+    "dynamic_rigids",
+    "dynamic_deformables"
+   ],
+   "sky": {
+    "lo_deg": 0.0,
+    "hi_deg": 6.0,
+    "gain": 0.3
+   },
+   "rolling_shutter": false,
+   "n_frames": 5,
+   "neg_control_pass_frames": 5,
+   "neg_control_all_pass": true,
+   "gradncc_argmax_correct_frames": 5,
+   "mae_argmin_correct_frames": 4,
+   "psnr_argmax_correct_frames": 4,
+   "grad_ncc_mean": 0.48,
+   "neg_margin_mean": 0.2389,
+   "mean_alpha": 0.33,
+   "frac_covered": 0.5052,
+   "mae_full": 0.0818,
+   "mae_covered": 0.094,
+   "mae_opaque": 0.073,
+   "share_err_uncovered": 0.4199,
+   "share_err_not_opaque": 0.9098,
+   "frac_opaque": 0.0941,
+   "frac_truly_empty": 0.42344,
+   "ref_mean_low_alpha": 0.1613,
+   "render_mean_low_alpha": 0.0902,
+   "frac_low_alpha": 0.5436,
+   "render_mean": 0.2002,
+   "ref_mean": 0.2408,
+   "raster_ms_median": 34.19,
+   "actor_gaussians_median": 35535,
+   "attach": {
+    "layers_attached": [
+     "dynamic_rigids",
+     "dynamic_deformables"
+    ],
+    "per_layer": {
+     "dynamic_rigids": {
+      "present": true,
+      "n_layer_tracks": 35,
+      "n_mapped": 35,
+      "n_cuboids_with_gaussians": 30,
+      "n_mapped_and_present": 30,
+      "n_gaussians": 115824,
+      "accept_reason_counts": {
+       "exact_zero_cost": 35
+      },
+      "per_track": [
+       {
+        "cuboid": 0,
+        "range": [
+         27563398630.0,
+         27576595773.0
+        ],
+        "best_track": 45,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 150093.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "0",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 1,
+        "range": [
+         27567849524.0,
+         27572794865.0
+        ],
+        "best_track": 65,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 895138.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "101",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 2,
+        "range": [
+         27567848993.0,
+         27571900258.0
+        ],
+        "best_track": 72,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 536736.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "102",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 3,
+        "range": [
+         27567970653.0,
+         27568274730.0
+        ],
+        "best_track": 42,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 18781.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "103",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 4,
+        "range": [
+         27568351765.0,
+         27583349902.0
+        ],
+        "best_track": 60,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1561.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "107",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 5,
+        "range": [
+         27568351156.0,
+         27583350854.0
+        ],
+        "best_track": 49,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1561.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "108",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 6,
+        "range": [
+         27569556559.0,
+         27583349131.0
+        ],
+        "best_track": 56,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1205565.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "111",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 7,
+        "range": [
+         27571300555.0,
+         27571898759.0
+        ],
+        "best_track": 41,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 683558.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "121",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 8,
+        "range": [
+         27571590867.0,
+         27572292005.0
+        ],
+        "best_track": 75,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 683558.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "123",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 9,
+        "range": [
+         27571653577.0,
+         27575803443.0
+        ],
+        "best_track": 70,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 330063.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "124",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 10,
+        "range": [
+         27571895428.0,
+         27574395850.0
+        ],
+        "best_track": 64,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 504686.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "127",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 11,
+        "range": [
+         27571894382.0,
+         27575892701.0
+        ],
+        "best_track": 55,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 330063.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "129",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 12,
+        "range": [
+         27571947607.0,
+         27583306870.0
+        ],
+        "best_track": 76,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 2097640.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "130",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 13,
+        "range": [
+         27572396043.0,
+         27572799941.0
+        ],
+        "best_track": 46,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1313112.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "131",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 14,
+        "range": [
+         27572398046.0,
+         27574393782.0
+        ],
+        "best_track": 66,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 504686.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "133",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 15,
+        "range": [
+         27572698313.0,
+         27575995654.0
+        ],
+        "best_track": 67,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 906884.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "135",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 16,
+        "range": [
+         27574293815.0,
+         27575193563.0
+        ],
+        "best_track": 44,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 209772.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "142",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 17,
+        "range": [
+         27575699493.0,
+         27578793415.0
+        ],
+        "best_track": 54,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 3719388.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "147",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 18,
+        "range": [
+         27575848741.0,
+         27583302504.0
+        ],
+        "best_track": 53,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1611870.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "151",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 19,
+        "range": [
+         27577450310.0,
+         27583312805.0
+        ],
+        "best_track": 61,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 346618.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "157",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 20,
+        "range": [
+         27577852091.0,
+         27583303483.0
+        ],
+        "best_track": 48,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 149355.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "159",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 21,
+        "range": [
+         27578448647.0,
+         27583335386.0
+        ],
+        "best_track": 58,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 126298.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "161",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 22,
+        "range": [
+         27579097308.0,
+         27583394726.0
+        ],
+        "best_track": 74,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 708001.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "164",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 23,
+        "range": [
+         27580248409.0,
+         27583309392.0
+        ],
+        "best_track": 47,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 509903.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "169",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 24,
+        "range": [
+         27580748950.0,
+         27583300030.0
+        ],
+        "best_track": 43,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 509903.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "171",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 25,
+        "range": [
+         27580893401.0,
+         27581991820.0
+        ],
+        "best_track": 59,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1452661.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "172",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 26,
+        "range": [
+         27563347554.0,
+         27572497555.0
+        ],
+        "best_track": 62,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1243069.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "45",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 27,
+        "range": [
+         27564652908.0,
+         27565446870.0
+        ],
+        "best_track": 57,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 493629.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "56",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 28,
+        "range": [
+         27565259011.0,
+         27571183989.0
+        ],
+        "best_track": 69,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1005356.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "60",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 29,
+        "range": [
+         27565749475.0,
+         27572400661.0
+        ],
+        "best_track": 68,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1697032.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "69",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 30,
+        "range": [
+         27563398849.0,
+         27583298917.0
+        ],
+        "best_track": 50,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 4355604.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "6",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 31,
+        "range": [
+         27566247101.0,
+         27571201255.0
+        ],
+        "best_track": 73,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1005356.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "77",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 32,
+        "range": [
+         27567048913.0,
+         27567850608.0
+        ],
+        "best_track": 63,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 99033.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "90",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 33,
+        "range": [
+         27567059338.0,
+         27567661430.0
+        ],
+        "best_track": 52,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 199603.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "91",
+        "label": "trailer"
+       },
+       {
+        "cuboid": 34,
+        "range": [
+         27567046896.0,
+         27567947624.0
+        ],
+        "best_track": 71,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 36248.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "93",
+        "label": "automobile"
+       }
+      ]
+     },
+     "dynamic_deformables": {
+      "present": true,
+      "n_layer_tracks": 2,
+      "n_mapped": 2,
+      "n_cuboids_with_gaussians": 2,
+      "n_mapped_and_present": 2,
+      "n_gaussians": 1039,
+      "accept_reason_counts": {
+       "exact_zero_cost": 2
+      },
+      "per_track": [
+       {
+        "cuboid": 0,
+        "range": [
+         27581765526.0,
+         27582669839.0
+        ],
+        "best_track": 77,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 903740.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "174",
+        "label": "rider"
+       },
+       {
+        "cuboid": 1,
+        "range": [
+         27565458140.0,
+         27569782749.0
+        ],
+        "best_track": 51,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 300598.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "64",
+        "label": "person"
+       }
+      ]
+     }
+    },
+    "falsifier": [
+     {
+      "frame": 0,
+      "grad_ncc_actors_off": 0.4403,
+      "grad_ncc_actors_on": 0.4401,
+      "grad_ncc_actors_on_WRONG_TIME": 0.2458,
+      "delta_on_minus_off": -0.0001,
+      "delta_on_minus_wrongtime": 0.1944,
+      "pixels_changed_by_actors": 668,
+      "pass_placement": true,
+      "pass_strict": false,
+      "pass": true
+     }
+    ],
+    "falsifier_pass_frames": 1,
+    "falsifier_pass_frames_strict": 0,
+    "falsifier_n_frames": 1,
+    "mean_delta_on_minus_wrongtime": 0.1944,
+    "mean_delta_on_minus_off": -0.0001,
+    "verdict": "ACCEPTED",
+    "verdict_strict_improvement": "REFUSED"
+   },
+   "build_s": 4.9,
+   "n_static_gaussians": 2952008,
+   "layer_counts": {
+    "background": 2382789,
+    "road": 722725
+   },
+   "cull": {
+    "quantile": 0.95,
+    "scale_thresh_m": 1.4263,
+    "n_dropped": 153506,
+    "n_kept": 2952008
+   },
+   "shutter_type_declared": "ROLLING_TOP_TO_BOTTOM",
+   "per_frame": [
+    {
+     "frame": 0,
+     "raster_ms": 34.19,
+     "wall_ms": 46.84,
+     "n_actor_gaussians": 9948,
+     "actors_per_layer": {
+      "dynamic_rigids": 9948,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.29550662636756897,
+     "frac_covered": 0.44139033564814817,
+     "frac_alpha_ge_0.995_OPAQUE": 0.0827121913580247,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.47782069830246915,
+     "render_mean": 0.18958088755607605,
+     "ref_mean": 0.2660837769508362,
+     "mae_full": 0.10755627602338791,
+     "mae_covered": 0.1123570054769516,
+     "mae_uncovered": 0.10376293212175369,
+     "share_of_abs_error_uncovered": 0.5389083623886108,
+     "share_of_abs_error_not_opaque": 0.9445850253105164,
+     "mae_opaque": 0.07205986976623535,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.47782,
+      0.08079,
+      0.08752,
+      0.06115,
+      0.05658,
+      0.07959,
+      0.07384,
+      0.08271
+     ],
+     "alpha_hist_abs_error_share": [
+      0.38517,
+      0.15374,
+      0.18252,
+      0.08805,
+      0.04068,
+      0.04507,
+      0.04935,
+      0.05541
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.203393816947937,
+     "render_mean_where_alpha_lt_0.1": 0.09330262243747711,
+     "frac_alpha_lt_0.1": 0.5978433641975308,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "0": 0.4318,
+       "75": 0.2001,
+       "150": 0.1813,
+       "224": 0.1678,
+       "299": 0.1786,
+       "374": 0.1873
+      },
+      "correct_frame": 0,
+      "grad_ncc_correct": 0.4318,
+      "best_wrong_frame": 75,
+      "grad_ncc_best_wrong": 0.2001,
+      "margin": 0.2316,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "0": 0.1076,
+       "75": 0.1076,
+       "150": 0.0978,
+       "224": 0.0932,
+       "299": 0.0904,
+       "374": 0.1029
+      },
+      "mae_argmin_is_correct": false,
+      "psnr_argmax_is_correct": false,
+      "psnr_by_ref_frame": {
+       "0": 16.807,
+       "75": 16.633,
+       "150": 17.118,
+       "224": 17.272,
+       "299": 17.892,
+       "374": 16.965
+      }
+     },
+     "grad_ncc": 0.4318,
+     "sky_weight_mean": 0.6137
+    },
+    {
+     "frame": 60,
+     "raster_ms": 37.91,
+     "wall_ms": 75.39,
+     "n_actor_gaussians": 15324,
+     "actors_per_layer": {
+      "dynamic_rigids": 14692,
+      "dynamic_deformables": 632
+     },
+     "mean_alpha": 0.2843914330005646,
+     "frac_covered": 0.4054682677469136,
+     "frac_alpha_ge_0.995_OPAQUE": 0.08504581404320988,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.5378616898148149,
+     "render_mean": 0.184687077999115,
+     "ref_mean": 0.24379108846187592,
+     "mae_full": 0.09127145260572433,
+     "mae_covered": 0.11292894184589386,
+     "mae_uncovered": 0.07650113105773926,
+     "share_of_abs_error_uncovered": 0.4983195662498474,
+     "share_of_abs_error_not_opaque": 0.933715283870697,
+     "mae_opaque": 0.07113691419363022,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.53786,
+      0.05667,
+      0.07548,
+      0.04805,
+      0.04383,
+      0.07064,
+      0.08242,
+      0.08505
+     ],
+     "alpha_hist_abs_error_share": [
+      0.38169,
+      0.11663,
+      0.18303,
+      0.10472,
+      0.04178,
+      0.04244,
+      0.06342,
+      0.06628
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.16763953864574432,
+     "render_mean_where_alpha_lt_0.1": 0.08740247040987015,
+     "frac_alpha_lt_0.1": 0.6234794560185185,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "60": 0.451,
+       "0": 0.2587,
+       "150": 0.2077,
+       "224": 0.1819,
+       "299": 0.198,
+       "374": 0.1985
+      },
+      "correct_frame": 60,
+      "grad_ncc_correct": 0.451,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2587,
+      "margin": 0.1923,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "60": 0.0913,
+       "0": 0.1257,
+       "150": 0.1036,
+       "224": 0.095,
+       "299": 0.0932,
+       "374": 0.1069
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "60": 17.993,
+       "0": 15.476,
+       "150": 16.73,
+       "224": 17.107,
+       "299": 17.701,
+       "374": 16.776
+      }
+     },
+     "grad_ncc": 0.451,
+     "sky_weight_mean": 0.6168
+    },
+    {
+     "frame": 150,
+     "raster_ms": 36.19,
+     "wall_ms": 82.11,
+     "n_actor_gaussians": 55390,
+     "actors_per_layer": {
+      "dynamic_rigids": 54758,
+      "dynamic_deformables": 632
+     },
+     "mean_alpha": 0.32076185941696167,
+     "frac_covered": 0.5417862654320987,
+     "frac_alpha_ge_0.995_OPAQUE": 0.0936328125,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.36313609182098766,
+     "render_mean": 0.1981266885995865,
+     "ref_mean": 0.24274420738220215,
+     "mae_full": 0.08334769308567047,
+     "mae_covered": 0.10141899436712265,
+     "mae_uncovered": 0.06198039650917053,
+     "share_of_abs_error_uncovered": 0.3407444953918457,
+     "share_of_abs_error_not_opaque": 0.9177747964859009,
+     "mae_opaque": 0.07319314777851105,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.36314,
+      0.09508,
+      0.18512,
+      0.04934,
+      0.04595,
+      0.07972,
+      0.08803,
+      0.09363
+     ],
+     "alpha_hist_abs_error_share": [
+      0.24264,
+      0.09811,
+      0.2894,
+      0.0988,
+      0.04975,
+      0.06096,
+      0.07811,
+      0.08223
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1584479957818985,
+     "render_mean_where_alpha_lt_0.1": 0.09495465457439423,
+     "frac_alpha_lt_0.1": 0.5415147569444444,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "150": 0.449,
+       "0": 0.2426,
+       "75": 0.2355,
+       "224": 0.2031,
+       "299": 0.1924,
+       "374": 0.1908
+      },
+      "correct_frame": 150,
+      "grad_ncc_correct": 0.449,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2426,
+      "margin": 0.2064,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "150": 0.0833,
+       "0": 0.1164,
+       "75": 0.1036,
+       "224": 0.0888,
+       "299": 0.0857,
+       "374": 0.0966
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "150": 18.753,
+       "0": 16.007,
+       "75": 16.821,
+       "224": 17.521,
+       "299": 18.262,
+       "374": 17.366
+      }
+     },
+     "grad_ncc": 0.449,
+     "sky_weight_mean": 0.599
+    },
+    {
+     "frame": 300,
+     "raster_ms": 34.16,
+     "wall_ms": 65.4,
+     "n_actor_gaussians": 35535,
+     "actors_per_layer": {
+      "dynamic_rigids": 35535,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.353547066450119,
+     "frac_covered": 0.45827932098765434,
+     "frac_alpha_ge_0.995_OPAQUE": 0.10161217206790124,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.47597125771604937,
+     "render_mean": 0.20623725652694702,
+     "ref_mean": 0.2306613326072693,
+     "mae_full": 0.0667887032032013,
+     "mae_covered": 0.07588399946689606,
+     "mae_uncovered": 0.05909436196088791,
+     "share_of_abs_error_uncovered": 0.47931215167045593,
+     "share_of_abs_error_not_opaque": 0.895355761051178,
+     "mae_opaque": 0.06878168880939484,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.47597,
+      0.06575,
+      0.05842,
+      0.03169,
+      0.05484,
+      0.09945,
+      0.11227,
+      0.10161
+     ],
+     "alpha_hist_abs_error_share": [
+      0.4036,
+      0.07571,
+      0.0868,
+      0.0564,
+      0.06125,
+      0.09153,
+      0.12006,
+      0.10464
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.14885765314102173,
+     "render_mean_where_alpha_lt_0.1": 0.08891306817531586,
+     "frac_alpha_lt_0.1": 0.5737707368827161,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "300": 0.5641,
+       "0": 0.2678,
+       "75": 0.2589,
+       "150": 0.2267,
+       "224": 0.2602,
+       "374": 0.2537
+      },
+      "correct_frame": 300,
+      "grad_ncc_correct": 0.5641,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2678,
+      "margin": 0.2963,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "300": 0.0668,
+       "0": 0.1167,
+       "75": 0.0999,
+       "150": 0.0934,
+       "224": 0.0853,
+       "374": 0.0904
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "300": 20.999,
+       "0": 16.165,
+       "75": 17.525,
+       "150": 17.732,
+       "224": 18.441,
+       "374": 18.343
+      }
+     },
+     "grad_ncc": 0.5641,
+     "sky_weight_mean": 0.6016
+    },
+    {
+     "frame": 450,
+     "raster_ms": 31.76,
+     "wall_ms": 68.81,
+     "n_actor_gaussians": 52893,
+     "actors_per_layer": {
+      "dynamic_rigids": 52893,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.3959483504295349,
+     "frac_covered": 0.6788975694444445,
+     "frac_alpha_ge_0.995_OPAQUE": 0.10769579475308642,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.2624049961419753,
+     "render_mean": 0.2223360538482666,
+     "ref_mean": 0.22082091867923737,
+     "mae_full": 0.06025046110153198,
+     "mae_covered": 0.06724372506141663,
+     "mae_uncovered": 0.045464836061000824,
+     "share_of_abs_error_uncovered": 0.2423030138015747,
+     "share_of_abs_error_not_opaque": 0.8576749563217163,
+     "mae_opaque": 0.07962382584810257,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.2624,
+      0.0587,
+      0.23315,
+      0.08498,
+      0.04277,
+      0.08946,
+      0.12084,
+      0.1077
+     ],
+     "alpha_hist_abs_error_share": [
+      0.18882,
+      0.05349,
+      0.18417,
+      0.09879,
+      0.06028,
+      0.10645,
+      0.16569,
+      0.14233
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1280670464038849,
+     "render_mean_where_alpha_lt_0.1": 0.08619971573352814,
+     "frac_alpha_lt_0.1": 0.3812008101851852,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "450": 0.5043,
+       "0": 0.2364,
+       "75": 0.2343,
+       "150": 0.1964,
+       "224": 0.181,
+       "299": 0.2064
+      },
+      "correct_frame": 450,
+      "grad_ncc_correct": 0.5043,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2364,
+      "margin": 0.2679,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "450": 0.0603,
+       "0": 0.1028,
+       "75": 0.0909,
+       "150": 0.0886,
+       "224": 0.0839,
+       "299": 0.0846
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "450": 21.774,
+       "0": 17.111,
+       "75": 18.048,
+       "150": 17.879,
+       "224": 18.116,
+       "299": 18.277
+      }
+     },
+     "grad_ncc": 0.5043,
+     "sky_weight_mean": 0.5677
+    }
+   ]
+  },
+  {
+   "arm": "AFTER_plus_rs",
+   "layers": [
+    "background",
+    "road",
+    "dynamic_rigids",
+    "dynamic_deformables"
+   ],
+   "sky": {
+    "lo_deg": 0.0,
+    "hi_deg": 6.0,
+    "gain": 0.3
+   },
+   "rolling_shutter": true,
+   "n_frames": 5,
+   "neg_control_pass_frames": 5,
+   "neg_control_all_pass": true,
+   "gradncc_argmax_correct_frames": 5,
+   "mae_argmin_correct_frames": 4,
+   "psnr_argmax_correct_frames": 5,
+   "grad_ncc_mean": 0.5913,
+   "neg_margin_mean": 0.3453,
+   "mean_alpha": 0.3847,
+   "frac_covered": 0.5982,
+   "mae_full": 0.0733,
+   "mae_covered": 0.0872,
+   "mae_opaque": 0.0778,
+   "share_err_uncovered": 0.2998,
+   "share_err_not_opaque": 0.7488,
+   "frac_opaque": 0.2205,
+   "frac_truly_empty": 0.32247,
+   "ref_mean_low_alpha": 0.1485,
+   "render_mean_low_alpha": 0.0936,
+   "frac_low_alpha": 0.4654,
+   "render_mean": 0.2234,
+   "ref_mean": 0.2408,
+   "raster_ms_median": 3683.84,
+   "actor_gaussians_median": 35535,
+   "attach": {
+    "layers_attached": [
+     "dynamic_rigids",
+     "dynamic_deformables"
+    ],
+    "per_layer": {
+     "dynamic_rigids": {
+      "present": true,
+      "n_layer_tracks": 35,
+      "n_mapped": 35,
+      "n_cuboids_with_gaussians": 30,
+      "n_mapped_and_present": 30,
+      "n_gaussians": 115824,
+      "accept_reason_counts": {
+       "exact_zero_cost": 35
+      },
+      "per_track": [
+       {
+        "cuboid": 0,
+        "range": [
+         27563398630.0,
+         27576595773.0
+        ],
+        "best_track": 45,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 150093.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "0",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 1,
+        "range": [
+         27567849524.0,
+         27572794865.0
+        ],
+        "best_track": 65,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 895138.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "101",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 2,
+        "range": [
+         27567848993.0,
+         27571900258.0
+        ],
+        "best_track": 72,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 536736.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "102",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 3,
+        "range": [
+         27567970653.0,
+         27568274730.0
+        ],
+        "best_track": 42,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 18781.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "103",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 4,
+        "range": [
+         27568351765.0,
+         27583349902.0
+        ],
+        "best_track": 60,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1561.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "107",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 5,
+        "range": [
+         27568351156.0,
+         27583350854.0
+        ],
+        "best_track": 49,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1561.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "108",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 6,
+        "range": [
+         27569556559.0,
+         27583349131.0
+        ],
+        "best_track": 56,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1205565.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "111",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 7,
+        "range": [
+         27571300555.0,
+         27571898759.0
+        ],
+        "best_track": 41,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 683558.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "121",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 8,
+        "range": [
+         27571590867.0,
+         27572292005.0
+        ],
+        "best_track": 75,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 683558.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "123",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 9,
+        "range": [
+         27571653577.0,
+         27575803443.0
+        ],
+        "best_track": 70,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 330063.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "124",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 10,
+        "range": [
+         27571895428.0,
+         27574395850.0
+        ],
+        "best_track": 64,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 504686.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "127",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 11,
+        "range": [
+         27571894382.0,
+         27575892701.0
+        ],
+        "best_track": 55,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 330063.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "129",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 12,
+        "range": [
+         27571947607.0,
+         27583306870.0
+        ],
+        "best_track": 76,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 2097640.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "130",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 13,
+        "range": [
+         27572396043.0,
+         27572799941.0
+        ],
+        "best_track": 46,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1313112.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "131",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 14,
+        "range": [
+         27572398046.0,
+         27574393782.0
+        ],
+        "best_track": 66,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 504686.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "133",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 15,
+        "range": [
+         27572698313.0,
+         27575995654.0
+        ],
+        "best_track": 67,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 906884.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "135",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 16,
+        "range": [
+         27574293815.0,
+         27575193563.0
+        ],
+        "best_track": 44,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 209772.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "142",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 17,
+        "range": [
+         27575699493.0,
+         27578793415.0
+        ],
+        "best_track": 54,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 3719388.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "147",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 18,
+        "range": [
+         27575848741.0,
+         27583302504.0
+        ],
+        "best_track": 53,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1611870.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "151",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 19,
+        "range": [
+         27577450310.0,
+         27583312805.0
+        ],
+        "best_track": 61,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 346618.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "157",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 20,
+        "range": [
+         27577852091.0,
+         27583303483.0
+        ],
+        "best_track": 48,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 149355.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "159",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 21,
+        "range": [
+         27578448647.0,
+         27583335386.0
+        ],
+        "best_track": 58,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 126298.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "161",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 22,
+        "range": [
+         27579097308.0,
+         27583394726.0
+        ],
+        "best_track": 74,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 708001.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "164",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 23,
+        "range": [
+         27580248409.0,
+         27583309392.0
+        ],
+        "best_track": 47,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 509903.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "169",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 24,
+        "range": [
+         27580748950.0,
+         27583300030.0
+        ],
+        "best_track": 43,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 509903.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "171",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 25,
+        "range": [
+         27580893401.0,
+         27581991820.0
+        ],
+        "best_track": 59,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1452661.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "172",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 26,
+        "range": [
+         27563347554.0,
+         27572497555.0
+        ],
+        "best_track": 62,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1243069.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "45",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 27,
+        "range": [
+         27564652908.0,
+         27565446870.0
+        ],
+        "best_track": 57,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 493629.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "56",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 28,
+        "range": [
+         27565259011.0,
+         27571183989.0
+        ],
+        "best_track": 69,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1005356.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "60",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 29,
+        "range": [
+         27565749475.0,
+         27572400661.0
+        ],
+        "best_track": 68,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1697032.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "69",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 30,
+        "range": [
+         27563398849.0,
+         27583298917.0
+        ],
+        "best_track": 50,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 4355604.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "6",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 31,
+        "range": [
+         27566247101.0,
+         27571201255.0
+        ],
+        "best_track": 73,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 1005356.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "77",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 32,
+        "range": [
+         27567048913.0,
+         27567850608.0
+        ],
+        "best_track": 63,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 99033.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "90",
+        "label": "automobile"
+       },
+       {
+        "cuboid": 33,
+        "range": [
+         27567059338.0,
+         27567661430.0
+        ],
+        "best_track": 52,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 199603.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "91",
+        "label": "trailer"
+       },
+       {
+        "cuboid": 34,
+        "range": [
+         27567046896.0,
+         27567947624.0
+        ],
+        "best_track": 71,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 36248.0,
+        "accepted": true,
+        "accepted_strict_margin": false,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "93",
+        "label": "automobile"
+       }
+      ]
+     },
+     "dynamic_deformables": {
+      "present": true,
+      "n_layer_tracks": 2,
+      "n_mapped": 2,
+      "n_cuboids_with_gaussians": 2,
+      "n_mapped_and_present": 2,
+      "n_gaussians": 1039,
+      "accept_reason_counts": {
+       "exact_zero_cost": 2
+      },
+      "per_track": [
+       {
+        "cuboid": 0,
+        "range": [
+         27581765526.0,
+         27582669839.0
+        ],
+        "best_track": 77,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 903740.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "174",
+        "label": "rider"
+       },
+       {
+        "cuboid": 1,
+        "range": [
+         27565458140.0,
+         27569782749.0
+        ],
+        "best_track": 51,
+        "best_cost_us": 0.0,
+        "runner_up_cost_us": 300598.0,
+        "accepted": true,
+        "accepted_strict_margin": true,
+        "accept_reason": "exact_zero_cost",
+        "track_id": "64",
+        "label": "person"
+       }
+      ]
+     }
+    },
+    "falsifier": [
+     {
+      "frame": 0,
+      "grad_ncc_actors_off": 0.4403,
+      "grad_ncc_actors_on": 0.4401,
+      "grad_ncc_actors_on_WRONG_TIME": 0.2458,
+      "delta_on_minus_off": -0.0001,
+      "delta_on_minus_wrongtime": 0.1944,
+      "pixels_changed_by_actors": 668,
+      "pass_placement": true,
+      "pass_strict": false,
+      "pass": true
+     }
+    ],
+    "falsifier_pass_frames": 1,
+    "falsifier_pass_frames_strict": 0,
+    "falsifier_n_frames": 1,
+    "mean_delta_on_minus_wrongtime": 0.1944,
+    "mean_delta_on_minus_off": -0.0001,
+    "verdict": "ACCEPTED",
+    "verdict_strict_improvement": "REFUSED"
+   },
+   "build_s": 46.4,
+   "n_static_gaussians": 2952008,
+   "layer_counts": {
+    "background": 2382789,
+    "road": 722725
+   },
+   "cull": {
+    "quantile": 0.95,
+    "scale_thresh_m": 1.4263,
+    "n_dropped": 153506,
+    "n_kept": 2952008
+   },
+   "shutter_type_declared": "ROLLING_TOP_TO_BOTTOM",
+   "per_frame": [
+    {
+     "frame": 0,
+     "raster_ms": 3683.84,
+     "wall_ms": 3698.61,
+     "n_actor_gaussians": 9948,
+     "actors_per_layer": {
+      "dynamic_rigids": 9948,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.3536846339702606,
+     "frac_covered": 0.5347149884259259,
+     "frac_alpha_ge_0.995_OPAQUE": 0.17802951388888888,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.3664265046296296,
+     "render_mean": 0.21686716377735138,
+     "ref_mean": 0.2660837769508362,
+     "mae_full": 0.09339678287506104,
+     "mae_covered": 0.11178088188171387,
+     "mae_uncovered": 0.07226940989494324,
+     "share_of_abs_error_uncovered": 0.36003246903419495,
+     "share_of_abs_error_not_opaque": 0.85454922914505,
+     "mae_opaque": 0.0763055682182312,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.36643,
+      0.09886,
+      0.13461,
+      0.0606,
+      0.04725,
+      0.05813,
+      0.0561,
+      0.17803
+     ],
+     "alpha_hist_abs_error_share": [
+      0.23108,
+      0.12896,
+      0.26609,
+      0.10233,
+      0.03548,
+      0.04108,
+      0.04954,
+      0.14545
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.18392136693000793,
+     "render_mean_where_alpha_lt_0.1": 0.10025198012590408,
+     "frac_alpha_lt_0.1": 0.532064525462963,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "0": 0.524,
+       "75": 0.2115,
+       "150": 0.1859,
+       "224": 0.1747,
+       "299": 0.1885,
+       "374": 0.1973
+      },
+      "correct_frame": 0,
+      "grad_ncc_correct": 0.524,
+      "best_wrong_frame": 75,
+      "grad_ncc_best_wrong": 0.2115,
+      "margin": 0.3125,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "0": 0.0934,
+       "75": 0.0962,
+       "150": 0.0896,
+       "224": 0.0896,
+       "299": 0.0854,
+       "374": 0.0922
+      },
+      "mae_argmin_is_correct": false,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "0": 18.415,
+       "75": 17.586,
+       "150": 17.785,
+       "224": 17.619,
+       "299": 18.243,
+       "374": 17.708
+      }
+     },
+     "grad_ncc": 0.524,
+     "sky_weight_mean": 0.5915
+    },
+    {
+     "frame": 60,
+     "raster_ms": 4414.0,
+     "wall_ms": 4445.06,
+     "n_actor_gaussians": 15324,
+     "actors_per_layer": {
+      "dynamic_rigids": 14692,
+      "dynamic_deformables": 632
+     },
+     "mean_alpha": 0.3316671848297119,
+     "frac_covered": 0.4534080825617284,
+     "frac_alpha_ge_0.995_OPAQUE": 0.19346305941358025,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.4927459490740741,
+     "render_mean": 0.20474641025066376,
+     "ref_mean": 0.24379108846187592,
+     "mae_full": 0.08245761692523956,
+     "mae_covered": 0.10719761252403259,
+     "mae_uncovered": 0.06193532049655914,
+     "share_of_abs_error_uncovered": 0.4105544984340668,
+     "share_of_abs_error_not_opaque": 0.8222088813781738,
+     "mae_opaque": 0.07577791064977646,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.49275,
+      0.05385,
+      0.08827,
+      0.03978,
+      0.03878,
+      0.04698,
+      0.04614,
+      0.19346
+     ],
+     "alpha_hist_abs_error_share": [
+      0.32916,
+      0.08139,
+      0.1993,
+      0.08112,
+      0.05385,
+      0.03232,
+      0.04507,
+      0.17779
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1561456322669983,
+     "render_mean_where_alpha_lt_0.1": 0.091498963534832,
+     "frac_alpha_lt_0.1": 0.5757532793209876,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "60": 0.5427,
+       "0": 0.2552,
+       "150": 0.2158,
+       "224": 0.1907,
+       "299": 0.2112,
+       "374": 0.1974
+      },
+      "correct_frame": 60,
+      "grad_ncc_correct": 0.5427,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2552,
+      "margin": 0.2875,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "60": 0.0825,
+       "0": 0.1193,
+       "150": 0.0983,
+       "224": 0.0931,
+       "299": 0.0885,
+       "374": 0.0986
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "60": 19.339,
+       "0": 15.909,
+       "150": 17.341,
+       "224": 17.469,
+       "299": 18.235,
+       "374": 17.595
+      }
+     },
+     "grad_ncc": 0.5427,
+     "sky_weight_mean": 0.604
+    },
+    {
+     "frame": 150,
+     "raster_ms": 3633.88,
+     "wall_ms": 3675.29,
+     "n_actor_gaussians": 55390,
+     "actors_per_layer": {
+      "dynamic_rigids": 54758,
+      "dynamic_deformables": 632
+     },
+     "mean_alpha": 0.372194766998291,
+     "frac_covered": 0.5920360725308642,
+     "frac_alpha_ge_0.995_OPAQUE": 0.2089477237654321,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.3136352237654321,
+     "render_mean": 0.21998286247253418,
+     "ref_mean": 0.24274420738220215,
+     "mae_full": 0.07314076274633408,
+     "mae_covered": 0.08600223064422607,
+     "mae_uncovered": 0.054476238787174225,
+     "share_of_abs_error_uncovered": 0.30385708808898926,
+     "share_of_abs_error_not_opaque": 0.7787213325500488,
+     "mae_opaque": 0.07745712995529175,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.31364,
+      0.09433,
+      0.18989,
+      0.05352,
+      0.03789,
+      0.0474,
+      0.05439,
+      0.20895
+     ],
+     "alpha_hist_abs_error_share": [
+      0.21331,
+      0.09055,
+      0.20907,
+      0.10888,
+      0.05086,
+      0.04334,
+      0.06272,
+      0.22128
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.1478596180677414,
+     "render_mean_where_alpha_lt_0.1": 0.0971856340765953,
+     "frac_alpha_lt_0.1": 0.48597270447530866,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "150": 0.5741,
+       "0": 0.2456,
+       "75": 0.2417,
+       "224": 0.207,
+       "299": 0.1992,
+       "374": 0.194
+      },
+      "correct_frame": 150,
+      "grad_ncc_correct": 0.5741,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2456,
+      "margin": 0.3285,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "150": 0.0731,
+       "0": 0.1098,
+       "75": 0.0964,
+       "224": 0.0856,
+       "299": 0.0823,
+       "374": 0.0896
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "150": 20.387,
+       "0": 16.631,
+       "75": 17.564,
+       "224": 17.84,
+       "299": 18.663,
+       "374": 18.05
+      }
+     },
+     "grad_ncc": 0.5741,
+     "sky_weight_mean": 0.5798
+    },
+    {
+     "frame": 300,
+     "raster_ms": 3488.39,
+     "wall_ms": 3504.29,
+     "n_actor_gaussians": 35535,
+     "actors_per_layer": {
+      "dynamic_rigids": 35535,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.4299144148826599,
+     "frac_covered": 0.7174782986111111,
+     "frac_alpha_ge_0.995_OPAQUE": 0.24881462191358025,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.19072386188271606,
+     "render_mean": 0.23813322186470032,
+     "ref_mean": 0.2306613326072693,
+     "mae_full": 0.05879973620176315,
+     "mae_covered": 0.06555497646331787,
+     "mae_uncovered": 0.04164445772767067,
+     "share_of_abs_error_uncovered": 0.2000938206911087,
+     "share_of_abs_error_not_opaque": 0.6848189234733582,
+     "mae_opaque": 0.07448341697454453,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.19072,
+      0.0918,
+      0.27424,
+      0.04641,
+      0.03152,
+      0.05985,
+      0.05664,
+      0.24881
+     ],
+     "alpha_hist_abs_error_share": [
+      0.13908,
+      0.06101,
+      0.21233,
+      0.06856,
+      0.04039,
+      0.07842,
+      0.08503,
+      0.31518
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.12985199689865112,
+     "render_mean_where_alpha_lt_0.1": 0.0930531844496727,
+     "frac_alpha_lt_0.1": 0.36932532793209877,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "300": 0.6623,
+       "0": 0.2595,
+       "75": 0.252,
+       "150": 0.2232,
+       "224": 0.2471,
+       "374": 0.2456
+      },
+      "correct_frame": 300,
+      "grad_ncc_correct": 0.6623,
+      "best_wrong_frame": 0,
+      "grad_ncc_best_wrong": 0.2595,
+      "margin": 0.4028,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "300": 0.0588,
+       "0": 0.1064,
+       "75": 0.0884,
+       "150": 0.0873,
+       "224": 0.0808,
+       "374": 0.0791
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "300": 22.477,
+       "0": 16.998,
+       "75": 18.568,
+       "150": 18.284,
+       "224": 18.794,
+       "374": 19.428
+      }
+     },
+     "grad_ncc": 0.6623,
+     "sky_weight_mean": 0.5497
+    },
+    {
+     "frame": 450,
+     "raster_ms": 3847.33,
+     "wall_ms": 3863.42,
+     "n_actor_gaussians": 52893,
+     "actors_per_layer": {
+      "dynamic_rigids": 52893,
+      "dynamic_deformables": 0
+     },
+     "mean_alpha": 0.4358329474925995,
+     "frac_covered": 0.6935575810185185,
+     "frac_alpha_ge_0.995_OPAQUE": 0.2734384645061728,
+     "frac_alpha_lt_0.01_TRULY_EMPTY": 0.24879533179012345,
+     "render_mean": 0.23740333318710327,
+     "ref_mean": 0.22082091867923737,
+     "mae_full": 0.058753661811351776,
+     "mae_covered": 0.06568717211484909,
+     "mae_uncovered": 0.043061334639787674,
+     "share_of_abs_error_uncovered": 0.22459569573402405,
+     "share_of_abs_error_not_opaque": 0.603919506072998,
+     "mae_opaque": 0.08510570973157883,
+     "alpha_hist_edges": [
+      0.0,
+      0.01,
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.995,
+      1.0001
+     ],
+     "alpha_hist_pixel_frac": [
+      0.2488,
+      0.05765,
+      0.21611,
+      0.08465,
+      0.03459,
+      0.03882,
+      0.04595,
+      0.27344
+     ],
+     "alpha_hist_abs_error_share": [
+      0.17835,
+      0.04624,
+      0.13821,
+      0.07704,
+      0.04264,
+      0.0508,
+      0.07062,
+      0.39608
+     ],
+     "cov_thresh": 0.05,
+     "ref_mean_where_alpha_lt_0.1": 0.12460415065288544,
+     "render_mean_where_alpha_lt_0.1": 0.08602146804332733,
+     "frac_alpha_lt_0.1": 0.36389515817901236,
+     "neg_control": {
+      "grad_ncc_by_ref_frame": {
+       "450": 0.6535,
+       "0": 0.2446,
+       "75": 0.2585,
+       "150": 0.1998,
+       "224": 0.19,
+       "299": 0.2267
+      },
+      "correct_frame": 450,
+      "grad_ncc_correct": 0.6535,
+      "best_wrong_frame": 75,
+      "grad_ncc_best_wrong": 0.2585,
+      "margin": 0.395,
+      "argmax_is_correct": true,
+      "n_wrong_frames": 5,
+      "pass": true,
+      "mae_by_ref_frame": {
+       "450": 0.0588,
+       "0": 0.1029,
+       "75": 0.0913,
+       "150": 0.0903,
+       "224": 0.089,
+       "299": 0.0895
+      },
+      "mae_argmin_is_correct": true,
+      "psnr_argmax_is_correct": true,
+      "psnr_by_ref_frame": {
+       "450": 22.496,
+       "0": 17.18,
+       "75": 18.078,
+       "150": 17.81,
+       "224": 17.715,
+       "299": 17.956
+      }
+     },
+     "grad_ncc": 0.6535,
+     "sky_weight_mean": 0.5486
+    }
+   ]
+  }
+ ]
+}

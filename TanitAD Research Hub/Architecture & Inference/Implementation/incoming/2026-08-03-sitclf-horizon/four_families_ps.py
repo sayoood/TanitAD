@@ -74,7 +74,10 @@ def main():
                              clip_cluster=cc, scores={k: z[k] for k in ARMS}, ego=ego,
                              source=str(a.scores))
         for j, s in enumerate(sits):
-            for arm in ("PS_SEL", "C_GLOBAL", "C_ORACLE_PS"):
+            # the legacy-ego pass exists only to MEASURE the stratum-boundary difference,
+            # so it runs on the arm under test alone rather than tripling the cost.
+            for arm in (("PS_SEL", "C_GLOBAL", "C_ORACLE_PS") if tag == "causal"
+                        else ("PS_SEL",)):
                 rep = four_family_report(
                     bundle, s, fused=z[arm][:, j].astype(np.float64),
                     baseline=z["FROZEN"][:, j].astype(np.float64),

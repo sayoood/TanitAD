@@ -163,24 +163,34 @@ def negative_control(render_u8, refs, correct_frame, wrong_frames):
             "psnr_by_ref_frame": {int(k): round(v, 3) for k, v in psnr_rows.items()}}
 
 
-def load_refs(mp4, frames, size_wh):
+def load_refs(mp4, frames, size_wh, ref_offset: int = 0):
     """Decode every needed reference frame in ONE sequential pass.
 
     Seeking a 3840x2160 mp4 once per (arm, frame, wrong-frame) pair dominated the
     harness's wall clock; the references do not change between arms, so they are
-    decoded once and reused."""
+    decoded once and reused.
+
+    ``frames`` are **RIG** indices and the returned dict is keyed by RIG index; the
+    video frame actually decoded for rig frame ``f`` is ``f + ref_offset``.  Keeping the
+    keys in rig space means every caller downstream (``negative_control``,
+    ``wrong_frames_for``, ``score_arm``) is correct without knowing the offset exists —
+    which is the only way an alignment fix does not have to be re-applied at N call
+    sites and forgotten at one of them.  See ``R-2026-08-03-k``.
+    """
     import cv2
     want = sorted(set(int(f) for f in frames))
+    vid = {int(f) + int(ref_offset): int(f) for f in want}
+    need = sorted(vid)
     out, cap, i, k = {}, cv2.VideoCapture(str(mp4)), 0, 0
-    while k < len(want):
+    while k < len(need):
         ok, img = cap.read()
         if not ok:
             break
-        if i == want[k]:
+        if i == need[k]:
             img = img[:, :, ::-1]
             if (img.shape[1], img.shape[0]) != tuple(size_wh):
                 img = cv2.resize(img, tuple(size_wh), interpolation=cv2.INTER_AREA)
-            out[want[k]] = np.ascontiguousarray(img)
+            out[vid[need[k]]] = np.ascontiguousarray(img)
             k += 1
         i += 1
     cap.release()
@@ -318,6 +328,141 @@ def summarize(name, rows, arm, extra=None):
     return s
 
 
+# --------------------------------------------------------------------------------- #
+# ⛔ THE ALIGNMENT GATE — runs BEFORE any fidelity number is produced                 #
+# --------------------------------------------------------------------------------- #
+def assert_reference_aligned(r, refs, frames, ref_offset: int, k: int = 3,
+                             n_probe: int = 3, out_dir: Path | None = None,
+                             min_prominence: float = 0.02,
+                             min_modal_mass: float = 0.5) -> dict:
+    """Render probe frames and score them against reference frames ``f-k .. f+k``.
+
+    ⛔ THE FAILURE THIS PREVENTS ALREADY HAPPENED (`R-2026-08-03-k`).  Every absolute
+    grad-NCC / MAE / PSNR on scene `00040136` was scored against a reference **6 frames
+    too early**, for weeks, while the numbers still looked plausible and the harness's
+    own negative control PASSED on every frame.  It passed because
+    ``wrong_frames_for()`` enforces ``MIN_WRONG_GAP = 40``: a 6-frame error is invisible
+    to it **by construction**.  The hard negatives for an alignment error are the
+    IMMEDIATE NEIGHBOURS — exactly the frames that control deliberately excludes.
+
+    So this gate is a different control, not a stricter one, and it is not optional:
+    it runs before the arms, on the same renderer, and a non-zero argmax is a hard stop.
+
+    Raises ``SystemExit`` on failure, after writing the evidence to ``out_dir``.
+    """
+    from frame_align import adjudicate, bootstrap_offset
+
+    # ⚠️ A probe frame needs its WHOLE neighbourhood decoded, or its argmax sits at a
+    # truncated edge and the adjudicator refuses on `boundary` — which is the correct
+    # behaviour of the estimator and a FALSE alarm from the gate. Rig frame 0 has no
+    # f-k neighbours by construction, so it can never be a probe frame. MEASURED: the
+    # first run of this gate failed on `{0: None}` at a correct offset.
+    eligible = [f for f in frames if all((f + d) in refs for d in range(-k, k + 1))]
+    if not eligible:
+        raise SystemExit(
+            f"⛔ ALIGNMENT GATE CANNOT RUN: no frame in {list(frames)} has a complete "
+            f"+-{k} reference neighbourhood decoded. Reduce --align-k or pick interior "
+            "frames. A gate that silently skips itself is not a gate.")
+    probe = [eligible[i] for i in
+             sorted(set(int(round(x)) for x in
+                        np.linspace(0, len(eligible) - 1, min(n_probe, len(eligible)))))]
+    # ⚠️ A frame carries alignment information only if its curve has a PROMINENT peak.
+    # On a stationary segment every neighbouring reference frame is nearly identical, so
+    # the curve is flat and its argmax is noise. MEASURED on `7c72937c` frame 60: the
+    # whole +-10 curve spans 0.3994-0.4041 and the argmax landed at -6 at a CORRECT
+    # offset. Such a frame is UNINFORMATIVE, not misaligned, and must not vote —
+    # otherwise the gate blocks a correct run, which is how gates get disabled.
+    curves, informative, offwindow, per_frame = [], [], [], {}
+    for f in probe:
+        img = r.render(r.gt_cam_to_nre(f),
+                       actor_time_us=float(r.frame_timestamps_us(f)[1]))[0]
+        cur = {d: round(grad_ncc(img, refs[f + d]), 5)
+               for d in range(-k, k + 1) if (f + d) in refs}
+        est = adjudicate(cur, "render_neighbour_scan", min_peak=0.05,
+                         min_prominence=min_prominence, require_turnover=False)
+        if not est.refused:
+            curves.append(cur)
+        per_frame[int(f)] = {"grad_ncc_by_offset": cur,
+                             "argmax_offset": est.offset, "refused": est.refused,
+                             "reason": est.reason,
+                             "informative": (not est.refused),
+                             "prominence": est.prominence,
+                             "subframe_offset": est.subframe_offset,
+                             "gain_vs_offset0": (round(cur[est.offset] - cur[0], 5)
+                                                 if est.offset is not None and 0 in cur
+                                                 else None)}
+        if not est.refused:
+            informative.append(int(f))
+        elif est.reason == "boundary":
+            # NOT "uninformative": the curve is still climbing at the scan edge, so the
+            # residual exists and is >= k. That is a misalignment of unknown magnitude.
+            offwindow.append(int(f))
+    boot = bootstrap_offset(curves, b=1000, seed=0, method="render_neighbour_scan",
+                            min_peak=0.05, min_prominence=min_prominence,
+                            require_turnover=False)
+    argmaxes = {f: per_frame[f]["argmax_offset"] for f in informative}
+    modal0 = float(boot.get("mass", {}).get(0, 0.0))
+    subs = [per_frame[f]["subframe_offset"] for f in informative
+            if per_frame[f]["subframe_offset"] is not None]
+    # PASS = the INTEGER residual is 0 on the aggregate. A sub-frame preference (the
+    # optimum sitting between two samples) may split single-frame argmaxes across 0/+-1
+    # without any index being wrong; a genuine off-by-one moves the bootstrap mass
+    # wholesale, as the offset-0 demonstration on `00040136` shows (mass {6: 1.0}).
+    ok = (len(informative) > 0 and not offwindow
+          and boot.get("point") == 0 and modal0 >= min_modal_mass)
+    res = {"gate": "reference_alignment", "ref_offset_applied": int(ref_offset),
+           "k": k, "probe_frames": [int(f) for f in probe],
+           "frames_offered": [int(f) for f in frames],
+           "frames_skipped_incomplete_window": [int(f) for f in frames
+                                                if f not in eligible],
+           "informative_frames": informative,
+           "offwindow_frames": offwindow,
+           "uninformative_frames": {str(f): per_frame[f]["reason"]
+                                    for f in per_frame
+                                    if f not in informative and f not in offwindow},
+           "min_prominence": min_prominence, "min_modal_mass": min_modal_mass,
+           "residual_argmax_by_frame": {str(f): v["argmax_offset"]
+                                        for f, v in per_frame.items()},
+           "residual_offset_bootstrap": boot,
+           "residual_mass_at_zero": round(modal0, 4),
+           "residual_subframe_mean": (round(float(np.mean(subs)), 3) if subs else None),
+           "per_frame": per_frame,
+           "pass": bool(ok),
+           "why": ("the harness's other negative control uses MIN_WRONG_GAP=40 and is "
+                   "structurally blind to a small index error; this one is not")}
+    if out_dir is not None:
+        (Path(out_dir) / "alignment_gate.json").write_text(json.dumps(res, indent=1))
+    if not ok:
+        bad = {f: a for f, a in argmaxes.items() if a != 0}
+        if not informative and not offwindow:
+            raise SystemExit(
+                "\n⛔ ALIGNMENT GATE CANNOT CERTIFY — and 'cannot certify' is NOT 'aligned'.\n"
+                f"   none of the probe frames {probe} has a peak prominent enough to "
+                f"identify an offset (min_prominence={min_prominence}).\n"
+                "   Pick probe frames where the ego is MOVING; a stationary segment "
+                "carries no alignment information at all.")
+        if offwindow or boot.get("point") is None:
+            # the residual is at or beyond the scan edge — the ">= +3" failure again:
+            # reporting a boundary as an answer is exactly what this module forbids.
+            advice = (f"   the residual is AT OR BEYOND the +-{k} scan edge on frames "
+                      f"{offwindow or 'the mean curve'}, so this gate cannot name the "
+                      "correction.\n   Widen --align-k, or measure the offset with "
+                      "frame_align.py / rs_frame_offset.py.")
+        else:
+            advice = (f"   => the correct offset is {ref_offset + boot['point']:+d} "
+                      f"(residual {boot['point']:+d}, bootstrap mass {boot.get('mass')}). "
+                      "Re-run with --ref-offset that.")
+        raise SystemExit(
+            "\n⛔ ALIGNMENT GATE FAILED — NO FIDELITY NUMBER FROM THIS RUN IS ADMISSIBLE.\n"
+            f"   applied --ref-offset {ref_offset:+d}; residual is NOT 0 on "
+            f"{len(bad)}/{len(argmaxes)} informative probe frames: {bad}\n"
+            f"   bootstrap residual {boot.get('point')} mass {boot.get('mass')} "
+            f"(mass at 0 = {modal0:.3f} < {min_modal_mass})\n"
+            + advice + "\n"
+            "   This is R-2026-08-03-k. Do not disable the gate to get a number.")
+    return res
+
+
 def git_sha(repo: Path) -> str:
     try:
         return subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
@@ -352,6 +497,16 @@ def main():
     ap.add_argument("--loader-dir", default=None)
     ap.add_argument("--png-frame", type=int, default=0)
     ap.add_argument("--repo", default=".")
+    ap.add_argument("--ref-offset", type=int, default=None,
+                    help="video_index = rig_index + OFFSET. Default: read PER SCENE from "
+                         "(n_mp4_decodable - n_rig). ⛔ Do NOT hard-code +6 — it is +5 on "
+                         "7c72937c (R-2026-08-03-k).")
+    ap.add_argument("--align-k", type=int, default=3,
+                    help="neighbour half-window for the alignment gate")
+    ap.add_argument("--align-probe-frames", type=int, default=3)
+    ap.add_argument("--no-align-check", action="store_true",
+                    help="⛔ disables the gate. Recorded in the report; any number "
+                         "produced with this flag is NOT admissible as an absolute.")
     a = ap.parse_args()
 
     scene = Path(a.scene_dir).expanduser()
@@ -368,12 +523,32 @@ def main():
     _rig = RigTrajectories(scene / "rig_trajectories.json")
     _cam = _rig.camera(CAM)
     n_frames, size = _rig.n_frames(CAM), (int(_cam.width), int(_cam.height))
+
+    # ---- the reference offset, PER SCENE, never hard-coded --------------------------
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from frame_align import count_delta, mp4_motion_series
+    mp4 = scene / f"{CAM}.mp4"
+    if a.ref_offset is None:
+        n_dec, _meta, _M, _mn, _hd = mp4_motion_series(mp4)
+        e = count_delta(n_dec, n_frames)
+        if e.refused:
+            raise SystemExit(f"cannot derive --ref-offset for {scene.name}: {e}")
+        ref_offset, offset_src = e.offset, f"count_delta(mp4={n_dec}, rig={n_frames})"
+    else:
+        ref_offset, offset_src = int(a.ref_offset), "--ref-offset (explicit)"
+    print(f"[rq] reference offset {ref_offset:+d} frames  [{offset_src}]", flush=True)
+
     wrong_map = {f: wrong_frames_for(f, n_frames) for f in frames}
     need = set(frames) | {w for ws in wrong_map.values() for w in ws}
+    # the alignment gate scores against the IMMEDIATE NEIGHBOURS, so decode them too
+    need |= {f + d for f in frames for d in range(-a.align_k, a.align_k + 1)
+             if 0 <= f + d < n_frames}
     t_ref = time.time()
-    refs = load_refs(scene / f"{CAM}.mp4", need, size)
+    refs = load_refs(mp4, need, size, ref_offset=ref_offset)
     print(f"[rq] decoded {len(refs)}/{len(need)} reference frames in "
-          f"{time.time() - t_ref:.1f}s (clip has {n_frames} frames)", flush=True)
+          f"{time.time() - t_ref:.1f}s (clip has {n_frames} rig frames, "
+          f"video index = rig index {ref_offset:+d})", flush=True)
     missing = sorted(need - set(refs))
     if missing:
         raise SystemExit(f"reference frames not decodable: {missing}")
@@ -382,9 +557,30 @@ def main():
               "git_sha": git_sha(Path(a.repo)),
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
               "frames": frames, "clip_n_frames": n_frames,
+              "ref_offset": int(ref_offset), "ref_offset_source": offset_src,
+              "ref_offset_rule": "video_index = rig_index + ref_offset  (R-2026-08-03-k)",
+              "alignment_gate": None,
+              "alignment_gate_disabled": bool(a.no_align_check),
               "wrong_frames_per_correct": {int(k): v for k, v in wrong_map.items()},
               "metric": "gradient-NCC (PSNR and plain NCC are RETRACTED on this clip)",
               "arms": []}
+
+    # ---- ⛔ the gate, BEFORE any arm is allowed to report a number -------------------
+    if a.no_align_check:
+        print("[rq] ⛔ ALIGNMENT GATE DISABLED — absolutes from this run are NOT "
+              "admissible", flush=True)
+    else:
+        _r0, _ = build_renderer(scene, arms[0], a.loader_dir)
+        for _ in range(2):
+            _r0.render(_r0.gt_cam_to_nre(frames[0]))
+        report["alignment_gate"] = assert_reference_aligned(
+            _r0, refs, frames, ref_offset, k=a.align_k,
+            n_probe=a.align_probe_frames, out_dir=out)
+        print(f"[rq] ✅ alignment gate PASS at offset {ref_offset:+d} "
+              f"(residual argmax 0 on every probe frame)", flush=True)
+        del _r0
+        import torch
+        torch.cuda.empty_cache()
 
     for arm in arms:
         print(f"[rq] === arm {arm['name']}  layers={arm['layers']} sky={arm['sky']}",

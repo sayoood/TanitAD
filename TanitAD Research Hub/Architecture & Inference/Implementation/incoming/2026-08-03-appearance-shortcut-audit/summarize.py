@@ -80,8 +80,9 @@ if p1:
             continue
         ff = r["four_families"]
         L, LA, TA, ST = ff["LONGITUDINAL"], ff["LATERAL"], ff["TACTICAL"], ff["STRATEGIC"]
-        print(f"\n--- {a} --- (ADE_2s {r['ade_2s']['point']:.4f} m "
-              f"[{r['ade_2s']['lo']:.4f},{r['ade_2s']['hi']:.4f}])")
+        ade = r["ade_2s"]
+        print(f"\n--- {a} --- (ADE_2s {ade.get('mean', ade.get('point')):.4f} m "
+              f"[{ade['lo']:.4f},{ade['hi']:.4f}])")
         print(f"  LONGITUDINAL  target-speed MAE {L['scalar_speed_mae_mps']:.4f} m/s  "
               f"bias {L['scalar_speed_bias_mps']:+.4f}  along-track MAE {L['along_mae_m']:.4f} m "
               f"bias {L['along_bias_m']:+.4f}  accel MAE {L['accel_mae_mps2']:.4f} m/s2")
@@ -182,10 +183,17 @@ if p2:
     if "G3_vertical_shift" in p2:
         hdr("P2 — G3: does a PURE GEOMETRIC vertical shift reproduce the collapse?")
         g3 = p2["G3_vertical_shift"]
-        print(g3["arm"])
         print(g3["note"])
-        for row in g3["sweep"]:
-            print(f"  shift {row['shift_rows']:3d} rows -> speed R2 {row['r2_speed']:+.4f}")
+        print(g3.get("reference_scale", ""))
+        for aname, r in g3.get("arms", {}).items():
+            tag = " ⛔ VOID — " + r["void_reason"] if r["VOID"] else ""
+            print(f"\n  {aname} (fitted on {r['fitted_on']}), baseline R2 "
+                  f"{r['baseline_r2_shift0']:+.4f}{tag}")
+            for row in r["sweep"]:
+                lost = row["frac_of_baseline_lost"]
+                print(f"    shift {row['shift_rows']:3d} rows -> speed R2 "
+                      f"{row['r2_speed']:+.5f}"
+                      + ("" if lost is None else f"   ({lost*100:5.1f} % of baseline lost)"))
 
 # --------------------------------------------------------------------------- #
 p3 = load("results_p3_sitclf.json")
