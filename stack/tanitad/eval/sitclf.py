@@ -85,6 +85,87 @@ def causal_window(feats, starts, ends, win: int) -> tuple[np.ndarray, np.ndarray
     return out, ok
 
 
+def temporal_difference(feats, starts, ends, k: int = 1) -> tuple[np.ndarray, np.ndarray]:
+    """``d[t] = feats[t] - feats[t-k]`` within a clip, plus validity ``[N]``.
+
+    ⭐ WHY THIS IS NOT REDUNDANT WITH :func:`causal_window`. A stacked window
+    already *linearly spans* its own differences, so for a LINEAR head an
+    explicit difference channel adds exactly nothing (see :func:`diff_reparam`,
+    which makes that identity checkable). What this function is for is the other
+    thing: building a PCA basis on the MOTION distribution. A basis fitted on
+    ``feats`` maximises variance over the marginal frame distribution — mostly
+    scene appearance — and the frame-to-frame change can sit in directions with
+    negligible marginal variance and be truncated away. Fitting the basis on
+    ``d`` instead keeps a DIFFERENT subspace of the 2048-d readout, which is not
+    a reparameterisation of the appearance basis and therefore can carry
+    information the stacked appearance window cannot express at the same rank.
+
+    Rows whose ``t-k`` falls in another clip (or before the clip start) are
+    zero-filled and marked invalid, never edge-padded: an edge-padded difference
+    is exactly zero, which is the signature of a stationary scene and is the
+    single most misleading value this feature could take.
+    """
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got {k}")
+    X = np.asarray(feats, dtype=np.float32)
+    if X.ndim != 2:
+        raise ValueError(f"feats must be [N, C], got {X.shape}")
+    out = np.zeros_like(X)
+    ok = np.zeros(X.shape[0], dtype=bool)
+    for a, b in zip(starts, ends):
+        if b - a <= k:
+            continue
+        out[a + k:b] = X[a + k:b] - X[a:b - k]
+        ok[a + k:b] = True
+    return out, ok
+
+
+def diff_reparam(Xw, win: int, in_dim: int) -> np.ndarray:
+    """Rewrite a causal window as ``[f_t, f_t-f_{t-1}, ..., f_{t-w+2}-f_{t-w+1}]``.
+
+    ⚠️ This is an EXACTLY INVERTIBLE linear map of :func:`causal_window`'s
+    output, and it exists to be a CONTROL rather than an arm. The claim "explicit
+    motion channels help" is untestable on a linear head unless you first
+    establish what a pure change of basis does on its own: ridge is fitted after
+    per-column standardisation and with an L2 penalty, and neither is invariant
+    to a rotation of the design matrix, so two mathematically equivalent
+    parameterisations can still score differently. Running this arm measures that
+    residual and bounds how much of any "motion channel" gain is really just the
+    penalty geometry moving.
+
+    Block ``j`` of ``Xw`` is ``feats[t-(win-1)+j]`` (``causal_window``'s offsets
+    ``-(win-1)..0``), so block ``win-1`` is the present frame.
+    """
+    A = np.asarray(Xw, dtype=np.float32)
+    win, in_dim = int(win), int(in_dim)
+    if A.ndim != 2 or A.shape[1] != win * in_dim:
+        raise ValueError(f"expected [N, {win * in_dim}], got {A.shape}")
+    B = A.reshape(A.shape[0], win, in_dim)
+    out = np.empty_like(B)
+    out[:, 0] = B[:, win - 1]                       # the present frame, verbatim
+    if win > 1:
+        out[:, 1:] = B[:, :0:-1] - B[:, win - 2::-1]
+    return out.reshape(A.shape[0], win * in_dim)
+
+
+def undiff_reparam(Xd, win: int, in_dim: int) -> np.ndarray:
+    """Inverse of :func:`diff_reparam` — the proof the map loses nothing.
+
+    Kept beside it so the invertibility claim is executable rather than asserted:
+    ``tests/test_sitclf.py`` round-trips a random window through both.
+    """
+    A = np.asarray(Xd, dtype=np.float32)
+    win, in_dim = int(win), int(in_dim)
+    if A.ndim != 2 or A.shape[1] != win * in_dim:
+        raise ValueError(f"expected [N, {win * in_dim}], got {A.shape}")
+    D = A.reshape(A.shape[0], win, in_dim)
+    out = np.empty_like(D)
+    out[:, win - 1] = D[:, 0]
+    for j in range(1, win):
+        out[:, win - 1 - j] = out[:, win - j] - D[:, j]
+    return out.reshape(A.shape[0], win * in_dim)
+
+
 def cluster_folds(clip_id, n_folds: int = 2, seed: int = 0) -> np.ndarray:
     """Fold assignment per ROW, split on whole CLUSTERS.
 

@@ -1,0 +1,225 @@
+{
+ "schema": "tanitad.corpus_label_manifest/1",
+ "generated_utc": "2026-08-03",
+ "author_stream": "REF-C improvement DIRECTION 3 of 3 — data and labels",
+ "reading_rules": [
+  "Every row carries `evidence_class`. MEASURED means this stream loaded it or ran it here; INHERITED means another agent or doc asserted it and it was NOT re-verified by this stream.",
+  "`parity` is the verdict of tanitad.data.parity.corpus_key_of on the path, not a description. `null` corpus_key means NOT a registered parity corpus.",
+  "Anything marked UNCONFIRMED failed at least two probes at different locations and must not be quoted as existing."
+ ],
+
+ "parity_system": {
+  "source": "stack/tanitad/data/parity.py + stack/tanitad/data/parity_manifest.json",
+  "evidence_class": "MEASURED (loaded the manifest, printed every corpus entry)",
+  "train_key": "physicalai-train-e438721ae894",
+  "train_episodes": 2376,
+  "train_uid_digest_prefix": "9877bef64da3",
+  "skip_hash": "f09e44db",
+  "val_key": "physicalai-val-0c5f7dac3b11",
+  "val_episodes": 600,
+  "val_uid_digest": null,
+  "val_uid_digest_note": "DELIBERATELY ABSENT — uid_source 'count-only-unrecorded'. The clean val split is COUNT-ONLY checked. This is a real hole: a substituted val set of the right size passes.",
+  "registered_val_deployments": [
+   {"n_episodes": 600, "role": "full build"},
+   {"n_episodes": 40, "role": "canonical TanitEval deployment -> 881 stride-8 windows = THE published open-loop statistic"}
+  ],
+  "leaky_split_refused": {
+   "key": "physicalai-val-f1b378f295ae",
+   "why": "78.5 % of its populated episodes are IN the parity train set"
+  },
+  "geometry_siblings_registered": [
+   {"key": "physicalai-train-e438721ae894-w120-256x640cyl", "uid_kind": "v2ep_clipid", "clips": 2400, "digest_prefix": "e61a04553df5"},
+   {"key": "physicalai-val-0c5f7dac3b11-w120-256x640cyl", "uid_kind": "v2ep_clipid", "clips": 600, "digest_prefix": "0b176d2e5cb4"}
+  ]
+ },
+
+ "corpora": [
+  {
+   "name": "parity raw epcache — TRAIN (256x256 square, 9-ch frames)",
+   "where": "pod1/pod2 /workspace/data/physicalai_phase0/_epcache/physicalai-train-e438721ae894 ; pod3 /workspace/pai_epcache",
+   "size": "260 GB / 2376 episodes / 24 skips",
+   "parity": "CANONICAL",
+   "evidence_class": "INHERITED (FLEET_INVENTORY_2026-07-28-migration.md; pods not probed by this stream)",
+   "arms": ["flagship v1 (flagship4b-speedjerk-30k)", "v1.1 nospeed control", "REF-B", "REF-C base + XL", "v15/v16"],
+   "refc_relevant": true,
+   "note": "THIS is the corpus REF-C was trained on. 256 px SQUARE — do not mix with the 429-token 176x624 v5f geometry."
+  },
+  {
+   "name": "parity raw epcache — VAL",
+   "where": "same roots, .../physicalai-val-0c5f7dac3b11 ; 40-episode deployment at tanitad-eval:/root/valdata/",
+   "size": "65.56 GiB / 600 episodes; the 40-ep deployment yields the canonical 881 stride-8 windows",
+   "parity": "CANONICAL (count-only digest)",
+   "evidence_class": "INHERITED (parity_manifest known_deployments; VAL_256_PLAN.md)",
+   "refc_relevant": true
+  },
+  {
+   "name": "w120 v2 compressed geometry siblings (train + val), <clip_id>.v2ep.pt PNG 256x640 cylindrical",
+   "where": "HF Sayood/tanitad-physicalai-w120-256x640cyl (gated); was pod2 /workspace/data/...-w120-256x640cyl",
+   "size": "106 GB (2400 train clips + 600 val clips)",
+   "parity": "PARITY-PRESERVING RE-CACHE — membership_identical true, sha256 re-matched after the HF round trip",
+   "evidence_class": "INHERITED (LOOP_STATE.md; parity_manifest geometry entries MEASURED by this stream)",
+   "arms": ["v5 / v5f (429-token 176x624 sub-frame of this cache)"],
+   "refc_relevant": false,
+   "note": "REF-C is 256 px SQUARE and this is 256x640 cylindrical. Feeding it to REF-C is a geometry change, not a drop-in."
+  },
+  {
+   "name": "256 px raw epcache pushed to HF (the pod2 rescue)",
+   "where": "HF Sayood/tanitad-physicalai-w120-256x640cyl (SAME repo, misleading name — it holds BOTH)",
+   "size": "349.5 GB / 3053 files",
+   "parity": "asserted parity; verified by a torch.load round-trip of one 121 MB episode",
+   "evidence_class": "INHERITED (LOOP_STATE.md)",
+   "refc_relevant": true,
+   "note": "THE recovery path for a REF-C retrain now that pod2 is terminated."
+  },
+  {
+   "name": "v2bal 50 h maneuver-balanced corpus",
+   "where": "/workspace/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d",
+   "size": "9000 clips / 49.742 trainable h / 22.3 GiB",
+   "parity": "DIFFERENT EPISODE SELECTION, BY DESIGN — key 4b7eeeac222d",
+   "evidence_class": "INHERITED (MODEL_REGISTRY.md TRAIN_CMD)",
+   "arms": ["flagship-v2corpus-30k", "flagship-v1arch-v2bal-30k"],
+   "refc_relevant": "ONLY as a separate arm on a new axis — never as a drop-in.",
+   "warning": "the v2corpus arm was falsified partly because --v2 conflated the data change with ten architecture changes. Do not repeat."
+  },
+  {
+   "name": "LOCAL dev-box epcache — the measurement surface this stream used",
+   "where": "C:/Users/Admin/tanitad-data/physicalai/_epcache/physicalai-train-14231cd29c74 (400 eps, 44 GB) and .../physicalai-val-bb543bdf7836 (100 eps, 11 GB)",
+   "size": "500 episodes / 99,477 frames total; median clip 19.9 s",
+   "parity": "NOT REGISTERED — corpus_key_of returns null for both",
+   "evidence_class": "MEASURED (loaded all 500 episodes; schema {frames_u8 [199,9,256,256] uint8, actions [199,2], poses [199,4], episode_id int, maneuvers [199] int64})",
+   "refc_relevant": "as a LABELER test-bed only. Every percentage measured here is about the labeler (a pure function of poses), never a cross-arm number.",
+   "note": "0 skip markers present. This is the only PhysicalAI episode data reachable without a pod."
+  },
+  {
+   "name": "REF-A DINOv2 / I-JEPA feature caches",
+   "where": "pod3 /root/phase0_dinofeats/{corpus}-dinov2-b14 ; /workspace/tmp/ijepa_feats",
+   "parity": "DINOv2 carries the SAME ep_*.pt basenames -> same uid space. I-JEPA val is ~80 % leaked into train and UNUSABLE.",
+   "evidence_class": "INHERITED (MODEL_REGISTRY.md)",
+   "refc_relevant": false
+  },
+  {
+   "name": "comma2k19 episodes",
+   "where": "/workspace/data/comma2k19/_epcache ; HF Sayood/tanitad-comma2k19-episodes ; local C:/Users/Admin/tanitad-data/comma2k19 (Chunk_1.zip 8.7 GB + extracted/)",
+   "parity": "NON-PARITY (unregistered key)",
+   "evidence_class": "MEASURED (local dir listed) + INHERITED (pod paths)",
+   "refc_relevant": false,
+   "note": "highway-dominated; would move the speed mix hard (see label-quality section) and is therefore NOT a neutral addition."
+  },
+  {
+   "name": "NuRec scene reconstructions + OpenDRIVE maps",
+   "where": "HF nvidia/PhysicalAI-Autonomous-Vehicles-NuRec (2.89 TB gated); per-scene members pulled by stack/experiments/nurec-gsplat/build_t1_labels.py",
+   "size": "1607 scenes surveyed; T1 = 141 candidates",
+   "parity": "DIFFERENT CORPUS ENTIRELY",
+   "evidence_class": "MEASURED for the 14 local strategic_gt_*.json + the 141-scene strategic_gt_t1.tar.gz; INHERITED for the 2.89 TB figure",
+   "refc_relevant": "THE ONLY source of a non-kinematic strategic label in the programme.",
+   "members_confirmed": ["map.xodr", "pose_record.json", "data_info.json", "parsed_config.yaml", "rig_trajectories.json", "clipgt/egomotion_estimate.parquet", "clipgt/intersection_area.parquet", "clipgt/lane.parquet"],
+   "members_UNCONFIRMED": ["clipgt/obstacle.parquet (named in README.md:229, no parser reads it)", "sequence_tracks.json (no hit in any repo probe)"]
+  },
+  {
+   "name": "l2d / argoverse2 / nuscenes / cosmos_drive readers",
+   "where": "stack/tanitad/data/{l2d,argoverse2,nuscenes,cosmos_drive}.py",
+   "parity": "n/a",
+   "evidence_class": "INHERITED (module audit)",
+   "refc_relevant": false,
+   "note": "NONE of these is wired to a trainer. argoverse2 and nuscenes are lake ingestors + tests only; cosmos_drive is preview-only. Treat as unbuilt capability, not as available corpus."
+  }
+ ],
+
+ "labels": [
+  {
+   "name": "man5 — the shipped 5-way tactical target",
+   "minted_by": "stack/scripts/refb_labels.py window_maneuver_labels (v1) / window_maneuver_labels_v2 (v2 curvature gate)",
+   "consumed_by": "stack/scripts/refc_train.py (5-way head), refb_train.py, taniteval",
+   "n_classes": 5,
+   "valid_fraction": 1.0,
+   "valid_note": "defined on every window with a full 2 s future; no mask",
+   "degenerate_fraction": 0.1697,
+   "degenerate_definition": "LOSSY = lateral class is a turn AND longitudinal class is live, so the priority collapse destroys the longitudinal decision and no decode rule recovers it",
+   "denominator": "9203 windows / 400 episodes, stride 8, v2 gate (train sample); 2301 windows / 100 episodes gives 16.60 %",
+   "evidence_class": "MEASURED",
+   "artifact": "results/labelqa_pai_train_400ep.json TACTICAL.LOSSY_RATE.v2",
+   "class_balance_v2_train": {"lane_keep": 0.3495, "turn_left": 0.1772, "turn_right": 0.1442, "accelerate": 0.1674, "brake_stop": 0.1617},
+   "cross_check": "the SAME quantity measured on the canonical 40-ep val at stride 5 is 132/1364 = 9.68 % (…/2026-08-03-dtac1-tactical-head/dtac1_probe_refc-base-30k.json). The two DIFFER because the populations differ, not because the definition does — see route_gate_speed_probe.json."
+  },
+  {
+   "name": "lat x lon — the FACTORED tactical target",
+   "minted_by": "stack/tanitad/refs/refc_tactical.py window_factored_labels / window_factored_labels_v2",
+   "consumed_by": "stack/scripts/refc_train.py behind RefCConfig.factored_maneuver (DEFAULT FALSE — no published run has it on)",
+   "n_classes": "3 x 3",
+   "valid_fraction": 1.0,
+   "degenerate_fraction": 0.0,
+   "denominator": "same 9203 / 2301 windows",
+   "evidence_class": "MEASURED",
+   "class_balance_lat_v2_train": {"lane_keep": 0.6786, "turn_left": 0.1772, "turn_right": 0.1442},
+   "class_balance_lon_v2_train": {"brake_stop": 0.2120, "steady": 0.5011, "accelerate": 0.2869},
+   "projection_identity": "collapse(lat, lon) == the shipped 5-way label on 11,504 / 11,504 windows (0 mismatches). MEASURED — this is what makes the switch a refinement rather than a relabel."
+  },
+  {
+   "name": "route — the strategic 3-class target (v2.1)",
+   "minted_by": "stack/scripts/refb_labels.py route_target_v21 / route_from_future_v21",
+   "consumed_by": "refc_train.py --labels v21, refb_train.py, flagship_v15, taniteval",
+   "n_classes": "3 + ROUTE_UNKNOWN sentinel (deliberately out of CE range)",
+   "valid_fraction": 0.7843,
+   "degenerate_fraction": 0.2157,
+   "degenerate_definition": "ROUTE_UNKNOWN — no_arc (13.04 %) or gray_zone (8.53 %)",
+   "denominator": "9203 windows / 400 episodes, stride 8",
+   "evidence_class": "MEASURED",
+   "class_balance_train": {"left": 0.3609, "right": 0.2937, "unknown": 0.2157, "straight": 0.1297},
+   "reason_share_train": {"tight_transient": 0.6546, "no_arc": 0.1304, "road_following": 0.1297, "gray_zone": 0.0853},
+   "within_clip": "5.4 % of episodes carry a CONSTANT route; mean 2.36 distinct classes and only 1.49 switches per ~23-window episode. Coarse and slowly varying, NOT a pure clip tag.",
+   "known_defects": [
+    "the turn share (65.5 % tight_transient) is dominated by the SPEED MIX: turn rate 76.9 % at 3-6 m/s vs 2.5 % at 10-15 m/s",
+    "the transience gate is inert on 96.0 % of windows (arc < TRANSIENCE_MIN_ARC_M 150 m) — but re-enabling it at 60 m moves only 1.0 % of windows (route_v21_vs_v22_ab.json), so it is NOT the cause",
+    "no distance-to-manoeuvre: turn-labelled windows sit 0-200 m from the turn (d_now 32.9 %, d_50_100 18.2 %, d_100_200 6.3 %) and all carry the same token"
+   ]
+  },
+  {
+   "name": "nav_cmd — the strategic MODEL INPUT",
+   "minted_by": "stack/scripts/refb_labels.py nav_command_v21",
+   "n_classes": 4,
+   "valid_fraction": 0.7843,
+   "degenerate_fraction": 0.2157,
+   "degenerate_definition": "ROUTE_UNKNOWN collapsed onto NAV_FOLLOW by _ROUTE_TO_NAV.get(route, NAV_FOLLOW) — indistinguishable at the input from a real road_following judgement",
+   "denominator": "3179 windows fed `follow` out of 9203; 1985 of them (62.44 %) are the collapsed sentinel",
+   "evidence_class": "MEASURED",
+   "artifact": "results/labelqa_pai_train_400ep.json STRATEGIC.NAV_FOLLOW_DEGENERACY",
+   "fixed_by": "nav_command_v21_ex (provenance) and nav_input_v22 (the (command, known) pair) — added 2026-08-03"
+  },
+  {
+   "name": "route_gt — the MAP-DERIVED strategic label (NuRec OpenDRIVE)",
+   "minted_by": "stack/experiments/nurec-gsplat/strategic_gt.py from map.xodr + clipgt",
+   "n_classes": "LEFT / STRAIGHT / RIGHT / UTURN, per DECISION EVENT with an option set and a distance",
+   "coverage": "141 T1 candidates -> 141 labelled -> 110 admissible (31 refused by the map-vs-realised-heading control) -> 78 with >= 1 scoreable decision -> 77 actually scored, 116-117 events, 4745 poses",
+   "per_scene_admissible_pose_fraction_example": 0.495,
+   "evidence_class": "MEASURED (this stream loaded results/strategic_gt/*.json and the 141-file strategic_gt_t1.tar.gz)",
+   "why_it_matters": "this is the ONLY strategic label in the programme that is not a function of the ego's own future trajectory. Every kinematic route label is circular in exactly the way the C6 confound describes.",
+   "not_parity": "NuRec is a different corpus; it can validate the kinematic label, it cannot replace it inside the parity arm."
+  },
+  {
+   "name": "situation labels — lane_change / intersection / roundabout",
+   "minted_by": "stack/tanitad/data/situations.py (detectors) + stack/scripts/emit_situation_labels.py",
+   "coverage": "14.0 % of train episodes contain a lane change, 50.5 % contain an intersection event (400 eps); val 12.0 % / 45.0 % (100 eps)",
+   "event_counts_train": {"lane_change": 59, "intersection": 222, "turn": 222, "roundabout": 40},
+   "evidence_class": "MEASURED",
+   "known_defect_FIXED": "alon_pre / omega_pre were built on np.gradient (CENTRED) under a STRICTLY CAUSAL comment. |centred - causal| differs on 91.3 % of frames; mean 0.0307 m/s^2 (4.53 % of the mean |alon_pre|) and 0.00306 rad/s (3.26 %); max 0.611 m/s^2 and 0.0750 rad/s. Fixed 2026-08-03 via situations.backward_diff.",
+   "blast_radius": "every banked `ego` block [v, alon_pre, omega_pre]/EGO_SCALE: sc_build_labels.py:164, build_substrate.py:111, sc_train.py:38, sc_train_v2.py:38, gen1_sc_train.py:38, tanitad/eval/sitclf_deploy.py:264, run_sitclf_opt.py:78. A SEPARATE alon_pre lineage exists in …/2026-07-26-h2-label-v2/scripts/l2_build.py:280 and was NOT touched."
+  },
+  {
+   "name": "headway / time-gap / TTC — the LONGITUDINAL distance-keeping family",
+   "status": "ABSENT FROM THE EPCACHE",
+   "reason": "the episode record stores only {frames_u8, actions, poses, episode_id, maneuvers}. There is no lead-agent track, so no headway, time-gap or TTC can be computed from any existing cache.",
+   "n": 0,
+   "evidence_class": "MEASURED (loaded an episode and enumerated its keys)",
+   "source_exists": "obstacle.offline carries 3D agent tracks on 97.44 % of the source corpus and is NOT read by the episode builder — physicalai.py reads 4 of 36 features.",
+   "work_item": "joining obstacle.offline at build time is the single highest-value corpus upgrade for the LONGITUDINAL family the PI made binding, and it is a RE-CACHE (same episodes), not a re-selection."
+  }
+ ],
+
+ "instruments_added_by_this_stream": [
+  {"path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-refc-corpus-and-labels/scripts/labelqa_scan.py", "what": "per-family label-quality scan with denominators over an epcache split"},
+  {"path": ".../scripts/route_gate_speed_probe.py", "what": "speed-stratified turn rate, route reason histogram and arc-vs-gate audit"},
+  {"path": ".../scripts/route_v21_vs_v22_ab.py", "what": "pre-registered A/B of the shipped route labeler against the scene-adaptive variant"},
+  {"path": ".../scripts/route_within_clip_probe.py", "what": "is the strategic label a per-window decision or a clip tag; distance-to-manoeuvre band share"},
+  {"path": "stack/tests/test_label_causality_and_nav.py", "what": "18 tests pinning each defect and its fix"}
+ ]
+}

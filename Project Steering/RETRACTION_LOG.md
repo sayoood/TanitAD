@@ -2264,3 +2264,65 @@ the verdict but do touch what may be quoted from it:**
    `flagship/navSTRAIGHT` an out-of-vocabulary probe rather than a condition. Harmless for the
    verdict (`nav_oracle ∈ {0,1,2}`, verified over all 4745 poses), but `flagship/navSTRAIGHT 0.3879`
    must not be read as a result.
+
+---
+
+## R-2026-08-03-nav — ⛔ "the closed-loop rollouts fed nav=0 everywhere because `nav_command_v21`
+## needs 25 s of lookahead and the scenes are 20 s" is REFUTED
+
+**Retracted claim (mine, stated to the PI):** *the scenes are ~20 s, `NAV_HORIZON_STEPS = 250`
+(25 s), therefore the route label can never be judged and every tick was fed `NAV_FOLLOW` — the
+model never received a turn command.*
+
+**MEASURED 2026-08-03**, re-derived from the banked rollouts
+(`stack/experiments/alpasim-gsplat/results/openloop-thor-2026-08-03/rollouts/`), all four arms
+(flagship-v1 × REF-C-base × empty × objects), 190 scored ticks each:
+
+| scene | frames | nav actually fed | `nav_valid` |
+|---|---|---|---|
+| **junction 7c72937c** | 199 (19.9 s) | **NAV_LEFT on 121 / 190**, FOLLOW on 69 | **161 / 190** |
+| 00040136 (night) | 199 (19.9 s) | FOLLOW on 190 / 190 | 65 / 190 |
+
+`route_from_future_v21` **clamps the horizon to the available future** — on the 199-frame junction
+scene it integrates `arc = 125.1 m` and returns a turn, `valid=True`, at t = 0/5/10. The 25 s
+default is a *cap*, not a *requirement*. Identical for all four arms, so this is a property of the
+label function, not of an arm.
+
+⇒ **The consequence is the opposite of what I reported.** On the junction scene the models *were*
+given the correct turn command on 121 of 190 ticks and still tracked the road. **That makes the
+missed exit a MODEL failure, not a nav-plumbing failure** — and it is therefore admissible evidence
+about the strategic level, which the plumbing story would have thrown away.
+
+**Root-cause class: I read the MECHANISM off a function's DEFAULT PARAMETER instead of measuring
+its BEHAVIOUR on the actual data.** `NAV_HORIZON_STEPS = 250` and `T = 199` is a true pair of facts
+that supports a false conclusion; one call on the real poses refutes it. Same family as
+"a mechanism that is real in the source is not thereby the binding constraint" (R-2026-08-03-dtac1),
+one level earlier: here the mechanism was not even real.
+⇒ **RULE: never infer what a label function did from its signature. Read the value it actually
+emitted — the rollouts record `nav` and `nav_valid` per tick precisely so this is a lookup, not a
+derivation.**
+
+### What survives, and is the real defect
+
+⚠️ **`nav_valid` is 65/190 on the night scene and 161/190 on the junction scene, and the model
+cannot see that bit.** `nav_command_v21` collapses `ROUTE_UNKNOWN` and `ROUTE_STRAIGHT` onto the
+**same `NAV_FOLLOW`** token, so *"the road goes straight"* and *"I could not judge the route"* are
+byte-identical at the model input. On the night scene **125 of 190 `FOLLOW` tokens are the
+UNKNOWN sentinel**, not a route statement. Corroborated on the corpus at scale: of 3,179 windows
+fed `follow`, **1,985 (62.4 %) are a collapsed UNKNOWN**
+(`…/incoming/2026-08-03-refc-corpus-and-labels/`).
+⇒ The fix is `nav_input_v22`'s **`(cmd, known)` pair** — already implemented in
+`stack/scripts/refb_labels.py`, not yet wired into any trainer or driver.
+
+### Second defect, separately confirmed here
+
+`closedloop_drive.py:368` and `score_t1_strategic.py:392` pass `min_steps=10` to a v2.1 signature
+that had dropped the parameter; a bare `except` swallowed the `TypeError`, so **the
+scene-length-adapted short-horizon nav had never once executed** — every banked rollout row carries
+`nav_short_err: TypeError(...)`. Fixed at HEAD (`refb_labels.py`, 18 tests in
+`stack/tests/test_label_causality_and_nav.py`); re-verified live 2026-08-03: the call now returns
+`valid=True`. Re-running it over the banked poses changes the short-horizon value on **7 of 22**
+ticks of the night scene and correctly **declines to judge** on the junction scene (the 6 s window
+cannot see a 125 m arc).
+⇒ **RULE: a bare `except` around a label call converts a signature breakage into a plausible
+default. Record the exception in the artifact — that is the only reason this was findable.**
