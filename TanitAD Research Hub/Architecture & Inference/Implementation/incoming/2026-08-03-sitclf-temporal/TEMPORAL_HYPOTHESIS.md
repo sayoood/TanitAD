@@ -93,9 +93,32 @@ has been fixed so a re-run is correct.
 
 ---
 
-## 3. What the controls establish before any arm is quoted
+## 3. ⭐ The study reproduces B4's banked row BIT-IDENTICALLY — an unplanned end-to-end validation
 
-*(filled from `results_temporal.json` — see §4)*
+`run_horizon.py` rebuilds the situation events from the episode caches, refits the PCA, refits the
+ridge and reruns the bootstrap in a **separate process from a separate script**, and at
+`lead_s = 3.0` it lands on the banked B4 `ridge_pca16_w8` row exactly:
+
+| situation | this study (`results_horizon.json`, lead 3.0 s) | B4 (`…/2026-08-03-sitclf-matched-capacity/results_matched_capacity.json`) |
+|---|---|---|
+| `lane_change` | AP 0.02841 · lift **1.269 [1.075, 1.571]** · 1,749 pos | AP 0.02841 · lift **1.269 [1.075, 1.571]** · 1,749 pos |
+| `roundabout` | AP 0.03822 · lift **2.619 [1.893, 3.944]** · 1,142 pos | AP 0.03822 · lift **2.619 [1.893, 3.944]** · 1,142 pos |
+| `intersection` | AP 0.16607 · lift **1.677 [1.454, 1.996]** · 7,032 pos | AP 0.16607 · lift **1.677 [1.454, 1.996]** · 7,032 pos |
+
+Agreement to 5 decimal places on the point estimate **and both interval bounds**, on all three
+situations, is a C-FID-class check that the label rebuild, the fold machinery, the PCA, the ridge
+and the estimator in this stream are the same ones that produced the banked table. Every number
+below therefore sits on the same footing as B4's.
+
+*(The B4 comparison is a REPRODUCTION, not a shared computation: `run_horizon.py` never reads
+`results_matched_capacity.json`, and its own C-FID assertion — rebuilt frame count vs substrate
+frame count — must pass before it produces anything.)*
+
+---
+
+## 3b. What the controls establish before any arm is quoted
+
+*(filled from `results_temporal.json` / `results_fast.json` — see §4)*
 
 ---
 
@@ -105,12 +128,93 @@ has been fixed so a re-run is correct.
 
 ---
 
-## 5. The label pipeline's causality break
+## 5. ⚠️ The brief's citation is wrong — and the underlying claim is true at other lines
 
-*(see §5 below, filled after the run)*
+The brief attributes "our models keep only the LAST frame's feature map" to
+`stack/tanitad/refs/refc.py:1112-1117`. **Those lines say no such thing.** MEASURED by reading them:
+they are the body of `_lan_anchor_prior`, computing a z-scored anchor endpoint —
+`end_x = self.anchors[..., -1, 0]`, `z = (end_x - end_x.mean()) / end_x.std()` — and the `-1` there
+indexes the last **waypoint of an anchor**, not the last frame of a sequence.
+
+⭐ **The claim itself is nevertheless TRUE, and verifiable at two independent locations:**
+
+* **implementation** — `refc.py:1688` `fmap = fmap_all.reshape(b, w, *fmap_all.shape[1:])[:, -1]`
+  and `refc.py:1691` `fmap, pooled = self.encoder(frames[:, -1])`;
+* **documentation** — `refc.py:722` *"REF-C is structurally single-instant: `RefCModel.forward`
+  cross-attends the LAST frame's feature map only"*, echoed at `:705`, `:1013`, `:1506`, `:1545`.
+
+The correction matters because a wrong line reference is how an INHERITED claim survives audit
+without ever being checked — the exact failure class `RETRACTION_LOG.md` exists to log. **Anyone
+quoting this should cite `refc.py:1688,1691`.**
+
+### ⛔ THE BOUNDARY THAT MUST TRAVEL WITH THIS RESULT
+
+REF-C and the situation classifier **do not share an input path**:
+
+| | REF-C | situation classifier |
+|---|---|---|
+| frames reaching the encoder | **last frame only** (`refc.py:1691`) | a **3-frame stack**, 100 ms spacing (`config.py:17,360`) |
+| latents reaching the head | **one** | **8**, offsets −7..0 (`sitclf.causal_window`) |
+| motion-bearing span | **0 s** | **0.9 s** |
+
+⇒ Whatever this study concludes about the situation classifier **does not transfer to REF-C**, whose
+S6 arm is registered at `refc.py:726-727` as *"conditional on the sibling temporal-feature stream"*.
+A null here must **not** be read as cancelling that arm: REF-C really is single-instant, this
+classifier never was, and they need separate evidence.
 
 ---
 
-## 6. Manifest and status
+## 6. The label pipeline's causality break — verified, and its blast radius SIZED
 
-*(filled at the end)*
+**Status: already fixed, by a sibling stream, earlier the same day. I verified rather than redid it.**
+
+`stack/tanitad/data/situations.py` built `alon_pre` / `omega_pre` as a trailing mean of
+`np.gradient` — a **centred** difference — under a comment reading `STRICTLY CAUSAL`, so both
+channels read one frame (0.1 s) past `t` on every interior frame. The fix (`backward_diff`, with
+`causal_pre=True` the default and `causal_pre=False` reproducing the legacy channels bit-for-bit)
+is at HEAD, and `stack/tests/test_label_causality_and_nav.py` covers it —
+`test_backward_diff_is_strictly_causal`, `test_causal_pre_is_the_default_and_legacy_is_reproducible`
+and a detector-channel invariance test. **VERIFIED BY RUNNING: 18 passed in 8.59 s.**
+
+⭐ **What was still missing was a NUMBER.** The module's blast-radius note names the consumers but
+never says how far the leaky channels actually are from the causal ones — and "a defect exists"
+versus "the defect is 4.7 % of the channel" license very different decisions about rebuilding banked
+artifacts. MEASURED here over **100 val clips / 19,900 frames**
+(`causality_blast_radius.py` → `causality_blast_radius.json`):
+
+| channel | mean abs change | p99 | max | **relative to the channel's own scale** | **frames changed > 1 % of scale** |
+|---|---:|---:|---:|---:|---:|
+| `alon_pre` (m/s²) | 0.0317 | 0.1884 | 0.4618 | **4.70 %** | **72.4 %** |
+| `omega_pre` (rad/s) | 0.00286 | 0.0200 | 0.0593 | **3.24 %** | **50.7 %** |
+
+**`LABEL_SIDE_IDENTICAL: true`** — `omega`, `kappa`, `alon` and **all three detectors** return
+bit-identical events under both modes (12 lane changes / 7 roundabouts / 49 intersections over those
+clips). So the fix could not have silently re-derived a single situation label, which would have
+retro-fitted a pre-registered study. That is the load-bearing invariant and it now has a test *and*
+a measurement behind it.
+
+### ⚠️ One banked artifact is still on the LEAKY channels
+
+MEASURED by rebuilding clip 0's ego block both ways and comparing against the bank:
+`C:/Users/Admin/tanitad-data/eval/sitclf_b4_substrate.npz`'s `E` block matches
+`causal_pre=False` **exactly** (max abs diff 0.000e+00) and differs from the causal version by
+7.17e-2. It was built before the fix landed.
+
+Consequences, stated precisely:
+
+* ⛔ **No deployable arm is affected** — ego is not a legal inference input, so no arm in this study
+  or in B4 reads `E`.
+* ⚠️ **`regime_strata` does** — the LONGITUDINAL/LATERAL family strata in `four_family_report` are
+  defined by `[v, alon_pre, omega_pre]`, so those stratum boundaries are drawn with a channel that
+  peeks 0.1 s ahead. A **stratification** variable is not a model input and a paired within-stratum
+  contrast stays valid, but the boundaries are not exactly the causal ones and that is disclosed
+  rather than assumed away.
+* ⚠️ My two `CPOS_ego_*` power controls read `E` and therefore inherit the same 0.1 s peek. It makes
+  them, if anything, slightly **stronger** than a causal ego arm — which is conservative for a
+  control whose job is to prove the rows are separable.
+
+---
+
+## 7. Manifest and status
+
+See `MANIFEST.md`.

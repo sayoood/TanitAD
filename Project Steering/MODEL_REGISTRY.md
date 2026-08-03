@@ -683,9 +683,31 @@ identical **elementwise, max diff 0.0** (re-verified 2026-07-26).
 **G-A verdict: PARTIAL — 2 of 5.** ✅ G1 (<0.458) ✅ G2 (<0.4522) · ❌ oracle ≤0.22 (0.2815)
 · ❌ miss ≤0.10 (0.1067, narrow) · ❌ canary flat (+0.650). **Branch 1 does not fire.**
 
-**What it settles:** unfreezing 4 ViT blocks buys only **8.4 %** of the fan gap — nowhere near REF-C's
-0.1640. Frozen-vs-trained encoder is confirmed as the *direction*, but this is **not** the route to a
-REF-C-grade fan, and the WM cost makes it actively hostile to a design built on that WM (v3.5).
+**What it settles:** unfreezing 4 ViT blocks is **not** the route to a REF-C-grade fan, and the WM
+cost makes it actively hostile to a design built on that WM (v3.5). Frozen-vs-trained encoder is
+confirmed as the *direction* only.
+
+⛔ **CORRECTED 2026-08-03 — the earlier sentence here conflated two different quantities.** It read
+*"buys only 8.4 % of the fan gap — nowhere near REF-C's 0.1640"*. Both halves were wrong:
+
+| quantity | value |
+|---|---|
+| **relative** improvement in the fan number (0.3073 → 0.2815) | **8.40 %** ← *this is what 8.4 % actually is* |
+| fraction of the gap **to REF-C-XL** (0.1640) closed | **18.0 %** |
+| fraction of the gap **to REF-C-base** (0.1914) closed | **22.3 %** |
+
+**8.4 % is a relative change in the fan, not a fraction of a gap.** And **0.1640 is REF-C-XL's fan,
+not base's** — base is **0.1914**, so comparing a base-scale lever against XL's number overstates
+the shortfall. The verdict is unchanged (18–22 % of a gap is not closing it, and the canary went
++144 %), but the magnitude must be quoted correctly.
+
+⚠️ **DO NOT MERGE THIS 8.4 % WITH THE OTHER ONE.** §4's *"a learned re-scorer recovers at most 8.4 %
+of the gap across 47 trained arms"* is an unrelated quantity that coincidentally shares the digits —
+that one **is** a fraction-of-gap, about a re-scorer, on REF-C. This one is a relative change, about
+unfreezing, on the flagship. Two numbers, one string; quote the section, never the bare figure.
+⚠️ The re-scorer 8.4 % resolves to a **prose note, not a results JSON** — it is `INHERITED` until
+someone re-derives it from the 47 arms' raw output, and it is load-bearing for the D-SEL adverse
+prior (`PREREG_D-SEL_REFC_SELECTION_SURFACE.md`).
 
 ⚠️ **Process note (mine).** At step 2500 a transient spike (oracle 2.08, gnorm 161) plus a monotone
 canary trend led me to report a "decisive failure". **It recovered completely** — 5,999 lands ~~the best
@@ -1419,9 +1441,28 @@ scale-A/B matched-vocabulary control nests vs both base and XL (`nested vocabula
 Eval **identical to base/XL**: `taniteval.refc_eval` on the canonical 40-ep / 881-window val, nav=follow,
 2 truncated-denoise steps.
 
-**Results — FINAL step 29,999 (`refc-small-30k`), 881 windows** ✅ *(raw:
-`taniteval/results/refc-small-30k.json`, `scaleab_refc-small-30k_vs_refc-{base,xl}-30k.json`; repo copies
-in `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/`)*
+**Results — FINAL step 29,999 (`refc-small-30k`), 881 windows** ✅
+
+⛔ **CITATION CORRECTED 2026-08-03.** This block previously cited
+`taniteval/results/refc-small-30k.json` as *the raw* and the hub directory as *"repo copies"*.
+**`taniteval/results/refc-small-30k.json` DOES NOT EXIST** (probed at `taniteval/results/`,
+`taniteval/taniteval/results/`, and repo-wide by name). The hub directory is not a copy — **it is
+the only source**, and it holds more than the dead citation claimed:
+
+```
+TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/
+  refc-small-30k.json                          ← the raw eval output
+  scaleab_refc-small-30k_vs_refc-base-30k.json
+  scaleab_refc-small-30k_vs_refc-xl-30k.json   ← the brace form `{base,xl}` was never a real path
+  windows_refc-small-30k.pt   fan_refc-small-30k.pt
+  refc_anchors_small64.pt     provenance.json  eval_registry_after.py
+```
+
+⇒ **RULE: a shell brace expansion is not a citation.** `…_vs_refc-{base,xl}-30k.json` names no file
+and cannot be checked by anything that reads the registry literally — which is every reader and
+every script. Write both paths.
+⇒ **RULE: never label the only copy of an artifact a "copy".** It invites deletion of the thing the
+number rests on, and it sends the next reader to a path that does not exist.
 
 | Metric (full-set, episode-cluster bootstrap B=2000) | **small** (54.7 M) | base (104.2 M) | XL (251.9 M) |
 |---|---|---|---|

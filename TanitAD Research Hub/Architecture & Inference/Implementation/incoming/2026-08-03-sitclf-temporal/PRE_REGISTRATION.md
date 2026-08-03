@@ -98,6 +98,33 @@ the MDE stated as the widest paired-vs-reference CI half-width actually achieved
 
 ⛔ **`roundabout` may not decide anything** — 39 positive clusters at B4, below its own C-POW bar.
 
+## 5b. ADDENDUM — the anticipation-horizon characterisation (`run_horizon.py`)
+
+Registered in `run_horizon.py`'s module docstring, which was written **and the outcomes below
+committed** before the script was executed; this section restates it in the pre-registration so the
+two cannot drift.
+
+⛔ **This is a CHARACTERISATION, not a re-selection.** `lead_s = 3.0` lives in the parent
+pre-registration §2.4 and §7 forbids re-sweeping a §2 constant once a held-out number is seen.
+Nothing in this addendum selects a new `lead_s`, changes a deployed constant, or re-derives a banked
+label: **every horizon in {1, 2, 3, 4, 5} s is reported and none is chosen**, the detectors and their
+frozen thresholds are untouched, and the deployed value stays 3.0. The output is a curve describing
+how predictable the *task* is as a function of how far ahead it asks.
+
+The representation is pinned to the REFERENCE recipe (appearance PCA-16, WIN 8, 129 params/head) and
+the PCA basis is fitted once per fold and reused at every horizon — the basis does not depend on the
+labels, so the only thing moving is the label's lead.
+
+| verdict | predicate | reading |
+|---|---|---|
+| **HORIZON_LIMITED** | skill over the permuted-feature null at the shortest powered lead exceeds **1.5×** that at the longest powered lead | the label asks for more anticipation than the front camera can supply ⇒ the lever is the horizon / label definition, and **no encoder, window or head fixes it** |
+| **HORIZON_FLAT** | otherwise | the horizon is not the binding constraint; the ceiling is elsewhere |
+| **UNDERPOWERED_C_POW** | fewer than 2 horizons clear the 40-positive-cluster bar | no verdict |
+
+⚠️ **Power moves with the lead** — a shorter lead has fewer positive frames. Positive frames **and
+positive clusters** are reported per horizon and C-POW is applied per horizon, because a lift that
+"improves" only because its denominator shrank is the same defect as a recall-only frontier.
+
 ## 6. What would make me wrong in a way I could not detect
 
 * If the frozen v1 trunk's 3-frame stack already saturates the motion available at 256 px / 51.4°,

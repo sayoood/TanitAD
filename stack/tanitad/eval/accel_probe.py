@@ -88,6 +88,17 @@ def window_features(Z: Tensor, kind: str) -> Tensor:
     symmetric window positions, not in the centre token that the shipped linear
     readout reads. Giving a linear probe that basis is the cheapest way to find
     out whether the shipped head's failure is a basis problem.
+
+    ``tdiff`` / ``abstdiff`` (added 2026-08-03, D-LATENT) are the ADJACENT-frame
+    bases. ``diff`` differences positions symmetric about the centre, so it
+    spans lags of 2, 4 and ``w-1`` steps and NEVER forms the 1-step difference;
+    for a channel whose physics is a per-step derivative that is the wrong
+    stencil. ``tdiff`` is the full first-difference sequence (w-1 blocks) — the
+    discrete velocity of the representation — and ``abstdiff`` is its magnitude,
+    i.e. a sign-blind MOTION-ENERGY basis. On a pixel substrate ``abstdiff`` is a
+    crude optical-flow-magnitude proxy, which is the quantity whose own time
+    derivative is longitudinal acceleration; on a latent substrate it asks
+    whether the representation moves *at all* in a target-correlated way.
     """
     if Z.ndim != 3:
         raise ValueError(f"Z must be [N, W, D], got {tuple(Z.shape)}")
@@ -103,10 +114,16 @@ def window_features(Z: Tensor, kind: str) -> Tensor:
     if kind == "centre_diff":
         return torch.cat([window_features(Z, "centre"),
                           window_features(Z, "diff")], dim=1)
+    if kind in ("tdiff", "abstdiff"):
+        if w < 2:
+            raise ValueError(f"{kind!r} needs W >= 2, got W={w}")
+        dz = (Z[:, 1:] - Z[:, :-1]).reshape(n, (w - 1) * d)
+        return dz.abs() if kind == "abstdiff" else dz
     raise KeyError(f"unknown feature kind {kind!r}; known: {FEATURE_BUILDERS}")
 
 
-FEATURE_BUILDERS = ("centre", "window", "diff", "centre_diff")
+FEATURE_BUILDERS = ("centre", "window", "diff", "centre_diff",
+                    "tdiff", "abstdiff")
 
 
 # --------------------------------------------------------------------------- #

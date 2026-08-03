@@ -48,6 +48,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results_temporal.json")
     ap.add_argument("--subspace", default="results_subspace.json")
+    ap.add_argument("--horizon", default="results_horizon.json")
     ap.add_argument("--out", default="tables.md")
     a = ap.parse_args()
     R = json.loads(Path(a.results).read_text(encoding="utf-8"))
@@ -165,6 +166,36 @@ def main():
             L.append("")
         sg = ff["families"]["STRATEGIC"]
         L.append(f"**STRATEGIC** — {sg['_status']}: {sg['_reason']} (n = {sg['n_rows']:,})\n")
+
+    # ---- the anticipation horizon -----------------------------------------
+    if a.horizon and Path(a.horizon).exists():
+        H = json.loads(Path(a.horizon).read_text(encoding="utf-8"))
+        L.append("\n## T5. The anticipation HORIZON (reference recipe, `ridge_app16_w8`)\n")
+        L.append("⚠️ **The row set and the base rate BOTH move with the lead** — a longer lead "
+                 "creates more positive frames and masks more end-of-clip rows — so these rows "
+                 "are *not* the identical-row comparison the ladder is. `precision_lift` "
+                 "(P@5 % ÷ base rate) is the column that is comparable across leads; raw AP-lift "
+                 "is not, because its ceiling is 1/base.\n")
+        for s in SITS:
+            rows = [(l, H["per_situation"][s].get(f"lead_{l}")) for l in H["leads_s"]]
+            rows = [(l, r) for l, r in rows if r and "_status" not in r]
+            if not rows:
+                continue
+            v = H.get("verdict", {}).get(s, {})
+            L.append(f"\n### `{s}` — {v.get('VERDICT', '?')}\n")
+            L.append("| lead | rows | pos | clusters+ | C-POW | base | AP | AP-lift [95 %] | "
+                     "P@5 % | fires / true | **precision lift** | Δ vs null |")
+            L.append("|---:|---:|---:|---:|---|---:|---:|---|---:|---:|---:|---|")
+            for l, r in rows:
+                op = r["op_5pct"]
+                L.append(
+                    f"| {l} s | {r['n_scorable']:,} | {r['n_pos']:,} | "
+                    f"{r['n_clusters_with_a_positive']} | "
+                    f"{'PASS' if r['C_POW_pass'] else '**FAIL**'} | {r['base_rate']:.5f} | "
+                    f"{r['ap']:.5f} | {r['ap_lift']['point']:.3f} "
+                    f"[{r['ap_lift']['lo']:.3f}, {r['ap_lift']['hi']:.3f}] | "
+                    f"{f(op['precision'])} | {op['n_alarm']:,} / {op['n_pos']:,} | "
+                    f"**{f(op['precision_lift'], 3)}** | {ci(r['paired_vs_null'])} |")
 
     Path(a.out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"wrote {a.out}  ({len(L)} lines)")
