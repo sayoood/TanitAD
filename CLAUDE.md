@@ -247,6 +247,41 @@ same idling the rule above forbids, wearing a timer.
    them wait.
 
 
+## ⛔ BINDING — A GOAL INPUT IS ADMISSIBLE, BUT MUST NOT CARRY THE SITUATION CLASSIFIER (Sayed, 2026-08-03)
+
+**Sayed:** *"yes a goal input is admissible, at the same time, we need to be careful not to include
+the result of the situation classification in the goal input."*
+
+| | |
+|---|---|
+| ✅ **Admissible at inference** | a goal / route signal — including a **predicted geometric goal point**, which the literature shows is the lever that actually works (categorical command +0.2 PDMS; goal point **+4.7**). |
+| ⛔ **NOT admissible inside it** | the **output of the situation classifier**, in any form — class posterior, argmax, embedding, or any feature derived from them. |
+
+**Why the second half matters more than the first.** If the goal input carries the situation
+classifier's output, then:
+1. **Attribution dies.** A planner improvement can no longer be assigned to the goal or to the
+   classifier — they are one path. That is the `--v2` conflation failure again (ten levers on two
+   axes, result non-attributable), and the C6 confound again.
+2. **The classifier stops being independently evaluable.** Its errors enter the planner and come back
+   as planner metrics; we would be scoring a loop.
+3. **It is the nav-echo defect in a new costume.** MEASURED today: flagship v1's route head is an
+   exact bijection of the nav we feed it (369/369 and 81/81) and scored **1.0000** — an echo of its
+   own input read as skill. A goal built from the classifier would let the *planner* echo the
+   *classifier* the same way.
+
+**The design rule:** the goal path and the situation path stay **information-disjoint at inference**.
+State, for any arm, what the goal is computed from — and if a shared trunk feeds both, say so and
+justify why that is not a back door.
+
+⚠️ **The admissibility check to run:** for any goal signal, ask *"could this have been computed from
+the situation classifier's output?"* If yes, it is inadmissible until shown otherwise. Same family as
+the leak test in [[the vision-only rule]]: **ask whether an input at inference contains something the
+thing being measured also produces.**
+
+⚠️ **A supplied route is optimistic by construction on PhysicalAI** — our only route supplier there is
+the ego's own future path. Prefer a **predicted** goal, which sidesteps both this and the
+vision-only rule.
+
 ## ⛔ BINDING — LABELS MAY USE EGO; INFERENCE IS VISION-ONLY (Sayed, 2026-08-03)
 
 **Sayed, verbatim:** *"for ground truth data of scenario classification you can use both ego and

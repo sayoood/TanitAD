@@ -509,6 +509,39 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "pooled": out["pooled"]}
 
 
+def assert_selection_params_are_alive(model) -> dict:
+    """⛔ FAIL-LOUD: every D-SEL parameter must have a real gradient.
+
+    Called once, after the FIRST backward. A zero-init graft is gated, and a
+    gated graft is indistinguishable from a DEAD one until you look at its
+    gradient — ``lon_to_anchor``, ``lan_gate`` and ``ctx_to_cond`` all start at
+    exactly 0 on purpose, so "the weight is zero" proves nothing either way.
+    The programme has already paid for this distinction twice: the flagship
+    trained ``cond_imagination`` at ZERO tokens for a whole run, and D-TAC1's
+    ``tactical_speed_input`` was coupled to ``factored_maneuver`` in a way that
+    silently deleted the F1-only ablation ("a conservative guard that makes an
+    effect unattributable is not conservative").
+
+    Raising here costs seconds; discovering it in a post-mortem costs GPU-days.
+    """
+    checks, dead = {}, []
+    for name, p in model.named_parameters():
+        if not any(t in name for t in ("route_to_anchor", "cons_gate")):
+            continue
+        g = 0.0 if p.grad is None else float(p.grad.abs().sum())
+        checks[name] = g
+        if p.grad is None or g == 0.0:
+            dead.append(name)
+    if dead:
+        raise RuntimeError(
+            f"D-SEL parameters received NO gradient: {dead}. They are dead, not "
+            f"gated. The ranked score must be SUPERVISED for a graft on it to "
+            f"train — `argmax` has no gradient and nothing else in the loss "
+            f"differentiates w.r.t. `sel_score`. Check that compute_losses "
+            f"builds `loss_rcls` for this flag combination.")
+    return checks
+
+
 def _save_ckpt(path: Path, model, opt, step: int) -> None:
     # atomic write: a kill mid-save must not corrupt the resume point
     tmp = path.with_suffix(".tmp")
@@ -714,6 +747,7 @@ def train(args) -> dict:
     data_iter = iter(dl)
     t_data = t_step = 0.0
     last_log: dict = {}
+    _sel_checked = False        # D-SEL dead-parameter guard runs once
     while step < args.steps:
         cur_lr = cosine_lr(step, args.steps, warmup, lr)
         for pg in opt.param_groups:
@@ -730,6 +764,11 @@ def train(args) -> dict:
         opt.zero_grad(set_to_none=True)
         out = compute_losses(model, batch_d, device, mode=args.mode)
         out["loss"].backward()
+        if not _sel_checked and (cfg.graft_cons or cfg.graft_route):
+            print(json.dumps({"d_sel_gradients": {
+                k: round(v, 8) for k, v in
+                assert_selection_params_are_alive(model).items()}}), flush=True)
+            _sel_checked = True
         gnorm = float(torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0))
         opt.step()
         t_step += time.perf_counter() - t_s0
@@ -922,4 +961,22 @@ def main(argv=None):
                     help="X15: feed an explicit 'v0 is present' flag beside the "
                          "ego-dropped speed, to the measurement encoder and (if "
                          "--tactical-speed-input) the tactical head. 0.0 m/s is "
-                         "in-distribution 'stationary', 
+                         "in-distribution 'stationary', so the zero-fill is a "
+                         "confident lie.")
+    ap.add_argument("--refc1", action="store_true",
+                    help="REF-C.1: fixed-distance path checkpoints at "
+                         "(2,5,10,20) m + target-speed classification head")
+    ap.add_argument("--workers", type=int, default=0,
+                    help="DataLoader workers (0 = in-loop decode, old behavior)")
+    ap.add_argument("--log-every", type=int, default=None)
+    ap.add_argument("--save-every", type=int, default=None)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--device", default="auto")
+    ap.add_argument("--smoke", action="store_true",
+                    help="tiny config (CI/CPU smoke; 1-channel 64 px episodes)")
+    args = ap.parse_args(argv)
+    return train(args)
+
+
+if __name__ == "__main__":
+    main()

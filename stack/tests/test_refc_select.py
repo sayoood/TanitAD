@@ -150,9 +150,6 @@ def test_zero_init_grafts_do_not_move_the_pick_at_step_zero():
     score is bit-identical to the graft-free one on the first forward — the
     ``ctx_to_cond`` / ``lon_to_anchor`` discipline, so any later change is
     attributable to the seam rather than to a random init."""
-    root = _make_cached_root(Path(__file__).parent / "_dsel_tmp") \
-        if False else None                      # (kept explicit; see fixtures)
-    del root
     frames = torch.randn(4, 4, 1, 64, 64)
     v0 = torch.tensor([3.0, 10.0, 20.0, 0.5])
     off = _build().eval()
@@ -161,8 +158,8 @@ def test_zero_init_grafts_do_not_move_the_pick_at_step_zero():
     with torch.no_grad():
         a = off(frames, v0=v0, steps=2)
         b = on(frames, v0=v0, steps=2)
-    assert float(on.decoder.route_to_anchor.weight.abs().max()) == 0.0
-    assert float(on.decoder.cons_gate.abs().max()) == 0.0
+    assert float(on.decoder.route_to_anchor.weight.detach().abs().max()) == 0.0
+    assert float(on.decoder.cons_gate.detach().abs().max()) == 0.0
     assert torch.equal(a["sel_score"], b["sel_score"])
     assert torch.equal(a["sel_idx"], b["sel_idx"])
 
@@ -237,42 +234,99 @@ def test_the_guard_fires_on_a_candidate_blind_score():
         m(torch.randn(2, 4, 1, 64, 64), v0=torch.tensor([5.0, 9.0]), steps=2)
 
 
-def test_the_world_model_is_not_corrupted_by_the_ranking_objective():
-    """``cons_detach`` (default) runs ``law_head`` under ``no_grad``, so LAW
-    stays trained by its own MSE alone — the flagship's FROZEN-predictor
-    discipline. The gate still receives gradient, so the lever is gated, not
-    dead."""
-    root = _make_cached_root(_tmp())
-    m = _build(graft_cons=True).train()
+def test_rank_grafts_are_gated_not_dead(tmp_path):
+    """⭐ THE FINDING THIS TEST WAS WRITTEN TO CATCH, AND DID.
+
+    ``argmax`` has no gradient, and nothing else in REF-C's loss differentiates
+    w.r.t. the ranked score — ``traj`` and ``law_pred`` differentiate w.r.t. the
+    FAN, through a detached index. So a graft added to ``sel_score`` receives
+    EXACTLY ZERO gradient unless the ranked score is itself supervised. The
+    first run of this test found ``cons_gate.grad is None``; ``compute_losses``
+    now builds the ranked-score CE for every lever that touches that score, not
+    only for S1.
+
+    A zero-init parameter is gated; a zero-init parameter with no gradient is
+    dead — and the two are indistinguishable by inspecting the weight.
+    """
+    root = _make_cached_root(tmp_path)
+    m = _build(graft_cons=True, graft_route=True).train()
     batch = _batch(root, m.cfg)
     out = refc_train.compute_losses(m, batch)
     out["loss"].backward()
-    assert m.decoder.cons_gate.grad is not None
-    assert float(m.decoder.cons_gate.grad.abs().sum()) > 0.0, "gated but DEAD"
+    live = refc_train.assert_selection_params_are_alive(m)   # raises if dead
+    assert set(live) == {"decoder.route_to_anchor.weight", "decoder.cons_gate"}
+    assert all(v > 0.0 for v in live.values()), live
     # law_head still trains (its own MSE), and every parameter has a gradient.
     assert float(m.law_head[0].weight.grad.abs().sum()) > 0.0
     for name, p in m.named_parameters():
         assert p.grad is not None and torch.isfinite(p.grad).all(), name
 
 
+def test_the_world_model_is_not_corrupted_by_the_ranking_objective(tmp_path):
+    """``cons_detach`` (default True) runs ``law_head`` under ``no_grad``, so the
+    ranking objective cannot reshape the world model: LAW stays trained by its
+    own MSE alone. This is the flagship's FROZEN-predictor discipline
+    (``_imagination_inputs`` rolls under ``no_grad`` for the same reason).
+
+    Proved by CONTRAST, not by reading the flag: with the LAW MSE removed, a
+    detached consequence path must leave ``law_head`` with no gradient at all,
+    while an undetached one must not.
+
+    ⚠️ The gate is OPENED first. At ``cons_gate = 0`` nothing flows through the
+    consequence path in EITHER setting, so the contrast would be vacuous and the
+    test would "pass" while proving nothing — the same shape of vacuity as a
+    guard that cannot fail. Opening it also demonstrates the property that makes
+    reusing ``feat_proj`` / ``conf_head`` safe: at step 0 those modules receive
+    no extra gradient from this path at all, so the coupling grows only as
+    training chooses to open the gate."""
+    root = _make_cached_root(tmp_path)
+    batch = _batch(root, refc_smoke_config())
+    grads = {}
+    for detach in (True, False):
+        m = _build(graft_cons=True, cons_detach=detach).train()
+        with torch.no_grad():
+            m.decoder.cons_gate.fill_(0.5)          # open the gate: see above
+        out = refc_train.compute_losses(m, batch)
+        # everything EXCEPT the LAW MSE, so the only path into law_head that
+        # could remain is the consequence path itself
+        (out["loss"] - refc_train.LAW_WEIGHT * out["law"]).backward()
+        g = m.law_head[0].weight.grad
+        grads[detach] = 0.0 if g is None else float(g.abs().sum())
+    assert grads[True] == 0.0, "cons_detach=True still back-props into LAW"
+    assert grads[False] > 0.0, "the contrast is vacuous — no path either way"
+
+
 # ---------- (d) S2 reachability, S4 seam clamp --------------------------------
 
-def test_reach_clamp_masks_only_the_argmax_and_never_empties_a_window():
+def test_reach_clamp_masks_only_the_argmax_and_still_emits_on_an_empty_set():
     """The band filters the ARGMAX; the returned score stays unmasked so no
-    ``-inf`` can reach a cross-entropy, and a row whose survivor set is empty
+    ``-inf`` can reach a cross-entropy, and a row whose survivor set is EMPTY
     keeps its whole fan — an unreachable-everywhere window is a measurement
-    failure, not a licence to emit nothing."""
+    failure, not a licence to emit nothing.
+
+    ⚠️ The MEASURED ``frac_windows_with_empty_survivor_set = 0.00 %`` belongs to
+    REF-C-XL's real 256-anchor fan (``t1_clip_fansize.json``); this smoke model
+    has 20 synthetic anchors and an untrained offset head, so empty sets DO
+    occur here. That is exactly why the fallback is what gets pinned — the
+    property that must hold on any fan — rather than a number that belongs to
+    one arm's artifact."""
     frames = torch.randn(5, 4, 1, 64, 64)
     v0 = torch.tensor([0.0, 3.0, 10.0, 25.0, 40.0])
     m = _build(sel_reach_clamp=True).eval()
     with torch.no_grad():
         out = m(frames, v0=v0, steps=2)
     assert torch.isfinite(out["sel_score"]).all()          # no -inf escapes
-    assert out["sel_tele"]["reach_frac_windows_empty"] == 0.0
     assert 0.0 < out["sel_tele"]["reach_frac_candidates_clipped"] < 1.0
-    # the pick is always a real anchor index
+    # the pick is always a real anchor index, empty survivor set or not
     assert 0 <= int(out["sel_idx"].min()) and \
         int(out["sel_idx"].max()) < m.cfg.anchors.n_anchors
+    # force EVERY window empty: no candidate can imply 200 m/s
+    with torch.no_grad():
+        hard = m(frames, v0=torch.full((5,), 200.0), steps=2)
+    assert hard["sel_tele"]["reach_frac_windows_empty"] == 1.0
+    assert hard["sel_tele"]["reach_frac_candidates_clipped"] == 0.0  # kept all
+    assert torch.isfinite(hard["sel_score"]).all()
+    assert torch.equal(hard["sel_idx"], out["sel_score"].argmax(dim=1))
 
 
 def test_reach_clamp_never_leaks_past_ego_dropout():
