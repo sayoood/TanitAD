@@ -1429,3 +1429,38 @@ is now the sitclf action rather than the head swap.
 ⭐ **Class: this is CLAUDE.md rule 5 in practice** — *"When ambition meets inconvenient evidence, the
 answer is the cheapest discriminating experiment, not a scoped-down goal."* Dropping vision because
 a fusion bug made it look useless would have been exactly the scoped-down goal the rule forbids.
+
+
+## 2026-08-03 — P7 SCREENED: the agents are ALREADY daily; the real defect is MISSED RUNS
+
+**The PI's P7 was "change their cron so they ALL run DAILY instead of one-agent-per-day".**
+⛔ **That half is ALREADY DONE and the priority is stale.** MEASURED via `list_scheduled_tasks` —
+all six research agents carry a **daily** cron, staggered into six slots:
+
+| agent | cron | last actually ran |
+|---|---|---|
+| Tools & DevEnv | `43 6 * * *` | 2026-08-03 06:17 ✅ |
+| Data Engineering | `17 8 * * *` | 2026-08-02 21:46 ⚠️ |
+| Architecture & Inference | `51 9 * * *` | 2026-08-03 05:39 ✅ |
+| Benchmarks & Eval | `23 11 * * *` | 2026-08-03 06:15 ✅ |
+| **Opponent Analyzer** | `49 12 * * *` | **2026-08-01 22:57** 🔴 |
+| **Production & Optimization** | `29 14 * * *` | **2026-08-01 04:44** 🔴 |
+| Orchestrator (debt sweep) | `11 16 * * *` | 2026-08-03 05:49 ✅ |
+| Pod training monitor | `37 */6 * * *` | 2026-08-02 22:42 |
+| Evening report | `53 17 * * *` | 2026-08-02 16:02 |
+
+⇒ **THE REAL DEFECT: two agents have silently missed ~2 days of daily runs.** Opponent Analyzer and
+Production & Optimization are `enabled: true` with a valid daily cron and a `nextRunAt` in the
+future, yet `lastRunAt` is 2026-08-01. Their slots (12:49 and 14:29 local) are **afternoon** slots —
+the four agents that DID run occupy morning slots. **HYPOTHESIS (not established): the host is
+asleep/off during the afternoon window, so afternoon-slot tasks never dispatch.** A scheduled task
+that is enabled and never fires reports no error anywhere — the same invisible-failure shape as the
+MooseFS log bug.
+⇒ **Do not "fix" P7 by editing crons — they are already correct. Fix DISPATCH**, or move the two
+afternoon slots into the window the host is actually awake.
+
+**Stranded deliverables (the other half of P7):** only two branches are ahead of `main` —
+`agent/data-engineering-20260710` (1 commit) and `agent/data-engineering-20260711` (2 commits),
+both from **2026-07-10/11, i.e. ~24 days unmerged**. Everything else is merged. That is far better
+than the historical 10-12-day backlog, but those two are the oldest debt in the repo and belong in
+the orchestrator's next sweep.
