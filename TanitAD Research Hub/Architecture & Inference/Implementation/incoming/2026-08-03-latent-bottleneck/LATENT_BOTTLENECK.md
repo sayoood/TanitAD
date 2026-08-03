@@ -1,4 +1,4 @@
-# D-LATENT — the latent IS the bottleneck, but NOT for the reason the programme believed
+# D-LATENT — ⛔ the latent-bottleneck thesis is FALSIFIED for `long_accel`, and the reason is worse than a bottleneck
 
 **Date** 2026-08-03 · **Substrate** dev box (RTX 4060), **0 pod GPU-h**, no training pod touched ·
 **Pre-registration** `Project Steering/PREREG_TEMPORAL_LATENT.md` (both outcomes fixed in advance)
@@ -9,14 +9,59 @@
 |---|---|
 | `results_mechanism.json` | ⭐ **the mechanism** — the decisive numbers |
 | `results_precision_ladder.json` | how precise a speed read must be, and the failed one-mechanism test |
-| `results_temporal_falsifier.json` | the pre-registered D probe, 30 arms (pass 2, corrected substrate) |
+| `results_temporal_falsifier.json` | the pre-registered D probe — **35 arms** + the null + the oracle (pass 2, corrected substrate) |
+| `raw/summary_tables.txt` + `summarize.py` | ⭐ every table below, emitted FROM the JSON — no number here is hand-transcribed |
 | `raw/results_pass1_STACKAVG_INADMISSIBLE.json` | pass 1, kept — its defect is documented, not hidden |
 | `raw/temporal_kv_cost.json` | ⭐ **what approach A costs**, MEASURED on all three REF-C presets |
 | `raw/run_log*.txt` | full logs |
 
 ---
 
-## 0. HEADLINE — five findings, in the order that changes decisions
+## 0.0 ⛔ THE PRE-REGISTERED VERDICT — **OUTCOME V (VIDEO-LIMITED)** — written first, as registered
+
+`PREREG_TEMPORAL_LATENT.md` §4 committed me to putting this above every ranked approach if it
+fired. It fired, with **every** admissibility condition met:
+
+| pre-registered condition for OUTCOME V | measured |
+|---|---|
+| no temporal arm's paired ΔR²(`long_accel`) separated positive with R² ≥ +0.05 | ✅ **0 of 35 arms.** Not one of `v1` (2,048–18,432 features), `pix*`, `stk*`, `mot*`, linear or rbf |
+| the ORACLE-INPUT arm still reaches ≈ +0.93 | ✅ **+0.9262** (9 features, true speed window) |
+| `speed` still separates positive on the hand-built arms (the admissibility gate) | ✅ **6 arms separated**: `pix32_centre_rbf` +0.6693\*, `mot8_window_rbf` +0.5633\*, `mot16_window_rbf` +0.5200\*, `pix8_abstdiff_rbf` +0.4202\*, `stk8_abstdiff_rbf` +0.3898\*, `stk8_tdiff_rbf` +0.3531\* |
+| the single-instant controls must NOT separate (outcome M) | ✅ none separated: `pix32_centre` −0.0552, `stk32_centre` −0.0559, `pix32_centre_rbf` −0.2561 |
+
+⇒ **`long_accel` is not recoverable from monocular 10 Hz 256 px video at this n, above the measured
+sensitivity floor — by ANY of 35 arms across four substrates and two kernels, while the same
+arms recover `speed` and the oracle recovers accel at 0.93.** As registered: this **retires the
+"the latent is the bottleneck" framing for `long_accel` specifically**. It does **not** retire it
+for speed, TTC, headway or the manoeuvre decision, which must be argued on their own evidence.
+
+⭐⭐ **AND THE FINDING THAT REFRAMES EVERYTHING — on this corpus `speed` is read mostly from
+STATIC APPEARANCE.** A single 32×32 grayscale **still frame** through an rbf ridge reads `speed` at
+**R² +0.6642 [separated]** — against the 18,432-feature, 800 ms latent window's **+0.7145**.
+**One static frame is 93 % of the full learned latent's speed accuracy**, and it is **~1.75×** the
+best *motion-only* arm in the whole panel (`pix8_tdiff_rbf` +0.3778, `stk8_tdiff_rbf` +0.3479\*).
+
+⚠️ **Stated precisely, because the strong version is wrong.** Motion features DO carry speed — but
+only nonlinearly, and only about half as well:
+
+| basis | linear | rbf |
+|---|---:|---:|
+| **pure temporal difference** (`*_tdiff` / `*_diff`, all 4 substrates, 8–16,384 features) | **−0.0052 = the null on all 10 arms** | +0.1449 … **+0.3778** |
+| **single static frame** (`pix32_centre`) | −0.0588 | **+0.6642** |
+| full latent window (`v1_window`, 800 ms) | **+0.7145** | — |
+
+(The linear null on differences is expected physics — `∂I/∂t = −∇I·v` is linear in `v` only at fixed
+image gradient — which is exactly why the rbf rung was added.)
+
+⇒ **Appearance dominates motion by ~1.75× for reading speed, and the full 800 ms learned latent adds
+only 7 % over one still frame.** Nothing in this pipeline was ever *forced* to learn motion, because
+appearance was almost sufficient for the metric being optimised. The `long_accel` null, the 88.7 %
+longitudinal gap, and the appearance-dominant speed read are plausibly **one fact** rather than
+three — ⚠️ HYPOTHESIS at programme scale, MEASURED only on comma2k19 highway (RANK 1 tests it).
+
+---
+
+## 0. FIVE MORE FINDINGS, in the order that changes decisions
 
 1. ⛔ **THE BRIEFING'S MECHANISM IS FACTUALLY WRONG, and it is wrong in a way that matters.**
    The brief says *"A single RGB frame cannot carry relative velocity, closing rate, or TTC"*.
@@ -45,13 +90,19 @@
    increment directly" are **both** exactly at the null. The 100 ms speed change is not in the
    latent window in any form a ridge over 18,432 features can reach.
 
-3. ⭐⭐ **AND THE REASON, in one number: consecutive latents are near-duplicates.**
-   Mean cosine between window positions **100 ms apart = 0.98825**; across the whole **800 ms**
-   window **0.91398**; against a **random other row's** centre **0.32770**.
-   ⇒ The representation separates **SCENES** (0.33) and barely separates **INSTANTS** (0.988).
-   **Keeping W frames of this latent stacks W near-copies.** That is why `v1_window` — all nine
-   latents, 18,432 features — sits at the null, MEASURED, and it is why **approach A as briefed
-   cannot work on the current trunk.**
+3. ⭐⭐ **AND THE REASON, in one number: the latent is not TEMPORALLY SMOOTH — its frame-to-frame
+   jitter along its own speed direction is 51× the physical signal.**
+   Fit ONE linear speed readout `w` and apply it per window position. It is a good *scene-level*
+   speed reader (held-out R² **+0.6767**), but the std of `w·(z_{j+1} − z_j)` is **29.695 m/s²**
+   against a true increment std of **0.582 m/s²** — a **51.0× jitter ratio** — and it correlates
+   **+0.0061** with the true increment.
+   Supporting: mean cosine between positions 100 ms apart **0.98825**, across the 800 ms window
+   **0.91398**, against a random other row **0.32770** — the representation separates **SCENES**
+   (0.33) far more than **INSTANTS** (0.988), and what little it does move between instants is
+   off-axis noise.
+   ⇒ **Keeping W frames of this latent stacks W near-copies whose differences are noise.** That is
+   why `v1_window` — all nine latents, 18,432 features — sits at the null, MEASURED, and it is why
+   **approach A as briefed cannot work on the current trunk.**
 
 4. ⛔ **"THE LATENT READS SPEED TOO COARSELY" IS ALSO REFUTED — the one-mechanism test FAILED.**
    Take the TRUE speed track, corrupt it with AR(1) noise matched to the real latent-read error's
@@ -61,19 +112,27 @@
    ⇒ A track that coarse but correctly *structured* recovers the channel. The latent's error is not
    noise around a moving signal — **the within-window variation carries no signal to begin with.**
 
-5. ⛔ **THE PRE-REGISTERED PIXEL FALSIFIER IS INADMISSIBLE, and its failure is informative.**
-   Its own positive control failed: hand-built pixel motion features read `speed` at
-   **R² ≤ +0.1064** where the frozen v1 latent reads it at **+0.7145** on the same windows — the
-   learned latent is the **~7× BETTER motion reader**. ⇒ **"The encoder destroys motion" is not
-   supported by any measurement here.** The pre-registration's VOID clause fired exactly as written
-   and no L/V verdict may be quoted from that family (§4.4).
+5. ⛔ **"THE ENCODER DESTROYS MOTION" IS NOT SUPPORTED.** The frozen v1 latent reads `speed` at
+   **+0.7145** against the best hand-built substrate's **+0.6642** — only **1.1×** better, and the
+   hand-built winner is a **single static frame**. The encoder is not throwing motion away; **there
+   was little usable motion signal in the substrate to throw away**, and the learned latent is
+   reading the same appearance cue a still frame gives.
+   ⚠️ **Two instrument defects had to be fixed before this was readable** (§2): pass 1 averaged the
+   9-channel stack (3 timesteps) into every window position, and pooling *before* differencing
+   cancels opposing-sign gradients. On pass 1 the pixel family's positive control failed
+   (`speed` ≤ +0.1064) and the whole family would have been VOID. Fixing both, plus adding rbf
+   kernels (a linear map from brightness differences to velocity is physically mis-specified),
+   raised it to **+0.6642 separated** and made the verdict admissible.
 
-**⇒ The one-line answer to the PI's question.** The latent *is* the binding constraint, but the
-defect is **temporal RESOLUTION at the 100 ms scale**, not temporal SPAN and not pooling.
-Architecture changes that widen the span (approach A) or re-route existing tensors (approach B) are
-**measured dead on this trunk**. The lever is the **encoder's pretraining objective** — and the
-programme now has a **0-GPU screen with numeric targets** to gate any such run before it is paid for
-(§6).
+**⇒ The one-line answer to the PI's question.** The representation is not "missing temporal
+content that a better architecture could route to the decoder". Two things are true at once:
+**(a)** `long_accel` is not in this video at the strength `speed` is carried at (§0.0, pre-registered
+falsification), and **(b)** the `speed` the model *does* read is an **appearance shortcut**, and the
+latent's frame-to-frame motion along its own speed axis is **51× the physical signal and
+uncorrelated with it** (§3.2b). Architecture changes that widen the temporal span (approach A) or
+re-route existing tensors (approach B) are **measured dead on this trunk**. The only live lever is
+the **encoder's pretraining objective** — and the programme now has a **0-GPU screen with numeric
+targets** to gate any such run before it is paid for (§6).
 
 ---
 
@@ -174,6 +233,32 @@ should. It simply moves **in an unrelated direction** (corr 0.089), and the erro
 `derive_long_accel`, refuted) and regress the derivative directly (here) — and both land on the
 null while the identical protocol on the identical rows reaches +0.90 from a real speed track.
 
+### 3.2b ⭐⭐ The sharpest form: ONE shared speed direction, applied per position
+
+§3.1 fits the whole 18,432-d window to each position's speed, so a position's prediction can be
+carried by *other* positions' latents and the ridge can smooth. The clean question is whether the
+latent **moves along its own speed direction** at 100 ms. Fit **one** linear readout `w` on the
+train rows pooled over all positions, then apply it per position: `v̂ⱼ = w·zⱼ`, so
+`Δv̂ⱼ = w·(z_{j+1} − zⱼ)`.
+
+| quantity | value |
+|---|---:|
+| held-out `speed` R² at the centre | **+0.6767** *(≈ the windowed read's +0.6912 — the direction is a good SCENE-level speed readout)* |
+| **TRUE** within-window increment std | 0.582 m/s² |
+| **PREDICTED** increment std from that same direction | **29.695 m/s²** |
+| ⇒ frame-to-frame **JITTER RATIO** | **51.0×** |
+| corr(predicted increment, true increment) | **+0.0061** |
+| derived `long_accel` R² | **−869.9** |
+
+⭐ **This is the defect in one number.** The latent's speed direction is a *good* scene-level speed
+readout and its frame-to-frame motion along that direction is **51× larger than the physical signal
+and uncorrelated with it**. The representation is not temporally smooth: consecutive frames of the
+same scene land far apart along the very axis that encodes speed. No decoder, no routing, and no
+number of retained frames can recover a 0.58 m/s² signal from a 29.7 m/s² jitter.
+
+⇒ **The design target this hands to approach C is concrete: temporal SMOOTHNESS / equivariance of
+the latent along its task-relevant directions**, not span, not scale, not pooling.
+
 ### 3.3 The representation separates SCENES, not INSTANTS
 
 Mean cosine similarity over the 17 held-out episodes' latent windows:
@@ -241,7 +326,12 @@ missing.**
 ### 4.3 Four metric families — per family, never pooled
 
 Computed for every arm in `results_temporal_falsifier.json → arms.*.four_families`
-(`tanitad.eval.idm_families`), on the same windows, with the same estimator.
+(`tanitad.eval.idm_families`), on the same windows, with the same estimator, and emitted by
+`summarize.py` (table 5) so nothing here is hand-transcribed.
+⚠️ **The values below are for the same headline arm and the same 2,346 windows as the panel this
+replicates, and they agree with it** — the replication in §2 is bit-exact on the shared rows, so the
+family numbers are a re-derivation rather than an independent second measurement. Read
+`raw/summary_tables.txt` for this run's own emission.
 
 | family | what the headline latent arm does | note |
 |---|---|---|
@@ -251,23 +341,40 @@ Computed for every arm in `results_temporal_falsifier.json → arms.*.four_famil
 | **STRATEGIC** | **UNAVAILABLE, n = 2,346** | no route/goal label on comma2k19 (`idm_families.strategic` states the reason in the artifact). ⛔ WORK ITEM |
 | ADE@2 s *(one row, never the result)* | 5.882 m [4.855, 7.016] vs the null's 12.047 m | |
 
-### 4.4 ⛔ The pixel family is INADMISSIBLE — the VOID clause fired
+### 4.4 The hand-built family, and why the verdict is admissible
 
-The pre-registration said: *"If `speed` fails to separate on the pixel arms, the pixel substrate is
-inadmissible as a probe and the run is VOID for the pixel family."* It did.
+The pre-registration's VOID clause was *"if `speed` fails to separate on the pixel arms, the pixel
+substrate is inadmissible and the run is VOID for that family."* **On pass 1 it would have voided.
+On pass 2 — with both substrate defects fixed and rbf kernels added — it does not.**
 
-| substrate | best `speed` R² over its arms | vs the v1 latent's +0.7145 |
-|---|---:|---|
-| `pix*` / `stk*` / `mot*` (hand-built, pass 2) | see `results_temporal_falsifier.json` | — |
-| `pix*` (pass 1, stack-averaged) | **+0.1064** | **6.7× worse** |
-| **frozen v1 latent** | **+0.7145** | — |
+| substrate | best `speed` R² | separated? | vs the v1 latent's +0.7145 |
+|---|---:|:--:|---|
+| `pix*` pass 1 (9-channel stack **averaged**) | +0.1064 | 1 arm | 6.7× worse ⇒ **would have been VOID** |
+| **`pix32_centre_rbf` — ONE static 32×32 grayscale frame** | **+0.6642** | ✅ | **0.93× — a still frame is 93 % of the latent** |
+| `mot8_window_rbf` (full-res motion energy, 576 f) | +0.5582 | ✅ | 0.78× |
+| `mot16_window_rbf` (2,304 f) | +0.5148 | ✅ | 0.72× |
+| `pix8_abstdiff_rbf` / `stk8_abstdiff_rbf` / `stk8_tdiff_rbf` | +0.4150 / +0.3846 / +0.3479 | ✅✅✅ | |
+| **frozen v1 latent** (`v1_window`, 18,432 f, 800 ms) | **+0.7145** | ✅ | — |
 
-⇒ Two consequences, both load-bearing:
-1. **No L-vs-V verdict may be quoted from the pixel family.** "The video does not carry it" is
-   **not** established, and neither is "the encoder destroys it".
-2. ⭐ **The learned latent is the best motion reader we have** — better than every hand-built pixel
-   motion feature tried, including full-resolution motion energy and an rbf kernel on it. Any
-   proposal premised on "the encoder throws motion away" must contend with that.
+Three consequences, all load-bearing:
+
+1. ✅ **The verdict is admissible.** Six hand-built arms separate positive on `speed`; **zero** of
+   the 35 arms separate positive on `long_accel`. Outcome **V** fires as registered (§0.0).
+2. ⭐⭐ **The best hand-built speed reader is a SINGLE STATIC FRAME** (+0.6642), beating the best
+   motion-only arm (+0.3778) by **1.75×**. All **ten** linear pure-difference arms across all four
+   substrates sit at exactly the null (−0.0052); their rbf counterparts reach +0.1449…+0.3778.
+   ⇒ **Appearance dominates motion for reading speed here** — and the full 800 ms learned latent
+   adds only **7 %** over one still frame.
+3. ⚠️ **The `abstdiff` / `mot` arms do carry something real** (+0.35…+0.56, separated) — motion
+   energy *is* informative about speed. It is simply **weaker than appearance**, and its own
+   temporal derivative (`*_tdiff` on the motion field, i.e. the acceleration proxy) is at the null.
+
+⛔ **What this does NOT establish.** The sensitivity floor here is two amplitude points
+(planted signal at 0.01 / 0.05 of substrate RMS → R² +0.9953 / +0.9966, so the probe is not blunt at
+those amplitudes), and the prior panel's carrier analysis — INHERITED, not re-run on the pixel
+substrate — showed detection is **SNR-limited, not amplitude-limited**: a signal sharing a
+high-variance direction can hide at true R² 0.6. **"`long_accel` is absent from the video" is not
+proven; "it is not carried at the strength `speed` is carried at, at n = 17 held-out episodes" is.**
 
 ---
 
@@ -331,7 +438,34 @@ to **12.5–13.3 %**. **Peak activation memory is essentially unchanged (×1.004
 *(Wall-clock ratios in the artifact were measured while another job held the GPU and are NOT
 quotable; the MAC, memory and parameter columns are contention-free.)*
 
-### ⭐ RANK 1 — the encoder's PRETRAINING objective (approach C), gated by a 0-GPU screen
+### ⭐⭐ RANK 1 — AUDIT THE APPEARANCE SHORTCUT PROGRAMME-WIDE (0 GPU, days of value)
+
+**This was not on the brief and it outranks everything on it.** §0.0 and §4.4 measure that
+`speed` — the channel the whole longitudinal story rests on — is read at **93 %** of the learned
+latent's accuracy from a **single static frame**, and at **exactly the null** from every pure
+temporal-difference basis. If our speed channel is an appearance cue (road class, lane width,
+camera pitch, scene type) rather than a motion estimate, then:
+
+* it is **corpus-specific and will not transfer** — which is exactly the shape of the measured
+  cross-rig collapse (frozen v1 speed R² **+0.930 → −2.465** across a camera rig,
+  `…/2026-07-22-idm-proof/results.json`), a result the programme has been reading as a
+  *camera-geometry* problem;
+* the **88.7 % longitudinal share of the oracle gap** is explained without any appeal to
+  architecture;
+* every arm conditioned on a predicted speed inherits the shortcut.
+
+**What to run (all 0-GPU, on banked dumps):** the §6 screen plus a **frame-order-shuffle** control
+(shuffle the window's frames; if `speed` R² is unchanged, the read uses no temporal order at all)
+and a **single-frame-vs-window** contrast, on **v5f, REF-C and PhysicalAI-AV** — none of which has
+ever been screened. ⚠️ Everything in this document is comma2k19 highway; the shortcut's *magnitude*
+elsewhere is **UNKNOWN**, and that is precisely why it must be measured before it is believed or
+dismissed.
+
+### ⭐ RANK 2 — the encoder's PRETRAINING objective (approach C), gated by a 0-GPU screen
+
+⚠️ **Justify it on `speed` / TTC / manoeuvre, NOT on `long_accel`.** §0.0 falsifies the
+vision route for `long_accel` at this n and floor; an encoder proposal that promises to recover it
+must be refused.
 
 This is the only axis the measurements leave open, and it is where the PI's instinct was right.
 
@@ -346,7 +480,8 @@ This is the only axis the measurements leave open, and it is where the PI's inst
 | **the untried axis** | **frozen VIDEO-pretrained encoder (V-JEPA 2 ViT-L)** — *"the one experiment nobody in the field has run; our frozen-encoder ceiling was measured on IMAGE-pretrained encoders only"* | `BACKLOG.md` **B5** |
 
 ⇒ **Recommendation: B5 is the right next encoder experiment, and it must be gated by the screen in
-§6 before any long run is authorised.** `dynenc-branchB` is the cautionary precedent: 40 k steps
+§6 before any long run is authorised — with the appearance-shortcut audit (RANK 1) as its
+acceptance criterion, not `long_accel`.** `dynenc-branchB` is the cautionary precedent: 40 k steps
 were spent producing a latent that a 5-minute probe would have rejected.
 
 ⚠️ **Note the tension and do not paper over it.** Flagship-v1's encoder *was* trained with an
@@ -355,9 +490,10 @@ action-conditioned forward predictor — a temporal objective — and still give
 penalise **temporal collapse** specifically. That is a hypothesis, not a result, and the screen is
 how it gets tested cheaply.
 
-### ⭐ RANK 2 — stop asking vision for `long_accel`; take it from the speed track (0 GPU)
+### ⭐ RANK 3 — stop asking vision for `long_accel`; take it from the speed track (0 GPU)
 
-The cheapest correct engineering answer, and it is already measured:
+**After §0.0 this is not merely the cheapest route — it is the ONLY measured one.** Already
+measured:
 `long_accel` is **R² +0.9262** recoverable from the **true 9-position speed window** by a
 **9-feature** ridge. Wherever a speed track exists — CAN, or a downstream state estimate — the accel
 channel should be **derived from that track, not read out of the latent**, and §4.1 now states the
@@ -369,7 +505,7 @@ means REF-C's existing `v0` input — a **scalar** ego speed at inference (`refc
 `ego_dropout 0.5`) — cannot be upgraded to an ego speed *sequence* and then called a perception
 result. It would be a legitimate **vehicle-integration** decision and must be labelled as one.
 
-### RANK 3 — fix what the TACTICAL family actually shows (0 GPU, high value)
+### RANK 4 — fix what the TACTICAL family actually shows (0 GPU, high value)
 
 The `long_accel` channel currently predicts **`cruise` on 2,346 / 2,346 windows** — balanced
 accuracy exactly at chance. Any downstream use of the IDM as a longitudinal pseudo-labeller is
@@ -377,7 +513,7 @@ labelling `cruise` unconditionally, **invisibly to ADE and to the scalar R²**. 
 four-family rule paying for itself, and it is a correctness bug in a labeller, not a research
 question.
 
-### RANK 4 — measure the same thing on the arms that matter (cheap, and currently unmeasured)
+### RANK 5 — measure the same thing on the arms that matter (cheap, and currently unmeasured)
 
 Everything here is **flagship-v1 / comma2k19 / 256 px square**. The screen in §6 costs minutes per
 arm and has **never been run on v5f (429-token, 176×624), on REF-C's ResNet trunk, or on
@@ -393,9 +529,10 @@ computable from a banked latent cache in minutes, all with an oracle positive co
 
 | # | screen | frozen v1 (FAIL) | oracle | **gate to pass** |
 |---|---|---:|---:|---|
-| 1 | mean cosine between latents **100 ms apart** | **0.98825** | — | **< 0.95** (the representation must resolve instants, not just scenes) |
-| 2 | corr(within-window speed derivative, true derivative) | **+0.0891** | +0.99997 | **> 0.50** |
+| 1 | ⭐ **JITTER RATIO** — std of `w·(z_{j+1}−z_j)` ÷ the true increment std, for the shared speed direction `w` | **51.0×** | 1.0× | **≤ 2×** — the single most diagnostic number, and the cheapest |
+| 2 | corr(within-window speed derivative, true derivative) | **+0.0891** *(per-position: +0.0061)* | +0.99997 | **> 0.50** |
 | 3 | derived `long_accel` R² (best 9-point SG derivative) | **−0.3773** | +0.9277 | **> +0.50**, equivalently speed-read **σ ≤ 0.28 m/s** |
+| 4 | mean cosine between latents **100 ms apart** *(supporting, not decisive)* | **0.98825** | — | context for 1–3; a high cosine with high jitter means the motion is off-axis noise |
 
 Implementation: `run_mechanism.py` + `run_precision_ladder.py` in this directory; the reusable
 pieces are already in the repo instrument (`stack/tanitad/eval/accel_probe.py`, extended this run
@@ -411,8 +548,15 @@ with the `tdiff` / `abstdiff` adjacent-frame bases + a contract test).
   highway episodes, 17 held out. **Nothing transfers to v5f or PhysicalAI-AV without re-running.**
 * **One channel.** `long_accel`. The lateral and strategic families are reported but this design is
   not powered for them, and comma2k19 has no object or route labels at all (§4.3).
-* **The pixel family is VOID** (§4.4). "The information is not in the video" is **not** shown; what
-  is shown is that our hand-built pixel motion features are far weaker readers than the latent.
+* ⛔ **"The information is not in the video" is NOT shown.** Outcome V says *not carried at the
+  strength `speed` is carried at, at n = 17 held-out episodes, above the measured floor* — and that
+  floor is **SNR-limited, not amplitude-limited** (INHERITED from the prior panel's carrier sweep:
+  a signal on a high-variance direction can hide at true R² 0.6; two planted-amplitude points were
+  re-measured here, +0.9953 / +0.9966).
+* ⚠️ **The appearance-shortcut finding (§0.0) is measured on comma2k19 HIGHWAY only.** That corpus
+  is ~74 % straight and its speed distribution is strongly tied to road class, which is exactly the
+  condition that makes an appearance shortcut available. **Its magnitude on PhysicalAI-AV or v5f is
+  UNKNOWN and must be measured, not assumed** — that is RANK 1.
 * **The cosine and correlation screens are diagnostics, not a theory.** They predict this null well;
   their thresholds in §6 are proposed from **one** encoder and should be re-calibrated as soon as a
   second latent is screened.
@@ -424,9 +568,15 @@ with the `tdiff` / `abstdiff` adjacent-frame bases + a contract test).
 
 ## 8. ESCALATIONS — these need someone else to act
 
+0. ⭐⭐ **THE APPEARANCE SHORTCUT NEEDS A PROGRAMME-WIDE AUDIT (RANK 1), and it is not mine to
+   schedule.** A single static frame reads `speed` at 93 % of the full learned latent's accuracy,
+   and every pure-difference basis reads it at exactly the null. If that holds on PhysicalAI-AV, a
+   large part of the longitudinal story — including the cross-rig collapse currently attributed to
+   camera geometry (frozen v1 speed R² **+0.930 → −2.465**,
+   `…/2026-07-22-idm-proof/results.json`) — has a simpler explanation. **Owner needed.**
 1. ⭐ **`Project Steering/GATE_PROTOCOL.md` should adopt the §6 latent screen as a pre-flight gate
    for any encoder-training authorisation.** `dynenc-branchB` spent 40 k steps producing a latent
-   the screen would have rejected in minutes (§5 RANK 1). This is a protocol change and is not mine
+   the screen would have rejected in minutes (§5 RANK 2). This is a protocol change and is not mine
    to make.
 2. ⭐ **`BACKLOG.md` B5 (frozen V-JEPA 2 video-pretrained encoder) is the top-ranked encoder
    experiment by this analysis** — and should be re-scoped to **run the §6 screen FIRST**, at which
@@ -437,10 +587,12 @@ with the `tdiff` / `abstdiff` adjacent-frame bases + a contract test).
    would need σ ≲ 0.1 m/s … a ~47× improvement"*. That is correct **for a 2-point centred
    difference**; with the optimal 9-point SG derivative it is **σ ≲ 0.28 m/s, ~21×** (§4.1). The
    docstring should carry the estimator with the number.
-4. ⚠️ **`ACCEL_RECOVERABILITY.md` §5.1 concludes the remaining levers are "the representation … or
-   an ego-speed channel".** This run sharpens the first half: the representation lever is
-   **temporal resolution**, and the two obvious ways to buy it (keep W frames; difference the
-   latents) are **both measured dead** on this trunk.
+4. ⛔ **`ACCEL_RECOVERABILITY.md` §5.1's first lever is now REFUTED, not sharpened.** It concludes
+   the remaining levers are *"the representation … or an ego-speed channel"*. Outcome V (§0.0)
+   removes the representation lever **for this channel**: no representation tried — learned or
+   hand-built, 8 to 18,432 features, linear or rbf — separates on `long_accel` while all of them
+   separate on `speed`. The ego-speed channel is the surviving lever, and §4.1 states its
+   requirement (**σ ≲ 0.28 m/s**, not σ ≲ 0.1).
 5. ⚠️ **`BACKLOG.md` A7 (Delta-JEPA — displacement instead of concatenated endpoints)** gets a
    second, independent refutation here: `v1_tdiff` / `v1_abstdiff` (the true adjacent-frame
    difference bases, which A7 describes and which the old `diff` basis could not form) are at the

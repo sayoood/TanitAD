@@ -483,6 +483,24 @@ class RefCConfig:
     #                                   head. 0.0 m/s is in-distribution
     #                                   "stationary"; masking to it is a
     #                                   confident lie.
+    nav_known_channel: bool = False   # E1: the COMPANION BIT of the nav command.
+    #                                   `nav_command_v21` collapses ROUTE_UNKNOWN
+    #                                   and ROUTE_STRAIGHT onto the SAME
+    #                                   NAV_FOLLOW token, so "the road goes
+    #                                   straight" and "I could not judge the
+    #                                   route" are BYTE-IDENTICAL at the model
+    #                                   input. MEASURED: 1,985 of 3,179 (62.4 %)
+    #                                   `follow` windows are a collapsed UNKNOWN.
+    #                                   This adds `nav_known` in {0,1} beside the
+    #                                   one-hot, exactly as `ego_valid_channel`
+    #                                   adds the "v0 is present" flag beside the
+    #                                   ego-dropped speed — the same X15 rule
+    #                                   ("never zero-fill a channel whose zero is
+    #                                   a valid in-distribution value"), applied
+    #                                   to the route instead of the speed.
+    #                                   ⛔ DEFAULT OFF. Turning it on changes what
+    #                                   every arm is fed and is a PI decision.
+    #                                   Feed it from `refb_labels.nav_input_v22`.
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
@@ -1376,7 +1394,15 @@ class RefCModel(nn.Module):
         # (``V15Config.ego_null_row``). The channel is preferred here because it
         # also reaches the TACTICAL head, which reads ``v`` directly and would be
         # untouched by a row swapped in at the measurement OUTPUT.
-        d_meas_in = 1 + len(NAV_COMMANDS) + (1 if cfg.ego_valid_channel else 0)
+        # E1 (``nav_known_channel``): the same rule one channel over. The nav
+        # one-hot cannot express "this command is the UNKNOWN sentinel", because
+        # `_ROUTE_TO_NAV.get(route, NAV_FOLLOW)` maps BOTH `ROUTE_STRAIGHT` and
+        # `ROUTE_UNKNOWN` to `follow`. Without the bit the network's only options
+        # are to trust a meaningless command on 62.4 % of `follow` windows or to
+        # learn to ignore the command channel entirely — and evaluating REF-C
+        # with ``nav_cmd=None`` is what the second one looks like from outside.
+        d_meas_in = (1 + len(NAV_COMMANDS) + (1 if cfg.ego_valid_channel else 0)
+                     + (1 if cfg.nav_known_channel else 0))
         self.measurement = nn.Sequential(
             nn.Linear(d_meas_in, cfg.measurement.hidden), nn.ReLU(inplace=True),
             nn.Linear(cfg.measurement.hidden, cfg.measurement.d_out),
@@ -1659,7 +1685,8 @@ class RefCModel(nn.Module):
                 v0: Tensor | None = None,
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None, steps: int = 0,
-                lan: Tensor | None = None) -> dict:
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -1696,6 +1723,7 @@ class RefCModel(nn.Module):
         if self.cfg.graft_imagination:
             fmap, imag_logvar = self.imagination(fmap)
 
+        nav_cmd_given, known = nav_cmd is not None, None
         if nav_cmd is None:                      # unlabeled -> follow (idx 0)
             nav_cmd = torch.zeros(b, dtype=torch.long, device=frames.device)
         nav = F.one_hot(nav_cmd, len(NAV_COMMANDS)).to(pooled.dtype)
@@ -1711,7 +1739,31 @@ class RefCModel(nn.Module):
             keep = keep * (torch.rand(b, 1, device=v.device)
                            >= self.cfg.ego_dropout).to(v.dtype)
             v = v * keep                         # per-sample Bernoulli zero
-        meas_in = [v, nav] + ([keep] if self.cfg.ego_valid_channel else [])
+        # E1: the nav command's COMPANION BIT. Fail loud in BOTH directions —
+        # a `nav_known` that is silently dropped is exactly the class of bug this
+        # seam exists to remove, and a gate that is on while the caller forgets
+        # the bit would quietly assert "this command is a real judgement" on
+        # every window.
+        if nav_known is not None and not self.cfg.nav_known_channel:
+            raise ValueError(
+                "nav_known was supplied but cfg.nav_known_channel is False — it "
+                "would be silently dropped. Turn the gate on or stop passing it.")
+        if self.cfg.nav_known_channel:
+            if nav_known is None:
+                if not nav_cmd_given:
+                    # `nav_cmd=None` -> the `follow` fallback IS the sentinel, so
+                    # the honest companion bit is 0.0 and needs no argument.
+                    nav_known = torch.zeros(b, dtype=pooled.dtype,
+                                            device=pooled.device)
+                else:
+                    raise ValueError(
+                        "nav_known_channel is on and a nav_cmd was supplied, so "
+                        "nav_known must be supplied too (refb_labels."
+                        "nav_input_v22 returns the pair). Defaulting it to 1.0 "
+                        "would assert a judgement the labeller never made.")
+            known = nav_known.to(pooled.dtype).reshape(b, 1)
+        meas_in = ([v, nav] + ([keep] if self.cfg.ego_valid_channel else [])
+                   + ([known] if self.cfg.nav_known_channel else []))
         m = self.measurement(torch.cat(meas_in, dim=-1))
 
         # Aux heads (image branch): maneuver logits also drive the H19 reweight.

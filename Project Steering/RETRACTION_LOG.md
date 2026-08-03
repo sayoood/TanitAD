@@ -2368,3 +2368,59 @@ ADE-only read of this run reports "healthy". Third independent instrument now po
 rather than generation (with D-TAC1's within-`lane_keep` finding and the closed-loop TACTICAL row).
 ⚠️ Trainer-log numbers: a curve watch, **not quotable as a result**. The 5 k gate is adjudicated on
 `stack/scripts/run_gate.py` over the four families with the paired episode-cluster bootstrap.
+
+---
+
+## R-2026-08-03-latent — ⛔ "our models keep only the LAST frame, so the cross-attended tokens are SINGLE-INSTANT and a single RGB frame cannot carry velocity" — the PREMISE is FALSE, and the CONCLUSION it supported is separately refuted
+
+**Retracted** 2026-08-03. **Class C3 (mechanism instead of measurement)**, compounded by
+**C4 (inherited without re-verification)**.
+
+**What was asserted**, and used to brief two parallel streams as the load-bearing mechanism behind
+the `long_accel` null, the sitclf capacity curve and the 88.7 % longitudinal gap:
+
+> the model computes feature maps for all W frames and KEEPS ONLY THE LAST … the 64 tokens the
+> anchor queries cross-attend are single-instant … a single RGB frame cannot carry relative
+> velocity, closing rate, or TTC.
+
+**The `[:, -1]` read is CORRECT** (`stack/tanitad/refs/refc.py:1683`). **Everything drawn from it is
+not**, on three independent measurements:
+
+1. **The kept tensor is NOT a single RGB frame.** `refc.py:241` — `in_channels: int = 9`,
+   *"D-015 3-frame RGB stack (latest = `[-3:]`)"* — and the stack is **sliding**:
+   `frames_u8[t][6:9] == frames_u8[t+1][3:6]` at **max |d| = 0.0**. One model "frame" already spans
+   **300 ms**. Corroborated independently by the sitclf-temporal stream on a different corpus and a
+   different file (`config.py:17`, `:360`; PhysicalAI cache `[199, 9, 256, 256]`).
+2. **Keeping the other W−1 frames would not help.** `v1_window` — **all nine** latents, 18,432
+   features — is **at the null** on `long_accel` (−0.0626, Δ vs its shuffled control +0.0000) while
+   separating on `speed` (+0.7145, Δ +0.7197\*) in the same draw. The latent's frame-to-frame
+   jitter along its own speed direction is **51.0×** the physical signal and correlates **+0.0061**
+   with it.
+3. **The channel is not recoverable from the video at all, at this n.** Pre-registered probe
+   (`Project Steering/PREREG_TEMPORAL_LATENT.md`), **35 arms** over four substrates (frozen v1
+   latent, raw frames, the D-015 sub-frame stack, full-resolution motion energy), linear and rbf,
+   8–18,432 features: **zero** separate positive on `long_accel`; **six** separate positive on
+   `speed`; the oracle (true speed window, 9 features) reaches **+0.9262**.
+
+**And the finding that replaces it:** a **single static 32×32 grayscale frame** reads `speed` at
+**R² +0.6642 [separated]** — **93 %** of the full 800 ms learned latent's +0.7145, and **1.75×** the
+best motion-only arm in the panel (+0.3778). All **ten** LINEAR pure-difference arms sit at exactly
+the null (−0.0052); their rbf counterparts reach +0.1449…+0.3778. ⇒ **on this corpus appearance
+DOMINATES motion for reading speed**, and nothing in the pipeline was ever forced to learn motion.
+⚠️ MEASURED on comma2k19 highway only — the magnitude elsewhere is UNKNOWN and is the top-ranked
+follow-up.
+
+**Root-cause class C3, in its most expensive form: a correct line of code was read, and a physical
+consequence was inferred from it without measuring the tensor's shape or the channel's
+recoverability.** The inference was reasonable, it was repeated in two briefs, and it would have
+funded an architecture change (keep W frames — MEASURED cost: decoder MACs ×1.49 on REF-C-XL, peak
+memory ×1.004, +4,097 params) that the data says cannot work for the channel it was proposed for.
+
+⇒ **STRENGTHENED RULE: an architectural claim about WHAT A TENSOR CONTAINS must cite a measured
+SHAPE and a measured RECOVERABILITY, not a line of code.** `in_channels=9` is four characters away
+from the line everyone read. Related to **C15** (semantics from a name) — here the semantics were
+taken from an *indexing expression* instead.
+
+Evidence: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-latent-bottleneck/`
+(`LATENT_BOTTLENECK.md`, `results_mechanism.json`, `results_temporal_falsifier.json`,
+`results_precision_ladder.json`, `raw/temporal_kv_cost.json`).

@@ -12,7 +12,8 @@ RTX 4060 with `OMP_NUM_THREADS` set (the documented multi-arm trap).
 | **Pre-registration** (both outcomes fixed in advance) | `Project Steering/PREREG_TEMPORAL_LATENT.md` | no — staged in git |
 | ⭐ mechanism results | `…/2026-08-03-latent-bottleneck/results_mechanism.json` | no — staged |
 | precision-ladder results | `…/2026-08-03-latent-bottleneck/results_precision_ladder.json` | no — staged |
-| D-probe results (pass 2, corrected substrate) | `…/2026-08-03-latent-bottleneck/results_temporal_falsifier.json` | no — staged |
+| D-probe results (pass 2, corrected substrate; 35 arms) | `…/2026-08-03-latent-bottleneck/results_temporal_falsifier.json` | no — staged |
+| ⭐ tables emitted FROM the JSON (nothing hand-transcribed) | `…/2026-08-03-latent-bottleneck/summarize.py`, `raw/summary_tables.txt` | no — staged |
 | D-probe pass 1 (defective substrate, KEPT as evidence) | `…/2026-08-03-latent-bottleneck/raw/results_pass1_STACKAVG_INADMISSIBLE.json` | no — staged |
 | approach-A cost measurement | `…/2026-08-03-latent-bottleneck/raw/temporal_kv_cost.json` | no — staged |
 | runners | `…/2026-08-03-latent-bottleneck/run_mechanism.py`, `run_precision_ladder.py`, `run_temporal_falsifier.py`, `analyze_temporal_kv_cost.py` | no — staged |
@@ -58,16 +59,23 @@ OMP_NUM_THREADS=2 python analyze_temporal_kv_cost.py --out raw/temporal_kv_cost.
 4. **`Project Steering/BACKLOG.md` A7** (Delta-JEPA): second independent refutation — the true
    adjacent-frame difference bases are at the null and the direct-increment regression gives
    corr +0.0007.
-5. **`Project Steering/RETRACTION_LOG.md`**: the "single RGB frame" framing that this stream and the
+5. ⭐⭐ **The APPEARANCE SHORTCUT (LATENT_BOTTLENECK.md §0.0, escalation 0) needs an owner.** A
+   single static frame reads `speed` at 93 % of the full latent's accuracy and every pure-difference
+   basis reads it at the null. If this holds off-highway it re-explains a large part of the
+   longitudinal story, including the cross-rig collapse.
+6. **`Project Steering/RETRACTION_LOG.md`**: the "single RGB frame" framing that this stream and the
    sitclf-temporal stream were both briefed with is factually wrong about our input
    (`in_channels=9`, D-015 3-frame sliding stack). Root-cause class: *an architectural claim
    inherited from a code READING rather than from a shape MEASUREMENT.*
 
 ## What is NOT done
 
-* The `mot*` / `stk*` / rbf pixel arms answer the pre-registered L-vs-V question only if their
-  positive control fires; if it does not, that family stays VOID and the L-vs-V question remains
-  **OPEN**. See `LATENT_BOTTLENECK.md` §4.4 for the measured outcome.
+* ✅ **DONE** — the pre-registered D probe ran to a verdict: **OUTCOME V (VIDEO-LIMITED)**, with the
+  admissibility gate met (6 hand-built arms separated on `speed`; 0 of 35 arms separated on
+  `long_accel`). See `LATENT_BOTTLENECK.md` §0.0 and §4.4.
+* ⛔ **NOT DONE — the appearance-shortcut audit (RANK 1 / escalation 0)** on PhysicalAI-AV, v5f and
+  REF-C. This run measured the shortcut only on comma2k19 highway, where it is largest by
+  construction. It is the highest-value follow-up in the document and it has **no owner**.
 * The §6 screen has **not** been run on v5f, on REF-C's ResNet trunk, or on PhysicalAI-AV. Those are
   the arms the programme is actually deciding about.
 * No retrain was launched and none is proposed here without the screen first.
