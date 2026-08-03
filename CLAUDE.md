@@ -247,6 +247,39 @@ same idling the rule above forbids, wearing a timer.
    them wait.
 
 
+## ⛔ BINDING — AT LEAST FIVE PARALLEL STREAMS, ALWAYS (Sayed, 2026-08-03)
+
+**Sayed:** *"dont idle, always have at least 5 streams in parallel, use the loop, goal and workflow
+concepts of claude."*
+
+**The rule:** at every point in the programme there are **≥5 work streams in flight simultaneously**.
+One agent running while the orchestrator waits is IDLING WITH EXTRA STEPS. A turn that ends with
+fewer than five live streams and unexhausted backlog is not finished.
+
+**The three mechanisms, and when each is right:**
+
+| concept | use it for |
+|---|---|
+| **Loop** (`/loop` + a CRON DRUMBEAT) | the heartbeat — re-enters, re-checks the fleet, and picks the next unblocked item. Must be a COMPLETE handoff: a fresh session reads only the cron prompt. Rewrite it every run. |
+| **Goal / priority order** | the PI's numbered list. It is a **PRIORITY ORDER, NOT A DEPENDENCY CHAIN** — item 1 blocked says nothing about 2–12. Drop to the next unblocked item IN THE SAME TURN. |
+| **Workflow** (`Workflow` tool) | fan-out across independent streams, each with its own adversarial verify. Prefer `pipeline()` so a stream verifies as soon as it finishes; use a barrier only when a stage genuinely needs ALL prior results. |
+
+**How to keep five alive without thrash:**
+1. **Never let a stream finish without launching its successor.** When an agent reports, commit its
+   work AND start the next item in the same turn.
+2. **Streams must be INDEPENDENT.** Five agents editing the same file is one stream with a merge
+   conflict. Partition by directory//concern, and say which files each owns.
+3. **Mix horizons:** long compute (training, engine builds), medium (experiments), short (docs,
+   instrument fixes, banking stranded artifacts). A GPU-gated turn still ships the short ones.
+4. **A blocked stream is replaced, not waited on.** `Project Steering/BACKLOG.md` is the pull-list.
+5. ⚠️ **Fan-out is still capped** — uncontrolled sub-spawning exhausted the weekly API budget on
+   2026-07-21 and cost three agents' work. Five to eight concurrent is the band; scale depth, not
+   breadth, beyond that.
+
+*(Root cause: the orchestrator repeatedly ran ONE agent and then reported. Sequential delegation is
+still sequential. The programme's throughput is set by how many independent questions are being
+answered at once, not by how carefully one is.)*
+
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 
 **Sayed, verbatim, after asking repeatedly:** *"Despite I told you many times, don't consider only
